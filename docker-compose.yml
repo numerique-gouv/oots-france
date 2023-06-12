@@ -1,0 +1,23 @@
+version: '3'
+
+x-app:
+  &configuration-base
+  build:
+    context: .
+  volumes:
+    - .:/usr/src/app
+    - node_modules:/usr/src/app/node_modules/
+
+services:
+  test:
+    <<: *configuration-base
+    command: "npm run test:watch"
+
+  web:
+    <<: *configuration-base
+    command: "npx nodemon server.js"
+    ports:
+      - "${PORT_OOTS_FRANCE}:3000"
+
+volumes:
+  node_modules:
