@@ -8,7 +8,7 @@ const creeServeur = () => {
     reponse.status(504).send('Not Implemented Yet!');
   });
 
-  const ecoute = (...args) => (serveur = app.listen(...args));
+  const ecoute = (...args) => { serveur = app.listen(...args); };
 
   const arreteEcoute = () => serveur.close();
 

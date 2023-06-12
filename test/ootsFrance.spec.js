@@ -17,6 +17,6 @@ describe('Le serveur OOTS France', () => {
         expect(erreur.response.status).to.equal(504);
         suite();
       })
-      .catch(suite)
+      .catch(suite);
   });
 });
