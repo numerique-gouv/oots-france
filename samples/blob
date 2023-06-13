@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<query:QueryResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+    xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:sdg="http://data.europa.eu/p4s"
+    xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
+    requestId="urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797">
+    <!-- The 'id' attribute of a 'QueryResponse' MUST be unique UUID (RFC 4122) for each request starting with prefix "urn:uuid:" -->
+    <!-- The 'status attribute of a 'QueryResponse' MUST be encoded as "urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success" for successful responses or as "urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Unavailable" for responses that will be available at a later time .  -->
+
+
+    <!-- Top Level Slots, providing metadata about the Response and the Evidence Provider -->
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType">
+            <!-- MUST be the fixed value "oots-edm:v1.0" depending on release version -->
+            <rim:Value>oots-edm:v1.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceResponseIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType">
+            <!-- The 'rim:Value' of the 'EvidenceResponseIdentifier' MUST be unique UUID (RFC 4122) for each response. -->
+            <rim:Value>166155eb-d7a7-4cac-9086-8a85f0116462</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="IssueDateTime">
+        <rim:SlotValue xsi:type="rim:DateTimeValueType">
+            <!-- MUST be according to xsd:dateTime.  -->
+            <rim:Value>2022-05-19T17:10:10.872Z</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceProvider">
+        <rim:SlotValue xsi:type="rim:CollectionValueType">
+            <rim:Element xsi:type="rim:AnyValueType">
+                <sdg:Agent>
+                    <!-- The value of the 'schemeID' attribute of the 'Identifier' MUST be part of the code list 'EAS' (Electronic Address Scheme ) and use the prefix 'urn:cef.eu:names:identifier:EAS:[Code]'  -->
+                    <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930"
+                        >DE73524311</sdg:Identifier>
+                    <sdg:Name lang="EN">Civil Registration Office Berlin I</sdg:Name>
+                    <sdg:Address>
+                        <sdg:FullAddress>Schönstedtstraße 5, 13357 Berlin, Germany</sdg:FullAddress>
+                        <sdg:LocatorDesignator>5</sdg:LocatorDesignator>
+                        <sdg:PostCode>13357</sdg:PostCode>
+                        <sdg:PostCityName>Berlin</sdg:PostCityName>
+                        <sdg:Thoroughfare>Schönstedtstraße</sdg:Thoroughfare>
+                        <!-- The value of the 'AdminUnitLevel1' MUST be coded using the code list 'CountryIdentificationCode' (ISO 3166-1' alpha-2 codes).  -->
+                        <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+                        <!-- The value of the 'AdminUnitLevel2' MUST be coded using the code list 'NUTS' (Nomenclature of Territorial Units for Statistics).  -->
+                        <sdg:AdminUnitLevel2>DE3</sdg:AdminUnitLevel2>
+                    </sdg:Address>
+                    <!--   The value MUST be part of the code list 'AgentClassification'. Default value: EP (Evidence Provider). If the code 'IP' (Intermediary Platform) is present there must be another 'sdg:Agent' Element containing the code 'EP'. The code 'ER' and 'ERRP' shall not be used by this transaction.  -->
+                    <sdg:Classification>EP</sdg:Classification>
+                </sdg:Agent>
+            </rim:Element>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceRequester">
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+            <sdg:Agent>
+                <!-- The value of the 'schemeID' attribute of the 'Identifier' MUST be part of the code list 'EAS' (Electronic Address Scheme ) and use the prefix 'urn:cef.eu:names:identifier:EAS:[Code]'  -->
+                <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096"
+                    >DK22233223</sdg:Identifier>
+                <sdg:Name lang="EN">Denmark University Portal</sdg:Name>
+            </sdg:Agent>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <!-- First Object. The 'id' attribute of a 'RegistryObject' MUST be unique UUID (RFC 4122) starting with prefix "urn:uuid:". -->
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType"
+            id="urn:uuid:f073cbe2-cf2a-4f46-b9ff-d4b0fde53ab1">
+            <rim:Slot name="EvidenceMetadata">
+                <rim:SlotValue xsi:type="rim:AnyValueType">
+                    <sdg:Evidence>
+                        <!--   The value of 'Identifier' of an 'Evidence' MUST be unique UUID (RFC 4122).  -->
+                        <sdg:Identifier>37a169f1-9cf6-4aa8-ac24-b083fa569173</sdg:Identifier>
+                        <!-- Must contain the Minimum Data Set part of the evidence Subject attributes to confirm identity matching. Must contain either a IsAbout <<NaturalPerson>> or <<LegalPerson>> but NOT both. An example for <<LegalPerson>> is <sdg:LegalPersonIdentifier schemeID="eidas">ES/SE/12132123Y</sdg:LegalPersonIdentifier> <sdg:LegalName>AnyCompanyName</sdg:LegalName> -->
+                        <sdg:IsAbout>
+                            <sdg:NaturalPerson>
+                                <!-- The identifier of the user retrieved through the EvidenceRequest from eIDAS -->
+                                <!-- eIDAS Identifier: MUST have the format XX/YY/ZZZZZZZ where XX is the Nationality Code of the identifier and YY is the Nationality Code of the destination country and ZZZZZZZ is an undefined combination of characters which uniquely identifies the identity asserted in the country of origin. The values of XX and YY MUST be part of the code list 'CountryIdentificationCode' (ISO 3166-1' alpha-2 codes). Example: ES/AT/02635542Y.  -->
+                                <!-- The 'schemeID' attribute of the 'Identifier' MUST have the fixed value 'eidas'.  -->
+                                <sdg:Identifier schemeID="eidas">DK/DE/123123123</sdg:Identifier>
+                                <!-- Mandatory Minimum Data Set -->
+                                <sdg:FamilyName>Smith</sdg:FamilyName>
+                                <sdg:GivenName>John</sdg:GivenName>
+                                <!-- The value of 'DateOfBirth' MUST use the following format YYYY + “-“ + MM + “-“ + DD (as defined for xsd:date)  -->
+                                <sdg:DateOfBirth>1970-03-01</sdg:DateOfBirth>
+                            </sdg:NaturalPerson>
+                        </sdg:IsAbout>
+                        <sdg:IssuingAuthority>
+                            <!-- The issuing authority which might be different from the evidence provider e.g. if the evidence provider acts as national base registry that aggregates local authorities issuing the evidence -->
+                            <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930"
+                                >DE73524311</sdg:Identifier>
+                            <sdg:Name lang="EN">Civil Registration Office Berlin I</sdg:Name>
+                        </sdg:IssuingAuthority>
+                        <sdg:IsConformantTo>
+                            <!-- MUST be a UUID of the request which was retrieved from the Evidence Broker/DSD and include a code of the code list 'CountryIdentificationCode' (ISO 3166-1' alpha-2 codes) using the prefix and scheme ''https://sr.oots.tech.europa.eu/evidencetypeclassifications/[CountryIdentificationCode]/[UUID]'' pointing to the Semantic Repository -->
+                            <sdg:EvidenceTypeClassification>https://sr.oots.tech.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e</sdg:EvidenceTypeClassification>
+                            <!-- The value of 'lang' attribute of Title and Description MUST be part of the code list 'LanguageCode' (ISO 639-1 two-letter code).    -->
+                            <sdg:Title lang="EN">Certificate of Birth</sdg:Title>
+                            <sdg:Title lang="DE">Geburtsurkunde</sdg:Title>
+                            <sdg:Description lang="EN">An official certificate of birth of a person
+                                - with first name, surname, sex, date and place of birth, which is
+                                obtained from the birth register of the place of
+                                birth.</sdg:Description>
+                            <sdg:Description lang="DE">Eine amtliche Bescheinigung über die Geburt
+                                einer Person – mit Vorname, Familienname, Geschlecht, Datum und Ort
+                                der Geburt, welche aus dem Geburtsregister des Geburtsortes erstellt
+                                wird.</sdg:Description>
+                        </sdg:IsConformantTo>
+                        <!-- The issuing date, distribution and validity period of the evidence. MUST be according to xsd:date. -->
+                        <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
+                        <sdg:Distribution>
+                            <!-- The value of 'Format' of the requested distribution MUST be part of the code list 'OOTSMediaTypes' and should match the one requested by the Evidence Requester -->
+                            <sdg:Format>application/xml</sdg:Format>
+                            <!-- The value of Language attribute MUST be part of the code list 'LanguageCode' (ISO 639-1 two-letter code).    -->
+                            <sdg:Language>DE</sdg:Language>
+                            <!-- MUST be a persistent URL with a link to a "DataModelScheme" of the Evidence Type retrieved by the DSD and described in the Semantic Repository which uses the prefix "https://sr.oots.tech.europa.eu/distributions/[DataModelScheme]".-->
+                            <sdg:ConformsTo>https://sr.oots.tech.europa.eu/distributions/certificate-of-birth-1.0.0</sdg:ConformsTo>
+                            <!-- MUST be a persistent URL with link to a "DataModelScheme" and "Subset" of the EvidenceType retrieved from the Data Service Directory, described in the Semantic Repository which uses the prefix "https://sr.oots.tech.europa.eu/distributions/[DataModelScheme]/[Subset]"-->
+                            <sdg:Transformation>https://sr.oots.tech.europa.eu/distributions/certificate-of-birth-1.0.0/age-of-majority</sdg:Transformation>
+                        </sdg:Distribution>
+                        <sdg:ValidityPeriod>
+                            <!-- The StartDate and EndDate MUST be according to xsd:date. -->
+                            <sdg:StartDate>2023-01-19</sdg:StartDate>
+                            <sdg:EndDate>2024-05-19</sdg:EndDate>
+                        </sdg:ValidityPeriod>
+                    </sdg:Evidence>
+                </rim:SlotValue>
+            </rim:Slot>
+            <!-- The attached Document Provided as Evidence. Points to an AS4 attachment -->
+            <rim:RepositoryItemRef xlink:href="cid:attachment100001@example.oots.eu"
+                xlink:title="BirthCertificate"/>
+        </rim:RegistryObject>
+        <!-- Another Object might be placed here. The 'id' attribute of a 'RegistryObject' MUST be unique UUID (RFC 4122) starting with prefix "urn:uuid:". -->
+    </rim:RegistryObjectList>
+</query:QueryResponse>
