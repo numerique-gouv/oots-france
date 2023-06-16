@@ -1,5 +1,4 @@
 const axios = require('axios');
-const expect = require('expect.js');
 const { XMLParser } = require('fast-xml-parser');
 
 const OOTS_FRANCE = require('../src/ootsFrance');
@@ -20,7 +19,7 @@ describe('Le serveur OOTS France', () => {
     it('sert une réponse au format XML', (suite) => {
       axios.get('http://localhost:1234/response/educationEvidence')
         .then((reponse) => {
-          expect(reponse.headers['content-type']).to.equal('text/xml; charset=utf-8');
+          expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
           suite();
         })
         .catch(suite);
@@ -34,7 +33,7 @@ describe('Le serveur OOTS France', () => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
           const requestId = xml['query:QueryResponse']['@_requestId'];
-          expect(requestId).to.equal('urn:uuid:11111111-1111-1111-1111-111111111111');
+          expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
           suite();
         })
         .catch(suite);
@@ -46,14 +45,14 @@ describe('Le serveur OOTS France', () => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
 
-          expect(xml['query:QueryResponse']['rim:RegistryObjectList']).to.not.be(undefined);
+          expect(xml['query:QueryResponse']['rim:RegistryObjectList']).toBeDefined();
 
           const slots = [].concat(xml['query:QueryResponse']['rim:Slot']);
-          expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).to.be(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceResponseIdentifier')).to.be(true);
-          expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).to.be(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).to.be(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).to.be(true);
+          expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
+          expect(slots.some((s) => s['@_name'] === 'EvidenceResponseIdentifier')).toBe(true);
+          expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
+          expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
+          expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
 
           suite();
         })
@@ -65,7 +64,7 @@ describe('Le serveur OOTS France', () => {
     axios.get('http://localhost:1234/')
       .then(() => suite('Réponse OK inattendue'))
       .catch((erreur) => {
-        expect(erreur.response.status).to.equal(504);
+        expect(erreur.response.status).toEqual(504);
         suite();
       })
       .catch(suite);
