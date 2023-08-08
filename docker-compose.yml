@@ -4,6 +4,8 @@ x-app:
   &configuration-base
   build:
     context: .
+  env_file:
+    - .env
   volumes:
     - .:/usr/src/app
     - node_modules:/usr/src/app/node_modules/
