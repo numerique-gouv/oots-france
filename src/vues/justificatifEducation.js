@@ -12,18 +12,12 @@ class JustificatifEducation {
     xmlns:xlink="http://www.w3.org/1999/xlink"
     status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
     requestId="urn:uuid:${this.uuid}">
-  <rim:Slot name="SpecificationIdentifier">
-  </rim:Slot>
-  <rim:Slot name="EvidenceResponseIdentifier">
-  </rim:Slot>
-  <rim:Slot name="IssueDateTime">
-  </rim:Slot>
-  <rim:Slot name="EvidenceProvider">
-  </rim:Slot>
-  <rim:Slot name="EvidenceRequester">
-  </rim:Slot>
-  <rim:RegistryObjectList>
-  </rim:RegistryObjectList>
+  <rim:Slot name="SpecificationIdentifier"/>
+  <rim:Slot name="EvidenceResponseIdentifier"/>
+  <rim:Slot name="IssueDateTime"/>
+  <rim:Slot name="EvidenceProvider"/>
+  <rim:Slot name="EvidenceRequester"/>
+  <rim:RegistryObjectList/>
 </query:QueryResponse>`;
   }
 }
