@@ -1,9 +1,12 @@
 const OOTS_FRANCE = require('./src/ootsFrance');
-const adaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
+const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 
 const port = process.env.PORT || 3000;
-const serveur = OOTS_FRANCE.creeServeur({ adaptateurDomibus, adaptateurUUID });
+const serveur = OOTS_FRANCE.creeServeur({
+  adaptateurDomibus: AdaptateurDomibus({ adaptateurUUID }),
+  adaptateurUUID,
+});
 serveur.ecoute(port, () => {
   /* eslint-disable no-console */
 

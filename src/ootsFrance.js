@@ -24,7 +24,16 @@ const creeServeur = (config) => {
     reponse.send(requeteJustificatif.enXML());
   });
 
-  app.get('/idTestMessage', (_requete, reponse) => adaptateurDomibus
+  app.get('/requete/diplomeSecondDegre', (_requete, reponse) => {
+    const idConversation = adaptateurUUID.genereUUID();
+
+    adaptateurDomibus
+      .envoieMessageRequete('AP_SI_01', idConversation)
+      .then(() => adaptateurDomibus.urlRedirectionDepuisReponse(idConversation))
+      .then((urlRedirection) => reponse.redirect(`${urlRedirection}?returnurl=${process.env.URL_OOTS_FRANCE}`));
+  });
+
+  app.get('/idMessageTest', (_requete, reponse) => adaptateurDomibus
     .envoieMessageTest('oots_test_platform')
     .then(({ data }) => reponse.send(data)));
 
