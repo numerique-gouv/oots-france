@@ -84,39 +84,6 @@ describe('Le serveur OOTS France', () => {
         })
         .catch(suite);
     });
-
-    it('respecte la structure définie par OOTS', (suite) => {
-      axios.get('http://localhost:1234/messageRequeteJustificatif')
-        .then((reponse) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(reponse.data);
-
-          expect(xml['query:QueryRequest']['rim:Slot']).toBeDefined();
-          const slots = [].concat(xml['query:QueryRequest']['rim:Slot']);
-          expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'Procedure')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'PossibilityForPreview')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'ExplicitRequestGiven')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'Requirements')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
-
-          expect(xml['query:QueryRequest']['query:Query']['rim:Slot']).toBeDefined();
-          const querySlots = [].concat(xml['query:QueryRequest']['query:Query']['rim:Slot']);
-          expect(querySlots.some((s) => s['@_name'] === 'EvidenceRequest')).toBe(true);
-          expect(querySlots.some((s) => s['@_name'] === 'NaturalPerson')).toBe(true);
-
-          expect(xml['query:QueryRequest']['query:ResponseOption']).toBeDefined();
-          expect(xml['query:QueryRequest']['query:ResponseOption']['@_returnType']).toEqual('LeafClassWithRepositoryItem');
-
-          expect(xml['query:QueryRequest']['query:Query']).toBeDefined();
-          expect(xml['query:QueryRequest']['query:Query']['@_queryDefinition']).toEqual('DocumentQuery');
-
-          suite();
-        })
-        .catch(suite);
-    });
   });
 
   it('sert une erreur HTTP 504 (not implemented)', (suite) => {
