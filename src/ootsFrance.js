@@ -1,5 +1,6 @@
 const express = require('express');
 
+const diplomeSecondDegre = require('./api/diplomeSecondDegre');
 const JustificatifEducation = require('./vues/justificatifEducation');
 const RequeteJustificatifEducation = require('./vues/requeteJustificatifEducation');
 
@@ -24,14 +25,7 @@ const creeServeur = (config) => {
     reponse.send(requeteJustificatif.enXML());
   });
 
-  app.get('/requete/diplomeSecondDegre', (_requete, reponse) => {
-    const idConversation = adaptateurUUID.genereUUID();
-
-    adaptateurDomibus
-      .envoieMessageRequete('AP_SI_01', idConversation)
-      .then(() => adaptateurDomibus.urlRedirectionDepuisReponse(idConversation))
-      .then((urlRedirection) => reponse.redirect(`${urlRedirection}?returnurl=${process.env.URL_OOTS_FRANCE}`));
-  });
+  app.get('/requete/diplomeSecondDegre', (...args) => diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, ...args));
 
   app.get('/idMessageTest', (_requete, reponse) => adaptateurDomibus
     .envoieMessageTest('oots_test_platform')
