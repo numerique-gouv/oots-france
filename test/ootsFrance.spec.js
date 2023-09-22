@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { XMLParser } = require('fast-xml-parser');
 
+const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
 describe('Le serveur OOTS France', () => {
@@ -83,6 +84,24 @@ describe('Le serveur OOTS France', () => {
           suite();
         })
         .catch(suite);
+    });
+  });
+
+  describe('sur GET /requete/diplomeSecondDegre', () => {
+    describe('avec un destinataire qui ne répond pas', () => {
+      it('retourne une erreur HTTP 504 (Gateway Timeout)', (suite) => {
+        adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
+        adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('oups'));
+
+        axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
+          .then(() => suite('La requête aurait dû générer une erreur HTTP 504'))
+          .catch(({ response }) => {
+            expect(response.status).toEqual(504);
+            expect(response.data).toEqual('oups');
+            suite();
+          })
+          .catch(suite);
+      });
     });
   });
 

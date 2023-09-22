@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { XMLParser } = require('fast-xml-parser');
 
+const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
 const RequeteJustificatifEducation = require('../vues/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
@@ -115,7 +116,7 @@ const AdaptateurDomibus = (config) => {
 </soap:Envelope>
     `;
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       let idInterval;
 
       const tenteRecuperationIdMessageSuivant = () => axios.post(
@@ -147,6 +148,11 @@ const AdaptateurDomibus = (config) => {
         });
 
       idInterval = setInterval(tenteRecuperationIdMessageSuivant, 500);
+
+      setTimeout(() => {
+        clearInterval(idInterval);
+        reject(new ErreurAbsenceReponseDestinataire('Le destinataire ne répond pas !'));
+      }, 10_000);
     });
   };
 
