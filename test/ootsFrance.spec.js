@@ -64,6 +64,31 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
+  describe('sur GET /ebms/entetes/requeteJustificatif', () => {
+    it('sert une réponse au format XML', (suite) => {
+      axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+        .then((reponse) => {
+          expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+          suite();
+        })
+        .catch(suite);
+    });
+
+    it('génère un identifiant unique de conversation', (suite) => {
+      adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
+
+      axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+        .then((reponse) => {
+          const parser = new XMLParser({ ignoreAttributes: false });
+          const xml = parser.parse(reponse.data);
+          const idConversation = xml['eb:Messaging']['eb:UserMessage']['eb:CollaborationInfo']['eb:ConversationId'];
+          expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
+          suite();
+        })
+        .catch(suite);
+    });
+  });
+
   describe('sur GET /ebms/messages/requeteJustificatif', () => {
     it('sert une réponse au format XML', (suite) => {
       axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')

@@ -1,6 +1,7 @@
 const express = require('express');
 
 const diplomeSecondDegre = require('./api/diplomeSecondDegre');
+const entete = require('./ebms/entete');
 const JustificatifEducation = require('./vues/justificatifEducation');
 const RequeteJustificatifEducation = require('./vues/requeteJustificatifEducation');
 
@@ -24,6 +25,19 @@ const creeServeur = (config) => {
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(requeteJustificatif.enXML());
+  });
+
+  app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
+    const { destinataire } = requete.query;
+    const idConversation = adaptateurUUID.genereUUID();
+    const idPayload = `cid:${adaptateurUUID.genereUUID()}@domibus.fr`;
+    const enteteEBMS = entete(
+      { adaptateurUUID, horodateur },
+      { destinataire, idConversation, idPayload },
+    );
+
+    reponse.set('Content-Type', 'text/xml');
+    reponse.send(enteteEBMS);
   });
 
   app.get('/requete/diplomeSecondDegre', (...args) => diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, ...args));
