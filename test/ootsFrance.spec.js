@@ -62,9 +62,9 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
-  describe('sur GET /messageRequeteJustificatif', () => {
+  describe('sur GET /ebms/messages/requeteJustificatif', () => {
     it('sert une réponse au format XML', (suite) => {
-      axios.get('http://localhost:1234/messageRequeteJustificatif')
+      axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
         .then((reponse) => {
           expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
           suite();
@@ -75,7 +75,7 @@ describe('Le serveur OOTS France', () => {
     it('génère un identifiant unique de requête', (suite) => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      axios.get('http://localhost:1234/messageRequeteJustificatif')
+      axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);

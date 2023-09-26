@@ -17,7 +17,7 @@ const creeServeur = (config) => {
     reponse.send(justificatif.enXML());
   });
 
-  app.get('/messageRequeteJustificatif', (_requete, reponse) => {
+  app.get('/ebms/messages/requeteJustificatif', (_requete, reponse) => {
     const uuid = adaptateurUUID.genereUUID();
     const requeteJustificatif = new RequeteJustificatifEducation(uuid);
 
