@@ -1,6 +1,7 @@
 class RequeteJustificatifEducation {
-  constructor(uuid) {
+  constructor(uuid, horodatage) {
     this.uuid = uuid;
+    this.horodatage = horodatage;
   }
 
   enXML() {
@@ -23,7 +24,7 @@ class RequeteJustificatifEducation {
   </rim:Slot>
   <rim:Slot name="IssueDateTime">
     <rim:SlotValue xsi:type="rim:DateTimeValueType">
-      <rim:Value>${new Date().toISOString()}</rim:Value>
+      <rim:Value>${this.horodatage}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="Procedure">

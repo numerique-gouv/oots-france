@@ -7,11 +7,13 @@ const OOTS_FRANCE = require('../src/ootsFrance');
 describe('Le serveur OOTS France', () => {
   const adaptateurUUID = {};
   const adaptateurDomibus = {};
+  const horodateur = {};
   let serveur;
 
   beforeEach((suite) => {
     adaptateurUUID.genereUUID = () => '';
-    serveur = OOTS_FRANCE.creeServeur({ adaptateurDomibus, adaptateurUUID });
+    horodateur.maintenant = () => '';
+    serveur = OOTS_FRANCE.creeServeur({ adaptateurDomibus, adaptateurUUID, horodateur });
     serveur.ecoute(1234, suite);
   });
 

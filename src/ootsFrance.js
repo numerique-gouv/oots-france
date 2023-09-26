@@ -5,7 +5,7 @@ const JustificatifEducation = require('./vues/justificatifEducation');
 const RequeteJustificatifEducation = require('./vues/requeteJustificatifEducation');
 
 const creeServeur = (config) => {
-  const { adaptateurDomibus, adaptateurUUID } = config;
+  const { adaptateurDomibus, adaptateurUUID, horodateur } = config;
   let serveur;
   const app = express();
 
@@ -19,7 +19,8 @@ const creeServeur = (config) => {
 
   app.get('/ebms/messages/requeteJustificatif', (_requete, reponse) => {
     const uuid = adaptateurUUID.genereUUID();
-    const requeteJustificatif = new RequeteJustificatifEducation(uuid);
+    const horodatage = horodateur.maintenant();
+    const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(requeteJustificatif.enXML());

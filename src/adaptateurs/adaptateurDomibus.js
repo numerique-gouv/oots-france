@@ -8,7 +8,7 @@ const urlBase = process.env.URL_BASE_DOMIBUS;
 const expediteur = process.env.EXPEDITEUR_DOMIBUS;
 
 const AdaptateurDomibus = (config) => {
-  const { adaptateurUUID } = config;
+  const { adaptateurUUID, horodateur } = config;
 
   const envoieMessage = (message, destinataire, idConversation) => {
     const messageEnBase64 = Buffer.from(message).toString('base64');
@@ -88,7 +88,8 @@ const AdaptateurDomibus = (config) => {
 
   const envoieMessageRequete = (destinataire, idConversation) => {
     const uuid = adaptateurUUID.genereUUID();
-    const requeteJustificatif = new RequeteJustificatifEducation(uuid);
+    const horodatage = horodateur.maintenant();
+    const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
 
     return envoieMessage(requeteJustificatif.enXML(), destinataire, idConversation);
   };
