@@ -39,7 +39,8 @@ const AdaptateurDomibus = (config) => {
   const { adaptateurUUID, horodateur } = config;
 
   const envoieMessage = (message, destinataire, idConversation) => {
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@domibus.fr`;
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
     const messageAEnvoyer = enveloppeSOAP(
       config,
       { destinataire, idConversation, idPayload },

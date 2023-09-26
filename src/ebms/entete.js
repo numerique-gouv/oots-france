@@ -5,7 +5,8 @@ const entete = (config = {}, donnees = {}) => {
 
   const { destinataire, idConversation, idPayload } = donnees;
   const horodatage = horodateur.maintenant();
-  const idMessage = `${adaptateurUUID.genereUUID()}@domibus.fr`;
+  const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+  const idMessage = `${adaptateurUUID.genereUUID()}@${suffixe}`;
   const baliseIdConversation = (typeof idConversation !== 'undefined')
     ? `<eb:ConversationId>${idConversation}</eb:ConversationId>`
     : '';

@@ -30,7 +30,8 @@ const creeServeur = (config) => {
   app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
     const { destinataire } = requete.query;
     const idConversation = adaptateurUUID.genereUUID();
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@domibus.fr`;
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
     const enteteEBMS = entete(
       { adaptateurUUID, horodateur },
       { destinataire, idConversation, idPayload },

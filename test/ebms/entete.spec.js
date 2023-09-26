@@ -6,10 +6,16 @@ describe("l'entête EBMS", () => {
   const parser = new XMLParser({ ignoreAttributes: false });
   const adaptateurUUID = {};
   const horodateur = {};
+  let suffixe;
 
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => '';
     horodateur.maintenant = () => '';
+    suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+  });
+
+  afterEach(() => {
+    process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS = suffixe;
   });
 
   it('suit la structure EMBS', () => {
@@ -34,12 +40,14 @@ describe("l'entête EBMS", () => {
     });
 
     it('est identifié', () => {
+      process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS = 'oots.eu';
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
+
       const enteteEBMS = entete({ adaptateurUUID, horodateur });
       const xml = parser.parse(enteteEBMS);
       const idMessage = xml['eb:Messaging']['eb:UserMessage']['eb:MessageInfo']['eb:MessageId'];
 
-      expect(idMessage).toEqual('11111111-1111-1111-1111-111111111111@domibus.fr');
+      expect(idMessage).toEqual('11111111-1111-1111-1111-111111111111@oots.eu');
     });
   });
 
@@ -69,12 +77,12 @@ describe("l'entête EBMS", () => {
     it('identifie le payload du message', () => {
       const enteteEBMS = entete(
         { adaptateurUUID, horodateur },
-        { idPayload: 'cid:11111111-1111-1111-1111-111111111111@domibus.fr' },
+        { idPayload: 'cid:11111111-1111-1111-1111-111111111111@oots.eu' },
       );
       const xml = parser.parse(enteteEBMS);
       const idPayload = xml['eb:Messaging']['eb:UserMessage']['eb:PayloadInfo']['eb:PartInfo']['@_href'];
 
-      expect(idPayload).toEqual('cid:11111111-1111-1111-1111-111111111111@domibus.fr');
+      expect(idPayload).toEqual('cid:11111111-1111-1111-1111-111111111111@oots.eu');
     });
   });
 });
