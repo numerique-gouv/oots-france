@@ -1,6 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 
-const RequeteJustificatifEducation = require('../../src/vues/requeteJustificatifEducation');
+const RequeteJustificatifEducation = require('../../src/ebms/requeteJustificatifEducation');
 
 describe("La vue du message de requête d'un justificatif", () => {
   const parser = new XMLParser({ ignoreAttributes: false });

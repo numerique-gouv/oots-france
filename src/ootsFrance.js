@@ -2,8 +2,8 @@ const express = require('express');
 
 const diplomeSecondDegre = require('./api/diplomeSecondDegre');
 const entete = require('./ebms/entete');
+const RequeteJustificatifEducation = require('./ebms/requeteJustificatifEducation');
 const JustificatifEducation = require('./vues/justificatifEducation');
-const RequeteJustificatifEducation = require('./vues/requeteJustificatifEducation');
 
 const creeServeur = (config) => {
   const { adaptateurDomibus, adaptateurUUID, horodateur } = config;

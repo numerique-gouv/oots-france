@@ -3,7 +3,7 @@ const { XMLParser } = require('fast-xml-parser');
 
 const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
 const entete = require('../ebms/entete');
-const RequeteJustificatifEducation = require('../vues/requeteJustificatifEducation');
+const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
 
