@@ -19,7 +19,7 @@ const reponseRecuperationMessage = (donnees) => {
     const messageReponseEncode = xml['soap:Envelope']['soap:Body']['ns4:retrieveMessageResponse'].payload.value;
     const messageReponseDecode = Buffer.from(messageReponseEncode, 'base64').toString('ascii');
 
-    return parser.parse(messageReponseDecode)['query:QueryResponse']['ns6:Exception']['rim:Slot']
+    return parser.parse(messageReponseDecode)['query:QueryResponse']['rs:Exception']['rim:Slot']
       .find((slot) => slot['@_name'] === 'PreviewLocation')['rim:SlotValue']['rim:Value'];
   };
 
