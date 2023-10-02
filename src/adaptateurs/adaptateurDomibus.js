@@ -2,6 +2,7 @@ const axios = require('axios');
 const { XMLParser } = require('fast-xml-parser');
 
 const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
+const { requeteRecuperationMessage, reponseRecuperationMessage } = require('../domibus/recuperationMessage');
 const entete = require('../ebms/entete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
@@ -67,6 +68,14 @@ const AdaptateurDomibus = (config) => {
     return envoieMessage(requeteJustificatif.enXML(), destinataire, idConversation);
   };
 
+  const recupereMessage = (idMessage) => axios
+    .post(
+      `${urlBase}/services/wsplugin/retrieveMessage`,
+      requeteRecuperationMessage(idMessage),
+      { headers: { 'Content-Type': 'text/xml' } },
+    )
+    .then(({ data }) => reponseRecuperationMessage(data));
+
   const urlRedirectionDepuisReponse = (identifiantConversation) => {
     const requeteListeMessagesEnAttente = (idConversation) => `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
@@ -78,17 +87,6 @@ const AdaptateurDomibus = (config) => {
   </soap:Body>
 </soap:Envelope>
      `;
-
-    const requeteMessage = (idMessage) => `
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
-  <soap:Header/>
-  <soap:Body>
-    <_1:retrieveMessageRequest>
-      <messageID>${idMessage}</messageID>
-    </_1:retrieveMessageRequest>
-  </soap:Body>
-</soap:Envelope>
-    `;
 
     return new Promise((resolve, reject) => {
       let idInterval;
@@ -105,19 +103,8 @@ const AdaptateurDomibus = (config) => {
 
           if (typeof idMessage !== 'undefined') {
             clearInterval(idInterval);
-            axios.post(
-              `${urlBase}/services/wsplugin/retrieveMessage`,
-              requeteMessage(idMessage),
-              { headers: { 'Content-Type': 'text/xml' } },
-            )
-              .then(({ data: d }) => {
-                const messageReponseEncode = parser.parse(d)['soap:Envelope']['soap:Body']['ns4:retrieveMessageResponse'].payload.value;
-                const messageReponseDecode = Buffer.from(messageReponseEncode, 'base64').toString('ascii');
-                const urlRedirection = parser.parse(messageReponseDecode)['query:QueryResponse']['ns6:Exception']['rim:Slot']
-                  .find((slot) => slot['@_name'] === 'PreviewLocation')['rim:SlotValue']['rim:Value'];
-
-                resolve(urlRedirection);
-              });
+            recupereMessage(idMessage)
+              .then((reponse) => resolve(reponse.urlRedirection()));
           }
         });
 
