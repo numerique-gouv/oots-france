@@ -9,6 +9,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   adaptateurUUID,
   horodateur,
 });
+
 serveur.ecoute(port, () => {
   /* eslint-disable no-console */
 

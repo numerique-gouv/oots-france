@@ -71,6 +71,36 @@ const AdaptateurDomibus = (config) => {
       .then((reponse) => reponse.idMessage());
   };
 
+  const recupereIdMessageSuivant = (identifiantConversation) => {
+    const requeteListeMessagesEnAttente = (idConversation) => {
+      const filtreIdConversation = idConversation
+        ? `<conversationId>${idConversation}</conversationId>`
+        : '';
+
+      return `
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
+  <soap:Header/>
+  <soap:Body>
+    <_1:listPendingMessagesRequest>${filtreIdConversation}</_1:listPendingMessagesRequest>
+  </soap:Body>
+</soap:Envelope>
+      `;
+    };
+
+    return axios.post(
+      `${urlBase}/services/wsplugin/listPendingMessages`,
+      requeteListeMessagesEnAttente(identifiantConversation),
+      { headers: { 'Content-Type': 'text/xml' } },
+    )
+      .then(({ data }) => {
+        const parser = new XMLParser({ ignoreAttributes: false });
+        const xml = parser.parse(data);
+        const idMessage = xml['soap:Envelope']['soap:Body']['ns4:listPendingMessagesResponse'].messageID;
+
+        return idMessage;
+      });
+  };
+
   const recupereMessage = (idMessage) => axios
     .post(
       `${urlBase}/services/wsplugin/retrieveMessage`,
@@ -79,31 +109,12 @@ const AdaptateurDomibus = (config) => {
     )
     .then(({ data }) => new ReponseRecuperationMessage(data));
 
-  const urlRedirectionDepuisReponse = (identifiantConversation, idMessageRenvoye) => {
-    const requeteListeMessagesEnAttente = (idConversation) => `
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
-  <soap:Header/>
-  <soap:Body>
-    <_1:listPendingMessagesRequest>
-      <conversationId>${idConversation}</conversationId>
-    </_1:listPendingMessagesRequest>
-  </soap:Body>
-</soap:Envelope>
-     `;
-
-    return new Promise((resolve, reject) => {
+  const urlRedirectionDepuisReponse = (idConversation, idMessageRenvoye) => new Promise(
+    (resolve, reject) => {
       let idInterval;
 
-      const tenteRecuperationIdMessageSuivant = () => axios.post(
-        `${urlBase}/services/wsplugin/listPendingMessages`,
-        requeteListeMessagesEnAttente(identifiantConversation),
-        { headers: { 'Content-Type': 'text/xml' } },
-      )
-        .then(({ data }) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(data);
-          const idMessage = xml['soap:Envelope']['soap:Body']['ns4:listPendingMessagesResponse'].messageID;
-
+      const tenteRecuperationIdMessageSuivant = () => recupereIdMessageSuivant(idConversation)
+        .then((idMessage) => {
           if (typeof idMessage !== 'undefined' && idMessage !== idMessageRenvoye) {
             clearInterval(idInterval);
             recupereMessage(idMessage)
@@ -117,12 +128,13 @@ const AdaptateurDomibus = (config) => {
         clearInterval(idInterval);
         reject(new ErreurAbsenceReponseDestinataire('Le destinataire ne répond pas !'));
       }, 10_000);
-    });
-  };
+    },
+  );
 
   return {
     envoieMessageRequete,
     envoieMessageTest,
+    recupereIdMessageSuivant,
     urlRedirectionDepuisReponse,
   };
 };
