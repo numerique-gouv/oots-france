@@ -2,7 +2,8 @@ const axios = require('axios');
 const { XMLParser } = require('fast-xml-parser');
 
 const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
-const { requeteRecuperationMessage, reponseRecuperationMessage } = require('../domibus/recuperationMessage');
+const { requeteRecuperationMessage } = require('../domibus/recuperationMessage');
+const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const entete = require('../ebms/entete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
@@ -74,7 +75,7 @@ const AdaptateurDomibus = (config) => {
       requeteRecuperationMessage(idMessage),
       { headers: { 'Content-Type': 'text/xml' } },
     )
-    .then(({ data }) => reponseRecuperationMessage(data));
+    .then(({ data }) => new ReponseRecuperationMessage(data));
 
   const urlRedirectionDepuisReponse = (identifiantConversation) => {
     const requeteListeMessagesEnAttente = (idConversation) => `

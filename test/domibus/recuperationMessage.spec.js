@@ -1,4 +1,4 @@
-const { reponseRecuperationMessage } = require('../../src/domibus/recuperationMessage');
+const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
   it("connaît l'URL de redirecition spécifiée", () => {
@@ -29,7 +29,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
     const messageBase64 = Buffer.from(message).toString('base64');
 
-    const reponse = reponseRecuperationMessage(`
+    const reponse = new ReponseRecuperationMessage(`
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
   <soap:Header>
     <!-- Entêtes SOAP. Inutiles pour ce test -->
