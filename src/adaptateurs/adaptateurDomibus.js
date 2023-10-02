@@ -3,6 +3,7 @@ const { XMLParser } = require('fast-xml-parser');
 
 const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
 const { requeteRecuperationMessage } = require('../domibus/recuperationMessage');
+const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const entete = require('../ebms/entete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
@@ -53,7 +54,7 @@ const AdaptateurDomibus = (config) => {
       `${urlBase}/services/wsplugin/submitMessage`,
       messageAEnvoyer,
       { headers: { 'Content-Type': 'text/xml' } },
-    );
+    ).then(({ data }) => new ReponseEnvoiMessage(data));
   };
 
   const envoieMessageTest = (destinataire) => envoieMessage(
@@ -66,7 +67,8 @@ const AdaptateurDomibus = (config) => {
     const horodatage = horodateur.maintenant();
     const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
 
-    return envoieMessage(requeteJustificatif.enXML(), destinataire, idConversation);
+    return envoieMessage(requeteJustificatif.enXML(), destinataire, idConversation)
+      .then((reponse) => reponse.idMessage());
   };
 
   const recupereMessage = (idMessage) => axios
@@ -77,7 +79,7 @@ const AdaptateurDomibus = (config) => {
     )
     .then(({ data }) => new ReponseRecuperationMessage(data));
 
-  const urlRedirectionDepuisReponse = (identifiantConversation) => {
+  const urlRedirectionDepuisReponse = (identifiantConversation, idMessageRenvoye) => {
     const requeteListeMessagesEnAttente = (idConversation) => `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
   <soap:Header/>
@@ -102,7 +104,7 @@ const AdaptateurDomibus = (config) => {
           const xml = parser.parse(data);
           const idMessage = xml['soap:Envelope']['soap:Body']['ns4:listPendingMessagesResponse'].messageID;
 
-          if (typeof idMessage !== 'undefined') {
+          if (typeof idMessage !== 'undefined' && idMessage !== idMessageRenvoye) {
             clearInterval(idInterval);
             recupereMessage(idMessage)
               .then((reponse) => resolve(reponse.urlRedirection()));
