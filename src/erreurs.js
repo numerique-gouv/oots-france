@@ -1,3 +1,4 @@
 class ErreurAbsenceReponseDestinataire extends Error {}
+class ErreurAucunMessageDomibusRecu extends Error {}
 
-module.exports = { ErreurAbsenceReponseDestinataire };
+module.exports = { ErreurAbsenceReponseDestinataire, ErreurAucunMessageDomibusRecu };

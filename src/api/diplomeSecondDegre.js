@@ -6,7 +6,7 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
 
   return adaptateurDomibus
     .envoieMessageRequete(destinataire, idConversation)
-    .then((idMessage) => adaptateurDomibus.urlRedirectionDepuisReponse(idConversation, idMessage))
+    .then(() => adaptateurDomibus.urlRedirectionDepuisReponse(idConversation))
     .then((urlRedirection) => {
       reponse.redirect(`${urlRedirection}?returnurl=${process.env.URL_OOTS_FRANCE}`);
     })

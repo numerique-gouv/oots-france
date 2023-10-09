@@ -54,21 +54,6 @@ describe('Le requêteur de diplôme du second degré', () => {
       .catch(suite);
   });
 
-  it("filtre dans la recherche l'identifiant du message envoyé", (suite) => {
-    adaptateurDomibus.envoieMessageRequete = () => Promise.resolve('11111111-1111-1111-1111-111111111111');
-
-    adaptateurDomibus.urlRedirectionDepuisReponse = (_idConversation, idMessageEnvoye) => {
-      try {
-        expect(idMessageEnvoye).toEqual('11111111-1111-1111-1111-111111111111');
-        return Promise.resolve();
-      } catch (e) { return Promise.reject(e); }
-    };
-
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
-      .then(() => suite())
-      .catch(suite);
-  });
-
   describe('quand `process.env.URL_OOTS_FRANCE` vaut `https://localhost:1234`', () => {
     let urlOotsFrance;
 

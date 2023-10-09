@@ -9,6 +9,8 @@ module.exports = {
     ecmaVersion: 'latest',
     sourceType: 'module',
   },
-  rules: {
-  },
+  overrides: [{
+    files: ['src/erreurs.js'],
+    rules: { 'max-classes-per-file': ['off'] },
+  }],
 };

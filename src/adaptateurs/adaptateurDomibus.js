@@ -1,14 +1,16 @@
 const axios = require('axios');
-const { XMLParser } = require('fast-xml-parser');
+const EventEmitter = require('node:events');
 
-const { ErreurAbsenceReponseDestinataire } = require('../erreurs');
-const { requeteRecuperationMessage } = require('../domibus/recuperationMessage');
+const { ErreurAbsenceReponseDestinataire, ErreurAucunMessageDomibusRecu } = require('../erreurs');
+const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes');
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
+const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
 const entete = require('../ebms/entete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
+const REPONSE_REDIRECTION_PREVISUALISATION = 'reponseRedirectionPrevisualisation';
 
 const enveloppeSOAP = (config, donnees, message) => {
   const enteteEBMS = entete(config, donnees);
@@ -38,8 +40,42 @@ const enveloppeSOAP = (config, donnees, message) => {
   `;
 };
 
-const AdaptateurDomibus = (config) => {
+const AdaptateurDomibus = (config = {}) => {
   const { adaptateurUUID, horodateur } = config;
+  const annonceur = new EventEmitter();
+
+  const ecoute = () => {
+    const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
+      `${urlBase}/services/wsplugin/listPendingMessages`,
+      requeteListeMessagesEnAttente(identifiantConversation),
+      { headers: { 'Content-Type': 'text/xml' } },
+    )
+      .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
+      .then((reponse) => {
+        if (reponse.messageEnAttente()) { return reponse.idMessageSuivant(); }
+        return Promise.reject(new ErreurAucunMessageDomibusRecu());
+      });
+
+    const recupereMessage = (idMessage) => axios.post(
+      `${urlBase}/services/wsplugin/retrieveMessage`,
+      requeteRecuperationMessage(idMessage),
+      { headers: { 'Content-Type': 'text/xml' } },
+    )
+      .then(({ data }) => new ReponseRecuperationMessage(data));
+
+    const traiteMessageSuivant = () => recupereIdMessageSuivant()
+      .then((idMessage) => recupereMessage(idMessage))
+      .then((reponse) => {
+        if (reponse.action() === 'ExceptionResponse') {
+          annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, reponse);
+        }
+      })
+      .catch((e) => {
+        if (!(e instanceof ErreurAucunMessageDomibusRecu)) { throw e; }
+      });
+
+    setInterval(traiteMessageSuivant, 500);
+  };
 
   const envoieMessage = (message, destinataire, idConversation) => {
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
@@ -71,70 +107,24 @@ const AdaptateurDomibus = (config) => {
       .then((reponse) => reponse.idMessage());
   };
 
-  const recupereIdMessageSuivant = (identifiantConversation) => {
-    const requeteListeMessagesEnAttente = (idConversation) => {
-      const filtreIdConversation = idConversation
-        ? `<conversationId>${idConversation}</conversationId>`
-        : '';
-
-      return `
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
-  <soap:Header/>
-  <soap:Body>
-    <_1:listPendingMessagesRequest>${filtreIdConversation}</_1:listPendingMessagesRequest>
-  </soap:Body>
-</soap:Envelope>
-      `;
-    };
-
-    return axios.post(
-      `${urlBase}/services/wsplugin/listPendingMessages`,
-      requeteListeMessagesEnAttente(identifiantConversation),
-      { headers: { 'Content-Type': 'text/xml' } },
-    )
-      .then(({ data }) => {
-        const parser = new XMLParser({ ignoreAttributes: false });
-        const xml = parser.parse(data);
-        const idMessage = xml['soap:Envelope']['soap:Body']['ns4:listPendingMessagesResponse'].messageID;
-
-        return idMessage;
-      });
-  };
-
-  const recupereMessage = (idMessage) => axios
-    .post(
-      `${urlBase}/services/wsplugin/retrieveMessage`,
-      requeteRecuperationMessage(idMessage),
-      { headers: { 'Content-Type': 'text/xml' } },
-    )
-    .then(({ data }) => new ReponseRecuperationMessage(data));
-
-  const urlRedirectionDepuisReponse = (idConversation, idMessageRenvoye) => new Promise(
+  const urlRedirectionDepuisReponse = (idConversation) => new Promise(
     (resolve, reject) => {
-      let idInterval;
-
-      const tenteRecuperationIdMessageSuivant = () => recupereIdMessageSuivant(idConversation)
-        .then((idMessage) => {
-          if (typeof idMessage !== 'undefined' && idMessage !== idMessageRenvoye) {
-            clearInterval(idInterval);
-            recupereMessage(idMessage)
-              .then((reponse) => resolve(reponse.urlRedirection()));
-          }
-        });
-
-      idInterval = setInterval(tenteRecuperationIdMessageSuivant, 500);
+      annonceur.on(REPONSE_REDIRECTION_PREVISUALISATION, (reponse) => {
+        if (idConversation === reponse.idConversation()) {
+          resolve(reponse.urlRedirection());
+        }
+      });
 
       setTimeout(() => {
-        clearInterval(idInterval);
         reject(new ErreurAbsenceReponseDestinataire('Le destinataire ne répond pas !'));
       }, 10_000);
     },
   );
 
   return {
+    ecoute,
     envoieMessageRequete,
     envoieMessageTest,
-    recupereIdMessageSuivant,
     urlRedirectionDepuisReponse,
   };
 };

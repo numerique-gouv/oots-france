@@ -3,12 +3,15 @@ const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 const horodateur = require('./src/adaptateurs/horodateur');
 
-const port = process.env.PORT || 3000;
+const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
+
 const serveur = OOTS_FRANCE.creeServeur({
-  adaptateurDomibus: AdaptateurDomibus({ adaptateurUUID, horodateur }),
+  adaptateurDomibus,
   adaptateurUUID,
   horodateur,
 });
+
+const port = process.env.PORT || 3000;
 
 serveur.ecoute(port, () => {
   /* eslint-disable no-console */
@@ -17,3 +20,5 @@ serveur.ecoute(port, () => {
 
   /* eslint-enable no-console */
 });
+
+adaptateurDomibus.ecoute();

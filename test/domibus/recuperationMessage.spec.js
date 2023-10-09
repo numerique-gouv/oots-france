@@ -49,4 +49,36 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
     expect(reponse.urlRedirection()).toEqual('https://example.com/preview/12345678-1234-1234-1234-1234567890ab');
   });
+
+  describe("à partir de l'entête", () => {
+    const reponse = new ReponseRecuperationMessage(`
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Header>
+    <ns5:Messaging xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+                   xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+                   xmlns:ns4="http://eu.domibus.wsplugin/" mustUnderstand="false">
+      <ns5:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
+        <ns5:CollaborationInfo>
+          <ns5:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</ns5:Service>
+          <ns5:Action>ExecuteQueryRequest</ns5:Action>
+          <ns5:ConversationId>12345678-1234-1234-1234-1234567890ab</ns5:ConversationId>
+        </ns5:CollaborationInfo>
+        <!-- d'autres informations inutiles pour le test -->
+      </ns5:UserMessage>
+    </ns5:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <-- Corps du message -->
+  </soap:Body>
+</soap:Envelope>
+    `);
+
+    it("connaît le type d'action liée au message", () => {
+      expect(reponse.action()).toEqual('ExecuteQueryRequest');
+    });
+
+    it("connaît l'identifiant de la conversation", () => {
+      expect(reponse.idConversation()).toEqual('12345678-1234-1234-1234-1234567890ab');
+    });
+  });
 });
