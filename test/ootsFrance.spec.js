@@ -118,13 +118,14 @@ describe('Le serveur OOTS France', () => {
     describe('avec un destinataire qui ne répond pas', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', (suite) => {
         adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
-        adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('oups'));
+        adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
+        adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
 
         axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
           .then(() => suite('La requête aurait dû générer une erreur HTTP 504'))
           .catch(({ response }) => {
             expect(response.status).toEqual(504);
-            expect(response.data).toEqual('oups');
+            expect(response.data).toEqual('aucune URL reçue ; aucune pièce reçue');
             suite();
           })
           .catch(suite);

@@ -1,4 +1,5 @@
 const diplomeSecondDegre = require('../../src/api/diplomeSecondDegre');
+const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
 
 describe('Le requêteur de diplôme du second degré', () => {
   const adaptateurUUID = {};
@@ -9,6 +10,7 @@ describe('Le requêteur de diplôme du second degré', () => {
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => '';
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
+    adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
 
     requete.query = {};
@@ -80,5 +82,19 @@ describe('Le requêteur de diplôme du second degré', () => {
         .then(() => suite())
         .catch(suite);
     });
+  });
+
+  it('accepte de recevoir directement la pièce justificative', (suite) => {
+    let pieceJustificativeRecue = false;
+    adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('Aucune URL de redirection reçue'));
+    adaptateurDomibus.pieceJustificativeDepuisReponse = () => {
+      pieceJustificativeRecue = true;
+      return Promise.resolve();
+    };
+
+    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+      .then(() => expect(pieceJustificativeRecue).toBe(true))
+      .then(() => suite())
+      .catch(suite);
   });
 });

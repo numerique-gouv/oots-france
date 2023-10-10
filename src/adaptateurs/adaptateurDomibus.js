@@ -7,11 +7,13 @@ const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
 const Entete = require('../ebms/entete');
+const EnteteReponse = require('../ebms/enteteReponse');
 const EnteteRequete = require('../ebms/enteteRequete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
 const REPONSE_REDIRECTION_PREVISUALISATION = 'reponseRedirectionPrevisualisation';
+const REPONSE_SUCCES = 'reponseSucces';
 
 const enveloppeSOAP = (config, idPayload, enteteEBMS, message) => {
   const messageEnBase64 = Buffer.from(message).toString('base64');
@@ -43,6 +45,42 @@ const AdaptateurDomibus = (config = {}) => {
   const { adaptateurUUID, horodateur } = config;
   const annonceur = new EventEmitter();
 
+  const envoieReponse = (message, destinataire, idConversation) => {
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
+    const enteteEBMS = new EnteteReponse(config, { destinataire, idConversation, idPayload });
+    const messageAEnvoyer = enveloppeSOAP(
+      config,
+      idPayload,
+      enteteEBMS,
+      message,
+    );
+
+    return axios.post(
+      `${urlBase}/services/wsplugin/submitMessage`,
+      messageAEnvoyer,
+      { headers: { 'Content-Type': 'text/xml' } },
+    ).then(({ data }) => new ReponseEnvoiMessage(data));
+  };
+
+  const envoieRequete = (message, destinataire, idConversation) => {
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
+    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
+    const enteteEBMS = new EnteteRequete(config, { destinataire, idConversation, idPayload });
+    const messageAEnvoyer = enveloppeSOAP(
+      config,
+      idPayload,
+      enteteEBMS,
+      message,
+    );
+
+    return axios.post(
+      `${urlBase}/services/wsplugin/submitMessage`,
+      messageAEnvoyer,
+      { headers: { 'Content-Type': 'text/xml' } },
+    ).then(({ data }) => new ReponseEnvoiMessage(data));
+  };
+
   const ecoute = () => {
     const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
       `${urlBase}/services/wsplugin/listPendingMessages`,
@@ -62,36 +100,26 @@ const AdaptateurDomibus = (config = {}) => {
     )
       .then(({ data }) => new ReponseRecuperationMessage(data));
 
+    const repondsA = (requete) => {
+      envoieReponse('', 'AP_FR_01', requete.idConversation());
+    };
+
     const traiteMessageSuivant = () => recupereIdMessageSuivant()
       .then((idMessage) => recupereMessage(idMessage))
-      .then((reponse) => {
-        if (reponse.action() === Entete.ERREUR_REPONSE) {
-          annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, reponse);
+      .then((message) => {
+        if (message.action() === Entete.ERREUR_REPONSE) {
+          annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message);
+        } else if (message.action() === Entete.EXECUTION_REPONSE) {
+          annonceur.emit(REPONSE_SUCCES, message);
+        } else if (message.action() === Entete.EXECUTION_REQUETE) {
+          repondsA(message);
         }
       })
       .catch((e) => {
         if (!(e instanceof ErreurAucunMessageDomibusRecu)) { throw e; }
       });
 
-    setInterval(traiteMessageSuivant, 500);
-  };
-
-  const envoieRequete = (message, destinataire, idConversation) => {
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteRequete(config, { destinataire, idConversation, idPayload });
-    const messageAEnvoyer = enveloppeSOAP(
-      config,
-      idPayload,
-      enteteEBMS,
-      message,
-    );
-
-    return axios.post(
-      `${urlBase}/services/wsplugin/submitMessage`,
-      messageAEnvoyer,
-      { headers: { 'Content-Type': 'text/xml' } },
-    ).then(({ data }) => new ReponseEnvoiMessage(data));
+    setInterval(traiteMessageSuivant, 300);
   };
 
   const envoieMessageTest = (destinataire) => envoieRequete(
@@ -117,7 +145,21 @@ const AdaptateurDomibus = (config = {}) => {
       });
 
       setTimeout(() => {
-        reject(new ErreurAbsenceReponseDestinataire('Le destinataire ne répond pas !'));
+        reject(new ErreurAbsenceReponseDestinataire('aucune URL de redirection reçue'));
+      }, 10_000);
+    },
+  );
+
+  const pieceJustificativeDepuisReponse = (idConversation) => new Promise(
+    (resolve, reject) => {
+      annonceur.on(REPONSE_SUCCES, (reponse) => {
+        if (idConversation === reponse.idConversation()) {
+          resolve('Une pièce');
+        }
+      });
+
+      setTimeout(() => {
+        reject(new ErreurAbsenceReponseDestinataire('aucune pièce justificative reçue'));
       }, 10_000);
     },
   );
@@ -126,6 +168,7 @@ const AdaptateurDomibus = (config = {}) => {
     ecoute,
     envoieMessageRequete,
     envoieMessageTest,
+    pieceJustificativeDepuisReponse,
     urlRedirectionDepuisReponse,
   };
 };
