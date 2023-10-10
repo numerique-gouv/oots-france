@@ -1,3 +1,9 @@
+const ACTIONS = {
+  EXECUTION_REQUETE: 'ExecuteQueryRequest',
+  EXECUTION_REPONSE: 'ExecuteQueryResponse',
+  ERREUR_REPONSE: 'ExceptionResponse',
+};
+
 class Entete {
   constructor(config = {}, donnees = {}) {
     this.expediteur = process.env.EXPEDITEUR_DOMIBUS;
@@ -10,6 +16,10 @@ class Entete {
     const { adaptateurUUID } = config;
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     this.idMessage = `${adaptateurUUID.genereUUID()}@${suffixe}`;
+  }
+
+  static action() {
+    throw new Error('Méthode non implémentée dans classe abstraite');
   }
 
   enXML() {
@@ -44,7 +54,7 @@ class Entete {
     </eb:PartyInfo>
     <eb:CollaborationInfo>
       <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>
-      <eb:Action>ExecuteQueryRequest</eb:Action>
+      <eb:Action>${this.constructor.action()}</eb:Action>
       ${baliseIdConversation}
     </eb:CollaborationInfo>
     <eb:MessageProperties>
@@ -63,5 +73,7 @@ class Entete {
     `;
   }
 }
+
+Object.assign(Entete, ACTIONS);
 
 module.exports = Entete;
