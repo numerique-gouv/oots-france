@@ -6,7 +6,7 @@ const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('.
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
-const entete = require('../ebms/entete');
+const EnteteRequete = require('../ebms/enteteRequete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
@@ -22,7 +22,7 @@ const enveloppeSOAP = (config, idPayload, enteteEBMS, message) => {
   xmlns:_1="http://eu.domibus.wsplugin/"
   xmlns:xm="http://www.w3.org/2005/05/xmlmime">
 
-  <soap:Header>${enteteEBMS}</soap:Header>
+  <soap:Header>${enteteEBMS.enXML()}</soap:Header>
 
   <soap:Body>
     <_1:submitRequest>
@@ -78,7 +78,7 @@ const AdaptateurDomibus = (config = {}) => {
   const envoieRequete = (message, destinataire, idConversation) => {
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = entete(config, { destinataire, idConversation, idPayload });
+    const enteteEBMS = new EnteteRequete(config, { destinataire, idConversation, idPayload });
     const messageAEnvoyer = enveloppeSOAP(
       config,
       idPayload,

@@ -1,7 +1,7 @@
 const express = require('express');
 
 const diplomeSecondDegre = require('./api/diplomeSecondDegre');
-const entete = require('./ebms/entete');
+const EnteteRequete = require('./ebms/enteteRequete');
 const RequeteJustificatifEducation = require('./ebms/requeteJustificatifEducation');
 const JustificatifEducation = require('./vues/justificatifEducation');
 
@@ -32,13 +32,13 @@ const creeServeur = (config) => {
     const idConversation = adaptateurUUID.genereUUID();
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = entete(
+    const enteteEBMS = new EnteteRequete(
       { adaptateurUUID, horodateur },
       { destinataire, idConversation, idPayload },
     );
 
     reponse.set('Content-Type', 'text/xml');
-    reponse.send(enteteEBMS);
+    reponse.send(enteteEBMS.enXML());
   });
 
   app.get('/requete/diplomeSecondDegre', (...args) => diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, ...args));
