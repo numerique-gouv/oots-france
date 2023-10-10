@@ -6,6 +6,7 @@ const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('.
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
+const Entete = require('../ebms/entete');
 const EnteteRequete = require('../ebms/enteteRequete');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
@@ -64,7 +65,7 @@ const AdaptateurDomibus = (config = {}) => {
     const traiteMessageSuivant = () => recupereIdMessageSuivant()
       .then((idMessage) => recupereMessage(idMessage))
       .then((reponse) => {
-        if (reponse.action() === 'ExceptionResponse') {
+        if (reponse.action() === Entete.ERREUR_REPONSE) {
           annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, reponse);
         }
       })
