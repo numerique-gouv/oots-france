@@ -12,9 +12,7 @@ const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducati
 const urlBase = process.env.URL_BASE_DOMIBUS;
 const REPONSE_REDIRECTION_PREVISUALISATION = 'reponseRedirectionPrevisualisation';
 
-const enveloppeSOAP = (config, donnees, message) => {
-  const enteteEBMS = entete(config, donnees);
-  const { idPayload } = donnees;
+const enveloppeSOAP = (config, idPayload, enteteEBMS, message) => {
   const messageEnBase64 = Buffer.from(message).toString('base64');
 
   return `
@@ -77,12 +75,14 @@ const AdaptateurDomibus = (config = {}) => {
     setInterval(traiteMessageSuivant, 500);
   };
 
-  const envoieMessage = (message, destinataire, idConversation) => {
+  const envoieRequete = (message, destinataire, idConversation) => {
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
+    const enteteEBMS = entete(config, { destinataire, idConversation, idPayload });
     const messageAEnvoyer = enveloppeSOAP(
       config,
-      { destinataire, idConversation, idPayload },
+      idPayload,
+      enteteEBMS,
       message,
     );
 
@@ -93,7 +93,7 @@ const AdaptateurDomibus = (config = {}) => {
     ).then(({ data }) => new ReponseEnvoiMessage(data));
   };
 
-  const envoieMessageTest = (destinataire) => envoieMessage(
+  const envoieMessageTest = (destinataire) => envoieRequete(
     '<?xml version="1.0" encoding="UTF-8"?>\n<hello>world</hello>',
     destinataire,
   );
@@ -103,7 +103,7 @@ const AdaptateurDomibus = (config = {}) => {
     const horodatage = horodateur.maintenant();
     const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
 
-    return envoieMessage(requeteJustificatif.enXML(), destinataire, idConversation)
+    return envoieRequete(requeteJustificatif.enXML(), destinataire, idConversation)
       .then((reponse) => reponse.idMessage());
   };
 
