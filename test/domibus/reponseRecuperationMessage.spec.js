@@ -1,7 +1,7 @@
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
-  it("connaît l'URL de redirecition spécifiée", () => {
+  it("connaît l'URL de redirection spécifiée", () => {
     const message = `<query:QueryResponse
         xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
         xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
