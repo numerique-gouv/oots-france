@@ -1,7 +1,7 @@
 const ACTIONS = {
   EXECUTION_REQUETE: 'ExecuteQueryRequest',
   EXECUTION_REPONSE: 'ExecuteQueryResponse',
-  ERREUR_REPONSE: 'ExceptionResponse',
+  REPONSE_ERREUR: 'ExceptionResponse',
 };
 
 class Entete {

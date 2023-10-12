@@ -107,7 +107,7 @@ const AdaptateurDomibus = (config = {}) => {
     const traiteMessageSuivant = () => recupereIdMessageSuivant()
       .then((idMessage) => recupereMessage(idMessage))
       .then((message) => {
-        if (message.action() === Entete.ERREUR_REPONSE) {
+        if (message.action() === Entete.REPONSE_ERREUR) {
           annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message);
         } else if (message.action() === Entete.EXECUTION_REPONSE) {
           annonceur.emit(REPONSE_SUCCES, message);
