@@ -45,10 +45,10 @@ const AdaptateurDomibus = (config = {}) => {
   const { adaptateurUUID, horodateur } = config;
   const annonceur = new EventEmitter();
 
-  const envoieReponse = (message, destinataire, idConversation) => {
+  const envoieMessageDomibus = (ClasseEntete, message, destinataire, idConversation) => {
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteReponse(config, { destinataire, idConversation, idPayload });
+    const enteteEBMS = new ClasseEntete(config, { destinataire, idConversation, idPayload });
     const messageAEnvoyer = enveloppeSOAP(
       config,
       idPayload,
@@ -63,23 +63,8 @@ const AdaptateurDomibus = (config = {}) => {
     ).then(({ data }) => new ReponseEnvoiMessage(data));
   };
 
-  const envoieRequete = (message, destinataire, idConversation) => {
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteRequete(config, { destinataire, idConversation, idPayload });
-    const messageAEnvoyer = enveloppeSOAP(
-      config,
-      idPayload,
-      enteteEBMS,
-      message,
-    );
-
-    return axios.post(
-      `${urlBase}/services/wsplugin/submitMessage`,
-      messageAEnvoyer,
-      { headers: { 'Content-Type': 'text/xml' } },
-    ).then(({ data }) => new ReponseEnvoiMessage(data));
-  };
+  const envoieRequete = (...args) => envoieMessageDomibus(EnteteRequete, ...args);
+  const envoieReponse = (...args) => envoieMessageDomibus(EnteteReponse, ...args);
 
   const ecoute = () => {
     const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
