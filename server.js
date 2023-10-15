@@ -2,12 +2,15 @@ const OOTS_FRANCE = require('./src/ootsFrance');
 const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 const horodateur = require('./src/adaptateurs/horodateur');
+const EcouteurDomibus = require('./src/ecouteurDomibus');
 
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
+const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 300 });
 
 const serveur = OOTS_FRANCE.creeServeur({
   adaptateurDomibus,
   adaptateurUUID,
+  ecouteurDomibus,
   horodateur,
 });
 
@@ -21,4 +24,4 @@ serveur.ecoute(port, () => {
   /* eslint-enable no-console */
 });
 
-adaptateurDomibus.ecoute();
+ecouteurDomibus.ecoute();

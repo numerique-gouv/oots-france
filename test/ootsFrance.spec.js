@@ -7,13 +7,23 @@ const OOTS_FRANCE = require('../src/ootsFrance');
 describe('Le serveur OOTS France', () => {
   const adaptateurUUID = {};
   const adaptateurDomibus = {};
+  const ecouteurDomibus = {};
   const horodateur = {};
+
   let serveur;
 
   beforeEach((suite) => {
     adaptateurUUID.genereUUID = () => '';
+    ecouteurDomibus.arreteEcoute = () => {};
+    ecouteurDomibus.etat = () => '';
     horodateur.maintenant = () => '';
-    serveur = OOTS_FRANCE.creeServeur({ adaptateurDomibus, adaptateurUUID, horodateur });
+
+    serveur = OOTS_FRANCE.creeServeur({
+      adaptateurDomibus,
+      adaptateurUUID,
+      ecouteurDomibus,
+      horodateur,
+    });
     serveur.ecoute(1234, suite);
   });
 
@@ -130,6 +140,52 @@ describe('Le serveur OOTS France', () => {
           })
           .catch(suite);
       });
+    });
+  });
+
+  describe('sur POST /admin/arretEcouteDomibus', () => {
+    it("arrête d'écouter Domibus", (suite) => {
+      let arretEcoute = false;
+      ecouteurDomibus.arreteEcoute = () => {
+        arretEcoute = true;
+      };
+
+      axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+        .then(() => expect(arretEcoute).toBe(true))
+        .then(() => suite())
+        .catch(suite);
+    });
+
+    it("retourne le nouvel état de l'écouteur", (suite) => {
+      ecouteurDomibus.etat = () => 'nouvel état';
+
+      axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }))
+        .then(() => suite())
+        .catch(suite);
+    });
+  });
+
+  describe('sur POST /admin/demarrageEcouteDomibus', () => {
+    it('écoute Domibus', (suite) => {
+      let demarreEcoute = false;
+      ecouteurDomibus.ecoute = () => {
+        demarreEcoute = true;
+      };
+
+      axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+        .then(() => expect(demarreEcoute).toBe(true))
+        .then(() => suite())
+        .catch(suite);
+    });
+
+    it("retourne le nouvel état de l'écouteur", (suite) => {
+      ecouteurDomibus.etat = () => 'nouvel état';
+
+      axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }))
+        .then(() => suite())
+        .catch(suite);
     });
   });
 

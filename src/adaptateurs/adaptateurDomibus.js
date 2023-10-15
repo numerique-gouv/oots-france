@@ -67,55 +67,51 @@ const AdaptateurDomibus = (config = {}) => {
   const envoieReponseErreur = (...args) => envoieMessageDomibus(EnteteErreur, ...args);
   const envoieRequete = (...args) => envoieMessageDomibus(EnteteRequete, ...args);
 
-  const ecoute = () => {
-    const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
-      `${urlBase}/services/wsplugin/listPendingMessages`,
-      requeteListeMessagesEnAttente(identifiantConversation),
-      { headers: { 'Content-Type': 'text/xml' } },
-    )
-      .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
-      .then((reponse) => {
-        if (reponse.messageEnAttente()) { return reponse.idMessageSuivant(); }
-        return Promise.reject(new ErreurAucunMessageDomibusRecu());
-      });
+  const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
+    `${urlBase}/services/wsplugin/listPendingMessages`,
+    requeteListeMessagesEnAttente(identifiantConversation),
+    { headers: { 'Content-Type': 'text/xml' } },
+  )
+    .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
+    .then((reponse) => {
+      if (reponse.messageEnAttente()) { return reponse.idMessageSuivant(); }
+      return Promise.reject(new ErreurAucunMessageDomibusRecu());
+    });
 
-    const recupereMessage = (idMessage) => axios.post(
-      `${urlBase}/services/wsplugin/retrieveMessage`,
-      requeteRecuperationMessage(idMessage),
-      { headers: { 'Content-Type': 'text/xml' } },
-    )
-      .then(({ data }) => new ReponseRecuperationMessage(data));
+  const recupereMessage = (idMessage) => axios.post(
+    `${urlBase}/services/wsplugin/retrieveMessage`,
+    requeteRecuperationMessage(idMessage),
+    { headers: { 'Content-Type': 'text/xml' } },
+  )
+    .then(({ data }) => new ReponseRecuperationMessage(data));
 
-    const repondsA = (requete) => {
-      const message = new ReponseErreur({
-        idRequete: requete.idMessage(),
-        exception: {
-          type: 'rs:ObjectNotFoundExceptionType',
-          message: 'Object not found',
-          severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
-          code: 'EDM:ERR:0004',
-        },
-      }, { adaptateurUUID, horodateur });
-      envoieReponseErreur(message.enXML(), requete.expediteur(), requete.idConversation());
-    };
-
-    const traiteMessageSuivant = () => recupereIdMessageSuivant()
-      .then((idMessage) => recupereMessage(idMessage))
-      .then((message) => {
-        if (message.action() === Entete.REPONSE_ERREUR) {
-          annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message);
-        } else if (message.action() === Entete.EXECUTION_REPONSE) {
-          annonceur.emit(REPONSE_SUCCES, message);
-        } else if (message.action() === Entete.EXECUTION_REQUETE) {
-          repondsA(message);
-        }
-      })
-      .catch((e) => {
-        if (!(e instanceof ErreurAucunMessageDomibusRecu)) { throw e; }
-      });
-
-    setInterval(traiteMessageSuivant, 300);
+  const repondsA = (requete) => {
+    const message = new ReponseErreur({
+      idRequete: requete.idMessage(),
+      exception: {
+        type: 'rs:ObjectNotFoundExceptionType',
+        message: 'Object not found',
+        severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+        code: 'EDM:ERR:0004',
+      },
+    }, { adaptateurUUID, horodateur });
+    envoieReponseErreur(message.enXML(), requete.expediteur(), requete.idConversation());
   };
+
+  const traiteMessageSuivant = () => recupereIdMessageSuivant()
+    .then((idMessage) => recupereMessage(idMessage))
+    .then((message) => {
+      if (message.action() === Entete.REPONSE_ERREUR) {
+        annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message);
+      } else if (message.action() === Entete.EXECUTION_REPONSE) {
+        annonceur.emit(REPONSE_SUCCES, message);
+      } else if (message.action() === Entete.EXECUTION_REQUETE) {
+        repondsA(message);
+      }
+    })
+    .catch((e) => {
+      if (!(e instanceof ErreurAucunMessageDomibusRecu)) { throw e; }
+    });
 
   const envoieMessageTest = (destinataire) => envoieRequete(
     '<?xml version="1.0" encoding="UTF-8"?>\n<hello>world</hello>',
@@ -164,10 +160,10 @@ const AdaptateurDomibus = (config = {}) => {
   );
 
   return {
-    ecoute,
     envoieMessageRequete,
     envoieMessageTest,
     pieceJustificativeDepuisReponse,
+    traiteMessageSuivant,
     urlRedirectionDepuisReponse,
   };
 };

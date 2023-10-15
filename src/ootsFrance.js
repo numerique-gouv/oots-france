@@ -8,7 +8,12 @@ const RequeteJustificatifEducation = require('./ebms/requeteJustificatifEducatio
 const JustificatifEducation = require('./vues/justificatifEducation');
 
 const creeServeur = (config) => {
-  const { adaptateurDomibus, adaptateurUUID, horodateur } = config;
+  const {
+    adaptateurDomibus,
+    adaptateurUUID,
+    ecouteurDomibus,
+    horodateur,
+  } = config;
   let serveur;
   const app = express();
 
@@ -18,6 +23,16 @@ const creeServeur = (config) => {
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(justificatif.enXML());
+  });
+
+  app.post('/admin/arretEcouteDomibus', (_requete, reponse) => {
+    ecouteurDomibus.arreteEcoute();
+    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
+  });
+
+  app.post('/admin/demarrageEcouteDomibus', (_requete, reponse) => {
+    ecouteurDomibus.ecoute();
+    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
   });
 
   app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
