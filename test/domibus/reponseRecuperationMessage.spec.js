@@ -1,4 +1,5 @@
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
+const { ErreurReponseRequete } = require('../../src/erreurs');
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
   it("connaît l'URL de redirection spécifiée", () => {
@@ -32,7 +33,11 @@ describe('La réponse à une requête Domibus de récupération de message', () 
     const reponse = new ReponseRecuperationMessage(`
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
   <soap:Header>
-    <!-- Entêtes SOAP. Inutiles pour ce test -->
+    <ns5:Messaging>
+      <ns5:UserMessage>
+        <!-- Entêtes SOAP. Inutiles pour ce test -->
+      </ns5:UserMessage>
+    </ns5:Messaging>
   </soap:Header>
   <soap:Body>
     <ns4:retrieveMessageResponse
@@ -58,6 +63,19 @@ describe('La réponse à une requête Domibus de récupération de message', () 
                    xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
                    xmlns:ns4="http://eu.domibus.wsplugin/" mustUnderstand="false">
       <ns5:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
+        <ns5:MessageInfo>
+            <ns5:Timestamp><!-- … --></ns5:Timestamp>
+            <ns5:MessageId>11111111-1111-1111-1111-111111111111@oots.eu</ns5:MessageId>
+        </ns5:MessageInfo>
+
+        <ns5:PartyInfo>
+            <ns5:From>
+                <ns5:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator">AP_SI_01</ns5:PartyId>
+                <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
+            </ns5:From>
+            <ns5:To><!-- … --></ns5:To>
+        </ns5:PartyInfo>
+
         <ns5:CollaborationInfo>
           <ns5:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</ns5:Service>
           <ns5:Action>ExecuteQueryRequest</ns5:Action>
@@ -79,6 +97,66 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
     it("connaît l'identifiant de la conversation", () => {
       expect(reponse.idConversation()).toEqual('12345678-1234-1234-1234-1234567890ab');
+    });
+
+    it("connaît l'expéditeur", () => {
+      expect(reponse.expediteur()).toEqual('AP_SI_01');
+    });
+
+    it('connaît son identifiant de message', () => {
+      expect(reponse.idMessage()).toEqual('11111111-1111-1111-1111-111111111111@oots.eu');
+    });
+  });
+
+  describe("dans le cas d'une réponse en erreur", () => {
+    const message = `<query:QueryResponse
+        xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+        xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+        xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure"
+        requestId="urn:uuid:11111111-1111-1111-1111-111111111111">
+
+  <rs:Exception xsi:type="rs:ObjectNotFoundExceptionType"
+                code="EDM:ERR:0004"
+                message="Object not found"
+                severity="urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error">
+  </rs:Exception>
+  <!-- … -->
+</query:QueryResponse>`;
+
+    const messageBase64 = Buffer.from(message).toString('base64');
+
+    const reponse = new ReponseRecuperationMessage(`
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Header>
+    <ns5:Messaging>
+      <ns5:UserMessage>
+        <!-- Entêtes SOAP. Inutiles pour ce test -->
+      </ns5:UserMessage>
+    </ns5:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <ns4:retrieveMessageResponse
+      xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+      xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+      xmlns:ns4="http://eu.domibus.wsplugin/">
+      <payload payloadId="cid:11111111-1111-1111-1111-111111111111@oots.eu">
+        <value>${messageBase64}</value>
+      </payload>
+    </ns4:retrieveMessageResponse>
+  </soap:Body>
+</soap:Envelope>
+    `);
+
+    it("lève une erreur à la tentative de lecture de l'URL de redirection", (suite) => {
+      try {
+        reponse.urlRedirection();
+        suite('Une `ErreurReponseRequete` aurait dû être levée.');
+      } catch (e) {
+        expect(e).toBeInstanceOf(ErreurReponseRequete);
+        expect(e.message).toEqual('Object not found');
+        suite();
+      }
     });
   });
 });

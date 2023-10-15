@@ -1,5 +1,5 @@
 const diplomeSecondDegre = require('../../src/api/diplomeSecondDegre');
-const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
+const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete } = require('../../src/erreurs');
 
 describe('Le requêteur de diplôme du second degré', () => {
   const adaptateurUUID = {};
@@ -86,7 +86,7 @@ describe('Le requêteur de diplôme du second degré', () => {
 
   it('accepte de recevoir directement la pièce justificative', (suite) => {
     let pieceJustificativeRecue = false;
-    adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('Aucune URL de redirection reçue'));
+    adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL de redirection reçue'));
     adaptateurDomibus.pieceJustificativeDepuisReponse = () => {
       pieceJustificativeRecue = true;
       return Promise.resolve();
@@ -94,6 +94,24 @@ describe('Le requêteur de diplôme du second degré', () => {
 
     diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => expect(pieceJustificativeRecue).toBe(true))
+      .then(() => suite())
+      .catch(suite);
+  });
+
+  it("génère une erreur HTTP 502 (Bad Gateway) sur réception d'une réponse en erreur", (suite) => {
+    adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurReponseRequete('object not found'));
+    adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucun justificatif reçu'));
+
+    reponse.status = (codeStatus) => {
+      expect(codeStatus).toEqual(502);
+      return reponse;
+    };
+
+    reponse.send = (contenu) => {
+      expect(contenu).toEqual('object not found ; aucun justificatif reçu');
+    };
+
+    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => suite())
       .catch(suite);
   });

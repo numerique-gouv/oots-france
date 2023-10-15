@@ -7,8 +7,9 @@ const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
 const Entete = require('../ebms/entete');
-const EnteteReponse = require('../ebms/enteteReponse');
+const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
+const ReponseErreur = require('../ebms/reponseErreur');
 const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
@@ -63,8 +64,8 @@ const AdaptateurDomibus = (config = {}) => {
     ).then(({ data }) => new ReponseEnvoiMessage(data));
   };
 
+  const envoieReponseErreur = (...args) => envoieMessageDomibus(EnteteErreur, ...args);
   const envoieRequete = (...args) => envoieMessageDomibus(EnteteRequete, ...args);
-  const envoieReponse = (...args) => envoieMessageDomibus(EnteteReponse, ...args);
 
   const ecoute = () => {
     const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
@@ -86,7 +87,16 @@ const AdaptateurDomibus = (config = {}) => {
       .then(({ data }) => new ReponseRecuperationMessage(data));
 
     const repondsA = (requete) => {
-      envoieReponse('', 'AP_FR_01', requete.idConversation());
+      const message = new ReponseErreur({
+        idRequete: requete.idMessage(),
+        exception: {
+          type: 'rs:ObjectNotFoundExceptionType',
+          message: 'Object not found',
+          severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+          code: 'EDM:ERR:0004',
+        },
+      }, { adaptateurUUID, horodateur });
+      envoieReponseErreur(message.enXML(), requete.expediteur(), requete.idConversation());
     };
 
     const traiteMessageSuivant = () => recupereIdMessageSuivant()
@@ -125,7 +135,11 @@ const AdaptateurDomibus = (config = {}) => {
     (resolve, reject) => {
       annonceur.on(REPONSE_REDIRECTION_PREVISUALISATION, (reponse) => {
         if (idConversation === reponse.idConversation()) {
-          resolve(reponse.urlRedirection());
+          try {
+            resolve(reponse.urlRedirection());
+          } catch (e) {
+            reject(e);
+          }
         }
       });
 
