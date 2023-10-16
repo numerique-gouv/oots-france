@@ -1,26 +1,27 @@
+const EnteteMessageRecu = require('./enteteMessageRecu');
 const ReponseDomibus = require('./reponseDomibus');
 const { ErreurReponseRequete } = require('../erreurs');
 
 class ReponseRecuperationMessage extends ReponseDomibus {
   constructor(...args) {
     super(...args);
-    this.enteteInfosMessage = this.xml['soap:Envelope']['soap:Header']['ns5:Messaging']['ns5:UserMessage'];
+    this.entete = new EnteteMessageRecu(this.xml['soap:Envelope']['soap:Header']);
   }
 
   action() {
-    return this.enteteInfosMessage['ns5:CollaborationInfo']['ns5:Action'];
+    return this.entete.action();
   }
 
   expediteur() {
-    return this.enteteInfosMessage['ns5:PartyInfo']['ns5:From']['ns5:PartyId']['#text'];
+    return this.entete.expediteur();
   }
 
   idConversation() {
-    return this.enteteInfosMessage['ns5:CollaborationInfo']['ns5:ConversationId'];
+    return this.entete.idConversation();
   }
 
   idMessage() {
-    return this.enteteInfosMessage['ns5:MessageInfo']['ns5:MessageId'];
+    return this.entete.idMessage();
   }
 
   urlRedirection() {
