@@ -1,6 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 
-const { valeurSlot } = require('./utils');
+const { verifiePresenceSlot, valeurSlot } = require('./utils');
 const RequeteJustificatifEducation = require('../../src/ebms/requeteJustificatifEducation');
 
 describe("La vue du message de requête d'un justificatif", () => {
@@ -27,27 +27,23 @@ describe("La vue du message de requête d'un justificatif", () => {
     const requeteJustificatif = new RequeteJustificatifEducation(configurationRequete);
     const xml = parser.parse(requeteJustificatif.enXML());
 
-    expect(xml['query:QueryRequest']['rim:Slot']).toBeDefined();
-    const slots = [].concat(xml['query:QueryRequest']['rim:Slot']);
-    expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'Procedure')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'PossibilityForPreview')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'ExplicitRequestGiven')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'Requirements')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
-    expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
+    const scopeRechercheQueryRequest = xml['query:QueryRequest'];
+    verifiePresenceSlot('SpecificationIdentifier', scopeRechercheQueryRequest);
+    verifiePresenceSlot('IssueDateTime', scopeRechercheQueryRequest);
+    verifiePresenceSlot('Procedure', scopeRechercheQueryRequest);
+    verifiePresenceSlot('PossibilityForPreview', scopeRechercheQueryRequest);
+    verifiePresenceSlot('ExplicitRequestGiven', scopeRechercheQueryRequest);
+    verifiePresenceSlot('Requirements', scopeRechercheQueryRequest);
+    verifiePresenceSlot('EvidenceRequester', scopeRechercheQueryRequest);
+    verifiePresenceSlot('EvidenceProvider', scopeRechercheQueryRequest);
 
-    expect(xml['query:QueryRequest']['query:Query']['rim:Slot']).toBeDefined();
-    const querySlots = [].concat(xml['query:QueryRequest']['query:Query']['rim:Slot']);
-    expect(querySlots.some((s) => s['@_name'] === 'EvidenceRequest')).toBe(true);
-    expect(querySlots.some((s) => s['@_name'] === 'NaturalPerson')).toBe(true);
+    const scopeRechercheQuery = xml['query:QueryRequest']['query:Query'];
+    verifiePresenceSlot('EvidenceRequest', scopeRechercheQuery);
+    verifiePresenceSlot('NaturalPerson', scopeRechercheQuery);
+    expect(scopeRechercheQuery['@_queryDefinition']).toEqual('DocumentQuery');
 
     expect(xml['query:QueryRequest']['query:ResponseOption']).toBeDefined();
     expect(xml['query:QueryRequest']['query:ResponseOption']['@_returnType']).toEqual('LeafClassWithRepositoryItem');
-
-    expect(xml['query:QueryRequest']['query:Query']).toBeDefined();
-    expect(xml['query:QueryRequest']['query:Query']['@_queryDefinition']).toEqual('DocumentQuery');
   });
 
   it('injecte la demande de prévisualisation', () => {
