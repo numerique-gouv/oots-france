@@ -119,9 +119,7 @@ const AdaptateurDomibus = (config = {}) => {
   );
 
   const envoieMessageRequete = (destinataire, idConversation) => {
-    const uuid = adaptateurUUID.genereUUID();
-    const horodatage = horodateur.maintenant();
-    const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
+    const requeteJustificatif = new RequeteJustificatifEducation({ adaptateurUUID, horodateur });
 
     return envoieRequete(requeteJustificatif.enXML(), destinataire, idConversation)
       .then((reponse) => reponse.idMessage());

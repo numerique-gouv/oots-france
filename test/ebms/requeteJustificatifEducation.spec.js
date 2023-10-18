@@ -4,9 +4,18 @@ const RequeteJustificatifEducation = require('../../src/ebms/requeteJustificatif
 
 describe("La vue du message de requête d'un justificatif", () => {
   const parser = new XMLParser({ ignoreAttributes: false });
+  const adaptateurUUID = {};
+  const horodateur = {};
+  const configurationRequete = { adaptateurUUID, horodateur };
+
+  beforeEach(() => {
+    adaptateurUUID.genereUUID = () => '';
+    horodateur.maintenant = () => '';
+  });
 
   it('injecte un identifiant unique de requête', () => {
-    const requeteJustificatif = new RequeteJustificatifEducation('11111111-1111-1111-1111-111111111111');
+    adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
+    const requeteJustificatif = new RequeteJustificatifEducation(configurationRequete);
 
     const xml = parser.parse(requeteJustificatif.enXML());
     const requestId = xml['query:QueryRequest']['@_id'];
@@ -14,7 +23,7 @@ describe("La vue du message de requête d'un justificatif", () => {
   });
 
   it('respecte la structure définie par OOTS', () => {
-    const requeteJustificatif = new RequeteJustificatifEducation('11111111-1111-1111-1111-111111111111');
+    const requeteJustificatif = new RequeteJustificatifEducation(configurationRequete);
     const xml = parser.parse(requeteJustificatif.enXML());
 
     expect(xml['query:QueryRequest']['rim:Slot']).toBeDefined();

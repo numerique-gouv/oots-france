@@ -1,10 +1,13 @@
 class RequeteJustificatifEducation {
-  constructor(uuid, horodatage) {
-    this.uuid = uuid;
-    this.horodatage = horodatage;
+  constructor({ adaptateurUUID, horodateur }) {
+    this.adaptateurUUID = adaptateurUUID;
+    this.horodateur = horodateur;
   }
 
   enXML() {
+    const uuid = this.adaptateurUUID.genereUUID();
+    const horodatage = this.horodateur.maintenant();
+
     return `<?xml version="1.0" encoding="UTF-8"?>
 <query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
@@ -15,7 +18,7 @@ class RequeteJustificatifEducation {
           xmlns:xlink="http://www.w3.org/1999/xlink"
           xmlns:xml="http://www.w3.org/XML/1998/namespace"
           xml:lang="EN"
-          id="urn:uuid:${this.uuid}">
+          id="urn:uuid:${uuid}">
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
@@ -24,7 +27,7 @@ class RequeteJustificatifEducation {
   </rim:Slot>
   <rim:Slot name="IssueDateTime">
     <rim:SlotValue xsi:type="rim:DateTimeValueType">
-      <rim:Value>${this.horodatage}</rim:Value>
+      <rim:Value>${horodatage}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="Procedure">

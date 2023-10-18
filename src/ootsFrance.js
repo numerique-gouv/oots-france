@@ -50,9 +50,7 @@ const creeServeur = (config) => {
   });
 
   app.get('/ebms/messages/requeteJustificatif', (_requete, reponse) => {
-    const uuid = adaptateurUUID.genereUUID();
-    const horodatage = horodateur.maintenant();
-    const requeteJustificatif = new RequeteJustificatifEducation(uuid, horodatage);
+    const requeteJustificatif = new RequeteJustificatifEducation({ adaptateurUUID, horodateur });
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(requeteJustificatif.enXML());
