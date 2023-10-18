@@ -1,7 +1,8 @@
 class RequeteJustificatifEducation {
-  constructor({ adaptateurUUID, horodateur }) {
+  constructor({ adaptateurUUID, horodateur }, { previsualisationRequise = false } = {}) {
     this.adaptateurUUID = adaptateurUUID;
     this.horodateur = horodateur;
+    this.previsualisationRequise = previsualisationRequise;
   }
 
   enXML() {
@@ -40,7 +41,7 @@ class RequeteJustificatifEducation {
   </rim:Slot>
   <rim:Slot name="PossibilityForPreview">
     <rim:SlotValue xsi:type="rim:BooleanValueType">
-      <rim:Value>true</rim:Value>
+      <rim:Value>${this.previsualisationRequise}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="ExplicitRequestGiven">

@@ -118,8 +118,11 @@ const AdaptateurDomibus = (config = {}) => {
     destinataire,
   );
 
-  const envoieMessageRequete = (destinataire, idConversation) => {
-    const requeteJustificatif = new RequeteJustificatifEducation({ adaptateurUUID, horodateur });
+  const envoieMessageRequete = (destinataire, idConversation, previsualisationRequise) => {
+    const requeteJustificatif = new RequeteJustificatifEducation(
+      { adaptateurUUID, horodateur },
+      { previsualisationRequise },
+    );
 
     return envoieRequete(requeteJustificatif.enXML(), destinataire, idConversation)
       .then((reponse) => reponse.idMessage());

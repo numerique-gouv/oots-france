@@ -14,10 +14,10 @@ const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseReq
 
 const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse) => {
   const idConversation = adaptateurUUID.genereUUID();
-  const { destinataire } = requete.query;
+  const { destinataire, previsualisationRequise } = requete.query;
 
   return adaptateurDomibus
-    .envoieMessageRequete(destinataire, idConversation)
+    .envoieMessageRequete(destinataire, idConversation, (previsualisationRequise === 'true' || previsualisationRequise === ''))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificative(idConversation, adaptateurDomibus),

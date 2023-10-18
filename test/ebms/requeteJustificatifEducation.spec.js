@@ -1,5 +1,6 @@
 const { XMLParser } = require('fast-xml-parser');
 
+const { valeurSlot } = require('./utils');
 const RequeteJustificatifEducation = require('../../src/ebms/requeteJustificatifEducation');
 
 describe("La vue du message de requête d'un justificatif", () => {
@@ -47,5 +48,16 @@ describe("La vue du message de requête d'un justificatif", () => {
 
     expect(xml['query:QueryRequest']['query:Query']).toBeDefined();
     expect(xml['query:QueryRequest']['query:Query']['@_queryDefinition']).toEqual('DocumentQuery');
+  });
+
+  it('injecte la demande de prévisualisation', () => {
+    const requeteJustificatif = new RequeteJustificatifEducation(
+      configurationRequete,
+      { previsualisationRequise: false },
+    );
+    const xml = parser.parse(requeteJustificatif.enXML());
+
+    const demandePrevisualisation = valeurSlot('PossibilityForPreview', xml['query:QueryRequest']);
+    expect(demandePrevisualisation).toBe(false);
   });
 });
