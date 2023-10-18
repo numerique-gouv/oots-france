@@ -1,23 +1,7 @@
 const { XMLParser } = require('fast-xml-parser');
 
+const { verifiePresenceSlot, valeurSlot } = require('./utils');
 const ReponseErreur = require('../../src/ebms/reponseErreur');
-
-const verifiePresenceSlotAvecNom = (nomSlot, scopeRecherche) => {
-  expect(scopeRecherche).toBeDefined();
-
-  const sectionSlots = scopeRecherche['rim:Slot'];
-  expect(sectionSlots).toBeDefined();
-
-  const slots = [].concat(sectionSlots);
-  expect(slots.some((s) => s['@_name'] === nomSlot)).toBe(true);
-};
-
-const valeurSlot = (nomSlot, scopeRecherche) => {
-  verifiePresenceSlotAvecNom(nomSlot, scopeRecherche);
-  const sectionSlots = scopeRecherche['rim:Slot'];
-  const slots = [].concat(sectionSlots);
-  return slots.find((s) => s['@_name'] === nomSlot)['rim:SlotValue']['rim:Value'];
-};
 
 describe('Une réponse EBMS en erreur', () => {
   const parser = new XMLParser({ ignoreAttributes: false });
@@ -70,7 +54,7 @@ describe('Une réponse EBMS en erreur', () => {
   it('contient une section `SpecificationIdentifier`', () => {
     const reponse = new ReponseErreur();
     const xml = parser.parse(reponse.enXML());
-    verifiePresenceSlotAvecNom('SpecificationIdentifier', xml['query:QueryResponse']);
+    verifiePresenceSlot('SpecificationIdentifier', xml['query:QueryResponse']);
   });
 
   describe('dans la section `EvidenceResponseIdentifier`', () => {
@@ -88,6 +72,6 @@ describe('Une réponse EBMS en erreur', () => {
   it('contient une section `ErrorProvider`', () => {
     const reponse = new ReponseErreur();
     const xml = parser.parse(reponse.enXML());
-    verifiePresenceSlotAvecNom('ErrorProvider', xml['query:QueryResponse']);
+    verifiePresenceSlot('ErrorProvider', xml['query:QueryResponse']);
   });
 });
