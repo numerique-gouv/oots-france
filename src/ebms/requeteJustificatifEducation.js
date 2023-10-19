@@ -96,7 +96,7 @@ class RequeteJustificatifEducation {
           <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
           <sdg:Identifier schemeID="eidas">DK/DE/123123123</sdg:Identifier>
           <sdg:FamilyName>Smith</sdg:FamilyName>
-          <sdg:GivenName>John</sdg:GivenName>
+          <sdg:GivenName>Chuck</sdg:GivenName>
           <sdg:DateOfBirth>1970-03-01</sdg:DateOfBirth>
           <sdg:BirthName>John Doepidis</sdg:BirthName>
           <sdg:PlaceOfBirth>Hamburg, Germany</sdg:PlaceOfBirth>
