@@ -142,7 +142,7 @@ const AdaptateurDomibus = (config = {}) => {
 
       setTimeout(() => {
         reject(new ErreurAbsenceReponseDestinataire('aucune URL de redirection reçue'));
-      }, 10_000);
+      }, process.env.DELAI_MAX_ATTENTE_DOMIBUS);
     },
   );
 
@@ -156,7 +156,7 @@ const AdaptateurDomibus = (config = {}) => {
 
       setTimeout(() => {
         reject(new ErreurAbsenceReponseDestinataire('aucune pièce justificative reçue'));
-      }, 10_000);
+      }, process.env.DELAI_MAX_ATTENTE_DOMIBUS);
     },
   );
 
