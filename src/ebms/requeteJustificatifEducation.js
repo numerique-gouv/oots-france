@@ -35,7 +35,7 @@ class RequeteJustificatifEducation {
     <rim:SlotValue xsi:type="rim:InternationalStringValueType">
       <rim:Value>
         <rim:LocalizedString xml:lang="EN"
-          value="T2"/>
+          value="T1"/>
       </rim:Value>
     </rim:SlotValue>
   </rim:Slot>
@@ -54,7 +54,7 @@ class RequeteJustificatifEducation {
       collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Requirement>
-          <sdg:Identifier>https://sr.oots.tech.ec.europa.eu/requirements/17015504-5140-3659-8d83-9838400e2e14</sdg:Identifier>
+          <sdg:Identifier>https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42</sdg:Identifier>
           <sdg:Name lang="EN">Proof of tertiary education diploma/certificate/degree</sdg:Name>
         </sdg:Requirement>
       </rim:Element>
@@ -83,8 +83,8 @@ class RequeteJustificatifEducation {
   <rim:Slot name="EvidenceProvider">
     <rim:SlotValue xsi:type="rim:AnyValueType">
       <sdg:Agent>
-        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">220</sdg:Identifier>
-        <sdg:Name lang="EN">Višja strokovna šola</sdg:Name>
+        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">BR_IT_01</sdg:Identifier>
+        <sdg:Name lang="EN">Italy</sdg:Name>
       </sdg:Agent>
     </rim:SlotValue>
   </rim:Slot>
@@ -96,8 +96,8 @@ class RequeteJustificatifEducation {
           <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
           <sdg:Identifier schemeID="eidas">DK/DE/123123123</sdg:Identifier>
           <sdg:FamilyName>Smith</sdg:FamilyName>
-          <sdg:GivenName>Chuck</sdg:GivenName>
-          <sdg:DateOfBirth>1970-03-01</sdg:DateOfBirth>
+          <sdg:GivenName>Jonas</sdg:GivenName>
+          <sdg:DateOfBirth>1999-03-01</sdg:DateOfBirth>
           <sdg:BirthName>John Doepidis</sdg:BirthName>
           <sdg:PlaceOfBirth>Hamburg, Germany</sdg:PlaceOfBirth>
           <sdg:CurrentAddress>
@@ -126,8 +126,8 @@ class RequeteJustificatifEducation {
     <rim:Slot name="EvidenceRequest">
       <rim:SlotValue xsi:type="rim:AnyValueType">
         <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
-          <sdg:Identifier>936f3aa4-afc9-4363-ad19-9579cd09ef8e</sdg:Identifier>
-          <sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/SI/e2aa2284-501d-344b-b49c-589c50484c14</sdg:EvidenceTypeClassification>
+          <sdg:Identifier>a8851d44-8f62-4561-99d2-5383ce3f30a7</sdg:Identifier>
+          <sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/EU/b6a49e54-8b3c-4688-acad-380440dc5962</sdg:EvidenceTypeClassification>
           <sdg:Title lang="EN">Diploma</sdg:Title>
           <sdg:DistributedAs>
             <sdg:Format>application/xml</sdg:Format>
