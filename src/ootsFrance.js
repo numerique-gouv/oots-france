@@ -96,7 +96,7 @@ const creeServeur = (config) => {
 
   const ecoute = (...args) => { serveur = app.listen(...args); };
 
-  const arreteEcoute = () => serveur.close();
+  const arreteEcoute = (suite) => serveur.close(suite);
 
   return {
     arreteEcoute,

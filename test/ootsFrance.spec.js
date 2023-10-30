@@ -27,7 +27,9 @@ describe('Le serveur OOTS France', () => {
     serveur.ecoute(1234, suite);
   });
 
-  afterEach(() => { serveur.arreteEcoute(); });
+  afterEach((suite) => {
+    serveur.arreteEcoute(() => setTimeout(suite));
+  });
 
   describe('sur GET /response/educationEvidence', () => {
     it('sert une réponse au format XML', (suite) => {
