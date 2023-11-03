@@ -1,22 +1,22 @@
 class EnteteMessageRecu {
   constructor(donneesEntete) {
-    this.enteteMessageUtilisateur = donneesEntete['ns5:Messaging']['ns5:UserMessage'];
+    this.enteteMessageUtilisateur = donneesEntete.Messaging.UserMessage;
   }
 
   action() {
-    return this.enteteMessageUtilisateur['ns5:CollaborationInfo']['ns5:Action'];
+    return this.enteteMessageUtilisateur.CollaborationInfo.Action;
   }
 
   expediteur() {
-    return this.enteteMessageUtilisateur['ns5:PartyInfo']['ns5:From']['ns5:PartyId']['#text'];
+    return this.enteteMessageUtilisateur.PartyInfo.From.PartyId['#text'];
   }
 
   idConversation() {
-    return this.enteteMessageUtilisateur['ns5:CollaborationInfo']['ns5:ConversationId'];
+    return this.enteteMessageUtilisateur.CollaborationInfo.ConversationId;
   }
 
   idMessage() {
-    return this.enteteMessageUtilisateur['ns5:MessageInfo']['ns5:MessageId'];
+    return this.enteteMessageUtilisateur.MessageInfo.MessageId;
   }
 }
 
