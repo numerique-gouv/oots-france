@@ -110,7 +110,13 @@ const AdaptateurDomibus = (config = {}) => {
       }
     })
     .catch((e) => {
-      if (!(e instanceof ErreurAucunMessageDomibusRecu)) { throw e; }
+      if (!(e instanceof ErreurAucunMessageDomibusRecu)) {
+        /* eslint-disable no-console */
+
+        console.error(e.response?.data || e);
+
+        /* eslint-enable no-console */
+      }
     });
 
   const envoieMessageTest = (destinataire) => envoieRequete(
