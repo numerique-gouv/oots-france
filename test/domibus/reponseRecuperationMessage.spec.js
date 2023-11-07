@@ -1,4 +1,5 @@
 const ConstructeurEnveloppeSOAPException = require('../constructeurs/constructeurEnveloppeSOAPException');
+const ReponseErreurAutorisationRequise = require('../../src/domibus/reponseErreurAutorisationRequise');
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
 const { ErreurReponseRequete } = require('../../src/erreurs');
 
@@ -9,7 +10,8 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       .construis();
     const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
 
-    expect(reponse.urlRedirection()).toEqual('https://example.com/preview/12345678-1234-1234-1234-1234567890ab');
+    expect(reponse.corpsMessage).toBeInstanceOf(ReponseErreurAutorisationRequise);
+    expect(reponse.suiteConversation()).toEqual('https://example.com/preview/12345678-1234-1234-1234-1234567890ab');
   });
 
   it("connaît le type d'action liée au message", () => {
@@ -69,7 +71,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
 
       try {
-        reponse.urlRedirection();
+        reponse.suiteConversation();
         suite('Une `ErreurReponseRequete` aurait dû être levée.');
       } catch (e) {
         expect(e).toBeInstanceOf(ErreurReponseRequete);

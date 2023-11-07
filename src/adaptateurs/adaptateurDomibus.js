@@ -139,7 +139,7 @@ const AdaptateurDomibus = (config = {}) => {
       annonceur.on(REPONSE_REDIRECTION_PREVISUALISATION, (reponse) => {
         if (idConversation === reponse.idConversation()) {
           try {
-            resolve(reponse.urlRedirection());
+            resolve(reponse.suiteConversation());
           } catch (e) {
             reject(e);
           }
