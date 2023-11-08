@@ -10,6 +10,10 @@ class ConstructeurEnveloppeSOAPException {
       });
   }
 
+  constructor() {
+    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
+  }
+
   avecErreur({
     type,
     code,
@@ -38,6 +42,11 @@ class ConstructeurEnveloppeSOAPException {
 
   avecIdMessage(id) {
     this.idMessage = id;
+    return this;
+  }
+
+  avecIdPayload(id) {
+    this.idPayload = id;
     return this;
   }
 
@@ -103,7 +112,7 @@ class ConstructeurEnveloppeSOAPException {
             <ns5:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0190">NL222332239</ns5:Property>
         </ns5:MessageProperties>
         <ns5:PayloadInfo>
-            <ns5:PartInfo href="cid:530ad1e2-5eaf-4a9a-8192-227432eea95d@it.nrw">
+            <ns5:PartInfo href="${this.idPayload}">
                 <ns5:PartProperties>
                     <ns5:Property name="MimeType">application/x-ebrs+xml</ns5:Property>
                     <ns5:Property name="CompressionType">application/gzip</ns5:Property>
@@ -118,7 +127,7 @@ class ConstructeurEnveloppeSOAPException {
       xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
       xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
       xmlns:ns4="http://eu.domibus.wsplugin/">
-      <payload payloadId="cid:11111111-1111-1111-1111-111111111111@oots.eu">
+      <payload payloadId="${this.idPayload}">
         <value>${messageBase64}</value>
       </payload>
     </ns4:retrieveMessageResponse>

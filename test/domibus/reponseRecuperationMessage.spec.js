@@ -47,6 +47,15 @@ describe('La réponse à une requête Domibus de récupération de message', () 
     expect(reponse.idMessage()).toEqual('11111111-1111-1111-1111-111111111111@oots.eu');
   });
 
+  it('connaît son identifiant de payload du message EBMS', () => {
+    const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
+      .avecIdPayload('cid:11111111-1111-1111-1111-111111111111@oots.eu')
+      .construis();
+
+    const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+    expect(reponse.idPayload).toEqual('cid:11111111-1111-1111-1111-111111111111@oots.eu');
+  });
+
   describe("dans le cas d'une réponse en erreur pièce inexistante", () => {
     it("lève une erreur à la tentative de lecture de l'URL de redirection", (suite) => {
       const enveloppeSOAP = new ConstructeurEnveloppeSOAPException()
