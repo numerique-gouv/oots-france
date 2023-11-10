@@ -7,13 +7,8 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     super(...args);
     this.entete = new EnteteMessageRecu(this.xml.Envelope.Header);
 
-    this.idPayload = this.entete.idPayload();
-
-    const payloads = [].concat(this.xml.Envelope.Body.retrieveMessageResponse.payload);
-    const corpsMessageEncode = payloads
-      .find((p) => p['@_payloadId'] === this.idPayload)
-      .value;
-    const corpsMessageDecode = Buffer.from(corpsMessageEncode, 'base64').toString('ascii');
+    this.idsPayloads = this.entete.payloads();
+    const corpsMessageDecode = this.payload('application/x-ebrs+xml');
     const corpsMessageParse = this.parser.parse(corpsMessageDecode);
 
     this.corpsMessage = FabriqueMessages.nouveauMessage(this.entete.action(), corpsMessageParse);
@@ -33,6 +28,15 @@ class ReponseRecuperationMessage extends ReponseDomibus {
 
   idMessage() {
     return this.entete.idMessage();
+  }
+
+  payload(mimeType) {
+    const payloads = [].concat(this.xml.Envelope.Body.retrieveMessageResponse.payload);
+    const corpsMessageEncode = payloads
+      .find((p) => p['@_payloadId'] === this.idsPayloads[mimeType])
+      .value;
+
+    return Buffer.from(corpsMessageEncode, 'base64').toString('ascii');
   }
 
   suiteConversation() {

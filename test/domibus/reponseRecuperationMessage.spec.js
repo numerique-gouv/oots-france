@@ -55,7 +55,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       .construis();
 
     const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
-    expect(reponse.idPayload).toEqual('cid:11111111-1111-1111-1111-111111111111@oots.eu');
+    expect(reponse.idsPayloads['application/x-ebrs+xml']).toEqual('cid:11111111-1111-1111-1111-111111111111@oots.eu');
   });
 
   describe("dans le cas d'une réponse en erreur pièce inexistante", () => {
