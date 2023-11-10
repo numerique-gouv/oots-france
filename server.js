@@ -5,7 +5,7 @@ const horodateur = require('./src/adaptateurs/horodateur');
 const EcouteurDomibus = require('./src/ecouteurDomibus');
 
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
-const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 300 });
+const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
 
 const serveur = OOTS_FRANCE.creeServeur({
   adaptateurDomibus,
