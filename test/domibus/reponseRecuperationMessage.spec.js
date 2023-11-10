@@ -1,3 +1,4 @@
+const ConstructeurEnveloppeSOAPAvecPieceJointe = require('../constructeurs/constructeurEnveloppeSOAPAvecPieceJointe');
 const ConstructeurEnveloppeSOAPException = require('../constructeurs/constructeurEnveloppeSOAPException');
 const ReponseErreurAutorisationRequise = require('../../src/domibus/reponseErreurAutorisationRequise');
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
@@ -56,6 +57,16 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
     const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
     expect(reponse.idsPayloads['application/x-ebrs+xml']).toEqual('cid:11111111-1111-1111-1111-111111111111@oots.eu');
+  });
+
+  it('sait extraire une pièce jointe', () => {
+    const enveloppeSOAP = new ConstructeurEnveloppeSOAPAvecPieceJointe()
+      .avecPieceJointe('cid:12345678-1234-1234-1234-1234567890ab@pdf.oots.eu', 'application/pdf', 'abcd')
+      .construis();
+
+    const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+    const contenuPieceJustificative = reponse.pieceJustificative().toString();
+    expect(contenuPieceJustificative).toEqual('abcd');
   });
 
   describe("dans le cas d'une réponse en erreur pièce inexistante", () => {

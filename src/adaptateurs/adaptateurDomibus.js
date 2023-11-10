@@ -156,7 +156,7 @@ const AdaptateurDomibus = (config = {}) => {
     (resolve, reject) => {
       annonceur.on(REPONSE_SUCCES, (reponse) => {
         if (idConversation === reponse.idConversation()) {
-          resolve('Une pièce');
+          resolve(reponse.pieceJustificative());
         }
       });
 

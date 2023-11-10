@@ -26,7 +26,8 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
       if (resultat.urlRedirection) {
         reponse.redirect(resultat.urlRedirection);
       } else if (resultat.pieceJustificative) {
-        reponse.send('Pièce justificative reçue !');
+        reponse.set({ 'content-type': 'application/pdf; charset=utf-8' });
+        reponse.send(resultat.pieceJustificative);
       }
     })
     .catch((e) => {
