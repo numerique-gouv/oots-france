@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<db:configuration xmlns:db="http://domibus.eu/configuration" party="blue_gw">
+  <mpcs>
+    <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600"/>
+  </mpcs>
+
+  <businessProcesses>
+    <roles>
+      <role name="defaultInitiatorRole" value="http://sdg.europa.eu/edelivery/gateway"/>
+      <role name="defaultResponderRole" value="http://sdg.europa.eu/edelivery/gateway"/>
+    </roles>
+
+    <parties>
+      <partyIdTypes>
+        <partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator"/>
+      </partyIdTypes>
+      <party name="blue_gw" endpoint="http://localhost:8080/domibus/services/msh" allowChunking="false">
+        <identifier partyId="blue_gw" partyIdType="partyTypeUrn"/>
+      </party>
+    </parties>
+
+    <meps>
+      <mep name="oneway" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay"/>
+      <mep name="twoway" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/twoWay"/>
+      <binding name="push" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/push"/>
+      <binding name="pushAndPush" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/pushAndPush"/>
+    </meps>
+
+    <properties>
+      <property name="originalSenderProperty" key="originalSender" datatype="string" required="true"/>
+      <property name="finalRecipientProperty" key="finalRecipient" datatype="string" required="true"/>
+      <propertySet name="fourCornersPropertySet">
+        <propertyRef property="originalSenderProperty"/>
+        <propertyRef property="finalRecipientProperty"/>
+      </propertySet>
+    </properties>
+
+    <securities>
+      <security name="noSigNoEnc" policy="doNothingPolicy.xml" signatureMethod="RSA_SHA256"/>
+      <security name="signOnly" policy="signOnly.xml" signatureMethod="RSA_SHA256"/>
+      <security name="eDeliveryAS4Policy_BST" policy="eDeliveryAS4Policy_BST.xml" signatureMethod="RSA_SHA256"/>
+    </securities>
+
+    <errorHandlings>
+      <errorHandling name="defaultErrorHandling" errorAsResponse="true" businessErrorNotifyProducer="false" businessErrorNotifyConsumer="false" deliveryFailureNotifyProducer="false"/>
+      <errorHandling name="secondErrorHandlingAllTrue" errorAsResponse="true" businessErrorNotifyProducer="true" businessErrorNotifyConsumer="true" deliveryFailureNotifyProducer="true"/>
+    </errorHandlings>
+
+    <agreements>
+      <agreement name="agreementEmpty" value="" type=""/>
+    </agreements>
+
+    <services>
+      <service name="queryManager" value="QueryManager" type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0"/>
+      <service name="testService" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/service"/>
+    </services>
+
+    <actions>
+      <action name="executeQueryRequest" value="ExecuteQueryRequest"/>
+      <action name="executeQueryResponse" value="ExecuteQueryResponse"/>
+      <action name="exceptionResponse" value="ExceptionResponse"/>
+      <action name="testAction" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/test"/>
+    </actions>
+
+    <as4>
+      <receptionAwareness name="receptionAwareness" retry="12;4;CONSTANT" duplicateDetection="true"/>
+      <reliability name="AS4Reliability" nonRepudiation="true" replyPattern="response"/>
+    </as4>
+
+    <splittingConfigurations>
+      <splitting name="default" fragmentSize="20" compression="true" joinInterval="1440"/>
+    </splittingConfigurations>
+
+    <legConfigurations>
+      <legConfiguration name="ootsRequestLeg" service="queryManager" action="executeQueryRequest" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+      <legConfiguration name="ootsResponseLeg" service="queryManager" action="executeQueryResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="false"/>
+      <legConfiguration name="ootsErrorLeg" service="queryManager" action="exceptionResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+      <legConfiguration name="testServiceCase" service="testService" action="testAction" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+    </legConfigurations>
+
+    <process name="ootsProcess" agreement="agreementEmpty" mep="oneway" binding="push" initiatorRole="defaultInitiatorRole" responderRole="defaultInitiatorRole">
+      <initiatorParties>
+        <initiatorParty name="blue_gw"/>
+      </initiatorParties>
+
+      <responderParties>
+        <responderParty name="blue_gw"/>
+      </responderParties>
+
+      <legs>
+        <leg name="ootsRequestLeg"/>
+        <leg name="ootsResponseLeg"/>
+        <leg name="ootsErrorLeg"/>
+        <leg name="testServiceCase"/>
+      </legs>
+    </process>
+  </businessProcesses>
+</db:configuration>
