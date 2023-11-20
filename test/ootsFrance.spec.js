@@ -130,6 +130,7 @@ describe('Le serveur OOTS France', () => {
     describe('avec un destinataire qui ne répond pas', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', (suite) => {
         adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
+        adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
         adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
         adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
 
