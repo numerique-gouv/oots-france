@@ -1,7 +1,10 @@
 version: '3'
 
-x-app:
-  &configuration-base
+x-domibus: &env-domibus
+  env_file:
+    - ./.env.domibus
+
+x-oots: &configuration-base
   build:
     context: .
   env_file:
@@ -20,6 +23,38 @@ services:
     command: "npx nodemon server.js"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
+    depends_on:
+     - domibus
+
+  domibus:
+    image: code.europa.eu:4567/edelivery/docker/domibus-tomcat9:5.0.4
+    <<: *env-domibus
+    environment:
+      - DB_TYPE=MySQL
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - LOGGER_LEVEL_ORG_APACHE_CXF=INFO
+      - CHECK_DEFAULT_PASSWD=false
+      - domibus.metrics.sl4j.reporter.enable=false
+      - domibus.metrics.monitor.jms.queues=false
+      - domibus.metrics.monitor.memory=false
+      - domibus.metrics.monitor.gc=false
+      - domibus.metrics.monitor.cached.threads=false
+    ports:
+      - "${PORT_DOMIBUS}:8080"
+    volumes:
+      - ./domibus:/data/tomcat/conf/domibus
+    depends_on:
+      - mysql
+
+  mysql:
+    image: code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.0.4
+    <<: *env-domibus
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      - shared_db_file_system:/var/lib/mysql
 
 volumes:
   node_modules:
+  shared_db_file_system:

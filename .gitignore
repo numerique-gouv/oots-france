@@ -1,3 +1,4 @@
-.env
-.env.oots
+.env*
+!.env*.template
+domibus/
 node_modules/
