@@ -40,6 +40,9 @@ services:
       - domibus.metrics.monitor.memory=false
       - domibus.metrics.monitor.gc=false
       - domibus.metrics.monitor.cached.threads=false
+    logging:
+      driver:
+        none
     ports:
       - "${PORT_DOMIBUS}:8080"
     volumes:
