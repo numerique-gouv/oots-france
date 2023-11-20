@@ -1,5 +1,9 @@
 const diplomeSecondDegre = require('../../src/api/diplomeSecondDegre');
-const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete } = require('../../src/erreurs');
+const {
+  ErreurAbsenceReponseDestinataire,
+  ErreurReponseRequete,
+  ErreurDestinataireInexistant,
+} = require('../../src/erreurs');
 
 describe('Le requêteur de diplôme du second degré', () => {
   const adaptateurUUID = {};
@@ -12,6 +16,7 @@ describe('Le requêteur de diplôme du second degré', () => {
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
     adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
+    adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
 
     requete.query = {};
     reponse.send = () => Promise.resolve();
@@ -26,7 +31,9 @@ describe('Le requêteur de diplôme du second degré', () => {
       try {
         expect(destinataire).toEqual('UN_DESTINATAIRE');
         return Promise.resolve();
-      } catch (e) { return Promise.reject(e); }
+      } catch (e) {
+        return Promise.reject(e);
+      }
     };
 
     diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
@@ -109,6 +116,23 @@ describe('Le requêteur de diplôme du second degré', () => {
 
     reponse.send = (contenu) => {
       expect(contenu).toEqual('object not found ; aucun justificatif reçu');
+    };
+
+    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+      .then(() => suite())
+      .catch(suite);
+  });
+
+  it("génère une erreur 422 lorsque le destinataire n'existe pas", (suite) => {
+    requete.query.destinataire = 'DESTINATAIRE_INEXISTANT';
+    adaptateurDomibus.verifieDestinataireExiste = (dest) => Promise.reject(new ErreurDestinataireInexistant(`Le Destinataire n'existe pas : ${dest}`));
+
+    reponse.status = (codeStatus) => {
+      expect(codeStatus).toEqual(422);
+      return reponse;
+    };
+    reponse.send = (contenu) => {
+      expect(contenu).toEqual('Le Destinataire n\'existe pas : DESTINATAIRE_INEXISTANT');
     };
 
     diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)

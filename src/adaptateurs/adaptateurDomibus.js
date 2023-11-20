@@ -1,7 +1,11 @@
 const axios = require('axios');
 const EventEmitter = require('node:events');
 
-const { ErreurAbsenceReponseDestinataire, ErreurAucunMessageDomibusRecu } = require('../erreurs');
+const {
+  ErreurAbsenceReponseDestinataire,
+  ErreurAucunMessageDomibusRecu,
+  ErreurDestinataireInexistant,
+} = require('../erreurs');
 const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes');
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
@@ -64,6 +68,19 @@ const AdaptateurDomibus = (config = {}) => {
     ).then(({ data }) => new ReponseEnvoiMessage(data));
   };
 
+  const envoieRequeteREST = (chemin, parametres) => {
+    const jetonEncode = btoa(
+      `${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`,
+    );
+
+    return axios({
+      method: 'get',
+      url: `${urlBase}/${chemin}`,
+      headers: { Authorization: `Basic ${jetonEncode}` },
+      params: parametres,
+    }).then(({ data }) => data);
+  };
+
   const envoieReponseErreur = (...args) => envoieMessageDomibus(EnteteErreur, ...args);
   const envoieRequete = (...args) => envoieMessageDomibus(EnteteRequete, ...args);
 
@@ -74,7 +91,9 @@ const AdaptateurDomibus = (config = {}) => {
   )
     .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
     .then((reponse) => {
-      if (reponse.messageEnAttente()) { return reponse.idMessageSuivant(); }
+      if (reponse.messageEnAttente()) {
+        return reponse.idMessageSuivant();
+      }
       return Promise.reject(new ErreurAucunMessageDomibusRecu());
     });
 
@@ -165,6 +184,10 @@ const AdaptateurDomibus = (config = {}) => {
       }, process.env.DELAI_MAX_ATTENTE_DOMIBUS);
     },
   );
+  const verifieDestinataireExiste = (destinataire) => envoieRequeteREST('ext/party', { partyId: destinataire })
+    .then((destinataires) => ((destinataires.length === 0)
+      ? Promise.reject(new ErreurDestinataireInexistant(`Le destinataire n'existe pas : ${destinataire}`))
+      : Promise.resolve()));
 
   return {
     envoieMessageRequete,
@@ -172,6 +195,7 @@ const AdaptateurDomibus = (config = {}) => {
     pieceJustificativeDepuisReponse,
     traiteMessageSuivant,
     urlRedirectionDepuisReponse,
+    verifieDestinataireExiste,
   };
 };
 

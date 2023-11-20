@@ -1,4 +1,4 @@
-const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete } = require('../erreurs');
+const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete, ErreurDestinataireInexistant } = require('../erreurs');
 
 const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
@@ -17,7 +17,8 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
   const { destinataire, previsualisationRequise } = requete.query;
 
   return adaptateurDomibus
-    .envoieMessageRequete(destinataire, idConversation, (previsualisationRequise === 'true' || previsualisationRequise === ''))
+    .verifieDestinataireExiste(destinataire)
+    .then(() => adaptateurDomibus.envoieMessageRequete(destinataire, idConversation, (previsualisationRequise === 'true' || previsualisationRequise === '')))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificative(idConversation, adaptateurDomibus),
@@ -31,14 +32,15 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
       }
     })
     .catch((e) => {
-      if (e instanceof AggregateError) {
+      if (e instanceof ErreurDestinataireInexistant) {
+        reponse.status(422).send(e.message);
+      } else if (e instanceof AggregateError) {
         let codeStatus = 500;
         if (e.errors.every(estErreurAbsenceReponse)) {
           codeStatus = 504;
         } else if (e.errors.every(estErreurMetier)) {
           codeStatus = 502;
         }
-
         reponse.status(codeStatus).send(e.errors.map((erreur) => erreur.message).join(' ; '));
       } else throw e;
     });
