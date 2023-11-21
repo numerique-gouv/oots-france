@@ -42,7 +42,7 @@ L'application Domibus devrait être accessible depuis un navigateur à l'URL
 `http://localhost:[PORT_DOMIBUS]` (avec comme valeur pour `PORT_DOMIBUS` celle
 indiquée dans le fichier `.env`).
 
-> [!WARNING]
+> [!IMPORTANT]
 > Domibus est créé avec un login / mot de passe par défaut (`admin`/`123456`).
 > Il est fortement recommandé de changer le mot de passe de ce compte dès ce
 > premier lancement.
@@ -52,7 +52,7 @@ puis sur l'icône « crayon » sur la ligne du compte `admin`. Saisir le nouveau
 mot de passe et la confirmation. Cliquer sur « OK ». Cliquer ensuite sur le
 bouton « Save » en bas à gauche.
 
-> [!WARNING]
+> [!IMPORTANT]
 > Cette dernière étape est importante. Si on n'effectue pas cette sauvegarde,
 > le mot de passe ne sera pas mis à jour.
 
@@ -64,16 +64,26 @@ compte d'administration standard en cas de mauvaise manipulation.
 
 Dans la colonne de gauche, cliquer sur « Users », puis sur le bouton « New ».
 Saisir les informations relatives à ce nouveau compte. Choisir comme rôle
-`ROLE_ADMIN` pour donner les droits administrateur. Cliauer sur « OK ». Cliquer
+`ROLE_ADMIN` pour donner les droits administrateur. Cliquer sur « OK ». Cliquer
 ensuite sur le bouton « Save » en bas à gauche.
 
-> [!WARNING]
+> [!IMPORTANT]
 > Cette dernière étape est importante. Si on n'effectue pas cette sauvegarde,
 > le nouvel utilisateur ne sera pas créé.
 
 Si on se déconnecte (lien « Logout » dans l'icône menu en haut à droite), on
 doit maintenant pouvoir se reconnecter avec le nouveau compte créé.
 
+### Créer un compte d'accès pour l'API REST
+
+Dans la colonne de gauche, cliquer sur « Plugin Users », puis sur le bouton « New ».
+Saisir les informations relatives à ce nouveau compte. Choisir comme rôle
+`ROLE_ADMIN` pour donner les droits administrateur. Cliquer sur « OK ». Cliquer
+ensuite sur le bouton « Save » en bas à gauche.
+
+> [!IMPORTANT]
+> Les informations de connexion du Plugin User doivent correspondre aux variables
+> `LOGIN_API_REST` et `MOT_DE_PASSE_API_REST` dans le fichier de variables d'environnement `env.oots`.
 
 ### Charger un fichier de configuration PMode
 
