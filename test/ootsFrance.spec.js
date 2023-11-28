@@ -5,14 +5,16 @@ const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
 describe('Le serveur OOTS France', () => {
-  const adaptateurUUID = {};
   const adaptateurDomibus = {};
+  const adaptateurEnvironnement = {};
+  const adaptateurUUID = {};
   const ecouteurDomibus = {};
   const horodateur = {};
 
   let serveur;
 
   beforeEach((suite) => {
+    adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => 'true';
     adaptateurUUID.genereUUID = () => '';
     ecouteurDomibus.arreteEcoute = () => {};
     ecouteurDomibus.etat = () => '';
@@ -20,6 +22,7 @@ describe('Le serveur OOTS France', () => {
 
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurDomibus,
+      adaptateurEnvironnement,
       adaptateurUUID,
       ecouteurDomibus,
       horodateur,
@@ -127,13 +130,17 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /requete/diplomeSecondDegre', () => {
+    beforeEach(() => {
+      adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => true;
+      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
+      adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
+      adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve(Buffer.from(''));
+    });
+
     describe('avec un destinataire qui ne répond pas', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', (suite) => {
-        adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
-        adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
-        adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
         adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
-
         axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
           .then(() => suite('La requête aurait dû générer une erreur HTTP 504'))
           .catch(({ response }) => {
@@ -143,6 +150,19 @@ describe('Le serveur OOTS France', () => {
           })
           .catch(suite);
       });
+    });
+
+    it('retourne une erreur 501 quand le feature flip est désactivé', (suite) => {
+      adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => false;
+
+      axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=AP_FR_01')
+        .then(() => suite('La requête aurait dû générer une erreur HTTP 501'))
+        .catch(({ response }) => {
+          expect(response.status).toEqual(501);
+          expect(response.data).toEqual('Not Implemented Yet!');
+          suite();
+        })
+        .catch(suite);
     });
   });
 

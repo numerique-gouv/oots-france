@@ -10,6 +10,7 @@ const JustificatifEducation = require('./vues/justificatifEducation');
 const creeServeur = (config) => {
   const {
     adaptateurDomibus,
+    adaptateurEnvironnement,
     adaptateurUUID,
     ecouteurDomibus,
     horodateur,
@@ -84,7 +85,13 @@ const creeServeur = (config) => {
     reponse.send(reponseErreur.enXML());
   });
 
-  app.get('/requete/diplomeSecondDegre', (...args) => diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, ...args));
+  app.get('/requete/diplomeSecondDegre', (requete, reponse) => {
+    if (adaptateurEnvironnement.avecRequeteDiplomeSecondDegre()) {
+      diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    } else {
+      reponse.status(501).send('Not Implemented Yet!');
+    }
+  });
 
   app.get('/idMessageTest', (_requete, reponse) => adaptateurDomibus
     .envoieMessageTest('oots_test_platform')
