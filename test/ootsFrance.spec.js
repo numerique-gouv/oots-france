@@ -35,97 +35,74 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /response/educationEvidence', () => {
-    it('sert une réponse au format XML', (suite) => {
-      axios.get('http://localhost:1234/response/educationEvidence')
-        .then((reponse) => {
-          expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-          suite();
-        })
-        .catch(suite);
-    });
+    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/response/educationEvidence')
+      .then((reponse) => {
+        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+      }));
 
-    it('génère un identifiant unique de requête', (suite) => {
+    it('génère un identifiant unique de requête', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      axios.get('http://localhost:1234/response/educationEvidence')
+      return axios.get('http://localhost:1234/response/educationEvidence')
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
           const requestId = xml['query:QueryResponse']['@_requestId'];
           expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
-          suite();
-        })
-        .catch(suite);
+        });
     });
 
-    it('respecte la structure définie par OOTS', (suite) => {
-      axios.get('http://localhost:1234/response/educationEvidence')
-        .then((reponse) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(reponse.data);
+    it('respecte la structure définie par OOTS', () => axios.get('http://localhost:1234/response/educationEvidence')
+      .then((reponse) => {
+        const parser = new XMLParser({ ignoreAttributes: false });
+        const xml = parser.parse(reponse.data);
 
-          expect(xml['query:QueryResponse']['rim:RegistryObjectList']).toBeDefined();
+        expect(xml['query:QueryResponse']['rim:RegistryObjectList']).toBeDefined();
 
-          const slots = [].concat(xml['query:QueryResponse']['rim:Slot']);
-          expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceResponseIdentifier')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
-          expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
-
-          suite();
-        })
-        .catch(suite);
-    });
+        const slots = [].concat(xml['query:QueryResponse']['rim:Slot']);
+        expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
+        expect(slots.some((s) => s['@_name'] === 'EvidenceResponseIdentifier')).toBe(true);
+        expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
+        expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
+        expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
+      }));
   });
 
   describe('sur GET /ebms/entetes/requeteJustificatif', () => {
-    it('sert une réponse au format XML', (suite) => {
-      axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
-        .then((reponse) => {
-          expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-          suite();
-        })
-        .catch(suite);
-    });
+    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+      .then((reponse) => {
+        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+      }));
 
-    it('génère un identifiant unique de conversation', (suite) => {
+    it('génère un identifiant unique de conversation', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+      return axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
           const idConversation = xml['eb:Messaging']['eb:UserMessage']['eb:CollaborationInfo']['eb:ConversationId'];
           expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
-          suite();
-        })
-        .catch(suite);
+        });
     });
   });
 
   describe('sur GET /ebms/messages/requeteJustificatif', () => {
-    it('sert une réponse au format XML', (suite) => {
-      axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
-        .then((reponse) => {
-          expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-          suite();
-        })
-        .catch(suite);
-    });
+    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
+      .then((reponse) => {
+        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+      }));
 
-    it('génère un identifiant unique de requête', (suite) => {
+    it('génère un identifiant unique de requête', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
+      return axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
           const requestId = xml['query:QueryRequest']['@_id'];
           expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
-          suite();
-        })
-        .catch(suite);
+        });
     });
   });
 
@@ -139,86 +116,76 @@ describe('Le serveur OOTS France', () => {
     });
 
     describe('avec un destinataire qui ne répond pas', () => {
-      it('retourne une erreur HTTP 504 (Gateway Timeout)', (suite) => {
+      it('retourne une erreur HTTP 504 (Gateway Timeout)', () => {
+        expect.assertions(2);
+
         adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
-        axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
-          .then(() => suite('La requête aurait dû générer une erreur HTTP 504'))
+
+        return axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
           .catch(({ response }) => {
             expect(response.status).toEqual(504);
             expect(response.data).toEqual('aucune URL reçue ; aucune pièce reçue');
-            suite();
-          })
-          .catch(suite);
+          });
       });
     });
 
-    it('retourne une erreur 501 quand le feature flip est désactivé', (suite) => {
+    it('retourne une erreur 501 quand le feature flip est désactivé', () => {
+      expect.assertions(2);
+
       adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => false;
 
-      axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=AP_FR_01')
-        .then(() => suite('La requête aurait dû générer une erreur HTTP 501'))
+      return axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=AP_FR_01')
         .catch(({ response }) => {
           expect(response.status).toEqual(501);
           expect(response.data).toEqual('Not Implemented Yet!');
-          suite();
-        })
-        .catch(suite);
+        });
     });
   });
 
   describe('sur POST /admin/arretEcouteDomibus', () => {
-    it("arrête d'écouter Domibus", (suite) => {
+    it("arrête d'écouter Domibus", () => {
       let arretEcoute = false;
       ecouteurDomibus.arreteEcoute = () => {
         arretEcoute = true;
       };
 
-      axios.post('http://localhost:1234/admin/arretEcouteDomibus')
-        .then(() => expect(arretEcoute).toBe(true))
-        .then(() => suite())
-        .catch(suite);
+      return axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+        .then(() => expect(arretEcoute).toBe(true));
     });
 
-    it("retourne le nouvel état de l'écouteur", (suite) => {
+    it("retourne le nouvel état de l'écouteur", () => {
       ecouteurDomibus.etat = () => 'nouvel état';
 
-      axios.post('http://localhost:1234/admin/arretEcouteDomibus')
-        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }))
-        .then(() => suite())
-        .catch(suite);
+      return axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
     });
   });
 
   describe('sur POST /admin/demarrageEcouteDomibus', () => {
-    it('écoute Domibus', (suite) => {
+    it('écoute Domibus', () => {
       let demarreEcoute = false;
       ecouteurDomibus.ecoute = () => {
         demarreEcoute = true;
       };
 
-      axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
-        .then(() => expect(demarreEcoute).toBe(true))
-        .then(() => suite())
-        .catch(suite);
+      return axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+        .then(() => expect(demarreEcoute).toBe(true));
     });
 
-    it("retourne le nouvel état de l'écouteur", (suite) => {
+    it("retourne le nouvel état de l'écouteur", () => {
       ecouteurDomibus.etat = () => 'nouvel état';
 
-      axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
-        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }))
-        .then(() => suite())
-        .catch(suite);
+      return axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
     });
   });
 
-  it('sert une erreur HTTP 504 (not implemented)', (suite) => {
-    axios.get('http://localhost:1234/')
-      .then(() => suite('Réponse OK inattendue'))
-      .catch((erreur) => {
-        expect(erreur.response.status).toEqual(504);
-        suite();
-      })
-      .catch(suite);
+  describe('sur GET /', () => {
+    it('sert une erreur HTTP 504 (not implemented)', () => {
+      expect.assertions(1);
+
+      return axios.get('http://localhost:1234/')
+        .catch((erreur) => expect(erreur.response.status).toEqual(504));
+    });
   });
 });
