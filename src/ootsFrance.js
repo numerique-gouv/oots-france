@@ -4,7 +4,7 @@ const diplomeSecondDegre = require('./api/diplomeSecondDegre');
 const EnteteErreur = require('./ebms/enteteErreur');
 const EnteteRequete = require('./ebms/enteteRequete');
 const ReponseErreur = require('./ebms/reponseErreur');
-const RequeteJustificatifEducation = require('./ebms/requeteJustificatifEducation');
+const RequeteJustificatif = require('./ebms/requeteJustificatif');
 const JustificatifEducation = require('./vues/justificatifEducation');
 
 const creeServeur = (config) => {
@@ -51,7 +51,7 @@ const creeServeur = (config) => {
   });
 
   app.get('/ebms/messages/requeteJustificatif', (_requete, reponse) => {
-    const requeteJustificatif = new RequeteJustificatifEducation({ adaptateurUUID, horodateur });
+    const requeteJustificatif = new RequeteJustificatif({ adaptateurUUID, horodateur });
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(requeteJustificatif.enXML());
