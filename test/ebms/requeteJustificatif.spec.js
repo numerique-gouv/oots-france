@@ -56,4 +56,15 @@ describe("La vue du message de requête d'un justificatif", () => {
     const demandePrevisualisation = valeurSlot('PossibilityForPreview', xml['query:QueryRequest']);
     expect(demandePrevisualisation).toBe(false);
   });
+
+  it('injecte le code de la démarche administrative (en anglais, « procedure »)', () => {
+    const requeteJustificatif = new RequeteJustificatif(
+      configurationRequete,
+      { codeDemarche: 'T3' },
+    );
+    const xml = parser.parse(requeteJustificatif.enXML());
+
+    const codeDemarche = valeurSlot('Procedure', xml['query:QueryRequest']);
+    expect(codeDemarche['rim:LocalizedString']['@_value']).toBe('T3');
+  });
 });
