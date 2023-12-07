@@ -1,7 +1,15 @@
 class RequeteJustificatif {
-  constructor({ adaptateurUUID, horodateur }, { previsualisationRequise = false } = {}) {
+  constructor(
+    { adaptateurUUID, horodateur },
+    {
+      codeDemarche = 'T1',
+      previsualisationRequise = false,
+    } = {},
+  ) {
     this.adaptateurUUID = adaptateurUUID;
     this.horodateur = horodateur;
+
+    this.codeDemarche = codeDemarche;
     this.previsualisationRequise = previsualisationRequise;
   }
 
@@ -35,7 +43,7 @@ class RequeteJustificatif {
     <rim:SlotValue xsi:type="rim:InternationalStringValueType">
       <rim:Value>
         <rim:LocalizedString xml:lang="EN"
-          value="T1"/>
+          value="${this.codeDemarche}"/>
       </rim:Value>
     </rim:SlotValue>
   </rim:Slot>
