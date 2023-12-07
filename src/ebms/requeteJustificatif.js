@@ -1,4 +1,4 @@
-class RequeteJustificatifEducation {
+class RequeteJustificatif {
   constructor({ adaptateurUUID, horodateur }, { previsualisationRequise = false } = {}) {
     this.adaptateurUUID = adaptateurUUID;
     this.horodateur = horodateur;
@@ -140,4 +140,4 @@ class RequeteJustificatifEducation {
   }
 }
 
-module.exports = RequeteJustificatifEducation;
+module.exports = RequeteJustificatif;

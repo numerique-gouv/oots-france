@@ -1,7 +1,7 @@
 const { XMLParser } = require('fast-xml-parser');
 
 const { verifiePresenceSlot, valeurSlot } = require('./utils');
-const RequeteJustificatifEducation = require('../../src/ebms/requeteJustificatifEducation');
+const RequeteJustificatif = require('../../src/ebms/requeteJustificatif');
 
 describe("La vue du message de requête d'un justificatif", () => {
   const parser = new XMLParser({ ignoreAttributes: false });
@@ -16,7 +16,7 @@ describe("La vue du message de requête d'un justificatif", () => {
 
   it('injecte un identifiant unique de requête', () => {
     adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
-    const requeteJustificatif = new RequeteJustificatifEducation(configurationRequete);
+    const requeteJustificatif = new RequeteJustificatif(configurationRequete);
 
     const xml = parser.parse(requeteJustificatif.enXML());
     const requestId = xml['query:QueryRequest']['@_id'];
@@ -24,7 +24,7 @@ describe("La vue du message de requête d'un justificatif", () => {
   });
 
   it('respecte la structure définie par OOTS', () => {
-    const requeteJustificatif = new RequeteJustificatifEducation(configurationRequete);
+    const requeteJustificatif = new RequeteJustificatif(configurationRequete);
     const xml = parser.parse(requeteJustificatif.enXML());
 
     const scopeRechercheQueryRequest = xml['query:QueryRequest'];
@@ -47,7 +47,7 @@ describe("La vue du message de requête d'un justificatif", () => {
   });
 
   it('injecte la demande de prévisualisation', () => {
-    const requeteJustificatif = new RequeteJustificatifEducation(
+    const requeteJustificatif = new RequeteJustificatif(
       configurationRequete,
       { previsualisationRequise: false },
     );

@@ -14,7 +14,7 @@ const Entete = require('../ebms/entete');
 const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
 const ReponseErreur = require('../ebms/reponseErreur');
-const RequeteJustificatifEducation = require('../ebms/requeteJustificatifEducation');
+const RequeteJustificatif = require('../ebms/requeteJustificatif');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
 const REPONSE_REDIRECTION_PREVISUALISATION = 'reponseRedirectionPrevisualisation';
@@ -144,7 +144,7 @@ const AdaptateurDomibus = (config = {}) => {
   );
 
   const envoieMessageRequete = (destinataire, idConversation, previsualisationRequise) => {
-    const requeteJustificatif = new RequeteJustificatifEducation(
+    const requeteJustificatif = new RequeteJustificatif(
       { adaptateurUUID, horodateur },
       { previsualisationRequise },
     );
