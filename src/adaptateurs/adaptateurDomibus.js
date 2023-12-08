@@ -10,6 +10,7 @@ const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('.
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
+const CodeDemarche = require('../ebms/codeDemarche');
 const Entete = require('../ebms/entete');
 const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
@@ -105,15 +106,27 @@ const AdaptateurDomibus = (config = {}) => {
     .then(({ data }) => new ReponseRecuperationMessage(data));
 
   const repondsA = (requete) => {
-    const message = new ReponseErreur({
-      idRequete: requete.idMessage(),
-      exception: {
-        type: 'rs:ObjectNotFoundExceptionType',
-        message: 'Object not found',
-        severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
-        code: 'EDM:ERR:0004',
-      },
-    }, { adaptateurUUID, horodateur });
+    const infosErreur = (requete.codeDemarche() === CodeDemarche.VERIFICATION_SYSTEME)
+      ? {
+        idRequete: requete.idMessage(),
+        exception: {
+          type: 'query:QueryExceptionType',
+          message: 'Query Exception',
+          severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+          code: 'EDM:ERR:0008',
+        },
+      }
+      : {
+        idRequete: requete.idMessage(),
+        exception: {
+          type: 'rs:ObjectNotFoundExceptionType',
+          message: 'Object not found',
+          severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+          code: 'EDM:ERR:0004',
+        },
+      };
+
+    const message = new ReponseErreur(infosErreur, { adaptateurUUID, horodateur });
     envoieReponseErreur(message.enXML(), requete.expediteur(), requete.idConversation());
   };
 

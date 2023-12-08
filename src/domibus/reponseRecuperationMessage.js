@@ -18,6 +18,10 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.entete.action();
   }
 
+  codeDemarche() {
+    return this.corpsMessage.codeDemarche();
+  }
+
   expediteur() {
     return this.entete.expediteur();
   }
