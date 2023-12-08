@@ -1,7 +1,9 @@
 const ConstructeurEnveloppeSOAPAvecPieceJointe = require('../constructeurs/constructeurEnveloppeSOAPAvecPieceJointe');
 const ConstructeurEnveloppeSOAPException = require('../constructeurs/constructeurEnveloppeSOAPException');
+const ConstructeurEnveloppeSOAPRequete = require('../constructeurs/constructeurEnveloppeSOAPRequete');
 const ReponseErreurAutorisationRequise = require('../../src/domibus/reponseErreurAutorisationRequise');
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
+const CodeDemarche = require('../../src/ebms/codeDemarche');
 const { ErreurReponseRequete } = require('../../src/erreurs');
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
@@ -89,6 +91,17 @@ describe('La réponse à une requête Domibus de récupération de message', () 
         expect(e.message).toEqual('Object not found');
         suite();
       }
+    });
+  });
+
+  describe("dans le cas d'une requête de pièce justificative", () => {
+    it('connaît le code de la démarche', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
+        .construis();
+
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+      expect(reponse.codeDemarche()).toBe(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE);
     });
   });
 });
