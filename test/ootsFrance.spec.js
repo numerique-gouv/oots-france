@@ -181,11 +181,11 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /', () => {
-    it('sert une erreur HTTP 504 (not implemented)', () => {
+    it('sert une erreur HTTP 501 (not implemented)', () => {
       expect.assertions(1);
 
       return axios.get('http://localhost:1234/')
-        .catch((erreur) => expect(erreur.response.status).toEqual(504));
+        .catch((erreur) => expect(erreur.response.status).toEqual(501));
     });
   });
 });

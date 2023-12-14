@@ -98,7 +98,7 @@ const creeServeur = (config) => {
     .then(({ data }) => reponse.send(data)));
 
   app.get('/', (_requete, reponse) => {
-    reponse.status(504).send('Not Implemented Yet!');
+    reponse.status(501).send('Not Implemented Yet!');
   });
 
   const ecoute = (...args) => { serveur = app.listen(...args); };
