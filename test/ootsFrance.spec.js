@@ -15,7 +15,7 @@ describe('Le serveur OOTS France', () => {
   let serveur;
 
   beforeEach((suite) => {
-    adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => 'true';
+    adaptateurEnvironnement.avecRequetePieceJustificative = () => 'true';
     adaptateurUUID.genereUUID = () => '';
     ecouteurDomibus.arreteEcoute = () => {};
     ecouteurDomibus.etat = () => '';
@@ -110,9 +110,8 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
-  describe('sur GET /requete/diplomeSecondDegre', () => {
+  describe('sur GET /requete/pieceJustificative', () => {
     beforeEach(() => {
-      adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => true;
       adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
       adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
       adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
@@ -124,8 +123,7 @@ describe('Le serveur OOTS France', () => {
         expect.assertions(2);
 
         adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
-
-        return axios.get(`http://localhost:${port}/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX`)
+        return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=DESTINATAIRE_SILENCIEUX`)
           .catch(({ response }) => {
             expect(response.status).toEqual(504);
             expect(response.data).toEqual('aucune URL reçue ; aucune pièce reçue');
@@ -136,9 +134,9 @@ describe('Le serveur OOTS France', () => {
     it('retourne une erreur 501 quand le feature flip est désactivé', () => {
       expect.assertions(2);
 
-      adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => false;
+      adaptateurEnvironnement.avecRequetePieceJustificative = () => false;
 
-      return axios.get(`http://localhost:${port}/requete/diplomeSecondDegre?destinataire=AP_FR_01`)
+      return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=AP_FR_01`)
         .catch(({ response }) => {
           expect(response.status).toEqual(501);
           expect(response.data).toEqual('Not Implemented Yet!');

@@ -1,11 +1,11 @@
-const diplomeSecondDegre = require('../../src/api/diplomeSecondDegre');
+const pieceJustificative = require('../../src/api/pieceJustificative');
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurReponseRequete,
   ErreurDestinataireInexistant,
 } = require('../../src/erreurs');
 
-describe('Le requêteur de diplôme du second degré', () => {
+describe('Le requêteur de pièce justificative', () => {
   const adaptateurUUID = {};
   const adaptateurDomibus = {};
   const requete = {};
@@ -36,7 +36,7 @@ describe('Le requêteur de diplôme du second degré', () => {
       }
     };
 
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => suite())
       .catch(suite);
   });
@@ -58,7 +58,7 @@ describe('Le requêteur de diplôme du second degré', () => {
       } catch (e) { return Promise.reject(e); }
     };
 
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => suite())
       .catch(suite);
   });
@@ -85,7 +85,7 @@ describe('Le requêteur de diplôme du second degré', () => {
         } catch (e) { return Promise.reject(e); }
       };
 
-      diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+      pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
         .then(() => suite())
         .catch(suite);
     });
@@ -99,7 +99,7 @@ describe('Le requêteur de diplôme du second degré', () => {
       return Promise.resolve();
     };
 
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => expect(pieceJustificativeRecue).toBe(true))
       .then(() => suite())
       .catch(suite);
@@ -118,7 +118,7 @@ describe('Le requêteur de diplôme du second degré', () => {
       expect(contenu).toEqual('object not found ; aucun justificatif reçu');
     };
 
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => suite())
       .catch(suite);
   });
@@ -135,7 +135,7 @@ describe('Le requêteur de diplôme du second degré', () => {
       expect(contenu).toEqual('Le Destinataire n\'existe pas : DESTINATAIRE_INEXISTANT');
     };
 
-    diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
       .then(() => suite())
       .catch(suite);
   });

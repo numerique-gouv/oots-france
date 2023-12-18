@@ -1,6 +1,6 @@
 const express = require('express');
 
-const diplomeSecondDegre = require('./api/diplomeSecondDegre');
+const pieceJustificative = require('./api/pieceJustificative');
 const EnteteErreur = require('./ebms/enteteErreur');
 const EnteteRequete = require('./ebms/enteteRequete');
 const ReponseErreur = require('./ebms/reponseErreur');
@@ -85,9 +85,9 @@ const creeServeur = (config) => {
     reponse.send(reponseErreur.enXML());
   });
 
-  app.get('/requete/diplomeSecondDegre', (requete, reponse) => {
-    if (adaptateurEnvironnement.avecRequeteDiplomeSecondDegre()) {
-      diplomeSecondDegre(adaptateurDomibus, adaptateurUUID, requete, reponse);
+  app.get('/requete/pieceJustificative', (requete, reponse) => {
+    if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
+      pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
     } else {
       reponse.status(501).send('Not Implemented Yet!');
     }

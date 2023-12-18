@@ -125,7 +125,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL
 
 Il est alors possible de tester l'envoi d'un message de test en requêtant l'URL
 suivante depuis un navigateur :
-`http://localhost:[PORT_OOTS_FRANCE]/requete/diplomeSecondDegre?destinataire=blue_gw`.
+`http://localhost:[PORT_OOTS_FRANCE]/requete/pieceJustificative?destinataire=blue_gw`.
 
 
 ## Exécution de la suite de tests automatisés

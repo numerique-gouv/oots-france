@@ -1,3 +1,3 @@
-const avecRequeteDiplomeSecondDegre = () => process.env.AVEC_REQUETE_DIPLOME_SECOND_DEGRE === 'true';
+const avecRequetePieceJustificative = () => process.env.AVEC_REQUETE_PIECE_JUSTIFICATIVE === 'true';
 
-module.exports = { avecRequeteDiplomeSecondDegre };
+module.exports = { avecRequetePieceJustificative };
