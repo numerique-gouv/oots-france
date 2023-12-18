@@ -39,6 +39,21 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
   });
 
+  it('transmets le code démarche dans la requête', () => {
+    requete.query.codeDemarche = 'UN_CODE';
+
+    adaptateurDomibus.envoieMessageRequete = ({ codeDemarche }) => {
+      try {
+        expect(codeDemarche).toEqual('UN_CODE');
+        return Promise.resolve();
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    };
+
+    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+  });
+
   it('utilise un identifiant de conversation', () => {
     adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
