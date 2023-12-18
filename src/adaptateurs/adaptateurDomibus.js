@@ -156,7 +156,7 @@ const AdaptateurDomibus = (config = {}) => {
     destinataire,
   );
 
-  const envoieMessageRequete = (destinataire, idConversation, previsualisationRequise) => {
+  const envoieMessageRequete = ({ destinataire, idConversation, previsualisationRequise }) => {
     const requeteJustificatif = new RequeteJustificatif(
       { adaptateurUUID, horodateur },
       { previsualisationRequise },

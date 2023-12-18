@@ -18,7 +18,11 @@ const pieceJustificative = (adaptateurDomibus, adaptateurUUID, requete, reponse)
 
   return adaptateurDomibus
     .verifieDestinataireExiste(destinataire)
-    .then(() => adaptateurDomibus.envoieMessageRequete(destinataire, idConversation, (previsualisationRequise === 'true' || previsualisationRequise === '')))
+    .then(() => adaptateurDomibus.envoieMessageRequete({
+      destinataire,
+      idConversation,
+      previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
+    }))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),
