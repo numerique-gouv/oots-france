@@ -4,7 +4,6 @@ NETTOYAGES :
 - Nettoyer le code pour résoudre le « feature envy » dans l'adaptateur Domibus
 
 PROCHAINES ÉTAPES :
-- changer route `requete/diplomeSecondDegre` en `requete/pieceJustificative`
 - Récupérer le code démarche sur l'URL de `requete/pieceJustificative`
 - L'injecter dans la requête EBMS à envoyer sur Domibus
 - Faire une PR

@@ -4,7 +4,7 @@ const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
   .then((url) => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }));
 
-const pieceJustificative = (idConversation, adaptateurDomibus) => adaptateurDomibus
+const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .pieceJustificativeDepuisReponse(idConversation)
   .then((pj) => ({ pieceJustificative: pj }));
 
@@ -12,7 +12,7 @@ const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinat
 const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
 const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
 
-const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse) => {
+const pieceJustificative = (adaptateurDomibus, adaptateurUUID, requete, reponse) => {
   const idConversation = adaptateurUUID.genereUUID();
   const { destinataire, previsualisationRequise } = requete.query;
 
@@ -21,7 +21,7 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
     .then(() => adaptateurDomibus.envoieMessageRequete(destinataire, idConversation, (previsualisationRequise === 'true' || previsualisationRequise === '')))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
-      pieceJustificative(idConversation, adaptateurDomibus),
+      pieceJustificativeRecue(idConversation, adaptateurDomibus),
     ]))
     .then((resultat) => {
       if (resultat.urlRedirection) {
@@ -46,4 +46,4 @@ const diplomeSecondDegre = (adaptateurDomibus, adaptateurUUID, requete, reponse)
     });
 };
 
-module.exports = diplomeSecondDegre;
+module.exports = pieceJustificative;
