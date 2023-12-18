@@ -4,7 +4,4 @@ NETTOYAGES :
 - Nettoyer le code pour résoudre le « feature envy » dans l'adaptateur Domibus
 
 PROCHAINES ÉTAPES :
-- Récupérer le code démarche sur l'URL de `requete/pieceJustificative`
-- L'injecter dans la requête EBMS à envoyer sur Domibus
-- Faire une PR
 - Envoyer le PDF du drapeau plutôt qu'une erreur

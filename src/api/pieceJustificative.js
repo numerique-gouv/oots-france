@@ -14,11 +14,12 @@ const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseReq
 
 const pieceJustificative = (adaptateurDomibus, adaptateurUUID, requete, reponse) => {
   const idConversation = adaptateurUUID.genereUUID();
-  const { destinataire, previsualisationRequise } = requete.query;
+  const { codeDemarche, destinataire, previsualisationRequise } = requete.query;
 
   return adaptateurDomibus
     .verifieDestinataireExiste(destinataire)
     .then(() => adaptateurDomibus.envoieMessageRequete({
+      codeDemarche,
       destinataire,
       idConversation,
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
