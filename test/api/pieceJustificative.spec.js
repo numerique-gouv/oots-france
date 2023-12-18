@@ -27,7 +27,7 @@ describe('Le requêteur de pièce justificative', () => {
   it('envoie un message AS4 au bon destinataire', () => {
     requete.query.destinataire = 'UN_DESTINATAIRE';
 
-    adaptateurDomibus.envoieMessageRequete = (destinataire) => {
+    adaptateurDomibus.envoieMessageRequete = ({ destinataire }) => {
       try {
         expect(destinataire).toEqual('UN_DESTINATAIRE');
         return Promise.resolve();
@@ -42,7 +42,7 @@ describe('Le requêteur de pièce justificative', () => {
   it('utilise un identifiant de conversation', () => {
     adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-    adaptateurDomibus.envoieMessageRequete = (_destinataire, idConversation) => {
+    adaptateurDomibus.envoieMessageRequete = ({ idConversation }) => {
       try {
         expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
         return Promise.resolve();
