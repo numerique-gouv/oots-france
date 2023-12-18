@@ -11,6 +11,7 @@ describe('Le serveur OOTS France', () => {
   const ecouteurDomibus = {};
   const horodateur = {};
 
+  let port;
   let serveur;
 
   beforeEach((suite) => {
@@ -27,15 +28,18 @@ describe('Le serveur OOTS France', () => {
       ecouteurDomibus,
       horodateur,
     });
-    serveur.ecoute(1234, suite);
+    serveur.ecoute(0, () => {
+      port = serveur.port();
+      suite();
+    });
   });
 
   afterEach((suite) => {
-    serveur.arreteEcoute(() => setTimeout(suite));
+    serveur.arreteEcoute(suite);
   });
 
   describe('sur GET /response/educationEvidence', () => {
-    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/response/educationEvidence')
+    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/response/educationEvidence`)
       .then((reponse) => {
         expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
       }));
@@ -43,7 +47,7 @@ describe('Le serveur OOTS France', () => {
     it('génère un identifiant unique de requête', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      return axios.get('http://localhost:1234/response/educationEvidence')
+      return axios.get(`http://localhost:${port}/response/educationEvidence`)
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
@@ -52,7 +56,7 @@ describe('Le serveur OOTS France', () => {
         });
     });
 
-    it('respecte la structure définie par OOTS', () => axios.get('http://localhost:1234/response/educationEvidence')
+    it('respecte la structure définie par OOTS', () => axios.get(`http://localhost:${port}/response/educationEvidence`)
       .then((reponse) => {
         const parser = new XMLParser({ ignoreAttributes: false });
         const xml = parser.parse(reponse.data);
@@ -69,7 +73,7 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /ebms/entetes/requeteJustificatif', () => {
-    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/entetes/requeteJustificatif`)
       .then((reponse) => {
         expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
       }));
@@ -77,7 +81,7 @@ describe('Le serveur OOTS France', () => {
     it('génère un identifiant unique de conversation', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      return axios.get('http://localhost:1234/ebms/entetes/requeteJustificatif')
+      return axios.get(`http://localhost:${port}/ebms/entetes/requeteJustificatif`)
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
@@ -88,7 +92,7 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /ebms/messages/requeteJustificatif', () => {
-    it('sert une réponse au format XML', () => axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
+    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/messages/requeteJustificatif`)
       .then((reponse) => {
         expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
       }));
@@ -96,7 +100,7 @@ describe('Le serveur OOTS France', () => {
     it('génère un identifiant unique de requête', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      return axios.get('http://localhost:1234/ebms/messages/requeteJustificatif')
+      return axios.get(`http://localhost:${port}/ebms/messages/requeteJustificatif`)
         .then((reponse) => {
           const parser = new XMLParser({ ignoreAttributes: false });
           const xml = parser.parse(reponse.data);
@@ -121,7 +125,7 @@ describe('Le serveur OOTS France', () => {
 
         adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
 
-        return axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX')
+        return axios.get(`http://localhost:${port}/requete/diplomeSecondDegre?destinataire=DESTINATAIRE_SILENCIEUX`)
           .catch(({ response }) => {
             expect(response.status).toEqual(504);
             expect(response.data).toEqual('aucune URL reçue ; aucune pièce reçue');
@@ -134,7 +138,7 @@ describe('Le serveur OOTS France', () => {
 
       adaptateurEnvironnement.avecRequeteDiplomeSecondDegre = () => false;
 
-      return axios.get('http://localhost:1234/requete/diplomeSecondDegre?destinataire=AP_FR_01')
+      return axios.get(`http://localhost:${port}/requete/diplomeSecondDegre?destinataire=AP_FR_01`)
         .catch(({ response }) => {
           expect(response.status).toEqual(501);
           expect(response.data).toEqual('Not Implemented Yet!');
@@ -149,14 +153,14 @@ describe('Le serveur OOTS France', () => {
         arretEcoute = true;
       };
 
-      return axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+      return axios.post(`http://localhost:${port}/admin/arretEcouteDomibus`)
         .then(() => expect(arretEcoute).toBe(true));
     });
 
     it("retourne le nouvel état de l'écouteur", () => {
       ecouteurDomibus.etat = () => 'nouvel état';
 
-      return axios.post('http://localhost:1234/admin/arretEcouteDomibus')
+      return axios.post(`http://localhost:${port}/admin/arretEcouteDomibus`)
         .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
     });
   });
@@ -168,14 +172,14 @@ describe('Le serveur OOTS France', () => {
         demarreEcoute = true;
       };
 
-      return axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+      return axios.post(`http://localhost:${port}/admin/demarrageEcouteDomibus`)
         .then(() => expect(demarreEcoute).toBe(true));
     });
 
     it("retourne le nouvel état de l'écouteur", () => {
       ecouteurDomibus.etat = () => 'nouvel état';
 
-      return axios.post('http://localhost:1234/admin/demarrageEcouteDomibus')
+      return axios.post(`http://localhost:${port}/admin/demarrageEcouteDomibus`)
         .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
     });
   });
@@ -184,7 +188,7 @@ describe('Le serveur OOTS France', () => {
     it('sert une erreur HTTP 501 (not implemented)', () => {
       expect.assertions(1);
 
-      return axios.get('http://localhost:1234/')
+      return axios.get(`http://localhost:${port}/`)
         .catch((erreur) => expect(erreur.response.status).toEqual(501));
     });
   });
