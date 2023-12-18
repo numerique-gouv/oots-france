@@ -101,13 +101,16 @@ const creeServeur = (config) => {
     reponse.status(501).send('Not Implemented Yet!');
   });
 
+  const arreteEcoute = (suite) => serveur.close(suite);
+
   const ecoute = (...args) => { serveur = app.listen(...args); };
 
-  const arreteEcoute = (suite) => serveur.close(suite);
+  const port = () => serveur.address().port;
 
   return {
     arreteEcoute,
     ecoute,
+    port,
   };
 };
 
