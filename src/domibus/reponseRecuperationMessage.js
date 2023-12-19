@@ -47,6 +47,10 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.payload('application/pdf');
   }
 
+  reponse(config) {
+    return this.corpsMessage.reponse(this.idMessage(), config);
+  }
+
   suiteConversation() {
     return this.corpsMessage.suiteConversation();
   }

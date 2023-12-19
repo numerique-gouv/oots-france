@@ -1,3 +1,18 @@
+const DESCRIPTIONS_EXCEPTIONS = {
+  QUERY_EXCEPTION: {
+    type: 'query:QueryExceptionType',
+    message: 'Query Exception',
+    severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+    code: 'EDM:ERR:0008',
+  },
+  OBJECT_NOT_FOUND_EXCEPTION: {
+    type: 'rs:ObjectNotFoundExceptionType',
+    message: 'Object not found',
+    severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+    code: 'EDM:ERR:0004',
+  },
+};
+
 class ReponseErreur {
   constructor(donnees = {}, config = {}) {
     this.idRequete = donnees.idRequete;
@@ -50,4 +65,5 @@ class ReponseErreur {
   }
 }
 
+Object.assign(ReponseErreur, DESCRIPTIONS_EXCEPTIONS);
 module.exports = ReponseErreur;
