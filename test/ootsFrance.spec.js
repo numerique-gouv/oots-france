@@ -1,6 +1,6 @@
 const axios = require('axios');
-const { XMLParser } = require('fast-xml-parser');
 
+const { parseXML, verifiePresenceSlot } = require('./ebms/utils');
 const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
@@ -49,26 +49,24 @@ describe('Le serveur OOTS France', () => {
 
       return axios.get(`http://localhost:${port}/response/educationEvidence`)
         .then((reponse) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(reponse.data);
-          const requestId = xml['query:QueryResponse']['@_requestId'];
+          const xml = parseXML(reponse.data);
+          const requestId = xml.QueryResponse['@_requestId'];
           expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
         });
     });
 
     it('respecte la structure définie par OOTS', () => axios.get(`http://localhost:${port}/response/educationEvidence`)
       .then((reponse) => {
-        const parser = new XMLParser({ ignoreAttributes: false });
-        const xml = parser.parse(reponse.data);
+        const xml = parseXML(reponse.data);
 
-        expect(xml['query:QueryResponse']['rim:RegistryObjectList']).toBeDefined();
+        expect(xml.QueryResponse.RegistryObjectList).toBeDefined();
 
-        const slots = [].concat(xml['query:QueryResponse']['rim:Slot']);
-        expect(slots.some((s) => s['@_name'] === 'SpecificationIdentifier')).toBe(true);
-        expect(slots.some((s) => s['@_name'] === 'EvidenceResponseIdentifier')).toBe(true);
-        expect(slots.some((s) => s['@_name'] === 'IssueDateTime')).toBe(true);
-        expect(slots.some((s) => s['@_name'] === 'EvidenceProvider')).toBe(true);
-        expect(slots.some((s) => s['@_name'] === 'EvidenceRequester')).toBe(true);
+        verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
+        verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
+        verifiePresenceSlot('EvidenceResponseIdentifier', xml.QueryResponse);
+        verifiePresenceSlot('IssueDateTime', xml.QueryResponse);
+        verifiePresenceSlot('EvidenceProvider', xml.QueryResponse);
+        verifiePresenceSlot('EvidenceRequester', xml.QueryResponse);
       }));
   });
 
@@ -83,9 +81,8 @@ describe('Le serveur OOTS France', () => {
 
       return axios.get(`http://localhost:${port}/ebms/entetes/requeteJustificatif`)
         .then((reponse) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(reponse.data);
-          const idConversation = xml['eb:Messaging']['eb:UserMessage']['eb:CollaborationInfo']['eb:ConversationId'];
+          const xml = parseXML(reponse.data);
+          const idConversation = xml.Messaging.UserMessage.CollaborationInfo.ConversationId;
           expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
         });
     });
@@ -102,9 +99,8 @@ describe('Le serveur OOTS France', () => {
 
       return axios.get(`http://localhost:${port}/ebms/messages/requeteJustificatif`)
         .then((reponse) => {
-          const parser = new XMLParser({ ignoreAttributes: false });
-          const xml = parser.parse(reponse.data);
-          const requestId = xml['query:QueryRequest']['@_id'];
+          const xml = parseXML(reponse.data);
+          const requestId = xml.QueryRequest['@_id'];
           expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
         });
     });
