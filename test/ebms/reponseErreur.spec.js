@@ -1,10 +1,7 @@
-const { XMLParser } = require('fast-xml-parser');
-
-const { verifiePresenceSlot, valeurSlot } = require('./utils');
+const { parseXML, verifiePresenceSlot, valeurSlot } = require('./utils');
 const ReponseErreur = require('../../src/ebms/reponseErreur');
 
 describe('Une réponse EBMS en erreur', () => {
-  const parser = new XMLParser({ ignoreAttributes: false });
   const horodateur = {};
   const adaptateurUUID = {};
 
@@ -16,8 +13,8 @@ describe('Une réponse EBMS en erreur', () => {
   it("injecte l'identifiant unique de requête", () => {
     const reponse = new ReponseErreur({ idRequete: '11111111-1111-1111-1111-111111111111' });
 
-    const xml = parser.parse(reponse.enXML());
-    const idRequete = xml['query:QueryResponse']['@_requestId'];
+    const xml = parseXML(reponse.enXML());
+    const idRequete = xml.QueryResponse['@_requestId'];
     expect(idRequete).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
   });
 
@@ -31,10 +28,10 @@ describe('Une réponse EBMS en erreur', () => {
       },
     });
 
-    const xml = parser.parse(reponse.enXML());
-    const sectionException = xml['query:QueryResponse']['rs:Exception'];
+    const xml = parseXML(reponse.enXML());
+    const sectionException = xml.QueryResponse.Exception;
     expect(sectionException).toBeDefined();
-    expect(sectionException['@_xsi:type']).toEqual('unType');
+    expect(sectionException['@_type']).toEqual('unType');
     expect(sectionException['@_message']).toEqual('Un message');
     expect(sectionException['@_severity']).toEqual('unCodeSeverite');
     expect(sectionException['@_code']).toEqual('unCodeException');
@@ -45,16 +42,16 @@ describe('Une réponse EBMS en erreur', () => {
       horodateur.maintenant = () => '2023-09-30T14:30:00.000Z';
       const reponse = new ReponseErreur({}, { horodateur });
 
-      const xml = parser.parse(reponse.enXML());
-      const horodatage = valeurSlot('Timestamp', xml['query:QueryResponse']['rs:Exception']);
+      const xml = parseXML(reponse.enXML());
+      const horodatage = valeurSlot('Timestamp', xml.QueryResponse.Exception);
       expect(horodatage).toEqual('2023-09-30T14:30:00.000Z');
     });
   });
 
   it('contient une section `SpecificationIdentifier`', () => {
     const reponse = new ReponseErreur();
-    const xml = parser.parse(reponse.enXML());
-    verifiePresenceSlot('SpecificationIdentifier', xml['query:QueryResponse']);
+    const xml = parseXML(reponse.enXML());
+    verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
   });
 
   describe('dans la section `EvidenceResponseIdentifier`', () => {
@@ -62,16 +59,16 @@ describe('Une réponse EBMS en erreur', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
       const reponse = new ReponseErreur({}, { adaptateurUUID });
-      const xml = parser.parse(reponse.enXML());
+      const xml = parseXML(reponse.enXML());
 
-      const idReponse = valeurSlot('EvidenceResponseIdentifier', xml['query:QueryResponse']);
+      const idReponse = valeurSlot('EvidenceResponseIdentifier', xml.QueryResponse);
       expect(idReponse).toEqual('11111111-1111-1111-1111-111111111111');
     });
   });
 
   it('contient une section `ErrorProvider`', () => {
     const reponse = new ReponseErreur();
-    const xml = parser.parse(reponse.enXML());
-    verifiePresenceSlot('ErrorProvider', xml['query:QueryResponse']);
+    const xml = parseXML(reponse.enXML());
+    verifiePresenceSlot('ErrorProvider', xml.QueryResponse);
   });
 });

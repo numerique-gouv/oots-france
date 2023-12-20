@@ -1,7 +1,13 @@
+const { XMLParser } = require('fast-xml-parser');
+
+const parseXML = (...args) => (
+  new XMLParser({ ignoreAttributes: false, removeNSPrefix: true }).parse(...args)
+);
+
 const verifiePresenceSlot = (nomSlot, scopeRecherche) => {
   expect(scopeRecherche).toBeDefined();
 
-  const sectionSlots = scopeRecherche['rim:Slot'];
+  const sectionSlots = scopeRecherche.Slot;
   expect(sectionSlots).toBeDefined();
 
   const slots = [].concat(sectionSlots);
@@ -10,9 +16,9 @@ const verifiePresenceSlot = (nomSlot, scopeRecherche) => {
 
 const valeurSlot = (nomSlot, scopeRecherche) => {
   verifiePresenceSlot(nomSlot, scopeRecherche);
-  const sectionSlots = scopeRecherche['rim:Slot'];
+  const sectionSlots = scopeRecherche.Slot;
   const slots = [].concat(sectionSlots);
-  return slots.find((s) => s['@_name'] === nomSlot)['rim:SlotValue']['rim:Value'];
+  return slots.find((s) => s['@_name'] === nomSlot).SlotValue.Value;
 };
 
-module.exports = { verifiePresenceSlot, valeurSlot };
+module.exports = { parseXML, verifiePresenceSlot, valeurSlot };
