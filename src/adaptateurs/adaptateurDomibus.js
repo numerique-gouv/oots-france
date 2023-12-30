@@ -4,7 +4,6 @@ const EventEmitter = require('node:events');
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurAucunMessageDomibusRecu,
-  ErreurDestinataireInexistant,
 } = require('../erreurs');
 const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes');
 const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
@@ -178,18 +177,16 @@ const AdaptateurDomibus = (config = {}) => {
       }, process.env.DELAI_MAX_ATTENTE_DOMIBUS);
     },
   );
-  const verifieDestinataireExiste = (destinataire) => envoieRequeteREST('ext/party', { partyId: destinataire })
-    .then((destinataires) => ((destinataires.length === 0)
-      ? Promise.reject(new ErreurDestinataireInexistant(`Le destinataire n'existe pas : ${destinataire}`))
-      : Promise.resolve()));
+
+  const trouvePointAcces = (nomPointAcces) => envoieRequeteREST('ext/party', { name: nomPointAcces });
 
   return {
     envoieMessageRequete,
     envoieMessageTest,
     pieceJustificativeDepuisReponse,
     traiteMessageSuivant,
+    trouvePointAcces,
     urlRedirectionDepuisReponse,
-    verifieDestinataireExiste,
   };
 };
 

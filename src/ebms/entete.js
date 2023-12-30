@@ -10,7 +10,8 @@ class Entete {
     this.typeIdentifiantExpediteur = process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS;
 
     this.horodateur = config.horodateur;
-    this.destinataire = donnees.destinataire;
+    this.identifiantDestinataire = donnees.destinataire?.id;
+    this.typeIdentifiantDestinataire = donnees.destinataire?.typeIdentifiant;
     this.idConversation = donnees.idConversation;
     this.idPayload = donnees.idPayload;
 
@@ -47,8 +48,8 @@ class Entete {
         <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
       </eb:From>
       <eb:To>
-        <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator">
-          ${this.destinataire}
+        <eb:PartyId type="${this.typeIdentifiantDestinataire}">
+          ${this.identifiantDestinataire}
         </eb:PartyId>
         <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
       </eb:To>

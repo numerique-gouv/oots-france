@@ -75,6 +75,18 @@ describe("l'entête EBMS de requête", () => {
       expect(expediteur['@_type']).toBe('unType');
       expect(expediteur['#text']).toBe('unIdentifiant');
     });
+
+    it('renseigne le destinataire (C3)', () => {
+      const enteteEBMS = new EnteteRequete(
+        { adaptateurUUID, horodateur },
+        { destinataire: { typeIdentifiant: 'unType', id: 'unIdentifiant' } },
+      );
+      const xml = parseXML(enteteEBMS.enXML());
+      const destinataire = xml.Messaging.UserMessage.PartyInfo.To.PartyId;
+
+      expect(destinataire['@_type']).toBe('unType');
+      expect(destinataire['#text']).toBe('unIdentifiant');
+    });
   });
 
   describe('dans le chemin /Messaging/UserMessage/MessageProperties', () => {
