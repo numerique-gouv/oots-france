@@ -6,7 +6,8 @@ const ACTIONS = {
 
 class Entete {
   constructor(config = {}, donnees = {}) {
-    this.expediteur = process.env.EXPEDITEUR_DOMIBUS;
+    this.identifiantExpediteur = process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS;
+    this.typeIdentifiantExpediteur = process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS;
 
     this.horodateur = config.horodateur;
     this.destinataire = donnees.destinataire;
@@ -40,8 +41,8 @@ class Entete {
     </eb:MessageInfo>
     <eb:PartyInfo>
       <eb:From>
-        <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator">
-          ${this.expediteur}
+        <eb:PartyId type="${this.typeIdentifiantExpediteur}">
+          ${this.identifiantExpediteur}
         </eb:PartyId>
         <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
       </eb:From>
