@@ -28,7 +28,7 @@ describe("l'entête EBMS de requête", () => {
     expect(userMessageInfos.PayloadInfo).toBeDefined();
   });
 
-  describe('dans le chemin /eb:Messaging/eb:UserMessage/eb:MessageInfo', () => {
+  describe('dans le chemin /Messaging/UserMessage/MessageInfo', () => {
     it('est horodaté', () => {
       horodateur.maintenant = () => '2023-09-01T15:30:00.000Z';
       const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur });
@@ -50,7 +50,7 @@ describe("l'entête EBMS de requête", () => {
     });
   });
 
-  describe('dans le chemin /eb:Messaging/eb:UserMessage/eb:MessageProperties', () => {
+  describe('dans le chemin /Messaging/UserMessage/MessageProperties', () => {
     it("renseigne l'expéditeur (C1)", () => {
       const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur });
       const xml = parseXML(enteteEBMS.enXML());
@@ -72,7 +72,7 @@ describe("l'entête EBMS de requête", () => {
     });
   });
 
-  describe('dans le chemin /eb:Messaging/eb:UserMessage/eb:PayloadInfo', () => {
+  describe('dans le chemin /Messaging/UserMessage/PayloadInfo', () => {
     it('identifie le payload du message', () => {
       const enteteEBMS = new EnteteRequete(
         { adaptateurUUID, horodateur },
