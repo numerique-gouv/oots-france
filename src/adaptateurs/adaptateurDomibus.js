@@ -68,9 +68,7 @@ const AdaptateurDomibus = (config = {}) => {
   };
 
   const envoieRequeteREST = (chemin, parametres) => {
-    const jetonEncode = btoa(
-      `${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`,
-    );
+    const jetonEncode = btoa(`${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`);
 
     return axios({
       method: 'get',
