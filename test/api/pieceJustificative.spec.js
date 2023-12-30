@@ -6,8 +6,10 @@ const {
 } = require('../../src/erreurs');
 
 describe('Le requêteur de pièce justificative', () => {
-  const adaptateurUUID = {};
   const adaptateurDomibus = {};
+  const adaptateurUUID = {};
+  const depotPointsAcces = {};
+  const config = { adaptateurDomibus, adaptateurUUID, depotPointsAcces };
   const requete = {};
   const reponse = {};
 
@@ -16,7 +18,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
     adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
-    adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
+    depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
 
     requete.query = {};
     reponse.send = () => Promise.resolve();
@@ -25,18 +27,18 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it('envoie un message AS4 au bon destinataire', () => {
-    requete.query.destinataire = 'UN_DESTINATAIRE';
+    depotPointsAcces.trouvePointAcces = () => Promise.resolve({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
 
     adaptateurDomibus.envoieMessageRequete = ({ destinataire }) => {
       try {
-        expect(destinataire).toEqual('UN_DESTINATAIRE');
+        expect(destinataire).toEqual({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
         return Promise.resolve();
       } catch (e) {
         return Promise.reject(e);
       }
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    return pieceJustificative(config, requete, reponse);
   });
 
   it('transmets le code démarche dans la requête', () => {
@@ -51,7 +53,7 @@ describe('Le requêteur de pièce justificative', () => {
       }
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    return pieceJustificative(config, requete, reponse);
   });
 
   it('utilise un identifiant de conversation', () => {
@@ -71,7 +73,7 @@ describe('Le requêteur de pièce justificative', () => {
       } catch (e) { return Promise.reject(e); }
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    return pieceJustificative(config, requete, reponse);
   });
 
   describe('quand `process.env.URL_OOTS_FRANCE` vaut `https://localhost:1234`', () => {
@@ -96,7 +98,7 @@ describe('Le requêteur de pièce justificative', () => {
         } catch (e) { return Promise.reject(e); }
       };
 
-      return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+      return pieceJustificative(config, requete, reponse);
     });
   });
 
@@ -108,7 +110,7 @@ describe('Le requêteur de pièce justificative', () => {
       return Promise.resolve();
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse)
+    return pieceJustificative(config, requete, reponse)
       .then(() => expect(pieceJustificativeRecue).toBe(true));
   });
 
@@ -125,21 +127,21 @@ describe('Le requêteur de pièce justificative', () => {
       expect(contenu).toEqual('object not found ; aucun justificatif reçu');
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    return pieceJustificative(config, requete, reponse);
   });
 
   it("génère une erreur 422 lorsque le destinataire n'existe pas", () => {
     requete.query.destinataire = 'DESTINATAIRE_INEXISTANT';
-    adaptateurDomibus.verifieDestinataireExiste = (dest) => Promise.reject(new ErreurDestinataireInexistant(`Le Destinataire n'existe pas : ${dest}`));
+    depotPointsAcces.trouvePointAcces = () => Promise.reject(new ErreurDestinataireInexistant('Oups'));
 
     reponse.status = (codeStatus) => {
       expect(codeStatus).toEqual(422);
       return reponse;
     };
     reponse.send = (contenu) => {
-      expect(contenu).toEqual('Le Destinataire n\'existe pas : DESTINATAIRE_INEXISTANT');
+      expect(contenu).toEqual('Oups');
     };
 
-    return pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+    return pieceJustificative(config, requete, reponse);
   });
 });

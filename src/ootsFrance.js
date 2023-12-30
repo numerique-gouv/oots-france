@@ -12,6 +12,7 @@ const creeServeur = (config) => {
     adaptateurDomibus,
     adaptateurEnvironnement,
     adaptateurUUID,
+    depotPointsAcces,
     ecouteurDomibus,
     horodateur,
   } = config;
@@ -87,7 +88,7 @@ const creeServeur = (config) => {
 
   app.get('/requete/pieceJustificative', (requete, reponse) => {
     if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
-      pieceJustificative(adaptateurDomibus, adaptateurUUID, requete, reponse);
+      pieceJustificative({ adaptateurDomibus, adaptateurUUID, depotPointsAcces }, requete, reponse);
     } else {
       reponse.status(501).send('Not Implemented Yet!');
     }

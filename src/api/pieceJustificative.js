@@ -12,13 +12,16 @@ const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinat
 const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
 const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
 
-const pieceJustificative = (adaptateurDomibus, adaptateurUUID, requete, reponse) => {
+const pieceJustificative = (
+  { adaptateurDomibus, adaptateurUUID, depotPointsAcces },
+  requete,
+  reponse,
+) => {
   const idConversation = adaptateurUUID.genereUUID();
-  const { codeDemarche, destinataire, previsualisationRequise } = requete.query;
+  const { codeDemarche, nomDestinataire, previsualisationRequise } = requete.query;
 
-  return adaptateurDomibus
-    .verifieDestinataireExiste(destinataire)
-    .then(() => adaptateurDomibus.envoieMessageRequete({
+  return depotPointsAcces.trouvePointAcces(nomDestinataire)
+    .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
       codeDemarche,
       destinataire,
       idConversation,

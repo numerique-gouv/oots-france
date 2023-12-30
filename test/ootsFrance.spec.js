@@ -8,6 +8,7 @@ describe('Le serveur OOTS France', () => {
   const adaptateurDomibus = {};
   const adaptateurEnvironnement = {};
   const adaptateurUUID = {};
+  const depotPointsAcces = {};
   const ecouteurDomibus = {};
   const horodateur = {};
 
@@ -17,6 +18,7 @@ describe('Le serveur OOTS France', () => {
   beforeEach((suite) => {
     adaptateurEnvironnement.avecRequetePieceJustificative = () => 'true';
     adaptateurUUID.genereUUID = () => '';
+    depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
     ecouteurDomibus.arreteEcoute = () => {};
     ecouteurDomibus.etat = () => '';
     horodateur.maintenant = () => '';
@@ -25,6 +27,7 @@ describe('Le serveur OOTS France', () => {
       adaptateurDomibus,
       adaptateurEnvironnement,
       adaptateurUUID,
+      depotPointsAcces,
       ecouteurDomibus,
       horodateur,
     });
@@ -109,7 +112,6 @@ describe('Le serveur OOTS France', () => {
   describe('sur GET /requete/pieceJustificative', () => {
     beforeEach(() => {
       adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
-      adaptateurDomibus.verifieDestinataireExiste = () => Promise.resolve();
       adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
       adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve(Buffer.from(''));
     });
