@@ -31,7 +31,8 @@ class ConstructeurEnveloppeSOAPException {
   }
 
   avecExpediteur(expediteur) {
-    this.expediteur = expediteur;
+    this.identifiantExpediteur = expediteur.id;
+    this.typeIdentifiantExpediteur = expediteur.typeIdentifiant;
     return this;
   }
 
@@ -94,7 +95,7 @@ class ConstructeurEnveloppeSOAPException {
         </ns5:MessageInfo>
         <ns5:PartyInfo>
             <ns5:From>
-                <ns5:PartyId type="urn:cef.eu:names:identifier:EAS:0204">${this.expediteur}</ns5:PartyId>
+                <ns5:PartyId type="${this.typeIdentifiantExpediteur}">${this.identifiantExpediteur}</ns5:PartyId>
                 <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
             </ns5:From>
             <ns5:To>

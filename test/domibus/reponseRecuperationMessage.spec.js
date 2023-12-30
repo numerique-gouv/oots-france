@@ -36,11 +36,11 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
   it("connaît l'expéditeur", () => {
     const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
-      .avecExpediteur('AP_SI_01')
+      .avecExpediteur({ typeIdentifiant: 'unType', id: 'unIdentifiant' })
       .construis();
     const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
 
-    expect(reponse.expediteur()).toEqual('AP_SI_01');
+    expect(reponse.expediteur()).toEqual({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
   });
 
   it('connaît son identifiant de message', () => {

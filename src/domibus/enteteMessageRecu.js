@@ -9,7 +9,12 @@ class EnteteMessageRecu {
   }
 
   expediteur() {
-    return this.enteteMessageUtilisateur.PartyInfo.From.PartyId['#text'];
+    const infosExpediteur = this.enteteMessageUtilisateur.PartyInfo.From.PartyId;
+
+    return {
+      typeIdentifiant: infosExpediteur['@_type'],
+      id: infosExpediteur['#text'],
+    };
   }
 
   idConversation() {

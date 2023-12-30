@@ -50,6 +50,33 @@ describe("l'entête EBMS de requête", () => {
     });
   });
 
+  describe('dans le chemin /Messaging/UserMessage/PartyInfo', () => {
+    let identifiantExpediteur;
+    let typeIdentifiantExpediteur;
+
+    beforeEach(() => {
+      identifiantExpediteur = process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS;
+      typeIdentifiantExpediteur = process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS;
+    });
+
+    afterEach(() => {
+      process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS = identifiantExpediteur;
+      process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS = typeIdentifiantExpediteur;
+    });
+
+    it("renseigne l'expéditeur (C2)", () => {
+      process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS = 'unIdentifiant';
+      process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS = 'unType';
+
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur });
+      const xml = parseXML(enteteEBMS.enXML());
+      const expediteur = xml.Messaging.UserMessage.PartyInfo.From.PartyId;
+
+      expect(expediteur['@_type']).toBe('unType');
+      expect(expediteur['#text']).toBe('unIdentifiant');
+    });
+  });
+
   describe('dans le chemin /Messaging/UserMessage/MessageProperties', () => {
     it("renseigne l'expéditeur (C1)", () => {
       const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur });
