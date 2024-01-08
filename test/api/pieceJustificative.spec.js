@@ -21,9 +21,10 @@ describe('Le requêteur de pièce justificative', () => {
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
 
     requete.query = {};
+    reponse.json = () => Promise.resolve();
+    reponse.redirect = () => Promise.resolve();
     reponse.send = () => Promise.resolve();
     reponse.status = () => reponse;
-    reponse.redirect = () => Promise.resolve();
   });
 
   it('envoie un message AS4 au bon destinataire', () => {
@@ -123,8 +124,8 @@ describe('Le requêteur de pièce justificative', () => {
       return reponse;
     };
 
-    reponse.send = (contenu) => {
-      expect(contenu).toEqual('object not found ; aucun justificatif reçu');
+    reponse.json = (contenu) => {
+      expect(contenu).toEqual({ erreur: 'object not found ; aucun justificatif reçu' });
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -138,8 +139,8 @@ describe('Le requêteur de pièce justificative', () => {
       expect(codeStatus).toEqual(422);
       return reponse;
     };
-    reponse.send = (contenu) => {
-      expect(contenu).toEqual('Oups');
+    reponse.json = (contenu) => {
+      expect(contenu).toEqual({ erreur: 'Oups' });
     };
 
     return pieceJustificative(config, requete, reponse);
