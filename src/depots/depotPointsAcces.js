@@ -6,6 +6,10 @@ class DepotPointsAcces {
   }
 
   trouvePointAcces(nom) {
+    if (typeof nom === 'undefined' || nom === '') {
+      return Promise.reject(new ErreurDestinataireInexistant('Destinataire non renseigné'));
+    }
+
     return this.adaptateurDomibus.trouvePointAcces(nom)
       .then((pointsAcces) => {
         if (pointsAcces.length === 0) {
