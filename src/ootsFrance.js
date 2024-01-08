@@ -73,7 +73,7 @@ const creeServeur = (config) => {
   });
 
   app.get('/ebms/messages/reponseErreur', (requete, reponse) => {
-    const reponseErreur = new ReponseErreur({
+    const reponseErreur = new ReponseErreur({ adaptateurUUID, horodateur }, {
       idRequete: adaptateurUUID.genereUUID(),
       exception: {
         type: 'rs:ObjectNotFoundExceptionType',
@@ -81,7 +81,7 @@ const creeServeur = (config) => {
         severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
         code: 'EDM:ERR:0004',
       },
-    }, { adaptateurUUID, horodateur });
+    });
     reponse.set('Content-Type', 'text/xml');
     reponse.send(reponseErreur.enXML());
   });

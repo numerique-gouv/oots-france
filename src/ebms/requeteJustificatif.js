@@ -1,16 +1,26 @@
-class RequeteJustificatif {
+const EnteteRequete = require('./enteteRequete');
+const Message = require('./message');
+
+class RequeteJustificatif extends Message {
+  static ClasseEntete = EnteteRequete;
+
   constructor(
-    { adaptateurUUID, horodateur },
+    config,
     {
       codeDemarche = 'T1',
+      destinataire = {},
+      idConversation = config.adaptateurUUID.genereUUID(),
       previsualisationRequise = false,
     } = {},
   ) {
-    this.adaptateurUUID = adaptateurUUID;
-    this.horodateur = horodateur;
+    super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
     this.previsualisationRequise = previsualisationRequise;
+  }
+
+  corpsMessageEnXML() {
+    return this.enXML();
   }
 
   enXML() {

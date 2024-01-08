@@ -48,7 +48,14 @@ class ReponseRecuperationMessage extends ReponseDomibus {
   }
 
   reponse(config) {
-    return this.corpsMessage.reponse(this.idMessage(), config);
+    return this.corpsMessage.reponse(
+      config,
+      {
+        destinataire: this.expediteur(),
+        idConversation: this.idConversation(),
+        idRequete: this.idMessage(),
+      },
+    );
   }
 
   suiteConversation() {

@@ -109,6 +109,13 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
+  describe('sur GET /ebms/messages/reponseErreur', () => {
+    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/messages/reponseErreur`)
+      .then((reponse) => {
+        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+      }));
+  });
+
   describe('sur GET /requete/pieceJustificative', () => {
     beforeEach(() => {
       adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();

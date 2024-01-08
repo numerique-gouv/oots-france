@@ -1,3 +1,6 @@
+const EnteteErreur = require('./enteteErreur');
+const Message = require('./message');
+
 const DESCRIPTIONS_EXCEPTIONS = {
   QUERY_EXCEPTION: {
     type: 'query:QueryExceptionType',
@@ -13,16 +16,29 @@ const DESCRIPTIONS_EXCEPTIONS = {
   },
 };
 
-class ReponseErreur {
-  constructor(donnees = {}, config = {}) {
-    this.idRequete = donnees.idRequete;
-    this.typeException = donnees.exception?.type;
-    this.messageException = donnees.exception?.message;
-    this.severiteException = donnees.exception?.severite;
-    this.codeException = donnees.exception?.code;
+class ReponseErreur extends Message {
+  static ClasseEntete = EnteteErreur;
 
-    this.horodateur = config.horodateur;
-    this.adaptateurUUID = config.adaptateurUUID;
+  constructor(
+    config,
+    {
+      destinataire,
+      exception,
+      idConversation,
+      idRequete,
+    } = {},
+  ) {
+    super(config, { destinataire, idConversation });
+
+    this.idRequete = idRequete;
+    this.typeException = exception?.type;
+    this.messageException = exception?.message;
+    this.severiteException = exception?.severite;
+    this.codeException = exception?.code;
+  }
+
+  corpsMessageEnXML() {
+    return this.enXML();
   }
 
   enXML() {
