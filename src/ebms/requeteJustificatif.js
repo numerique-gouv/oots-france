@@ -20,10 +20,6 @@ class RequeteJustificatif extends Message {
   }
 
   corpsMessageEnXML() {
-    return this.enXML();
-  }
-
-  enXML() {
     const uuid = this.adaptateurUUID.genereUUID();
     const horodatage = this.horodateur.maintenant();
 

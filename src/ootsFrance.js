@@ -55,7 +55,7 @@ const creeServeur = (config) => {
     const requeteJustificatif = new RequeteJustificatif({ adaptateurUUID, horodateur });
 
     reponse.set('Content-Type', 'text/xml');
-    reponse.send(requeteJustificatif.enXML());
+    reponse.send(requeteJustificatif.corpsMessageEnXML());
   });
 
   app.get('/ebms/entetes/reponseErreur', (requete, reponse) => {
@@ -83,7 +83,7 @@ const creeServeur = (config) => {
       },
     });
     reponse.set('Content-Type', 'text/xml');
-    reponse.send(reponseErreur.enXML());
+    reponse.send(reponseErreur.corpsMessageEnXML());
   });
 
   app.get('/requete/pieceJustificative', (requete, reponse) => {
