@@ -124,7 +124,7 @@ describe('Le serveur OOTS France', () => {
         return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=DESTINATAIRE_SILENCIEUX`)
           .catch(({ response }) => {
             expect(response.status).toEqual(504);
-            expect(response.data).toEqual('aucune URL reçue ; aucune pièce reçue');
+            expect(response.data).toEqual({ erreur: 'aucune URL reçue ; aucune pièce reçue' });
           });
       });
     });

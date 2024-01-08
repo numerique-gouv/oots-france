@@ -41,7 +41,7 @@ const pieceJustificative = (
     })
     .catch((e) => {
       if (e instanceof ErreurDestinataireInexistant) {
-        reponse.status(422).send(e.message);
+        reponse.status(422).json({ erreur: e.message });
       } else if (e instanceof AggregateError) {
         let codeStatus = 500;
         if (e.errors.every(estErreurAbsenceReponse)) {
@@ -49,7 +49,7 @@ const pieceJustificative = (
         } else if (e.errors.every(estErreurMetier)) {
           codeStatus = 502;
         }
-        reponse.status(codeStatus).send(e.errors.map((erreur) => erreur.message).join(' ; '));
+        reponse.status(codeStatus).json({ erreur: e.errors.map((erreur) => erreur.message).join(' ; ') });
       } else throw e;
     });
 };
