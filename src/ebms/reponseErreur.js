@@ -38,10 +38,6 @@ class ReponseErreur extends Message {
   }
 
   corpsMessageEnXML() {
-    return this.enXML();
-  }
-
-  enXML() {
     return `<?xml version="1.0" encoding="UTF-8"?>
 <query:QueryResponse xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
                      xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
