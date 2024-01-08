@@ -94,10 +94,6 @@ const creeServeur = (config) => {
     }
   });
 
-  app.get('/idMessageTest', (_requete, reponse) => adaptateurDomibus
-    .envoieMessageTest('oots_test_platform')
-    .then(({ data }) => reponse.send(data)));
-
   app.get('/', (_requete, reponse) => {
     reponse.status(501).send('Not Implemented Yet!');
   });
