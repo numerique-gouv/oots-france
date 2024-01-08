@@ -10,61 +10,20 @@ const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
 const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
 const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
 const Entete = require('../ebms/entete');
-const EnteteErreur = require('../ebms/enteteErreur');
-const EnteteRequete = require('../ebms/enteteRequete');
 const RequeteJustificatif = require('../ebms/requeteJustificatif');
 
 const urlBase = process.env.URL_BASE_DOMIBUS;
 const REPONSE_REDIRECTION_PREVISUALISATION = 'reponseRedirectionPrevisualisation';
 const REPONSE_SUCCES = 'reponseSucces';
 
-const enveloppeSOAP = (config, idPayload, enteteEBMS, message) => {
-  const messageEnBase64 = Buffer.from(message).toString('base64');
-
-  return `
-<soap:Envelope
-  xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
-  xmlns:ns="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
-  xmlns:_1="http://eu.domibus.wsplugin/"
-  xmlns:xm="http://www.w3.org/2005/05/xmlmime">
-
-  <soap:Header>${enteteEBMS.enXML()}</soap:Header>
-
-  <soap:Body>
-    <_1:submitRequest>
-      <bodyload>
-        <value>cid:bodyload</value>
-      </bodyload>
-      <payload payloadId="${idPayload}" contentType="application/x-ebrs+xml">
-        <value>${messageEnBase64}</value>
-      </payload>
-    </_1:submitRequest>
-  </soap:Body>
-</soap:Envelope>
-  `;
-};
-
 const AdaptateurDomibus = (config = {}) => {
-  const { adaptateurUUID, horodateur } = config;
   const annonceur = new EventEmitter();
 
-  const envoieMessageDomibus = (ClasseEntete, message, destinataire, idConversation) => {
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new ClasseEntete(config, { destinataire, idConversation, idPayload });
-    const messageAEnvoyer = enveloppeSOAP(
-      config,
-      idPayload,
-      enteteEBMS,
-      message,
-    );
-
-    return axios.post(
-      `${urlBase}/services/wsplugin/submitMessage`,
-      messageAEnvoyer,
-      { headers: { 'Content-Type': 'text/xml' } },
-    ).then(({ data }) => new ReponseEnvoiMessage(data));
-  };
+  const envoieMessageDomibus = (messageSOAP) => axios.post(
+    `${urlBase}/services/wsplugin/submitMessage`,
+    messageSOAP,
+    { headers: { 'Content-Type': 'text/xml' } },
+  ).then(({ data }) => new ReponseEnvoiMessage(data));
 
   const envoieRequeteREST = (chemin, parametres) => {
     const jetonEncode = btoa(`${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`);
@@ -76,9 +35,6 @@ const AdaptateurDomibus = (config = {}) => {
       params: parametres,
     }).then(({ data }) => data);
   };
-
-  const envoieReponseErreur = (...args) => envoieMessageDomibus(EnteteErreur, ...args);
-  const envoieRequete = (...args) => envoieMessageDomibus(EnteteRequete, ...args);
 
   const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
     `${urlBase}/services/wsplugin/listPendingMessages`,
@@ -101,8 +57,8 @@ const AdaptateurDomibus = (config = {}) => {
     .then(({ data }) => new ReponseRecuperationMessage(data));
 
   const repondsA = (requete) => {
-    const message = requete.reponse({ adaptateurUUID, horodateur });
-    envoieReponseErreur(message.enXML(), requete.expediteur(), requete.idConversation());
+    const message = requete.reponse(config);
+    envoieMessageDomibus(message.enSOAP());
   };
 
   const traiteMessageSuivant = () => recupereIdMessageSuivant()
@@ -126,18 +82,10 @@ const AdaptateurDomibus = (config = {}) => {
       }
     });
 
-  const envoieMessageRequete = ({
-    codeDemarche,
-    destinataire,
-    idConversation,
-    previsualisationRequise,
-  }) => {
-    const requeteJustificatif = new RequeteJustificatif(
-      { adaptateurUUID, horodateur },
-      { codeDemarche, previsualisationRequise },
-    );
+  const envoieMessageRequete = (donnees) => {
+    const requeteJustificatif = new RequeteJustificatif(config, donnees);
 
-    return envoieRequete(requeteJustificatif.enXML(), destinataire, idConversation)
+    return envoieMessageDomibus(requeteJustificatif.enSOAP())
       .then((reponse) => reponse.idMessage());
   };
 

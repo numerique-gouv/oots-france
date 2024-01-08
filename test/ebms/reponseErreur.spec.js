@@ -2,16 +2,17 @@ const { parseXML, verifiePresenceSlot, valeurSlot } = require('./utils');
 const ReponseErreur = require('../../src/ebms/reponseErreur');
 
 describe('Une réponse EBMS en erreur', () => {
-  const horodateur = {};
   const adaptateurUUID = {};
+  const horodateur = {};
+  const config = { adaptateurUUID, horodateur };
 
   beforeEach(() => {
-    horodateur.maintenant = () => '';
     adaptateurUUID.genereUUID = () => '';
+    horodateur.maintenant = () => '';
   });
 
   it("injecte l'identifiant unique de requête", () => {
-    const reponse = new ReponseErreur({ idRequete: '11111111-1111-1111-1111-111111111111' });
+    const reponse = new ReponseErreur(config, { idRequete: '11111111-1111-1111-1111-111111111111' });
 
     const xml = parseXML(reponse.enXML());
     const idRequete = xml.QueryResponse['@_requestId'];
@@ -19,7 +20,7 @@ describe('Une réponse EBMS en erreur', () => {
   });
 
   it('contient une section `Exception`', () => {
-    const reponse = new ReponseErreur({
+    const reponse = new ReponseErreur(config, {
       exception: {
         type: 'unType',
         message: 'Un message',
@@ -40,7 +41,7 @@ describe('Une réponse EBMS en erreur', () => {
   describe('dans la section `Exception`', () => {
     it('est horodatée', () => {
       horodateur.maintenant = () => '2023-09-30T14:30:00.000Z';
-      const reponse = new ReponseErreur({}, { horodateur });
+      const reponse = new ReponseErreur(config, {});
 
       const xml = parseXML(reponse.enXML());
       const horodatage = valeurSlot('Timestamp', xml.QueryResponse.Exception);
@@ -49,7 +50,7 @@ describe('Une réponse EBMS en erreur', () => {
   });
 
   it('contient une section `SpecificationIdentifier`', () => {
-    const reponse = new ReponseErreur();
+    const reponse = new ReponseErreur(config);
     const xml = parseXML(reponse.enXML());
     verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
   });
@@ -58,7 +59,7 @@ describe('Une réponse EBMS en erreur', () => {
     it('est identifiée par un UUID', () => {
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
-      const reponse = new ReponseErreur({}, { adaptateurUUID });
+      const reponse = new ReponseErreur(config);
       const xml = parseXML(reponse.enXML());
 
       const idReponse = valeurSlot('EvidenceResponseIdentifier', xml.QueryResponse);
@@ -67,7 +68,7 @@ describe('Une réponse EBMS en erreur', () => {
   });
 
   it('contient une section `ErrorProvider`', () => {
-    const reponse = new ReponseErreur();
+    const reponse = new ReponseErreur(config);
     const xml = parseXML(reponse.enXML());
     verifiePresenceSlot('ErrorProvider', xml.QueryResponse);
   });

@@ -4,6 +4,15 @@ const CodeDemarche = require('../../src/ebms/codeDemarche');
 const ReponseErreur = require('../../src/ebms/reponseErreur');
 
 describe('Une action de requête reçue depuis Domibus', () => {
+  const adaptateurUUID = {};
+  const horodateur = {};
+  const config = { adaptateurUUID, horodateur };
+
+  beforeEach(() => {
+    adaptateurUUID.genereUUID = () => '';
+    horodateur.maintenant = () => '';
+  });
+
   it('connaît le code de la démarche', () => {
     const xmlParse = new ConstructeurXMLParseRequeteRecue()
       .avecCodeDemarche('UN_CODE')
@@ -19,7 +28,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis();
       const requete = new Requete(xmlParse);
-      const reponse = requete.reponse('12345');
+      const reponse = requete.reponse(config, { idRequete: '12345' });
 
       expect(reponse.idRequete).toBe('12345');
     });
@@ -30,7 +39,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .construis();
       const requete = new Requete(xmlParse);
 
-      expect(requete.reponse()).toBeInstanceOf(ReponseErreur);
+      expect(requete.reponse(config)).toBeInstanceOf(ReponseErreur);
     });
 
     it('répond avec une erreur OBJECT_NOT_FOUND', () => {
@@ -38,7 +47,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis();
       const requete = new Requete(xmlParse);
-      const reponseErreur = requete.reponse();
+      const reponseErreur = requete.reponse(config);
 
       expect(reponseErreur.codeException).toBe('EDM:ERR:0004');
     });
@@ -50,7 +59,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .construis();
       const requete = new Requete(xmlParse);
-      const reponseErreur = requete.reponse();
+      const reponseErreur = requete.reponse(config);
 
       expect(reponseErreur.codeException).toBe('EDM:ERR:0008');
     });
