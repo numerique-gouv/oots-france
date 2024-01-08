@@ -126,11 +126,6 @@ const AdaptateurDomibus = (config = {}) => {
       }
     });
 
-  const envoieMessageTest = (destinataire) => envoieRequete(
-    '<?xml version="1.0" encoding="UTF-8"?>\n<hello>world</hello>',
-    destinataire,
-  );
-
   const envoieMessageRequete = ({
     codeDemarche,
     destinataire,
@@ -182,7 +177,6 @@ const AdaptateurDomibus = (config = {}) => {
 
   return {
     envoieMessageRequete,
-    envoieMessageTest,
     pieceJustificativeDepuisReponse,
     traiteMessageSuivant,
     trouvePointAcces,
