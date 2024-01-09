@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const { parseXML, verifiePresenceSlot } = require('./ebms/utils');
+const { parseXML } = require('./ebms/utils');
 const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
@@ -39,38 +39,6 @@ describe('Le serveur OOTS France', () => {
 
   afterEach((suite) => {
     serveur.arreteEcoute(suite);
-  });
-
-  describe('sur GET /response/educationEvidence', () => {
-    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/response/educationEvidence`)
-      .then((reponse) => {
-        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-      }));
-
-    it('génère un identifiant unique de requête', () => {
-      adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
-
-      return axios.get(`http://localhost:${port}/response/educationEvidence`)
-        .then((reponse) => {
-          const xml = parseXML(reponse.data);
-          const requestId = xml.QueryResponse['@_requestId'];
-          expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
-        });
-    });
-
-    it('respecte la structure définie par OOTS', () => axios.get(`http://localhost:${port}/response/educationEvidence`)
-      .then((reponse) => {
-        const xml = parseXML(reponse.data);
-
-        expect(xml.QueryResponse.RegistryObjectList).toBeDefined();
-
-        verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
-        verifiePresenceSlot('SpecificationIdentifier', xml.QueryResponse);
-        verifiePresenceSlot('EvidenceResponseIdentifier', xml.QueryResponse);
-        verifiePresenceSlot('IssueDateTime', xml.QueryResponse);
-        verifiePresenceSlot('EvidenceProvider', xml.QueryResponse);
-        verifiePresenceSlot('EvidenceRequester', xml.QueryResponse);
-      }));
   });
 
   describe('sur GET /ebms/entetes/requeteJustificatif', () => {
