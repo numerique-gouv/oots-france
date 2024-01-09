@@ -3,6 +3,7 @@ const express = require('express');
 const pieceJustificative = require('./api/pieceJustificative');
 const EnteteErreur = require('./ebms/enteteErreur');
 const EnteteRequete = require('./ebms/enteteRequete');
+const PointAcces = require('./ebms/pointAcces');
 const ReponseErreur = require('./ebms/reponseErreur');
 const RequeteJustificatif = require('./ebms/requeteJustificatif');
 const JustificatifEducation = require('./vues/justificatifEducation');
@@ -38,7 +39,8 @@ const creeServeur = (config) => {
   });
 
   app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
-    const { destinataire } = requete.query;
+    const { idDestinataire, typeIdentifiant } = requete.query;
+    const destinataire = new PointAcces(idDestinataire, typeIdentifiant);
     const idConversation = adaptateurUUID.genereUUID();
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;

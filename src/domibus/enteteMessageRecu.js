@@ -1,3 +1,5 @@
+const PointAcces = require('../ebms/pointAcces');
+
 class EnteteMessageRecu {
   constructor(donneesEntete) {
     this.enteteMessageUtilisateur = donneesEntete.Messaging.UserMessage;
@@ -10,11 +12,7 @@ class EnteteMessageRecu {
 
   expediteur() {
     const infosExpediteur = this.enteteMessageUtilisateur.PartyInfo.From.PartyId;
-
-    return {
-      typeIdentifiant: infosExpediteur['@_type'],
-      id: infosExpediteur['#text'],
-    };
+    return new PointAcces(infosExpediteur['#text'], infosExpediteur['@_type']);
   }
 
   idConversation() {

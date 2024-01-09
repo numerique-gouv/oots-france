@@ -4,6 +4,7 @@ const ConstructeurEnveloppeSOAPRequete = require('../constructeurs/constructeurE
 const ReponseErreurAutorisationRequise = require('../../src/domibus/reponseErreurAutorisationRequise');
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage');
 const CodeDemarche = require('../../src/ebms/codeDemarche');
+const PointAcces = require('../../src/ebms/pointAcces');
 const { ErreurReponseRequete } = require('../../src/erreurs');
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
@@ -36,11 +37,12 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
   it("connaît l'expéditeur", () => {
     const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
-      .avecExpediteur({ typeIdentifiant: 'unType', id: 'unIdentifiant' })
+      .avecExpediteur(new PointAcces('unIdentifiant', 'unType'))
       .construis();
     const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
 
-    expect(reponse.expediteur()).toEqual({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
+    expect(reponse.expediteur().id).toEqual('unIdentifiant');
+    expect(reponse.expediteur().typeId).toEqual('unType');
   });
 
   it('connaît son identifiant de message', () => {

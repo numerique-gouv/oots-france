@@ -11,8 +11,7 @@ class Entete {
     this.expediteur = PointAcces.expediteur();
 
     this.horodateur = config.horodateur;
-    this.identifiantDestinataire = donnees.destinataire?.id;
-    this.typeIdentifiantDestinataire = donnees.destinataire?.typeIdentifiant;
+    this.destinataire = donnees.destinataire;
     this.idConversation = donnees.idConversation;
     this.idPayload = donnees.idPayload;
 
@@ -42,15 +41,8 @@ class Entete {
       <eb:MessageId>${this.idMessage}</eb:MessageId>
     </eb:MessageInfo>
     <eb:PartyInfo>
-      <eb:From>
-        ${this.expediteur.enXML()}
-      </eb:From>
-      <eb:To>
-        <eb:PartyId type="${this.typeIdentifiantDestinataire}">
-          ${this.identifiantDestinataire}
-        </eb:PartyId>
-        <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
-      </eb:To>
+      <eb:From>${this.expediteur.enXML()}</eb:From>
+      <eb:To>${this.destinataire.enXML()}</eb:To>
     </eb:PartyInfo>
     <eb:CollaborationInfo>
       <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>

@@ -1,3 +1,4 @@
+const PointAcces = require('../ebms/pointAcces');
 const { ErreurDestinataireInexistant } = require('../erreurs');
 
 class DepotPointsAcces {
@@ -17,10 +18,7 @@ class DepotPointsAcces {
         }
 
         const infosIdentifiant = pointsAcces[0].identifiers[0];
-        return {
-          typeIdentifiant: infosIdentifiant.partyIdType.value,
-          id: infosIdentifiant.partyId,
-        };
+        return new PointAcces(infosIdentifiant.partyId, infosIdentifiant.partyIdType.value);
       });
   }
 }
