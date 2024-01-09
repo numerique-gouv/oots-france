@@ -6,7 +6,6 @@ const EnteteRequete = require('./ebms/enteteRequete');
 const PointAcces = require('./ebms/pointAcces');
 const ReponseErreur = require('./ebms/reponseErreur');
 const RequeteJustificatif = require('./ebms/requeteJustificatif');
-const JustificatifEducation = require('./vues/justificatifEducation');
 
 const creeServeur = (config) => {
   const {
@@ -19,14 +18,6 @@ const creeServeur = (config) => {
   } = config;
   let serveur;
   const app = express();
-
-  app.get('/response/educationEvidence', (_requete, reponse) => {
-    const uuid = adaptateurUUID.genereUUID();
-    const justificatif = new JustificatifEducation(uuid);
-
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(justificatif.enXML());
-  });
 
   app.post('/admin/arretEcouteDomibus', (_requete, reponse) => {
     ecouteurDomibus.arreteEcoute();
