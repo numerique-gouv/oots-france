@@ -65,10 +65,11 @@ describe("Le dépôt des points d'accès", () => {
     };
 
     const depot = new DepotPointsAcces(adaptateurDomibus);
-    return expect(depot.trouvePointAcces('unNom')).resolves.toEqual({
-      typeIdentifiant: 'urn:unType',
-      id: 'unId',
-    });
+    return depot.trouvePointAcces('unNom')
+      .then((pointAcces) => {
+        expect(pointAcces.id).toBe('unId');
+        expect(pointAcces.typeId).toBe('urn:unType');
+      });
   });
 
   it("retourne une `ErreurDestinataireInexistant` si le nom du point d'accès est inconnu", () => {

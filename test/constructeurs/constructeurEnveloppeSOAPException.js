@@ -1,3 +1,5 @@
+const PointAcces = require('../../src/ebms/pointAcces');
+
 class ConstructeurEnveloppeSOAPException {
   static erreurAutorisationRequise() {
     return new ConstructeurEnveloppeSOAPException()
@@ -12,6 +14,7 @@ class ConstructeurEnveloppeSOAPException {
 
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
+    this.expediteur = PointAcces.expediteur();
   }
 
   avecErreur({
@@ -31,8 +34,7 @@ class ConstructeurEnveloppeSOAPException {
   }
 
   avecExpediteur(expediteur) {
-    this.identifiantExpediteur = expediteur.id;
-    this.typeIdentifiantExpediteur = expediteur.typeIdentifiant;
+    this.expediteur = expediteur;
     return this;
   }
 
@@ -95,8 +97,7 @@ class ConstructeurEnveloppeSOAPException {
         </ns5:MessageInfo>
         <ns5:PartyInfo>
             <ns5:From>
-                <ns5:PartyId type="${this.typeIdentifiantExpediteur}">${this.identifiantExpediteur}</ns5:PartyId>
-                <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
+                ${this.expediteur.enXML()}
             </ns5:From>
             <ns5:To>
                 <ns5:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">GovernmentNLGateway01</ns5:PartyId>

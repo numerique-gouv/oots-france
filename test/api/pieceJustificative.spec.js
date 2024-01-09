@@ -1,4 +1,6 @@
 const pieceJustificative = require('../../src/api/pieceJustificative');
+const PointAcces = require('../../src/ebms/pointAcces');
+
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurReponseRequete,
@@ -28,11 +30,12 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it('envoie un message AS4 au bon destinataire', () => {
-    depotPointsAcces.trouvePointAcces = () => Promise.resolve({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
+    depotPointsAcces.trouvePointAcces = () => Promise.resolve(new PointAcces('unIdentifiant', 'unType'));
 
     adaptateurDomibus.envoieMessageRequete = ({ destinataire }) => {
       try {
-        expect(destinataire).toEqual({ typeIdentifiant: 'unType', id: 'unIdentifiant' });
+        expect(destinataire.id).toEqual('unIdentifiant');
+        expect(destinataire.typeId).toEqual('unType');
         return Promise.resolve();
       } catch (e) {
         return Promise.reject(e);
