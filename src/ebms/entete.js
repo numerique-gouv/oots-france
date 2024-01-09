@@ -1,3 +1,5 @@
+const PointAcces = require('./pointAcces');
+
 const ACTIONS = {
   EXECUTION_REQUETE: 'ExecuteQueryRequest',
   EXECUTION_REPONSE: 'ExecuteQueryResponse',
@@ -6,8 +8,7 @@ const ACTIONS = {
 
 class Entete {
   constructor(config = {}, donnees = {}) {
-    this.identifiantExpediteur = process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS;
-    this.typeIdentifiantExpediteur = process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS;
+    this.expediteur = PointAcces.expediteur();
 
     this.horodateur = config.horodateur;
     this.identifiantDestinataire = donnees.destinataire?.id;
@@ -42,10 +43,7 @@ class Entete {
     </eb:MessageInfo>
     <eb:PartyInfo>
       <eb:From>
-        <eb:PartyId type="${this.typeIdentifiantExpediteur}">
-          ${this.identifiantExpediteur}
-        </eb:PartyId>
-        <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+        ${this.expediteur.enXML()}
       </eb:From>
       <eb:To>
         <eb:PartyId type="${this.typeIdentifiantDestinataire}">
