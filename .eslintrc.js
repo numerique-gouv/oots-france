@@ -12,5 +12,8 @@ module.exports = {
   overrides: [{
     files: ['src/erreurs.js'],
     rules: { 'max-classes-per-file': ['off'] },
+  }, {
+    files: ['test*/**/*.*js'],
+    rules: { 'no-new': ['off'] },
   }],
 };

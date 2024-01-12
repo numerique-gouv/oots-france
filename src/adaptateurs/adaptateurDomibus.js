@@ -5,10 +5,8 @@ const {
   ErreurAbsenceReponseDestinataire,
   ErreurAucunMessageDomibusRecu,
 } = require('../erreurs');
+const InstructionSOAP = require('../domibus/instructionSOAP');
 const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes');
-const ReponseEnvoiMessage = require('../domibus/reponseEnvoiMessage');
-const ReponseRecuperationMessage = require('../domibus/reponseRecuperationMessage');
-const ReponseRequeteListeMessagesEnAttente = require('../domibus/reponseRequeteListeMessagesEnAttente');
 const Entete = require('../ebms/entete');
 const RequeteJustificatif = require('../ebms/requeteJustificatif');
 
@@ -32,20 +30,22 @@ const AdaptateurDomibus = (config = {}) => {
   })
     .then(({ data }) => data);
 
-  const envoieRequeteSOAP = (commande, message) => axios.post(
-    `${urlBase}/services/wsplugin/${commande}`,
+  const envoieRequeteSOAP = (instruction, message) => axios.post(
+    `${urlBase}/services/wsplugin/${instruction.label}`,
     message,
     { headers: { 'Content-Type': 'text/xml', ...enteteAuthentificationBasique() } },
+  )
+    .then(({ data }) => instruction.nouvelleReponseDomibus(data));
+
+  const envoieMessageDomibus = (...args) => envoieRequeteSOAP(
+    InstructionSOAP.envoieMessage(),
+    ...args,
   );
 
-  const envoieMessageDomibus = (messageSOAP) => envoieRequeteSOAP('submitMessage', messageSOAP)
-    .then(({ data }) => new ReponseEnvoiMessage(data));
-
   const recupereIdMessageSuivant = (identifiantConversation) => envoieRequeteSOAP(
-    'listPendingMessages',
+    InstructionSOAP.listeMessagesEnAttente(),
     requeteListeMessagesEnAttente(identifiantConversation),
   )
-    .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
     .then((reponse) => {
       if (reponse.messageEnAttente()) {
         return reponse.idMessageSuivant();
@@ -54,10 +54,9 @@ const AdaptateurDomibus = (config = {}) => {
     });
 
   const recupereMessage = (idMessage) => envoieRequeteSOAP(
-    'retrieveMessage',
+    InstructionSOAP.recupereMessage(),
     requeteRecuperationMessage(idMessage),
-  )
-    .then(({ data }) => new ReponseRecuperationMessage(data));
+  );
 
   const repondsA = (requete) => {
     const message = requete.reponse(config);
