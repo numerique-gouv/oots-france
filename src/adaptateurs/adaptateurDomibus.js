@@ -19,21 +19,23 @@ const REPONSE_SUCCES = 'reponseSucces';
 const AdaptateurDomibus = (config = {}) => {
   const annonceur = new EventEmitter();
 
-  const envoieRequeteREST = (chemin, parametres) => {
+  const enteteAuthentificationBasique = () => {
     const jetonEncode = btoa(`${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`);
-
-    return axios({
-      method: 'get',
-      url: `${urlBase}/${chemin}`,
-      headers: { Authorization: `Basic ${jetonEncode}` },
-      params: parametres,
-    }).then(({ data }) => data);
+    return { Authorization: `Basic ${jetonEncode}` };
   };
+
+  const envoieRequeteREST = (chemin, parametres) => axios({
+    method: 'get',
+    url: `${urlBase}/${chemin}`,
+    headers: enteteAuthentificationBasique(),
+    params: parametres,
+  })
+    .then(({ data }) => data);
 
   const envoieRequeteSOAP = (commande, message) => axios.post(
     `${urlBase}/services/wsplugin/${commande}`,
     message,
-    { headers: { 'Content-Type': 'text/xml' } },
+    { headers: { 'Content-Type': 'text/xml', ...enteteAuthentificationBasique() } },
   );
 
   const envoieMessageDomibus = (messageSOAP) => envoieRequeteSOAP('submitMessage', messageSOAP)
