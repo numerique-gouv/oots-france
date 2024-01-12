@@ -19,12 +19,6 @@ const REPONSE_SUCCES = 'reponseSucces';
 const AdaptateurDomibus = (config = {}) => {
   const annonceur = new EventEmitter();
 
-  const envoieMessageDomibus = (messageSOAP) => axios.post(
-    `${urlBase}/services/wsplugin/submitMessage`,
-    messageSOAP,
-    { headers: { 'Content-Type': 'text/xml' } },
-  ).then(({ data }) => new ReponseEnvoiMessage(data));
-
   const envoieRequeteREST = (chemin, parametres) => {
     const jetonEncode = btoa(`${process.env.LOGIN_API_REST}:${process.env.MOT_DE_PASSE_API_REST}`);
 
@@ -36,10 +30,18 @@ const AdaptateurDomibus = (config = {}) => {
     }).then(({ data }) => data);
   };
 
-  const recupereIdMessageSuivant = (identifiantConversation) => axios.post(
-    `${urlBase}/services/wsplugin/listPendingMessages`,
-    requeteListeMessagesEnAttente(identifiantConversation),
+  const envoieRequeteSOAP = (commande, message) => axios.post(
+    `${urlBase}/services/wsplugin/${commande}`,
+    message,
     { headers: { 'Content-Type': 'text/xml' } },
+  );
+
+  const envoieMessageDomibus = (messageSOAP) => envoieRequeteSOAP('submitMessage', messageSOAP)
+    .then(({ data }) => new ReponseEnvoiMessage(data));
+
+  const recupereIdMessageSuivant = (identifiantConversation) => envoieRequeteSOAP(
+    'listPendingMessages',
+    requeteListeMessagesEnAttente(identifiantConversation),
   )
     .then(({ data }) => new ReponseRequeteListeMessagesEnAttente(data))
     .then((reponse) => {
@@ -49,10 +51,9 @@ const AdaptateurDomibus = (config = {}) => {
       return Promise.reject(new ErreurAucunMessageDomibusRecu());
     });
 
-  const recupereMessage = (idMessage) => axios.post(
-    `${urlBase}/services/wsplugin/retrieveMessage`,
+  const recupereMessage = (idMessage) => envoieRequeteSOAP(
+    'retrieveMessage',
     requeteRecuperationMessage(idMessage),
-    { headers: { 'Content-Type': 'text/xml' } },
   )
     .then(({ data }) => new ReponseRecuperationMessage(data));
 
