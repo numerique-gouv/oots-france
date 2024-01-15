@@ -1,5 +1,6 @@
 const MessageRecu = require('./messageRecu');
 const ReponseErreur = require('../ebms/reponseErreur');
+const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
 const CodeDemarche = require('../ebms/codeDemarche');
 
 class Requete extends MessageRecu {
@@ -9,9 +10,11 @@ class Requete extends MessageRecu {
   }
 
   reponse(config, donnees) {
-    const exception = this.codeDemarche() === CodeDemarche.VERIFICATION_SYSTEME
-      ? ReponseErreur.QUERY_EXCEPTION
-      : ReponseErreur.OBJECT_NOT_FOUND_EXCEPTION;
+    if (this.codeDemarche() === CodeDemarche.VERIFICATION_SYSTEME) {
+      return new ReponseVerificationSysteme(config, donnees);
+    }
+
+    const exception = ReponseErreur.OBJECT_NOT_FOUND_EXCEPTION;
     return new ReponseErreur(config, { ...donnees, exception });
   }
 }

@@ -14,6 +14,7 @@ class Entete {
     this.destinataire = donnees.destinataire;
     this.idConversation = donnees.idConversation;
     this.idPayload = donnees.idPayload;
+    this.idPieceJointe = donnees.idPieceJointe;
 
     const { adaptateurUUID } = config;
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
@@ -54,14 +55,29 @@ class Entete {
       <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C4</eb:Property>
     </eb:MessageProperties>
     <eb:PayloadInfo>
-       <eb:PartInfo href="${this.idPayload}">
-          <eb:PartProperties>
-             <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
-          </eb:PartProperties>
-       </eb:PartInfo>
+      <eb:PartInfo href="${this.idPayload}">
+        <eb:PartProperties>
+          <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+        </eb:PartProperties>
+      </eb:PartInfo>
+      ${this.infosPieceJointe()}
     </eb:PayloadInfo>
   </eb:UserMessage>
 </eb:Messaging>
+    `;
+  }
+
+  infosPieceJointe() {
+    if (typeof this.idPieceJointe === 'undefined') {
+      return '';
+    }
+
+    return `
+<eb:PartInfo href="${this.idPieceJointe}">
+  <eb:PartProperties>
+    <eb:Property name="MimeType">application/pdf</eb:Property>
+  </eb:PartProperties>
+</eb:PartInfo>
     `;
   }
 }
