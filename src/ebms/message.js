@@ -3,6 +3,9 @@ class Message {
     this.adaptateurUUID = config.adaptateurUUID;
     this.horodateur = config.horodateur;
 
+    this.idPieceJointe = donnees.idPieceJointe;
+    this.contenuPieceJointe = donnees.contenuPieceJointe;
+
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     this.idPayload = `cid:${this.adaptateurUUID.genereUUID()}@${suffixe}`;
     this.entete = new this.constructor.ClasseEntete(
@@ -31,9 +34,22 @@ class Message {
       <payload payloadId="${this.idPayload}" contentType="application/x-ebrs+xml">
         <value>${messageEnBase64}</value>
       </payload>
+      ${this.pieceJointe()}
     </_1:submitRequest>
   </soap:Body>
 </soap:Envelope>
+    `;
+  }
+
+  pieceJointe() {
+    if (typeof this.idPieceJointe === 'undefined') {
+      return '';
+    }
+
+    return `
+<payload payloadId="${this.idPieceJointe}">
+  <value>${this.contenuPieceJointe}</value>
+</payload>
     `;
   }
 }

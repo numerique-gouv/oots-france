@@ -51,17 +51,30 @@ describe('Une action de requête reçue depuis Domibus', () => {
 
       expect(reponseErreur.codeException).toBe('EDM:ERR:0004');
     });
-  });
 
-  describe('avec comme démarche une vérification système', () => {
-    it('répond avec une erreur QUERY_EXCEPTION', () => {
+    it('ne joint pas de pièce justificative', () => {
       const xmlParse = new ConstructeurXMLParseRequeteRecue()
-        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis();
       const requete = new Requete(xmlParse);
       const reponseErreur = requete.reponse(config);
 
-      expect(reponseErreur.codeException).toBe('EDM:ERR:0008');
+      expect(reponseErreur.idPieceJointe).toBeUndefined();
+      expect(reponseErreur.contenuPieceJointe).toBeUndefined();
+    });
+  });
+
+  describe('avec comme démarche une vérification système', () => {
+    it('répond avec un message de vérification système avec pièce jointe', () => {
+      adaptateurUUID.genereUUID = () => '12345678-1234-1234-1234-1234567890ab';
+      const xmlParse = new ConstructeurXMLParseRequeteRecue()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .construis();
+      const requete = new Requete(xmlParse);
+      const reponse = requete.reponse(config, {});
+
+      expect(reponse.idPieceJointe).toBe('cid:12345678-1234-1234-1234-1234567890ab@pdf.oots.fr');
+      expect(reponse.contenuPieceJointe).toBeDefined();
     });
   });
 });
