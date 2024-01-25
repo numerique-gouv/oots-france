@@ -155,6 +155,30 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
+  describe('sur GET /auth/cles_publiques', () => {
+    it('retourne les clés de chiffrement au format JSON Web Key Set', () => {
+      adaptateurEnvironnement.clesChiffrement = () => ({
+        keys:
+          [
+            {
+              e: 'AQAB',
+              n: '5O3as-2qay5...',
+              kty: 'RSA',
+              kid: 'identifiant de clé',
+              use: 'enc',
+            },
+          ],
+      });
+
+      return axios.get(`http://localhost:${port}/auth/cles_publiques`)
+        .then((response) => {
+          expect(response.status).toEqual(200);
+          expect(response.data.keys).toHaveLength(1);
+          expect(response.data.keys[0].kid).toEqual('identifiant de clé');
+        });
+    });
+  });
+
   describe('sur GET /', () => {
     it('sert une erreur HTTP 501 (not implemented)', () => {
       expect.assertions(1);

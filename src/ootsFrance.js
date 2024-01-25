@@ -91,6 +91,12 @@ const creeServeur = (config) => {
     reponse.status(501).send('Not Implemented Yet!');
   });
 
+  app.get('/auth/cles_publiques', (_requete, reponse) => {
+    reponse.set('Content-Type', 'application/json');
+    reponse.status(200)
+      .send(adaptateurEnvironnement.clesChiffrement());
+  });
+
   const arreteEcoute = (suite) => serveur.close(suite);
 
   const ecoute = (...args) => { serveur = app.listen(...args); };
