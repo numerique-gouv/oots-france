@@ -5,6 +5,7 @@ const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
 describe('Le serveur OOTS France', () => {
+  const adaptateurChiffrement = {};
   const adaptateurDomibus = {};
   const adaptateurEnvironnement = {};
   const adaptateurUUID = {};
@@ -16,6 +17,7 @@ describe('Le serveur OOTS France', () => {
   let serveur;
 
   beforeEach((suite) => {
+    adaptateurChiffrement.cleHachage = () => '';
     adaptateurEnvironnement.avecRequetePieceJustificative = () => 'true';
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
@@ -24,6 +26,7 @@ describe('Le serveur OOTS France', () => {
     horodateur.maintenant = () => '';
 
     serveur = OOTS_FRANCE.creeServeur({
+      adaptateurChiffrement,
       adaptateurDomibus,
       adaptateurEnvironnement,
       adaptateurUUID,
@@ -157,24 +160,21 @@ describe('Le serveur OOTS France', () => {
 
   describe('sur GET /auth/cles_publiques', () => {
     it('retourne les clés de chiffrement au format JSON Web Key Set', () => {
-      adaptateurEnvironnement.clesChiffrement = () => ({
-        keys:
-          [
-            {
-              e: 'AQAB',
-              n: '5O3as-2qay5...',
-              kty: 'RSA',
-              kid: 'identifiant de clé',
-              use: 'enc',
-            },
-          ],
-      });
+      adaptateurEnvironnement.clePriveeJWK = () => ({ e: 'AQAB', n: '503as-2qay5...', kty: 'RSA' });
+      adaptateurChiffrement.cleHachage = (chaine) => `hash de ${chaine}`;
 
       return axios.get(`http://localhost:${port}/auth/cles_publiques`)
-        .then((response) => {
-          expect(response.status).toEqual(200);
-          expect(response.data.keys).toHaveLength(1);
-          expect(response.data.keys[0].kid).toEqual('identifiant de clé');
+        .then((reponse) => {
+          expect(reponse.status).toEqual(200);
+          expect(reponse.data).toEqual({
+            keys: [{
+              kid: 'hash de 503as-2qay5...',
+              kty: 'RSA',
+              use: 'enc',
+              e: 'AQAB',
+              n: '503as-2qay5...',
+            }],
+          });
         });
     });
   });
