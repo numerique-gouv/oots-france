@@ -9,6 +9,7 @@ const RequeteJustificatif = require('./ebms/requeteJustificatif');
 
 const creeServeur = (config) => {
   const {
+    adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurEnvironnement,
     adaptateurUUID,
@@ -92,9 +93,22 @@ const creeServeur = (config) => {
   });
 
   app.get('/auth/cles_publiques', (_requete, reponse) => {
+    const { kty, n, e } = adaptateurEnvironnement.clePriveeJWK();
+    const idClePublique = adaptateurChiffrement.cleHachage(n);
+
+    const clePubliqueDansJWKSet = {
+      keys: [{
+        kid: idClePublique,
+        use: 'enc',
+        kty,
+        e,
+        n,
+      }],
+    };
+
     reponse.set('Content-Type', 'application/json');
     reponse.status(200)
-      .send(adaptateurEnvironnement.clesChiffrement());
+      .send(clePubliqueDansJWKSet);
   });
 
   const arreteEcoute = (suite) => serveur.close(suite);
