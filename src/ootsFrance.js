@@ -12,6 +12,7 @@ const creeServeur = (config) => {
     adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurEnvironnement,
+    adaptateurFranceConnectPlus,
     adaptateurUUID,
     depotPointsAcces,
     ecouteurDomibus,
@@ -28,6 +29,20 @@ const creeServeur = (config) => {
   app.post('/admin/demarrageEcouteDomibus', (_requete, reponse) => {
     ecouteurDomibus.ecoute();
     reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
+  });
+
+  app.get('/auth/fcplus/connexion', (requete, reponse) => {
+    const { code, state } = requete.query;
+    if (typeof state === 'undefined' || state === '') {
+      reponse.status(400).json({ erreur: "Paramètre 'state' absent de la requête" });
+    } else if (typeof code === 'undefined' || code === '') {
+      reponse.status(400).json({ erreur: "Paramètre 'code' absent de la requête" });
+    } else {
+      adaptateurFranceConnectPlus.recupereInfosUtilisateur(code)
+        .then((infos) => {
+          reponse.json(infos);
+        });
+    }
   });
 
   app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {

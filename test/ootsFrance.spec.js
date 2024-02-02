@@ -8,6 +8,7 @@ describe('Le serveur OOTS France', () => {
   const adaptateurChiffrement = {};
   const adaptateurDomibus = {};
   const adaptateurEnvironnement = {};
+  const adaptateurFranceConnectPlus = {};
   const adaptateurUUID = {};
   const depotPointsAcces = {};
   const ecouteurDomibus = {};
@@ -19,6 +20,7 @@ describe('Le serveur OOTS France', () => {
   beforeEach((suite) => {
     adaptateurChiffrement.cleHachage = () => '';
     adaptateurEnvironnement.avecRequetePieceJustificative = () => 'true';
+    adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.resolve({});
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
     ecouteurDomibus.arreteEcoute = () => {};
@@ -29,6 +31,7 @@ describe('Le serveur OOTS France', () => {
       adaptateurChiffrement,
       adaptateurDomibus,
       adaptateurEnvironnement,
+      adaptateurFranceConnectPlus,
       adaptateurUUID,
       depotPointsAcces,
       ecouteurDomibus,
@@ -42,6 +45,45 @@ describe('Le serveur OOTS France', () => {
 
   afterEach((suite) => {
     serveur.arreteEcoute(suite);
+  });
+
+  describe('sur GET /auth/fcplus/connexion', () => {
+    it("sert les infos utilisateur si les paramètres 'code' et 'state' sont présents", () => {
+      adaptateurFranceConnectPlus.recupereInfosUtilisateur = (code) => {
+        try {
+          expect(code).toBe('unCode');
+          return Promise.resolve({ infosUtilisateur: 'des Infos' });
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      };
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
+        .then((reponse) => {
+          expect(reponse.status).toBe(200);
+          expect(reponse.data).toEqual({ infosUtilisateur: 'des Infos' });
+        });
+    });
+
+    it("sert une erreur HTTP 400 (Bad Request) si le paramètre 'code' est manquant", () => {
+      expect.assertions(2);
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState`)
+        .catch(({ response }) => {
+          expect(response.status).toBe(400);
+          expect(response.data).toEqual({ erreur: "Paramètre 'code' absent de la requête" });
+        });
+    });
+
+    it("sert une erreur HTTP 400 (Bad Request) si le paramètre 'state' est manquant", () => {
+      expect.assertions(2);
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?code=unCode`)
+        .catch(({ response }) => {
+          expect(response.status).toBe(400);
+          expect(response.data).toEqual({ erreur: "Paramètre 'state' absent de la requête" });
+        });
+    });
   });
 
   describe('sur GET /ebms/entetes/requeteJustificatif', () => {
