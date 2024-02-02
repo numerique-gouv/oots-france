@@ -3,6 +3,7 @@ const OOTS_FRANCE = require('./src/ootsFrance');
 const adaptateurChiffrement = require('./src/adaptateurs/adaptateurChiffrement');
 const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurEnvironnement = require('./src/adaptateurs/adaptateurEnvironnement');
+const adaptateurFranceConnectPlus = require('./src/adaptateurs/adaptateurFranceConnectPlus');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 const horodateur = require('./src/adaptateurs/horodateur');
 const DepotPointsAcces = require('./src/depots/depotPointsAcces');
@@ -15,6 +16,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   adaptateurChiffrement,
   adaptateurDomibus,
   adaptateurEnvironnement,
+  adaptateurFranceConnectPlus,
   adaptateurUUID,
   depotPointsAcces,
   ecouteurDomibus,
