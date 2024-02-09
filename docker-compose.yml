@@ -24,7 +24,16 @@ services:
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
+     - mock_fcplus
      - domibus
+
+  mock_fcplus:
+    <<: *configuration-base
+    command: "npx nodemon mockFCPlus.js"
+    ports:
+      - "${PORT_MOCK_FCPLUS}:4000"
+    environment:
+      - URL_BASE_MOCK_FCPLUS=http://mock_fcplus:4000
 
   domibus:
     image: code.europa.eu:4567/edelivery/docker/domibus-tomcat9:5.0.4
