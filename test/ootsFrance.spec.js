@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const { parseXML } = require('./ebms/utils');
-const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
+const { ErreurAbsenceReponseDestinataire, ErreurEchecAuthentification } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
 describe('Le serveur OOTS France', () => {
@@ -82,6 +82,20 @@ describe('Le serveur OOTS France', () => {
         .catch(({ response }) => {
           expect(response.status).toBe(400);
           expect(response.data).toEqual({ erreur: "Paramètre 'state' absent de la requête" });
+        });
+    });
+
+    it("sert une erreur HTTP 502 (Bad Gateway) quand l'authentification échoue", () => {
+      expect.assertions(2);
+
+      adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => (
+        Promise.reject(new ErreurEchecAuthentification('Oups'))
+      );
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?code=unCode&state=unState`)
+        .catch(({ response }) => {
+          expect(response.status).toBe(502);
+          expect(response.data).toEqual({ erreur: 'Échec authentification (Oups)' });
         });
     });
   });

@@ -39,9 +39,10 @@ const creeServeur = (config) => {
       reponse.status(400).json({ erreur: "Paramètre 'code' absent de la requête" });
     } else {
       adaptateurFranceConnectPlus.recupereInfosUtilisateur(code)
-        .then((infos) => {
-          reponse.json(infos);
-        });
+        .then((infos) => reponse.json(infos))
+        .catch((e) => reponse.status(502).json({
+          erreur: `Échec authentification (${e.message})`,
+        }));
     }
   });
 

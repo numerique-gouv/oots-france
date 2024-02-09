@@ -2,6 +2,7 @@ const axios = require('axios');
 const jose = require('jose');
 
 const adaptateurEnvironnement = require('./adaptateurEnvironnement');
+const { ErreurEchecAuthentification } = require('../erreurs');
 
 const configurationOpenIdFranceConnectPlus = axios
   .get(adaptateurEnvironnement.urlConfigurationOpenIdFCPlus())
@@ -43,6 +44,7 @@ const dechiffreInfosUtilisateur = (infos) => jose
 
 const recupereInfosUtilisateur = (code) => recupereJetonAcces(code)
   .then(recupereInfosUtilisateurChiffrees)
-  .then(dechiffreInfosUtilisateur);
+  .then(dechiffreInfosUtilisateur)
+  .catch((e) => Promise.reject(new ErreurEchecAuthentification(e.message)));
 
 module.exports = { recupereInfosUtilisateur };
