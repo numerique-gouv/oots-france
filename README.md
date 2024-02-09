@@ -5,7 +5,7 @@ OOTS](https://ec.europa.eu/digital-building-blocks/wikis/display/OOTS/OOTSHUB+Ho
 qui agit comme intermédiaire
 - d'une part entre une institution consommatrice de pièces justificatives et la
   couche eDelivery, et
-- d'uatre part entre la couche eDelivery et une institution en mesure de
+- d'autre part entre la couche eDelivery et une institution en mesure de
   fournir des pièces justificatives.
 
 # Configuration de l'environnement de développement
