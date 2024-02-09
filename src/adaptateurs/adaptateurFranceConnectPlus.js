@@ -31,13 +31,15 @@ const recupereInfosUtilisateurChiffrees = (jeton) => configurationOpenIdFranceCo
   ))
   .then(({ data }) => data);
 
+const verifieSignatureJWT = (jwt) => configurationOpenIdFranceConnectPlus
+  .then(({ jwks_uri: urlJWKS }) => jose.createRemoteJWKSet(new URL(urlJWKS)))
+  .then((jwks) => jose.jwtVerify(jwt, jwks))
+  .then(({ payload }) => payload);
+
 const dechiffreInfosUtilisateur = (infos) => jose
   .importJWK(adaptateurEnvironnement.clePriveeJWK())
   .then((clePrivee) => jose.compactDecrypt(infos, clePrivee))
-  .then(({ plaintext }) => {
-    const payload = plaintext.toString().split('.')[1];
-    return JSON.parse(atob(payload));
-  });
+  .then(({ plaintext }) => verifieSignatureJWT(plaintext));
 
 const recupereInfosUtilisateur = (code) => recupereJetonAcces(code)
   .then(recupereInfosUtilisateurChiffrees)

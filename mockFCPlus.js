@@ -22,6 +22,7 @@ const ootsJWK = JSON.parse(atob(process.env.CLE_PRIVEE_JWK_EN_BASE64));
 
 app.get('/', (_requete, reponse) => {
   reponse.json({
+    jwks_uri: `${process.env.URL_BASE_MOCK_FCPLUS}/jwks`,
     token_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/jeton`,
     userinfo_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/userinfo`,
   });
@@ -29,6 +30,19 @@ app.get('/', (_requete, reponse) => {
 
 app.post('/jeton', (_requete, reponse) => {
   reponse.json({ access_token: 'unJeton' });
+});
+
+app.get('/jwks', (_requete, reponse) => {
+  const { kty, n, e } = jwk;
+
+  reponse.json({
+    keys: [{
+      use: 'sig',
+      kty,
+      n,
+      e,
+    }],
+  });
 });
 
 app.get('/userinfo', (_requete, reponse) => {
