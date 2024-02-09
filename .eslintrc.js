@@ -16,4 +16,8 @@ module.exports = {
     files: ['test*/**/*.*js'],
     rules: { 'no-new': ['off'] },
   }],
+  plugins: ['no-only-tests'],
+  rules: {
+    'no-only-tests/no-only-tests': 'error',
+  },
 };
