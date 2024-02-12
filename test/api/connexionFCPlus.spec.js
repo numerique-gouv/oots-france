@@ -1,13 +1,16 @@
 const connexionFCPlus = require('../../src/api/connexionFCPlus');
 
 describe('Le requêteur de connexion FC+', () => {
+  const adaptateurChiffrement = {};
   const adaptateurFranceConnectPlus = {};
-  const config = { adaptateurFranceConnectPlus };
+  const config = { adaptateurChiffrement, adaptateurFranceConnectPlus };
   const requete = {};
   const reponse = {};
 
   beforeEach(() => {
+    adaptateurChiffrement.genereJeton = () => Promise.resolve();
     adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.resolve({});
+    requete.session = {};
     reponse.json = () => Promise.resolve();
     reponse.status = () => reponse;
   });
@@ -34,5 +37,13 @@ describe('Le requêteur de connexion FC+', () => {
     };
 
     return connexionFCPlus(config, 'unCode', requete, reponse);
+  });
+
+  it('conserve les infos utilisateurs dans un cookie de session', () => {
+    adaptateurChiffrement.genereJeton = () => Promise.resolve('XXX');
+
+    expect(requete.session.jeton).toBeUndefined();
+    return connexionFCPlus(config, 'unCode', requete, reponse)
+      .then(() => expect(requete.session.jeton).toBe('XXX'));
   });
 });

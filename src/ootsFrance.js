@@ -1,3 +1,4 @@
+const cookieSession = require('cookie-session');
 const express = require('express');
 
 const connexionFCPlus = require('./api/connexionFCPlus');
@@ -21,6 +22,14 @@ const creeServeur = (config) => {
   } = config;
   let serveur;
   const app = express();
+
+  app.use(cookieSession({
+    maxAge: 15 * 60 * 1000,
+    name: 'jeton',
+    sameSite: true,
+    secret: adaptateurEnvironnement.secretJetonSession(),
+    secure: false,
+  }));
 
   app.post('/admin/arretEcouteDomibus', (_requete, reponse) => {
     ecouteurDomibus.arreteEcoute();
@@ -126,7 +135,7 @@ const creeServeur = (config) => {
   });
 
   app.get('/', (_requete, reponse) => {
-    reponse.status(501).send('Not Implemented Yet!');
+    reponse.status(501).send('Pas encore implémenté !');
   });
 
   const arreteEcoute = (suite) => serveur.close(suite);
