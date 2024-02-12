@@ -1,5 +1,6 @@
 const express = require('express');
 
+const connexionFCPlus = require('./api/connexionFCPlus');
 const pieceJustificative = require('./api/pieceJustificative');
 const EnteteErreur = require('./ebms/enteteErreur');
 const EnteteRequete = require('./ebms/enteteRequete');
@@ -57,11 +58,12 @@ const creeServeur = (config) => {
     } else if (typeof code === 'undefined' || code === '') {
       reponse.status(400).json({ erreur: "Paramètre 'code' absent de la requête" });
     } else {
-      adaptateurFranceConnectPlus.recupereInfosUtilisateur(code)
-        .then((infos) => reponse.json(infos))
-        .catch((e) => reponse.status(502).json({
-          erreur: `Échec authentification (${e.message})`,
-        }));
+      connexionFCPlus(
+        { adaptateurChiffrement, adaptateurFranceConnectPlus },
+        code,
+        requete,
+        reponse,
+      );
     }
   });
 
