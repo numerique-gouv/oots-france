@@ -8,11 +8,14 @@ const parametresRequeteJeton = () => ({
   redirect_uri: process.env.URL_REDIRECTION_CONNEXION,
 });
 
+const secretJetonSession = () => new TextEncoder().encode(process.env.SECRET_JETON_SESSION);
+
 const urlConfigurationOpenIdFCPlus = () => process.env.URL_CONFIGURATION_OPEN_ID_FCPLUS;
 
 module.exports = {
   avecRequetePieceJustificative,
   clePriveeJWK,
   parametresRequeteJeton,
+  secretJetonSession,
   urlConfigurationOpenIdFCPlus,
 };
