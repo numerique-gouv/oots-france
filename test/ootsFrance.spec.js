@@ -48,21 +48,32 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /auth/fcplus/connexion', () => {
-    it("sert les infos utilisateur si les paramètres 'code' et 'state' sont présents", () => {
-      adaptateurFranceConnectPlus.recupereInfosUtilisateur = (code) => {
-        try {
-          expect(code).toBe('unCode');
-          return Promise.resolve({ infosUtilisateur: 'des Infos' });
-        } catch (e) {
-          return Promise.reject(e);
-        }
-      };
+    describe('lorsque les paramètres `code` et `state` sont présents', () => {
+      it('sert les infos utilisateur', () => {
+        adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => (
+          Promise.resolve({ infos: 'des infos' })
+        );
 
-      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
-        .then((reponse) => {
-          expect(reponse.status).toBe(200);
-          expect(reponse.data).toEqual({ infosUtilisateur: 'des Infos' });
-        });
+        return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
+          .then((reponse) => {
+            expect(reponse.status).toBe(200);
+            expect(reponse.data).toEqual({ infos: 'des infos' });
+          });
+      });
+
+      it("sert une erreur HTTP 502 (Bad Gateway) quand l'authentification échoue", () => {
+        expect.assertions(2);
+
+        adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => (
+          Promise.reject(new ErreurEchecAuthentification('Oups'))
+        );
+
+        return axios.get(`http://localhost:${port}/auth/fcplus/connexion?code=unCode&state=unState`)
+          .catch(({ response }) => {
+            expect(response.status).toBe(502);
+            expect(response.data).toEqual({ erreur: 'Échec authentification (Oups)' });
+          });
+      });
     });
 
     it("sert une erreur HTTP 400 (Bad Request) si le paramètre 'code' est manquant", () => {
@@ -82,20 +93,6 @@ describe('Le serveur OOTS France', () => {
         .catch(({ response }) => {
           expect(response.status).toBe(400);
           expect(response.data).toEqual({ erreur: "Paramètre 'state' absent de la requête" });
-        });
-    });
-
-    it("sert une erreur HTTP 502 (Bad Gateway) quand l'authentification échoue", () => {
-      expect.assertions(2);
-
-      adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => (
-        Promise.reject(new ErreurEchecAuthentification('Oups'))
-      );
-
-      return axios.get(`http://localhost:${port}/auth/fcplus/connexion?code=unCode&state=unState`)
-        .catch(({ response }) => {
-          expect(response.status).toBe(502);
-          expect(response.data).toEqual({ erreur: 'Échec authentification (Oups)' });
         });
     });
   });
