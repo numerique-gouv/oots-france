@@ -1,6 +1,7 @@
 const Entete = require('../../src/ebms/entete');
 const EnteteReponse = require('../../src/ebms/enteteReponse');
 const PointAcces = require('../../src/ebms/pointAcces');
+const PieceJointe = require('../../src/ebms/pieceJointe');
 
 describe("L'entête d'une réponse", () => {
   const adaptateurUUID = {};
@@ -25,8 +26,7 @@ describe("L'entête d'une réponse", () => {
 
   it('peut contenir une pièce jointe', () => {
     const entete = new EnteteReponse(config, {
-      idPayload: 'unIdPayload',
-      idPieceJointe: 'unIdentifiantPieceJointe',
+      pieceJointe: new PieceJointe('unIdentifiantPieceJointe'),
       destinataire,
     });
 

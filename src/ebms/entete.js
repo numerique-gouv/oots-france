@@ -1,4 +1,5 @@
 const PointAcces = require('./pointAcces');
+const PieceJointeVide = require('./pieceJointeVide');
 
 const ACTIONS = {
   EXECUTION_REQUETE: 'ExecuteQueryRequest',
@@ -14,7 +15,7 @@ class Entete {
     this.destinataire = donnees.destinataire;
     this.idConversation = donnees.idConversation;
     this.idPayload = donnees.idPayload;
-    this.idPieceJointe = donnees.idPieceJointe;
+    this.pieceJointe = donnees.pieceJointe || new PieceJointeVide();
 
     const { adaptateurUUID } = config;
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
@@ -54,30 +55,17 @@ class Entete {
       <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">C1</eb:Property>
       <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">C4</eb:Property>
     </eb:MessageProperties>
+
     <eb:PayloadInfo>
       <eb:PartInfo href="${this.idPayload}">
         <eb:PartProperties>
-          <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+        <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
         </eb:PartProperties>
       </eb:PartInfo>
-      ${this.infosPieceJointe()}
+      ${this.pieceJointe.enXML()}
     </eb:PayloadInfo>
   </eb:UserMessage>
 </eb:Messaging>
-    `;
-  }
-
-  infosPieceJointe() {
-    if (typeof this.idPieceJointe === 'undefined') {
-      return '';
-    }
-
-    return `
-<eb:PartInfo href="${this.idPieceJointe}">
-  <eb:PartProperties>
-    <eb:Property name="MimeType">application/pdf</eb:Property>
-  </eb:PartProperties>
-</eb:PartInfo>
     `;
   }
 }
