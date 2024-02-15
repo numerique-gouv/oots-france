@@ -236,11 +236,29 @@ describe('Le serveur OOTS France', () => {
   });
 
   describe('sur GET /', () => {
-    it('sert une erreur HTTP 501 (not implemented)', () => {
-      expect.assertions(1);
+    beforeEach(() => {
+      adaptateurChiffrement.verifieJeton = () => Promise.resolve();
+    });
+
+    it("affiche qu'il n'y a pas pas d'utilisateur courant par défaut", () => (
+      axios.get(`http://localhost:${port}/`)
+        .then((reponse) => {
+          expect(reponse.status).toBe(200);
+          expect(reponse.data).toContain("Pas d'utilisateur courant");
+        })
+    ));
+
+    it("affiche prénom et nom de l'utilisateur courant s'il existe", () => {
+      adaptateurChiffrement.verifieJeton = () => Promise.resolve({
+        given_name: 'Sandra',
+        family_name: 'Nicouette',
+      });
 
       return axios.get(`http://localhost:${port}/`)
-        .catch((erreur) => expect(erreur.response.status).toEqual(501));
+        .then((reponse) => {
+          expect(reponse.status).toBe(200);
+          expect(reponse.data).toContain('Utilisateur courant : Sandra Nicouette');
+        });
     });
   });
 });
