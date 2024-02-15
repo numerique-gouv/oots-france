@@ -28,7 +28,7 @@ const creeServeur = (config) => {
     name: 'jeton',
     sameSite: true,
     secret: adaptateurEnvironnement.secretJetonSession(),
-    secure: false,
+    secure: adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),
   }));
 
   app.post('/admin/arretEcouteDomibus', (_requete, reponse) => {
