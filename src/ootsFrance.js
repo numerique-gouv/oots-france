@@ -134,8 +134,12 @@ const creeServeur = (config) => {
     }
   });
 
-  app.get('/', (_requete, reponse) => {
-    reponse.status(501).send('Pas encore implémenté !');
+  app.get('/', (requete, reponse) => {
+    adaptateurChiffrement.verifieJeton(requete.session.jeton)
+      .then((jeton) => (jeton
+        ? `Utilisateur courant : ${jeton.given_name} ${jeton.family_name}`
+        : "Pas d'utilisateur courant"))
+      .then((message) => reponse.send(message));
   });
 
   const arreteEcoute = (suite) => serveur.close(suite);

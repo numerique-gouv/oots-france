@@ -10,8 +10,13 @@ const genereJeton = (donnees) => new jose.SignJWT(donnees)
   .sign(adaptateurEnvironnement.secretJetonSession());
 
 const verifieJeton = (jeton) => {
+  if (typeof jeton === 'undefined') {
+    return Promise.resolve();
+  }
+
   const secret = adaptateurEnvironnement.secretJetonSession();
-  return jose.jwtVerify(jeton, secret);
+  return jose.jwtVerify(jeton, secret)
+    .then(({ payload }) => payload);
 };
 
 module.exports = { cleHachage, genereJeton, verifieJeton };
