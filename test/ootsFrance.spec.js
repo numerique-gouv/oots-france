@@ -21,6 +21,7 @@ describe('Le serveur OOTS France', () => {
     adaptateurChiffrement.cleHachage = () => '';
     adaptateurChiffrement.genereJeton = () => Promise.resolve();
     adaptateurEnvironnement.avecRequetePieceJustificative = () => 'true';
+    adaptateurEnvironnement.avecEnvoiCookieSurHTTP = () => 'true';
     adaptateurEnvironnement.secretJetonSession = () => 'secret';
     adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.resolve({});
     adaptateurUUID.genereUUID = () => '';
