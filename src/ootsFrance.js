@@ -8,6 +8,7 @@ const EnteteRequete = require('./ebms/enteteRequete');
 const PointAcces = require('./ebms/pointAcces');
 const ReponseErreur = require('./ebms/reponseErreur');
 const RequeteJustificatif = require('./ebms/requeteJustificatif');
+const routesAdmin = require('./routes/routesAdmin');
 
 const creeServeur = (config) => {
   const {
@@ -31,15 +32,7 @@ const creeServeur = (config) => {
     secure: adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),
   }));
 
-  app.post('/admin/arretEcouteDomibus', (_requete, reponse) => {
-    ecouteurDomibus.arreteEcoute();
-    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
-  });
-
-  app.post('/admin/demarrageEcouteDomibus', (_requete, reponse) => {
-    ecouteurDomibus.ecoute();
-    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
-  });
+  app.use('/admin', routesAdmin({ ecouteurDomibus }));
 
   app.get('/auth/cles_publiques', (_requete, reponse) => {
     const { kty, n, e } = adaptateurEnvironnement.clePriveeJWK();
