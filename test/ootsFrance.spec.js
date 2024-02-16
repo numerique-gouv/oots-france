@@ -176,44 +176,6 @@ describe('Le serveur OOTS France', () => {
     });
   });
 
-  describe('sur POST /admin/arretEcouteDomibus', () => {
-    it("arrête d'écouter Domibus", () => {
-      let arretEcoute = false;
-      ecouteurDomibus.arreteEcoute = () => {
-        arretEcoute = true;
-      };
-
-      return axios.post(`http://localhost:${port}/admin/arretEcouteDomibus`)
-        .then(() => expect(arretEcoute).toBe(true));
-    });
-
-    it("retourne le nouvel état de l'écouteur", () => {
-      ecouteurDomibus.etat = () => 'nouvel état';
-
-      return axios.post(`http://localhost:${port}/admin/arretEcouteDomibus`)
-        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
-    });
-  });
-
-  describe('sur POST /admin/demarrageEcouteDomibus', () => {
-    it('écoute Domibus', () => {
-      let demarreEcoute = false;
-      ecouteurDomibus.ecoute = () => {
-        demarreEcoute = true;
-      };
-
-      return axios.post(`http://localhost:${port}/admin/demarrageEcouteDomibus`)
-        .then(() => expect(demarreEcoute).toBe(true));
-    });
-
-    it("retourne le nouvel état de l'écouteur", () => {
-      ecouteurDomibus.etat = () => 'nouvel état';
-
-      return axios.post(`http://localhost:${port}/admin/demarrageEcouteDomibus`)
-        .then((reponse) => expect(reponse.data).toEqual({ etatEcouteur: 'nouvel état' }));
-    });
-  });
-
   describe('sur GET /auth/cles_publiques', () => {
     it('retourne les clés de chiffrement au format JSON Web Key Set', () => {
       adaptateurEnvironnement.clePriveeJWK = () => ({ e: 'AQAB', n: '503as-2qay5...', kty: 'RSA' });
