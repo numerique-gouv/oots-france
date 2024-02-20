@@ -17,7 +17,10 @@ const serveurTest = () => {
   };
 
   const initialise = (suite) => {
-    adaptateurChiffrement = {};
+    adaptateurChiffrement = {
+      genereJeton: () => Promise.resolve(),
+    };
+
     adaptateurDomibus = {};
 
     adaptateurEnvironnement = {
