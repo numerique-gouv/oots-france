@@ -1,7 +1,6 @@
 const cookieSession = require('cookie-session');
 const express = require('express');
 
-const connexionFCPlus = require('./api/connexionFCPlus');
 const pieceJustificative = require('./api/pieceJustificative');
 const EnteteErreur = require('./ebms/enteteErreur');
 const EnteteRequete = require('./ebms/enteteRequete');
@@ -9,6 +8,7 @@ const PointAcces = require('./ebms/pointAcces');
 const ReponseErreur = require('./ebms/reponseErreur');
 const RequeteJustificatif = require('./ebms/requeteJustificatif');
 const routesAdmin = require('./routes/routesAdmin');
+const routesAuth = require('./routes/routesAuth');
 
 const creeServeur = (config) => {
   const {
@@ -34,40 +34,11 @@ const creeServeur = (config) => {
 
   app.use('/admin', routesAdmin({ ecouteurDomibus }));
 
-  app.get('/auth/cles_publiques', (_requete, reponse) => {
-    const { kty, n, e } = adaptateurEnvironnement.clePriveeJWK();
-    const idClePublique = adaptateurChiffrement.cleHachage(n);
-
-    const clePubliqueDansJWKSet = {
-      keys: [{
-        kid: idClePublique,
-        use: 'enc',
-        kty,
-        e,
-        n,
-      }],
-    };
-
-    reponse.set('Content-Type', 'application/json');
-    reponse.status(200)
-      .send(clePubliqueDansJWKSet);
-  });
-
-  app.get('/auth/fcplus/connexion', (requete, reponse) => {
-    const { code, state } = requete.query;
-    if (typeof state === 'undefined' || state === '') {
-      reponse.status(400).json({ erreur: "Paramètre 'state' absent de la requête" });
-    } else if (typeof code === 'undefined' || code === '') {
-      reponse.status(400).json({ erreur: "Paramètre 'code' absent de la requête" });
-    } else {
-      connexionFCPlus(
-        { adaptateurChiffrement, adaptateurFranceConnectPlus },
-        code,
-        requete,
-        reponse,
-      );
-    }
-  });
+  app.use('/auth', routesAuth({
+    adaptateurChiffrement,
+    adaptateurEnvironnement,
+    adaptateurFranceConnectPlus,
+  }));
 
   app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
     const { idDestinataire, typeIdentifiant } = requete.query;
