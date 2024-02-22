@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-const { parseXML } = require('./ebms/utils');
 const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
@@ -48,49 +47,6 @@ describe('Le serveur OOTS France', () => {
 
   afterEach((suite) => {
     serveur.arreteEcoute(suite);
-  });
-
-  describe('sur GET /ebms/entetes/requeteJustificatif', () => {
-    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/entetes/requeteJustificatif`)
-      .then((reponse) => {
-        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-      }));
-
-    it('génère un identifiant unique de conversation', () => {
-      adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
-
-      return axios.get(`http://localhost:${port}/ebms/entetes/requeteJustificatif`)
-        .then((reponse) => {
-          const xml = parseXML(reponse.data);
-          const idConversation = xml.Messaging.UserMessage.CollaborationInfo.ConversationId;
-          expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
-        });
-    });
-  });
-
-  describe('sur GET /ebms/messages/requeteJustificatif', () => {
-    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/messages/requeteJustificatif`)
-      .then((reponse) => {
-        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-      }));
-
-    it('génère un identifiant unique de requête', () => {
-      adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
-
-      return axios.get(`http://localhost:${port}/ebms/messages/requeteJustificatif`)
-        .then((reponse) => {
-          const xml = parseXML(reponse.data);
-          const requestId = xml.QueryRequest['@_id'];
-          expect(requestId).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
-        });
-    });
-  });
-
-  describe('sur GET /ebms/messages/reponseErreur', () => {
-    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/messages/reponseErreur`)
-      .then((reponse) => {
-        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
-      }));
   });
 
   describe('sur GET /requete/pieceJustificative', () => {
