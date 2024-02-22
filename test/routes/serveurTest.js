@@ -29,7 +29,11 @@ const serveurTest = () => {
     };
 
     adaptateurFranceConnectPlus = {};
-    adaptateurUUID = {};
+
+    adaptateurUUID = {
+      genereUUID: () => '',
+    };
+
     depotPointsAcces = {};
 
     ecouteurDomibus = {
@@ -38,7 +42,9 @@ const serveurTest = () => {
       etat: () => '',
     };
 
-    horodateur = {};
+    horodateur = {
+      maintenant: () => '',
+    };
 
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurChiffrement,

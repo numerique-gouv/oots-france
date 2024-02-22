@@ -2,13 +2,9 @@ const cookieSession = require('cookie-session');
 const express = require('express');
 
 const pieceJustificative = require('./api/pieceJustificative');
-const EnteteErreur = require('./ebms/enteteErreur');
-const EnteteRequete = require('./ebms/enteteRequete');
-const PointAcces = require('./ebms/pointAcces');
-const ReponseErreur = require('./ebms/reponseErreur');
-const RequeteJustificatif = require('./ebms/requeteJustificatif');
 const routesAdmin = require('./routes/routesAdmin');
 const routesAuth = require('./routes/routesAuth');
+const routesEbms = require('./routes/routesEbms');
 
 const creeServeur = (config) => {
   const {
@@ -40,55 +36,7 @@ const creeServeur = (config) => {
     adaptateurFranceConnectPlus,
   }));
 
-  app.get('/ebms/entetes/requeteJustificatif', (requete, reponse) => {
-    const { idDestinataire, typeIdentifiant } = requete.query;
-    const destinataire = new PointAcces(idDestinataire, typeIdentifiant);
-    const idConversation = adaptateurUUID.genereUUID();
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteRequete(
-      { adaptateurUUID, horodateur },
-      { destinataire, idConversation, idPayload },
-    );
-
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(enteteEBMS.enXML());
-  });
-
-  app.get('/ebms/messages/requeteJustificatif', (_requete, reponse) => {
-    const requeteJustificatif = new RequeteJustificatif({ adaptateurUUID, horodateur });
-
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(requeteJustificatif.corpsMessageEnXML());
-  });
-
-  app.get('/ebms/entetes/reponseErreur', (requete, reponse) => {
-    const { destinataire } = requete.query;
-    const idConversation = adaptateurUUID.genereUUID();
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteErreur(
-      { adaptateurUUID, horodateur },
-      { destinataire, idConversation, idPayload },
-    );
-
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(enteteEBMS.enXML());
-  });
-
-  app.get('/ebms/messages/reponseErreur', (requete, reponse) => {
-    const reponseErreur = new ReponseErreur({ adaptateurUUID, horodateur }, {
-      idRequete: adaptateurUUID.genereUUID(),
-      exception: {
-        type: 'rs:ObjectNotFoundExceptionType',
-        message: 'Object not found',
-        severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
-        code: 'EDM:ERR:0004',
-      },
-    });
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(reponseErreur.corpsMessageEnXML());
-  });
+  app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }));
 
   app.get('/requete/pieceJustificative', (requete, reponse) => {
     if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
