@@ -36,7 +36,9 @@ const serveurTest = () => {
       secretJetonSession: () => 'secret',
     };
 
-    adaptateurFranceConnectPlus = {};
+    adaptateurFranceConnectPlus = {
+      recupereInfosUtilisateur: () => Promise.resolve({}),
+    };
 
     adaptateurUUID = {
       genereUUID: () => '',

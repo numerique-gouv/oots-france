@@ -53,6 +53,19 @@ describe('Le serveur des routes `/auth`', () => {
           .catch(leveErreur);
       });
 
+      it('stocke les infos dans un cookie sans attribut `Secure` si autorisé', () => {
+        serveur.adaptateurEnvironnement().avecEnvoiCookieSurHTTP = () => true;
+        return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
+          .then((reponse) => {
+            expect(reponse.headers).toHaveProperty('set-cookie');
+            const valeurEnteteSetCookie = reponse
+              .headers['set-cookie']
+              .find((h) => h.match(/jeton=/));
+            expect(valeurEnteteSetCookie).not.toContain('secure');
+          })
+          .catch(leveErreur);
+      });
+
       it("sert une erreur HTTP 502 (Bad Gateway) quand l'authentification échoue", () => {
         expect.assertions(2);
 

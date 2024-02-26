@@ -26,7 +26,7 @@ const creeServeur = (config) => {
     name: 'jeton',
     sameSite: true,
     secret: adaptateurEnvironnement.secretJetonSession(),
-    secure: adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),
+    secure: !adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),
   }));
 
   app.use('/admin', routesAdmin({ ecouteurDomibus }));
