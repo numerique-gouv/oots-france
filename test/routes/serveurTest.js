@@ -31,7 +31,7 @@ const serveurTest = () => {
     };
 
     adaptateurEnvironnement = {
-      avecEnvoiCookieSurHTTP: () => 'true',
+      avecEnvoiCookieSurHTTP: () => true,
       avecRequetePieceJustificative: () => true,
       secretJetonSession: () => 'secret',
     };
