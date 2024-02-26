@@ -21,6 +21,8 @@ const creeServeur = (config) => {
   let serveur;
   const app = express();
 
+  app.set('trust proxy', 1);
+
   app.use(cookieSession({
     maxAge: 15 * 60 * 1000,
     name: 'jeton',
