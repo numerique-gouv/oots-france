@@ -3,6 +3,7 @@ const express = require('express');
 
 const routesAdmin = require('./routes/routesAdmin');
 const routesAuth = require('./routes/routesAuth');
+const routesBase = require('./routes/routesBase');
 const routesEbms = require('./routes/routesEbms');
 const routesRequete = require('./routes/routesRequete');
 
@@ -45,13 +46,7 @@ const creeServeur = (config) => {
     depotPointsAcces,
   }));
 
-  app.get('/', (requete, reponse) => {
-    adaptateurChiffrement.verifieJeton(requete.session.jeton)
-      .then((jeton) => (jeton
-        ? `Utilisateur courant : ${jeton.given_name} ${jeton.family_name}`
-        : "Pas d'utilisateur courant"))
-      .then((message) => reponse.send(message));
-  });
+  app.use('/', routesBase({ adaptateurChiffrement }));
 
   const arreteEcoute = (suite) => serveur.close(suite);
 

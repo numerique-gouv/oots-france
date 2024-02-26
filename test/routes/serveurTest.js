@@ -21,6 +21,7 @@ const serveurTest = () => {
   const initialise = (suite) => {
     adaptateurChiffrement = {
       genereJeton: () => Promise.resolve(),
+      verifieJeton: () => Promise.resolve(),
     };
 
     adaptateurDomibus = {
