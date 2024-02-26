@@ -1,5 +1,7 @@
 const OOTS_FRANCE = require('../../src/ootsFrance');
 
+const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
+
 const serveurTest = () => {
   let adaptateurChiffrement;
   let adaptateurDomibus;
@@ -21,10 +23,15 @@ const serveurTest = () => {
       genereJeton: () => Promise.resolve(),
     };
 
-    adaptateurDomibus = {};
+    adaptateurDomibus = {
+      envoieMessageRequete: () => Promise.resolve(),
+      urlRedirectionDepuisReponse: () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue')),
+      pieceJustificativeDepuisReponse: () => Promise.resolve(Buffer.from('')),
+    };
 
     adaptateurEnvironnement = {
       avecEnvoiCookieSurHTTP: () => 'true',
+      avecRequetePieceJustificative: () => true,
       secretJetonSession: () => 'secret',
     };
 
@@ -34,7 +41,9 @@ const serveurTest = () => {
       genereUUID: () => '',
     };
 
-    depotPointsAcces = {};
+    depotPointsAcces = {
+      trouvePointAcces: () => Promise.resolve({}),
+    };
 
     ecouteurDomibus = {
       arreteEcoute: () => {},

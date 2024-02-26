@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-const { ErreurAbsenceReponseDestinataire } = require('../src/erreurs');
 const OOTS_FRANCE = require('../src/ootsFrance');
 
 describe('Le serveur OOTS France', () => {
@@ -47,39 +46,6 @@ describe('Le serveur OOTS France', () => {
 
   afterEach((suite) => {
     serveur.arreteEcoute(suite);
-  });
-
-  describe('sur GET /requete/pieceJustificative', () => {
-    beforeEach(() => {
-      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
-      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'));
-      adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve(Buffer.from(''));
-    });
-
-    describe('avec un destinataire qui ne répond pas', () => {
-      it('retourne une erreur HTTP 504 (Gateway Timeout)', () => {
-        expect.assertions(2);
-
-        adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'));
-        return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=DESTINATAIRE_SILENCIEUX`)
-          .catch(({ response }) => {
-            expect(response.status).toEqual(504);
-            expect(response.data).toEqual({ erreur: 'aucune URL reçue ; aucune pièce reçue' });
-          });
-      });
-    });
-
-    it('retourne une erreur 501 quand le feature flip est désactivé', () => {
-      expect.assertions(2);
-
-      adaptateurEnvironnement.avecRequetePieceJustificative = () => false;
-
-      return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=AP_FR_01`)
-        .catch(({ response }) => {
-          expect(response.status).toEqual(501);
-          expect(response.data).toEqual('Not Implemented Yet!');
-        });
-    });
   });
 
   describe('sur GET /', () => {

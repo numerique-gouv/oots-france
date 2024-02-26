@@ -1,10 +1,10 @@
 const cookieSession = require('cookie-session');
 const express = require('express');
 
-const pieceJustificative = require('./api/pieceJustificative');
 const routesAdmin = require('./routes/routesAdmin');
 const routesAuth = require('./routes/routesAuth');
 const routesEbms = require('./routes/routesEbms');
+const routesRequete = require('./routes/routesRequete');
 
 const creeServeur = (config) => {
   const {
@@ -38,13 +38,12 @@ const creeServeur = (config) => {
 
   app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }));
 
-  app.get('/requete/pieceJustificative', (requete, reponse) => {
-    if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
-      pieceJustificative({ adaptateurDomibus, adaptateurUUID, depotPointsAcces }, requete, reponse);
-    } else {
-      reponse.status(501).send('Not Implemented Yet!');
-    }
-  });
+  app.use('/requete', routesRequete({
+    adaptateurDomibus,
+    adaptateurEnvironnement,
+    adaptateurUUID,
+    depotPointsAcces,
+  }));
 
   app.get('/', (requete, reponse) => {
     adaptateurChiffrement.verifieJeton(requete.session.jeton)
