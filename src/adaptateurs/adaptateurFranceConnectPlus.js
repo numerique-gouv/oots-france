@@ -2,6 +2,7 @@ const axios = require('axios');
 const jose = require('jose');
 
 const adaptateurEnvironnement = require('./adaptateurEnvironnement');
+const adaptateurChiffrement = require('./adaptateurChiffrement');
 const { ErreurEchecAuthentification } = require('../erreurs');
 
 const configurationOpenIdFranceConnectPlus = axios
@@ -34,8 +35,7 @@ const recupereInfosUtilisateurChiffrees = (jeton) => configurationOpenIdFranceCo
 
 const verifieSignatureJWT = (jwt) => configurationOpenIdFranceConnectPlus
   .then(({ jwks_uri: urlJWKS }) => jose.createRemoteJWKSet(new URL(urlJWKS)))
-  .then((jwks) => jose.jwtVerify(jwt, jwks))
-  .then(({ payload }) => payload);
+  .then((jwks) => adaptateurChiffrement.verifieJeton(jwt, jwks));
 
 const dechiffreInfosUtilisateur = (infos) => jose
   .importJWK(adaptateurEnvironnement.clePriveeJWK())
