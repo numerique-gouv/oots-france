@@ -1,11 +1,12 @@
 const express = require('express');
 
 const routesBase = (config) => {
-  const { adaptateurChiffrement } = config;
+  const { adaptateurChiffrement, adaptateurEnvironnement } = config;
   const routes = express.Router();
 
   routes.get('/', (requete, reponse) => {
-    adaptateurChiffrement.verifieJeton(requete.session.jeton)
+    const secret = adaptateurEnvironnement.secretJetonSession();
+    adaptateurChiffrement.verifieJeton(requete.session.jeton, secret)
       .then((jeton) => (jeton
         ? `Utilisateur courant : ${jeton.given_name} ${jeton.family_name}`
         : "Pas d'utilisateur courant"))
