@@ -9,12 +9,11 @@ const genereJeton = (donnees) => new jose.SignJWT(donnees)
   .setProtectedHeader({ alg: 'HS256' })
   .sign(adaptateurEnvironnement.secretJetonSession());
 
-const verifieJeton = (jeton) => {
+const verifieJeton = (jeton, secret) => {
   if (typeof jeton === 'undefined') {
     return Promise.resolve();
   }
 
-  const secret = adaptateurEnvironnement.secretJetonSession();
   return jose.jwtVerify(jeton, secret)
     .then(({ payload }) => payload);
 };

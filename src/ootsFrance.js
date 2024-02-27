@@ -48,7 +48,7 @@ const creeServeur = (config) => {
     depotPointsAcces,
   }));
 
-  app.use('/', routesBase({ adaptateurChiffrement }));
+  app.use('/', routesBase({ adaptateurChiffrement, adaptateurEnvironnement }));
 
   const arreteEcoute = (suite) => serveur.close(suite);
 
