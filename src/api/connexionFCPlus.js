@@ -4,7 +4,6 @@ const connexionFCPlus = (config, code, requete, reponse) => {
   return adaptateurFranceConnectPlus.recupereInfosUtilisateur(code)
     .then((infos) => adaptateurChiffrement.genereJeton(infos)
       .then((jwt) => {
-        // eslint-disable-next-line no-param-reassign
         requete.session.jeton = jwt;
       })
       .then(() => reponse.json(infos)))

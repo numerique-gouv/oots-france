@@ -17,6 +17,7 @@ const creeServeur = (config) => {
     depotPointsAcces,
     ecouteurDomibus,
     horodateur,
+    middleware,
   } = config;
   let serveur;
   const app = express();
@@ -48,7 +49,7 @@ const creeServeur = (config) => {
     depotPointsAcces,
   }));
 
-  app.use('/', routesBase({ adaptateurChiffrement, adaptateurEnvironnement }));
+  app.use('/', routesBase({ middleware }));
 
   const arreteEcoute = (suite) => serveur.close(suite);
 
