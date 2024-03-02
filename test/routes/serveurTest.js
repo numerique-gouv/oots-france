@@ -1,5 +1,6 @@
 const OOTS_FRANCE = require('../../src/ootsFrance');
 
+const MiddlewareFantaisie = require('../mocks/middleware');
 const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
 
 const serveurTest = () => {
@@ -11,6 +12,7 @@ const serveurTest = () => {
   let depotPointsAcces;
   let ecouteurDomibus;
   let horodateur;
+  let middleware;
 
   let serveur;
 
@@ -58,6 +60,8 @@ const serveurTest = () => {
       maintenant: () => '',
     };
 
+    middleware = new MiddlewareFantaisie({});
+
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurChiffrement,
       adaptateurDomibus,
@@ -67,6 +71,7 @@ const serveurTest = () => {
       depotPointsAcces,
       ecouteurDomibus,
       horodateur,
+      middleware,
     });
 
     serveur.ecoute(0, suite);
@@ -85,6 +90,7 @@ const serveurTest = () => {
     ecouteurDomibus: () => ecouteurDomibus,
     horodateur: () => horodateur,
     initialise,
+    middleware: () => middleware,
     port,
   };
 };

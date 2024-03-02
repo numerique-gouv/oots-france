@@ -24,9 +24,11 @@ describe('Le serveur des routes `/`', () => {
         .catch(leveErreur)));
 
     it("affiche prénom et nom de l'utilisateur courant s'il existe", () => {
-      serveur.adaptateurChiffrement().verifieJeton = () => Promise.resolve({
-        given_name: 'Sandra',
-        family_name: 'Nicouette',
+      serveur.middleware().reinitialise({
+        utilisateurCourant: {
+          given_name: 'Sandra',
+          family_name: 'Nicouette',
+        },
       });
 
       return axios.get(`http://localhost:${port}/`)
