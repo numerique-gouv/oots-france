@@ -3,6 +3,7 @@ class ErreurAucunMessageDomibusRecu extends Error {}
 class ErreurDestinataireInexistant extends Error {}
 class ErreurEchecAuthentification extends Error {}
 class ErreurInstructionSOAPInconnue extends Error {}
+class ErreurJetonInvalide extends Error {}
 class ErreurReponseRequete extends Error {}
 
 module.exports = {
@@ -11,5 +12,6 @@ module.exports = {
   ErreurDestinataireInexistant,
   ErreurEchecAuthentification,
   ErreurInstructionSOAPInconnue,
+  ErreurJetonInvalide,
   ErreurReponseRequete,
 };
