@@ -1,3 +1,4 @@
+const { ErreurJetonInvalide } = require('../../src/erreurs');
 const Middleware = require('../../src/routes/middleware');
 
 describe('Le middleware OOTS-France', () => {
@@ -42,6 +43,17 @@ describe('Le middleware OOTS-France', () => {
         expect(requete.utilisateurCourant).toEqual({ infos: 'des infos' });
         suite();
       } catch (e) { suite(e); }
+    })
+      .catch(suite);
+  });
+
+  it("supprime les infos de l'utilisateur courant si le jeton est invalide", (suite) => {
+    adaptateurChiffrement.verifieJeton = () => Promise.reject(new ErreurJetonInvalide('oups'));
+
+    const middleware = new Middleware(config);
+    middleware.renseigneUtilisateurCourant(requete, null, () => {
+      expect(requete.utilisateurCourant).toBeUndefined();
+      suite();
     })
       .catch(suite);
   });

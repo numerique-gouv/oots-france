@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const jose = require('jose');
 
 const adaptateurEnvironnement = require('./adaptateurEnvironnement');
+const { ErreurJetonInvalide } = require('../erreurs');
 
 const cleHachage = (chaine) => crypto.createHash('md5').update(chaine).digest('hex');
 
@@ -15,7 +16,8 @@ const verifieJeton = (jeton, secret) => {
   }
 
   return jose.jwtVerify(jeton, secret)
-    .then(({ payload }) => payload);
+    .then(({ payload }) => payload)
+    .catch((e) => Promise.reject(new ErreurJetonInvalide(e)));
 };
 
 module.exports = { cleHachage, genereJeton, verifieJeton };
