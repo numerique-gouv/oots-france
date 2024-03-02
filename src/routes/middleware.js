@@ -8,6 +8,7 @@ class Middleware {
     const secret = this.adaptateurEnvironnement.secretJetonSession();
     return this.adaptateurChiffrement.verifieJeton(requete.session.jeton, secret)
       .then((infosUtilisateur) => { requete.utilisateurCourant = infosUtilisateur; })
+      .catch(() => { requete.utilisateurCourant = undefined; })
       .then(() => suite());
   }
 }
