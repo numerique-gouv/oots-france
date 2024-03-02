@@ -7,10 +7,12 @@ const adaptateurFranceConnectPlus = require('./src/adaptateurs/adaptateurFranceC
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 const horodateur = require('./src/adaptateurs/horodateur');
 const DepotPointsAcces = require('./src/depots/depotPointsAcces');
+const Middleware = require('./src/routes/middleware');
 
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
 const depotPointsAcces = new DepotPointsAcces(adaptateurDomibus);
 const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
+const middleware = new Middleware({ adaptateurChiffrement, adaptateurEnvironnement });
 
 const serveur = OOTS_FRANCE.creeServeur({
   adaptateurChiffrement,
@@ -21,6 +23,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   depotPointsAcces,
   ecouteurDomibus,
   horodateur,
+  middleware,
 });
 
 const port = process.env.PORT || 3000;
