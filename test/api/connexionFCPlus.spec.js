@@ -1,4 +1,5 @@
 const connexionFCPlus = require('../../src/api/connexionFCPlus');
+const { ErreurEchecAuthentification } = require('../../src/erreurs');
 
 describe('Le requêteur de connexion FC+', () => {
   const adaptateurChiffrement = {};
@@ -45,5 +46,13 @@ describe('Le requêteur de connexion FC+', () => {
     expect(requete.session.jeton).toBeUndefined();
     return connexionFCPlus(config, 'unCode', requete, reponse)
       .then(() => expect(requete.session.jeton).toBe('XXX'));
+  });
+
+  it('supprime le jeton déjà en session sur erreur récupération infos', () => {
+    adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.reject(new ErreurEchecAuthentification('oups'));
+
+    requete.session.jeton = 'unJeton';
+    return connexionFCPlus(config, 'unCode', requete, reponse)
+      .then(() => expect(requete.session.jeton).toBeUndefined());
   });
 });
