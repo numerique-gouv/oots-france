@@ -107,6 +107,22 @@ Domibus](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments
 pour la signification des diverses propriétés.
 
 
+## Bouchon du fournisseur d'identité
+
+La solution fournit un « faux serveur FranceConnect+ » qui permet de bouchonner
+les appels au fournisseur d'identité et d'obtenir les informations utilisateur.
+Le serveur est lancé dans le conteneur Docker `mock_fcplus` et est accessible
+_via_ le port déclaré dans la variable d'environnement `PORT_MOCK_FCPLUS` dans
+le fichier `.env`. Une fois le bouchon actif, la requête `GET
+http://localhost:[PORT_MOCK_FCPLUS]` devrait renvoyer un JSON avec les divers
+points d'accès et leur URL respective (depuis l'intérieur du conteneur du
+serveur OOTS-France).
+
+Pour que le serveur OOTS-France puisse communiquer avec ce bouchon, il faudra
+renseigner dans le fichier `.env.oots` la variable d'environnement
+`URL_CONFIGURATION_OPEN_ID_FCPLUS` avec la valeur `http://mock_fcplus:4000` (le
+port d'écoute du bouchon depuis l'intérieur du conteneur).
+
 ## Lancement du serveur OOTS-France
 
 ```sh
