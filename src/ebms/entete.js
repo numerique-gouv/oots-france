@@ -55,11 +55,10 @@ class Entete {
       <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">C1</eb:Property>
       <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">C4</eb:Property>
     </eb:MessageProperties>
-
     <eb:PayloadInfo>
       <eb:PartInfo href="${this.idPayload}">
         <eb:PartProperties>
-        <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+          <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
         </eb:PartProperties>
       </eb:PartInfo>
       ${this.pieceJointe.enXMLDansEntete()}

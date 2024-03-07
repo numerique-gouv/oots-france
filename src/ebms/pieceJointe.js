@@ -1,6 +1,7 @@
 class PieceJointe {
-  constructor(identifiantPieceJointe) {
+  constructor(identifiantPieceJointe, contenuPieceJointe) {
     this.idPieceJointe = identifiantPieceJointe;
+    this.contenuPieceJointe = contenuPieceJointe;
   }
 
   enXMLDansEntete() {
@@ -10,6 +11,14 @@ class PieceJointe {
     <eb:Property name="MimeType">application/pdf</eb:Property>
   </eb:PartProperties>
 </eb:PartInfo>
+    `;
+  }
+
+  enXMLDansCorps() {
+    return `
+<payload payloadId="${this.idPieceJointe}">
+  <value>${this.contenuPieceJointe}</value>
+</payload>
     `;
   }
 }

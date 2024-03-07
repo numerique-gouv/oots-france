@@ -2,15 +2,20 @@ const fs = require('fs');
 
 const EnteteReponse = require('./enteteReponse');
 const Message = require('./message');
+const PieceJointe = require('./pieceJointe');
 
 class ReponseVerificationSysteme extends Message {
   static ClasseEntete = EnteteReponse;
 
   constructor(config, donnees) {
-    const idPieceJointe = `cid:${config.adaptateurUUID.genereUUID()}@pdf.oots.fr`;
-    const contenuPieceJointe = fs.readFileSync('./assets/drapeau.pdf').toString('base64');
+    const pieceJointe = new PieceJointe(
+      `cid:${config.adaptateurUUID.genereUUID()}@pdf.oots.fr`,
+      fs.readFileSync('./assets/drapeau.pdf').toString('base64'),
+    );
 
-    super(config, { ...donnees, idPieceJointe, contenuPieceJointe });
+    super(config, {
+      ...donnees, pieceJointe,
+    });
     this.idRequete = donnees.idRequete;
   }
 
@@ -51,7 +56,7 @@ class ReponseVerificationSysteme extends Message {
           <sdg:Format>application/pdf</sdg:Format>
         </sdg:Distribution>
       </rim:Slot>
-      <rim:RepositoryItemRef xlink:href="${this.idPieceJointe}" xlink:title="Evidence"/>
+      <rim:RepositoryItemRef xlink:href="${this.pieceJointe.idPieceJointe}" xlink:title="Evidence"/>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
