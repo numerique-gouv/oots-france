@@ -1,15 +1,18 @@
+const PieceJointe = require('../../src/ebms/pieceJointe');
+
 class ConstructeurEnveloppeSOAPAvecPieceJointe {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
-    this.idPieceJointe = 'cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu';
     this.typeMimePieceJointe = 'application/pdf';
-    this.contenuPieceJointe = '';
+    this.pieceJointe = new PieceJointe(
+      'cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu',
+      'e2RhdGE6J3RydWN9',
+    );
   }
 
   avecPieceJointe(id, typeMime, contenu) {
-    this.idPieceJointe = id;
     this.typeMimePieceJointe = typeMime;
-    this.contenuPieceJointe = contenu;
+    this.pieceJointe = new PieceJointe(id, contenu);
 
     return this;
   }
@@ -30,7 +33,7 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
   <rim:RegistryObjectList>
     <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">
       <rim:Slot name="EvidenceMetadata"><!-- … --></rim:Slot>
-      <rim:RepositoryItemRef ns7:href="${this.idPieceJointe}" ns7:title="Evidence"/>
+      <rim:RepositoryItemRef ns7:href="${this.pieceJointe.idPieceJointe}" ns7:title="Evidence"/>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
@@ -39,7 +42,7 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     const messageBase64 = Buffer.from(message).toString('base64');
 
     const infosPieceJointe = `
-<ns5:PartInfo href="${this.idPieceJointe}">
+<ns5:PartInfo href="${this.pieceJointe.idPieceJointe}">
     <ns5:PartProperties>
         <ns5:Property name="MimeType">${this.typeMimePieceJointe}</ns5:Property>
         <ns5:Property name="CompressionType">application/gzip</ns5:Property>
@@ -48,8 +51,8 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     `;
 
     const pieceJointe = `
-<payload payloadId="${this.idPieceJointe}">
-  <value>${Buffer.from(this.contenuPieceJointe).toString('base64')}</value>
+<payload payloadId="${this.pieceJointe.idPieceJointe}">
+  <value>${Buffer.from(this.pieceJointe.contenuPieceJointe).toString('base64')}</value>
 </payload>
     `;
 

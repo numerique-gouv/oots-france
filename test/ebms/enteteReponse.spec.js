@@ -26,7 +26,7 @@ describe("L'entête d'une réponse", () => {
 
   it('peut contenir une pièce jointe', () => {
     const entete = new EnteteReponse(config, {
-      pieceJointe: new PieceJointe('unIdentifiantPieceJointe'),
+      pieceJointe: new PieceJointe('unIdentifiantPieceJointe', 'dW50cnVj'),
       destinataire,
     });
 

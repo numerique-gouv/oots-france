@@ -59,8 +59,8 @@ describe('Une action de requête reçue depuis Domibus', () => {
       const requete = new Requete(xmlParse);
       const reponseErreur = requete.reponse(config);
 
-      expect(reponseErreur.idPieceJointe).toBeUndefined();
-      expect(reponseErreur.contenuPieceJointe).toBeUndefined();
+      expect(reponseErreur.pieceJointe.idPieceJointe).toBeUndefined();
+      expect(reponseErreur.pieceJointe.contenuPieceJointe).toBeUndefined();
     });
   });
 
@@ -73,8 +73,8 @@ describe('Une action de requête reçue depuis Domibus', () => {
       const requete = new Requete(xmlParse);
       const reponse = requete.reponse(config, {});
 
-      expect(reponse.idPieceJointe).toBe('cid:12345678-1234-1234-1234-1234567890ab@pdf.oots.fr');
-      expect(reponse.contenuPieceJointe).toBeDefined();
+      expect(reponse.pieceJointe.idPieceJointe).toBe('cid:12345678-1234-1234-1234-1234567890ab@pdf.oots.fr');
+      expect(reponse.pieceJointe.contenuPieceJointe).toBeDefined();
     });
   });
 });
