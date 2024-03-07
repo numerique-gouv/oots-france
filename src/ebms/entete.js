@@ -62,7 +62,7 @@ class Entete {
         <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
         </eb:PartProperties>
       </eb:PartInfo>
-      ${this.pieceJointe.enXML()}
+      ${this.pieceJointe.enXMLDansEntete()}
     </eb:PayloadInfo>
   </eb:UserMessage>
 </eb:Messaging>

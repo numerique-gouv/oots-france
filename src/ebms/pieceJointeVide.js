@@ -1,7 +1,7 @@
 const PieceJointe = require('./pieceJointe');
 
 class PieceJointeVide extends PieceJointe {
-  enXML() {
+  static enXMLDansEntete() {
     return '';
   }
 }

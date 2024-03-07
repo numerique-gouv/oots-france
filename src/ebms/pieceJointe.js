@@ -3,10 +3,7 @@ class PieceJointe {
     this.idPieceJointe = identifiantPieceJointe;
   }
 
-  enXML() {
-    if (typeof this.idPieceJointe === 'undefined') {
-      return '';
-    }
+  enXMLDansEntete() {
     return `
 <eb:PartInfo href="${this.idPieceJointe}">
   <eb:PartProperties>
