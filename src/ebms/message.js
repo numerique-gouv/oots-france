@@ -15,6 +15,8 @@ class Message {
     );
   }
 
+  pieceJointePresente = () => this.pieceJointe.constructor.name === 'PieceJointe';
+
   enSOAP() {
     const messageEnBase64 = Buffer.from(this.corpsMessageEnXML()).toString('base64');
 

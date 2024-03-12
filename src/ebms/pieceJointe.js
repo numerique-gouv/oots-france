@@ -1,12 +1,12 @@
 class PieceJointe {
   constructor(identifiantPieceJointe, contenuPieceJointe) {
-    this.idPieceJointe = identifiantPieceJointe;
+    this.identifiant = identifiantPieceJointe;
     this.contenuPieceJointe = contenuPieceJointe;
   }
 
   enXMLDansEntete() {
     return `
-<eb:PartInfo href="${this.idPieceJointe}">
+<eb:PartInfo href="${this.identifiant}">
   <eb:PartProperties>
     <eb:Property name="MimeType">application/pdf</eb:Property>
   </eb:PartProperties>
@@ -16,11 +16,13 @@ class PieceJointe {
 
   enXMLDansCorps() {
     return `
-<payload payloadId="${this.idPieceJointe}">
-  <value>${this.contenuPieceJointe}</value>
+<payload payloadId="${this.identifiant}">
+  <value>(${this.contenuPieceJointe})</value>
 </payload>
     `;
   }
+
+  contenuEnBase64 = () => '';
 }
 
 module.exports = PieceJointe;
