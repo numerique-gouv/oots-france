@@ -56,7 +56,7 @@ class ReponseVerificationSysteme extends Message {
           <sdg:Format>application/pdf</sdg:Format>
         </sdg:Distribution>
       </rim:Slot>
-      <rim:RepositoryItemRef xlink:href="${this.pieceJointe.idPieceJointe}" xlink:title="Evidence"/>
+      <rim:RepositoryItemRef xlink:href="${this.pieceJointe.identifiant}" xlink:title="Evidence"/>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
