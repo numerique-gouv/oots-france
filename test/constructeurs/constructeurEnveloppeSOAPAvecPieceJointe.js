@@ -52,7 +52,7 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
 
     const pieceJointe = `
 <payload payloadId="${this.pieceJointe.idPieceJointe}">
-  <value>${Buffer.from(this.pieceJointe.contenuPieceJointe).toString('base64')}</value>
+  <value>${Buffer.from(this.pieceJointe.contenu).toString('base64')}</value>
 </payload>
     `;
 
