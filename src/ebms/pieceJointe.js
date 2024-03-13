@@ -1,7 +1,7 @@
 class PieceJointe {
-  constructor(identifiantPieceJointe, contenuPieceJointe) {
+  constructor(identifiantPieceJointe, contenu) {
     this.identifiant = identifiantPieceJointe;
-    this.contenuPieceJointe = contenuPieceJointe;
+    this.contenu = contenu;
   }
 
   enXMLDansEntete() {
@@ -17,12 +17,10 @@ class PieceJointe {
   enXMLDansCorps() {
     return `
 <payload payloadId="${this.identifiant}">
-  <value>(${this.contenuPieceJointe})</value>
+  <value>(${this.contenu})</value>
 </payload>
     `;
   }
-
-  contenuEnBase64 = () => '';
 }
 
 module.exports = PieceJointe;
