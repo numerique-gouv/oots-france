@@ -31,7 +31,7 @@ const AdaptateurDomibus = (config = {}) => {
     .then(({ data }) => data);
 
   const envoieRequeteSOAP = (instruction, message) => axios.post(
-    `${urlBase}/services/wsplugin/${instruction.label}`,
+    `${urlBase}/services/wsplugin/${instruction.libelle}`,
     message,
     { headers: { 'Content-Type': 'text/xml', ...enteteAuthentificationBasique() } },
   )
