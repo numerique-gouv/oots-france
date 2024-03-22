@@ -14,7 +14,16 @@ const routesRequete = (config) => {
 
   routes.get('/pieceJustificative', (requete, reponse) => {
     if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
-      pieceJustificative({ adaptateurDomibus, adaptateurUUID, depotPointsAcces }, requete, reponse);
+      pieceJustificative(
+        {
+          adaptateurDomibus,
+          adaptateurEnvironnement,
+          adaptateurUUID,
+          depotPointsAcces,
+        },
+        requete,
+        reponse,
+      );
     } else {
       reponse.status(501).send('Not Implemented Yet!');
     }

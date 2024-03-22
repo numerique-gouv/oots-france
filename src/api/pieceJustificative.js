@@ -13,7 +13,12 @@ const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
 const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
 
 const pieceJustificative = (
-  { adaptateurDomibus, adaptateurUUID, depotPointsAcces },
+  {
+    adaptateurDomibus,
+    adaptateurEnvironnement,
+    adaptateurUUID,
+    depotPointsAcces,
+  },
   requete,
   reponse,
 ) => {
@@ -25,7 +30,7 @@ const pieceJustificative = (
       codeDemarche,
       destinataire,
       idConversation,
-      identifiantEIDAS: process.env.IDENTIFIANT_EIDAS,
+      identifiantEIDAS: adaptateurEnvironnement.identifiantEIDAS(),
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))
     .then(() => Promise.any([
