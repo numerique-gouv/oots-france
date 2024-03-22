@@ -9,17 +9,24 @@ const {
 
 describe('Le requêteur de pièce justificative', () => {
   const adaptateurDomibus = {};
+  const adaptateurEnvironnement = {};
   const adaptateurUUID = {};
   const depotPointsAcces = {};
-  const config = { adaptateurDomibus, adaptateurUUID, depotPointsAcces };
+  const config = {
+    adaptateurDomibus,
+    adaptateurEnvironnement,
+    adaptateurUUID,
+    depotPointsAcces,
+  };
   const requete = {};
   const reponse = {};
 
   beforeEach(() => {
-    adaptateurUUID.genereUUID = () => '';
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
     adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
+    adaptateurEnvironnement.identifiantEIDAS = () => 'FR/BE/123456789';
+    adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
 
     requete.query = {};
