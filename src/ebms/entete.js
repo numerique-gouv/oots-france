@@ -51,8 +51,8 @@ class Entete {
       ${baliseIdConversation}
     </eb:CollaborationInfo>
     <eb:MessageProperties>
-      <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C1</eb:Property>
-      <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C4</eb:Property>
+      <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">C1</eb:Property>
+      <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">C4</eb:Property>
     </eb:MessageProperties>
     <eb:PayloadInfo>
       <eb:PartInfo href="${this.idPayload}">
