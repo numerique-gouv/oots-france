@@ -25,6 +25,7 @@ const pieceJustificative = (
       codeDemarche,
       destinataire,
       idConversation,
+      identifiantEIDAS: process.env.IDENTIFIANT_EIDAS,
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))
     .then(() => Promise.any([
