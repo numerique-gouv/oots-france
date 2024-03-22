@@ -98,7 +98,7 @@ describe("l'entête EBMS de requête", () => {
       const proprietes = xml.Messaging.UserMessage.MessageProperties.Property;
       const expediteur = proprietes.find((p) => p['@_name'] === 'originalSender');
 
-      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered');
+      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR');
       expect(expediteur['#text']).toEqual('C1');
     });
 
@@ -108,7 +108,7 @@ describe("l'entête EBMS de requête", () => {
       const proprietes = xml.Messaging.UserMessage.MessageProperties.Property;
       const expediteur = proprietes.find((p) => p['@_name'] === 'finalRecipient');
 
-      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered');
+      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots');
       expect(expediteur['#text']).toEqual('C4');
     });
   });
