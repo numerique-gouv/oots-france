@@ -42,6 +42,11 @@ const routesAuth = (config) => {
     }
   });
 
+  routes.get('/fcplus/deconnexion', (requete, reponse) => {
+    requete.session = null;
+    reponse.end('déconnecté !');
+  });
+
   return routes;
 };
 
