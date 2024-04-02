@@ -1,6 +1,7 @@
 const express = require('express');
 
 const connexionFCPlus = require('../api/connexionFCPlus');
+const deconnexionFCPlus = require('../api/deconnexionFCPlus');
 
 const routesAuth = (config) => {
   const { adaptateurChiffrement, adaptateurEnvironnement, adaptateurFranceConnectPlus } = config;
@@ -42,10 +43,9 @@ const routesAuth = (config) => {
     }
   });
 
-  routes.get('/fcplus/deconnexion', (requete, reponse) => {
-    requete.session = null;
-    reponse.end('déconnecté !');
-  });
+  routes.get('/fcplus/deconnexion', (requete, reponse) => (
+    deconnexionFCPlus(requete, reponse)
+  ));
 
   return routes;
 };
