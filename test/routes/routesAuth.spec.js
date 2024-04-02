@@ -101,4 +101,18 @@ describe('Le serveur des routes `/auth`', () => {
         });
     });
   });
+
+  describe('sur GET /auth/fcplus/deconnexion', () => {
+    it('vide le cookie de session', () => (
+      axios.get(`http://localhost:${port}/auth/fcplus/deconnexion`)
+        .then((reponse) => {
+          expect(reponse.headers).toHaveProperty('set-cookie');
+          const valeurEnteteSetCookie = reponse
+            .headers['set-cookie']
+            .find((h) => h.match(/jeton/));
+          expect(valeurEnteteSetCookie).toContain('jeton=;');
+        })
+        .catch(leveErreur)
+    ));
+  });
 });
