@@ -1,8 +1,6 @@
 const axios = require('axios');
 
 const { leveErreur } = require('./utils');
-const { ErreurEchecAuthentification } = require('../../src/erreurs');
-
 const serveurTest = require('./serveurTest');
 
 describe('Le serveur des routes `/auth`', () => {
@@ -40,15 +38,16 @@ describe('Le serveur des routes `/auth`', () => {
 
   describe('sur GET /auth/fcplus/connexion', () => {
     describe('lorsque les paramètres `code` et `state` sont présents', () => {
-      it('sert les infos utilisateur', () => {
-        serveur.adaptateurFranceConnectPlus().recupereInfosUtilisateur = () => (
+      it('sert les infos de la session FC+', () => {
+        serveur.adaptateurChiffrement().verifieSignatureJWTDepuisJWKS = () => (
           Promise.resolve({ infos: 'des infos' })
         );
+        serveur.adaptateurChiffrement().dechiffreJWE = () => Promise.resolve('abcdef');
 
         return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
           .then((reponse) => {
             expect(reponse.status).toBe(200);
-            expect(reponse.data).toEqual({ infos: 'des infos' });
+            expect(reponse.data).toEqual({ infos: 'des infos', jwtSessionFCPlus: 'abcdef' });
           })
           .catch(leveErreur);
       });
@@ -69,8 +68,8 @@ describe('Le serveur des routes `/auth`', () => {
       it("sert une erreur HTTP 502 (Bad Gateway) quand l'authentification échoue", () => {
         expect.assertions(2);
 
-        serveur.adaptateurFranceConnectPlus().recupereInfosUtilisateur = () => (
-          Promise.reject(new ErreurEchecAuthentification('Oups'))
+        serveur.adaptateurFranceConnectPlus().recupereInfosUtilisateurChiffrees = () => (
+          Promise.reject(new Error('Oups'))
         );
 
         return axios.get(`http://localhost:${port}/auth/fcplus/connexion?code=unCode&state=unState`)
