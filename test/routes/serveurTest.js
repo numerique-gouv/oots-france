@@ -22,8 +22,10 @@ const serveurTest = () => {
 
   const initialise = (suite) => {
     adaptateurChiffrement = {
+      dechiffreJWE: () => Promise.resolve(),
       genereJeton: () => Promise.resolve(),
       verifieJeton: () => Promise.resolve(),
+      verifieSignatureJWTDepuisJWKS: () => Promise.resolve({}),
     };
 
     adaptateurDomibus = {
@@ -40,7 +42,9 @@ const serveurTest = () => {
     };
 
     adaptateurFranceConnectPlus = {
-      recupereInfosUtilisateur: () => Promise.resolve({}),
+      recupereDonneesJetonAcces: () => Promise.resolve({}),
+      recupereInfosUtilisateurChiffrees: () => Promise.resolve(),
+      recupereURLClefsPubliques: () => Promise.resolve(),
     };
 
     adaptateurUUID = {

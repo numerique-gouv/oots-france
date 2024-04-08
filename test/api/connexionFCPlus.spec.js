@@ -1,5 +1,4 @@
 const connexionFCPlus = require('../../src/api/connexionFCPlus');
-const { ErreurEchecAuthentification } = require('../../src/erreurs');
 
 describe('Le requêteur de connexion FC+', () => {
   const adaptateurChiffrement = {};
@@ -9,31 +8,25 @@ describe('Le requêteur de connexion FC+', () => {
   const reponse = {};
 
   beforeEach(() => {
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve();
     adaptateurChiffrement.genereJeton = () => Promise.resolve();
-    adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.resolve({});
+    adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = () => Promise.resolve({});
+    adaptateurFranceConnectPlus.recupereDonneesJetonAcces = () => Promise.resolve({});
+    adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.resolve();
+    adaptateurFranceConnectPlus.recupereURLClefsPubliques = () => Promise.resolve();
     requete.session = {};
     reponse.json = () => Promise.resolve();
     reponse.status = () => reponse;
   });
 
-  it('interroge le serveur FC+ pour obtenir les infos utilisateurs', () => {
+  it('retourne les infos de la session FC+ en JSON', () => {
     expect.assertions(1);
 
-    adaptateurFranceConnectPlus.recupereInfosUtilisateur = (code) => {
-      expect(code).toBe('unCode');
-      return Promise.resolve({});
-    };
-
-    return connexionFCPlus(config, 'unCode', requete, reponse);
-  });
-
-  it('retourne les infos utilisateurs obtenues en JSON', () => {
-    expect.assertions(1);
-
-    adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.resolve({ infos: 'des infos' });
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve('abcdef');
+    adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = () => Promise.resolve({ infos: 'des infos' });
 
     reponse.json = (donnees) => {
-      expect(donnees).toEqual({ infos: 'des infos' });
+      expect(donnees).toEqual({ infos: 'des infos', jwtSessionFCPlus: 'abcdef' });
       return Promise.resolve();
     };
 
@@ -49,7 +42,8 @@ describe('Le requêteur de connexion FC+', () => {
   });
 
   it('supprime le jeton déjà en session sur erreur récupération infos', () => {
-    adaptateurFranceConnectPlus.recupereInfosUtilisateur = () => Promise.reject(new ErreurEchecAuthentification('oups'));
+    adaptateurChiffrement.genereJeton = () => Promise.resolve('abcdef');
+    adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.reject(new Error('oups'));
 
     requete.session.jeton = 'unJeton';
     return connexionFCPlus(config, 'unCode', requete, reponse)

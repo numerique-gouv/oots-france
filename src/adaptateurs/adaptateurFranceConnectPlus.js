@@ -1,8 +1,5 @@
 const axios = require('axios');
 const adaptateurEnvironnement = require('./adaptateurEnvironnement');
-const adaptateurChiffrement = require('./adaptateurChiffrement');
-const { ErreurEchecAuthentification } = require('../erreurs');
-const SessionFCPlus = require('../modeles/sessionFCPlus');
 
 const configurationOpenIdFranceConnectPlus = axios
   .get(adaptateurEnvironnement.urlConfigurationOpenIdFCPlus())
@@ -23,35 +20,20 @@ const recupereDonneesJetonAcces = (code) => configurationOpenIdFranceConnectPlus
   ))
   .then(({ data }) => data);
 
-const initialiseSessionFCPlus = (donnees) => adaptateurChiffrement.dechiffreJWE(donnees.id_token)
-  .then((jwt) => new SessionFCPlus({ jetonAcces: donnees.access_token, jwt }));
-
-const creeSessionFCPlus = (code) => recupereDonneesJetonAcces(code)
-  .then(initialiseSessionFCPlus);
-
-const recupereInfosUtilisateurChiffrees = (sessionFCPlus) => configurationOpenIdFranceConnectPlus
+const recupereInfosUtilisateurChiffrees = (jetonAcces) => configurationOpenIdFranceConnectPlus
   .then(({ userinfo_endpoint: urlRecuperationInfosUtilisateur }) => (
     axios.get(
       urlRecuperationInfosUtilisateur,
-      { headers: { Authorization: `Bearer ${sessionFCPlus.jetonAcces}` } },
+      { headers: { Authorization: `Bearer ${jetonAcces}` } },
     )
   ))
-  .then(({ data }) => sessionFCPlus.avecInfosUtilisateurChiffrees(data));
+  .then(({ data }) => data);
 
-const verifieSignatureJWT = (jwt) => configurationOpenIdFranceConnectPlus
-  .then(({ jwks_uri: url }) => adaptateurChiffrement.verifieSignatureJWTDepuisJWKS(jwt, url));
+const recupereURLClefsPubliques = () => configurationOpenIdFranceConnectPlus
+  .then(({ jwks_uri: url }) => url);
 
-const dechiffreInfosUtilisateur = (sessionFCPlus) => (
-  adaptateurChiffrement.dechiffreJWE(sessionFCPlus.infosUtilisateurChiffrees)
-    .then(verifieSignatureJWT)
-    .then((infosDechiffrees) => Object.assign(infosDechiffrees, {
-      jwtSessionFCPlus: sessionFCPlus.jwt,
-    }))
-);
-
-const recupereInfosUtilisateur = (code) => creeSessionFCPlus(code)
-  .then(recupereInfosUtilisateurChiffrees)
-  .then(dechiffreInfosUtilisateur)
-  .catch((e) => Promise.reject(new ErreurEchecAuthentification(e.message)));
-
-module.exports = { recupereInfosUtilisateur };
+module.exports = {
+  recupereDonneesJetonAcces,
+  recupereInfosUtilisateurChiffrees,
+  recupereURLClefsPubliques,
+};
