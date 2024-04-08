@@ -6,6 +6,11 @@ const { ErreurJetonInvalide } = require('../erreurs');
 
 const cleHachage = (chaine) => crypto.createHash('md5').update(chaine).digest('hex');
 
+const dechiffreJWE = (jwe) => jose
+  .importJWK(adaptateurEnvironnement.clePriveeJWK())
+  .then((k) => jose.compactDecrypt(jwe, k))
+  .then(({ plaintext }) => plaintext.toString());
+
 const genereJeton = (donnees) => new jose.SignJWT(donnees)
   .setProtectedHeader({ alg: 'HS256' })
   .sign(adaptateurEnvironnement.secretJetonSession());
@@ -20,4 +25,15 @@ const verifieJeton = (jeton, secret) => {
     .catch((e) => Promise.reject(new ErreurJetonInvalide(e)));
 };
 
-module.exports = { cleHachage, genereJeton, verifieJeton };
+const verifieSignatureJWTDepuisJWKS = (jwt, urlJWKS) => {
+  const jwks = jose.createRemoteJWKSet(new URL(urlJWKS));
+  return verifieJeton(jwt, jwks);
+};
+
+module.exports = {
+  cleHachage,
+  dechiffreJWE,
+  genereJeton,
+  verifieJeton,
+  verifieSignatureJWTDepuisJWKS,
+};

@@ -1,6 +1,4 @@
 const axios = require('axios');
-const jose = require('jose');
-
 const adaptateurEnvironnement = require('./adaptateurEnvironnement');
 const adaptateurChiffrement = require('./adaptateurChiffrement');
 const { ErreurEchecAuthentification } = require('../erreurs');
@@ -25,12 +23,7 @@ const recupereDonneesJetonAcces = (code) => configurationOpenIdFranceConnectPlus
   ))
   .then(({ data }) => data);
 
-const dechiffreJWE = (jwe) => jose
-  .importJWK(adaptateurEnvironnement.clePriveeJWK())
-  .then((k) => jose.compactDecrypt(jwe, k))
-  .then(({ plaintext }) => plaintext.toString());
-
-const initialiseSessionFCPlus = (donnees) => dechiffreJWE(donnees.id_token)
+const initialiseSessionFCPlus = (donnees) => adaptateurChiffrement.dechiffreJWE(donnees.id_token)
   .then((jwt) => new SessionFCPlus({ jetonAcces: donnees.access_token, jwt }));
 
 const creeSessionFCPlus = (code) => recupereDonneesJetonAcces(code)
@@ -46,11 +39,10 @@ const recupereInfosUtilisateurChiffrees = (sessionFCPlus) => configurationOpenId
   .then(({ data }) => sessionFCPlus.avecInfosUtilisateurChiffrees(data));
 
 const verifieSignatureJWT = (jwt) => configurationOpenIdFranceConnectPlus
-  .then(({ jwks_uri: urlJWKS }) => jose.createRemoteJWKSet(new URL(urlJWKS)))
-  .then((jwks) => adaptateurChiffrement.verifieJeton(jwt, jwks));
+  .then(({ jwks_uri: url }) => adaptateurChiffrement.verifieSignatureJWTDepuisJWKS(jwt, url));
 
 const dechiffreInfosUtilisateur = (sessionFCPlus) => (
-  dechiffreJWE(sessionFCPlus.infosUtilisateurChiffrees)
+  adaptateurChiffrement.dechiffreJWE(sessionFCPlus.infosUtilisateurChiffrees)
     .then(verifieSignatureJWT)
     .then((infosDechiffrees) => Object.assign(infosDechiffrees, {
       jwtSessionFCPlus: sessionFCPlus.jwt,
