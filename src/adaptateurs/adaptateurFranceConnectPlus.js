@@ -15,7 +15,7 @@ const parametresRequeteJeton = (code) => Object.assign(
   { code, grant_type: 'authorization_code' },
 );
 
-const recupereJetonAcces = (code) => configurationOpenIdFranceConnectPlus
+const recupereDonneesJetonAcces = (code) => configurationOpenIdFranceConnectPlus
   .then(({ token_endpoint: urlRecuperationJetonAcces }) => (
     axios.post(
       urlRecuperationJetonAcces,
@@ -23,12 +23,18 @@ const recupereJetonAcces = (code) => configurationOpenIdFranceConnectPlus
       { headers: { 'content-type': 'application/x-www-form-urlencoded' } },
     )
   ))
-  .then(({ data }) => jose.importJWK(adaptateurEnvironnement.clePriveeJWK())
-    .then((k) => jose.compactDecrypt(data.id_token, k))
-    .then(({ plaintext }) => new SessionFCPlus({
-      jetonAcces: data.access_token,
-      jwt: plaintext.toString(),
-    })));
+  .then(({ data }) => data);
+
+const dechiffreJWE = (jwe) => jose
+  .importJWK(adaptateurEnvironnement.clePriveeJWK())
+  .then((k) => jose.compactDecrypt(jwe, k))
+  .then(({ plaintext }) => plaintext.toString());
+
+const initialiseSessionFCPlus = (donnees) => dechiffreJWE(donnees.id_token)
+  .then((jwt) => new SessionFCPlus({ jetonAcces: donnees.access_token, jwt }));
+
+const creeSessionFCPlus = (code) => recupereDonneesJetonAcces(code)
+  .then(initialiseSessionFCPlus);
 
 const recupereInfosUtilisateurChiffrees = (sessionFCPlus) => configurationOpenIdFranceConnectPlus
   .then(({ userinfo_endpoint: urlRecuperationInfosUtilisateur }) => (
@@ -43,15 +49,15 @@ const verifieSignatureJWT = (jwt) => configurationOpenIdFranceConnectPlus
   .then(({ jwks_uri: urlJWKS }) => jose.createRemoteJWKSet(new URL(urlJWKS)))
   .then((jwks) => adaptateurChiffrement.verifieJeton(jwt, jwks));
 
-const dechiffreInfosUtilisateur = (sessionFCPlus) => jose
-  .importJWK(adaptateurEnvironnement.clePriveeJWK())
-  .then((clePrivee) => jose.compactDecrypt(sessionFCPlus.infosUtilisateurChiffrees, clePrivee))
-  .then(({ plaintext }) => verifieSignatureJWT(plaintext))
-  .then((infosDechiffrees) => Object.assign(infosDechiffrees, {
-    jwtSessionFCPlus: sessionFCPlus.jwt,
-  }));
+const dechiffreInfosUtilisateur = (sessionFCPlus) => (
+  dechiffreJWE(sessionFCPlus.infosUtilisateurChiffrees)
+    .then(verifieSignatureJWT)
+    .then((infosDechiffrees) => Object.assign(infosDechiffrees, {
+      jwtSessionFCPlus: sessionFCPlus.jwt,
+    }))
+);
 
-const recupereInfosUtilisateur = (code) => recupereJetonAcces(code)
+const recupereInfosUtilisateur = (code) => creeSessionFCPlus(code)
   .then(recupereInfosUtilisateurChiffrees)
   .then(dechiffreInfosUtilisateur)
   .catch((e) => Promise.reject(new ErreurEchecAuthentification(e.message)));
