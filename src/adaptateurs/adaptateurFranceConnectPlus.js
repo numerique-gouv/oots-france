@@ -32,8 +32,12 @@ const recupereInfosUtilisateurChiffrees = (jetonAcces) => configurationOpenIdFra
 const recupereURLClefsPubliques = () => configurationOpenIdFranceConnectPlus
   .then(({ jwks_uri: url }) => url);
 
+const urlDestructionSession = () => configurationOpenIdFranceConnectPlus
+  .then(({ end_session_endpoint: url }) => url);
+
 module.exports = {
   recupereDonneesJetonAcces,
   recupereInfosUtilisateurChiffrees,
   recupereURLClefsPubliques,
+  urlDestructionSession,
 };

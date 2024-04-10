@@ -16,6 +16,8 @@ const secretJetonSession = () => new TextEncoder().encode(process.env.SECRET_JET
 
 const urlConfigurationOpenIdFCPlus = () => process.env.URL_CONFIGURATION_OPEN_ID_FCPLUS;
 
+const urlRedirectionDeconnexion = () => process.env.URL_REDIRECTION_DECONNEXION;
+
 module.exports = {
   avecEnvoiCookieSurHTTP,
   avecRequetePieceJustificative,
@@ -24,4 +26,5 @@ module.exports = {
   parametresRequeteJeton,
   secretJetonSession,
   urlConfigurationOpenIdFCPlus,
+  urlRedirectionDeconnexion,
 };
