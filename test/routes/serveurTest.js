@@ -22,6 +22,7 @@ const serveurTest = () => {
 
   const initialise = (suite) => {
     adaptateurChiffrement = {
+      cleHachage: () => '',
       dechiffreJWE: () => Promise.resolve(),
       genereJeton: () => Promise.resolve(),
       verifieJeton: () => Promise.resolve(),
@@ -39,12 +40,14 @@ const serveurTest = () => {
       avecRequetePieceJustificative: () => true,
       identifiantEIDAS: () => 'FR/BE/123456789',
       secretJetonSession: () => 'secret',
+      urlRedirectionDeconnexion: () => '',
     };
 
     adaptateurFranceConnectPlus = {
       recupereDonneesJetonAcces: () => Promise.resolve({}),
       recupereInfosUtilisateurChiffrees: () => Promise.resolve(),
       recupereURLClefsPubliques: () => Promise.resolve(),
+      urlDestructionSession: () => Promise.resolve(''),
     };
 
     adaptateurUUID = {

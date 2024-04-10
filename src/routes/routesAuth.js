@@ -2,9 +2,15 @@ const express = require('express');
 
 const connexionFCPlus = require('../api/connexionFCPlus');
 const deconnexionFCPlus = require('../api/deconnexionFCPlus');
+const destructionSessionFCPlus = require('../api/destructionSessionFCPlus');
 
 const routesAuth = (config) => {
-  const { adaptateurChiffrement, adaptateurEnvironnement, adaptateurFranceConnectPlus } = config;
+  const {
+    adaptateurChiffrement,
+    adaptateurEnvironnement,
+    adaptateurFranceConnectPlus,
+    middleware,
+  } = config;
 
   const routes = express.Router();
 
@@ -45,6 +51,18 @@ const routesAuth = (config) => {
 
   routes.get('/fcplus/deconnexion', (requete, reponse) => (
     deconnexionFCPlus(requete, reponse)
+  ));
+
+  routes.get('/fcplus/destructionSession', (...args) => middleware.renseigneUtilisateurCourant(...args), (requete, reponse) => (
+    destructionSessionFCPlus(
+      {
+        adaptateurChiffrement,
+        adaptateurEnvironnement,
+        adaptateurFranceConnectPlus,
+      },
+      requete,
+      reponse,
+    )
   ));
 
   return routes;

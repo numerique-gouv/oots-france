@@ -38,6 +38,7 @@ const creeServeur = (config) => {
     adaptateurChiffrement,
     adaptateurEnvironnement,
     adaptateurFranceConnectPlus,
+    middleware,
   }));
 
   app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }));
