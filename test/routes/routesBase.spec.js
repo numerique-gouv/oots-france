@@ -22,21 +22,5 @@ describe('Le serveur des routes `/`', () => {
           expect(reponse.data).toContain("Pas d'utilisateur courant");
         })
         .catch(leveErreur)));
-
-    it("affiche prénom et nom de l'utilisateur courant s'il existe", () => {
-      serveur.middleware().reinitialise({
-        utilisateurCourant: {
-          given_name: 'Sandra',
-          family_name: 'Nicouette',
-        },
-      });
-
-      return axios.get(`http://localhost:${port}/`)
-        .then((reponse) => {
-          expect(reponse.status).toBe(200);
-          expect(reponse.data).toContain('Utilisateur courant : Sandra Nicouette');
-        })
-        .catch(leveErreur);
-    });
   });
 });

@@ -3,9 +3,9 @@ const fs = require('node:fs');
 class ModelePageAccueil {
   infosUtilisateur;
 
-  constructor(infosUtilisateur, modeleVierge) {
+  constructor(infosUtilisateur) {
     this.infosUtilisateur = infosUtilisateur;
-    this.modeleVierge = modeleVierge || fs.readFileSync(`${__dirname}/pageAccueil.html`).toString();
+    this.modeleVierge = fs.readFileSync(`${__dirname}/pageAccueil.html`).toString();
   }
 
   enHTML = () => (this.infosUtilisateur
@@ -15,7 +15,8 @@ class ModelePageAccueil {
   avecUtilisateurConnecte() {
     return this.modeleVierge.replace(
       '{{contenu}}',
-      `Utilisateur courant : ${this.infosUtilisateur.given_name} ${this.infosUtilisateur.family_name}`,
+      `<p>Utilisateur courant : ${this.infosUtilisateur.given_name} ${this.infosUtilisateur.family_name}</p>
+                <a href="/auth/fcplus/destructionSession">Déconnexion</a>`,
     );
   }
 
