@@ -1,33 +1,29 @@
 const { ErreurEchecAuthentification } = require('../erreurs');
 
+const leveErreurParametreManquant = (messageParamManquant) => (
+  `${messageParamManquant}. La session a-t-elle bien été instanciée depuis la fabrique ?`
+);
+
 class SessionFCPlus {
-  constructor(config, code) {
+  constructor(config) {
     this.adaptateurChiffrement = config.adaptateurChiffrement;
     this.adaptateurFranceConnectPlus = config.adaptateurFranceConnectPlus;
-    this.code = code;
 
     this.jetonAcces = undefined;
     this.jwt = undefined;
     this.urlClefsPubliques = undefined;
   }
 
-  conserveJetonAcces(jetonAcces) {
-    this.jetonAcces = jetonAcces;
-  }
-
-  conserveJWT(jwe) {
-    return this.adaptateurChiffrement.dechiffreJWE(jwe)
-      .then((jwt) => { this.jwt = jwt; });
-  }
-
-  conserveURLClefsPubliques() {
-    return this.adaptateurFranceConnectPlus.recupereURLClefsPubliques()
-      .then((url) => { this.urlClefsPubliques = url; });
-  }
-
   enJSON() {
-    return this.peupleDonneesJetonAcces()
-      .then(() => this.infosUtilisateurDechiffrees())
+    if (!this.jwt) {
+      return Promise.reject(new Error(leveErreurParametreManquant('JWT non défini')));
+    }
+
+    if (!this.urlClefsPubliques) {
+      return Promise.reject(new Error(leveErreurParametreManquant('URL clefs publiques non définie')));
+    }
+
+    return this.infosUtilisateurDechiffrees()
       .then((jwtInfosUtilisateur) => this.adaptateurChiffrement.verifieSignatureJWTDepuisJWKS(
         jwtInfosUtilisateur,
         this.urlClefsPubliques,
@@ -37,17 +33,12 @@ class SessionFCPlus {
   }
 
   infosUtilisateurDechiffrees() {
+    if (!this.jetonAcces) {
+      return Promise.reject(new Error(leveErreurParametreManquant('Jeton accès non défini')));
+    }
+
     return this.adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees(this.jetonAcces)
       .then((jwe) => this.adaptateurChiffrement.dechiffreJWE(jwe));
-  }
-
-  peupleDonneesJetonAcces() {
-    return this.adaptateurFranceConnectPlus.recupereDonneesJetonAcces(this.code)
-      .then((donnees) => Promise.all([
-        this.conserveJetonAcces(donnees.access_token),
-        this.conserveJWT(donnees.id_token),
-        this.conserveURLClefsPubliques(),
-      ]));
   }
 }
 

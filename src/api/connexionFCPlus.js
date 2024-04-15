@@ -1,16 +1,10 @@
-const SessionFCPlus = require('../modeles/sessionFCPlus');
-
 const connexionFCPlus = (config, code, requete, reponse) => {
-  const { adaptateurChiffrement, adaptateurFranceConnectPlus } = config;
+  const { adaptateurChiffrement, fabriqueSessionFCPlus } = config;
 
   requete.session.jeton = undefined;
 
-  const sessionFCPlus = new SessionFCPlus(
-    { adaptateurChiffrement, adaptateurFranceConnectPlus },
-    code,
-  );
-
-  return sessionFCPlus.enJSON()
+  return fabriqueSessionFCPlus.nouvelleSession(code)
+    .then((session) => session.enJSON())
     .then((infos) => adaptateurChiffrement.genereJeton(infos)
       .then((jwt) => { requete.session.jeton = jwt; })
       .then(() => reponse.json(infos)))

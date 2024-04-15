@@ -11,6 +11,7 @@ const serveurTest = () => {
   let adaptateurUUID;
   let depotPointsAcces;
   let ecouteurDomibus;
+  let fabriqueSessionFCPlus;
   let horodateur;
   let middleware;
 
@@ -64,6 +65,10 @@ const serveurTest = () => {
       etat: () => '',
     };
 
+    fabriqueSessionFCPlus = {
+      nouvelleSession: () => Promise.resolve({ enJSON: () => Promise.resolve({}) }),
+    };
+
     horodateur = {
       maintenant: () => '',
     };
@@ -78,6 +83,7 @@ const serveurTest = () => {
       adaptateurUUID,
       depotPointsAcces,
       ecouteurDomibus,
+      fabriqueSessionFCPlus,
       horodateur,
       middleware,
     });
@@ -96,6 +102,7 @@ const serveurTest = () => {
     arrete,
     depotPointsAcces: () => depotPointsAcces,
     ecouteurDomibus: () => ecouteurDomibus,
+    fabriqueSessionFCPlus: () => fabriqueSessionFCPlus,
     horodateur: () => horodateur,
     initialise,
     middleware: () => middleware,

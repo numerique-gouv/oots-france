@@ -9,6 +9,7 @@ const routesAuth = (config) => {
     adaptateurChiffrement,
     adaptateurEnvironnement,
     adaptateurFranceConnectPlus,
+    fabriqueSessionFCPlus,
     middleware,
   } = config;
 
@@ -41,7 +42,7 @@ const routesAuth = (config) => {
       reponse.status(400).json({ erreur: "Paramètre 'code' absent de la requête" });
     } else {
       connexionFCPlus(
-        { adaptateurChiffrement, adaptateurFranceConnectPlus },
+        { adaptateurChiffrement, fabriqueSessionFCPlus },
         code,
         requete,
         reponse,
