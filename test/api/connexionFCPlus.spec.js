@@ -2,18 +2,16 @@ const connexionFCPlus = require('../../src/api/connexionFCPlus');
 
 describe('Le requêteur de connexion FC+', () => {
   const adaptateurChiffrement = {};
-  const adaptateurFranceConnectPlus = {};
-  const config = { adaptateurChiffrement, adaptateurFranceConnectPlus };
+  const fabriqueSessionFCPlus = {};
+  const config = { adaptateurChiffrement, fabriqueSessionFCPlus };
   const requete = {};
   const reponse = {};
 
   beforeEach(() => {
-    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve();
     adaptateurChiffrement.genereJeton = () => Promise.resolve();
-    adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = () => Promise.resolve({});
-    adaptateurFranceConnectPlus.recupereDonneesJetonAcces = () => Promise.resolve({});
-    adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.resolve();
-    adaptateurFranceConnectPlus.recupereURLClefsPubliques = () => Promise.resolve();
+    fabriqueSessionFCPlus.nouvelleSession = () => Promise.resolve({
+      enJSON: () => Promise.resolve({}),
+    });
     requete.session = {};
     reponse.json = () => Promise.resolve();
     reponse.status = () => reponse;
@@ -22,11 +20,12 @@ describe('Le requêteur de connexion FC+', () => {
   it('retourne les infos de la session FC+ en JSON', () => {
     expect.assertions(1);
 
-    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve('abcdef');
-    adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = () => Promise.resolve({ infos: 'des infos' });
+    fabriqueSessionFCPlus.nouvelleSession = () => Promise.resolve({
+      enJSON: () => Promise.resolve({ infos: 'des infos' }),
+    });
 
     reponse.json = (donnees) => {
-      expect(donnees).toEqual({ infos: 'des infos', jwtSessionFCPlus: 'abcdef' });
+      expect(donnees).toEqual({ infos: 'des infos' });
       return Promise.resolve();
     };
 
@@ -42,8 +41,10 @@ describe('Le requêteur de connexion FC+', () => {
   });
 
   it('supprime le jeton déjà en session sur erreur récupération infos', () => {
+    fabriqueSessionFCPlus.nouvelleSession = () => Promise.resolve({
+      enJSON: () => Promise.reject(new Error('oups')),
+    });
     adaptateurChiffrement.genereJeton = () => Promise.resolve('abcdef');
-    adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.reject(new Error('oups'));
 
     requete.session.jeton = 'unJeton';
     return connexionFCPlus(config, 'unCode', requete, reponse)

@@ -16,6 +16,7 @@ const creeServeur = (config) => {
     adaptateurUUID,
     depotPointsAcces,
     ecouteurDomibus,
+    fabriqueSessionFCPlus,
     horodateur,
     middleware,
   } = config;
@@ -38,6 +39,7 @@ const creeServeur = (config) => {
     adaptateurChiffrement,
     adaptateurEnvironnement,
     adaptateurFranceConnectPlus,
+    fabriqueSessionFCPlus,
     middleware,
   }));
 

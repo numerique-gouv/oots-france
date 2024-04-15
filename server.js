@@ -5,6 +5,7 @@ const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurEnvironnement = require('./src/adaptateurs/adaptateurEnvironnement');
 const adaptateurFranceConnectPlus = require('./src/adaptateurs/adaptateurFranceConnectPlus');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
+const FabriqueSessionFCPlus = require('./src/modeles/fabriqueSessionFCPlus');
 const horodateur = require('./src/adaptateurs/horodateur');
 const DepotPointsAcces = require('./src/depots/depotPointsAcces');
 const Middleware = require('./src/routes/middleware');
@@ -12,6 +13,10 @@ const Middleware = require('./src/routes/middleware');
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
 const depotPointsAcces = new DepotPointsAcces(adaptateurDomibus);
 const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
+const fabriqueSessionFCPlus = new FabriqueSessionFCPlus({
+  adaptateurChiffrement,
+  adaptateurFranceConnectPlus,
+});
 const middleware = new Middleware({ adaptateurChiffrement, adaptateurEnvironnement });
 
 const serveur = OOTS_FRANCE.creeServeur({
@@ -22,6 +27,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   adaptateurUUID,
   depotPointsAcces,
   ecouteurDomibus,
+  fabriqueSessionFCPlus,
   horodateur,
   middleware,
 });

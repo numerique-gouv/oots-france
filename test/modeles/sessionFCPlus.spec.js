@@ -9,57 +9,19 @@ describe('Une session FranceConnect+', () => {
   beforeEach(() => {
     adaptateurChiffrement.dechiffreJWE = () => Promise.resolve('');
     adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = () => Promise.resolve({});
-    adaptateurFranceConnectPlus.recupereDonneesJetonAcces = () => Promise.resolve({});
     adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.resolve('');
-    adaptateurFranceConnectPlus.recupereURLClefsPubliques = () => Promise.resolve('');
   });
 
-  describe('sur demande peuplement donnees jeton accès', () => {
-    it("conserve le jeton d'accès", () => {
-      adaptateurFranceConnectPlus.recupereDonneesJetonAcces = (code) => {
-        try {
-          expect(code).toBe('unCode');
-          return Promise.resolve({ access_token: 'abcdef' });
-        } catch (e) {
-          return Promise.reject(e);
-        }
-      };
+  const nouvelleSession = ({
+    jetonAcces = 'unJetonAcces',
+    jwt = 'unJWT',
+    urlClefsPubliques = 'uneURL',
+  } = {}) => {
+    const session = new SessionFCPlus(config);
+    Object.assign(session, { jetonAcces, jwt, urlClefsPubliques });
 
-      const session = new SessionFCPlus(config, 'unCode');
-      return session.peupleDonneesJetonAcces()
-        .then(() => {
-          expect(session.jetonAcces).toBe('abcdef');
-        });
-    });
-
-    it('conserve le JWT associé', () => {
-      adaptateurFranceConnectPlus.recupereDonneesJetonAcces = () => Promise.resolve({ id_token: '123' });
-      adaptateurChiffrement.dechiffreJWE = (jwe) => {
-        try {
-          expect(jwe).toBe('123');
-          return Promise.resolve('999');
-        } catch (e) {
-          return Promise.reject(e);
-        }
-      };
-
-      const session = new SessionFCPlus(config, 'unCode');
-      return session.peupleDonneesJetonAcces()
-        .then(() => {
-          expect(session.jwt).toBe('999');
-        });
-    });
-
-    it("conserve l'URL des clefs publiques FC+", () => {
-      adaptateurFranceConnectPlus.recupereURLClefsPubliques = () => Promise.resolve('http://example.com');
-
-      const session = new SessionFCPlus(config, 'unCode');
-      return session.peupleDonneesJetonAcces()
-        .then(() => {
-          expect(session.urlClefsPubliques).toBe('http://example.com');
-        });
-    });
-  });
+    return session;
+  };
 
   describe('sur demande infos utilisateur déchiffrées', () => {
     it('récupère les infos', () => {
@@ -82,12 +44,22 @@ describe('Une session FranceConnect+', () => {
       };
 
       const session = new SessionFCPlus(config, 'unCode');
-      session.conserveJetonAcces('abcdef');
+      session.jetonAcces = 'abcdef';
 
       return session.infosUtilisateurDechiffrees()
         .then((jwt) => {
           expect(jwt).toBe('999');
         });
+    });
+
+    it("lève une erreur si le jeton d'accès n'est pas défini", () => {
+      expect.assertions(2);
+
+      const session = nouvelleSession({ jetonAcces: '' });
+      expect(session.jetonAcces).toBeFalsy();
+
+      return session.infosUtilisateurDechiffrees()
+        .catch((e) => expect(e.message).toBe('Jeton accès non défini. La session a-t-elle bien été instanciée depuis la fabrique ?'));
     });
   });
 
@@ -99,14 +71,12 @@ describe('Une session FranceConnect+', () => {
         return Promise.resolve({});
       };
 
-      const session = new SessionFCPlus(config, 'unCode');
+      const session = nouvelleSession();
       return session.enJSON()
         .then(() => expect(signatureVerifiee).toBe(true));
     });
 
     it('ajoute le JWT de session aux infos utilisateur', () => {
-      adaptateurFranceConnectPlus.recupereURLClefsPubliques = () => Promise.resolve('http://example.com');
-      adaptateurFranceConnectPlus.recupereDonneesJetonAcces = () => Promise.resolve({ id_token: '999' });
       adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.resolve('aaa');
       adaptateurChiffrement.dechiffreJWE = (jwe) => Promise.resolve(jwe);
       adaptateurChiffrement.verifieSignatureJWTDepuisJWKS = (jwt, url) => {
@@ -119,8 +89,7 @@ describe('Une session FranceConnect+', () => {
         }
       };
 
-      const session = new SessionFCPlus(config, 'unCode');
-      session.jwt = '999';
+      const session = nouvelleSession({ jwt: '999', urlClefsPubliques: 'http://example.com' });
 
       return session.enJSON()
         .then((json) => expect(json).toEqual({
@@ -134,13 +103,33 @@ describe('Une session FranceConnect+', () => {
 
       adaptateurFranceConnectPlus.recupereInfosUtilisateurChiffrees = () => Promise.reject(new Error('oups'));
 
-      const session = new SessionFCPlus(config, 'unCode');
+      const session = nouvelleSession();
 
       return session.enJSON()
         .catch((e) => {
           expect(e).toBeInstanceOf(ErreurEchecAuthentification);
           expect(e.message).toBe('oups');
         });
+    });
+
+    it("lève une erreur si le JWT n'est pas défini", () => {
+      expect.assertions(2);
+
+      const session = nouvelleSession({ jwt: '' });
+      expect(session.jwt).toBeFalsy();
+
+      return session.enJSON()
+        .catch((e) => expect(e.message).toBe('JWT non défini. La session a-t-elle bien été instanciée depuis la fabrique ?'));
+    });
+
+    it("lève une erreur si l'URL des clefs publiques n'est pas définie", () => {
+      expect.assertions(2);
+
+      const session = nouvelleSession({ urlClefsPubliques: '' });
+      expect(session.urlClefsPubliques).toBeFalsy();
+
+      return session.enJSON()
+        .catch((e) => expect(e.message).toBe('URL clefs publiques non définie. La session a-t-elle bien été instanciée depuis la fabrique ?'));
     });
   });
 });
