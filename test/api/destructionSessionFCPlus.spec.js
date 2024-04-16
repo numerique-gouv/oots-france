@@ -5,14 +5,15 @@ describe('Le requêteur de destruction de session FC+', () => {
   const adaptateurEnvironnement = {};
   const adaptateurFranceConnectPlus = {};
   const config = { adaptateurChiffrement, adaptateurEnvironnement, adaptateurFranceConnectPlus };
-  const requete = {};
   const reponse = {};
+
+  let requete = {};
 
   beforeEach(() => {
     adaptateurChiffrement.cleHachage = () => '';
     adaptateurEnvironnement.urlRedirectionDeconnexion = () => '';
     adaptateurFranceConnectPlus.urlDestructionSession = () => Promise.resolve('');
-    requete.session = {};
+    requete = {};
     reponse.end = () => Promise.resolve();
     reponse.redirect = () => Promise.resolve();
   });
@@ -77,6 +78,24 @@ describe('Le requêteur de destruction de session FC+', () => {
       reponse.redirect = (url) => {
         try {
           expect(url).toContain('post_logout_redirect_uri=http://example.com');
+          return Promise.resolve();
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      };
+
+      destructionSessionFCPlus(config, requete, reponse);
+    });
+  });
+
+  describe('Quand le JWT de session est inexistant', () => {
+    it('redirige vers `/auth/fcplus/deconnexion`', () => {
+      expect.assertions(2);
+      expect(requete.utilisateurCourant).toBeUndefined();
+
+      reponse.redirect = (url) => {
+        try {
+          expect(url).toBe('/auth/fcplus/deconnexion');
           return Promise.resolve();
         } catch (e) {
           return Promise.reject(e);

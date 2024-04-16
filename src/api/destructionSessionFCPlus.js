@@ -5,11 +5,14 @@ const destructionSessionFCPlus = (config, requete, reponse) => {
     adaptateurFranceConnectPlus,
   } = config;
 
-  const { utilisateurCourant: { jwtSessionFCPlus } } = requete;
+  const { utilisateurCourant } = requete;
+  if (!utilisateurCourant) { return reponse.redirect('/auth/fcplus/deconnexion'); }
+
+  const { jwtSessionFCPlus } = utilisateurCourant;
   const etat = adaptateurChiffrement.cleHachage(`${Math.random()}`);
   const urlRedirectionDeconnexion = adaptateurEnvironnement.urlRedirectionDeconnexion();
 
-  adaptateurFranceConnectPlus.urlDestructionSession()
+  return adaptateurFranceConnectPlus.urlDestructionSession()
     .then((url) => reponse.redirect(
       `${url}?id_token_hint=${jwtSessionFCPlus}&state=${etat}&post_logout_redirect_uri=${urlRedirectionDeconnexion}`,
     ));
