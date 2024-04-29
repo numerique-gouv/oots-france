@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>OOTS-France</title>
+
+{{#infosUtilisateur}}
+  <p>Utilisateur courant : {{given_name}} {{family_name}}</p>
+  <a href="/auth/fcplus/destructionSession">Déconnexion</a>
+{{/infosUtilisateur}}
+{{^infosUtilisateur}}
+  <p>Pas d'utilisateur courant</p>
+{{/infosUtilisateur}}

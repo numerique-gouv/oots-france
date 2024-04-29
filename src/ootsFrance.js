@@ -1,5 +1,6 @@
 const cookieSession = require('cookie-session');
 const express = require('express');
+const mustacheExpress = require('mustache-express');
 
 const routesAdmin = require('./routes/routesAdmin');
 const routesAuth = require('./routes/routesAuth');
@@ -24,6 +25,10 @@ const creeServeur = (config) => {
   const app = express();
 
   app.set('trust proxy', 1);
+
+  app.set('views', `${__dirname}/vues`);
+  app.set('view engine', 'mustache');
+  app.engine('mustache', mustacheExpress());
 
   app.use(cookieSession({
     maxAge: 15 * 60 * 1000,
