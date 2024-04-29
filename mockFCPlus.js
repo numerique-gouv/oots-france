@@ -31,6 +31,34 @@ const jwkInvalide = {
 
 const ootsJWK = JSON.parse(atob(process.env.CLE_PRIVEE_JWK_EN_BASE64));
 
+const enJWE = (cleSignature, infos) => {
+  const headerJWT = {
+    alg: 'RS256',
+  };
+
+  const headerJWE = {
+    alg: 'RSA-OAEP',
+    enc: 'A256GCM',
+    cty: 'JWT',
+    kid: adaptateurChiffrement.cleHachage(ootsJWK.n),
+    iss: 'http://oots',
+    aud: process.env.IDENTIFIANT_CLIENT_FCPLUS,
+  };
+
+  return jose.importJWK(cleSignature)
+    .then((clePrivee) => new jose.SignJWT(infos)
+      .setProtectedHeader(headerJWT)
+      .setIssuedAt()
+      .setIssuer('http://mock_fcplus')
+      .setAudience(process.env.IDENTIFIANT_CLIENT_FCPLUS)
+      .setExpirationTime('1h')
+      .sign(clePrivee))
+    .then((jwt) => jose.importJWK(ootsJWK)
+      .then((clePrivee) => new jose.CompactEncrypt(new TextEncoder().encode(jwt))
+        .setProtectedHeader(headerJWE)
+        .encrypt(clePrivee)));
+};
+
 const port = 4000;
 const app = express();
 
@@ -67,34 +95,8 @@ app.get('/userinfo', (requete, reponse) => {
   const jeton = requete.headers.authorization.match(/Bearer (.*)/)[1];
   const cleSignature = (jeton === JETON_CAS_SIGNATURE_INVALIDE) ? jwkInvalide : jwkValide;
 
-  const envoieInfos = (infos) => {
-    const headerJWT = {
-      alg: 'RS256',
-    };
-
-    const headerJWE = {
-      alg: 'RSA-OAEP',
-      enc: 'A256GCM',
-      cty: 'JWT',
-      kid: adaptateurChiffrement.cleHachage(ootsJWK.n),
-      iss: 'http://oots',
-      aud: process.env.IDENTIFIANT_CLIENT_FCPLUS,
-    };
-
-    jose.importJWK(cleSignature)
-      .then((clePrivee) => new jose.SignJWT(infos)
-        .setProtectedHeader(headerJWT)
-        .setIssuedAt()
-        .setIssuer('http://mock_fcplus')
-        .setAudience(process.env.IDENTIFIANT_CLIENT_FCPLUS)
-        .setExpirationTime('1h')
-        .sign(clePrivee))
-      .then((jwt) => jose.importJWK(ootsJWK)
-        .then((clePrivee) => new jose.CompactEncrypt(new TextEncoder().encode(jwt))
-          .setProtectedHeader(headerJWE)
-          .encrypt(clePrivee)))
-      .then((jwe) => reponse.send(jwe));
-  };
+  const envoieInfos = (infos) => enJWE(cleSignature, infos)
+    .then((jwe) => reponse.send(jwe));
 
   envoieInfos({
     given_name: 'Anne-Juliette',
