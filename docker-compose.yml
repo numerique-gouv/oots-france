@@ -33,7 +33,7 @@ services:
     ports:
       - "${PORT_MOCK_FCPLUS}:4000"
     environment:
-      - URL_BASE_MOCK_FCPLUS=http://mock_fcplus:4000
+      - URL_BASE_MOCK_FCPLUS=${URL_BASE}:${PORT_MOCK_FCPLUS}
 
   domibus:
     image: code.europa.eu:4567/edelivery/docker/domibus-tomcat9:5.0.4
