@@ -66,16 +66,23 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (_requete, reponse) => {
   reponse.json({
+    end_session_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/fin_session`,
     jwks_uri: `${process.env.URL_BASE_MOCK_FCPLUS}/jwks`,
     token_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/jeton`,
     userinfo_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/userinfo`,
   });
 });
 
+app.get('/fin_session', (_requete, reponse) => {
+  reponse.redirect(process.env.URL_REDIRECTION_DECONNEXION);
+});
+
 app.post('/jeton', (requete, reponse) => {
   const { code } = requete.body;
   const jeton = (code === 'XXX') ? JETON_CAS_SIGNATURE_INVALIDE : 'unJeton';
-  reponse.json({ access_token: jeton });
+
+  enJWE(jwkValide, {})
+    .then((jwe) => reponse.json({ access_token: jeton, id_token: jwe }));
 });
 
 app.get('/jwks', (_requete, reponse) => {
