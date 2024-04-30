@@ -128,4 +128,16 @@ describe('Le serveur des routes `/auth`', () => {
         .catch(leveErreur);
     });
   });
+
+  describe('sur GET /auth/fcplus/creationSession', () => {
+    it("redirige vers l'URL (FC+) de création de session", () => {
+      serveur.adaptateurFranceConnectPlus().urlCreationSession = () => Promise.resolve(
+        `http://localhost:${port}/redirectionConnexion`, // page inexistante, résultera en une erreur HTTP 404
+      );
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/creationSession`)
+        .catch((e) => expect(e.response.request.path).toContain('/redirectionConnexion'))
+        .catch(leveErreur);
+    });
+  });
 });

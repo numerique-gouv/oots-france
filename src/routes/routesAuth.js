@@ -2,6 +2,7 @@ const express = require('express');
 
 const connexionFCPlus = require('../api/connexionFCPlus');
 const deconnexionFCPlus = require('../api/deconnexionFCPlus');
+const creationSessionFCPlus = require('../api/creationSessionFCPlus');
 const destructionSessionFCPlus = require('../api/destructionSessionFCPlus');
 
 const routesAuth = (config) => {
@@ -56,6 +57,18 @@ const routesAuth = (config) => {
 
   routes.get('/fcplus/destructionSession', (...args) => middleware.renseigneUtilisateurCourant(...args), (requete, reponse) => (
     destructionSessionFCPlus(
+      {
+        adaptateurChiffrement,
+        adaptateurEnvironnement,
+        adaptateurFranceConnectPlus,
+      },
+      requete,
+      reponse,
+    )
+  ));
+
+  routes.get('/fcplus/creationSession', (requete, reponse) => (
+    creationSessionFCPlus(
       {
         adaptateurChiffrement,
         adaptateurEnvironnement,
