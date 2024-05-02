@@ -14,22 +14,8 @@ describe('Le requêteur de connexion FC+', () => {
     });
     requete.session = {};
     reponse.json = () => Promise.resolve();
+    reponse.redirect = () => Promise.resolve();
     reponse.status = () => reponse;
-  });
-
-  it('retourne les infos de la session FC+ en JSON', () => {
-    expect.assertions(1);
-
-    fabriqueSessionFCPlus.nouvelleSession = () => Promise.resolve({
-      enJSON: () => Promise.resolve({ infos: 'des infos' }),
-    });
-
-    reponse.json = (donnees) => {
-      expect(donnees).toEqual({ infos: 'des infos' });
-      return Promise.resolve();
-    };
-
-    return connexionFCPlus(config, 'unCode', requete, reponse);
   });
 
   it('conserve les infos utilisateurs dans un cookie de session', () => {
