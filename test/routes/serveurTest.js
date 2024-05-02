@@ -39,6 +39,7 @@ const serveurTest = () => {
     adaptateurEnvironnement = {
       avecEnvoiCookieSurHTTP: () => true,
       avecRequetePieceJustificative: () => true,
+      fournisseurIdentiteSuggere: () => '',
       identifiantClient: () => '',
       identifiantEIDAS: () => 'FR/BE/123456789',
       secretJetonSession: () => 'secret',

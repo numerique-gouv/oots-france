@@ -8,7 +8,7 @@ const creationSessionFCPlus = (config, requete, reponse) => {
 
   return adaptateurFranceConnectPlus.urlCreationSession()
     .then((url) => reponse.redirect(
-      `${url}?scope=profile%20openid&acr_values=eidas2&claims={%22id_token%22:{%22amr%22:{%22essential%22:true}}}&prompt=login%20consent&response_type=code&client_id=${identifiantClient}&redirect_uri=${urlRedirectionConnexion}&state=${etat}&nonce=${nonce}`,
+      `${url}?scope=profile%20openid&acr_values=eidas2&claims={%22id_token%22:{%22amr%22:{%22essential%22:true}}}&prompt=login%20consent&response_type=code&idp_hint=${adaptateurEnvironnement.fournisseurIdentiteSuggere()}&client_id=${identifiantClient}&redirect_uri=${urlRedirectionConnexion}&state=${etat}&nonce=${nonce}`,
     ));
 };
 
