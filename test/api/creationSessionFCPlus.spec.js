@@ -11,6 +11,7 @@ describe('Le requêteur de création de session FC+', () => {
 
   beforeEach(() => {
     adaptateurChiffrement.cleHachage = () => '';
+    adaptateurEnvironnement.fournisseurIdentiteSuggere = () => '';
     adaptateurEnvironnement.identifiantClient = () => '';
     adaptateurEnvironnement.urlRedirectionConnexion = () => '';
     adaptateurFranceConnectPlus.urlCreationSession = () => Promise.resolve('');
@@ -33,7 +34,7 @@ describe('Le requêteur de création de session FC+', () => {
   });
 
   it('ajoute des paramètres à la requête', () => {
-    expect.assertions(5);
+    expect.assertions(6);
 
     reponse.redirect = (url) => {
       try {
@@ -42,6 +43,7 @@ describe('Le requêteur de création de session FC+', () => {
         expect(url).toContain('claims={%22id_token%22:{%22amr%22:{%22essential%22:true}}}');
         expect(url).toContain('prompt=login%20consent');
         expect(url).toContain('response_type=code');
+        expect(url).toContain('idp_hint=');
 
         return Promise.resolve();
       } catch (e) {
@@ -106,5 +108,23 @@ describe('Le requêteur de création de session FC+', () => {
     };
 
     return creationSessionFCPlus(config, requete, reponse);
+  });
+
+  describe('Si utilisation bridge eIDAS', () => {
+    it('renseigne le paramètre `idp_hint` avec la valeur `eidas-bridge`', () => {
+      expect.assertions(1);
+      adaptateurEnvironnement.fournisseurIdentiteSuggere = () => 'eidas-bridge';
+
+      reponse.redirect = (url) => {
+        try {
+          expect(url).toContain('idp_hint=eidas-bridge');
+          return Promise.resolve();
+        } catch (e) {
+          return Promise.reject(e);
+        }
+      };
+
+      return creationSessionFCPlus(config, requete, reponse);
+    });
   });
 });
