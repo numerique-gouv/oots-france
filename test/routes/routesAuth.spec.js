@@ -38,32 +38,23 @@ describe('Le serveur des routes `/auth`', () => {
 
   describe('sur GET /auth/fcplus/connexion', () => {
     describe('lorsque les paramètres `code` et `state` sont présents', () => {
-      it('sert les infos de la session FC+', () => {
-        serveur.fabriqueSessionFCPlus().nouvelleSession = (code) => {
-          try {
-            expect(code).toBe('unCode');
-            return Promise.resolve({
-              enJSON: () => Promise.resolve({ infos: 'des infos' }),
-            });
-          } catch (e) {
-            return Promise.reject(e);
-          }
-        };
+      it('redirige vers page accueil depuis navigateur', () => (
+        axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
+          .then((reponse) => expect(reponse.data).toContain('<meta http-equiv="refresh" content="0; url=\'/\'">'))
+          .catch(leveErreur)
+      ));
 
-        return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
-          .then((reponse) => {
-            expect(reponse.status).toBe(200);
-            expect(reponse.data).toEqual({ infos: 'des infos' });
-          })
-          .catch(leveErreur);
-      });
-
-      it('stocke les infos dans un cookie sans attribut `Secure` si autorisé', () => {
+      it('stocke les infos dans un cookie sans attribut `Secure` si autorisé avant la redirection', () => {
         serveur.adaptateurEnvironnement().avecEnvoiCookieSurHTTP = () => true;
-        return axios.get(`http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`)
-          .then((reponse) => {
-            expect(reponse.headers).toHaveProperty('set-cookie');
-            const valeurEnteteSetCookie = reponse
+        return axios({
+          method: 'get',
+          url: `http://localhost:${port}/auth/fcplus/connexion?state=unState&code=unCode`,
+          maxRedirects: 0,
+        })
+          .catch(({ response }) => {
+            expect(response.status).toBe(302);
+            expect(response.headers).toHaveProperty('set-cookie');
+            const valeurEnteteSetCookie = response
               .headers['set-cookie']
               .find((h) => h.match(/session=/));
             expect(valeurEnteteSetCookie).not.toContain('secure');

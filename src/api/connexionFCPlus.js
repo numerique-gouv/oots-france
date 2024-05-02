@@ -1,3 +1,11 @@
+const redirigeDepuisNavigateur = (destination, reponse) => reponse.send(`
+<!DOCTYPE html>
+<html>
+<head><meta http-equiv="refresh" content="0; url='${destination}'"></head>
+<body></body>
+</html>
+`);
+
 const connexionFCPlus = (config, code, requete, reponse) => {
   const { adaptateurChiffrement, fabriqueSessionFCPlus } = config;
 
@@ -6,8 +14,8 @@ const connexionFCPlus = (config, code, requete, reponse) => {
   return fabriqueSessionFCPlus.nouvelleSession(code)
     .then((session) => session.enJSON())
     .then((infos) => adaptateurChiffrement.genereJeton(infos)
-      .then((jwt) => { requete.session.jeton = jwt; })
-      .then(() => reponse.json(infos)))
+      .then((jwt) => { requete.session.jeton = jwt; }))
+    .then(() => redirigeDepuisNavigateur('/', reponse))
     .catch((e) => reponse.status(502).json({ erreur: `Échec authentification (${e.message})` }));
 };
 
