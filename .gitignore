@@ -1,4 +1,5 @@
 .env*
 !.env*.template
 /domibus/
+/nginx/
 node_modules/
