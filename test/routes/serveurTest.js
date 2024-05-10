@@ -39,8 +39,10 @@ const serveurTest = () => {
     adaptateurEnvironnement = {
       avecEnvoiCookieSurHTTP: () => true,
       avecRequetePieceJustificative: () => true,
+      identifiantClient: () => '',
       identifiantEIDAS: () => 'FR/BE/123456789',
       secretJetonSession: () => 'secret',
+      urlRedirectionConnexion: () => '',
       urlRedirectionDeconnexion: () => '',
     };
 
@@ -48,6 +50,7 @@ const serveurTest = () => {
       recupereDonneesJetonAcces: () => Promise.resolve({}),
       recupereInfosUtilisateurChiffrees: () => Promise.resolve(),
       recupereURLClefsPubliques: () => Promise.resolve(),
+      urlCreationSession: () => Promise.resolve(''),
       urlDestructionSession: () => Promise.resolve(''),
     };
 

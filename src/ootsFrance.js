@@ -32,7 +32,7 @@ const creeServeur = (config) => {
 
   app.use(cookieSession({
     maxAge: 15 * 60 * 1000,
-    name: 'jeton',
+    name: 'session',
     sameSite: true,
     secret: adaptateurEnvironnement.secretJetonSession(),
     secure: !adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),

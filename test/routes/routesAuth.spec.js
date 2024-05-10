@@ -65,7 +65,7 @@ describe('Le serveur des routes `/auth`', () => {
             expect(reponse.headers).toHaveProperty('set-cookie');
             const valeurEnteteSetCookie = reponse
               .headers['set-cookie']
-              .find((h) => h.match(/jeton=/));
+              .find((h) => h.match(/session=/));
             expect(valeurEnteteSetCookie).not.toContain('secure');
           })
           .catch(leveErreur);
@@ -126,6 +126,27 @@ describe('Le serveur des routes `/auth`', () => {
       return axios.get(`http://localhost:${port}/auth/fcplus/destructionSession`)
         .then((reponse) => expect(reponse.request.path).toContain('id_token_hint=abcdef'))
         .catch(leveErreur);
+    });
+  });
+
+  describe('sur GET /auth/fcplus/creationSession', () => {
+    const verifieRedirection = (urlSource, urlDestination) => axios({
+      method: 'get',
+      url: urlSource,
+      maxRedirects: 0,
+    })
+      .catch(({ response }) => {
+        expect(response.status).toBe(302);
+        expect(response.headers.location).toMatch(new RegExp(`^${urlDestination}`));
+      })
+      .catch(leveErreur);
+
+    it("redirige vers l'URL (FC+) de création de session", () => {
+      serveur.adaptateurFranceConnectPlus().urlCreationSession = () => Promise.resolve(
+        `http://localhost:${port}/redirectionConnexion`, // page inexistante, résultera en une erreur HTTP 404
+      );
+
+      return verifieRedirection(`http://localhost:${port}/auth/fcplus/creationSession`, `http://localhost:${port}/redirectionConnexion`);
     });
   });
 });

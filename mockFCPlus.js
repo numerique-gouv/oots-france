@@ -66,11 +66,17 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (_requete, reponse) => {
   reponse.json({
+    authorization_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/debut_session`,
     end_session_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/fin_session`,
     jwks_uri: `${process.env.URL_BASE_MOCK_FCPLUS}/jwks`,
     token_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/jeton`,
     userinfo_endpoint: `${process.env.URL_BASE_MOCK_FCPLUS}/userinfo`,
   });
+});
+
+app.get('/debut_session', (requete, reponse) => {
+  const etat = requete.params.state;
+  reponse.redirect(`${process.env.URL_REDIRECTION_CONNEXION}?state=${etat}&code=abcdef`);
 });
 
 app.get('/fin_session', (_requete, reponse) => {
