@@ -1,3 +1,7 @@
+const stockeDansCookieSession = (infos, adaptateurChiffrement, requete) => adaptateurChiffrement
+  .genereJeton(infos)
+  .then((jwt) => { requete.session.jeton = jwt; });
+
 const redirigeDepuisNavigateur = (destination, reponse) => reponse.send(`
 <!DOCTYPE html>
 <html>
@@ -13,8 +17,7 @@ const connexionFCPlus = (config, code, requete, reponse) => {
 
   return fabriqueSessionFCPlus.nouvelleSession(code)
     .then((session) => session.enJSON())
-    .then((infos) => adaptateurChiffrement.genereJeton(infos)
-      .then((jwt) => { requete.session.jeton = jwt; }))
+    .then((infos) => stockeDansCookieSession(infos, adaptateurChiffrement, requete))
     .then(() => redirigeDepuisNavigateur('/', reponse))
     .catch((e) => reponse.status(502).json({ erreur: `Échec authentification (${e.message})` }));
 };
