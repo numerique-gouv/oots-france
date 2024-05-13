@@ -2,9 +2,10 @@ const express = require('express');
 
 const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
-const ReponseErreur = require('../ebms/reponseErreur');
-const RequeteJustificatif = require('../ebms/requeteJustificatif');
 const PointAcces = require('../ebms/pointAcces');
+const ReponseErreur = require('../ebms/reponseErreur');
+const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
+const RequeteJustificatif = require('../ebms/requeteJustificatif');
 
 const routesEbms = (config) => {
   const { adaptateurUUID, horodateur } = config;
@@ -59,6 +60,16 @@ const routesEbms = (config) => {
     });
     reponse.set('Content-Type', 'text/xml');
     reponse.send(reponseErreur.corpsMessageEnXML());
+  });
+
+  routes.get('/messages/reponseJustificatif', (requete, reponse) => {
+    const reponseJustificatif = new ReponseVerificationSysteme({ adaptateurUUID, horodateur }, {
+      destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
+      idRequete: '12345678-1234-1234-1234-1234567890ab',
+      idConversation: '12345',
+    });
+    reponse.set('Content-Type', 'text/xml');
+    reponse.send(reponseJustificatif.corpsMessageEnXML());
   });
 
   return routes;
