@@ -19,7 +19,12 @@ const valeurSlot = (nomSlot, scopeRecherche) => {
   const sectionSlots = scopeRecherche.Slot;
   const slots = [].concat(sectionSlots);
   const slot = slots.find((s) => s['@_name'] === nomSlot).SlotValue;
-  return (slot['@_type'] === 'rim:AnyValueType') ? slot : slot.Value;
+
+  switch (slot['@_type']) {
+    case 'rim:AnyValueType': return slot;
+    case 'rim:CollectionValueType': return slot.Element;
+    default: return slot.Value;
+  }
 };
 
 module.exports = { parseXML, verifiePresenceSlot, valeurSlot };

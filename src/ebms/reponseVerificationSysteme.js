@@ -23,6 +23,7 @@ class ReponseVerificationSysteme extends Message {
     return `<query:QueryResponse
         xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
         xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        xmlns:sdg="http://data.europa.eu/p4s"
         xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
@@ -46,15 +47,57 @@ class ReponseVerificationSysteme extends Message {
     </rim:SlotValue>
   </rim:Slot>
 
-  <rim:Slot name="EvidenceProvider"><!-- … --></rim:Slot>
-  <rim:Slot name="EvidenceRequester"><!-- … --></rim:Slot>
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:CollectionValueType">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
+          <sdg:Name></sdg:Name>
+          <sdg:Classification>EP</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+      <sdg:Agent>
+        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096"></sdg:Identifier>
+        <sdg:Name></sdg:Name>
+      </sdg:Agent>
+    </rim:SlotValue>
+  </rim:Slot>
 
   <rim:RegistryObjectList>
     <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">
       <rim:Slot name="EvidenceMetadata">
-        <sdg:Distribution>
-          <sdg:Format>application/pdf</sdg:Format>
-        </sdg:Distribution>
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+          <sdg:Evidence>
+            <sdg:Identifier>${this.adaptateurUUID?.genereUUID()}</sdg:Identifier>
+            <sdg:IsAbout>
+              <sdg:NaturalPerson>
+                <sdg:Identifier schemeID='eidas'>DK/DE/123123123</sdg:Identifier>
+                <sdg:FamilyName></sdg:FamilyName>
+                <sdg:GivenName></sdg:GivenName>
+                <sdg:DateOfBirth>1970-03-01</sdg:DateOfBirth>
+              </sdg:NaturalPerson>
+            </sdg:IsAbout>
+            <sdg:IssuingAuthority>
+              <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
+              <sdg:Name></sdg:Name>
+            </sdg:IssuingAuthority>
+            <sdg:IsConformantTo>
+              <sdg:EvidenceTypeClassification>
+                https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/12345678-1234-1234-1234-1234567890ab
+              </sdg:EvidenceTypeClassification>
+              <sdg:Title lang="EN"></sdg:Title>
+            </sdg:IsConformantTo>
+            <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
+            <sdg:Distribution>
+              <sdg:Format>application/pdf</sdg:Format>
+            </sdg:Distribution>
+          </sdg:Evidence>
+        </rim:SlotValue>
       </rim:Slot>
       <rim:RepositoryItemRef xlink:href="${this.pieceJointe.identifiant}" xlink:title="Evidence"/>
     </rim:RegistryObject>
