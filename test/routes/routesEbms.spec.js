@@ -62,4 +62,12 @@ describe('Le serveur des routes `/ebms`', () => {
       })
       .catch(leveErreur));
   });
+
+  describe('sur GET /ebms/messages/reponseJustificatif', () => {
+    it('sert une réponse au format XML', () => axios.get(`http://localhost:${port}/ebms/messages/reponseJustificatif`)
+      .then((reponse) => {
+        expect(reponse.headers['content-type']).toEqual('text/xml; charset=utf-8');
+      })
+      .catch(leveErreur));
+  });
 });
