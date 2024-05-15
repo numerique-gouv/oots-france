@@ -38,5 +38,16 @@ describe('Le serveur des routes `/`', () => {
         })
         .catch(leveErreur);
     });
+    it("n'affiche pas le bouton quand le feature flip est désactivé", () => {
+      expect.assertions(2);
+
+      serveur.adaptateurEnvironnement().avecConnexionFCPlus = () => false;
+
+      return axios.get(`http://localhost:${port}/`)
+        .then((reponse) => {
+          expect(reponse.status).toEqual(200);
+          expect(reponse.data).not.toContain('Connexion');
+        });
+    });
   });
 });

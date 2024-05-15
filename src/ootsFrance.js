@@ -57,7 +57,10 @@ const creeServeur = (config) => {
     depotPointsAcces,
   }));
 
-  app.use('/', routesBase({ middleware }));
+  app.use('/', routesBase({
+    adaptateurEnvironnement,
+    middleware,
+  }));
 
   const arreteEcoute = (suite) => serveur.close(suite);
 
