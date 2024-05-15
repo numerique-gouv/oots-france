@@ -1,7 +1,11 @@
 const express = require('express');
 
 const routesBase = (config) => {
-  const { middleware } = config;
+  const {
+    adaptateurEnvironnement,
+    middleware,
+  } = config;
+
   const routes = express.Router();
 
   routes.get(
@@ -9,7 +13,11 @@ const routesBase = (config) => {
     (...args) => middleware.renseigneUtilisateurCourant(...args),
     (requete, reponse) => {
       const infosUtilisateur = requete.utilisateurCourant;
-      reponse.render('pageAccueil', { infosUtilisateur });
+      const avecConnexionFCPlus = adaptateurEnvironnement.avecConnexionFCPlus();
+      reponse.render('pageAccueil', {
+        infosUtilisateur,
+        avecConnexionFCPlus,
+      });
     },
   );
 

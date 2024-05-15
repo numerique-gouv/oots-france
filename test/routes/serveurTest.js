@@ -37,6 +37,7 @@ const serveurTest = () => {
     };
 
     adaptateurEnvironnement = {
+      avecConnexionFCPlus: () => true,
       avecEnvoiCookieSurHTTP: () => true,
       avecRequetePieceJustificative: () => true,
       fournisseurIdentiteSuggere: () => '',

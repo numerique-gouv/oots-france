@@ -1,6 +1,8 @@
-const avecRequetePieceJustificative = () => process.env.AVEC_REQUETE_PIECE_JUSTIFICATIVE === 'true';
+const avecConnexionFCPlus = () => process.env.AVEC_CONNEXION_FC_PLUS === 'true';
 
 const avecEnvoiCookieSurHTTP = () => process.env.AVEC_ENVOI_COOKIE_SUR_HTTP === 'true';
+
+const avecRequetePieceJustificative = () => process.env.AVEC_REQUETE_PIECE_JUSTIFICATIVE === 'true';
 
 const clePriveeJWK = () => JSON.parse(atob(process.env.CLE_PRIVEE_JWK_EN_BASE64));
 
@@ -26,6 +28,7 @@ const urlRedirectionDeconnexion = () => process.env.URL_REDIRECTION_DECONNEXION;
 
 module.exports = {
   avecEnvoiCookieSurHTTP,
+  avecConnexionFCPlus,
   avecRequetePieceJustificative,
   clePriveeJWK,
   fournisseurIdentiteSuggere,
