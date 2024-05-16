@@ -11,6 +11,7 @@ class RequeteJustificatif extends Message {
       destinataire = {},
       idConversation = config.adaptateurUUID.genereUUID(),
       identifiantEIDAS = 'DK/DE/123123123',
+      idTypeJustificatif = 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/b6a49e54-8b3c-4688-acad-380440dc5962',
       previsualisationRequise = false,
     } = {},
   ) {
@@ -18,6 +19,7 @@ class RequeteJustificatif extends Message {
 
     this.codeDemarche = codeDemarche;
     this.identifiantEIDAS = identifiantEIDAS;
+    this.idTypeJustificatif = idTypeJustificatif;
     this.previsualisationRequise = previsualisationRequise;
   }
 
@@ -143,7 +145,7 @@ class RequeteJustificatif extends Message {
       <rim:SlotValue xsi:type="rim:AnyValueType">
         <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
           <sdg:Identifier>a8851d44-8f62-4561-99d2-5383ce3f30a7</sdg:Identifier>
-          <sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/b6a49e54-8b3c-4688-acad-380440dc5962</sdg:EvidenceTypeClassification>
+          <sdg:EvidenceTypeClassification>${this.idTypeJustificatif}</sdg:EvidenceTypeClassification>
           <sdg:Title lang="EN">Diploma</sdg:Title>
           <sdg:DistributedAs>
             <sdg:Format>application/xml</sdg:Format>

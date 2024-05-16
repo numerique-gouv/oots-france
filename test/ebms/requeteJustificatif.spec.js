@@ -75,4 +75,15 @@ describe("La vue du message de requête d'un justificatif", () => {
     const personne = valeurSlot('NaturalPerson', xml.QueryRequest.Query);
     expect(personne.Person.Identifier['#text']).toBe('BE/FR/123456789');
   });
+
+  it("injecte l'identifiant de type de justificatif demandé", () => {
+    const requeteJustificatif = new RequeteJustificatif(
+      configurationRequete,
+      { idTypeJustificatif: 'unIdentifiant' },
+    );
+    const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
+
+    const requete = valeurSlot('EvidenceRequest', xml.QueryRequest.Query);
+    expect(requete.DataServiceEvidenceType.EvidenceTypeClassification).toBe('unIdentifiant');
+  });
 });
