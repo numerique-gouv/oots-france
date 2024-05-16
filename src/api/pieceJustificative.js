@@ -23,7 +23,12 @@ const pieceJustificative = (
   reponse,
 ) => {
   const idConversation = adaptateurUUID.genereUUID();
-  const { codeDemarche, nomDestinataire, previsualisationRequise } = requete.query;
+  const {
+    codeDemarche,
+    idTypeJustificatif,
+    nomDestinataire,
+    previsualisationRequise,
+  } = requete.query;
 
   return depotPointsAcces.trouvePointAcces(nomDestinataire)
     .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
@@ -31,6 +36,7 @@ const pieceJustificative = (
       destinataire,
       idConversation,
       identifiantEIDAS: adaptateurEnvironnement.identifiantEIDAS(),
+      idTypeJustificatif,
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))
     .then(() => Promise.any([

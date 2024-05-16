@@ -52,12 +52,27 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(config, requete, reponse);
   });
 
-  it('transmets le code démarche dans la requête', () => {
+  it('transmet le code démarche dans la requête', () => {
     requete.query.codeDemarche = 'UN_CODE';
 
     adaptateurDomibus.envoieMessageRequete = ({ codeDemarche }) => {
       try {
         expect(codeDemarche).toEqual('UN_CODE');
+        return Promise.resolve();
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it("transmet l'identifiant de type de pièce justificative demandée", () => {
+    requete.query.idTypeJustificatif = 'unIdentifiant';
+
+    adaptateurDomibus.envoieMessageRequete = ({ idTypeJustificatif }) => {
+      try {
+        expect(idTypeJustificatif).toEqual('unIdentifiant');
         return Promise.resolve();
       } catch (e) {
         return Promise.reject(e);
