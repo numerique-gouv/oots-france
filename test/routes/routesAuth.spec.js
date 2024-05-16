@@ -139,5 +139,16 @@ describe('Le serveur des routes `/auth`', () => {
 
       return verifieRedirection(`http://localhost:${port}/auth/fcplus/creationSession`, `http://localhost:${port}/redirectionConnexion`);
     });
+
+    it('retourne une erreur 501 si le feature-flipping est désactivé', () => {
+      expect.assertions(1);
+
+      serveur.adaptateurEnvironnement().avecConnexionFCPlus = () => false;
+
+      return axios.get(`http://localhost:${port}/auth/fcplus/creationSession`)
+        .catch(({ response }) => {
+          expect(response.status).toEqual(501);
+        });
+    });
   });
 });
