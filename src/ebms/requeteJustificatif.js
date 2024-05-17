@@ -12,7 +12,7 @@ class RequeteJustificatif extends Message {
       destinataire = {},
       idConversation = config.adaptateurUUID.genereUUID(),
       identifiantEIDAS = 'DK/DE/123123123',
-      typeJustificatif = new TypeJustificatif('https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/b6a49e54-8b3c-4688-acad-380440dc5962'),
+      typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
     } = {},
   ) {
@@ -142,18 +142,7 @@ class RequeteJustificatif extends Message {
         </sdg:Person>
       </rim:SlotValue>
     </rim:Slot>
-    <rim:Slot name="EvidenceRequest">
-      <rim:SlotValue xsi:type="rim:AnyValueType">
-        <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
-          <sdg:Identifier>a8851d44-8f62-4561-99d2-5383ce3f30a7</sdg:Identifier>
-          <sdg:EvidenceTypeClassification>${this.typeJustificatif.id}</sdg:EvidenceTypeClassification>
-          <sdg:Title lang="EN">Diploma</sdg:Title>
-          <sdg:DistributedAs>
-            <sdg:Format>application/xml</sdg:Format>
-          </sdg:DistributedAs>
-        </sdg:DataServiceEvidenceType>
-      </rim:SlotValue>
-    </rim:Slot>
+    ${this.typeJustificatif.enXML()}
   </query:Query>
 </query:QueryRequest>`;
   }
