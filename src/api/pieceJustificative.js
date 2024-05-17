@@ -1,4 +1,5 @@
 const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete, ErreurDestinataireInexistant } = require('../erreurs');
+const TypeJustificatif = require('../ebms/typeJustificatif');
 
 const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
@@ -29,6 +30,7 @@ const pieceJustificative = (
     nomDestinataire,
     previsualisationRequise,
   } = requete.query;
+  const typeJustificatif = new TypeJustificatif({ id: idTypeJustificatif });
 
   return depotPointsAcces.trouvePointAcces(nomDestinataire)
     .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
@@ -36,7 +38,7 @@ const pieceJustificative = (
       destinataire,
       idConversation,
       identifiantEIDAS: adaptateurEnvironnement.identifiantEIDAS(),
-      idTypeJustificatif,
+      typeJustificatif,
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))
     .then(() => Promise.any([

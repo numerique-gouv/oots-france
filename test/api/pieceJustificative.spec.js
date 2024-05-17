@@ -70,9 +70,9 @@ describe('Le requêteur de pièce justificative', () => {
   it("transmet l'identifiant de type de pièce justificative demandée", () => {
     requete.query.idTypeJustificatif = 'unIdentifiant';
 
-    adaptateurDomibus.envoieMessageRequete = ({ idTypeJustificatif }) => {
+    adaptateurDomibus.envoieMessageRequete = ({ typeJustificatif }) => {
       try {
-        expect(idTypeJustificatif).toEqual('unIdentifiant');
+        expect(typeJustificatif.id).toEqual('unIdentifiant');
         return Promise.resolve();
       } catch (e) {
         return Promise.reject(e);
