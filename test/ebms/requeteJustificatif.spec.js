@@ -1,5 +1,6 @@
 const { parseXML, verifiePresenceSlot, valeurSlot } = require('./utils');
 const RequeteJustificatif = require('../../src/ebms/requeteJustificatif');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 describe("La vue du message de requête d'un justificatif", () => {
   const adaptateurUUID = {};
@@ -79,7 +80,7 @@ describe("La vue du message de requête d'un justificatif", () => {
   it("injecte l'identifiant de type de justificatif demandé", () => {
     const requeteJustificatif = new RequeteJustificatif(
       configurationRequete,
-      { idTypeJustificatif: 'unIdentifiant' },
+      { typeJustificatif: new TypeJustificatif({ id: 'unIdentifiant' }) },
     );
     const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
 
