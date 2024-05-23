@@ -16,7 +16,7 @@ Il est nécessaire en prérequis d'avoir installé [Git](https://git-scm.com/) e
 Commencer par récupérer les sources du projet et aller dans le répertoire créé.
 
 ```sh
-$ git clone https://github.com/betagouv/oots-france.git && cd oots-france
+$ git clone https://github.com/numerique-gouv/oots-france.git && cd oots-france
 ```
 
 Créer les fichiers `.env`, `.env.oots` et `.env.domibus` respectivement à
@@ -106,22 +106,6 @@ de modifier diverses propriétés de Domibus depuis le fichier
 Domibus](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/638060670/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.0.4%29%2817.7%29.pdf?version=2&modificationDate=1684157357586&api=v2)
 pour la signification des diverses propriétés.
 
-
-## Bouchon du fournisseur d'identité
-
-La solution fournit un « faux serveur FranceConnect+ » qui permet de bouchonner
-les appels au fournisseur d'identité et d'obtenir les informations utilisateur.
-Le serveur est lancé dans le conteneur Docker `mock_fcplus` et est accessible
-_via_ le port déclaré dans la variable d'environnement `PORT_MOCK_FCPLUS` dans
-le fichier `.env`. Une fois le bouchon actif, la requête `GET
-http://localhost:[PORT_MOCK_FCPLUS]` devrait renvoyer un JSON avec les divers
-points d'accès et leur URL respective (depuis l'intérieur du conteneur du
-serveur OOTS-France).
-
-Pour que le serveur OOTS-France puisse communiquer avec ce bouchon, il faudra
-renseigner dans le fichier `.env.oots` la variable d'environnement
-`URL_CONFIGURATION_OPEN_ID_FCPLUS` avec la valeur `http://mock_fcplus:4000` (le
-port d'écoute du bouchon depuis l'intérieur du conteneur).
 
 ## Lancement du serveur OOTS-France
 
