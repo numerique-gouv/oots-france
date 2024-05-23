@@ -23,10 +23,8 @@ const serveurTest = () => {
     };
 
     adaptateurEnvironnement = {
-      avecEnvoiCookieSurHTTP: () => true,
       avecRequetePieceJustificative: () => true,
       identifiantEIDAS: () => 'FR/BE/123456789',
-      secretJetonSession: () => 'secret',
     };
 
     adaptateurUUID = {
