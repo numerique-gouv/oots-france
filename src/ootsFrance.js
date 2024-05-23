@@ -1,4 +1,3 @@
-const cookieSession = require('cookie-session');
 const express = require('express');
 const mustacheExpress = require('mustache-express');
 
@@ -24,14 +23,6 @@ const creeServeur = (config) => {
   app.set('views', `${__dirname}/vues`);
   app.set('view engine', 'mustache');
   app.engine('mustache', mustacheExpress());
-
-  app.use(cookieSession({
-    maxAge: 15 * 60 * 1000,
-    name: 'session',
-    sameSite: true,
-    secret: adaptateurEnvironnement.secretJetonSession(),
-    secure: !adaptateurEnvironnement.avecEnvoiCookieSurHTTP(),
-  }));
 
   app.use('/admin', routesAdmin({ ecouteurDomibus }));
 
