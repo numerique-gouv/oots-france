@@ -1,25 +1,11 @@
 const express = require('express');
 
-const routesBase = (config) => {
-  const {
-    adaptateurEnvironnement,
-    middleware,
-  } = config;
-
+const routesBase = () => {
   const routes = express.Router();
 
-  routes.get(
-    '/',
-    (...args) => middleware.renseigneUtilisateurCourant(...args),
-    (requete, reponse) => {
-      const infosUtilisateur = requete.utilisateurCourant;
-      const avecConnexionFCPlus = adaptateurEnvironnement.avecConnexionFCPlus();
-      reponse.render('pageAccueil', {
-        infosUtilisateur,
-        avecConnexionFCPlus,
-      });
-    },
-  );
+  routes.get('/', (_requete, reponse) => {
+    reponse.send('OOTS-France');
+  });
 
   return routes;
 };
