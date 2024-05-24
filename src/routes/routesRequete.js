@@ -17,7 +17,6 @@ const routesRequete = (config) => {
       pieceJustificative(
         {
           adaptateurDomibus,
-          adaptateurEnvironnement,
           adaptateurUUID,
           depotPointsAcces,
         },

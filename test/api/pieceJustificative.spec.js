@@ -25,7 +25,6 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
     adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
-    adaptateurEnvironnement.identifiantEIDAS = () => 'FR/BE/123456789';
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
 
@@ -80,30 +79,6 @@ describe('Le requêteur de pièce justificative', () => {
     };
 
     return pieceJustificative(config, requete, reponse);
-  });
-
-  describe('quand `process.env.IDENTIFIANT_EIDAS` vaut `FR/BE/123456789`', () => {
-    let identifiantTemporaire;
-
-    beforeEach(() => {
-      identifiantTemporaire = process.env.IDENTIFIANT_EIDAS;
-      process.env.IDENTIFIANT_EIDAS = 'FR/BE/123456789';
-    });
-
-    afterEach(() => {
-      process.env.IDENTIFIANT_EIDAS = identifiantTemporaire;
-    });
-
-    it('utilise cet identifiant', () => {
-      adaptateurDomibus.envoieMessageRequete = ({ identifiantEIDAS }) => {
-        try {
-          expect(identifiantEIDAS).toEqual('FR/BE/123456789');
-          return Promise.resolve();
-        } catch (e) { return Promise.reject(e); }
-      };
-
-      return pieceJustificative(config, requete, reponse);
-    });
   });
 
   it('utilise un identifiant de conversation', () => {

@@ -16,7 +16,6 @@ const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseReq
 const pieceJustificative = (
   {
     adaptateurDomibus,
-    adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
   },
@@ -37,7 +36,6 @@ const pieceJustificative = (
       codeDemarche,
       destinataire,
       idConversation,
-      identifiantEIDAS: adaptateurEnvironnement.identifiantEIDAS(),
       typeJustificatif,
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))

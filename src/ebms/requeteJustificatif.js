@@ -11,7 +11,6 @@ class RequeteJustificatif extends Message {
       codeDemarche = 'T1',
       destinataire = {},
       idConversation = config.adaptateurUUID.genereUUID(),
-      identifiantEIDAS = 'DK/DE/123123123',
       typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
     } = {},
@@ -19,7 +18,6 @@ class RequeteJustificatif extends Message {
     super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
-    this.identifiantEIDAS = identifiantEIDAS;
     this.typeJustificatif = typeJustificatif;
     this.previsualisationRequise = previsualisationRequise;
   }
@@ -113,7 +111,6 @@ class RequeteJustificatif extends Message {
       <rim:SlotValue xsi:type="rim:AnyValueType">
         <sdg:Person>
           <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
-          <sdg:Identifier schemeID="eidas">${this.identifiantEIDAS}</sdg:Identifier>
           <sdg:FamilyName>Smith</sdg:FamilyName>
           <sdg:GivenName>Jonas</sdg:GivenName>
           <sdg:DateOfBirth>1999-03-01</sdg:DateOfBirth>
