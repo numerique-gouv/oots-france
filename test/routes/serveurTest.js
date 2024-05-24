@@ -24,7 +24,6 @@ const serveurTest = () => {
 
     adaptateurEnvironnement = {
       avecRequetePieceJustificative: () => true,
-      identifiantEIDAS: () => 'FR/BE/123456789',
     };
 
     adaptateurUUID = {

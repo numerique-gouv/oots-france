@@ -66,17 +66,6 @@ describe("La vue du message de requête d'un justificatif", () => {
     expect(codeDemarche.LocalizedString['@_value']).toBe('T3');
   });
 
-  it("injecte l'identifiant eIDAS spécifié en variable d'environnement", () => {
-    const requeteJustificatif = new RequeteJustificatif(
-      configurationRequete,
-      { identifiantEIDAS: 'BE/FR/123456789' },
-    );
-    const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
-
-    const personne = valeurSlot('NaturalPerson', xml.QueryRequest.Query);
-    expect(personne.Person.Identifier['#text']).toBe('BE/FR/123456789');
-  });
-
   it("injecte l'identifiant de type de justificatif demandé", () => {
     const requeteJustificatif = new RequeteJustificatif(
       configurationRequete,
