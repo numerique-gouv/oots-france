@@ -1,4 +1,9 @@
-const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete, ErreurDestinataireInexistant } = require('../erreurs');
+const {
+  ErreurAbsenceReponseDestinataire,
+  ErreurDestinataireInexistant,
+  ErreurReponseRequete,
+  ErreurTypeJustificatifIntrouvable,
+} = require('../erreurs');
 
 const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
@@ -54,7 +59,9 @@ const pieceJustificative = (
       }
     })
     .catch((e) => {
-      if (e instanceof ErreurDestinataireInexistant) {
+      if (
+        e instanceof ErreurDestinataireInexistant || e instanceof ErreurTypeJustificatifIntrouvable
+      ) {
         reponse.status(422).json({ erreur: e.message });
       } else if (e instanceof AggregateError) {
         let codeStatus = 500;

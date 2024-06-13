@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 const serveurTest = require('./serveurTest');
-const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
+const { ErreurAbsenceReponseDestinataire, ErreurTypeJustificatifIntrouvable } = require('../../src/erreurs');
 
 describe('Le serveur des routes `/requete`', () => {
   const serveur = serveurTest();
@@ -30,17 +30,29 @@ describe('Le serveur des routes `/requete`', () => {
           });
       });
     });
+  });
 
-    it('retourne une erreur 501 quand le feature flip est désactivé', () => {
-      expect.assertions(2);
+  it('retourne une erreur HTTP 422 (Unprocessable Content) si le type de justificatif est introuvable', () => {
+    serveur.depotServicesCommuns().trouveTypeJustificatif = () => (
+      Promise.reject(new ErreurTypeJustificatifIntrouvable('oups'))
+    );
 
-      serveur.adaptateurEnvironnement().avecRequetePieceJustificative = () => false;
+    return axios.get(`http://localhost:${port}/requete/pieceJustificative`)
+      .catch(({ response }) => {
+        expect(response.status).toEqual(422);
+        expect(response.data).toEqual({ erreur: 'oups' });
+      });
+  });
 
-      return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=AP_FR_01`)
-        .catch(({ response }) => {
-          expect(response.status).toEqual(501);
-          expect(response.data).toEqual('Not Implemented Yet!');
-        });
-    });
+  it('retourne une erreur 501 quand le feature flip est désactivé', () => {
+    expect.assertions(2);
+
+    serveur.adaptateurEnvironnement().avecRequetePieceJustificative = () => false;
+
+    return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=AP_FR_01`)
+      .catch(({ response }) => {
+        expect(response.status).toEqual(501);
+        expect(response.data).toEqual('Not Implemented Yet!');
+      });
   });
 });
