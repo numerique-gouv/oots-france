@@ -1,3 +1,4 @@
+const { ErreurTypeJustificatifIntrouvable } = require('../erreurs');
 const TypeJustificatif = require('../ebms/typeJustificatif');
 
 const DONNEES_DEPOT = {
@@ -14,7 +15,11 @@ class DepotServicesCommunsLocal {
   }
 
   trouveTypeJustificatif(id) {
-    const donneesTypeJustificatif = this.donnees.typesJustificatif.find((tj) => tj.id === id);
+    const donneesTypeJustificatif = this.donnees?.typesJustificatif?.find((tj) => tj.id === id);
+    if (typeof donneesTypeJustificatif === 'undefined') {
+      return Promise.reject(new ErreurTypeJustificatifIntrouvable(`Type justificatif avec identifiant "${id}" introuvable`));
+    }
+
     const typeJustificatif = new TypeJustificatif(donneesTypeJustificatif);
     return Promise.resolve(typeJustificatif);
   }
