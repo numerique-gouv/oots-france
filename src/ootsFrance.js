@@ -12,6 +12,7 @@ const creeServeur = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotServicesCommuns,
     ecouteurDomibus,
     horodateur,
   } = config;
@@ -33,6 +34,7 @@ const creeServeur = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotServicesCommuns,
   }));
 
   app.use('/', routesBase());

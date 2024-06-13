@@ -6,6 +6,7 @@ const serveurTest = () => {
   let adaptateurEnvironnement;
   let adaptateurUUID;
   let depotPointsAcces;
+  let depotServicesCommuns;
   let ecouteurDomibus;
   let horodateur;
 
@@ -34,6 +35,10 @@ const serveurTest = () => {
       trouvePointAcces: () => Promise.resolve({}),
     };
 
+    depotServicesCommuns = {
+      trouveTypeJustificatif: () => Promise.resolve({}),
+    };
+
     ecouteurDomibus = {
       arreteEcoute: () => {},
       ecoute: () => {},
@@ -49,6 +54,7 @@ const serveurTest = () => {
       adaptateurEnvironnement,
       adaptateurUUID,
       depotPointsAcces,
+      depotServicesCommuns,
       ecouteurDomibus,
       horodateur,
     });
@@ -64,6 +70,7 @@ const serveurTest = () => {
     adaptateurUUID: () => adaptateurUUID,
     arrete,
     depotPointsAcces: () => depotPointsAcces,
+    depotServicesCommuns: () => depotServicesCommuns,
     ecouteurDomibus: () => ecouteurDomibus,
     horodateur: () => horodateur,
     initialise,
