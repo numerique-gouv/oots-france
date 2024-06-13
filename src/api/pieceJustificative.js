@@ -30,16 +30,17 @@ const pieceJustificative = (
     previsualisationRequise,
   } = requete.query;
 
-  return depotServicesCommuns.trouveTypeJustificatif(idTypeJustificatif)
-    .then((typeJustificatif) => depotPointsAcces
-      .trouvePointAcces(nomDestinataire)
-      .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
-        codeDemarche,
-        destinataire,
-        idConversation,
-        typeJustificatif,
-        previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
-      })))
+  return Promise.all([
+    depotServicesCommuns.trouveTypeJustificatif(idTypeJustificatif),
+    depotPointsAcces.trouvePointAcces(nomDestinataire),
+  ])
+    .then(([typeJustificatif, destinataire]) => adaptateurDomibus.envoieMessageRequete({
+      codeDemarche,
+      destinataire,
+      idConversation,
+      typeJustificatif,
+      previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
+    }))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),
