@@ -22,6 +22,7 @@ describe('Le serveur des routes `/requete`', () => {
         serveur.adaptateurDomibus().pieceJustificativeDepuisReponse = (
           () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'))
         );
+
         return axios.get(`http://localhost:${port}/requete/pieceJustificative?destinataire=DESTINATAIRE_SILENCIEUX`)
           .catch(({ response }) => {
             expect(response.status).toEqual(504);

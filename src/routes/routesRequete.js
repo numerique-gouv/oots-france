@@ -8,6 +8,7 @@ const routesRequete = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotServicesCommuns,
   } = config;
 
   const routes = express.Router();
@@ -19,6 +20,7 @@ const routesRequete = (config) => {
           adaptateurDomibus,
           adaptateurUUID,
           depotPointsAcces,
+          depotServicesCommuns,
         },
         requete,
         reponse,

@@ -1,5 +1,4 @@
 const { ErreurAbsenceReponseDestinataire, ErreurReponseRequete, ErreurDestinataireInexistant } = require('../erreurs');
-const TypeJustificatif = require('../ebms/typeJustificatif');
 
 const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
@@ -18,6 +17,7 @@ const pieceJustificative = (
     adaptateurDomibus,
     adaptateurUUID,
     depotPointsAcces,
+    depotServicesCommuns,
   },
   requete,
   reponse,
@@ -29,16 +29,17 @@ const pieceJustificative = (
     nomDestinataire,
     previsualisationRequise,
   } = requete.query;
-  const typeJustificatif = new TypeJustificatif({ id: idTypeJustificatif });
 
-  return depotPointsAcces.trouvePointAcces(nomDestinataire)
-    .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
-      codeDemarche,
-      destinataire,
-      idConversation,
-      typeJustificatif,
-      previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
-    }))
+  return depotServicesCommuns.trouveTypeJustificatif(idTypeJustificatif)
+    .then((typeJustificatif) => depotPointsAcces
+      .trouvePointAcces(nomDestinataire)
+      .then((destinataire) => adaptateurDomibus.envoieMessageRequete({
+        codeDemarche,
+        destinataire,
+        idConversation,
+        typeJustificatif,
+        previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
+      })))
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),

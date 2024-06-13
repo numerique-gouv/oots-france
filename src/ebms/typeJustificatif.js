@@ -3,7 +3,7 @@ const FORMATS_DISTRIBUTION = {
 };
 
 class TypeJustificatif {
-  constructor(donnees) {
+  constructor(donnees = {}) {
     const { id, descriptions, formatDistribution } = donnees;
     this.id = id || 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000';
     this.descriptions = descriptions;
