@@ -1,0 +1,29 @@
+Vérification state et notion
+- renommer requete.session.jeton en requete.session.tampon
+- renommer requete.state en requete.etat
+- mettre mockFC+ à jour pour pouvoir gérer le cas où le state renvoyé n'est pas le bon
+
+Nettoyage :
+- renommer requete.session.jeton en requete.session.utilisateur
+- GET /fcplus/auth/connexion_apres_redirection : supprimer le paramètre `code` de l'appel à src/api/etc.
+
+
+
+
+RequeteJustificatif
+- Nettoyer trame EBMS
+
+ReponseVerificationSysteme
+- Injecter le bon identifiant eIDAS de l'utilisateur faisant la requête
+- Injecter le bon identifiant du fournisseur de pièce justificative
+- Injecter le bon schemeID du requêteur de pièce justificative
+- Injecter le bon identifiant du requêteur de pièce justificative
+- Nettoyage : extraire objet `Personne`
+
+Nettoyage :
+- `test/ebms/utils` : polymorphisme pour récupérer valeur d'un `rim:Slot` ? (c'est pour les tests, mais tout de même…)
+
+
+Plus tard…
+- regarder s'il ne faut pas ajouter des `return` dans les tests de `test/api/destructionSessionFCPlus.spec.js`
+- factoriser adaptateurChiffrement.clefHachage(`${Math.random()}`)
