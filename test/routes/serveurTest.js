@@ -37,6 +37,7 @@ const serveurTest = () => {
 
     depotServicesCommuns = {
       trouveTypeJustificatif: () => Promise.resolve({}),
+      trouveTypesJustificatifsPourDemarche: () => Promise.resolve([]),
     };
 
     ecouteurDomibus = {
