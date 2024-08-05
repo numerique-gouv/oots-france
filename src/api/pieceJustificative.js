@@ -1,5 +1,6 @@
 const {
   ErreurAbsenceReponseDestinataire,
+  ErreurCodeDemarcheIntrouvable,
   ErreurDestinataireInexistant,
   ErreurReponseRequete,
   ErreurTypeJustificatifIntrouvable,
@@ -30,20 +31,19 @@ const pieceJustificative = (
   const idConversation = adaptateurUUID.genereUUID();
   const {
     codeDemarche,
-    idTypeJustificatif,
     nomDestinataire,
     previsualisationRequise,
   } = requete.query;
 
   return Promise.all([
-    depotServicesCommuns.trouveTypeJustificatif(idTypeJustificatif),
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche),
     depotPointsAcces.trouvePointAcces(nomDestinataire),
   ])
-    .then(([typeJustificatif, destinataire]) => adaptateurDomibus.envoieMessageRequete({
+    .then(([typesJustificatifs, destinataire]) => adaptateurDomibus.envoieMessageRequete({
       codeDemarche,
       destinataire,
       idConversation,
-      typeJustificatif,
+      typeJustificatif: typesJustificatifs[0],
       previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
     }))
     .then(() => Promise.any([
@@ -60,7 +60,9 @@ const pieceJustificative = (
     })
     .catch((e) => {
       if (
-        e instanceof ErreurDestinataireInexistant || e instanceof ErreurTypeJustificatifIntrouvable
+        e instanceof ErreurCodeDemarcheIntrouvable
+          || e instanceof ErreurDestinataireInexistant
+          || e instanceof ErreurTypeJustificatifIntrouvable
       ) {
         reponse.status(422).json({ erreur: e.message });
       } else if (e instanceof AggregateError) {

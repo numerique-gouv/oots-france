@@ -1,7 +1,11 @@
 const axios = require('axios');
 
 const serveurTest = require('./serveurTest');
-const { ErreurAbsenceReponseDestinataire, ErreurTypeJustificatifIntrouvable } = require('../../src/erreurs');
+const {
+  ErreurAbsenceReponseDestinataire,
+  ErreurCodeDemarcheIntrouvable,
+  ErreurTypeJustificatifIntrouvable,
+} = require('../../src/erreurs');
 
 describe('Le serveur des routes `/requete`', () => {
   const serveur = serveurTest();
@@ -35,6 +39,18 @@ describe('Le serveur des routes `/requete`', () => {
   it('retourne une erreur HTTP 422 (Unprocessable Content) si le type de justificatif est introuvable', () => {
     serveur.depotServicesCommuns().trouveTypeJustificatif = () => (
       Promise.reject(new ErreurTypeJustificatifIntrouvable('oups'))
+    );
+
+    return axios.get(`http://localhost:${port}/requete/pieceJustificative`)
+      .catch(({ response }) => {
+        expect(response.status).toEqual(422);
+        expect(response.data).toEqual({ erreur: 'oups' });
+      });
+  });
+
+  it('retourne une erreur HTTP 422 (Unprocessable Content) si le code démarche est introuvable', () => {
+    serveur.depotServicesCommuns().trouveTypesJustificatifsPourDemarche = () => (
+      Promise.reject(new ErreurCodeDemarcheIntrouvable('oups'))
     );
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative`)

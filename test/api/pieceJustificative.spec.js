@@ -30,7 +30,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
-    depotServicesCommuns.trouveTypeJustificatif = () => Promise.resolve({});
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([]);
 
     requete.query = {};
     reponse.json = () => Promise.resolve();
@@ -70,14 +70,14 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(config, requete, reponse);
   });
 
-  it('interroge dépôt services communs pour récupérer infos relatives au type de justificatif', () => {
+  it('interroge dépôt services communs pour récupérer infos relatives au code démarche', () => {
     expect.assertions(1);
-    requete.query.idTypeJustificatif = 'unIdentifiant';
+    requete.query.codeDemarche = '00';
 
-    depotServicesCommuns.trouveTypeJustificatif = (id) => {
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = (code) => {
       try {
-        expect(id).toBe('unIdentifiant');
-        return Promise.resolve({});
+        expect(code).toBe('00');
+        return Promise.resolve([]);
       } catch (e) {
         return Promise.reject(e);
       }
@@ -87,7 +87,7 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it("transmet l'identifiant de type de pièce justificative demandée", () => {
-    depotServicesCommuns.trouveTypeJustificatif = () => Promise.resolve({ id: 'unIdentifiant' });
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([{ id: 'unIdentifiant' }]);
 
     adaptateurDomibus.envoieMessageRequete = ({ typeJustificatif }) => {
       try {
