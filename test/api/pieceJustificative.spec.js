@@ -1,5 +1,7 @@
 const pieceJustificative = require('../../src/api/pieceJustificative');
 const PointAcces = require('../../src/ebms/pointAcces');
+const Fournisseur = require('../../src/ebms/fournisseur');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 const {
   ErreurAbsenceReponseDestinataire,
@@ -30,7 +32,10 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
-    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([]);
+    depotServicesCommuns.trouveFournisseurs = () => Promise.resolve([new Fournisseur()]);
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve(
+      [new TypeJustificatif()],
+    );
 
     requete.query = {};
     reponse.json = () => Promise.resolve();
@@ -77,7 +82,7 @@ describe('Le requêteur de pièce justificative', () => {
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = (code) => {
       try {
         expect(code).toBe('00');
-        return Promise.resolve([]);
+        return Promise.resolve([new TypeJustificatif()]);
       } catch (e) {
         return Promise.reject(e);
       }
@@ -92,6 +97,43 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.envoieMessageRequete = ({ typeJustificatif }) => {
       try {
         expect(typeJustificatif.id).toEqual('unIdentifiant');
+        return Promise.resolve();
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('interroge dépôt services communs pour récupérer fournisseurs relatifs au justificatif et au code pays', () => {
+    expect.assertions(2);
+    requete.query.codePays = 'FR';
+    depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([{ id: 'unIdentifiant' }]);
+
+    depotServicesCommuns.trouveFournisseurs = (idTypeJustificatif, codePays) => {
+      try {
+        expect(idTypeJustificatif).toBe('unIdentifiant');
+        expect(codePays).toBe('FR');
+        return Promise.resolve([new Fournisseur()]);
+      } catch (e) {
+        return Promise.reject(e);
+      }
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('transmets fournisseur à requête', () => {
+    expect.assertions(1);
+
+    depotServicesCommuns.trouveFournisseurs = () => (
+      Promise.resolve([new Fournisseur({ descriptions: { FR: 'Un fournisseur' } })])
+    );
+
+    adaptateurDomibus.envoieMessageRequete = ({ fournisseur }) => {
+      try {
+        expect(fournisseur.descriptions.FR).toBe('Un fournisseur');
         return Promise.resolve();
       } catch (e) {
         return Promise.reject(e);

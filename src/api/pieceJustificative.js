@@ -1,51 +1,54 @@
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurCodeDemarcheIntrouvable,
+  ErreurCodePaysIntrouvable,
   ErreurDestinataireInexistant,
   ErreurReponseRequete,
   ErreurTypeJustificatifIntrouvable,
 } = require('../erreurs');
 
-const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
-  .urlRedirectionDepuisReponse(idConversation)
-  .then((url) => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }));
+const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinataire;
+const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
+const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
+
+const paramsRequete = (config, codeDemarche, codePays) => {
+  const { depotPointsAcces, depotServicesCommuns } = config;
+
+  return depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche)
+    .then((tjs) => tjs[0])
+    .then((tj) => depotServicesCommuns.trouveFournisseurs(tj.id, codePays)
+      .then((fs) => fs[0])
+      .then((f) => depotPointsAcces.trouvePointAcces(f.idPointAcces())
+        .then((pa) => ({ destinataire: pa, fournisseur: f, typeJustificatif: tj }))));
+};
 
 const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .pieceJustificativeDepuisReponse(idConversation)
   .then((pj) => ({ pieceJustificative: pj }));
 
-const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinataire;
-const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
-const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
+const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
+  .urlRedirectionDepuisReponse(idConversation)
+  .then((url) => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }));
 
-const pieceJustificative = (
-  {
+const pieceJustificative = (config, requete, reponse) => {
+  const {
     adaptateurDomibus,
     adaptateurUUID,
-    depotPointsAcces,
-    depotServicesCommuns,
-  },
-  requete,
-  reponse,
-) => {
+  } = config;
   const idConversation = adaptateurUUID.genereUUID();
-  const {
-    codeDemarche,
-    nomDestinataire,
-    previsualisationRequise,
-  } = requete.query;
+  const { codeDemarche, codePays, previsualisationRequise } = requete.query;
 
-  return Promise.all([
-    depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche),
-    depotPointsAcces.trouvePointAcces(nomDestinataire),
-  ])
-    .then(([typesJustificatifs, destinataire]) => adaptateurDomibus.envoieMessageRequete({
-      codeDemarche,
-      destinataire,
-      idConversation,
-      typeJustificatif: typesJustificatifs[0],
-      previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
-    }))
+  return paramsRequete(config, codeDemarche, codePays)
+    .then(({ destinataire, fournisseur, typeJustificatif }) => {
+      adaptateurDomibus.envoieMessageRequete({
+        codeDemarche,
+        destinataire,
+        fournisseur,
+        idConversation,
+        typeJustificatif,
+        previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
+      });
+    })
     .then(() => Promise.any([
       urlRedirection(idConversation, adaptateurDomibus),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),
@@ -61,6 +64,7 @@ const pieceJustificative = (
     .catch((e) => {
       if (
         e instanceof ErreurCodeDemarcheIntrouvable
+          || e instanceof ErreurCodePaysIntrouvable
           || e instanceof ErreurDestinataireInexistant
           || e instanceof ErreurTypeJustificatifIntrouvable
       ) {
