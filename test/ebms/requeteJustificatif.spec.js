@@ -1,4 +1,5 @@
 const { parseXML, verifiePresenceSlot, valeurSlot } = require('./utils');
+const Fournisseur = require('../../src/ebms/fournisseur');
 const RequeteJustificatif = require('../../src/ebms/requeteJustificatif');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
@@ -75,5 +76,16 @@ describe("La vue du message de requête d'un justificatif", () => {
 
     const requete = valeurSlot('EvidenceRequest', xml.QueryRequest.Query);
     expect(requete.DataServiceEvidenceType.EvidenceTypeClassification).toBe('unIdentifiant');
+  });
+
+  it('injecte le fournisseur', () => {
+    const requeteJustificatif = new RequeteJustificatif(
+      configurationRequete,
+      { fournisseur: new Fournisseur({ pointAcces: { typeId: 'unType', id: 'unIdentifiant' } }) },
+    );
+    const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
+
+    const fournisseur = valeurSlot('EvidenceProvider', xml.QueryRequest);
+    expect(fournisseur.Agent.Identifier['#text']).toBe('unIdentifiant');
   });
 });
