@@ -1,5 +1,7 @@
-const OOTS_FRANCE = require('../../src/ootsFrance');
 const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
+const OOTS_FRANCE = require('../../src/ootsFrance');
+const Fournisseur = require('../../src/ebms/fournisseur');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 const serveurTest = () => {
   let adaptateurDomibus;
@@ -36,8 +38,9 @@ const serveurTest = () => {
     };
 
     depotServicesCommuns = {
+      trouveFournisseurs: () => Promise.resolve([new Fournisseur()]),
       trouveTypeJustificatif: () => Promise.resolve({}),
-      trouveTypesJustificatifsPourDemarche: () => Promise.resolve([]),
+      trouveTypesJustificatifsPourDemarche: () => Promise.resolve([new TypeJustificatif()]),
     };
 
     ecouteurDomibus = {
