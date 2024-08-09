@@ -1,31 +1,10 @@
 const { ErreurCodeDemarcheIntrouvable, ErreurCodePaysIntrouvable, ErreurTypeJustificatifIntrouvable } = require('../erreurs');
+const adaptateurEnvironnement = require('../adaptateurs/adaptateurEnvironnement');
 const Fournisseur = require('../ebms/fournisseur');
 const TypeJustificatif = require('../ebms/typeJustificatif');
 
-const DONNEES_DEPOT = {
-  demarches: [{
-    code: '00',
-    idsTypeJustificatif: ['https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000'],
-  }],
-
-  typesJustificatif: [{
-    id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000',
-    descriptions: { EN: 'System Health Check' },
-    formatDistribution: 'application/pdf',
-    fournisseurs: {
-      FR: [{
-        pointAcces: {
-          id: 'blue_gw',
-          systeme: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR',
-        },
-        descriptions: { EN: 'French Intermediary Platform' },
-      }],
-    },
-  }],
-};
-
 class DepotServicesCommunsLocal {
-  constructor(donnees = DONNEES_DEPOT) {
+  constructor(donnees = adaptateurEnvironnement.donneesDepotServicesCommunsLocal()) {
     this.donnees = donnees;
   }
 
