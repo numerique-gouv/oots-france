@@ -1,6 +1,7 @@
 class ErreurAbsenceReponseDestinataire extends Error {}
 class ErreurAucunMessageDomibusRecu extends Error {}
 class ErreurCodeDemarcheIntrouvable extends Error {}
+class ErreurCodePaysIntrouvable extends Error {}
 class ErreurDestinataireInexistant extends Error {}
 class ErreurEchecAuthentification extends Error {}
 class ErreurInstructionSOAPInconnue extends Error {}
@@ -12,6 +13,7 @@ module.exports = {
   ErreurAbsenceReponseDestinataire,
   ErreurAucunMessageDomibusRecu,
   ErreurCodeDemarcheIntrouvable,
+  ErreurCodePaysIntrouvable,
   ErreurDestinataireInexistant,
   ErreurEchecAuthentification,
   ErreurInstructionSOAPInconnue,

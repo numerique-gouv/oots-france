@@ -1,5 +1,5 @@
 const ConstructeurDepotServicesCommuns = require('../constructeurs/constructeurDepotServicesCommuns');
-const { ErreurCodeDemarcheIntrouvable, ErreurTypeJustificatifIntrouvable } = require('../../src/erreurs');
+const { ErreurCodeDemarcheIntrouvable, ErreurCodePaysIntrouvable, ErreurTypeJustificatifIntrouvable } = require('../../src/erreurs');
 const DepotServicesCommuns = require('../../src/depots/depotServicesCommunsLocal');
 
 describe('Le Dépôt (local, bouchonné) de données des services communs', () => {
@@ -56,6 +56,34 @@ describe('Le Dépôt (local, bouchonné) de données des services communs', () =
       .catch((e) => {
         expect(e).toBeInstanceOf(ErreurCodeDemarcheIntrouvable);
         expect(e.message).toBe('Code démarche "XX" introuvable');
+      });
+  });
+
+  it("trouve tous les fournisseurs d'un pays liés à un type de justificatif", () => {
+    const depot = new ConstructeurDepotServicesCommuns()
+      .avecTypeJustificatif({
+        id: '12345',
+        fournisseurs: { FR: [{ pointAcces: { id: 'unIdentifiant' } }] },
+      })
+      .construis();
+
+    return depot.trouveFournisseurs('12345', 'FR')
+      .then((fournisseurs) => {
+        expect(fournisseurs.length).toBe(1);
+        expect(fournisseurs[0].idPointAcces()).toBe('unIdentifiant');
+      });
+  });
+
+  it('retourne une erreur si code pays introuvable', () => {
+    expect.assertions(2);
+    const depot = new ConstructeurDepotServicesCommuns()
+      .avecTypeJustificatif({ id: '12345', fournisseurs: { FR: [] } })
+      .construis();
+
+    return depot.trouveFournisseurs('12345', 'BE')
+      .catch((e) => {
+        expect(e).toBeInstanceOf(ErreurCodePaysIntrouvable);
+        expect(e.message).toBe('Code pays "BE" introuvable');
       });
   });
 });
