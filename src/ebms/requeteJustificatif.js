@@ -1,4 +1,5 @@
 const EnteteRequete = require('./enteteRequete');
+const Fournisseur = require('./fournisseur');
 const Message = require('./message');
 const TypeJustificatif = require('./typeJustificatif');
 
@@ -10,6 +11,7 @@ class RequeteJustificatif extends Message {
     {
       codeDemarche = 'T1',
       destinataire = {},
+      fournisseur = new Fournisseur(),
       idConversation = config.adaptateurUUID.genereUUID(),
       typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
@@ -18,6 +20,7 @@ class RequeteJustificatif extends Message {
     super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
+    this.fournisseur = fournisseur;
     this.typeJustificatif = typeJustificatif;
     this.previsualisationRequise = previsualisationRequise;
   }
@@ -97,14 +100,7 @@ class RequeteJustificatif extends Message {
       </rim:Element>
     </rim:SlotValue>
   </rim:Slot>
-  <rim:Slot name="EvidenceProvider">
-    <rim:SlotValue xsi:type="rim:AnyValueType">
-      <sdg:Agent>
-        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">BR_IT_01</sdg:Identifier>
-        <sdg:Name lang="EN">Italy</sdg:Name>
-      </sdg:Agent>
-    </rim:SlotValue>
-  </rim:Slot>
+  ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
     <rim:Slot name="NaturalPerson">
