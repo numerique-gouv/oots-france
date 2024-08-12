@@ -1,1 +1,1 @@
-docker-compose up web
+docker-compose up nginx

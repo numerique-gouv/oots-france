@@ -106,6 +106,30 @@ de modifier diverses propriétés de Domibus depuis le fichier
 Domibus](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/638060670/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.0.4%29%2817.7%29.pdf?version=2&modificationDate=1684157357586&api=v2)
 pour la signification des diverses propriétés.
 
+## Configurer NGinx
+
+OOTS-France s'appuie sur les services tiers de FranceConnect+, qui exigent que
+les interactions aient lieu sur HTTPS. Pour ce faire :
+
+```sh
+$ cp nginx.template nginx
+```
+
+Ensuite, changer…
+- dans le fichier `nginx/conf/nginx.conf` : toutes les occurrences de
+  `example.com` en le nom du domaine lié à la machine de développement.
+- dans le fichier `nginx/script/init-letsencrypt.sh` : toutes les occurrences
+  de `example.com` en le nom du domaine lié à la machine de développement _et_
+  l'adresse `user@example.com` en l'adresse mail du développeur qui va demander
+  les certificats.
+
+Lancer ensuite la demande de certificats.
+
+```sh
+$ nginx/scripts/init-letsencrypt.sh
+```
+
+Le script doit installer les certificats et terminer en succès.
 
 ## Lancement du serveur OOTS-France
 
@@ -120,12 +144,11 @@ web_1      | OOTS-France est démarré et écoute le port [XXX] !…
 ```
 
 Le serveur devrait être accessible depuis un navigateur à l'URL
-`http://localhost:[PORT_OOTS_FRANCE]` (avec comme valeur pour
-`PORT_OOTS_FRANCE` celle indiquée dans le fichier `.env`).
+`https://<nom.du.domaine>`
 
 Il est alors possible de tester l'envoi d'un message de test en requêtant l'URL
 suivante depuis un navigateur :
-`http://localhost:[PORT_OOTS_FRANCE]/requete/pieceJustificative?nomDestinataire=blue_gw`.
+`https://<nom.du.domaine>/requete/pieceJustificative?codeDemarche=00&codePays=FR`
 
 
 ## Exécution de la suite de tests automatisés
