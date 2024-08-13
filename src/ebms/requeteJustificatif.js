@@ -1,6 +1,7 @@
 const EnteteRequete = require('./enteteRequete');
 const Fournisseur = require('./fournisseur');
 const Message = require('./message');
+const PersonnePhysique = require('./personnePhysique');
 const TypeJustificatif = require('./typeJustificatif');
 
 class RequeteJustificatif extends Message {
@@ -13,6 +14,7 @@ class RequeteJustificatif extends Message {
       destinataire = {},
       fournisseur = new Fournisseur(),
       idConversation = config.adaptateurUUID.genereUUID(),
+      personne = new PersonnePhysique(),
       typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
     } = {},
@@ -21,6 +23,7 @@ class RequeteJustificatif extends Message {
 
     this.codeDemarche = codeDemarche;
     this.fournisseur = fournisseur;
+    this.personne = personne;
     this.typeJustificatif = typeJustificatif;
     this.previsualisationRequise = previsualisationRequise;
   }
@@ -103,19 +106,7 @@ class RequeteJustificatif extends Message {
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
-    <rim:Slot name="NaturalPerson">
-      <rim:SlotValue xsi:type="rim:AnyValueType">
-        <sdg:Person>
-          <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
-          <sdg:FamilyName>Smith</sdg:FamilyName>
-          <sdg:GivenName>Jonas</sdg:GivenName>
-          <sdg:DateOfBirth>1999-03-01</sdg:DateOfBirth>
-          <sdg:BirthName></sdg:BirthName>
-          <sdg:PlaceOfBirth></sdg:PlaceOfBirth>
-          <sdg:Gender>Male</sdg:Gender>
-        </sdg:Person>
-      </rim:SlotValue>
-    </rim:Slot>
+    ${this.personne.enXML()}
     ${this.typeJustificatif.enXML()}
   </query:Query>
 </query:QueryRequest>`;
