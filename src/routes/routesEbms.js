@@ -2,6 +2,7 @@ const express = require('express');
 
 const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
+const Fournisseur = require('../ebms/fournisseur');
 const PointAcces = require('../ebms/pointAcces');
 const ReponseErreur = require('../ebms/reponseErreur');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
@@ -28,7 +29,12 @@ const routesEbms = (config) => {
   });
 
   routes.get('/messages/requeteJustificatif', (_requete, reponse) => {
-    const requeteJustificatif = new RequeteJustificatif({ adaptateurUUID, horodateur });
+    const requeteJustificatif = new RequeteJustificatif({ adaptateurUUID, horodateur }, {
+      fournisseur: new Fournisseur({
+        pointAcces: { id: 'blue_gw', typeId: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR' },
+        descriptions: { EN: 'French Intermediary Platform' },
+      }),
+    });
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(requeteJustificatif.corpsMessageEnXML());
