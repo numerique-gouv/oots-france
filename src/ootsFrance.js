@@ -1,5 +1,4 @@
 const express = require('express');
-const mustacheExpress = require('mustache-express');
 
 const routesAdmin = require('./routes/routesAdmin');
 const routesBase = require('./routes/routesBase');
@@ -20,10 +19,6 @@ const creeServeur = (config) => {
   const app = express();
 
   app.set('trust proxy', 1);
-
-  app.set('views', `${__dirname}/vues`);
-  app.set('view engine', 'mustache');
-  app.engine('mustache', mustacheExpress());
 
   app.use('/admin', routesAdmin({ ecouteurDomibus }));
 
