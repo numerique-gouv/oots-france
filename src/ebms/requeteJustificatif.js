@@ -1,6 +1,7 @@
 const EnteteRequete = require('./enteteRequete');
 const Fournisseur = require('./fournisseur');
 const Message = require('./message');
+const Requeteur = require('./requeteur');
 const TypeJustificatif = require('./typeJustificatif');
 
 class RequeteJustificatif extends Message {
@@ -13,6 +14,7 @@ class RequeteJustificatif extends Message {
       destinataire = {},
       fournisseur = new Fournisseur(),
       idConversation = config.adaptateurUUID.genereUUID(),
+      requeteur = new Requeteur(),
       typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
     } = {},
@@ -21,6 +23,7 @@ class RequeteJustificatif extends Message {
 
     this.codeDemarche = codeDemarche;
     this.fournisseur = fournisseur;
+    this.requeteur = requeteur;
     this.typeJustificatif = typeJustificatif;
     this.previsualisationRequise = previsualisationRequise;
   }
@@ -80,24 +83,7 @@ class RequeteJustificatif extends Message {
       </rim:Element>
     </rim:SlotValue>
   </rim:Slot>
-  <rim:Slot name="EvidenceRequester">
-    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
-      <rim:Element xsi:type="rim:AnyValueType">
-        <sdg:Agent>
-          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">123456</sdg:Identifier>
-          <sdg:Name lang="FR">Un requêteur français</sdg:Name>
-          <sdg:Classification>ER</sdg:Classification>
-        </sdg:Agent>
-      </rim:Element>
-      <rim:Element xsi:type="rim:AnyValueType">
-        <sdg:Agent>
-          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
-          <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
-          <sdg:Classification>IP</sdg:Classification>
-        </sdg:Agent>
-      </rim:Element>
-    </rim:SlotValue>
-  </rim:Slot>
+  ${this.requeteur.enXML()}
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
