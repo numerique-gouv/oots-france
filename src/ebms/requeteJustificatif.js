@@ -81,7 +81,7 @@ class RequeteJustificatif extends Message {
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="EvidenceRequester">
-    <rim:SlotValue xsi:type="rim:CollectionValueType">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
           <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096">DK22233223</sdg:Identifier>
