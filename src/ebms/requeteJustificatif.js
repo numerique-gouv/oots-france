@@ -84,18 +84,16 @@ class RequeteJustificatif extends Message {
     <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
-          <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096">DK22233223</sdg:Identifier>
-          <sdg:Name lang="EN">Denmark University Portal</sdg:Name>
-          <sdg:Address>
-            <sdg:FullAddress>Prince Street 15, 1050 Copenhagen, Denmark</sdg:FullAddress>
-            <sdg:LocatorDesignator>15</sdg:LocatorDesignator>
-            <sdg:PostCode>1050</sdg:PostCode>
-            <sdg:PostCityName>Copenhagen</sdg:PostCityName>
-            <sdg:Thoroughfare>Prince Street</sdg:Thoroughfare>
-            <sdg:AdminUnitLevel1>DK</sdg:AdminUnitLevel1>
-            <sdg:AdminUnitLevel2>DK011</sdg:AdminUnitLevel2>
-          </sdg:Address>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">123456</sdg:Identifier>
+          <sdg:Name lang="FR">Un requêteur français</sdg:Name>
           <sdg:Classification>ER</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
+          <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
+          <sdg:Classification>IP</sdg:Classification>
         </sdg:Agent>
       </rim:Element>
     </rim:SlotValue>
