@@ -1,18 +1,16 @@
-class Requeteur {
-  constructor(donnees = {}) {
-    this.id = donnees.id;
-    this.nom = donnees.nom;
-    this.url = donnees.url;
-  }
+const Requeteur = require('../../src/ebms/requeteur');
 
-  enXML() {
-    return `
+describe('Un requêteur', () => {
+  it("s'affiche en XML", () => {
+    const requeteur = new Requeteur({ id: '123456', nom: 'Un requêteur français' });
+
+    expect(requeteur.enXML()).toBe(`
 <rim:Slot name="EvidenceRequester">
   <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
     <rim:Element xsi:type="rim:AnyValueType">
       <sdg:Agent>
-        <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">${this.id}</sdg:Identifier>
-        <sdg:Name lang="FR">${this.nom}</sdg:Name>
+        <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">123456</sdg:Identifier>
+        <sdg:Name lang="FR">Un requêteur français</sdg:Name>
         <sdg:Classification>ER</sdg:Classification>
       </sdg:Agent>
     </rim:Element>
@@ -25,8 +23,6 @@ class Requeteur {
     </rim:Element>
   </rim:SlotValue>
 </rim:Slot>
-    `;
-  }
-}
-
-module.exports = Requeteur;
+    `);
+  });
+});
