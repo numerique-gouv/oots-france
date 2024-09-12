@@ -1,11 +1,7 @@
 const {
   ErreurAbsenceReponseDestinataire,
-  ErreurCodeDemarcheIntrouvable,
-  ErreurCodePaysIntrouvable,
-  ErreurDestinataireInexistant,
+  ErreurEBMS,
   ErreurReponseRequete,
-  ErreurRequeteurInexistant,
-  ErreurTypeJustificatifIntrouvable,
 } = require('../erreurs');
 
 const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinataire;
@@ -80,13 +76,7 @@ const pieceJustificative = (config, requete, reponse) => {
       }
     })
     .catch((e) => {
-      if (
-        e instanceof ErreurCodeDemarcheIntrouvable
-          || e instanceof ErreurCodePaysIntrouvable
-          || e instanceof ErreurDestinataireInexistant
-          || e instanceof ErreurRequeteurInexistant
-          || e instanceof ErreurTypeJustificatifIntrouvable
-      ) {
+      if (e instanceof ErreurEBMS) {
         reponse.status(422).json({ erreur: e.message });
       } else if (e instanceof AggregateError) {
         let codeStatus = 500;
