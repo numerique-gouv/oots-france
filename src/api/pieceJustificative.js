@@ -4,6 +4,7 @@ const {
   ErreurCodePaysIntrouvable,
   ErreurDestinataireInexistant,
   ErreurReponseRequete,
+  ErreurRequeteurInexistant,
   ErreurTypeJustificatifIntrouvable,
 } = require('../erreurs');
 
@@ -11,15 +12,21 @@ const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinat
 const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
 const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
 
-const paramsRequete = (config, codeDemarche, codePays) => {
-  const { depotPointsAcces, depotServicesCommuns } = config;
+const paramsRequete = (config, codeDemarche, codePays, idRequeteur) => {
+  const { depotPointsAcces, depotRequeteurs, depotServicesCommuns } = config;
 
   return depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche)
     .then((tjs) => tjs[0])
     .then((tj) => depotServicesCommuns.trouveFournisseurs(tj.id, codePays)
       .then((fs) => fs[0])
       .then((f) => depotPointsAcces.trouvePointAcces(f.idPointAcces())
-        .then((pa) => ({ destinataire: pa, fournisseur: f, typeJustificatif: tj }))));
+        .then((pa) => depotRequeteurs.trouveRequeteur(idRequeteur)
+          .then((r) => ({
+            destinataire: pa,
+            fournisseur: f,
+            requeteur: r,
+            typeJustificatif: tj,
+          })))));
 };
 
 const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
@@ -36,15 +43,26 @@ const pieceJustificative = (config, requete, reponse) => {
     adaptateurUUID,
   } = config;
   const idConversation = adaptateurUUID.genereUUID();
-  const { codeDemarche, codePays, previsualisationRequise } = requete.query;
+  const {
+    codeDemarche,
+    codePays,
+    idRequeteur,
+    previsualisationRequise,
+  } = requete.query;
 
-  return paramsRequete(config, codeDemarche, codePays)
-    .then(({ destinataire, fournisseur, typeJustificatif }) => {
+  return paramsRequete(config, codeDemarche, codePays, idRequeteur)
+    .then(({
+      destinataire,
+      fournisseur,
+      requeteur,
+      typeJustificatif,
+    }) => {
       adaptateurDomibus.envoieMessageRequete({
         codeDemarche,
         destinataire,
         fournisseur,
         idConversation,
+        requeteur,
         typeJustificatif,
         previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
       });
@@ -66,6 +84,7 @@ const pieceJustificative = (config, requete, reponse) => {
         e instanceof ErreurCodeDemarcheIntrouvable
           || e instanceof ErreurCodePaysIntrouvable
           || e instanceof ErreurDestinataireInexistant
+          || e instanceof ErreurRequeteurInexistant
           || e instanceof ErreurTypeJustificatifIntrouvable
       ) {
         reponse.status(422).json({ erreur: e.message });

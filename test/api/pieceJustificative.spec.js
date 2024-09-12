@@ -1,12 +1,14 @@
 const pieceJustificative = require('../../src/api/pieceJustificative');
 const PointAcces = require('../../src/ebms/pointAcces');
 const Fournisseur = require('../../src/ebms/fournisseur');
+const Requeteur = require('../../src/ebms/requeteur');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 const {
   ErreurAbsenceReponseDestinataire,
-  ErreurReponseRequete,
   ErreurDestinataireInexistant,
+  ErreurRequeteurInexistant,
+  ErreurReponseRequete,
 } = require('../../src/erreurs');
 
 describe('Le requêteur de pièce justificative', () => {
@@ -14,6 +16,7 @@ describe('Le requêteur de pièce justificative', () => {
   const adaptateurEnvironnement = {};
   const adaptateurUUID = {};
   const depotPointsAcces = {};
+  const depotRequeteurs = {};
   const depotServicesCommuns = {};
 
   const config = {
@@ -21,6 +24,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotRequeteurs,
     depotServicesCommuns,
   };
   const requete = {};
@@ -32,6 +36,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur());
     depotServicesCommuns.trouveFournisseurs = () => Promise.resolve([new Fournisseur()]);
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve(
       [new TypeJustificatif()],
@@ -124,7 +129,7 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(config, requete, reponse);
   });
 
-  it('transmets fournisseur à requête', () => {
+  it('transmet fournisseur à requête', () => {
     expect.assertions(1);
 
     depotServicesCommuns.trouveFournisseurs = () => (
@@ -138,6 +143,45 @@ describe('Le requêteur de pièce justificative', () => {
       } catch (e) {
         return Promise.reject(e);
       }
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('interroge le dépôt de requêteurs', () => {
+    expect.assertions(1);
+    requete.query.idRequeteur = '123456';
+
+    depotRequeteurs.trouveRequeteur = (id) => {
+      expect(id).toBe('123456');
+      return Promise.resolve(new Requeteur());
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('transmet requêteur à requête', () => {
+    expect.assertions(1);
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur({ nom: 'Un requêteur' }));
+
+    adaptateurDomibus.envoieMessageRequete = ({ requeteur }) => {
+      expect(requeteur.nom).toBe('Un requêteur');
+      return Promise.resolve();
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it("génère une erreur 422 lorsque le requêteur n'existe pas", () => {
+    requete.query.idRequeteur = 'requeteurInexistant';
+    depotRequeteurs.trouveRequeteur = () => Promise.reject(new ErreurRequeteurInexistant('Oups'));
+
+    reponse.status = (codeStatus) => {
+      expect(codeStatus).toEqual(422);
+      return reponse;
+    };
+    reponse.json = (contenu) => {
+      expect(contenu).toEqual({ erreur: 'Oups' });
     };
 
     return pieceJustificative(config, requete, reponse);

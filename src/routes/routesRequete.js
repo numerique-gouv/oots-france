@@ -8,6 +8,7 @@ const routesRequete = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotRequeteurs,
     depotServicesCommuns,
   } = config;
 
@@ -20,6 +21,7 @@ const routesRequete = (config) => {
           adaptateurDomibus,
           adaptateurUUID,
           depotPointsAcces,
+          depotRequeteurs,
           depotServicesCommuns,
         },
         requete,
