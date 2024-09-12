@@ -24,6 +24,19 @@ partir des fichiers `.env.template`, `.env.oots.template` et
 `.env.domibus.template`. Renseigner les diverses variables d'environnement.
 
 
+## Configuration de la base de données (MySQL)
+
+À la première utilisation, il faut lancer le conteneur de base de données seul
+pour lui laisser le temps de se configurer correctement.
+
+```sh
+$ docker-compose up mysql
+```
+
+Attendre que soit affiché à l'écran `[Server] /usr/sbin/mysqld: ready for
+connections.` puis arrêter le conteneur avec `<CTRL> + C`.
+
+
 ## Configuration du point d'accès eDelivery (Domibus)
 
 Lancer le conteneur Domibus
