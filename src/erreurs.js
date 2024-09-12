@@ -7,6 +7,7 @@ class ErreurEchecAuthentification extends Error {}
 class ErreurInstructionSOAPInconnue extends Error {}
 class ErreurJetonInvalide extends Error {}
 class ErreurReponseRequete extends Error {}
+class ErreurRequeteurInexistant extends Error {}
 class ErreurTypeJustificatifIntrouvable extends Error {}
 
 module.exports = {
@@ -19,5 +20,6 @@ module.exports = {
   ErreurInstructionSOAPInconnue,
   ErreurJetonInvalide,
   ErreurReponseRequete,
+  ErreurRequeteurInexistant,
   ErreurTypeJustificatifIntrouvable,
 };
