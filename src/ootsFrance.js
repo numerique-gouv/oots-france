@@ -11,6 +11,7 @@ const creeServeur = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotRequeteurs,
     depotServicesCommuns,
     ecouteurDomibus,
     horodateur,
@@ -29,6 +30,7 @@ const creeServeur = (config) => {
     adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
+    depotRequeteurs,
     depotServicesCommuns,
   }));
 

@@ -1,6 +1,7 @@
 const { ErreurAbsenceReponseDestinataire } = require('../../src/erreurs');
 const OOTS_FRANCE = require('../../src/ootsFrance');
 const Fournisseur = require('../../src/ebms/fournisseur');
+const Requeteur = require('../../src/ebms/requeteur');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 const serveurTest = () => {
@@ -8,6 +9,7 @@ const serveurTest = () => {
   let adaptateurEnvironnement;
   let adaptateurUUID;
   let depotPointsAcces;
+  let depotRequeteurs;
   let depotServicesCommuns;
   let ecouteurDomibus;
   let horodateur;
@@ -37,6 +39,10 @@ const serveurTest = () => {
       trouvePointAcces: () => Promise.resolve({}),
     };
 
+    depotRequeteurs = {
+      trouveRequeteur: () => Promise.resolve(new Requeteur()),
+    };
+
     depotServicesCommuns = {
       trouveFournisseurs: () => Promise.resolve([new Fournisseur()]),
       trouveTypeJustificatif: () => Promise.resolve({}),
@@ -58,6 +64,7 @@ const serveurTest = () => {
       adaptateurEnvironnement,
       adaptateurUUID,
       depotPointsAcces,
+      depotRequeteurs,
       depotServicesCommuns,
       ecouteurDomibus,
       horodateur,
@@ -74,6 +81,7 @@ const serveurTest = () => {
     adaptateurUUID: () => adaptateurUUID,
     arrete,
     depotPointsAcces: () => depotPointsAcces,
+    depotRequeteurs: () => depotRequeteurs,
     depotServicesCommuns: () => depotServicesCommuns,
     ecouteurDomibus: () => ecouteurDomibus,
     horodateur: () => horodateur,
