@@ -54,31 +54,25 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it('envoie un message AS4 au bon destinataire', () => {
+    expect.assertions(2);
     depotPointsAcces.trouvePointAcces = () => Promise.resolve(new PointAcces('unIdentifiant', 'unType'));
 
     adaptateurDomibus.envoieMessageRequete = ({ destinataire }) => {
-      try {
-        expect(destinataire.id).toEqual('unIdentifiant');
-        expect(destinataire.typeId).toEqual('unType');
-        return Promise.resolve();
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(destinataire.id).toEqual('unIdentifiant');
+      expect(destinataire.typeId).toEqual('unType');
+      return Promise.resolve();
     };
 
     return pieceJustificative(config, requete, reponse);
   });
 
   it('transmet le code démarche dans la requête', () => {
+    expect.assertions(1);
     requete.query.codeDemarche = 'UN_CODE';
 
     adaptateurDomibus.envoieMessageRequete = ({ codeDemarche }) => {
-      try {
-        expect(codeDemarche).toEqual('UN_CODE');
-        return Promise.resolve();
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(codeDemarche).toEqual('UN_CODE');
+      return Promise.resolve();
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -89,27 +83,20 @@ describe('Le requêteur de pièce justificative', () => {
     requete.query.codeDemarche = '00';
 
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = (code) => {
-      try {
-        expect(code).toBe('00');
-        return Promise.resolve([new TypeJustificatif()]);
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(code).toBe('00');
+      return Promise.resolve([new TypeJustificatif()]);
     };
 
     return pieceJustificative(config, requete, reponse);
   });
 
   it("transmet l'identifiant de type de pièce justificative demandée", () => {
+    expect.assertions(1);
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([{ id: 'unIdentifiant' }]);
 
     adaptateurDomibus.envoieMessageRequete = ({ typeJustificatif }) => {
-      try {
-        expect(typeJustificatif.id).toEqual('unIdentifiant');
-        return Promise.resolve();
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(typeJustificatif.id).toEqual('unIdentifiant');
+      return Promise.resolve();
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -121,13 +108,9 @@ describe('Le requêteur de pièce justificative', () => {
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve([{ id: 'unIdentifiant' }]);
 
     depotServicesCommuns.trouveFournisseurs = (idTypeJustificatif, codePays) => {
-      try {
-        expect(idTypeJustificatif).toBe('unIdentifiant');
-        expect(codePays).toBe('FR');
-        return Promise.resolve([new Fournisseur()]);
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(idTypeJustificatif).toBe('unIdentifiant');
+      expect(codePays).toBe('FR');
+      return Promise.resolve([new Fournisseur()]);
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -141,12 +124,8 @@ describe('Le requêteur de pièce justificative', () => {
     );
 
     adaptateurDomibus.envoieMessageRequete = ({ fournisseur }) => {
-      try {
-        expect(fournisseur.descriptions.FR).toBe('Un fournisseur');
-        return Promise.resolve();
-      } catch (e) {
-        return Promise.reject(e);
-      }
+      expect(fournisseur.descriptions.FR).toBe('Un fournisseur');
+      return Promise.resolve();
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -177,6 +156,7 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it("génère une erreur 422 lorsque le requêteur n'existe pas", () => {
+    expect.assertions(2);
     requete.query.idRequeteur = 'requeteurInexistant';
     depotRequeteurs.trouveRequeteur = () => Promise.reject(new ErreurRequeteurInexistant('Oups'));
 
@@ -192,20 +172,17 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it('utilise un identifiant de conversation', () => {
+    expect.assertions(2);
     adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111';
 
     adaptateurDomibus.envoieMessageRequete = ({ idConversation }) => {
-      try {
-        expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
-        return Promise.resolve();
-      } catch (e) { return Promise.reject(e); }
+      expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
+      return Promise.resolve();
     };
 
     adaptateurDomibus.urlRedirectionDepuisReponse = (idConversation) => {
-      try {
-        expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
-        return Promise.resolve();
-      } catch (e) { return Promise.reject(e); }
+      expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111');
+      return Promise.resolve();
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -223,14 +200,13 @@ describe('Le requêteur de pièce justificative', () => {
     });
 
     it("construis l'URL de redirection", () => {
+      expect.assertions(1);
       adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://example.com');
       process.env.URL_OOTS_FRANCE = 'http://localhost:1234';
 
       reponse.redirect = (urlRedirection) => {
-        try {
-          expect(urlRedirection).toEqual('https://example.com?returnurl=http://localhost:1234');
-          return Promise.resolve();
-        } catch (e) { return Promise.reject(e); }
+        expect(urlRedirection).toEqual('https://example.com?returnurl=http://localhost:1234');
+        return Promise.resolve();
       };
 
       return pieceJustificative(config, requete, reponse);
@@ -290,6 +266,7 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it("génère une erreur HTTP 502 (Bad Gateway) sur réception d'une réponse en erreur", () => {
+    expect.assertions(2);
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurReponseRequete('object not found'));
     adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucun justificatif reçu'));
 
@@ -306,6 +283,7 @@ describe('Le requêteur de pièce justificative', () => {
   });
 
   it("génère une erreur 422 lorsque le destinataire n'existe pas", () => {
+    expect.assertions(2);
     requete.query.destinataire = 'DESTINATAIRE_INEXISTANT';
     depotPointsAcces.trouvePointAcces = () => Promise.reject(new ErreurDestinataireInexistant('Oups'));
 
