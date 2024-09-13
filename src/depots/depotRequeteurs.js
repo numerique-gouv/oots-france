@@ -1,9 +1,10 @@
 const { ErreurRequeteurInexistant } = require('../erreurs');
+const adaptateurEnvironnement = require('../adaptateurs/adaptateurEnvironnement');
 const Requeteur = require('../ebms/requeteur');
 
 class DepotRequeteurs {
   constructor(donnees) {
-    this.donnees = donnees;
+    this.donnees = donnees || adaptateurEnvironnement.donneesRequeteurs();
   }
 
   trouveRequeteur(id) {
