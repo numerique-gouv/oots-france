@@ -10,7 +10,7 @@ const DepotServicesCommuns = require('./src/depots/depotServicesCommunsLocal');
 
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
 const depotPointsAcces = new DepotPointsAcces(adaptateurDomibus);
-const depotRequeteurs = new DepotRequeteurs({});
+const depotRequeteurs = new DepotRequeteurs();
 const depotServicesCommuns = new DepotServicesCommuns();
 const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
 
