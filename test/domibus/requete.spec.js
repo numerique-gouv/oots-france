@@ -22,6 +22,25 @@ describe('Une action de requête reçue depuis Domibus', () => {
     expect(requete.codeDemarche()).toBe('UN_CODE');
   });
 
+  it('connaît le requêteur', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecRequeteur({ id: '12345', nom: 'Un requêteur' })
+      .construis();
+    const requete = new Requete(xmlParse);
+
+    expect(requete.requeteur().id).toBe('12345');
+    expect(requete.requeteur().nom).toBe('Un requêteur');
+  });
+
+  it('connaît le requêteur, même si identifiant est un nombre', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecRequeteur({ id: 12345 })
+      .construis();
+    const requete = new Requete(xmlParse);
+
+    expect(requete.requeteur().id).toBe('12345');
+  });
+
   describe('avec comme démarche une demande de bourse', () => {
     it("transmets l'identifiant de la requête", () => {
       const xmlParse = new ConstructeurXMLParseRequeteRecue()
