@@ -48,7 +48,7 @@ class ReponseVerificationSysteme extends Message {
   </rim:Slot>
 
   <rim:Slot name="EvidenceProvider">
-    <rim:SlotValue xsi:type="rim:CollectionValueType">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
           <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
