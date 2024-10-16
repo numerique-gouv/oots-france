@@ -13,10 +13,10 @@ class ReponseVerificationSysteme extends Message {
       fs.readFileSync('./assets/drapeau.pdf').toString('base64'),
     );
 
-    super(config, {
-      ...donnees, pieceJointe,
-    });
+    super(config, { ...donnees, pieceJointe });
+
     this.idRequete = donnees.idRequete;
+    this.requeteur = donnees.requeteur;
   }
 
   corpsMessageEnXML() {
