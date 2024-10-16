@@ -1,9 +1,9 @@
 const MessageRecu = require('./messageRecu');
+const { valeurSlot } = require('../ebms/utils');
 
 class ReponseErreurAutorisationRequise extends MessageRecu {
   suiteConversation() {
-    return this.xmlParse.QueryResponse.Exception.Slot
-      .find((slot) => slot['@_name'] === 'PreviewLocation').SlotValue.Value;
+    return valeurSlot('PreviewLocation', this.xmlParse.QueryResponse.Exception);
   }
 }
 
