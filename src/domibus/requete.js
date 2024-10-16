@@ -3,11 +3,11 @@ const CodeDemarche = require('../ebms/codeDemarche');
 const ReponseErreur = require('../ebms/reponseErreur');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
 const Requeteur = require('../ebms/requeteur');
+const { valeurSlot } = require('../ebms/utils');
 
 class Requete extends MessageRecu {
   codeDemarche() {
-    return this.xmlParse.QueryRequest.Slot
-      .find((slot) => slot['@_name'] === 'Procedure').SlotValue.Value.LocalizedString['@_value'];
+    return valeurSlot('Procedure', this.xmlParse.QueryRequest).LocalizedString['@_value'];
   }
 
   reponse(config, donnees) {
@@ -20,13 +20,8 @@ class Requete extends MessageRecu {
   }
 
   requeteur() {
-    const requeteurs = this.xmlParse.QueryRequest.Slot
-      .find((slot) => slot['@_name'] === 'EvidenceRequester')
-      .SlotValue.Element
-      .map((e) => e.Agent);
-
-    const requeteurJustificatif = requeteurs
-      .find((r) => r.Classification === 'ER');
+    const requeteurs = valeurSlot('EvidenceRequester', this.xmlParse.QueryRequest).map((e) => e.Agent);
+    const requeteurJustificatif = requeteurs.find((r) => r.Classification === 'ER');
 
     const idRequeteur = requeteurJustificatif.Identifier['#text']
       ?.toString();

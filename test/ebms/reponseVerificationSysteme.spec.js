@@ -1,4 +1,4 @@
-const { parseXML, valeurSlot, verifiePresenceSlot } = require('./utils');
+const { parseXML, valeurSlot, verifiePresenceSlot } = require('../../src/ebms/utils');
 const ReponseVerificationSysteme = require('../../src/ebms/reponseVerificationSysteme');
 const PointAcces = require('../../src/ebms/pointAcces');
 
