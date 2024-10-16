@@ -59,14 +59,7 @@ class ReponseVerificationSysteme extends Message {
     </rim:SlotValue>
   </rim:Slot>
 
-  <rim:Slot name="EvidenceRequester">
-    <rim:SlotValue xsi:type="rim:AnyValueType">
-      <sdg:Agent>
-        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096"></sdg:Identifier>
-        <sdg:Name></sdg:Name>
-      </sdg:Agent>
-    </rim:SlotValue>
-  </rim:Slot>
+  ${this.requeteur.enXMLPourReponse()}
 
   <rim:RegistryObjectList>
     <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">

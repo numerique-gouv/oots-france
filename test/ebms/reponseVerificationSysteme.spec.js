@@ -1,15 +1,21 @@
 const { parseXML, valeurSlot, verifiePresenceSlot } = require('../../src/ebms/utils');
 const ReponseVerificationSysteme = require('../../src/ebms/reponseVerificationSysteme');
 const PointAcces = require('../../src/ebms/pointAcces');
+const Requeteur = require('../../src/ebms/requeteur');
 
 describe('Reponse Verification Systeme', () => {
   const adaptateurUUID = {};
   const horodateur = {};
   const config = { adaptateurUUID, horodateur };
-  const donnees = { destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant') };
+
+  let donnees = {};
 
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => '';
+    donnees = {
+      destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
+      requeteur: { enXMLPourReponse: () => '' },
+    };
     horodateur.maintenant = () => '';
   });
 
@@ -59,6 +65,7 @@ describe('Reponse Verification Systeme', () => {
   });
 
   it('contient la description du requêteur de la pièce justificative', () => {
+    donnees.requeteur = new Requeteur({ id: 'abcdef', nom: 'Un requêteur' });
     const reponse = new ReponseVerificationSysteme(config, donnees);
     const xml = parseXML(reponse.corpsMessageEnXML());
 
@@ -69,7 +76,9 @@ describe('Reponse Verification Systeme', () => {
     expect(requeteur).toBeDefined();
     expect(requeteur.Identifier).toBeDefined();
     expect(requeteur.Identifier['@_schemeID']).toBeDefined(); // /!\
+    expect(requeteur.Identifier['#text']).toBe('abcdef');
     expect(requeteur.Name).toBeDefined();
+    expect(requeteur.Name['#text']).toBe('Un requêteur');
   });
 
   it('injecte un identifiant unique de pièce justificative', () => {
