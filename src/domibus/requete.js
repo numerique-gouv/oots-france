@@ -1,7 +1,8 @@
 const MessageRecu = require('./messageRecu');
+const CodeDemarche = require('../ebms/codeDemarche');
 const ReponseErreur = require('../ebms/reponseErreur');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
-const CodeDemarche = require('../ebms/codeDemarche');
+const Requeteur = require('../ebms/requeteur');
 
 class Requete extends MessageRecu {
   codeDemarche() {
@@ -16,6 +17,26 @@ class Requete extends MessageRecu {
 
     const exception = ReponseErreur.OBJECT_NOT_FOUND_EXCEPTION;
     return new ReponseErreur(config, { ...donnees, exception });
+  }
+
+  requeteur() {
+    const requeteurs = this.xmlParse.QueryRequest.Slot
+      .find((slot) => slot['@_name'] === 'EvidenceRequester')
+      .SlotValue.Element
+      .map((e) => e.Agent);
+
+    const requeteurJustificatif = requeteurs
+      .find((r) => r.Classification === 'ER');
+
+    const idRequeteur = requeteurJustificatif.Identifier['#text']
+      ?.toString();
+
+    const nomRequeteur = []
+      .concat(requeteurJustificatif.Name ?? [])
+      ?.[0]
+      ?.['#text'];
+
+    return new Requeteur({ id: idRequeteur, nom: nomRequeteur });
   }
 }
 
