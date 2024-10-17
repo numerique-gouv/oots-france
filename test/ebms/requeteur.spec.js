@@ -1,10 +1,10 @@
 const Requeteur = require('../../src/ebms/requeteur');
 
 describe('Un requêteur', () => {
-  it("s'affiche en XML", () => {
+  it("s'affiche en XML pour une requête", () => {
     const requeteur = new Requeteur({ id: '123456', nom: 'Un requêteur français' });
 
-    expect(requeteur.enXML()).toBe(`
+    expect(requeteur.enXMLPourRequete()).toBe(`
 <rim:Slot name="EvidenceRequester">
   <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
     <rim:Element xsi:type="rim:AnyValueType">
