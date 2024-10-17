@@ -43,10 +43,6 @@ class Requeteur {
 </rim:Slot>
     `;
   }
-
-  enXML() {
-    return this.enXMLPourRequete();
-  }
 }
 
 module.exports = Requeteur;
