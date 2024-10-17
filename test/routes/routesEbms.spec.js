@@ -2,7 +2,7 @@ const axios = require('axios');
 
 const serveurTest = require('./serveurTest');
 const leveErreur = require('./utils');
-const { parseXML } = require('../ebms/utils');
+const { parseXML } = require('../../src/ebms/utils');
 
 describe('Le serveur des routes `/ebms`', () => {
   const serveur = serveurTest();

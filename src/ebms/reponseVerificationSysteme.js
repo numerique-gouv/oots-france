@@ -13,10 +13,10 @@ class ReponseVerificationSysteme extends Message {
       fs.readFileSync('./assets/drapeau.pdf').toString('base64'),
     );
 
-    super(config, {
-      ...donnees, pieceJointe,
-    });
+    super(config, { ...donnees, pieceJointe });
+
     this.idRequete = donnees.idRequete;
+    this.requeteur = donnees.requeteur;
   }
 
   corpsMessageEnXML() {
@@ -48,7 +48,7 @@ class ReponseVerificationSysteme extends Message {
   </rim:Slot>
 
   <rim:Slot name="EvidenceProvider">
-    <rim:SlotValue xsi:type="rim:CollectionValueType">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
           <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
@@ -59,14 +59,7 @@ class ReponseVerificationSysteme extends Message {
     </rim:SlotValue>
   </rim:Slot>
 
-  <rim:Slot name="EvidenceRequester">
-    <rim:SlotValue xsi:type="rim:AnyValueType">
-      <sdg:Agent>
-        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0096"></sdg:Identifier>
-        <sdg:Name></sdg:Name>
-      </sdg:Agent>
-    </rim:SlotValue>
-  </rim:Slot>
+  ${this.requeteur.enXMLPourReponse()}
 
   <rim:RegistryObjectList>
     <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">

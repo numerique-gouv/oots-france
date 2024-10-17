@@ -1,4 +1,4 @@
-const { parseXML } = require('./utils');
+const { parseXML } = require('../../src/ebms/utils');
 const EnteteRequete = require('../../src/ebms/enteteRequete');
 const PointAcces = require('../../src/ebms/pointAcces');
 

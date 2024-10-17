@@ -99,11 +99,34 @@ describe('La réponse à une requête Domibus de récupération de message', () 
   describe("dans le cas d'une requête de pièce justificative", () => {
     it('connaît le code de la démarche', () => {
       const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
-        .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .construis();
 
       const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
-      expect(reponse.codeDemarche()).toBe(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE);
+      expect(reponse.codeDemarche()).toBe(CodeDemarche.VERIFICATION_SYSTEME);
+    });
+
+    it('connaît le requêteur', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecRequeteur({ id: '12345', nom: 'Un requêteur' })
+        .construis();
+
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+      expect(reponse.requeteur().id).toBe('12345');
+      expect(reponse.requeteur().nom).toBe('Un requêteur');
+    });
+
+    it('transmet le requêteur à la réponse', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecRequeteur({ id: '12345', nom: 'Un requêteur' })
+        .construis();
+
+      const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
+        adaptateurUUID: { genereUUID: () => '' },
+      });
+      expect(reponseVerificationSysteme.requeteur).toEqual({ id: '12345', nom: 'Un requêteur' });
     });
   });
 });

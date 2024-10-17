@@ -1,4 +1,4 @@
-const { parseXML, verifiePresenceSlot, valeurSlot } = require('./utils');
+const { parseXML, verifiePresenceSlot, valeurSlot } = require('../../src/ebms/utils');
 const ReponseErreur = require('../../src/ebms/reponseErreur');
 
 describe('Une réponse EBMS en erreur', () => {

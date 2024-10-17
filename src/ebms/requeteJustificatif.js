@@ -83,7 +83,7 @@ class RequeteJustificatif extends Message {
       </rim:Element>
     </rim:SlotValue>
   </rim:Slot>
-  ${this.requeteur.enXML()}
+  ${this.requeteur.enXMLPourRequete()}
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">

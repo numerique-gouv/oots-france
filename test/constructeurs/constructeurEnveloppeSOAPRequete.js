@@ -2,10 +2,16 @@ class ConstructeurEnveloppeSOAPRequete {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
     this.codeDemarche = '';
+    this.requeteur = { id: '', nom: '' };
   }
 
   avecCodeDemarche(codeDemarche) {
     this.codeDemarche = codeDemarche;
+    return this;
+  }
+
+  avecRequeteur({ id, nom }) {
+    Object.assign(this.requeteur, { id, nom });
     return this;
   }
 
@@ -36,7 +42,24 @@ class ConstructeurEnveloppeSOAPRequete {
   <rim:Slot name="PossibilityForPreview"><!-- … --></rim:Slot>
   <rim:Slot name="ExplicitRequestGiven"><!-- … --></rim:Slot>
   <rim:Slot name="Requirements"><!-- … --></rim:Slot>
-  <rim:Slot name="EvidenceRequester"><!-- … --></rim:Slot>
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">${this.requeteur.id}</sdg:Identifier>
+          <sdg:Name lang="FR">${this.requeteur.nom}</sdg:Name>
+          <sdg:Classification>ER</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
+          <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
+          <sdg:Classification>IP</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
   <rim:Slot name="EvidenceProvider"><!-- … --></rim:Slot>
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
