@@ -5,13 +5,13 @@ const parseXML = (...args) => (
 );
 
 const verifiePresenceSlot = (nomSlot, scopeRecherche) => {
-  expect(scopeRecherche).toBeDefined();
+  if (typeof scopeRecherche === 'undefined') { throw new Error('Le périmètre de recherche est introuvable.'); }
 
   const sectionSlots = scopeRecherche.Slot;
-  expect(sectionSlots).toBeDefined();
+  if (typeof sectionSlots === 'undefined') { throw new Error('Aucun slot trouvé pour le périmètre de recherche.'); }
 
   const slots = [].concat(sectionSlots);
-  expect(slots.some((s) => s['@_name'] === nomSlot)).toBe(true);
+  if (slots.every((s) => s['@_name'] !== nomSlot)) { throw new Error(`Aucun slot nommé ${nomSlot} trouvé.`); }
 };
 
 const valeurSlot = (nomSlot, scopeRecherche) => {
