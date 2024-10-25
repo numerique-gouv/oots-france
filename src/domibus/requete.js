@@ -22,16 +22,10 @@ class Requete extends MessageRecu {
   requeteur() {
     const requeteurs = valeurSlot('EvidenceRequester', this.xmlParse.QueryRequest).map((e) => e.Agent);
     const requeteurJustificatif = requeteurs.find((r) => r.Classification === 'ER');
+    const id = Requete.idRequeteur(requeteurJustificatif);
+    const nom = Requete.nomRequeteur(requeteurJustificatif);
 
-    const idRequeteur = requeteurJustificatif.Identifier['#text']
-      ?.toString();
-
-    const nomRequeteur = []
-      .concat(requeteurJustificatif.Name ?? [])
-      ?.[0]
-      ?.['#text'];
-
-    return new Requeteur({ id: idRequeteur, nom: nomRequeteur });
+    return new Requeteur({ id, nom });
   }
 }
 

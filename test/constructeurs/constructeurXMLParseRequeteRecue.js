@@ -1,16 +1,13 @@
-class ConstructeurXMLParseRequeteRecue {
+const ConstructeurXMLParseMessageRecu = require('./constructeurXMLParseMessageRecu');
+
+class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
   constructor() {
+    super();
     this.codeDemarche = '';
-    this.requeteur = { id: '', nom: '' };
   }
 
   avecCodeDemarche(codeDemarche) {
     this.codeDemarche = codeDemarche;
-    return this;
-  }
-
-  avecRequeteur({ id, nom }) {
-    Object.assign(this.requeteur, { id, nom });
     return this;
   }
 
