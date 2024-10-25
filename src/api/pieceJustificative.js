@@ -26,8 +26,8 @@ const paramsRequete = (config, codeDemarche, codePays, idRequeteur) => {
 };
 
 const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
-  .pieceJustificativeDepuisReponse(idConversation)
-  .then((pj) => ({ pieceJustificative: pj }));
+  .reponseAvecPieceJustificative(idConversation)
+  .then((reponse) => ({ reponseAvecPieceJustificative: reponse }));
 
 const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
@@ -70,9 +70,10 @@ const pieceJustificative = (config, requete, reponse) => {
     .then((resultat) => {
       if (resultat.urlRedirection) {
         reponse.redirect(resultat.urlRedirection);
-      } else if (resultat.pieceJustificative) {
+      } else if (resultat.reponseAvecPieceJustificative) {
+        const pj = resultat.reponseAvecPieceJustificative.pieceJustificative();
         reponse.set({ 'content-type': 'application/pdf; charset=utf-8' });
-        reponse.send(resultat.pieceJustificative);
+        reponse.send(pj);
       }
     })
     .catch((e) => {

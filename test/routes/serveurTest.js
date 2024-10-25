@@ -24,7 +24,9 @@ const serveurTest = () => {
     adaptateurDomibus = {
       envoieMessageRequete: () => Promise.resolve(),
       urlRedirectionDepuisReponse: () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue')),
-      pieceJustificativeDepuisReponse: () => Promise.resolve(Buffer.from('')),
+      reponseAvecPieceJustificative: () => Promise.resolve({
+        pieceJustificative: () => Buffer.from(''),
+      }),
     };
 
     adaptateurEnvironnement = {

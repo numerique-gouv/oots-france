@@ -24,7 +24,7 @@ describe('Le serveur des routes `/requete`', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', () => {
         expect.assertions(2);
 
-        serveur.adaptateurDomibus().pieceJustificativeDepuisReponse = (
+        serveur.adaptateurDomibus().reponseAvecPieceJustificative = (
           () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'))
         );
 

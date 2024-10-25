@@ -109,12 +109,10 @@ const AdaptateurDomibus = (config = {}) => {
     },
   );
 
-  const pieceJustificativeDepuisReponse = (idConversation) => new Promise(
+  const reponseAvecPieceJustificative = (idConversation) => new Promise(
     (resolve, reject) => {
       annonceur.on(REPONSE_SUCCES, (reponse) => {
-        if (idConversation === reponse.idConversation()) {
-          resolve(reponse.pieceJustificative());
-        }
+        if (idConversation === reponse.idConversation()) { resolve(reponse); }
       });
 
       setTimeout(() => {
@@ -127,7 +125,7 @@ const AdaptateurDomibus = (config = {}) => {
 
   return {
     envoieMessageRequete,
-    pieceJustificativeDepuisReponse,
+    reponseAvecPieceJustificative,
     traiteMessageSuivant,
     trouvePointAcces,
     urlRedirectionDepuisReponse,
