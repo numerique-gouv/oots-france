@@ -18,6 +18,7 @@ describe('Le requêteur de pièce justificative', () => {
   const depotPointsAcces = {};
   const depotRequeteurs = {};
   const depotServicesCommuns = {};
+  const transmetteurPiecesJustificatives = {};
 
   const config = {
     adaptateurDomibus,
@@ -26,6 +27,7 @@ describe('Le requêteur de pièce justificative', () => {
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
+    transmetteurPiecesJustificatives,
   };
   const requete = {};
   const reponse = {};
@@ -41,11 +43,13 @@ describe('Le requêteur de pièce justificative', () => {
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve(
       [new TypeJustificatif()],
     );
+    transmetteurPiecesJustificatives.envoie = () => Promise.resolve();
 
     requete.query = {};
     reponse.json = () => Promise.resolve();
     reponse.redirect = () => Promise.resolve();
     reponse.send = () => Promise.resolve();
+    reponse.set = () => Promise.resolve();
     reponse.status = () => reponse;
   });
 
@@ -243,6 +247,46 @@ describe('Le requêteur de pièce justificative', () => {
 
     return pieceJustificative(config, requete, reponse)
       .then(() => expect(pieceJustificativeRecue).toBe(true));
+  });
+
+  describe('sur réception réponse avec pièce justificative', () => {
+    const reponseAvecPJ = {};
+
+    beforeEach(() => {
+      reponseAvecPJ.idRequeteur = () => '';
+      reponseAvecPJ.pieceJustificative = () => Buffer.from('');
+
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject();
+      adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve(reponseAvecPJ);
+    });
+
+    it('renvoie la pièce justificative au fournisseur de service', () => {
+      expect.assertions(2);
+
+      reponseAvecPJ.pieceJustificative = () => Buffer.from('Des données');
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve({ url: 'http://example.com' });
+
+      transmetteurPiecesJustificatives.envoie = (pj, urlBase) => {
+        expect(pj.toString()).toBe('Des données');
+        expect(urlBase).toBe('http://example.com');
+        return Promise.resolve();
+      };
+
+      return pieceJustificative(config, requete, reponse);
+    });
+
+    it("redirige l'utilisateur vers une URL de callback chez le fournisseur de service", () => {
+      expect.assertions(1);
+
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve({ url: 'http://example.com' });
+
+      reponse.redirect = (urlRedirection) => {
+        expect(urlRedirection).toBe('http://example.com/oots/callback');
+        return Promise.resolve();
+      };
+
+      return pieceJustificative(config, requete, reponse);
+    });
   });
 
   it("génère une erreur HTTP 502 (Bad Gateway) sur réception d'une réponse en erreur", () => {

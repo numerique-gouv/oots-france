@@ -13,6 +13,7 @@ const serveurTest = () => {
   let depotServicesCommuns;
   let ecouteurDomibus;
   let horodateur;
+  let transmetteurPiecesJustificatives;
 
   let serveur;
 
@@ -25,6 +26,7 @@ const serveurTest = () => {
       envoieMessageRequete: () => Promise.resolve(),
       urlRedirectionDepuisReponse: () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue')),
       reponseAvecPieceJustificative: () => Promise.resolve({
+        idRequeteur: () => '',
         pieceJustificative: () => Buffer.from(''),
       }),
     };
@@ -61,6 +63,10 @@ const serveurTest = () => {
       maintenant: () => '',
     };
 
+    transmetteurPiecesJustificatives = {
+      envoie: () => Promise.resolve(),
+    };
+
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurDomibus,
       adaptateurEnvironnement,
@@ -70,6 +76,7 @@ const serveurTest = () => {
       depotServicesCommuns,
       ecouteurDomibus,
       horodateur,
+      transmetteurPiecesJustificatives,
     });
 
     serveur.ecoute(0, suite);
@@ -87,6 +94,7 @@ const serveurTest = () => {
     depotServicesCommuns: () => depotServicesCommuns,
     ecouteurDomibus: () => ecouteurDomibus,
     horodateur: () => horodateur,
+    transmetteurPiecesJustificatives: () => transmetteurPiecesJustificatives,
     initialise,
     port,
   };

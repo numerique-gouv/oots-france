@@ -15,6 +15,7 @@ const creeServeur = (config) => {
     depotServicesCommuns,
     ecouteurDomibus,
     horodateur,
+    transmetteurPiecesJustificatives,
   } = config;
   let serveur;
   const app = express();
@@ -32,6 +33,7 @@ const creeServeur = (config) => {
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
+    transmetteurPiecesJustificatives,
   }));
 
   app.use('/', routesBase());

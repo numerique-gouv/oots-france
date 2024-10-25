@@ -4,6 +4,7 @@ const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurEnvironnement = require('./src/adaptateurs/adaptateurEnvironnement');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
 const horodateur = require('./src/adaptateurs/horodateur');
+const transmetteurPiecesJustificatives = require('./src/adaptateurs/transmetteurPiecesJustificatives');
 const DepotPointsAcces = require('./src/depots/depotPointsAcces');
 const DepotRequeteurs = require('./src/depots/depotRequeteurs');
 const DepotServicesCommuns = require('./src/depots/depotServicesCommunsLocal');
@@ -23,6 +24,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   depotServicesCommuns,
   ecouteurDomibus,
   horodateur,
+  transmetteurPiecesJustificatives,
 });
 
 const port = process.env.PORT || 3000;
