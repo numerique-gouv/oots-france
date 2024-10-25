@@ -34,6 +34,10 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.entete.idMessage();
   }
 
+  idRequeteur() {
+    return this.requeteur().id;
+  }
+
   payload(mimeType) {
     const payloads = [].concat(this.xml.Envelope.Body.retrieveMessageResponse.payload);
     const corpsMessageEncode = payloads

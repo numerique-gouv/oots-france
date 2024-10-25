@@ -29,7 +29,7 @@ const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateu
   .reponseAvecPieceJustificative(idConversation)
   .then((reponse) => ({ reponseAvecPieceJustificative: reponse }));
 
-const urlRedirection = (idConversation, adaptateurDomibus) => adaptateurDomibus
+const urlRedirectionRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
   .then((url) => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }));
 
@@ -37,6 +37,8 @@ const pieceJustificative = (config, requete, reponse) => {
   const {
     adaptateurDomibus,
     adaptateurUUID,
+    depotRequeteurs,
+    transmetteurPiecesJustificatives,
   } = config;
   const idConversation = adaptateurUUID.genereUUID();
   const {
@@ -64,16 +66,21 @@ const pieceJustificative = (config, requete, reponse) => {
       });
     })
     .then(() => Promise.any([
-      urlRedirection(idConversation, adaptateurDomibus),
+      urlRedirectionRecue(idConversation, adaptateurDomibus),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),
     ]))
-    .then((resultat) => {
-      if (resultat.urlRedirection) {
-        reponse.redirect(resultat.urlRedirection);
-      } else if (resultat.reponseAvecPieceJustificative) {
-        const pj = resultat.reponseAvecPieceJustificative.pieceJustificative();
-        reponse.set({ 'content-type': 'application/pdf; charset=utf-8' });
-        reponse.send(pj);
+    .then(({ reponseAvecPieceJustificative, urlRedirection }) => {
+      if (urlRedirection) {
+        reponse.redirect(urlRedirection);
+      } else if (reponseAvecPieceJustificative) {
+        const id = reponseAvecPieceJustificative.idRequeteur();
+        const pj = reponseAvecPieceJustificative.pieceJustificative();
+
+        depotRequeteurs.trouveRequeteur(id)
+          .then(({ url }) => Promise.all([
+            transmetteurPiecesJustificatives.envoie(pj, url),
+            reponse.redirect(`${url}/oots/callback`),
+          ]));
       }
     })
     .catch((e) => {

@@ -10,6 +10,7 @@ const routesRequete = (config) => {
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
+    transmetteurPiecesJustificatives,
   } = config;
 
   const routes = express.Router();
@@ -23,6 +24,7 @@ const routesRequete = (config) => {
           depotPointsAcces,
           depotRequeteurs,
           depotServicesCommuns,
+          transmetteurPiecesJustificatives,
         },
         requete,
         reponse,
