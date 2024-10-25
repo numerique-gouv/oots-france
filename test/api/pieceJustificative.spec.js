@@ -32,7 +32,7 @@ describe('Le requêteur de pièce justificative', () => {
 
   beforeEach(() => {
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
-    adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.resolve();
+    adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
@@ -236,7 +236,7 @@ describe('Le requêteur de pièce justificative', () => {
   it('accepte de recevoir directement la pièce justificative', () => {
     let pieceJustificativeRecue = false;
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL de redirection reçue'));
-    adaptateurDomibus.pieceJustificativeDepuisReponse = () => {
+    adaptateurDomibus.reponseAvecPieceJustificative = () => {
       pieceJustificativeRecue = true;
       return Promise.resolve();
     };
@@ -247,7 +247,7 @@ describe('Le requêteur de pièce justificative', () => {
 
   it("génère une erreur HTTP 502 (Bad Gateway) sur réception d'une réponse en erreur", () => {
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurReponseRequete('object not found'));
-    adaptateurDomibus.pieceJustificativeDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucun justificatif reçu'));
+    adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucun justificatif reçu'));
 
     reponse.status = (codeStatus) => {
       expect(codeStatus).toEqual(502);
