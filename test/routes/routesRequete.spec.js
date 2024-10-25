@@ -38,9 +38,9 @@ describe('Le serveur des routes `/requete`', () => {
   });
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si le type de justificatif est introuvable', () => {
-    serveur.depotServicesCommuns().trouveTypeJustificatif = () => (
-      Promise.reject(new ErreurTypeJustificatifIntrouvable('oups'))
-    );
+    serveur.depotServicesCommuns().trouveTypesJustificatifsPourDemarche = () => Promise.resolve([
+      Promise.reject(new ErreurTypeJustificatifIntrouvable('oups')),
+    ]);
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative`)
       .catch(({ response }) => {
