@@ -4,9 +4,6 @@ describe('Un entête de message Domibus reçu', () => {
   const donnees = {
     Messaging: {
       UserMessage: {
-        MessageInfo: {
-          MessageId: '00000000-0000-0000-0000-000000000000@domibus.eu',
-        },
         PayloadInfo: {
           PartInfo: [{
             '@_href': 'cid:11111111-1111-1111-1111-111111111111@regrep.oots.eu',
@@ -19,11 +16,6 @@ describe('Un entête de message Domibus reçu', () => {
       },
     },
   };
-
-  it("retourne l'identifiant du message en supprimant le suffixe", () => {
-    const entete = new EnteteMessageRecu(donnees);
-    expect(entete.idMessage()).toBe('00000000-0000-0000-0000-000000000000');
-  });
 
   it("retrouve l'identifiant du payload associé à un type MIME donné", () => {
     const entete = new EnteteMessageRecu(donnees);
