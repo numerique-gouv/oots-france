@@ -27,7 +27,7 @@ class ReponseVerificationSysteme extends Message {
         xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
-        requestId="urn:uuid:${this.idRequete}">
+        requestId="${this.idRequete}">
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">

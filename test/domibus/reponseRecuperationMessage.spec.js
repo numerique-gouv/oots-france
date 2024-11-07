@@ -45,15 +45,6 @@ describe('La réponse à une requête Domibus de récupération de message', () 
     expect(reponse.expediteur().typeId).toEqual('unType');
   });
 
-  it('connaît son identifiant de message', () => {
-    const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
-      .avecIdMessage('11111111-1111-1111-1111-111111111111@oots.eu')
-      .construis();
-    const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
-
-    expect(reponse.idMessage()).toEqual('11111111-1111-1111-1111-111111111111@oots.eu');
-  });
-
   it('connaît son identifiant de payload du message EBMS', () => {
     const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
       .avecIdPayload('cid:11111111-1111-1111-1111-111111111111@oots.eu')
@@ -104,6 +95,15 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
       const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
       expect(reponse.codeDemarche()).toBe(CodeDemarche.VERIFICATION_SYSTEME);
+    });
+
+    it('connaît son identifiant de requête', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecIdRequete('urn:uuid:11111111-1111-1111-1111-111111111111')
+        .construis();
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+
+      expect(reponse.idRequete()).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111');
     });
 
     it('connaît le requêteur', () => {

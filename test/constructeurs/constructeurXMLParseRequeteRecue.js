@@ -4,6 +4,7 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
   constructor() {
     super();
     this.codeDemarche = '';
+    this.idRequete = '';
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -11,9 +12,15 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
     return this;
   }
 
+  avecIdRequete(id) {
+    this.idRequete = id;
+    return this;
+  }
+
   construis() {
     return {
       QueryRequest: {
+        '@_id': this.idRequete,
         Slot: [
           {
             '@_name': 'SpecificationIdentifier',

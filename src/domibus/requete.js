@@ -10,6 +10,10 @@ class Requete extends MessageRecu {
     return valeurSlot('Procedure', this.xmlParse.QueryRequest).LocalizedString['@_value'];
   }
 
+  idRequete() {
+    return this.xmlParse.QueryRequest['@_id'];
+  }
+
   reponse(config, donnees) {
     if (this.codeDemarche() === CodeDemarche.VERIFICATION_SYSTEME) {
       return new ReponseVerificationSysteme(config, donnees);

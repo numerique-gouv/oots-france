@@ -30,8 +30,8 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.entete.idConversation();
   }
 
-  idMessage() {
-    return this.entete.idMessage();
+  idRequete() {
+    return this.corpsMessage.idRequete();
   }
 
   idRequeteur() {
@@ -57,7 +57,7 @@ class ReponseRecuperationMessage extends ReponseDomibus {
       {
         destinataire: this.expediteur(),
         idConversation: this.idConversation(),
-        idRequete: this.idMessage(),
+        idRequete: this.idRequete(),
         requeteur: this.requeteur(),
       },
     );
