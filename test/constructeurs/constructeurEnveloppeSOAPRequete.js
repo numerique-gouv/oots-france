@@ -2,11 +2,17 @@ class ConstructeurEnveloppeSOAPRequete {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
     this.codeDemarche = '';
+    this.idRequete = '';
     this.requeteur = { id: '', nom: '' };
   }
 
   avecCodeDemarche(codeDemarche) {
     this.codeDemarche = codeDemarche;
+    return this;
+  }
+
+  avecIdRequete(id) {
+    this.idRequete = id;
     return this;
   }
 
@@ -27,7 +33,7 @@ class ConstructeurEnveloppeSOAPRequete {
           xmlns:xlink="http://www.w3.org/1999/xlink"
           xmlns:xml="http://www.w3.org/XML/1998/namespace"
           xml:lang="EN"
-          id="urn:uuid:766d83a5-f753-4926-9603-cc9280f7651c">
+          id="${this.idRequete}">
 
   <rim:Slot name="SpecificationIdentifier"><!-- … --></rim:Slot>
   <rim:Slot name="IssueDateTime"><!-- … --></rim:Slot>

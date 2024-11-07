@@ -13,6 +13,15 @@ describe('Une action de requête reçue depuis Domibus', () => {
     horodateur.maintenant = () => '';
   });
 
+  it("connaît l'identifiant de la requête", () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecIdRequete('urn:uuid:12345678-1234-1234-1234-1234567890ab')
+      .construis();
+    const requete = new Requete(xmlParse);
+
+    expect(requete.idRequete()).toBe('urn:uuid:12345678-1234-1234-1234-1234567890ab');
+  });
+
   it('connaît le code de la démarche', () => {
     const xmlParse = new ConstructeurXMLParseRequeteRecue()
       .avecCodeDemarche('UN_CODE')

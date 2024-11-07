@@ -12,7 +12,7 @@ describe('Une réponse EBMS en erreur', () => {
   });
 
   it("injecte l'identifiant unique de requête", () => {
-    const reponse = new ReponseErreur(config, { idRequete: '11111111-1111-1111-1111-111111111111' });
+    const reponse = new ReponseErreur(config, { idRequete: 'urn:uuid:11111111-1111-1111-1111-111111111111' });
 
     const xml = parseXML(reponse.corpsMessageEnXML());
     const idRequete = xml.QueryResponse['@_requestId'];

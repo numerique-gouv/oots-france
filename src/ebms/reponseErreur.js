@@ -45,7 +45,7 @@ class ReponseErreur extends Message {
                      xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                      xmlns:xlink="http://www.w3.org/1999/xlink"
-                     requestId="urn:uuid:${this.idRequete}"
+                     requestId="${this.idRequete}"
                      status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
 
   <rim:Slot name="SpecificationIdentifier">
