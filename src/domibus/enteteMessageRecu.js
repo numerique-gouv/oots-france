@@ -20,8 +20,7 @@ class EnteteMessageRecu {
   }
 
   idMessage() {
-    const idMessage = this.enteteMessageUtilisateur.MessageInfo.MessageId;
-    return idMessage.replace(/@.*$/, '');
+    return this.enteteMessageUtilisateur.MessageInfo.MessageId;
   }
 
   idPayload(typeMime) {
