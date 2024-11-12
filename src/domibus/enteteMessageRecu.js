@@ -19,10 +19,6 @@ class EnteteMessageRecu {
     return this.enteteMessageUtilisateur.CollaborationInfo.ConversationId;
   }
 
-  idMessage() {
-    return this.enteteMessageUtilisateur.MessageInfo.MessageId;
-  }
-
   idPayload(typeMime) {
     const infosPayloadMessageEBMS = this.infosPayloads.find((i) => {
       const proprietes = [].concat(i.PartProperties.Property);
