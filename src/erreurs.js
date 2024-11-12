@@ -5,6 +5,9 @@ class ErreurInstructionSOAPInconnue extends Error {}
 class ErreurJetonInvalide extends Error {}
 class ErreurReponseRequete extends Error {}
 
+class ErreurDomibus extends Error {}
+class ErreurAttributInconnu extends ErreurDomibus {}
+
 class ErreurEBMS extends Error {}
 class ErreurCodeDemarcheIntrouvable extends ErreurEBMS {}
 class ErreurCodePaysIntrouvable extends ErreurEBMS {}
@@ -14,6 +17,7 @@ class ErreurTypeJustificatifIntrouvable extends ErreurEBMS {}
 
 module.exports = {
   ErreurAbsenceReponseDestinataire,
+  ErreurAttributInconnu,
   ErreurAucunMessageDomibusRecu,
   ErreurCodeDemarcheIntrouvable,
   ErreurCodePaysIntrouvable,
