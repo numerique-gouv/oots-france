@@ -33,10 +33,7 @@ class Entete {
       : '';
 
     return `
-<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/
-  https://www.oasis-open.org/committees/download.php/64179/ebms-header-3_0-200704_with_property_type_attribute.xsd">
+<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
   <eb:UserMessage>
     <eb:MessageInfo>
       <eb:Timestamp>${horodatage}</eb:Timestamp>
