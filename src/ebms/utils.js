@@ -22,7 +22,7 @@ const valeurSlot = (nomSlot, scopeRecherche) => {
 
   switch (slot['@_type']) {
     case 'rim:AnyValueType': return slot;
-    case 'rim:CollectionValueType': return slot.Element;
+    case 'rim:CollectionValueType': return [].concat(slot.Element);
     default: return slot.Value;
   }
 };

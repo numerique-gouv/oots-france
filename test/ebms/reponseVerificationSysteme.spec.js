@@ -55,7 +55,7 @@ describe('Reponse Verification Systeme', () => {
     const scopeRecherche = xml.QueryResponse;
     verifiePresenceSlot('EvidenceProvider', scopeRecherche);
 
-    const fournisseur = valeurSlot('EvidenceProvider', scopeRecherche).Agent;
+    const fournisseur = valeurSlot('EvidenceProvider', scopeRecherche)[0].Agent;
     expect(fournisseur).toBeDefined();
     expect(fournisseur.Identifier).toBeDefined();
     expect(fournisseur.Identifier['@_schemeID']).toBe('urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR');
