@@ -88,4 +88,15 @@ describe("La vue du message de requête d'un justificatif", () => {
     const fournisseur = valeurSlot('EvidenceProvider', xml.QueryRequest);
     expect(fournisseur.Agent.Identifier['#text']).toBe('unIdentifiant');
   });
+
+  it('injecte les données du demandeur de justificatif', () => {
+    const requeteJustificatif = new RequeteJustificatif(
+      configurationRequete,
+    );
+    const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
+    const naturalPerson = valeurSlot('NaturalPerson', xml.QueryRequest.Query);
+    expect(naturalPerson.Person.FamilyName).toBe('Smith');
+    expect(naturalPerson.Person.GivenName).toBe('Jonas');
+    expect(naturalPerson.Person.DateOfBirth).toBe('1993-03-01');
+  });
 });

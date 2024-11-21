@@ -1,6 +1,7 @@
 const EnteteRequete = require('./enteteRequete');
 const Fournisseur = require('./fournisseur');
 const Message = require('./message');
+const PersonnePhysique = require('./personnePhysique');
 const Requeteur = require('./requeteur');
 const TypeJustificatif = require('./typeJustificatif');
 
@@ -22,6 +23,7 @@ class RequeteJustificatif extends Message {
     super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
+    this.demandeur = new PersonnePhysique({ nom: 'Smith', prenom: 'Jonas', dateNaissance: '1993-03-01' });
     this.fournisseur = fournisseur;
     this.requeteur = requeteur;
     this.typeJustificatif = typeJustificatif;
@@ -87,38 +89,7 @@ class RequeteJustificatif extends Message {
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
-    <rim:Slot name="NaturalPerson">
-      <rim:SlotValue xsi:type="rim:AnyValueType">
-        <sdg:Person>
-          <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
-          <sdg:FamilyName>Smith</sdg:FamilyName>
-          <sdg:GivenName>Jonas</sdg:GivenName>
-          <sdg:DateOfBirth>1999-03-01</sdg:DateOfBirth>
-          <sdg:BirthName>John Doepidis</sdg:BirthName>
-          <sdg:PlaceOfBirth>Hamburg, Germany</sdg:PlaceOfBirth>
-          <sdg:CurrentAddress>
-            <sdg:FullAddress>Refshalevej 96, 1432 København, Denmark</sdg:FullAddress>
-            <sdg:LocatorDesignator>96</sdg:LocatorDesignator>
-            <sdg:PostCode>1432</sdg:PostCode>
-            <sdg:PostCityName>København</sdg:PostCityName>
-            <sdg:Thoroughfare>Refshalevej</sdg:Thoroughfare>
-            <sdg:AdminUnitLevel1>DK</sdg:AdminUnitLevel1>
-            <sdg:AdminUnitLevel2>DK011</sdg:AdminUnitLevel2>
-          </sdg:CurrentAddress>
-          <sdg:Gender>Male</sdg:Gender>
-          <sdg:SectorSpecificAttribute>
-            <sdg:AttributeName>IBAN</sdg:AttributeName>
-            <sdg:AttributeURI>http://eidas.europa.eu/attributes/naturalperson/banking/IBAN</sdg:AttributeURI>
-            <sdg:AttributeValue>DE02500105170137075032</sdg:AttributeValue>
-          </sdg:SectorSpecificAttribute>
-          <sdg:SectorSpecificAttribute>
-            <sdg:AttributeName>BIC</sdg:AttributeName>
-            <sdg:AttributeURI>http://eidas.europa.eu/attributes/naturalperson/banking/BIC</sdg:AttributeURI>
-            <sdg:AttributeValue>INGDDEFFYYY</sdg:AttributeValue>
-          </sdg:SectorSpecificAttribute>
-        </sdg:Person>
-      </rim:SlotValue>
-    </rim:Slot>
+    ${this.demandeur.enXML()}
     ${this.typeJustificatif.enXML()}
   </query:Query>
 </query:QueryRequest>`;
