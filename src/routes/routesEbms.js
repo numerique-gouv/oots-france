@@ -15,8 +15,10 @@ const routesEbms = (config) => {
   const routes = express.Router();
 
   routes.get('/entetes/requeteJustificatif', (requete, reponse) => {
-    const { idDestinataire, typeIdentifiant } = requete.query;
-    const destinataire = new PointAcces(idDestinataire, typeIdentifiant);
+    const destinataire = new PointAcces(
+      process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS,
+      process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS,
+    );
     const idConversation = adaptateurUUID.genereUUID();
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;

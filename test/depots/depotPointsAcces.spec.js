@@ -6,7 +6,7 @@ class ConstructeurPointAcces {
   constructor() {
     this.nom = adaptateurUUID.genereUUID();
     this.id = this.nom;
-    this.typeIdentifiant = 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator';
+    this.typeIdentifiant = 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots';
   }
 
   avecId(id) {
