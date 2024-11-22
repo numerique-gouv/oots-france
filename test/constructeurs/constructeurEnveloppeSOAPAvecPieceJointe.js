@@ -67,11 +67,11 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
         </eb:MessageInfo>
         <eb:PartyInfo>
           <eb:From>
-            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator">AP_SI_01</eb:PartyId>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_SI_01</eb:PartyId>
             <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
           </eb:From>
           <eb:To>
-            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator">AP_FR_01</eb:PartyId>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_FR_01</eb:PartyId>
             <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
           </eb:To>
         </eb:PartyInfo>

@@ -12,7 +12,7 @@
 
     <parties>
       <partyIdTypes>
-        <partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-simulator"/>
+        <partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"/>
       </partyIdTypes>
       <party name="blue_gw" endpoint="http://localhost:8080/domibus/services/msh" allowChunking="false">
         <identifier partyId="blue_gw" partyIdType="partyTypeUrn"/>
