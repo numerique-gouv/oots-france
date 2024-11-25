@@ -15,7 +15,7 @@ const routesEbms = (config) => {
 
   const routes = express.Router();
 
-  routes.get('/entetes/requeteJustificatif', (requete, reponse) => {
+  const sersXMLEntete = (ClasseEntete, reponse) => {
     const destinataire = new PointAcces(
       process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS,
       process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS,
@@ -23,14 +23,16 @@ const routesEbms = (config) => {
     const idConversation = adaptateurUUID.genereUUID();
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
     const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteRequete(
+    const enteteEBMS = new ClasseEntete(
       { adaptateurUUID, horodateur },
       { destinataire, idConversation, idPayload },
     );
 
     reponse.set('Content-Type', 'text/xml');
     reponse.send(enteteEBMS.enXML());
-  });
+  };
+
+  routes.get('/entetes/requeteJustificatif', (_, reponse) => sersXMLEntete(EnteteRequete, reponse));
 
   routes.get('/messages/requeteJustificatif', (_requete, reponse) => {
     const requeteJustificatif = new RequeteJustificatif(
@@ -47,19 +49,7 @@ const routesEbms = (config) => {
     reponse.send(requeteJustificatif.corpsMessageEnXML());
   });
 
-  routes.get('/entetes/reponseErreur', (requete, reponse) => {
-    const { destinataire } = requete.query;
-    const idConversation = adaptateurUUID.genereUUID();
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    const idPayload = `cid:${adaptateurUUID.genereUUID()}@${suffixe}`;
-    const enteteEBMS = new EnteteErreur(
-      { adaptateurUUID, horodateur },
-      { destinataire, idConversation, idPayload },
-    );
-
-    reponse.set('Content-Type', 'text/xml');
-    reponse.send(enteteEBMS.enXML());
-  });
+  routes.get('/entetes/reponseErreur', (_, reponse) => sersXMLEntete(EnteteErreur, reponse));
 
   routes.get('/messages/reponseErreur', (requete, reponse) => {
     const reponseErreur = new ReponseErreur({ adaptateurUUID, horodateur }, {
