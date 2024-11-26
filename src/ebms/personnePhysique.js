@@ -25,7 +25,7 @@ ${identifiantEidasEnXML}
     `;
   }
 
-  enXML() {
+  enXMLPourRequete() {
     return `
 <rim:Slot name="NaturalPerson">
   <rim:SlotValue xsi:type="rim:AnyValueType">
