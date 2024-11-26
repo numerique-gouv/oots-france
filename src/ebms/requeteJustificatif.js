@@ -89,7 +89,7 @@ class RequeteJustificatif extends Message {
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
-    ${this.demandeur.enXML()}
+    ${this.demandeur.enXMLPourRequete()}
     ${this.typeJustificatif.enXML()}
   </query:Query>
 </query:QueryRequest>`;

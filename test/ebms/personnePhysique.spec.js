@@ -12,7 +12,7 @@ describe('Une personne physique', () => {
       },
     );
 
-    expect(jose.enXML()).toBe(`
+    expect(jose.enXMLPourRequete()).toBe(`
 <rim:Slot name="NaturalPerson">
   <rim:SlotValue xsi:type="rim:AnyValueType">
     <sdg:Person>
@@ -31,7 +31,7 @@ describe('Une personne physique', () => {
 
   it("n'affiche pas la balise identifiant s'il n'y a pas d'identifiant renseigné", () => {
     const personneSansIdentifiantEidas = new PersonnePhysique();
-    const xml = parseXML(personneSansIdentifiantEidas.enXML());
+    const xml = parseXML(personneSansIdentifiantEidas.enXMLPourRequete());
     const identifiantEidas = valeurSlot('NaturalPerson', xml).Person.Identifier;
 
     expect(identifiantEidas).toBeUndefined();
