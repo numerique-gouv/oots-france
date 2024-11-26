@@ -1,13 +1,21 @@
+const PersonnePhysique = require('../../src/ebms/personnePhysique');
+
 class ConstructeurEnveloppeSOAPRequete {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
     this.codeDemarche = '';
+    this.demandeur = new PersonnePhysique();
     this.idRequete = '';
     this.requeteur = { id: '', nom: '' };
   }
 
   avecCodeDemarche(codeDemarche) {
     this.codeDemarche = codeDemarche;
+    return this;
+  }
+
+  avecDemandeur(donnees) {
+    this.demandeur = new PersonnePhysique(donnees);
     return this;
   }
 
@@ -69,7 +77,16 @@ class ConstructeurEnveloppeSOAPRequete {
   <rim:Slot name="EvidenceProvider"><!-- … --></rim:Slot>
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
-    <rim:Slot name="NaturalPerson"><!-- … --></rim:Slot>
+    <rim:Slot name="NaturalPerson">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+        <sdg:Person>
+          <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+          <sdg:FamilyName>${this.demandeur.nom}</sdg:FamilyName>
+          <sdg:GivenName>${this.demandeur.prenom}</sdg:GivenName>
+          <sdg:DateOfBirth>${this.demandeur.dateNaissance}</sdg:DateOfBirth>
+        </sdg:Person>
+      </rim:SlotValue>
+    </rim:Slot>
     <rim:Slot name="EvidenceRequest"><!-- … --></rim:Slot>
   </query:Query>
 </query:QueryRequest>

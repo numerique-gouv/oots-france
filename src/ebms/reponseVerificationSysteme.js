@@ -15,6 +15,7 @@ class ReponseVerificationSysteme extends Message {
 
     super(config, { ...donnees, pieceJointe });
 
+    this.demandeur = donnees.demandeur;
     this.idRequete = donnees.idRequete;
     this.requeteur = donnees.requeteur;
   }
