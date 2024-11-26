@@ -128,5 +128,27 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       });
       expect(reponseVerificationSysteme.requeteur).toEqual({ id: '12345', nom: 'Un requêteur' });
     });
+
+    it('connaît le demandeur', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecDemandeur({ nom: 'Dupont' })
+        .construis();
+
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+      expect(reponse.demandeur().nom).toBe('Dupont');
+    });
+
+    it('transmet le demandeur à la réponse', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecDemandeur({ nom: 'Dupont' })
+        .construis();
+
+      const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
+        adaptateurUUID: { genereUUID: () => '' },
+      });
+      expect(reponseVerificationSysteme.demandeur.nom).toEqual('Dupont');
+    });
   });
 });
