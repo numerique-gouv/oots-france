@@ -3,6 +3,7 @@ const express = require('express');
 const EnteteErreur = require('../ebms/enteteErreur');
 const EnteteRequete = require('../ebms/enteteRequete');
 const Fournisseur = require('../ebms/fournisseur');
+const PersonnePhysique = require('../ebms/personnePhysique');
 const PointAcces = require('../ebms/pointAcces');
 const ReponseErreur = require('../ebms/reponseErreur');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
@@ -75,8 +76,10 @@ const routesEbms = (config) => {
   });
 
   routes.get('/messages/reponseJustificatif', (requete, reponse) => {
+    const demandeur = new PersonnePhysique({ dateNaissance: '1992-10-22', nom: 'Dupont', prenom: 'Jean' });
     const requeteur = new Requeteur({ id: '12345', nom: 'Un requêteur' });
     const reponseJustificatif = new ReponseVerificationSysteme({ adaptateurUUID, horodateur }, {
+      demandeur,
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       idRequete: '12345678-1234-1234-1234-1234567890ab',
       idConversation: '12345',

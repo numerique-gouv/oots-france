@@ -1,7 +1,8 @@
-const { parseXML, valeurSlot, verifiePresenceSlot } = require('../../src/ebms/utils');
-const ReponseVerificationSysteme = require('../../src/ebms/reponseVerificationSysteme');
+const PersonnePhysique = require('../../src/ebms/personnePhysique');
 const PointAcces = require('../../src/ebms/pointAcces');
+const ReponseVerificationSysteme = require('../../src/ebms/reponseVerificationSysteme');
 const Requeteur = require('../../src/ebms/requeteur');
+const { parseXML, valeurSlot, verifiePresenceSlot } = require('../../src/ebms/utils');
 
 describe('Reponse Verification Systeme', () => {
   const adaptateurUUID = {};
@@ -13,6 +14,7 @@ describe('Reponse Verification Systeme', () => {
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => '';
     donnees = {
+      demandeur: new PersonnePhysique(),
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       requeteur: { enXMLPourReponse: () => '' },
     };
@@ -31,8 +33,6 @@ describe('Reponse Verification Systeme', () => {
     expect(evidence.Identifier).toBeDefined();
     expect(evidence.IsAbout).toBeDefined();
     expect(evidence.IsAbout.NaturalPerson).toBeDefined();
-    expect(evidence.IsAbout.NaturalPerson.Identifier).toBeDefined(); // /!\
-    expect(evidence.IsAbout.NaturalPerson.Identifier['@_schemeID']).toBe('eidas');
     expect(evidence.IsAbout.NaturalPerson.FamilyName).toBeDefined();
     expect(evidence.IsAbout.NaturalPerson.GivenName).toBeDefined();
     expect(evidence.IsAbout.NaturalPerson.DateOfBirth).toBeDefined();
@@ -79,6 +79,24 @@ describe('Reponse Verification Systeme', () => {
     expect(requeteur.Identifier['#text']).toBe('abcdef');
     expect(requeteur.Name).toBeDefined();
     expect(requeteur.Name['#text']).toBe('Un requêteur');
+  });
+
+  it('contient la description du demandeur', () => {
+    donnees.demandeur = new PersonnePhysique({
+      dateNaissance: '1992-10-22',
+      identifiantEidas: 'DK/DE/123123123',
+      nom: 'Dupont',
+      prenom: 'Jean',
+    });
+    const reponse = new ReponseVerificationSysteme(config, donnees);
+    const xml = parseXML(reponse.corpsMessageEnXML());
+    const scopeRecherche = xml.QueryResponse.RegistryObjectList.RegistryObject;
+
+    const demandeur = valeurSlot('EvidenceMetadata', scopeRecherche).Evidence.IsAbout.NaturalPerson;
+    expect(demandeur.Identifier['#text']).toBe('DK/DE/123123123');
+    expect(demandeur.FamilyName).toBe('Dupont');
+    expect(demandeur.GivenName).toBe('Jean');
+    expect(demandeur.DateOfBirth).toBe('1992-10-22');
   });
 
   it('injecte un identifiant unique de pièce justificative', () => {
