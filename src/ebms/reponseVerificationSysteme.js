@@ -69,12 +69,7 @@ class ReponseVerificationSysteme extends Message {
           <sdg:Evidence>
             <sdg:Identifier>${this.adaptateurUUID?.genereUUID()}</sdg:Identifier>
             <sdg:IsAbout>
-              <sdg:NaturalPerson>
-                <sdg:Identifier schemeID='eidas'>DK/DE/123123123</sdg:Identifier>
-                <sdg:FamilyName></sdg:FamilyName>
-                <sdg:GivenName></sdg:GivenName>
-                <sdg:DateOfBirth>1970-03-01</sdg:DateOfBirth>
-              </sdg:NaturalPerson>
+              ${this.demandeur.enXMLPourReponse()}
             </sdg:IsAbout>
             <sdg:IssuingAuthority>
               <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>

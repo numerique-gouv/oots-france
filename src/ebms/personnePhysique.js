@@ -6,24 +6,42 @@ class PersonnePhysique {
     this.dateNaissance = donnees.dateNaissance;
   }
 
-  enXML() {
+  attributsEnXML() {
     const identifiantEidasEnXML = typeof this.identifiantEidas !== 'undefined'
       ? `<sdg:Identifier schemeID="eidas">${this.identifiantEidas}</sdg:Identifier>`
       : '';
 
     return `
+${identifiantEidasEnXML}
+<sdg:FamilyName>${this.nom}</sdg:FamilyName>
+<sdg:GivenName>${this.prenom}</sdg:GivenName>
+<sdg:DateOfBirth>${this.dateNaissance}</sdg:DateOfBirth>
+`;
+  }
+
+  enXMLPourReponse() {
+    return `
+<sdg:NaturalPerson>${this.attributsEnXML()}</sdg:NaturalPerson>
+    `;
+  }
+
+  enXML() {
+    return `
 <rim:Slot name="NaturalPerson">
   <rim:SlotValue xsi:type="rim:AnyValueType">
     <sdg:Person>
       <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
-      ${identifiantEidasEnXML}
-      <sdg:FamilyName>${this.nom}</sdg:FamilyName>
-      <sdg:GivenName>${this.prenom}</sdg:GivenName>
-      <sdg:DateOfBirth>${this.dateNaissance}</sdg:DateOfBirth>
+${this.attributsEnXML()}
     </sdg:Person>
   </rim:SlotValue>
 </rim:Slot>
     `;
+  }
+
+  identifiantEidasEnXML() {
+    return typeof this.identifiantEidas !== 'undefined'
+      ? `<sdg:Identifier schemeID="eidas">${this.identifiantEidas}</sdg:Identifier>`
+      : '';
   }
 }
 
