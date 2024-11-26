@@ -1,14 +1,21 @@
 const ConstructeurXMLParseMessageRecu = require('./constructeurXMLParseMessageRecu');
+const PersonnePhysique = require('../../src/ebms/personnePhysique');
 
 class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
   constructor() {
     super();
     this.codeDemarche = '';
     this.idRequete = '';
+    this.demandeur = new PersonnePhysique();
   }
 
   avecCodeDemarche(codeDemarche) {
     this.codeDemarche = codeDemarche;
+    return this;
+  }
+
+  avecDemandeur(donnees) {
+    this.demandeur = new PersonnePhysique(donnees);
     return this;
   }
 
@@ -63,6 +70,25 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
             },
           },
         ],
+        Query: {
+          Slot: [
+            {
+              '@_name': 'NaturalPerson',
+              SlotValue: {
+                '@_type': 'rim:AnyValueType',
+                Person: {
+                  Identifier: this.demandeur.identifiantEidas && {
+                    '@_schemeID': 'eidas',
+                    '#text': this.demandeur.identifiantEidas,
+                  },
+                  FamilyName: this.demandeur.nom,
+                  GivenName: this.demandeur.prenom,
+                  DateOfBirth: this.demandeur.dateNaissance,
+                },
+              },
+            },
+          ],
+        },
       },
     };
   }

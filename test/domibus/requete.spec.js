@@ -50,6 +50,24 @@ describe('Une action de requête reçue depuis Domibus', () => {
     expect(requete.requeteur().id).toBe('12345');
   });
 
+  it('connaît le demandeur', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecDemandeur({
+        dateNaissance: '1992-10-22',
+        identifiantEidas: 'DK/DE/123123123',
+        nom: 'Dupont',
+        prenom: 'Jean',
+      })
+      .construis();
+    const requete = new Requete(xmlParse);
+
+    const demandeur = requete.demandeur();
+    expect(demandeur.dateNaissance).toBe('1992-10-22');
+    expect(demandeur.identifiantEidas).toBe('DK/DE/123123123');
+    expect(demandeur.nom).toBe('Dupont');
+    expect(demandeur.prenom).toBe('Jean');
+  });
+
   describe('avec comme démarche une demande de bourse', () => {
     it("transmets l'identifiant de la requête", () => {
       const xmlParse = new ConstructeurXMLParseRequeteRecue()
