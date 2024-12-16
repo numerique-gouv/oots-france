@@ -5,6 +5,7 @@ const Requeteur = require('../../src/ebms/requeteur');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 const serveurTest = () => {
+  let adaptateurChiffrement;
   let adaptateurDomibus;
   let adaptateurEnvironnement;
   let adaptateurUUID;
@@ -22,6 +23,10 @@ const serveurTest = () => {
   };
 
   const initialise = (suite) => {
+    adaptateurChiffrement = {
+      cleHachage: () => '',
+    };
+
     adaptateurDomibus = {
       envoieMessageRequete: () => Promise.resolve(),
       urlRedirectionDepuisReponse: () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue')),
@@ -69,6 +74,7 @@ const serveurTest = () => {
 
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurDomibus,
+      adaptateurChiffrement,
       adaptateurEnvironnement,
       adaptateurUUID,
       depotPointsAcces,
@@ -85,6 +91,7 @@ const serveurTest = () => {
   const port = () => serveur.port();
 
   return {
+    adaptateurChiffrement: () => adaptateurChiffrement,
     adaptateurDomibus: () => adaptateurDomibus,
     adaptateurEnvironnement: () => adaptateurEnvironnement,
     adaptateurUUID: () => adaptateurUUID,
