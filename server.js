@@ -1,5 +1,6 @@
 const EcouteurDomibus = require('./src/ecouteurDomibus');
 const OOTS_FRANCE = require('./src/ootsFrance');
+const adaptateurChiffrement = require('./src/adaptateurs/adaptateurChiffrement');
 const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus');
 const adaptateurEnvironnement = require('./src/adaptateurs/adaptateurEnvironnement');
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID');
@@ -16,6 +17,7 @@ const depotServicesCommuns = new DepotServicesCommuns();
 const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
 
 const serveur = OOTS_FRANCE.creeServeur({
+  adaptateurChiffrement,
   adaptateurDomibus,
   adaptateurEnvironnement,
   adaptateurUUID,

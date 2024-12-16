@@ -1,12 +1,14 @@
 const express = require('express');
 
 const routesAdmin = require('./routes/routesAdmin');
+const routesAuth = require('./routes/routesAuth');
 const routesBase = require('./routes/routesBase');
 const routesEbms = require('./routes/routesEbms');
 const routesRequete = require('./routes/routesRequete');
 
 const creeServeur = (config) => {
   const {
+    adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurEnvironnement,
     adaptateurUUID,
@@ -23,6 +25,8 @@ const creeServeur = (config) => {
   app.set('trust proxy', 1);
 
   app.use('/admin', routesAdmin({ ecouteurDomibus }));
+
+  app.use('/auth', routesAuth({ adaptateurChiffrement, adaptateurEnvironnement }));
 
   app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }));
 
