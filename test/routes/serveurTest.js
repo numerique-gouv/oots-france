@@ -25,6 +25,7 @@ const serveurTest = () => {
   const initialise = (suite) => {
     adaptateurChiffrement = {
       cleHachage: () => '',
+      dechiffreJWE: () => Promise.resolve({}),
     };
 
     adaptateurDomibus = {
@@ -49,7 +50,7 @@ const serveurTest = () => {
     };
 
     depotRequeteurs = {
-      trouveRequeteur: () => Promise.resolve(new Requeteur()),
+      trouveRequeteur: () => Promise.resolve(new Requeteur({ adaptateurChiffrement })),
     };
 
     depotServicesCommuns = {

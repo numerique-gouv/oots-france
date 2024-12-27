@@ -1,4 +1,5 @@
 const adaptateurChiffrement = require('../adaptateurs/adaptateurChiffrement');
+const PersonnePhysique = require('./personnePhysique');
 
 class Requeteur {
   constructor(config = {}, donnees = {}) {
@@ -6,6 +7,15 @@ class Requeteur {
     this.id = donnees.id;
     this.nom = donnees.nom;
     this.url = donnees.url;
+  }
+
+  beneficiaire(infosUtilisateurChiffrees) {
+    const urlClesPubliques = `${this.url}/auth/cles_publiques`;
+
+    return this.adaptateurChiffrement.dechiffreJWE(infosUtilisateurChiffrees, urlClesPubliques)
+      .then(({ dateNaissance, nomUsage, prenom }) => (
+        new PersonnePhysique({ dateNaissance, nom: nomUsage, prenom })
+      ));
   }
 
   identifiantEtNomEnXML() {
