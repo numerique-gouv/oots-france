@@ -126,7 +126,10 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
         adaptateurUUID: { genereUUID: () => '' },
       });
-      expect(reponseVerificationSysteme.requeteur).toEqual({ id: '12345', nom: 'Un requêteur' });
+
+      const { requeteur } = reponseVerificationSysteme;
+      expect(requeteur.id).toBe('12345');
+      expect(requeteur.nom).toBe('Un requêteur');
     });
 
     it('connaît le demandeur', () => {

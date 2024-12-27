@@ -1,4 +1,5 @@
 const { ErreurRequeteurInexistant } = require('../erreurs');
+const adaptateurChiffrement = require('../adaptateurs/adaptateurChiffrement');
 const adaptateurEnvironnement = require('../adaptateurs/adaptateurEnvironnement');
 const Requeteur = require('../ebms/requeteur');
 
@@ -15,7 +16,7 @@ class DepotRequeteurs {
       );
     }
 
-    const resultat = new Requeteur({ id, ...donneesRequeteur });
+    const resultat = new Requeteur({ adaptateurChiffrement }, { id, ...donneesRequeteur });
     return Promise.resolve(resultat);
   }
 }

@@ -65,7 +65,7 @@ describe('Reponse Verification Systeme', () => {
   });
 
   it('contient la description du requêteur de la pièce justificative', () => {
-    donnees.requeteur = new Requeteur({ id: 'abcdef', nom: 'Un requêteur' });
+    donnees.requeteur = new Requeteur({}, { id: 'abcdef', nom: 'Un requêteur' });
     const reponse = new ReponseVerificationSysteme(config, donnees);
     const xml = parseXML(reponse.corpsMessageEnXML());
 

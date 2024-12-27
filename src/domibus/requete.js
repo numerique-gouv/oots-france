@@ -41,7 +41,7 @@ class Requete extends MessageRecu {
     const id = Requete.idRequeteur(requeteurJustificatif);
     const nom = Requete.nomRequeteur(requeteurJustificatif);
 
-    return new Requeteur({ id, nom });
+    return new Requeteur({}, { id, nom });
   }
 }
 

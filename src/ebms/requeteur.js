@@ -1,5 +1,8 @@
+const adaptateurChiffrement = require('../adaptateurs/adaptateurChiffrement');
+
 class Requeteur {
-  constructor(donnees = {}) {
+  constructor(config = {}, donnees = {}) {
+    this.adaptateurChiffrement = config.adaptateurChiffrement || adaptateurChiffrement;
     this.id = donnees.id;
     this.nom = donnees.nom;
     this.url = donnees.url;

@@ -2,7 +2,7 @@ const Requeteur = require('../../src/ebms/requeteur');
 
 describe('Un requêteur', () => {
   it("s'affiche en XML pour une requête", () => {
-    const requeteur = new Requeteur({ id: '123456', nom: 'Un requêteur français' });
+    const requeteur = new Requeteur({}, { id: '123456', nom: 'Un requêteur français' });
 
     expect(requeteur.enXMLPourRequete()).toBe(`
 <rim:Slot name="EvidenceRequester">
