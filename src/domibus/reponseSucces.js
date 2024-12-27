@@ -8,7 +8,7 @@ class ReponseSucces extends MessageRecu {
     const id = ReponseSucces.idRequeteur(requeteur);
     const nom = ReponseSucces.nomRequeteur(requeteur);
 
-    return new Requeteur({ id, nom });
+    return new Requeteur({}, { id, nom });
   }
 }
 

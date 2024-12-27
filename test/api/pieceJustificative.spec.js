@@ -145,7 +145,7 @@ describe('Le requêteur de pièce justificative', () => {
 
   it('transmet requêteur à requête', () => {
     expect.assertions(1);
-    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur({ nom: 'Un requêteur' }));
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur({}, { nom: 'Un requêteur' }));
 
     adaptateurDomibus.envoieMessageRequete = ({ requeteur }) => {
       expect(requeteur.nom).toBe('Un requêteur');
