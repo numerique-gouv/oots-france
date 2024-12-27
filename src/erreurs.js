@@ -2,7 +2,6 @@ class ErreurAbsenceReponseDestinataire extends Error {}
 class ErreurAucunMessageDomibusRecu extends Error {}
 class ErreurEchecAuthentification extends Error {}
 class ErreurInstructionSOAPInconnue extends Error {}
-class ErreurJetonInvalide extends Error {}
 class ErreurReponseRequete extends Error {}
 
 class ErreurDomibus extends Error {}
@@ -25,7 +24,6 @@ module.exports = {
   ErreurEchecAuthentification,
   ErreurEBMS,
   ErreurInstructionSOAPInconnue,
-  ErreurJetonInvalide,
   ErreurReponseRequete,
   ErreurRequeteurInexistant,
   ErreurTypeJustificatifIntrouvable,
