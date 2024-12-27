@@ -12,6 +12,7 @@ const {
 } = require('../../src/erreurs');
 
 describe('Le requêteur de pièce justificative', () => {
+  const adaptateurChiffrement = {};
   const adaptateurDomibus = {};
   const adaptateurEnvironnement = {};
   const adaptateurUUID = {};
@@ -33,12 +34,15 @@ describe('Le requêteur de pièce justificative', () => {
   const reponse = {};
 
   beforeEach(() => {
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({});
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve();
     adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve();
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve();
     adaptateurUUID.genereUUID = () => '';
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({});
-    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur());
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+      new Requeteur({ adaptateurChiffrement }),
+    );
     depotServicesCommuns.trouveFournisseurs = () => Promise.resolve([new Fournisseur()]);
     depotServicesCommuns.trouveTypesJustificatifsPourDemarche = () => Promise.resolve(
       [new TypeJustificatif()],
@@ -137,7 +141,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     depotRequeteurs.trouveRequeteur = (id) => {
       expect(id).toBe('123456');
-      return Promise.resolve(new Requeteur());
+      return Promise.resolve(new Requeteur({ adaptateurChiffrement }));
     };
 
     return pieceJustificative(config, requete, reponse);
@@ -145,10 +149,38 @@ describe('Le requêteur de pièce justificative', () => {
 
   it('transmet requêteur à requête', () => {
     expect.assertions(1);
-    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur({}, { nom: 'Un requêteur' }));
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(new Requeteur({ adaptateurChiffrement }, { nom: 'Un requêteur' }));
 
     adaptateurDomibus.envoieMessageRequete = ({ requeteur }) => {
       expect(requeteur.nom).toBe('Un requêteur');
+      return Promise.resolve();
+    };
+
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('déchiffre les infos utilisateur reçues', () => {
+    expect.assertions(1);
+    adaptateurChiffrement.dechiffreJWE = (jwe) => {
+      expect(jwe).toBe('abcdef');
+      return Promise.resolve({});
+    };
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+      new Requeteur({ adaptateurChiffrement }),
+    );
+
+    requete.query.utilisateur = 'abcdef';
+    return pieceJustificative(config, requete, reponse);
+  });
+
+  it('transmet la personne physique bénéficiaire à la requête', () => {
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({ nomUsage: 'Dupond' });
+    depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+      new Requeteur({ adaptateurChiffrement }),
+    );
+
+    adaptateurDomibus.envoieMessageRequete = ({ beneficiaire }) => {
+      expect(beneficiaire.nom).toBe('Dupond');
       return Promise.resolve();
     };
 
@@ -240,7 +272,9 @@ describe('Le requêteur de pièce justificative', () => {
       expect.assertions(2);
 
       reponseAvecPJ.pieceJustificative = () => Buffer.from('Des données');
-      depotRequeteurs.trouveRequeteur = () => Promise.resolve({ url: 'http://example.com' });
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+        new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' }),
+      );
 
       transmetteurPiecesJustificatives.envoie = (pj, urlBase) => {
         expect(pj.toString()).toBe('Des données');
@@ -254,7 +288,9 @@ describe('Le requêteur de pièce justificative', () => {
     it("redirige l'utilisateur vers une URL de callback chez le fournisseur de service", () => {
       expect.assertions(1);
 
-      depotRequeteurs.trouveRequeteur = () => Promise.resolve({ url: 'http://example.com' });
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+        new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' }),
+      );
 
       reponse.redirect = (urlRedirection) => {
         expect(urlRedirection).toBe('http://example.com/oots/callback');
