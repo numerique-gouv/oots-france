@@ -14,7 +14,7 @@ describe('Reponse Verification Systeme', () => {
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => '';
     donnees = {
-      demandeur: new PersonnePhysique(),
+      beneficiaire: new PersonnePhysique(),
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       requeteur: { enXMLPourReponse: () => '' },
     };
@@ -81,8 +81,8 @@ describe('Reponse Verification Systeme', () => {
     expect(requeteur.Name['#text']).toBe('Un requêteur');
   });
 
-  it('contient la description du demandeur', () => {
-    donnees.demandeur = new PersonnePhysique({
+  it('contient la description du bénéficiaire', () => {
+    donnees.beneficiaire = new PersonnePhysique({
       dateNaissance: '1992-10-22',
       identifiantEidas: 'DK/DE/123123123',
       nom: 'Dupont',
@@ -92,11 +92,11 @@ describe('Reponse Verification Systeme', () => {
     const xml = parseXML(reponse.corpsMessageEnXML());
     const scopeRecherche = xml.QueryResponse.RegistryObjectList.RegistryObject;
 
-    const demandeur = valeurSlot('EvidenceMetadata', scopeRecherche).Evidence.IsAbout.NaturalPerson;
-    expect(demandeur.Identifier['#text']).toBe('DK/DE/123123123');
-    expect(demandeur.FamilyName).toBe('Dupont');
-    expect(demandeur.GivenName).toBe('Jean');
-    expect(demandeur.DateOfBirth).toBe('1992-10-22');
+    const beneficiaire = valeurSlot('EvidenceMetadata', scopeRecherche).Evidence.IsAbout.NaturalPerson;
+    expect(beneficiaire.Identifier['#text']).toBe('DK/DE/123123123');
+    expect(beneficiaire.FamilyName).toBe('Dupont');
+    expect(beneficiaire.GivenName).toBe('Jean');
+    expect(beneficiaire.DateOfBirth).toBe('1992-10-22');
   });
 
   it('injecte un identifiant unique de pièce justificative', () => {

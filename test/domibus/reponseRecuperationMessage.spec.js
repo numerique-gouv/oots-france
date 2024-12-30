@@ -132,17 +132,17 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       expect(requeteur.nom).toBe('Un requêteur');
     });
 
-    it('connaît le demandeur', () => {
+    it('connaît le bénéficiaire', () => {
       const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
         .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .avecDemandeur({ nom: 'Dupont' })
         .construis();
 
       const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
-      expect(reponse.demandeur().nom).toBe('Dupont');
+      expect(reponse.beneficiaire().nom).toBe('Dupont');
     });
 
-    it('transmet le demandeur à la réponse', () => {
+    it('transmet le bénéficiaire à la réponse', () => {
       const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
         .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .avecDemandeur({ nom: 'Dupont' })
@@ -151,7 +151,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
         adaptateurUUID: { genereUUID: () => '' },
       });
-      expect(reponseVerificationSysteme.demandeur.nom).toEqual('Dupont');
+      expect(reponseVerificationSysteme.beneficiaire.nom).toEqual('Dupont');
     });
   });
 });

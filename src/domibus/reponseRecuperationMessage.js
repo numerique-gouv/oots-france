@@ -22,8 +22,8 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.corpsMessage.codeDemarche();
   }
 
-  demandeur() {
-    return this.corpsMessage.demandeur();
+  beneficiaire() {
+    return this.corpsMessage.beneficiaire();
   }
 
   expediteur() {
@@ -59,7 +59,7 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.corpsMessage.reponse(
       config,
       {
-        demandeur: this.demandeur(),
+        beneficiaire: this.beneficiaire(),
         destinataire: this.expediteur(),
         idConversation: this.idConversation(),
         idRequete: this.idRequete(),

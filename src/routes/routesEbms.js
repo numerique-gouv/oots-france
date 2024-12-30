@@ -66,10 +66,10 @@ const routesEbms = (config) => {
   });
 
   routes.get('/messages/reponseJustificatif', (requete, reponse) => {
-    const demandeur = new PersonnePhysique({ dateNaissance: '1992-10-22', nom: 'Dupont', prenom: 'Jean' });
+    const beneficiaire = new PersonnePhysique({ dateNaissance: '1992-10-22', nom: 'Dupont', prenom: 'Jean' });
     const requeteur = new Requeteur({ id: '12345', nom: 'Un requêteur' });
     const reponseJustificatif = new ReponseVerificationSysteme({ adaptateurUUID, horodateur }, {
-      demandeur,
+      beneficiaire,
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       idRequete: '12345678-1234-1234-1234-1234567890ab',
       idConversation: '12345',

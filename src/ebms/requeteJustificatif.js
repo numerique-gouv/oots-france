@@ -24,7 +24,7 @@ class RequeteJustificatif extends Message {
     super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
-    this.demandeur = beneficiaire;
+    this.beneficiaire = beneficiaire;
     this.fournisseur = fournisseur;
     this.requeteur = requeteur;
     this.typeJustificatif = typeJustificatif;
@@ -90,7 +90,7 @@ class RequeteJustificatif extends Message {
   ${this.fournisseur.enXML()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
-    ${this.demandeur.enXMLPourRequete()}
+    ${this.beneficiaire.enXMLPourRequete()}
     ${this.typeJustificatif.enXML()}
   </query:Query>
 </query:QueryRequest>`;

@@ -90,7 +90,7 @@ describe("La vue du message de requête d'un justificatif", () => {
     expect(fournisseur.Agent.Identifier['#text']).toBe('unIdentifiant');
   });
 
-  it('injecte les données du demandeur de justificatif', () => {
+  it('injecte les données du bénéficiaire', () => {
     const requeteJustificatif = new RequeteJustificatif(
       configurationRequete,
       { beneficiaire: new PersonnePhysique({ nom: 'Durand', prenom: 'Sabine', dateNaissance: '1987-03-28' }) },

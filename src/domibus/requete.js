@@ -11,14 +11,14 @@ class Requete extends MessageRecu {
     return valeurSlot('Procedure', this.xmlParse.QueryRequest).LocalizedString['@_value'];
   }
 
-  demandeur() {
-    const demandeur = valeurSlot('NaturalPerson', this.xmlParse.QueryRequest.Query).Person;
+  beneficiaire() {
+    const beneficiaire = valeurSlot('NaturalPerson', this.xmlParse.QueryRequest.Query).Person;
 
     return new PersonnePhysique({
-      dateNaissance: demandeur.DateOfBirth,
-      identifiantEidas: demandeur.Identifier?.['#text'],
-      nom: demandeur.FamilyName,
-      prenom: demandeur.GivenName,
+      dateNaissance: beneficiaire.DateOfBirth,
+      identifiantEidas: beneficiaire.Identifier?.['#text'],
+      nom: beneficiaire.FamilyName,
+      prenom: beneficiaire.GivenName,
     });
   }
 
