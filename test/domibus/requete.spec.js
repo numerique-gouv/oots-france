@@ -50,7 +50,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
     expect(requete.requeteur().id).toBe('12345');
   });
 
-  it('connaît le demandeur', () => {
+  it('connaît le bénéficiaire', () => {
     const xmlParse = new ConstructeurXMLParseRequeteRecue()
       .avecDemandeur({
         dateNaissance: '1992-10-22',
@@ -61,11 +61,11 @@ describe('Une action de requête reçue depuis Domibus', () => {
       .construis();
     const requete = new Requete(xmlParse);
 
-    const demandeur = requete.demandeur();
-    expect(demandeur.dateNaissance).toBe('1992-10-22');
-    expect(demandeur.identifiantEidas).toBe('DK/DE/123123123');
-    expect(demandeur.nom).toBe('Dupont');
-    expect(demandeur.prenom).toBe('Jean');
+    const beneficiaire = requete.beneficiaire();
+    expect(beneficiaire.dateNaissance).toBe('1992-10-22');
+    expect(beneficiaire.identifiantEidas).toBe('DK/DE/123123123');
+    expect(beneficiaire.nom).toBe('Dupont');
+    expect(beneficiaire.prenom).toBe('Jean');
   });
 
   describe('avec comme démarche une demande de bourse', () => {

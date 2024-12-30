@@ -6,7 +6,7 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
     super();
     this.codeDemarche = '';
     this.idRequete = '';
-    this.demandeur = new PersonnePhysique();
+    this.beneficiaire = new PersonnePhysique();
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -15,7 +15,7 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
   }
 
   avecDemandeur(donnees) {
-    this.demandeur = new PersonnePhysique(donnees);
+    this.beneficiaire = new PersonnePhysique(donnees);
     return this;
   }
 
@@ -77,13 +77,13 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
               SlotValue: {
                 '@_type': 'rim:AnyValueType',
                 Person: {
-                  Identifier: this.demandeur.identifiantEidas && {
+                  Identifier: this.beneficiaire.identifiantEidas && {
                     '@_schemeID': 'eidas',
-                    '#text': this.demandeur.identifiantEidas,
+                    '#text': this.beneficiaire.identifiantEidas,
                   },
-                  FamilyName: this.demandeur.nom,
-                  GivenName: this.demandeur.prenom,
-                  DateOfBirth: this.demandeur.dateNaissance,
+                  FamilyName: this.beneficiaire.nom,
+                  GivenName: this.beneficiaire.prenom,
+                  DateOfBirth: this.beneficiaire.dateNaissance,
                 },
               },
             },

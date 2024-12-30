@@ -15,7 +15,7 @@ class ReponseVerificationSysteme extends Message {
 
     super(config, { ...donnees, pieceJointe });
 
-    this.demandeur = donnees.demandeur;
+    this.beneficiaire = donnees.beneficiaire;
     this.idRequete = donnees.idRequete;
     this.requeteur = donnees.requeteur;
   }
@@ -69,7 +69,7 @@ class ReponseVerificationSysteme extends Message {
           <sdg:Evidence>
             <sdg:Identifier>${this.adaptateurUUID?.genereUUID()}</sdg:Identifier>
             <sdg:IsAbout>
-              ${this.demandeur.enXMLPourReponse()}
+              ${this.beneficiaire.enXMLPourReponse()}
             </sdg:IsAbout>
             <sdg:IssuingAuthority>
               <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>

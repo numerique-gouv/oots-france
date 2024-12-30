@@ -32,7 +32,7 @@ describe('Un requêteur', () => {
     `);
   });
 
-  it('déchiffre le JWE contenant les infos utilisateur le concernant', () => {
+  it('déchiffre le JWE contenant les infos du bénéficiaire', () => {
     expect.assertions(2);
 
     adaptateurChiffrement.dechiffreJWE = (jwe, urlJWKS) => {
@@ -45,7 +45,7 @@ describe('Un requêteur', () => {
     return requeteur.beneficiaire('abcd');
   });
 
-  it('retourne la personne physique associée aux infos utilisateur déchiffrées', () => {
+  it('retourne la personne physique associée aux infos bénéficiaire déchiffrées', () => {
     adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({ dateNaissance: '1965-11-25', nomUsage: 'Dupont', prenom: 'Sophie' });
 
     const requeteur = new Requeteur({ adaptateurChiffrement }, {});

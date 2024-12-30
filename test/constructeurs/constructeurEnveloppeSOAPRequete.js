@@ -4,7 +4,7 @@ class ConstructeurEnveloppeSOAPRequete {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
     this.codeDemarche = '';
-    this.demandeur = new PersonnePhysique();
+    this.beneficiaire = new PersonnePhysique();
     this.idRequete = '';
     this.requeteur = { id: '', nom: '' };
   }
@@ -15,7 +15,7 @@ class ConstructeurEnveloppeSOAPRequete {
   }
 
   avecDemandeur(donnees) {
-    this.demandeur = new PersonnePhysique(donnees);
+    this.beneficiaire = new PersonnePhysique(donnees);
     return this;
   }
 
@@ -81,9 +81,9 @@ class ConstructeurEnveloppeSOAPRequete {
       <rim:SlotValue xsi:type="rim:AnyValueType">
         <sdg:Person>
           <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
-          <sdg:FamilyName>${this.demandeur.nom}</sdg:FamilyName>
-          <sdg:GivenName>${this.demandeur.prenom}</sdg:GivenName>
-          <sdg:DateOfBirth>${this.demandeur.dateNaissance}</sdg:DateOfBirth>
+          <sdg:FamilyName>${this.beneficiaire.nom}</sdg:FamilyName>
+          <sdg:GivenName>${this.beneficiaire.prenom}</sdg:GivenName>
+          <sdg:DateOfBirth>${this.beneficiaire.dateNaissance}</sdg:DateOfBirth>
         </sdg:Person>
       </rim:SlotValue>
     </rim:Slot>
