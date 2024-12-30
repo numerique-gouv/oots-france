@@ -11,6 +11,7 @@ class RequeteJustificatif extends Message {
   constructor(
     config,
     {
+      beneficiaire = new PersonnePhysique(),
       codeDemarche = 'T1',
       destinataire = {},
       fournisseur = new Fournisseur(),
@@ -23,7 +24,7 @@ class RequeteJustificatif extends Message {
     super(config, { destinataire, idConversation });
 
     this.codeDemarche = codeDemarche;
-    this.demandeur = new PersonnePhysique({ nom: 'Smith', prenom: 'Jonas', dateNaissance: '1993-03-01' });
+    this.demandeur = beneficiaire;
     this.fournisseur = fournisseur;
     this.requeteur = requeteur;
     this.typeJustificatif = typeJustificatif;

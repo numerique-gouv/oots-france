@@ -1,5 +1,6 @@
 const { parseXML, verifiePresenceSlot, valeurSlot } = require('../../src/ebms/utils');
 const Fournisseur = require('../../src/ebms/fournisseur');
+const PersonnePhysique = require('../../src/ebms/personnePhysique');
 const RequeteJustificatif = require('../../src/ebms/requeteJustificatif');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
@@ -92,11 +93,12 @@ describe("La vue du message de requête d'un justificatif", () => {
   it('injecte les données du demandeur de justificatif', () => {
     const requeteJustificatif = new RequeteJustificatif(
       configurationRequete,
+      { beneficiaire: new PersonnePhysique({ nom: 'Durand', prenom: 'Sabine', dateNaissance: '1987-03-28' }) },
     );
     const xml = parseXML(requeteJustificatif.corpsMessageEnXML());
     const naturalPerson = valeurSlot('NaturalPerson', xml.QueryRequest.Query);
-    expect(naturalPerson.Person.FamilyName).toBe('Smith');
-    expect(naturalPerson.Person.GivenName).toBe('Jonas');
-    expect(naturalPerson.Person.DateOfBirth).toBe('1993-03-01');
+    expect(naturalPerson.Person.FamilyName).toBe('Durand');
+    expect(naturalPerson.Person.GivenName).toBe('Sabine');
+    expect(naturalPerson.Person.DateOfBirth).toBe('1987-03-28');
   });
 });
