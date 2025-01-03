@@ -9,6 +9,7 @@ const ReponseErreur = require('../ebms/reponseErreur');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
 const RequeteJustificatif = require('../ebms/requeteJustificatif');
 const Requeteur = require('../ebms/requeteur');
+const TypeJustificatif = require('../ebms/typeJustificatif');
 
 const routesEbms = (config) => {
   const { adaptateurUUID, horodateur } = config;
@@ -68,12 +69,17 @@ const routesEbms = (config) => {
   routes.get('/messages/reponseJustificatif', (requete, reponse) => {
     const beneficiaire = new PersonnePhysique({ dateNaissance: '1992-10-22', nom: 'Dupont', prenom: 'Jean' });
     const requeteur = new Requeteur({ id: '12345', nom: 'Un requêteur' });
+    const typeJustificatif = new TypeJustificatif({
+      id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/12345678-1234-1234-1234-1234567890ab',
+      descriptions: { EN: 'Some Evidence Type' },
+    });
     const reponseJustificatif = new ReponseVerificationSysteme({ adaptateurUUID, horodateur }, {
       beneficiaire,
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       idRequete: '12345678-1234-1234-1234-1234567890ab',
       idConversation: '12345',
       requeteur,
+      typeJustificatif,
     });
     reponse.set('Content-Type', 'text/xml');
     reponse.send(reponseJustificatif.corpsMessageEnXML());
