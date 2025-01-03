@@ -68,6 +68,22 @@ describe('Une action de requête reçue depuis Domibus', () => {
     expect(beneficiaire.prenom).toBe('Jean');
   });
 
+  it('connaît le type de justificatif demandé', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecTypeJustificatif({
+        id: 'abcdef',
+        descriptions: { EN: 'Some Evidence Type', FR: 'Un type de justificatif' },
+        formatDistribution: 'text/plain',
+      })
+      .construis();
+    const requete = new Requete(xmlParse);
+
+    const typeJustificatif = requete.typeJustificatif();
+    expect(typeJustificatif.id).toBe('abcdef');
+    expect(typeJustificatif.descriptions).toEqual({ EN: 'Some Evidence Type', FR: 'Un type de justificatif' });
+    expect(typeJustificatif.formatDistribution).toBe('text/plain');
+  });
+
   describe('avec comme démarche une demande de bourse', () => {
     it("transmets l'identifiant de la requête", () => {
       const xmlParse = new ConstructeurXMLParseRequeteRecue()

@@ -1,5 +1,6 @@
 const ConstructeurXMLParseMessageRecu = require('./constructeurXMLParseMessageRecu');
 const PersonnePhysique = require('../../src/ebms/personnePhysique');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
   constructor() {
@@ -7,6 +8,7 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
     this.codeDemarche = '';
     this.idRequete = '';
     this.beneficiaire = new PersonnePhysique();
+    this.typeJustificatif = new TypeJustificatif();
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -21,6 +23,11 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
 
   avecIdRequete(id) {
     this.idRequete = id;
+    return this;
+  }
+
+  avecTypeJustificatif(donnees) {
+    this.typeJustificatif = new TypeJustificatif(donnees);
     return this;
   }
 
@@ -84,6 +91,19 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
                   FamilyName: this.beneficiaire.nom,
                   GivenName: this.beneficiaire.prenom,
                   DateOfBirth: this.beneficiaire.dateNaissance,
+                },
+              },
+            },
+            {
+              '@_name': 'EvidenceRequest',
+              SlotValue: {
+                '@_type': 'rim:AnyValueType',
+                DataServiceEvidenceType: {
+                  Identifier: '00000000-0000-0000-0000-000000000000',
+                  EvidenceTypeClassification: this.typeJustificatif.id,
+                  Title: Object.entries(this.typeJustificatif.descriptions || {})
+                    .map(([k, v]) => ({ '@_lang': k, '#text': v })),
+                  DistributedAs: { Format: this.typeJustificatif.formatDistribution },
                 },
               },
             },
