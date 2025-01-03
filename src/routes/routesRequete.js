@@ -17,18 +17,23 @@ const routesRequete = (config) => {
 
   routes.get('/pieceJustificative', (requete, reponse) => {
     if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
-      pieceJustificative(
-        {
-          adaptateurDomibus,
-          adaptateurUUID,
-          depotPointsAcces,
-          depotRequeteurs,
-          depotServicesCommuns,
-          transmetteurPiecesJustificatives,
-        },
-        requete,
-        reponse,
-      );
+      const { beneficiaire } = requete.query;
+      if (typeof beneficiaire === 'undefined' || beneficiaire === '') {
+        reponse.status(422).send({ erreur: 'Le bénéficiaire doit être renseigné' });
+      } else {
+        pieceJustificative(
+          {
+            adaptateurDomibus,
+            adaptateurUUID,
+            depotPointsAcces,
+            depotRequeteurs,
+            depotServicesCommuns,
+            transmetteurPiecesJustificatives,
+          },
+          requete,
+          reponse,
+        );
+      }
     } else {
       reponse.status(501).send('Not Implemented Yet!');
     }
