@@ -37,10 +37,6 @@ class ConstructeurEnveloppeSOAPRequete {
   }
 
   construis() {
-    const descriptionsTypeJustificatif = () => Object
-      .entries(this.typeJustificatif.descriptions || {})
-      .map(([langue, description]) => `<sdg:Title lang="${langue}">${description}</sdg:Title>`);
-
     const message = `
 <?xml version="1.0" encoding="UTF-8"?>
 <query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -98,18 +94,7 @@ class ConstructeurEnveloppeSOAPRequete {
         </sdg:Person>
       </rim:SlotValue>
     </rim:Slot>
-    <rim:Slot name="EvidenceRequest">
-      <rim:SlotValue xsi:type="rim:AnyValueType">
-        <sdg:DataServiceEvidenceType>
-          <sdg:Identifier>00000000-0000-0000-0000-000000000000</sdg:Identifier>
-          <sdg:EvidenceTypeClassification>${this.typeJustificatif.id}</sdg:EvidenceTypeClassification>
-          ${descriptionsTypeJustificatif()}
-          <sdg:DistributedAs>
-            <sdg:Format>${this.typeJustificatif.formatDistribution}</sdg:Format>
-          </sdg:DistributedAs>
-        </sdg:DataServiceEvidenceType>
-      </rim:SlotValue>
-    </rim:Slot>
+    ${this.typeJustificatif.enXMLPourRequete()}
   </query:Query>
 </query:QueryRequest>
 `;

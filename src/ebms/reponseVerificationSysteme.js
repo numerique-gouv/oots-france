@@ -69,19 +69,12 @@ class ReponseVerificationSysteme extends Message {
         <rim:SlotValue xsi:type="rim:AnyValueType">
           <sdg:Evidence>
             <sdg:Identifier>${this.adaptateurUUID?.genereUUID()}</sdg:Identifier>
-            <sdg:IsAbout>
-              ${this.beneficiaire.enXMLPourReponse()}
-            </sdg:IsAbout>
+            <sdg:IsAbout>${this.beneficiaire.enXMLPourReponse()}</sdg:IsAbout>
             <sdg:IssuingAuthority>
               <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
               <sdg:Name></sdg:Name>
             </sdg:IssuingAuthority>
-            <sdg:IsConformantTo>
-              <sdg:EvidenceTypeClassification>
-                https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/12345678-1234-1234-1234-1234567890ab
-              </sdg:EvidenceTypeClassification>
-              <sdg:Title lang="EN"></sdg:Title>
-            </sdg:IsConformantTo>
+            <sdg:IsConformantTo>${this.typeJustificatif.enXMLPourReponse()}</sdg:IsConformantTo>
             <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
             <sdg:Distribution>
               <sdg:Format>application/pdf</sdg:Format>
