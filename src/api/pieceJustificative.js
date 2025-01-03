@@ -1,6 +1,7 @@
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurEBMS,
+  ErreurJetonInvalide,
   ErreurReponseRequete,
 } = require('../erreurs');
 
@@ -89,7 +90,7 @@ const pieceJustificative = (config, requete, reponse) => {
       }
     })
     .catch((e) => {
-      if (e instanceof ErreurEBMS) {
+      if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
         reponse.status(422).json({ erreur: e.message });
       } else if (e instanceof AggregateError) {
         let codeStatus = 500;
