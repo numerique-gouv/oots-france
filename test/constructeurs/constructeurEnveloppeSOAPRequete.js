@@ -1,4 +1,5 @@
 const PersonnePhysique = require('../../src/ebms/personnePhysique');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 
 class ConstructeurEnveloppeSOAPRequete {
   constructor() {
@@ -7,6 +8,7 @@ class ConstructeurEnveloppeSOAPRequete {
     this.beneficiaire = new PersonnePhysique();
     this.idRequete = '';
     this.requeteur = { id: '', nom: '' };
+    this.typeJustificatif = new TypeJustificatif();
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -26,6 +28,11 @@ class ConstructeurEnveloppeSOAPRequete {
 
   avecRequeteur({ id, nom }) {
     Object.assign(this.requeteur, { id, nom });
+    return this;
+  }
+
+  avecTypeJustificatif(donnees) {
+    this.typeJustificatif = new TypeJustificatif(donnees);
     return this;
   }
 
@@ -87,7 +94,7 @@ class ConstructeurEnveloppeSOAPRequete {
         </sdg:Person>
       </rim:SlotValue>
     </rim:Slot>
-    <rim:Slot name="EvidenceRequest"><!-- … --></rim:Slot>
+    ${this.typeJustificatif.enXMLPourRequete()}
   </query:Query>
 </query:QueryRequest>
 `;

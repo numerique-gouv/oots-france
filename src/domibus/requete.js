@@ -4,6 +4,7 @@ const ReponseErreur = require('../ebms/reponseErreur');
 const PersonnePhysique = require('../ebms/personnePhysique');
 const ReponseVerificationSysteme = require('../ebms/reponseVerificationSysteme');
 const Requeteur = require('../ebms/requeteur');
+const TypeJustificatif = require('../ebms/typeJustificatif');
 const { valeurSlot } = require('../ebms/utils');
 
 class Requete extends MessageRecu {
@@ -42,6 +43,19 @@ class Requete extends MessageRecu {
     const nom = Requete.nomRequeteur(requeteurJustificatif);
 
     return new Requeteur({}, { id, nom });
+  }
+
+  typeJustificatif() {
+    const donneesTypeJustificatif = valeurSlot('EvidenceRequest', this.xmlParse.QueryRequest.Query).DataServiceEvidenceType;
+    const descriptions = []
+      .concat(donneesTypeJustificatif.Title || {})
+      .reduce((acc, description) => Object.assign(acc, { [description['@_lang']]: description['#text'] }), {});
+
+    return new TypeJustificatif({
+      id: donneesTypeJustificatif.EvidenceTypeClassification,
+      descriptions,
+      formatDistribution: donneesTypeJustificatif.DistributedAs.Format,
+    });
   }
 }
 

@@ -153,5 +153,28 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       });
       expect(reponseVerificationSysteme.beneficiaire.nom).toEqual('Dupont');
     });
+
+    it('connaît le type de justificatif demandé', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecTypeJustificatif({ id: 'abcdef', descriptions: { FR: 'Un type de justificatif' } })
+        .construis();
+
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP);
+      expect(reponse.typeJustificatif().id).toBe('abcdef');
+    });
+
+    it('transmet le type de justificatif à la réponse', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecTypeJustificatif({ id: 'abcdef', descriptions: { FR: 'Un type de justificatif' } })
+        .construis();
+
+      const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
+        adaptateurUUID: { genereUUID: () => '' },
+      });
+
+      expect(reponseVerificationSysteme.typeJustificatif.id).toBe('abcdef');
+    });
   });
 });

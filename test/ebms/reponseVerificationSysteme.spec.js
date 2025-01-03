@@ -2,6 +2,7 @@ const PersonnePhysique = require('../../src/ebms/personnePhysique');
 const PointAcces = require('../../src/ebms/pointAcces');
 const ReponseVerificationSysteme = require('../../src/ebms/reponseVerificationSysteme');
 const Requeteur = require('../../src/ebms/requeteur');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif');
 const { parseXML, valeurSlot, verifiePresenceSlot } = require('../../src/ebms/utils');
 
 describe('Reponse Verification Systeme', () => {
@@ -17,6 +18,7 @@ describe('Reponse Verification Systeme', () => {
       beneficiaire: new PersonnePhysique(),
       destinataire: new PointAcces('unTypeIdentifiant', 'unIdentifiant'),
       requeteur: { enXMLPourReponse: () => '' },
+      typeJustificatif: new TypeJustificatif({ descriptions: { EN: 'Some Evidence Type' } }),
     };
     horodateur.maintenant = () => '';
   });
@@ -107,6 +109,18 @@ describe('Reponse Verification Systeme', () => {
 
     const idPiece = valeurSlot('EvidenceMetadata', scopeRecherche).Evidence.Identifier;
     expect(idPiece).toEqual('11111111-1111-1111-1111-111111111111');
+  });
+
+  it('injecte le type de pièce justificative', () => {
+    donnees.typeJustificatif = new TypeJustificatif({ id: 'abcdef' });
+    const reponse = new ReponseVerificationSysteme(config, donnees);
+    const xml = parseXML(reponse.corpsMessageEnXML());
+    const scopeRecherche = xml.QueryResponse.RegistryObjectList.RegistryObject;
+
+    const idTypeJustificatif = valeurSlot('EvidenceMetadata', scopeRecherche).Evidence
+      .IsConformantTo
+      .EvidenceTypeClassification;
+    expect(idTypeJustificatif).toBe('abcdef');
   });
 
   it('contient une pièce jointe', () => {

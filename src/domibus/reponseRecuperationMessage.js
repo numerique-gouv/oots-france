@@ -64,6 +64,7 @@ class ReponseRecuperationMessage extends ReponseDomibus {
         idConversation: this.idConversation(),
         idRequete: this.idRequete(),
         requeteur: this.requeteur(),
+        typeJustificatif: this.typeJustificatif(),
       },
     );
   }
@@ -74,6 +75,10 @@ class ReponseRecuperationMessage extends ReponseDomibus {
 
   suiteConversation() {
     return this.corpsMessage.suiteConversation();
+  }
+
+  typeJustificatif() {
+    return this.corpsMessage.typeJustificatif();
   }
 }
 
