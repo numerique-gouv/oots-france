@@ -5,18 +5,21 @@ const pieceJustificative = require('../api/pieceJustificative');
 const routesRequete = (config) => {
   const {
     adaptateurDomibus,
-    adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
+    middleware,
     transmetteurPiecesJustificatives,
   } = config;
 
   const routes = express.Router();
 
-  routes.get('/pieceJustificative', (requete, reponse) => {
-    if (adaptateurEnvironnement.avecRequetePieceJustificative()) {
+  routes.get(
+    '/pieceJustificative',
+    middleware.verifieInterrupteurOOTS,
+    middleware.verifieBeneficiaire,
+    (requete, reponse) => {
       pieceJustificative(
         {
           adaptateurDomibus,
@@ -29,10 +32,8 @@ const routesRequete = (config) => {
         requete,
         reponse,
       );
-    } else {
-      reponse.status(501).send('Not Implemented Yet!');
-    }
-  });
+    },
+  );
 
   return routes;
 };

@@ -9,12 +9,14 @@ const transmetteurPiecesJustificatives = require('./src/adaptateurs/transmetteur
 const DepotPointsAcces = require('./src/depots/depotPointsAcces');
 const DepotRequeteurs = require('./src/depots/depotRequeteurs');
 const DepotServicesCommuns = require('./src/depots/depotServicesCommunsLocal');
+const nouveauMiddleware = require('./src/routes/middleware');
 
 const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, horodateur });
 const depotPointsAcces = new DepotPointsAcces(adaptateurDomibus);
 const depotRequeteurs = new DepotRequeteurs();
 const depotServicesCommuns = new DepotServicesCommuns();
 const ecouteurDomibus = new EcouteurDomibus({ adaptateurDomibus, intervalleEcoute: 1000 });
+const middleware = nouveauMiddleware(adaptateurEnvironnement);
 
 const serveur = OOTS_FRANCE.creeServeur({
   adaptateurChiffrement,
@@ -26,6 +28,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   depotServicesCommuns,
   ecouteurDomibus,
   horodateur,
+  middleware,
   transmetteurPiecesJustificatives,
 });
 

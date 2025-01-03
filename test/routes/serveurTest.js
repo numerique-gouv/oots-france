@@ -3,6 +3,7 @@ const OOTS_FRANCE = require('../../src/ootsFrance');
 const Fournisseur = require('../../src/ebms/fournisseur');
 const Requeteur = require('../../src/ebms/requeteur');
 const TypeJustificatif = require('../../src/ebms/typeJustificatif');
+const nouveauMiddleware = require('../../src/routes/middleware');
 
 const serveurTest = () => {
   let adaptateurChiffrement;
@@ -14,6 +15,7 @@ const serveurTest = () => {
   let depotServicesCommuns;
   let ecouteurDomibus;
   let horodateur;
+  let middleware;
   let transmetteurPiecesJustificatives;
 
   let serveur;
@@ -73,6 +75,8 @@ const serveurTest = () => {
       envoie: () => Promise.resolve(),
     };
 
+    middleware = nouveauMiddleware(adaptateurEnvironnement);
+
     serveur = OOTS_FRANCE.creeServeur({
       adaptateurDomibus,
       adaptateurChiffrement,
@@ -83,6 +87,7 @@ const serveurTest = () => {
       depotServicesCommuns,
       ecouteurDomibus,
       horodateur,
+      middleware,
       transmetteurPiecesJustificatives,
     });
 
