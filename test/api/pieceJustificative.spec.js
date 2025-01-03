@@ -159,7 +159,7 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(config, requete, reponse);
   });
 
-  it('déchiffre les infos utilisateur reçues', () => {
+  it('déchiffre les infos bénéficiaire reçues', () => {
     expect.assertions(1);
     adaptateurChiffrement.dechiffreJWE = (jwe) => {
       expect(jwe).toBe('abcdef');
@@ -169,7 +169,7 @@ describe('Le requêteur de pièce justificative', () => {
       new Requeteur({ adaptateurChiffrement }),
     );
 
-    requete.query.utilisateur = 'abcdef';
+    requete.query.beneficiaire = 'abcdef';
     return pieceJustificative(config, requete, reponse);
   });
 
