@@ -8,7 +8,7 @@ const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinat
 const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
 const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
 
-const paramsRequete = (config, codeDemarche, codePays, idRequeteur, jwe) => {
+const paramsRequete = (beneficiaireChiffre, config, codeDemarche, codePays, idRequeteur) => {
   const { depotPointsAcces, depotRequeteurs, depotServicesCommuns } = config;
 
   return depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche)
@@ -17,7 +17,7 @@ const paramsRequete = (config, codeDemarche, codePays, idRequeteur, jwe) => {
       .then((fs) => fs[0])
       .then((f) => depotPointsAcces.trouvePointAcces(f.idPointAcces())
         .then((pa) => depotRequeteurs.trouveRequeteur(idRequeteur)
-          .then((r) => r.beneficiaire(jwe)
+          .then((r) => r.beneficiaire(beneficiaireChiffre)
             .then((b) => ({
               beneficiaire: b,
               destinataire: pa,
@@ -44,23 +44,23 @@ const pieceJustificative = (config, requete, reponse) => {
   } = config;
   const idConversation = adaptateurUUID.genereUUID();
   const {
+    beneficiaire,
     codeDemarche,
     codePays,
     idRequeteur,
     previsualisationRequise,
-    utilisateur,
   } = requete.query;
 
-  return paramsRequete(config, codeDemarche, codePays, idRequeteur, utilisateur)
+  return paramsRequete(beneficiaire, config, codeDemarche, codePays, idRequeteur)
     .then(({
-      beneficiaire,
+      beneficiaire: b,
       destinataire,
       fournisseur,
       requeteur,
       typeJustificatif,
     }) => {
       adaptateurDomibus.envoieMessageRequete({
-        beneficiaire,
+        beneficiaire: b,
         codeDemarche,
         destinataire,
         fournisseur,
