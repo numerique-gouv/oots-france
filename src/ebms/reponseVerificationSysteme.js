@@ -18,6 +18,7 @@ class ReponseVerificationSysteme extends Message {
     this.beneficiaire = donnees.beneficiaire;
     this.idRequete = donnees.idRequete;
     this.requeteur = donnees.requeteur;
+    this.typeJustificatif = donnees.typeJustificatif;
   }
 
   corpsMessageEnXML() {
