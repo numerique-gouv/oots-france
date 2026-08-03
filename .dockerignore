@@ -5,4 +5,11 @@ domibus
 nginx
 docs/prompts
 .env*
-!.env*.template
+# Exceptions nommées une à une, et surtout sans joker : un motif de
+# ré-inclusion contenant `*` empêche BuildKit d'élaguer les répertoires exclus.
+# Il parcourt alors tout l'arbre, `domibus/` compris, dont il ne peut pas lire le
+# contenu quand le conteneur tourne — la construction échoue sur
+# « open domibus: permission denied ».
+!.env.template
+!.env.oots.template
+!.env.domibus.template
