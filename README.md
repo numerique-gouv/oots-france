@@ -8,10 +8,26 @@ qui agit comme intermédiaire
 - d'autre part entre la couche eDelivery et une institution en mesure de
   fournir des pièces justificatives.
 
+# Documentation
+
+- [docs/oots_context.md](docs/oots_context.md) — contexte du projet OOTS :
+  l'écosystème européen, les spécifications, ce que couvre ce dépôt et la
+  cartographie du code. **À lire en premier** pour comprendre le projet.
+- [docs/domibus_context.md](docs/domibus_context.md) — contexte de
+  l'application Domibus (point d'accès eDelivery) : concepts, usage par
+  OOTS-France, installation locale et pièges connus.
+- [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des
+  spécifications OOTS (TDD), négociation de version entre États membres et
+  version à viser pour la reprise du développement.
+- [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions,
+  commandes, travail en parallèle par worktrees).
+
 # Configuration de l'environnement de développement
 
 Il est nécessaire en prérequis d'avoir installé [Git](https://git-scm.com/) et
-[Docker](https://www.docker.com/).
+[Docker](https://www.docker.com/), avec
+[Compose v2](https://docs.docker.com/compose/releases/migrate/) : les scripts
+du dépôt appellent `docker compose`, et non l'ancien binaire `docker-compose`.
 
 Commencer par récupérer les sources du projet et aller dans le répertoire créé.
 
@@ -30,7 +46,7 @@ partir des fichiers `.env.template`, `.env.oots.template` et
 pour lui laisser le temps de se configurer correctement.
 
 ```sh
-$ docker-compose up mysql
+$ docker compose up mysql
 ```
 
 Attendre que soit affiché à l'écran `[Server] /usr/sbin/mysqld: ready for
@@ -42,17 +58,20 @@ connections.` puis arrêter le conteneur avec `<CTRL> + C`.
 Lancer le conteneur Domibus
 
 ```sh
-$ docker-compose up domibus
+$ docker compose up domibus
 ```
 
-Attendre la fin du déploiement de la webapp et l'affichage du message suivant :
+Attendre quelques instants que Tomcat termine de déployer la webapp Domibus. Ce
+conteneur n'écrit rien dans le terminal : ses logs se consultent comme décrit
+dans [Afficher les logs de Domibus](#afficher-les-logs-de-domibus), et la fin du
+déploiement s'y traduit par le message suivant :
 
 ```
 domibus_1  | [Information horodatage] INFO [main] org.apache.catalina.startup.Catalina.start Server startup in [XXX] milliseconds
 ```
 
 L'application Domibus devrait être accessible depuis un navigateur à l'URL
-`http://localhost:[PORT_DOMIBUS]` (avec comme valeur pour `PORT_DOMIBUS` celle
+`http://localhost:[PORT_DOMIBUS]/domibus` (avec comme valeur pour `PORT_DOMIBUS` celle
 indiquée dans le fichier `.env`).
 
 > [!IMPORTANT]
@@ -98,6 +117,39 @@ ensuite sur le bouton « Save » en bas à gauche.
 > Les informations de connexion du Plugin User doivent correspondre aux variables
 > `LOGIN_API_REST` et `MOT_DE_PASSE_API_REST` dans le fichier de variables d'environnement `env.oots`.
 
+### Configurer les certificats
+
+Les certificats livrés avec l'image Docker Domibus sont des certificats de
+démonstration qui peuvent être expirés. Le script suivant les remplace par un
+certificat auto-signé fraîchement généré (identité `blue_gw`, valide dix ans) :
+
+```sh
+$ scripts/genereCertificats.sh
+```
+
+Il écrit deux magasins dans `domibus/keystores/` : `gateway_keystore.jks` (la
+clé privée de la passerelle) et `gateway_truststore.jks` (le certificat seul).
+Le même certificat sert des deux côtés parce que le PMode d'exemple configure
+Domibus pour dialoguer avec lui-même (voir
+[docs/domibus_context.md](docs/domibus_context.md)) : Domibus doit donc faire
+confiance à son propre certificat pour valider les messages qu'il s'envoie.
+
+Le script s'appuie sur `keytool` s'il est installé, sinon sur une image Docker
+contenant un JRE ; il refuse d'écraser des magasins existants, qu'il faut donc
+supprimer au préalable pour régénérer les certificats.
+
+> [!WARNING]
+> Ces certificats sont réservés au poste de développement : auto-signés et
+> protégés par un mot de passe public (`test123`), ils ne doivent jamais servir
+> sur un environnement réel.
+
+Domibus ne lit ces fichiers qu'à son **premier** démarrage, puis conserve les
+magasins en base. S'il a déjà démarré, les charger depuis l'interface
+d'administration : dans la colonne de gauche, cliquer sur « Truststores », puis
+« Domibus », enfin sur « Upload » ; sélectionner
+`domibus/keystores/gateway_truststore.jks` (type : JKS, mot de passe :
+`test123`) et cliquer sur « Reload KeyStore » (bouton en bas à droite).
+
 ### Charger un fichier de configuration PMode
 
 Dans la colonne de gauche, cliquer sur « PMode », puis sur « Current ». Cliquer
@@ -119,7 +171,27 @@ de modifier diverses propriétés de Domibus depuis le fichier
 Domibus](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/638060670/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.0.4%29%2817.7%29.pdf?version=2&modificationDate=1684157357586&api=v2)
 pour la signification des diverses propriétés.
 
+### Afficher les logs de Domibus
+
+Le conteneur `domibus` tourne avec le pilote de journalisation `none` (voir
+`docker-compose.yml`), ses logs étant assez verbeux pour saturer le disque en
+production : `docker compose logs domibus` ne renvoie donc rien. Les logs
+restent lisibles dans le conteneur, où le script suivant les suit :
+
+```sh
+$ scripts/logsDomibus.sh
+```
+
+Le niveau de détail se règle dans `domibus/logback.xml` (rechargé
+automatiquement toutes les 10 secondes, sans redémarrage). Passer
+`org.apache.cxf` en `INFO` y fait apparaître les enveloppes SOAP échangées avec
+le WS plugin — utile pour déboguer, mais très bavard : l'application interroge
+Domibus toutes les secondes.
+
 ## Configurer NGinx
+
+> [!NOTE]
+> Cette section ne concerne que les environnements de production.
 
 OOTS-France s'appuie sur les services tiers de FranceConnect+, qui exigent que
 les interactions aient lieu sur HTTPS. Pour ce faire :
@@ -146,22 +218,33 @@ Le script doit installer les certificats et terminer en succès.
 
 ## Lancement du serveur OOTS-France
 
+### En local
+
 ```sh
-$ scripts/start.sh
+$ docker compose up web
 ```
 
 Attendre l'affichage du message
 
 ```
-web_1      | OOTS-France est démarré et écoute le port [XXX] !…
+web-1  | OOTS-France est démarré et écoute le port [XXX] !…
+```
+
+Le serveur est alors accessible à l'URL `http://localhost:<PORT_OOTS_FRANCE>`.
+
+Il est possible de tester qu'il répond en requêtant :
+`http://localhost:<PORT_OOTS_FRANCE>/requete/pieceJustificative?codeDemarche=00&codePays=FR`
+
+### En production
+
+La configuration Nginx doit d'abord être en place (voir [Configurer NGinx](#configurer-nginx)).
+
+```sh
+$ scripts/start.sh
 ```
 
 Le serveur devrait être accessible depuis un navigateur à l'URL
 `https://<nom.du.domaine>`
-
-Il est alors possible de tester l'envoi d'un message de test en requêtant l'URL
-suivante depuis un navigateur :
-`https://<nom.du.domaine>/requete/pieceJustificative?codeDemarche=00&codePays=FR`
 
 
 ## Exécution de la suite de tests automatisés

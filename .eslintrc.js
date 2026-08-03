@@ -5,6 +5,7 @@ module.exports = {
     jest: true,
   },
   extends: 'airbnb-base',
+  ignorePatterns: ['.worktrees/'],
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
