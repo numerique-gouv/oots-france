@@ -208,6 +208,8 @@ src/depots/                Accès aux données : points d'accès (via Domibus), 
 src/erreurs.js             Hiérarchie des erreurs métier
 test/                      Tests Jest, miroir de src/, avec des constructeurs de
                            données de test dans test/constructeurs/
+test-e2e/                  Test Jest de bout en bout, joué contre un vrai Domibus
+                           et exclu de `npm test` (voir test_e2e.md)
 ```
 
 ## Ce que ne fait pas encore ce dépôt

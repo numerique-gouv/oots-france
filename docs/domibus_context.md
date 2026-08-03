@@ -26,7 +26,8 @@ directement : elle soumet et récupère ses messages auprès de son Domibus
 local, qui se charge du transport transfrontalier.
 
 Version utilisée ici : **5.0.4** (images Docker officielles déclarées dans
-`docker-compose.yml`).
+`docker-compose.yml`). Ce que cette version coûte, et ce qu'apporterait une
+plus récente, sont détaillés dans [versions_domibus.md](versions_domibus.md).
 
 ## Concepts clés
 

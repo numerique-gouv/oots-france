@@ -16,6 +16,10 @@ qui agit comme intermédiaire
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de
   l'application Domibus (point d'accès eDelivery) : concepts, usage par
   OOTS-France, installation locale et pièges connus.
+- [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un
+  échange OOTS complet en local, à travers Domibus.
+- [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus
+  utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des
   spécifications OOTS (TDD), négociation de version entre États membres et
   version à viser pour la reprise du développement.
@@ -163,6 +167,33 @@ Party ». Cliquer sur l'icône « avion en papier » à droite. Le « Connection
 Status » devrait passer au vert.
 
 
+### Rejouer ces étapes sans la console
+
+Les trois dernières — compte d'accès pour l'API REST, certificats et PMode —
+passent par une API REST d'administration, dont un script fait le tour :
+
+```sh
+$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… scripts/configureDomibus.sh
+```
+
+C'est ainsi que l'intégration continue monte une passerelle sans intervention
+humaine (voir [docs/test_e2e.md](docs/test_e2e.md)), et de quoi reconfigurer en
+une commande une instance repartie de zéro. Le script est rejouable : le Plugin
+User n'est créé que s'il manque, et recharger le même truststore ou le même
+PMode est sans effet.
+
+> [!IMPORTANT]
+> Les deux identifiants sont exigés, et doivent reprendre ceux du `.env.oots`
+> avec lequel tourne l'application : c'est le compte qu'elle présentera à la
+> passerelle. En créer un autre donnerait un Plugin User ne correspondant à
+> rien, et l'application recevrait des `403` sur toutes ses requêtes. Le script
+> ne peut pas les lire lui-même : un `.env.oots` n'est pas chargeable depuis un
+> script shell, ses valeurs contenant `&` et des accolades JSON.
+
+Restent manuels le changement du mot de passe `admin` et la création d'un second
+compte administrateur, décrits plus haut.
+
+
 ### Modifier la configuration de Domibus
 
 Le conteneur a créé un répertoire (non versionné) `./domibus`. Il est possible
@@ -235,6 +266,12 @@ Le serveur est alors accessible à l'URL `http://localhost:<PORT_OOTS_FRANCE>`.
 Il est possible de tester qu'il répond en requêtant :
 `http://localhost:<PORT_OOTS_FRANCE>/requete/pieceJustificative?codeDemarche=00&codePays=FR`
 
+> [!NOTE]
+> Cette URL renvoie `422 {"erreur":"Le bénéficiaire doit être renseigné"}`, que
+> Domibus tourne ou non : elle prouve seulement que le serveur écoute.
+> Pour exercer réellement la chaîne eDelivery, voir
+> [docs/test_e2e.md](docs/test_e2e.md).
+
 ### En production
 
 La configuration Nginx doit d'abord être en place (voir [Configurer NGinx](#configurer-nginx)).
@@ -252,3 +289,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL
 Les tests peuvent être lancés depuis un conteneur Docker en exécutant le script
 `scripts/tests.sh`. Les tests sont alors rejoués à chaque modification de
 fichier du projet sur la machine hôte.
+
+Cette suite injecte des adaptateurs factices : elle ne touche jamais Domibus.
+Pour exercer la chaîne eDelivery réelle, voir
+[docs/test_e2e.md](docs/test_e2e.md).
