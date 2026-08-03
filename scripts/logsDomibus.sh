@@ -1,1 +1,1 @@
-docker-compose exec domibus tail -f logs/catalina.out
+docker compose exec domibus tail -f logs/catalina.out

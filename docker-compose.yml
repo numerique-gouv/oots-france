@@ -1,5 +1,3 @@
-version: '3'
-
 x-domibus: &env-domibus
   env_file:
     - ./.env.domibus
