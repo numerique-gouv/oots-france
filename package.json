@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm test",
     "test": "eslint . && jest",
+    "test:e2e": "jest --config jest.e2e.js",
     "test:watch": "nodemon --ignore .worktrees --exec jest",
     "start": "node server.js"
   },
@@ -29,7 +30,8 @@
     "testTimeout": 1000,
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.worktrees/"
+      "/.worktrees/",
+      "/test-e2e/"
     ]
   }
 }
