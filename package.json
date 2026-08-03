@@ -5,7 +5,7 @@
   "scripts": {
     "build": "npm test",
     "test": "eslint . && jest",
-    "test:watch": "nodemon --exec jest",
+    "test:watch": "nodemon --ignore .worktrees --exec jest",
     "start": "node server.js"
   },
   "author": "",
@@ -26,6 +26,10 @@
     "uuid": "^9.0.0"
   },
   "jest": {
-    "testTimeout": 1000
+    "testTimeout": 1000,
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/.worktrees/"
+    ]
   }
 }

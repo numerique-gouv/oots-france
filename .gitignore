@@ -3,3 +3,8 @@
 /domibus/
 /nginx/
 node_modules/
+docs/prompts/
+docker-compose.override.yml
+.claude/
+CLAUDE.local.md
+.worktrees/
