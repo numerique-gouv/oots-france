@@ -11,6 +11,9 @@
   },
   "author": "",
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=24"
+  },
   "devDependencies": {
     "eslint": "^8.43.0",
     "eslint-config-airbnb-base": "^15.0.0",

@@ -36,7 +36,7 @@ jobs:
       MOT_DE_PASSE_MAGASINS: test123
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Prépare les fichiers d'environnement
         run: scripts/ci/preparEnvironnement.sh
