@@ -36,5 +36,9 @@
       "/.worktrees/",
       "/test-e2e/"
     ]
+  },
+  "overrides": {
+    "picomatch": "^4.0.5",
+    "brace-expansion": "^2.0.2"
   }
 }
