@@ -17,7 +17,7 @@ BOCAL=$(mktemp)
 trap 'rm -f "$BOCAL"' EXIT
 
 curl -sS -c "$BOCAL" -o /dev/null \
-  -X POST "$URL_DOMIBUS/rest/security/authentication" \
+  -X POST "$URL_DOMIBUS/rest/public/security/authentication" \
   -H 'Content-Type: application/json' \
   -d "{\"username\":\"$DOMIBUS_ADMIN\",\"password\":\"$DOMIBUS_MOT_DE_PASSE_ADMIN\"}" || exit 0
 
@@ -40,16 +40,20 @@ montre() {
     " || echo "(illisible)"
 }
 
-montre "Journal des messages" "rest/messagelog?page=0&pageSize=20&orderBy=received&asc=false"
-montre "Journal des erreurs" "rest/errorlogs?page=0&pageSize=20&orderBy=timestamp&asc=false"
-montre "Certificats du truststore" "rest/truststore/list"
+montre "Journal des messages" "rest/internal/user/messagelog?page=0&pageSize=20&orderBy=received&asc=false"
+montre "Journal des erreurs" "rest/internal/user/errorlogs?page=0&pageSize=20&orderBy=timestamp&asc=false"
 
-# Domibus 5.0.4 n'expose pas le keystore en REST (venu dans des versions
-# ultérieures) : on lit donc directement le magasin monté dans le conteneur.
-echo
-echo "───────── Certificat de la passerelle (keystore)"
-docker compose exec -T domibus \
-  keytool -list -keystore /data/tomcat/conf/domibus/keystores/gateway_keystore.jks \
-  -storepass "${MOT_DE_PASSE_MAGASINS:-test123}" 2>&1 | head -20 || echo "(illisible)"
+# Les deux magasins se lisent par la même API depuis Domibus 5.2 : plus besoin
+# d'aller ouvrir le fichier au `keytool` dans le conteneur, comme l'imposait
+# 5.0.4 faute de route pour le keystore.
+#
+# Ce sont les alias qu'il faut regarder en premier : les profils de sécurité
+# les imposent (blue_gw_rsa_sign, blue_gw_rsa_decrypt côté keystore ;
+# blue_gw_rsa_sign, blue_gw_rsa_encrypt côté truststore), et un alias qui
+# s'en écarte fait échouer la signature ou le chiffrement sans autre symptôme
+# qu'un message jamais acquitté.
+montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
+montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
+montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"
 
 exit 0

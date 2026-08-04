@@ -7,7 +7,7 @@
 > | --- | --- |
 > | le contexte métier OOTS, le modèle « quatre coins » | [oots_context.md](oots_context.md) |
 > | installer et configurer Domibus pas à pas (mots de passe, Plugin User, certificats, upload du PMode, logs) | [README](../README.md) |
-> | les propriétés de `domibus.properties`, l'API des plugins, la sécurité | [Guide d'administration Domibus 5.0.4 (PDF)](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/638060670/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.0.4%29%2817.7%29.pdf?version=2&modificationDate=1684157357586&api=v2) |
+> | les propriétés de `domibus.properties`, l'API des plugins, la sécurité | [Documentation technique Domibus 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) |
 
 ## Qu'est-ce que Domibus ?
 
@@ -25,9 +25,10 @@ compte de C1 ou de C4 selon le sens de l'échange — et ne parle **jamais** AS4
 directement : elle soumet et récupère ses messages auprès de son Domibus
 local, qui se charge du transport transfrontalier.
 
-Version utilisée ici : **5.0.4** (images Docker officielles déclarées dans
-`docker-compose.yml`). Ce que cette version coûte, et ce qu'apporterait une
-plus récente, sont détaillés dans [versions_domibus.md](versions_domibus.md).
+Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dans
+`docker-compose.yml`), sur Tomcat 10.1 et Java 21. Pourquoi celle-là et non la
+5.2.1, plus récente, est expliqué dans
+[versions_domibus.md](versions_domibus.md).
 
 ## Concepts clés
 
@@ -37,10 +38,27 @@ plus récente, sont détaillés dans [versions_domibus.md](versions_domibus.md).
   `partyId`, un `partyIdType` et un endpoint **MSH** (*Message Service
   Handler*) — l'URL où elle reçoit les messages AS4. Nos correspondants (les
   autres États membres) sont des parties.
-- **Keystore / truststore** : le keystore porte la clé privée avec laquelle
+- **Keystore / truststore** : le keystore porte les clés privées avec lesquelles
   notre Domibus signe et déchiffre ; le truststore porte les certificats des
-  parties auxquelles on fait confiance. Les alias des certificats doivent
-  correspondre aux noms de parties du PMode.
+  parties auxquelles on fait confiance.
+- **Profil de sécurité** : depuis 5.1, la cryptographie d'une *leg* se décrit
+  par un profil nommé (`profile="rsa"` dans le PMode) et non plus par un fichier
+  de politique WS-Security. Seul `rsa` existe aujourd'hui ; le support des
+  courbes elliptiques est annoncé. Activer les profils
+  (`domibus.security.profiles.active`) **impose la convention d'alias**
+  ci-dessous, où `<partie>` est le nom de la partie au PMode :
+
+  | Magasin | Alias | Rôle |
+  | --- | --- | --- |
+  | keystore | `<partie>_rsa_sign` | notre clé privée de signature |
+  | keystore | `<partie>_rsa_decrypt` | notre clé privée de déchiffrement |
+  | truststore | `<partie>_rsa_sign` | certificat vérifiant la signature du pair |
+  | truststore | `<partie>_rsa_encrypt` | certificat chiffrant à destination du pair |
+
+  L'alias unique par partie, qui suffisait avant les profils, ne suffit plus :
+  un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans
+  autre symptôme qu'un message jamais acquitté. `scripts/genereCertificats.sh`
+  produit les quatre.
 - **MPC** (*Message Partition Channel*) : la file dans laquelle les messages
   attendent d'être récupérés, avec sa politique de rétention.
 - **Utilisateur console vs Plugin User** : les comptes « Users » servent à
@@ -49,7 +67,13 @@ plus récente, sont détaillés dans [versions_domibus.md](versions_domibus.md).
   Les deux jeux d'identifiants sont indépendants.
 - **Plugins** : Domibus expose ses messages aux applications métier via des
   plugins — ici le **WS plugin** (SOAP, namespace `http://eu.domibus.wsplugin/`).
-  Les plugins JMS et filesystem existent mais ne sont pas utilisés.
+  Les plugins JMS et filesystem existent mais ne sont pas utilisés ; un plugin
+  REST est apparu en 5.2.1, que ce dépôt n'utilise pas encore.
+- **Filtres de message** (*message filters*) : une liste ordonnée qui décide
+  quel plugin est notifié d'un message entrant. Le premier filtre dont les
+  critères de routage correspondent l'emporte — et un filtre sans critère
+  correspond à tout. En 5.2, `backendWSPlugin` est en tête par défaut, ce qui
+  convient ; l'ordre se règle par la page « Message Filter » de la console.
 
 ## Comment OOTS-France utilise Domibus
 
@@ -96,11 +120,11 @@ Ce que règle le reste du fichier :
 
 | Élément | Ce qu'il configure |
 | --- | --- |
-| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded="3600"` — en **minutes**, soit 2,5 jours |
+| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours |
 | `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH de `blue_gw` (`http://localhost:8080/domibus/services/msh`) |
 | `<roles>` / `<meps>` / `<agreements>` | Rôles initiateur/répondeur, modèle d'échange « oneway » en « push », et un accord vide (champ imposé par le schéma) |
 | `<properties>` | Rend obligatoires `originalSender` et `finalRecipient` sur chaque message (`fourCornersPropertySet`) |
-| `<securities>` | Signature **et** chiffrement (`eDeliveryAS4Policy_BST`), en RSA_SHA256 |
+| `<securities>` | Signature **et** chiffrement, décrits par le profil `rsa` (voir « Profil de sécurité » plus haut) |
 | `<errorHandlings>` | L'erreur est renvoyée en réponse, sans notification à quiconque d'autre |
 | `<services>` / `<actions>` | Le service `queryManager` et ses actions `executeQueryRequest` / `executeQueryResponse` / `exceptionResponse` (les messages OOTS, cf. [oots_context.md](oots_context.md)), plus un `testService` de connectivité — c'est lui que déclenche le bouton « avion en papier » de la console |
 | `<as4>` | Fiabilité : 12 tentatives de renvoi espacées de 4 min, détection des doublons, accusés de réception signés (non-répudiation) |

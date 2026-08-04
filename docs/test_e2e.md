@@ -39,8 +39,7 @@ zéro. Il automatise ce que le README fait faire à la main :
 | --- | --- |
 | Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/preparEnvironnement.sh` |
 | Attendre le déploiement de la webapp | `scripts/ci/attendDomibus.sh` |
-| Remplacer les certificats de démonstration expirés | `scripts/ci/remplaceCertificats.sh`, qui appelle `scripts/genereCertificats.sh` |
-| Charger le truststore, faire relire le keystore, charger le PMode, créer le Plugin User | `scripts/configureDomibus.sh` |
+| Générer les certificats, charger les deux magasins et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configureDomibus.sh`, qui appelle `scripts/genereCertificats.sh` |
 | Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnostiqueDomibus.sh` |
 
 > [!WARNING]
@@ -49,38 +48,31 @@ zéro. Il automatise ce que le README fait faire à la main :
 > sortie remplacerait une configuration locale irrécupérable. Sur un runner ils
 > sont absents, et le script écrit sans rien demander ; `FORCER=1` passe outre.
 
-### Le remplacement des certificats
+### Les certificats
 
-Les certificats livrés avec l'image ont expiré le 1er décembre 2025. Tant qu'ils
-sont en place, Domibus refuse d'émettre (`EBMS_0004`) et le message reste en
-`WAITING_FOR_RETRY` — l'application, elle, ne voit qu'un délai dépassé.
+Les certificats livrés avec l'image sont publics et partagés par toutes les
+installations : `scripts/configureDomibus.sh` en génère d'autres et les
+téléverse. Il n'y a plus rien à déposer sur le disque de la passerelle — le
+détour par le fichier, ses copies sous root et le bouton « Reload KeyStore »
+qu'imposait Domibus 5.0.4 ont disparu avec la montée en 5.2.
 
-Quatre comportements de la passerelle dictent la façon de les remplacer :
-
-| Comportement | Conséquence |
-| --- | --- |
-| L'image écrase `./domibus` en s'initialisant, `keystores/` compris | Le remplacement a lieu **après** le premier démarrage. C'est l'ordre que suit déjà le [README](../README.md). |
-| `./domibus` appartient à l'utilisateur du conteneur et n'est ouvert qu'à lui (mode 770) | Les magasins sont générés ailleurs, puis copiés en place sous l'identité de root, propriétaire aligné sur celui du répertoire. Le truststore reste ainsi lisible pour son téléversement. |
-| Domibus absorbe `gateway_truststore.jks` à son démarrage et retire le fichier | Le magasin à téléverser est celui qui a été généré hors du répertoire, non celui qui y a été copié. |
-| Le keystore ne se téléverse pas en 5.0.4 | Seule sa **relecture** depuis le fichier est exposée : `POST rest/keystore/resets`, le bouton « Reload KeyStore » de la console. Sans elle, la passerelle signe avec la clé de démonstration conservée en base. |
-
-L'API suffit donc à faire prendre en compte les deux magasins, sans
-redémarrage : le truststore par téléversement, le keystore par relecture.
-
-> [!WARNING]
-> Ne pas redémarrer la passerelle pour appliquer de nouveaux certificats : elle
-> en profiterait pour reprendre le fichier truststore fraîchement déposé.
+Ce sont désormais les **alias** qui demandent de l'attention. Les profils de
+sécurité les imposent, et un alias qui s'en écarte fait échouer la signature ou
+le chiffrement — la convention est donnée dans
+[domibus_context.md](domibus_context.md).
 
 > [!IMPORTANT]
-> Le truststore porte le certificat du *destinataire*, le keystore la clé de
+> Le truststore porte les certificats du *destinataire*, le keystore les clés de
 > l'*émetteur* : corriger l'un sans l'autre ne fait que déplacer l'erreur de
 > `receiver certificate is not valid` à `sender certificate is not valid`.
 
 `scripts/configureDomibus.sh` passe par l'API REST d'administration plutôt que
 par la console web, et sert aussi bien en local : son emploi et ses identifiants
 sont décrits dans le [README](../README.md#rejouer-ces-étapes-sans-la-console).
-Un truststore demandé mais introuvable l'arrête, plutôt que de laisser des
-certificats périmés en place.
+Il se termine par un **message AS4 de test** — l'« avion en papier » de la
+console — dont il attend l'acquittement : la signature, le chiffrement et les
+alias sont donc validés avant que l'application n'entre en jeu. S'il passe et
+que le test de bout en bout échoue, la passerelle est hors de cause.
 
 > [!NOTE]
 > Domibus applique aux Plugin Users une politique de mot de passe stricte : 16 à
@@ -167,9 +159,23 @@ explicite si l'un manque :
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
 | `422` sur le jeton | le faux requêteur n'est pas joignable depuis le conteneur `web` : le test tourne-t-il bien dans le conteneur ? |
 | `504`, ou `aucun justificatif reçu après 60 s` | Domibus n'a pas répondu : PMode chargé ? certificats valides ? Voir les [logs Domibus](../README.md#afficher-les-logs-de-domibus) |
+| `504` alors que le journal des messages montre un `ACKNOWLEDGED` **et** un `RECEIVED` | l'échange AS4 a abouti, mais le message entrant est parti à un autre plugin : vérifier que son `pluginType` vaut bien `backendWSPlugin` |
+| `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
+| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnostiqueDomibus.sh` les affiche |
+| `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : blue_gw` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 
 Le délai d'attente côté application se règle par `DELAI_MAX_ATTENTE_DOMIBUS`
-(30 s dans la configuration d'exemple). Passer `org.apache.cxf` en `INFO` dans
-`domibus/logback.xml` fait apparaître les enveloppes SOAP échangées — très
-bavard, mais décisif pour déboguer un rejet de message.
+(30 s dans la configuration d'exemple). Pour voir les enveloppes SOAP échangées
+— très bavard, mais décisif pour déboguer un rejet de message —, passer
+`org.apache.cxf` à `INFO` dans `domibus/logback.xml`, que Domibus relit toutes
+les 10 s.
+
+> [!NOTE]
+> Les variables `LOGGER_LEVEL_*` de `docker-compose.yml` ne sont lues qu'à la
+> **création** de `./domibus` : elles fixent les niveaux de départ d'une
+> installation neuve, pas ceux d'une pile qui tourne. Sur une pile démarrée,
+> c'est `domibus/logback.xml` qu'il faut modifier.
+
+Les refus de Domibus se lisent par ailleurs dans `logs/domibus-error.log`, dont
+le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`.

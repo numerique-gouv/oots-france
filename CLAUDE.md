@@ -24,7 +24,7 @@ double the maintenance cost.
 | OOTS ecosystem, specs (TDD), four-corner model, code map, glossary, known gaps | `docs/oots_context.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
-| Domibus versioning: what 5.0.4 costs, what a newer version would bring, upgrade checks | `docs/versions_domibus.md` |
+| Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | Installation and configuration steps | `README.md` |
 | Agent conventions and workflow | this file |

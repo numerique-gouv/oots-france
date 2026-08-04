@@ -6,18 +6,40 @@
 >
 > | Pour… | Voir |
 > | --- | --- |
-> | ce qu'est Domibus, le PMode d'exemple, la façon dont l'application s'en sert | [domibus_context.md](domibus_context.md) |
+> | ce qu'est Domibus, les profils de sécurité, les filtres de message, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
 > | installer et configurer la passerelle pas à pas | [README](../README.md) |
 > | le scénario de bout en bout et la configuration automatisée | [test_e2e.md](test_e2e.md) |
 > | le versionnement des **spécifications OOTS**, sans rapport avec celui de Domibus | [versions_tdd.md](versions_tdd.md) |
 
 ## La version utilisée ici
 
-`docker-compose.yml` fige **Domibus 5.0.4**, construit en février 2023. La
-version courante est
-[5.2.1.1](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus)
-(juillet 2026) : le dépôt a donc trois années de retard, et deux versions
-mineures.
+`docker-compose.yml` fige **Domibus 5.2-JEE10** (images `domibus-tomcat10` et
+`domibus-mysql8`, toutes deux publiées le 23 mai 2026) : Tomcat 10.1, Java 21,
+Jakarta EE 10.
+
+### Pourquoi pas la 5.2.1
+
+Une image `5.2.1-JEE10` existe pour les deux, et c'est la plus récente publiée.
+Mais **les deux images de ce tag ne s'accordent pas** : `domibus-tomcat10`
+déploie un WAR 5.2.1, tandis que `domibus-mysql8` n'embarque que le script
+`mysql-5.2.ddl` — le même que celui du tag 5.2. Or la 5.2.1 a ajouté quatre
+colonnes (`TB_PART_INFO.TYPE`, `.PROCESSING_STATE`, `.PROCESSING_DETAIL` et
+`TB_USER_MESSAGE_LOG.AUTO_SEND_IF_COMPLETE`). Le premier message émis échoue
+alors sur :
+
+```
+could not execute batch [Unknown column 'PROCESSING_DETAIL' in 'field list']
+```
+
+Aucune image MySQL publiée ne fournit ce schéma, et aucun script
+`mysql-5.2-to-5.2.1-upgrade.ddl` n'est livré : la 5.2.1 n'est donc pas
+utilisable en l'état sans rattraper le schéma à la main. **Le tag 5.2-JEE10,
+lui, est cohérent de bout en bout** — c'est la version la plus récente qui
+fonctionne.
+
+> [!NOTE]
+> Le dépôt de sources publie aussi un tag `5.2.1.1-JEE10`, sans image
+> correspondante au registre.
 
 > [!NOTE]
 > La version de Domibus et celle des TDD sont **indépendantes** : Domibus
@@ -25,48 +47,103 @@ mineures.
 > n'impose rien sur l'autre — pour les TDD, voir
 > [versions_tdd.md](versions_tdd.md).
 
-## Ce que 5.0.4 coûte aujourd'hui
+## Ce que 5.2 coûte aujourd'hui
 
-Les contournements correspondants vivent dans `scripts/configureDomibus.sh` et
-`scripts/ci/` :
+Deux irritants seulement subsistent :
 
 | Constat | Ce qu'il impose |
 | --- | --- |
-| Le keystore ne se téléverse pas ; seule sa relecture depuis le fichier est exposée (`POST rest/keystore/resets`) | Déposer le fichier dans le répertoire monté, puis demander sa relecture — en deux temps, là où le truststore se téléverse directement |
-| L'API d'administration n'est pas documentée publiquement pour cette version | Les routes ont dû être retrouvées en sondant la passerelle, puis en lisant le *bundle* Angular de la console pour y trouver `reloadKeyStore()` |
-| Aucune route de santé | La disponibilité se sonde sur `rest/application/name`, qui renvoie la chaîne `"Domibus"` — il se trouve qu'elle ne répond qu'une fois la webapp déployée |
-| Les réponses sont préfixées par `)]}',` | Ce préfixe doit sauter avant tout parsage |
-| Les certificats de démonstration livrés avec l'image ont expiré le 1er décembre 2025 | Ils doivent être régénérés, sans quoi la passerelle refuse d'émettre (`EBMS_0004`) |
-| L'image écrase le répertoire de configuration monté à son premier démarrage | Les certificats ne peuvent être remplacés qu'**après** ce démarrage |
-| Domibus absorbe `gateway_truststore.jks` au démarrage et retire le fichier | Le magasin doit être généré ailleurs pour rester téléversable |
+| L'API d'administration de la console n'est toujours pas documentée | Les routes se lisent dans le code source (voir plus bas) — ce qui est sûr, mais reste hors contrat |
+| Les réponses de la console sont préfixées par `)]}',` | Ce préfixe doit sauter avant tout parsage |
 
-## Ce qu'apporterait une version plus récente
+Les magasins sont au format **PKCS#12**, JKS étant un format propriétaire
+déprécié depuis Java 9. Le passage demande deux précautions, car Domibus ne
+traite pas ses deux magasins de la même façon :
 
-| Version | Apport | Ce que cela retirerait ici |
-| --- | --- | --- |
-| [5.1](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/Domibus+v5.1+Admin+Console+Help) | Téléversement du keystore, du truststore et du TLS truststore depuis la console, mot de passe compris ; le bouton de relecture depuis le disque subsiste. Un magasin identique à celui en place n'est pas remplacé | Le détour par le fichier pour le keystore : les deux magasins se poseraient par la même API, et le script y gagnerait sa symétrie |
-| [5.1.9](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.1.9) | Le mot de passe du keystore peut différer de celui des clés privées | Une contrainte en moins sur `scripts/genereCertificats.sh`, qui impose aujourd'hui le même mot de passe aux deux |
-| [5.2.1](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.2.1) | Un *Domibus REST Plugin* 1.0, à interface **OpenAPI** documentée (variantes Jakarta EE 10 seulement) | Le sondage à l'aveugle : les routes seraient décrites, et le plugin REST pourrait à terme remplacer les enveloppes SOAP du WS plugin construites dans `src/domibus/requetes.js` |
+- le **truststore** se convertit seul : le téléversement bascule
+  `domibus.security.truststore.type` et son emplacement ;
+- le **keystore**, non. Son type et son emplacement doivent être imposés au
+  démarrage, dans `SERVER_INIT_PROPERTIES`. Sans le type, la passerelle écrit le
+  PKCS#12 reçu à l'emplacement `.jks` en le croyant JKS, répond `200`, puis
+  échoue à la relecture suivante sur une `java.io.EOFException`. Sans
+  l'emplacement, elle refuse plus franchement le téléversement :
+  `[DOM_005] Store file extension [jks] should match the configured truststore
+  type [pkcs12]`.
 
-Une image plus récente livrerait par ailleurs des certificats de démonstration
-non expirés — mais les régénérer reste préférable : ceux de l'image sont publics
-et partagés par toutes les installations.
+Ni l'un ni l'autre ne se règle à chaud : le type s'écrit par l'API des
+propriétés, mais pas l'emplacement, et un réglage à chaud ne survivrait pas à la
+réinitialisation du répertoire de configuration.
 
-## Ce qu'il faudrait vérifier avant de migrer
+> [!WARNING]
+> La [documentation Domibus](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/)
+> signale, à la section *Private Keys and Certificates*, qu'un keystore PKCS#12
+> lu sous **Java 21** — la version qu'embarque l'image — peut échouer sur
+> `Could not load key store: keystore password was incorrect`, alors que le mot
+> de passe est correct. Le cas ne s'est pas produit ici, les magasins étant
+> produits et relus par le même Java 21. S'il survient, la documentation donne
+> le remède : régénérer le magasin au format hérité,
+> `keytool -J-Dkeystore.pkcs12.legacy -importkeystore -srckeystore … -deststoretype PKCS12`.
+
+Les deux magasins portent **un seul mot de passe**, partagé avec les clés
+privées qu'ils contiennent. Domibus ne sait pas les dissocier : les notes de
+version [5.1.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/905218215/Domibus+-+v5.1.9)
+rangent EDELIVERY-13917, « *Possibility to upload a keystore with a keystore
+password that is not the same as the password for the private keys* », parmi les
+**Known Issues** — c'est une limitation ouverte, non une fonctionnalité livrée.
+
+## Ce que la montée depuis 5.0.4 a réglé
+
+| Contournement de 5.0.4 | Ce qui l'a remplacé |
+| --- | --- |
+| Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Les deux magasins se posent par la même API. `scripts/ci/remplaceCertificats.sh`, qui n'existait que pour écrire dans un répertoire appartenant au conteneur, a disparu — avec son `sudo cp` et son `chown --reference` |
+| Aucune route de santé : la disponibilité se sondait sur `rest/application/name`, publique par accident | `rest/public/**` est la famille explicitement publique ; `attendDomibus.sh` interroge `rest/public/application/title` |
+| Le keystore ne se lisait pas en REST : `diagnostiqueDomibus.sh` ouvrait le fichier au `keytool` dans le conteneur | `rest/internal/admin/keystore/list`, symétrique de celle du truststore |
+| Les certificats de démonstration livrés avec l'image avaient expiré | Ceux de la 5.2 sont valides — mais restent publics et partagés par toutes les installations, donc toujours régénérés |
+| L'image écrasait le répertoire de configuration monté à son premier démarrage, ce qui obligeait à remplacer les certificats **après** ce démarrage | Toujours vrai, mais sans conséquence : plus rien n'a besoin d'être déposé sur le disque de la passerelle |
+| Domibus absorbait `gateway_truststore.jks` au démarrage et retirait le fichier | Idem : les magasins sont générés dans un répertoire temporaire et téléversés |
+
+La montée a par ailleurs permis de sortir de `domibus/` — répertoire non
+versionné et recréé à chaque table rase — les réglages dont le dépôt dépend :
+niveaux de journalisation et activation des profils de sécurité sont désormais
+déclarés dans `docker-compose.yml`, via `LOGGER_LEVEL_*` et
+`SERVER_INIT_PROPERTIES`.
+
+## Lire les routes d'administration à la source
+
+La console n'expose ni OpenAPI ni documentation : la documentation technique 5.2
+ne cite **aucune** route `rest/**`. Elles restent donc hors contrat — mais elles
+sont **vérifiables**, ce qui vaut mieux que de les sonder à l'aveugle :
+[le code de Domibus](https://code.europa.eu/edelivery/domibus) est public, et
+les contrôleurs `Core/Domibus-MSH/src/main/java/eu/domibus/web/rest/*Resource.java`,
+au tag de la version visée, les déclarent toutes.
+
+C'est ainsi qu'a été établi le fait principal de cette montée : **5.2 préfixe
+chaque route par le rôle qu'elle exige** — `rest/public/…`,
+`rest/internal/user/…`, `rest/internal/admin/…`. Aucune des routes utilisées en
+5.0.4 n'a survécu telle quelle.
+
+Seules les routes `ext/**` sont contractuelles et documentées — `ext/party`, dont
+l'application se sert pour résoudre un point d'accès, en fait partie.
+
+## Ce qu'apporterait la suite
+
+| Piste | Apport |
+| --- | --- |
+| Une image MySQL 5.2.1 cohérente | Elle débloquerait la 5.2.1, et avec elle le **Domibus REST Plugin** 1.0, livré dans son image (`domibus-default-rest-plugin-1.0.jar`) mais absent de la 5.2. Son interface JSON est décrite en OpenAPI, et son mode *webhook* supprimerait le polling à 1 s de `src/ecouteurDomibus.js` au profit d'une route de notification exposée par l'application. C'est le chantier suivant : il réécrit `src/domibus/`, `adaptateurDomibus.js` et la suite `test/domibus/` |
+| Le profil de sécurité `ecdsa` | Annoncé, non disponible : seul `rsa` existe en 5.2 |
 
 > [!IMPORTANT]
-> Le test de bout en bout est le garde-fou de cette migration : il exerce la
-> chaîne réelle, là où la suite unitaire simule le transport. Le jouer contre la
-> nouvelle version dira en une exécution si le contrat tient — voir
-> [test_e2e.md](test_e2e.md).
+> Le jour où la 5.2.1 sera utilisable, son plugin REST arrivera **en tête des
+> filtres de message et sans critère de routage** : il captera tous les messages
+> entrants, et le WS plugin ne sera plus notifié. L'échange AS4 aboutira
+> pourtant — le journal montrera un `ACKNOWLEDGED` puis un `RECEIVED` — mais
+> `listPendingMessages` ne renverra rien et la requête s'achèvera sur un 504.
+> Seul le `pluginType` du message reçu trahit la cause. Il faudra remettre
+> `backendWSPlugin` en tête, ce que fait la page « Message Filter » de la
+> console et que sait aussi l'API `rest/internal/admin/messagefilters`.
 
-- **Le WS plugin**, dont dépend tout `src/domibus/` : les opérations
-  `submitMessage`, `listPendingMessages` et `retrieveMessage` sont-elles
-  inchangées, et leur namespace `http://eu.domibus.wsplugin/` avec ?
-- **Le schéma du PMode** : `exemples/configuration_PMode_Domibus.xml` est écrit
-  pour 5.0.4 et refusé s'il ne valide plus.
-- **Le serveur d'applications** : 5.2 tourne sur Tomcat 10.1, donc sur Jakarta
-  EE 10 — l'image et les propriétés changent en conséquence.
-- **Les routes d'administration** utilisées par `scripts/configureDomibus.sh` :
-  elles ne sont pas contractuelles, rien ne garantit leur stabilité d'une
-  version à l'autre.
+> [!IMPORTANT]
+> Le test de bout en bout reste le garde-fou de toute montée de version : il
+> exerce la chaîne réelle, là où la suite unitaire simule le transport. Le jouer
+> contre la nouvelle version dit en une exécution si le contrat tient — voir
+> [test_e2e.md](test_e2e.md).

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <db:configuration xmlns:db="http://domibus.eu/configuration" party="blue_gw">
   <mpcs>
-    <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600"/>
+    <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600" retention_sent_success="3600" retention_sent_failure="3600"/>
   </mpcs>
 
   <businessProcesses>
@@ -36,9 +36,7 @@
     </properties>
 
     <securities>
-      <security name="noSigNoEnc" policy="doNothingPolicy.xml" signatureMethod="RSA_SHA256"/>
-      <security name="signOnly" policy="signOnly.xml" signatureMethod="RSA_SHA256"/>
-      <security name="eDeliveryAS4Policy_BST" policy="eDeliveryAS4Policy_BST.xml" signatureMethod="RSA_SHA256"/>
+      <security name="eDeliveryAS4PolicyRSA" profile="rsa"/>
     </securities>
 
     <errorHandlings>
@@ -72,10 +70,10 @@
     </splittingConfigurations>
 
     <legConfigurations>
-      <legConfiguration name="ootsRequestLeg" service="queryManager" action="executeQueryRequest" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
-      <legConfiguration name="ootsResponseLeg" service="queryManager" action="executeQueryResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="false"/>
-      <legConfiguration name="ootsErrorLeg" service="queryManager" action="exceptionResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
-      <legConfiguration name="testServiceCase" service="testService" action="testAction" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4Policy_BST" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+      <legConfiguration name="ootsRequestLeg" service="queryManager" action="executeQueryRequest" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4PolicyRSA" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+      <legConfiguration name="ootsResponseLeg" service="queryManager" action="executeQueryResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4PolicyRSA" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="false"/>
+      <legConfiguration name="ootsErrorLeg" service="queryManager" action="exceptionResponse" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4PolicyRSA" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
+      <legConfiguration name="testServiceCase" service="testService" action="testAction" defaultMpc="defaultMpc" reliability="AS4Reliability" security="eDeliveryAS4PolicyRSA" receptionAwareness="receptionAwareness" propertySet="fourCornersPropertySet" errorHandling="defaultErrorHandling" compressPayloads="true"/>
     </legConfigurations>
 
     <process name="ootsProcess" agreement="agreementEmpty" mep="oneway" binding="push" initiatorRole="defaultInitiatorRole" responderRole="defaultInitiatorRole">

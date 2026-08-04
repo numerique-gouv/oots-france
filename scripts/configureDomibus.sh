@@ -23,9 +23,12 @@
 # sont exigés plutôt que déduits, un .env.oots n'étant pas chargeable depuis un
 # script shell — ses valeurs contiennent `&` et des accolades JSON.
 #   FICHIER_PMODE               PMode à charger (exemples/configuration_PMode_Domibus.xml)
-#   FICHIER_TRUSTSTORE          truststore à imposer, ignoré s'il est absent
-#                               (domibus/keystores/gateway_truststore.jks)
-#   MOT_DE_PASSE_TRUSTSTORE     son mot de passe (test123, cf. genereCertificats.sh)
+#   REPERTOIRE_MAGASINS         où lire keystore et truststore ; à défaut, ils
+#                               sont générés dans un répertoire temporaire par
+#                               scripts/genereCertificats.sh
+#   MOT_DE_PASSE_MAGASINS       leur mot de passe — obligatoire, et devant
+#                               correspondre à celui du .env avec lequel tourne
+#                               la passerelle
 
 set -e
 
@@ -35,11 +38,8 @@ DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-123456}"
 LOGIN_API_REST="${LOGIN_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
 MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
 FICHIER_PMODE="${FICHIER_PMODE:-exemples/configuration_PMode_Domibus.xml}"
-FICHIER_TRUSTSTORE="${FICHIER_TRUSTSTORE:-domibus/keystores/gateway_truststore.jks}"
-# Indiqué pour la lisibilité du journal : c'est Domibus qui le relit, à
-# l'emplacement que lui donne domibus.security.keystore.location.
-FICHIER_KEYSTORE="domibus/keystores/gateway_keystore.jks"
-MOT_DE_PASSE_TRUSTSTORE="${MOT_DE_PASSE_TRUSTSTORE:-test123}"
+MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
+PARTIE="blue_gw"
 
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)
@@ -51,7 +51,7 @@ sansPrefixeJSON() { tail -c +7; }
 
 echo "→ Authentification sur $URL_DOMIBUS en tant que $DOMIBUS_ADMIN"
 if ! curl -sS -f -c "$BOCAL" -o /dev/null \
-  -X POST "$URL_DOMIBUS/rest/security/authentication" \
+  -X POST "$URL_DOMIBUS/rest/public/security/authentication" \
   -H 'Content-Type: application/json' \
   -d "{\"username\":\"$DOMIBUS_ADMIN\",\"password\":\"$DOMIBUS_MOT_DE_PASSE_ADMIN\"}"; then
   echo "❌ Authentification refusée sur $URL_DOMIBUS (passerelle joignable ? identifiants ?)." >&2
@@ -94,43 +94,50 @@ messageDomibus() {
   fi
 }
 
-# Les certificats livrés avec l'image étant expirés, on impose ceux du dépôt.
-# Le remplacement est idempotent : recharger le même magasin est sans effet.
-#
-# Un truststore demandé mais introuvable arrête le script — le passer sous
-# silence laisserait des certificats périmés en place, et la passerelle
-# refuserait d'émettre sans autre symptôme qu'un délai dépassé côté application.
-# Passer FICHIER_TRUSTSTORE vide pour conserver délibérément celui en place.
-if [ -n "$FICHIER_TRUSTSTORE" ] && [ ! -f "$FICHIER_TRUSTSTORE" ]; then
-  echo "❌ Truststore introuvable : $FICHIER_TRUSTSTORE" >&2
-  exit 1
+# Les certificats livrés avec l'image sont publics et partagés par toutes les
+# installations : on impose les nôtres. À défaut de magasins fournis, on les
+# génère — ils n'ont pas à survivre au script, la passerelle les conservant en
+# base une fois téléversés.
+if [ -z "$REPERTOIRE_MAGASINS" ]; then
+  REPERTOIRE_MAGASINS=$(mktemp -d)
+  trap 'rm -f "$BOCAL" "$REPONSE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
+  echo "→ Génération des magasins dans $REPERTOIRE_MAGASINS"
+  DESTINATION="$REPERTOIRE_MAGASINS" MOT_DE_PASSE_MAGASINS="$MOT_DE_PASSE_MAGASINS" \
+    "$(dirname "$0")/genereCertificats.sh" > /dev/null
 fi
 
-if [ -n "$FICHIER_TRUSTSTORE" ]; then
-  echo "→ Chargement du truststore $FICHIER_TRUSTSTORE"
-  CODE_TRUSTSTORE=$(appelAvecCode \
-    -F "file=@$FICHIER_TRUSTSTORE" \
-    -F "password=$MOT_DE_PASSE_TRUSTSTORE" \
-    "$URL_DOMIBUS/rest/truststore/save")
-  if [ "$CODE_TRUSTSTORE" != "200" ]; then
-    echo "❌ Chargement du truststore refusé ($CODE_TRUSTSTORE) : $(messageDomibus)" >&2
+# Les deux magasins se posent par la même API depuis Domibus 5.1 : le détour du
+# keystore par le disque, que 5.0.4 imposait, n'a plus lieu d'être.
+#
+# allowChangingDiskStoreProps laisse Domibus aligner ses propriétés de magasin
+# sur le fichier reçu. Il ne le fait que pour le truststore — le type et
+# l'emplacement du keystore sont imposés au démarrage, voir docker-compose.yml.
+chargeMagasin() {
+  magasinNom="$1"
+  magasinFichier="$REPERTOIRE_MAGASINS/gateway_$1.p12"
+
+  if [ ! -f "$magasinFichier" ]; then
+    echo "❌ Magasin introuvable : $magasinFichier" >&2
     exit 1
   fi
-else
-  echo "→ Pas de truststore demandé, on garde celui en place"
-fi
 
-# Le keystore, lui, ne se téléverse pas : Domibus 5.0.4 n'expose que sa
-# relecture depuis le fichier — c'est le bouton « Reload KeyStore » de la
-# console. Elle est indispensable : sans elle la passerelle signe avec la clé
-# conservée en base depuis son premier démarrage, et refuse d'émettre
-# (EBMS_0004, « sender certificate is not valid ») même le truststore corrigé.
-echo "→ Relecture du keystore depuis $FICHIER_KEYSTORE"
-CODE_KEYSTORE=$(appelAvecCode -X POST "$URL_DOMIBUS/rest/keystore/resets")
-if [ "$CODE_KEYSTORE" != "200" ]; then
-  echo "❌ Relecture du keystore refusée ($CODE_KEYSTORE) : $(messageDomibus)" >&2
-  exit 1
-fi
+  echo "→ Chargement du $magasinNom $magasinFichier"
+  # --form-string plutôt que -F pour les valeurs : -F traite un « @ » ou un
+  # « < » en tête comme un nom de fichier à lire, ce qui enverrait son contenu
+  # à la place du mot de passe. Seul le magasin lui-même est un vrai fichier.
+  magasinCode=$(appelAvecCode \
+    -F "file=@$magasinFichier" \
+    --form-string "password=$MOT_DE_PASSE_MAGASINS" \
+    --form-string "allowChangingDiskStoreProps=true" \
+    "$URL_DOMIBUS/rest/internal/admin/$magasinNom/save")
+  if [ "$magasinCode" != "200" ]; then
+    echo "❌ Chargement du $magasinNom refusé ($magasinCode) : $(messageDomibus)" >&2
+    exit 1
+  fi
+}
+
+chargeMagasin truststore
+chargeMagasin keystore
 
 echo "→ Chargement du PMode $FICHIER_PMODE"
 # Domibus répond 200 en signalant les avertissements du PMode : ceux du PMode
@@ -138,8 +145,8 @@ echo "→ Chargement du PMode $FICHIER_PMODE"
 # passerelle dialogue avec elle-même.
 CODE_PMODE=$(appelAvecCode \
   -F "file=@$FICHIER_PMODE" \
-  -F "description=Configuration automatique" \
-  "$URL_DOMIBUS/rest/pmode")
+  --form-string "description=Configuration automatique" \
+  "$URL_DOMIBUS/rest/internal/admin/pmode")
 if [ "$CODE_PMODE" != "200" ]; then
   echo "❌ Chargement du PMode refusé ($CODE_PMODE) : $(messageDomibus)" >&2
   exit 1
@@ -148,7 +155,7 @@ fi
 # Recréer un Plugin User existant échoue : on ne crée que s'il manque, pour que
 # le script puisse être rejoué sans erreur.
 echo "→ Vérification du Plugin User $LOGIN_API_REST"
-EXISTE=$(appelAuthentifie "$URL_DOMIBUS/rest/plugin/users?pageSize=100&page=0&authType=BASIC" \
+EXISTE=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/plugin/users?pageSize=100&page=0&authType=BASIC" \
   | sansPrefixeJSON \
   | node -e "
     let e = '';
@@ -164,7 +171,7 @@ if [ "$EXISTE" = "oui" ]; then
 else
   echo "  création"
   CODE_UTILISATEUR=$(appelAvecCode \
-    -X PUT "$URL_DOMIBUS/rest/plugin/users" \
+    -X PUT "$URL_DOMIBUS/rest/internal/admin/plugin/users" \
     -H 'Content-Type: application/json' \
     -d "[{\"userName\":\"$LOGIN_API_REST\",\"password\":\"$MOT_DE_PASSE_API_REST\",\"authRoles\":\"ROLE_ADMIN\",\"authenticationType\":\"BASIC\",\"status\":\"NEW\",\"active\":true,\"suspended\":false,\"domain\":\"default\",\"originalUser\":null,\"certificateId\":null}]")
   if [ "$CODE_UTILISATEUR" != "204" ]; then
@@ -174,15 +181,65 @@ else
   fi
 fi
 
-# Ultime garde-fou : c'est par ce compte, et sur cette route, que l'application
+# Premier garde-fou : c'est par ce compte, et sur cette route, que l'application
 # résout les points d'accès. S'il échoue ici, il échouera dans le test.
 echo "→ Vérification de l'accès à l'annuaire des parties"
 CODE_PARTIE=$(curl -sS -o /dev/null -w '%{http_code}' \
   -u "$LOGIN_API_REST:$MOT_DE_PASSE_API_REST" \
-  "$URL_DOMIBUS/ext/party?name=blue_gw" || true)
+  "$URL_DOMIBUS/ext/party?name=$PARTIE" || true)
 if [ "$CODE_PARTIE" != "200" ]; then
   echo "❌ L'annuaire des parties répond $CODE_PARTIE au Plugin User $LOGIN_API_REST." >&2
   exit 1
 fi
 
-echo "✅ Domibus configuré : PMode chargé, Plugin User $LOGIN_API_REST opérationnel"
+# Second garde-fou, autrement plus parlant : le test de connectivité de la
+# console — l'« avion en papier ». Il fait circuler un vrai message AS4 en
+# boucle sur la passerelle, donc il exerce la signature et le chiffrement, et
+# valide du même coup les alias des profils de sécurité. Le tout sans rien
+# devoir à l'application : s'il passe et que le test de bout en bout échoue,
+# la passerelle est hors de cause.
+echo "→ Test de connectivité $PARTIE → $PARTIE"
+CODE_TEST=$(appelAvecCode \
+  -X POST "$URL_DOMIBUS/rest/internal/admin/testing" \
+  -H 'Content-Type: application/json' \
+  -d "{\"sender\":\"$PARTIE\",\"receiver\":\"$PARTIE\"}")
+if [ "$CODE_TEST" != "200" ]; then
+  echo "❌ Test de connectivité refusé ($CODE_TEST) : $(messageDomibus)" >&2
+  exit 1
+fi
+
+# Le message part de façon asynchrone : son acquittement se lit ensuite.
+#
+# Le `|| true` compte ici pour la même raison qu'au-dessus, et trente fois
+# plutôt qu'une : une session expirée, une page d'erreur du serveur
+# d'applications ou tout corps qui n'est pas du JSON font lever `node`, et
+# `set -e` interromprait le script sur une pile d'appels JavaScript — au lieu du
+# message d'échec ci-dessous, qui, lui, oriente. Le `2>/dev/null` ne masque que
+# cette pile : les erreurs de curl, elles, restent affichées.
+echo "  message soumis, attente de l'acquittement"
+STATUT=""
+for _ in $(seq 1 30); do
+  sleep 1
+  STATUT=$(appelAuthentifie \
+    "$URL_DOMIBUS/rest/internal/admin/testing/connectionmonitor?senderPartyId=$PARTIE&partyIds=$PARTIE" \
+    | sansPrefixeJSON \
+    | node -e "
+      let e = '';
+      process.stdin.on('data', (d) => { e += d; });
+      process.stdin.on('end', () => {
+        const partie = JSON.parse(e)[process.argv[1]] ?? {};
+        console.log(partie.lastSent?.messageStatus ?? '');
+      });
+    " "$PARTIE" 2> /dev/null || true)
+  [ "$STATUT" = "ACKNOWLEDGED" ] && break
+  [ "$STATUT" = "SEND_FAILURE" ] && break
+done
+
+if [ "$STATUT" != "ACKNOWLEDGED" ]; then
+  echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
+  echo "   Certificats et alias des profils de sécurité en cause ?" >&2
+  echo "   scripts/ci/diagnostiqueDomibus.sh détaille les magasins et les erreurs." >&2
+  exit 1
+fi
+
+echo "✅ Domibus configuré : magasins chargés, PMode chargé, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"

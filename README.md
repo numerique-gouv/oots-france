@@ -123,20 +123,28 @@ ensuite sur le bouton « Save » en bas à gauche.
 
 ### Configurer les certificats
 
-Les certificats livrés avec l'image Docker Domibus sont des certificats de
-démonstration qui peuvent être expirés. Le script suivant les remplace par un
-certificat auto-signé fraîchement généré (identité `blue_gw`, valide dix ans) :
+Les certificats livrés avec l'image Docker Domibus sont publics et partagés par
+toutes les installations. Le script suivant les remplace par des certificats
+auto-signés fraîchement générés (identité `blue_gw`, valides dix ans) :
 
 ```sh
-$ scripts/genereCertificats.sh
+$ MOT_DE_PASSE_MAGASINS=… scripts/genereCertificats.sh
 ```
 
-Il écrit deux magasins dans `domibus/keystores/` : `gateway_keystore.jks` (la
-clé privée de la passerelle) et `gateway_truststore.jks` (le certificat seul).
-Le même certificat sert des deux côtés parce que le PMode d'exemple configure
-Domibus pour dialoguer avec lui-même (voir
-[docs/domibus_context.md](docs/domibus_context.md)) : Domibus doit donc faire
-confiance à son propre certificat pour valider les messages qu'il s'envoie.
+Le mot de passe doit être celui du `.env` avec lequel tourne la passerelle : le
+script ne lit pas ce fichier, et refuse de tourner sans qu'on le lui donne
+plutôt que de retomber sur un défaut qui masquerait l'écart.
+
+Il écrit deux magasins PKCS#12 dans `domibus/keystores/` :
+`gateway_keystore.p12`, qui porte **deux** clés privées — une de signature, une
+de déchiffrement —, et `gateway_truststore.p12`, qui porte leurs certificats.
+Les alias ne sont pas libres : les profils de sécurité de Domibus 5.1+ les
+imposent, et [docs/domibus_context.md](docs/domibus_context.md) en donne la
+convention.
+
+Les mêmes certificats servent des deux côtés parce que le PMode d'exemple
+configure Domibus pour dialoguer avec lui-même : la passerelle doit donc faire
+confiance à ses propres certificats pour valider les messages qu'elle s'envoie.
 
 Le script s'appuie sur `keytool` s'il est installé, sinon sur une image Docker
 contenant un JRE ; il refuse d'écraser des magasins existants, qu'il faut donc
@@ -144,15 +152,25 @@ supprimer au préalable pour régénérer les certificats.
 
 > [!WARNING]
 > Ces certificats sont réservés au poste de développement : auto-signés et
-> protégés par un mot de passe public (`test123`), ils ne doivent jamais servir
+> protégés par le mot de passe choisi dans `.env`, ils ne doivent jamais servir
 > sur un environnement réel.
 
-Domibus ne lit ces fichiers qu'à son **premier** démarrage, puis conserve les
-magasins en base. S'il a déjà démarré, les charger depuis l'interface
-d'administration : dans la colonne de gauche, cliquer sur « Truststores », puis
-« Domibus », enfin sur « Upload » ; sélectionner
-`domibus/keystores/gateway_truststore.jks` (type : JKS, mot de passe :
-`test123`) et cliquer sur « Reload KeyStore » (bouton en bas à droite).
+Domibus relit ces fichiers **à chaque démarrage**, à l'emplacement que lui
+donnent `domibus.security.keystore.location` et son équivalent truststore. Les y
+déposer ne suffit pourtant pas sur une passerelle déjà démarrée : il faut les
+lui téléverser, ce qui les installe *et* les réécrit à cet emplacement.
+
+Depuis l'interface d'administration : dans la colonne de gauche, cliquer sur
+« Truststores », puis « Domibus », enfin sur « Upload » ; sélectionner le
+magasin (type : PKCS12, mot de passe : celui de `MOT_DE_PASSE_MAGASINS`). Les
+deux magasins se téléversent de la même façon — le détour par le disque et le
+bouton « Reload KeyStore », qu'imposait Domibus 5.0.4, n'ont plus lieu d'être.
+
+> [!IMPORTANT]
+> Le mot de passe des magasins déposés doit rester celui du `.env` : la
+> passerelle les rouvre avec cette valeur au démarrage suivant. Un écart ne se
+> voit pas tout de suite — l'échange continue de fonctionner jusqu'au
+> redémarrage, puis échoue en `SEND_FAILURE`.
 
 ### Charger un fichier de configuration PMode
 
@@ -173,7 +191,8 @@ Les trois dernières — compte d'accès pour l'API REST, certificats et PMode �
 passent par une API REST d'administration, dont un script fait le tour :
 
 ```sh
-$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… scripts/configureDomibus.sh
+$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
+    scripts/configureDomibus.sh
 ```
 
 C'est ainsi que l'intégration continue monte une passerelle sans intervention
@@ -199,8 +218,15 @@ compte administrateur, décrits plus haut.
 Le conteneur a créé un répertoire (non versionné) `./domibus`. Il est possible
 de modifier diverses propriétés de Domibus depuis le fichier
 `domibus/domibus.properties`. Se référer à [la documentation
-Domibus](https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/638060670/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.0.4%29%2817.7%29.pdf?version=2&modificationDate=1684157357586&api=v2)
+Domibus](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/)
 pour la signification des diverses propriétés.
+
+> [!IMPORTANT]
+> Ce répertoire est recréé par l'image à chaque réinitialisation : une propriété
+> qu'on y modifie est perdue à la première table rase. Pour qu'un réglage
+> survive, le déclarer dans `SERVER_INIT_PROPERTIES`, au service `domibus` de
+> `docker-compose.yml` — l'image l'injecte dans la JVM, et il prime alors sur le
+> fichier.
 
 ### Afficher les logs de Domibus
 
