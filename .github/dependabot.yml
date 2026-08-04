@@ -1,0 +1,50 @@
+# Configuration Dependabot.
+#
+# Sans ce fichier, seules les mises à jour de sécurité sont proposées, et les
+# demandes de tirage ouvertes ne sont plus rebasées une fois périmées : quatre
+# d'entre elles avaient ainsi vieilli six mois en visant des versions
+# elles-mêmes redevenues vulnérables entre-temps.
+#
+# Documentation :
+# https://docs.github.com/fr/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    open-pull-requests-limit: 10
+    groups:
+      # Une seule demande de tirage par lot : les montées de version des
+      # dépendances de développement n'ont pas à être revues une par une.
+      developpement:
+        dependency-type: development
+      production:
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Europe/Paris
