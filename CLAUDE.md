@@ -65,15 +65,30 @@ The French terms map to specific TDD concepts — see the glossary in
 
 ```sh
 scripts/tests.sh          # lint + tests in Docker, watch mode (docker compose up test)
-npm test                  # eslint . && jest (needs local node 18+ / npm install)
-npx jest test/ebms/requeteJustificatif.spec.js   # single test file
+npm test                  # eslint . && jest (needs local node 24+ / npm install)
+npm test -- test/ebms/requeteJustificatif.spec.js  # single test file (keeps NODE_OPTIONS)
 scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up)
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
-CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 18,
-plus CodeQL. `npm test` runs ESLint (airbnb-base) before Jest — lint failures
-fail the build, and `no-only-tests` forbids committing `.only`.
+CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 24,
+plus CodeQL. `npm test` runs ESLint before Jest — lint failures fail the
+build, and `no-only-tests` forbids committing `.only`.
+
+The lint bases are taken as published and unconfigured — [`@eslint/js`](https://www.npmjs.com/package/@eslint/js)
+for correctness, [`@stylistic`](https://eslint.style/) for style,
+[`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x)
+for imports. Style is theirs, not ours: when `eslint --fix` disagrees with the
+code, the code yields. Only two rules are added, neither stylistic —
+`no-only-tests`, and `commonjs` on `import-x/no-unresolved`, without which the
+import rules would ignore every `require` in the project.
+
+> [!IMPORTANT]
+> Run Jest through the npm scripts, never as a bare `npx jest`: they carry
+> `NODE_OPTIONS=--experimental-vm-modules`, without which every suite that
+> reaches [`jose`](https://github.com/panva/jose) fails to load. jose is
+> published as an ES module only; Node requires it natively, but Jest needs
+> that flag to do the same.
 
 `test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from
 `npm test` via `testPathIgnorePatterns`. Keep it excluded: `node.js.yml` runs
@@ -131,8 +146,8 @@ Rules:
 
 - One worktree = one branch = one task. Work, commit, then merge/PR from the
   main checkout; remove with `git worktree remove .worktrees/<nom>`.
-- `.worktrees/` is ignored everywhere (git, ESLint, Jest, nodemon, Docker
-  build context) so worktrees don't interfere with the main checkout.
+- `.worktrees/` is ignored everywhere (git, ESLint, Jest, Docker build
+  context) so worktrees don't interfere with the main checkout.
 - `scripts/tests.sh` works out of the box in a worktree: docker compose
   derives its project name from the directory, so containers and volumes are
   isolated per worktree.
