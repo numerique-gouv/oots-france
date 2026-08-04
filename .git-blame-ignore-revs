@@ -1,0 +1,9 @@
+# Révisions à ignorer par `git blame` : reformatages mécaniques, sans
+# changement de comportement, qui masqueraient sinon l'auteur réel de chaque
+# ligne.
+#
+# Pris en compte automatiquement par GitHub. En local :
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Aligne le code sur le style @stylistic (eslint --fix sur 92 fichiers)
+9d3087c7437909bfc578ce672af3f3b903a8eca1
