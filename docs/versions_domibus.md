@@ -125,18 +125,62 @@ chaque route par le rôle qu'elle exige** — `rest/public/…`,
 Seules les routes `ext/**` sont contractuelles et documentées — `ext/party`, dont
 l'application se sert pour résoudre un point d'accès, en fait partie.
 
+La même méthode répond à la question voisine, « ce plugin tourne-t-il sur cette
+version ? » : elle se lit dans le POM de l'artefact et dans le comparatif des
+deux tags du dépôt public, pas en le déployant pour voir — c'est ainsi qu'a été
+tranché le cas du plugin REST ci-dessous.
+
 ## Ce qu'apporterait la suite
 
 | Piste | Apport |
 | --- | --- |
-| Une image MySQL 5.2.1 cohérente | Elle débloquerait la 5.2.1, et avec elle le **Domibus REST Plugin** 1.0, livré dans son image (`domibus-default-rest-plugin-1.0.jar`) mais absent de la 5.2. Son interface JSON est décrite en OpenAPI, et son mode *webhook* supprimerait le polling à 1 s de `src/ecouteurDomibus.js` au profit d'une route de notification exposée par l'application. C'est le chantier suivant : il réécrit `src/domibus/`, `adaptateurDomibus.js` et la suite `test/domibus/` |
+| Une image MySQL 5.2.1 cohérente | Elle débloquerait la 5.2.1, et avec elle le **Domibus REST Plugin** 1.0 — voir la section suivante, qui est le chantier en attente |
 | Le profil de sécurité `ecdsa` | Annoncé, non disponible : seul `rsa` existe en 5.2 |
 
+## Le plugin REST attend la 5.2.1
+
+Le [Domibus REST Plugin](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#restplugin)
+1.0 remplacerait le WS plugin SOAP par une interface JSON décrite en OpenAPI,
+dont le mode *webhook* supprimerait le polling à 1 s de `src/ecouteurDomibus.js`
+au profit d'une route de notification exposée par l'application. La bascule
+réécrirait `src/domibus/`, `adaptateurDomibus.js` et la suite `test/domibus/`.
+
+**Elle est impossible sur la 5.2**, et ce n'est pas une question de
+distribution : le plugin s'installe très bien à la main. Il est publié en
+artefact autonome —
+[`domibus-rest-plugin-distribution-1.0.zip`](https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-rest-plugin-distribution/1.0/domibus-rest-plugin-distribution-1.0.zip),
+qui contient le jar, `rest-plugin.properties` et un `rest-plugin-mysql.sql` dont
+les tables `REST_PLUGIN_TB_*` ne touchent à rien d'existant. C'est **l'API du
+cœur** qui manque : son
+[POM](https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-rest-plugin/1.0/domibus-rest-plugin-1.0.pom)
+déclare `domibus 5.2.1-JEE10` comme parent, et le
+[comparatif 5.2 → 5.2.1](https://code.europa.eu/edelivery/domibus/-/compare/5.2-JEE10...5.2.1-JEE10)
+montre que la 5.2.1 crée précisément ce dont il dépend — `MessageLogExtService`,
+`ErrorLogExtService`, `MessageIdExtService`,
+`AttachmentReferenceValidationExtService`, `PayloadProcessingState`,
+`PayloadType`, `AttachmentDTO`. Sur un cœur 5.2, le plugin ne se charge pas.
+
+Reste donc à débloquer la 5.2.1, dont l'écart de schéma se mesure exactement :
+**quatre colonnes**, `TB_USER_MESSAGE_LOG.AUTO_SEND_IF_COMPLETE` et
+`TB_PART_INFO.TYPE` / `.PROCESSING_STATE` / `.PROCESSING_DETAIL`. Une image
+`domibus-mysql8` au schéma 5.2.1 les apporterait ; à défaut, quatre `ALTER
+TABLE` joués à l'initialisation de la base suffiraient, la table rase
+supprimant tout risque de migration.
+
+> [!NOTE]
+> Aucun script de montée officiel n'existe parce que ces colonnes ont été
+> ajoutées **dans les `changeSet` de création** de
+> [`changelog.xml`](https://code.europa.eu/edelivery/domibus/-/blob/5.2.1-JEE10/Core/Domibus-MSH-db/src/main/resources/db/changelog.xml),
+> le `changeSet` `addColumn` correspondant (`EDELIVERY-16054-2`) étant laissé en
+> commentaire. Un Liquibase qui a déjà joué la création ne les verra donc
+> jamais — ce qui explique aussi que l'image MySQL 5.2.1 publiée reste au schéma
+> 5.2.
+
 > [!IMPORTANT]
-> Le jour où la 5.2.1 sera utilisable, son plugin REST arrivera **en tête des
-> filtres de message et sans critère de routage** : il captera tous les messages
-> entrants, et le WS plugin ne sera plus notifié. L'échange AS4 aboutira
-> pourtant — le journal montrera un `ACKNOWLEDGED` puis un `RECEIVED` — mais
+> Le jour où le plugin REST sera installé, il arrivera **en tête des filtres de
+> message et sans critère de routage** : il captera tous les messages entrants,
+> et le WS plugin ne sera plus notifié. L'échange AS4 aboutira pourtant — le
+> journal montrera un `ACKNOWLEDGED` puis un `RECEIVED` — mais
 > `listPendingMessages` ne renverra rien et la requête s'achèvera sur un 504.
 > Seul le `pluginType` du message reçu trahit la cause. Il faudra remettre
 > `backendWSPlugin` en tête, ce que fait la page « Message Filter » de la

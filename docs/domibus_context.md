@@ -68,7 +68,9 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
 - **Plugins** : Domibus expose ses messages aux applications métier via des
   plugins — ici le **WS plugin** (SOAP, namespace `http://eu.domibus.wsplugin/`).
   Les plugins JMS et filesystem existent mais ne sont pas utilisés ; un plugin
-  REST est apparu en 5.2.1, que ce dépôt n'utilise pas encore.
+  REST est apparu en 5.2.1 et exige ce cœur-là, donc ne s'installe pas sur la
+  5.2 en place — pourquoi, et ce qu'il faudrait pour l'adopter, dans
+  [versions_domibus.md](versions_domibus.md).
 - **Filtres de message** (*message filters*) : une liste ordonnée qui décide
   quel plugin est notifié d'un message entrant. Le premier filtre dont les
   critères de routage correspondent l'emporte — et un filtre sans critère
@@ -104,6 +106,14 @@ du message reçu. Les enveloppes SOAP sortantes sont construites dans
 >   puis attend la réponse corrélée par `conversationId` via des événements
 >   internes, avec un garde-fou temporel (`DELAI_MAX_ATTENTE_DOMIBUS`). Un
 >   redémarrage de l'appli perd les conversations en cours.
+
+Le polling n'est pas une fatalité de la 5.2 : le WS plugin déjà en place sait
+pousser vers le *backend*
+([*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend),
+propriété `wsplugin.push.enabled` et règles par destinataire final), la
+passerelle appelant alors `receiveSuccess` sur une URL de l'application au lieu
+d'être interrogée toutes les secondes. Le prix est un service SOAP à exposer
+côté Node — c'est ce que le plugin REST, lui, ferait en JSON.
 
 ## Le PMode d'exemple
 
