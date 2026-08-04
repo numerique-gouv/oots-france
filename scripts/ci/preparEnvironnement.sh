@@ -38,9 +38,16 @@ fi
 LOGIN_API_REST="${LOGIN_API_REST:-oots_ci}"
 MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:-Ci-OotsFrance-2026!}"
 
-cat > .env <<'FIN'
+# Ce mot de passe protège les magasins de certificats. La passerelle le lit
+# depuis .env, les scripts depuis l'environnement : le prendre d'ici garantit
+# que les deux voient la même valeur, comme pour les identifiants ci-dessus.
+MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
+
+# Heredoc non quoté : les valeurs ci-dessus doivent être substituées.
+cat > .env <<FIN
 PORT_DOMIBUS=8180
 PORT_OOTS_FRANCE=3000
+MOT_DE_PASSE_MAGASINS=$MOT_DE_PASSE_MAGASINS
 FIN
 
 cat > .env.domibus <<'FIN'

@@ -25,13 +25,15 @@ jobs:
     # Le déploiement de la webapp Domibus prend plusieurs minutes.
     timeout-minutes: 30
 
-    # Identifiants du Plugin User, jetables : ils sont créés dans une passerelle
-    # éphémère et disparaissent avec le runner. Ils doivent être partagés entre
-    # la préparation de l'environnement (qui les écrit dans .env.oots) et la
-    # configuration de Domibus (qui crée le compte correspondant).
+    # Secrets jetables : ils vivent dans une passerelle éphémère et disparaissent
+    # avec le runner. Ils sont portés au niveau du job parce que deux étapes
+    # doivent les voir identiques — la préparation de l'environnement, qui les
+    # écrit dans .env et .env.oots, et la configuration de Domibus, qui crée le
+    # compte correspondant et génère les magasins de certificats.
     env:
       LOGIN_API_REST: oots_ci
       MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
+      MOT_DE_PASSE_MAGASINS: test123
 
     steps:
       - uses: actions/checkout@v4
@@ -84,16 +86,10 @@ jobs:
       - name: Attend que Domibus réponde
         run: scripts/ci/attendDomibus.sh
 
-      - name: Remplace les certificats de démonstration
-        # Ceux livrés avec l'image ont expiré : sans quoi Domibus refuse
-        # d'émettre. Le script dépose les fichiers, l'étape suivante les fait
-        # prendre en compte.
-        run: scripts/ci/remplaceCertificats.sh
-
-      - name: Configure Domibus (truststore, PMode, Plugin User)
-        env:
-          # Magasin généré à l'étape précédente, hors du répertoire de Domibus.
-          FICHIER_TRUSTSTORE: /tmp/magasins-domibus/gateway_truststore.jks
+      - name: Configure Domibus (magasins, PMode, Plugin User)
+        # Le script génère lui-même les certificats : ceux livrés avec l'image
+        # sont publics et partagés par toutes les installations. Il finit par un
+        # message AS4 de test, qui doit revenir acquitté.
         run: scripts/configureDomibus.sh
 
       - name: Démarre l'application
@@ -111,12 +107,14 @@ jobs:
       - name: Logs Domibus en cas d'échec
         if: failure()
         # `docker compose logs domibus` ne renvoie rien : le service tourne avec
-        # le pilote de journalisation `none`. Les appels de l'écouteur, une fois
-        # par seconde, noient le reste : on les écarte pour garder le signal.
+        # le pilote de journalisation `none`.
+        #
+        # domibus-error.log d'abord : son appender filtre à WARN, donc il porte
+        # les refus de Domibus sans une ligne de bruit. catalina.out ensuite,
+        # pour ce qui relève de Tomcat ou de CXF et n'atteint pas ce fichier.
         run: |
-          docker compose exec -T domibus tail -n 2000 logs/catalina.out \
-            | grep -v 'AuthenticationDefaultService' \
-            | tail -n 200 || true
+          docker compose exec -T domibus tail -n 200 logs/domibus-error.log || true
+          docker compose exec -T domibus tail -n 100 logs/catalina.out || true
 
       - name: Logs de l'application en cas d'échec
         if: failure()
