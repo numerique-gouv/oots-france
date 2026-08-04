@@ -49,19 +49,48 @@ services:
      - domibus
 
   domibus:
-    image: code.europa.eu:4567/edelivery/docker/domibus-tomcat9:5.0.4
+    image: code.europa.eu:4567/edelivery/docker/domibus-tomcat10:5.2-JEE10
     <<: *env-domibus
     environment:
       - DB_TYPE=MySQL
       - DB_HOST=mysql
       - DB_PORT=3306
-      - LOGGER_LEVEL_ORG_APACHE_CXF=INFO
+      # L'image ne réécrit que ces deux niveaux dans logback.xml, et laisse
+      # eu.domibus à DEBUG. INFO ne suffirait pas : l'authentification de chaque
+      # requête journalise « [SEC-001] Unsecure login is allowed » à ce
+      # niveau-là, soit deux lignes par seconde sous le polling de
+      # src/ecouteurDomibus.js. Ce que WARN écarte reste consultable dans
+      # logs/domibus-error.log, dont le seuil est justement WARN.
+      #
+      # Ces deux variables ne sont lues qu'à la création de ./domibus : pour
+      # changer un niveau sur une pile qui tourne, modifier domibus/logback.xml,
+      # que Domibus relit toutes les 10 s.
+      - LOGGER_LEVEL_EU_DOMIBUS=WARN
+      # Passer org.apache.cxf à INFO fait apparaître les enveloppes SOAP.
+      - LOGGER_LEVEL_ORG_APACHE_CXF=WARN
       - CHECK_DEFAULT_PASSWD=false
-      - domibus.metrics.sl4j.reporter.enable=false
-      - domibus.metrics.monitor.jms.queues=false
-      - domibus.metrics.monitor.memory=false
-      - domibus.metrics.monitor.gc=false
-      - domibus.metrics.monitor.cached.threads=false
+      - KEYSTORE_PASSWD=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
+      - TRUSTSTORE_PASSWD=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
+      # L'entrypoint de l'image injecte SERVER_INIT_PROPERTIES dans JAVA_OPTS.
+      # C'est le seul moyen de fixer une propriété qui ne soit pas perdue à la
+      # prochaine réinitialisation de ./domibus par l'image.
+      - >-
+        SERVER_INIT_PROPERTIES=
+        -Ddomibus.metrics.slf4j.reporter.enable=false
+        -Ddomibus.metrics.monitor.jms.queues=false
+        -Ddomibus.metrics.monitor.memory=false
+        -Ddomibus.metrics.monitor.gc=false
+        -Ddomibus.metrics.monitor.cached.threads=false
+        -Ddomibus.security.keystore.type=pkcs12
+        -Ddomibus.security.keystore.location=/data/tomcat/conf/domibus/keystores/gateway_keystore.p12
+        -Ddomibus.security.profiles.active=true
+        -Ddomibus.security.profile.rsa.enabled=true
+        -Ddomibus.security.profile.rsa.signature.enabled=true
+        -Ddomibus.security.profile.rsa.encryption.enabled=true
+        -Ddomibus.security.profile.rsa.key.private.sign.alias=blue_gw_rsa_sign
+        -Ddomibus.security.profile.rsa.key.private.sign.password=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
+        -Ddomibus.security.profile.rsa.key.private.decrypt.alias=blue_gw_rsa_decrypt
+        -Ddomibus.security.profile.rsa.key.private.decrypt.password=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
     logging:
       driver:
         none
@@ -73,7 +102,7 @@ services:
       - mysql
 
   mysql:
-    image: code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.0.4
+    image: code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.2-JEE10
     <<: *env-domibus
     security_opt:
       - seccomp:unconfined
