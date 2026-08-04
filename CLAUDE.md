@@ -9,6 +9,9 @@
 - [docs/domibus_context.md](docs/domibus_context.md) — the eDelivery gateway
   (Domibus) this app talks to, and how the app drives it.
 - [README.md](README.md) — step-by-step local environment setup.
+- [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end
+  scenario through Domibus: run it after any change to the ebMS payloads or the
+  Domibus plumbing, since the Jest suite mocks the transport away entirely.
 
 ## Documentation: one fact, one place
 
@@ -21,6 +24,8 @@ double the maintenance cost.
 | OOTS ecosystem, specs (TDD), four-corner model, code map, glossary, known gaps | `docs/oots_context.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
+| Domibus versioning: what 5.0.4 costs, what a newer version would bring, upgrade checks | `docs/versions_domibus.md` |
+| The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | Installation and configuration steps | `README.md` |
 | Agent conventions and workflow | this file |
 
@@ -62,12 +67,20 @@ The French terms map to specific TDD concepts — see the glossary in
 scripts/tests.sh          # lint + tests in Docker, watch mode (docker compose up test)
 npm test                  # eslint . && jest (needs local node 18+ / npm install)
 npx jest test/ebms/requeteJustificatif.spec.js   # single test file
+scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up)
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
 CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 18,
 plus CodeQL. `npm test` runs ESLint (airbnb-base) before Jest — lint failures
 fail the build, and `no-only-tests` forbids committing `.only`.
+
+`test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from
+`npm test` via `testPathIgnorePatterns`. Keep it excluded: `node.js.yml` runs
+on a bare runner with no Domibus. It has its own workflow, `e2e.yml`, which
+builds the whole stack and configures Domibus through its admin REST API
+(`scripts/configureDomibus.sh`). Run it after touching the ebMS payloads or the
+Domibus plumbing, which the unit suite mocks away entirely.
 
 ## Architecture rules
 

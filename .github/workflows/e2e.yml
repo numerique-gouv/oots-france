@@ -1,0 +1,127 @@
+name: Test e2e
+
+# Le test e2e monte la pile complète (MySQL + Domibus + application) et joue un
+# échange OOTS réel : c'est le seul garde-fou sur le transport, que la suite
+# unitaire simule entièrement. Voir docs/test_e2e.md.
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Deux poussées rapprochées empileraient deux exécutions de plusieurs minutes,
+# dont la première n'intéresse déjà plus personne : la plus ancienne est
+# abandonnée. Le groupe porte sur la branche — `github.head_ref` pour une PR, où
+# `github.ref` vaudrait `refs/pull/…/merge`, différent à chaque commit et donc
+# incapable de rapprocher deux exécutions successives.
+concurrency:
+  group: e2e-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Le déploiement de la webapp Domibus prend plusieurs minutes.
+    timeout-minutes: 30
+
+    # Identifiants du Plugin User, jetables : ils sont créés dans une passerelle
+    # éphémère et disparaissent avec le runner. Ils doivent être partagés entre
+    # la préparation de l'environnement (qui les écrit dans .env.oots) et la
+    # configuration de Domibus (qui crée le compte correspondant).
+    env:
+      LOGIN_API_REST: oots_ci
+      MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prépare les fichiers d'environnement
+        run: scripts/ci/preparEnvironnement.sh
+
+      - name: Récupère les images Domibus et MySQL
+        # Le registre de la Commission coupe parfois la connexion pendant
+        # l'authentification (« connection reset by peer ») : on retente, plutôt
+        # que de teindre en rouge une PR pour une raison étrangère au code.
+        #
+        # Le `exit 1` final est nécessaire : l'état de sortie de la boucle est
+        # celui du `sleep`, donc un succès même après trois échecs.
+        run: |
+          for tentative in 1 2 3; do
+            # `docker compose pull` n'a pas de délai propre : une connexion
+            # établie puis muette le ferait attendre jusqu'au plafond du job.
+            # Le borner transforme un blocage en échec, que la boucle sait
+            # reprendre — cinq minutes, là où la récupération en demande moins
+            # d'une en temps normal.
+            timeout 300 docker compose pull mysql domibus && exit 0
+            echo "Échec de récupération (tentative $tentative), nouvelle tentative…"
+            sleep 15
+          done
+          exit 1
+
+      - name: Démarre MySQL
+        # Le README fait démarrer MySQL seul en premier : le conteneur crée la
+        # base à sa première exécution, et Domibus échoue s'il se connecte trop
+        # tôt.
+        run: |
+          docker compose up --detach mysql
+          timeout 300 sh -c 'until docker compose logs mysql | grep -q "ready for connections"; do sleep 3; done'
+
+      - name: Démarre Domibus
+        run: docker compose up --detach domibus
+
+      - name: Construit l'image de l'application
+        # Pendant que Tomcat déploie la webapp, ce qui prend 35 à 45 s :
+        # construire ici occupe ce temps mort, et l'attente qui suit s'en trouve
+        # réduite d'autant.
+        #
+        # Le contexte de build doit pour cela ignorer ./domibus, que le conteneur
+        # a créé et n'ouvre qu'à lui : voir le commentaire du `.dockerignore`,
+        # dont les motifs de ré-inclusion restent sans joker pour que BuildKit
+        # puisse élaguer la branche.
+        run: docker compose build web
+
+      - name: Attend que Domibus réponde
+        run: scripts/ci/attendDomibus.sh
+
+      - name: Remplace les certificats de démonstration
+        # Ceux livrés avec l'image ont expiré : sans quoi Domibus refuse
+        # d'émettre. Le script dépose les fichiers, l'étape suivante les fait
+        # prendre en compte.
+        run: scripts/ci/remplaceCertificats.sh
+
+      - name: Configure Domibus (truststore, PMode, Plugin User)
+        env:
+          # Magasin généré à l'étape précédente, hors du répertoire de Domibus.
+          FICHIER_TRUSTSTORE: /tmp/magasins-domibus/gateway_truststore.jks
+        run: scripts/configureDomibus.sh
+
+      - name: Démarre l'application
+        run: |
+          docker compose up --detach --no-build web
+          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/; do sleep 2; done'
+
+      - name: Joue le test e2e
+        run: docker compose exec -T web npm run test:e2e
+
+      - name: Diagnostic Domibus en cas d'échec
+        if: failure()
+        run: scripts/ci/diagnostiqueDomibus.sh
+
+      - name: Logs Domibus en cas d'échec
+        if: failure()
+        # `docker compose logs domibus` ne renvoie rien : le service tourne avec
+        # le pilote de journalisation `none`. Les appels de l'écouteur, une fois
+        # par seconde, noient le reste : on les écarte pour garder le signal.
+        run: |
+          docker compose exec -T domibus tail -n 2000 logs/catalina.out \
+            | grep -v 'AuthenticationDefaultService' \
+            | tail -n 200 || true
+
+      - name: Logs de l'application en cas d'échec
+        if: failure()
+        run: docker compose logs web || true
+
+      - name: Arrête la pile
+        if: always()
+        run: docker compose down --volumes || true

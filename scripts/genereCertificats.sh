@@ -8,6 +8,9 @@
 #
 # Usage : scripts/genereCertificats.sh [validité en jours ; 3650 par défaut]
 #
+# La variable DESTINATION permet d'écrire ailleurs que dans domibus/keystores —
+# utile lorsque ce répertoire appartient au conteneur et n'est pas accessible.
+#
 # Deux fichiers sont écrits dans domibus/keystores/ (répertoire non versionné) :
 #   - gateway_keystore.jks   : la clé privée et son certificat, alias blue_gw ;
 #   - gateway_truststore.jks : le certificat seul.
@@ -22,7 +25,7 @@ ALIAS="blue_gw"
 MOT_DE_PASSE="test123"
 VALIDITE="${1:-3650}"
 
-DESTINATION="$(git rev-parse --show-toplevel)/domibus/keystores"
+DESTINATION="${DESTINATION:-$(git rev-parse --show-toplevel)/domibus/keystores}"
 mkdir -p "$DESTINATION"
 
 for fichier in gateway_keystore.jks gateway_truststore.jks; do
