@@ -1,6 +1,6 @@
-const express = require('express');
+const express = require('express')
 
-const pieceJustificative = require('../api/pieceJustificative');
+const pieceJustificative = require('../api/pieceJustificative')
 
 const routesRequete = (config) => {
   const {
@@ -11,9 +11,9 @@ const routesRequete = (config) => {
     depotServicesCommuns,
     middleware,
     transmetteurPiecesJustificatives,
-  } = config;
+  } = config
 
-  const routes = express.Router();
+  const routes = express.Router()
 
   routes.get(
     '/pieceJustificative',
@@ -31,11 +31,11 @@ const routesRequete = (config) => {
         },
         requete,
         reponse,
-      );
+      )
     },
-  );
+  )
 
-  return routes;
-};
+  return routes
+}
 
-module.exports = routesRequete;
+module.exports = routesRequete

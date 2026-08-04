@@ -3,38 +3,38 @@ const {
   ErreurEBMS,
   ErreurJetonInvalide,
   ErreurReponseRequete,
-} = require('../erreurs');
+} = require('../erreurs')
 
-const estErreurAbsenceReponse = (e) => e instanceof ErreurAbsenceReponseDestinataire;
-const estErreurReponseRequete = (e) => e instanceof ErreurReponseRequete;
-const estErreurMetier = (e) => estErreurAbsenceReponse(e) || estErreurReponseRequete(e);
+const estErreurAbsenceReponse = e => e instanceof ErreurAbsenceReponseDestinataire
+const estErreurReponseRequete = e => e instanceof ErreurReponseRequete
+const estErreurMetier = e => estErreurAbsenceReponse(e) || estErreurReponseRequete(e)
 
 const paramsRequete = (beneficiaireChiffre, config, codeDemarche, codePays, idRequeteur) => {
-  const { depotPointsAcces, depotRequeteurs, depotServicesCommuns } = config;
+  const { depotPointsAcces, depotRequeteurs, depotServicesCommuns } = config
 
   return depotServicesCommuns.trouveTypesJustificatifsPourDemarche(codeDemarche)
-    .then((tjs) => tjs[0])
-    .then((tj) => depotServicesCommuns.trouveFournisseurs(tj.id, codePays)
-      .then((fs) => fs[0])
-      .then((f) => depotPointsAcces.trouvePointAcces(f.idPointAcces())
-        .then((pa) => depotRequeteurs.trouveRequeteur(idRequeteur)
-          .then((r) => r.beneficiaire(beneficiaireChiffre)
-            .then((b) => ({
+    .then(tjs => tjs[0])
+    .then(tj => depotServicesCommuns.trouveFournisseurs(tj.id, codePays)
+      .then(fs => fs[0])
+      .then(f => depotPointsAcces.trouvePointAcces(f.idPointAcces())
+        .then(pa => depotRequeteurs.trouveRequeteur(idRequeteur)
+          .then(r => r.beneficiaire(beneficiaireChiffre)
+            .then(b => ({
               beneficiaire: b,
               destinataire: pa,
               fournisseur: f,
               requeteur: r,
               typeJustificatif: tj,
-            }))))));
-};
+            }))))))
+}
 
 const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .reponseAvecPieceJustificative(idConversation)
-  .then((reponse) => ({ reponseAvecPieceJustificative: reponse }));
+  .then(reponse => ({ reponseAvecPieceJustificative: reponse }))
 
 const urlRedirectionRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
   .urlRedirectionDepuisReponse(idConversation)
-  .then((url) => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }));
+  .then(url => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }))
 
 const pieceJustificative = (config, requete, reponse) => {
   const {
@@ -42,15 +42,15 @@ const pieceJustificative = (config, requete, reponse) => {
     adaptateurUUID,
     depotRequeteurs,
     transmetteurPiecesJustificatives,
-  } = config;
-  const idConversation = adaptateurUUID.genereUUID();
+  } = config
+  const idConversation = adaptateurUUID.genereUUID()
   const {
     beneficiaire,
     codeDemarche,
     codePays,
     idRequeteur,
     previsualisationRequise,
-  } = requete.query;
+  } = requete.query
 
   return paramsRequete(beneficiaire, config, codeDemarche, codePays, idRequeteur)
     .then(({
@@ -69,7 +69,7 @@ const pieceJustificative = (config, requete, reponse) => {
         requeteur,
         typeJustificatif,
         previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
-      });
+      })
     })
     .then(() => Promise.any([
       urlRedirectionRecue(idConversation, adaptateurDomibus),
@@ -77,31 +77,35 @@ const pieceJustificative = (config, requete, reponse) => {
     ]))
     .then(({ reponseAvecPieceJustificative, urlRedirection }) => {
       if (urlRedirection) {
-        reponse.redirect(urlRedirection);
-      } else if (reponseAvecPieceJustificative) {
-        const id = reponseAvecPieceJustificative.idRequeteur();
-        const pj = reponseAvecPieceJustificative.pieceJustificative();
+        reponse.redirect(urlRedirection)
+      }
+      else if (reponseAvecPieceJustificative) {
+        const id = reponseAvecPieceJustificative.idRequeteur()
+        const pj = reponseAvecPieceJustificative.pieceJustificative()
 
         depotRequeteurs.trouveRequeteur(id)
           .then(({ url }) => Promise.all([
             transmetteurPiecesJustificatives.envoie(pj, url),
             reponse.redirect(`${url}/oots/callback`),
-          ]));
+          ]))
       }
     })
     .catch((e) => {
       if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
-        reponse.status(422).json({ erreur: e.message });
-      } else if (e instanceof AggregateError) {
-        let codeStatus = 500;
+        reponse.status(422).json({ erreur: e.message })
+      }
+      else if (e instanceof AggregateError) {
+        let codeStatus = 500
         if (e.errors.every(estErreurAbsenceReponse)) {
-          codeStatus = 504;
-        } else if (e.errors.every(estErreurMetier)) {
-          codeStatus = 502;
+          codeStatus = 504
         }
-        reponse.status(codeStatus).json({ erreur: e.errors.map((erreur) => erreur.message).join(' ; ') });
-      } else throw e;
-    });
-};
+        else if (e.errors.every(estErreurMetier)) {
+          codeStatus = 502
+        }
+        reponse.status(codeStatus).json({ erreur: e.errors.map(erreur => erreur.message).join(' ; ') })
+      }
+      else throw e
+    })
+}
 
-module.exports = pieceJustificative;
+module.exports = pieceJustificative

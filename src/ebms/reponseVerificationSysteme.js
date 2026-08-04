@@ -1,24 +1,24 @@
-const fs = require('fs');
+const fs = require('fs')
 
-const EnteteReponse = require('./enteteReponse');
-const Message = require('./message');
-const PieceJointe = require('./pieceJointe');
+const EnteteReponse = require('./enteteReponse')
+const Message = require('./message')
+const PieceJointe = require('./pieceJointe')
 
 class ReponseVerificationSysteme extends Message {
-  static ClasseEntete = EnteteReponse;
+  static ClasseEntete = EnteteReponse
 
   constructor(config, donnees) {
     const pieceJointe = new PieceJointe(
       `cid:${config.adaptateurUUID.genereUUID()}@pdf.oots.fr`,
       fs.readFileSync('./assets/drapeau.pdf').toString('base64'),
-    );
+    )
 
-    super(config, { ...donnees, pieceJointe });
+    super(config, { ...donnees, pieceJointe })
 
-    this.beneficiaire = donnees.beneficiaire;
-    this.idRequete = donnees.idRequete;
-    this.requeteur = donnees.requeteur;
-    this.typeJustificatif = donnees.typeJustificatif;
+    this.beneficiaire = donnees.beneficiaire
+    this.idRequete = donnees.idRequete
+    this.requeteur = donnees.requeteur
+    this.typeJustificatif = donnees.typeJustificatif
   }
 
   corpsMessageEnXML() {
@@ -86,8 +86,8 @@ class ReponseVerificationSysteme extends Message {
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
-    `;
+    `
   }
 }
 
-module.exports = ReponseVerificationSysteme;
+module.exports = ReponseVerificationSysteme

@@ -1,36 +1,36 @@
-const PointAcces = require('./pointAcces');
-const PieceJointeVide = require('./pieceJointeVide');
+const PointAcces = require('./pointAcces')
+const PieceJointeVide = require('./pieceJointeVide')
 
 const ACTIONS = {
   EXECUTION_REQUETE: 'ExecuteQueryRequest',
   EXECUTION_REPONSE: 'ExecuteQueryResponse',
   REPONSE_ERREUR: 'ExceptionResponse',
-};
+}
 
 class Entete {
   constructor(config = {}, donnees = {}) {
-    this.expediteur = PointAcces.expediteur();
+    this.expediteur = PointAcces.expediteur()
 
-    this.horodateur = config.horodateur;
-    this.destinataire = donnees.destinataire;
-    this.idConversation = donnees.idConversation;
-    this.idPayload = donnees.idPayload;
-    this.pieceJointe = donnees.pieceJointe || new PieceJointeVide();
+    this.horodateur = config.horodateur
+    this.destinataire = donnees.destinataire
+    this.idConversation = donnees.idConversation
+    this.idPayload = donnees.idPayload
+    this.pieceJointe = donnees.pieceJointe || new PieceJointeVide()
 
-    const { adaptateurUUID } = config;
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    this.idMessage = `${adaptateurUUID.genereUUID()}@${suffixe}`;
+    const { adaptateurUUID } = config
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS
+    this.idMessage = `${adaptateurUUID.genereUUID()}@${suffixe}`
   }
 
   static action() {
-    throw new Error('Méthode non implémentée dans classe abstraite');
+    throw new Error('Méthode non implémentée dans classe abstraite')
   }
 
   enXML() {
-    const horodatage = this.horodateur.maintenant();
+    const horodatage = this.horodateur.maintenant()
     const baliseIdConversation = (typeof this.idConversation !== 'undefined')
       ? `<eb:ConversationId>${this.idConversation}</eb:ConversationId>`
-      : '';
+      : ''
 
     return `
 <eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
@@ -62,10 +62,10 @@ class Entete {
     </eb:PayloadInfo>
   </eb:UserMessage>
 </eb:Messaging>
-    `;
+    `
   }
 }
 
-Object.assign(Entete, ACTIONS);
+Object.assign(Entete, ACTIONS)
 
-module.exports = Entete;
+module.exports = Entete

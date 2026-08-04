@@ -1,12 +1,12 @@
-const TypeJustificatif = require('../../src/ebms/typeJustificatif');
+const TypeJustificatif = require('../../src/ebms/typeJustificatif')
 
 describe('Le type de justificatif', () => {
-  it("s'affiche en XML", () => {
+  it('s\'affiche en XML', () => {
     const typeJustificatif = new TypeJustificatif({
       id: 'unIdentifiant',
       descriptions: { EN: 'someType' },
       formatDistribution: TypeJustificatif.FORMAT_PDF,
-    });
+    })
 
     expect(typeJustificatif.enXMLPourRequete()).toBe(`
 <rim:Slot name="EvidenceRequest">
@@ -23,6 +23,6 @@ describe('Le type de justificatif', () => {
     </sdg:DataServiceEvidenceType>
   </rim:SlotValue>
 </rim:Slot>
-    `);
-  });
-});
+    `)
+  })
+})

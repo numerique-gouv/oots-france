@@ -1,8 +1,8 @@
-const PersonnePhysique = require('../../src/ebms/personnePhysique');
-const { parseXML, valeurSlot } = require('../../src/ebms/utils');
+const PersonnePhysique = require('../../src/ebms/personnePhysique')
+const { parseXML, valeurSlot } = require('../../src/ebms/utils')
 
 describe('Une personne physique', () => {
-  it("s'affiche en XML pour une requête", () => {
+  it('s\'affiche en XML pour une requête', () => {
     const jose = new PersonnePhysique(
       {
         identifiantEidas: 'DK/DE/123123123',
@@ -10,7 +10,7 @@ describe('Une personne physique', () => {
         prenom: 'Jose',
         dateNaissance: '1985-12-20',
       },
-    );
+    )
 
     expect(jose.enXMLPourRequete()).toBe(`
 <rim:Slot name="NaturalPerson">
@@ -26,18 +26,18 @@ describe('Une personne physique', () => {
     </sdg:Person>
   </rim:SlotValue>
 </rim:Slot>
-    `);
-  });
+    `)
+  })
 
-  it("n'affiche pas la balise identifiant s'il n'y a pas d'identifiant renseigné", () => {
-    const personneSansIdentifiantEidas = new PersonnePhysique();
-    const xml = parseXML(personneSansIdentifiantEidas.enXMLPourRequete());
-    const identifiantEidas = valeurSlot('NaturalPerson', xml).Person.Identifier;
+  it('n\'affiche pas la balise identifiant s\'il n\'y a pas d\'identifiant renseigné', () => {
+    const personneSansIdentifiantEidas = new PersonnePhysique()
+    const xml = parseXML(personneSansIdentifiantEidas.enXMLPourRequete())
+    const identifiantEidas = valeurSlot('NaturalPerson', xml).Person.Identifier
 
-    expect(identifiantEidas).toBeUndefined();
-  });
+    expect(identifiantEidas).toBeUndefined()
+  })
 
-  it("s'affiche en XML pour une réponse", () => {
+  it('s\'affiche en XML pour une réponse', () => {
     const jose = new PersonnePhysique(
       {
         identifiantEidas: 'DK/DE/123123123',
@@ -45,7 +45,7 @@ describe('Une personne physique', () => {
         prenom: 'Jose',
         dateNaissance: '1985-12-20',
       },
-    );
+    )
 
     expect(jose.enXMLPourReponse()).toBe(`
 <sdg:NaturalPerson>
@@ -54,6 +54,6 @@ describe('Une personne physique', () => {
 <sdg:GivenName>Jose</sdg:GivenName>
 <sdg:DateOfBirth>1985-12-20</sdg:DateOfBirth>
 </sdg:NaturalPerson>
-    `);
-  });
-});
+    `)
+  })
+})

@@ -1,3 +1,3 @@
-const leveErreur = (e) => Promise.reject(e.response?.data || e);
+const leveErreur = e => Promise.reject(e.response?.data || e)
 
-module.exports = { leveErreur };
+module.exports = { leveErreur }

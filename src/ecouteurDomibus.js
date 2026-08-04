@@ -1,18 +1,18 @@
 const ETAT = {
   DEMARRE: 'démarré',
   ARRETE: 'arrêté',
-};
+}
 
 class EcouteurDomibus {
   constructor(config = {}) {
-    this.adaptateurDomibus = config.adaptateurDomibus;
-    this.intervalleEcoute = config.intervalleEcoute;
-    this.etatEcouteur = ETAT.ARRETE;
+    this.adaptateurDomibus = config.adaptateurDomibus
+    this.intervalleEcoute = config.intervalleEcoute
+    this.etatEcouteur = ETAT.ARRETE
   }
 
   arreteEcoute() {
-    clearInterval(this.idIntervalle);
-    this.etatEcouteur = ETAT.ARRETE;
+    clearInterval(this.idIntervalle)
+    this.etatEcouteur = ETAT.ARRETE
   }
 
   ecoute() {
@@ -20,18 +20,18 @@ class EcouteurDomibus {
       this.idIntervalle = setInterval(
         this.adaptateurDomibus.traiteMessageSuivant,
         this.intervalleEcoute,
-      );
-      this.etatEcouteur = ETAT.DEMARRE;
+      )
+      this.etatEcouteur = ETAT.DEMARRE
     }
   }
 
   estArrete() {
-    return this.etatEcouteur === ETAT.ARRETE;
+    return this.etatEcouteur === ETAT.ARRETE
   }
 
   etat() {
-    return this.etatEcouteur;
+    return this.etatEcouteur
   }
 }
 
-module.exports = EcouteurDomibus;
+module.exports = EcouteurDomibus

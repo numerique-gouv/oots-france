@@ -1,4 +1,4 @@
-const PointAcces = require('../../src/ebms/pointAcces');
+const PointAcces = require('../../src/ebms/pointAcces')
 
 class ConstructeurEnveloppeSOAPException {
   static erreurAutorisationRequise() {
@@ -9,12 +9,12 @@ class ConstructeurEnveloppeSOAPException {
         detail: 'The server needs authorisation and preview on its side to process the request',
         message: 'Missing Authorization',
         severite: 'urn:sr.oots.tech.ec.europa.eu:codes:ErrorSeverity:EDMErrorResponse:PreviewRequired',
-      });
+      })
   }
 
   constructor() {
-    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
-    this.expediteur = PointAcces.expediteur();
+    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.expediteur = PointAcces.expediteur()
   }
 
   avecErreur({
@@ -24,38 +24,38 @@ class ConstructeurEnveloppeSOAPException {
     message,
     severite,
   }) {
-    this.typeErreur = type;
-    this.codeErreur = code;
-    this.detailErreur = detail;
-    this.messageErreur = message;
-    this.severiteErreur = severite;
+    this.typeErreur = type
+    this.codeErreur = code
+    this.detailErreur = detail
+    this.messageErreur = message
+    this.severiteErreur = severite
 
-    return this;
+    return this
   }
 
   avecExpediteur(expediteur) {
-    this.expediteur = expediteur;
-    return this;
+    this.expediteur = expediteur
+    return this
   }
 
   avecIdConversation(id) {
-    this.idConversation = id;
-    return this;
+    this.idConversation = id
+    return this
   }
 
   avecIdMessage(id) {
-    this.idMessage = id;
-    return this;
+    this.idMessage = id
+    return this
   }
 
   avecIdPayload(id) {
-    this.idPayload = id;
-    return this;
+    this.idPayload = id
+    return this
   }
 
   avecURLRedirection(url) {
-    this.urlRedirection = url;
-    return this;
+    this.urlRedirection = url
+    return this
   }
 
   construis() {
@@ -82,9 +82,9 @@ class ConstructeurEnveloppeSOAPException {
       </rim:SlotValue>
     </rim:Slot>
   </rs:Exception>
-</query:QueryResponse>`;
+</query:QueryResponse>`
 
-    const messageBase64 = Buffer.from(message).toString('base64');
+    const messageBase64 = Buffer.from(message).toString('base64')
 
     return `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -135,8 +135,8 @@ class ConstructeurEnveloppeSOAPException {
     </ns4:retrieveMessageResponse>
   </soap:Body>
 </soap:Envelope>
-    `;
+    `
   }
 }
 
-module.exports = ConstructeurEnveloppeSOAPException;
+module.exports = ConstructeurEnveloppeSOAPException

@@ -1,3 +1,3 @@
-const maintenant = () => new Date().toISOString();
+const maintenant = () => new Date().toISOString()
 
-module.exports = { maintenant };
+module.exports = { maintenant }

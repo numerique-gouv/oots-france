@@ -1,10 +1,10 @@
-const express = require('express');
+const express = require('express')
 
-const routesAdmin = require('./routes/routesAdmin');
-const routesAuth = require('./routes/routesAuth');
-const routesBase = require('./routes/routesBase');
-const routesEbms = require('./routes/routesEbms');
-const routesRequete = require('./routes/routesRequete');
+const routesAdmin = require('./routes/routesAdmin')
+const routesAuth = require('./routes/routesAuth')
+const routesBase = require('./routes/routesBase')
+const routesEbms = require('./routes/routesEbms')
+const routesRequete = require('./routes/routesRequete')
 
 const creeServeur = (config) => {
   const {
@@ -19,17 +19,17 @@ const creeServeur = (config) => {
     horodateur,
     middleware,
     transmetteurPiecesJustificatives,
-  } = config;
-  let serveur;
-  const app = express();
+  } = config
+  let serveur
+  const app = express()
 
-  app.set('trust proxy', 1);
+  app.set('trust proxy', 1)
 
-  app.use('/admin', routesAdmin({ ecouteurDomibus }));
+  app.use('/admin', routesAdmin({ ecouteurDomibus }))
 
-  app.use('/auth', routesAuth({ adaptateurChiffrement, adaptateurEnvironnement }));
+  app.use('/auth', routesAuth({ adaptateurChiffrement, adaptateurEnvironnement }))
 
-  app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }));
+  app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }))
 
   app.use('/requete', routesRequete({
     adaptateurDomibus,
@@ -39,21 +39,23 @@ const creeServeur = (config) => {
     depotServicesCommuns,
     middleware,
     transmetteurPiecesJustificatives,
-  }));
+  }))
 
-  app.use('/', routesBase());
+  app.use('/', routesBase())
 
-  const arreteEcoute = (suite) => serveur.close(suite);
+  const arreteEcoute = suite => serveur.close(suite)
 
-  const ecoute = (...args) => { serveur = app.listen(...args); };
+  const ecoute = (...args) => {
+    serveur = app.listen(...args)
+  }
 
-  const port = () => serveur.address().port;
+  const port = () => serveur.address().port
 
   return {
     arreteEcoute,
     ecoute,
     port,
-  };
-};
+  }
+}
 
-module.exports = { creeServeur };
+module.exports = { creeServeur }

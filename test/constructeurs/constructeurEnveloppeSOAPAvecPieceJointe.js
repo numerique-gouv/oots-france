@@ -1,20 +1,20 @@
-const PieceJointe = require('../../src/ebms/pieceJointe');
+const PieceJointe = require('../../src/ebms/pieceJointe')
 
 class ConstructeurEnveloppeSOAPAvecPieceJointe {
   constructor() {
-    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
-    this.typeMimePieceJointe = 'application/pdf';
+    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.typeMimePieceJointe = 'application/pdf'
     this.pieceJointe = new PieceJointe(
       'cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu',
       'e2RhdGE6J3RydWN9',
-    );
+    )
   }
 
   avecPieceJointe(id, typeMime, contenu) {
-    this.typeMimePieceJointe = typeMime;
-    this.pieceJointe = new PieceJointe(id, contenu);
+    this.typeMimePieceJointe = typeMime
+    this.pieceJointe = new PieceJointe(id, contenu)
 
-    return this;
+    return this
   }
 
   construis() {
@@ -37,9 +37,9 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
-    `;
+    `
 
-    const messageBase64 = Buffer.from(message).toString('base64');
+    const messageBase64 = Buffer.from(message).toString('base64')
 
     const infosPieceJointe = `
 <ns5:PartInfo href="${this.pieceJointe.idPieceJointe}">
@@ -48,13 +48,13 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
         <ns5:Property name="CompressionType">application/gzip</ns5:Property>
     </ns5:PartProperties>
 </ns5:PartInfo>
-    `;
+    `
 
     const pieceJointe = `
 <payload payloadId="${this.pieceJointe.idPieceJointe}">
   <value>${Buffer.from(this.pieceJointe.contenu).toString('base64')}</value>
 </payload>
-    `;
+    `
 
     return `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -107,8 +107,8 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     </ns4:retrieveMessageResponse>
   </soap:Body>
 </soap:Envelope>
-    `;
+    `
   }
 }
 
-module.exports = ConstructeurEnveloppeSOAPAvecPieceJointe;
+module.exports = ConstructeurEnveloppeSOAPAvecPieceJointe

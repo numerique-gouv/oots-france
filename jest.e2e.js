@@ -11,4 +11,4 @@ module.exports = {
   // la même passerelle, avec la version d'une autre branche.
   testPathIgnorePatterns: ['/node_modules/', '/.worktrees/'],
   testTimeout: 90000,
-};
+}

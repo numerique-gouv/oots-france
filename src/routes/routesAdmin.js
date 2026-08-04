@@ -1,21 +1,21 @@
-const express = require('express');
+const express = require('express')
 
 const routesAdmin = (config) => {
-  const { ecouteurDomibus } = config;
+  const { ecouteurDomibus } = config
 
-  const routes = express.Router();
+  const routes = express.Router()
 
   routes.post('/arretEcouteDomibus', (_requete, reponse) => {
-    ecouteurDomibus.arreteEcoute();
-    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
-  });
+    ecouteurDomibus.arreteEcoute()
+    reponse.send({ etatEcouteur: ecouteurDomibus.etat() })
+  })
 
   routes.post('/demarrageEcouteDomibus', (_requete, reponse) => {
-    ecouteurDomibus.ecoute();
-    reponse.send({ etatEcouteur: ecouteurDomibus.etat() });
-  });
+    ecouteurDomibus.ecoute()
+    reponse.send({ etatEcouteur: ecouteurDomibus.etat() })
+  })
 
-  return routes;
-};
+  return routes
+}
 
-module.exports = routesAdmin;
+module.exports = routesAdmin

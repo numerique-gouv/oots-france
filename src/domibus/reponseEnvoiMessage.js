@@ -1,9 +1,9 @@
-const ReponseDomibus = require('./reponseDomibus');
+const ReponseDomibus = require('./reponseDomibus')
 
 class ReponseEnvoiMessage extends ReponseDomibus {
   idMessage() {
-    return this.xml.Envelope.Body.submitResponse.messageID;
+    return this.xml.Envelope.Body.submitResponse.messageID
   }
 }
 
-module.exports = ReponseEnvoiMessage;
+module.exports = ReponseEnvoiMessage

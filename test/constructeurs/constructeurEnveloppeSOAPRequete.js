@@ -1,39 +1,39 @@
-const PersonnePhysique = require('../../src/ebms/personnePhysique');
-const TypeJustificatif = require('../../src/ebms/typeJustificatif');
+const PersonnePhysique = require('../../src/ebms/personnePhysique')
+const TypeJustificatif = require('../../src/ebms/typeJustificatif')
 
 class ConstructeurEnveloppeSOAPRequete {
   constructor() {
-    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu';
-    this.codeDemarche = '';
-    this.beneficiaire = new PersonnePhysique();
-    this.idRequete = '';
-    this.requeteur = { id: '', nom: '' };
-    this.typeJustificatif = new TypeJustificatif();
+    this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.codeDemarche = ''
+    this.beneficiaire = new PersonnePhysique()
+    this.idRequete = ''
+    this.requeteur = { id: '', nom: '' }
+    this.typeJustificatif = new TypeJustificatif()
   }
 
   avecCodeDemarche(codeDemarche) {
-    this.codeDemarche = codeDemarche;
-    return this;
+    this.codeDemarche = codeDemarche
+    return this
   }
 
   avecDemandeur(donnees) {
-    this.beneficiaire = new PersonnePhysique(donnees);
-    return this;
+    this.beneficiaire = new PersonnePhysique(donnees)
+    return this
   }
 
   avecIdRequete(id) {
-    this.idRequete = id;
-    return this;
+    this.idRequete = id
+    return this
   }
 
   avecRequeteur({ id, nom }) {
-    Object.assign(this.requeteur, { id, nom });
-    return this;
+    Object.assign(this.requeteur, { id, nom })
+    return this
   }
 
   avecTypeJustificatif(donnees) {
-    this.typeJustificatif = new TypeJustificatif(donnees);
-    return this;
+    this.typeJustificatif = new TypeJustificatif(donnees)
+    return this
   }
 
   construis() {
@@ -97,8 +97,8 @@ class ConstructeurEnveloppeSOAPRequete {
     ${this.typeJustificatif.enXMLPourRequete()}
   </query:Query>
 </query:QueryRequest>
-`;
-    const messageBase64 = Buffer.from(message).toString('base64');
+`
+    const messageBase64 = Buffer.from(message).toString('base64')
 
     return `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -149,8 +149,8 @@ class ConstructeurEnveloppeSOAPRequete {
     </ns4:retrieveMessageResponse>
   </soap:Body>
 </soap:Envelope>
-  `;
+  `
   }
 }
 
-module.exports = ConstructeurEnveloppeSOAPRequete;
+module.exports = ConstructeurEnveloppeSOAPRequete

@@ -1,24 +1,24 @@
-const PieceJointeVide = require('./pieceJointeVide');
+const PieceJointeVide = require('./pieceJointeVide')
 
 class Message {
   constructor(config, donnees) {
-    this.adaptateurUUID = config.adaptateurUUID;
-    this.horodateur = config.horodateur;
+    this.adaptateurUUID = config.adaptateurUUID
+    this.horodateur = config.horodateur
 
-    this.pieceJointe = donnees.pieceJointe || new PieceJointeVide();
+    this.pieceJointe = donnees.pieceJointe || new PieceJointeVide()
 
-    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS;
-    this.idPayload = `cid:${this.adaptateurUUID.genereUUID()}@${suffixe}`;
+    const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS
+    this.idPayload = `cid:${this.adaptateurUUID.genereUUID()}@${suffixe}`
     this.entete = new this.constructor.ClasseEntete(
       config,
       { ...donnees, idPayload: this.idPayload },
-    );
+    )
   }
 
-  pieceJointePresente = () => this.pieceJointe.constructor.name === 'PieceJointe';
+  pieceJointePresente = () => this.pieceJointe.constructor.name === 'PieceJointe'
 
   enSOAP() {
-    const messageEnBase64 = Buffer.from(this.corpsMessageEnXML()).toString('base64');
+    const messageEnBase64 = Buffer.from(this.corpsMessageEnXML()).toString('base64')
 
     return `
 <soap:Envelope
@@ -41,8 +41,8 @@ class Message {
     </_1:submitRequest>
   </soap:Body>
 </soap:Envelope>
-    `;
+    `
   }
 }
 
-module.exports = Message;
+module.exports = Message

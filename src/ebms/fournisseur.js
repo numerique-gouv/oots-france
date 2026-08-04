@@ -1,14 +1,14 @@
 class Fournisseur {
   constructor(donnees = {}) {
-    const { pointAcces = {}, descriptions = {} } = donnees;
-    this.pointAcces = pointAcces;
-    this.descriptions = descriptions;
+    const { pointAcces = {}, descriptions = {} } = donnees
+    this.pointAcces = pointAcces
+    this.descriptions = descriptions
   }
 
   enXML() {
     const descriptionsEnXML = () => Object.entries(this.descriptions)
       .map(([langue, description]) => `<sdg:Name lang="${langue}">${description}</sdg:Name>`)
-      .join('\n      ');
+      .join('\n      ')
 
     return `
 <rim:Slot name="EvidenceProvider">
@@ -19,12 +19,12 @@ class Fournisseur {
     </sdg:Agent>
   </rim:SlotValue>
 </rim:Slot>
-    `;
+    `
   }
 
   idPointAcces() {
-    return this.pointAcces.id;
+    return this.pointAcces.id
   }
 }
 
-module.exports = Fournisseur;
+module.exports = Fournisseur

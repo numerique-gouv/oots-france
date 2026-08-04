@@ -1,9 +1,9 @@
-const PieceJointe = require('./pieceJointe');
+const PieceJointe = require('./pieceJointe')
 
 class PieceJointeVide extends PieceJointe {
-  enXMLDansEntete = () => '';
+  enXMLDansEntete = () => ''
 
-  enXMLDansCorps = () => '';
+  enXMLDansCorps = () => ''
 }
 
-module.exports = PieceJointeVide;
+module.exports = PieceJointeVide

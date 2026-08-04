@@ -1,7 +1,7 @@
-const ReponseEnvoiMessage = require('../../src/domibus/reponseEnvoiMessage');
+const ReponseEnvoiMessage = require('../../src/domibus/reponseEnvoiMessage')
 
-describe("La réponse d'un envoi de message Domibus", () => {
-  it("connaît l'identifiant du message envoyé", () => {
+describe('La réponse d\'un envoi de message Domibus', () => {
+  it('connaît l\'identifiant du message envoyé', () => {
     const donnees = `
 <soap:Envelope
   xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
@@ -14,10 +14,10 @@ describe("La réponse d'un envoi de message Domibus", () => {
     </ns4:submitResponse>
   </soap:Body>
 </soap:Envelope>
-  `;
+  `
 
-    const reponse = new ReponseEnvoiMessage(donnees);
+    const reponse = new ReponseEnvoiMessage(donnees)
 
-    expect(reponse.idMessage()).toEqual('12345678-1234-1234-1234-1234567890ab@oots.eu');
-  });
-});
+    expect(reponse.idMessage()).toEqual('12345678-1234-1234-1234-1234567890ab@oots.eu')
+  })
+})

@@ -1,58 +1,58 @@
-const EnteteMessageRecu = require('./enteteMessageRecu');
-const FabriqueMessages = require('./fabriqueMessages');
-const ReponseDomibus = require('./reponseDomibus');
+const EnteteMessageRecu = require('./enteteMessageRecu')
+const FabriqueMessages = require('./fabriqueMessages')
+const ReponseDomibus = require('./reponseDomibus')
 
 class ReponseRecuperationMessage extends ReponseDomibus {
   constructor(...args) {
-    super(...args);
-    this.entete = new EnteteMessageRecu(this.xml.Envelope.Header);
+    super(...args)
+    this.entete = new EnteteMessageRecu(this.xml.Envelope.Header)
 
-    this.idsPayloads = this.entete.payloads();
-    const corpsMessageDecode = this.payload('application/x-ebrs+xml').toString();
-    const corpsMessageParse = this.parser.parse(corpsMessageDecode);
+    this.idsPayloads = this.entete.payloads()
+    const corpsMessageDecode = this.payload('application/x-ebrs+xml').toString()
+    const corpsMessageParse = this.parser.parse(corpsMessageDecode)
 
-    this.corpsMessage = FabriqueMessages.nouveauMessage(this.entete.action(), corpsMessageParse);
+    this.corpsMessage = FabriqueMessages.nouveauMessage(this.entete.action(), corpsMessageParse)
   }
 
   action() {
-    return this.entete.action();
+    return this.entete.action()
   }
 
   codeDemarche() {
-    return this.corpsMessage.codeDemarche();
+    return this.corpsMessage.codeDemarche()
   }
 
   beneficiaire() {
-    return this.corpsMessage.beneficiaire();
+    return this.corpsMessage.beneficiaire()
   }
 
   expediteur() {
-    return this.entete.expediteur();
+    return this.entete.expediteur()
   }
 
   idConversation() {
-    return this.entete.idConversation();
+    return this.entete.idConversation()
   }
 
   idRequete() {
-    return this.corpsMessage.idRequete();
+    return this.corpsMessage.idRequete()
   }
 
   idRequeteur() {
-    return this.requeteur().id;
+    return this.requeteur().id
   }
 
   payload(mimeType) {
-    const payloads = [].concat(this.xml.Envelope.Body.retrieveMessageResponse.payload);
+    const payloads = [].concat(this.xml.Envelope.Body.retrieveMessageResponse.payload)
     const corpsMessageEncode = payloads
-      .find((p) => p['@_payloadId'] === this.idsPayloads[mimeType])
-      .value;
+      .find(p => p['@_payloadId'] === this.idsPayloads[mimeType])
+      .value
 
-    return Buffer.from(corpsMessageEncode, 'base64');
+    return Buffer.from(corpsMessageEncode, 'base64')
   }
 
   pieceJustificative() {
-    return this.payload('application/pdf');
+    return this.payload('application/pdf')
   }
 
   reponse(config) {
@@ -66,20 +66,20 @@ class ReponseRecuperationMessage extends ReponseDomibus {
         requeteur: this.requeteur(),
         typeJustificatif: this.typeJustificatif(),
       },
-    );
+    )
   }
 
   requeteur() {
-    return this.corpsMessage.requeteur();
+    return this.corpsMessage.requeteur()
   }
 
   suiteConversation() {
-    return this.corpsMessage.suiteConversation();
+    return this.corpsMessage.suiteConversation()
   }
 
   typeJustificatif() {
-    return this.corpsMessage.typeJustificatif();
+    return this.corpsMessage.typeJustificatif()
   }
 }
 
-module.exports = ReponseRecuperationMessage;
+module.exports = ReponseRecuperationMessage

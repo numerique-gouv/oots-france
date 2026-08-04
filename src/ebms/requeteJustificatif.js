@@ -1,12 +1,12 @@
-const EnteteRequete = require('./enteteRequete');
-const Fournisseur = require('./fournisseur');
-const Message = require('./message');
-const PersonnePhysique = require('./personnePhysique');
-const Requeteur = require('./requeteur');
-const TypeJustificatif = require('./typeJustificatif');
+const EnteteRequete = require('./enteteRequete')
+const Fournisseur = require('./fournisseur')
+const Message = require('./message')
+const PersonnePhysique = require('./personnePhysique')
+const Requeteur = require('./requeteur')
+const TypeJustificatif = require('./typeJustificatif')
 
 class RequeteJustificatif extends Message {
-  static ClasseEntete = EnteteRequete;
+  static ClasseEntete = EnteteRequete
 
   constructor(
     config,
@@ -21,19 +21,19 @@ class RequeteJustificatif extends Message {
       previsualisationRequise = false,
     } = {},
   ) {
-    super(config, { destinataire, idConversation });
+    super(config, { destinataire, idConversation })
 
-    this.codeDemarche = codeDemarche;
-    this.beneficiaire = beneficiaire;
-    this.fournisseur = fournisseur;
-    this.requeteur = requeteur;
-    this.typeJustificatif = typeJustificatif;
-    this.previsualisationRequise = previsualisationRequise;
+    this.codeDemarche = codeDemarche
+    this.beneficiaire = beneficiaire
+    this.fournisseur = fournisseur
+    this.requeteur = requeteur
+    this.typeJustificatif = typeJustificatif
+    this.previsualisationRequise = previsualisationRequise
   }
 
   corpsMessageEnXML() {
-    const uuid = this.adaptateurUUID.genereUUID();
-    const horodatage = this.horodateur.maintenant();
+    const uuid = this.adaptateurUUID.genereUUID()
+    const horodatage = this.horodateur.maintenant()
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 <query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -93,8 +93,8 @@ class RequeteJustificatif extends Message {
     ${this.beneficiaire.enXMLPourRequete()}
     ${this.typeJustificatif.enXMLPourRequete()}
   </query:Query>
-</query:QueryRequest>`;
+</query:QueryRequest>`
   }
 }
 
-module.exports = RequeteJustificatif;
+module.exports = RequeteJustificatif
