@@ -3,8 +3,12 @@
 #
 # Le conteneur tourne avec le pilote de journalisation `none` (voir
 # docker-compose.yml) : impossible de guetter le message de fin de démarrage de
-# Tomcat dans les logs. On interroge donc une route publique de l'API, la seule
-# qui réponde sans authentification.
+# Tomcat dans les logs. On interroge donc l'API.
+#
+# Depuis Domibus 5.2, la console préfixe ses routes par le rôle qu'elles
+# exigent : `rest/public/**` est justement la famille qui répond sans
+# authentification, et `application/title` en fait partie. C'est plus sûr que
+# l'ancienne `rest/application/name`, qui n'était publique que par accident.
 #
 # Usage : scripts/ci/attendDomibus.sh [délai max en secondes ; 600 par défaut]
 
@@ -17,7 +21,7 @@ echo "Attente de $URL_DOMIBUS (au plus ${DELAI_MAX} s)…"
 
 DEBUT=$(date +%s)
 while true; do
-  CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$URL_DOMIBUS/rest/application/name" || true)
+  CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$URL_DOMIBUS/rest/public/application/title" || true)
   if [ "$CODE" = "200" ]; then
     echo "Domibus répond après $(($(date +%s) - DEBUT)) s."
     exit 0
