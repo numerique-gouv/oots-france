@@ -14,7 +14,13 @@ class ConstructeurEnveloppeSOAPException {
 
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.idEchange = '88888888-8888-8888-8888-888888888888'
     this.expediteur = PointAcces.expediteur()
+  }
+
+  avecIdEchange(id) {
+    this.idEchange = id
+    return this
   }
 
   avecErreur({
@@ -112,6 +118,8 @@ class ConstructeurEnveloppeSOAPException {
         <ns5:MessageProperties>
             <ns5:Property name="originalSender" type="urn:cef.eu:names:identifier:EAS:0204">02-SchoolAuthority-34</ns5:Property>
             <ns5:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0190">NL222332239</ns5:Property>
+            <ns5:Property name="ExchangeId">${this.idEchange}</ns5:Property>
+            <ns5:Property name="SpecificationId">oots-edm:v2.0</ns5:Property>
         </ns5:MessageProperties>
         <ns5:PayloadInfo>
             <ns5:PartInfo href="${this.idPayload}">

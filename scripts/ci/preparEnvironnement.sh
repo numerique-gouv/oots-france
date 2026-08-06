@@ -72,7 +72,9 @@ cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
 DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL={"typesJustificatif":[{"id":"https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000","descriptions":{"FR":"Justificatif de test","EN":"Test evidence"},"formatDistribution":"application/pdf","fournisseurs":{"FR":[{"pointAcces":{"id":"blue_gw","typeId":"urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"},"descriptions":{"FR":"Fournisseur de test"}}]}}],"demarches":[{"code":"00","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]}]}
-DONNEES_REQUETEURS={"FR_TEST":{"nom":"Requêteur de test","url":"http://localhost:4000"}}
+DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://localhost:4000"}}
+IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
+NOM_FOURNISSEUR_FRANCAIS=Fournisseur de test
 URL_OOTS_FRANCE=http://localhost:3000
 
 DELAI_MAX_ATTENTE_DOMIBUS=30000
@@ -84,5 +86,20 @@ URL_BASE_DOMIBUS=http://domibus:8080/domibus
 LOGIN_API_REST=$LOGIN_API_REST
 MOT_DE_PASSE_API_REST=$MOT_DE_PASSE_API_REST
 FIN
+
+# Le template déclare le contrat : toute variable qu'il nomme doit être écrite
+# ici. Sans ce contrôle, l'oubli d'une variable nouvellement obligatoire ne se
+# voit qu'au démarrage de l'application, deux étapes plus loin, sous la forme
+# d'une attente qui expire sans rien dire.
+MANQUANTES=""
+for variable in $(sed -n 's/^\([A-Z_][A-Z_0-9]*\)=.*/\1/p' .env.oots.template); do
+  grep -q "^$variable=" .env.oots || MANQUANTES="$MANQUANTES $variable"
+done
+
+if [ -n "$MANQUANTES" ]; then
+  echo "❌ Variables déclarées par .env.oots.template et absentes de .env.oots :$MANQUANTES" >&2
+  echo "   Compléter scripts/ci/preparEnvironnement.sh." >&2
+  exit 1
+fi
 
 echo "Fichiers .env, .env.domibus et .env.oots écrits."

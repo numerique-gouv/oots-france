@@ -1,5 +1,14 @@
 const PointAcces = require('../ebms/pointAcces')
 
+// Les propriétés ebMS se présentent de la même façon quel que soit leur
+// conteneur — `MessageProperties` pour le message, `PartProperties` pour un
+// payload : une liste de `Property` distinguées par leur attribut `name`.
+// fast-xml-parser rend un objet quand il n'y en a qu'une et un tableau au-delà,
+// d'où la coercition.
+const valeurPropriete = (sectionProprietes, nom) => [].concat(sectionProprietes?.Property ?? [])
+  .find(p => p['@_name'] === nom)
+  ?.['#text']
+
 class EnteteMessageRecu {
   constructor(donneesEntete) {
     this.enteteMessageUtilisateur = donneesEntete.Messaging.UserMessage
@@ -19,21 +28,13 @@ class EnteteMessageRecu {
     return this.enteteMessageUtilisateur.CollaborationInfo.ConversationId
   }
 
-  idPayload(typeMime) {
-    const infosPayloadMessageEBMS = this.infosPayloads.find((i) => {
-      const proprietes = [].concat(i.PartProperties.Property)
-      const proprieteMimeType = proprietes.find(p => p['@_name'] === 'MimeType')
-      return proprieteMimeType['#text'] === typeMime
-    })
-
-    return infosPayloadMessageEBMS['@_href']
+  idEchange() {
+    return valeurPropriete(this.enteteMessageUtilisateur.MessageProperties, 'ExchangeId')
   }
 
   payloads() {
     return this.infosPayloads.reduce((acc, infosPayload) => {
-      const proprietes = [].concat(infosPayload.PartProperties.Property)
-      const proprieteTypeMime = proprietes.find(p => p['@_name'] === 'MimeType')
-      const typeMime = proprieteTypeMime['#text']
+      const typeMime = valeurPropriete(infosPayload.PartProperties, 'MimeType')
 
       return Object.assign(acc, { [typeMime]: infosPayload['@_href'] })
     }, {})

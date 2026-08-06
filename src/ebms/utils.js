@@ -1,7 +1,13 @@
 const { XMLParser } = require('fast-xml-parser')
 
+// `leadingZeros: false` garde `00` — le code de la démarche « vérification
+// système » — sous forme de chaîne : sans lui il serait converti en nombre `0`.
 const parseXML = (...args) => (
-  new XMLParser({ ignoreAttributes: false, removeNSPrefix: true }).parse(...args)
+  new XMLParser({
+    ignoreAttributes: false,
+    removeNSPrefix: true,
+    numberParseOptions: { leadingZeros: false },
+  }).parse(...args)
 )
 
 const verifiePresenceSlot = (nomSlot, scopeRecherche) => {

@@ -4,10 +4,13 @@ const ConstructeurEnveloppeSOAPRequete = require('../constructeurs/constructeurE
 const ReponseErreurAutorisationRequise = require('../../src/domibus/reponseErreurAutorisationRequise')
 const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperationMessage')
 const CodeDemarche = require('../../src/ebms/codeDemarche')
+const Fournisseur = require('../../src/ebms/fournisseur')
 const PointAcces = require('../../src/ebms/pointAcces')
 const { ErreurReponseRequete } = require('../../src/erreurs')
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
+  const fournisseurFrancais = Fournisseur.francais({ id: '00000000000001', nom: 'Un fournisseur français' })
+
   it('connaît l\'URL de redirection spécifiée', () => {
     const enveloppeSOAP = ConstructeurEnveloppeSOAPException.erreurAutorisationRequise()
       .avecURLRedirection('https://example.com/preview/12345678-1234-1234-1234-1234567890ab')
@@ -98,6 +101,21 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       expect(reponse.codeDemarche()).toBe(CodeDemarche.VERIFICATION_SYSTEME)
     })
 
+    it('fait écho à l\'identifiant d\'échange de la requête', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecIdEchange('22222222-2222-2222-2222-222222222222')
+        .construis()
+
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
+        adaptateurUUID: { genereUUID: () => '11111111-1111-1111-1111-111111111111' },
+        fournisseurFrancais,
+        horodateur: { maintenant: () => '' },
+      })
+
+      expect(reponse.entete.idEchange).toBe('22222222-2222-2222-2222-222222222222')
+    })
+
     it('connaît son identifiant de requête', () => {
       const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
         .avecIdRequete('urn:uuid:11111111-1111-1111-1111-111111111111')
@@ -126,6 +144,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
       const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
         adaptateurUUID: { genereUUID: () => '' },
+        fournisseurFrancais,
       })
 
       const { requeteur } = reponseVerificationSysteme
@@ -151,6 +170,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
       const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
         adaptateurUUID: { genereUUID: () => '' },
+        fournisseurFrancais,
       })
       expect(reponseVerificationSysteme.beneficiaire.nom).toEqual('Dupont')
     })
@@ -173,6 +193,7 @@ describe('La réponse à une requête Domibus de récupération de message', () 
 
       const reponseVerificationSysteme = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
         adaptateurUUID: { genereUUID: () => '' },
+        fournisseurFrancais,
       })
 
       expect(reponseVerificationSysteme.typeJustificatif.id).toBe('abcdef')

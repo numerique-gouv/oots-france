@@ -7,8 +7,11 @@ class Message {
 
     this.pieceJointe = donnees.pieceJointe || new PieceJointeVide()
 
+    // Les TDD imposent que le CID du payload reprenne l'identifiant du document
+    // RegRep qu'il transporte : un seul UUID sert donc les deux.
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS
-    this.idPayload = `cid:${this.adaptateurUUID.genereUUID()}@${suffixe}`
+    this.idDocument = this.adaptateurUUID.genereUUID()
+    this.idPayload = `cid:${this.idDocument}@${suffixe}`
     this.entete = new this.constructor.ClasseEntete(
       config,
       { ...donnees, idPayload: this.idPayload },

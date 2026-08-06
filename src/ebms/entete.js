@@ -1,5 +1,8 @@
 const PointAcces = require('./pointAcces')
 const PieceJointeVide = require('./pieceJointeVide')
+const { IDENTIFIANT_SPECIFICATION_EDM } = require('./specificationEdm')
+const { echappeXML } = require('./echappement')
+const { identiteEbms } = require('./identiteEbms')
 
 const ACTIONS = {
   EXECUTION_REQUETE: 'ExecuteQueryRequest',
@@ -17,9 +20,20 @@ class Entete {
     this.idPayload = donnees.idPayload
     this.pieceJointe = donnees.pieceJointe || new PieceJointeVide()
 
+    // Identités des coins C1 et C4, qui s'inversent selon le sens du message :
+    // chaque message les calcule à partir du requêteur et du fournisseur. Un
+    // coin non renseigné est refusé ici plutôt qu'annoncé `undefined` sur le
+    // réseau — voir `identiteEbms`.
+    this.emetteurOriginal = identiteEbms(donnees.emetteurOriginal ?? {}, 'L\'émetteur d\'origine (C1)')
+    this.destinataireFinal = identiteEbms(donnees.destinataireFinal ?? {}, 'Le destinataire final (C4)')
+
     const { adaptateurUUID } = config
     const suffixe = process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS
     this.idMessage = `${adaptateurUUID.genereUUID()}@${suffixe}`
+
+    // L'échange couvre la requête et les réponses qui lui succèdent : le
+    // fournisseur reprend l'identifiant reçu au lieu d'en générer un nouveau.
+    this.idEchange = donnees.idEchange || adaptateurUUID.genereUUID()
   }
 
   static action() {
@@ -29,7 +43,7 @@ class Entete {
   enXML() {
     const horodatage = this.horodateur.maintenant()
     const baliseIdConversation = (typeof this.idConversation !== 'undefined')
-      ? `<eb:ConversationId>${this.idConversation}</eb:ConversationId>`
+      ? `<eb:ConversationId>${echappeXML(this.idConversation)}</eb:ConversationId>`
       : ''
 
     return `
@@ -37,7 +51,7 @@ class Entete {
   <eb:UserMessage>
     <eb:MessageInfo>
       <eb:Timestamp>${horodatage}</eb:Timestamp>
-      <eb:MessageId>${this.idMessage}</eb:MessageId>
+      <eb:MessageId>${echappeXML(this.idMessage)}</eb:MessageId>
     </eb:MessageInfo>
     <eb:PartyInfo>
       <eb:From>${this.expediteur.enXML()}</eb:From>
@@ -49,11 +63,13 @@ class Entete {
       ${baliseIdConversation}
     </eb:CollaborationInfo>
     <eb:MessageProperties>
-      <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">C1</eb:Property>
-      <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">C4</eb:Property>
+      <eb:Property name="originalSender" type="${echappeXML(this.emetteurOriginal.typeId)}">${echappeXML(this.emetteurOriginal.id)}</eb:Property>
+      <eb:Property name="finalRecipient" type="${echappeXML(this.destinataireFinal.typeId)}">${echappeXML(this.destinataireFinal.id)}</eb:Property>
+      <eb:Property name="ExchangeId">${echappeXML(this.idEchange)}</eb:Property>
+      <eb:Property name="SpecificationId">${IDENTIFIANT_SPECIFICATION_EDM}</eb:Property>
     </eb:MessageProperties>
     <eb:PayloadInfo>
-      <eb:PartInfo href="${this.idPayload}">
+      <eb:PartInfo href="${echappeXML(this.idPayload)}">
         <eb:PartProperties>
           <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
         </eb:PartProperties>

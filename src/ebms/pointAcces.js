@@ -1,3 +1,4 @@
+const { echappeXML } = require('./echappement')
 class PointAcces {
   static expediteur() {
     const id = process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS
@@ -13,7 +14,7 @@ class PointAcces {
 
   enXML() {
     return `
-<eb:PartyId type="${this.typeId}">${this.id}</eb:PartyId>
+<eb:PartyId type="${echappeXML(this.typeId)}">${echappeXML(this.id)}</eb:PartyId>
 <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
     `
   }

@@ -29,9 +29,13 @@
     <properties>
       <property name="originalSenderProperty" key="originalSender" datatype="string" required="true"/>
       <property name="finalRecipientProperty" key="finalRecipient" datatype="string" required="true"/>
+      <property name="exchangeIdProperty" key="ExchangeId" datatype="string" required="false"/>
+      <property name="specificationIdProperty" key="SpecificationId" datatype="string" required="false"/>
       <propertySet name="fourCornersPropertySet">
         <propertyRef property="originalSenderProperty"/>
         <propertyRef property="finalRecipientProperty"/>
+        <propertyRef property="exchangeIdProperty"/>
+        <propertyRef property="specificationIdProperty"/>
       </propertySet>
     </properties>
 

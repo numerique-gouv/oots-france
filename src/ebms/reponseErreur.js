@@ -1,13 +1,10 @@
 const EnteteErreur = require('./enteteErreur')
 const Message = require('./message')
+const { IDENTIFIANT_SPECIFICATION_EDM } = require('./specificationEdm')
+const { echappeXML } = require('./echappement')
+const { exigeIdentite } = require('./identiteEbms')
 
 const DESCRIPTIONS_EXCEPTIONS = {
-  QUERY_EXCEPTION: {
-    type: 'query:QueryExceptionType',
-    message: 'Query Exception',
-    severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
-    code: 'EDM:ERR:0008',
-  },
   OBJECT_NOT_FOUND_EXCEPTION: {
     type: 'rs:ObjectNotFoundExceptionType',
     message: 'Object not found',
@@ -24,13 +21,24 @@ class ReponseErreur extends Message {
     {
       destinataire,
       exception,
+      fournisseur = config.fournisseurFrancais,
       idConversation,
+      idEchange,
       idRequete,
+      requeteur,
     } = {},
   ) {
-    super(config, { destinataire, idConversation })
+    super(config, {
+      destinataire,
+      idConversation,
+      idEchange,
+      emetteurOriginal: exigeIdentite(fournisseur, 'Le fournisseur français'),
+      destinataireFinal: exigeIdentite(requeteur, 'Le requêteur'),
+    })
 
+    this.fournisseur = fournisseur
     this.idRequete = idRequete
+    this.requeteur = requeteur
     this.typeException = exception?.type
     this.messageException = exception?.message
     this.severiteException = exception?.severite
@@ -45,23 +53,23 @@ class ReponseErreur extends Message {
                      xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
                      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                      xmlns:xlink="http://www.w3.org/1999/xlink"
-                     requestId="${this.idRequete}"
+                     requestId="${echappeXML(this.idRequete)}"
                      status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value>oots-edm:v1.0</rim:Value>
+      <rim:Value>${IDENTIFIANT_SPECIFICATION_EDM}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
 
   <rim:Slot name="EvidenceResponseIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value>${this.adaptateurUUID?.genereUUID()}</rim:Value>
+      <rim:Value>${this.idDocument}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
 
-  <rim:Slot name="ErrorProvider">
-  </rim:Slot>
+  ${this.fournisseur.enXMLPourErreur()}
+  ${this.requeteur.enXMLPourReponse()}
 
   <rs:Exception xsi:type="${this.typeException}"
                 message="${this.messageException}"
