@@ -33,7 +33,7 @@ l'écouteur, réponse renvoyée, justificatif retransmis au requêteur.
 
 Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue
 ce scénario à chaque `push` et chaque `pull_request`, en montant la pile de
-zéro. Il automatise ce que le README fait faire à la main :
+zéro. Il automatise ce que l'installation locale demande de faire :
 
 | Étape | Script |
 | --- | --- |
@@ -68,7 +68,8 @@ le chiffrement — la convention est donnée dans
 
 `scripts/configureDomibus.sh` passe par l'API REST d'administration plutôt que
 par la console web, et sert aussi bien en local : son emploi et ses identifiants
-sont décrits dans le [README](../README.md#rejouer-ces-étapes-sans-la-console).
+sont décrits dans le
+[README](../README.md#configurer-domibus-en-une-commande).
 Il se termine par un **message AS4 de test** — l'« avion en papier » de la
 console — dont il attend l'acquittement : la signature, le chiffrement et les
 alias sont donc validés avant que l'application n'entre en jeu. S'il passe et

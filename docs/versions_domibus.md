@@ -7,7 +7,8 @@
 > | Pour… | Voir |
 > | --- | --- |
 > | ce qu'est Domibus, les profils de sécurité, les filtres de message, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
-> | installer et configurer la passerelle pas à pas | [README](../README.md) |
+> | installer et configurer Domibus | [README](../README.md#configurer-domibus-en-une-commande) |
+> | refaire cette configuration dans l'interface | [configurer_domibus_via_l_interface.md](configurer_domibus_via_l_interface.md) |
 > | le scénario de bout en bout et la configuration automatisée | [test_e2e.md](test_e2e.md) |
 > | le versionnement des **spécifications OOTS**, sans rapport avec celui de Domibus | [versions_tdd.md](versions_tdd.md) |
 
@@ -101,6 +102,25 @@ password that is not the same as the password for the private keys* », parmi le
 | Les certificats de démonstration livrés avec l'image avaient expiré | Ceux de la 5.2 sont valides — mais restent publics et partagés par toutes les installations, donc toujours régénérés |
 | L'image écrasait le répertoire de configuration monté à son premier démarrage, ce qui obligeait à remplacer les certificats **après** ce démarrage | Toujours vrai, mais sans conséquence : plus rien n'a besoin d'être déposé sur le disque de la passerelle |
 | Domibus absorbait `gateway_truststore.jks` au démarrage et retirait le fichier | Idem : les magasins sont générés dans un répertoire temporaire et téléversés |
+
+> [!IMPORTANT]
+> Un poste installé avant cette montée doit repartir d'une base vide : le volume
+> `shared_db_file_system` porte encore le schéma écrit par `domibus-mysql8:5.0.4`,
+> que le WAR 5.2 ne sait pas lire. Le symptôme est une `Fault` au premier appel
+> du plugin WS :
+>
+> ```
+> JDBC exception executing SQL [select … from WS_PLUGIN_TB_MESSAGE_LOG …]
+> [Unknown column 'wle1_0.MESSAGE_ENTITY_ID' in 'field list']
+> ```
+>
+> `docker compose down --volumes` efface le volume ; reprendre ensuite le
+> [README](../README.md) depuis le démarrage de MySQL, puis rejouer
+> `scripts/configureDomibus.sh` — magasins, PMode et Plugin User vivent dans la
+> base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence
+> désormais les messages par leur identifiant d'entité, et le reste du schéma a
+> suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner
+> vierge.
 
 La montée a par ailleurs permis de sortir de `domibus/` — répertoire non
 versionné et recréé à chaque table rase — les réglages dont le dépôt dépend :

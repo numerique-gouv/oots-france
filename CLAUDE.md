@@ -26,7 +26,8 @@ double the maintenance cost.
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
-| Installation and configuration steps | `README.md` |
+| Installation and configuration steps, including `scripts/configureDomibus.sh` | `README.md` |
+| Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode) | `docs/configurer_domibus_via_l_interface.md` |
 | Agent conventions and workflow | this file |
 
 When adding documentation, extend the owning file rather than repeating it
