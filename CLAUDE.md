@@ -72,9 +72,10 @@ scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
-CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 26,
-plus CodeQL. `npm test` runs ESLint before Jest — lint failures fail the
-build, and `no-only-tests` forbids committing `.only`.
+CI (GitHub Actions) runs `npm ci && npm test` on Node 26, plus CodeQL. There is
+no build step: the project runs its sources as-is. `npm test` runs ESLint before
+Jest — lint failures fail the build, and `no-only-tests` forbids committing
+`.only`.
 
 The lint bases are taken as published and unconfigured — [`@eslint/js`](https://www.npmjs.com/package/@eslint/js)
 for correctness, [`@stylistic`](https://eslint.style/) for style,
