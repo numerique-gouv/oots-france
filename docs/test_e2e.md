@@ -52,13 +52,12 @@ zéro. Il automatise ce que l'installation locale demande de faire :
 
 Les certificats livrés avec l'image sont publics et partagés par toutes les
 installations : `scripts/configureDomibus.sh` en génère d'autres et les
-téléverse. Il n'y a plus rien à déposer sur le disque de la passerelle — le
-détour par le fichier, ses copies sous root et le bouton « Reload KeyStore »
-qu'imposait Domibus 5.0.4 ont disparu avec la montée en 5.2.
+téléverse. Tout passe par l'API REST, rien n'est à déposer sur le disque de la
+passerelle.
 
-Ce sont désormais les **alias** qui demandent de l'attention. Les profils de
-sécurité les imposent, et un alias qui s'en écarte fait échouer la signature ou
-le chiffrement — la convention est donnée dans
+Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité les
+imposent, et un alias qui s'en écarte fait échouer la signature ou le
+chiffrement — la convention est donnée dans
 [domibus_context.md](domibus_context.md).
 
 > [!IMPORTANT]

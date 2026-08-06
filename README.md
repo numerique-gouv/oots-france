@@ -197,13 +197,13 @@ OOTS-France s'appuie sur les services tiers de FranceConnect+, qui exigent que
 les interactions aient lieu sur HTTPS. Pour ce faire :
 
 ```sh
-$ cp nginx.template nginx
+$ cp -r nginx.template nginx
 ```
 
 Ensuite, changer…
 - dans le fichier `nginx/conf/nginx.conf` : toutes les occurrences de
   `example.com` en le nom du domaine lié à la machine de développement.
-- dans le fichier `nginx/script/init-letsencrypt.sh` : toutes les occurrences
+- dans le fichier `nginx/scripts/init-letsencrypt.sh` : toutes les occurrences
   de `example.com` en le nom du domaine lié à la machine de développement _et_
   l'adresse `user@example.com` en l'adresse mail du développeur qui va demander
   les certificats.
