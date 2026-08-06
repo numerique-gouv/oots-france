@@ -8,3 +8,6 @@ docker-compose.override.yml
 .claude/
 CLAUDE.local.md
 .worktrees/
+
+# artefacts de validation Schematron (téléchargés)
+.schematron/

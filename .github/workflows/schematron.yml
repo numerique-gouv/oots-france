@@ -1,0 +1,89 @@
+name: Validation Schematron
+
+# Confronte les messages produits par le code aux règles Schematron publiées
+# avec les TDD. Contrairement à `e2e.yml`, aucune passerelle n'est nécessaire :
+# les messages sont sérialisés par les classes de `src/ebms/`, puis validés hors
+# ligne. Voir la section « Validation des messages » du README.
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+concurrency:
+  group: schematron-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schematron:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # Une seule source pour la version validée : le script la reçoit en
+      # argument, la clé de cache la porte, et les deux ne peuvent pas diverger.
+      VERSION_TDD: 2.0.1
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26.x
+          cache: 'npm'
+
+      # Les messages sont produits par le code du dépôt, qui atteint `jose` via
+      # `adaptateurChiffrement` : les dépendances sont nécessaires.
+      - run: npm ci
+
+      # Le runner embarque un JDK, mais lequel dépend de l'image : le fixer
+      # évite qu'une mise à jour de l'image change le moteur XSLT sous nos pieds.
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Saxon, SchXslt et la trentaine de fichiers Schematron ne changent pas
+      # tant que la version des TDD ne bouge pas ; leur compilation en XSLT non
+      # plus, et c'est elle qui coûte. Le cache la rejoue en quelques secondes.
+      - name: Restaure les artefacts de validation
+        uses: actions/cache@v4
+        with:
+          path: .schematron
+          key: schematron-${{ env.VERSION_TDD }}
+
+      - name: Valide les messages contre les règles des TDD ${{ env.VERSION_TDD }}
+        # Les règles sont téléchargées depuis code.europa.eu, dont les coupures
+        # sont sans rapport avec le code de la PR : on retente plutôt que de la
+        # teindre en rouge (même raison que la récupération des images dans
+        # `e2e.yml`). Une règle violée sort en 2 et n'est pas rejouée : elle ne
+        # guérirait pas d'une seconde tentative, et masquer 45 s d'attente
+        # derrière un verdict acquis n'aide personne.
+        #
+        # Le `exit 1` final est nécessaire : l'état de sortie de la boucle est
+        # celui du `sleep`, donc un succès même après trois échecs.
+        #
+        # `BAVARD` détaille les slots facultatifs absents : sur un runner, la
+        # sortie est la seule trace qui reste pour comprendre un échec.
+        env:
+          BAVARD: '1'
+        run: |
+          for tentative in 1 2 3; do
+            scripts/valideSchematron.sh "$VERSION_TDD" && exit 0
+            code=$?
+            if [ "$code" -eq 2 ]; then
+              exit 2
+            fi
+            echo "Échec de préparation (tentative $tentative, code $code), nouvelle tentative…"
+            sleep 15
+          done
+          exit 1
+
+      - name: Publie les messages et les rapports en cas d'échec
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: messages-et-rapports-svrl
+          path: .schematron/${{ env.VERSION_TDD }}/messages/
+          if-no-files-found: ignore
