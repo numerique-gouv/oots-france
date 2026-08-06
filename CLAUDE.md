@@ -103,7 +103,7 @@ import rules would ignore every `require` in the project.
 >
 > **Node 26.7 or newer is required**, and pinned in three places that must stay
 > in step: `engines` in `package.json`, `FROM node:26.7` in the `Dockerfile`,
-> and the matrix in `node.js.yml`. Below Node 24.9 the suites fail with
+> and the matrix in `tests.yml`. Below Node 24.9 the suites fail with
 > `ERR_REQUIRE_ESM`, since Jest's `require(ESM)` needs
 > `vm.SourceTextModule.prototype.hasAsyncGraph`; older Node also rejects
 > `--disable-warning=` inside `NODE_OPTIONS` and dies before Jest even starts.
@@ -115,7 +115,7 @@ import rules would ignore every `require` in the project.
 > any bump here, run `docker compose build --pull web`.
 
 `test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from
-`npm test` via `testPathIgnorePatterns`. Keep it excluded: `node.js.yml` runs
+`npm test` via `testPathIgnorePatterns`. Keep it excluded: `tests.yml` runs
 on a bare runner with no Domibus. It has its own workflow, `e2e.yml`, which
 builds the whole stack and configures Domibus through its admin REST API
 (`scripts/configureDomibus.sh`). Run it after touching the ebMS payloads or the

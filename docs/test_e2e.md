@@ -22,11 +22,11 @@ l'écouteur, réponse renvoyée, justificatif retransmis au requêteur.
 | Configuration Jest | bloc `jest` de `package.json` | `jest.e2e.js` |
 | Délai par test | 1 s | 90 s |
 | Prérequis | aucun | pile démarrée et Domibus configuré |
-| Workflow GitHub | `node.js.yml` | `e2e.yml` |
+| Workflow GitHub | `tests.yml` | `e2e.yml` |
 
 > [!IMPORTANT]
 > Le test e2e est exclu de `npm test` par `testPathIgnorePatterns`, et doit le
-> rester : le workflow `node.js.yml` tourne sur un runner nu, sans Domibus ni
+> rester : le workflow `tests.yml` tourne sur un runner nu, sans Domibus ni
 > variables d'environnement. L'y inclure ferait échouer toutes les CI.
 
 ## En intégration continue
