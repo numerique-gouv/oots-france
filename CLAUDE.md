@@ -66,13 +66,13 @@ The French terms map to specific TDD concepts — see the glossary in
 
 ```sh
 scripts/tests.sh          # lint + tests in Docker, watch mode (docker compose up test)
-npm test                  # eslint . && jest (needs local node 24+ / npm install)
+npm test                  # eslint . && jest (needs local node 26.7+ / npm install)
 npm test -- test/ebms/requeteJustificatif.spec.js  # single test file (keeps NODE_OPTIONS)
 scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up)
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
-CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 24,
+CI (GitHub Actions) runs `npm ci && npm run build && npm test` on Node 26,
 plus CodeQL. `npm test` runs ESLint before Jest — lint failures fail the
 build, and `no-only-tests` forbids committing `.only`.
 
@@ -88,8 +88,30 @@ import rules would ignore every `require` in the project.
 > Run Jest through the npm scripts, never as a bare `npx jest`: they carry
 > `NODE_OPTIONS=--experimental-vm-modules`, without which every suite that
 > reaches [`jose`](https://github.com/panva/jose) fails to load. jose is
-> published as an ES module only; Node requires it natively, but Jest needs
-> that flag to do the same.
+> published as an ES module only; Node requires it natively, but Jest never
+> uses Node's loader — [`jest-resolve`](https://github.com/jestjs/jest) only
+> detects a file as ESM when `vm.SyntheticModule` exists, which that flag
+> alone provides. Without it jose is compiled as CommonJS:
+> `SyntaxError: Unexpected token 'export'`.
+>
+> The flag is still required on Node 26: `vm.SourceTextModule` remains
+> experimental, so nothing here becomes removable by upgrading. The companion
+> `--disable-warning=ExperimentalWarning` only silences the resulting banner;
+> keep it narrow rather than reaching for `NODE_NO_WARNINGS=1`, which would
+> also hide deprecation warnings worth reading.
+>
+> **Node 26.7 or newer is required**, and pinned in three places that must stay
+> in step: `engines` in `package.json`, `FROM node:26.7` in the `Dockerfile`,
+> and the matrix in `node.js.yml`. Below Node 24.9 the suites fail with
+> `ERR_REQUIRE_ESM`, since Jest's `require(ESM)` needs
+> `vm.SourceTextModule.prototype.hasAsyncGraph`; older Node also rejects
+> `--disable-warning=` inside `NODE_OPTIONS` and dies before Jest even starts.
+
+> [!WARNING]
+> The `Dockerfile` pins an exact minor on purpose. A floating `FROM node:26`
+> lets a stale cached image drift far behind CI — the failure mode is a local
+> `scripts/testE2e.sh` dying on a Node that the workflow never exercises. After
+> any bump here, run `docker compose build --pull web`.
 
 `test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from
 `npm test` via `testPathIgnorePatterns`. Keep it excluded: `node.js.yml` runs
