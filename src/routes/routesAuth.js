@@ -1,16 +1,16 @@
-const express = require('express');
+const express = require('express')
 
 const routesAuth = (config) => {
   const {
     adaptateurChiffrement,
     adaptateurEnvironnement,
-  } = config;
+  } = config
 
-  const routes = express.Router();
+  const routes = express.Router()
 
   routes.get('/cles_publiques', (_requete, reponse) => {
-    const { kty, n, e } = adaptateurEnvironnement.clePriveeJWK();
-    const idClePublique = adaptateurChiffrement.cleHachage(n);
+    const { kty, n, e } = adaptateurEnvironnement.clePriveeJWK()
+    const idClePublique = adaptateurChiffrement.cleHachage(n)
 
     const clePubliqueDansJWKSet = {
       keys: [{
@@ -20,14 +20,14 @@ const routesAuth = (config) => {
         e,
         n,
       }],
-    };
+    }
 
-    reponse.set('Content-Type', 'application/json');
+    reponse.set('Content-Type', 'application/json')
     reponse.status(200)
-      .send(clePubliqueDansJWKSet);
-  });
+      .send(clePubliqueDansJWKSet)
+  })
 
-  return routes;
-};
+  return routes
+}
 
-module.exports = routesAuth;
+module.exports = routesAuth

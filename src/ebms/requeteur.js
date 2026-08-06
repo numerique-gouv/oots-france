@@ -1,26 +1,26 @@
-const adaptateurChiffrement = require('../adaptateurs/adaptateurChiffrement');
-const PersonnePhysique = require('./personnePhysique');
+const adaptateurChiffrement = require('../adaptateurs/adaptateurChiffrement')
+const PersonnePhysique = require('./personnePhysique')
 
 class Requeteur {
   constructor(config = {}, donnees = {}) {
-    this.adaptateurChiffrement = config.adaptateurChiffrement || adaptateurChiffrement;
-    this.id = donnees.id;
-    this.nom = donnees.nom;
-    this.url = donnees.url;
+    this.adaptateurChiffrement = config.adaptateurChiffrement || adaptateurChiffrement
+    this.id = donnees.id
+    this.nom = donnees.nom
+    this.url = donnees.url
   }
 
   beneficiaire(infosUtilisateurChiffrees) {
-    const urlClesPubliques = `${this.url}/auth/cles_publiques`;
+    const urlClesPubliques = `${this.url}/auth/cles_publiques`
 
     return this.adaptateurChiffrement.dechiffreJWE(infosUtilisateurChiffrees, urlClesPubliques)
       .then(({ dateNaissance, nomUsage, prenom }) => (
         new PersonnePhysique({ dateNaissance, nom: nomUsage, prenom })
-      ));
+      ))
   }
 
   identifiantEtNomEnXML() {
     return `<sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">${this.id}</sdg:Identifier>
-        <sdg:Name lang="FR">${this.nom}</sdg:Name>`;
+        <sdg:Name lang="FR">${this.nom}</sdg:Name>`
   }
 
   enXMLPourReponse() {
@@ -32,7 +32,7 @@ class Requeteur {
     </sdg:Agent>
   </rim:SlotValue>
 </rim:Slot>
-    `;
+    `
   }
 
   enXMLPourRequete() {
@@ -54,8 +54,8 @@ class Requeteur {
     </rim:Element>
   </rim:SlotValue>
 </rim:Slot>
-    `;
+    `
   }
 }
 
-module.exports = Requeteur;
+module.exports = Requeteur

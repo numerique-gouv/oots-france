@@ -1,7 +1,7 @@
-const ReponseEnvoiMessage = require('./reponseEnvoiMessage');
-const ReponseRecuperationMessage = require('./reponseRecuperationMessage');
-const ReponseRequeteListeMessagesEnAttente = require('./reponseRequeteListeMessagesEnAttente');
-const { ErreurInstructionSOAPInconnue } = require('../erreurs');
+const ReponseEnvoiMessage = require('./reponseEnvoiMessage')
+const ReponseRecuperationMessage = require('./reponseRecuperationMessage')
+const ReponseRequeteListeMessagesEnAttente = require('./reponseRequeteListeMessagesEnAttente')
+const { ErreurInstructionSOAPInconnue } = require('../erreurs')
 
 const instructions = {
   ENVOIE_MESSAGE: {
@@ -16,43 +16,43 @@ const instructions = {
     libelle: 'retrieveMessage',
     classeReponse: ReponseRecuperationMessage,
   },
-};
+}
 
 const libelles = Object.keys(instructions)
-  .reduce((acc, cle) => ({ ...acc, [cle]: instructions[cle].libelle }), {});
+  .reduce((acc, cle) => ({ ...acc, [cle]: instructions[cle].libelle }), {})
 
 class InstructionSOAP {
   static instructionsExistantes() {
-    return Object.values(libelles);
+    return Object.values(libelles)
   }
 
   static envoieMessage() {
-    return new InstructionSOAP('submitMessage');
+    return new InstructionSOAP('submitMessage')
   }
 
   static listeMessagesEnAttente() {
-    return new InstructionSOAP('listPendingMessages');
+    return new InstructionSOAP('listPendingMessages')
   }
 
   static recupereMessage() {
-    return new InstructionSOAP('retrieveMessage');
+    return new InstructionSOAP('retrieveMessage')
   }
 
   constructor(libelleInstruction) {
     if (!InstructionSOAP.instructionsExistantes().includes(libelleInstruction)) {
-      throw new ErreurInstructionSOAPInconnue(`Instruction SOAP inconnue: ${libelleInstruction}`);
+      throw new ErreurInstructionSOAPInconnue(`Instruction SOAP inconnue: ${libelleInstruction}`)
     }
 
-    this.libelle = libelleInstruction;
+    this.libelle = libelleInstruction
     this.ClasseReponse = Object.values(instructions)
       .find(({ libelle }) => libelle === libelleInstruction)
-      .classeReponse;
+      .classeReponse
   }
 
   nouvelleReponseDomibus(data) {
-    return new this.ClasseReponse(data);
+    return new this.ClasseReponse(data)
   }
 }
 
-Object.assign(InstructionSOAP, libelles);
-module.exports = InstructionSOAP;
+Object.assign(InstructionSOAP, libelles)
+module.exports = InstructionSOAP

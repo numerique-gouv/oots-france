@@ -1,9 +1,9 @@
-const Entete = require('./entete');
+const Entete = require('./entete')
 
 class EnteteErreur extends Entete {
   static action() {
-    return Entete.REPONSE_ERREUR;
+    return Entete.REPONSE_ERREUR
   }
 }
 
-module.exports = EnteteErreur;
+module.exports = EnteteErreur

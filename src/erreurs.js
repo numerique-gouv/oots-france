@@ -29,4 +29,4 @@ module.exports = {
   ErreurReponseRequete,
   ErreurRequeteurInexistant,
   ErreurTypeJustificatifIntrouvable,
-};
+}

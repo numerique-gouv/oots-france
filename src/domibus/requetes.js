@@ -1,7 +1,7 @@
 const requeteListeMessagesEnAttente = (idConversation) => {
   const filtreIdConversation = idConversation
     ? `<conversationId>${idConversation}</conversationId>`
-    : '';
+    : ''
 
   return `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
@@ -10,10 +10,10 @@ const requeteListeMessagesEnAttente = (idConversation) => {
     <_1:listPendingMessagesRequest>${filtreIdConversation}</_1:listPendingMessagesRequest>
   </soap:Body>
 </soap:Envelope>
-  `;
-};
+  `
+}
 
-const requeteRecuperationMessage = (idMessage) => `
+const requeteRecuperationMessage = idMessage => `
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
   <soap:Header/>
   <soap:Body>
@@ -22,9 +22,9 @@ const requeteRecuperationMessage = (idMessage) => `
     </_1:retrieveMessageRequest>
   </soap:Body>
 </soap:Envelope>
-  `;
+  `
 
 module.exports = {
   requeteListeMessagesEnAttente,
   requeteRecuperationMessage,
-};
+}

@@ -42,7 +42,7 @@ services:
 
   web:
     <<: *configuration-base
-    command: "npx nodemon server.js"
+    command: "node --watch server.js"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:

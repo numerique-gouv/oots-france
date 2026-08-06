@@ -1,105 +1,104 @@
-const axios = require('axios');
+const axios = require('axios')
 
-const serveurTest = require('./serveurTest');
+const serveurTest = require('./serveurTest')
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurCodeDemarcheIntrouvable,
   ErreurCodePaysIntrouvable,
   ErreurJetonInvalide,
   ErreurTypeJustificatifIntrouvable,
-} = require('../../src/erreurs');
+} = require('../../src/erreurs')
 
 describe('Le serveur des routes `/requete`', () => {
-  const serveur = serveurTest();
-  let port;
+  const serveur = serveurTest()
+  let port
 
-  beforeEach((suite) => serveur.initialise(() => {
-    port = serveur.port();
-    suite();
-  }));
+  beforeEach(suite => serveur.initialise(() => {
+    port = serveur.port()
+    suite()
+  }))
 
-  afterEach((suite) => serveur.arrete(suite));
+  afterEach(suite => serveur.arrete(suite))
 
   describe('sur GET /requete/pieceJustificative', () => {
     describe('avec un destinataire qui ne répond pas', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', () => {
-        expect.assertions(2);
+        expect.assertions(2)
 
-        serveur.adaptateurDomibus().reponseAvecPieceJustificative = (
-          () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'))
-        );
+        serveur.adaptateurDomibus().reponseAvecPieceJustificative
+          = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'))
 
         return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX&destinataire=DESTINATAIRE_SILENCIEUX`)
           .catch(({ response }) => {
-            expect(response.status).toEqual(504);
-            expect(response.data).toEqual({ erreur: 'aucune URL reçue ; aucune pièce reçue' });
-          });
-      });
-    });
-  });
+            expect(response.status).toEqual(504)
+            expect(response.data).toEqual({ erreur: 'aucune URL reçue ; aucune pièce reçue' })
+          })
+      })
+    })
+  })
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si JWE pas transmis', () => (
     axios.get(`http://localhost:${port}/requete/pieceJustificative`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(422);
-        expect(response.data).toEqual({ erreur: 'Le bénéficiaire doit être renseigné' });
-      })));
+        expect(response.status).toEqual(422)
+        expect(response.data).toEqual({ erreur: 'Le bénéficiaire doit être renseigné' })
+      })))
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si erreur déchiffrage JWE', () => {
-    serveur.adaptateurChiffrement().dechiffreJWE = () => Promise.reject(new ErreurJetonInvalide('oups'));
+    serveur.adaptateurChiffrement().dechiffreJWE = () => Promise.reject(new ErreurJetonInvalide('oups'))
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=JWEInvalide`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(422);
-        expect(response.data).toEqual({ erreur: 'oups' });
-      });
-  });
+        expect(response.status).toEqual(422)
+        expect(response.data).toEqual({ erreur: 'oups' })
+      })
+  })
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si le type de justificatif est introuvable', () => {
     serveur.depotServicesCommuns().trouveTypesJustificatifsPourDemarche = () => Promise.resolve([
       Promise.reject(new ErreurTypeJustificatifIntrouvable('oups')),
-    ]);
+    ])
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(422);
-        expect(response.data).toEqual({ erreur: 'oups' });
-      });
-  });
+        expect(response.status).toEqual(422)
+        expect(response.data).toEqual({ erreur: 'oups' })
+      })
+  })
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si le code démarche est introuvable', () => {
     serveur.depotServicesCommuns().trouveTypesJustificatifsPourDemarche = () => (
       Promise.reject(new ErreurCodeDemarcheIntrouvable('oups'))
-    );
+    )
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(422);
-        expect(response.data).toEqual({ erreur: 'oups' });
-      });
-  });
+        expect(response.status).toEqual(422)
+        expect(response.data).toEqual({ erreur: 'oups' })
+      })
+  })
 
   it('retourne une erreur HTTP 422 (Unprocessable Content) si le code pays est introuvable', () => {
     serveur.depotServicesCommuns().trouveFournisseurs = () => (
       Promise.reject(new ErreurCodePaysIntrouvable('oups'))
-    );
+    )
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(422);
-        expect(response.data).toEqual({ erreur: 'oups' });
-      });
-  });
+        expect(response.status).toEqual(422)
+        expect(response.data).toEqual({ erreur: 'oups' })
+      })
+  })
 
   it('retourne une erreur 501 quand le feature flip est désactivé', () => {
-    expect.assertions(2);
+    expect.assertions(2)
 
-    serveur.adaptateurEnvironnement().avecRequetePieceJustificative = () => false;
+    serveur.adaptateurEnvironnement().avecRequetePieceJustificative = () => false
 
     return axios.get(`http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX&destinataire=AP_FR_01`)
       .catch(({ response }) => {
-        expect(response.status).toEqual(501);
-        expect(response.data).toEqual('Not Implemented Yet!');
-      });
-  });
-});
+        expect(response.status).toEqual(501)
+        expect(response.data).toEqual('Not Implemented Yet!')
+      })
+  })
+})

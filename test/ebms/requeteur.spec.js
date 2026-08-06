@@ -1,14 +1,14 @@
-const Requeteur = require('../../src/ebms/requeteur');
+const Requeteur = require('../../src/ebms/requeteur')
 
 describe('Un requêteur', () => {
-  const adaptateurChiffrement = {};
+  const adaptateurChiffrement = {}
 
   beforeEach(() => {
-    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve();
-  });
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve()
+  })
 
-  it("s'affiche en XML pour une requête", () => {
-    const requeteur = new Requeteur({}, { id: '123456', nom: 'Un requêteur français' });
+  it('s\'affiche en XML pour une requête', () => {
+    const requeteur = new Requeteur({}, { id: '123456', nom: 'Un requêteur français' })
 
     expect(requeteur.enXMLPourRequete()).toBe(`
 <rim:Slot name="EvidenceRequester">
@@ -29,31 +29,31 @@ describe('Un requêteur', () => {
     </rim:Element>
   </rim:SlotValue>
 </rim:Slot>
-    `);
-  });
+    `)
+  })
 
   it('déchiffre le JWE contenant les infos du bénéficiaire', () => {
-    expect.assertions(2);
+    expect.assertions(2)
 
     adaptateurChiffrement.dechiffreJWE = (jwe, urlJWKS) => {
-      expect(jwe).toBe('abcd');
-      expect(urlJWKS).toBe('http://example.com/auth/cles_publiques');
-      return Promise.resolve({});
-    };
+      expect(jwe).toBe('abcd')
+      expect(urlJWKS).toBe('http://example.com/auth/cles_publiques')
+      return Promise.resolve({})
+    }
 
-    const requeteur = new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' });
-    return requeteur.beneficiaire('abcd');
-  });
+    const requeteur = new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' })
+    return requeteur.beneficiaire('abcd')
+  })
 
   it('retourne la personne physique associée aux infos bénéficiaire déchiffrées', () => {
-    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({ dateNaissance: '1965-11-25', nomUsage: 'Dupont', prenom: 'Sophie' });
+    adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({ dateNaissance: '1965-11-25', nomUsage: 'Dupont', prenom: 'Sophie' })
 
-    const requeteur = new Requeteur({ adaptateurChiffrement }, {});
+    const requeteur = new Requeteur({ adaptateurChiffrement }, {})
     return requeteur.beneficiaire('abcd')
       .then((b) => {
-        expect(b.dateNaissance).toBe('1965-11-25');
-        expect(b.nom).toBe('Dupont');
-        expect(b.prenom).toBe('Sophie');
-      });
-  });
-});
+        expect(b.dateNaissance).toBe('1965-11-25')
+        expect(b.nom).toBe('Dupont')
+        expect(b.prenom).toBe('Sophie')
+      })
+  })
+})

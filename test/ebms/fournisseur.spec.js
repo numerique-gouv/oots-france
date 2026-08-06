@@ -1,7 +1,7 @@
-const Fournisseur = require('../../src/ebms/fournisseur');
+const Fournisseur = require('../../src/ebms/fournisseur')
 
 describe('Un fournisseur', () => {
-  it("s'affiche en XML", () => {
+  it('s\'affiche en XML', () => {
     const fournisseur = new Fournisseur({
       pointAcces: {
         id: 'unIdentifiant',
@@ -9,9 +9,9 @@ describe('Un fournisseur', () => {
       },
       descriptions: {
         EN: 'some access point',
-        FR: "un point d'accès",
+        FR: 'un point d\'accès',
       },
-    });
+    })
 
     expect(fournisseur.enXML()).toBe(`
 <rim:Slot name="EvidenceProvider">
@@ -23,6 +23,6 @@ describe('Un fournisseur', () => {
     </sdg:Agent>
   </rim:SlotValue>
 </rim:Slot>
-    `);
-  });
-});
+    `)
+  })
+})

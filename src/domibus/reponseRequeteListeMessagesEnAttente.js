@@ -1,14 +1,14 @@
-const ReponseDomibus = require('./reponseDomibus');
+const ReponseDomibus = require('./reponseDomibus')
 
 class ReponseRequeteListeMessagesEnAttente extends ReponseDomibus {
   idMessageSuivant() {
-    const resultat = this.xml.Envelope.Body.listPendingMessagesResponse.messageID;
-    return (typeof resultat === 'string') ? resultat : resultat?.[0];
+    const resultat = this.xml.Envelope.Body.listPendingMessagesResponse.messageID
+    return (typeof resultat === 'string') ? resultat : resultat?.[0]
   }
 
   messageEnAttente() {
-    return !!this.idMessageSuivant();
+    return !!this.idMessageSuivant()
   }
 }
 
-module.exports = ReponseRequeteListeMessagesEnAttente;
+module.exports = ReponseRequeteListeMessagesEnAttente

@@ -1,4 +1,4 @@
-const ConstructeurXMLParseMessageRecu = require('./constructeurXMLParseMessageRecu');
+const ConstructeurXMLParseMessageRecu = require('./constructeurXMLParseMessageRecu')
 
 class ConstructeurXMLParseReponseSuccesRecue extends ConstructeurXMLParseMessageRecu {
   construis() {
@@ -7,9 +7,9 @@ class ConstructeurXMLParseReponseSuccesRecue extends ConstructeurXMLParseMessage
         Slot: [
           {
             '@_name': 'EvidenceRequester',
-            SlotValue: {
+            'SlotValue': {
               '@_type': 'rim:AnyValueType',
-              Agent: {
+              'Agent': {
                 Identifier: { '#text': this.requeteur.id },
                 Name: [
                   { '@_lang': 'FR', '#text': this.requeteur.nom },
@@ -20,8 +20,8 @@ class ConstructeurXMLParseReponseSuccesRecue extends ConstructeurXMLParseMessage
           },
         ],
       },
-    };
+    }
   }
 }
 
-module.exports = ConstructeurXMLParseReponseSuccesRecue;
+module.exports = ConstructeurXMLParseReponseSuccesRecue

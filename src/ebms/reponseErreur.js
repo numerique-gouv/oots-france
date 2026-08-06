@@ -1,5 +1,5 @@
-const EnteteErreur = require('./enteteErreur');
-const Message = require('./message');
+const EnteteErreur = require('./enteteErreur')
+const Message = require('./message')
 
 const DESCRIPTIONS_EXCEPTIONS = {
   QUERY_EXCEPTION: {
@@ -14,10 +14,10 @@ const DESCRIPTIONS_EXCEPTIONS = {
     severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
     code: 'EDM:ERR:0004',
   },
-};
+}
 
 class ReponseErreur extends Message {
-  static ClasseEntete = EnteteErreur;
+  static ClasseEntete = EnteteErreur
 
   constructor(
     config,
@@ -28,13 +28,13 @@ class ReponseErreur extends Message {
       idRequete,
     } = {},
   ) {
-    super(config, { destinataire, idConversation });
+    super(config, { destinataire, idConversation })
 
-    this.idRequete = idRequete;
-    this.typeException = exception?.type;
-    this.messageException = exception?.message;
-    this.severiteException = exception?.severite;
-    this.codeException = exception?.code;
+    this.idRequete = idRequete
+    this.typeException = exception?.type
+    this.messageException = exception?.message
+    this.severiteException = exception?.severite
+    this.codeException = exception?.code
   }
 
   corpsMessageEnXML() {
@@ -73,9 +73,9 @@ class ReponseErreur extends Message {
       </rim:SlotValue>
     </rim:Slot>
   </rs:Exception>
-</query:QueryResponse>`;
+</query:QueryResponse>`
   }
 }
 
-Object.assign(ReponseErreur, DESCRIPTIONS_EXCEPTIONS);
-module.exports = ReponseErreur;
+Object.assign(ReponseErreur, DESCRIPTIONS_EXCEPTIONS)
+module.exports = ReponseErreur
