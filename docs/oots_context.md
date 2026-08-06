@@ -64,15 +64,38 @@ Un message eDelivery traverse quatre coins. Pour une requête de justificatif :
 Les coins qualifient le trajet d'un message : sur la réponse, ils s'inversent.
 L'*Evidence Requester* agit pour le compte de C1 et confie le message à C2.
 
-> [!IMPORTANT]
-> Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender`
-> et `finalRecipient`. `src/ebms/entete.js` y écrit aujourd'hui les chaînes
-> `C1` et `C4` : le message annonce donc le *nom du coin* au lieu de l'identité
-> de l'organisation qui l'occupe. Un échange réel attend là un identifiant
-> d'organisation — les messages reçus d'autres États membres, rejoués dans
-> `test/constructeurs/`, portent par exemple `02-SchoolAuthority-34`. En
-> l'état, le pays destinataire ne peut ni savoir quelle autorité demande, ni
-> router vers le bon fournisseur.
+Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender` et
+`finalRecipient`, que `src/ebms/entete.js` renseigne à partir du requêteur et du
+fournisseur : sur la requête, le requêteur puis le fournisseur visé ; sur les
+réponses, où les coins s'inversent, le fournisseur français puis le requêteur
+reçu.
+
+### Identifier une organisation
+
+Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel
+répertoire il provient. Ce **schéma d'identifiant** accompagne l'identifiant
+partout où il apparaît — le `type` des propriétés ebMS ci-dessus, le `schemeID`
+des `sdg:Identifier` du payload RegRep. Les TDD n'en admettent que deux formes :
+
+| Forme | Usage |
+| --- | --- |
+| `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467109633/Code+lists) (*Electronic Address Scheme*), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
+| `urn:oasis:names:tc:ebcore:partyid-type:unregistered:[Code]` | repli pour une organisation hors de tout répertoire listé, suivi d'un code pays |
+
+**Les organisations françaises sont identifiées par leur SIRET**, soit le code
+EAS **`0009`** (`src/ebms/schemeIdentifiant.js`). Rien n'était à demander à la
+Commission pour cela : la liste EAS contient déjà les répertoires français —
+`0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la
+configuration : le SIRET du fournisseur est porté par
+`IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est
+indexé par celui de chaque requêteur.
+
+> [!NOTE]
+> Deux identités échappent encore à cette règle, faute de SIRET renseigné : la
+> plateforme intermédiaire `OOTSFRANCE`, déclarée en second agent de chaque
+> requête, et les points d'accès eDelivery — mais ces derniers ne sont pas des
+> organisations : une passerelle porte un identifiant de passerelle
+> (`unregistered:oots` dans le PMode), non un SIRET.
 
 ### Les messages échangés
 
@@ -93,11 +116,17 @@ Trois messages circulent :
   justificatif demandé ;
 - `ExecuteQueryResponse` : réponse contenant le justificatif en pièce jointe ;
 - `ExceptionResponse` : réponse d'erreur RegRep ; le cas particulier
-  `EDM:ERR:0004` avec une URL de redirection sert à rediriger l'usager vers le
+  `EDM:ERR:0002` (`rs:AuthorizationExceptionType`, sévérité `PreviewRequired`),
+  accompagné du slot `PreviewLocation`, sert à rediriger l'usager vers le
   *Preview Space* du pays fournisseur.
 
-L'identifiant de spécification injecté dans les messages est `oots-edm:v1.0`
-(voir `src/ebms/requeteJustificatif.js`).
+L'identifiant de spécification injecté dans les messages est porté par
+`src/ebms/specificationEdm.js` ; il voyage dans le slot `SpecificationIdentifier`
+de chaque message et dans la propriété ebMS `SpecificationId`. Quelle version
+viser et comment elle se négocie : [versions_tdd.md](versions_tdd.md).
+
+Les messages produits se valident contre les règles Schematron officielles avec
+`scripts/valideSchematron.sh` (voir [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 
 ## Spécifications et documentation officielles
 
@@ -108,17 +137,15 @@ L'identifiant de spécification injecté dans les messages est `oots-edm:v1.0`
   niveau, identité et eID, DSD, Evidence Broker, Semantic Repository, listes de
   codes, API des Common Services, et l'**EDM** (*Exchange Data Model* : les
   requêtes, réponses et erreurs, la prévisualisation) — c'est lui que
-  référence l'identifiant `oots-edm:v1.0` des messages. S'y ajoutent les
+  référence l'identifiant de spécification des messages. S'y ajoutent les
   schémas XML et les règles Schematron de validation.
 - [Historique des versions des TDD](https://ec.europa.eu/digital-building-blocks/sites/display/TDD/OOTS+Technical+Design+Documents+Releases) —
   chaque version est archivée avec son changelog.
 
-> [!IMPORTANT]
-> Ce dépôt a été écrit contre les TDD v1.x (`oots-edm:v1.0`), alors que la
-> v2.0 adoptée en février 2026 n'est **pas rétrocompatible** : toute reprise du
-> développement doit commencer par un rapprochement avec les TDD courants. Le
-> versionnement, la cohabitation des versions sur le réseau et la version à
-> viser sont traités dans [versions_tdd.md](versions_tdd.md).
+Les trois messages sont alignés sur la **v2.0** (`oots-edm:v2.0`) et validés
+contre ses règles Schematron. Le versionnement, la cohabitation des versions sur
+le réseau et les préalables restant à lever sont traités dans
+[versions_tdd.md](versions_tdd.md).
 
 ## Histoire et état du projet
 
@@ -255,13 +282,21 @@ qu'une brique existe :
 - **Persistance et pistes d'audit** : aucune base de données côté application
   (l'état des conversations vit en mémoire via des événements) ; les pistes
   d'audit exigées par les TDD ne sont pas implémentées.
-- **Alignement TDD v2.0** : le code cible les TDD v1.x (`oots-edm:v1.0`) ; la
-  v2.0 (février 2026), non rétrocompatible, n'est pas couverte, et la ligne
-  v1.x elle-même a avancé depuis. C'est la v2.0 qu'il est recommandé de viser
-  — raisons et préalables dans [versions_tdd.md](versions_tdd.md).
-- **Identification des coins C1 et C4** : les entêtes ebMS annoncent les
-  chaînes `C1` et `C4` au lieu des identifiants des organisations concernées
-  (cf. [Le modèle des quatre coins](#le-modèle-des-quatre-coins)).
+- **Fonctionnalités v2.0 non couvertes** : les messages sont conformes à la
+  v2.0, mais plusieurs de ses apports restent hors du dépôt — le
+  [SMP](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467117984/SMP+specifications)
+  et la découverte dynamique, la deuxième requête consécutive à une
+  prévisualisation (slots `PreviewLocation` et `ReturnLocation` en requête), le
+  slot facultatif `EvidenceProviderClassification` (inalimentable sans DSD
+  réel), et les données d'identité du *wallet* au-delà du `NaturalPerson`
+  actuel.
+- **Données figées dans les messages** : le slot `Requirements` porte toujours
+  le même *requirement*, le niveau de garantie eIDAS est fixé à `High`, et
+  l'adresse des agents se limite au pays — le minimum qu'exigent les règles
+  Schematron. Ces valeurs attendent les Common Services et l'intégration eIDAS.
+- **SIRET de la plateforme intermédiaire** : l'agent `OOTSFRANCE` déclaré en
+  second de chaque requête garde le schéma de repli, faute de SIRET renseigné
+  (cf. [Identifier une organisation](#identifier-une-organisation)).
 - **Homologation de sécurité** : jamais réalisée, alors que des données
   potentiellement sensibles transitent par le système.
 
