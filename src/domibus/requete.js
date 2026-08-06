@@ -9,7 +9,7 @@ const { valeurSlot } = require('../ebms/utils')
 
 class Requete extends MessageRecu {
   codeDemarche() {
-    return valeurSlot('Procedure', this.xmlParse.QueryRequest).LocalizedString['@_value']
+    return valeurSlot('Procedure', this.xmlParse.QueryRequest)
   }
 
   beneficiaire() {
@@ -41,8 +41,12 @@ class Requete extends MessageRecu {
     const requeteurJustificatif = requeteurs.find(r => r.Classification === 'ER')
     const id = Requete.idRequeteur(requeteurJustificatif)
     const nom = Requete.nomRequeteur(requeteurJustificatif)
+    const typeId = Requete.typeIdRequeteur(requeteurJustificatif)
+    const langue = Requete.langueRequeteur(requeteurJustificatif)
 
-    return new Requeteur({}, { id, nom })
+    return new Requeteur({}, {
+      id, langue, nom, typeId,
+    })
   }
 
   typeJustificatif() {

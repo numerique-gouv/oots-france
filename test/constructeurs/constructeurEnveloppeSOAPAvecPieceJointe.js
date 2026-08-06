@@ -3,11 +3,17 @@ const PieceJointe = require('../../src/ebms/pieceJointe')
 class ConstructeurEnveloppeSOAPAvecPieceJointe {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.idEchange = '88888888-8888-8888-8888-888888888888'
     this.typeMimePieceJointe = 'application/pdf'
     this.pieceJointe = new PieceJointe(
       'cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu',
       'e2RhdGE6J3RydWN9',
     )
+  }
+
+  avecIdEchange(id) {
+    this.idEchange = id
+    return this
   }
 
   avecPieceJointe(id, typeMime, contenu) {
@@ -31,9 +37,14 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
   <rim:Slot name="EvidenceProvider"><!-- … --></rim:Slot>
   <rim:Slot name="EvidenceRequester"><!-- … --></rim:Slot>
   <rim:RegistryObjectList>
-    <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">
-      <rim:Slot name="EvidenceMetadata"><!-- … --></rim:Slot>
-      <rim:RepositoryItemRef ns7:href="${this.pieceJointe.idPieceJointe}" ns7:title="Evidence"/>
+    <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:RegistryPackageType" id="urn:uuid:d3009b63-a656-47b9-863e-57ff30b01ad1">
+      <rim:RegistryObjectList>
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">
+          <rim:Slot name="EvidenceMetadata"><!-- … --></rim:Slot>
+          <rim:Classification id="urn:uuid:e4352455-fb02-404f-a5ac-1b0916a0c3d8" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
+          <rim:RepositoryItemRef ns7:href="${this.pieceJointe.identifiant}" ns7:title="Evidence"/>
+        </rim:RegistryObject>
+      </rim:RegistryObjectList>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>
@@ -42,7 +53,7 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     const messageBase64 = Buffer.from(message).toString('base64')
 
     const infosPieceJointe = `
-<ns5:PartInfo href="${this.pieceJointe.idPieceJointe}">
+<ns5:PartInfo href="${this.pieceJointe.identifiant}">
     <ns5:PartProperties>
         <ns5:Property name="MimeType">${this.typeMimePieceJointe}</ns5:Property>
         <ns5:Property name="CompressionType">application/gzip</ns5:Property>
@@ -51,7 +62,7 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
     `
 
     const pieceJointe = `
-<payload payloadId="${this.pieceJointe.idPieceJointe}">
+<payload payloadId="${this.pieceJointe.identifiant}">
   <value>${Buffer.from(this.pieceJointe.contenu).toString('base64')}</value>
 </payload>
     `
@@ -81,8 +92,10 @@ class ConstructeurEnveloppeSOAPAvecPieceJointe {
           <eb:ConversationId>5fe50e16-d6b8-4005-b5ec-0ab097f34448</eb:ConversationId>
         </eb:CollaborationInfo>
         <eb:MessageProperties>
-          <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-provider">C1</eb:Property>
+          <eb:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000001</eb:Property>
           <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-requester">BR_SI_01</eb:Property>
+          <eb:Property name="ExchangeId">${this.idEchange}</eb:Property>
+          <eb:Property name="SpecificationId">oots-edm:v2.0</eb:Property>
         </eb:MessageProperties>
         <eb:PayloadInfo>
           <eb:PartInfo href="${this.idPayload}">

@@ -3,6 +3,9 @@ const fs = require('fs')
 const EnteteReponse = require('./enteteReponse')
 const Message = require('./message')
 const PieceJointe = require('./pieceJointe')
+const { IDENTIFIANT_SPECIFICATION_EDM } = require('./specificationEdm')
+const { echappeXML } = require('./echappement')
+const { exigeIdentite } = require('./identiteEbms')
 
 class ReponseVerificationSysteme extends Message {
   static ClasseEntete = EnteteReponse
@@ -13,9 +16,19 @@ class ReponseVerificationSysteme extends Message {
       fs.readFileSync('./assets/drapeau.pdf').toString('base64'),
     )
 
-    super(config, { ...donnees, pieceJointe })
+    const fournisseur = donnees.fournisseur || config.fournisseurFrancais
+
+    // Sur la réponse, les coins s'inversent : le fournisseur devient l'émetteur
+    // d'origine et le requêteur le destinataire final.
+    super(config, {
+      ...donnees,
+      pieceJointe,
+      emetteurOriginal: exigeIdentite(fournisseur, 'Le fournisseur français'),
+      destinataireFinal: exigeIdentite(donnees.requeteur, 'Le requêteur'),
+    })
 
     this.beneficiaire = donnees.beneficiaire
+    this.fournisseur = fournisseur
     this.idRequete = donnees.idRequete
     this.requeteur = donnees.requeteur
     this.typeJustificatif = donnees.typeJustificatif
@@ -29,60 +42,52 @@ class ReponseVerificationSysteme extends Message {
         xmlns:xlink="http://www.w3.org/1999/xlink"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
-        requestId="${this.idRequete}">
+        requestId="${echappeXML(this.idRequete)}">
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value>oots-edm:v1.0</rim:Value>
+      <rim:Value>${IDENTIFIANT_SPECIFICATION_EDM}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
 
   <rim:Slot name="EvidenceResponseIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value>${this.adaptateurUUID?.genereUUID()}</rim:Value>
+      <rim:Value>${this.idDocument}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
 
   <rim:Slot name="IssueDateTime">
     <rim:SlotValue xsi:type="rim:DateTimeValueType">
-      <rim:Value>2023-03-10T10:20:31+02:00</rim:Value>
+      <rim:Value>${this.horodateur.maintenant()}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
 
-  <rim:Slot name="EvidenceProvider">
-    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
-      <rim:Element xsi:type="rim:AnyValueType">
-        <sdg:Agent>
-          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
-          <sdg:Name></sdg:Name>
-          <sdg:Classification>EP</sdg:Classification>
-        </sdg:Agent>
-      </rim:Element>
-    </rim:SlotValue>
-  </rim:Slot>
+  ${this.fournisseur.enXMLPourReponse()}
 
   ${this.requeteur.enXMLPourReponse()}
 
   <rim:RegistryObjectList>
-    <rim:RegistryObject xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:0c37ed98-5774-407a-a056-21eeffe66712">
-      <rim:Slot name="EvidenceMetadata">
-        <rim:SlotValue xsi:type="rim:AnyValueType">
-          <sdg:Evidence>
-            <sdg:Identifier>${this.adaptateurUUID?.genereUUID()}</sdg:Identifier>
-            <sdg:IsAbout>${this.beneficiaire.enXMLPourReponse()}</sdg:IsAbout>
-            <sdg:IssuingAuthority>
-              <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"></sdg:Identifier>
-              <sdg:Name></sdg:Name>
-            </sdg:IssuingAuthority>
-            <sdg:IsConformantTo>${this.typeJustificatif.enXMLPourReponse()}</sdg:IsConformantTo>
-            <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
-            <sdg:Distribution>
-              <sdg:Format>application/pdf</sdg:Format>
-            </sdg:Distribution>
-          </sdg:Evidence>
-        </rim:SlotValue>
-      </rim:Slot>
-      <rim:RepositoryItemRef xlink:href="${this.pieceJointe.identifiant}" xlink:title="Evidence"/>
+    <rim:RegistryObject xsi:type="rim:RegistryPackageType" id="urn:uuid:${this.adaptateurUUID.genereUUID()}">
+      <rim:RegistryObjectList>
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:${this.adaptateurUUID.genereUUID()}">
+          <rim:Slot name="EvidenceMetadata">
+            <rim:SlotValue xsi:type="rim:AnyValueType">
+              <sdg:Evidence>
+                <sdg:Identifier>${this.adaptateurUUID.genereUUID()}</sdg:Identifier>
+                <sdg:IsAbout>${this.beneficiaire.enXMLPourReponse()}</sdg:IsAbout>
+                ${this.fournisseur.enXMLAutoriteEmettrice()}
+                <sdg:IsConformantTo>${this.typeJustificatif.enXMLPourReponse()}</sdg:IsConformantTo>
+                <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
+                <sdg:Distribution>
+                  <sdg:Format>application/pdf</sdg:Format>
+                </sdg:Distribution>
+              </sdg:Evidence>
+            </rim:SlotValue>
+          </rim:Slot>
+          <rim:Classification id="urn:uuid:${this.adaptateurUUID.genereUUID()}" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
+          <rim:RepositoryItemRef xlink:href="${this.pieceJointe.identifiant}" xlink:title="Evidence"/>
+        </rim:RegistryObject>
+      </rim:RegistryObjectList>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>

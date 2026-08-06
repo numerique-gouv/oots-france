@@ -1,6 +1,7 @@
 const EnteteMessageRecu = require('./enteteMessageRecu')
 const FabriqueMessages = require('./fabriqueMessages')
 const ReponseDomibus = require('./reponseDomibus')
+const { parseXML } = require('../ebms/utils')
 
 class ReponseRecuperationMessage extends ReponseDomibus {
   constructor(...args) {
@@ -9,7 +10,7 @@ class ReponseRecuperationMessage extends ReponseDomibus {
 
     this.idsPayloads = this.entete.payloads()
     const corpsMessageDecode = this.payload('application/x-ebrs+xml').toString()
-    const corpsMessageParse = this.parser.parse(corpsMessageDecode)
+    const corpsMessageParse = parseXML(corpsMessageDecode)
 
     this.corpsMessage = FabriqueMessages.nouveauMessage(this.entete.action(), corpsMessageParse)
   }
@@ -62,6 +63,7 @@ class ReponseRecuperationMessage extends ReponseDomibus {
         beneficiaire: this.beneficiaire(),
         destinataire: this.expediteur(),
         idConversation: this.idConversation(),
+        idEchange: this.entete.idEchange(),
         idRequete: this.idRequete(),
         requeteur: this.requeteur(),
         typeJustificatif: this.typeJustificatif(),

@@ -262,3 +262,32 @@ fichier du projet sur la machine hôte.
 Cette suite injecte des adaptateurs factices : elle ne touche jamais Domibus.
 Pour exercer la chaîne eDelivery réelle, voir
 [docs/test_e2e.md](docs/test_e2e.md).
+
+### Validation des messages contre les règles des TDD
+
+```sh
+$ scripts/valideSchematron.sh          # règles de la version 2.0.1 des TDD
+$ scripts/valideSchematron.sh 1.2.5    # ou d'une autre version publiée
+$ BAVARD=1 scripts/valideSchematron.sh # détaille aussi les slots facultatifs absents
+```
+
+Le script fait produire un exemplaire de chaque message par le code du dépôt,
+puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch)
+publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les
+règles, [SchXslt](https://github.com/schxslt/schxslt) et
+[Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la
+machine n'en dispose pas.
+
+Le script sort en `0` si les messages sont conformes, en `2` si une règle est
+violée, et en `1` pour toute autre défaillance — un téléchargement interrompu,
+par exemple. La CI rejoue les seconds, jamais les premiers.
+
+> [!NOTE]
+> C'est une validation autonome : elle ne dépend d'aucun autre État membre, à
+> la différence des [Testing Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services)
+> de la Commission, qui restent le juge de paix avant toute interopérabilité
+> réelle.
+
+Le workflow `schematron.yml` la rejoue à chaque PR ; c'est le seul garde-fou
+automatique sur la conformité des messages, la suite unitaire ne vérifiant que
+la présence des slots.

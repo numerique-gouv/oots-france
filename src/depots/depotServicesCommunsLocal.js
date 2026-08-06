@@ -14,7 +14,14 @@ class DepotServicesCommunsLocal {
       ?.find(tj => tj.id === idTypeJustificatif)
       ?.fournisseurs
       ?.[codePays]
-      ?.map(f => new Fournisseur(f))
+      ?.map((f) => {
+        const fournisseur = new Fournisseur(f)
+        // Force la lecture de l'identité : une entrée d'annuaire incomplète se
+        // signale ici, en nommant le type de justificatif et le pays, plutôt
+        // qu'au moment d'assembler le message, loin de sa cause.
+        fournisseur.identiteEbms(`Le fournisseur déclaré pour le justificatif « ${idTypeJustificatif} » en « ${codePays} »`)
+        return fournisseur
+      })
 
     if (typeof fournisseurs === 'undefined') {
       return Promise.reject(new ErreurCodePaysIntrouvable(`Code pays "${codePays}" introuvable`))

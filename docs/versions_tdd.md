@@ -24,8 +24,13 @@ Deux versions majeures existent à ce jour :
 
 | Version | Adoption | Identifiant EDM |
 | --- | --- | --- |
-| v1.x (jusqu'à 1.2.4) | décembre 2023, puis mineures et correctifs | `oots-edm:v1.0` … `oots-edm:v1.2` |
-| v2.0 | 19 février 2026 | `oots-edm:v2.0` |
+| v1.x (jusqu'à 1.2.5) | décembre 2023, puis mineures et correctifs | `oots-edm:v1.0` … `oots-edm:v1.2` |
+| v2.0 (jusqu'à 2.0.1) | 19 février 2026 | `oots-edm:v2.0` |
+
+L'identifiant EDM ne suit que la version *mineure* : les correctifs 2.0.0 et
+2.0.1 annoncent tous deux `oots-edm:v2.0`. Le statut de chaque livraison se lit
+dans le fichier [`releases.toml`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/master/OOTS-EDM/releases.toml)
+du dépôt des TDD.
 
 ## Comment une version est annoncée dans les échanges
 
@@ -44,8 +49,8 @@ Deux endroits se répondent :
   Le pluriel est le point important : un fournisseur peut annoncer qu'il
   comprend plusieurs versions.
 - **Dans le message**, le slot `SpecificationIdentifier` porte la version
-  effectivement employée (`oots-edm:v1.0` dans ce dépôt, voir
-  `src/ebms/requeteJustificatif.js`). Les TDD imposent qu'il **corresponde au
+  effectivement employée (`oots-edm:v2.0` dans ce dépôt, voir
+  `src/ebms/specificationEdm.js`). Les TDD imposent qu'il **corresponde au
   `ConformsTo` de l'*Access Service* retenu** par l'*Evidence Requester* lors
   de sa requête au DSD.
 
@@ -102,14 +107,11 @@ C'est le schéma habituel des réseaux « quatre coins » à découverte
 centralisée : la migration est portée par les métadonnées, pas par un
 calendrier commun.
 
-## Quelle version viser pour ce dépôt
+## La version visée par ce dépôt
 
-Le code cible `oots-edm:v1.0`, c'est-à-dire la toute première version majeure
-— pas le sommet de la ligne 1.x, qui est 1.2.4. Deux écarts se cumulent donc :
-le retard *au sein* de la v1.x, et la marche vers la v2.0. D'où la question,
-au moment de la reprise : rattraper la 1.2, ou aller directement à la 2.0 ?
-
-**La recommandation est de viser directement la v2.0.** Trois raisons.
+**Le code cible `oots-edm:v2.0`**, et non la ligne 1.x, pourtant toujours
+maintenue et plus largement déployée. Trois raisons à ce choix, qu'il faudrait
+reprendre pour en changer.
 
 D'abord, l'argument habituel en faveur de la 1.2 — « c'est la version qui
 interopère aujourd'hui » — ne s'applique pas ici. Ce dépôt n'échange avec
@@ -130,9 +132,9 @@ Enfin, la 2.0 est la version qui prépare eIDAS 2 et les synergies avec le
 réorientés lors de la mise en hibernation du projet. La viser réaligne le
 dépôt avec le cadre qui le finance.
 
-S'y ajoute le coût : `oots-edm:v1.0` → `1.2` représente deux versions mineures
-de mappings de syntaxe et de listes de codes, dont l'essentiel serait ensuite
-jeté, la 2.0 étant une réécriture des messages plutôt qu'une mise à jour.
+La conformité des messages à la version visée se vérifie avec
+`scripts/valideSchematron.sh` (voir le
+[README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 
 ### Le préalable à lever
 
@@ -149,16 +151,17 @@ Schematron, listes de codes) ne dépend pas des autres États membres. Seul le
 test pair-à-pair en dépend, et il suppose de toute façon d'avoir d'abord
 comblé les manques fonctionnels.
 
-### Par où commencer
+### Ce qui reste à faire
 
-Ne pas traiter cela comme une migration. La première tâche — confronter
-`src/ebms/` aux mappings de syntaxe courants — est nécessaire quelle que soit
-la cible : la mener **contre la v2.0** donne la taille réelle de l'écart avant
-tout engagement irréversible.
+La conformité des messages ne fait pas l'interopérabilité. Restent hors du
+dépôt les apports de la 2.0 qui supposent des briques absentes — le SMP et la
+découverte dynamique, la deuxième requête consécutive à une prévisualisation,
+le slot `EvidenceProviderClassification`, les données d'identité du *wallet* —
+ainsi que les valeurs encore figées dans les messages ; la liste vit dans
+[Ce que ne fait pas encore ce dépôt](oots_context.md#ce-que-ne-fait-pas-encore-ce-dépôt).
 
-Les changements qui touchent directement ce dépôt commencent par l'identifiant
-`oots-edm:v2.0` et par de nouveaux slots dans les messages (prévisualisation,
-classification du fournisseur, alignement de l'identité sur les données PID du
-*wallet*), décrits dans le
+Les références utiles pour la suite : le
 [mapping de syntaxe des requêtes v2.0.0](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/952470359/4.5.1+-+Evidence+Request+Syntax+Mapping+v2.0.0+March+2026)
-et dans le changelog de la release. L'inventaire exhaustif reste à faire.
+et les [artefacts publiés avec chaque version](https://code.europa.eu/oots/tdd/tdd_chapters)
+(schémas, Schematron, listes de codes), dont `releases.toml` donne le statut —
+la 2.0.1 y est marquée `PHASED_IN` depuis juillet 2026.

@@ -1,12 +1,8 @@
-const { XMLParser } = require('fast-xml-parser')
+const { parseXML } = require('../ebms/utils')
 
 class ReponseDomibus {
   constructor(donnees) {
-    this.parser = new XMLParser({
-      ignoreAttributes: false,
-      removeNSPrefix: true,
-    })
-    this.xml = this.parser.parse(donnees)
+    this.xml = parseXML(donnees)
   }
 }
 

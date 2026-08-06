@@ -6,6 +6,11 @@ describe('l\'entête EBMS de requête', () => {
   const adaptateurUUID = {}
   const horodateur = {}
   const destinataire = new PointAcces('id', 'urn:type')
+  // L'entête refuse une identité de coin absente : ces deux-là la fournissent.
+  const coins = {
+    emetteurOriginal: { id: '00000000000002', typeId: 'urn:cef.eu:names:identifier:EAS:0009' },
+    destinataireFinal: { id: 'DE73524311', typeId: 'urn:cef.eu:names:identifier:EAS:9930' },
+  }
   let suffixe
 
   beforeEach(() => {
@@ -19,7 +24,7 @@ describe('l\'entête EBMS de requête', () => {
   })
 
   it('suit la structure EMBS', () => {
-    const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+    const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
     const xml = parseXML(enteteEBMS.enXML())
     const userMessageInfos = xml.Messaging.UserMessage
 
@@ -33,7 +38,7 @@ describe('l\'entête EBMS de requête', () => {
   describe('dans le chemin /Messaging/UserMessage/MessageInfo', () => {
     it('est horodaté', () => {
       horodateur.maintenant = () => '2023-09-01T15:30:00.000Z'
-      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
       const xml = parseXML(enteteEBMS.enXML())
       const horodatage = xml.Messaging.UserMessage.MessageInfo.Timestamp
 
@@ -44,7 +49,7 @@ describe('l\'entête EBMS de requête', () => {
       process.env.SUFFIXE_IDENTIFIANTS_DOMIBUS = 'oots.eu'
       adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111'
 
-      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
       const xml = parseXML(enteteEBMS.enXML())
       const idMessage = xml.Messaging.UserMessage.MessageInfo.MessageId
 
@@ -70,7 +75,7 @@ describe('l\'entête EBMS de requête', () => {
       process.env.IDENTIFIANT_EXPEDITEUR_DOMIBUS = 'unIdentifiant'
       process.env.TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS = 'unType'
 
-      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
       const xml = parseXML(enteteEBMS.enXML())
       const infosExpediteur = xml.Messaging.UserMessage.PartyInfo.From.PartyId
 
@@ -81,7 +86,7 @@ describe('l\'entête EBMS de requête', () => {
     it('renseigne le destinataire (C3)', () => {
       const enteteEBMS = new EnteteRequete(
         { adaptateurUUID, horodateur },
-        { destinataire: new PointAcces('unIdentifiant', 'unType') },
+        { destinataire: new PointAcces('unIdentifiant', 'unType'), ...coins },
       )
       const xml = parseXML(enteteEBMS.enXML())
       const infosDestinataire = xml.Messaging.UserMessage.PartyInfo.To.PartyId
@@ -92,24 +97,69 @@ describe('l\'entête EBMS de requête', () => {
   })
 
   describe('dans le chemin /Messaging/UserMessage/MessageProperties', () => {
-    it('renseigne l\'expéditeur (C1)', () => {
-      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+    it('identifie l\'organisation qui demande le justificatif (C1)', () => {
+      const enteteEBMS = new EnteteRequete(
+        { adaptateurUUID, horodateur },
+        {
+          ...coins,
+          destinataire,
+          emetteurOriginal: { id: '00000000000002', typeId: 'urn:cef.eu:names:identifier:EAS:0009' },
+        },
+      )
       const xml = parseXML(enteteEBMS.enXML())
       const proprietes = xml.Messaging.UserMessage.MessageProperties.Property
       const expediteur = proprietes.find(p => p['@_name'] === 'originalSender')
 
-      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR')
-      expect(expediteur['#text']).toEqual('C1')
+      expect(expediteur['@_type']).toEqual('urn:cef.eu:names:identifier:EAS:0009')
+      expect(expediteur['#text']).toEqual('00000000000002')
     })
 
-    it('renseigne le destinataire final (C4)', () => {
-      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire })
+    it('identifie l\'organisation qui détient le justificatif (C4)', () => {
+      const enteteEBMS = new EnteteRequete(
+        { adaptateurUUID, horodateur },
+        {
+          ...coins,
+          destinataire,
+          destinataireFinal: { id: 'DE73524311', typeId: 'urn:cef.eu:names:identifier:EAS:9930' },
+        },
+      )
       const xml = parseXML(enteteEBMS.enXML())
       const proprietes = xml.Messaging.UserMessage.MessageProperties.Property
-      const expediteur = proprietes.find(p => p['@_name'] === 'finalRecipient')
+      const destinataireFinal = proprietes.find(p => p['@_name'] === 'finalRecipient')
 
-      expect(expediteur['@_type']).toEqual('urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots')
-      expect(expediteur['#text']).toEqual('C4')
+      expect(destinataireFinal['@_type']).toEqual('urn:cef.eu:names:identifier:EAS:9930')
+      expect(destinataireFinal['#text']).toEqual('DE73524311')
+    })
+
+    it('identifie l\'échange', () => {
+      adaptateurUUID.genereUUID = () => '11111111-1111-1111-1111-111111111111'
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
+      const xml = parseXML(enteteEBMS.enXML())
+      const proprietes = xml.Messaging.UserMessage.MessageProperties.Property
+
+      const idEchange = proprietes.find(p => p['@_name'] === 'ExchangeId')
+      expect(idEchange['#text']).toEqual('11111111-1111-1111-1111-111111111111')
+    })
+
+    it('reprend l\'identifiant d\'échange fourni plutôt que d\'en générer un', () => {
+      const enteteEBMS = new EnteteRequete(
+        { adaptateurUUID, horodateur },
+        { destinataire, ...coins, idEchange: '22222222-2222-2222-2222-222222222222' },
+      )
+      const xml = parseXML(enteteEBMS.enXML())
+      const proprietes = xml.Messaging.UserMessage.MessageProperties.Property
+
+      const idEchange = proprietes.find(p => p['@_name'] === 'ExchangeId')
+      expect(idEchange['#text']).toEqual('22222222-2222-2222-2222-222222222222')
+    })
+
+    it('annonce la version du modèle d\'échange', () => {
+      const enteteEBMS = new EnteteRequete({ adaptateurUUID, horodateur }, { destinataire, ...coins })
+      const xml = parseXML(enteteEBMS.enXML())
+      const proprietes = xml.Messaging.UserMessage.MessageProperties.Property
+
+      const version = proprietes.find(p => p['@_name'] === 'SpecificationId')
+      expect(version['#text']).toEqual('oots-edm:v2.0')
     })
   })
 
@@ -117,7 +167,7 @@ describe('l\'entête EBMS de requête', () => {
     it('identifie le payload du message', () => {
       const enteteEBMS = new EnteteRequete(
         { adaptateurUUID, horodateur },
-        { idPayload: 'cid:11111111-1111-1111-1111-111111111111@oots.eu', destinataire },
+        { idPayload: 'cid:11111111-1111-1111-1111-111111111111@oots.eu', destinataire, ...coins },
       )
       const xml = parseXML(enteteEBMS.enXML())
       const idPayload = xml.Messaging.UserMessage.PayloadInfo.PartInfo['@_href']

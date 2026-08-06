@@ -8,6 +8,11 @@ describe('L\'entête d\'une réponse', () => {
   const horodateur = {}
   const config = { adaptateurUUID, horodateur }
   const destinataire = new PointAcces('unID', 'unTypeID')
+  // L'entête refuse une identité de coin absente : ces deux-là la fournissent.
+  const coins = {
+    emetteurOriginal: { id: '00000000000002', typeId: 'urn:cef.eu:names:identifier:EAS:0009' },
+    destinataireFinal: { id: 'DE73524311', typeId: 'urn:cef.eu:names:identifier:EAS:9930' },
+  }
 
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => ''
@@ -19,7 +24,7 @@ describe('L\'entête d\'une réponse', () => {
   })
 
   it('ne contient pas de pièce jointe si aucune n\'est fournie', () => {
-    const enteteReponse = new EnteteReponse(config, { destinataire })
+    const enteteReponse = new EnteteReponse(config, { destinataire, ...coins })
 
     expect(enteteReponse.enXML()).not.toContain('application/pdf')
   })
@@ -28,6 +33,7 @@ describe('L\'entête d\'une réponse', () => {
     const entete = new EnteteReponse(config, {
       pieceJointe: new PieceJointe('unIdentifiantPieceJointe', 'dW50cnVj'),
       destinataire,
+      ...coins,
     })
 
     expect(entete.enXML()).toContain('application/pdf')

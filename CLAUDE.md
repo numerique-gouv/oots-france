@@ -72,7 +72,8 @@ scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
-CI (GitHub Actions) runs `npm ci && npm test` on Node 26, plus CodeQL. There is
+CI (GitHub Actions) runs `npm ci && npm test` on Node 26, plus CodeQL, the e2e
+suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is
 no build step: the project runs its sources as-is. `npm test` runs ESLint before
 Jest — lint failures fail the build, and `no-only-tests` forbids committing
 `.only`.
@@ -120,6 +121,13 @@ on a bare runner with no Domibus. It has its own workflow, `e2e.yml`, which
 builds the whole stack and configures Domibus through its admin REST API
 (`scripts/configureDomibus.sh`). Run it after touching the ebMS payloads or the
 Domibus plumbing, which the unit suite mocks away entirely.
+
+`scripts/valideSchematron.sh` confronts the messages the code produces to the
+Schematron rules published with the TDD — the only automated check on OOTS
+conformance, since the unit suite only asserts that slots are present. It needs
+no gateway, so `schematron.yml` runs it on a bare runner. Run it after changing
+any payload in `src/ebms/`; the owning documentation is
+[README](README.md#validation-des-messages-contre-les-règles-des-tdd).
 
 ## Architecture rules
 

@@ -1,3 +1,4 @@
+const { echappeXML } = require('./echappement')
 const FORMATS_DISTRIBUTION = {
   FORMAT_PDF: 'application/pdf',
 }
@@ -13,10 +14,10 @@ class TypeJustificatif {
   identifiantEtDescriptionsEnXML() {
     const descriptionsEnXML = () => Object
       .entries(this.descriptions)
-      .map(([langue, description]) => `<sdg:Title lang="${langue}">${description}</sdg:Title>`)
+      .map(([langue, description]) => `<sdg:Title lang="${echappeXML(langue)}">${echappeXML(description)}</sdg:Title>`)
 
     return `
-<sdg:EvidenceTypeClassification>${this.id}</sdg:EvidenceTypeClassification>
+<sdg:EvidenceTypeClassification>${echappeXML(this.id)}</sdg:EvidenceTypeClassification>
 ${descriptionsEnXML()}
     `
   }
@@ -29,7 +30,7 @@ ${descriptionsEnXML()}
       <sdg:Identifier>00000000-0000-0000-0000-000000000000</sdg:Identifier>
       ${this.identifiantEtDescriptionsEnXML()}
       <sdg:DistributedAs>
-        <sdg:Format>${this.formatDistribution}</sdg:Format>
+        <sdg:Format>${echappeXML(this.formatDistribution)}</sdg:Format>
       </sdg:DistributedAs>
     </sdg:DataServiceEvidenceType>
   </rim:SlotValue>
