@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "build": "npm test",
     "test": "eslint . && NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest",
     "test:e2e": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --config jest.e2e.js",
     "test:watch": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --watchAll",
@@ -12,7 +11,7 @@
   "author": "",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=24"
+    "node": ">=26.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

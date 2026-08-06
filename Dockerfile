@@ -1,4 +1,4 @@
-FROM node:24
+FROM node:26.7
 
 RUN npm install -g npm
 

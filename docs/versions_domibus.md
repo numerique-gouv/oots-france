@@ -96,7 +96,7 @@ password that is not the same as the password for the private keys* », parmi le
 
 | Contournement de 5.0.4 | Ce qui l'a remplacé |
 | --- | --- |
-| Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Les deux magasins se posent par la même API. `scripts/ci/remplaceCertificats.sh`, qui n'existait que pour écrire dans un répertoire appartenant au conteneur, a disparu — avec son `sudo cp` et son `chown --reference` |
+| Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Les deux magasins se posent par la même API, sans jamais écrire dans un répertoire appartenant au conteneur |
 | Aucune route de santé : la disponibilité se sondait sur `rest/application/name`, publique par accident | `rest/public/**` est la famille explicitement publique ; `attendDomibus.sh` interroge `rest/public/application/title` |
 | Le keystore ne se lisait pas en REST : `diagnostiqueDomibus.sh` ouvrait le fichier au `keytool` dans le conteneur | `rest/internal/admin/keystore/list`, symétrique de celle du truststore |
 | Les certificats de démonstration livrés avec l'image avaient expiré | Ceux de la 5.2 sont valides — mais restent publics et partagés par toutes les installations, donc toujours régénérés |
