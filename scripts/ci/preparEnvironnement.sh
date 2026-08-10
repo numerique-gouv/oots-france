@@ -85,6 +85,13 @@ URL_BASE_DOMIBUS=http://domibus:8080/domibus
 
 LOGIN_API_REST=$LOGIN_API_REST
 MOT_DE_PASSE_API_REST=$MOT_DE_PASSE_API_REST
+
+POSTGRES_DB=oots_france
+POSTGRES_USER=oots
+POSTGRES_PASSWORD=oots_ci
+MOT_DE_PASSE_BASE_APPLICATION=oots_application_ci
+URL_BASE_DONNEES=postgres://oots_application:oots_application_ci@postgres:5432/oots_france
+URL_BASE_DONNEES_MIGRATION=postgres://oots:oots_ci@postgres:5432/oots_france
 FIN
 
 # Le template déclare le contrat : toute variable qu'il nomme doit être écrite

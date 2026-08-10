@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
+    "migre": "node node_modules/node-pg-migrate/bin/node-pg-migrate.js --database-url-var URL_BASE_DONNEES_MIGRATION up",
+    "purgeJournal": "node scripts/purgeJournal.js",
     "test": "eslint . && NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest",
     "test:e2e": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --config jest.e2e.js",
     "test:watch": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --watchAll",
@@ -26,7 +28,9 @@
     "axios": "^1.19.0",
     "express": "^5.2.1",
     "fast-xml-parser": "^5.10.1",
-    "jose": "^6.2.8"
+    "jose": "^6.2.8",
+    "node-pg-migrate": "^9.0.0",
+    "pg": "^8.23.0"
   },
   "jest": {
     "testTimeout": 1000,

@@ -30,10 +30,16 @@ const identiteFournisseurFrancais = () => ({
   nom: variableObligatoire('NOM_FOURNISSEUR_FRANCAIS'),
 })
 
+// Obligatoire : sans base, aucun échange n'est journalisé, et l'article 17 du
+// règlement (UE) 2022/1463 n'est pas tenu. Mieux vaut refuser de démarrer que
+// de requêter sans laisser de trace.
+const urlBaseDonnees = () => variableObligatoire('URL_BASE_DONNEES')
+
 module.exports = {
   avecRequetePieceJustificative,
   clePriveeJWK,
   donneesDepotServicesCommunsLocal,
   donneesRequeteurs,
   identiteFournisseurFrancais,
+  urlBaseDonnees,
 }

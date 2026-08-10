@@ -46,7 +46,35 @@ services:
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
-     - domibus
+      domibus:
+        condition: service_started
+      # Attendre le démarrage ne suffit pas : l'image joue ses scripts
+      # d'initialisation — dont la création du rôle applicatif — après avoir
+      # ouvert le port, et l'application se connecterait à une base qui refuse
+      # encore son rôle. La condition porte donc sur le `healthcheck`.
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:18.4-alpine
+    # Même fichier que l'application : la base et son client doivent voir les
+    # mêmes identifiants, comme `.env.domibus` est partagé par MySQL et Domibus.
+    env_file:
+      - ./.env.oots
+    volumes:
+      # Depuis la 18, l'image veut le montage sur /var/lib/postgresql et range
+      # les données dans un sous-répertoire nommé d'après la version majeure,
+      # de quoi permettre un `pg_upgrade --link` plus tard. Monter directement
+      # /var/lib/postgresql/data, comme le voulaient les versions précédentes,
+      # fait refuser le démarrage.
+      - donnees_postgres:/var/lib/postgresql
+      # Joués une seule fois, à la création du volume : voir le script.
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready --username=$$POSTGRES_USER --dbname=$$POSTGRES_DB"]
+      interval: 2s
+      timeout: 5s
+      retries: 15
 
   domibus:
     image: code.europa.eu:4567/edelivery/docker/domibus-tomcat10:5.2-JEE10
@@ -110,5 +138,6 @@ services:
       - shared_db_file_system:/var/lib/mysql
 
 volumes:
+  donnees_postgres:
   node_modules:
   shared_db_file_system:
