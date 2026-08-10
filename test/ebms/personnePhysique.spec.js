@@ -56,4 +56,31 @@ describe('Une personne physique', () => {
 </sdg:NaturalPerson>
     `)
   })
+  describe('sur son identifiant pour le journal', () => {
+    // Le chapitre 4.8 demande de journaliser le sujet du justificatif.
+    // L'identifiant eIDAS est la donnée la plus économe qui le désigne encore
+    // sans ambiguïté : il se préfère à l'état civil chaque fois qu'il existe.
+    it('préfère l\'identifiant eIDAS quand il est connu', () => {
+      const jose = new PersonnePhysique({
+        identifiantEidas: 'DK/DE/123123123',
+        nom: 'Garcia',
+        prenom: 'Jose',
+        dateNaissance: '1985-12-20',
+      })
+
+      expect(jose.identifiantPourJournal()).toBe('DK/DE/123123123')
+    })
+
+    // Tant que le rapprochement d'identité n'existe pas, le bénéficiaire arrive
+    // du requêteur sans identifiant : l'état civil est le seul recours.
+    it('se rabat sur l\'état civil à défaut', () => {
+      const jose = new PersonnePhysique({
+        nom: 'Garcia',
+        prenom: 'Jose',
+        dateNaissance: '1985-12-20',
+      })
+
+      expect(jose.identifiantPourJournal()).toBe('Garcia Jose (1985-12-20)')
+    })
+  })
 })

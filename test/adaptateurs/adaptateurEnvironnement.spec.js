@@ -46,4 +46,20 @@ describe('L\'adaptateur d\'environnement', () => {
         .toThrow(/NOM_FOURNISSEUR_FRANCAIS/)
     })
   })
+  describe('sur l\'URL de la base de données', () => {
+    it('la lit dans l\'environnement', () => {
+      process.env.URL_BASE_DONNEES = 'postgres://oots_application:secret@postgres:5432/oots_france'
+
+      expect(adaptateurEnvironnement.urlBaseDonnees())
+        .toBe('postgres://oots_application:secret@postgres:5432/oots_france')
+    })
+
+    // Sans base, aucun échange n'est journalisé, et l'article 17 du règlement
+    // (UE) 2022/1463 n'est pas tenu : mieux vaut refuser de démarrer.
+    it('refuse de démarrer si elle manque', () => {
+      delete process.env.URL_BASE_DONNEES
+
+      expect(() => adaptateurEnvironnement.urlBaseDonnees()).toThrow(ErreurConfiguration)
+    })
+  })
 })

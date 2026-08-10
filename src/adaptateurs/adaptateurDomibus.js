@@ -5,6 +5,7 @@ const {
   ErreurAbsenceReponseDestinataire,
   ErreurAucunMessageDomibusRecu,
 } = require('../erreurs')
+const consigneSansDerouter = require('../consigneSansDerouter')
 const InstructionSOAP = require('../domibus/instructionSOAP')
 const journaliseMessageRecu = require('../domibus/journaliseMessageRecu')
 const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes')
@@ -81,13 +82,15 @@ const AdaptateurDomibus = (config = {}) => {
     }
 
     return envoieMessageDomibus(reponse.enSOAP())
-      .then(envoi => depotJournal.consigneReponseEmise({
-        actionEbms: reponse.constructor.ClasseEntete.action(),
-        idConversation: requete.idConversation(),
-        idMessage: envoi.idMessage(),
-        idEchange: requete.idEchange(),
-      })
-        .catch(echec => console.error(`Réponse émise sans trace au journal (conversation ${requete.idConversation()}, message ${envoi.idMessage()}) : ${echec.message}`)))
+      .then(envoi => consigneSansDerouter(
+        () => depotJournal.consigneReponseEmise({
+          actionEbms: reponse.constructor.ClasseEntete.action(),
+          idConversation: requete.idConversation(),
+          idMessage: envoi.idMessage(),
+          idEchange: requete.idEchange(),
+        }),
+        `Réponse émise sans trace au journal (conversation ${requete.idConversation()}, message ${envoi.idMessage()})`,
+      ))
   }
 
   // Journalisé avant d'être traité — mais jamais au prix du traitement.
@@ -99,8 +102,10 @@ const AdaptateurDomibus = (config = {}) => {
   // réponse, ou la requête HTTP en attente expirerait sur « aucune pièce
   // reçue » alors que la pièce est arrivée. L'incident est consigné avec de
   // quoi le retrouver, et le message est traité.
-  const journaliseSansBloquer = message => journaliseMessageRecu(message, config)
-    .catch(echec => console.error(`Message traité sans trace au journal (conversation ${message.idConversation()}, message ${message.idMessage()}) : ${echec.message}`))
+  const journaliseSansBloquer = message => consigneSansDerouter(
+    () => journaliseMessageRecu(message, config),
+    `Message traité sans trace au journal (conversation ${message.idConversation()}, message ${message.idMessage()})`,
+  )
     .then(() => message)
 
   const traiteMessageSuivant = () => recupereIdMessageSuivant()
@@ -129,7 +134,10 @@ const AdaptateurDomibus = (config = {}) => {
     const requeteJustificatif = new RequeteJustificatif(config, donnees)
 
     return envoieMessageDomibus(requeteJustificatif.enSOAP())
-      .then(reponse => reponse.idMessage())
+      .then(reponse => ({
+        idMessage: reponse.idMessage(),
+        idRequete: requeteJustificatif.idRequete(),
+      }))
   }
 
   const urlRedirectionDepuisReponse = idConversation => new Promise(

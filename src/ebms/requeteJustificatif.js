@@ -36,6 +36,13 @@ class RequeteJustificatif extends Message {
     this.previsualisationRequise = previsualisationRequise
   }
 
+  // L'identifiant du `QueryRequest` émis, sous la forme exacte qu'il porte dans
+  // le message — le destinataire le relit ainsi, et le chapitre 4.8 demande de
+  // le journaliser des deux côtés de l'échange.
+  idRequete() {
+    return `urn:uuid:${this.idDocument}`
+  }
+
   corpsMessageEnXML() {
     const horodatage = this.horodateur.maintenant()
 

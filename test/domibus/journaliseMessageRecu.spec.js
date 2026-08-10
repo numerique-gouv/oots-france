@@ -33,6 +33,7 @@ describe('La journalisation d\'un message reçu', () => {
       .avecIdRequete('urn:uuid:uneRequete')
       .avecCodeDemarche('T1')
       .avecRequeteur({ id: '12345678901234', nom: 'Un requêteur' })
+      .avecDemandeur({ nom: 'Garcia', prenom: 'Jose', dateNaissance: '1985-12-20' })
       .construis()
     const message = new ReponseRecuperationMessage(enveloppeSOAP)
 
@@ -47,7 +48,7 @@ describe('La journalisation d\'un message reçu', () => {
         expect(evenement.codeDemarche).toBe('T1')
         expect(evenement.autoriteRequerante).toBe('12345678901234')
         expect(evenement.autoriteFournisseuse).toBe('00000000000001')
-        expect(evenement.sujetJustificatif).toBeDefined()
+        expect(evenement.sujetJustificatif).toBe('Garcia Jose (1985-12-20)')
       })
   })
 

@@ -52,7 +52,7 @@ Le premier démarrage crée la base, puis le rôle `oots_application` sous leque
 > [!IMPORTANT]
 > Ce rôle n'est créé qu'à la **première** création du volume. Sur une base déjà initialisée, ou hors Docker, le créer à la main — voir `docker/postgres/init/01-role-applicatif.sh`.
 
-La conservation de douze mois n'est pas automatique : brancher `npm run purgeJournal` sur une tâche planifiée.
+La conservation de douze mois n'est pas automatique : elle tient à `npm run purgeJournal`, à brancher sur une tâche planifiée — voir [reste_à_faire.md](docs/reste_à_faire.md#48--non-répudiation-et-journalisation-).
 
 
 ## Configuration du point d'accès eDelivery (Domibus)

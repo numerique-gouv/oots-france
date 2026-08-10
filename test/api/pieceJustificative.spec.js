@@ -41,7 +41,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({})
     adaptateurChiffrement.empreinteSha256 = () => 'uneEmpreinte'
     Object.assign(depotJournal, depotJournalFactice())
-    adaptateurDomibus.envoieMessageRequete = () => Promise.resolve()
+    adaptateurDomibus.envoieMessageRequete = () => Promise.resolve({ idMessage: '', idRequete: '' })
     adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve()
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve()
     adaptateurUUID.genereUUID = () => ''
@@ -71,7 +71,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.envoieMessageRequete = ({ destinataire }) => {
       expect(destinataire.id).toEqual('unIdentifiant')
       expect(destinataire.typeId).toEqual('unType')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -83,7 +83,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ codeDemarche }) => {
       expect(codeDemarche).toEqual('UN_CODE')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -107,7 +107,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ typeJustificatif }) => {
       expect(typeJustificatif.id).toEqual('unIdentifiant')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -136,7 +136,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ fournisseur }) => {
       expect(fournisseur.descriptions.FR).toBe('Un fournisseur')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -160,7 +160,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ requeteur }) => {
       expect(requeteur.nom).toBe('Un requêteur')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -188,7 +188,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ beneficiaire }) => {
       expect(beneficiaire.nom).toBe('Dupond')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -216,7 +216,7 @@ describe('Le requêteur de pièce justificative', () => {
 
     adaptateurDomibus.envoieMessageRequete = ({ idConversation }) => {
       expect(idConversation).toEqual('11111111-1111-1111-1111-111111111111')
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     adaptateurDomibus.urlRedirectionDepuisReponse = (idConversation) => {
@@ -257,7 +257,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL de redirection reçue'))
     adaptateurDomibus.reponseAvecPieceJustificative = () => {
       pieceJustificativeRecue = true
-      return Promise.resolve()
+      return Promise.resolve({ idMessage: '', idRequete: '' })
     }
 
     return pieceJustificative(config, requete, reponse)
@@ -344,7 +344,7 @@ describe('Le requêteur de pièce justificative', () => {
   describe('sur le journal des échanges', () => {
     it('consigne la requête émise, avec son contexte métier et l\'identifiant du message', () => {
       adaptateurUUID.genereUUID = () => 'uneConversation'
-      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve('unMessage@oots.eu')
+      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve({ idMessage: 'unMessage@oots.eu', idRequete: 'urn:uuid:uneRequete' })
       requete.query.codeDemarche = 'T1'
       requete.query.idRequeteur = '12345678901234'
 
@@ -403,7 +403,7 @@ describe('Le requêteur de pièce justificative', () => {
     // La requête est partie : la signaler en erreur ferait retenter le
     // requêteur, donc instruire deux fois le même échange chez le fournisseur.
     it('n\'interrompt pas la conversation quand la requête émise ne peut être consignée', () => {
-      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve('unMessage@oots.eu')
+      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve({ idMessage: 'unMessage@oots.eu', idRequete: 'urn:uuid:uneRequete' })
       adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://apercu.example.com')
       depotJournal.consigneRequeteEmise = () => Promise.reject(new Error('base indisponible'))
 

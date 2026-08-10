@@ -1,3 +1,4 @@
+const consigneSansDerouter = require('../consigneSansDerouter')
 const Entete = require('../ebms/entete')
 const {
   ErreurAbsenceReponseDestinataire,
@@ -83,28 +84,29 @@ const pieceJustificative = (config, requete, reponse) => {
         typeJustificatif,
         previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
       })
-        .then((idMessage) => {
+        .then(({ idMessage, idRequete }) => {
           requeteEmise = true
 
-          return depotJournal.consigneRequeteEmise({
-            actionEbms: Entete.EXECUTION_REQUETE,
-            idConversation,
-            idMessage,
-            idRequeteur,
-            autoriteRequerante: requeteur.id,
-            schemaAutoriteRequerante: requeteur.typeId,
-            autoriteFournisseuse: fournisseur.pointAcces.id,
-            schemaAutoriteFournisseuse: fournisseur.pointAcces.typeId,
-            sujetJustificatif: b.identifiantPourJournal(),
-            typeJustificatif: typeJustificatif.id,
-            codeDemarche,
-          })
-            // La requête est partie : laisser cet échec interrompre la chaîne
-            // renverrait un 500 au requêteur, qui retenterait et ferait
-            // instruire deux fois le même échange chez le fournisseur. La
-            // conversation se poursuit donc, et l'incident est consigné avec
-            // de quoi le retrouver, faute d'avoir pu l'être au journal.
-            .catch(echec => console.error(`Requête émise sans trace au journal (conversation ${idConversation}, message ${idMessage}) : ${echec.message}`))
+          // Sans ce rattrapage, un échec d'écriture renverrait un 500 au
+          // requêteur, qui retenterait et ferait instruire deux fois le même
+          // échange chez le fournisseur — alors que la requête est partie.
+          return consigneSansDerouter(
+            () => depotJournal.consigneRequeteEmise({
+              actionEbms: Entete.EXECUTION_REQUETE,
+              idConversation,
+              idMessage,
+              idRequete,
+              idRequeteur,
+              autoriteRequerante: requeteur.id,
+              schemaAutoriteRequerante: requeteur.typeId,
+              autoriteFournisseuse: fournisseur.pointAcces.id,
+              schemaAutoriteFournisseuse: fournisseur.pointAcces.typeId,
+              sujetJustificatif: b.identifiantPourJournal(),
+              typeJustificatif: typeJustificatif.id,
+              codeDemarche,
+            }),
+            `Requête émise sans trace au journal (conversation ${idConversation}, message ${idMessage})`,
+          )
         })
     })
     .then(() => Promise.any([
@@ -126,15 +128,17 @@ const pieceJustificative = (config, requete, reponse) => {
             transmetteurPiecesJustificatives.envoie(pj, url),
             reponse.redirect(`${url}/oots/callback`),
           ])
-            .then(() => depotJournal.consignePieceTransmise({
-              idConversation,
-              idRequeteur: id,
-              typeMime: 'application/pdf',
-              empreinteJustificatif: adaptateurChiffrement.empreinteSha256(pj),
-            })
-              // La redirection est déjà partie : cet échec n'a plus personne à
-              // qui être signifié.
-              .catch(echec => console.error(`Pièce transmise sans trace au journal (conversation ${idConversation}, requêteur ${id}) : ${echec.message}`))))
+            // La redirection est déjà partie : cet échec n'a plus personne à
+            // qui être signifié.
+            .then(() => consigneSansDerouter(
+              () => depotJournal.consignePieceTransmise({
+                idConversation,
+                idRequeteur: id,
+                typeMime: 'application/pdf',
+                empreinteJustificatif: adaptateurChiffrement.empreinteSha256(pj),
+              }),
+              `Pièce transmise sans trace au journal (conversation ${idConversation}, requêteur ${id})`,
+            )))
       }
 
       return undefined
@@ -146,20 +150,20 @@ const pieceJustificative = (config, requete, reponse) => {
       // part.
       const journalise = requeteEmise
         ? Promise.resolve()
-        : depotJournal.consigneRequeteRefusee({
-            idConversation,
-            idRequeteur,
-            codeDemarche,
-            codeErreur: e.constructor.name,
-          })
+        : consigneSansDerouter(
+            () => depotJournal.consigneRequeteRefusee({
+              idConversation,
+              idRequeteur,
+              codeDemarche,
+              codeErreur: e.constructor.name,
+            }),
+            `Requête refusée sans trace au journal (conversation ${idConversation}, requêteur ${idRequeteur})`,
+          )
 
       return journalise
-        // Comme pour l'erreur ci-dessous : la route ne rend pas cette promesse
-        // à Express, et une écriture en échec deviendrait une rejection
-        // orpheline qui emporterait le processus. Le requêteur reçoit sa
-        // réponse dans tous les cas.
-        .catch(echecJournal => console.error(echecJournal))
         .then(() => {
+          const journaliseLErreur = () => console.error(e.response?.data || e)
+
           // Une erreur survenue après la redirection — la transmission de la
           // pièce au requêteur échoue une fois celle-ci partie, par exemple —
           // n'a plus de réponse HTTP disponible. Écrire par-dessus lèverait
@@ -167,7 +171,7 @@ const pieceJustificative = (config, requete, reponse) => {
           // rend pas à Express : la rejection orpheline emporterait le
           // processus.
           if (reponse.headersSent) {
-            console.error(e.response?.data || e)
+            journaliseLErreur()
             return
           }
 
@@ -188,7 +192,7 @@ const pieceJustificative = (config, requete, reponse) => {
             // Relancée, l'erreur ne serait rattrapée par personne — la route ne
             // rend pas cette promesse à Express — et tuerait le processus. Le
             // détail reste au journal plutôt que de partir au requêteur.
-            console.error(e.response?.data || e)
+            journaliseLErreur()
             reponse.status(500).json({ erreur: 'Erreur interne' })
           }
         })

@@ -48,10 +48,12 @@ services:
     depends_on:
       domibus:
         condition: service_started
-      # Attendre le démarrage ne suffit pas : l'image joue ses scripts
-      # d'initialisation — dont la création du rôle applicatif — après avoir
-      # ouvert le port, et l'application se connecterait à une base qui refuse
-      # encore son rôle. La condition porte donc sur le `healthcheck`.
+      # `service_started` ne garantit que le lancement du conteneur. L'image y
+      # joue encore ses scripts d'initialisation — dont la création du rôle
+      # applicatif — sur un serveur temporaire qui n'écoute que le socket local
+      # (`listen_addresses=''`), avant d'en relancer un définitif qui, lui,
+      # ouvre le port. Sans `service_healthy`, `web` se connecterait dans cet
+      # intervalle et essuierait un refus de connexion.
       postgres:
         condition: service_healthy
 

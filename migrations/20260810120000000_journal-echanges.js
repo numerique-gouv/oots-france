@@ -8,8 +8,10 @@
 
 exports.up = (pgm) => {
   pgm.sql(`
+    CREATE SEQUENCE journal_echanges_id_seq AS bigint;
+
     CREATE TABLE journal_echanges (
-      id                            bigserial PRIMARY KEY,
+      id                            bigint PRIMARY KEY,
       horodatage                    timestamptz NOT NULL DEFAULT now(),
       type_evenement                text NOT NULL,
       action_ebms                   text,
@@ -49,6 +51,8 @@ exports.up = (pgm) => {
       'SHA-256 de la pièce transportée. Suffit à prouver après coup qu''un document donné est celui qui a transité, sans le conserver.';
     COMMENT ON COLUMN journal_echanges.empreinte IS
       'Maillon de la chaîne : SHA-256 du contenu canonique de la ligne, préfixé de l''empreinte précédente. Calculé par le déclencheur, jamais par l''application.';
+
+    ALTER SEQUENCE journal_echanges_id_seq OWNED BY journal_echanges.id;
 
     CREATE INDEX journal_echanges_conversation ON journal_echanges (id_conversation);
     CREATE INDEX journal_echanges_horodatage ON journal_echanges (horodatage DESC);
@@ -100,6 +104,14 @@ exports.up = (pgm) => {
   // `LOCK TABLE` ferait le même travail mais s'interbloquerait, chaque
   // transaction détenant déjà un ROW EXCLUSIVE que l'autre attendrait.
   //
+  // L'identifiant est tiré **sous ce verrou**, et non par un défaut de colonne
+  // (`bigserial`) : `nextval` s'exécuterait alors à la construction de la
+  // ligne, avant le verrou, et deux transactions concurrentes pourraient
+  // valider dans un ordre différent de celui de leurs identifiants. La chaîne
+  // étant reconstruite par `id`, elle paraîtrait rompue sans qu'aucune ligne
+  // n'ait été altérée — soixante insertions parallèles suffisaient à produire
+  // huit fausses ruptures.
+  //
   // Le coût est négligeable ici : quelques événements par requête OOTS, et le
   // verrou ne tient que le temps de l'insertion.
   pgm.sql(`
@@ -108,6 +120,8 @@ exports.up = (pgm) => {
       precedente text;
     BEGIN
       PERFORM pg_advisory_xact_lock(hashtext('journal_echanges'));
+
+      NEW.id := nextval('journal_echanges_id_seq');
 
       SELECT empreinte INTO precedente
       FROM journal_echanges
