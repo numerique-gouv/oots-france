@@ -4,6 +4,7 @@
   "description": "",
   "scripts": {
     "migre": "node node_modules/node-pg-migrate/bin/node-pg-migrate.js --database-url-var URL_BASE_DONNEES_MIGRATION up",
+    "journal": "node scripts/consulteJournal.js",
     "purgeJournal": "node scripts/purgeJournal.js",
     "test": "eslint . && NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest",
     "test:e2e": "NODE_OPTIONS=\"--experimental-vm-modules --disable-warning=ExperimentalWarning\" jest --config jest.e2e.js",
