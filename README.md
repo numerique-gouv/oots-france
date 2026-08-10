@@ -187,7 +187,7 @@ $ scripts/valideSchematron.sh 1.2.5    # ou d'une autre version publiée
 $ BAVARD=1 scripts/valideSchematron.sh # détaille aussi les slots facultatifs absents
 ```
 
-Le script fait produire un exemplaire de chaque message par le code du dépôt, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://github.com/schxslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
+Le script fait produire un exemplaire de chaque message par le code du dépôt, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://codeberg.org/SchXslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
 
 Le script sort en `0` si les messages sont conformes, en `2` si une règle est violée, et en `1` pour toute autre défaillance — un téléchargement interrompu, par exemple. La CI rejoue les seconds, jamais les premiers.
 

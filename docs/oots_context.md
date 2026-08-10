@@ -50,7 +50,7 @@ Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel rép
 
 | Forme | Usage |
 | --- | --- |
-| `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467109633/Code+lists) (*Electronic Address Scheme*), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
+| `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/External/EAS.gc) (*Electronic Address Scheme*), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
 | `urn:oasis:names:tc:ebcore:partyid-type:unregistered:[Code]` | repli pour une organisation hors de tout répertoire listé, suivi d'un code pays |
 
 **Les organisations françaises sont identifiées par leur SIRET**, soit le code EAS **`0009`** (`src/ebms/schemeIdentifiant.js`). Rien n'était à demander à la Commission pour cela : la liste EAS contient déjà les répertoires français — `0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la configuration : le SIRET du fournisseur est porté par `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est indexé par celui de chaque requêteur.
