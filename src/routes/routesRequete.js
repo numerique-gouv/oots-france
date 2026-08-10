@@ -5,6 +5,7 @@ const pieceJustificative = require('../api/pieceJustificative')
 const routesRequete = (config) => {
   const {
     adaptateurDomibus,
+    adaptateurEnvironnement,
     adaptateurUUID,
     depotPointsAcces,
     depotRequeteurs,
@@ -23,6 +24,7 @@ const routesRequete = (config) => {
       pieceJustificative(
         {
           adaptateurDomibus,
+          adaptateurEnvironnement,
           adaptateurUUID,
           depotPointsAcces,
           depotRequeteurs,

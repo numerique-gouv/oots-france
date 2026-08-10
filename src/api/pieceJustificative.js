@@ -32,9 +32,42 @@ const pieceJustificativeRecue = (idConversation, adaptateurDomibus) => adaptateu
   .reponseAvecPieceJustificative(idConversation)
   .then(reponse => ({ reponseAvecPieceJustificative: reponse }))
 
-const urlRedirectionRecue = (idConversation, adaptateurDomibus) => adaptateurDomibus
-  .urlRedirectionDepuisReponse(idConversation)
-  .then(url => ({ urlRedirection: `${url}?returnurl=${process.env.URL_OOTS_FRANCE}` }))
+// La méthode par laquelle l'espace de prévisualisation ramène l'usager. Les TDD
+// admettent GET, PUT et POST et recommandent GET — la seule que sache produire
+// la redirection HTTP par laquelle le portail le reprend.
+const METHODE_RETOUR = 'GET'
+
+// L'espace de prévisualisation reçoit l'adresse de retour et sa méthode en
+// paramètres de requête, que les TDD nomment `returnurl` et `returnmethod`. Ils
+// sont posés par `URLSearchParams`, qui les encode et respecte la requête que
+// `PreviewLocation` porte déjà — une concaténation sur `?` la détruirait. Les
+// TDD interdisent à cette adresse de porter elle-même ces deux noms : `set`
+// écrase donc plutôt qu'il n'ajoute, et c'est la valeur du portail qui vaut.
+const urlRedirectionRecue = (idConversation, config) => {
+  // Lue avant la course : une configuration absente est notre faute, et doit se
+  // voir tout de suite plutôt qu'au bout du délai d'attente de Domibus.
+  const urlRetour = config.adaptateurEnvironnement.urlOotsFrance()
+
+  return config.adaptateurDomibus
+    .urlRedirectionDepuisReponse(idConversation)
+    .then((url) => {
+      let urlPrevisualisation
+      try {
+        urlPrevisualisation = new URL(url)
+      }
+      // L'adresse vient du correspondant étranger : illisible, elle ferait
+      // sinon remonter au requêteur le message natif de `URL`, en anglais et
+      // inclassable — donc un 500 là où l'échec vient d'en face.
+      catch {
+        throw new ErreurReponseRequete(`Adresse de prévisualisation reçue illisible : « ${url} ».`)
+      }
+
+      urlPrevisualisation.searchParams.set('returnurl', urlRetour)
+      urlPrevisualisation.searchParams.set('returnmethod', METHODE_RETOUR)
+
+      return { urlRedirection: urlPrevisualisation.toString() }
+    })
+}
 
 const pieceJustificative = (config, requete, reponse) => {
   const {
@@ -75,7 +108,7 @@ const pieceJustificative = (config, requete, reponse) => {
       })
     })
     .then(() => Promise.any([
-      urlRedirectionRecue(idConversation, adaptateurDomibus),
+      urlRedirectionRecue(idConversation, config),
       pieceJustificativeRecue(idConversation, adaptateurDomibus),
     ]))
     .then(({ reponseAvecPieceJustificative, urlRedirection }) => {

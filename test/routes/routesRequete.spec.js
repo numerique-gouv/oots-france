@@ -21,6 +21,27 @@ describe('Le serveur des routes `/requete`', () => {
   afterEach(suite => serveur.arrete(suite))
 
   describe('sur GET /requete/pieceJustificative', () => {
+    // Le routeur recompose la configuration qu'il transmet à l'API : un
+    // adaptateur qu'il oublie d'y remettre ne se voit qu'ici, les tests de
+    // `pieceJustificative` l'appelant directement avec une configuration
+    // complète.
+    it('redirige vers l\'espace de prévisualisation, adresse de retour comprise', () => {
+      expect.assertions(1)
+
+      serveur.adaptateurDomibus().urlRedirectionDepuisReponse
+        = () => Promise.resolve('https://example.com/apercu')
+
+      return axios.get(
+        `http://localhost:${port}/requete/pieceJustificative?beneficiaire=XXX`,
+        { maxRedirects: 0, validateStatus: statut => statut === 302 },
+      )
+        .then(({ headers }) => {
+          expect(headers.location).toEqual(
+            'https://example.com/apercu?returnurl=http%3A%2F%2Flocalhost%3A1234&returnmethod=GET',
+          )
+        })
+    })
+
     describe('avec un destinataire qui ne répond pas', () => {
       it('retourne une erreur HTTP 504 (Gateway Timeout)', () => {
         expect.assertions(2)

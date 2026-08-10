@@ -41,6 +41,7 @@ const serveurTest = () => {
 
     adaptateurEnvironnement = {
       avecRequetePieceJustificative: () => true,
+      urlOotsFrance: () => 'http://localhost:1234',
     }
 
     adaptateurUUID = {
