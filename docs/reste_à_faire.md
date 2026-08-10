@@ -178,18 +178,27 @@ S'y ajoute le **SMP** (*Service Metadata Publisher*, [spécifications](https://e
 
 ### 4.8 — Non-répudiation et journalisation ❌
 
-Rien n'existe, et c'est une **exigence légale** : l'article 17 du [règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj), décliné par le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900013171/4.8+-+Evidence+Exchange+Logging+v1.2.1+April+2025).
+Aucun journal conforme n'existe, et c'est une **exigence légale** : l'article 17 du [règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj), décliné par le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900013171/4.8+-+Evidence+Exchange+Logging+v1.2.1+April+2025).
 
 > [!WARNING]
 > Sans ces journaux, aucune homologation n'est envisageable : ils sont la seule preuve qu'un échange a eu lieu et de ce qu'il contenait.
 
-À journaliser, pour la requête, la réponse et l'erreur :
+Le chapitre répartit la charge entre deux couches — « *All logging related to these messages and the events they report is handled at the level of eDelivery Access Points* » — et le `eb:ConversationId` les relie. Tout n'est donc pas à écrire : Domibus produit déjà la couche basse, qui est la plus difficile.
 
-- identifiants des autorités requérante et fournisseuse ;
-- `ConversationId` et `MessageId` de l'entête ebMS ;
-- identifiants de requête et de réponse, et sujet du justificatif ;
-- données de non-répudiation, dont les **empreintes signées des parties MIME** transportant le justificatif ;
-- conservation **douze mois**, sans stocker de données personnelles — les empreintes suffisent.
+| Couche | À journaliser | Où cela vit |
+| --- | --- | --- |
+| Protocole | accusés de réception AS4, erreurs et *SOAP faults* ; empreintes signées de chaque partie MIME (`NonRepudiationInformation`) ; entêtes `eb:Messaging` et `wsse:Security` ; `MessageId` et `ConversationId` | Domibus, dans sa base — reste à **régler la rétention** |
+| Métier | `id` de la requête et de la réponse, sujet du justificatif, type demandé, code démarche, identifiants des autorités requérante et fournisseuse | rien — à écrire par-dessus la persistance du bouchon 6 |
+
+**Côté Domibus : une affaire de configuration.** La [documentation 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_non_repudiation) décrit ce qu'il conserve déjà — à l'émission, le `SignalMessage` complet, dont le *receipt* et sa signature par le point d'accès destinataire ; à la réception, le `UserMessage` complet et la signature de l'émetteur. Mais le PMode d'exemple efface le message dès son téléchargement (`retention_downloaded="0"`, voir [domibus_context.md](domibus_context.md#le-pmode-dexemple)) : ces preuves partent avec lui. La 5.1 a dissocié la rétention des métadonnées de celle du justificatif ([notes de version](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.1)) — `delete_message_metadata="false"` et `retention_metadata_offset`, en minutes, soit 525 600 pour douze mois. C'est exactement la règle de l'article 17(1)(b), « à l'exception de la preuve elle-même » : justificatif purgé sitôt remis, métadonnées et empreintes gardées un an. En découlent deux obligations d'exploitation : sauvegarder le volume MySQL, et ne pas compter sur la sortie standard du conteneur, coupée par le pilote de journalisation `none` (voir [README](../README.md#afficher-les-logs-de-domibus)).
+
+> [!CAUTION]
+> Le **plugin eArchiving** de Domibus ([documentation](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_earchiving)) n'est pas la réponse : il exporte les messages en ASiC-E, justificatifs compris, là où l'article 17 exclut précisément la preuve. Il relève de l'archivage à valeur probante, qui demanderait sa propre base légale.
+
+**Côté application : tout reste à faire.** Rien ne subsiste d'une conversation après son traitement. Une brique libre existante est à chercher avant d'écrire ce journal soi-même. Deux points de vigilance à la conception :
+
+- le journal **est lui-même un traitement de données personnelles** — le sujet du justificatif y figure. Seul son *contenu* en est exclu, et les empreintes suffisent à prouver après coup qu'un document donné est bien celui qui a transité. La [recommandation de la CNIL sur les mesures de journalisation](https://www.cnil.fr/fr/la-cnil-publie-une-recommandation-relative-aux-mesures-de-journalisation) fait référence pour la durée comme pour la protection des journaux, et converge avec les douze mois du règlement ;
+- Domibus, en point d'accès émetteur, **ne conserve pas les justificatifs** et recommande à l'expéditeur initial de les garder le temps nécessaire à la non-répudiation. Dans OOTS cette garde revient au requêteur, pas à ce dépôt : la conserver ici reviendrait à stocker le justificatif que l'article 17 écarte.
 
 Implique la persistance du bouchon 6.
 
@@ -266,7 +275,7 @@ Trois travaux indépendants, tous vérifiables sans gateway ni service central.
 ### Lot 2 — Poser les fondations
 
 4. **Persistance** : choisir le magasin, y porter l'état des conversations aujourd'hui en mémoire.
-5. **Journalisation 4.8** par-dessus, avec la conservation à douze mois et l'exclusion des données personnelles.
+5. **Journalisation 4.8** par-dessus : rétention des métadonnées portée à douze mois dans le PMode d'un côté, journal métier corrélé par `ConversationId` de l'autre.
 
 Ces deux-là conditionnent la prévisualisation comme l'homologation ; les retarder fait travailler deux fois.
 
