@@ -1,6 +1,8 @@
 const EnteteMessageRecu = require('./enteteMessageRecu')
 const FabriqueMessages = require('./fabriqueMessages')
 const ReponseDomibus = require('./reponseDomibus')
+const ReponseErreur = require('../ebms/reponseErreur')
+const { ErreurMessageIllisible } = require('../erreurs')
 const { parseXML } = require('../ebms/utils')
 
 class ReponseRecuperationMessage extends ReponseDomibus {
@@ -57,18 +59,41 @@ class ReponseRecuperationMessage extends ReponseDomibus {
   }
 
   reponse(config) {
-    return this.corpsMessage.reponse(
-      config,
-      {
-        beneficiaire: this.beneficiaire(),
-        destinataire: this.expediteur(),
-        idConversation: this.idConversation(),
-        idEchange: this.entete.idEchange(),
-        idRequete: this.idRequete(),
-        requeteur: this.requeteur(),
-        typeJustificatif: this.typeJustificatif(),
-      },
-    )
+    // Lus d'abord : ce sont ceux dont la réponse a besoin quoi qu'il arrive,
+    // pour être adressée et rattachée à sa conversation. Les quatre premiers
+    // viennent de l'entête ebMS ou d'un attribut, et ne peuvent pas manquer
+    // sans que le message soit inexploitable de bout en bout ; le requêteur,
+    // lui, vient d'un slot. S'il est illisible, l'erreur part d'ici sans être
+    // rattrapée : une réponse sans destinataire final n'irait nulle part.
+    const donneesCommunes = {
+      destinataire: this.expediteur(),
+      idConversation: this.idConversation(),
+      idEchange: this.entete.idEchange(),
+      idRequete: this.idRequete(),
+      requeteur: this.requeteur(),
+    }
+
+    try {
+      return this.corpsMessage.reponse(
+        config,
+        {
+          ...donneesCommunes,
+          beneficiaire: this.beneficiaire(),
+          typeJustificatif: this.typeJustificatif(),
+        },
+      )
+    }
+    catch (e) {
+      if (!(e instanceof ErreurMessageIllisible)) throw e
+
+      // Une requête qu'on ne sait pas lire se répond : les TDD réservent
+      // `EDM:ERR:0003` à ce cas, et la laisser sans réponse abandonnerait le
+      // correspondant au silence.
+      return new ReponseErreur(config, {
+        ...donneesCommunes,
+        exception: ReponseErreur.INVALID_REQUEST_EXCEPTION,
+      })
+    }
   }
 
   requeteur() {

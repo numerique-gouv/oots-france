@@ -30,6 +30,38 @@ describe('Une réponse EBMS en erreur', () => {
     expect(idRequete).toEqual('urn:uuid:11111111-1111-1111-1111-111111111111')
   })
 
+  // La table n'est pas un choix local : c'est la transcription de la liste
+  // officielle `EDMErrorCodes` publiée avec les TDD 2.0.1. Les libellés sont
+  // donc attendus au mot près — un « Authorisation » pour « Authorization »
+  // passerait une simple vérification de non-vacuité.
+  it('transcrit les huit codes d\'erreur de la liste `EDMErrorCodes`', () => {
+    const codesAttendus = {
+      AUTHENTICATION_EXCEPTION: ['EDM:ERR:0001', 'rs:AuthenticationExceptionType', 'Failed Authentication'],
+      AUTHORIZATION_EXCEPTION: ['EDM:ERR:0002', 'rs:AuthorizationExceptionType', 'Missing Authorization'],
+      INVALID_REQUEST_EXCEPTION: ['EDM:ERR:0003', 'rs:InvalidRequestExceptionType', 'Syntactically or semantically invalid request'],
+      OBJECT_NOT_FOUND_EXCEPTION: ['EDM:ERR:0004', 'rs:ObjectNotFoundExceptionType', 'Object not found'],
+      TIMEOUT_EXCEPTION: ['EDM:ERR:0005', 'rs:TimeoutExceptionType', 'Exceeding timeout period'],
+      UNRESOLVED_REFERENCE_EXCEPTION: ['EDM:ERR:0006', 'rs:UnresolvedReferenceExceptionType', 'Referenced object that cannot be resolved'],
+      UNSUPPORTED_CAPABILITY_EXCEPTION: ['EDM:ERR:0007', 'rs:UnsupportedCapabilityExceptionType', 'Optional feature or capability is not supported'],
+      QUERY_EXCEPTION: ['EDM:ERR:0008', 'query:QueryExceptionType', 'Invalid query syntax or semantics that must be corrected'],
+    }
+
+    Object.entries(codesAttendus).forEach(([nom, [code, type, message]]) => {
+      expect(ReponseErreur[nom].code).toEqual(code)
+      expect(ReponseErreur[nom].type).toEqual(type)
+      expect(ReponseErreur[nom].message).toEqual(message)
+    })
+  })
+
+  it('réserve la sévérité `PreviewRequired` à l\'erreur qui porte la prévisualisation', () => {
+    expect(ReponseErreur.AUTHORIZATION_EXCEPTION.severite)
+      .toEqual('urn:sr.oots.tech.ec.europa.eu:codes:ErrorSeverity:EDMErrorResponse:PreviewRequired')
+    expect(ReponseErreur.AUTHENTICATION_EXCEPTION.severite)
+      .toEqual('urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error')
+    expect(ReponseErreur.INVALID_REQUEST_EXCEPTION.severite)
+      .toEqual('urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error')
+  })
+
   it('contient une section `Exception`', () => {
     const reponse = nouvelleErreur({
       exception: {
