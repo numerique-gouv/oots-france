@@ -30,12 +30,14 @@ const journaliseMessageRecu = (message, config = {}) => {
   // message reçu, donc un mode d'échec de plus dans le cycle de sondage, pour
   // une information que le journal détient.
   if (message.action() === Entete.EXECUTION_REPONSE) {
+    // Toutes les réponses n'en portent pas : une vérification de système n'a
+    // rien à joindre.
+    const aUnJustificatif = message.aUnJustificatif()
+
     return depotJournal.consigneReponseRecue({
       ...commun,
-      // Toutes les réponses n'en portent pas : une vérification de système
-      // n'a rien à joindre.
-      typeMime: message.aUnJustificatif() ? 'application/pdf' : undefined,
-      empreinteJustificatif: message.aUnJustificatif()
+      typeMime: aUnJustificatif ? 'application/pdf' : undefined,
+      empreinteJustificatif: aUnJustificatif
         ? adaptateurChiffrement.empreinteSha256(message.pieceJustificative())
         : undefined,
     })

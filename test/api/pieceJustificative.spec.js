@@ -56,6 +56,7 @@ describe('Le requêteur de pièce justificative', () => {
     transmetteurPiecesJustificatives.envoie = () => Promise.resolve()
 
     requete.query = {}
+    reponse.headersSent = false
     reponse.json = () => Promise.resolve()
     reponse.redirect = () => Promise.resolve()
     reponse.send = () => Promise.resolve()
@@ -397,6 +398,51 @@ describe('Le requêteur de pièce justificative', () => {
           expect(evenement.codeErreur).toBe('ErreurDestinataireInexistant')
           expect(evenement.idRequeteur).toBe('12345678901234')
         })
+    })
+
+    // La requête est partie : la signaler en erreur ferait retenter le
+    // requêteur, donc instruire deux fois le même échange chez le fournisseur.
+    it('n\'interrompt pas la conversation quand la requête émise ne peut être consignée', () => {
+      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve('unMessage@oots.eu')
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://apercu.example.com')
+      depotJournal.consigneRequeteEmise = () => Promise.reject(new Error('base indisponible'))
+
+      let statut
+      reponse.status = (code) => {
+        statut = code
+        return reponse
+      }
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => expect(statut).toBeUndefined())
+    })
+
+    // Écrire par-dessus une réponse déjà partie lèverait `ERR_HTTP_HEADERS_SENT`
+    // dans un `.then` que la route ne rend pas à Express : la rejection
+    // orpheline emporterait le processus.
+    it('ne répond pas une seconde fois quand l\'échec survient après la redirection', () => {
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'))
+      adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve({
+        idRequeteur: () => '12345678901234',
+        pieceJustificative: () => Buffer.from('Des données'),
+      })
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+        new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' }),
+      )
+      transmetteurPiecesJustificatives.envoie = () => Promise.reject(new Error('requêteur injoignable'))
+
+      let statut
+      reponse.redirect = () => {
+        reponse.headersSent = true
+        return Promise.resolve()
+      }
+      reponse.status = (code) => {
+        statut = code
+        return reponse
+      }
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => expect(statut).toBeUndefined())
     })
 
     // Le journal raconte déjà l'échange : `requete_emise` sans réponse dit

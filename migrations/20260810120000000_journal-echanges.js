@@ -134,6 +134,17 @@ exports.up = (pgm) => {
     COMMENT ON VIEW vue_journal_conversation IS
       'Le journal, augmenté de l''empreinte recalculée : toute ligne dont empreinte et empreinte_attendue diffèrent a été altérée.';
 
+    CREATE VIEW vue_journal_verifie AS
+      SELECT
+        e.*,
+        e.empreinte = e.empreinte_attendue AS empreinte_valide,
+        lag(e.empreinte) OVER (ORDER BY e.id) IS NULL
+          OR e.empreinte_precedente = lag(e.empreinte) OVER (ORDER BY e.id) AS maillon_valide
+      FROM vue_journal_conversation e;
+
+    COMMENT ON VIEW vue_journal_verifie IS
+      'Les deux ruptures possibles, ligne par ligne : empreinte_valide dit qu''une ligne n''a pas été réécrite, maillon_valide qu''aucune ligne n''a disparu avant elle. La fenêtre porte sur tout le journal — filtrer sur une conversation après coup, jamais avant, sans quoi le maillon serait comparé à la ligne précédente de la seule conversation.';
+
     CREATE VIEW vue_dernieres_conversations AS
       SELECT
         id_conversation,
@@ -179,7 +190,7 @@ exports.up = (pgm) => {
     REVOKE ALL ON journal_echanges FROM PUBLIC;
     GRANT SELECT, INSERT ON journal_echanges TO oots_application;
     GRANT USAGE, SELECT ON SEQUENCE journal_echanges_id_seq TO oots_application;
-    GRANT SELECT ON vue_journal_conversation, vue_dernieres_conversations TO oots_application;
+    GRANT SELECT ON vue_journal_conversation, vue_journal_verifie, vue_dernieres_conversations TO oots_application;
   `)
 }
 
@@ -189,6 +200,7 @@ exports.down = (pgm) => {
   pgm.sql(`
     DROP FUNCTION purge_journal_echanges();
     DROP VIEW vue_dernieres_conversations;
+    DROP VIEW vue_journal_verifie;
     DROP VIEW vue_journal_conversation;
     DROP FUNCTION contenu_canonique_journal(journal_echanges);
     DROP TABLE journal_echanges;

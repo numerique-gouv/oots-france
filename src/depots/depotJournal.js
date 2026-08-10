@@ -112,33 +112,19 @@ class DepotJournal {
   // `LIKE`, dont les caractères spéciaux seraient interprétés.
   evenementsDeConversation(prefixeIdConversation) {
     return this.adaptateurPostgres.requete(`
-      SELECT *, empreinte = empreinte_attendue AS empreinte_valide
-      FROM vue_journal_conversation
+      SELECT *
+      FROM vue_journal_verifie
       WHERE starts_with(id_conversation, $1)
       ORDER BY id
     `, [prefixeIdConversation])
   }
 
-  // Deux ruptures possibles, et deux vérifications : l'empreinte d'une ligne ne
-  // correspond plus à son contenu — elle a été modifiée —, ou son maillon ne
-  // rattrape plus la ligne précédente — une ligne a disparu entre les deux.
-  //
-  // La toute première ligne est exemptée de la seconde : après une purge, elle
-  // pointe légitimement vers un maillon supprimé.
+  // Les ruptures sur tout le journal. La distinction entre les deux formes,
+  // et l'exemption de la première ligne, vivent dans `vue_journal_verifie`.
   verifieChaine() {
     return this.adaptateurPostgres.requete(`
       SELECT id, horodatage, type_evenement, id_conversation, empreinte_valide, maillon_valide
-      FROM (
-        SELECT
-          e.id,
-          e.horodatage,
-          e.type_evenement,
-          e.id_conversation,
-          e.empreinte = e.empreinte_attendue AS empreinte_valide,
-          lag(e.empreinte) OVER (ORDER BY e.id) IS NULL
-            OR e.empreinte_precedente = lag(e.empreinte) OVER (ORDER BY e.id) AS maillon_valide
-        FROM vue_journal_conversation e
-      ) AS verification
+      FROM vue_journal_verifie
       WHERE NOT empreinte_valide OR NOT maillon_valide
       ORDER BY id
     `)

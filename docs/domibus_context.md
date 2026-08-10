@@ -84,10 +84,10 @@ La [documentation 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_no
 La rétention dissociée introduite par la [5.1](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.1) permet d'appliquer la règle telle qu'elle est écrite — journaliser la réponse « à l'exception de la preuve elle-même » : le justificatif part dès son téléchargement, les métadonnées et les accusés restent douze mois.
 
 > [!IMPORTANT]
-> Ces douze mois n'ont de valeur que si le volume MySQL est sauvegardé : une table rase du répertoire `domibus/` emporte les preuves avec le reste.
+> Ces douze mois n'ont de valeur que si le volume MySQL est sauvegardé. C'est `shared_db_file_system` qui porte les preuves, qu'un `docker compose down --volumes` supprime — et non le répertoire `domibus/`, qui ne tient que la configuration et que l'image recrée sans dommage.
 
 > [!CAUTION]
-> Le plugin **eArchiving** ([documentation](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_earchiving)) n'est pas la réponse à l'article 17 : il exporte les messages en ASiC-E, justificatifs compris, là où l'article exclut précisément la preuve. Il relève de l'archivage à valeur probante, qui demanderait sa propre base légale.
+> Le plugin **eArchiving** ([documentation](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_earchiving)) n'est pas la réponse à l'article 17 : il exporte les messages en paquets EARK, justificatifs compris, là où l'article exclut précisément la preuve. Il relève de l'archivage à valeur probante, qui demanderait sa propre base légale.
 
 Domibus ne connaît en revanche rien du contenu OOTS — identifiants de requête, sujet et type du justificatif, code démarche —, ni des refus prononcés avant tout envoi. C'est l'objet du journal applicatif, décrit dans [reste_à_faire.md](reste_à_faire.md#48--non-répudiation-et-journalisation-) et consultable par `npm run journal` (voir le [README](../README.md#consulter-le-journal-des-échanges)).
 

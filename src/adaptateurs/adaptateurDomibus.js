@@ -86,12 +86,26 @@ const AdaptateurDomibus = (config = {}) => {
         idConversation: requete.idConversation(),
         idMessage: envoi.idMessage(),
         idEchange: requete.idEchange(),
-      }))
+      })
+        .catch(echec => console.error(`Réponse émise sans trace au journal (conversation ${requete.idConversation()}, message ${envoi.idMessage()}) : ${echec.message}`)))
   }
+
+  // Journalisé avant d'être traité — mais jamais au prix du traitement.
+  //
+  // `recupereMessage` a déjà consommé le message côté Domibus : il n'est plus
+  // en attente, et un second appel ne le retrouverait pas. Renoncer à le
+  // traiter parce que la base n'a pas répondu ne rejouerait donc rien, et
+  // perdrait en plus la suite — l'autorité requérante n'obtiendrait aucune
+  // réponse, ou la requête HTTP en attente expirerait sur « aucune pièce
+  // reçue » alors que la pièce est arrivée. L'incident est consigné avec de
+  // quoi le retrouver, et le message est traité.
+  const journaliseSansBloquer = message => journaliseMessageRecu(message, config)
+    .catch(echec => console.error(`Message traité sans trace au journal (conversation ${message.idConversation()}, message ${message.idMessage()}) : ${echec.message}`))
+    .then(() => message)
 
   const traiteMessageSuivant = () => recupereIdMessageSuivant()
     .then(idMessage => recupereMessage(idMessage))
-    .then(message => journaliseMessageRecu(message, config).then(() => message))
+    .then(journaliseSansBloquer)
     .then((message) => {
       if (message.action() === Entete.REPONSE_ERREUR) {
         annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message)

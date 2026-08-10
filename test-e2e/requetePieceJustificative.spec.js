@@ -209,8 +209,8 @@ describe('Une requête de pièce justificative', () => {
   // aller-retour à travers Domibus pour la même chose. C'est ici que le SQL du
   // journal est réellement exercé — la suite unitaire ne touche pas la base.
   describe('une fois l\'échange abouti', () => {
-    // La passerelle dialogue avec elle-même : les six événements d'un échange
-    // complet, ceux du requêteur comme ceux du fournisseur, tombent dans le
+    // La passerelle dialogue avec elle-même : les cinq événements d'un échange
+    // abouti, ceux du requêteur comme ceux du fournisseur, tombent dans le
     // même journal.
     const TYPES_ATTENDUS = [
       'requete_emise',

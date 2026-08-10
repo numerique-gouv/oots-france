@@ -99,6 +99,12 @@ const pieceJustificative = (config, requete, reponse) => {
             typeJustificatif: typeJustificatif.id,
             codeDemarche,
           })
+            // La requête est partie : laisser cet échec interrompre la chaîne
+            // renverrait un 500 au requêteur, qui retenterait et ferait
+            // instruire deux fois le même échange chez le fournisseur. La
+            // conversation se poursuit donc, et l'incident est consigné avec
+            // de quoi le retrouver, faute d'avoir pu l'être au journal.
+            .catch(echec => console.error(`Requête émise sans trace au journal (conversation ${idConversation}, message ${idMessage}) : ${echec.message}`))
         })
     })
     .then(() => Promise.any([
@@ -125,7 +131,10 @@ const pieceJustificative = (config, requete, reponse) => {
               idRequeteur: id,
               typeMime: 'application/pdf',
               empreinteJustificatif: adaptateurChiffrement.empreinteSha256(pj),
-            })))
+            })
+              // La redirection est déjà partie : cet échec n'a plus personne à
+              // qui être signifié.
+              .catch(echec => console.error(`Pièce transmise sans trace au journal (conversation ${idConversation}, requêteur ${id}) : ${echec.message}`))))
       }
 
       return undefined
@@ -151,6 +160,17 @@ const pieceJustificative = (config, requete, reponse) => {
         // réponse dans tous les cas.
         .catch(echecJournal => console.error(echecJournal))
         .then(() => {
+          // Une erreur survenue après la redirection — la transmission de la
+          // pièce au requêteur échoue une fois celle-ci partie, par exemple —
+          // n'a plus de réponse HTTP disponible. Écrire par-dessus lèverait
+          // `ERR_HTTP_HEADERS_SENT` ici même, dans un `.then` que la route ne
+          // rend pas à Express : la rejection orpheline emporterait le
+          // processus.
+          if (reponse.headersSent) {
+            console.error(e.response?.data || e)
+            return
+          }
+
           if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
             reponse.status(422).json({ erreur: e.message })
           }

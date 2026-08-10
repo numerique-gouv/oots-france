@@ -82,18 +82,28 @@ const afficheConversation = (evenements) => {
 
   evenements.forEach(afficheEvenement)
 
-  const alterees = evenements.filter(e => !e.empreinte_valide)
+  // Les deux ruptures se disent séparément : une ligne réécrite après coup, et
+  // une ligne disparue avant celle-ci. Ne vérifier que la première ferait
+  // annoncer « valide » un journal amputé de son milieu.
+  const reecrites = evenements.filter(e => !e.empreinte_valide)
+  const precedeesDunTrou = evenements.filter(e => !e.maillon_valide)
   const debut = evenements[0].horodatage.toISOString()
   const fin = evenements[evenements.length - 1].horodatage.toISOString()
 
   console.log('')
-  if (alterees.length === 0) {
+  if (reecrites.length === 0 && precedeesDunTrou.length === 0) {
     console.log(`Chaîne d'empreintes : valide — ${evenements.length} événement(s), de ${debut} à ${fin}`)
+    return
   }
-  else {
-    // Le journal n'a pas seulement perdu une ligne : quelqu'un l'a réécrite
-    // après coup, en base et sous un rôle qui en avait le droit.
-    console.log(`⚠️  Chaîne d'empreintes : ROMPUE sur ${alterees.length} événement(s) — ${alterees.map(e => e.id).join(', ')}`)
+
+  console.log('⚠️  Chaîne d\'empreintes : ROMPUE')
+  if (reecrites.length > 0) {
+    console.log(`   réécrits après coup   ${reecrites.map(e => e.id).join(', ')}`)
+  }
+  if (precedeesDunTrou.length > 0) {
+    // Sauf pour la plus ancienne ligne du journal, qu'une purge a pu priver de
+    // son maillon — `vue_journal_verifie` l'exempte déjà.
+    console.log(`   précédés d'une lacune ${precedeesDunTrou.map(e => e.id).join(', ')}`)
   }
 }
 
@@ -173,7 +183,9 @@ const consultation = prefixeIdConversation ? detaille() : liste()
 
 consultation
   .catch((e) => {
-    console.error(e.message)
+    // L'erreur entière, pile comprise, comme `purgeJournal.js` : une base
+    // injoignable se lit dans le message, un bug du dépôt dans la pile.
+    console.error(e)
     process.exitCode = 1
   })
   .finally(() => adaptateurPostgres.fermeConnexions())
