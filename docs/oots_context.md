@@ -85,7 +85,6 @@ Les trois messages sont alignés sur la **v2.0** (`oots-edm:v2.0`) et validés c
 Ce dépôt est le prototype **OOTS France**, développé jusqu'à fin 2024 par la DINUM (direction interministérielle du numérique). Le projet a alors été mis en **hibernation**, les budgets étant réorientés vers le *wallet* eIDAS 2. À retenir :
 
 - Le code couvre les échanges requête/réponse de justificatifs dans les deux sens (côté requêtant et côté fournisseur), conformes aux TDD au moment de l'arrêt.
-- Les manques fonctionnels sont listés dans [Ce que ne fait pas encore ce dépôt](#ce-que-ne-fait-pas-encore-ce-dépôt).
 - Depuis juillet 2026, le projet est **ressuscité** : l'hibernation est terminée. La remise en marche a commencé par l'environnement de développement local — certificats de démonstration régénérés et Domibus configuré en boucle sur lui-même (voir [domibus_context.md](domibus_context.md)).
 
 > [!IMPORTANT]
@@ -99,7 +98,7 @@ Application **Node.js / Express** (tout est nommé en **français**, code et tes
 
 ### Côté Evidence Requester (la France demande un justificatif)
 
-1. Un fournisseur de service appelle `GET /requete/pieceJustificative?codeDemarche=…&codePays=…&idRequeteur=…&beneficiaire=…` (`src/routes/routesRequete.js`, puis `src/api/pieceJustificative.js`). Le paramètre `beneficiaire` est un [**JWE**](https://datatracker.ietf.org/doc/html/rfc7516) (*JSON Web Encryption*) chiffré avec la clé publique exposée par `GET /auth/cles_publiques`. Le déchiffrement a lieu dans `src/adaptateurs/adaptateurChiffrement.js`, avec la clé privée fournie par `CLE_PRIVEE_JWK_EN_BASE64`.
+1. Un fournisseur de service appelle `GET /requete/pieceJustificative?codeDemarche=…&codePays=…&idRequeteur=…&beneficiaire=…` (`src/routes/routesRequete.js`, puis `src/api/pieceJustificative.js`). Le paramètre `beneficiaire` est un [**JWE**](https://datatracker.ietf.org/doc/html/rfc7516) (*JSON Web Encryption*) chiffré avec la clé publique exposée par `GET /auth/cles_publiques`. Le déchiffrement a lieu dans `src/adaptateurs/adaptateurChiffrement.js`, avec la clé privée fournie par `CLE_PRIVEE_JWK_EN_BASE64`. Le jeton ainsi ouvert est ensuite vérifié contre le JWKS que le fournisseur de service publie à sa **propre** URL `/auth/cles_publiques` (`src/ebms/requeteur.js`) : deux jeux de clés distincts interviennent donc, celui d'OOTS France pour ouvrir l'enveloppe et celui du fournisseur pour authentifier son contenu. Cette signature n'atteste que l'émetteur, jamais sa légitimité à agir pour le bénéficiaire déclaré.
 2. L'application résout type de justificatif → fournisseur → point d'accès via les dépôts (`src/depots/`), construit la requête ebMS/RegRep (`src/ebms/requeteJustificatif.js`) et la soumet à Domibus (`src/adaptateurs/adaptateurDomibus.js`).
 3. Elle attend (au plus `DELAI_MAX_ATTENTE_DOMIBUS` ms) soit une réponse avec pièce jointe — transmise alors au requêteur via `src/adaptateurs/transmetteurPiecesJustificatives.js` —, soit une erreur de redirection vers l'espace de prévisualisation du pays fournisseur.
 
@@ -135,20 +134,7 @@ test-e2e/                  Test Jest de bout en bout, joué contre un vrai Domib
 
 ## Ce que ne fait pas encore ce dépôt
 
-Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même. Liste utile pour situer une tâche ou éviter de supposer qu'une brique existe :
-
-- **Common Services réels** : ni le DSD, ni l'Evidence Broker, ni le Semantic Repository ne sont appelés. Ils sont simulés par un bouchon local (`src/depots/depotServicesCommunsLocal.js`) alimenté par la variable d'environnement `DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL` (recopie manuelle d'un sous-ensemble de la base centrale). Un prototype séparé d'accès aux Common Services a existé hors de ce dépôt.
-- **Preview Space français** : l'espace de prévisualisation et de recueil du consentement côté Evidence Provider n'est pas implémenté. Seule la redirection de l'usager vers le *preview* du pays fournisseur (via `ExceptionResponse` + URL de redirection) est gérée côté Evidence Requester. C'est une exigence de la Commission difficilement contournable, identifiée comme priorité de reprise.
-- **Interrogation de vrais fournisseurs de données français** : en tant qu'Evidence Provider, l'application ne sait répondre qu'à la démarche de test « vérification système », avec un PDF d'exemple ; aucun appel à une API nationale (API Diplômes, Statut étudiant…) n'est branché, et toute autre démarche reçoit une erreur.
-- **Réconciliation d'identité** : le rapprochement entre l'identité eIDAS (nom d'usage) et l'identité pivot française (nom de naissance) n'est pas traité ; c'est le problème ouvert majeur du projet, qui bloque la fourniture de justificatifs pour des usagers européens connus de l'administration française.
-- **Intégration [FranceConnect+](https://partenaires.franceconnect.gouv.fr/)** : l'Evidence Requester n'a pas le statut de fournisseur de données FranceConnect ; les données d'identité du bénéficiaire sont transmises directement par le fournisseur de service (JWE dans le paramètre `beneficiaire`), ce qui fait de ce dernier un vecteur d'attaque potentiel.
-- **Choix multiples** : `src/api/pieceJustificative.js` prend le premier type de justificatif de la démarche et le premier fournisseur du pays (`tjs[0]`, `fs[0]`) ; pas de sélection par l'usager quand il y a plusieurs possibilités.
-- **Justificatifs structurés** : seuls des documents en pièce jointe (PDF) sont gérés ; pas d'exploitation du Semantic Repository pour des données structurées.
-- **Persistance et pistes d'audit** : aucune base de données côté application (l'état des conversations vit en mémoire via des événements) ; les pistes d'audit exigées par les TDD ne sont pas implémentées.
-- **Fonctionnalités v2.0 non couvertes** : les messages sont conformes à la v2.0, mais plusieurs de ses apports restent hors du dépôt — le [SMP](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467117984/SMP+specifications) et la découverte dynamique, la deuxième requête consécutive à une prévisualisation (slots `PreviewLocation` et `ReturnLocation` en requête), le slot facultatif `EvidenceProviderClassification` (inalimentable sans DSD réel), et les données d'identité du *wallet* au-delà du `NaturalPerson` actuel.
-- **Données figées dans les messages** : le slot `Requirements` porte toujours le même *requirement*, le niveau de garantie eIDAS est fixé à `High`, et l'adresse des agents se limite au pays — le minimum qu'exigent les règles Schematron. Ces valeurs attendent les Common Services et l'intégration eIDAS.
-- **SIRET de la plateforme intermédiaire** : l'agent `OOTSFRANCE` déclaré en second de chaque requête garde le schéma de repli, faute de SIRET renseigné (cf. [Identifier une organisation](#identifier-une-organisation)).
-- **Homologation de sécurité** : jamais réalisée, alors que des données potentiellement sensibles transitent par le système.
+Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, ordre de travail proposé : [reste_à_faire.md](reste_à_faire.md).
 
 ## Glossaire rapide
 

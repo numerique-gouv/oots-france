@@ -55,7 +55,7 @@ C'est le schéma habituel des réseaux « quatre coins » à découverte central
 
 **Le code cible `oots-edm:v2.0`**, et non la ligne 1.x, pourtant toujours maintenue et plus largement déployée. Trois raisons à ce choix, qu'il faudrait reprendre pour en changer.
 
-D'abord, l'argument habituel en faveur de la 1.2 — « c'est la version qui interopère aujourd'hui » — ne s'applique pas ici. Ce dépôt n'échange avec personne : les [manques identifiés](oots_context.md#ce-que-ne-fait-pas-encore-ce-dépôt) (Common Services réels, Preview Space, fournisseurs de données, réconciliation d'identité) empêchent de toute façon un échange réel de bout en bout. Une conformité 1.2 achèterait donc une interopérabilité inutilisable en l'état.
+D'abord, l'argument habituel en faveur de la 1.2 — « c'est la version qui interopère aujourd'hui » — ne s'applique pas ici. Ce dépôt n'échange avec personne : les [manques identifiés](reste_à_faire.md) (Common Services réels, Preview Space, fournisseurs de données, réconciliation d'identité) empêchent de toute façon un échange réel de bout en bout. Une conformité 1.2 achèterait donc une interopérabilité inutilisable en l'état.
 
 Ensuite, la 1.2 ne couvre pas entièrement le [règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj) : la 2.0 s'annonce comme apportant « une couverture complète de toutes les exigences du règlement d'exécution », ce qui dit en creux que la ligne 1.x ne l'atteint pas. Bâtir sur 1.2 un système qui devra être homologué et transporter des données sensibles part d'une base connue comme incomplète.
 
@@ -72,6 +72,6 @@ Ce risque reste limité : la validation autonome (schémas XML, règles Schematr
 
 ### Ce qui reste à faire
 
-La conformité des messages ne fait pas l'interopérabilité. Restent hors du dépôt les apports de la 2.0 qui supposent des briques absentes — le SMP et la découverte dynamique, la deuxième requête consécutive à une prévisualisation, le slot `EvidenceProviderClassification`, les données d'identité du *wallet* — ainsi que les valeurs encore figées dans les messages ; la liste vit dans [Ce que ne fait pas encore ce dépôt](oots_context.md#ce-que-ne-fait-pas-encore-ce-dépôt).
+La conformité des messages ne fait pas l'interopérabilité : plusieurs apports de la 2.0 supposent des briques absentes du dépôt. L'inventaire des manques, le travail que chacun représente et l'ordre dans lequel les aborder sont dans [reste_à_faire.md](reste_à_faire.md).
 
 Les références utiles pour la suite : le [mapping de syntaxe des requêtes v2.0.0](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/952470359/4.5.1+-+Evidence+Request+Syntax+Mapping+v2.0.0+March+2026) et les [artefacts publiés avec chaque version](https://code.europa.eu/oots/tdd/tdd_chapters) (schémas, Schematron, listes de codes), dont `releases.toml` donne le statut — la 2.0.1 y est marquée `PHASED_IN` depuis juillet 2026.

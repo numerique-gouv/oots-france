@@ -13,7 +13,8 @@ Each piece of information has a single owning document; everything else links to
 
 | Topic | Owner |
 | --- | --- |
-| OOTS ecosystem, specs (TDD), four-corner model, code map, glossary, known gaps | `docs/oots_context.md` |
+| OOTS ecosystem, specs (TDD), four-corner model, code map, glossary | `docs/oots_context.md` |
+| Known gaps and what remains to reach full TDD conformance: chapter-by-chapter inventory, the stubs and how to replace them, the proposed order of work | `docs/reste_à_faire.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
