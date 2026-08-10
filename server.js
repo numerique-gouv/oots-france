@@ -3,10 +3,12 @@ const OOTS_FRANCE = require('./src/ootsFrance')
 const adaptateurChiffrement = require('./src/adaptateurs/adaptateurChiffrement')
 const AdaptateurDomibus = require('./src/adaptateurs/adaptateurDomibus')
 const adaptateurEnvironnement = require('./src/adaptateurs/adaptateurEnvironnement')
+const AdaptateurPostgres = require('./src/adaptateurs/adaptateurPostgres')
 const adaptateurUUID = require('./src/adaptateurs/adaptateurUUID')
 const horodateur = require('./src/adaptateurs/horodateur')
 const Fournisseur = require('./src/ebms/fournisseur')
 const transmetteurPiecesJustificatives = require('./src/adaptateurs/transmetteurPiecesJustificatives')
+const DepotJournal = require('./src/depots/depotJournal')
 const DepotPointsAcces = require('./src/depots/depotPointsAcces')
 const DepotRequeteurs = require('./src/depots/depotRequeteurs')
 const DepotServicesCommuns = require('./src/depots/depotServicesCommunsLocal')
@@ -17,7 +19,17 @@ const nouveauMiddleware = require('./src/routes/middleware')
 // s'en plaigne. L'accesseur lève une `ErreurConfiguration`, qui arrête ici.
 const fournisseurFrancais = Fournisseur.francais(adaptateurEnvironnement.identiteFournisseurFrancais())
 
-const adaptateurDomibus = AdaptateurDomibus({ adaptateurUUID, fournisseurFrancais, horodateur })
+const adaptateurPostgres = AdaptateurPostgres({
+  urlBaseDonnees: adaptateurEnvironnement.urlBaseDonnees(),
+})
+const depotJournal = new DepotJournal(adaptateurPostgres)
+const adaptateurDomibus = AdaptateurDomibus({
+  adaptateurChiffrement,
+  adaptateurUUID,
+  depotJournal,
+  fournisseurFrancais,
+  horodateur,
+})
 const depotPointsAcces = new DepotPointsAcces(adaptateurDomibus)
 const depotRequeteurs = new DepotRequeteurs()
 const depotServicesCommuns = new DepotServicesCommuns()
@@ -29,6 +41,7 @@ const serveur = OOTS_FRANCE.creeServeur({
   adaptateurDomibus,
   adaptateurEnvironnement,
   adaptateurUUID,
+  depotJournal,
   depotPointsAcces,
   depotRequeteurs,
   depotServicesCommuns,

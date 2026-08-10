@@ -27,12 +27,24 @@ class ReponseRecuperationMessage extends ReponseDomibus {
     return this.corpsMessage.beneficiaire()
   }
 
+  codeErreur() {
+    return this.corpsMessage.codeErreur()
+  }
+
   expediteur() {
     return this.entete.expediteur()
   }
 
   idConversation() {
     return this.entete.idConversation()
+  }
+
+  idEchange() {
+    return this.entete.idEchange()
+  }
+
+  idMessage() {
+    return this.entete.idMessage()
   }
 
   idRequete() {
@@ -50,6 +62,14 @@ class ReponseRecuperationMessage extends ReponseDomibus {
       .value
 
     return Buffer.from(corpsMessageEncode, 'base64')
+  }
+
+  // Toutes les réponses n'en portent pas — une erreur, une vérification de
+  // système n'ont rien à joindre. Le demander avant d'appeler
+  // `pieceJustificative` évite de casser le cycle de sondage sur un message
+  // parfaitement valide.
+  aUnJustificatif() {
+    return typeof this.idsPayloads['application/pdf'] !== 'undefined'
   }
 
   pieceJustificative() {

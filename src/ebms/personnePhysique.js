@@ -39,6 +39,18 @@ ${this.attributsEnXML()}
     `
   }
 
+  // Le sujet du justificatif, tel que le chapitre 4.8 demande de le journaliser
+  // (« Evidence Subject information »).
+  //
+  // L'identifiant eIDAS suffit et se préfère à l'état civil : c'est la donnée
+  // la plus économe qui désigne encore la personne sans ambiguïté. Faute de
+  // rapprochement d'identité — le bénéficiaire est aujourd'hui transmis par le
+  // requêteur, sans identifiant —, l'état civil reste le seul recours. Le jour
+  // où l'identifiant sera toujours présent, cette seconde branche disparaîtra.
+  identifiantPourJournal() {
+    return this.identifiantEidas ?? `${this.nom} ${this.prenom} (${this.dateNaissance})`
+  }
+
   identifiantEidasEnXML() {
     return typeof this.identifiantEidas !== 'undefined'
       ? `<sdg:Identifier schemeID="eidas">${echappeXML(this.identifiantEidas)}</sdg:Identifier>`

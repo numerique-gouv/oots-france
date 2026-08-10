@@ -1,4 +1,5 @@
 const pieceJustificative = require('../../src/api/pieceJustificative')
+const depotJournalFactice = require('../constructeurs/depotJournalFactice')
 const PointAcces = require('../../src/ebms/pointAcces')
 const Fournisseur = require('../../src/ebms/fournisseur')
 const Requeteur = require('../../src/ebms/requeteur')
@@ -16,15 +17,18 @@ describe('Le requêteur de pièce justificative', () => {
   const adaptateurDomibus = {}
   const adaptateurEnvironnement = {}
   const adaptateurUUID = {}
+  const depotJournal = {}
   const depotPointsAcces = {}
   const depotRequeteurs = {}
   const depotServicesCommuns = {}
   const transmetteurPiecesJustificatives = {}
 
   const config = {
+    adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurEnvironnement,
     adaptateurUUID,
+    depotJournal,
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
@@ -35,6 +39,8 @@ describe('Le requêteur de pièce justificative', () => {
 
   beforeEach(() => {
     adaptateurChiffrement.dechiffreJWE = () => Promise.resolve({})
+    adaptateurChiffrement.empreinteSha256 = () => 'uneEmpreinte'
+    Object.assign(depotJournal, depotJournalFactice())
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve()
     adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve()
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve()
@@ -332,5 +338,78 @@ describe('Le requêteur de pièce justificative', () => {
     }
 
     return pieceJustificative(config, requete, reponse)
+  })
+
+  describe('sur le journal des échanges', () => {
+    it('consigne la requête émise, avec son contexte métier et l\'identifiant du message', () => {
+      adaptateurUUID.genereUUID = () => 'uneConversation'
+      adaptateurDomibus.envoieMessageRequete = () => Promise.resolve('unMessage@oots.eu')
+      requete.query.codeDemarche = 'T1'
+      requete.query.idRequeteur = '12345678901234'
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => {
+          const [evenement] = depotJournal.evenementsDeType('requete_emise')
+
+          expect(evenement.idConversation).toBe('uneConversation')
+          expect(evenement.idMessage).toBe('unMessage@oots.eu')
+          expect(evenement.idRequeteur).toBe('12345678901234')
+          expect(evenement.codeDemarche).toBe('T1')
+          expect(evenement.actionEbms).toBe('ExecuteQueryRequest')
+        })
+    })
+
+    it('consigne la remise de la pièce au requêteur, par son empreinte', () => {
+      adaptateurUUID.genereUUID = () => 'uneConversation'
+      adaptateurChiffrement.empreinteSha256 = () => 'empreinteDuJustificatif'
+      // Sans quoi la redirection de prévisualisation, résolue par défaut,
+      // gagne la course et la pièce n'est jamais remise.
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'))
+      adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve({
+        idRequeteur: () => '12345678901234',
+        pieceJustificative: () => Buffer.from('Des données'),
+      })
+      depotRequeteurs.trouveRequeteur = () => Promise.resolve(
+        new Requeteur({ adaptateurChiffrement }, { url: 'http://example.com' }),
+      )
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => {
+          const [evenement] = depotJournal.evenementsDeType('piece_transmise')
+
+          expect(evenement.idConversation).toBe('uneConversation')
+          expect(evenement.idRequeteur).toBe('12345678901234')
+          expect(evenement.empreinteJustificatif).toBe('empreinteDuJustificatif')
+          expect(evenement.typeMime).toBe('application/pdf')
+        })
+    })
+
+    // Ce refus ne produit aucun message ebMS : sans cette trace, l'erreur que
+    // l'article 17 demande de journaliser n'existerait nulle part.
+    it('consigne un refus prononcé avant tout envoi', () => {
+      depotPointsAcces.trouvePointAcces = () => Promise.reject(new ErreurDestinataireInexistant('Oups'))
+      requete.query.idRequeteur = '12345678901234'
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => {
+          const [evenement] = depotJournal.evenementsDeType('requete_refusee')
+
+          expect(evenement.codeErreur).toBe('ErreurDestinataireInexistant')
+          expect(evenement.idRequeteur).toBe('12345678901234')
+        })
+    })
+
+    // Le journal raconte déjà l'échange : `requete_emise` sans réponse dit
+    // l'expiration. Le redire en refus laisserait croire qu'on n'a rien envoyé.
+    it('ne consigne pas de refus quand la requête est partie et reste sans réponse', () => {
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune URL reçue'))
+      adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.reject(new ErreurAbsenceReponseDestinataire('aucune pièce reçue'))
+
+      return pieceJustificative(config, requete, reponse)
+        .then(() => {
+          expect(depotJournal.evenementsDeType('requete_emise')).toHaveLength(1)
+          expect(depotJournal.evenementsDeType('requete_refusee')).toHaveLength(0)
+        })
+    })
   })
 })

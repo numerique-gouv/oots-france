@@ -1,3 +1,4 @@
+const Entete = require('../ebms/entete')
 const {
   ErreurAbsenceReponseDestinataire,
   ErreurEBMS,
@@ -38,8 +39,10 @@ const urlRedirectionRecue = (idConversation, adaptateurDomibus) => adaptateurDom
 
 const pieceJustificative = (config, requete, reponse) => {
   const {
+    adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurUUID,
+    depotJournal,
     depotRequeteurs,
     transmetteurPiecesJustificatives,
   } = config
@@ -51,6 +54,13 @@ const pieceJustificative = (config, requete, reponse) => {
     idRequeteur,
     previsualisationRequise,
   } = requete.query
+
+  // Ce que la passerelle ne saura jamais : un refus prononcé ici ne produit
+  // aucun message ebMS, donc aucune trace de son côté. L'article 17 demande
+  // pourtant de journaliser les erreurs — d'où le témoin, qui distingue
+  // l'échange refusé avant tout envoi de celui resté sans réponse, dont
+  // `requete_emise` rend déjà compte.
+  let requeteEmise = false
 
   return paramsRequete(beneficiaire, config, codeDemarche, codePays, idRequeteur)
     .then(({
@@ -73,6 +83,23 @@ const pieceJustificative = (config, requete, reponse) => {
         typeJustificatif,
         previsualisationRequise: (previsualisationRequise === 'true' || previsualisationRequise === ''),
       })
+        .then((idMessage) => {
+          requeteEmise = true
+
+          return depotJournal.consigneRequeteEmise({
+            actionEbms: Entete.EXECUTION_REQUETE,
+            idConversation,
+            idMessage,
+            idRequeteur,
+            autoriteRequerante: requeteur.id,
+            schemaAutoriteRequerante: requeteur.typeId,
+            autoriteFournisseuse: fournisseur.pointAcces.id,
+            schemaAutoriteFournisseuse: fournisseur.pointAcces.typeId,
+            sujetJustificatif: b.identifiantPourJournal(),
+            typeJustificatif: typeJustificatif.id,
+            codeDemarche,
+          })
+        })
     })
     .then(() => Promise.any([
       urlRedirectionRecue(idConversation, adaptateurDomibus),
@@ -92,32 +119,59 @@ const pieceJustificative = (config, requete, reponse) => {
           .then(({ url }) => Promise.all([
             transmetteurPiecesJustificatives.envoie(pj, url),
             reponse.redirect(`${url}/oots/callback`),
-          ]))
+          ])
+            .then(() => depotJournal.consignePieceTransmise({
+              idConversation,
+              idRequeteur: id,
+              typeMime: 'application/pdf',
+              empreinteJustificatif: adaptateurChiffrement.empreinteSha256(pj),
+            })))
       }
 
       return undefined
     })
     .catch((e) => {
-      if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
-        reponse.status(422).json({ erreur: e.message })
-      }
-      else if (e instanceof AggregateError) {
-        let codeStatus = 500
-        if (e.errors.every(estErreurAbsenceReponse)) {
-          codeStatus = 504
-        }
-        else if (e.errors.every(estErreurMetier)) {
-          codeStatus = 502
-        }
-        reponse.status(codeStatus).json({ erreur: e.errors.map(erreur => erreur.message).join(' ; ') })
-      }
-      else {
-        // Relancée, l'erreur ne serait rattrapée par personne — la route ne
-        // rend pas cette promesse à Express — et tuerait le processus. Le
-        // détail reste au journal plutôt que de partir au requêteur.
-        console.error(e.response?.data || e)
-        reponse.status(500).json({ erreur: 'Erreur interne' })
-      }
+      // Un échange que la requête a quitté est déjà raconté par le journal :
+      // `requete_emise` sans réponse dit l'expiration, `erreur_recue` dit le
+      // refus du fournisseur. Seul le refus prononcé ici n'existerait nulle
+      // part.
+      const journalise = requeteEmise
+        ? Promise.resolve()
+        : depotJournal.consigneRequeteRefusee({
+            idConversation,
+            idRequeteur,
+            codeDemarche,
+            codeErreur: e.constructor.name,
+          })
+
+      return journalise
+        // Comme pour l'erreur ci-dessous : la route ne rend pas cette promesse
+        // à Express, et une écriture en échec deviendrait une rejection
+        // orpheline qui emporterait le processus. Le requêteur reçoit sa
+        // réponse dans tous les cas.
+        .catch(echecJournal => console.error(echecJournal))
+        .then(() => {
+          if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
+            reponse.status(422).json({ erreur: e.message })
+          }
+          else if (e instanceof AggregateError) {
+            let codeStatus = 500
+            if (e.errors.every(estErreurAbsenceReponse)) {
+              codeStatus = 504
+            }
+            else if (e.errors.every(estErreurMetier)) {
+              codeStatus = 502
+            }
+            reponse.status(codeStatus).json({ erreur: e.errors.map(erreur => erreur.message).join(' ; ') })
+          }
+          else {
+            // Relancée, l'erreur ne serait rattrapée par personne — la route ne
+            // rend pas cette promesse à Express — et tuerait le processus. Le
+            // détail reste au journal plutôt que de partir au requêteur.
+            console.error(e.response?.data || e)
+            reponse.status(500).json({ erreur: 'Erreur interne' })
+          }
+        })
     })
 }
 

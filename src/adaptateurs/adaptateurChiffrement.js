@@ -6,6 +6,12 @@ const { ErreurJetonInvalide } = require('../erreurs')
 
 const cleHachage = chaine => crypto.createHash('md5').update(chaine).digest('hex')
 
+// L'empreinte du justificatif consignée au journal. Elle prouve après coup
+// qu'un document donné est celui qui a transité, sans que le journal ait à
+// conserver la pièce — que l'article 17 du règlement (UE) 2022/1463 exclut
+// justement. MD5 ci-dessus reste cantonné à son usage de clé.
+const empreinteSha256 = contenu => crypto.createHash('sha256').update(contenu).digest('hex')
+
 const dechiffreJWE = (jwe, urlJWKS) => {
   const jwks = jose.createRemoteJWKSet(new URL(urlJWKS))
 
@@ -24,4 +30,5 @@ const dechiffreJWE = (jwe, urlJWKS) => {
 module.exports = {
   cleHachage,
   dechiffreJWE,
+  empreinteSha256,
 }

@@ -32,6 +32,13 @@ class EnteteMessageRecu {
     return valeurPropriete(this.enteteMessageUtilisateur.MessageProperties, 'ExchangeId')
   }
 
+  // L'identifiant que la passerelle donne au message : c'est lui qu'on porte
+  // dans la page « Message Log » de la console Domibus pour retrouver, en face
+  // d'un événement du journal, l'accusé de réception signé qui lui correspond.
+  idMessage() {
+    return this.enteteMessageUtilisateur.MessageInfo.MessageId
+  }
+
   payloads() {
     return this.infosPayloads.reduce((acc, infosPayload) => {
       const typeMime = valeurPropriete(infosPayload.PartProperties, 'MimeType')

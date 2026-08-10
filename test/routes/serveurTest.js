@@ -4,12 +4,14 @@ const Fournisseur = require('../../src/ebms/fournisseur')
 const Requeteur = require('../../src/ebms/requeteur')
 const TypeJustificatif = require('../../src/ebms/typeJustificatif')
 const nouveauMiddleware = require('../../src/routes/middleware')
+const depotJournalFactice = require('../constructeurs/depotJournalFactice')
 
 const serveurTest = () => {
   let adaptateurChiffrement
   let adaptateurDomibus
   let adaptateurEnvironnement
   let adaptateurUUID
+  let depotJournal
   let depotPointsAcces
   let depotRequeteurs
   let depotServicesCommuns
@@ -28,6 +30,7 @@ const serveurTest = () => {
     adaptateurChiffrement = {
       cleHachage: () => '',
       dechiffreJWE: () => Promise.resolve({}),
+      empreinteSha256: () => '',
     }
 
     adaptateurDomibus = {
@@ -46,6 +49,8 @@ const serveurTest = () => {
     adaptateurUUID = {
       genereUUID: () => '',
     }
+
+    depotJournal = depotJournalFactice()
 
     depotPointsAcces = {
       trouvePointAcces: () => Promise.resolve({}),
@@ -82,6 +87,7 @@ const serveurTest = () => {
       adaptateurChiffrement,
       adaptateurEnvironnement,
       adaptateurUUID,
+      depotJournal,
       depotPointsAcces,
       depotRequeteurs,
       depotServicesCommuns,
@@ -102,6 +108,7 @@ const serveurTest = () => {
     adaptateurEnvironnement: () => adaptateurEnvironnement,
     adaptateurUUID: () => adaptateurUUID,
     arrete,
+    depotJournal: () => depotJournal,
     depotPointsAcces: () => depotPointsAcces,
     depotRequeteurs: () => depotRequeteurs,
     depotServicesCommuns: () => depotServicesCommuns,

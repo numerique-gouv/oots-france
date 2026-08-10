@@ -12,6 +12,7 @@ const creeServeur = (config) => {
     adaptateurDomibus,
     adaptateurEnvironnement,
     adaptateurUUID,
+    depotJournal,
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,
@@ -32,8 +33,10 @@ const creeServeur = (config) => {
   app.use('/ebms', routesEbms({ adaptateurUUID, horodateur }))
 
   app.use('/requete', routesRequete({
+    adaptateurChiffrement,
     adaptateurDomibus,
     adaptateurUUID,
+    depotJournal,
     depotPointsAcces,
     depotRequeteurs,
     depotServicesCommuns,

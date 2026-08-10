@@ -6,6 +6,7 @@ const {
   ErreurAucunMessageDomibusRecu,
 } = require('../erreurs')
 const InstructionSOAP = require('../domibus/instructionSOAP')
+const journaliseMessageRecu = require('../domibus/journaliseMessageRecu')
 const { requeteListeMessagesEnAttente, requeteRecuperationMessage } = require('../domibus/requetes')
 const Entete = require('../ebms/entete')
 const RequeteJustificatif = require('../ebms/requeteJustificatif')
@@ -63,6 +64,7 @@ const AdaptateurDomibus = (config = {}) => {
   // rattrapée emporte le processus — un refus de Domibus suffisait à laisser
   // l'application morte, l'écouteur avec elle.
   const repondsA = (requete) => {
+    const { depotJournal } = config
     let reponse
 
     try {
@@ -79,10 +81,17 @@ const AdaptateurDomibus = (config = {}) => {
     }
 
     return envoieMessageDomibus(reponse.enSOAP())
+      .then(envoi => depotJournal.consigneReponseEmise({
+        actionEbms: reponse.constructor.ClasseEntete.action(),
+        idConversation: requete.idConversation(),
+        idMessage: envoi.idMessage(),
+        idEchange: requete.idEchange(),
+      }))
   }
 
   const traiteMessageSuivant = () => recupereIdMessageSuivant()
     .then(idMessage => recupereMessage(idMessage))
+    .then(message => journaliseMessageRecu(message, config).then(() => message))
     .then((message) => {
       if (message.action() === Entete.REPONSE_ERREUR) {
         annonceur.emit(REPONSE_REDIRECTION_PREVISUALISATION, message)
