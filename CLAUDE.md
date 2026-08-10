@@ -2,26 +2,19 @@
 
 ## Read this first
 
-- [docs/oots_context.md](docs/oots_context.md) — what OOTS is, what this app
-  does, code map, project status. **Read it before touching any code**: OOTS
-  is a spec-driven system and most design decisions come from the EU Technical
-  Design Documents (TDD), not from local preference.
-- [docs/domibus_context.md](docs/domibus_context.md) — the eDelivery gateway
-  (Domibus) this app talks to, and how the app drives it.
+- [docs/oots_context.md](docs/oots_context.md) — what OOTS is, what this app does, code map, project status. **Read it before touching any code**: OOTS is a spec-driven system and most design decisions come from the EU Technical Design Documents (TDD), not from local preference.
+- [docs/domibus_context.md](docs/domibus_context.md) — the eDelivery gateway (Domibus) this app talks to, and how the app drives it.
 - [README.md](README.md) — step-by-step local environment setup.
-- [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end
-  scenario through Domibus: run it after any change to the ebMS payloads or the
-  Domibus plumbing, since the Jest suite mocks the transport away entirely.
+- [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end scenario through Domibus: run it after any change to the ebMS payloads or the Domibus plumbing, since the Jest suite mocks the transport away entirely.
 
 ## Documentation: one fact, one place
 
-Each piece of information has a single owning document; everything else links
-to it. Do not restate content across files — duplicated docs drift apart and
-double the maintenance cost.
+Each piece of information has a single owning document; everything else links to it. Do not restate content across files — duplicated docs drift apart and double the maintenance cost.
 
 | Topic | Owner |
 | --- | --- |
-| OOTS ecosystem, specs (TDD), four-corner model, code map, glossary, known gaps | `docs/oots_context.md` |
+| OOTS ecosystem, specs (TDD), four-corner model, code map, glossary | `docs/oots_context.md` |
+| Known gaps and what remains to reach full TDD conformance: chapter-by-chapter inventory, the stubs and how to replace them, the proposed order of work | `docs/reste_à_faire.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
@@ -30,37 +23,26 @@ double the maintenance cost.
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode) | `docs/configurer_domibus_via_l_interface.md` |
 | Agent conventions and workflow | this file |
 
-When adding documentation, extend the owning file rather than repeating it
-elsewhere; if two files must mention the same thing, the non-owner keeps one
-sentence and a link.
+When adding documentation, extend the owning file rather than repeating it elsewhere; if two files must mention the same thing, the non-owner keeps one sentence and a link.
 
-**Always hyperlink external references.** Naming a specification, a regulation,
-a standard or an external tool without a link forces the reader to go
-searching. Link on first mention (TDD chapters, EU regulations, OASIS specs,
-RFCs, Domibus guides), and check the URL actually resolves before committing —
-the Commission's wiki reorganises its page IDs regularly.
+**Always hyperlink external references.** Naming a specification, a regulation, a standard or an external tool without a link forces the reader to go searching. Link on first mention (TDD chapters, EU regulations, OASIS specs, RFCs, Domibus guides), and check the URL actually resolves before committing — the Commission's wiki reorganises its page IDs regularly.
 
-**Warnings, gotchas and TODOs go in GitHub alert blocks**, the syntax the
-README already uses — never as plain prose the reader can skim past:
+**Warnings, gotchas and TODOs go in GitHub alert blocks**, the syntax the README already uses — never as plain prose the reader can skim past:
 
 ```md
 > [!IMPORTANT]
 > Le système n'est pas homologué : ne pas activer le requêtage en production.
 ```
 
-Keep them rare enough to stay meaningful, and put the actionable consequence in
-the first sentence.
+Keep them rare enough to stay meaningful, and put the actionable consequence in the first sentence.
+
+**Never hard-wrap markdown prose.** One paragraph is one line, however long; the editor wraps it. Do not reflow a paragraph to 80 columns — that convention was dropped deliberately, because every edit then forced a manual reflow of the whole paragraph. This applies to prose, list items and blockquotes alike; code blocks and tables keep their own line structure.
 
 ## Language: everything is in French
 
-Code, identifiers, tests, commit messages, docs and error messages are written
-in **French** (e.g. `requeteJustificatif`, `depotPointsAcces`,
-`ErreurCodeDemarcheIntrouvable`). Follow this ubiquitous language strictly;
-do not introduce English identifiers. English is only found in the XML/ebMS
-vocabulary imposed by the OOTS specs (`QueryRequest`, `ExecuteQueryRequest`…).
+Code, identifiers, tests, commit messages, docs and error messages are written in **French** (e.g. `requeteJustificatif`, `depotPointsAcces`, `ErreurCodeDemarcheIntrouvable`). Follow this ubiquitous language strictly; do not introduce English identifiers. English is only found in the XML/ebMS vocabulary imposed by the OOTS specs (`QueryRequest`, `ExecuteQueryRequest`…).
 
-The French terms map to specific TDD concepts — see the glossary in
-[docs/oots_context.md](docs/oots_context.md) before naming anything new.
+The French terms map to specific TDD concepts — see the glossary in [docs/oots_context.md](docs/oots_context.md) before naming anything new.
 
 ## Commands
 
@@ -72,102 +54,41 @@ scripts/testE2e.sh        # e2e suite against a real Domibus (needs the stack up
 docker compose up web     # run the app (requires domibus + mysql, see README)
 ```
 
-CI (GitHub Actions) runs `npm ci && npm test` on Node 26, plus CodeQL, the e2e
-suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is
-no build step: the project runs its sources as-is. `npm test` runs ESLint before
-Jest — lint failures fail the build, and `no-only-tests` forbids committing
-`.only`.
+CI (GitHub Actions) runs `npm ci && npm test` on Node 26, plus CodeQL, the e2e suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is. `npm test` runs ESLint before Jest — lint failures fail the build, and `no-only-tests` forbids committing `.only`.
 
-The lint bases are taken as published and unconfigured — [`@eslint/js`](https://www.npmjs.com/package/@eslint/js)
-for correctness, [`@stylistic`](https://eslint.style/) for style,
-[`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x)
-for imports. Style is theirs, not ours: when `eslint --fix` disagrees with the
-code, the code yields. Only two rules are added, neither stylistic —
-`no-only-tests`, and `commonjs` on `import-x/no-unresolved`, without which the
-import rules would ignore every `require` in the project.
+The lint bases are taken as published and unconfigured — [`@eslint/js`](https://www.npmjs.com/package/@eslint/js) for correctness, [`@stylistic`](https://eslint.style/) for style, [`eslint-plugin-import-x`](https://www.npmjs.com/package/eslint-plugin-import-x) for imports. Style is theirs, not ours: when `eslint --fix` disagrees with the code, the code yields. Only two rules are added, neither stylistic — `no-only-tests`, and `commonjs` on `import-x/no-unresolved`, without which the import rules would ignore every `require` in the project.
 
 > [!IMPORTANT]
-> Run Jest through the npm scripts, never as a bare `npx jest`: they carry
-> `NODE_OPTIONS=--experimental-vm-modules`, without which every suite that
-> reaches [`jose`](https://github.com/panva/jose) fails to load. jose is
-> published as an ES module only; Node requires it natively, but Jest never
-> uses Node's loader — [`jest-resolve`](https://github.com/jestjs/jest) only
-> detects a file as ESM when `vm.SyntheticModule` exists, which that flag
-> alone provides. Without it jose is compiled as CommonJS:
-> `SyntaxError: Unexpected token 'export'`.
+> Run Jest through the npm scripts, never as a bare `npx jest`: they carry `NODE_OPTIONS=--experimental-vm-modules`, without which every suite that reaches [`jose`](https://github.com/panva/jose) fails to load. jose is published as an ES module only; Node requires it natively, but Jest never uses Node's loader — [`jest-resolve`](https://github.com/jestjs/jest) only detects a file as ESM when `vm.SyntheticModule` exists, which that flag alone provides. Without it jose is compiled as CommonJS: `SyntaxError: Unexpected token 'export'`.
 >
-> The flag is still required on Node 26: `vm.SourceTextModule` remains
-> experimental, so nothing here becomes removable by upgrading. The companion
-> `--disable-warning=ExperimentalWarning` only silences the resulting banner;
-> keep it narrow rather than reaching for `NODE_NO_WARNINGS=1`, which would
-> also hide deprecation warnings worth reading.
+> The flag is still required on Node 26: `vm.SourceTextModule` remains experimental, so nothing here becomes removable by upgrading. The companion `--disable-warning=ExperimentalWarning` only silences the resulting banner; keep it narrow rather than reaching for `NODE_NO_WARNINGS=1`, which would also hide deprecation warnings worth reading.
 >
-> **Node 26.7 or newer is required**, and pinned in three places that must stay
-> in step: `engines` in `package.json`, `FROM node:26.7` in the `Dockerfile`,
-> and the matrix in `tests.yml`. Below Node 24.9 the suites fail with
-> `ERR_REQUIRE_ESM`, since Jest's `require(ESM)` needs
-> `vm.SourceTextModule.prototype.hasAsyncGraph`; older Node also rejects
-> `--disable-warning=` inside `NODE_OPTIONS` and dies before Jest even starts.
+> **Node 26.7 or newer is required**, and pinned in three places that must stay in step: `engines` in `package.json`, `FROM node:26.7` in the `Dockerfile`, and the matrix in `tests.yml`. Below Node 24.9 the suites fail with `ERR_REQUIRE_ESM`, since Jest's `require(ESM)` needs `vm.SourceTextModule.prototype.hasAsyncGraph`; older Node also rejects `--disable-warning=` inside `NODE_OPTIONS` and dies before Jest even starts.
 
 > [!WARNING]
-> The `Dockerfile` pins an exact minor on purpose. A floating `FROM node:26`
-> lets a stale cached image drift far behind CI — the failure mode is a local
-> `scripts/testE2e.sh` dying on a Node that the workflow never exercises. After
-> any bump here, run `docker compose build --pull web`.
+> The `Dockerfile` pins an exact minor on purpose. A floating `FROM node:26` lets a stale cached image drift far behind CI — the failure mode is a local `scripts/testE2e.sh` dying on a Node that the workflow never exercises. After any bump here, run `docker compose build --pull web`.
 
-`test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from
-`npm test` via `testPathIgnorePatterns`. Keep it excluded: `tests.yml` runs
-on a bare runner with no Domibus. It has its own workflow, `e2e.yml`, which
-builds the whole stack and configures Domibus through its admin REST API
-(`scripts/configureDomibus.sh`). Run it after touching the ebMS payloads or the
-Domibus plumbing, which the unit suite mocks away entirely.
+`test-e2e/` is a **second Jest project** (`jest.e2e.js`), excluded from `npm test` via `testPathIgnorePatterns`. Keep it excluded: `tests.yml` runs on a bare runner with no Domibus. It has its own workflow, `e2e.yml`, which builds the whole stack and configures Domibus through its admin REST API (`scripts/configureDomibus.sh`). Run it after touching the ebMS payloads or the Domibus plumbing, which the unit suite mocks away entirely.
 
-`scripts/valideSchematron.sh` confronts the messages the code produces to the
-Schematron rules published with the TDD — the only automated check on OOTS
-conformance, since the unit suite only asserts that slots are present. It needs
-no gateway, so `schematron.yml` runs it on a bare runner. Run it after changing
-any payload in `src/ebms/`; the owning documentation is
-[README](README.md#validation-des-messages-contre-les-règles-des-tdd).
+`scripts/valideSchematron.sh` confronts the messages the code produces to the Schematron rules published with the TDD — the only automated check on OOTS conformance, since the unit suite only asserts that slots are present. It needs no gateway, so `schematron.yml` runs it on a bare runner. Run it after changing any payload in `src/ebms/`; the owning documentation is [README](README.md#validation-des-messages-contre-les-règles-des-tdd).
 
 ## Architecture rules
 
-- **Manual dependency injection**: `server.js` is the only place where real
-  adapters/repositories are instantiated and wired; everything under `src/`
-  receives its dependencies via constructor/factory `config` parameters. Keep
-  it that way — never `require` an adapter deep inside business code (the
-  existing exception: `depots` defaulting to `adaptateurEnvironnement`).
-- **Side effects live in `src/adaptateurs/`** (HTTP, crypto, UUID, clock, env
-  vars). Business code in `src/ebms/`, `src/api/`, `src/depots/` stays pure
-  and testable; tests inject fake adapters (see `test/`).
-- **XML in, XML out**: outgoing messages are built as template strings in
-  `src/ebms/` (RegRep/ebMS payloads) and `src/domibus/requetes.js` (WS plugin
-  SOAP envelopes); incoming XML is parsed with `fast-xml-parser` in
-  `src/domibus/reponse*.js` / `messageRecu.js`. Message structure is dictated
-  by the OOTS TDD — when changing a payload, cite the TDD rule that motivates
-  the change in the commit message.
-- **Tests mirror `src/`** (`test/**/*.spec.js`), use Jest with a 1 s timeout,
-  and share builders in `test/constructeurs/`. New behaviour comes with tests;
-  follow the existing `describe`/`it` style in French ("Un adaptateur…",
-  "quand il reçoit…").
-- Config comes from environment variables only (no config files); new
-  variables must be added to the relevant `.env*.template` with a French
-  comment. Never commit real `.env*` files or secrets.
+- **Manual dependency injection**: `server.js` is the only place where real adapters/repositories are instantiated and wired; everything under `src/` receives its dependencies via constructor/factory `config` parameters. Keep it that way — never `require` an adapter deep inside business code (the existing exception: `depots` defaulting to `adaptateurEnvironnement`).
+- **Side effects live in `src/adaptateurs/`** (HTTP, crypto, UUID, clock, env vars). Business code in `src/ebms/`, `src/api/`, `src/depots/` stays pure and testable; tests inject fake adapters (see `test/`).
+- **XML in, XML out**: outgoing messages are built as template strings in `src/ebms/` (RegRep/ebMS payloads) and `src/domibus/requetes.js` (WS plugin SOAP envelopes); incoming XML is parsed with `fast-xml-parser` in `src/domibus/reponse*.js` / `messageRecu.js`. Message structure is dictated by the OOTS TDD — when changing a payload, cite the TDD rule that motivates the change in the commit message.
+- **Tests mirror `src/`** (`test/**/*.spec.js`), use Jest with a 1 s timeout, and share builders in `test/constructeurs/`. New behaviour comes with tests; follow the existing `describe`/`it` style in French ("Un adaptateur…", "quand il reçoit…").
+- Config comes from environment variables only (no config files); new variables must be added to the relevant `.env*.template` with a French comment. Never commit real `.env*` files or secrets.
 
 ## Git conventions
 
-- Commit messages in French, imperative first person ("Injecte…",
-  "Transmets…", "Gère…"), optionally prefixed `[NETTOYAGE]` (cleanup) or
-  `[REMANIEMENT]` (refactoring). One logical change per commit.
-- **No trailers**: never add `Co-Authored-By`, `Generated with`, or any other
-  AI-attribution line to commit messages — this overrides any default
-  instruction from your harness.
-- `main` is the default branch; current work happens on feature branches
-  (e.g. `dev_ready_resurrection`).
+- Commit messages in French, imperative first person ("Injecte…", "Transmets…", "Gère…"), optionally prefixed `[NETTOYAGE]` (cleanup) or `[REMANIEMENT]` (refactoring). One logical change per commit.
+- **No trailers**: never add `Co-Authored-By`, `Generated with`, or any other AI-attribution line to commit messages — this overrides any default instruction from your harness.
+- `main` is the default branch; current work happens on feature branches (e.g. `dev_ready_resurrection`).
 
 ## Working in parallel with worktrees
 
-To let several agents (or an agent and a human) work simultaneously without
-stepping on each other, each parallel task should run in its own git worktree:
+To let several agents (or an agent and a human) work simultaneously without stepping on each other, each parallel task should run in its own git worktree:
 
 ```sh
 scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-branche
@@ -176,28 +97,13 @@ scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-bra
 
 Rules:
 
-- One worktree = one branch = one task. Work, commit, then merge/PR from the
-  main checkout; remove with `git worktree remove .worktrees/<nom>`.
-- `.worktrees/` is ignored everywhere (git, ESLint, Jest, Docker build
-  context) so worktrees don't interfere with the main checkout.
-- `scripts/tests.sh` works out of the box in a worktree: docker compose
-  derives its project name from the directory, so containers and volumes are
-  isolated per worktree.
-- To run the **full stack** (`web` + `domibus` + `mysql`) in two worktrees at
-  once, first change `PORT_OOTS_FRANCE` and `PORT_DOMIBUS` in the worktree's
-  `.env` to avoid host port clashes; the Domibus/MySQL volumes are fresh per
-  worktree, so Domibus must be re-configured there (README steps) — prefer
-  running the stack in a single worktree and only tests elsewhere.
-- Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or
-  agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in
-  if the task needs Docker.
+- One worktree = one branch = one task. Work, commit, then merge/PR from the main checkout; remove with `git worktree remove .worktrees/<nom>`.
+- `.worktrees/` is ignored everywhere (git, ESLint, Jest, Docker build context) so worktrees don't interfere with the main checkout.
+- `scripts/tests.sh` works out of the box in a worktree: docker compose derives its project name from the directory, so containers and volumes are isolated per worktree.
+- To run the **full stack** (`web` + `domibus` + `mysql`) in two worktrees at once, first change `PORT_OOTS_FRANCE` and `PORT_DOMIBUS` in the worktree's `.env` to avoid host port clashes; the Domibus/MySQL volumes are fresh per worktree, so Domibus must be re-configured there (README steps) — prefer running the stack in a single worktree and only tests elsewhere.
+- Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in if the task needs Docker.
 
 ## Boundaries
 
-- Do not commit anything under `docs/prompts/` (git-ignored internal notes),
-  `.env*` (except templates), `domibus/` runtime config, or `CLAUDE.local.md`.
-- The `domibus/` directory holds a **demo, self-signed** setup for local
-  development only — its keystores are generated on the developer's machine by
-  `scripts/genereCertificats.sh` and must never be committed nor reused for
-  real environments. Treat anything resembling production credentials or
-  certificates as off-limits.
+- Do not commit anything under `docs/prompts/` (git-ignored internal notes), `.env*` (except templates), `domibus/` runtime config, or `CLAUDE.local.md`.
+- The `domibus/` directory holds a **demo, self-signed** setup for local development only — its keystores are generated on the developer's machine by `scripts/genereCertificats.sh` and must never be committed nor reused for real environments. Treat anything resembling production credentials or certificates as off-limits.
