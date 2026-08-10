@@ -9,6 +9,10 @@ const fs = require('node:fs')
 const express = require('express')
 const jose = require('jose')
 
+const adaptateurChiffrement = require('../src/adaptateurs/adaptateurChiffrement')
+const AdaptateurPostgres = require('../src/adaptateurs/adaptateurPostgres')
+const DepotJournal = require('../src/depots/depotJournal')
+
 const ID_REQUETEUR = '00000000000002'
 // `00` est le code démarche de vérification système : c'est le seul auquel
 // l'application répond par un justificatif (cf. src/domibus/requete.js).
@@ -140,6 +144,8 @@ describe('Une requête de pièce justificative', () => {
   let fauxRequeteur
   let urlRequeteur
   let beneficiaireChiffre
+  let adaptateurPostgres
+  let depotJournal
 
   beforeAll(async () => {
     verifieConfiguration()
@@ -152,14 +158,21 @@ describe('Une requête de pièce justificative', () => {
 
     fauxRequeteur = await demarreFauxRequeteur(port, clePublique, idClePublique)
     beneficiaireChiffre = await construitBeneficiaireChiffre(privateKey, idClePublique)
+
+    adaptateurPostgres = AdaptateurPostgres({ urlBaseDonnees: process.env.URL_BASE_DONNEES })
+    depotJournal = new DepotJournal(adaptateurPostgres)
   })
 
-  // `beforeAll` peut échouer avant d'avoir monté le faux requêteur : sans cette
-  // garde, l'erreur de fermeture masquerait la vraie cause de l'échec.
-  afterAll(() => new Promise((resolve) => {
-    if (typeof fauxRequeteur === 'undefined') resolve()
-    else fauxRequeteur.serveur.close(resolve)
-  }))
+  afterAll(async () => {
+    if (typeof adaptateurPostgres !== 'undefined') await adaptateurPostgres.fermeConnexions()
+
+    // `beforeAll` peut échouer avant d'avoir monté le faux requêteur : sans
+    // cette garde, l'erreur de fermeture masquerait la vraie cause de l'échec.
+    await new Promise((resolve) => {
+      if (typeof fauxRequeteur === 'undefined') resolve()
+      else fauxRequeteur.serveur.close(resolve)
+    })
+  })
 
   it('revient du fournisseur avec le justificatif attendu, à travers Domibus', async () => {
     const parametres = new URLSearchParams({
@@ -189,5 +202,63 @@ describe('Une requête de pièce justificative', () => {
     expect(justificatif.subarray(0, 4).toString()).toBe('%PDF')
     expect(justificatif.length).toBe(attendu.length)
     expect(justificatif.equals(attendu)).toBe(true)
+  })
+
+  // Enchaîné sur l'échange ci-dessus plutôt que joué dans sa propre suite :
+  // c'est le même scénario qu'il inspecte, et le rejouer coûterait un second
+  // aller-retour à travers Domibus pour la même chose. C'est ici que le SQL du
+  // journal est réellement exercé — la suite unitaire ne touche pas la base.
+  describe('une fois l\'échange abouti', () => {
+    // La passerelle dialogue avec elle-même : les six événements d'un échange
+    // complet, ceux du requêteur comme ceux du fournisseur, tombent dans le
+    // même journal.
+    const TYPES_ATTENDUS = [
+      'requete_emise',
+      'requete_recue',
+      'reponse_emise',
+      'reponse_recue',
+      'piece_transmise',
+    ]
+
+    let evenements
+
+    beforeAll(async () => {
+      const [derniere] = await depotJournal.dernieresConversations({ limite: 1 })
+      expect(derniere).toBeDefined()
+
+      evenements = await depotJournal.evenementsDeConversation(derniere.id_conversation)
+    })
+
+    it('journalise chaque étape de la conversation', () => {
+      const types = evenements.map(e => e.type_evenement)
+
+      TYPES_ATTENDUS.forEach(type => expect(types).toContain(type))
+    })
+
+    it('consigne l\'empreinte du justificatif, et jamais le justificatif', () => {
+      const attendue = adaptateurChiffrement.empreinteSha256(fs.readFileSync('./assets/drapeau.pdf'))
+      const avecEmpreinte = evenements.filter(e => e.empreinte_justificatif !== null)
+
+      expect(avecEmpreinte.length).toBeGreaterThan(0)
+      avecEmpreinte.forEach(e => expect(e.empreinte_justificatif).toBe(attendue))
+
+      // Le justificatif est un PDF : nulle colonne ne doit en porter l'en-tête.
+      evenements.forEach(e => Object.values(e).forEach((valeur) => {
+        if (typeof valeur === 'string') expect(valeur).not.toContain('%PDF')
+      }))
+    })
+
+    it('chaîne les empreintes sans rupture', async () => {
+      expect(await depotJournal.verifieChaine()).toEqual([])
+    })
+
+    it('refuse que le rôle applicatif modifie ou supprime une ligne', async () => {
+      const [{ id }] = evenements
+
+      await expect(adaptateurPostgres.requete('UPDATE journal_echanges SET code_demarche = $1 WHERE id = $2', ['XX', id]))
+        .rejects.toThrow(/permission denied/)
+      await expect(adaptateurPostgres.requete('DELETE FROM journal_echanges WHERE id = $1', [id]))
+        .rejects.toThrow(/permission denied/)
+    })
   })
 })

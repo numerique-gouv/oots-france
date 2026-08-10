@@ -15,7 +15,7 @@ Le test e2e (`test-e2e/`) comble ce trou : il exerce la chaîne réelle — requ
 | Commande | `npm test` (via `scripts/tests.sh`) | `npm run test:e2e` (via `scripts/testE2e.sh`) |
 | Configuration Jest | bloc `jest` de `package.json` | `jest.e2e.js` |
 | Délai par test | 1 s | 90 s |
-| Prérequis | aucun | pile démarrée et Domibus configuré |
+| Prérequis | aucun | pile démarrée, Domibus configuré, migrations jouées |
 | Workflow GitHub | `tests.yml` | `e2e.yml` |
 
 > [!IMPORTANT]
@@ -29,6 +29,7 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 | --- | --- |
 | Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/preparEnvironnement.sh` |
 | Attendre le déploiement de la webapp | `scripts/ci/attendDomibus.sh` |
+| Démarrer PostgreSQL et créer la table du journal | `docker compose up --detach postgres` puis `npm run migre` |
 | Générer les certificats, charger les deux magasins et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configureDomibus.sh`, qui appelle `scripts/genereCertificats.sh` |
 | Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnostiqueDomibus.sh` |
 
@@ -51,7 +52,7 @@ Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité le
 
 ## Lancer le test
 
-Une fois la pile démarrée (`web` + `domibus` + `mysql`, Domibus configuré comme décrit dans le [README](../README.md)) :
+Une fois la pile démarrée (`web` + `domibus` + `mysql` + `postgres`, Domibus configuré et migrations jouées comme décrit dans le [README](../README.md)) :
 
 ```sh
 $ scripts/testE2e.sh
@@ -63,10 +64,17 @@ Une exécution réussie affiche :
 PASS test-e2e/requetePieceJustificative.spec.js (4.3 s)
   Une requête de pièce justificative
     ✓ revient du fournisseur avec le justificatif attendu, à travers Domibus (3766 ms)
+    une fois l'échange abouti
+      ✓ journalise chaque étape de la conversation
+      ✓ consigne l'empreinte du justificatif, et jamais le justificatif
+      ✓ chaîne les empreintes sans rupture
+      ✓ refuse que le rôle applicatif modifie ou supprime une ligne
 
 Test Suites: 1 passed, 1 total
-Tests:       1 passed, 1 total
+Tests:       5 passed, 5 total
 ```
+
+Les quatre derniers tests inspectent le journal des échanges (chapitre 4.8) que l'échange vient de produire : c'est le seul endroit où son SQL — le déclencheur de chaînage, les vues, les privilèges en ajout seul — soit réellement exercé, la suite unitaire ne touchant jamais la base. Ils sont enchaînés sur le même scénario plutôt que joués à part, pour ne pas coûter un second aller-retour à travers Domibus.
 
 > [!IMPORTANT]
 > Le test s'exécute **dans le conteneur `web`** (c'est ce que fait le wrapper `scripts/testE2e.sh`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://localhost:4000`, adresse qui n'a le bon sens que vue du conteneur : lancé depuis la machine hôte, le test échouerait au déchiffrement du jeton bénéficiaire, faute pour l'application de pouvoir joindre les clés publiques du requêteur.
@@ -108,6 +116,9 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnostiqueDomibus.sh` les affiche |
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : blue_gw` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
+| `Unable to acquire JDBC Connection [HikariPool-1 …]` côté Domibus, ou `Thread starvation or clock leap detected` | **deux piles Domibus tournent en parallèle** — un autre worktree, le plus souvent. Chacune est un JVM Tomcat plus un MySQL : la machine s'étrangle, et un échange qui prend deux secondes en met huit minutes. `docker ps` les montre ; n'en garder qu'une |
+| `relation "journal_echanges" does not exist` | les migrations n'ont pas été jouées : `docker compose run --rm --no-deps web npm run migre` |
+| `role "oots_application" does not exist` | le volume PostgreSQL préexistait à ce lot, et son script d'initialisation n'a donc jamais tourné — le recréer (`docker compose down --volumes`) ou créer le rôle à la main |
 
 Le délai d'attente côté application se règle par `DELAI_MAX_ATTENTE_DOMIBUS` (30 s dans la configuration d'exemple). Pour voir les enveloppes SOAP échangées — très bavard, mais décisif pour déboguer un rejet de message —, passer `org.apache.cxf` à `INFO` dans `domibus/logback.xml`, que Domibus relit toutes les 10 s.
 

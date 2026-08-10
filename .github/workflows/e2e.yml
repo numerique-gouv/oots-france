@@ -83,6 +83,14 @@ jobs:
         # puisse élaguer la branche.
         run: docker compose build web
 
+      - name: Prépare la base du journal
+        # Pendant le déploiement de Domibus, comme la construction ci-dessus :
+        # PostgreSQL démarre en quelques secondes, et le `depends_on` de `web`
+        # attend de toute façon son `healthcheck`.
+        run: |
+          docker compose up --detach postgres
+          docker compose run --rm --no-deps web npm run migre
+
       - name: Attend que Domibus réponde
         run: scripts/ci/attendDomibus.sh
 
@@ -119,6 +127,13 @@ jobs:
       - name: Logs de l'application en cas d'échec
         if: failure()
         run: docker compose logs web || true
+
+      - name: Journal des échanges en cas d'échec
+        if: failure()
+        # Il dit jusqu'où l'échange est allé : une conversation qui s'arrête sur
+        # `requete_emise` n'a jamais reçu de réponse, une `requete_refusee`
+        # n'est jamais partie.
+        run: docker compose exec -T web npm run journal || true
 
       - name: Arrête la pile
         if: always()
