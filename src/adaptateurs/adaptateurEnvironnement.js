@@ -30,10 +30,17 @@ const identiteFournisseurFrancais = () => ({
   nom: variableObligatoire('NOM_FOURNISSEUR_FRANCAIS'),
 })
 
+// L'adresse à laquelle l'espace de prévisualisation d'un autre État membre
+// ramène l'usager une fois qu'il a choisi. Obligatoire pour la même raison que
+// l'identité ci-dessus : absente, elle partirait en `returnurl=undefined` chez
+// le correspondant, qui l'accepterait sans rien dire.
+const urlOotsFrance = () => variableObligatoire('URL_OOTS_FRANCE')
+
 module.exports = {
   avecRequetePieceJustificative,
   clePriveeJWK,
   donneesDepotServicesCommunsLocal,
   donneesRequeteurs,
   identiteFournisseurFrancais,
+  urlOotsFrance,
 }

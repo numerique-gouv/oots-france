@@ -68,17 +68,29 @@ else
 fi
 
 # ------------------------------------------------------- règles Schematron
-SCHEMATRONS=(EDM-REQ-C EDM-REQ-S EDM-RESP-C EDM-RESP-S EDM-ERR-C EDM-ERR-S)
+SCHEMATRONS=(EDM-REQ-C EDM-REQ-S EDM-RESP-C EDM-RESP-S EDM-ERR-C EDM-ERR-S EDM-ebMS)
 
-# Le répertoire n'apparaît qu'une fois les six règles et toutes leurs
-# inclusions récupérées : sa présence vaut donc bien preuve de complétude.
-if [ ! -d "$outils/sch" ]; then
-  echo "→ Téléchargement des règles Schematron des TDD $VERSION_TDD"
-  mkdir -p "$outils/sch.partiel/codelist-include"
-  for regle in "${SCHEMATRONS[@]}"; do
-    telechargeArtefactTdd "OOTS-EDM/sch/$regle.sch" "$outils/sch.partiel/$regle.sch"
-  done
-  python3 - "$PROJET_GITLAB" "$VERSION_TDD" "$outils/sch.partiel/codelist-include" <<'PY'
+mkdir -p "$outils/sch"
+
+# Chaque règle est gardée par son propre fichier, et non par la présence du
+# répertoire : l'intégration continue met `.schematron` en cache sous une clé
+# qui ne dépend que de la version des TDD, si bien qu'une règle ajoutée ici ne
+# serait jamais récupérée sur un cache déjà chaud. Le couple `.partiel` + `mv`
+# conserve l'atomicité par artefact.
+for regle in "${SCHEMATRONS[@]}"; do
+  if [ ! -f "$outils/sch/$regle.sch" ]; then
+    echo "→ Téléchargement de la règle $regle des TDD $VERSION_TDD"
+    telechargeArtefactTdd "OOTS-EDM/sch/$regle.sch" "$outils/sch/$regle.sch.partiel"
+    mv "$outils/sch/$regle.sch.partiel" "$outils/sch/$regle.sch"
+  fi
+done
+
+# Les listes de codes incluses par les règles se récupèrent en bloc : leur
+# répertoire n'apparaît qu'une fois toutes téléchargées.
+if [ ! -d "$outils/sch/codelist-include" ]; then
+  echo "→ Téléchargement des listes de codes des TDD $VERSION_TDD"
+  mkdir -p "$outils/sch/codelist-include.partiel"
+  python3 - "$PROJET_GITLAB" "$VERSION_TDD" "$outils/sch/codelist-include.partiel" <<'PY'
 import json, os, sys, urllib.parse, urllib.request
 projet, version, destination = sys.argv[1:4]
 arbre = f'https://code.europa.eu/api/v4/projects/{projet}/repository/tree?ref={version}&path=OOTS-EDM/sch/codelist-include&per_page=100'
@@ -87,7 +99,7 @@ for entree in json.load(urllib.request.urlopen(arbre)):
     source = f'https://code.europa.eu/api/v4/projects/{projet}/repository/files/{chemin}/raw?ref={version}'
     urllib.request.urlretrieve(source, os.path.join(destination, entree['name']))
 PY
-  mv "$outils/sch.partiel" "$outils/sch"
+  mv "$outils/sch/codelist-include.partiel" "$outils/sch/codelist-include"
 fi
 
 for regle in "${SCHEMATRONS[@]}"; do
@@ -123,6 +135,19 @@ valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
 valide erreur EDM-ERR-C
 valide erreur EDM-ERR-S
+valide erreurRequeteInvalide EDM-ERR-C
+valide erreurRequeteInvalide EDM-ERR-S
+valide erreurCapaciteNonSupportee EDM-ERR-C
+valide erreurCapaciteNonSupportee EDM-ERR-S
+
+# Les entêtes ebMS relèvent d'une règle à part, dont les contextes sont ancrés
+# sur `//eb:Messaging` : le document que produit `Entete#enXML()` lui suffit,
+# sans l'enveloppe SOAP qui l'entoure sur le fil.
+valide requete.entete EDM-ebMS
+valide reponse.entete EDM-ebMS
+valide erreur.entete EDM-ebMS
+valide erreurRequeteInvalide.entete EDM-ebMS
+valide erreurCapaciteNonSupportee.entete EDM-ebMS
 
 # Code 2 pour une violation de règle, distinct du 1 que rend toute autre
 # défaillance (téléchargement, compilation) : l'appelant peut ainsi retenter un
@@ -134,4 +159,4 @@ if [ "$enEchec" -ne 0 ]; then
 fi
 
 echo
-echo "✓ Les trois messages sont conformes aux TDD $VERSION_TDD."
+echo "✓ Les messages et leurs entêtes ebMS sont conformes aux TDD $VERSION_TDD."

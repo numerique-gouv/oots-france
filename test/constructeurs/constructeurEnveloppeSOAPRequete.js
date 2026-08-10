@@ -10,6 +10,14 @@ class ConstructeurEnveloppeSOAPRequete {
     this.idRequete = ''
     this.requeteur = { id: 'BR_SI_01', nom: 'Un requêteur slovène' }
     this.typeJustificatif = new TypeJustificatif()
+    this.slotsRetires = []
+  }
+
+  // Pour éprouver la lecture d'une requête incomplète, qui vaut « requête
+  // invalide » aux yeux des TDD.
+  sansSlot(nom) {
+    this.slotsRetires.push(nom)
+    return this
   }
 
   avecIdEchange(id) {
@@ -43,30 +51,15 @@ class ConstructeurEnveloppeSOAPRequete {
   }
 
   construis() {
-    const message = `
-<?xml version="1.0" encoding="UTF-8"?>
-<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-          xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
-          xmlns:sdg="http://data.europa.eu/p4s"
-          xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
-          xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
-          xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
-          xmlns:xlink="http://www.w3.org/1999/xlink"
-          xmlns:xml="http://www.w3.org/XML/1998/namespace"
-          xml:lang="EN"
-          id="${this.idRequete}">
+    const slot = (nom, xml) => (this.slotsRetires.includes(nom) ? '' : xml)
 
-  <rim:Slot name="SpecificationIdentifier"><!-- … --></rim:Slot>
-  <rim:Slot name="IssueDateTime"><!-- … --></rim:Slot>
-  <rim:Slot name="Procedure">
+    const slotProcedure = slot('Procedure', `<rim:Slot name="Procedure">
     <rim:SlotValue xsi:type="rim:StringValueType">
       <rim:Value>${this.codeDemarche}</rim:Value>
     </rim:SlotValue>
-  </rim:Slot>
-  <rim:Slot name="PossibilityForPreview"><!-- … --></rim:Slot>
-  <rim:Slot name="ExplicitRequestGiven"><!-- … --></rim:Slot>
-  <rim:Slot name="Requirements"><!-- … --></rim:Slot>
-  <rim:Slot name="EvidenceRequester">
+  </rim:Slot>`)
+
+    const slotRequeteur = slot('EvidenceRequester', `<rim:Slot name="EvidenceRequester">
     <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
@@ -83,7 +76,28 @@ class ConstructeurEnveloppeSOAPRequete {
         </sdg:Agent>
       </rim:Element>
     </rim:SlotValue>
-  </rim:Slot>
+  </rim:Slot>`)
+
+    const message = `
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+          xmlns:sdg="http://data.europa.eu/p4s"
+          xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+          xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+          xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          xml:lang="EN"
+          id="${this.idRequete}">
+
+  <rim:Slot name="SpecificationIdentifier"><!-- … --></rim:Slot>
+  <rim:Slot name="IssueDateTime"><!-- … --></rim:Slot>
+  ${slotProcedure}
+  <rim:Slot name="PossibilityForPreview"><!-- … --></rim:Slot>
+  <rim:Slot name="ExplicitRequestGiven"><!-- … --></rim:Slot>
+  <rim:Slot name="Requirements"><!-- … --></rim:Slot>
+  ${slotRequeteur}
   <rim:Slot name="EvidenceProvider"><!-- … --></rim:Slot>
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">

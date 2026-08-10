@@ -9,6 +9,19 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
     this.idRequete = ''
     this.beneficiaire = new PersonnePhysique()
     this.typeJustificatif = new TypeJustificatif()
+    this.contenusRetires = []
+  }
+
+  // Le slot reste en place, mais ce qu'on y cherche disparaît : c'est le cas
+  // qu'un simple `sansSlot` ne sait pas produire, et celui contre lequel les
+  // gardes de `Requete` protègent.
+  sansContenu(nom) {
+    this.contenusRetires.push(nom)
+    return this
+  }
+
+  contenu(nom, valeur) {
+    return this.contenusRetires.includes(nom) ? undefined : valeur
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -53,16 +66,20 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
             '@_name': 'EvidenceRequester',
             'SlotValue': {
               '@_type': 'rim:CollectionValueType',
+              // L'élément reste dans la collection, vidé de son agent : c'est
+              // la forme la plus exigeante pour la lecture, qui doit survivre
+              // à un élément sans `Agent` avant de constater qu'aucun n'est
+              // classé `ER`.
               'Element': [
                 {
-                  Agent: {
+                  Agent: this.contenu('AgentRequeteur', {
                     Identifier: { '#text': this.requeteur.id },
                     Name: [
                       { '@_lang': 'FR', '#text': this.requeteur.nom },
                       { '@_lang': 'EN', '#text': 'Some translation' },
                     ],
                     Classification: 'ER',
-                  },
+                  }),
                 },
                 {
                   Agent: {
@@ -80,7 +97,7 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
               '@_name': 'NaturalPerson',
               'SlotValue': {
                 '@_type': 'rim:AnyValueType',
-                'Person': {
+                'Person': this.contenu('Person', {
                   Identifier: this.beneficiaire.identifiantEidas && {
                     '@_schemeID': 'eidas',
                     '#text': this.beneficiaire.identifiantEidas,
@@ -88,20 +105,22 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
                   FamilyName: this.beneficiaire.nom,
                   GivenName: this.beneficiaire.prenom,
                   DateOfBirth: this.beneficiaire.dateNaissance,
-                },
+                }),
               },
             },
             {
               '@_name': 'EvidenceRequest',
               'SlotValue': {
                 '@_type': 'rim:AnyValueType',
-                'DataServiceEvidenceType': {
+                'DataServiceEvidenceType': this.contenu('DataServiceEvidenceType', {
                   Identifier: '00000000-0000-0000-0000-000000000000',
                   EvidenceTypeClassification: this.typeJustificatif.id,
                   Title: Object.entries(this.typeJustificatif.descriptions || {})
                     .map(([k, v]) => ({ '@_lang': k, '#text': v })),
-                  DistributedAs: { Format: this.typeJustificatif.formatDistribution },
-                },
+                  DistributedAs: this.contenu('DistributedAs', {
+                    Format: this.typeJustificatif.formatDistribution,
+                  }),
+                }),
               },
             },
           ],

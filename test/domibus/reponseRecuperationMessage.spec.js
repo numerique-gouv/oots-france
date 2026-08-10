@@ -6,7 +6,7 @@ const ReponseRecuperationMessage = require('../../src/domibus/reponseRecuperatio
 const CodeDemarche = require('../../src/ebms/codeDemarche')
 const Fournisseur = require('../../src/ebms/fournisseur')
 const PointAcces = require('../../src/ebms/pointAcces')
-const { ErreurReponseRequete } = require('../../src/erreurs')
+const { ErreurReponseRequete, ErreurMessageIllisible } = require('../../src/erreurs')
 
 describe('La réponse à une requête Domibus de récupération de message', () => {
   const fournisseurFrancais = Fournisseur.francais({ id: '00000000000001', nom: 'Un fournisseur français' })
@@ -85,6 +85,27 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       }
       catch (e) {
         expect(e).toBeInstanceOf(ErreurReponseRequete)
+        expect(e.message).toEqual('EDM:ERR:0004 : Object not found')
+        suite()
+      }
+    })
+
+    it('se contente du libellé quand l\'erreur reçue ne porte pas de code', (suite) => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPException()
+        .avecErreur({
+          type: 'rs:ObjectNotFoundExceptionType',
+          message: 'Object not found',
+          severite: 'urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error',
+        })
+        .sansCode()
+        .construis()
+      const reponse = new ReponseRecuperationMessage(enveloppeSOAP)
+
+      try {
+        reponse.suiteConversation()
+        suite('Une `ErreurReponseRequete` aurait dû être levée.')
+      }
+      catch (e) {
         expect(e.message).toEqual('Object not found')
         suite()
       }
@@ -150,6 +171,34 @@ describe('La réponse à une requête Domibus de récupération de message', () 
       const { requeteur } = reponseVerificationSysteme
       expect(requeteur.id).toBe('12345')
       expect(requeteur.nom).toBe('Un requêteur')
+    })
+
+    it('répond une erreur `EDM:ERR:0003` quand un slot attendu manque', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .sansSlot('Procedure')
+        .construis()
+
+      const reponseErreur = new ReponseRecuperationMessage(enveloppeSOAP).reponse({
+        adaptateurUUID: { genereUUID: () => '' },
+        fournisseurFrancais,
+        horodateur: { maintenant: () => '' },
+      })
+
+      expect(reponseErreur.codeException).toBe('EDM:ERR:0003')
+      expect(reponseErreur.typeException).toBe('rs:InvalidRequestExceptionType')
+    })
+
+    it('renonce à répondre quand le requêteur lui-même est illisible', () => {
+      const enveloppeSOAP = new ConstructeurEnveloppeSOAPRequete()
+        .sansSlot('EvidenceRequester')
+        .construis()
+      const requeteRecue = new ReponseRecuperationMessage(enveloppeSOAP)
+
+      expect(() => requeteRecue.reponse({
+        adaptateurUUID: { genereUUID: () => '' },
+        fournisseurFrancais,
+        horodateur: { maintenant: () => '' },
+      })).toThrow(ErreurMessageIllisible)
     })
 
     it('connaît le bénéficiaire', () => {

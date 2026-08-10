@@ -6,6 +6,7 @@ const TypeJustificatif = require('../../src/ebms/typeJustificatif')
 
 const {
   ErreurAbsenceReponseDestinataire,
+  ErreurConfiguration,
   ErreurDestinataireInexistant,
   ErreurRequeteurInexistant,
   ErreurReponseRequete,
@@ -38,6 +39,7 @@ describe('Le requêteur de pièce justificative', () => {
     adaptateurDomibus.envoieMessageRequete = () => Promise.resolve()
     adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.resolve()
     adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve()
+    adaptateurEnvironnement.urlOotsFrance = () => 'http://localhost:1234'
     adaptateurUUID.genereUUID = () => ''
     depotPointsAcces.trouvePointAcces = () => Promise.resolve({})
     depotRequeteurs.trouveRequeteur = () => Promise.resolve(
@@ -220,25 +222,84 @@ describe('Le requêteur de pièce justificative', () => {
     return pieceJustificative(config, requete, reponse)
   })
 
-  describe('quand `process.env.URL_OOTS_FRANCE` vaut `https://localhost:1234`', () => {
-    let urlOotsFrance
-
-    beforeEach(() => {
-      urlOotsFrance = process.env.URL_OOTS_FRANCE
-    })
-
-    afterEach(() => {
-      process.env.URL_OOTS_FRANCE = urlOotsFrance
-    })
-
-    it('construis l\'URL de redirection', () => {
+  describe('quand une prévisualisation est requise', () => {
+    it('ajoute l\'adresse de retour et sa méthode à l\'URL de prévisualisation', () => {
       expect.assertions(1)
-      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://example.com')
-      process.env.URL_OOTS_FRANCE = 'http://localhost:1234'
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://example.com/apercu')
 
       reponse.redirect = (urlRedirection) => {
-        expect(urlRedirection).toEqual('https://example.com?returnurl=http://localhost:1234')
+        expect(urlRedirection).toEqual(
+          'https://example.com/apercu?returnurl=http%3A%2F%2Flocalhost%3A1234&returnmethod=GET',
+        )
         return Promise.resolve()
+      }
+
+      return pieceJustificative(config, requete, reponse)
+    })
+
+    it('préserve les paramètres que l\'espace de prévisualisation porte déjà', () => {
+      expect.assertions(3)
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('https://example.com/apercu?jeton=abc')
+
+      reponse.redirect = (urlRedirection) => {
+        const parametres = new URL(urlRedirection).searchParams
+        expect(parametres.get('jeton')).toEqual('abc')
+        expect(parametres.get('returnurl')).toEqual('http://localhost:1234')
+        expect(parametres.get('returnmethod')).toEqual('GET')
+        return Promise.resolve()
+      }
+
+      return pieceJustificative(config, requete, reponse)
+    })
+
+    // Les TDD interdisent à l'adresse de prévisualisation de porter ces deux
+    // noms : si elle le fait quand même, c'est la valeur du portail qui vaut.
+    it('écrase une adresse de retour que l\'espace de prévisualisation aurait posée', () => {
+      expect.assertions(2)
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve(
+        'https://example.com/apercu?returnurl=https%3A%2F%2Fusurpateur.example&returnmethod=POST',
+      )
+
+      reponse.redirect = (urlRedirection) => {
+        const parametres = new URL(urlRedirection).searchParams
+        expect(parametres.getAll('returnurl')).toEqual(['http://localhost:1234'])
+        expect(parametres.getAll('returnmethod')).toEqual(['GET'])
+        return Promise.resolve()
+      }
+
+      return pieceJustificative(config, requete, reponse)
+    })
+
+    // La configuration est lue avant que la course ne démarre : sans cela,
+    // l'échec resterait caché derrière la branche qui attend Domibus.
+    it('échoue sans attendre Domibus quand l\'adresse de retour n\'est pas configurée', () => {
+      expect.assertions(1)
+      adaptateurEnvironnement.urlOotsFrance = () => {
+        throw new ErreurConfiguration('URL_OOTS_FRANCE est obligatoire')
+      }
+      adaptateurDomibus.reponseAvecPieceJustificative = () => new Promise(() => {})
+
+      reponse.status = (codeStatus) => {
+        expect(codeStatus).toEqual(500)
+        return reponse
+      }
+
+      return pieceJustificative(config, requete, reponse)
+    })
+
+    it('rend une erreur métier quand l\'adresse de prévisualisation reçue est illisible', () => {
+      expect.assertions(2)
+      adaptateurDomibus.urlRedirectionDepuisReponse = () => Promise.resolve('pas une URL')
+      adaptateurDomibus.reponseAvecPieceJustificative = () => Promise.reject(
+        new ErreurAbsenceReponseDestinataire('aucun justificatif reçu'),
+      )
+
+      reponse.status = (codeStatus) => {
+        expect(codeStatus).toEqual(502)
+        return reponse
+      }
+      reponse.json = ({ erreur }) => {
+        expect(erreur).toContain('Adresse de prévisualisation reçue illisible')
       }
 
       return pieceJustificative(config, requete, reponse)

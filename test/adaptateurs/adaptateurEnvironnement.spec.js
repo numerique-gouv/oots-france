@@ -46,4 +46,24 @@ describe('L\'adaptateur d\'environnement', () => {
         .toThrow(/NOM_FOURNISSEUR_FRANCAIS/)
     })
   })
+
+  describe('sur l\'adresse d\'OOTS France', () => {
+    it('la lit dans l\'environnement', () => {
+      process.env.URL_OOTS_FRANCE = 'https://oots.gouv.fr'
+
+      expect(adaptateurEnvironnement.urlOotsFrance()).toEqual('https://oots.gouv.fr')
+    })
+
+    // Absente, elle partirait en `returnurl=undefined` chez le correspondant.
+    it.each([
+      ['absente', undefined],
+      ['vide', ''],
+      ['faite d\'espaces', '   '],
+    ])('refuse une variable %s', (_, valeur) => {
+      if (valeur === undefined) delete process.env.URL_OOTS_FRANCE
+      else process.env.URL_OOTS_FRANCE = valeur
+
+      expect(() => adaptateurEnvironnement.urlOotsFrance()).toThrow(ErreurConfiguration)
+    })
+  })
 })

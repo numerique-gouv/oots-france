@@ -8,7 +8,7 @@
 > | quelle version des TDD viser et comment elle se négocie | [versions_tdd.md](versions_tdd.md) |
 > | la passerelle eDelivery et sa configuration | [domibus_context.md](domibus_context.md) |
 >
-> État arrêté au 10 août 2026, établi contre la table des matières des TDD et les artefacts publiés avec la [2.0.1](https://code.europa.eu/oots/tdd/tdd_chapters). Statuts : ✅ fait · 🟡 partiel · ❌ absent.
+> État arrêté au 10 août 2026, lot 1 fait, établi contre la table des matières des TDD et les artefacts publiés avec la [2.0.1](https://code.europa.eu/oots/tdd/tdd_chapters). Statuts : ✅ fait · 🟡 partiel · ❌ absent.
 
 ## Vue d'ensemble
 
@@ -24,7 +24,7 @@ Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, vali
 | 4.7 — Configuration eDelivery | 🟡 | moyenne |
 | 4.8 — Non-répudiation et journalisation | ❌ | moyenne, **exigence légale** |
 | 4.9 — Prévisualisation | 🟡 | lourde |
-| 4.10 — Variantes de flux | ❌ | moyenne |
+| 4.10 — Variantes de flux | 🟡 | moyenne |
 | 5 — Modèles de données des justificatifs | ❌ | lourde |
 | 6 — Ergonomie (UX) | ❌ | dépend de la même décision de périmètre |
 
@@ -160,10 +160,7 @@ Les trois messages sont au niveau v2.0 et passent les six jeux de règles joués
 
 ### 4.6 — Règles métier 🟡
 
-Les TDD publient une vingtaine de jeux de règles Schematron ([tableau récapitulatif](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/README.md)) ; `scripts/valideSchematron.sh` en joue six.
-
-> [!IMPORTANT]
-> **[`EDM-ebMS.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) n'est pas joué**, alors que le dépôt construit lui-même l'entête ebMS (`src/ebms/entete.js`, transmise à Domibus dans le `soap:Header` du `submitRequest`). C'est le gain de conformité le moins cher de tout cet inventaire.
+Les TDD publient une vingtaine de jeux de règles Schematron ([tableau récapitulatif](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/README.md)) ; `scripts/valideSchematron.sh` en joue sept, dont [`EDM-ebMS.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) sur l'entête que le dépôt construit lui-même (`src/ebms/entete.js`). Les entêtes des quatre messages la passent sans qu'aucune correction ait été nécessaire.
 
 Les jeux `DSD-*`, `EB-*`, `LCM-*` et `MS-CLASS` deviendront pertinents au fur et à mesure du chapitre 3 ; le script est déjà structuré pour les accueillir (tableau `SCHEMATRONS`, puis un appel `valide` par message).
 
@@ -197,10 +194,10 @@ Implique la persistance du bouchon 6.
 
 Le mécanisme, décrit par le [chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/pages/viewpage.action?pageId=900013172), se joue en deux échanges : le fournisseur répond d'abord une erreur `EDM:ERR:0002` portant l'adresse de son espace de prévisualisation ; l'usager s'y rend, choisit ; une **seconde requête** rapporte alors les justificatifs retenus.
 
-Côté **requêteur**, le dépôt lit `PreviewLocation` (`src/domibus/reponseErreurAutorisationRequise.js`) et redirige l'usager. Manquent :
+Côté **requêteur**, le dépôt lit `PreviewLocation` (`src/domibus/reponseErreurAutorisationRequise.js`) et redirige l'usager en lui joignant l'adresse de retour et sa méthode, `returnurl` et `returnmethod` (`src/api/pieceJustificative.js`). Manque **la seconde requête** : mêmes paramètres que la première, slot `PreviewLocation` recopié tel quel, même `ConversationId`. Sans elle, le flux s'arrête à la redirection et aucun justificatif n'est jamais rapporté, quand bien même un espace de prévisualisation existerait en face.
 
-- la lecture de `PreviewMethod` (obligatoire) et le paramètre `returnmethod` à la redirection — seul `returnurl` est ajouté (`src/api/pieceJustificative.js`) ;
-- **la seconde requête** : mêmes paramètres que la première, slot `PreviewLocation` recopié tel quel, même `ConversationId`. Sans elle, le flux s'arrête à la redirection et aucun justificatif n'est jamais rapporté, quand bien même un espace de prévisualisation existerait en face.
+> [!NOTE]
+> Le slot `PreviewMethod`, que le chapitre 4.9 décrit encore comme obligatoire, **n'existe plus en v2.0** : `EDM-ERR-S.sch` 2.0.0 porte la note « Removed PreviewMethod », et sa règle `R-EDM-ERR-S027` interdit à `rs:Exception` tout slot autre que `Timestamp`, `PreviewLocation` et `PreviewDescription`. Le chapitre annonçait déjà cette suppression en recommandant de s'en tenir à GET. Il n'y a donc rien à lire côté requêteur, et rien à produire côté fournisseur ; le chapitre du wiki, resté en v1.2.1, n'a simplement pas suivi ses propres artefacts.
 
 Côté **fournisseur**, l'espace de prévisualisation (*Preview Space*) est entièrement à écrire — le plus gros chantier de l'inventaire. C'est une exigence de la Commission difficilement contournable, identifiée à l'arrêt du projet comme priorité de reprise ; l'ordre proposé plus bas le place pourtant en lot 4, non par moindre importance mais parce qu'il suppose la persistance du lot 2, et qu'il va de pair avec le rapprochement d'identité que sa ré-authentification appelle. À faire :
 
@@ -209,27 +206,27 @@ Côté **fournisseur**, l'espace de prévisualisation (*Preview Space*) est enti
 - mémorisation de la requête en attente et des attributs d'identité ;
 - ré-authentification de l'usager (nœud eIDAS ou identité nationale) ;
 - présentation des justificatifs disponibles et **sélection par l'usager** ;
-- retour vers l'OPP par l'URL et la méthode reçues ;
-- côté message, produire `EDM:ERR:0002` avec `PreviewLocation`, `PreviewMethod` et, facultativement, `PreviewLocationDescription`.
+- retour vers l'OPP par l'URL et la méthode reçues en `returnurl` et `returnmethod` ;
+- côté message, produire `EDM:ERR:0002` avec `PreviewLocation` et, facultativement, `PreviewDescription`. La description de l'exception existe déjà (`AUTHORIZATION_EXCEPTION`), mais le gabarit de `src/ebms/reponseErreur.js` n'admet aujourd'hui aucun slot au-delà de `Timestamp` : il faudra l'ouvrir.
 
 ### 4.10 — Variantes de flux ❌
 
 - **Choix multiples** : `src/api/pieceJustificative.js` retient le premier type de justificatif de la démarche et le premier fournisseur du pays (`tjs[0]`, `fs[0]`). L'usager doit pouvoir choisir.
 - Plusieurs justificatifs dans une requête, plusieurs fournisseurs.
-- **Codes d'erreur** : la [liste officielle](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/OOTS/EDMErrorCodes-CodeList.gc) en compte huit ; le dépôt n'en produit **qu'un** et n'en consomme qu'un autre.
+- **Codes d'erreur** : les huit codes de la [liste officielle](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/OOTS/EDMErrorCodes-CodeList.gc) sont désormais tous décrits dans `DESCRIPTIONS_EXCEPTIONS` (`src/ebms/reponseErreur.js`), mais trois seulement sont émis. Les autres attendent la brique qui leur donnerait un déclencheur — les définir ne coûtait rien, les émettre suppose le reste du système.
 
   | Code | Signification | Type d'exception | État |
   | --- | --- | --- | --- |
-  | `EDM:ERR:0001` | échec d'authentification | `rs:AuthenticationExceptionType` | ❌ |
-  | `EDM:ERR:0002` | autorisation manquante — porte la prévisualisation | `rs:AuthorizationExceptionType` | 🟡 lu, jamais produit |
-  | `EDM:ERR:0003` | requête invalide sur le fond — la demande elle-même ne tient pas | `rs:InvalidRequestExceptionType` | ❌ |
-  | `EDM:ERR:0004` | objet introuvable | `rs:ObjectNotFoundExceptionType` | ✅ produit |
-  | `EDM:ERR:0005` | délai dépassé | `rs:TimeoutExceptionType` | ❌ |
-  | `EDM:ERR:0006` | référence non résolue | `rs:UnresolvedReferenceExceptionType` | ❌ |
-  | `EDM:ERR:0007` | capacité facultative non supportée | `rs:UnsupportedCapabilityExceptionType` | ❌ |
-  | `EDM:ERR:0008` | requête RegRep mal formée — syntaxe ou sémantique de la requête à corriger | `query:QueryExceptionType` | ❌ |
+  | `EDM:ERR:0001` | échec d'authentification | `rs:AuthenticationExceptionType` | 🟡 décrit ; aucune authentification n'est vérifiée sur une requête entrante (chapitre 2) |
+  | `EDM:ERR:0002` | autorisation manquante — porte la prévisualisation | `rs:AuthorizationExceptionType` | 🟡 lu ; produit avec le *Preview Space* (4.9), qui suppose d'ouvrir le gabarit aux slots |
+  | `EDM:ERR:0003` | requête invalide sur le fond — la demande elle-même ne tient pas | `rs:InvalidRequestExceptionType` | ✅ émis sur une requête entrante dont une donnée attendue manque — slot absent, ou présent mais vide de ce qu'on y cherche |
+  | `EDM:ERR:0004` | objet introuvable | `rs:ObjectNotFoundExceptionType` | ✅ émis sur une démarche sans fournisseur de données raccordé |
+  | `EDM:ERR:0005` | délai dépassé | `rs:TimeoutExceptionType` | 🟡 décrit ; sans déclencheur, le seul délai du dépôt (`DELAI_MAX_ATTENTE_DOMIBUS`) étant côté requêteur et rendu en HTTP 504. Il en faudrait un côté fournisseur, sur la production du justificatif — donc de vrais fournisseurs de données (bouchon 3) |
+  | `EDM:ERR:0006` | référence non résolue | `rs:UnresolvedReferenceExceptionType` | 🟡 décrit ; suppose les services communs réels (chapitre 3), seuls capables de rendre une référence irrésolue |
+  | `EDM:ERR:0007` | capacité facultative non supportée | `rs:UnsupportedCapabilityExceptionType` | ✅ émis quand le format de distribution demandé n'est pas le PDF |
+  | `EDM:ERR:0008` | requête RegRep mal formée — syntaxe ou sémantique de la requête à corriger | `query:QueryExceptionType` | 🟡 décrit ; se distinguerait de `0003` sur un payload que RegRep lui-même rejette, ce que le dépôt ne sait pas encore constater |
 
-  `src/ebms/reponseErreur.js` est déjà structuré pour les accueillir : chaque code est une entrée de `DESCRIPTIONS_EXCEPTIONS`.
+  Côté consommation, l'erreur reçue reporte désormais son code dans le message levé (`src/domibus/reponseErreur.js`), au lieu de réduire les huit à leur libellé.
 
 ## Chapitre 5 — Modèles de données des justificatifs ❌
 
@@ -255,13 +252,9 @@ Recommandations d'expérience utilisateur pour l'OPP et l'espace de prévisualis
 
 Six lots, ordonnés par dépendance plutôt que par chapitre.
 
-### Lot 1 — Ce qui se corrige tout de suite
+### Lot 1 — Ce qui se corrige tout de suite ✅
 
-Trois travaux indépendants, tous vérifiables sans gateway ni service central.
-
-1. Jouer `EDM-ebMS.sch` dans `scripts/valideSchematron.sh` : ajouter la règle au tableau `SCHEMATRONS`, produire l'entête dans `scripts/produisMessagesOots.js` (aujourd'hui seul le corps du message est écrit), puis corriger ce que la règle refuse.
-2. Compléter les huit codes d'erreur dans `DESCRIPTIONS_EXCEPTIONS` (`src/ebms/reponseErreur.js`) et les émettre là où le cas se présente — notamment `0003` sur une requête entrante invalide et `0005` sur expiration.
-3. Lire `PreviewMethod` et ajouter `returnmethod` à la redirection.
+Trois travaux indépendants, tous vérifiables sans gateway ni service central, tous faits : `EDM-ebMS.sch` est jouée sur l'entête des quatre messages (4.6), les huit codes d'erreur sont décrits et trois d'entre eux émis (4.10), et la redirection vers l'espace de prévisualisation porte `returnurl` et `returnmethod` (4.9). Ce que chacun a laissé derrière lui est consigné au chapitre correspondant.
 
 ### Lot 2 — Poser les fondations
 
