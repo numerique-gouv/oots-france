@@ -64,7 +64,20 @@ class ConstructeurEnveloppeSOAPException {
     return this
   }
 
+  // `R-EDM-ERR-C026` impose l'attribut, mais rien ne garantit que le
+  // correspondant s'y tienne, et la lecture se passe de lui plutôt que de
+  // buter dessus. L'omettre vraiment, plutôt que de l'écrire vide, est le seul
+  // moyen d'éprouver ce repli.
+  sansCode() {
+    this.codeErreur = undefined
+    return this
+  }
+
   construis() {
+    const attributCode = typeof this.codeErreur === 'undefined'
+      ? ''
+      : `code="${this.codeErreur}"`
+
     const message = `<query:QueryResponse
         xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
         xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
@@ -73,7 +86,7 @@ class ConstructeurEnveloppeSOAPException {
         requestId="urn:uuid:11111111-1111-1111-1111-111111111111">
 
   <rs:Exception xsi:type="${this.typeErreur}"
-                code="${this.codeErreur}"
+                ${attributCode}
                 detail="${this.detailErreur}"
                 message="${this.messageErreur}"
                 severity="${this.severiteErreur}">

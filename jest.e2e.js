@@ -8,7 +8,10 @@ module.exports = {
   // Le motif descend dans tout l'arbre : sans cette exclusion, les worktrees
   // de .worktrees/ — le mode de travail parallèle décrit dans CLAUDE.md —
   // seraient collectés eux aussi, et le scénario rejoué autant de fois contre
-  // la même passerelle, avec la version d'une autre branche.
-  testPathIgnorePatterns: ['/node_modules/', '/.worktrees/'],
+  // la même passerelle, avec la version d'une autre branche. Le motif est
+  // ancré sur `<rootDir>` : non ancré, il se compare au chemin absolu, et
+  // exclurait donc tous les tests d'un worktree, dont le chemin contient
+  // `.worktrees/` de bout en bout.
+  testPathIgnorePatterns: ['/node_modules/', '<rootDir>/.worktrees/'],
   testTimeout: 90000,
 }

@@ -56,10 +56,35 @@ describe('L\'adaptateur d\'environnement', () => {
 
     // Sans base, aucun échange n'est journalisé, et l'article 17 du règlement
     // (UE) 2022/1463 n'est pas tenu : mieux vaut refuser de démarrer.
-    it('refuse de démarrer si elle manque', () => {
-      delete process.env.URL_BASE_DONNEES
+    it.each([
+      ['absente', undefined],
+      ['vide', ''],
+      ['faite d\'espaces', '   '],
+    ])('refuse une variable %s', (_, valeur) => {
+      if (valeur === undefined) delete process.env.URL_BASE_DONNEES
+      else process.env.URL_BASE_DONNEES = valeur
 
       expect(() => adaptateurEnvironnement.urlBaseDonnees()).toThrow(ErreurConfiguration)
+    })
+  })
+
+  describe('sur l\'adresse d\'OOTS France', () => {
+    it('la lit dans l\'environnement', () => {
+      process.env.URL_OOTS_FRANCE = 'https://oots.gouv.fr'
+
+      expect(adaptateurEnvironnement.urlOotsFrance()).toEqual('https://oots.gouv.fr')
+    })
+
+    // Absente, elle partirait en `returnurl=undefined` chez le correspondant.
+    it.each([
+      ['absente', undefined],
+      ['vide', ''],
+      ['faite d\'espaces', '   '],
+    ])('refuse une variable %s', (_, valeur) => {
+      if (valeur === undefined) delete process.env.URL_OOTS_FRANCE
+      else process.env.URL_OOTS_FRANCE = valeur
+
+      expect(() => adaptateurEnvironnement.urlOotsFrance()).toThrow(ErreurConfiguration)
     })
   })
 })

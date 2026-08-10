@@ -3,6 +3,7 @@ const Requete = require('../../src/domibus/requete')
 const CodeDemarche = require('../../src/ebms/codeDemarche')
 const Fournisseur = require('../../src/ebms/fournisseur')
 const ReponseErreur = require('../../src/ebms/reponseErreur')
+const { ErreurMessageIllisible } = require('../../src/erreurs')
 
 describe('Une action de requête reçue depuis Domibus', () => {
   const adaptateurUUID = {}
@@ -114,6 +115,38 @@ describe('Une action de requête reçue depuis Domibus', () => {
     expect(typeJustificatif.formatDistribution).toBe('text/plain')
   })
 
+  // Le slot est bien là, mais vide de ce qu'on y cherche : sans ces gardes,
+  // l'accès à la propriété absente lèverait un `TypeError`, que rien ne
+  // distingue d'une défaillance interne. Ce que la requête typée devient
+  // ensuite — un `EDM:ERR:0003` renvoyé, ou le silence quand c'est le
+  // requêteur qui manque — se décide dans `reponseRecuperationMessage`, qui a
+  // ses propres tests pour les deux issues.
+  describe('quand un slot est présent mais vide de ce qu\'on y cherche', () => {
+    it('refuse une requête sans agent de classification `ER`', () => {
+      const xmlParse = new ConstructeurXMLParseRequeteRecue().sansContenu('AgentRequeteur').construis()
+
+      expect(() => new Requete(xmlParse).requeteur()).toThrow(ErreurMessageIllisible)
+    })
+
+    it('refuse une requête sans personne physique', () => {
+      const xmlParse = new ConstructeurXMLParseRequeteRecue().sansContenu('Person').construis()
+
+      expect(() => new Requete(xmlParse).beneficiaire()).toThrow(ErreurMessageIllisible)
+    })
+
+    it('refuse une requête sans type de justificatif', () => {
+      const xmlParse = new ConstructeurXMLParseRequeteRecue().sansContenu('DataServiceEvidenceType').construis()
+
+      expect(() => new Requete(xmlParse).typeJustificatif()).toThrow(ErreurMessageIllisible)
+    })
+
+    it('refuse une requête sans format de distribution', () => {
+      const xmlParse = new ConstructeurXMLParseRequeteRecue().sansContenu('DistributedAs').construis()
+
+      expect(() => new Requete(xmlParse).typeJustificatif()).toThrow(ErreurMessageIllisible)
+    })
+  })
+
   describe('avec comme démarche une demande de bourse', () => {
     it('transmets l\'identifiant de la requête', () => {
       const xmlParse = new ConstructeurXMLParseRequeteRecue()
@@ -162,9 +195,27 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .construis()
       const requete = new Requete(xmlParse)
-      const reponse = requete.reponse(config, { requeteur: requete.requeteur() })
+      const reponse = requete.reponse(config, {
+        requeteur: requete.requeteur(),
+        typeJustificatif: requete.typeJustificatif(),
+      })
 
       expect(reponse.pieceJointePresente()).toBe(true)
+    })
+
+    it('répond avec une erreur UNSUPPORTED_CAPABILITY quand le format demandé n\'est pas le PDF', () => {
+      const xmlParse = new ConstructeurXMLParseRequeteRecue()
+        .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
+        .avecTypeJustificatif({ formatDistribution: 'application/xml' })
+        .construis()
+      const requete = new Requete(xmlParse)
+      const reponseErreur = requete.reponse(config, {
+        requeteur: requete.requeteur(),
+        typeJustificatif: requete.typeJustificatif(),
+      })
+
+      expect(reponseErreur).toBeInstanceOf(ReponseErreur)
+      expect(reponseErreur.codeException).toBe('EDM:ERR:0007')
     })
   })
 })

@@ -224,6 +224,8 @@ $ BAVARD=1 scripts/valideSchematron.sh # détaille aussi les slots facultatifs a
 
 Le script fait produire un exemplaire de chaque message par le code du dépôt, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://codeberg.org/SchXslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
 
+Chaque message est validé sur deux plans : son corps RegRep contre les règles `EDM-REQ-*`, `EDM-RESP-*` et `EDM-ERR-*`, et son **entête ebMS** contre [`EDM-ebMS.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) — celle que le dépôt construit lui-même et remet à Domibus dans le `soap:Header` du `submitRequest`. Les fichiers produits portent le suffixe `.entete.xml`.
+
 Le script sort en `0` si les messages sont conformes, en `2` si une règle est violée, et en `1` pour toute autre défaillance — un téléchargement interrompu, par exemple. La CI rejoue les seconds, jamais les premiers.
 
 > [!NOTE]

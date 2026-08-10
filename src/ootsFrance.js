@@ -35,6 +35,7 @@ const creeServeur = (config) => {
   app.use('/requete', routesRequete({
     adaptateurChiffrement,
     adaptateurDomibus,
+    adaptateurEnvironnement,
     adaptateurUUID,
     depotJournal,
     depotPointsAcces,

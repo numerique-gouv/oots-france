@@ -37,7 +37,7 @@
     "testTimeout": 1000,
     "testPathIgnorePatterns": [
       "/node_modules/",
-      "/.worktrees/",
+      "<rootDir>/.worktrees/",
       "/test-e2e/"
     ]
   },

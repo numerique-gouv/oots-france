@@ -1,6 +1,7 @@
-// Produit un exemplaire de chacun des trois messages OOTS, avec les classes du
-// dépôt, pour que scripts/valideSchematron.sh les confronte aux règles des TDD.
-// Les valeurs sont fictives mais réalistes : seule la structure est validée.
+// Produit un exemplaire de chaque message OOTS, corps et entête ebMS, avec les
+// classes du dépôt, pour que scripts/valideSchematron.sh les confronte aux
+// règles des TDD. Les valeurs sont fictives mais réalistes : seule la structure
+// est validée.
 const fs = require('fs')
 const path = require('path')
 
@@ -62,30 +63,59 @@ const typeJustificatif = new TypeJustificatif({
 const destinataire = new PointAcces('AP_DE_01', 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots')
 const idRequete = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'
 
+// Renseigné sur chaque message comme il l'est en production : sans lui la
+// balise `eb:ConversationId` est omise, et la règle qui exige un UUID
+// (R-EDM-ebMS-017) ne s'exercerait sur rien.
+const idConversation = 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24'
+
 const messages = {
   requete: new RequeteJustificatif(config, {
     beneficiaire,
     codeDemarche: 'T3',
     destinataire,
     fournisseur: fournisseurAllemand,
+    idConversation,
     requeteur,
     typeJustificatif,
   }),
   reponse: new ReponseVerificationSysteme(config, {
     beneficiaire,
     destinataire,
+    idConversation,
     idRequete,
     requeteur,
     typeJustificatif,
   }),
+  // Un exemplaire par code que le dépôt émet : le type d'exception change avec
+  // le code, et les règles le contraignent — un code jamais produit ici est un
+  // code jamais confronté aux règles.
   erreur: new ReponseErreur(config, {
     destinataire,
     exception: ReponseErreur.OBJECT_NOT_FOUND_EXCEPTION,
+    idConversation,
+    idRequete,
+    requeteur,
+  }),
+  erreurRequeteInvalide: new ReponseErreur(config, {
+    destinataire,
+    exception: ReponseErreur.INVALID_REQUEST_EXCEPTION,
+    idConversation,
+    idRequete,
+    requeteur,
+  }),
+  erreurCapaciteNonSupportee: new ReponseErreur(config, {
+    destinataire,
+    exception: ReponseErreur.UNSUPPORTED_CAPABILITY_EXCEPTION,
+    idConversation,
     idRequete,
     requeteur,
   }),
 }
 
+// L'entête ebMS est écrite à part : elle relève de sa propre règle, et le corps
+// du message ne la contient pas — sur le fil, c'est l'enveloppe SOAP soumise à
+// Domibus qui les réunit.
 Object.entries(messages).forEach(([nom, message]) => {
   fs.writeFileSync(path.join(destination, `${nom}.xml`), message.corpsMessageEnXML())
+  fs.writeFileSync(path.join(destination, `${nom}.entete.xml`), message.entete.enXML().trim())
 })
