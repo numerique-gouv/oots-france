@@ -66,7 +66,7 @@ Ce que règle le reste du fichier :
 
 | Élément | Ce qu'il configure |
 | --- | --- |
-| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours |
+| `<mpcs>` | Rétention : `retention_downloaded="0"` (justificatif téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours. `delete_message_metadata="false"` et `retention_metadata_offset="525600"` conservent en revanche les **métadonnées et les accusés signés douze mois** après l'effacement du justificatif, comme l'expose ci-dessous |
 | `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH de `blue_gw` (`http://localhost:8080/domibus/services/msh`) |
 | `<roles>` / `<meps>` / `<agreements>` | Rôles initiateur/répondeur, modèle d'échange « oneway » en « push », et un accord vide (champ imposé par le schéma) |
 | `<properties>` | Rend obligatoires `originalSender` et `finalRecipient` sur chaque message (`fourCornersPropertySet`) |
@@ -76,6 +76,20 @@ Ce que règle le reste du fichier :
 | `<as4>` | Fiabilité : 12 tentatives de renvoi espacées de 4 min, détection des doublons, accusés de réception signés (non-répudiation) |
 | `<splittingConfigurations>` | Découpage des gros messages : fragments de 20 Mo compressés, réassemblage sous 24 h |
 | `<legConfigurations>` | Assemble les profils ci-dessus par type d'échange : `ootsRequestLeg`, `ootsResponseLeg` (sans compression, contrairement à la requête), `ootsErrorLeg`, `testServiceCase` |
+
+### Ce que Domibus conserve pour la non-répudiation
+
+La [documentation 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_non_repudiation) le décrit : à l'émission, la passerelle garde le `SignalMessage` complet — l'accusé de réception, ses `NonRepudiationInformation` (une empreinte par partie MIME) et la signature du point d'accès destinataire ; à la réception, le `UserMessage` complet et la signature de l'émetteur. C'est la couche protocole de la journalisation exigée par l'[article 17 du règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj).
+
+La rétention dissociée introduite par la [5.1](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.1) permet d'appliquer la règle telle qu'elle est écrite — journaliser la réponse « à l'exception de la preuve elle-même » : le justificatif part dès son téléchargement, les métadonnées et les accusés restent douze mois.
+
+> [!IMPORTANT]
+> Ces douze mois n'ont de valeur que si le volume MySQL est sauvegardé : une table rase du répertoire `domibus/` emporte les preuves avec le reste.
+
+> [!CAUTION]
+> Le plugin **eArchiving** ([documentation](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_earchiving)) n'est pas la réponse à l'article 17 : il exporte les messages en ASiC-E, justificatifs compris, là où l'article exclut précisément la preuve. Il relève de l'archivage à valeur probante, qui demanderait sa propre base légale.
+
+Domibus ne connaît en revanche rien du contenu OOTS — identifiants de requête, sujet et type du justificatif, code démarche —, ni des refus prononcés avant tout envoi. C'est l'objet du journal applicatif, décrit dans [reste_à_faire.md](reste_à_faire.md#48--non-répudiation-et-journalisation-) et consultable par `npm run journal` (voir le [README](../README.md#consulter-le-journal-des-échanges)).
 
 ## Spécificités de l'installation locale
 

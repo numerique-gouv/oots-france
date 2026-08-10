@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <db:configuration xmlns:db="http://domibus.eu/configuration" party="blue_gw">
   <mpcs>
-    <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600" retention_sent_success="3600" retention_sent_failure="3600"/>
+    <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600" retention_sent_success="3600" retention_sent_failure="3600" delete_message_metadata="false" retention_metadata_offset="525600"/>
   </mpcs>
 
   <businessProcesses>

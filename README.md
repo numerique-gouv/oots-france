@@ -38,6 +38,23 @@ $ docker compose up mysql
 Attendre que soit affiché à l'écran `[Server] /usr/sbin/mysqld: ready for connections.` puis arrêter le conteneur avec `<CTRL> + C`.
 
 
+## Configuration de la base du journal (PostgreSQL)
+
+MySQL appartient à Domibus. L'application, elle, écrit son **journal des échanges** dans une base PostgreSQL distincte — l'obligation légale de journalisation est décrite dans [docs/reste_à_faire.md](docs/reste_à_faire.md#48--non-répudiation-et-journalisation-).
+
+```sh
+$ docker compose up -d postgres
+$ docker compose run --rm --no-deps web npm run migre
+```
+
+Le premier démarrage crée la base, puis le rôle `oots_application` sous lequel tourne l'application — distinct du propriétaire, et sans droit de modifier ni de supprimer une ligne du journal. La migration crée la table, son déclencheur de chaînage et ses vues.
+
+> [!IMPORTANT]
+> Ce rôle n'est créé qu'à la **première** création du volume. Sur une base déjà initialisée, ou hors Docker, le créer à la main — voir `docker/postgres/init/01-role-applicatif.sh`.
+
+La conservation de douze mois n'est pas automatique : brancher `npm run purgeJournal` sur une tâche planifiée.
+
+
 ## Configuration du point d'accès eDelivery (Domibus)
 
 Lancer le conteneur Domibus
@@ -172,6 +189,23 @@ $ scripts/start.sh
 ```
 
 Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.du.domaine>`
+
+
+## Consulter le journal des échanges
+
+Sans argument, la commande liste les dernières conversations ; avec un préfixe d'identifiant de conversation, elle en détaille chaque événement.
+
+```sh
+$ docker compose exec web npm run journal                  # les dernières conversations
+$ docker compose exec web npm run journal -- --erreurs     # celles qui ont échoué
+$ docker compose exec web npm run journal 52f1c57d         # le détail de l'une d'elles
+$ docker compose exec web npm run journal 52f1c57d -- --json
+```
+
+Le détail n'abrège rien, et se clôt sur la validité de la chaîne d'empreintes. Les `MessageId` qu'il affiche sont ceux à porter dans la page **Message Log** de la console Domibus : c'est le pont entre les deux journaux, celui de l'application et celui de la passerelle (voir [docs/domibus_context.md](docs/domibus_context.md#ce-que-domibus-conserve-pour-la-non-répudiation)).
+
+> [!NOTE]
+> Le journal porte des données personnelles — le sujet du justificatif y figure. Il n'est accessible qu'en ligne de commande : aucune route HTTP ne l'expose.
 
 
 ## Exécution de la suite de tests automatisés

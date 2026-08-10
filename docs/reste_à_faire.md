@@ -12,7 +12,7 @@
 
 ## Vue d'ensemble
 
-Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, validé par les règles Schematron — et sur rien d'autre. Tout ce qui entoure l'échange (annuaires, prévisualisation, journalisation, identité, configuration eDelivery réelle) est bouchonné ou absent. La conformité des messages est la petite part du travail restant.
+Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, validé par les règles Schematron — et **sur la journalisation** des échanges, exigée par l'article 17. Tout le reste de ce qui entoure l'échange (annuaires, prévisualisation, identité, configuration eDelivery réelle) est bouchonné ou absent.
 
 | Chapitre TDD | Statut | Charge restante |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, vali
 | 4.5 — Modèles de données des messages | ✅ | résiduelle (slots facultatifs) |
 | 4.6 — Règles métier (Schematron) | 🟡 | faible |
 | 4.7 — Configuration eDelivery | 🟡 | moyenne |
-| 4.8 — Non-répudiation et journalisation | ❌ | moyenne, **exigence légale** |
+| 4.8 — Non-répudiation et journalisation | 🟡 | faible : purge à planifier, page de consultation |
 | 4.9 — Prévisualisation | 🟡 | lourde |
 | 4.10 — Variantes de flux | ❌ | moyenne |
 | 5 — Modèles de données des justificatifs | ❌ | lourde |
@@ -109,9 +109,9 @@ Deux régimes distincts en découlent, à ne pas confondre :
 
 ### 6. L'état des conversations, gardé en mémoire
 
-Aucune base de données : l'état des conversations vit en mémoire, et un redémarrage perd les échanges en cours (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)).
+La base PostgreSQL introduite pour le journal (4.8) ne porte que lui : **l'état des conversations vit toujours en mémoire**, et un redémarrage perd les échanges en cours (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)).
 
-**Remplacement.** Une persistance, réclamée par trois exigences distinctes — les journaux à douze mois (4.8), la requête mise en attente pendant la prévisualisation (4.9), et la simple survie à un redémarrage.
+**Remplacement.** Y porter l'attente d'une réponse Domibus, aujourd'hui bâtie sur des promesses et un délai d'expiration en mémoire. Les TDD ne l'exigent pas — le [chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/pages/viewpage.action?pageId=900013172) demande la corrélation des deux requêtes et admet que la session de l'usager expire, jamais la survie à un redémarrage : c'est de la robustesse, et cela se traitera avec la conception du parcours de prévisualisation.
 
 ### 7. Les valeurs écrites en dur dans les messages
 
@@ -176,31 +176,30 @@ S'y ajoute le **SMP** (*Service Metadata Publisher*, [spécifications](https://e
 > [!NOTE]
 > Le chapitre 4.7 en v1.2.1 **ne mentionne pas le SMP** : la conception y repose entièrement sur des points d'accès pré-configurés. L'étendue exacte de l'obligation en v2.0 reste donc à lire dans la version 2.0.0 du chapitre avant tout chiffrage — c'est la différence entre ajuster un PMode et changer de mécanisme d'adressage.
 
-### 4.8 — Non-répudiation et journalisation ❌
+### 4.8 — Non-répudiation et journalisation 🟡
 
-Aucun journal conforme n'existe, et c'est une **exigence légale** : l'article 17 du [règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj), décliné par le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900013171/4.8+-+Evidence+Exchange+Logging+v1.2.1+April+2025).
+Le journal existe, et c'est une **exigence légale** : l'article 17 du [règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj), décliné par le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900013171/4.8+-+Evidence+Exchange+Logging+v1.2.1+April+2025).
 
-> [!WARNING]
-> Sans ces journaux, aucune homologation n'est envisageable : ils sont la seule preuve qu'un échange a eu lieu et de ce qu'il contenait.
-
-Le chapitre répartit la charge entre deux couches — « *All logging related to these messages and the events they report is handled at the level of eDelivery Access Points* » — et le `eb:ConversationId` les relie. Tout n'est donc pas à écrire : Domibus produit déjà la couche basse, qui est la plus difficile.
+Le chapitre répartit la charge entre deux couches — « *All logging related to these messages and the events they report is handled at the level of eDelivery Access Points* » — et le `eb:ConversationId` les relie.
 
 | Couche | À journaliser | Où cela vit |
 | --- | --- | --- |
-| Protocole | accusés de réception AS4, erreurs et *SOAP faults* ; empreintes signées de chaque partie MIME (`NonRepudiationInformation`) ; entêtes `eb:Messaging` et `wsse:Security` ; `MessageId` et `ConversationId` | Domibus, dans sa base — reste à **régler la rétention** |
-| Métier | `id` de la requête et de la réponse, sujet du justificatif, type demandé, code démarche, identifiants des autorités requérante et fournisseuse | rien — à écrire par-dessus la persistance du bouchon 6 |
+| Protocole | accusés de réception AS4, erreurs et *SOAP faults* ; empreintes signées de chaque partie MIME (`NonRepudiationInformation`) ; entêtes `eb:Messaging` et `wsse:Security` | Domibus, dont le PMode conserve désormais les métadonnées douze mois — voir [domibus_context.md](domibus_context.md#ce-que-domibus-conserve-pour-la-non-répudiation) |
+| Métier | `id` de la requête et de la réponse, sujet et type du justificatif, code démarche, identités des deux autorités, refus prononcés avant tout envoi | la table `journal_echanges`, en base PostgreSQL |
 
-**Côté Domibus : une affaire de configuration.** La [documentation 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_non_repudiation) décrit ce qu'il conserve déjà — à l'émission, le `SignalMessage` complet, dont le *receipt* et sa signature par le point d'accès destinataire ; à la réception, le `UserMessage` complet et la signature de l'émetteur. Mais le PMode d'exemple efface le message dès son téléchargement (`retention_downloaded="0"`, voir [domibus_context.md](domibus_context.md#le-pmode-dexemple)) : ces preuves partent avec lui. La 5.1 a dissocié la rétention des métadonnées de celle du justificatif ([notes de version](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Domibus+-+v5.1)) — `delete_message_metadata="false"` et `retention_metadata_offset`, en minutes, soit 525 600 pour douze mois. C'est exactement la règle de l'article 17(1)(b), « à l'exception de la preuve elle-même » : justificatif purgé sitôt remis, métadonnées et empreintes gardées un an. En découlent deux obligations d'exploitation : sauvegarder le volume MySQL, et ne pas compter sur la sortie standard du conteneur, coupée par le pilote de journalisation `none` (voir [README](../README.md#afficher-les-logs-de-domibus)).
+**Ce qui est en place.** Sept types d'événement, consignés par `src/depots/depotJournal.js` depuis l'API et l'adaptateur Domibus. Le justificatif n'est jamais stocké : seule son empreinte SHA-256 l'est, ce qui suffit à prouver après coup qu'un document donné est celui qui a transité. La table tient en **ajout seul par les privilèges** — l'application se connecte sous un rôle distinct du propriétaire, sans `UPDATE` ni `DELETE` — et un déclencheur chaîne les empreintes d'une ligne à la suivante, de sorte qu'une réécriture ou une suppression rompe la chaîne. `npm run journal` liste et détaille les conversations (voir le [README](../README.md#consulter-le-journal-des-échanges)).
 
-> [!CAUTION]
-> Le **plugin eArchiving** de Domibus ([documentation](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_earchiving)) n'est pas la réponse : il exporte les messages en ASiC-E, justificatifs compris, là où l'article 17 exclut précisément la preuve. Il relève de l'archivage à valeur probante, qui demanderait sa propre base légale.
+**Ce qui reste.**
 
-**Côté application : tout reste à faire.** Rien ne subsiste d'une conversation après son traitement. Une brique libre existante est à chercher avant d'écrire ce journal soi-même. Deux points de vigilance à la conception :
+- **Brancher `npm run purgeJournal`** sur une tâche planifiée de l'hébergement : la conservation de douze mois n'est aujourd'hui appliquée que si on l'invoque. `pg_partman` prendrait le relais si le volume l'exigeait, au prix d'une extension absente de l'image officielle.
+- **Sauvegarder les deux bases.** Sans sauvegarde, les douze mois ne tiennent qu'à un volume Docker — celui de PostgreSQL comme celui de MySQL.
+- **Ouvrir le journal à qui n'a pas d'accès *ssh*** : une page `/admin/journal` reste à écrire. Elle suppose d'abord d'authentifier `/admin`, aujourd'hui **ouvert à qui l'appelle** — ses deux routes arrêtent et relancent l'écoute Domibus sans aucun contrôle.
+- **Surveiller [`cs-log`](https://code.europa.eu/oots/common-services/cs-log)**, la « Common Services Logging Library » de la Commission : le projet est vivant mais son dépôt reste fermé, alors que le reste des Common Services a été ouvert sous EUPL. Le code serait en Java, donc inutilisable ici, mais il dirait quel format d'entrée et quelle rétention la Commission juge conformes.
 
-- le journal **est lui-même un traitement de données personnelles** — le sujet du justificatif y figure. Seul son *contenu* en est exclu, et les empreintes suffisent à prouver après coup qu'un document donné est bien celui qui a transité. La [recommandation de la CNIL sur les mesures de journalisation](https://www.cnil.fr/fr/la-cnil-publie-une-recommandation-relative-aux-mesures-de-journalisation) fait référence pour la durée comme pour la protection des journaux, et converge avec les douze mois du règlement ;
-- Domibus, en point d'accès émetteur, **ne conserve pas les justificatifs** et recommande à l'expéditeur initial de les garder le temps nécessaire à la non-répudiation. Dans OOTS cette garde revient au requêteur, pas à ce dépôt : la conserver ici reviendrait à stocker le justificatif que l'article 17 écarte.
+Deux points de vigilance, à garder en tête à chaque évolution :
 
-Implique la persistance du bouchon 6.
+- le journal **est lui-même un traitement de données personnelles** — le sujet du justificatif y figure. Seul son *contenu* en est exclu. La [recommandation de la CNIL sur les mesures de journalisation](https://www.cnil.fr/fr/la-cnil-publie-une-recommandation-relative-aux-mesures-de-journalisation) fait référence pour la durée comme pour la protection des journaux, et converge avec les douze mois du règlement. Le jour où le rapprochement d'identité fournira un identifiant eIDAS (bouchon 4), il remplacera l'état civil aujourd'hui consigné ;
+- l'obligation des douze mois pèse sur le requêteur et le fournisseur, **jamais sur le point d'accès**. S'appuyer sur la base de Domibus reste légitime tant qu'on l'opère soi-même ; l'empreinte calculée par l'application est ce qui rend le journal autonome si la passerelle change un jour de main.
 
 ### 4.9 — Prévisualisation 🟡 côté requêteur, ❌ côté fournisseur
 
@@ -252,10 +251,13 @@ Recommandations d'expérience utilisateur pour l'OPP et l'espace de prévisualis
 
 ## Chantiers transverses
 
-- **Persistance** — bouchon 6, réclamée par 4.8, 4.9 et la robustesse.
+- **Persistance de l'état des conversations** — bouchon 6, réclamée par 4.9 et la robustesse ; la base existe désormais, le journal s'y appuie.
 - **Fournisseurs de données français** — bouchon 3 : sans eux, la France n'est fournisseur que sur le papier.
 - **Transport** — le *polling* de Domibus toutes les secondes peut céder la place au *push to backend* du WS plugin ; sans effet sur la conformité, mais sur la robustesse (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)).
 - **Homologation de sécurité** — jamais réalisée. Infrastructure à clés publiques, analyse d'impact RGPD, durcissement. Tant qu'elle manque, `AVEC_REQUETE_PIECE_JUSTIFICATIVE` reste fermé en production.
+
+> [!WARNING]
+> **Les routes `/admin` ne sont protégées par rien.** N'importe qui peut arrêter l'écoute de Domibus, donc suspendre tout traitement des messages entrants. À authentifier avant tout déploiement — et avant d'y exposer la moindre lecture du journal, qui porte des données personnelles.
 - **Validation de conformité par la Commission** — vérifier que le validateur OOTS et la plateforme [ITB](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) (*Interoperability Test Bed*) acceptent la v2.0, et connaître la version cible du prochain Projectathon. Préalable déjà consigné dans [versions_tdd.md](versions_tdd.md#le-préalable-à-lever).
 
 ---
@@ -274,33 +276,34 @@ Trois travaux indépendants, tous vérifiables sans gateway ni service central.
 
 ### Lot 2 — Poser les fondations
 
-4. **Persistance** : choisir le magasin, y porter l'état des conversations aujourd'hui en mémoire.
-5. **Journalisation 4.8** par-dessus : rétention des métadonnées portée à douze mois dans le PMode d'un côté, journal métier corrélé par `ConversationId` de l'autre.
+4. ~~**Persistance** et **journalisation 4.8**~~ — faites : base PostgreSQL, table `journal_echanges` en ajout seul, rétention des métadonnées portée à douze mois dans le PMode.
+5. **Authentifier `/admin`**, préalable à la page de consultation du journal comme à tout déploiement.
+6. **Porter l'état des conversations en base**, ce que la prévisualisation réclamera.
 
-Ces deux-là conditionnent la prévisualisation comme l'homologation ; les retarder fait travailler deux fois.
+Ces travaux conditionnent la prévisualisation comme l'homologation ; les retarder fait travailler deux fois.
 
 ### Lot 3 — Sortir des bouchons d'annuaire
 
-6. DSD en lecture (3.1.3), avec le cache de 3.4 et la lecture du `ConformsTo`.
-7. EB en lecture (3.2), qui alimente enfin le slot `Requirements`.
-8. Publication LCM au DSD et à l'EB (3.1.6, 3.2.5) — sans quoi la France reste invisible des autres États membres.
+7. DSD en lecture (3.1.3), avec le cache de 3.4 et la lecture du `ConformsTo`.
+8. EB en lecture (3.2), qui alimente enfin le slot `Requirements`.
+9. Publication LCM au DSD et à l'EB (3.1.6, 3.2.5) — sans quoi la France reste invisible des autres États membres.
 
 ### Lot 4 — Le parcours usager complet
 
-9. Seconde requête après prévisualisation côté requêteur.
-10. Espace de prévisualisation côté fournisseur (4.9).
-11. Rapprochement d'identité (2.3).
+10. Seconde requête après prévisualisation côté requêteur.
+11. Espace de prévisualisation côté fournisseur (4.9).
+12. Rapprochement d'identité (2.3).
 
 ### Lot 5 — Élargir le périmètre fonctionnel
 
-12. Justificatifs structurés (chapitres 5 et 3.3).
-13. Variantes de flux : choix multiples, justificatifs multiples (4.10).
-14. Personnes morales et représentants autorisés (2).
+13. Justificatifs structurés (chapitres 5 et 3.3).
+14. Variantes de flux : choix multiples, justificatifs multiples (4.10).
+15. Personnes morales et représentants autorisés (2).
 
 ### Lot 6 — eDelivery réel
 
-15. PMode aligné sur les points d'accès du réseau, certificats de la vraie infrastructure à clés publiques, conformité au profil AS4 1.15.
-16. SMP et découverte dynamique.
+16. PMode aligné sur les points d'accès du réseau, certificats de la vraie infrastructure à clés publiques, conformité au profil AS4 1.15.
+17. SMP et découverte dynamique.
 
 ## Questions ouvertes à trancher avant de s'engager
 
