@@ -66,7 +66,7 @@ Ce que règle le reste du fichier :
 
 | Élément | Ce qu'il configure |
 | --- | --- |
-| `<mpcs>` | Rétention : `retention_downloaded="0"` (justificatif téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours. `delete_message_metadata="false"` et `retention_metadata_offset="525600"` conservent en revanche les **métadonnées et les accusés signés douze mois** après l'effacement du justificatif, comme l'expose ci-dessous |
+| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt, justificatif compris), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours. `delete_message_metadata="false"` et `retention_metadata_offset="525600"` conservent en revanche les **métadonnées et les accusés signés douze mois** après l'effacement du justificatif, comme l'expose ci-dessous |
 | `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH de `blue_gw` (`http://localhost:8080/domibus/services/msh`) |
 | `<roles>` / `<meps>` / `<agreements>` | Rôles initiateur/répondeur, modèle d'échange « oneway » en « push », et un accord vide (champ imposé par le schéma) |
 | `<properties>` | Rend obligatoires `originalSender` et `finalRecipient` sur chaque message (`fourCornersPropertySet`) |

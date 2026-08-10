@@ -89,7 +89,8 @@ const AdaptateurDomibus = (config = {}) => {
           idMessage: envoi.idMessage(),
           idEchange: requete.idEchange(),
         }),
-        `Réponse émise sans trace au journal (conversation ${requete.idConversation()}, message ${envoi.idMessage()})`,
+        'Réponse émise',
+        () => `conversation ${requete.idConversation()}, message ${envoi.idMessage()}`,
       ))
   }
 
@@ -104,7 +105,8 @@ const AdaptateurDomibus = (config = {}) => {
   // quoi le retrouver, et le message est traité.
   const journaliseSansBloquer = message => consigneSansDerouter(
     () => journaliseMessageRecu(message, config),
-    `Message traité sans trace au journal (conversation ${message.idConversation()}, message ${message.idMessage()})`,
+    'Message traité',
+    () => `conversation ${message.idConversation()}, message ${message.idMessage()}`,
   )
     .then(() => message)
 

@@ -138,7 +138,8 @@ const pieceJustificative = (config, requete, reponse) => {
               typeJustificatif: typeJustificatif.id,
               codeDemarche,
             }),
-            `Requête émise sans trace au journal (conversation ${idConversation}, message ${idMessage})`,
+            'Requête émise',
+            () => `conversation ${idConversation}, message ${idMessage}`,
           )
         })
     })
@@ -170,7 +171,8 @@ const pieceJustificative = (config, requete, reponse) => {
                 typeMime: 'application/pdf',
                 empreinteJustificatif: adaptateurChiffrement.empreinteSha256(pj),
               }),
-              `Pièce transmise sans trace au journal (conversation ${idConversation}, requêteur ${id})`,
+              'Pièce transmise',
+              () => `conversation ${idConversation}, requêteur ${id}`,
             )))
       }
 
@@ -190,7 +192,8 @@ const pieceJustificative = (config, requete, reponse) => {
               codeDemarche,
               codeErreur: e.constructor.name,
             }),
-            `Requête refusée sans trace au journal (conversation ${idConversation}, requêteur ${idRequeteur})`,
+            'Requête refusée',
+            () => `conversation ${idConversation}, requêteur ${idRequeteur}`,
           )
 
       return journalise

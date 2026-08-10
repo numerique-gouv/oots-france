@@ -260,5 +260,57 @@ describe('Une requête de pièce justificative', () => {
       await expect(adaptateurPostgres.requete('DELETE FROM journal_echanges WHERE id = $1', [id]))
         .rejects.toThrow(/permission denied/)
     })
+
+    // L'identifiant est tiré sous le verrou consultatif du déclencheur, et non
+    // par un défaut de colonne : sans cela, deux transactions concurrentes
+    // valident dans un ordre différent de celui de leurs identifiants, et la
+    // chaîne — reconstruite par `id` — paraît rompue sans qu'aucune ligne
+    // n'ait été altérée. Soixante insertions parallèles suffisaient à produire
+    // huit fausses ruptures.
+    it('chaîne sans fausse rupture sous insertions concurrentes', async () => {
+      await Promise.all(Array.from({ length: 60 }, (_, i) => depotJournal.consigneRequeteRefusee({
+        idConversation: `concurrence-${i}`,
+        codeErreur: 'ErreurCodeDemarcheIntrouvable',
+      })))
+
+      expect(await depotJournal.verifieChaine()).toEqual([])
+    })
+
+    // Le journal ne vaut que si la rupture se voit. Le propriétaire de la base
+    // peut ce que le rôle applicatif ne peut pas : c'est donc lui qui joue ici
+    // la falsification qu'on veut détecter.
+    describe('devant une altération du journal', () => {
+      let adaptateurProprietaire
+
+      beforeAll(() => {
+        adaptateurProprietaire = AdaptateurPostgres({
+          urlBaseDonnees: process.env.URL_BASE_DONNEES_MIGRATION,
+        })
+      })
+
+      afterAll(() => adaptateurProprietaire.fermeConnexions())
+
+      it('signale une ligne réécrite après coup, et la lacune laissée par une suppression', async () => {
+        const [{ id: idReecrit }] = await adaptateurProprietaire.requete(
+          'SELECT id FROM journal_echanges ORDER BY id LIMIT 1',
+        )
+        await adaptateurProprietaire.requete(
+          'UPDATE journal_echanges SET code_demarche = $1 WHERE id = $2',
+          ['FALSIFIÉ', idReecrit],
+        )
+
+        const [{ id: idSupprime }] = await adaptateurProprietaire.requete(
+          'SELECT id FROM journal_echanges ORDER BY id OFFSET 1 LIMIT 1',
+        )
+        await adaptateurProprietaire.requete('DELETE FROM journal_echanges WHERE id = $1', [idSupprime])
+
+        const ruptures = await depotJournal.verifieChaine()
+
+        expect(ruptures.find(r => r.id === idReecrit).empreinte_valide).toBe(false)
+        // La ligne qui suivait la supprimée pointe désormais vers un maillon
+        // absent : c'est ainsi qu'une suppression se voit.
+        expect(ruptures.some(r => !r.maillon_valide)).toBe(true)
+      })
+    })
   })
 })

@@ -13,14 +13,16 @@ const Entete = require('../ebms/entete')
 // la preuve elle-même des journaux.
 const journaliseMessageRecu = (message, config = {}) => {
   const { adaptateurChiffrement, depotJournal, fournisseurFrancais } = config
+  // La même valeur journalise et aiguille : la lire une fois le dit.
+  const action = message.action()
   const commun = {
-    actionEbms: message.action(),
+    actionEbms: action,
     idConversation: message.idConversation(),
     idMessage: message.idMessage(),
     idEchange: message.idEchange(),
   }
 
-  if (message.action() === Entete.REPONSE_ERREUR) {
+  if (action === Entete.REPONSE_ERREUR) {
     return depotJournal.consigneErreurRecue({ ...commun, codeErreur: message.codeErreur() })
   }
 
@@ -29,7 +31,7 @@ const journaliseMessageRecu = (message, config = {}) => {
   // `ConversationId`. Les relire imposerait de parser un slot de plus à chaque
   // message reçu, donc un mode d'échec de plus dans le cycle de sondage, pour
   // une information que le journal détient.
-  if (message.action() === Entete.EXECUTION_REPONSE) {
+  if (action === Entete.EXECUTION_REPONSE) {
     // Toutes les réponses n'en portent pas : une vérification de système n'a
     // rien à joindre.
     const aUnJustificatif = message.aUnJustificatif()

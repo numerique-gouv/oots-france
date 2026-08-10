@@ -12,7 +12,7 @@
 
 ## Vue d'ensemble
 
-Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, validé par les règles Schematron — et **journalise ses échanges** comme l'exige le premier alinéa de l'article 17. Tout le reste de ce qui entoure l'échange (annuaires, prévisualisation, identité, configuration eDelivery réelle) est bouchonné ou absent.
+Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, validé par les règles Schematron — et **journalise ses échanges** comme l'exige, à un identifiant près, le premier alinéa de l'article 17. Tout le reste de ce qui entoure l'échange (annuaires, prévisualisation, identité, configuration eDelivery réelle) est bouchonné ou absent.
 
 | Chapitre TDD | Statut | Charge restante |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ Le dépôt est conforme **sur les messages** — chapitre 4.5, niveau v2.0, vali
 | 4.5 — Modèles de données des messages | ✅ | résiduelle (slots facultatifs) |
 | 4.6 — Règles métier (Schematron) | 🟡 | faible |
 | 4.7 — Configuration eDelivery | 🟡 | moyenne |
-| 4.8 — Non-répudiation et journalisation | 🟡 | moyenne : l'alinéa 1 de l'article 17 est tenu, les alinéas 2, 3 et 5 non |
+| 4.8 — Non-répudiation et journalisation | 🟡 | moyenne : l'alinéa 1 de l'article 17 l'est presque, les alinéas 2, 3 et 5 pas du tout |
 | 4.9 — Prévisualisation | 🟡 | lourde |
 | 4.10 — Variantes de flux | 🟡 | moyenne |
 | 5 — Modèles de données des justificatifs | ❌ | lourde |
@@ -190,9 +190,9 @@ Le chapitre répartit la charge entre deux couches — « *All logging related t
 
 - **Brancher `npm run purgeJournal`** sur une tâche planifiée de l'hébergement : la conservation de douze mois n'est aujourd'hui appliquée que si on l'invoque. `pg_partman` prendrait le relais si le volume l'exigeait, au prix d'une extension absente de l'image officielle.
 - **Sauvegarder les deux bases.** Sans sauvegarde, les douze mois ne tiennent qu'à un volume Docker — celui de PostgreSQL comme celui de MySQL.
-- **Ouvrir le journal à qui n'a pas d'accès *ssh*** : une page `/admin/journal` reste à écrire. Elle suppose d'abord d'authentifier `/admin`, aujourd'hui **ouvert à qui l'appelle** — ses deux routes arrêtent et relancent l'écoute Domibus sans aucun contrôle.
+- **Ouvrir le journal à qui n'a pas d'accès *ssh*** : une page `/admin/journal` reste à écrire, et suppose d'abord d'authentifier `/admin` (voir [Chantiers transverses](#chantiers-transverses)).
 - **Couvrir les alinéas 2, 3 et 5 de l'article 17**, que ce lot laisse entiers. Le 2 impose au fournisseur de journaliser **la décision de l'usager après prévisualisation** — approuver, refuser, ou quitter l'espace sans se prononcer : impossible tant que la 4.9 côté fournisseur n'existe pas (lot 4). Le 3 vise les interactions avec les services communs, que le bouchon 1 remplace encore. Le 5 impose de **tenir ces journaux à disposition de l'autre partie sur demande**, par le tableau de bord d'assistance de l'article 22 — rien n'est prévu pour cela.
-- **Alimenter `id_reponse`**, seule colonne du journal qu'aucun point d'émission ne renseigne : aucun accesseur ne donne l'`id` du `QueryResponse` reçu.
+- **Alimenter `id_reponse`**, seule colonne du journal qu'aucun point d'émission ne renseigne : le slot `EvidenceResponseIdentifier` n'a pas d'accesseur. C'est ce qui manque à l'alinéa 1(b), qui demande l'information contenue dans la réponse.
 - **Journaliser l'échec de remise au requêteur** : `piece_transmise` n'est écrit qu'en cas de succès, et aucun type d'événement ne dit qu'une pièce pourtant reçue n'a pas pu être remise.
 - **Combler trois angles morts de test** : `src/adaptateurs/adaptateurDomibus.js` n'a aucune suite unitaire — il faudrait simuler `axios`, ce que le dépôt ne fait nulle part encore ; `scripts/consulteJournal.js` n'est exercé par rien, alors que sa détection de rupture de chaîne est ce sur quoi un auditeur s'appuierait ; et l'enchaînement purge puis vérification de chaîne n'est vérifié qu'en raisonnement, jamais joué.
 - **Surveiller [`cs-log`](https://code.europa.eu/oots/common-services/cs-log)**, la « Common Services Logging Library » de la Commission : le projet est vivant mais son dépôt reste fermé, alors que le reste des Common Services a été ouvert sous EUPL. Le code serait en Java, donc inutilisable ici, mais il dirait quel format d'entrée et quelle rétention la Commission juge conformes.
@@ -256,10 +256,10 @@ Recommandations d'expérience utilisateur pour l'OPP et l'espace de prévisualis
 - **Fournisseurs de données français** — bouchon 3 : sans eux, la France n'est fournisseur que sur le papier.
 - **Transport** — le *polling* de Domibus toutes les secondes peut céder la place au *push to backend* du WS plugin ; sans effet sur la conformité, mais sur la robustesse (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)).
 - **Homologation de sécurité** — jamais réalisée. Infrastructure à clés publiques, analyse d'impact RGPD, durcissement. Tant qu'elle manque, `AVEC_REQUETE_PIECE_JUSTIFICATIVE` reste fermé en production.
+- **Validation de conformité par la Commission** — vérifier que le validateur OOTS et la plateforme [ITB](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) (*Interoperability Test Bed*) acceptent la v2.0, et connaître la version cible du prochain Projectathon. Préalable déjà consigné dans [versions_tdd.md](versions_tdd.md#le-préalable-à-lever).
 
 > [!WARNING]
 > **Les routes `/admin` ne sont protégées par rien.** N'importe qui peut arrêter l'écoute de Domibus, donc suspendre tout traitement des messages entrants. À authentifier avant tout déploiement — et avant d'y exposer la moindre lecture du journal, qui porte des données personnelles.
-- **Validation de conformité par la Commission** — vérifier que le validateur OOTS et la plateforme [ITB](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) (*Interoperability Test Bed*) acceptent la v2.0, et connaître la version cible du prochain Projectathon. Préalable déjà consigné dans [versions_tdd.md](versions_tdd.md#le-préalable-à-lever).
 
 ---
 
@@ -273,7 +273,7 @@ Trois travaux indépendants, tous vérifiables sans gateway ni service central, 
 
 ### Lot 2 — Poser les fondations
 
-4. ~~**Persistance** et **journalisation 4.8**~~ — l'alinéa 1 de l'article 17 est tenu : base PostgreSQL, table `journal_echanges` en ajout seul, rétention des métadonnées portée à douze mois dans le PMode. Les alinéas 2, 3 et 5 suivent leurs chantiers respectifs.
+4. ~~**Persistance** et **journalisation 4.8**~~ — l'alinéa 1 de l'article 17 est tenu à l'exception de l'identifiant de la réponse : base PostgreSQL, table `journal_echanges` en ajout seul. La rétention de l'alinéa 4 tient aux deux bouts — le PMode côté passerelle, une tâche planifiée côté journal, encore à brancher. Les alinéas 2, 3 et 5 suivent leurs chantiers respectifs.
 5. **Authentifier `/admin`**, préalable à la page de consultation du journal comme à tout déploiement.
 6. **Porter l'état des conversations en base**, ce que la prévisualisation réclamera.
 

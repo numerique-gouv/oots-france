@@ -415,6 +415,7 @@ describe('Le requêteur de pièce justificative', () => {
 
           expect(evenement.idConversation).toBe('uneConversation')
           expect(evenement.idMessage).toBe('unMessage@oots.eu')
+          expect(evenement.idRequete).toBe('urn:uuid:uneRequete')
           expect(evenement.idRequeteur).toBe('12345678901234')
           expect(evenement.codeDemarche).toBe('T1')
           expect(evenement.actionEbms).toBe('ExecuteQueryRequest')

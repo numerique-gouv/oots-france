@@ -63,6 +63,10 @@ describe('Le dépôt du journal', () => {
         expect(appel.texte).toContain('INSERT INTO journal_echanges')
         expect(valeurInseree(appel, 'type_evenement')).toBe('requete_emise')
         expect(valeurInseree(appel, 'id_conversation')).toBe('conv-1')
+        // Voisines et positionnelles : une inversion des deux passerait sans
+        // cela inaperçue.
+        expect(valeurInseree(appel, 'id_requete')).toBe('urn:uuid:requete-1')
+        expect(valeurInseree(appel, 'id_reponse')).toBeUndefined()
         expect(valeurInseree(appel, 'code_demarche')).toBe('T1')
         expect(valeurInseree(appel, 'sujet_justificatif')).toBe('FR/DE/1234')
         expect(valeurInseree(appel, 'id_requeteur')).toBe('98765432109876')

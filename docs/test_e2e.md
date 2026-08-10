@@ -69,12 +69,15 @@ PASS test-e2e/requetePieceJustificative.spec.js (4.3 s)
       ✓ consigne l'empreinte du justificatif, et jamais le justificatif
       ✓ chaîne les empreintes sans rupture
       ✓ refuse que le rôle applicatif modifie ou supprime une ligne
+      ✓ chaîne sans fausse rupture sous insertions concurrentes
+      devant une altération du journal
+        ✓ signale une ligne réécrite après coup, et la lacune laissée par une suppression
 
 Test Suites: 1 passed, 1 total
-Tests:       5 passed, 5 total
+Tests:       7 passed, 7 total
 ```
 
-Les quatre derniers tests inspectent le journal des échanges (chapitre 4.8) que l'échange vient de produire : c'est le seul endroit où son SQL — le déclencheur de chaînage, les vues, les privilèges en ajout seul — soit réellement exercé, la suite unitaire ne touchant jamais la base. Ils sont enchaînés sur le même scénario plutôt que joués à part, pour ne pas coûter un second aller-retour à travers Domibus.
+Les six derniers tests inspectent le journal des échanges (chapitre 4.8) que l'échange vient de produire : c'est le seul endroit où son SQL — le déclencheur de chaînage, les vues, les privilèges en ajout seul — soit réellement exercé, la suite unitaire ne touchant jamais la base. Ils sont enchaînés sur le même scénario plutôt que joués à part, pour ne pas coûter un second aller-retour à travers Domibus. Les deux derniers n'en dépendent d'ailleurs pas : ils écrivent directement par le dépôt, l'un pour vérifier que soixante insertions parallèles ne rompent aucun maillon, l'autre pour falsifier le journal sous le rôle propriétaire et constater que la rupture se voit.
 
 > [!IMPORTANT]
 > Le test s'exécute **dans le conteneur `web`** (c'est ce que fait le wrapper `scripts/testE2e.sh`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://localhost:4000`, adresse qui n'a le bon sens que vue du conteneur : lancé depuis la machine hôte, le test échouerait au déchiffrement du jeton bénéficiaire, faute pour l'application de pouvoir joindre les clés publiques du requêteur.
