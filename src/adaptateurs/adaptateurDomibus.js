@@ -58,9 +58,27 @@ const AdaptateurDomibus = (config = {}) => {
     requeteRecuperationMessage(idMessage),
   )
 
+  // La promesse d'envoi est rendue, et non abandonnée : sans quoi son échec
+  // n'atteint pas le `catch` du cycle de sondage, et une rejection non
+  // rattrapée emporte le processus — un refus de Domibus suffisait à laisser
+  // l'application morte, l'écouteur avec elle.
   const repondsA = (requete) => {
-    const message = requete.reponse(config)
-    envoieMessageDomibus(message.enSOAP())
+    let reponse
+
+    try {
+      reponse = requete.reponse(config)
+    }
+    catch (e) {
+      // Une requête dont on ne sait pas tirer l'identité du requêteur ne peut
+      // pas recevoir de réponse : celle-ci n'aurait pas de destinataire. Plutôt
+      // qu'émettre un message adressé à personne, on renonce — mais en nommant
+      // la conversation, seule prise pour retrouver la requête fautive dans les
+      // journaux de la passerelle.
+      e.message = `Requête laissée sans réponse (conversation ${requete.idConversation()}) : ${e.message}`
+      throw e
+    }
+
+    return envoieMessageDomibus(reponse.enSOAP())
   }
 
   const traiteMessageSuivant = () => recupereIdMessageSuivant()
@@ -73,8 +91,10 @@ const AdaptateurDomibus = (config = {}) => {
         annonceur.emit(REPONSE_SUCCES, message)
       }
       else if (message.action() === Entete.EXECUTION_REQUETE) {
-        repondsA(message)
+        return repondsA(message)
       }
+
+      return undefined
     })
     .catch((e) => {
       if (!(e instanceof ErreurAucunMessageDomibusRecu)) {

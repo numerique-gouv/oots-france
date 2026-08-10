@@ -4,11 +4,17 @@ const TypeJustificatif = require('../../src/ebms/typeJustificatif')
 class ConstructeurEnveloppeSOAPRequete {
   constructor() {
     this.idPayload = 'cid:99999999-9999-9999-9999-999999999999@oots.eu'
+    this.idEchange = '88888888-8888-8888-8888-888888888888'
     this.codeDemarche = ''
     this.beneficiaire = new PersonnePhysique()
     this.idRequete = ''
-    this.requeteur = { id: '', nom: '' }
+    this.requeteur = { id: 'BR_SI_01', nom: 'Un requêteur slovène' }
     this.typeJustificatif = new TypeJustificatif()
+  }
+
+  avecIdEchange(id) {
+    this.idEchange = id
+    return this
   }
 
   avecCodeDemarche(codeDemarche) {
@@ -53,11 +59,8 @@ class ConstructeurEnveloppeSOAPRequete {
   <rim:Slot name="SpecificationIdentifier"><!-- … --></rim:Slot>
   <rim:Slot name="IssueDateTime"><!-- … --></rim:Slot>
   <rim:Slot name="Procedure">
-    <rim:SlotValue xsi:type="rim:InternationalStringValueType">
-      <rim:Value>
-        <rim:LocalizedString xml:lang="EN"
-          value="${this.codeDemarche}"/>
-      </rim:Value>
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>${this.codeDemarche}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="PossibilityForPreview"><!-- … --></rim:Slot>
@@ -67,14 +70,14 @@ class ConstructeurEnveloppeSOAPRequete {
     <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
-          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">${this.requeteur.id}</sdg:Identifier>
+          <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">${this.requeteur.id}</sdg:Identifier>
           <sdg:Name lang="FR">${this.requeteur.nom}</sdg:Name>
           <sdg:Classification>ER</sdg:Classification>
         </sdg:Agent>
       </rim:Element>
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Agent>
-          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
+          <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">OOTSFRANCE</sdg:Identifier>
           <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
           <sdg:Classification>IP</sdg:Classification>
         </sdg:Agent>
@@ -125,8 +128,10 @@ class ConstructeurEnveloppeSOAPRequete {
           <eb:ConversationId>5fe50e16-d6b8-4005-b5ec-0ab097f34448</eb:ConversationId>
         </eb:CollaborationInfo>
         <eb:MessageProperties>
-          <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-provider">C1</eb:Property>
+          <eb:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000001</eb:Property>
           <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-requester">BR_SI_01</eb:Property>
+          <eb:Property name="ExchangeId">${this.idEchange}</eb:Property>
+          <eb:Property name="SpecificationId">oots-edm:v2.0</eb:Property>
         </eb:MessageProperties>
         <eb:PayloadInfo>
           <eb:PartInfo href="${this.idPayload}">

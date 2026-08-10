@@ -45,11 +45,8 @@ class ConstructeurXMLParseRequeteRecue extends ConstructeurXMLParseMessageRecu {
           {
             '@_name': 'Procedure',
             'SlotValue': {
-              Value: {
-                LocalizedString: {
-                  '@_value': this.codeDemarche,
-                },
-              },
+              '@_type': 'rim:StringValueType',
+              'Value': this.codeDemarche,
             },
           },
           {

@@ -60,7 +60,10 @@ const pieceJustificative = (config, requete, reponse) => {
       requeteur,
       typeJustificatif,
     }) => {
-      adaptateurDomibus.envoieMessageRequete({
+      // La promesse est rendue : abandonnée, son échec — un refus de Domibus,
+      // par exemple — n'atteindrait pas le `catch` de la chaîne et emporterait
+      // le processus.
+      return adaptateurDomibus.envoieMessageRequete({
         beneficiaire: b,
         codeDemarche,
         destinataire,
@@ -83,12 +86,16 @@ const pieceJustificative = (config, requete, reponse) => {
         const id = reponseAvecPieceJustificative.idRequeteur()
         const pj = reponseAvecPieceJustificative.pieceJustificative()
 
-        depotRequeteurs.trouveRequeteur(id)
+        // Rendue, comme les autres : abandonnée, une erreur de transmission
+        // au requêteur échapperait au `catch` et emporterait le processus.
+        return depotRequeteurs.trouveRequeteur(id)
           .then(({ url }) => Promise.all([
             transmetteurPiecesJustificatives.envoie(pj, url),
             reponse.redirect(`${url}/oots/callback`),
           ]))
       }
+
+      return undefined
     })
     .catch((e) => {
       if (e instanceof ErreurEBMS || e instanceof ErreurJetonInvalide) {
@@ -104,7 +111,13 @@ const pieceJustificative = (config, requete, reponse) => {
         }
         reponse.status(codeStatus).json({ erreur: e.errors.map(erreur => erreur.message).join(' ; ') })
       }
-      else throw e
+      else {
+        // Relancée, l'erreur ne serait rattrapée par personne — la route ne
+        // rend pas cette promesse à Express — et tuerait le processus. Le
+        // détail reste au journal plutôt que de partir au requêteur.
+        console.error(e.response?.data || e)
+        reponse.status(500).json({ erreur: 'Erreur interne' })
+      }
     })
 }
 

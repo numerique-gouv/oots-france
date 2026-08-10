@@ -9,7 +9,7 @@ const fs = require('node:fs')
 const express = require('express')
 const jose = require('jose')
 
-const ID_REQUETEUR = 'FR_TEST'
+const ID_REQUETEUR = '00000000000002'
 // `00` est le code démarche de vérification système : c'est le seul auquel
 // l'application répond par un justificatif (cf. src/domibus/requete.js).
 const CODE_DEMARCHE = '00'

@@ -63,7 +63,7 @@ describe('Le Dépôt (local, bouchonné) de données des services communs', () =
     const depot = new ConstructeurDepotServicesCommuns()
       .avecTypeJustificatif({
         id: '12345',
-        fournisseurs: { FR: [{ pointAcces: { id: 'unIdentifiant' } }] },
+        fournisseurs: { FR: [{ pointAcces: { id: 'unIdentifiant', typeId: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots' } }] },
       })
       .construis()
 

@@ -1,9 +1,9 @@
 const EnteteRequete = require('./enteteRequete')
-const Fournisseur = require('./fournisseur')
 const Message = require('./message')
 const PersonnePhysique = require('./personnePhysique')
-const Requeteur = require('./requeteur')
 const TypeJustificatif = require('./typeJustificatif')
+const { IDENTIFIANT_SPECIFICATION_EDM } = require('./specificationEdm')
+const { echappeXML } = require('./echappement')
 
 class RequeteJustificatif extends Message {
   static ClasseEntete = EnteteRequete
@@ -14,14 +14,19 @@ class RequeteJustificatif extends Message {
       beneficiaire = new PersonnePhysique(),
       codeDemarche = 'T1',
       destinataire = {},
-      fournisseur = new Fournisseur(),
+      fournisseur,
       idConversation = config.adaptateurUUID.genereUUID(),
-      requeteur = new Requeteur(),
+      requeteur,
       typeJustificatif = new TypeJustificatif({}),
       previsualisationRequise = false,
     } = {},
   ) {
-    super(config, { destinataire, idConversation })
+    super(config, {
+      destinataire,
+      idConversation,
+      emetteurOriginal: requeteur.identiteEbms(),
+      destinataireFinal: fournisseur.identiteEbms(),
+    })
 
     this.codeDemarche = codeDemarche
     this.beneficiaire = beneficiaire
@@ -32,7 +37,6 @@ class RequeteJustificatif extends Message {
   }
 
   corpsMessageEnXML() {
-    const uuid = this.adaptateurUUID.genereUUID()
     const horodatage = this.horodateur.maintenant()
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -44,12 +48,11 @@ class RequeteJustificatif extends Message {
           xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
           xmlns:xlink="http://www.w3.org/1999/xlink"
           xmlns:xml="http://www.w3.org/XML/1998/namespace"
-          xml:lang="EN"
-          id="urn:uuid:${uuid}">
+          id="urn:uuid:${this.idDocument}">
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value>oots-edm:v1.0</rim:Value>
+      <rim:Value>${IDENTIFIANT_SPECIFICATION_EDM}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="IssueDateTime">
@@ -58,11 +61,8 @@ class RequeteJustificatif extends Message {
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="Procedure">
-    <rim:SlotValue xsi:type="rim:InternationalStringValueType">
-      <rim:Value>
-        <rim:LocalizedString xml:lang="EN"
-          value="${this.codeDemarche}"/>
-      </rim:Value>
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>${echappeXML(this.codeDemarche)}</rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="PossibilityForPreview">
@@ -87,7 +87,7 @@ class RequeteJustificatif extends Message {
     </rim:SlotValue>
   </rim:Slot>
   ${this.requeteur.enXMLPourRequete()}
-  ${this.fournisseur.enXML()}
+  ${this.fournisseur.enXMLPourRequete()}
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
     ${this.beneficiaire.enXMLPourRequete()}

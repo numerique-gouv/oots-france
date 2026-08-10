@@ -15,8 +15,11 @@ describe('Un requêteur', () => {
   <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
     <rim:Element xsi:type="rim:AnyValueType">
       <sdg:Agent>
-        <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">123456</sdg:Identifier>
+        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">123456</sdg:Identifier>
         <sdg:Name lang="FR">Un requêteur français</sdg:Name>
+        <sdg:Address>
+          <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+        </sdg:Address>
         <sdg:Classification>ER</sdg:Classification>
       </sdg:Agent>
     </rim:Element>

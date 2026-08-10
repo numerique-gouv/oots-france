@@ -1,12 +1,14 @@
 const ConstructeurXMLParseRequeteRecue = require('../constructeurs/constructeurXMLParseRequeteRecue')
 const Requete = require('../../src/domibus/requete')
 const CodeDemarche = require('../../src/ebms/codeDemarche')
+const Fournisseur = require('../../src/ebms/fournisseur')
 const ReponseErreur = require('../../src/ebms/reponseErreur')
 
 describe('Une action de requête reçue depuis Domibus', () => {
   const adaptateurUUID = {}
   const horodateur = {}
-  const config = { adaptateurUUID, horodateur }
+  const fournisseurFrancais = Fournisseur.francais({ id: '00000000000001', nom: 'Un fournisseur français' })
+  const config = { adaptateurUUID, fournisseurFrancais, horodateur }
 
   beforeEach(() => {
     adaptateurUUID.genereUUID = () => ''
@@ -29,6 +31,34 @@ describe('Une action de requête reçue depuis Domibus', () => {
     const requete = new Requete(xmlParse)
 
     expect(requete.codeDemarche()).toBe('UN_CODE')
+  })
+
+  it('conserve le schéma d\'identifiant et la langue d\'un requêteur étranger', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecRequeteur({ id: 'DK22233223', nom: 'Denmark University Portal' })
+      .construis()
+    const [agentER] = xmlParse.QueryRequest.Slot
+      .find(s => s['@_name'] === 'EvidenceRequester').SlotValue.Element
+    agentER.Agent.Identifier['@_schemeID'] = 'urn:cef.eu:names:identifier:EAS:0096'
+    agentER.Agent.Name[0]['@_lang'] = 'EN'
+
+    const { typeId, langue } = new Requete(xmlParse).requeteur()
+
+    expect(typeId).toBe('urn:cef.eu:names:identifier:EAS:0096')
+    expect(langue).toBe('EN')
+  })
+
+  // Un schéma vide ne désigne aucun répertoire : le prendre pour une absence
+  // étiquetterait en français une organisation qui ne l'est pas.
+  it('ne prend pas un schéma d\'identifiant vide pour un requêteur français', () => {
+    const xmlParse = new ConstructeurXMLParseRequeteRecue()
+      .avecRequeteur({ id: 'DK22233223', nom: 'Denmark University Portal' })
+      .construis()
+    const [agentER] = xmlParse.QueryRequest.Slot
+      .find(s => s['@_name'] === 'EvidenceRequester').SlotValue.Element
+    agentER.Agent.Identifier['@_schemeID'] = ''
+
+    expect(new Requete(xmlParse).requeteur().typeId).toBe('')
   })
 
   it('connaît le requêteur', () => {
@@ -90,7 +120,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis()
       const requete = new Requete(xmlParse)
-      const reponse = requete.reponse(config, { idRequete: '12345' })
+      const reponse = requete.reponse(config, { idRequete: '12345', requeteur: requete.requeteur() })
 
       expect(reponse.idRequete).toBe('12345')
     })
@@ -101,7 +131,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .construis()
       const requete = new Requete(xmlParse)
 
-      expect(requete.reponse(config)).toBeInstanceOf(ReponseErreur)
+      expect(requete.reponse(config, { requeteur: requete.requeteur() })).toBeInstanceOf(ReponseErreur)
     })
 
     it('répond avec une erreur OBJECT_NOT_FOUND', () => {
@@ -109,7 +139,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis()
       const requete = new Requete(xmlParse)
-      const reponseErreur = requete.reponse(config)
+      const reponseErreur = requete.reponse(config, { requeteur: requete.requeteur() })
 
       expect(reponseErreur.codeException).toBe('EDM:ERR:0004')
     })
@@ -119,7 +149,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.DEMANDE_BOURSE_ETUDIANTE)
         .construis()
       const requete = new Requete(xmlParse)
-      const reponseErreur = requete.reponse(config)
+      const reponseErreur = requete.reponse(config, { requeteur: requete.requeteur() })
 
       expect(reponseErreur.pieceJointePresente()).toBe(false)
     })
@@ -132,7 +162,7 @@ describe('Une action de requête reçue depuis Domibus', () => {
         .avecCodeDemarche(CodeDemarche.VERIFICATION_SYSTEME)
         .construis()
       const requete = new Requete(xmlParse)
-      const reponse = requete.reponse(config, {})
+      const reponse = requete.reponse(config, { requeteur: requete.requeteur() })
 
       expect(reponse.pieceJointePresente()).toBe(true)
     })
