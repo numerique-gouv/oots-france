@@ -68,12 +68,9 @@ const jwk = privateKey.export({ format: 'jwk' });
 console.log(Buffer.from(JSON.stringify({ ...jwk, alg: 'ECDH-ES', use: 'enc' })).toString('base64'));
 ")
 
-# L'annuaire déclare deux démarches sur le même type de justificatif, et c'est
-# volontaire : `00` est la vérification système, la seule à laquelle
-# l'application réponde par un justificatif, et `T3` sert au scénario d'erreur
-# du test de bout en bout. Une démarche non déclarée serait refusée par
-# l'annuaire local avant d'atteindre la passerelle, sur un 422 : le chemin
-# `EDM:ERR:0004` ne s'exercerait pas.
+# L'annuaire déclare deux démarches sur le même type de justificatif : `00` pour
+# le scénario nominal du test de bout en bout, `T3` pour son scénario d'erreur.
+# Les deux doivent y figurer, cf. docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64

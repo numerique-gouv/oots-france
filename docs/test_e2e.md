@@ -93,7 +93,7 @@ L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'appli
 
 Le reste du trajet est du code de production : `src/api/pieceJustificative.js` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus, puis attend la réponse corrélée par `conversationId`. L'écouteur (`src/ecouteurDomibus.js`) récupère la requête revenue dans sa propre file, y répond avec `assets/drapeau.pdf`, puis récupère cette réponse. Le test compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
-Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse que l'écouteur construit, `src/domibus/requete.js` ne servant un justificatif que pour la démarche `00`. Ce que le test vérifie est le **code EDM** remonté à l'appelant, non le code HTTP : celui-ci découle de l'attente bloquante, que la réécriture Rails remplace par un écran d'attente.
+Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse que l'écouteur construit, `src/domibus/requete.js` ne servant un justificatif que pour la démarche `00`. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Le code HTTP est affirmé lui aussi, mais il décrit l'état actuel plutôt qu'un contrat — il découle de l'attente bloquante, que la réécriture Rails remplace par un écran d'attente.
 
 ## Configuration attendue
 

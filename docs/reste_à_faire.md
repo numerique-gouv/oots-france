@@ -271,6 +271,12 @@ La version Rails restreint explicitement les trois listes (gestion de clé, chif
 
 Contrairement à l'identité du fournisseur français, elle ne passe pas par le garde-fou de `src/adaptateurs/adaptateurEnvironnement.js`. Absente, elle ne se signale qu'en pleine requête, par une exception de désérialisation. À rendre obligatoire au démarrage.
 
+### L'attente d'une réponse laisse derrière elle des écouteurs et des minuteurs
+
+`urlRedirectionDepuisReponse` et `reponseAvecPieceJustificative` (`src/adaptateurs/adaptateurDomibus.js`) posent chacun un `annonceur.on(...)` **jamais retiré**, et leur `setTimeout` de garde n'est **jamais annulé** — deux écouteurs permanents et deux minuteurs de trente secondes par requête HTTP, sur un `EventEmitter` unique au processus. Rien n'est cassé aujourd'hui : la corrélation par identifiant de conversation empêche un écouteur périmé de réagir à une réponse qui ne le concerne pas.
+
+La réécriture règle le problème par construction, en remplaçant cet annonceur de processus par un état de conversation partagé : c'est ce que décrit le bouchon 6, et c'est ce qu'impose un serveur multi-processus, où le sondeur d'un travailleur ne réveillerait jamais la requête d'un autre.
+
 ### Aucune route n'est authentifiée
 
 Les dix routes exposées le sont sans authentification, y compris les deux `POST /admin/*` qui arrêtent et redémarrent l'écoute de la passerelle. Le sujet change de nature avec le passage au *push to backend* (voir les chantiers transverses), qui rend le point d'entrée appelable depuis le réseau : c'est à ce moment-là qu'il se traite, pas avant.

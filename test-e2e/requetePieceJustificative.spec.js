@@ -13,10 +13,9 @@ const ID_REQUETEUR = '00000000000002'
 // `00` est le code démarche de vérification système : c'est le seul auquel
 // l'application répond par un justificatif (cf. src/domibus/requete.js).
 const CODE_DEMARCHE = '00'
-// Toute autre démarche reçoit une réponse d'erreur `EDM:ERR:0004`, tant qu'aucun
-// fournisseur réel n'est branché. `T3` — la demande de bourse étudiante des TDD
-// — doit être déclarée dans l'annuaire local, sans quoi la requête serait
-// refusée sur un 422 avant même d'atteindre la passerelle.
+// Toute autre démarche reçoit une réponse d'erreur `EDM:ERR:0004`. `T3` doit
+// être déclarée dans l'annuaire local malgré tout, sinon la requête n'atteint
+// jamais la passerelle (cf. docs/test_e2e.md).
 const CODE_DEMARCHE_SANS_FOURNISSEUR = 'T3'
 const CODE_PAYS = 'FR'
 const BENEFICIAIRE = { dateNaissance: '1965-11-25', nomUsage: 'Dupont', prenom: 'Sophie' }
@@ -208,17 +207,20 @@ describe('Une requête de pièce justificative', () => {
   // production sache produire, et il n'était couvert que par des tests
   // unitaires, où le transport est entièrement simulé.
   it('remonte le code d\'erreur des TDD quand le fournisseur ne connaît pas la démarche', async () => {
+    // Un justificatif livré ici signalerait une réponse mal corrélée : les
+    // écouteurs posés par requête ne sont jamais retirés (cf. docs/reste_à_faire.md).
+    const documentAvant = fauxRequeteur.recus.document
+
     const reponse = await demandePieceJustificative(CODE_DEMARCHE_SANS_FOURNISSEUR)
     const corps = await reponse.text()
 
-    // La réponse d'erreur revient vite, mais la branche qui guette le
-    // justificatif n'abandonne qu'au bout de `DELAI_MAX_ATTENTE_DOMIBUS` :
-    // `Promise.any` n'échoue qu'une fois les deux branches rejetées.
-    //
-    // Le code HTTP est un artefact de cette attente bloquante, que la
-    // réécriture supprime au profit d'un écran d'attente : c'est le code EDM
-    // qui fait foi ici, pas le 502.
-    expect(`${reponse.status} : ${corps}`).toContain('EDM:ERR:0004')
+    // Le code EDM est l'invariant : il vient du message reçu de la passerelle.
+    // Le 502, lui, décrit l'état actuel — il découle de l'attente bloquante
+    // (cf. docs/test_e2e.md), et la réécriture le changera légitimement. Il est
+    // affirmé quand même : sans lui, un 500 accidentel passerait.
     expect(reponse.status).toBe(502)
+    expect(corps).toContain('EDM:ERR:0004')
+
+    expect(fauxRequeteur.recus.document).toBe(documentAvant)
   })
 })
