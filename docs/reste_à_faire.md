@@ -248,6 +248,35 @@ Recommandations d'expérience utilisateur pour l'OPP et l'espace de prévisualis
 
 ---
 
+## Défauts à réparer pendant la réécriture
+
+Ces défauts-là ne sont pas des bouchons — personne ne les a posés sciemment. Ils ont été relevés en préparant la réécriture du dépôt en Ruby on Rails, et **ils ne sont pas corrigés en JavaScript** : le code qui les porte est réécrit dans la foulée, et le réparer deux fois coûterait deux fois. Chacun devient donc une exigence pour la version Rails.
+
+### La route qui publie la clé publique échoue
+
+`src/routes/routesAuth.js` construit son JWKS en lisant `{ kty, n, e }` — les paramètres d'une clé **RSA** — alors que la clé effectivement générée est une **EC P-256** (`scripts/ci/preparEnvironnement.sh`). `n` valant `undefined`, le calcul du `kid` lève `ERR_INVALID_ARG_TYPE` : la route ne rend pas un JWKS incomplet, elle **échoue**. Elle a manifestement été écrite pour une clé RSA, remplacée depuis sans qu'elle soit reprise.
+
+> [!IMPORTANT]
+> La version Rails publie la clé par **soustraction** des composantes secrètes (`d`, `p`, `q`, `dp`, `dq`, `qi`, `k`), et non en énumérant les champs à recopier : la route cesse alors de dépendre du type de clé, et le choix entre EC et RSA redevient libre et réversible. Le `kid` doit être le *thumbprint* de la [RFC 7638](https://datatracker.ietf.org/doc/html/rfc7638), défini pour tous les types de clé, là où le MD5 du seul modulus ne l'est que pour RSA.
+
+Aucun test ne pouvait l'attraper, et c'est le vrai enseignement : `test/routes/routesAuth.spec.js` injecte une clé RSA factice **et** remplace la fonction de hachage, tandis que `test-e2e/requetePieceJustificative.spec.js` **dérive** la clé publique du JWK privé au lieu d'appeler la route. Le test de bout en bout de la version Rails doit chiffrer pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé reconstruite à côté.
+
+### Le déchiffrement suit l'en-tête du jeton
+
+`src/adaptateurs/adaptateurChiffrement.js` appelle `compactDecrypt(jwe, k)` puis `jwtVerify(jwt, jwks)` **sans aucune option** : ni algorithmes admis, ni émetteur, ni audience attendus. C'est le jeton reçu qui désigne l'algorithme employé pour le déchiffrer et pour vérifier sa signature — une surface de confusion d'algorithme, où l'attaquant choisit le terrain.
+
+La version Rails restreint explicitement les trois listes (gestion de clé, chiffrement du contenu, signature). Le déchiffrement reste derrière un adaptateur étroit, pour que le format du jeton puisse changer sans se répandre. Il n'existe par ailleurs aucun test de cet adaptateur : il est remplacé par une doublure dans toute la suite.
+
+### `CLE_PRIVEE_JWK_EN_BASE64` n'est pas vérifiée au démarrage
+
+Contrairement à l'identité du fournisseur français, elle ne passe pas par le garde-fou de `src/adaptateurs/adaptateurEnvironnement.js`. Absente, elle ne se signale qu'en pleine requête, par une exception de désérialisation. À rendre obligatoire au démarrage.
+
+### Aucune route n'est authentifiée
+
+Les dix routes exposées le sont sans authentification, y compris les deux `POST /admin/*` qui arrêtent et redémarrent l'écoute de la passerelle. Le sujet change de nature avec le passage au *push to backend* (voir les chantiers transverses), qui rend le point d'entrée appelable depuis le réseau : c'est à ce moment-là qu'il se traite, pas avant.
+
+---
+
 ## Ordre proposé
 
 Six lots, ordonnés par dépendance plutôt que par chapitre.
