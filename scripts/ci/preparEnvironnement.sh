@@ -68,10 +68,13 @@ const jwk = privateKey.export({ format: 'jwk' });
 console.log(Buffer.from(JSON.stringify({ ...jwk, alg: 'ECDH-ES', use: 'enc' })).toString('base64'));
 ")
 
+# L'annuaire déclare deux démarches sur le même type de justificatif : `00` pour
+# le scénario nominal du test de bout en bout, `T3` pour son scénario d'erreur.
+# Les deux doivent y figurer, cf. docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
-DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL={"typesJustificatif":[{"id":"https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000","descriptions":{"FR":"Justificatif de test","EN":"Test evidence"},"formatDistribution":"application/pdf","fournisseurs":{"FR":[{"pointAcces":{"id":"blue_gw","typeId":"urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"},"descriptions":{"FR":"Fournisseur de test"}}]}}],"demarches":[{"code":"00","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]}]}
+DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL={"typesJustificatif":[{"id":"https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000","descriptions":{"FR":"Justificatif de test","EN":"Test evidence"},"formatDistribution":"application/pdf","fournisseurs":{"FR":[{"pointAcces":{"id":"blue_gw","typeId":"urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"},"descriptions":{"FR":"Fournisseur de test"}}]}}],"demarches":[{"code":"00","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]},{"code":"T3","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]}]}
 DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://localhost:4000"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Fournisseur de test

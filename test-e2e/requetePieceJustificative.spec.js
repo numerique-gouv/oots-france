@@ -13,6 +13,10 @@ const ID_REQUETEUR = '00000000000002'
 // `00` est le code démarche de vérification système : c'est le seul auquel
 // l'application répond par un justificatif (cf. src/domibus/requete.js).
 const CODE_DEMARCHE = '00'
+// Toute autre démarche reçoit une réponse d'erreur `EDM:ERR:0004`. `T3` doit
+// être déclarée dans l'annuaire local malgré tout, sinon la requête n'atteint
+// jamais la passerelle (cf. docs/test_e2e.md).
+const CODE_DEMARCHE_SANS_FOURNISSEUR = 'T3'
 const CODE_PAYS = 'FR'
 const BENEFICIAIRE = { dateNaissance: '1965-11-25', nomUsage: 'Dupont', prenom: 'Sophie' }
 const DELAI_MAX_ATTENTE = 60000
@@ -53,8 +57,11 @@ const verifieConfiguration = () => {
   }
 
   const servicesCommuns = JSON.parse(process.env.DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL ?? '{}')
-  if (!servicesCommuns.demarches?.some(d => d.code === CODE_DEMARCHE)) {
-    throw new Error(`DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL ne déclare aucune démarche "${CODE_DEMARCHE}".`)
+  const manquantes = [CODE_DEMARCHE, CODE_DEMARCHE_SANS_FOURNISSEUR]
+    .filter(code => !servicesCommuns.demarches?.some(d => d.code === code))
+
+  if (manquantes.length > 0) {
+    throw new Error(`DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL ne déclare aucune démarche ${manquantes.map(c => `"${c}"`).join(' ni ')}.`)
   }
 }
 
@@ -161,18 +168,22 @@ describe('Une requête de pièce justificative', () => {
     else fauxRequeteur.serveur.close(resolve)
   }))
 
-  it('revient du fournisseur avec le justificatif attendu, à travers Domibus', async () => {
+  const demandePieceJustificative = (codeDemarche) => {
     const parametres = new URLSearchParams({
-      codeDemarche: CODE_DEMARCHE,
+      codeDemarche,
       codePays: CODE_PAYS,
       idRequeteur: ID_REQUETEUR,
       beneficiaire: beneficiaireChiffre,
     })
 
-    const reponse = await fetch(
+    return fetch(
       `${process.env.URL_OOTS_FRANCE}/requete/pieceJustificative?${parametres}`,
       { redirect: 'manual' },
     )
+  }
+
+  it('revient du fournisseur avec le justificatif attendu, à travers Domibus', async () => {
+    const reponse = await demandePieceJustificative(CODE_DEMARCHE)
 
     // Le corps n'est lu qu'en cas d'échec, pour que le diff Jest porte le
     // message d'erreur de l'application plutôt qu'un simple code.
@@ -189,5 +200,27 @@ describe('Une requête de pièce justificative', () => {
     expect(justificatif.subarray(0, 4).toString()).toBe('%PDF')
     expect(justificatif.length).toBe(attendu.length)
     expect(justificatif.equals(attendu)).toBe(true)
+  })
+
+  // Le pendant du scénario nominal : la même chaîne complète, mais dont le
+  // fournisseur refuse de servir. C'est le seul autre chemin que le code de
+  // production sache produire, et il n'était couvert que par des tests
+  // unitaires, où le transport est entièrement simulé.
+  it('remonte le code d\'erreur des TDD quand le fournisseur ne connaît pas la démarche', async () => {
+    // Un justificatif livré ici signalerait une réponse mal corrélée : les
+    // écouteurs posés par requête ne sont jamais retirés (cf. docs/reste_à_faire.md).
+    const documentAvant = fauxRequeteur.recus.document
+
+    const reponse = await demandePieceJustificative(CODE_DEMARCHE_SANS_FOURNISSEUR)
+    const corps = await reponse.text()
+
+    // Le code EDM est l'invariant : il vient du message reçu de la passerelle.
+    // Le 502, lui, décrit l'état actuel — il découle de l'attente bloquante
+    // (cf. docs/test_e2e.md), et la réécriture le changera légitimement. Il est
+    // affirmé quand même : sans lui, un 500 accidentel passerait.
+    expect(reponse.status).toBe(502)
+    expect(corps).toContain('EDM:ERR:0004')
+
+    expect(fauxRequeteur.recus.document).toBe(documentAvant)
   })
 })

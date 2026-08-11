@@ -60,20 +60,31 @@ $ scripts/testE2e.sh
 Une exécution réussie affiche :
 
 ```
-PASS test-e2e/requetePieceJustificative.spec.js (4.3 s)
+PASS test-e2e/requetePieceJustificative.spec.js (32.2 s)
   Une requête de pièce justificative
-    ✓ revient du fournisseur avec le justificatif attendu, à travers Domibus (3766 ms)
+    ✓ revient du fournisseur avec le justificatif attendu, à travers Domibus (1808 ms)
+    ✓ remonte le code d'erreur des TDD quand le fournisseur ne connaît pas la démarche (30172 ms)
 
 Test Suites: 1 passed, 1 total
-Tests:       1 passed, 1 total
+Tests:       2 passed, 2 total
 ```
+
+> [!NOTE]
+> Les trente secondes du second scénario ne sont pas une lenteur du transport : la réponse d'erreur revient en quelques centaines de millisecondes, mais la branche qui guette le justificatif n'abandonne qu'au bout de `DELAI_MAX_ATTENTE_DOMIBUS`, et `Promise.any` n'échoue qu'une fois les deux branches rejetées.
 
 > [!IMPORTANT]
 > Le test s'exécute **dans le conteneur `web`** (c'est ce que fait le wrapper `scripts/testE2e.sh`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://localhost:4000`, adresse qui n'a le bon sens que vue du conteneur : lancé depuis la machine hôte, le test échouerait au déchiffrement du jeton bénéficiaire, faute pour l'application de pouvoir joindre les clés publiques du requêteur.
 >
 > Le port d'écoute, lui, est déduit de cette même URL : changer l'annuaire suffit à déplacer le faux requêteur, sans toucher au test.
 
-## Ce que le scénario joue
+## Ce que les scénarios jouent
+
+Deux scénarios partagent le même montage, et couvrent les deux seules réponses que le code de production sache produire :
+
+| Scénario | Démarche | Ce qui revient |
+| --- | --- | --- |
+| Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
+| Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
 
 L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les deux rôles que l'application n'assure pas :
 
@@ -82,6 +93,8 @@ L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'appli
 
 Le reste du trajet est du code de production : `src/api/pieceJustificative.js` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus, puis attend la réponse corrélée par `conversationId`. L'écouteur (`src/ecouteurDomibus.js`) récupère la requête revenue dans sa propre file, y répond avec `assets/drapeau.pdf`, puis récupère cette réponse. Le test compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
+Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse que l'écouteur construit, `src/domibus/requete.js` ne servant un justificatif que pour la démarche `00`. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Le code HTTP est affirmé lui aussi, mais il décrit l'état actuel plutôt qu'un contrat — il découle de l'attente bloquante, que la réécriture Rails remplace par un écran d'attente.
+
 ## Configuration attendue
 
 Le test vérifie ces trois points avant de commencer et échoue sur un message explicite si l'un manque :
@@ -89,11 +102,13 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | Variable | Valeur attendue |
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
-| `DONNEES_REQUETEURS` | déclare un requêteur `FR_TEST`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL` | déclare la démarche de code `00` |
+| `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
+| `DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL` | déclare les démarches `00` **et** `T3` |
 
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`src/domibus/requete.js`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
+>
+> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Elle doit néanmoins être **déclarée dans l'annuaire local**, faute de quoi la requête serait rejetée sur un `422` par `depotServicesCommunsLocal` avant même d'atteindre la passerelle, et le chemin `EDM:ERR:0004` ne s'exercerait pas.
 
 ## En cas d'échec
 
