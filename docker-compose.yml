@@ -50,7 +50,15 @@ services:
 
   web:
     <<: *configuration-base
-    command: "bundle exec rails server -b 0.0.0.0"
+    # Le fichier de PID vit dans le répertoire monté depuis l'hôte : un
+    # conteneur tué en laisse un, et `rails server` refuse alors de démarrer en
+    # annonçant un serveur déjà lancé qui n'existe plus. Le retirer ici est sans
+    # risque, un seul serveur tournant par conteneur.
+    #
+    # `exec` n'est pas cosmétique : sans lui, `sh` reste PID 1 et reçoit seul le
+    # SIGTERM de `docker compose stop`, sans le relayer. Le serveur est alors
+    # tué au SIGKILL à l'expiration du délai de grâce, sans avoir rien fermé.
+    command: "sh -c 'rm -f tmp/pids/server.pid && exec bundle exec rails server -b 0.0.0.0'"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
