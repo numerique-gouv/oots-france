@@ -96,7 +96,7 @@ bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single fi
 
 **Reach for `make lint-fix`, not `make lint`.** Everything RuboCop can settle on its own is noise in a report: reading it, deciding, and editing by hand spends attention on what a flag fixes, and leaves the offences that need judgement buried among the ones that do not. `-a` applies only what is safe. `make lint` is for reading a verdict without touching the tree — a workflow, or someone else's branch.
 
-Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on 5433, and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
+Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which has no default — `.env.template` leaves it blank and CI sets it to 5433 — and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
 
 CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is.
 
@@ -153,8 +153,9 @@ Two corollaries the skill cannot know: `Current` attributes are unused and must 
 To let several agents (or an agent and a human) work simultaneously without stepping on each other, each parallel task should run in its own git worktree:
 
 ```sh
-scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-branche
-                                 # and copies the git-ignored .env* files into it
+scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-branche,
+                                 # copies the git-ignored .env* files into it and
+                                 # shifts the ports its stack publishes
 ```
 
 Rules:
@@ -162,7 +163,9 @@ Rules:
 - One worktree = one branch = one task. Work, commit, then merge/PR from the main checkout; remove with `git worktree remove .worktrees/<nom>`.
 - `.worktrees/` is ignored everywhere (git, ESLint, Jest, Docker build context) so worktrees don't interfere with the main checkout.
 - `make test` works out of the box in a worktree: docker compose derives its project name from the directory, so containers and volumes are isolated per worktree.
-- To run the **full stack** (`web` + `worker` + `postgres` + `domibus` + `mysql`) in two worktrees at once, first change `PORT_OOTS_FRANCE` and `PORT_DOMIBUS` in the worktree's `.env` to avoid host port clashes; the Domibus/MySQL volumes are fresh per worktree, so Domibus must be re-configured there (README steps) — prefer running the stack in a single worktree and only tests elsewhere.
+- **The full stack runs in as many worktrees at once as there are free ports.** The script gives each worktree the smallest offset, between +1 and +99, whose whole port set is free — free meaning neither listening nor already written into another worktree's `.env`, since a stopped stack still owns its ports. One offset applies to every port of a stack, so the worktree on 3007 has its Domibus console on 8187. The Domibus/MySQL volumes are fresh per worktree, so Domibus must be re-configured there (README steps).
+- **Run stacks from a worktree, never from the main checkout.** Its ports are the reference set, and they belong to whoever works there — an agent that starts a stack on them takes the machine's `docker compose up` away from a human who has no way of seeing why. The worktree's own set is shifted and free, so nothing is lost by using it. `docker ps -a --filter publish=<port>` names the container holding a port, whatever project it belongs to; `docker compose -p <projet> down` releases it.
+- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/preparEnvironnement.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
 - Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in if the task needs Docker.
 
 ## Boundaries
