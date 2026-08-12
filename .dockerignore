@@ -1,9 +1,13 @@
 .git
-node_modules
 .worktrees
 domibus
 nginx
 docs/prompts
+.schematron
+log
+tmp
+vendor/bundle
+.bundle
 .env*
 # Exceptions nommées une à une, et surtout sans joker : un motif de
 # ré-inclusion contenant `*` empêche BuildKit d'élaguer les répertoires exclus.

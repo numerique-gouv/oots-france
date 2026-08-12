@@ -1,0 +1,262 @@
+plugins:
+  - rubocop-performance
+  - rubocop-rails
+  - rubocop-rspec
+  - rubocop-capybara
+  - rubocop-factory_bot
+  - rubocop-rspec_rails
+
+inherit_mode:
+  merge:
+    - Exclude
+
+AllCops:
+  NewCops: enable
+  Exclude:
+    - "Gemfile"
+    - "Rakefile"
+    - "bin/**/*"
+    - "db/**/*"
+    - "config/**/*"
+    - "vendor/**/*"
+    - "tmp/**/*"
+    - ".worktrees/**/*"
+    # Écrit par le générateur de `cucumber-rails` et réécrit à chaque montée de
+    # version : le corriger reviendrait à le corriger de nouveau ensuite. Ses
+    # tâches ne chargent délibérément pas l'environnement Rails, ce que
+    # `Rails/RakeEnvironment` ne peut pas savoir.
+    - "lib/tasks/cucumber.rake"
+
+FactoryBot/FactoryAssociationWithStrategy:
+  Enabled: false
+
+Layout/ArgumentAlignment:
+  EnforcedStyle: with_fixed_indentation
+
+Layout/EmptyLineBetweenDefs:
+  AllowAdjacentOneLineDefs: true
+
+Layout/FirstArrayElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/LineLength:
+  Enabled: false
+
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
+Layout/SpaceInsideHashLiteralBraces:
+  EnforcedStyle: space
+
+Lint/AmbiguousBlockAssociation:
+  Exclude:
+    - "spec/**/*_spec.rb"
+
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - "spec/**/*"
+
+Lint/EmptyClass:
+  Exclude:
+    - "app/policies/application_policy.rb"
+
+Lint/InheritException:
+  Enabled: false
+
+Lint/MissingSuper:
+  Enabled: false
+
+Lint/SuppressedException:
+  Exclude:
+    - "spec/**/*_spec.rb"
+
+Lint/UnexpectedBlockArity:
+  Enabled: false
+
+Metrics/BlockLength:
+  Exclude:
+    - "spec/spec_helper.rb"
+    - "spec/support/shared_examples/*"
+    - "spec/factories/**/*"
+  AllowedMethods:
+    - "describe"
+    - "context"
+    - "namespace"
+    - "shared_examples"
+    - "let"
+    - "path"
+    - "get"
+    - "response"
+    - "included"
+
+Metrics/ClassLength:
+  Max: 150
+  CountAsOne:
+    - "array"
+    - "method_call"
+
+Metrics/MethodLength:
+  Max: 15
+  CountAsOne:
+    - hash
+    - array
+
+# Le défaut que ce contrôle prévient — des arguments positionnels qu'on finit
+# par confondre — n'existe pas avec des mots-clés, nommés à l'appel comme à la
+# définition. Or une entête ebMS a réellement une dizaine de champs
+# indépendants, chacun imposé par la spécification : les regrouper dans un objet
+# ne ferait que déplacer la liste.
+Metrics/ParameterLists:
+  CountKeywordArgs: false
+
+# Les définitions de pas emploient les mots-clés Gherkin français que Cucumber
+# expose — `Étantdonné`, `Alors` —, et les scénarios sont en français par
+# décision explicite : ce ne sont pas des identifiants que nous choisissons.
+Naming/AsciiIdentifiers:
+  Exclude:
+    - "features/**/*"
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - "_"
+    - "id"
+    - "to"
+
+Naming/PredicateMethod:
+  Enabled: false
+
+Naming/VariableNumber:
+  Enabled: false
+
+# Le domaine est anglais, mais la documentation et les messages destinés à
+# des humains restent français : les commentaires accentués sont normaux ici.
+Style/AsciiComments:
+  Enabled: false
+
+Style/BlockComments:
+  Exclude:
+    - "spec/spec_helper.rb"
+
+Style/BlockDelimiters:
+  EnforcedStyle: braces_for_chaining
+
+Style/ClassAndModuleChildren:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/MethodCalledOnDoEndBlock:
+  Enabled: false
+
+Style/MethodCallWithArgsParentheses:
+  Enabled: false
+
+Style/MixinUsage:
+  Exclude:
+    - "features/support/**/*.rb"
+
+Style/OpenStructUse:
+  Exclude:
+    - "spec/**/*_spec.rb"
+
+Style/SignalException:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  EnforcedStyle: single_quotes
+
+Style/TrailingCommaInArguments:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: false
+
+Rails/ActionOrder:
+  Enabled: false
+
+Rails/Exit:
+  Exclude:
+    - "spec/**/*"
+
+Rails/FindEach:
+  Enabled: false
+
+Rails/I18nLazyLookup:
+  Enabled: false
+
+Rails/OutputSafety:
+  Enabled: false
+
+Rails/RedundantActiveRecordAllMethod:
+  Exclude:
+    - "spec/**/*"
+
+Rails/SkipsModelValidations:
+  Exclude:
+    - "spec/**/*_spec.rb"
+
+Rails/UnknownEnv:
+  Environments:
+    - production
+    - development
+    - test
+
+RSpec/BeforeAfterAll:
+  Enabled: false
+
+RSpec/DescribeClass:
+  Enabled: false
+
+RSpec/DescribedClass:
+  SkipBlocks: true
+
+RSpec/EmptyExampleGroup:
+  Exclude:
+    - "spec/requests/**/*"
+
+RSpec/ExampleLength:
+  Enabled: false
+
+RSpec/ExampleWording:
+  Enabled: false
+
+RSpec/LeakyConstantDeclaration:
+  Enabled: false
+
+RSpec/LetSetup:
+  Enabled: false
+
+RSpec/MessageSpies:
+  Enabled: false
+
+RSpec/MissingExampleGroupArgument:
+  Exclude:
+    - "spec/factories/**/*.rb"
+
+RSpec/MultipleExpectations:
+  Enabled: false
+
+RSpec/MultipleMemoizedHelpers:
+  Enabled: false
+
+RSpec/NamedSubject:
+  Enabled: false
+
+RSpec/NestedGroups:
+  Enabled: false
+
+RSpec/RepeatedDescription:
+  Enabled: false
+
+RSpec/SpecFilePathFormat:
+  Enabled: false

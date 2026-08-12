@@ -1,0 +1,51 @@
+fr:
+  # `Conversation` est le seul modèle persisté : ses traductions vivent sous
+  # `activerecord`, que Rails interroge d'après le `i18n_scope` de la classe.
+  # Sous `activemodel`, elles ne seraient jamais trouvées — la validation
+  # échouerait bien, mais avec le message générique de Rails.
+  activerecord:
+    attributes:
+      conversation:
+        preview_location: L'adresse de prévisualisation
+    errors:
+      models:
+        conversation:
+          attributes:
+            preview_location:
+              format: doit être une adresse http ou https
+  activemodel:
+    # Les identifiants sont anglais, parce que c'est le vocabulaire des TDD ;
+    # ce qui s'affiche ne l'est pas. Sans ces traductions, un message mêlerait
+    # les deux langues — « Country doit être un code pays ».
+    attributes:
+      address:
+        country: Le pays
+      ebms_identity:
+        id: L'identifiant
+        type_id: Le schéma d'identifiant
+      access_point:
+        id: L'identifiant
+        type_id: Le schéma d'identifiant
+      natural_person:
+        family_name: Le nom
+        given_name: Le prénom
+        date_of_birth: La date de naissance
+      evidence_type:
+        id: L'identifiant
+        distribution_format: Le format de distribution
+      evidence_requester:
+        id: L'identifiant
+      evidence_provider:
+        access_point: Le point d'accès
+    errors:
+      models:
+        address:
+          attributes:
+            country:
+              format: doit être un code pays à deux lettres
+        natural_person:
+          attributes:
+            date_of_birth:
+              format: doit être une date ISO 8601 (AAAA-MM-JJ)
+  evidence_requests:
+    inconnue: Cette demande est inconnue.
