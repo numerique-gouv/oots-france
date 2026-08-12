@@ -11,7 +11,7 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 
 | Répertoire | Contenu |
 | --- | --- |
-| `reference/messages/` | Les cinq messages RegRep (`requete`, `reponse`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/valideSchematron.sh` confronte aux règles des TDD. |
+| `reference/messages/` | Les cinq messages RegRep (`requete`, `reponse`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
 | `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq messages, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
 
 > [!IMPORTANT]

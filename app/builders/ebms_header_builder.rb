@@ -1,6 +1,6 @@
 # The ebMS header that accompanies every message. On the wire it is the SOAP
 # header of the envelope submitted to Domibus; the RegRep body does not contain
-# it, which is why `scripts/valideSchematron.sh` validates the two separately —
+# it, which is why `scripts/validate_schematron.sh` validates the two separately —
 # the header against `EDM-ebMS.sch`, the body against its own rules.
 class EbmsHeaderBuilder < ApplicationBuilder
   SERVICE = 'QueryManager'.freeze

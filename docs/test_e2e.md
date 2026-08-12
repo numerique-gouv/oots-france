@@ -26,31 +26,31 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 
 | Étape | Script |
 | --- | --- |
-| Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/preparEnvironnement.sh` |
-| Attendre le déploiement de la webapp | `scripts/ci/attendDomibus.sh` |
-| Générer les certificats, charger les deux magasins et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configureDomibus.sh`, qui appelle `scripts/genereCertificats.sh` |
-| Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnostiqueDomibus.sh` |
+| Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/prepare_environment.sh` |
+| Attendre le déploiement de la webapp | `scripts/ci/wait_for_domibus.sh` |
+| Générer les certificats, charger les deux magasins et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configure_domibus.sh`, qui appelle `scripts/generate_certificates.sh` |
+| Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnose_domibus.sh` |
 
 > [!WARNING]
-> `scripts/ci/preparEnvironnement.sh` écrit des `.env*` jetables et refuse de s'exécuter si ces fichiers existent déjà : ils ne sont pas versionnés, et sa sortie remplacerait une configuration locale irrécupérable. Sur un runner ils sont absents, et le script écrit sans rien demander ; `FORCER=1` passe outre.
+> `scripts/ci/prepare_environment.sh` écrit des `.env*` jetables et refuse de s'exécuter si ces fichiers existent déjà : ils ne sont pas versionnés, et sa sortie remplacerait une configuration locale irrécupérable. Sur un runner ils sont absents, et le script écrit sans rien demander ; `FORCER=1` passe outre.
 
 ### Les certificats
 
-Les certificats livrés avec l'image sont publics et partagés par toutes les installations : `scripts/configureDomibus.sh` en génère d'autres et les téléverse. Tout passe par l'API REST, rien n'est à déposer sur le disque de la passerelle.
+Les certificats livrés avec l'image sont publics et partagés par toutes les installations : `scripts/configure_domibus.sh` en génère d'autres et les téléverse. Tout passe par l'API REST, rien n'est à déposer sur le disque de la passerelle.
 
 Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité les imposent, et un alias qui s'en écarte fait échouer la signature ou le chiffrement — la convention est donnée dans [domibus_context.md](domibus_context.md).
 
 > [!IMPORTANT]
 > Le truststore porte les certificats du *destinataire*, le keystore les clés de l'*émetteur* : corriger l'un sans l'autre ne fait que déplacer l'erreur de `receiver certificate is not valid` à `sender certificate is not valid`.
 
-`scripts/configureDomibus.sh` passe par l'API REST d'administration plutôt que par la console web, et sert aussi bien en local : son emploi et ses identifiants sont décrits dans le [README](../README.md#configurer-domibus-en-une-commande). Il se termine par un **message AS4 de test** — l'« avion en papier » de la console — dont il attend l'acquittement : la signature, le chiffrement et les alias sont donc validés avant que l'application n'entre en jeu. S'il passe et que le test de bout en bout échoue, la passerelle est hors de cause.
+`scripts/configure_domibus.sh` passe par l'API REST d'administration plutôt que par la console web, et sert aussi bien en local : son emploi et ses identifiants sont décrits dans le [README](../README.md#configurer-domibus-en-une-commande). Il se termine par un **message AS4 de test** — l'« avion en papier » de la console — dont il attend l'acquittement : la signature, le chiffrement et les alias sont donc validés avant que l'application n'entre en jeu. S'il passe et que le test de bout en bout échoue, la passerelle est hors de cause.
 
 > [!NOTE]
 > Domibus applique aux Plugin Users une politique de mot de passe stricte : 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial. Un mot de passe plus court est refusé avec `[DOM_001]`, et l'application reçoit ensuite des `403` sur toutes ses requêtes.
 
 ## Lancer le test
 
-Une fois la pile démarrée (`web` + `domibus` + `mysql`, Domibus configuré comme décrit dans le [README](../README.md)) :
+Une fois la pile démarrée par `make up` (`web` + `worker` + `domibus` + `mysql`, sur une installation posée par `make setup` — voir le [README](../README.md#installer-et-lancer)) :
 
 ```sh
 $ make e2e
@@ -68,7 +68,7 @@ Une exécution réussie affiche :
 ```
 
 > [!NOTE]
-> Ces deux ou trois secondes tiennent au cron du répartiteur de notifications, que `scripts/configureDomibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
+> Ces deux ou trois secondes tiennent au cron du répartiteur de notifications, que `scripts/configure_domibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
 
 > [!IMPORTANT]
 > Les scénarios s'exécutent **dans le conteneur `web`** (c'est ce que fait `make e2e`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://web:4000` — un nom de service, et non `localhost` : le justificatif est retransmis par le travailleur de fond, qui tourne dans un autre conteneur que le scénario. Avec `localhost`, il n'y trouverait personne.
@@ -118,17 +118,13 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | `501 Not Implemented Yet!` | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` ne vaut pas `true` |
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
 | `422` sur le jeton | le faux requêteur n'est pas joignable depuis le conteneur `web` : le test tourne-t-il bien dans le conteneur ? |
-| `Toujours pas vrai après 90 s` | La réponse n'est pas revenue. Chercher `No rules found for properties` dans `logs/domibus-error.log` : la règle de notification ne s'applique pas. Sinon, PMode chargé ? certificats valides ? |
+| `Toujours pas vrai après 90 s`, les deux scénarios | Le service `worker` ne tourne pas — `docker compose ps`. L'exécution des travaux est `:external` : sans lui, ni la notification ni le ramassage périodique n'aboutissent, et les deux scénarios expirent après un 202 immédiat |
+| `Toujours pas vrai après 90 s`, un seul scénario | La réponse n'est pas revenue. Chercher `No rules found for properties` dans `logs/domibus-error.log` : la règle de notification ne s'applique pas. Sinon, PMode chargé ? certificats valides ? |
 | La passerelle reçoit `403` de notre route | Ce n'est pas l'authentification : c'est le contrôle d'hôte de Rails, qui refuse le nom de service `web:3000`. Voir `config.hosts` |
 | `504` alors que le journal des messages montre un `ACKNOWLEDGED` **et** un `RECEIVED` | l'échange AS4 a abouti, mais le message entrant est parti à un autre plugin : vérifier que son `pluginType` vaut bien `backendWSPlugin` |
 | `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
-| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnostiqueDomibus.sh` les affiche |
+| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnose_domibus.sh` les affiche |
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : blue_gw` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 
-Pour voir les enveloppes SOAP échangées — très bavard, mais décisif pour déboguer un rejet de message —, passer `org.apache.cxf` à `INFO` dans `domibus/logback.xml`, que Domibus relit toutes les 10 s.
-
-> [!NOTE]
-> Les variables `LOGGER_LEVEL_*` de `docker-compose.yml` ne sont lues qu'à la **création** de `./domibus` : elles fixent les niveaux de départ d'une installation neuve, pas ceux d'une pile qui tourne. Sur une pile démarrée, c'est `domibus/logback.xml` qu'il faut modifier.
-
-Les refus de Domibus se lisent par ailleurs dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`.
+Les refus de Domibus se lisent dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`. Comment suivre ces journaux et y faire apparaître les enveloppes SOAP échangées est décrit dans [domibus_context.md](domibus_context.md#lire-les-journaux).

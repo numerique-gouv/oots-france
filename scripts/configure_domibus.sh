@@ -5,7 +5,7 @@
 # Plugin User) via l'API REST d'administration, pour que l'intégration continue
 # puisse monter une passerelle utilisable sans intervention humaine.
 #
-# Usage : scripts/configureDomibus.sh
+# Usage : scripts/configure_domibus.sh
 #
 # Variables reconnues (valeurs par défaut entre parenthèses) :
 #   URL_DOMIBUS                 URL de la console ; à défaut, PORT_DOMIBUS
@@ -25,7 +25,7 @@
 #   FICHIER_PMODE               PMode à charger (exemples/configuration_PMode_Domibus.xml)
 #   REPERTOIRE_MAGASINS         où lire keystore et truststore ; à défaut, ils
 #                               sont générés dans un répertoire temporaire par
-#                               scripts/genereCertificats.sh
+#                               scripts/generate_certificates.sh
 #   MOT_DE_PASSE_MAGASINS       leur mot de passe — obligatoire, et devant
 #                               correspondre à celui du .env avec lequel tourne
 #                               la passerelle
@@ -112,7 +112,7 @@ if [ -z "$REPERTOIRE_MAGASINS" ]; then
   trap 'rm -f "$BOCAL" "$REPONSE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
   echo "→ Génération des magasins dans $REPERTOIRE_MAGASINS"
   DESTINATION="$REPERTOIRE_MAGASINS" MOT_DE_PASSE_MAGASINS="$MOT_DE_PASSE_MAGASINS" \
-    "$(dirname "$0")/genereCertificats.sh" > /dev/null
+    "$(dirname "$0")/generate_certificates.sh" > /dev/null
 fi
 
 # Les deux magasins se posent par la même API depuis Domibus 5.1 : le détour du
@@ -241,7 +241,7 @@ done
 if [ "$STATUT" != "ACKNOWLEDGED" ]; then
   echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
   echo "   Certificats et alias des profils de sécurité en cause ?" >&2
-  echo "   scripts/ci/diagnostiqueDomibus.sh détaille les magasins et les erreurs." >&2
+  echo "   scripts/ci/diagnose_domibus.sh détaille les magasins et les erreurs." >&2
   exit 1
 fi
 
@@ -268,7 +268,7 @@ if ! $COMMANDE_DOMIBUS test -f "$PROPRIETES_PLUGIN" 2> /dev/null; then
   echo "❌ Fichier de propriétés du plugin introuvable : $PROPRIETES_PLUGIN" >&2
   echo "   Commande employée pour atteindre la passerelle : $COMMANDE_DOMIBUS" >&2
   echo "   La passerelle a-t-elle démarré au moins une fois ? La régler autrement :" >&2
-  echo "   COMMANDE_DOMIBUS='docker exec -i <conteneur>' scripts/configureDomibus.sh" >&2
+  echo "   COMMANDE_DOMIBUS='docker exec -i <conteneur>' scripts/configure_domibus.sh" >&2
   exit 1
 fi
 
@@ -298,7 +298,7 @@ set -e
 sed -i '/^# --- OOTS-France/,/^# --- fin OOTS-France\$/d' "$PROPRIETES_PLUGIN"
 sed -i -e '\$a\' "$PROPRIETES_PLUGIN"
 cat >> "$PROPRIETES_PLUGIN" <<'FIN_BLOC'
-# --- OOTS-France : notification vers le dorsal (écrit par configureDomibus.sh)
+# --- OOTS-France : notification vers le dorsal (écrit par configure_domibus.sh)
 wsplugin.push.enabled=true
 wsplugin.push.markAsDownloaded=false
 wsplugin.push.alert.active=true

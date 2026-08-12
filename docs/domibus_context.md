@@ -5,7 +5,7 @@
 > | Pour… | Voir |
 > | --- | --- |
 > | le contexte métier OOTS, le modèle « quatre coins » | [oots_context.md](oots_context.md) |
-> | installer Domibus, le configurer en une commande, lire ses logs | [README](../README.md) |
+> | installer Domibus et le configurer en une commande | [README](../README.md) |
 > | refaire cette configuration à la main dans l'interface (Plugin User, certificats, PMode) | [configurer_domibus_via_l_interface.md](configurer_domibus_via_l_interface.md) |
 > | les propriétés de `domibus.properties`, l'API des plugins, la sécurité | [Documentation technique Domibus 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) |
 
@@ -31,7 +31,7 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
   | truststore | `<partie>_rsa_sign` | certificat vérifiant la signature du pair |
   | truststore | `<partie>_rsa_encrypt` | certificat chiffrant à destination du pair |
 
-  L'alias unique par partie, qui suffisait avant les profils, ne suffit plus : un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans autre symptôme qu'un message jamais acquitté. `scripts/genereCertificats.sh` produit les quatre.
+  L'alias unique par partie, qui suffisait avant les profils, ne suffit plus : un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans autre symptôme qu'un message jamais acquitté. `scripts/generate_certificates.sh` produit les quatre.
 - **MPC** (*Message Partition Channel*) : la file dans laquelle les messages attendent d'être récupérés, avec sa politique de rétention.
 - **Utilisateur console vs Plugin User** : les comptes « Users » servent à l'interface web d'administration ; les comptes « Plugin Users » servent aux applications clientes (comme OOTS-France) pour s'authentifier sur les API. Les deux jeux d'identifiants sont indépendants.
 - **Plugins** : Domibus expose ses messages aux applications métier via des plugins — ici le **WS plugin** (SOAP, namespace `http://eu.domibus.wsplugin/`). Les plugins JMS et filesystem existent mais ne sont pas utilisés ; un plugin REST est apparu en 5.2.1 et exige ce cœur-là, donc ne s'installe pas sur la 5.2 en place — pourquoi, et ce qu'il faudrait pour l'adopter, dans [versions_domibus.md](versions_domibus.md).
@@ -58,7 +58,7 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 
 C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` sur une URL de l'application, en SOAP.
 
-`scripts/configureDomibus.sh` le configure, et deux choses s'y révèlent à l'usage :
+`scripts/configure_domibus.sh` le configure, et deux choses s'y révèlent à l'usage :
 
 > [!IMPORTANT]
 > **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`, `markAsDownloaded`), elles, sont modifiables à chaud.
@@ -107,3 +107,19 @@ Ce que le README ne dit pas et qui surprend souvent :
 
 - **Le répertoire `./domibus/`** est monté comme répertoire de configuration du conteneur (`/data/tomcat/conf/domibus`) : `domibus.properties`, `keystores/`, `plugins/`, `policies/`, `logback.xml`. Le fichier `.configured` marque que le script de premier démarrage de l'image a déjà tourné — Domibus ne refera donc pas son initialisation, même après recréation du conteneur.
 - La configuration Domibus de **production** française (Ansible, durcissement système) vit hors de ce dépôt.
+
+### Modifier une propriété
+
+Les propriétés se règlent dans `domibus/domibus.properties` — la [documentation Domibus 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) en donne le sens.
+
+> [!IMPORTANT]
+> Ce répertoire est recréé par l'image à chaque réinitialisation : une propriété qu'on y modifie est perdue à la première table rase. Pour qu'un réglage survive, le déclarer dans `SERVER_INIT_PROPERTIES`, au service `domibus` de `docker-compose.yml` — l'image l'injecte dans la JVM, et il prime alors sur le fichier.
+
+### Lire les journaux
+
+Le conteneur `domibus` tourne avec le pilote de journalisation `none` (voir `docker-compose.yml`), ses journaux étant assez verbeux pour saturer le disque en production : `docker compose logs domibus` ne renvoie donc rien. Ils restent lisibles dans le conteneur, où `make logs-domibus` les suit.
+
+Le niveau de détail se règle dans `domibus/logback.xml`, relu automatiquement toutes les 10 secondes, sans redémarrage. Passer `org.apache.cxf` à `INFO` y fait apparaître les enveloppes SOAP échangées avec le WS plugin — décisif pour déboguer un rejet de message, mais très bavard.
+
+> [!NOTE]
+> Les variables `LOGGER_LEVEL_*` de `docker-compose.yml` ne sont lues qu'à la **création** de `./domibus` : elles fixent les niveaux de départ d'une installation neuve, pas ceux d'une pile qui tourne.

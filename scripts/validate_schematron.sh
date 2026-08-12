@@ -3,7 +3,7 @@
 # officielles des TDD. Exclu de la suite unitaire : la validation télécharge
 # des artefacts et exige Java (via Docker si Java n'est pas installé).
 #
-# Usage : scripts/valideSchematron.sh [version_tdd]
+# Usage : scripts/validate_schematron.sh [version_tdd]
 #
 # Sortie : 0 si les messages sont conformes, 2 si une règle est violée, 1 pour
 # toute autre défaillance (téléchargement, compilation).
@@ -123,7 +123,7 @@ valide() {
   saxon -s:"$messages/$message.xml" -xsl:"$outils/sch/$regle.xsl" -o:"$messages/$message.$regle.svrl" \
     > /dev/null
 
-  if ! python3 "$racine/scripts/resumeSchematron.py" \
+  if ! python3 "$racine/scripts/summarize_schematron.py" \
     "$messages/$message.$regle.svrl" "$message" "$regle" ${BAVARD:+--bavard}; then
     enEchec=1
   fi

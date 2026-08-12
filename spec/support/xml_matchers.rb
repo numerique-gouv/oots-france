@@ -9,7 +9,7 @@
 # matters: the `cid:` of the ebMS header must still designate the very payload
 # the body carries, while the drawn values and their order stop counting.
 #
-# Conformance itself is judged by `scripts/valideSchematron.sh`, against the
+# Conformance itself is judged by `scripts/validate_schematron.sh`, against the
 # rules published with the TDD.
 module XmlNormalisation
   require 'digest'

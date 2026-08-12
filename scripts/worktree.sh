@@ -34,7 +34,7 @@ DECALAGE_MAX=99
 # Tout le décalage se calcule à partir de ce fichier.
 if [ ! -r "$RACINE/.env" ]; then
   echo "❌ $RACINE/.env introuvable ou illisible." >&2
-  echo "   Le créer à partir de .env.template avant de créer un worktree." >&2
+  echo "   Lancer \`make setup\` dans le dépôt principal avant de créer un worktree." >&2
   exit 1
 fi
 
@@ -225,7 +225,16 @@ for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
     exit 1
   fi
 
-  printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" > "$CHEMIN/$(basename "$source")"
+  # Les URLs se décalent aux mêmes conditions que les ports, et pour la même
+  # raison : seul `.env` désigne l'hôte. Ailleurs, un `localhost` est vu depuis
+  # un conteneur — `URL_OOTS_FRANCE` sert au scénario de bout en bout, qui
+  # tourne dans `web` et y joint le serveur sur son port interne. Le décaler
+  # l'enverrait sur un port que rien n'écoute, et `make e2e` échouerait dans
+  # tout worktree.
+  case "$source" in
+    */.env) printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" ;;
+    *) printf '%s\n' "$LIGNES" ;;
+  esac > "$CHEMIN/$(basename "$source")"
 done
 
 echo

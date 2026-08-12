@@ -70,7 +70,7 @@ Trois messages circulent :
 
 L'identifiant de spécification injecté dans les messages est porté par `EdmSpecification` ; il voyage dans le slot `SpecificationIdentifier` de chaque message et dans la propriété ebMS `SpecificationId`. Quelle version viser et comment elle se négocie : [versions_tdd.md](versions_tdd.md).
 
-Les messages produits se valident contre les règles Schematron officielles avec `scripts/valideSchematron.sh` (voir [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
+Les messages produits se valident contre les règles Schematron officielles avec `scripts/validate_schematron.sh` (voir [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 
 ## Spécifications et documentation officielles
 

@@ -68,7 +68,7 @@ jobs:
           BAVARD: '1'
         run: |
           for tentative in 1 2 3; do
-            scripts/valideSchematron.sh "$VERSION_TDD" && exit 0
+            scripts/validate_schematron.sh "$VERSION_TDD" && exit 0
             code=$?
             if [ "$code" -eq 2 ]; then
               exit 2

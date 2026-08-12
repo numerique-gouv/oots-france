@@ -7,7 +7,7 @@ module Directories
   #
   # Its JSON keys are French, against the usual rule: they are an operations
   # contract, written by hand in `.env.oots` and by `scripts/ci/
-  # preparEnvironnement.sh`. The French stops at this class.
+  # prepare_environment.sh`. The French stops at this class.
   class CommonServices
     def initialize(data = Settings.common_services_data)
       @data = data

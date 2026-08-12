@@ -10,9 +10,21 @@
 # authentification, et `application/title` en fait partie. C'est plus sûr que
 # l'ancienne `rest/application/name`, qui n'était publique que par accident.
 #
-# Usage : scripts/ci/attendDomibus.sh [délai max en secondes ; 600 par défaut]
+# Usage : scripts/ci/wait_for_domibus.sh [délai max en secondes ; 600 par défaut]
 
 set -e
+
+# Le port se lit dans `.env` à défaut d'être dans l'environnement : `make` ne
+# charge pas ce fichier, et `docker compose`, qui le lit pour publier le port,
+# n'en propage rien au shell. Sans cette lecture, la cible `make domibus`
+# sonderait 8180 sur une installation qui a changé `PORT_DOMIBUS` — ce que
+# scripts/worktree.sh recommande pour faire tourner deux piles en parallèle.
+#
+# Prélevé par `sed` plutôt que chargé par `.` : `.env` porte aussi un mot de
+# passe, dont rien ne garantit qu'il traverse une interprétation par le shell.
+RACINE=$(cd "$(dirname "$0")/../.." && pwd)
+[ -n "$PORT_DOMIBUS" ] || [ ! -f "$RACINE/.env" ] || \
+  PORT_DOMIBUS=$(sed -n 's/^PORT_DOMIBUS=//p' "$RACINE/.env" | head -n 1)
 
 URL_DOMIBUS="${URL_DOMIBUS:-http://localhost:${PORT_DOMIBUS:-8180}/domibus}"
 DELAI_MAX="${1:-600}"
