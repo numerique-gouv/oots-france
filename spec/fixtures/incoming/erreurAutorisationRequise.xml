@@ -1,0 +1,57 @@
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+               xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+               xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+  <soap:Header>
+    <ns5:Messaging>
+      <ns5:UserMessage>
+        <ns5:MessageInfo>
+            <ns5:Timestamp>2023-09-24T09:07:45.000Z</ns5:Timestamp>
+            <ns5:MessageId>7612ae3c-954d-4fc2-8031-efd139b1248a@resp.gov.si</ns5:MessageId>
+        </ns5:MessageInfo>
+        <ns5:PartyInfo>
+            <ns5:From>
+                
+<eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_SI_01</eb:PartyId>
+<eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+    
+            </ns5:From>
+            <ns5:To>
+                <ns5:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">GovernmentNLGateway01</ns5:PartyId>
+                <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
+            </ns5:To>
+        </ns5:PartyInfo>
+        <ns5:CollaborationInfo>
+            <ns5:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</ns5:Service>
+            <ns5:Action>ExceptionResponse</ns5:Action>
+            <ns5:ConversationId>5fe50e16-d6b8-4005-b5ec-0ab097f34448</ns5:ConversationId>
+        </ns5:CollaborationInfo>
+        <ns5:MessageProperties>
+            <ns5:Property name="originalSender" type="urn:cef.eu:names:identifier:EAS:0204">02-SchoolAuthority-34</ns5:Property>
+            <ns5:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0190">NL222332239</ns5:Property>
+            <ns5:Property name="ExchangeId">88888888-8888-8888-8888-888888888888</ns5:Property>
+            <ns5:Property name="SpecificationId">oots-edm:v2.0</ns5:Property>
+        </ns5:MessageProperties>
+        <ns5:PayloadInfo>
+            <ns5:PartInfo href="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+                <ns5:PartProperties>
+                    <ns5:Property name="MimeType">application/x-ebrs+xml</ns5:Property>
+                    <ns5:Property name="CompressionType">application/gzip</ns5:Property>
+                </ns5:PartProperties>
+            </ns5:PartInfo>
+        </ns5:PayloadInfo>
+      </ns5:UserMessage>
+    </ns5:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <ns4:retrieveMessageResponse
+      xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+      xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+      xmlns:ns4="http://eu.domibus.wsplugin/">
+      <payload payloadId="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+        <value>PHF1ZXJ5OlF1ZXJ5UmVzcG9uc2UgeG1sbnM6eHNpPSJodHRwOi8vd3d3LnczLm9yZy8yMDAxL1hNTFNjaGVtYS1pbnN0YW5jZSIKICAgICAgICB4bWxuczpycz0idXJuOm9hc2lzOm5hbWVzOnRjOmVieG1sLXJlZ3JlcDp4c2Q6cnM6NC4wIgogICAgICAgIHhtbG5zOnF1ZXJ5PSJ1cm46b2FzaXM6bmFtZXM6dGM6ZWJ4bWwtcmVncmVwOnhzZDpxdWVyeTo0LjAiCiAgICAgICAgeG1sbnM6cmltPSJ1cm46b2FzaXM6bmFtZXM6dGM6ZWJ4bWwtcmVncmVwOnhzZDpyaW06NC4wIgogICAgICAgIHN0YXR1cz0idXJuOm9hc2lzOm5hbWVzOnRjOmVieG1sLXJlZ3JlcDpSZXNwb25zZVN0YXR1c1R5cGU6RmFpbHVyZSIKICAgICAgICByZXF1ZXN0SWQ9InVybjp1dWlkOjExMTExMTExLTExMTEtMTExMS0xMTExLTExMTExMTExMTExMSI+CgogIDxyczpFeGNlcHRpb24geHNpOnR5cGU9InJzOkF1dGhvcml6YXRpb25FeGNlcHRpb25UeXBlIgogICAgICAgICAgICAgICAgY29kZT0iRURNOkVSUjowMDAyIgogICAgICAgICAgICAgICAgZGV0YWlsPSJUaGUgc2VydmVyIG5lZWRzIGF1dGhvcmlzYXRpb24gYW5kIHByZXZpZXcgb24gaXRzIHNpZGUgdG8gcHJvY2VzcyB0aGUgcmVxdWVzdCIKICAgICAgICAgICAgICAgIG1lc3NhZ2U9Ik1pc3NpbmcgQXV0aG9yaXphdGlvbiIKICAgICAgICAgICAgICAgIHNldmVyaXR5PSJ1cm46c3Iub290cy50ZWNoLmVjLmV1cm9wYS5ldTpjb2RlczpFcnJvclNldmVyaXR5OkVETUVycm9yUmVzcG9uc2U6UHJldmlld1JlcXVpcmVkIj4KICAgIDxyaW06U2xvdCBuYW1lPSJQcmV2aWV3TG9jYXRpb24iPgogICAgICA8cmltOlNsb3RWYWx1ZSB4c2k6dHlwZT0icmltOlN0cmluZ1ZhbHVlVHlwZSI+CiAgICAgICAgPHJpbTpWYWx1ZT5odHRwczovL3ByZXZpc3VhbGlzYXRpb24uZXhhbXBsZS5zaS9lc3BhY2U/amV0b249YWJjPC9yaW06VmFsdWU+CiAgICAgIDwvcmltOlNsb3RWYWx1ZT4KICAgIDwvcmltOlNsb3Q+CiAgICA8cmltOlNsb3QgbmFtZT0iVGltZXN0YW1wIj4KICAgICAgPHJpbTpTbG90VmFsdWUgeHNpOnR5cGU9InJpbTpEYXRlVGltZVZhbHVlVHlwZSI+CiAgICAgICAgPHJpbTpWYWx1ZT4yMDIzLTEwLTAyVDExOjMwOjAwLjAwMCswMjowMDwvcmltOlZhbHVlPgogICAgICA8L3JpbTpTbG90VmFsdWU+CiAgICA8L3JpbTpTbG90PgogIDwvcnM6RXhjZXB0aW9uPgo8L3F1ZXJ5OlF1ZXJ5UmVzcG9uc2U+</value>
+      </payload>
+    </ns4:retrieveMessageResponse>
+  </soap:Body>
+</soap:Envelope>
+    
