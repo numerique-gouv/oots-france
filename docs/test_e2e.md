@@ -50,7 +50,7 @@ Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité le
 
 ## Lancer le test
 
-Une fois la pile démarrée (`web` + `domibus` + `mysql`, Domibus configuré comme décrit dans le [README](../README.md)) :
+Une fois la pile démarrée (`web` + `worker` + `domibus` + `mysql`, Domibus configuré comme décrit dans le [README](../README.md)) :
 
 ```sh
 $ make e2e
@@ -118,7 +118,8 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | `501 Not Implemented Yet!` | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` ne vaut pas `true` |
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
 | `422` sur le jeton | le faux requêteur n'est pas joignable depuis le conteneur `web` : le test tourne-t-il bien dans le conteneur ? |
-| `Toujours pas vrai après 90 s` | La réponse n'est pas revenue. Chercher `No rules found for properties` dans `logs/domibus-error.log` : la règle de notification ne s'applique pas. Sinon, PMode chargé ? certificats valides ? |
+| `Toujours pas vrai après 90 s`, les deux scénarios | Le service `worker` ne tourne pas — `docker compose ps`. L'exécution des travaux est `:external` : sans lui, ni la notification ni le ramassage périodique n'aboutissent, et les deux scénarios expirent après un 202 immédiat |
+| `Toujours pas vrai après 90 s`, un seul scénario | La réponse n'est pas revenue. Chercher `No rules found for properties` dans `logs/domibus-error.log` : la règle de notification ne s'applique pas. Sinon, PMode chargé ? certificats valides ? |
 | La passerelle reçoit `403` de notre route | Ce n'est pas l'authentification : c'est le contrôle d'hôte de Rails, qui refuse le nom de service `web:3000`. Voir `config.hosts` |
 | `504` alors que le journal des messages montre un `ACKNOWLEDGED` **et** un `RECEIVED` | l'échange AS4 a abouti, mais le message entrant est parti à un autre plugin : vérifier que son `pluginType` vaut bien `backendWSPlugin` |
 | `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
