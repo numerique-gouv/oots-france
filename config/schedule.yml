@@ -1,0 +1,16 @@
+# Travaux récurrents de GoodJob, lus par `config.good_job.enable_cron`.
+#
+# Un seul : le ramassage de ce que la passerelle nous a notifié sans succès.
+# Il est le filet derrière la notification, et non la voie principale — une
+# notification peut se perdre, son répartiteur peut être arrêté, et une file
+# laissée sans surveillance est un message jamais remis. Il est idempotent par
+# construction : la passerelle efface un message une fois récupéré.
+default: &commun
+  ramassage_messages_en_attente:
+    cron: '*/2 * * * *'
+    class: CollectPendingMessagesJob
+    description: Récupère ce que la passerelle garde encore pour nous
+
+development: *commun
+test: {}
+production: *commun

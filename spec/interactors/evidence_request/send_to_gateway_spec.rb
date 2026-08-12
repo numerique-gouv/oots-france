@@ -1,0 +1,96 @@
+require 'rails_helper'
+
+RSpec.describe EvidenceRequest::SendToGateway do
+  include OotsNamespaces
+
+  subject(:send_to_gateway) { described_class.call(gateway:, conversation:, **exchange) }
+
+  let(:gateway) { instance_double(DomibusClient, submit: nil) }
+  let(:conversation) { create(:conversation) }
+
+  let(:exchange) do
+    {
+      requester: build(:evidence_requester),
+      provider: build(:evidence_provider, access_point: build(:access_point, id: 'DE73524311')),
+      recipient: build(:access_point, id: 'AP_DE_01'),
+      beneficiary: build(:natural_person, eidas_identifier: 'FR/DE/123123123'),
+      evidence_type: build(:evidence_type),
+      procedure_code: ProcedureCode::STUDENT_GRANT,
+      preview_possible: false,
+      uuid: Oots::SequentialUuids.new,
+    }
+  end
+
+  def submitted = Nokogiri::XML(gateway_envelope)
+
+  it 'submits a request, under the conversation the answer will name' do
+    send_to_gateway
+
+    expect(action_of(submitted)).to eq(EbmsAction::EXECUTE_QUERY_REQUEST)
+    expect(conversation_of(submitted)).to eq(conversation.conversation_id)
+  end
+
+  # The submission is addressed to the party the PMode declares, while the
+  # corners of the four-corner model are the requester and the provider
+  # themselves. Confusing the two produces a message the gateway routes nowhere.
+  it 'addresses it to the access point, on behalf of the requester' do
+    send_to_gateway
+
+    expect(recipient_of(submitted)).to eq('AP_DE_01')
+    expect(property_of(submitted, 'finalRecipient')).to eq('DE73524311')
+    expect(property_of(submitted, 'originalSender')).to eq(exchange[:requester].id)
+  end
+
+  it 'records that the exchange is now waiting on the correspondent' do
+    send_to_gateway
+
+    expect(conversation.reload).to have_attributes(status: 'sent')
+  end
+
+  # Left in `pending`, the exchange would stay open on an answer nobody is
+  # coming back with: nothing was sent, so nothing will ever settle it.
+  describe 'a gateway that refuses the submission' do
+    before { allow(gateway).to receive(:submit).and_raise(Faraday::ConnectionFailed, 'connexion refusée') }
+
+    it 'settles the conversation as failed rather than leaving it hanging' do
+      send_to_gateway
+
+      expect(conversation.reload).to have_attributes(status: 'failed', error_description: /connexion refusée/)
+    end
+
+    # 502 and not 422: the caller is told the failure is upstream of them,
+    # which is what the key carries.
+    it 'reports it as a gateway refusal' do
+      expect(send_to_gateway).to be_failure
+      expect(send_to_gateway.error).to include(key: :gateway_refused, errors: ['connexion refusée'])
+    end
+  end
+
+  # The gateway can answer 200 with a body we cannot read. From the caller's
+  # point of view that is the same problem — the gateway — and not a fault of
+  # theirs, so it must not escape as an unhandled error.
+  describe 'a gateway answering something unreadable' do
+    before { allow(gateway).to receive(:submit).and_raise(UnreadableMessageError, 'Enveloppe SOAP illisible.') }
+
+    it 'reports it as a gateway refusal too, rather than raising' do
+      expect(send_to_gateway).to be_failure
+      expect(send_to_gateway.error).to include(key: :gateway_refused)
+      expect(conversation.reload).to have_attributes(status: 'failed')
+    end
+  end
+
+  def gateway_envelope
+    expect(gateway).to have_received(:submit) { |envelope| return envelope }
+  end
+
+  # Read with the parsers' own reader, not a copy of it: one prefix spelled
+  # differently here from there is a spec that passes against a message the
+  # application cannot read.
+  def action_of(document) = text_at(document, '//eb:Action')
+
+  def conversation_of(document) = text_at(document, '//eb:ConversationId')
+
+  def recipient_of(document) = text_at(document, '//eb:To/eb:PartyId')
+
+  def property_of(document, name) = text_at(document, "//eb:Property[@name=\"#{name}\"]")
+end
