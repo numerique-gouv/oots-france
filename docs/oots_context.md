@@ -42,7 +42,7 @@ Un message eDelivery traverse quatre coins. Pour une requête de justificatif :
 
 Les coins qualifient le trajet d'un message : sur la réponse, ils s'inversent. L'*Evidence Requester* agit pour le compte de C1 et confie le message à C2.
 
-Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender` et `finalRecipient`, que `src/ebms/entete.js` renseigne à partir du requêteur et du fournisseur : sur la requête, le requêteur puis le fournisseur visé ; sur les réponses, où les coins s'inversent, le fournisseur français puis le requêteur reçu.
+Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender` et `finalRecipient`, que `EbmsHeaderBuilder` renseigne à partir du requêteur et du fournisseur : sur la requête, le requêteur puis le fournisseur visé ; sur les réponses, où les coins s'inversent, le fournisseur français puis le requêteur reçu.
 
 ### Identifier une organisation
 
@@ -53,14 +53,14 @@ Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel rép
 | `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/External/EAS.gc) (*Electronic Address Scheme*), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
 | `urn:oasis:names:tc:ebcore:partyid-type:unregistered:[Code]` | repli pour une organisation hors de tout répertoire listé, suivi d'un code pays |
 
-**Les organisations françaises sont identifiées par leur SIRET**, soit le code EAS **`0009`** (`src/ebms/schemeIdentifiant.js`). Rien n'était à demander à la Commission pour cela : la liste EAS contient déjà les répertoires français — `0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la configuration : le SIRET du fournisseur est porté par `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est indexé par celui de chaque requêteur.
+**Les organisations françaises sont identifiées par leur SIRET**, soit le code EAS **`0009`** (`IdentifierScheme`). Rien n'était à demander à la Commission pour cela : la liste EAS contient déjà les répertoires français — `0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la configuration : le SIRET du fournisseur est porté par `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est indexé par celui de chaque requêteur.
 
 > [!NOTE]
 > Deux identités échappent encore à cette règle, faute de SIRET renseigné : la plateforme intermédiaire `OOTSFRANCE`, déclarée en second agent de chaque requête, et les points d'accès eDelivery — mais ces derniers ne sont pas des organisations : une passerelle porte un identifiant de passerelle (`unregistered:oots` dans le PMode), non un SIRET.
 
 ### Les messages échangés
 
-Les messages métier OOTS sont des documents XML au format de registre [**OASIS ebXML RegRep 4.0**](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) (namespaces `rim`, `rs`, `query`) enrichis du profil SDG (`sdg`, `http://data.europa.eu/p4s`), transportés dans des enveloppes [**ebMS3**](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/ebms_core-3.0-spec.html) — *ebXML Messaging Services*, le standard OASIS d'échange de messages métier sur SOAP, dont **AS4** (*Applicability Statement 4*) est un profil restreint. C'est le format des entêtes que construit `src/ebms/`, d'où le nom du répertoire.
+Les messages métier OOTS sont des documents XML au format de registre [**OASIS ebXML RegRep 4.0**](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) (namespaces `rim`, `rs`, `query`) enrichis du profil SDG (`sdg`, `http://data.europa.eu/p4s`), transportés dans des enveloppes [**ebMS3**](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/ebms_core-3.0-spec.html) — *ebXML Messaging Services*, le standard OASIS d'échange de messages métier sur SOAP, dont **AS4** (*Applicability Statement 4*) est un profil restreint. C'est le format des messages que construisent `app/builders/` et leurs gabarits.
 
 Trois messages circulent :
 
@@ -68,7 +68,7 @@ Trois messages circulent :
 - `ExecuteQueryResponse` : réponse contenant le justificatif en pièce jointe ;
 - `ExceptionResponse` : réponse d'erreur RegRep ; le cas particulier `EDM:ERR:0002` (`rs:AuthorizationExceptionType`, sévérité `PreviewRequired`), accompagné du slot `PreviewLocation`, sert à rediriger l'usager vers le *Preview Space* du pays fournisseur.
 
-L'identifiant de spécification injecté dans les messages est porté par `src/ebms/specificationEdm.js` ; il voyage dans le slot `SpecificationIdentifier` de chaque message et dans la propriété ebMS `SpecificationId`. Quelle version viser et comment elle se négocie : [versions_tdd.md](versions_tdd.md).
+L'identifiant de spécification injecté dans les messages est porté par `EdmSpecification` ; il voyage dans le slot `SpecificationIdentifier` de chaque message et dans la propriété ebMS `SpecificationId`. Quelle version viser et comment elle se négocie : [versions_tdd.md](versions_tdd.md).
 
 Les messages produits se valident contre les règles Schematron officielles avec `scripts/valideSchematron.sh` (voir [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 
@@ -88,61 +88,71 @@ Ce dépôt est le prototype **OOTS France**, développé jusqu'à fin 2024 par l
 - Depuis juillet 2026, le projet est **ressuscité** : l'hibernation est terminée. La remise en marche a commencé par l'environnement de développement local — certificats de démonstration régénérés et Domibus configuré en boucle sur lui-même (voir [domibus_context.md](domibus_context.md)).
 
 > [!IMPORTANT]
-> Le système n'est pas homologué. En production, les fonctionnalités de requêtage restent verrouillées par la variable d'environnement `AVEC_REQUETE_PIECE_JUSTIFICATIVE` (interrupteur vérifié par `src/routes/middleware.js`) : ne pas l'activer sans homologation préalable.
+> Le système n'est pas homologué. En production, les fonctionnalités de requêtage restent verrouillées par la variable d'environnement `AVEC_REQUETE_PIECE_JUSTIFICATIVE` (interrupteur vérifié par `EvidenceRequestsController`) : ne pas l'activer sans homologation préalable.
 
 ## Ce que fait concrètement ce dépôt
 
-Application **Node.js / Express** (tout est nommé en **français**, code et tests compris) qui tient les deux rôles nationaux d'OOTS en s'appuyant sur un Domibus adjacent.
+Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'appuyant sur un Domibus adjacent. Le code et les commentaires sont en anglais, parce que le vocabulaire des TDD l'est ; la documentation et les scénarios Cucumber restent en français (voir [CLAUDE.md](../CLAUDE.md#language-english-code-french-prose)).
 
 **En résumé** : le protocole OOTS fonctionne de bout en bout pour la démarche de test « vérification système » (`codeDemarche=00`) — construction et lecture des messages ebMS/RegRep, dialogue avec Domibus dans les deux sens, et remise du justificatif au demandeur. Ce qui reste à faire, ce sont les raccordements au monde extérieur : Common Services, fournisseurs de données nationaux, Preview Space.
 
 ### Côté Evidence Requester (la France demande un justificatif)
 
-1. Un fournisseur de service appelle `GET /requete/pieceJustificative?codeDemarche=…&codePays=…&idRequeteur=…&beneficiaire=…` (`src/routes/routesRequete.js`, puis `src/api/pieceJustificative.js`). Le paramètre `beneficiaire` est un [**JWE**](https://datatracker.ietf.org/doc/html/rfc7516) (*JSON Web Encryption*) chiffré avec la clé publique exposée par `GET /auth/cles_publiques`. Le déchiffrement a lieu dans `src/adaptateurs/adaptateurChiffrement.js`, avec la clé privée fournie par `CLE_PRIVEE_JWK_EN_BASE64`. Le jeton ainsi ouvert est ensuite vérifié contre le JWKS que le fournisseur de service publie à sa **propre** URL `/auth/cles_publiques` (`src/ebms/requeteur.js`) : deux jeux de clés distincts interviennent donc, celui d'OOTS France pour ouvrir l'enveloppe et celui du fournisseur pour authentifier son contenu. Cette signature n'atteste que l'émetteur, jamais sa légitimité à agir pour le bénéficiaire déclaré.
-2. L'application résout type de justificatif → fournisseur → point d'accès via les dépôts (`src/depots/`), construit la requête ebMS/RegRep (`src/ebms/requeteJustificatif.js`) et la soumet à Domibus (`src/adaptateurs/adaptateurDomibus.js`).
-3. Elle attend (au plus `DELAI_MAX_ATTENTE_DOMIBUS` ms) soit une réponse avec pièce jointe — transmise alors au requêteur via `src/adaptateurs/transmetteurPiecesJustificatives.js` —, soit une erreur de redirection vers l'espace de prévisualisation du pays fournisseur.
+1. Un fournisseur de service appelle `GET /requete/pieceJustificative?codeDemarche=…&codePays=…&idRequeteur=…&beneficiaire=…` (`EvidenceRequestsController`). Le paramètre `beneficiaire` est un [**JWE**](https://datatracker.ietf.org/doc/html/rfc7516) (*JSON Web Encryption*) chiffré avec la clé publique exposée par `GET /auth/cles_publiques`. Il est ouvert par `BeneficiaryToken`, avec la clé privée que fournit `CLE_PRIVEE_JWK_EN_BASE64`, puis vérifié contre le JWKS que le fournisseur de service publie à sa **propre** URL `/auth/cles_publiques`. Deux jeux de clés distincts interviennent donc : celui d'OOTS-France pour ouvrir l'enveloppe, celui du fournisseur pour authentifier son contenu. Cette signature n'atteste que l'émetteur, jamais sa légitimité à agir pour le bénéficiaire déclaré.
+2. L'organisateur `EvidenceRequest::Fetch` résout type de justificatif → fournisseur → point d'accès via les annuaires (`app/models/directories/`), construit la requête ebMS/RegRep (`EvidenceRequestBuilder`) et la soumet à Domibus (`DomibusClient`).
+3. Il **n'attend pas** la réponse : elle revient sur une autre connexion, par un répartiteur qui tourne à son propre rythme. Une `Conversation` est ouverte et l'appelant reçoit aussitôt un `202` portant son identifiant — la corrélation que décrit le [chapitre 4.10](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/887384522/4.10+-+Sample+Flows+informative+March+2025). Quand la réponse arrive, le justificatif est transmis au fournisseur de service sur sa propre URL ; l'état de l'échange, lui, se relit à `GET /requete/:conversation_id`.
 
 ### Côté Evidence Provider (un autre pays demande un justificatif à la France)
 
-`src/ecouteurDomibus.js` interroge Domibus à intervalle régulier (mécanique du *polling* détaillée dans [domibus_context.md](domibus_context.md)). Selon l'action ebMS du message reçu (`src/ebms/entete.js`), il émet les événements de réponse attendus par le côté requêtant, ou répond à une `ExecuteQueryRequest` entrante. La réponse dépend alors du code de démarche demandé (`src/domibus/requete.js`) :
+**C'est Domibus qui appelle**, sur `POST /domibus/notifications`, dès qu'un message arrive pour nous (*push to backend* du plugin WS, voir [domibus_context.md](domibus_context.md)). La route accuse réception aussitôt et met le traitement en file ; `IncomingMessage::Process` récupère alors le message et l'aiguille sur son action ebMS. La réponse à une `ExecuteQueryRequest` dépend du code de démarche demandé (`EvidenceProvision::AnswerRequest`) :
 
-- démarche `00`, la **vérification système** d'OOTS : une `ExecuteQueryResponse` complète, qui reprend les données de la requête (bénéficiaire, requêteur, type de justificatif) et porte un vrai PDF en pièce jointe — le fichier d'exemple `assets/drapeau.pdf`, encodé en base64 (`src/ebms/reponseVerificationSysteme.js`) ;
+- démarche `00`, la **vérification système** d'OOTS : une `ExecuteQueryResponse` complète, qui reprend les données de la requête (bénéficiaire, requêteur, type de justificatif) et porte un vrai PDF en pièce jointe — le fichier d'exemple `assets/drapeau.pdf` ;
 - toute autre démarche : une erreur `ObjectNotFoundException`, faute de fournisseur de données raccordé.
 
 ### Cartographie du code
 
 ```
-server.js                  Point d'entrée : câblage des dépendances (injection manuelle)
-src/ootsFrance.js          Création du serveur Express et montage des routeurs
-src/routes/                Routeurs Express : /admin, /auth, /ebms (génération XML de
-                           démonstration), /requete (API principale), middleware
-src/api/                   Orchestration de la requête de pièce justificative
-src/ebms/                  Construction/interprétation des messages métier OOTS
-                           (RegRep/ebMS : entêtes, requêtes, réponses, erreurs)
-src/domibus/               Dialogue technique avec Domibus : enveloppes SOAP du
-                           WS plugin, parsing des réponses et messages reçus
-src/adaptateurs/           Frontières du système : HTTP Domibus, chiffrement (jose),
-                           UUID, horodatage, environnement, envoi des justificatifs
-src/depots/                Accès aux données : points d'accès (via Domibus), requêteurs
-                           et services communs (bouchons alimentés par l'environnement)
-src/erreurs.js             Hiérarchie des erreurs métier
-test/                      Tests Jest, miroir de src/, avec des constructeurs de
-                           données de test dans test/constructeurs/
-test-e2e/                  Test Jest de bout en bout, joué contre un vrai Domibus
-                           et exclu de `npm test` (voir test_e2e.md)
+app/models/          Objets de valeur du domaine (ActiveModel, sans base) et
+                     Conversation, le seul enregistrement persisté ;
+                     directories/ tient les annuaires bouchonnés
+app/builders/        Constructeurs des messages sortants, rendant les gabarits
+app/templates/       Gabarits ERB des messages RegRep/ebMS et des enveloppes SOAP
+app/parsers/         Lecture Nokogiri des messages entrants, par URI d'espace de
+                     noms et jamais par préfixe
+app/clients/         Frontières HTTP : Domibus, jeu de clés du requêteur,
+                     retransmission du justificatif
+app/interactors/     Étapes unitaires ; app/organizers/ les enchaîne
+app/jobs/            Travaux de fond GoodJob : traitement d'un message, ramassage
+app/errors/          Hiérarchie d'exceptions et codes EDM
+app/controllers/     Requête, état d'un échange, JWKS, notifications de la passerelle
+app/lib/             Settings (seule porte sur l'environnement), horloge, UUID,
+                     jeu de clés publiques, production des messages spécimens
+spec/                RSpec, miroir de app/, avec fabriques FactoryBot et les
+                     messages de référence figés dans spec/fixtures/
+features/            Scénarios Cucumber de bout en bout, en Gherkin français,
+                     joués contre un vrai Domibus (voir test_e2e.md)
 ```
 
 ## Ce que ne fait pas encore ce dépôt
 
 Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, ordre de travail proposé : [reste_à_faire.md](reste_à_faire.md).
 
-## Glossaire rapide
+## Glossaire : terme des TDD → classe
 
-- **Justificatif / pièce justificative** : *evidence* dans les TDD.
-- **Démarche** (`codeDemarche`) : *procedure* — la procédure administrative qui motive la demande (`Requirement` côté Evidence Broker).
-- **Requêteur** : le fournisseur de service (français) qui demande un justificatif via OOTS France ; c'est le C1 du modèle « quatre coins », pour le compte duquel l'*Evidence Requester* émet la requête.
-- **Fournisseur** : *Evidence Provider* dans les TDD, l'organisation qui détient le justificatif (C4). L'équipe disait « Evidence Responder ».
-- **Bénéficiaire** : la personne physique concernée par le justificatif.
-- **Point d'accès** : *access point* eDelivery (une instance Domibus d'un État membre), soit C2, soit C3 selon le sens du message.
+Le code porte les noms des TDD. Ce tableau donne, pour chaque notion, le terme français employé dans cette documentation, celui des spécifications, et la classe qui l'incarne.
+
+| En français, ici | Dans les TDD | Dans le code |
+| --- | --- | --- |
+| Justificatif, pièce justificative | *evidence* | `Attachment`, `EvidenceType` |
+| Démarche (`codeDemarche`) | *procedure* ; `Requirement` côté Evidence Broker | `ProcedureCode` |
+| Requêteur — le fournisseur de service français qui demande, C1 | *Evidence Requester* | `EvidenceRequester` |
+| Fournisseur — l'organisation qui détient le justificatif, C4 | *Evidence Provider* | `EvidenceProvider` |
+| Bénéficiaire — la personne concernée | *natural person* | `NaturalPerson` |
+| Point d'accès — une instance Domibus d'un État membre, C2 ou C3 | *access point* | `AccessPoint` |
+| Identité d'une partie dans l'entête ebMS | *party identifier* et son *scheme* | `EbmsIdentity`, `IdentifierScheme` |
+| Espace de prévisualisation | *preview space* | slot `PreviewLocation` de `ErrorResponseBuilder` |
+| Conversation — l'échange, de la demande à sa réponse | `ConversationId` | `Conversation` |
+| Ce que demande un message — requête, réponse, erreur | *action* de l'entête ebMS | `EbmsAction` |
+
 - **ebMS** : *ebXML Messaging Services*, le standard d'enveloppe des messages (voir [Les messages échangés](#les-messages-échangés)). **AS4** en est un profil, **RegRep** est le format du contenu transporté.
 - **PMode, WS plugin, keystore…** : voir [domibus_context.md](domibus_context.md).
