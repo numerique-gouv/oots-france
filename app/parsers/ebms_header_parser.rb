@@ -1,0 +1,41 @@
+# The ebMS header of a message the gateway handed us.
+class EbmsHeaderParser
+  include OotsNamespaces
+
+  def initialize(document)
+    @user_message = at(document, '//eb:Messaging/eb:UserMessage')
+    raise UnreadableMessageError, "Pas d'entête ebMS dans le message reçu." if @user_message.nil?
+  end
+
+  def action = text_at(user_message, './eb:CollaborationInfo/eb:Action')
+
+  def conversation_id = text_at(user_message, './eb:CollaborationInfo/eb:ConversationId')
+
+  def exchange_id = property('ExchangeId')
+
+  # Where the message came from, and therefore where our answer goes. Read as an
+  # access point rather than a bare string: a response without a recipient goes
+  # nowhere, and the failure must show here.
+  def sender
+    party = at(user_message, './eb:PartyInfo/eb:From/eb:PartyId')
+    raise UnreadableMessageError, "Pas d'expéditeur dans l'entête du message reçu." if party.nil?
+
+    AccessPoint.new(id: party.text, type_id: attribute(party, 'type'))
+      .validate!("L'expéditeur du message reçu", error: UnreadableMessageError)
+  end
+
+  # { 'application/x-ebrs+xml' => 'cid:…', 'application/pdf' => 'cid:…' }
+  def payload_identifiers
+    all(user_message, './eb:PayloadInfo/eb:PartInfo').to_h do |part|
+      [part_property(part, 'MimeType'), attribute(part, 'href')]
+    end
+  end
+
+  private
+
+  attr_reader :user_message
+
+  def property(name) = text_at(user_message, "./eb:MessageProperties/eb:Property[@name='#{name}']")
+
+  def part_property(part, name) = text_at(part, "./eb:PartProperties/eb:Property[@name='#{name}']")
+end
