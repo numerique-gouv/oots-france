@@ -93,13 +93,19 @@ puts Base64.strict_encode64(JSON.generate(jwk))
 # L'annuaire déclare deux démarches sur le même type de justificatif : `00` pour
 # le scénario nominal du test de bout en bout, `T3` pour son scénario d'erreur.
 # Les deux doivent y figurer, cf. docs/test_e2e.md.
+#
+# Le fournisseur français, lui, garde son identité réelle plutôt qu'un nom de
+# test : elle est recopiée dans le `ErrorProvider` des messages de référence de
+# spec/fixtures/, et `spec/support/test_environment.rb` ne la pose qu'en `||=`.
+# Un nom de test ici passerait dans le conteneur par `env_file` et ferait rougir
+# la suite unitaire, que rien n'aurait pourtant modifiée.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
 DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL={"typesJustificatif":[{"id":"https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000","descriptions":{"FR":"Justificatif de test","EN":"Test evidence"},"formatDistribution":"application/pdf","fournisseurs":{"FR":[{"pointAcces":{"id":"blue_gw","typeId":"urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"},"descriptions":{"FR":"Fournisseur de test"}}]}}],"demarches":[{"code":"00","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]},{"code":"T3","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]}]}
 DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
-NOM_FOURNISSEUR_FRANCAIS=Fournisseur de test
+NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
 
 DELAI_MAX_ATTENTE_DOMIBUS=30000
