@@ -1,0 +1,2 @@
+class EvidenceRequesterNotFound < EbmsError
+end

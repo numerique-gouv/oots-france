@@ -1,0 +1,2 @@
+class CountryCodeNotFound < EbmsError
+end

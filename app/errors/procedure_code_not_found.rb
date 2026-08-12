@@ -1,0 +1,2 @@
+class ProcedureCodeNotFound < EbmsError
+end

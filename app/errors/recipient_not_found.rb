@@ -1,0 +1,2 @@
+class RecipientNotFound < EbmsError
+end

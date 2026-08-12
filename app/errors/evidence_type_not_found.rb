@@ -1,0 +1,2 @@
+class EvidenceTypeNotFound < EbmsError
+end
