@@ -78,6 +78,8 @@ Les messages produits se valident contre les règles Schematron officielles avec
 - [Technical Design Documents (TDD)](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) — la spécification de référence. Chapitres principaux : architecture haut niveau, identité et eID, DSD, Evidence Broker, Semantic Repository, listes de codes, API des Common Services, et l'**EDM** (*Exchange Data Model* : les requêtes, réponses et erreurs, la prévisualisation) — c'est lui que référence l'identifiant de spécification des messages. S'y ajoutent les schémas XML et les règles Schematron de validation.
 - [Historique des versions des TDD](https://ec.europa.eu/digital-building-blocks/sites/display/TDD/OOTS+Technical+Design+Documents+Releases) — chaque version est archivée avec son changelog.
 
+Pour retrouver rapidement le chapitre qui traite d'une question, et les schémas, règles Schematron et listes de codes publiés avec lui : [carte_des_tdd.md](carte_des_tdd.md).
+
 Les trois messages sont alignés sur la **v2.0** (`oots-edm:v2.0`) et validés contre ses règles Schematron. Le versionnement, la cohabitation des versions sur le réseau et les préalables restant à lever sont traités dans [versions_tdd.md](versions_tdd.md).
 
 ## Histoire et état du projet
@@ -135,7 +137,7 @@ features/            Scénarios Cucumber de bout en bout, en Gherkin français,
 
 ## Ce que ne fait pas encore ce dépôt
 
-Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, ordre de travail proposé : [reste_à_faire.md](reste_à_faire.md).
+Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
 
 ## Glossaire : terme des TDD → classe
 

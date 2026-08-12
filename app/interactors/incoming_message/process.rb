@@ -25,9 +25,9 @@ module IncomingMessage
       abandon_conversation(e, "L'échange a échoué")
       raise
     # `EbmsError` drives a 422 back to the caller at fault, and no caller is on
-    # this path to receive it. Catching the whole family is wider than what can
-    # reach here today — see « Les erreurs sur le chemin asynchrone » in
-    # docs/reste_à_faire.md.
+    # this path to receive it. Every subclass is raised while serving that
+    # caller's own request, so none can reach here: the net is empty. Stub 9 of
+    # `docs/reste_à_faire.md`.
     rescue EbmsError => e
       abandon_conversation(e, 'Échange impossible à mener à son terme')
       raise
