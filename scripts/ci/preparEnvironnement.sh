@@ -128,17 +128,40 @@ POSTGRES_PASSWORD=oots_france
 POSTGRES_DB=oots_france
 FIN
 
-# Le template déclare le contrat : toute variable qu'il nomme doit être écrite
-# ici. Sans ce contrôle, l'oubli d'une variable nouvellement obligatoire ne se
-# voit qu'au démarrage de l'application, deux étapes plus loin, sous la forme
-# d'une attente qui expire sans rien dire.
-MANQUANTES=""
-for variable in $(sed -n 's/^\([A-Z_][A-Z_0-9]*\)=.*/\1/p' .env.oots.template); do
-  grep -q "^$variable=" .env.oots || MANQUANTES="$MANQUANTES $variable"
+# Les templates déclarent le contrat : toute variable que l'un d'eux nomme doit
+# être écrite ici. Sans ce contrôle, l'oubli d'une variable nouvellement
+# obligatoire ne se voit qu'au démarrage de la pile, deux étapes plus loin, sous
+# la forme d'une attente qui expire sans rien dire.
+ERREURS=""
+signale() {
+  ERREURS="${ERREURS:+$ERREURS
+}$1"
+}
+
+for fichier in $FICHIERS; do
+  # Un template absent ferait échouer le `sed` ci-dessous dans une substitution
+  # de commande, dont le shell ne regarde pas le statut : la boucle tournerait à
+  # vide et le contrôle passerait, rétablissant l'attente muette qu'il existe
+  # justement pour empêcher.
+  if [ ! -r "$fichier.template" ]; then
+    signale "❌ $fichier.template introuvable : le contrat ne peut pas être vérifié."
+    continue
+  fi
+
+  MANQUANTES=""
+  for variable in $(sed -n 's/^\([A-Z_][A-Z_0-9]*\)=.*/\1/p' "$fichier.template"); do
+    grep -q "^$variable=" "$fichier" || MANQUANTES="$MANQUANTES $variable"
+  done
+
+  if [ -n "$MANQUANTES" ]; then
+    signale "❌ Variables déclarées par $fichier.template et absentes de $fichier :$MANQUANTES"
+  fi
 done
 
-if [ -n "$MANQUANTES" ]; then
-  echo "❌ Variables déclarées par .env.oots.template et absentes de .env.oots :$MANQUANTES" >&2
+# Les quatre fichiers sont rapportés d'un coup : sortir au premier fautif
+# masquerait les suivants, et coûterait autant d'allers-retours que de fichiers.
+if [ -n "$ERREURS" ]; then
+  echo "$ERREURS" >&2
   echo "   Compléter scripts/ci/preparEnvironnement.sh." >&2
   exit 1
 fi
