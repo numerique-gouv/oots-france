@@ -96,7 +96,7 @@ bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single fi
 
 **Reach for `make lint-fix`, not `make lint`.** Everything RuboCop can settle on its own is noise in a report: reading it, deciding, and editing by hand spends attention on what a flag fixes, and leaves the offences that need judgement buried among the ones that do not. `-a` applies only what is safe. `make lint` is for reading a verdict without touching the tree — a workflow, or someone else's branch.
 
-Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on 5433, and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
+Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which has no default — `.env.template` leaves it blank and CI sets it to 5433 — and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
 
 CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is.
 

@@ -197,7 +197,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 $ make test          # rubocop puis rspec
 ```
 
-Hors conteneur, il faut Ruby et une base joignable. Le service `postgres` en publie une sur le port 5433 :
+Hors conteneur, il faut Ruby et une base joignable. Le service `postgres` en publie une sur le port `PORT_POSTGRES` du `.env`, que `.env.template` laisse à renseigner et que l'intégration continue fixe à 5433 :
 
 ```sh
 $ docker compose up -d postgres

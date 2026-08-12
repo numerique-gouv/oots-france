@@ -71,10 +71,11 @@ services:
     env_file:
       - ./.env.postgres
     # Publié pour que la suite puisse tourner hors conteneur, avec
-    # `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433`. Le port diffère
-    # de 5432 pour ne pas heurter un PostgreSQL déjà installé sur la machine.
+    # `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=`, suivi de la valeur
+    # que `.env` donne à `PORT_POSTGRES`. Celle de référence, 5433, diffère de
+    # 5432 pour ne pas heurter un PostgreSQL déjà installé sur la machine.
     ports:
-      - "5433:5432"
+      - "${PORT_POSTGRES}:5432"
     # Monté sur `/var/lib/postgresql` et non sur son sous-répertoire `data` :
     # depuis la version 18, l'image range les données dans un sous-répertoire
     # nommé d'après la version majeure, pour permettre un `pg_upgrade --link`
