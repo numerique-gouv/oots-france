@@ -50,7 +50,7 @@ Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité le
 
 ## Lancer le test
 
-Une fois la pile démarrée (`web` + `worker` + `domibus` + `mysql`, Domibus configuré comme décrit dans le [README](../README.md)) :
+Une fois la pile démarrée par `make up` (`web` + `worker` + `domibus` + `mysql`, sur une installation posée par `make setup` — voir le [README](../README.md#installer-et-lancer)) :
 
 ```sh
 $ make e2e
@@ -127,9 +127,4 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : blue_gw` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 
-Pour voir les enveloppes SOAP échangées — très bavard, mais décisif pour déboguer un rejet de message —, passer `org.apache.cxf` à `INFO` dans `domibus/logback.xml`, que Domibus relit toutes les 10 s.
-
-> [!NOTE]
-> Les variables `LOGGER_LEVEL_*` de `docker-compose.yml` ne sont lues qu'à la **création** de `./domibus` : elles fixent les niveaux de départ d'une installation neuve, pas ceux d'une pile qui tourne. Sur une pile démarrée, c'est `domibus/logback.xml` qu'il faut modifier.
-
-Les refus de Domibus se lisent par ailleurs dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`.
+Les refus de Domibus se lisent dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`. Comment suivre ces journaux et y faire apparaître les enveloppes SOAP échangées est décrit dans [domibus_context.md](domibus_context.md#lire-les-journaux).

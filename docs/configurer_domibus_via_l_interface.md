@@ -1,6 +1,6 @@
 # Configurer Domibus via l'interface d'administration
 
-> Ce document décrit, geste par geste, les trois étapes de configuration d'une passerelle fraîche : compte d'accès pour l'API REST, certificats et PMode. `scripts/configure_domibus.sh` les pose en une commande, et c'est la voie normale — voir [Configurer Domibus en une commande](../README.md#configurer-domibus-en-une-commande). Les gestes ci-dessous servent à comprendre ce que le script fait, ou à reprendre une seule des trois étapes.
+> Ce document décrit, geste par geste, la configuration d'une passerelle fraîche dans sa console : les trois étapes qui s'y reprennent une à une — compte d'accès pour l'API REST, certificats et PMode —, puis la sécurisation des comptes d'administration. `scripts/configure_domibus.sh` pose les trois premières en une commande, et c'est la voie normale : voir [Configurer Domibus en une commande](../README.md#configurer-domibus-en-une-commande). Il pose aussi la notification vers l'application, qui n'a elle aucun équivalent dans cette console ; la sécurisation des comptes, à l'inverse, n'a aucun équivalent scripté.
 >
 > | Pour… | Voir |
 > | --- | --- |
@@ -8,7 +8,7 @@
 > | ce qu'est Domibus, les profils de sécurité, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
 > | la version utilisée et ce qu'elle impose | [versions_domibus.md](versions_domibus.md) |
 
-L'interface d'administration s'ouvre sur `http://localhost:[PORT_DOMIBUS]/domibus`, `PORT_DOMIBUS` étant la valeur du `.env`. Le changement du mot de passe `admin` et la création d'un second compte administrateur, qui n'ont pas d'équivalent scripté, restent décrits dans le [README](../README.md#sécuriser-les-comptes-dadministration).
+L'interface d'administration s'ouvre sur `http://localhost:[PORT_DOMIBUS]/domibus`, `PORT_DOMIBUS` étant la valeur du `.env`. Les deux dernières sections, sur les comptes d'administration, sont les seules qui n'aient aucun équivalent scripté.
 
 ## Créer un compte d'accès pour l'API REST
 
@@ -48,3 +48,24 @@ Depuis l'interface d'administration : dans la colonne de gauche, cliquer sur « 
 Dans la colonne de gauche, cliquer sur « PMode », puis sur « Current ». Cliquer sur le bouton « Upload ». Séléctionner un fichier de configuration (par exemple, `exemples/configuration_PMode_Domibus.xml`). Ajouter une description (par exemple, « Initialise configuration PMode »).
 
 Dans la colonne de gauche, cliquer sur « Connection Monitoring ». Une ligne devrait être affichée avec `blue_gw` comme « Sender Party » et « Responder Party ». Cliquer sur l'icône « avion en papier » à droite. Le « Connection Status » devrait passer au vert.
+
+## Sécuriser les comptes d'administration
+
+> [!IMPORTANT]
+> Domibus est créé avec un login / mot de passe par défaut (`admin`/`123456`). Il est fortement recommandé de changer le mot de passe de ce compte dès ce premier lancement.
+
+Pour changer le mot de passe, cliquer dans la colonne de gauche sur « Users », puis sur l'icône « crayon » sur la ligne du compte `admin`. Saisir le nouveau mot de passe et la confirmation. Cliquer sur « OK ». Cliquer ensuite sur le bouton « Save » en bas à gauche.
+
+> [!IMPORTANT]
+> Cette dernière étape est importante. Si on n'effectue pas cette sauvegarde, le mot de passe ne sera pas mis à jour.
+
+## Créer un utilisateur administrateur autre que l'utilisateur par défaut
+
+Cette étape permet de conserver le compte `admin` comme pour débloquer le compte d'administration standard en cas de mauvaise manipulation.
+
+Dans la colonne de gauche, cliquer sur « Users », puis sur le bouton « New ». Saisir les informations relatives à ce nouveau compte. Choisir comme rôle `ROLE_ADMIN` pour donner les droits administrateur. Cliquer sur « OK ». Cliquer ensuite sur le bouton « Save » en bas à gauche.
+
+> [!IMPORTANT]
+> Cette dernière étape est importante. Si on n'effectue pas cette sauvegarde, le nouvel utilisateur ne sera pas créé.
+
+Si on se déconnecte (lien « Logout » dans l'icône menu en haut à droite), on doit maintenant pouvoir se reconnecter avec le nouveau compte créé.

@@ -34,7 +34,7 @@ Each piece of information has a single owning document; everything else links to
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
-| Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode) | `docs/configurer_domibus_via_l_interface.md` |
+| Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
 | Agent conventions and workflow | this file |
 
 When adding documentation, extend the owning file rather than repeating it elsewhere; if two files must mention the same thing, the non-owner keeps one sentence and a link.
@@ -89,7 +89,8 @@ make lint-fix     # style — use this one while writing, never `make lint`
 make test         # rubocop + rspec in Docker
 make e2e          # Cucumber against a real Domibus (needs the stack up)
 make schematron   # messages against the TDD rules
-make up           # run the app (needs postgres + domibus, see README)
+make setup        # install from a fresh clone: env files, databases, gateway
+make up           # run the app — web and worker, both of them
 
 bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single file
 ```
@@ -101,7 +102,7 @@ Running the suite outside Docker needs a reachable database. `docker compose up 
 CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is.
 
 > [!IMPORTANT]
-> **Ruby 4.0.6 is required**, and pinned in three places that must stay in step: `.ruby-version`, `FROM ruby:4.0.6-slim` in the `Dockerfile`, and the matrix in `tests.yml`.
+> **Ruby 4.0.6 is required**, and pinned in six places that must stay in step: `.ruby-version`, `ruby '4.0.6'` in the `Gemfile`, `FROM ruby:4.0.6-slim` in the `Dockerfile`, and the `ruby-version` of all three workflows — `tests.yml`, `e2e.yml` and `schematron.yml`. `grep -rn '4\.0\.6' --exclude-dir=vendor --exclude=Gemfile.lock` finds the lot.
 
 > [!WARNING]
 > The `Dockerfile` pins an exact patch on purpose. A floating `FROM ruby:4.0` lets a stale cached image drift far behind CI — the failure mode is a local `make e2e` dying on a Ruby the workflow never exercises. After any bump here, run `docker compose build --pull web`.
@@ -165,7 +166,7 @@ Rules:
 - `make test` works out of the box in a worktree: docker compose derives its project name from the directory, so containers and volumes are isolated per worktree.
 - **The full stack runs in as many worktrees at once as there are free ports.** The script gives each worktree the smallest offset, between +1 and +99, whose whole port set is free — free meaning neither listening nor already written into another worktree's `.env`, since a stopped stack still owns its ports. One offset applies to every port of a stack, so the worktree on 3007 has its Domibus console on 8187. The Domibus/MySQL volumes are fresh per worktree, so Domibus must be re-configured there (README steps).
 - **Run stacks from a worktree, never from the main checkout.** Its ports are the reference set, and they belong to whoever works there — an agent that starts a stack on them takes the machine's `docker compose up` away from a human who has no way of seeing why. The worktree's own set is shifted and free, so nothing is lost by using it. `docker ps -a --filter publish=<port>` names the container holding a port, whatever project it belongs to; `docker compose -p <projet> down` releases it.
-- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/prepare_environment.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
+- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/preparEnvironnement.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
 - Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in if the task needs Docker.
 
 ## Boundaries
