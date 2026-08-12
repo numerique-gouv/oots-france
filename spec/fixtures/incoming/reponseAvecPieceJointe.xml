@@ -1,0 +1,65 @@
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+  <soap:Header>
+    <eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns2="http://www.w3.org/2003/05/soap-envelope" ns2:mustUnderstand="true">
+      <eb:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
+        <eb:MessageInfo>
+          <eb:Timestamp>2023-11-10T15:26:33.000Z</eb:Timestamp>
+          <eb:MessageId>7612ae3c-954d-4fc2-8031-efd139b1248a@resp.gov.si</eb:MessageId>
+        </eb:MessageInfo>
+        <eb:PartyInfo>
+          <eb:From>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_SI_01</eb:PartyId>
+            <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+          </eb:From>
+          <eb:To>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_FR_01</eb:PartyId>
+            <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+          </eb:To>
+        </eb:PartyInfo>
+        <eb:CollaborationInfo>
+          <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>
+          <eb:Action>ExecuteQueryResponse</eb:Action>
+          <eb:ConversationId>5fe50e16-d6b8-4005-b5ec-0ab097f34448</eb:ConversationId>
+        </eb:CollaborationInfo>
+        <eb:MessageProperties>
+          <eb:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000001</eb:Property>
+          <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-requester">BR_SI_01</eb:Property>
+          <eb:Property name="ExchangeId">88888888-8888-8888-8888-888888888888</eb:Property>
+          <eb:Property name="SpecificationId">oots-edm:v2.0</eb:Property>
+        </eb:MessageProperties>
+        <eb:PayloadInfo>
+          <eb:PartInfo href="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+            <eb:PartProperties>
+              <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+            </eb:PartProperties>
+          </eb:PartInfo>
+          
+<ns5:PartInfo href="cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu">
+    <ns5:PartProperties>
+        <ns5:Property name="MimeType">application/pdf</ns5:Property>
+        <ns5:Property name="CompressionType">application/gzip</ns5:Property>
+    </ns5:PartProperties>
+</ns5:PartInfo>
+    
+        </eb:PayloadInfo>
+      </eb:UserMessage>
+    </eb:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <ns4:retrieveMessageResponse
+      xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+      xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+      xmlns:ns4="http://eu.domibus.wsplugin/">
+      <payload payloadId="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+        <value>PHF1ZXJ5OlF1ZXJ5UmVzcG9uc2UKICAgICAgICB4bWxuczpxdWVyeT0idXJuOm9hc2lzOm5hbWVzOnRjOmVieG1sLXJlZ3JlcDp4c2Q6cXVlcnk6NC4wIgogICAgICAgIHhtbG5zOnJpbT0idXJuOm9hc2lzOm5hbWVzOnRjOmVieG1sLXJlZ3JlcDp4c2Q6cmltOjQuMCIKICAgICAgICB4bWxuczpuczc9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgICAgICAgc3RhdHVzPSJ1cm46b2FzaXM6bmFtZXM6dGM6ZWJ4bWwtcmVncmVwOlJlc3BvbnNlU3RhdHVzVHlwZTpTdWNjZXNzIgogICAgICAgIHJlcXVlc3RJZD0idXJuOnV1aWQ6NzY2ZDgzYTUtZjc1My00OTI2LTk2MDMtY2M5MjgwZjc2NTFjIj4KCiAgPHJpbTpTbG90IG5hbWU9IlNwZWNpZmljYXRpb25JZGVudGlmaWVyIj48IS0tIOKApiAtLT48L3JpbTpTbG90PgogIDxyaW06U2xvdCBuYW1lPSJFdmlkZW5jZVJlc3BvbnNlSWRlbnRpZmllciI+PCEtLSDigKYgLS0+PC9yaW06U2xvdD4KICA8cmltOlNsb3QgbmFtZT0iSXNzdWVEYXRlVGltZSI+PCEtLSDigKYgLS0+PC9yaW06U2xvdD4KICA8cmltOlNsb3QgbmFtZT0iRXZpZGVuY2VQcm92aWRlciI+PCEtLSDigKYgLS0+PC9yaW06U2xvdD4KICA8cmltOlNsb3QgbmFtZT0iRXZpZGVuY2VSZXF1ZXN0ZXIiPjwhLS0g4oCmIC0tPjwvcmltOlNsb3Q+CiAgPHJpbTpSZWdpc3RyeU9iamVjdExpc3Q+CiAgICA8cmltOlJlZ2lzdHJ5T2JqZWN0IHhtbG5zOnhzaT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS9YTUxTY2hlbWEtaW5zdGFuY2UiIHhzaTp0eXBlPSJyaW06UmVnaXN0cnlQYWNrYWdlVHlwZSIgaWQ9InVybjp1dWlkOmQzMDA5YjYzLWE2NTYtNDdiOS04NjNlLTU3ZmYzMGIwMWFkMSI+CiAgICAgIDxyaW06UmVnaXN0cnlPYmplY3RMaXN0PgogICAgICAgIDxyaW06UmVnaXN0cnlPYmplY3QgeHNpOnR5cGU9InJpbTpFeHRyaW5zaWNPYmplY3RUeXBlIiBpZD0idXJuOnV1aWQ6MGMzN2VkOTgtNTc3NC00MDdhLWEwNTYtMjFlZWZmZTY2NzEyIj4KICAgICAgICAgIDxyaW06U2xvdCBuYW1lPSJFdmlkZW5jZU1ldGFkYXRhIj48IS0tIOKApiAtLT48L3JpbTpTbG90PgogICAgICAgICAgPHJpbTpDbGFzc2lmaWNhdGlvbiBpZD0idXJuOnV1aWQ6ZTQzNTI0NTUtZmIwMi00MDRmLWE1YWMtMWIwOTE2YTBjM2Q4IiBjbGFzc2lmaWNhdGlvblNjaGVtZT0idXJuOmZkYzpvb3RzOmNsYXNzaWZpY2F0aW9uOmVkbSIgY2xhc3NpZmljYXRpb25Ob2RlPSJNYWluRXZpZGVuY2UiLz4KICAgICAgICAgIDxyaW06UmVwb3NpdG9yeUl0ZW1SZWYgbnM3OmhyZWY9ImNpZDoxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTFAcGRmLm9vdHMuZXUiIG5zNzp0aXRsZT0iRXZpZGVuY2UiLz4KICAgICAgICA8L3JpbTpSZWdpc3RyeU9iamVjdD4KICAgICAgPC9yaW06UmVnaXN0cnlPYmplY3RMaXN0PgogICAgPC9yaW06UmVnaXN0cnlPYmplY3Q+CiAgPC9yaW06UmVnaXN0cnlPYmplY3RMaXN0Pgo8L3F1ZXJ5OlF1ZXJ5UmVzcG9uc2U+CiAgICA=</value>
+      </payload>
+      
+<payload payloadId="cid:11111111-1111-1111-1111-111111111111@pdf.oots.eu">
+  <value>ZTJSaGRHRTZKM1J5ZFdOOQ==</value>
+</payload>
+    
+    </ns4:retrieveMessageResponse>
+  </soap:Body>
+</soap:Envelope>
+    

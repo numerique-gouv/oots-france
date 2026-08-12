@@ -2,7 +2,6 @@
 !.env*.template
 /domibus/
 /nginx/
-node_modules/
 docs/prompts/
 docker-compose.override.yml
 .claude/
@@ -11,3 +10,26 @@ CLAUDE.local.md
 
 # artefacts de validation Schematron (téléchargés)
 .schematron/
+
+# clé de déchiffrement des credentials Rails : jamais versionnée
+/config/master.key
+
+# configuration locale de Bundler
+/.bundle
+
+# journaux et fichiers temporaires
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+/tmp/pids/*
+!/tmp/pids/.keep
+
+# ressources compilées par Propshaft
+/public/assets
+
+# gems installées localement
+/vendor/bundle
+
+# rapport de couverture SimpleCov
+/coverage

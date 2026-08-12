@@ -27,7 +27,18 @@ $ git clone https://github.com/numerique-gouv/oots-france.git && cd oots-france
 Créer les fichiers `.env`, `.env.oots` et `.env.domibus` respectivement à partir des fichiers `.env.template`, `.env.oots.template` et `.env.domibus.template`. Renseigner les diverses variables d'environnement.
 
 
-## Configuration de la base de données (MySQL)
+## Configuration des bases de données
+
+Deux bases, sans rapport l'une avec l'autre : **PostgreSQL** porte l'état des conversations et la file des jobs de l'application, **MySQL** est celle de Domibus.
+
+```sh
+$ docker compose up -d postgres
+$ docker compose run --rm --no-deps web bundle exec rails db:prepare
+```
+
+Les identifiants vivent dans `.env.postgres` (lu par l'image) et dans `.env.oots` (lu par l'application, sous les noms `*_BASE_DE_DONNEES`) : les deux doivent rester en phase, comme `.env.domibus` l'impose déjà entre `MYSQL_USER` et `DB_USER`.
+
+### La base de Domibus (MySQL)
 
 À la première utilisation, il faut lancer le conteneur de base de données seul pour lui laisser le temps de se configurer correctement.
 
@@ -57,7 +68,7 @@ L'application Domibus devrait être accessible depuis un navigateur à l'URL `ht
 
 ### Configurer Domibus en une commande
 
-Une passerelle fraîche a besoin de trois choses : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, et un PMode. Toutes trois passent par une API REST d'administration, dont un script fait le tour :
+Une passerelle fraîche a besoin de quatre choses : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, un PMode, et la configuration de la notification vers l'application. Un script en fait le tour :
 
 ```sh
 $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
@@ -70,6 +81,13 @@ C'est ainsi que l'intégration continue monte une passerelle sans intervention h
 > Les deux identifiants de l'API REST sont exigés, et doivent reprendre ceux du `.env.oots` avec lequel tourne l'application : c'est le compte qu'elle présentera à la passerelle. En créer un autre donnerait un Plugin User ne correspondant à rien, et l'application recevrait des `403` sur toutes ses requêtes.
 >
 > `MOT_DE_PASSE_MAGASINS` doit de même être celui du `.env` avec lequel tourne la passerelle : elle rouvre ses magasins avec cette valeur à chaque démarrage.
+
+> [!IMPORTANT]
+> **La passerelle doit être redémarrée après ce script.** Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le script écrit, et ne prennent effet qu'au redémarrage.
+>
+> ```sh
+> $ docker compose restart domibus && scripts/ci/attendDomibus.sh
+> ```
 
 Le script s'authentifie sur la console en `admin`/`123456`, identifiants par défaut de l'image. Sur une passerelle dont le mot de passe a déjà été changé — ce que recommande [Sécuriser les comptes d'administration](#sécuriser-les-comptes-dadministration) —, les lui passer par `DOMIBUS_ADMIN` et `DOMIBUS_MOT_DE_PASSE_ADMIN`.
 
@@ -147,14 +165,10 @@ Le script doit installer les certificats et terminer en succès.
 ### En local
 
 ```sh
-$ docker compose up web
+$ docker compose up web worker
 ```
 
-Attendre l'affichage du message
-
-```
-web-1  | OOTS-France est démarré et écoute le port [XXX] !…
-```
+Deux services, et les deux sont nécessaires : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie. Sans le second, une demande reste indéfiniment en attente.
 
 Le serveur est alors accessible à l'URL `http://localhost:<PORT_OOTS_FRANCE>`.
 
@@ -168,7 +182,7 @@ Il est possible de tester qu'il répond en requêtant : `http://localhost:<PORT_
 La configuration Nginx doit d'abord être en place (voir [Configurer NGinx](#configurer-nginx)).
 
 ```sh
-$ scripts/start.sh
+$ docker compose up nginx
 ```
 
 Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.du.domaine>`
@@ -176,9 +190,20 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 
 ## Exécution de la suite de tests automatisés
 
-Les tests peuvent être lancés depuis un conteneur Docker en exécutant le script `scripts/tests.sh`. Les tests sont alors rejoués à chaque modification de fichier du projet sur la machine hôte.
+`make test` joue le style puis la suite unitaire dans un conteneur Docker. `make` seul liste les autres raccourcis :
 
-Cette suite injecte des adaptateurs factices : elle ne touche jamais Domibus. Pour exercer la chaîne eDelivery réelle, voir [docs/test_e2e.md](docs/test_e2e.md).
+```sh
+$ make test          # rubocop puis rspec
+```
+
+Hors conteneur, il faut Ruby et une base joignable. Le service `postgres` en publie une sur le port 5433 :
+
+```sh
+$ docker compose up -d postgres
+$ HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433 bundle exec rspec
+```
+
+Cette suite remplace toutes les frontières par des doublures : elle ne touche jamais Domibus. Pour exercer la chaîne eDelivery réelle, voir [docs/test_e2e.md](docs/test_e2e.md).
 
 ### Validation des messages contre les règles des TDD
 

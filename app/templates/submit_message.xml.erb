@@ -1,0 +1,26 @@
+<soap:Envelope
+  xmlns:soap="http://www.w3.org/2003/05/soap-envelope"
+  xmlns:ns="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+  xmlns:_1="http://eu.domibus.wsplugin/"
+  xmlns:xm="http://www.w3.org/2005/05/xmlmime">
+
+  <soap:Header>
+<%= header %>
+  </soap:Header>
+
+  <soap:Body>
+    <_1:submitRequest>
+      <bodyload>
+        <value>cid:bodyload</value>
+      </bodyload>
+      <payload payloadId="<%= escape(payload_id) %>" contentType="<%= EbmsHeaderBuilder::REGREP_MIME_TYPE %>">
+        <value><%= body_in_base64 %></value>
+      </payload>
+<%- if attachment.present? -%>
+      <payload payloadId="<%= escape(attachment.identifier) %>">
+        <value><%= attachment.content %></value>
+      </payload>
+<%- end -%>
+    </_1:submitRequest>
+  </soap:Body>
+</soap:Envelope>

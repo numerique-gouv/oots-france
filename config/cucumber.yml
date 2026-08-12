@@ -1,0 +1,8 @@
+<%
+# Les scénarios de bout en bout traversent une passerelle réelle : ils ne
+# peuvent pas tourner sur un runner nu, et sont donc écartés du profil par
+# défaut. `bout_en_bout` est le profil que `make e2e` invoque.
+commun = "--publish-quiet --strict"
+%>
+default: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags 'not @wip and not @bout_en_bout' features
+bout_en_bout: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags '@bout_en_bout' features

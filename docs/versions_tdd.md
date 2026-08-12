@@ -24,7 +24,7 @@ C'est le mécanisme central à comprendre : rien n'oblige tout le réseau à par
 Deux endroits se répondent :
 
 - **Dans le DSD** (*Data Service Directory*), chaque *Access Service* déclare un ou plusieurs éléments `sdg:ConformsTo` — « la ou les versions du profil eDelivery et du modèle de données d'échange utilisées par l'*access service* » — par exemple `oots-edm:v1.0` et `oots-edm:v1.2` côte à côte, comme le montre la [spécification de l'interface de requête du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/920061713/3.1.3+Query+Interface+Specification+of+the+DSD+v1.2.3+September+2025). Le pluriel est le point important : un fournisseur peut annoncer qu'il comprend plusieurs versions.
-- **Dans le message**, le slot `SpecificationIdentifier` porte la version effectivement employée (`oots-edm:v2.0` dans ce dépôt, voir `src/ebms/specificationEdm.js`). Les TDD imposent qu'il **corresponde au `ConformsTo` de l'*Access Service* retenu** par l'*Evidence Requester* lors de sa requête au DSD.
+- **Dans le message**, le slot `SpecificationIdentifier` porte la version effectivement employée (`oots-edm:v2.0` dans ce dépôt, voir `EdmSpecification`). Les TDD imposent qu'il **corresponde au `ConformsTo` de l'*Access Service* retenu** par l'*Evidence Requester* lors de sa requête au DSD.
 
 Autrement dit, le requêtant interroge le DSD, y lit les versions que sa cible sait traiter, en choisit une qu'il sait produire, puis l'annonce dans le message. La cohabitation de plusieurs versions sur le réseau est donc prévue par la spécification elle-même, et non bricolée après coup.
 

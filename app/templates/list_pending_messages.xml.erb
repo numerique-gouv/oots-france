@@ -1,0 +1,10 @@
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
+  <soap:Header/>
+  <soap:Body>
+    <_1:listPendingMessagesRequest>
+<%- if conversation_id.present? -%>
+      <conversationId><%= escape(conversation_id) %></conversationId>
+<%- end -%>
+    </_1:listPendingMessagesRequest>
+  </soap:Body>
+</soap:Envelope>

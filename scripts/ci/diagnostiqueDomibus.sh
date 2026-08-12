@@ -26,18 +26,18 @@ JETON=$(awk '/XSRF-TOKEN/ { print $7 }' "$BOCAL")
 montre() {
   echo
   echo "───────── $1"
-  # Le préfixe `)]}',` d'Angular saute avant affichage ; `node` remet en forme
-  # ce qui est du JSON et laisse passer le reste tel quel.
+  # Le préfixe `)]}',` d'Angular saute avant affichage ; `python3` remet en
+  # forme ce qui est du JSON et laisse passer le reste tel quel.
   curl -sS -b "$BOCAL" -H "X-XSRF-TOKEN: $JETON" "$URL_DOMIBUS/$2" \
     | tail -c +7 \
-    | node -e "
-      let e = '';
-      process.stdin.on('data', (d) => { e += d; });
-      process.stdin.on('end', () => {
-        try { console.log(JSON.stringify(JSON.parse(e), null, 2).slice(0, 4000)); }
-        catch { console.log(e.slice(0, 2000)); }
-      });
-    " || echo "(illisible)"
+    | python3 -c "
+import json, sys
+brut = sys.stdin.read()
+try:
+    print(json.dumps(json.loads(brut), indent=2, ensure_ascii=False)[:4000])
+except ValueError:
+    print(brut[:2000])
+" || echo "(illisible)"
 }
 
 montre "Journal des messages" "rest/internal/user/messagelog?page=0&pageSize=20&orderBy=received&asc=false"

@@ -1,0 +1,25 @@
+# La configuration vient exclusivement de l'environnement, comme le reste du
+# dépôt : aucun fichier de configuration à tenir en phase, et les mêmes
+# variables valent en local, dans la composition Docker et en intégration
+# continue. Les valeurs par défaut décrivent le service `postgres` de
+# `docker-compose.yml`.
+default: &default
+  adapter: postgresql
+  encoding: unicode
+  max_connections: <%= ENV.fetch('RAILS_MAX_THREADS', 5) %>
+  host: <%= ENV.fetch('HOTE_BASE_DE_DONNEES', 'localhost') %>
+  port: <%= ENV.fetch('PORT_BASE_DE_DONNEES', 5432) %>
+  username: <%= ENV.fetch('UTILISATEUR_BASE_DE_DONNEES', 'oots_france') %>
+  password: <%= ENV.fetch('MOT_DE_PASSE_BASE_DE_DONNEES', 'oots_france') %>
+
+development:
+  <<: *default
+  database: <%= ENV.fetch('NOM_BASE_DE_DONNEES', 'oots_france_development') %>
+
+test:
+  <<: *default
+  database: <%= ENV.fetch('NOM_BASE_DE_DONNEES', 'oots_france') %>_test
+
+production:
+  <<: *default
+  database: <%= ENV.fetch('NOM_BASE_DE_DONNEES', 'oots_france_production') %>

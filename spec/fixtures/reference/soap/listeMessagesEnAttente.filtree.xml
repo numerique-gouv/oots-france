@@ -1,0 +1,8 @@
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
+  <soap:Header/>
+  <soap:Body>
+    <_1:listPendingMessagesRequest><conversationId>e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24</conversationId></_1:listPendingMessagesRequest>
+  </soap:Body>
+</soap:Envelope>
+  

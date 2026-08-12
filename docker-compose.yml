@@ -5,16 +5,24 @@ x-domibus: &env-domibus
 x-oots: &configuration-base
   build:
     context: .
+  # Une seule image pour `web`, `worker` et `test` : sans ce nom explicite,
+  # Compose en dérive un par service et `docker compose build web` n'en
+  # construirait qu'un des trois.
+  image: oots-france-app
   env_file:
     - ./.env.oots
+  # Les gems vivent dans `/usr/local/bundle`, hors du répertoire monté : ce
+  # montage-ci ne les masque donc pas, et aucun volume nommé n'est nécessaire
+  # là où `node_modules` en réclamait un.
   volumes:
     - .:/usr/src/app
-    - node_modules:/usr/src/app/node_modules/
 
 services:
   test:
     <<: *configuration-base
-    command: "npm run test:watch"
+    command: "sh -c 'bundle exec rubocop && bundle exec rspec'"
+    depends_on:
+      - postgres
 
   certbot:
     image: certbot/certbot
@@ -42,11 +50,38 @@ services:
 
   web:
     <<: *configuration-base
-    command: "node --watch server.js"
+    command: "bundle exec rails server -b 0.0.0.0"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
      - domibus
+     - postgres
+
+  # Le worker tourne dans son propre processus : c'est ce qui impose que
+  # l'état des conversations soit partagé et persistant, là où l'application
+  # Node se contentait d'un annonceur interne au processus.
+  worker:
+    <<: *configuration-base
+    command: "bundle exec good_job start"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:18-alpine
+    env_file:
+      - ./.env.postgres
+    # Publié pour que la suite puisse tourner hors conteneur, avec
+    # `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433`. Le port diffère
+    # de 5432 pour ne pas heurter un PostgreSQL déjà installé sur la machine.
+    ports:
+      - "5433:5432"
+    # Monté sur `/var/lib/postgresql` et non sur son sous-répertoire `data` :
+    # depuis la version 18, l'image range les données dans un sous-répertoire
+    # nommé d'après la version majeure, pour permettre un `pg_upgrade --link`
+    # sans franchir de frontière de montage. Monter `data` directement fait
+    # échouer le démarrage.
+    volumes:
+      - postgres_data:/var/lib/postgresql
 
   domibus:
     image: code.europa.eu:4567/edelivery/docker/domibus-tomcat10:5.2-JEE10
@@ -58,8 +93,7 @@ services:
       # L'image ne réécrit que ces deux niveaux dans logback.xml, et laisse
       # eu.domibus à DEBUG. INFO ne suffirait pas : l'authentification de chaque
       # requête journalise « [SEC-001] Unsecure login is allowed » à ce
-      # niveau-là, soit deux lignes par seconde sous le polling de
-      # src/ecouteurDomibus.js. Ce que WARN écarte reste consultable dans
+      # niveau-là. Ce que WARN écarte reste consultable dans
       # logs/domibus-error.log, dont le seuil est justement WARN.
       #
       # Ces deux variables ne sont lues qu'à la création de ./domibus : pour
@@ -110,5 +144,5 @@ services:
       - shared_db_file_system:/var/lib/mysql
 
 volumes:
-  node_modules:
+  postgres_data:
   shared_db_file_system:

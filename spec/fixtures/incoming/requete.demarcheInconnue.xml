@@ -1,0 +1,52 @@
+
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
+  <soap:Header>
+    <eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns2="http://www.w3.org/2003/05/soap-envelope" ns2:mustUnderstand="true">
+      <eb:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
+        <eb:MessageInfo>
+          <eb:Timestamp>2023-11-10T15:26:33.000Z</eb:Timestamp>
+          <eb:MessageId>7612ae3c-954d-4fc2-8031-efd139b1248a@resp.gov.si</eb:MessageId>
+        </eb:MessageInfo>
+        <eb:PartyInfo>
+          <eb:From>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_SI_01</eb:PartyId>
+            <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+          </eb:From>
+          <eb:To>
+            <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots">AP_FR_01</eb:PartyId>
+            <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+          </eb:To>
+        </eb:PartyInfo>
+        <eb:CollaborationInfo>
+          <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>
+          <eb:Action>ExecuteQueryRequest</eb:Action>
+          <eb:ConversationId>5fe50e16-d6b8-4005-b5ec-0ab097f34448</eb:ConversationId>
+        </eb:CollaborationInfo>
+        <eb:MessageProperties>
+          <eb:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000001</eb:Property>
+          <eb:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots-evidence-requester">BR_SI_01</eb:Property>
+          <eb:Property name="ExchangeId">88888888-8888-8888-8888-888888888888</eb:Property>
+          <eb:Property name="SpecificationId">oots-edm:v2.0</eb:Property>
+        </eb:MessageProperties>
+        <eb:PayloadInfo>
+          <eb:PartInfo href="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+            <eb:PartProperties>
+              <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+            </eb:PartProperties>
+          </eb:PartInfo>
+        </eb:PayloadInfo>
+      </eb:UserMessage>
+    </eb:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <ns4:retrieveMessageResponse
+      xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+      xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"
+      xmlns:ns4="http://eu.domibus.wsplugin/">
+      <payload payloadId="cid:99999999-9999-9999-9999-999999999999@oots.eu">
+        <value>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHF1ZXJ5OlF1ZXJ5UmVxdWVzdCB4bWxuczp4c2k9Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvWE1MU2NoZW1hLWluc3RhbmNlIgogICAgICAgICAgeG1sbnM6cnM9InVybjpvYXNpczpuYW1lczp0YzplYnhtbC1yZWdyZXA6eHNkOnJzOjQuMCIKICAgICAgICAgIHhtbG5zOnNkZz0iaHR0cDovL2RhdGEuZXVyb3BhLmV1L3A0cyIKICAgICAgICAgIHhtbG5zOnhtaW1lPSJodHRwOi8vd3d3LnczLm9yZy8yMDA1LzA1L3htbG1pbWUiCiAgICAgICAgICB4bWxuczpyaW09InVybjpvYXNpczpuYW1lczp0YzplYnhtbC1yZWdyZXA6eHNkOnJpbTo0LjAiCiAgICAgICAgICB4bWxuczpxdWVyeT0idXJuOm9hc2lzOm5hbWVzOnRjOmVieG1sLXJlZ3JlcDp4c2Q6cXVlcnk6NC4wIgogICAgICAgICAgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiCiAgICAgICAgICB4bWxuczp4bWw9Imh0dHA6Ly93d3cudzMub3JnL1hNTC8xOTk4L25hbWVzcGFjZSIKICAgICAgICAgIHhtbDpsYW5nPSJFTiIKICAgICAgICAgIGlkPSJ1cm46dXVpZDo0ZmZiNTI4MS0xNzlkLTQ1NzgtYWRmMi0zOWZkMTNjY2M3OTciPgoKICA8cmltOlNsb3QgbmFtZT0iU3BlY2lmaWNhdGlvbklkZW50aWZpZXIiPjwhLS0g4oCmIC0tPjwvcmltOlNsb3Q+CiAgPHJpbTpTbG90IG5hbWU9Iklzc3VlRGF0ZVRpbWUiPjwhLS0g4oCmIC0tPjwvcmltOlNsb3Q+CiAgPHJpbTpTbG90IG5hbWU9IlByb2NlZHVyZSI+CiAgICA8cmltOlNsb3RWYWx1ZSB4c2k6dHlwZT0icmltOlN0cmluZ1ZhbHVlVHlwZSI+CiAgICAgIDxyaW06VmFsdWU+VDM8L3JpbTpWYWx1ZT4KICAgIDwvcmltOlNsb3RWYWx1ZT4KICA8L3JpbTpTbG90PgogIDxyaW06U2xvdCBuYW1lPSJQb3NzaWJpbGl0eUZvclByZXZpZXciPjwhLS0g4oCmIC0tPjwvcmltOlNsb3Q+CiAgPHJpbTpTbG90IG5hbWU9IkV4cGxpY2l0UmVxdWVzdEdpdmVuIj48IS0tIOKApiAtLT48L3JpbTpTbG90PgogIDxyaW06U2xvdCBuYW1lPSJSZXF1aXJlbWVudHMiPjwhLS0g4oCmIC0tPjwvcmltOlNsb3Q+CiAgPHJpbTpTbG90IG5hbWU9IkV2aWRlbmNlUmVxdWVzdGVyIj4KICAgIDxyaW06U2xvdFZhbHVlIHhzaTp0eXBlPSJyaW06Q29sbGVjdGlvblZhbHVlVHlwZSIgY29sbGVjdGlvblR5cGU9InVybjpvYXNpczpuYW1lczp0YzplYnhtbC1yZWdyZXA6Q29sbGVjdGlvblR5cGU6U2V0Ij4KICAgICAgPHJpbTpFbGVtZW50IHhzaTp0eXBlPSJyaW06QW55VmFsdWVUeXBlIj4KICAgICAgICA8c2RnOkFnZW50PgogICAgICAgICAgPHNkZzpJZGVudGlmaWVyIHNjaGVtZUlEPSJ1cm46Y2VmLmV1Om5hbWVzOmlkZW50aWZpZXI6RUFTOjAwMDkiPkJSX1NJXzAxPC9zZGc6SWRlbnRpZmllcj4KICAgICAgICAgIDxzZGc6TmFtZSBsYW5nPSJGUiI+VW4gcmVxdcOqdGV1ciBzbG92w6huZTwvc2RnOk5hbWU+CiAgICAgICAgICA8c2RnOkNsYXNzaWZpY2F0aW9uPkVSPC9zZGc6Q2xhc3NpZmljYXRpb24+CiAgICAgICAgPC9zZGc6QWdlbnQ+CiAgICAgIDwvcmltOkVsZW1lbnQ+CiAgICAgIDxyaW06RWxlbWVudCB4c2k6dHlwZT0icmltOkFueVZhbHVlVHlwZSI+CiAgICAgICAgPHNkZzpBZ2VudD4KICAgICAgICAgIDxzZGc6SWRlbnRpZmllciBzY2hlbWVJRD0idXJuOmNlZi5ldTpuYW1lczppZGVudGlmaWVyOkVBUzowMDA5Ij5PT1RTRlJBTkNFPC9zZGc6SWRlbnRpZmllcj4KICAgICAgICAgIDxzZGc6TmFtZSBsYW5nPSJFTiI+T09UUy1GcmFuY2UgSW50ZXJtZWRpYXJ5IFBsYXRmb3JtPC9zZGc6TmFtZT4KICAgICAgICAgIDxzZGc6Q2xhc3NpZmljYXRpb24+SVA8L3NkZzpDbGFzc2lmaWNhdGlvbj4KICAgICAgICA8L3NkZzpBZ2VudD4KICAgICAgPC9yaW06RWxlbWVudD4KICAgIDwvcmltOlNsb3RWYWx1ZT4KICA8L3JpbTpTbG90PgogIDxyaW06U2xvdCBuYW1lPSJFdmlkZW5jZVByb3ZpZGVyIj48IS0tIOKApiAtLT48L3JpbTpTbG90PgogIDxxdWVyeTpSZXNwb25zZU9wdGlvbiByZXR1cm5UeXBlPSJMZWFmQ2xhc3NXaXRoUmVwb3NpdG9yeUl0ZW0iLz4KICA8cXVlcnk6UXVlcnkgcXVlcnlEZWZpbml0aW9uPSJEb2N1bWVudFF1ZXJ5Ij4KICAgIDxyaW06U2xvdCBuYW1lPSJOYXR1cmFsUGVyc29uIj4KICAgICAgPHJpbTpTbG90VmFsdWUgeHNpOnR5cGU9InJpbTpBbnlWYWx1ZVR5cGUiPgogICAgICAgIDxzZGc6UGVyc29uPgogICAgICAgICAgPHNkZzpMZXZlbE9mQXNzdXJhbmNlPkhpZ2g8L3NkZzpMZXZlbE9mQXNzdXJhbmNlPgogICAgICAgICAgPHNkZzpGYW1pbHlOYW1lPnVuZGVmaW5lZDwvc2RnOkZhbWlseU5hbWU+CiAgICAgICAgICA8c2RnOkdpdmVuTmFtZT51bmRlZmluZWQ8L3NkZzpHaXZlbk5hbWU+CiAgICAgICAgICA8c2RnOkRhdGVPZkJpcnRoPnVuZGVmaW5lZDwvc2RnOkRhdGVPZkJpcnRoPgogICAgICAgIDwvc2RnOlBlcnNvbj4KICAgICAgPC9yaW06U2xvdFZhbHVlPgogICAgPC9yaW06U2xvdD4KICAgIAo8cmltOlNsb3QgbmFtZT0iRXZpZGVuY2VSZXF1ZXN0Ij4KICA8cmltOlNsb3RWYWx1ZSB4c2k6dHlwZT0icmltOkFueVZhbHVlVHlwZSI+CiAgICA8c2RnOkRhdGFTZXJ2aWNlRXZpZGVuY2VUeXBlIHhtbG5zPSJ1cm46b2FzaXM6bmFtZXM6dGM6ZWJ4bWwtcmVncmVwOnhzZDpyaW06NC4wIj4KICAgICAgPHNkZzpJZGVudGlmaWVyPjAwMDAwMDAwLTAwMDAtMDAwMC0wMDAwLTAwMDAwMDAwMDAwMDwvc2RnOklkZW50aWZpZXI+CiAgICAgIAo8c2RnOkV2aWRlbmNlVHlwZUNsYXNzaWZpY2F0aW9uPmh0dHBzOi8vc3Iub290cy50ZWNoLmVjLmV1cm9wYS5ldS9ldmlkZW5jZXR5cGVjbGFzc2lmaWNhdGlvbnMvb290cy8wMDAwMDAwMC0wMDAwLTAwMDAtMDAwMC0wMDAwMDAwMDAwMDA8L3NkZzpFdmlkZW5jZVR5cGVDbGFzc2lmaWNhdGlvbj4KCiAgICAKICAgICAgPHNkZzpEaXN0cmlidXRlZEFzPgogICAgICAgIDxzZGc6Rm9ybWF0PmFwcGxpY2F0aW9uL3BkZjwvc2RnOkZvcm1hdD4KICAgICAgPC9zZGc6RGlzdHJpYnV0ZWRBcz4KICAgIDwvc2RnOkRhdGFTZXJ2aWNlRXZpZGVuY2VUeXBlPgogIDwvcmltOlNsb3RWYWx1ZT4KPC9yaW06U2xvdD4KICAgIAogIDwvcXVlcnk6UXVlcnk+CjwvcXVlcnk6UXVlcnlSZXF1ZXN0Pgo=</value>
+      </payload>
+    </ns4:retrieveMessageResponse>
+  </soap:Body>
+</soap:Envelope>
+  

@@ -36,7 +36,7 @@ Sept simulacres tiennent lieu de raccordement au monde extérieur. Les recenser 
 
 ### 1. Les services communs, remplacés par une variable d'environnement
 
-`src/depots/depotServicesCommunsLocal.js` répond aux trois questions que les TDD confient à trois services centraux distincts :
+`Directories::CommonServices` répond aux trois questions que les TDD confient à trois services centraux distincts :
 
 | Méthode du bouchon | Service réel | Rôle |
 | --- | --- | --- |
@@ -51,14 +51,14 @@ Les données proviennent de `DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL`, un JSON de l
 > [!IMPORTANT]
 > Ne pas reprendre les signatures du bouchon comme contrat. Elles ont été dessinées pour un JSON local, pas déduites des API réelles, et elles perdent en route ce dont le reste du système a besoin — au premier chef l'élément `sdg:ConformsTo` du DSD, sans lequel la version d'EDM ne se négocie pas (voir 3.1.3), et les métadonnées d'*Access Service* dont dérive le PMode (voir le bouchon 2). C'est la spécification qui dicte les signatures.
 
-Le découpage naturel est celui que `src/domibus/` emploie déjà pour la passerelle, et rien n'oblige à inventer autre chose :
+Le découpage naturel est celui que `app/parsers/` emploie déjà pour la passerelle, et rien n'oblige à inventer autre chose :
 
 | Couche | Rôle | Précédent dans le dépôt |
 | --- | --- | --- |
-| `src/adaptateurs/adaptateurDsd.js`, `adaptateurEb.js`, `adaptateurSr.js` | l'appel sortant, seul effet de bord | `adaptateurDomibus.js` |
-| un module de lecture par service, pur | interpréter la réponse RegRep et rendre les objets métier (`Fournisseur`, `TypeJustificatif`, `PointAcces`) | `src/domibus/reponse*.js` |
+| `app/clients/dsd_client.rb`, `eb_client.rb`, `sr_client.rb` | l'appel sortant, seul effet de bord | `DomibusClient` |
+| un analyseur par service | interpréter la réponse RegRep et rendre les objets du domaine (`EvidenceProvider`, `EvidenceType`, `AccessPoint`) | `app/parsers/` |
 
-Les trois adaptateurs sont injectés dans `server.js` comme l'est déjà celui de Domibus, et `src/api/pieceJustificative.js` les appelle à la place du dépôt. Les interfaces sont des API REST fondées sur le protocole de requête [RegRep 4.0](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) : [requête au DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/920061713/3.1.3+Query+Interface+Specification+of+the+DSD+v1.2.3+September+2025), [le DSD lui-même](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900012822/3.1.1+Data+Service+Directory+DSD+v1.2.1+April+2025). Les réponses se valident avec les règles `DSD-RESP-*` et `EB-*` publiées à côté de celles déjà employées.
+Les trois clients sont passés aux interacteurs comme l'est déjà celui de Domibus, et `EvidenceRequest::Fetch` les appelle à la place de l'annuaire bouchonné. Les interfaces sont des API REST fondées sur le protocole de requête [RegRep 4.0](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) : [requête au DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/920061713/3.1.3+Query+Interface+Specification+of+the+DSD+v1.2.3+September+2025), [le DSD lui-même](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900012822/3.1.1+Data+Service+Directory+DSD+v1.2.1+April+2025). Les réponses se valident avec les règles `DSD-RESP-*` et `EB-*` publiées à côté de celles déjà employées.
 
 Deux choses du bouchon méritent d'être reprises plutôt que perdues : la construction des objets métier à partir des données brutes, et la validation immédiate de l'identité du fournisseur — `identiteEbms()` y est appelé dès la lecture, de sorte qu'une entrée incomplète se signale en nommant le type de justificatif et le pays, au lieu de partir en `undefined` dans un message.
 
@@ -67,7 +67,7 @@ Deux choses du bouchon méritent d'être reprises plutôt que perdues : la const
 
 ### 2. Le point d'accès, résolu dans le PMode au lieu du DSD
 
-`src/depots/depotPointsAcces.js` interroge `GET /ext/party` de Domibus, c'est-à-dire l'annuaire des parties **déjà déclarées dans le PMode** local. Un correspondant inconnu du PMode est donc introuvable.
+`DomibusClient#find_access_point` interroge `GET /ext/party` de Domibus, c'est-à-dire l'annuaire des parties **déjà déclarées dans le PMode** local. Un correspondant inconnu du PMode est donc introuvable.
 
 **Remplacement.** C'est la réponse du DSD qui désigne le point d'accès (*access point*, AP) du fournisseur. Le [chapitre 4.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/900013165/4.7+-+eDelivery+Configuration+v1.2.1+April+2025) donne la correspondance entre les métadonnées d'*Access Service* du DSD et les paramètres de PMode, notamment :
 
@@ -88,13 +88,13 @@ Deux régimes distincts en découlent, à ne pas confondre :
 
 ### 3. Le fournisseur de données français, remplacé par un PDF d'exemple
 
-`src/domibus/requete.js` n'accepte que la démarche `00` (« vérification système ») et renvoie `assets/drapeau.pdf` via `src/ebms/reponseVerificationSysteme.js` ; toute autre démarche reçoit une erreur *Object not found*.
+`EvidenceProvision::AnswerRequest` n'accepte que la démarche `00` (« vérification système ») et renvoie `assets/drapeau.pdf` via `SystemCheckResponseBuilder` ; toute autre démarche reçoit une erreur *Object not found*.
 
 **Remplacement.** Un adaptateur par fournisseur de données national (API Diplômes, statut étudiant…), derrière une interface commune « donne-moi le justificatif de type T pour la personne P ». La démarche `00` reste câblée telle quelle : c'est la démarche de test officielle, elle doit continuer de répondre.
 
 ### 4. L'identité du bénéficiaire, transmise par le requêteur
 
-`src/depots/depotRequeteurs.js` lit l'annuaire `DONNEES_REQUETEURS` (indexé par SIRET) et rend un `Requeteur` ; c'est celui-ci qui déchiffre l'identité du bénéficiaire, dans `beneficiaire()` (`src/ebms/requeteur.js`, appelé depuis `src/api/pieceJustificative.js`). Le fournisseur de service la transmet dans le paramètre `beneficiaire`, sous forme de JWE (*JSON Web Encryption*, [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516)) ; la mécanique des clés est décrite dans [oots_context.md](oots_context.md#côté-evidence-requester-la-france-demande-un-justificatif).
+`Directories::EvidenceRequesters` lit l'annuaire `DONNEES_REQUETEURS` (indexé par SIRET) et rend un `Requeteur` ; c'est celui-ci qui déchiffre l'identité du bénéficiaire, dans `beneficiaire()` (`EvidenceRequester`, appelé depuis `EvidenceRequest::Fetch`). Le fournisseur de service la transmet dans le paramètre `beneficiaire`, sous forme de JWE (*JSON Web Encryption*, [RFC 7516](https://datatracker.ietf.org/doc/html/rfc7516)) ; la mécanique des clés est décrite dans [oots_context.md](oots_context.md#côté-evidence-requester-la-france-demande-un-justificatif).
 
 > [!WARNING]
 > Le fournisseur de service est un vecteur d'attaque tant que ce bouchon tient : rien ne vérifie qu'il est légitime à agir pour le bénéficiaire qu'il déclare, et il peut donc en déclarer n'importe lequel. L'Evidence Requester n'a par ailleurs pas le statut de fournisseur de données FranceConnect, qui apporterait cette garantie.
@@ -115,15 +115,15 @@ Aucune base de données : l'état des conversations vit en mémoire, et un redé
 
 ### 7. Les valeurs écrites en dur dans les messages
 
-Aucune n'est un choix de conception : toutes tiennent lieu de ce que les services communs et l'intégration eIDAS devront fournir. Deux seulement sont bornées par les règles Schematron — le slot `Requirements`, dont la présence est imposée (`R-EDM-REQ-S011`) et qui doit porter au moins un élément (`R-EDM-REQ-S052`, sa valeur étant typée en collection par `R-EDM-REQ-S026`), et l'adresse, qui doit porter au moins le pays (`R-EDM-REQ-C073` et ses équivalents en réponse et en erreur, cités dans `src/ebms/adresse.js`). Les trois autres sont des valeurs valides parmi plusieurs, et non des planchers imposés : `High` parmi les trois niveaux de garantie, `application/pdf` parmi les six types de média admis, et le schéma de repli faute de SIRET (qu'un SIRET réel satisferait tout autant).
+Aucune n'est un choix de conception : toutes tiennent lieu de ce que les services communs et l'intégration eIDAS devront fournir. Deux seulement sont bornées par les règles Schematron — le slot `Requirements`, dont la présence est imposée (`R-EDM-REQ-S011`) et qui doit porter au moins un élément (`R-EDM-REQ-S052`, sa valeur étant typée en collection par `R-EDM-REQ-S026`), et l'adresse, qui doit porter au moins le pays (`R-EDM-REQ-C073` et ses équivalents en réponse et en erreur, cités dans `Address`). Les trois autres sont des valeurs valides parmi plusieurs, et non des planchers imposés : `High` parmi les trois niveaux de garantie, `application/pdf` parmi les six types de média admis, et le schéma de repli faute de SIRET (qu'un SIRET réel satisferait tout autant).
 
 | Valeur | Où | Ce qui doit la fournir |
 | --- | --- | --- |
-| slot `Requirements` (un *requirement* unique) | `src/ebms/requeteJustificatif.js` | l'Evidence Broker (3.2) |
-| `LevelOfAssurance` figé à `High` | `src/ebms/personnePhysique.js` | le niveau réel de l'authentification eIDAS (2.1) |
-| adresse des agents limitée au pays | `src/ebms/adresse.js` | le DSD et l'annuaire des requêteurs |
-| `application/pdf` | `src/ebms/pieceJointe.js`, `typeJustificatif.js` | la négociation de format de distribution (chapitre 5) |
-| schéma d'identifiant de repli pour `OOTSFRANCE` ([convention](oots_context.md#identifier-une-organisation)) | `src/ebms/schemeIdentifiant.js` | un SIRET à obtenir pour la plateforme intermédiaire |
+| slot `Requirements` (un *requirement* unique) | `EvidenceRequestBuilder` | l'Evidence Broker (3.2) |
+| `LevelOfAssurance` figé à `High` | `NaturalPerson` | le niveau réel de l'authentification eIDAS (2.1) |
+| adresse des agents limitée au pays | `Address` | le DSD et l'annuaire des requêteurs |
+| `application/pdf` | `Attachment`, `EvidenceType` | la négociation de format de distribution (chapitre 5) |
+| schéma d'identifiant de repli pour `OOTSFRANCE` ([convention](oots_context.md#identifier-une-organisation)) | `IdentifierScheme` | un SIRET à obtenir pour la plateforme intermédiaire |
 
 ---
 
@@ -138,7 +138,7 @@ Le dépôt expose une API à des fournisseurs de service ; il n'y a pas de porta
 - **2.1 — Authentification de l'usager côté requêteur.** ❌ Voir le bouchon 4 : l'identité arrive du fournisseur de service, sans preuve. À raccorder au nœud eIDAS français ou à FranceConnect+. Le niveau de garantie (*Level of Assurance*, LoA) annoncé dans le message doit alors refléter l'authentification réelle.
 - **2.3 — Rapprochement d'identité côté fournisseur.** ❌ Le problème ouvert majeur du projet : rapprocher l'identité eIDAS reçue (nom d'usage, attributs du pays d'origine) de l'identité pivot française (nom de naissance). Sans lui, la France ne peut fournir aucun justificatif à un usager européen dont elle détient le dossier sous une autre identité. Il englobe la ré-authentification dans l'espace de prévisualisation (4.9), que les TDD présentent comme la parade à l'usurpation d'identité.
 - **Personnes couvertes.** 🟡 Seul `sdg:NaturalPerson` est produit. Le [mapping v2.0 de la requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/952470359/4.5.1+-+Evidence+Request+Syntax+Mapping+v2.0.0+March+2026) prévoit aussi `LegalPerson`, `AuthorizedRepresentative` et `AuthorizedRepresentativeLegalPerson` : sans eux, aucune démarche d'entreprise ni de représentation n'est possible.
-- **Attributs d'identité du *wallet*.** ❌ Au-delà des attributs du `NaturalPerson` que produit `src/ebms/personnePhysique.js`, rien n'exploite les données d'identité que le portefeuille européen (EUDI) apportera — l'une des synergies annoncées de la v2.0 (voir [versions_tdd.md](versions_tdd.md#le-passage-de-v1x-à-v20)).
+- **Attributs d'identité du *wallet*.** ❌ Au-delà des attributs du `NaturalPerson` que produit `NaturalPerson`, rien n'exploite les données d'identité que le portefeuille européen (EUDI) apportera — l'une des synergies annoncées de la v2.0 (voir [versions_tdd.md](versions_tdd.md#le-passage-de-v1x-à-v20)).
 
 ## Chapitre 3 — Services communs
 
@@ -160,7 +160,7 @@ Les trois messages sont au niveau v2.0 et passent les six jeux de règles joués
 
 ### 4.6 — Règles métier 🟡
 
-Les TDD publient une vingtaine de jeux de règles Schematron ([tableau récapitulatif](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/README.md)) ; `scripts/valideSchematron.sh` en joue sept, dont [`EDM-ebMS.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) sur l'entête que le dépôt construit lui-même (`src/ebms/entete.js`). Les entêtes des quatre messages la passent sans qu'aucune correction ait été nécessaire.
+Les TDD publient une vingtaine de jeux de règles Schematron ([tableau récapitulatif](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/README.md)) ; `scripts/valideSchematron.sh` en joue sept, dont [`EDM-ebMS.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) sur l'entête que le dépôt construit lui-même (`EbmsHeaderBuilder`). Les entêtes des quatre messages la passent sans qu'aucune correction ait été nécessaire.
 
 Les jeux `DSD-*`, `EB-*`, `LCM-*` et `MS-CLASS` deviendront pertinents au fur et à mesure du chapitre 3 ; le script est déjà structuré pour les accueillir (tableau `SCHEMATRONS`, puis un appel `valide` par message).
 
@@ -194,7 +194,18 @@ Implique la persistance du bouchon 6.
 
 Le mécanisme, décrit par le [chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/pages/viewpage.action?pageId=900013172), se joue en deux échanges : le fournisseur répond d'abord une erreur `EDM:ERR:0002` portant l'adresse de son espace de prévisualisation ; l'usager s'y rend, choisit ; une **seconde requête** rapporte alors les justificatifs retenus.
 
-Côté **requêteur**, le dépôt lit `PreviewLocation` (`src/domibus/reponseErreurAutorisationRequise.js`) et redirige l'usager en lui joignant l'adresse de retour et sa méthode, `returnurl` et `returnmethod` (`src/api/pieceJustificative.js`). Manque **la seconde requête** : mêmes paramètres que la première, slot `PreviewLocation` recopié tel quel, même `ConversationId`. Sans elle, le flux s'arrête à la redirection et aucun justificatif n'est jamais rapporté, quand bien même un espace de prévisualisation existerait en face.
+Côté **requêteur**, le dépôt lit `PreviewLocation` (`ErrorResponseParser`), refuse tout schéma autre que `http` ou `https`, l'enregistre sur la conversation et le ressort dans l'état de l'échange, à charge pour la démarche de présenter le lien.
+
+> [!IMPORTANT]
+> **Les paramètres de requête `returnurl` et `returnmethod` ne sont pas les nôtres à poser.** Le chapitre les exige, mais dans sa section 5, qui décrit ce que doit faire l'*Online Procedure Portal* : « Add the return address […] in the preview URL **prior to presenting the link to the user** ». Celui qui présente le lien y joint l'adresse de retour, et cette adresse est la sienne — c'est chez lui que l'usager revient reprendre sa démarche, non chez nous. Le chapitre 1 dit la même chose autrement en plaçant l'usager devant le portail et jamais devant l'*Evidence Requester*.
+>
+> L'application JavaScript les posait, avec `urlOotsFrance()` pour valeur : l'usager revenait donc chez OOTS-France, qui avait alors un écran à lui montrer. C'était cohérent avec l'attente bloquante d'alors, jamais avec le chapitre. Ne pas l'avoir reporté est un défaut supprimé, pas une régression.
+>
+> Ce qui nous incombe est l'inverse : **rendre l'adresse reçue sans y toucher**, et en vérifier le schéma. C'est fait.
+
+Manque **la seconde requête**, qui est bien la nôtre : mêmes slots que la première à `IssueDateTime` près, même `ConversationId`, même `query:QueryRequest/@id`, et **sans** `PreviewMethod` ni `PreviewLocationDescription`. Sans elle, le flux s'arrête à l'adresse rendue et aucun justificatif n'est jamais rapporté, quand bien même un espace de prévisualisation existerait en face.
+
+Elle porte deux slots que la première interdit, et que [4.5.1 v2.0.0](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/952470359/4.5.1+-+Evidence+Request+Syntax+Mapping+v2.0.0+March+2026) déclare facultatifs au niveau du message mais obligatoires ici : `PreviewLocation`, recopié tel quel depuis la réponse, et **`ReturnLocation`**, l'adresse par laquelle l'usager revient au portail. C'est ce second slot qui porte le retour en v2.0, là où le chapitre 4.9 — resté en v1.2.1 — ne connaît que les paramètres de requête. Les deux mécanismes coexistent dans les documents publiés ; lequel prévaut, et si l'un remplace l'autre, reste à établir avant d'écrire cette requête.
 
 > [!NOTE]
 > Le slot `PreviewMethod`, que le chapitre 4.9 décrit encore comme obligatoire, **n'existe plus en v2.0** : `EDM-ERR-S.sch` 2.0.0 porte la note « Removed PreviewMethod », et sa règle `R-EDM-ERR-S027` interdit à `rs:Exception` tout slot autre que `Timestamp`, `PreviewLocation` et `PreviewDescription`. Le chapitre annonçait déjà cette suppression en recommandant de s'en tenir à GET. Il n'y a donc rien à lire côté requêteur, et rien à produire côté fournisseur ; le chapitre du wiki, resté en v1.2.1, n'a simplement pas suivi ses propres artefacts.
@@ -207,13 +218,13 @@ Côté **fournisseur**, l'espace de prévisualisation (*Preview Space*) est enti
 - ré-authentification de l'usager (nœud eIDAS ou identité nationale) ;
 - présentation des justificatifs disponibles et **sélection par l'usager** ;
 - retour vers l'OPP par l'URL et la méthode reçues en `returnurl` et `returnmethod` ;
-- côté message, produire `EDM:ERR:0002` avec `PreviewLocation` et, facultativement, `PreviewDescription`. La description de l'exception existe déjà (`AUTHORIZATION_EXCEPTION`), mais le gabarit de `src/ebms/reponseErreur.js` n'admet aujourd'hui aucun slot au-delà de `Timestamp` : il faudra l'ouvrir.
+- côté message, produire `EDM:ERR:0002` avec `PreviewLocation` et, facultativement, `PreviewDescription`. La description de l'exception existe déjà (`AUTHORIZATION_EXCEPTION`), mais le gabarit de `ErrorResponseBuilder` n'admet aujourd'hui aucun slot au-delà de `Timestamp` : il faudra l'ouvrir.
 
 ### 4.10 — Variantes de flux ❌
 
-- **Choix multiples** : `src/api/pieceJustificative.js` retient le premier type de justificatif de la démarche et le premier fournisseur du pays (`tjs[0]`, `fs[0]`). L'usager doit pouvoir choisir.
+- **Choix multiples** : `EvidenceRequest::Fetch` retient le premier type de justificatif de la démarche et le premier fournisseur du pays (`tjs[0]`, `fs[0]`). L'usager doit pouvoir choisir.
 - Plusieurs justificatifs dans une requête, plusieurs fournisseurs.
-- **Codes d'erreur** : les huit codes de la [liste officielle](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/OOTS/EDMErrorCodes-CodeList.gc) sont désormais tous décrits dans `DESCRIPTIONS_EXCEPTIONS` (`src/ebms/reponseErreur.js`), mais trois seulement sont émis. Les autres attendent la brique qui leur donnerait un déclencheur — les définir ne coûtait rien, les émettre suppose le reste du système.
+- **Codes d'erreur** : les huit codes de la [liste officielle](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/OOTS/EDMErrorCodes-CodeList.gc) sont désormais tous décrits dans `DESCRIPTIONS_EXCEPTIONS` (`ErrorResponseBuilder`), mais trois seulement sont émis. Les autres attendent la brique qui leur donnerait un déclencheur — les définir ne coûtait rien, les émettre suppose le reste du système.
 
   | Code | Signification | Type d'exception | État |
   | --- | --- | --- | --- |
@@ -226,7 +237,7 @@ Côté **fournisseur**, l'espace de prévisualisation (*Preview Space*) est enti
   | `EDM:ERR:0007` | capacité facultative non supportée | `rs:UnsupportedCapabilityExceptionType` | ✅ émis quand le format de distribution demandé n'est pas le PDF |
   | `EDM:ERR:0008` | requête RegRep mal formée — syntaxe ou sémantique de la requête à corriger | `query:QueryExceptionType` | 🟡 décrit ; se distinguerait de `0003` sur un payload que RegRep lui-même rejette, ce que le dépôt ne sait pas encore constater |
 
-  Côté consommation, l'erreur reçue reporte désormais son code dans le message levé (`src/domibus/reponseErreur.js`), au lieu de réduire les huit à leur libellé.
+  Côté consommation, l'erreur reçue reporte désormais son code dans le message levé (`ErrorResponseParser`), au lieu de réduire les huit à leur libellé.
 
 ## Chapitre 5 — Modèles de données des justificatifs ❌
 
@@ -243,43 +254,28 @@ Recommandations d'expérience utilisateur pour l'OPP et l'espace de prévisualis
 - **Persistance** — bouchon 6, réclamée par 4.8, 4.9 et la robustesse.
 - **Fournisseurs de données français** — bouchon 3 : sans eux, la France n'est fournisseur que sur le papier.
 - **Transport** — le *polling* de Domibus toutes les secondes peut céder la place au *push to backend* du WS plugin ; sans effet sur la conformité, mais sur la robustesse (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)).
+- **Les erreurs sur le chemin asynchrone** — `EbmsError` a été conçue pour le chemin synchrone, où `EvidenceRequestsController` la traduit en `422` vers l'appelant fautif. Un message entrant est traité dans un travail de fond, où il n'y a **pas d'appelant** : `IncomingMessage::Process` doit donc décider seul du sort de chaque erreur — régler la conversation pour libérer l'usager, journaliser, relancer pour laisser une trace d'exploitation — et l'a fait au fil des cas rencontrés, la revue de cette réécriture y ayant trouvé quatre défauts successifs. Le nœud est plus étroit qu'il n'y paraît : sur les cinq sous-classes d'`EbmsError`, **une seule est à double usage**, `EvidenceRequesterNotFound`, levée tantôt avec un identifiant fourni par l'appelant — sa requête est fausse — tantôt avec un identifiant que nous avons nous-mêmes enregistré à l'ouverture de la conversation — notre annuaire a dérivé depuis. Les autres sont déjà converties en `fail_with_error` par l'étape qui connaît le contexte. Le remède est d'appliquer ce même patron au seul site qui y échappe, `IncomingMessage::SettleConversation#deliver`, qui sait que l'identifiant vient de notre propre enregistrement : `Process` cesserait alors de rattraper toute une famille dont le nom promet que la faute est celle de l'appelant.
 - **Homologation de sécurité** — jamais réalisée. Infrastructure à clés publiques, analyse d'impact RGPD, durcissement. Tant qu'elle manque, `AVEC_REQUETE_PIECE_JUSTIFICATIVE` reste fermé en production.
 - **Validation de conformité par la Commission** — vérifier que le validateur OOTS et la plateforme [ITB](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) (*Interoperability Test Bed*) acceptent la v2.0, et connaître la version cible du prochain Projectathon. Préalable déjà consigné dans [versions_tdd.md](versions_tdd.md#le-préalable-à-lever).
 
 ---
 
-## Défauts à réparer pendant la réécriture
+## Défauts réparés par la réécriture
 
-Ces défauts-là ne sont pas des bouchons — personne ne les a posés sciemment. Ils ont été relevés en préparant la réécriture du dépôt en Ruby on Rails, et **ils ne sont pas corrigés en JavaScript** : le code qui les porte est réécrit dans la foulée, et le réparer deux fois coûterait deux fois. Chacun devient donc une exigence pour la version Rails.
+Relevés en préparant le passage à Rails, et délibérément **non corrigés en JavaScript** : le code qui les portait a été réécrit dans la foulée, et le réparer deux fois aurait coûté deux fois. Ils sont consignés ici parce que chacun dit quelque chose sur ce qui les avait laissés passer.
 
-### La route qui publie la clé publique échoue
+| Défaut | Réparation | Ce qui l'avait masqué |
+| --- | --- | --- |
+| La route publiant la clé publique énumérait `{ kty, n, e }` — des champs RSA — pour une clé EC, et **échouait** au lieu de rendre un JWKS incomplet | `PublicKeySet` publie **par soustraction** des composantes secrètes, avec un `kid` en *thumbprint* [RFC 7638](https://datatracker.ietf.org/doc/html/rfc7638) : le type de clé n'entre plus en jeu | Le test unitaire injectait une clé RSA factice **et** remplaçait le hachage ; le test de bout en bout dérivait la clé publique du JWK privé au lieu d'appeler la route |
+| Le déchiffrement suivait l'entête du jeton reçu, sans liste d'algorithmes admis — une surface de confusion d'algorithme | `BeneficiaryToken` fixe les trois listes et vérifie l'entête **avant** de déchiffrer | Aucun test : l'adaptateur était remplacé par une doublure dans toute la suite |
+| `CLE_PRIVEE_JWK_EN_BASE64` n'était pas vérifiée au démarrage | `Settings.verify!`, appelé par `config.ru` | Elle ne se signalait qu'en pleine requête, par une exception de désérialisation |
+| L'attente laissait derrière elle un écouteur et un minuteur par requête, jamais retirés | L'annonceur de processus est remplacé par `Conversation` : le problème disparaît par construction | Rien n'était cassé — la corrélation par conversation empêchait un écouteur périmé de réagir |
+| Aucune route n'était authentifiée | Le point d'entrée de la passerelle l'est ; c'était le plus urgent, puisqu'il déclenche du traitement depuis le réseau | Le sondage était un appel *sortant*, que personne ne pouvait provoquer |
 
-`src/routes/routesAuth.js` construit son JWKS en lisant `{ kty, n, e }` — les paramètres d'une clé **RSA** — alors que la clé effectivement générée est une **EC P-256** (`scripts/ci/preparEnvironnement.sh`). `n` valant `undefined`, le calcul du `kid` lève `ERR_INVALID_ARG_TYPE` : la route ne rend pas un JWKS incomplet, elle **échoue**. Elle a manifestement été écrite pour une clé RSA, remplacée depuis sans qu'elle soit reprise.
+Deux autres, découverts en faisant passer le bout en bout, sont documentés là où ils se manifestent : le jeu de clés d'un requêteur mis en cache sans rafraîchissement (rotation impossible), et le contrôle d'hôte de Rails répondant `403` à la passerelle.
 
-> [!IMPORTANT]
-> La version Rails publie la clé par **soustraction** des composantes secrètes (`d`, `p`, `q`, `dp`, `dq`, `qi`, `k`), et non en énumérant les champs à recopier : la route cesse alors de dépendre du type de clé, et le choix entre EC et RSA redevient libre et réversible. Le `kid` doit être le *thumbprint* de la [RFC 7638](https://datatracker.ietf.org/doc/html/rfc7638), défini pour tous les types de clé, là où le MD5 du seul modulus ne l'est que pour RSA.
-
-Aucun test ne pouvait l'attraper, et c'est le vrai enseignement : `test/routes/routesAuth.spec.js` injecte une clé RSA factice **et** remplace la fonction de hachage, tandis que `test-e2e/requetePieceJustificative.spec.js` **dérive** la clé publique du JWK privé au lieu d'appeler la route. Le test de bout en bout de la version Rails doit chiffrer pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé reconstruite à côté.
-
-### Le déchiffrement suit l'en-tête du jeton
-
-`src/adaptateurs/adaptateurChiffrement.js` appelle `compactDecrypt(jwe, k)` puis `jwtVerify(jwt, jwks)` **sans aucune option** : ni algorithmes admis, ni émetteur, ni audience attendus. C'est le jeton reçu qui désigne l'algorithme employé pour le déchiffrer et pour vérifier sa signature — une surface de confusion d'algorithme, où l'attaquant choisit le terrain.
-
-La version Rails restreint explicitement les trois listes (gestion de clé, chiffrement du contenu, signature). Le déchiffrement reste derrière un adaptateur étroit, pour que le format du jeton puisse changer sans se répandre. Il n'existe par ailleurs aucun test de cet adaptateur : il est remplacé par une doublure dans toute la suite.
-
-### `CLE_PRIVEE_JWK_EN_BASE64` n'est pas vérifiée au démarrage
-
-Contrairement à l'identité du fournisseur français, elle ne passe pas par le garde-fou de `src/adaptateurs/adaptateurEnvironnement.js`. Absente, elle ne se signale qu'en pleine requête, par une exception de désérialisation. À rendre obligatoire au démarrage.
-
-### L'attente d'une réponse laisse derrière elle des écouteurs et des minuteurs
-
-`urlRedirectionDepuisReponse` et `reponseAvecPieceJustificative` (`src/adaptateurs/adaptateurDomibus.js`) posent chacun un `annonceur.on(...)` **jamais retiré**, et leur `setTimeout` de garde n'est **jamais annulé** — deux écouteurs permanents et deux minuteurs de trente secondes par requête HTTP, sur un `EventEmitter` unique au processus. Rien n'est cassé aujourd'hui : la corrélation par identifiant de conversation empêche un écouteur périmé de réagir à une réponse qui ne le concerne pas.
-
-La réécriture règle le problème par construction, en remplaçant cet annonceur de processus par un état de conversation partagé : c'est ce que décrit le bouchon 6, et c'est ce qu'impose un serveur multi-processus, où le sondeur d'un travailleur ne réveillerait jamais la requête d'un autre.
-
-### Aucune route n'est authentifiée
-
-Les dix routes exposées le sont sans authentification, y compris les deux `POST /admin/*` qui arrêtent et redémarrent l'écoute de la passerelle. Le sujet change de nature avec le passage au *push to backend* (voir les chantiers transverses), qui rend le point d'entrée appelable depuis le réseau : c'est à ce moment-là qu'il se traite, pas avant.
+> [!NOTE]
+> **Les routes restantes ne sont toujours pas authentifiées** — la racine, le JWKS et la requête de justificatif. Les deux premières sont publiques par nature ; la troisième reste à traiter, et c'est ce que `AVEC_REQUETE_PIECE_JUSTIFICATIVE` tient fermé en attendant.
 
 ---
 
@@ -289,7 +285,10 @@ Six lots, ordonnés par dépendance plutôt que par chapitre.
 
 ### Lot 1 — Ce qui se corrige tout de suite ✅
 
-Trois travaux indépendants, tous vérifiables sans gateway ni service central, tous faits : `EDM-ebMS.sch` est jouée sur l'entête des quatre messages (4.6), les huit codes d'erreur sont décrits et trois d'entre eux émis (4.10), et la redirection vers l'espace de prévisualisation porte `returnurl` et `returnmethod` (4.9). Ce que chacun a laissé derrière lui est consigné au chapitre correspondant.
+Trois chantiers indépendants, tous vérifiables sans gateway ni service central : `EDM-ebMS.sch` est jouée sur l'entête des quatre messages (4.6), les huit codes d'erreur sont décrits et trois d'entre eux émis (4.10), et l'adresse de prévisualisation reçue est lue et vérifiée (4.9). Ce que chacun a laissé derrière lui est consigné au chapitre correspondant.
+
+> [!NOTE]
+> Le troisième posait aussi `returnurl` et `returnmethod` sur l'adresse reçue. La réécriture ne l'a pas reporté, et c'est bien : ces deux paramètres reviennent au portail de démarche, pas à nous. Voir [4.9](#49--prévisualisation--côté-requêteur--côté-fournisseur).
 
 ### Lot 2 — Poser les fondations
 

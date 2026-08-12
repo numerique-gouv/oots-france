@@ -1,0 +1,137 @@
+require 'rails_helper'
+
+RSpec.describe IncomingMessage::Process do
+  subject(:process) { described_class.call(message_id: 'un-message', gateway:, **collaborators) }
+
+  let(:collaborators) do
+    {
+      evidence_forwarder: instance_double(EvidenceForwarder),
+      requesters: Directories::EvidenceRequesters.new(
+        '00000000000002' => { 'nom' => 'Requêteur', 'url' => 'http://localhost:4000' },
+      ),
+      uuid: UuidGenerator.new,
+    }
+  end
+  let(:gateway) { instance_double(DomibusClient, retrieve: message) }
+  let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
+
+  it 'hands an incoming request to the interactor that answers it' do
+    allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+
+    process
+
+    expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
+  end
+
+  it 'hands an incoming response to the interactor that settles the conversation' do
+    allow(gateway).to receive(:retrieve).and_return(RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')))
+    allow(IncomingMessage::SettleConversation).to receive(:call!)
+
+    process
+
+    expect(IncomingMessage::SettleConversation).to have_received(:call!)
+  end
+
+  describe 'an action it does not know' do
+    let(:message) do
+      RetrievedMessageParser.new(real_envelope('requete').sub('ExecuteQueryRequest', 'SomethingElse'))
+    end
+
+    # An unknown action must leave a trace. The message has arrived and the
+    # gateway has erased it, so a lookup that merely returns nil leaves no log,
+    # no answer and no record that anything came at all — the one outcome that
+    # teaches nobody anything.
+    it 'says so in the log rather than dropping the message silently' do
+      allow(Rails.logger).to receive(:error)
+
+      process
+
+      expect(Rails.logger).to have_received(:error).with(/Action ebMS inconnue/)
+    end
+
+    it 'does not raise, the message being gone from the gateway anyway' do
+      expect { process }.not_to raise_error
+    end
+  end
+
+  describe 'a message whose body it cannot read' do
+    # The header parses — so the conversation is known — and the body does not.
+    let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
+
+    let!(:conversation) do
+      create(:conversation, conversation_id: message.conversation_id).tap(&:sent!)
+    end
+
+    before { allow(message).to receive(:body).and_raise(UnreadableMessageError, 'corps illisible') }
+
+    it 'logs it' do
+      allow(Rails.logger).to receive(:error)
+
+      process
+
+      expect(Rails.logger).to have_received(:error).with(/corps illisible/)
+    end
+
+    # Left in `sent`, the exchange would stay open for ever on an answer that
+    # has already arrived and been discarded.
+    it 'marks the conversation waiting on it as failed rather than leaving it hanging' do
+      process
+
+      expect(conversation.reload).to have_attributes(status: 'failed')
+    end
+  end
+
+  # There is nothing to fall back on here: the identifier the gateway gave us
+  # is its own, and only the message it refuses to hand over would have named
+  # the conversation. Logged, and no more — which is why the sweep exists.
+  it 'can only log when the message itself is unreadable' do
+    allow(gateway).to receive(:retrieve).and_raise(UnreadableMessageError, 'enveloppe illisible')
+    allow(Rails.logger).to receive(:error)
+
+    expect { process }.not_to raise_error
+    expect(Rails.logger).to have_received(:error).with(/enveloppe illisible/)
+  end
+
+  # Both failures below are answered the same way, and each example asserts the
+  # two halves of it together. Split in two, the half that re-raises passes
+  # whether the rescue is there or not — an unrescued error reaches the caller
+  # just as surely — and would keep a green tick over a clause someone deleted.
+  describe 'a message that names its conversation but cannot be seen through' do
+    let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
+
+    let!(:conversation) do
+      create(:conversation, conversation_id: message.conversation_id).tap(&:sent!)
+    end
+
+    # Retrying is not an option: the PMode erases a message once retrieved, so a
+    # second attempt would read nothing and would no longer even know which
+    # conversation it concerned. Nor is staying quiet: France answering another
+    # member state opens no conversation of its own, so on that path a job
+    # recorded as failed is the only signal there is.
+    describe 'a network failure after the message was retrieved' do
+      before do
+        allow(collaborators[:evidence_forwarder]).to receive(:deliver)
+          .and_raise(Faraday::ConnectionFailed, 'connexion refusée')
+      end
+
+      it 'settles the conversation, and still lets the failure surface' do
+        expect { process }.to raise_error(Faraday::ConnectionFailed)
+        expect(conversation.reload).to have_attributes(status: 'failed')
+      end
+    end
+
+    # `EbmsError` serves the synchronous path, where the controller turns it
+    # into a 422 for the caller at fault. Nothing catches it in a job, so
+    # unless this path settles the conversation itself it stays in `sent` for
+    # ever. Ours to fix, not the correspondent's: the entry is missing from the
+    # directory the environment carries, and no retry conjures it back.
+    describe 'an answer whose requester the directory no longer holds' do
+      before { collaborators[:requesters] = Directories::EvidenceRequesters.new({}) }
+
+      it 'settles the conversation, and still lets the failure surface' do
+        expect { process }.to raise_error(EvidenceRequesterNotFound)
+        expect(conversation.reload).to have_attributes(status: 'failed')
+      end
+    end
+  end
+end

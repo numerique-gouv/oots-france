@@ -1,0 +1,14 @@
+<sdg:Agent>
+  <sdg:Identifier schemeID="<%= escape(identity.type_id) %>"><%= escape(identity.id) %></sdg:Identifier>
+<%- names.each do |language, text| -%>
+  <sdg:Name lang="<%= escape(language) %>"><%= escape(text) %></sdg:Name>
+<%- end -%>
+<%- if address -%>
+  <sdg:Address>
+    <sdg:AdminUnitLevel1><%= escape(address.country) %></sdg:AdminUnitLevel1>
+  </sdg:Address>
+<%- end -%>
+<%- if classification -%>
+  <sdg:Classification><%= escape(classification) %></sdg:Classification>
+<%- end -%>
+</sdg:Agent>

@@ -1,0 +1,94 @@
+<query:QueryResponse
+        xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+        xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        xmlns:sdg="http://data.europa.eu/p4s"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
+        requestId="urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v2.0</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>1a2b3c4d-0000-4000-8000-000000000004</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-08-06T10:00:00.000Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  
+<rim:Slot name="EvidenceProvider">
+  <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+    <rim:Element xsi:type="rim:AnyValueType">
+      <sdg:Agent>
+        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000001</sdg:Identifier>
+      <sdg:Name lang="FR">Direction interministérielle du numérique</sdg:Name>
+        <sdg:Address>
+          <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+        </sdg:Address>
+        <sdg:Classification>EP</sdg:Classification>
+      </sdg:Agent>
+    </rim:Element>
+  </rim:SlotValue>
+</rim:Slot>
+    
+
+  
+<rim:Slot name="EvidenceRequester">
+  <rim:SlotValue xsi:type="rim:AnyValueType">
+    <sdg:Agent>
+      <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000002</sdg:Identifier>
+        <sdg:Name lang="FR">Ministère de l'enseignement supérieur</sdg:Name>
+    </sdg:Agent>
+  </rim:SlotValue>
+</rim:Slot>
+    
+
+  <rim:RegistryObjectList>
+    <rim:RegistryObject xsi:type="rim:RegistryPackageType" id="urn:uuid:1a2b3c4d-0000-4000-8000-000000000016">
+      <rim:RegistryObjectList>
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:1a2b3c4d-0000-4000-8000-000000000017">
+          <rim:Slot name="EvidenceMetadata">
+            <rim:SlotValue xsi:type="rim:AnyValueType">
+              <sdg:Evidence>
+                <sdg:Identifier>1a2b3c4d-0000-4000-8000-000000000018</sdg:Identifier>
+                <sdg:IsAbout>
+<sdg:NaturalPerson>
+<sdg:Identifier schemeID="eidas">FR/DE/123123123</sdg:Identifier>
+<sdg:FamilyName>Dupont</sdg:FamilyName>
+<sdg:GivenName>Jean</sdg:GivenName>
+<sdg:DateOfBirth>1992-10-22</sdg:DateOfBirth>
+</sdg:NaturalPerson>
+    </sdg:IsAbout>
+                <sdg:IssuingAuthority>
+              <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000001</sdg:Identifier>
+      <sdg:Name lang="FR">Direction interministérielle du numérique</sdg:Name>
+            </sdg:IssuingAuthority>
+                <sdg:IsConformantTo>
+<sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e</sdg:EvidenceTypeClassification>
+<sdg:Title lang="EN">Certificate of Birth</sdg:Title>
+    </sdg:IsConformantTo>
+                <sdg:IssuingDate>1970-03-03</sdg:IssuingDate>
+                <sdg:Distribution>
+                  <sdg:Format>application/pdf</sdg:Format>
+                </sdg:Distribution>
+              </sdg:Evidence>
+            </rim:SlotValue>
+          </rim:Slot>
+          <rim:Classification id="urn:uuid:1a2b3c4d-0000-4000-8000-000000000019" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
+          <rim:RepositoryItemRef xlink:href="cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr" xlink:title="Evidence"/>
+        </rim:RegistryObject>
+      </rim:RegistryObjectList>
+    </rim:RegistryObject>
+  </rim:RegistryObjectList>
+</query:QueryResponse>
+    

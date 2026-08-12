@@ -1,9 +1,8 @@
 name: Tests unitaires
 
-# Lint puis suite Jest, sur un runner nu : le transport ebMS y est entièrement
-# simulé. Le garde-fou sur les échanges réels est le workflow `e2e.yml`.
-# Le projet n'a pas d'étape de compilation, les sources sont exécutées telles
-# quelles — voir CLAUDE.md.
+# Style puis suite RSpec, sur un runner nu : le transport ebMS y est entièrement
+# simulé. Le garde-fou sur les échanges réels est le workflow `e2e.yml`, et
+# celui sur la conformité des messages est `schematron.yml`.
 
 on:
   push:
@@ -18,15 +17,48 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [26.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+        # À tenir en phase avec `.ruby-version` et le `FROM` du `Dockerfile`.
+        ruby-version: ['4.0.6']
+
+    # La suite touche la base : l'état des conversations y vit, et la file
+    # des jobs GoodJob aussi.
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: oots_france
+          POSTGRES_PASSWORD: oots_france
+          POSTGRES_DB: oots_france
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U oots_france"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      HOTE_BASE_DE_DONNEES: localhost
+      PORT_BASE_DE_DONNEES: 5432
+      UTILISATEUR_BASE_DE_DONNEES: oots_france
+      MOT_DE_PASSE_BASE_DE_DONNEES: oots_france
+      NOM_BASE_DE_DONNEES: oots_france
 
     steps:
-    - uses: actions/checkout@v7
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v7
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm test
+      - uses: actions/checkout@v7
+
+      - name: Installe Ruby ${{ matrix.ruby-version }}
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          # Installe les gems et les met en cache, sans étape supplémentaire.
+          bundler-cache: true
+
+      - name: Prépare la base de test
+        run: bundle exec rails db:test:prepare
+
+      - run: bundle exec rubocop
+
+      - run: bundle exec rspec
+
+      - run: bundle exec cucumber

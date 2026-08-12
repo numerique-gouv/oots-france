@@ -39,16 +39,16 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
 
 ## Comment OOTS-France utilise Domibus
 
-Tout passe par `src/adaptateurs/adaptateurDomibus.js`, en HTTP Basic avec les identifiants du Plugin User (`LOGIN_API_REST` / `MOT_DE_PASSE_API_REST`).
+Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin User (`LOGIN_API_REST` / `MOT_DE_PASSE_API_REST`).
 
 | Canal | Opération | Usage |
 | --- | --- | --- |
 | SOAP `…/services/wsplugin/submitMessage` | `submitMessage` | Soumettre un message ebMS sortant (requête ou réponse de justificatif) |
 | SOAP `…/services/wsplugin/listPendingMessages` | `listPendingMessages` | Lister les messages entrants en attente (filtrables par `conversationId`) |
 | SOAP `…/services/wsplugin/retrieveMessage` | `retrieveMessage` | Récupérer un message entrant par son `messageID` |
-| REST `…/ext/party` | `GET ?name=…` | Annuaire des parties du PMode (utilisé par `src/depots/depotPointsAcces.js` pour résoudre un point d'accès) |
+| REST `…/ext/party` | `GET ?name=…` | Annuaire des parties du PMode (`DomibusClient#find_access_point`, pour résoudre un point d'accès) |
 
-`src/ecouteurDomibus.js` fait du **polling** : toutes les `intervalleEcoute` ms (1 s dans `server.js`), il appelle `traiteMessageSuivant`, qui enchaîne `listPendingMessages` puis `retrieveMessage`, et dispatche selon l'action ebMS du message reçu. Les enveloppes SOAP sortantes sont construites dans `src/domibus/requetes.js` ; les réponses sont parsées par les classes `src/domibus/reponse*.js` (`fast-xml-parser`).
+**C'est la passerelle qui appelle** : le plugin WS pousse une notification vers `POST /domibus/notifications` dès qu'un message arrive pour nous. La route accuse réception et met le traitement en file ; le travail de fond enchaîne alors `retrieveMessage` et aiguille sur l'action ebMS. Les enveloppes SOAP sortantes sont des gabarits d'`app/templates/` ; les réponses sont lues en XPath par `app/parsers/`.
 
 > [!IMPORTANT]
 > Deux comportements à connaître avant de déboguer :
@@ -56,7 +56,28 @@ Tout passe par `src/adaptateurs/adaptateurDomibus.js`, en HTTP Basic avec les id
 > - **`retrieveMessage` consomme le message** : une fois récupéré, il n'est plus « pending » et disparaît de la file. Un message ne peut donc être lu qu'une seule fois, et un second appel ne le retrouvera pas.
 > - **Le lien est asynchrone et sans persistance** : l'appli soumet une requête puis attend la réponse corrélée par `conversationId` via des événements internes, avec un garde-fou temporel (`DELAI_MAX_ATTENTE_DOMIBUS`). Un redémarrage de l'appli perd les conversations en cours.
 
-Le polling n'est pas une fatalité de la 5.2 : le WS plugin déjà en place sait pousser vers le *backend* ([*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend), propriété `wsplugin.push.enabled` et règles par destinataire final), la passerelle appelant alors `receiveSuccess` sur une URL de l'application au lieu d'être interrogée toutes les secondes. Le prix est un service SOAP à exposer côté Node — c'est ce que le plugin REST, lui, ferait en JSON.
+C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` sur une URL de l'application, en SOAP.
+
+`scripts/configureDomibus.sh` le configure, et deux choses s'y révèlent à l'usage :
+
+> [!IMPORTANT]
+> **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`, `markAsDownloaded`), elles, sont modifiables à chaud.
+>
+> La règle ne filtre volontairement **aucun destinataire** : les messages qui nous arrivent en portent deux différents — l'identifiant de la passerelle sur une requête entrante, celui du requêteur sur la réponse qui lui revient — et une règle par valeur en oublierait toujours une.
+
+> [!CAUTION]
+> **`wsplugin.push.markAsDownloaded` vaut `true` par défaut**, et la notification vaut alors téléchargement. Or le PMode d'exemple porte `retention_downloaded="0"` : le justificatif serait effacé avant que l'application l'ait récupéré. Il est mis à `false` — c'est notre `retrieveMessage` qui marque le message, donc une fois qu'on l'a en main.
+
+Reste le cron du répartiteur, `wsplugin.dispatcher.worker.cronExpression`, qui vaut **une minute** par défaut : la latence perçue n'est donc pas celle du réseau. Le script le resserre à cinq secondes.
+
+### Ce qui arrive quand la notification n'aboutit pas
+
+La règle porte `retry=60;5;CONSTANT`, dont le format est documenté dans le fichier de propriétés livré : `retryTimeout;retryCount;(CONSTANT - SEND_ONCE)`. Cinq tentatives sur soixante minutes, donc — une application arrêtée moins d'une heure ne perd rien.
+
+Passé ce délai, la passerelle cesse d'essayer. Le message, lui, **reste récupérable** : `markAsDownloaded` valant `false`, seule notre `retrieveMessage` le marque, et le PMode le garde `retention_undownloaded="3600"` minutes, soit deux jours et demi. C'est cette fenêtre — et elle seule — que rattrape `CollectPendingMessagesJob`, en redemandant la liste toutes les deux minutes.
+
+> [!IMPORTANT]
+> **`wsplugin.push.alert.active` vaut `false` par défaut**, et l'épuisement des tentatives est alors parfaitement silencieux. Le script l'active : l'alerte paraît dans la console d'administration sans configuration supplémentaire. L'envoi par courriel demanderait en plus un SMTP et les adresses `domibus.alert.sender.email` et `domibus.alert.receiver.email`, `domibus.alert.mail.sending.active` étant lui aussi désactivé par défaut.
 
 ## Le PMode d'exemple
 

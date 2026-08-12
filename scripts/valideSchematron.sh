@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Valide les messages produits par ce dépôt contre les règles Schematron
-# officielles des TDD. Exclu de `npm test` : la validation télécharge des
-# artefacts et exige Java (via Docker si Java n'est pas installé).
+# officielles des TDD. Exclu de la suite unitaire : la validation télécharge
+# des artefacts et exige Java (via Docker si Java n'est pas installé).
 #
 # Usage : scripts/valideSchematron.sh [version_tdd]
 #
@@ -114,7 +114,7 @@ done
 
 # ------------------------------------------------------ messages à valider
 echo "→ Production des messages par le code du dépôt"
-node "$racine/scripts/produisMessagesOots.js" "$messages"
+(cd "$racine" && bundle exec rake "oots:messages[$messages]")
 
 # ------------------------------------------------------------- validation
 enEchec=0

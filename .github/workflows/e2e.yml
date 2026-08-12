@@ -38,6 +38,14 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Le runner a besoin de Ruby pour lui-même, et non pour l'application :
+      # `preparEnvironnement.sh` produit la clé privée de déchiffrement avec la
+      # bibliothèque standard. Les gems, elles, vivent dans l'image `web`.
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '4.0.6'
+          bundler-cache: false
+
       - name: Prépare les fichiers d'environnement
         run: scripts/ci/preparEnvironnement.sh
 
@@ -92,13 +100,29 @@ jobs:
         # message AS4 de test, qui doit revenir acquitté.
         run: scripts/configureDomibus.sh
 
-      - name: Démarre l'application
+      - name: Redémarre la passerelle pour appliquer la notification
+        # Les bascules du plugin se posent par l'API, mais pas les règles :
+        # `wsplugin.push.rules` est marquée non modifiable et ne vit que dans le
+        # fichier de propriétés du plugin, que `configureDomibus.sh` écrit. Elles
+        # ne prennent effet qu'ici.
         run: |
-          docker compose up --detach --no-build web
+          docker compose restart domibus
+          scripts/ci/attendDomibus.sh
+
+      - name: Démarre PostgreSQL et prépare le schéma
+        # L'état des conversations y vit, et la file des jobs GoodJob aussi.
+        run: |
+          docker compose up --detach postgres
+          timeout 120 sh -c 'until docker compose exec -T postgres pg_isready -U oots_france; do sleep 2; done'
+          docker compose run --rm --no-deps web bundle exec rails db:prepare
+
+      - name: Démarre l'application et son worker
+        run: |
+          docker compose up --detach --no-build web worker
           timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/; do sleep 2; done'
 
       - name: Joue le test e2e
-        run: docker compose exec -T web npm run test:e2e
+        run: make e2e
 
       - name: Diagnostic Domibus en cas d'échec
         if: failure()

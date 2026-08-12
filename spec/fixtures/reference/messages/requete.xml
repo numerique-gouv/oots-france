@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+          xmlns:sdg="http://data.europa.eu/p4s"
+          xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+          xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+          xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          id="urn:uuid:1a2b3c4d-0000-4000-8000-000000000000">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v2.0</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-08-06T10:00:00.000Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Procedure">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>T3</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="PossibilityForPreview">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>false</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="ExplicitRequestGiven">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>true</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Requirements">
+    <rim:SlotValue xsi:type="rim:CollectionValueType"
+      collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Requirement>
+          <sdg:Identifier>https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42</sdg:Identifier>
+          <sdg:Name lang="EN">Proof of tertiary education diploma/certificate/degree</sdg:Name>
+        </sdg:Requirement>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  
+<rim:Slot name="EvidenceRequester">
+  <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+    <rim:Element xsi:type="rim:AnyValueType">
+      <sdg:Agent>
+        <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000002</sdg:Identifier>
+        <sdg:Name lang="FR">Ministère de l'enseignement supérieur</sdg:Name>
+        <sdg:Address>
+          <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+        </sdg:Address>
+        <sdg:Classification>ER</sdg:Classification>
+      </sdg:Agent>
+    </rim:Element>
+    <rim:Element xsi:type="rim:AnyValueType">
+      <sdg:Agent>
+        <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
+        <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
+        <sdg:Classification>IP</sdg:Classification>
+      </sdg:Agent>
+    </rim:Element>
+  </rim:SlotValue>
+</rim:Slot>
+    
+  
+<rim:Slot name="EvidenceProvider">
+  <rim:SlotValue xsi:type="rim:AnyValueType">
+    <sdg:Agent>
+      <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">DE73524311</sdg:Identifier>
+      <sdg:Name lang="EN">Civil Registration Office Berlin I</sdg:Name>
+    </sdg:Agent>
+  </rim:SlotValue>
+</rim:Slot>
+    
+  <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
+  <query:Query queryDefinition="DocumentQuery">
+    
+<rim:Slot name="NaturalPerson">
+  <rim:SlotValue xsi:type="rim:AnyValueType">
+    <sdg:Person>
+      <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+
+<sdg:Identifier schemeID="eidas">FR/DE/123123123</sdg:Identifier>
+<sdg:FamilyName>Dupont</sdg:FamilyName>
+<sdg:GivenName>Jean</sdg:GivenName>
+<sdg:DateOfBirth>1992-10-22</sdg:DateOfBirth>
+
+    </sdg:Person>
+  </rim:SlotValue>
+</rim:Slot>
+    
+    
+<rim:Slot name="EvidenceRequest">
+  <rim:SlotValue xsi:type="rim:AnyValueType">
+    <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
+      <sdg:Identifier>00000000-0000-0000-0000-000000000000</sdg:Identifier>
+      
+<sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e</sdg:EvidenceTypeClassification>
+<sdg:Title lang="EN">Certificate of Birth</sdg:Title>
+    
+      <sdg:DistributedAs>
+        <sdg:Format>application/pdf</sdg:Format>
+      </sdg:DistributedAs>
+    </sdg:DataServiceEvidenceType>
+  </rim:SlotValue>
+</rim:Slot>
+    
+  </query:Query>
+</query:QueryRequest>
