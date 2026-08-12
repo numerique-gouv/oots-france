@@ -10,7 +10,7 @@
 # authentification, et `application/title` en fait partie. C'est plus sûr que
 # l'ancienne `rest/application/name`, qui n'était publique que par accident.
 #
-# Usage : scripts/ci/attendDomibus.sh [délai max en secondes ; 600 par défaut]
+# Usage : scripts/ci/wait_for_domibus.sh [délai max en secondes ; 600 par défaut]
 
 set -e
 

@@ -52,7 +52,7 @@ Le texte des chapitres vit sur le wiki ; **tout ce qui est exécutable vit dans 
 | Répertoire | Contenu |
 | --- | --- |
 | [`OOTS-EDM/xsd/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/xsd) | Les schémas XML, dont le profil `sdg` et la version corrigée du schéma d'en-tête ebMS3. |
-| [`OOTS-EDM/sch/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/sch) | Les règles Schematron, celles que joue `scripts/valideSchematron.sh`. |
+| [`OOTS-EDM/sch/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/sch) | Les règles Schematron, celles que joue `scripts/validate_schematron.sh`. |
 | [`OOTS-EDM/codelists/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/codelists) | Les listes de codes au format Genericode. |
 | [`OOTS-EDM/xml/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/xml) | Les messages d'exemple publiés avec la spécification. |
 

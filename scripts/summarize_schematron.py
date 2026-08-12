@@ -9,7 +9,7 @@ Le rapport est lu par un analyseur XML, et non par une expression régulière :
 un faux négatif ici passerait pour une validation réussie, ce qui est le pire
 verdict qu'un contrôle de conformité puisse rendre.
 
-Appelé par scripts/valideSchematron.sh.
+Appelé par scripts/validate_schematron.sh.
 """
 import sys
 from xml.etree import ElementTree

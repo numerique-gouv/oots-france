@@ -6,7 +6,7 @@
 # script va chercher l'information utile là où elle est structurée — le journal
 # des messages, celui des erreurs, et les certificats réellement chargés.
 #
-# Usage : scripts/ci/diagnostiqueDomibus.sh
+# Usage : scripts/ci/diagnose_domibus.sh
 # N'échoue jamais : il ne sert qu'à documenter un échec déjà constaté.
 
 URL_DOMIBUS="${URL_DOMIBUS:-http://localhost:${PORT_DOMIBUS:-8180}/domibus}"

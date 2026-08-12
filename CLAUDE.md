@@ -33,7 +33,7 @@ Each piece of information has a single owning document; everything else links to
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
-| Installation and configuration steps, including `scripts/configureDomibus.sh` | `README.md` |
+| Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode) | `docs/configurer_domibus_via_l_interface.md` |
 | Agent conventions and workflow | this file |
 
@@ -108,7 +108,7 @@ CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL,
 
 `features/` holds the **end-to-end scenarios**, which need a live gateway and are therefore excluded from the default Cucumber profile. `make e2e` runs them with the `bout_en_bout` profile, inside the `web` container. Run them after touching the ebMS payloads or the Domibus plumbing, which the unit suite mocks away entirely.
 
-`scripts/valideSchematron.sh` confronts the messages the code produces to the Schematron rules published with the TDD — the only automated check on OOTS conformance, since the unit suite only asserts that slots are present. It needs no gateway, so `schematron.yml` runs it on a bare runner. Run it after changing anything under `app/templates/` or `app/builders/`; the owning documentation is [README](README.md#validation-des-messages-contre-les-règles-des-tdd).
+`scripts/validate_schematron.sh` confronts the messages the code produces to the Schematron rules published with the TDD — the only automated check on OOTS conformance, since the unit suite only asserts that slots are present. It needs no gateway, so `schematron.yml` runs it on a bare runner. Run it after changing anything under `app/templates/` or `app/builders/`; the owning documentation is [README](README.md#validation-des-messages-contre-les-règles-des-tdd).
 
 ## Architecture rules
 
@@ -118,7 +118,7 @@ CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL,
 - **XML out, XPath in.** Outgoing messages are ERB templates under `app/templates/`, rendered by builders that expose in methods what the template interpolates — the XML stays literally readable, and so comparable by eye to the examples published with the TDD. Incoming messages are read with Nokogiri in `app/parsers/`, **binding namespaces by URI and never by prefix**: one Domibus response binds the same prefix to two different namespaces.
 - **Everything interpolated goes through `escape`.** ERB renders outside ActionView, so nothing is escaped for us. Part of what is interpolated comes from a foreign correspondent.
 - **Specs mirror `app/`** (`spec/**/*_spec.rb`), with FactoryBot factories and the reference messages of `spec/fixtures/` — see its README for what each directory is worth as evidence. New behaviour comes with specs.
-- Config comes from environment variables only (no config files); new variables must be added to the relevant `.env*.template` with a French comment, **and** to `scripts/ci/preparEnvironnement.sh`, whose own contract check fails otherwise. Never commit real `.env*` files or secrets.
+- Config comes from environment variables only (no config files); new variables must be added to the relevant `.env*.template` with a French comment, **and** to `scripts/ci/prepare_environment.sh`, whose own contract check fails otherwise. Never commit real `.env*` files or secrets.
 
 ### Layered design — apply it while writing, not after
 
@@ -165,10 +165,10 @@ Rules:
 - `make test` works out of the box in a worktree: docker compose derives its project name from the directory, so containers and volumes are isolated per worktree.
 - **The full stack runs in as many worktrees at once as there are free ports.** The script gives each worktree the smallest offset, between +1 and +99, whose whole port set is free — free meaning neither listening nor already written into another worktree's `.env`, since a stopped stack still owns its ports. One offset applies to every port of a stack, so the worktree on 3007 has its Domibus console on 8187. The Domibus/MySQL volumes are fresh per worktree, so Domibus must be re-configured there (README steps).
 - **Run stacks from a worktree, never from the main checkout.** Its ports are the reference set, and they belong to whoever works there — an agent that starts a stack on them takes the machine's `docker compose up` away from a human who has no way of seeing why. The worktree's own set is shifted and free, so nothing is lost by using it. `docker ps -a --filter publish=<port>` names the container holding a port, whatever project it belongs to; `docker compose -p <projet> down` releases it.
-- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/preparEnvironnement.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
+- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/prepare_environment.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
 - Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in if the task needs Docker.
 
 ## Boundaries
 
 - Do not commit anything under `docs/prompts/` (git-ignored internal notes), `.env*` (except templates), `domibus/` runtime config, or `CLAUDE.local.md`.
-- The `domibus/` directory holds a **demo, self-signed** setup for local development only — its keystores are generated on the developer's machine by `scripts/genereCertificats.sh` and must never be committed nor reused for real environments. Treat anything resembling production credentials or certificates as off-limits.
+- The `domibus/` directory holds a **demo, self-signed** setup for local development only — its keystores are generated on the developer's machine by `scripts/generate_certificates.sh` and must never be committed nor reused for real environments. Treat anything resembling production credentials or certificates as off-limits.

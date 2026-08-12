@@ -56,8 +56,8 @@ Les deux magasins portent **un seul mot de passe**, partagé avec les clés priv
 | Contournement de 5.0.4 | Ce qui l'a remplacé |
 | --- | --- |
 | Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Les deux magasins se posent par la même API, sans jamais écrire dans un répertoire appartenant au conteneur |
-| Aucune route de santé : la disponibilité se sondait sur `rest/application/name`, publique par accident | `rest/public/**` est la famille explicitement publique ; `attendDomibus.sh` interroge `rest/public/application/title` |
-| Le keystore ne se lisait pas en REST : `diagnostiqueDomibus.sh` ouvrait le fichier au `keytool` dans le conteneur | `rest/internal/admin/keystore/list`, symétrique de celle du truststore |
+| Aucune route de santé : la disponibilité se sondait sur `rest/application/name`, publique par accident | `rest/public/**` est la famille explicitement publique ; `wait_for_domibus.sh` interroge `rest/public/application/title` |
+| Le keystore ne se lisait pas en REST : `diagnose_domibus.sh` ouvrait le fichier au `keytool` dans le conteneur | `rest/internal/admin/keystore/list`, symétrique de celle du truststore |
 | Les certificats de démonstration livrés avec l'image avaient expiré | Ceux de la 5.2 sont valides — mais restent publics et partagés par toutes les installations, donc toujours régénérés |
 | L'image écrasait le répertoire de configuration monté à son premier démarrage, ce qui obligeait à remplacer les certificats **après** ce démarrage | Toujours vrai, mais sans conséquence : plus rien n'a besoin d'être déposé sur le disque de la passerelle |
 | Domibus absorbait `gateway_truststore.jks` au démarrage et retirait le fichier | Idem : les magasins sont générés dans un répertoire temporaire et téléversés |
@@ -70,7 +70,7 @@ Les deux magasins portent **un seul mot de passe**, partagé avec les clés priv
 > [Unknown column 'wle1_0.MESSAGE_ENTITY_ID' in 'field list']
 > ```
 >
-> `docker compose down --volumes` efface le volume ; reprendre ensuite le [README](../README.md) depuis le démarrage de MySQL, puis rejouer `scripts/configureDomibus.sh` — magasins, PMode et Plugin User vivent dans la base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence désormais les messages par leur identifiant d'entité, et le reste du schéma a suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner vierge.
+> `docker compose down --volumes` efface le volume ; reprendre ensuite le [README](../README.md) depuis le démarrage de MySQL, puis rejouer `scripts/configure_domibus.sh` — magasins, PMode et Plugin User vivent dans la base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence désormais les messages par leur identifiant d'entité, et le reste du schéma a suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner vierge.
 
 La montée a par ailleurs permis de sortir de `domibus/` — répertoire non versionné et recréé à chaque table rase — les réglages dont le dépôt dépend : niveaux de journalisation et activation des profils de sécurité sont désormais déclarés dans `docker-compose.yml`, via `LOGGER_LEVEL_*` et `SERVER_INIT_PROPERTIES`.
 

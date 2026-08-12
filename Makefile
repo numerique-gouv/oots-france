@@ -28,7 +28,7 @@ e2e: ## Cucumber through a real Domibus — needs the stack up, see docs/test_e2
 	$(IN_WEB) cucumber --profile bout_en_bout
 
 schematron: ## The messages we produce, against the rules published with the TDD
-	scripts/valideSchematron.sh
+	scripts/validate_schematron.sh
 
 console: ## A Rails console in the running server
 	$(COMPOSE) exec web bundle exec rails console

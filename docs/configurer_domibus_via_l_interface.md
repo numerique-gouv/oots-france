@@ -1,6 +1,6 @@
 # Configurer Domibus via l'interface d'administration
 
-> Ce document décrit, geste par geste, les trois étapes de configuration d'une passerelle fraîche : compte d'accès pour l'API REST, certificats et PMode. `scripts/configureDomibus.sh` les pose en une commande, et c'est la voie normale — voir [Configurer Domibus en une commande](../README.md#configurer-domibus-en-une-commande). Les gestes ci-dessous servent à comprendre ce que le script fait, ou à reprendre une seule des trois étapes.
+> Ce document décrit, geste par geste, les trois étapes de configuration d'une passerelle fraîche : compte d'accès pour l'API REST, certificats et PMode. `scripts/configure_domibus.sh` les pose en une commande, et c'est la voie normale — voir [Configurer Domibus en une commande](../README.md#configurer-domibus-en-une-commande). Les gestes ci-dessous servent à comprendre ce que le script fait, ou à reprendre une seule des trois étapes.
 >
 > | Pour… | Voir |
 > | --- | --- |
@@ -22,7 +22,7 @@ Dans la colonne de gauche, cliquer sur « Plugin Users », puis sur le bouton «
 Les certificats livrés avec l'image Docker Domibus sont publics et partagés par toutes les installations. Le script suivant les remplace par des certificats auto-signés fraîchement générés (identité `blue_gw`, valides dix ans) :
 
 ```sh
-$ MOT_DE_PASSE_MAGASINS=… scripts/genereCertificats.sh
+$ MOT_DE_PASSE_MAGASINS=… scripts/generate_certificates.sh
 ```
 
 Le mot de passe doit être celui du `.env` avec lequel tourne la passerelle : le script ne lit pas ce fichier, et refuse de tourner sans qu'on le lui donne plutôt que de retomber sur un défaut qui masquerait l'écart.

@@ -5,7 +5,7 @@
 # Aucune valeur n'est un secret : la base, la passerelle et la clé de
 # déchiffrement sont recréées à chaque exécution et détruites avec le runner.
 #
-# Usage : scripts/ci/preparEnvironnement.sh
+# Usage : scripts/ci/prepare_environment.sh
 #
 # Variables reconnues :
 #   FORCER=1  écrase les fichiers existants (voir la garde ci-dessous)
@@ -30,7 +30,7 @@ if [ -n "$EXISTANTS" ] && [ "$FORCER" != "1" ]; then
 fi
 
 # Ces identifiants doivent être les mêmes que ceux passés à
-# scripts/configureDomibus.sh : c'est le compte que le script crée dans Domibus
+# scripts/configure_domibus.sh : c'est le compte que le script crée dans Domibus
 # et celui avec lequel l'application s'y authentifie.
 #
 # Domibus impose au mot de passe 16 à 32 caractères, avec majuscule, minuscule,
@@ -45,7 +45,7 @@ MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
 
 # Les identifiants que Domibus posera sur ses notifications vers nous. Ils
 # doivent être les mêmes ici et dans `wsplugin.push.auth.*` côté passerelle,
-# que scripts/configureDomibus.sh renseigne.
+# que scripts/configure_domibus.sh renseigne.
 LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
 MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
 
@@ -163,7 +163,7 @@ done
 # masquerait les suivants, et coûterait autant d'allers-retours que de fichiers.
 if [ -n "$ERREURS" ]; then
   echo "$ERREURS" >&2
-  echo "   Compléter scripts/ci/preparEnvironnement.sh." >&2
+  echo "   Compléter scripts/ci/prepare_environment.sh." >&2
   exit 1
 fi
 

@@ -61,7 +61,7 @@ Ensuite, la 1.2 ne couvre pas entièrement le [règlement d'exécution (UE) 2022
 
 Enfin, la 2.0 est la version qui prépare eIDAS 2 et les synergies avec le *wallet* (EUDI) — c'est-à-dire l'axe vers lequel les budgets ont été réorientés lors de la mise en hibernation du projet. La viser réaligne le dépôt avec le cadre qui le finance.
 
-La conformité des messages à la version visée se vérifie avec `scripts/valideSchematron.sh` (voir le [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
+La conformité des messages à la version visée se vérifie avec `scripts/validate_schematron.sh` (voir le [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 
 ### Le préalable à lever
 

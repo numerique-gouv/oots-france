@@ -1,6 +1,6 @@
 module Oots
   # Renders one specimen of each OOTS message, body and ebMS header, with the
-  # repository's own builders, so `scripts/valideSchematron.sh` can confront
+  # repository's own builders, so `scripts/validate_schematron.sh` can confront
   # them with the rules published with the TDD.
   #
   # The values are fictional but realistic: only the structure is validated. The

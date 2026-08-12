@@ -31,7 +31,7 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
   | truststore | `<partie>_rsa_sign` | certificat vérifiant la signature du pair |
   | truststore | `<partie>_rsa_encrypt` | certificat chiffrant à destination du pair |
 
-  L'alias unique par partie, qui suffisait avant les profils, ne suffit plus : un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans autre symptôme qu'un message jamais acquitté. `scripts/genereCertificats.sh` produit les quatre.
+  L'alias unique par partie, qui suffisait avant les profils, ne suffit plus : un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans autre symptôme qu'un message jamais acquitté. `scripts/generate_certificates.sh` produit les quatre.
 - **MPC** (*Message Partition Channel*) : la file dans laquelle les messages attendent d'être récupérés, avec sa politique de rétention.
 - **Utilisateur console vs Plugin User** : les comptes « Users » servent à l'interface web d'administration ; les comptes « Plugin Users » servent aux applications clientes (comme OOTS-France) pour s'authentifier sur les API. Les deux jeux d'identifiants sont indépendants.
 - **Plugins** : Domibus expose ses messages aux applications métier via des plugins — ici le **WS plugin** (SOAP, namespace `http://eu.domibus.wsplugin/`). Les plugins JMS et filesystem existent mais ne sont pas utilisés ; un plugin REST est apparu en 5.2.1 et exige ce cœur-là, donc ne s'installe pas sur la 5.2 en place — pourquoi, et ce qu'il faudrait pour l'adopter, dans [versions_domibus.md](versions_domibus.md).
@@ -58,7 +58,7 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 
 C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` sur une URL de l'application, en SOAP.
 
-`scripts/configureDomibus.sh` le configure, et deux choses s'y révèlent à l'usage :
+`scripts/configure_domibus.sh` le configure, et deux choses s'y révèlent à l'usage :
 
 > [!IMPORTANT]
 > **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`, `markAsDownloaded`), elles, sont modifiables à chaud.

@@ -18,7 +18,7 @@
 # La passerelle se parlant à elle-même, les deux certificats du truststore sont
 # ceux des deux clés du keystore.
 #
-# Usage : scripts/genereCertificats.sh [validité en jours ; 3650 par défaut]
+# Usage : scripts/generate_certificates.sh [validité en jours ; 3650 par défaut]
 #
 # La variable DESTINATION permet d'écrire ailleurs que dans domibus/keystores —
 # utile lorsque ce répertoire appartient au conteneur et n'est pas accessible.

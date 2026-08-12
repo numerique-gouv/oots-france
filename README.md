@@ -73,7 +73,7 @@ Une passerelle fraîche a besoin de quatre choses : un compte d'accès pour l'AP
 
 ```sh
 $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
-    scripts/configureDomibus.sh
+    scripts/configure_domibus.sh
 ```
 
 C'est ainsi que l'intégration continue monte une passerelle sans intervention humaine (voir [docs/test_e2e.md](docs/test_e2e.md)), et de quoi reconfigurer en une commande une instance repartie de zéro. Le script est rejouable : le Plugin User n'est créé que s'il manque, et recharger le même truststore ou le même PMode est sans effet.
@@ -87,7 +87,7 @@ C'est ainsi que l'intégration continue monte une passerelle sans intervention h
 > **La passerelle doit être redémarrée après ce script.** Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le script écrit, et ne prennent effet qu'au redémarrage.
 >
 > ```sh
-> $ docker compose restart domibus && scripts/ci/attendDomibus.sh
+> $ docker compose restart domibus && scripts/ci/wait_for_domibus.sh
 > ```
 
 Le script s'authentifie sur la console en `admin`/`123456`, identifiants par défaut de l'image. Sur une passerelle dont le mot de passe a déjà été changé — ce que recommande [Sécuriser les comptes d'administration](#sécuriser-les-comptes-dadministration) —, les lui passer par `DOMIBUS_ADMIN` et `DOMIBUS_MOT_DE_PASSE_ADMIN`.
@@ -133,7 +133,7 @@ Le conteneur a créé un répertoire (non versionné) `./domibus`. Il est possib
 Le conteneur `domibus` tourne avec le pilote de journalisation `none` (voir `docker-compose.yml`), ses logs étant assez verbeux pour saturer le disque en production : `docker compose logs domibus` ne renvoie donc rien. Les logs restent lisibles dans le conteneur, où le script suivant les suit :
 
 ```sh
-$ scripts/logsDomibus.sh
+$ scripts/domibus_logs.sh
 ```
 
 Le niveau de détail se règle dans `domibus/logback.xml` (rechargé automatiquement toutes les 10 secondes, sans redémarrage). Passer `org.apache.cxf` en `INFO` y fait apparaître les enveloppes SOAP échangées avec le WS plugin — utile pour déboguer, mais très bavard : l'application interroge Domibus toutes les secondes.
@@ -209,9 +209,9 @@ Cette suite remplace toutes les frontières par des doublures : elle ne touche j
 ### Validation des messages contre les règles des TDD
 
 ```sh
-$ scripts/valideSchematron.sh          # règles de la version 2.0.1 des TDD
-$ scripts/valideSchematron.sh 1.2.5    # ou d'une autre version publiée
-$ BAVARD=1 scripts/valideSchematron.sh # détaille aussi les slots facultatifs absents
+$ scripts/validate_schematron.sh          # règles de la version 2.0.1 des TDD
+$ scripts/validate_schematron.sh 1.2.5    # ou d'une autre version publiée
+$ BAVARD=1 scripts/validate_schematron.sh # détaille aussi les slots facultatifs absents
 ```
 
 Le script fait produire un exemplaire de chaque message par le code du dépôt, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://codeberg.org/SchXslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
