@@ -26,10 +26,14 @@ else
   git worktree add -b "$NOM" "$CHEMIN"
 fi
 
-for fichier in .env .env.oots .env.domibus docker-compose.override.yml; do
-  if [ -f "$RACINE/$fichier" ]; then
-    cp "$RACINE/$fichier" "$CHEMIN/$fichier"
-  fi
+# Les `.env*` sont pris par motif, ce qui dispense d'en tenir la liste ;
+# `docker-compose.override.yml` ne suit aucun motif et reste nommé, donc un
+# futur fichier de configuration hors `.env*` sera à ajouter ici.
+for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
+  case "$source" in *.template) continue ;; esac
+  [ -f "$source" ] || continue
+
+  cp "$source" "$CHEMIN/$(basename "$source")"
 done
 
 echo
