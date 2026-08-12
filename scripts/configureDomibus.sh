@@ -41,6 +41,15 @@ FICHIER_PMODE="${FICHIER_PMODE:-exemples/configuration_PMode_Domibus.xml}"
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
 PARTIE="blue_gw"
 
+# Le répertoire monté dans la passerelle, où vivent les propriétés du plugin.
+REPERTOIRE_DOMIBUS="${REPERTOIRE_DOMIBUS:-domibus}"
+
+# L'adresse à laquelle la passerelle nous notifie, et les identifiants qu'elle
+# posera dessus. Vus depuis le conteneur Domibus, d'où le nom de service.
+URL_NOTIFICATION="${URL_NOTIFICATION:-http://web:3000/domibus/notifications}"
+LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
+MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
+
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)
 trap 'rm -f "$BOCAL" "$REPONSE"' EXIT
@@ -157,14 +166,11 @@ fi
 echo "→ Vérification du Plugin User $LOGIN_API_REST"
 EXISTE=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/plugin/users?pageSize=100&page=0&authType=BASIC" \
   | sansPrefixeJSON \
-  | node -e "
-    let e = '';
-    process.stdin.on('data', (d) => { e += d; });
-    process.stdin.on('end', () => {
-      const utilisateurs = JSON.parse(e).entries ?? [];
-      console.log(utilisateurs.some((u) => u.userName === process.argv[1]) ? 'oui' : 'non');
-    });
-  " "$LOGIN_API_REST")
+  | python3 -c "
+import json, sys
+utilisateurs = json.load(sys.stdin).get('entries') or []
+print('oui' if any(u.get('userName') == sys.argv[1] for u in utilisateurs) else 'non')
+" "$LOGIN_API_REST")
 
 if [ "$EXISTE" = "oui" ]; then
   echo "  déjà présent, rien à faire"
@@ -212,10 +218,10 @@ fi
 #
 # Le `|| true` compte ici pour la même raison qu'au-dessus, et trente fois
 # plutôt qu'une : une session expirée, une page d'erreur du serveur
-# d'applications ou tout corps qui n'est pas du JSON font lever `node`, et
-# `set -e` interromprait le script sur une pile d'appels JavaScript — au lieu du
-# message d'échec ci-dessous, qui, lui, oriente. Le `2>/dev/null` ne masque que
-# cette pile : les erreurs de curl, elles, restent affichées.
+# d'applications ou tout corps qui n'est pas du JSON font lever `python3`, et
+# `set -e` interromprait le script sur une trace d'appels — au lieu du message
+# d'échec ci-dessous, qui, lui, oriente. Le `2>/dev/null` ne masque que cette
+# trace : les erreurs de curl, elles, restent affichées.
 echo "  message soumis, attente de l'acquittement"
 STATUT=""
 for _ in $(seq 1 30); do
@@ -223,14 +229,11 @@ for _ in $(seq 1 30); do
   STATUT=$(appelAuthentifie \
     "$URL_DOMIBUS/rest/internal/admin/testing/connectionmonitor?senderPartyId=$PARTIE&partyIds=$PARTIE" \
     | sansPrefixeJSON \
-    | node -e "
-      let e = '';
-      process.stdin.on('data', (d) => { e += d; });
-      process.stdin.on('end', () => {
-        const partie = JSON.parse(e)[process.argv[1]] ?? {};
-        console.log(partie.lastSent?.messageStatus ?? '');
-      });
-    " "$PARTIE" 2> /dev/null || true)
+    | python3 -c "
+import json, sys
+partie = json.load(sys.stdin).get(sys.argv[1]) or {}
+print((partie.get('lastSent') or {}).get('messageStatus') or '')
+" "$PARTIE" 2> /dev/null || true)
   [ "$STATUT" = "ACKNOWLEDGED" ] && break
   [ "$STATUT" = "SEND_FAILURE" ] && break
 done
@@ -242,4 +245,75 @@ if [ "$STATUT" != "ACKNOWLEDGED" ]; then
   exit 1
 fi
 
+
+# --------------------------------------------------- notification vers nous
+#
+# La passerelle nous appelle au lieu d'être interrogée : c'est le *push to
+# backend* du plugin WS. Les bascules se posent par l'API, mais **pas les
+# règles** : `wsplugin.push.rules` est marquée non modifiable, et n'existe que
+# dans le fichier de propriétés du plugin. Elles ne prennent donc effet qu'au
+# redémarrage de la passerelle.
+#
+# Ce fichier s'écrit **depuis le conteneur**, et non depuis l'hôte : la
+# passerelle range sa configuration en mode 770, au nom de son propre
+# utilisateur. Sur une machine où cet identifiant numérique se trouve être
+# celui de l'opérateur, écrire directement fonctionne par coïncidence ;
+# ailleurs — un runner d'intégration continue — le fichier n'est même pas
+# lisible.
+COMMANDE_DOMIBUS="${COMMANDE_DOMIBUS:-docker compose exec -T domibus}"
+CONFIG_DOMIBUS="${CONFIG_DOMIBUS:-/data/tomcat/conf/domibus}"
+PROPRIETES_PLUGIN="$CONFIG_DOMIBUS/plugins/config/ws-plugin.properties"
+
+if ! $COMMANDE_DOMIBUS test -f "$PROPRIETES_PLUGIN" 2> /dev/null; then
+  echo "❌ Fichier de propriétés du plugin introuvable : $PROPRIETES_PLUGIN" >&2
+  echo "   Commande employée pour atteindre la passerelle : $COMMANDE_DOMIBUS" >&2
+  echo "   La passerelle a-t-elle démarré au moins une fois ? La régler autrement :" >&2
+  echo "   COMMANDE_DOMIBUS='docker exec -i <conteneur>' scripts/configureDomibus.sh" >&2
+  exit 1
+fi
+
+echo "→ Configuration de la notification vers $URL_NOTIFICATION"
+
+# Le bloc est délimité, pour que le script se rejoue sans empiler ses écritures.
+# Le fichier livré avec l'image ne finit pas par un saut de ligne : sans le
+# `$a\` du sed, le bloc se collerait à sa dernière ligne et son délimiteur ne
+# serait plus reconnu au rejeu suivant.
+#
+# `markAsDownloaded=false` : à `true`, la notification vaut téléchargement, et
+# le PMode d'exemple porte `retention_downloaded="0"` — le justificatif serait
+# effacé avant que nous l'ayons récupéré. À `false`, c'est notre
+# `retrieveMessage` qui marque le message, donc après l'avoir en main.
+#
+# La règle ne filtre **aucun destinataire** : les messages qui nous arrivent en
+# portent deux différents — l'identifiant de la passerelle sur une requête
+# entrante, celui du requêteur sur la réponse qui lui revient — et une règle par
+# valeur en oublierait toujours une.
+#
+# `alert.active` vaut `false` par défaut : sans elle, l'épuisement des cinq
+# tentatives est parfaitement silencieux. L'alerte paraît dans la console
+# d'administration sans configuration supplémentaire ; l'envoi par courriel, lui,
+# demanderait un SMTP et les adresses `domibus.alert.{sender,receiver}.email`.
+$COMMANDE_DOMIBUS sh -s <<FIN_PROPRIETES
+set -e
+sed -i '/^# --- OOTS-France/,/^# --- fin OOTS-France\$/d' "$PROPRIETES_PLUGIN"
+sed -i -e '\$a\' "$PROPRIETES_PLUGIN"
+cat >> "$PROPRIETES_PLUGIN" <<'FIN_BLOC'
+# --- OOTS-France : notification vers le dorsal (écrit par configureDomibus.sh)
+wsplugin.push.enabled=true
+wsplugin.push.markAsDownloaded=false
+wsplugin.push.alert.active=true
+wsplugin.push.auth.username=$LOGIN_NOTIFICATION_DOMIBUS
+wsplugin.push.auth.password=$MOT_DE_PASSE_NOTIFICATION_DOMIBUS
+wsplugin.push.rules.oots=Notification de tout message arrivant pour nous
+wsplugin.push.rules.oots.endpoint=$URL_NOTIFICATION
+wsplugin.push.rules.oots.retry=60;5;CONSTANT
+wsplugin.push.rules.oots.type=RECEIVE_SUCCESS
+wsplugin.dispatcher.worker.cronExpression=0/5 * * * * ?
+# --- fin OOTS-France
+FIN_BLOC
+FIN_PROPRIETES
+
+echo "  écrit dans $PROPRIETES_PLUGIN — un redémarrage de la passerelle est nécessaire"
+
 echo "✅ Domibus configuré : magasins chargés, PMode chargé, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
+echo "   Notification vers le dorsal écrite ; redémarrer la passerelle pour qu'elle s'applique."

@@ -28,14 +28,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v7
+      # Les messages sont rendus par les constructeurs du dépôt, via la tâche
+      # `oots:messages` : l'application doit donc pouvoir se charger.
+      - uses: ruby/setup-ruby@v1
         with:
-          node-version: 26.x
-          cache: 'npm'
-
-      # Les messages sont produits par le code du dépôt, qui atteint `jose` via
-      # `adaptateurChiffrement` : les dépendances sont nécessaires.
-      - run: npm ci
+          ruby-version: '4.0.6'
+          bundler-cache: true
 
       # Le runner embarque un JDK, mais lequel dépend de l'image : le fixer
       # évite qu'une mise à jour de l'image change le moteur XSLT sous nos pieds.
