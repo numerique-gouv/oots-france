@@ -46,7 +46,7 @@ jobs:
       # tant que la version des TDD ne bouge pas ; leur compilation en XSLT non
       # plus, et c'est elle qui coûte. Le cache la rejoue en quelques secondes.
       - name: Restaure les artefacts de validation
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .schematron
           key: schematron-${{ env.VERSION_TDD }}
@@ -80,7 +80,7 @@ jobs:
 
       - name: Publie les messages et les rapports en cas d'échec
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: messages-et-rapports-svrl
           path: .schematron/${{ env.VERSION_TDD }}/messages/
