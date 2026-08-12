@@ -104,12 +104,31 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL` | déclare les démarches `00` **et** `T3` |
+| `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : la résolution des annuaires passe par l'environnement d'acceptation, qui est public |
 
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
-> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Elle doit néanmoins être **déclarée dans l'annuaire local**, faute de quoi la requête serait rejetée sur un `422` par `depotServicesCommunsLocal` avant même d'atteindre la passerelle, et le chemin `EDM:ERR:0004` ne s'exercerait pas.
+> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Elle n'a plus à être déclarée nulle part localement : c'est l'Evidence Broker d'acceptation qui dit quels types de justificatif chaque démarche appelle.
+
+> [!IMPORTANT]
+> **Les deux scénarios sont suspendus**, par l'étiquette `@attente_inscription_fr` que le profil `bout_en_bout` écarte : ils dépendent d'une inscription de la France aux annuaires centraux qui n'existe pas encore, et non du code. `make e2e` ne joue donc plus rien pour l'instant, et le dire ici est le seul garde-fou contre l'oubli.
+
+### Ce qui manque, et comment lever l'étiquette
+
+Le trajet part désormais des annuaires réels. La France y est absente de deux façons, et chacune arrête un scénario :
+
+| Scénario | Ce qui manque | Ce que fait le code aujourd'hui |
+| --- | --- | --- |
+| Nominal (`00`) | aucun **service de données** français au Data Service Directory | le DSD répond `DSD:ERR:0001`, traduit en `CountryCodeNotFound`, rendu `422` |
+| Erreur (`T3`) | aucune **exigence** française pour cette démarche à l'Evidence Broker | l'EB répond `EB:ERR:0001`, traduit en `ProcedureCodeNotFound`, rendu `422` |
+
+Le second est le moins évident : la requête est maintenant refusée **avant** d'atteindre la passerelle, alors que ce scénario existe pour éprouver le refus du *fournisseur*. Le rétablir demande une seconde démarche française déclarée à l'EB dont aucun justificatif n'est servi — ce que `EvidenceProvision::AnswerRequest` fait déjà de toute démarche autre que `00`.
+
+Les deux inscriptions relèvent du même travail de raccordement, décrit dans [reste_à_faire.md](reste_à_faire.md#1-les-common-services). Retirer l'étiquette une fois qu'elles sont faites.
+
+> [!IMPORTANT]
+> L'inscription et le PMode local doivent nommer **le même identifiant de partie** : le DSD désigne une partie, pas une URL, et c'est le PMode qui dit à quelle adresse elle répond. C'est ce qui permet à l'échange de boucler sur la passerelle locale tout en passant par l'annuaire réel.
 
 ## En cas d'échec
 

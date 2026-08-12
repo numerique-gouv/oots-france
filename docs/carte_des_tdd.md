@@ -77,6 +77,9 @@ Rassemblées ici parce qu'elles sont dispersées dans quatre sous-chapitres et q
 <code-pays>.<eb|dsd>.v<majeure>.cs.<acc|prod>.oots.tech.ec.europa.eu
 ```
 
+> [!IMPORTANT]
+> **L'URL de base ne se déduit pas du gabarit, elle se résout.** En production l'enregistrement rend `https://query.cs.oots.tech.ec.europa.eu/`, qui ne porte aucun segment `prod` ; en acceptation, `https://query.cs.acc.oots.tech.ec.europa.eu/`. Les enregistrements ne sont pas génériques : `v9`, ou un code pays inexistant, ne résolvent rien.
+
 **Les valeurs figées des messages** (chapitres [4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) et [4.7.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932953)) :
 
 | Où | Valeur |
@@ -89,7 +92,18 @@ Rassemblées ici parce qu'elles sont dispersées dans quatre sous-chapitres et q
 | Type MIME du corps RegRep | `application/x-ebrs+xml` |
 | Schéma de classification de l'empaquetage | `urn:fdc:oots:classification:edm` |
 
-Les préfixes d'URI du Semantic Repository suivent tous la même forme, `https://sr.oots.tech.ec.europa.eu/<famille>/…` : `requirements/`, `evidencetypeclassifications/<pays>/`, `datamodels/`, `codelists/`.
+**Les en-têtes de l'interface commune** (chapitre [3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954)), que les deux services partagent :
+
+| En-tête | Valeur |
+| --- | --- |
+| `Accept` (obligatoire) | `application/x-ebrs+xml` |
+| `Accept-Version` | `oots-cs:v2.0` — sans lui, la réponse revient à la forme v1.0, sans slot `SpecificationIdentifier` |
+| `oots-response-sig` (en réponse) | la signature JWS détachée, dont le contenu signé est l'en-tête `digest` |
+
+> [!IMPORTANT]
+> **Le code HTTP ne dit rien** : succès comme refus arrivent en `200`, et la spécification impose de lire le corps quel que soit le code. Ce qui tranche est `query:QueryResponse/@status`, et un refus se nomme dans le `code` de son `rs:Exception`.
+
+Les préfixes d'URI du Semantic Repository suivent tous la même forme, `https://sr.oots.tech.ec.europa.eu/<famille>/…` : `requirements/`, `evidencetypeclassifications/<pays>/`, `datamodels/`, `codelists/`. **L'environnement d'acceptation, lui, emploie `sr.acc.oots.tech.ec.europa.eu`** : un identifiant relevé sur l'un ne vaut pas sur l'autre.
 
 > [!IMPORTANT]
 > En v2.0, le préfixe des modèles de données est `datamodels/` ; la v1.0 employait `distributions/`. Une entrée DSD lue en v1.0 et réutilisée en v2.0 doit être réécrite.

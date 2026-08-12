@@ -14,7 +14,7 @@ Les **bouchons** sont les endroits où le code écrit une valeur en dur, faute d
 
 Le protocole fonctionne. Une requête part de France vers un correspondant étranger et une réponse revient ; une requête étrangère arrive en France et reçoit une réponse. Les messages sont construits et lus au format exigé, transportés par une passerelle eDelivery réelle, et validés contre les règles Schematron officielles de la 2.0. L'échange asynchrone — la réponse revient sur une autre connexion, parfois longtemps après — est en place, avec la `Conversation` qui relie les deux moitiés.
 
-Ce qui manque n'est presque jamais le protocole : ce sont les **raccordements au monde réel**. Le dépôt parle correctement, mais il parle à des annuaires bouchonnés, au nom d'une identité qui n'a pas été authentifiée, et il n'a aucun justificatif réel à fournir. Un échange complet, aujourd'hui, ne transporte qu'un PDF d'exemple pour la démarche de vérification système.
+Les trois annuaires centraux sont désormais interrogés pour de vrai : découverte DNS, signature des réponses vérifiée, version négociée. Ce qui manque n'est presque jamais le protocole : ce sont les **raccordements au monde réel**. Le dépôt parle correctement, mais au nom d'une identité qui n'a pas été authentifiée, et il n'a aucun justificatif réel à fournir — ni, faute d'inscription au DSD, d'existence pour qui voudrait l'interroger. Un échange complet, aujourd'hui, ne transporte qu'un PDF d'exemple pour la démarche de vérification système.
 
 > [!IMPORTANT]
 > Le système n'est pas homologué. Le requêtage reste verrouillé en production par la variable `AVEC_REQUETE_PIECE_JUSTIFICATIVE` : ne pas l'activer avant homologation. Aucun des chantiers ci-dessous ne lève cette réserve à lui seul.
@@ -29,15 +29,18 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 
 **Ce qu'exige la spécification.** Le [chapitre 3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932907) définit trois appels REST : deux vers l'Evidence Broker ([3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939)) et un vers le Data Service Directory ([3.1.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)). L'instance à interroger se **découvre par le DNS** ([3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)) : chaque État membre a le choix entre l'instance de la Commission et la sienne, et le client doit résoudre un enregistrement NAPTR pour savoir à laquelle s'adresser. Les réponses portent une **signature détachée** que le client doit vérifier, et la version attendue se négocie par un en-tête `Accept-Version` ([3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954)).
 
-**Ce que fait le dépôt.** `Directories::CommonServices` lit un objet JSON posé dans une variable d'environnement. Il rend des types de justificatif et des fournisseurs, avec la bonne forme, mais ces données sont écrites à la main. Aucun appel réseau n'est fait vers un annuaire réel. C'est le **bouchon 1**.
+**Ce que fait le dépôt.** Les trois appels sont branchés sur les annuaires réels. L'instance à interroger est découverte par NAPTR (`CommonServicesInstance`), les requêtes portent `Accept-Version: oots-cs:v2.0`, la **signature détachée de chaque réponse est vérifiée** contre les racines publiques de la Commission (`CommonServicesSignature`), et les réponses sont mises en cache. `Directories::CommonServices` n'est plus qu'une façade au-dessus de `EvidenceBrokerClient` et `DataServiceDirectoryClient`. Le bouchon 1 est levé, et le bouchon 2 avec lui : le DSD fournit le point d'accès.
 
-**Ce qu'il faut construire.** Un client HTTP par service, dans `app/clients/`, produisant les objets de valeur que le reste du code manipule déjà. Puis, dans l'ordre de dépendance : la découverte DNS des instances, la vérification de la signature des réponses, l'en-tête de version, et un cache — la spécification recommande fortement d'interposer un cache mandataire, les données étant très statiques.
+**Ce qui reste.** Trois conséquences, que ce raccordement rend possibles sans les traiter :
 
-Trois conséquences en cascade méritent d'être nommées, parce qu'elles se règlent avec ce chantier et pas avant :
+- **Le choix de l'usager.** Quand plusieurs types de justificatif ou plusieurs fournisseurs conviennent, les TDD veulent que l'usager tranche. Le code garde le premier de la liste, silencieusement.
+- **Le dialogue de désambiguïsation.** Quand un pays a plusieurs fournisseurs pour un même justificatif, le DSD répond une erreur `DSD:ERR:0005` qui demande une précision à poser à l'usager — « dans quelle ville êtes-vous né ? ». L'erreur est reconnue et remontée telle quelle ; la question n'est pas posée.
+- **Le Semantic Repository comme service.** Il reste consulté à la conception, pas à l'exécution — ce que la spécification prévoit.
 
-- **Le choix de l'usager.** Quand plusieurs types de justificatif ou plusieurs fournisseurs conviennent, les TDD veulent que l'usager tranche. Le code garde aujourd'hui le premier de la liste, silencieusement.
-- **La négociation de version.** Chaque *Access Service* publie au DSD les versions qu'il comprend ; la version annoncée dans le message doit correspondre à celle-là. Sans lecture du DSD, le dépôt annonce `oots-edm:v2.0` sans savoir si son correspondant la comprend. Le mécanisme est décrit dans [versions_tdd.md](versions_tdd.md).
-- **Le dialogue de désambiguïsation.** Quand un pays a plusieurs fournisseurs pour un même justificatif, le DSD répond une erreur `DSD:ERR:0005` qui demande une précision à poser à l'usager — « dans quelle ville êtes-vous né ? ». La réponse doit être renvoyée au DSD, puis recopiée dans la requête. Rien de tout cela n'existe.
+**La négociation de version, elle, est faite**, et n'a pas demandé de code de tri : le mécanisme et ce que le dépôt en fait sont décrits dans [versions_tdd.md](versions_tdd.md).
+
+> [!IMPORTANT]
+> **La France n'est pas inscrite au Data Service Directory**, ni en acceptation ni en production. Elle a pourtant un type de justificatif publié au Semantic Repository et rattaché à l'exigence de test dans l'Evidence Broker : il ne manque que l'entrée DSD, celle qui porte le point d'accès. Tant qu'elle manque, aucun pays ne peut interroger la France, et le test de bout en bout échoue sur `DSD:ERR:0001`, rendu en `422`. C'est un travail de raccordement, pas de code.
 
 ### 2. L'identité de l'usager
 
@@ -86,7 +89,7 @@ Trois conséquences en cascade méritent d'être nommées, parce qu'elles se rè
 | `DataServiceEvidenceType/Identifier` | Un UUID composé de zéros (**bouchon 7**) | L'identifiant attribué par le Data Service Directory |
 | `DistributedAs` | Le seul format | Le format, la **langue** souhaitée, et le **profil de conformité** pour un justificatif structuré |
 | `AssociatedDocumentRequest` | Absent | Demander en même temps une annexe, une traduction ou une version lisible par un humain — nouveauté 2.0 |
-| `EvidenceProviderClassification` | Absent | La précision fournie par l'usager pour désigner le bon fournisseur (voir chantier 1) |
+| `EvidenceProviderClassification` | Absent | La précision fournie par l'usager pour désigner le bon fournisseur, en réponse à un `DSD:ERR:0005` (voir chantier 1) |
 | `PreviewLocation`, `ReturnLocation` | Absents | Requis dans le second échange de la prévisualisation (voir chantier 3) |
 | `LegalPerson`, `AuthorizedRepresentative` | Absents | Requis dès qu'une démarche porte sur une personne morale (voir chantier 2) |
 
@@ -145,7 +148,6 @@ Quatre contrôles manquent, tous assortis d'une réponse d'erreur précise :
 
 - **Vérifier la cohérence de version à l'entrée.** La 2.0 fait voyager la version deux fois : dans l'en-tête de transport et dans le corps du message. Elles doivent concorder, et un message où elles divergent doit être **rejeté**. Le dépôt écrit bien les deux, mais ne contrôle pas celles qu'il reçoit.
 - **Distinguer conversation et échange.** En 2.0, l'identifiant de conversation désigne un **usager et sa session**, et peut couvrir plusieurs justificatifs demandés à la suite ; l'identifiant d'échange désigne un aller-retour. Le dépôt en crée un de chaque par requête, ce qui les confond. La distinction devient nécessaire dès la prévisualisation, où les deux échanges partagent le même identifiant d'échange.
-- **Résoudre le point d'accès par le DSD.** Le destinataire est aujourd'hui cherché dans la configuration locale de la passerelle : un correspondant qu'elle ne déclare pas est introuvable (**bouchon 2**). C'est le DSD qui doit fournir cette adresse.
 - **La découverte dynamique par SMP** est facultative en 2.0 et annoncée comme obligatoire par la suite. À prévoir, pas à faire maintenant.
 
 ### 10. Ce que l'appelant apprend d'un échec
@@ -166,13 +168,11 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 
 | N° | Bouchon | Où | Remplacé par |
 | --- | --- | --- | --- |
-| 1 | Les trois annuaires centraux, lus depuis un JSON de configuration | `Directories::CommonServices`, `EvidenceRequest::ResolveEvidenceType` | Chantier 1 |
-| 2 | Le point d'accès du correspondant, cherché dans le PMode local | `DomibusClient#find_access_point` | Chantier 1 (le DSD le fournit) |
 | 3 | Le justificatif français : un PDF d'exemple et une date d'émission fixe | `EvidenceProvision::AnswerRequest`, `SystemCheckResponseBuilder::ISSUING_DATE` | Chantier 4 |
 | 4 | L'identité et l'autorisation : niveau de garantie fixe, annuaire de requêteurs autorisés | `NaturalPerson::LEVEL_OF_ASSURANCE`, `BeneficiaryToken`, `Directories::EvidenceRequesters` | Chantier 2 |
 | 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleConversation` | Chantier 3 |
 | 6 | La journalisation : aucune trace conforme à l'article 17 | — | Chantier 7 |
-| 7 | L'exigence et l'identifiant du type de justificatif demandé | `EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER`, `EvidenceTypeBuilder` | Chantier 1 |
+| 7 | L'exigence et l'identifiant du type de justificatif demandé | `EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER`, `EvidenceTypeBuilder` | Chantier 5 (l'Evidence Broker et le DSD les fournissent désormais) |
 | 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
 | 9 | Le filet à erreurs vide du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
 
@@ -193,12 +193,12 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | --- | --- | --- |
 | [1 — Architecture](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932911) | Partiel | Les deux rôles existent ; l'espace de prévisualisation, non |
 | [2 — Identité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) | Absent | eIDAS, personne morale, représentation, réconciliation |
-| [3.1 — DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | Bouchonné | Le client REST et son dialogue de désambiguïsation |
-| [3.2 — Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Bouchonné | Les deux requêtes REST |
+| [3.1 — DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | Partiel | Le dialogue de désambiguïsation `DSD:ERR:0005` |
+| [3.2 — Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Conforme | — |
 | [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Absent | Modèles de données structurés |
-| [3.4 — Distribution](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Absent | Découverte DNS des instances, cache mandataire |
+| [3.4 — Distribution](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Partiel | Découverte DNS et cache faits ; le cache mandataire reste une option de déploiement |
 | [3.5 — Listes de codes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Partiel | Seuls les codes d'erreur sont transcrits ; les autres listes ne sont ni chargées ni vérifiées |
-| [3.6 — API commune](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) | Absent | En-tête de version, vérification de la signature des réponses |
+| [3.6 — API commune](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) | Conforme | — |
 | [3.7 — Sécurité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932927) | À vérifier | Profil TLS à confronter à la configuration réelle |
 | [3.8 — Journalisation des annuaires](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932917) | Hors périmètre | Ne concerne que l'opérateur d'un annuaire |
 | [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Délais d'expiration ; distinction conversation / échange ; unicité et corrélation des identifiants de requête |
@@ -220,7 +220,7 @@ L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de m
 
 | Chantier | Ne peut aboutir qu'après | Son achèvement débloque |
 | --- | --- | --- |
-| 1. Common Services | — | 5 (écriture), 6, 9 (point d'accès) |
+| 1. Common Services | *fait* | 5 (écriture), 6 |
 | 2. Identité de l'usager | Une décision hors dépôt : quel fournisseur d'identité | Rien de bloqué, mais donne leur valeur aux attributs de 3, 4 et 5 |
 | 3. Prévisualisation — côté demandeur | 9 (distinction conversation / échange) | Rien |
 | 3. Prévisualisation — côté fournisseur | 4 (avoir un document à montrer) | Rien |
@@ -231,18 +231,17 @@ L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de m
 | 7. Journalisation | — | Rien |
 | 8. Délais d'expiration — délai global d'un aller-retour | — | Rien |
 | 8. Délais d'expiration — les trois intervalles T1/T2/T3 | 3 (les intervalles se définissent autour du flux de prévisualisation) | Rien |
-| 9. Finitions eDelivery | 1, pour le seul point d'accès par le DSD | 3 (côté demandeur) |
+| 9. Finitions eDelivery | — | 3 (côté demandeur) |
 | 10. Restitution des erreurs | — | Rien |
 
 ### Ce qui peut démarrer aujourd'hui, sans rien attendre
 
-Six lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
+Cinq lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
 
-- **Les clients des Common Services** (chantier 1). Ils s'écrivent et se testent contre les exemples publiés avec la spécification : le réseau n'est pas un préalable.
 - **La validation des messages reçus** (chantier 5, seconde moitié). Elle réutilise les règles Schematron déjà présentes dans le dépôt.
 - **La journalisation** (chantier 7).
 - **Les délais d'expiration** (chantier 8), dans leur forme simple — le délai global d'un aller-retour.
-- **Deux des quatre points de finition eDelivery** (chantier 9) : le contrôle de cohérence de version à l'entrée, et la distinction entre identifiant de conversation et identifiant d'échange.
+- **Les points de finition eDelivery restants** (chantier 9) : le contrôle de cohérence de version à l'entrée, et la distinction entre identifiant de conversation et identifiant d'échange.
 - **La restitution des erreurs à l'appelant** (chantier 10). La raison de l'échec est déjà enregistrée : il s'agit de décider ce qu'on en montre.
 
 ### Ce qui ne dépend pas de ce dépôt

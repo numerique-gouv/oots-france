@@ -28,6 +28,11 @@ Deux endroits se répondent :
 
 Autrement dit, le requêtant interroge le DSD, y lit les versions que sa cible sait traiter, en choisit une qu'il sait produire, puis l'annonce dans le message. La cohabitation de plusieurs versions sur le réseau est donc prévue par la spécification elle-même, et non bricolée après coup.
 
+**En pratique, le tri ne se fait pas chez le requêtant.** La requête au DSD accepte un paramètre facultatif `specification`, et le service ne rend alors que les *Access Services* déclarant cette version. Le dépôt y passe `EdmSpecification::IDENTIFIER`, ce qui a deux conséquences utiles : aucune règle de sélection locale à écrire, et un `DSD:ERR:0001` qui veut dire exactement « aucun correspondant de ce pays ne parle notre version » plutôt que « ce pays n'a pas de fournisseur ».
+
+> [!NOTE]
+> Sur l'environnement d'acceptation, la **Lituanie** et la **Finlande** déclarent `oots-edm:v2.0` — la seconde par un service nommé « Finland OOTS DEV TDD 2.0.0 ». Les autres États membres y sont encore en v1.x. Le choix de la 2.0 a donc de quoi se tester avec de vrais correspondants.
+
 ## Le passage de v1.x à v2.0
 
 ### Ce que la Commission a effectivement décidé

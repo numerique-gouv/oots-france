@@ -80,7 +80,7 @@ La console n'expose ni OpenAPI ni documentation : la documentation technique 5.2
 
 C'est ainsi qu'a été établi le fait principal de cette montée : **5.2 préfixe chaque route par le rôle qu'elle exige** — `rest/public/…`, `rest/internal/user/…`, `rest/internal/admin/…`. Aucune des routes utilisées en 5.0.4 n'a survécu telle quelle.
 
-Seules les routes `ext/**` sont contractuelles et documentées — `ext/party`, dont l'application se sert pour résoudre un point d'accès, en fait partie.
+Seules les routes `ext/**` sont contractuelles et documentées. L'application n'en emploie aucune : elle ne parle à la passerelle que par le plugin WS, le point d'accès de son correspondant lui venant du Data Service Directory (voir [oots_context.md](oots_context.md)).
 
 La même méthode répond à la question voisine, « ce plugin tourne-t-il sur cette version ? » : elle se lit dans le POM de l'artefact et dans le comparatif des deux tags du dépôt public, pas en le déployant pour voir — c'est ainsi qu'a été tranché le cas du plugin REST ci-dessous.
 
