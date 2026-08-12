@@ -7,11 +7,12 @@ OOTS-France est la plate-forme française du [système européen OOTS](https://e
 # Documentation
 
 - [docs/oots_context.md](docs/oots_context.md) — contexte du projet OOTS : l'écosystème européen, les spécifications, ce que couvre ce dépôt et la cartographie du code. **À lire en premier** pour comprendre le projet.
-- [docs/reste_à_faire.md](docs/reste_à_faire.md) — ce qui sépare le dépôt d'une conformité complète aux TDD : inventaire par chapitre, bouchons en place et par quoi les remplacer, ordre de travail proposé.
+- [docs/reste_à_faire.md](docs/reste_à_faire.md) — ce qui sépare le dépôt d'une conformité complète aux TDD : inventaire par chapitre, bouchons en place et par quoi les remplacer, dépendances entre chantiers.
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de l'application Domibus (point d'accès eDelivery) : concepts, usage par OOTS-France, installation locale et pièges connus.
 - [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un échange OOTS complet en local, à travers Domibus.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
+- [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).
 
 # Configuration de l'environnement de développement
