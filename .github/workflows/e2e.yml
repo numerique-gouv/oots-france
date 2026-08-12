@@ -70,12 +70,14 @@ jobs:
           exit 1
 
       - name: Démarre MySQL
-        # Le README fait démarrer MySQL seul en premier : le conteneur crée la
-        # base à sa première exécution, et Domibus échoue s'il se connecte trop
-        # tôt.
+        # MySQL démarre seul en premier : le conteneur crée la base à sa
+        # première exécution, et Domibus échoue s'il se connecte trop tôt.
+        #
+        # L'attente est celle de scripts/setup.sh, et non une reprise locale :
+        # les deux chemins d'installation doivent se comporter pareil.
         run: |
           docker compose up --detach mysql
-          timeout 300 sh -c 'until docker compose logs mysql | grep -q "ready for connections"; do sleep 3; done'
+          scripts/ci/wait_for_mysql.sh
 
       - name: Démarre Domibus
         run: docker compose up --detach domibus
@@ -113,7 +115,7 @@ jobs:
         # L'état des conversations y vit, et la file des jobs GoodJob aussi.
         run: |
           docker compose up --detach postgres
-          timeout 120 sh -c 'until docker compose exec -T postgres pg_isready -U oots_france; do sleep 2; done'
+          scripts/ci/wait_for_postgres.sh
           docker compose run --rm --no-deps web bundle exec rails db:prepare
 
       - name: Démarre l'application et son worker

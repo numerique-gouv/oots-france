@@ -1,6 +1,7 @@
 #!/bin/sh
 # Écrit les fichiers .env* attendus par docker compose, avec des valeurs jetables
-# destinées à l'intégration continue (cf. docs/test_e2e.md).
+# destinées à l'intégration continue (cf. docs/test_e2e.md) et à l'installation
+# locale, que scripts/setup.sh monte par-dessus.
 #
 # Aucune valeur n'est un secret : la base, la passerelle et la clé de
 # déchiffrement sont recréées à chaque exécution et détruites avec le runner.
@@ -66,6 +67,27 @@ DB_USER=domibus
 DB_PASS=domibus_ci
 FIN
 
+# Le runner d'intégration continue installe Ruby pour lui-même ; un poste de
+# développement n'a que Git et Docker pour prérequis, d'où le repli sur l'image
+# officielle. La version se lit dans .ruby-version plutôt que d'être écrite ici :
+# le dépôt épingle déjà la même valeur en plusieurs endroits, et n'en veut pas un
+# de plus.
+executeRuby() {
+  if command -v ruby >/dev/null 2>&1; then
+    ruby "$@"
+    return
+  fi
+
+  # Sans cette garde, l'absence du fichier donnerait le tag `ruby:-slim` et une
+  # erreur de référence Docker, sans rapport visible avec sa cause.
+  if [ ! -f .ruby-version ]; then
+    echo "❌ .ruby-version introuvable : lancer ce script depuis la racine du dépôt." >&2
+    exit 1
+  fi
+
+  docker run --rm "ruby:$(cat .ruby-version)-slim" ruby "$@"
+}
+
 # La clé privée de déchiffrement est générée à la volée : rien à versionner, et
 # chaque exécution repart d'un secret neuf. La bibliothèque standard de Ruby
 # suffit, sans gem.
@@ -76,7 +98,7 @@ FIN
 # française et cette brique, qu'aucun chapitre des TDD ne contraint. La route
 # qui publie la clé le fait par soustraction des composantes secrètes, donc le
 # type de clé reste libre et le choix réversible.
-CLE_PRIVEE_JWK_EN_BASE64=$(ruby -ropenssl -rjson -rbase64 -e '
+CLE_PRIVEE_JWK_EN_BASE64=$(executeRuby -ropenssl -rjson -rbase64 -e '
 cle = OpenSSL::PKey::RSA.generate(2048)
 b64 = ->(bn) { Base64.urlsafe_encode64(bn.to_s(2), padding: false) }
 
@@ -89,6 +111,32 @@ jwk = {
 
 puts Base64.strict_encode64(JSON.generate(jwk))
 ')
+
+# Une sortie tronquée ou polluée serait recopiée telle quelle dans .env.oots.
+# `Settings.verify!` ne l'y rattraperait pas : il n'écarte que les valeurs vides,
+# et celle-ci n'en est pas une. L'échec n'apparaîtrait donc qu'au premier
+# déchiffrement d'un jeton, loin d'ici. Le contrôle reste en `base64` seul : la
+# machine qui a eu besoin du repli Docker ci-dessus n'a toujours pas de Ruby pour
+# relire ce qu'il a produit.
+#
+# Le décodage est sorti du tube pour que son code de sortie soit celui qu'on
+# teste : dans un tube, seul le dernier compte, et `base64 -d` écrit sur stdout
+# tout ce qu'il a su décoder avant d'échouer.
+CLE_JWK_DECODEE=$(echo "$CLE_PRIVEE_JWK_EN_BASE64" | base64 -d 2>/dev/null) || {
+  echo "❌ La clé JWK produite n'est pas du base64 valide." >&2
+  exit 1
+}
+
+# `qi` est le dernier champ que le générateur écrit, et `}` ferme l'objet :
+# chercher `kty`, qui vient en tête, laisserait passer une clé tronquée juste
+# après — donc amputée de tout le matériel cryptographique.
+case "$CLE_JWK_DECODEE" in
+  *'"qi"'*'}') ;;
+  *)
+    echo "❌ La clé JWK produite est incomplète." >&2
+    exit 1
+    ;;
+esac
 
 # L'annuaire déclare deux démarches sur le même type de justificatif : `00` pour
 # le scénario nominal du test de bout en bout, `T3` pour son scénario d'erreur.
