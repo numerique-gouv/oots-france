@@ -47,6 +47,7 @@ FactoryBot.define do
   end
 
   factory :evidence_provider do
+    identifier { build(:ebms_identity, id: '00000000000003') }
     access_point { build(:access_point) }
     descriptions { { 'FR' => 'Fournisseur de test' } }
 

@@ -70,45 +70,6 @@ RSpec.describe DomibusClient do
     end
   end
 
-  describe '#find_access_point' do
-    let(:party) do
-      [{ 'identifiers' => [{ 'partyId' => 'blue_gw', 'partyIdType' => { 'value' => 'urn:…:unregistered:oots' } }] }]
-    end
-
-    it 'resolves a party of the PMode into an access point' do
-      stub_request(:get, "#{base_url}/ext/party").with(query: { name: 'blue_gw' })
-        .to_return(body: party.to_json)
-
-      expect(client.find_access_point('blue_gw'))
-        .to have_attributes(id: 'blue_gw', type_id: 'urn:…:unregistered:oots')
-    end
-
-    # An access point without a scheme reaches Domibus as a property it accepts
-    # and routes nowhere. Failing at the lookup names what is wrong.
-    it 'refuses a party the PMode declares without an identifier scheme' do
-      incomplete = [{ 'identifiers' => [{ 'partyId' => 'blue_gw' }] }]
-      stub_request(:get, "#{base_url}/ext/party").with(query: { name: 'blue_gw' })
-        .to_return(body: incomplete.to_json)
-
-      expect { client.find_access_point('blue_gw') }
-        .to raise_error(ConfigurationError, /Le point d'accès « blue_gw »/)
-    end
-
-    it 'refuses to look up a recipient that was never named' do
-      expect { client.find_access_point(nil) }.to raise_error(RecipientNotFound, /non renseigné/)
-    end
-
-    # The PMode is the only directory this deployment has: a correspondent it
-    # does not declare is unreachable, and saying so plainly is what tells an
-    # operator the PMode is what needs changing.
-    it 'says so when the PMode does not declare the party' do
-      stub_request(:get, "#{base_url}/ext/party").with(query: { name: 'inconnu' }).to_return(body: '[]')
-
-      expect { client.find_access_point('inconnu') }
-        .to raise_error(RecipientNotFound, /Point d'accès inexistant : inconnu/)
-    end
-  end
-
   it 'reads the gateway URL at each call, never memoising it at load time' do
     allow(Settings).to receive(:domibus_base_url).and_return('http://ailleurs:8080/domibus')
     stub = stub_request(:post, 'http://ailleurs:8080/domibus/services/wsplugin/submitMessage')

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:7c971e8b-ec04-4968-82c2-e6fb66959ac1">
+            <rim:Slot name="DataServiceEvidenceType">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:DataServiceEvidenceType>
+                        <sdg:Identifier>41170824-15d9-4c16-984e-63b75b937b8c</sdg:Identifier>
+                        <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74</sdg:EvidenceTypeClassification>
+                        <sdg:Title lang="EN">Dummy PDF - FI</sdg:Title>
+                        <sdg:Title lang="FI">Testi-PDF</sdg:Title>
+                        <sdg:Description lang="EN">Test evidence type for test requirement </sdg:Description>
+                        <sdg:Description lang="FI">Testitodistetyyppi testivaatimukselle</sdg:Description>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/pdf</sdg:Format>
+                            <sdg:Language>EN</sdg:Language>
+                        </sdg:DistributedAs>
+                        <sdg:AccessService>
+                            <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FI">AP_FI_03</sdg:Identifier>
+                            <sdg:Name lang="EN">Finland OOTS DEV TDD 2.0.0</sdg:Name>
+                            <sdg:ConformsTo>oots-edm:v2.0</sdg:ConformsTo>
+                            <sdg:Publisher>
+                                <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FI">FIKEHA02</sdg:Identifier>
+                                <sdg:Name lang="EN">Keha v. 2.0</sdg:Name>
+                                <sdg:Description lang="EN">Evidence provider for TDD 2.0.0 tests.</sdg:Description>
+                                <sdg:Address>
+                                    <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+                                </sdg:Address>
+                                <sdg:Jurisdiction>
+                                    <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+                                </sdg:Jurisdiction>
+                            </sdg:Publisher>
+                        </sdg:AccessService>
+                        <sdg:AuthenticationLevelOfAssurance>Substantial</sdg:AuthenticationLevelOfAssurance>
+                    </sdg:DataServiceEvidenceType>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

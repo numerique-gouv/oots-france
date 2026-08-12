@@ -1,0 +1,36 @@
+require 'rails_helper'
+
+RSpec.describe EvidenceBrokerClient do
+  subject(:broker) { described_class.new(query:) }
+
+  let(:query) { instance_double(CommonServicesQuery) }
+
+  it 'asks for the requirements of a procedure in a jurisdiction' do
+    allow(query).to receive(:search)
+      .and_return(RequirementsResponseParser.new(common_services_answer('eb_requirements_fr').first))
+
+    expect(broker.requirement_identifiers(procedure_code: '00', country_code: 'FR'))
+      .to eq(['https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000'])
+
+    expect(query).to have_received(:search).with(
+      { queryId: described_class::REQUIREMENTS_QUERY, 'procedure-id': '00', 'country-code': 'FR' },
+      parser: RequirementsResponseParser,
+    )
+  end
+
+  # Chapter 3.2.4 wants the identifier percent-encoded; Faraday does it, and
+  # what matters here is that the value handed over is the bare URI.
+  it 'asks for the evidence types satisfying a requirement' do
+    allow(query).to receive(:search)
+      .and_return(EvidenceTypesResponseParser.new(common_services_answer('eb_evidence_types_fr').first))
+    requirement = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000'
+
+    expect(broker.evidence_types(requirement_id: requirement, country_code: 'FR').map(&:id))
+      .to eq(['https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'])
+
+    expect(query).to have_received(:search).with(
+      { queryId: described_class::EVIDENCE_TYPES_QUERY, 'requirement-id': requirement, 'country-code': 'FR' },
+      parser: EvidenceTypesResponseParser,
+    )
+  end
+end

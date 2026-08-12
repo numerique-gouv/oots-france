@@ -1,16 +1,49 @@
 require 'rails_helper'
 
 RSpec.describe Settings do
+  # Those read as numbers need one, the others take anything non-blank.
+  def filled = Settings::REQUIRED.index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
+
   describe '.verify!' do
     it 'passes when every required variable is filled in' do
-      with_environment(Settings::REQUIRED.index_with { 'valeur' }) do
+      with_environment(filled) do
         expect { described_class.verify! }.not_to raise_error
       end
     end
 
+    # Checked at startup like presence: read at the point of use instead, a
+    # delay of « bientôt » would only fail on the first request. Both are named
+    # here rather than derived from NUMERIC, so dropping one from it shows.
+    %w[DELAI_MAX_SERVICES_COMMUNS DUREE_CACHE_SERVICES_COMMUNS].each do |name|
+      it "refuses #{name} when it is not a whole number" do
+        with_environment(filled.merge(name => 'bientôt')) do
+          expect { described_class.verify! }
+            .to raise_error(ConfigurationError, /#{name} \(« bientôt »\)/)
+        end
+      end
+    end
+
+    # A delay of minus one passes `Integer()` and would reach Faraday as it is.
+    it 'refuses a duration that is a number but not a positive one' do
+      with_environment(filled.merge('DELAI_MAX_SERVICES_COMMUNS' => '-1')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /entiers positifs/)
+      end
+    end
+
+    # Named at once, like the absent ones: correcting one to discover the next
+    # on the following deployment is the cycle this check exists to spare.
+    it 'names every malformed number at once, rather than the first' do
+      wrong = { 'DELAI_MAX_SERVICES_COMMUNS' => 'bientôt', 'DUREE_CACHE_SERVICES_COMMUNS' => 'longtemps' }
+
+      with_environment(filled.merge(wrong)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |erreur|
+          expect(erreur.message).to include('DELAI_MAX_SERVICES_COMMUNS', 'DUREE_CACHE_SERVICES_COMMUNS')
+        end
+      end
+    end
+
     it 'names every missing variable at once, rather than the first one' do
-      with_environment(Settings::REQUIRED.index_with { 'valeur' }
-                                         .merge('URL_OOTS_FRANCE' => nil, 'LOGIN_API_REST' => nil)) do
+      with_environment(filled.merge('URL_OOTS_FRANCE' => nil, 'LOGIN_API_REST' => nil)) do
         expect { described_class.verify! }
           .to raise_error(ConfigurationError, /URL_OOTS_FRANCE, LOGIN_API_REST/)
       end
@@ -19,7 +52,7 @@ RSpec.describe Settings do
     # A variable set to spaces is the failure mode a hand-edited `.env` really
     # produces, and it reaches much further than an absent one before failing.
     it 'treats a blank variable as missing' do
-      with_environment(Settings::REQUIRED.index_with { 'valeur' }.merge('SUFFIXE_IDENTIFIANTS_DOMIBUS' => '   ')) do
+      with_environment(filled.merge('SUFFIXE_IDENTIFIANTS_DOMIBUS' => '   ')) do
         expect { described_class.verify! }.to raise_error(ConfigurationError, /SUFFIXE_IDENTIFIANTS_DOMIBUS/)
       end
     end

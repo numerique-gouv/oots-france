@@ -12,6 +12,18 @@ module Fixtures
 
   def built_envelope(name) = read_fixture("incoming/#{name}.xml")
 
+  # A directory answer captured on the acceptance environment, with the two
+  # headers that carry its signature.
+  def common_services_answer(name)
+    body = read_fixture("common_services/#{name}.xml")
+    headers = read_fixture("common_services/#{name}.headers").lines.to_h do |line|
+      field, value = line.split(':', 2)
+      [field.strip.downcase, value.to_s.strip]
+    end
+
+    [body, headers]
+  end
+
   private
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read

@@ -15,6 +15,4 @@ class AccessPoint
 
   # Ours, as the gateway knows it.
   def self.sender = new(**Settings.domibus_sender)
-
-  def ebms_identity = EbmsIdentity.new(id:, type_id:)
 end

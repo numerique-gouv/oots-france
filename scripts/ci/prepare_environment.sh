@@ -138,23 +138,28 @@ case "$CLE_JWK_DECODEE" in
     ;;
 esac
 
-# L'annuaire déclare deux démarches sur le même type de justificatif : `00` pour
-# le scénario nominal du test de bout en bout, `T3` pour son scénario d'erreur.
-# Les deux doivent y figurer, cf. docs/test_e2e.md.
-#
-# Le fournisseur français, lui, garde son identité réelle plutôt qu'un nom de
-# test : elle est recopiée dans le `ErrorProvider` des messages de référence de
+# Le fournisseur français garde son identité réelle plutôt qu'un nom de test :
+# elle est recopiée dans le `ErrorProvider` des messages de référence de
 # spec/fixtures/, et `spec/support/test_environment.rb` ne la pose qu'en `||=`.
 # Un nom de test ici passerait dans le conteneur par `env_file` et ferait rougir
 # la suite unitaire, que rien n'aurait pourtant modifiée.
+#
+# Les annuaires visés sont ceux de l'environnement d'acceptation, qui est
+# public. Le test de bout en bout y résout un fournisseur français réel, dont
+# l'inscription est le préalable décrit dans docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
-DONNEES_DEPOT_SERVICES_COMMUNS_LOCAL={"typesJustificatif":[{"id":"https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000","descriptions":{"FR":"Justificatif de test","EN":"Test evidence"},"formatDistribution":"application/pdf","fournisseurs":{"FR":[{"pointAcces":{"id":"blue_gw","typeId":"urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"},"descriptions":{"FR":"Fournisseur de test"}}]}}],"demarches":[{"code":"00","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]},{"code":"T3","idsTypeJustificatif":["https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000"]}]}
 DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
+
+CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
+DELAI_MAX_SERVICES_COMMUNS=10000
+DUREE_CACHE_SERVICES_COMMUNS=3600
+ENVIRONNEMENT_SERVICES_COMMUNS=acc
+PAYS_SERVICES_COMMUNS=FR
 
 DELAI_MAX_ATTENTE_DOMIBUS=30000
 IDENTIFIANT_EXPEDITEUR_DOMIBUS=blue_gw

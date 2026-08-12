@@ -7,7 +7,7 @@ RSpec.describe EvidenceRequestBuilder do
     {
       requester: EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur"),
       provider: EvidenceProvider.new(
-        access_point: AccessPoint.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+        identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
         descriptions: { 'EN' => 'Civil Registration Office Berlin I' },
       ),
       beneficiary: NaturalPerson.new(
@@ -88,7 +88,7 @@ RSpec.describe EvidenceRequestBuilder do
   # day be read from a message a foreign correspondent sent us.
   it 'escapes a name that would otherwise inject an element' do
     hostile = EvidenceProvider.new(
-      access_point: AccessPoint.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+      identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
       descriptions: { 'EN' => '</sdg:Name><sdg:Injecté/>' },
     )
     rendered = described_class.new(**attributes, provider: hostile).render
