@@ -1,0 +1,85 @@
+<query:QueryResponse
+        xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+        xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        xmlns:sdg="http://data.europa.eu/p4s"
+        xmlns:xlink="http://www.w3.org/1999/xlink"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
+        requestId="<%= escape(request_id) %>">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= EdmSpecification::IDENTIFIER %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(document_id) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value><%= timestamp %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+<%= provider_agent %>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= requester_agent %>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:RegistryObjectList>
+    <rim:RegistryObject xsi:type="rim:RegistryPackageType" id="urn:uuid:<%= escape(package_id) %>">
+      <rim:RegistryObjectList>
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:<%= escape(extrinsic_object_id) %>">
+          <rim:Slot name="EvidenceMetadata">
+            <rim:SlotValue xsi:type="rim:AnyValueType">
+              <sdg:Evidence>
+                <sdg:Identifier><%= escape(evidence_id) %></sdg:Identifier>
+                <sdg:IsAbout>
+                  <sdg:NaturalPerson>
+<%- if beneficiary.eidas_identifier.present? -%>
+                    <sdg:Identifier schemeID="eidas"><%= escape(beneficiary.eidas_identifier) %></sdg:Identifier>
+<%- end -%>
+                    <sdg:FamilyName><%= escape(beneficiary.family_name) %></sdg:FamilyName>
+                    <sdg:GivenName><%= escape(beneficiary.given_name) %></sdg:GivenName>
+                    <sdg:DateOfBirth><%= escape(beneficiary.date_of_birth) %></sdg:DateOfBirth>
+                  </sdg:NaturalPerson>
+                </sdg:IsAbout>
+                <sdg:IssuingAuthority>
+                  <sdg:Identifier schemeID="<%= escape(provider_identity.type_id) %>"><%= escape(provider_identity.id) %></sdg:Identifier>
+<%- provider_names.each do |language, text| -%>
+                  <sdg:Name lang="<%= escape(language) %>"><%= escape(text) %></sdg:Name>
+<%- end -%>
+                </sdg:IssuingAuthority>
+                <sdg:IsConformantTo>
+                  <sdg:EvidenceTypeClassification><%= escape(evidence_type.id) %></sdg:EvidenceTypeClassification>
+<%- evidence_type.descriptions.each do |language, title| -%>
+                  <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
+<%- end -%>
+                </sdg:IsConformantTo>
+                <sdg:IssuingDate><%= SystemCheckResponseBuilder::ISSUING_DATE %></sdg:IssuingDate>
+                <sdg:Distribution>
+                  <sdg:Format><%= escape(evidence_type.distribution_format) %></sdg:Format>
+                </sdg:Distribution>
+              </sdg:Evidence>
+            </rim:SlotValue>
+          </rim:Slot>
+          <rim:Classification id="urn:uuid:<%= escape(classification_id) %>" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
+          <rim:RepositoryItemRef xlink:href="<%= escape(attachment.identifier) %>" xlink:title="Evidence"/>
+        </rim:RegistryObject>
+      </rim:RegistryObjectList>
+    </rim:RegistryObject>
+  </rim:RegistryObjectList>
+</query:QueryResponse>

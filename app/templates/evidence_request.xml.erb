@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+          xmlns:sdg="http://data.europa.eu/p4s"
+          xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+          xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+          xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          id="urn:uuid:<%= escape(document_id) %>">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= EdmSpecification::IDENTIFIER %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value><%= timestamp %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Procedure">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(procedure_code) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="PossibilityForPreview">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value><%= preview_possible %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="ExplicitRequestGiven">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>true</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Requirements">
+    <rim:SlotValue xsi:type="rim:CollectionValueType"
+      collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Requirement>
+          <sdg:Identifier><%= EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER %></sdg:Identifier>
+          <sdg:Name lang="EN"><%= EvidenceRequestBuilder::REQUIREMENT_NAME %></sdg:Name>
+        </sdg:Requirement>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+<%= requester_agent %>
+      </rim:Element>
+      <rim:Element xsi:type="rim:AnyValueType">
+<%= intermediary_platform_agent %>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= provider_agent %>
+    </rim:SlotValue>
+  </rim:Slot>
+  <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
+  <query:Query queryDefinition="DocumentQuery">
+    <rim:Slot name="NaturalPerson">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= beneficiary %>
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceRequest">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= evidence_type %>
+      </rim:SlotValue>
+    </rim:Slot>
+  </query:Query>
+</query:QueryRequest>

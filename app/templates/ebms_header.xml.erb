@@ -1,0 +1,45 @@
+<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+  <eb:UserMessage>
+    <eb:MessageInfo>
+      <eb:Timestamp><%= timestamp %></eb:Timestamp>
+      <eb:MessageId><%= escape(message_id) %></eb:MessageId>
+    </eb:MessageInfo>
+    <eb:PartyInfo>
+      <eb:From>
+        <eb:PartyId type="<%= escape(sender.type_id) %>"><%= escape(sender.id) %></eb:PartyId>
+        <eb:Role><%= AccessPoint::ROLE %></eb:Role>
+      </eb:From>
+      <eb:To>
+        <eb:PartyId type="<%= escape(recipient.type_id) %>"><%= escape(recipient.id) %></eb:PartyId>
+        <eb:Role><%= AccessPoint::ROLE %></eb:Role>
+      </eb:To>
+    </eb:PartyInfo>
+    <eb:CollaborationInfo>
+      <eb:Service type="<%= EbmsHeaderBuilder::SERVICE_TYPE %>"><%= EbmsHeaderBuilder::SERVICE %></eb:Service>
+      <eb:Action><%= action %></eb:Action>
+<%- if conversation_id.present? -%>
+      <eb:ConversationId><%= escape(conversation_id) %></eb:ConversationId>
+<%- end -%>
+    </eb:CollaborationInfo>
+    <eb:MessageProperties>
+      <eb:Property name="originalSender" type="<%= escape(original_sender.type_id) %>"><%= escape(original_sender.id) %></eb:Property>
+      <eb:Property name="finalRecipient" type="<%= escape(final_recipient.type_id) %>"><%= escape(final_recipient.id) %></eb:Property>
+      <eb:Property name="ExchangeId"><%= escape(exchange_id) %></eb:Property>
+      <eb:Property name="SpecificationId"><%= EdmSpecification::IDENTIFIER %></eb:Property>
+    </eb:MessageProperties>
+    <eb:PayloadInfo>
+      <eb:PartInfo href="<%= escape(payload_id) %>">
+        <eb:PartProperties>
+          <eb:Property name="MimeType"><%= EbmsHeaderBuilder::REGREP_MIME_TYPE %></eb:Property>
+        </eb:PartProperties>
+      </eb:PartInfo>
+<%- if attachment.present? -%>
+      <eb:PartInfo href="<%= escape(attachment.identifier) %>">
+        <eb:PartProperties>
+          <eb:Property name="MimeType"><%= Attachment::MIME_TYPE %></eb:Property>
+        </eb:PartProperties>
+      </eb:PartInfo>
+<%- end -%>
+    </eb:PayloadInfo>
+  </eb:UserMessage>
+</eb:Messaging>

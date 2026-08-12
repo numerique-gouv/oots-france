@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryResponse xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+                     xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                     xmlns:sdg="http://data.europa.eu/p4s"
+                     xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     requestId="<%= escape(request_id) %>"
+                     status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= EdmSpecification::IDENTIFIER %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(document_id) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="ErrorProvider">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= provider_agent %>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= requester_agent %>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rs:Exception xsi:type="<%= escape(exception.type) %>"
+                message="<%= escape(exception.message) %>"
+                severity="<%= escape(exception.severity) %>"
+<%- if exception.code.present? -%>
+                code="<%= escape(exception.code) %>"
+<%- end -%>
+                >
+    <rim:Slot name="Timestamp">
+      <rim:SlotValue xsi:type="rim:DateTimeValueType">
+        <rim:Value><%= timestamp %></rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+<%- if preview_location.present? -%>
+    <rim:Slot name="PreviewLocation">
+      <rim:SlotValue xsi:type="rim:StringValueType">
+        <rim:Value><%= escape(preview_location) %></rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+<%- end -%>
+  </rs:Exception>
+</query:QueryResponse>
