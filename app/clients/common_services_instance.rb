@@ -52,12 +52,18 @@ class CommonServicesInstance
     uri
   end
 
-  # `Resolv` swallows a timeout of its own accord — `ResolvTimeout` descends
-  # from `Timeout::Error`, not from `ResolvError`, and `raise_timeout_errors`
-  # is off by default — so a filtered resolver returns an empty list rather
-  # than raising, and is reported below as a record that does not exist.
+  # `raise_timeout_errors`, because it is off by default and `Resolv` then
+  # swallows its own exhaustion error: a filtered resolver would return an
+  # empty list, reported below as a country that published no record — sending
+  # the reader to the Commission for a registration that is not the problem.
+  #
+  # Merged into the default configuration rather than passed alone: a bare
+  # hash leaves `Resolv` with no nameserver but `0.0.0.0`, which resolves
+  # nothing at all.
   def records
-    Resolv::DNS.open { |dns| dns.getresources(name, Resolv::DNS::Resource::IN::NAPTR) }
+    Resolv::DNS.open(Resolv::DNS::Config.default_config_hash.merge(raise_timeout_errors: true)) do |dns|
+      dns.getresources(name, Resolv::DNS::Resource::IN::NAPTR)
+    end
   rescue Resolv::ResolvError => e
     raise CommonServicesError, "Résolution DNS impossible pour « #{name} » : #{e.message}."
   end

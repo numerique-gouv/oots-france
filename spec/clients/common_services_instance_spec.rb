@@ -73,6 +73,16 @@ RSpec.describe CommonServicesInstance do
     expect { instance.base_url }.to raise_error(CommonServicesError, /Résolution DNS impossible/)
   end
 
+  # Without it, an exhausted resolver returns an empty list and is reported as
+  # a country that published no record — and the nameservers have to be carried
+  # over, a bare hash leaving `Resolv` with `0.0.0.0` alone.
+  it 'asks the resolver to raise its timeouts, keeping the configured nameservers' do
+    instance.base_url
+
+    expect(Resolv::DNS).to have_received(:open)
+      .with(hash_including(raise_timeout_errors: true, nameserver: Resolv::DNS::Config.default_config_hash[:nameserver]))
+  end
+
   context 'when the environment names the instance' do
     around do |example|
       ENV['URL_BASE_DATA_SERVICE_DIRECTORY'] = 'http://web:4001/dsd'
