@@ -1,5 +1,4 @@
-# Talks to the Domibus WS plugin, and to its administration REST API for the
-# one thing the plugin does not expose: resolving a party of the PMode.
+# Talks to the Domibus WS plugin.
 #
 # No SOAP client: a `POST` in `text/xml` with basic authentication is all the
 # plugin asks for. No MTOM and no WS-Security either — the gateway signs and
@@ -27,31 +26,10 @@ class DomibusClient
     RetrievedMessageParser.new(post_soap('retrieveMessage', request))
   end
 
-  # The parties of the *local* PMode: a correspondent it does not declare is
-  # not found. Stub 2 of `docs/reste_à_faire.md`, which the DSD is to replace.
-  def find_access_point(name)
-    raise RecipientNotFound, 'Destinataire non renseigné.' if name.blank?
-
-    parties = get_json('ext/party', name:)
-    party = parties.first
-    raise RecipientNotFound, "Point d'accès inexistant : #{name}." if party.nil?
-
-    identifier = party.dig('identifiers', 0) || {}
-
-    AccessPoint.new(id: identifier['partyId'], type_id: identifier.dig('partyIdType', 'value'))
-      .validate!("Le point d'accès « #{name} »")
-  end
-
   private
 
   def post_soap(operation, body)
     connection.post("#{WS_PLUGIN_PATH}/#{operation}", body, 'Content-Type' => 'text/xml').body
-  end
-
-  def get_json(path, parameters)
-    response = connection.get(path, parameters)
-
-    JSON.parse(response.body)
   end
 
   # Lazily, so the base URL is read now and not when the file loads, which

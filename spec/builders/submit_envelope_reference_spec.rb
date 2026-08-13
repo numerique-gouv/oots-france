@@ -136,7 +136,8 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
 
   def german_provider
     EvidenceProvider.new(
-      access_point: AccessPoint.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+      identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+      access_point: german_access_point,
       descriptions: { 'EN' => 'Civil Registration Office Berlin I' },
     )
   end

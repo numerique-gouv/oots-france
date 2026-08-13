@@ -57,3 +57,21 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 > - la déclaration `<?xml …?>` des requêtes était précédée d'un saut de ligne, ce qu'un analyseur strict refuse.
 >
 > La réparation ne change que les déclarations d'espaces de noms et cette ligne blanche : le contenu, lui, est celui que les constructeurs produisaient. Ces fichiers restent un corpus de non-régression, pas un modèle — c'est `incoming/reel/` qui tient ce rôle.
+
+## `common_services/` — ce que les annuaires centraux répondent vraiment
+
+Six réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
+
+| Fichier | Contenu |
+| --- | --- |
+| `eb_requirements_fr` | Evidence Broker, exigences de la démarche `00` pour la France |
+| `eb_requirements_vides` | la même requête pour `T3`, à laquelle la France ne répond rien : `EB:ERR:0001` |
+| `eb_evidence_types_fr`, `eb_evidence_types_fi` | Evidence Broker, types de justificatif satisfaisant l'exigence de test, pour la France et pour la Finlande |
+| `dsd_data_services_fi` | Data Service Directory, le service finlandais qui déclare `oots-edm:v2.0` |
+| `dsd_aucun_service_fr` | la même requête pour la France, qui n'a aucun service inscrit : `DSD:ERR:0001` |
+
+> [!IMPORTANT]
+> **Ne pas retoucher ces fichiers.** Leur signature couvre les octets du corps : changer un caractère la casse, et `spec/clients/common_services_signature_spec.rb` — qui vérifie la vraie signature de la Commission — vire au rouge. Un cas de figure qui demande un corps différent se fabrique dans la spec, à partir de la fixture, jamais en éditant la fixture.
+
+> [!NOTE]
+> Le test de bout en bout n'emploie pas ces captures : son faux annuaire signe lui-même, et rend donc des gabarits, décalqués d'ici mais fabriqués — `features/support/common_services/`. Ce sont deux choses différentes, et seule celle-ci fait foi. Voir [test_e2e.md](../../docs/test_e2e.md#les-annuaires-centraux-sont-doublés).

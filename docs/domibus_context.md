@@ -47,7 +47,6 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 | SOAP `…/services/wsplugin/submitMessage` | `submitMessage` | Soumettre un message ebMS sortant (requête ou réponse de justificatif) |
 | SOAP `…/services/wsplugin/listPendingMessages` | `listPendingMessages` | Lister les messages entrants en attente (filtrables par `conversationId`) |
 | SOAP `…/services/wsplugin/retrieveMessage` | `retrieveMessage` | Récupérer un message entrant par son `messageID` |
-| REST `…/ext/party` | `GET ?name=…` | Annuaire des parties du PMode (`DomibusClient#find_access_point`, pour résoudre un point d'accès) |
 
 **C'est la passerelle qui appelle** : le plugin WS pousse une notification vers `POST /domibus/notifications` dès qu'un message arrive pour nous. La route accuse réception et met le traitement en file ; le travail de fond enchaîne alors `retrieveMessage` et aiguille sur l'action ebMS. Les enveloppes SOAP sortantes sont des gabarits d'`app/templates/` ; les réponses sont lues en XPath par `app/parsers/`.
 

@@ -11,7 +11,6 @@ module EvidenceRequest
       DecryptBeneficiary,
       ResolveEvidenceType,
       ResolveProvider,
-      ResolveAccessPoint,
       OpenConversation,
       SendToGateway
   end

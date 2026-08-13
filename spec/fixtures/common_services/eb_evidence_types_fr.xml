@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:de863d98-f063-4501-a8e3-51bbe3c3736d">
+            <rim:Slot name="Requirement">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:Requirement>
+                        <sdg:Identifier>https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000</sdg:Identifier>
+                        <sdg:Name lang="EN">(TEST) Test Requirement</sdg:Name>
+                        <sdg:Name lang="FI">Testivaatimus</sdg:Name>
+                        <sdg:Description lang="EN">Member States may assign their own Evidence Types to this Requirement to perform Smoke Tests in the production system. This requirement MUST only be linked with an MS Test Procedure</sdg:Description>
+                        <sdg:Description lang="FI">Testivaatimuksen avulla jäsenmaat voivat testata järjestelmän toimivuutta.</sdg:Description>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>fb362e18-2e09-4bfe-9a9b-ac0eccfda758</sdg:Identifier>
+                            <sdg:Title lang="EN">LAMA-BPO Submitting an initial application for admission to public tertiary education institution</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure for LAMA-BPO procedure portal integration</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T2</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>9783d769-63d5-4dce-9e1d-c932fe4cccba</sdg:Identifier>
+                            <sdg:Title lang="EN">Registration of Birth</sdg:Title>
+                            <sdg:Title lang="DE">Geburtsanmeldung</sdg:Title>
+                            <sdg:Description lang="EN">This procedure is used, when a new born child gets registered.</sdg:Description>
+                            <sdg:Description lang="DE">Dieses Verfahren wird genutzt, wenn ein Neugeborenes registriert wird.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>R1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>5ab14953-8869-44ae-a984-df5cffc5afed</sdg:Identifier>
+                            <sdg:Title lang="EN">Applying for tertiary education study financing such as study grants and loans from a public body or institution</sdg:Title>
+                            <sdg:Title lang="SV">Ansökan om studiestöd</sdg:Title>
+                            <sdg:Title lang="FI">Opintoetuuden hakeminen kolmannen asteen opintoihin</sdg:Title>
+                            <sdg:Description lang="EN">Applying for tertiary education study financing.</sdg:Description>
+                            <sdg:Description lang="SV">Ansökan om studiestöd</sdg:Description>
+                            <sdg:Description lang="FI">Opintoetuuden hakeminen kolmannen asteen opintoihin.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>54d19e6c-e070-48d5-84a7-6c7531b54e28</sdg:Identifier>
+                            <sdg:Title lang="EN">Procedure to test all requirement</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>X4</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>EE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>67a1ec89-4878-49ba-82e5-bf2f99dde5b6</sdg:Identifier>
+                            <sdg:Title lang="EN">Testing procedure 1</sdg:Title>
+                            <sdg:Description lang="EN">Dscription of the procedure 1</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>U2</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>RO</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>278c4348-ab3b-4f40-8a2c-decbdf223859</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure for Accelerator event</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>0027da9f-84bd-44f8-aa8b-934f0f8bf366</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>PT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>882d364c-27bc-4d7c-b756-eb354b27fea2</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure</sdg:Title>
+                            <sdg:Title lang="EL">Δοκιμαστική Διαδικασία</sdg:Title>
+                            <sdg:Description lang="EN">Procedure for testing evidence requests from Greek Providers</sdg:Description>
+                            <sdg:Description lang="EL">Διαδικασία για τη δοκιμή ανάκτησης ελληνικών τεκμηρίων</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>EL</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>959ca2df-6d78-4a3a-9803-ce9e3e8c8ad3</sdg:Identifier>
+                            <sdg:Title lang="EN">(ES TEST) Procedure</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>ES</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>662cc333-dc95-4f68-a64a-4535ce084225</sdg:Identifier>
+                            <sdg:Title lang="EN">Testprocedure - Dutch health check</sdg:Title>
+                            <sdg:Description lang="EN">Dutch member state test procedure for health check purposes </sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>NL</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>55c70a3a-cf0a-4261-90be-b2cccef57bf9</sdg:Identifier>
+                            <sdg:Title lang="EN">Test procedure</sdg:Title>
+                            <sdg:Title lang="DE">Testverfahren</sdg:Title>
+                            <sdg:Title lang="FR">Procédure de test</sdg:Title>
+                            <sdg:Title lang="NL">Test procedure</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure</sdg:Description>
+                            <sdg:Description lang="DE">Testverfahren</sdg:Description>
+                            <sdg:Description lang="FR">Procédure de test</sdg:Description>
+                            <sdg:Description lang="NL">Test procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>BE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>88330d77-9ca9-449e-bb6c-fdacc77deea5</sdg:Identifier>
+                            <sdg:Title lang="EN">LT Test Procedure (00)</sdg:Title>
+                            <sdg:Description lang="EN">Test Procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>42f464a1-b9c6-4ba2-a185-3ab7f5e50a4b</sdg:Identifier>
+                            <sdg:Title lang="EN">Test National Procedure AT</sdg:Title>
+                            <sdg:Title lang="DE">Test Österreichisches nationales Testverfahren (AT)</sdg:Title>
+                            <sdg:Description lang="EN">Test National Procedure AT Description</sdg:Description>
+                            <sdg:Description lang="DE">Test Österreichisches nationales Testverfahren (AT) Beschreibung</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>92c27c13-5c49-439b-a334-683d736a0cb7</sdg:Identifier>
+                            <sdg:Title lang="EN">Test - FR - MS Procedure</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>651736d5-a22c-48a4-888a-6b3979a42705</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>HR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>aa57e9a3-4e43-40e1-a2b5-080fecb2ed36</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure - HU</sdg:Title>
+                            <sdg:Title lang="HU">Teszt eljárás - HU</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>HU</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>a3db09f2-faeb-4c0e-8ff4-86f1d70767c2</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure RO</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>RO</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>08528b9d-1a42-401e-9697-caaacd2c327a</sdg:Identifier>
+                            <sdg:Title lang="EN">Testprocedure of Germany</sdg:Title>
+                            <sdg:Title lang="DE">Testverfahren von Deutschland</sdg:Title>
+                            <sdg:Description lang="EN">This is a test procedure of Germany</sdg:Description>
+                            <sdg:Description lang="DE">Dies ist ein Testverfahren von Deutschland</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>8dd2c4ad-b6db-48aa-95b9-aac0cfd8c263</sdg:Identifier>
+                            <sdg:Title lang="EN">Test procedure of Czech Republic</sdg:Title>
+                            <sdg:Title lang="CS">Testovací procedura České republiky</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>CZ</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>fff56ef2-ae0e-4895-85d0-1595ec32a19a</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST DANISH Procedure</sdg:Title>
+                            <sdg:Title lang="DA">TEST DANSK Procedure</sdg:Title>
+                            <sdg:Description lang="EN">TEST DANISH Procedure</sdg:Description>
+                            <sdg:Description lang="DA">TEST DANSK Procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>8a0c3b89-4556-4b88-84a8-1ee142311bbe</sdg:Identifier>
+                            <sdg:Title lang="EN">Second TEST procedure</sdg:Title>
+                            <sdg:Description lang="EN">Second member state TEST procedure to verify having multiple member state procedures tied to one SDG procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>9d90365e-3fb9-4d6a-a6a8-61cbfeb7c8df</sdg:Identifier>
+                            <sdg:Title lang="EN">Test procedure</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LU</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>d7debe70-dfc5-4ed0-861d-461c0c5ef29d</sdg:Identifier>
+                            <sdg:Title lang="EN">U3</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>U3</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>bb2710ae-b6bf-4ad0-a89c-82689814ec35</sdg:Identifier>
+                            <sdg:Title lang="EN">Test procedure</sdg:Title>
+                            <sdg:Title lang="SL">Testni postopek</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SI</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>d064774c-2f06-4b07-8f65-311c48f43e9e</sdg:Identifier>
+                            <sdg:Title lang="EN">Proof of birth</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>IE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>e81f2b34-c8e3-4658-ad75-1921bbd5de13</sdg:Identifier>
+                            <sdg:Title lang="EN">Request Birth Certificate</sdg:Title>
+                            <sdg:Description lang="EN">Request Birth Certificate</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>R1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>IE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>d58ec3ab-4c97-43ab-b0c1-20ef6a40ab44</sdg:Identifier>
+                            <sdg:Title lang="EN">Applying for a tertiary education study financing, such as study grants and loans from a public body or institution</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>IE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>4934ad9c-8874-441b-b1c6-cd7bab235135</sdg:Identifier>
+                            <sdg:Title lang="EN">Submitting an initial application for admission to public tertiary education institution</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T2</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>IE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>60d11303-3aa5-454e-be0a-0125f857ee69</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure</sdg:Title>
+                            <sdg:Title lang="LT">Test paslauga</sdg:Title>
+                            <sdg:Description lang="EN">test</sdg:Description>
+                            <sdg:Description lang="LT">test</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>085872bd-3218-46ff-98aa-e9339c856695</sdg:Identifier>
+                            <sdg:Title lang="EN">test</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>U4</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>d347172e-03d8-4916-8307-a637186c5efe</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST PROCEDURE CY</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>CY</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>0e796eae-6c6a-4f0a-ab59-fc59ae6b942e</sdg:Identifier>
+                            <sdg:Title lang="EN">Estonian Test Procedure</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>EE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>df6db4db-05a4-4793-a742-a719b5babafb</sdg:Identifier>
+                            <sdg:Title lang="EN">Test 00 procedure</sdg:Title>
+                            <sdg:Description lang="EN">Testing purposes procude for test requirement 1 or 00</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LV</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>8f596d47-082a-4a2a-9c1f-213ad6aca780</sdg:Identifier>
+                            <sdg:Title lang="EN">Notification of a data intermediation services provider</sdg:Title>
+                            <sdg:Description lang="EN">The notification of a data intermediation services provider is regulated in Article 11 of the Data Governance Act.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>X10</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>958e1322-5cb0-4b0b-94f0-47b484f68dd8</sdg:Identifier>
+                            <sdg:Title lang="EN">Recognition of foreign professional qualification</sdg:Title>
+                            <sdg:Description lang="EN">Recognition of professional qualifications is the process of oficial decisionmaking on the equivalence of a formal qualification or other professional qualification (i.e. non-formal education, professional experience) obtained in a member state or a third country for the purpose of gaining access to a so-called regulated profession. More information is available at: https://uznavanie.minedu.sk/en/category/recognition-of-professional-qualifications-for-regulated-pro</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>AM1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>fc120dfe-4e34-4024-b33c-24bb991159a4</sdg:Identifier>
+                            <sdg:Title lang="EN">Dummy Procedure</sdg:Title>
+                            <sdg:Description lang="EN">This procedure is a dummy to test with other member states supporting this feature.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>MT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>1c10e67f-bdea-41d6-bdf5-5f665736aa85</sdg:Identifier>
+                            <sdg:Title lang="EN">FULL all evidences test</sdg:Title>
+                            <sdg:Description lang="EN">FULL all evidences test</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>f742cca0-17cf-4b05-81e4-30978219fb7b</sdg:Identifier>
+                            <sdg:Title lang="EN">Registration as a data altruism organisation recognised in the Union</sdg:Title>
+                            <sdg:Description lang="EN">The registration procedure of recognised data altruism organisations is regulated in Article 19 of the Data Governance Act.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>X11</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>f470dfb8-51c1-4ead-86f6-26cb438b1ba0</sdg:Identifier>
+                            <sdg:Title lang="EN">Cross-border provision of services in the Slovak Republic</sdg:Title>
+                            <sdg:Title lang="SK">Oznámenie o cezhraničnom poskytovaní služieb na území slovenskej republiky</sdg:Title>
+                            <sdg:Description lang="EN">Cross-border providers should fulfil their notification obligation prior to providing the service in Slovakia for the first time. The notification applies only to provision of services representing regulated (craft or regulated) trades. Unregulated trades are not subject to the notification obligation. Examples of cross-border provision of services 1) a tourist guide established in Spain is guiding tourists on a tour in Slovakia; 2) a Czech entrepreneur with trade authorisation in construction wins a one-off contract to build a residential building in Slovakia; 3) a Slovak company wins a contract to build a photovoltaic power plant in Denmark; 4) a Polish catering company organises a corporate event for a Slovak company in Bratislava.</sdg:Description>
+                            <sdg:Description lang="SK">Príkladový popis</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>X1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>50a3de80-12aa-4d9f-8bbf-457ceccda4c5</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure - FI</sdg:Title>
+                            <sdg:Title lang="SV">Test - FI</sdg:Title>
+                            <sdg:Title lang="FI">Testimenettely - FI</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure as requested in https://ec.europa.eu/digital-building-blocks/wikis/display/SDGOO/26.+Test+Procedure+and+Test+Requirement+and+Test+Evidence+Classification</sdg:Description>
+                            <sdg:Description lang="SV">Testförfarande</sdg:Description>
+                            <sdg:Description lang="FI">Testimenettely https://ec.europa.eu/digital-building-blocks/wikis/display/SDGOO/26.+Test+Procedure+and+Test+Requirement+and+Test+Evidence+Classification mukaan</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>68b049ff-c8dc-4dc5-a70a-bbb955bfe96f</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure</sdg:Title>
+                            <sdg:Title lang="SK">Testovacia procedúra</sdg:Title>
+                            <sdg:Description lang="EN">Test Procedure</sdg:Description>
+                            <sdg:Description lang="SK">Testovacia procedúra</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:EvidenceTypeList>
+                            <sdg:Identifier>91ecb80f-c74a-48bd-ad43-2a6f1bdb5a7d</sdg:Identifier>
+                            <sdg:Name lang="EN">FR - Test Evidence Type List</sdg:Name>
+                            <sdg:EvidenceType>
+                                <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4</sdg:EvidenceTypeClassification>
+                                <sdg:Title lang="EN">FR - Test Evidence Type</sdg:Title>
+                                <sdg:Description lang="EN">Test Evidence Type - added by Emmanuel.</sdg:Description>
+                            </sdg:EvidenceType>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:EvidenceTypeList>
+                    </sdg:Requirement>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

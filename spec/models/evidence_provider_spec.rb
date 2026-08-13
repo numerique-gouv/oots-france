@@ -18,12 +18,23 @@ RSpec.describe EvidenceProvider do
     end
   end
 
-  it 'exposes the access point that reaches it, which is how a message is routed' do
-    expect(build(:evidence_provider).access_point_id).to eq('blue_gw')
+  # The DSD returns the two separately, and they differ: a Finnish provider
+  # answers as `FIKEHA02` behind the access point `AP_FI_03`.
+  it 'keeps its own identity apart from the access point carrying messages to it' do
+    provider = build(:evidence_provider, identifier: build(:ebms_identity, id: 'FIKEHA02'),
+      access_point: build(:access_point, id: 'AP_FI_03'))
+
+    expect(provider.ebms_identity.id).to eq('FIKEHA02')
+    expect(provider.access_point.id).to eq('AP_FI_03')
   end
 
-  it 'is invalid without an access point, there being nowhere to send the request' do
-    expect(build(:evidence_provider, access_point: nil)).not_to be_valid
+  it 'is invalid without an identity, there being no C4 to name in the message' do
+    expect(build(:evidence_provider, identifier: nil)).not_to be_valid
+  end
+
+  # Answering, France is its own C4 and the reply goes back to whoever sent it.
+  it 'needs no access point to answer as the French provider' do
+    expect(described_class.french(id: '00000000000001', name: 'DINUM')).to be_valid
   end
 
   it 'keeps one name per language, as the common services return them' do

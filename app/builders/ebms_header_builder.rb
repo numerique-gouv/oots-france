@@ -19,7 +19,10 @@ class EbmsHeaderBuilder < ApplicationBuilder
     sender: AccessPoint.sender, clock: Clock.new, uuid: UuidGenerator.new
   )
     @action = action
-    @recipient = recipient
+    # Validated like C1 and C4, and for the same reason: an access point with
+    # no identity travels to the gateway as a property it accepts and routes
+    # nowhere, which shows up only as silence on the other side.
+    @recipient = recipient.validate!("Le point d'accès destinataire (C3)")
     @sender = sender
     @original_sender = original_sender.validate!("L'émetteur d'origine (C1)")
     @final_recipient = final_recipient.validate!('Le destinataire final (C4)')

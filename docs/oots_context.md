@@ -101,7 +101,7 @@ Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'ap
 ### Côté Evidence Requester (la France demande un justificatif)
 
 1. Un fournisseur de service appelle `GET /requete/pieceJustificative?codeDemarche=…&codePays=…&idRequeteur=…&beneficiaire=…` (`EvidenceRequestsController`). Le paramètre `beneficiaire` est un [**JWE**](https://datatracker.ietf.org/doc/html/rfc7516) (*JSON Web Encryption*) chiffré avec la clé publique exposée par `GET /auth/cles_publiques`. Il est ouvert par `BeneficiaryToken`, avec la clé privée que fournit `CLE_PRIVEE_JWK_EN_BASE64`, puis vérifié contre le JWKS que le fournisseur de service publie à sa **propre** URL `/auth/cles_publiques`. Deux jeux de clés distincts interviennent donc : celui d'OOTS-France pour ouvrir l'enveloppe, celui du fournisseur pour authentifier son contenu. Cette signature n'atteste que l'émetteur, jamais sa légitimité à agir pour le bénéficiaire déclaré.
-2. L'organisateur `EvidenceRequest::Fetch` résout type de justificatif → fournisseur → point d'accès via les annuaires (`app/models/directories/`), construit la requête ebMS/RegRep (`EvidenceRequestBuilder`) et la soumet à Domibus (`DomibusClient`).
+2. L'organisateur `EvidenceRequest::Fetch` résout démarche → type de justificatif → fournisseur en interrogeant les **Common Services réels** — l'Evidence Broker puis le Data Service Directory, découverts par DNS et dont les réponses signées sont vérifiées (`app/clients/common_services_*.rb`, façade `Directories::CommonServices`). Le DSD rend du même coup le point d'accès du correspondant, puisqu'OOTS n'emploie pas de SMP. La requête ebMS/RegRep est ensuite construite (`EvidenceRequestBuilder`) et soumise à Domibus (`DomibusClient`).
 3. Il **n'attend pas** la réponse : elle revient sur une autre connexion, par un répartiteur qui tourne à son propre rythme. Une `Conversation` est ouverte et l'appelant reçoit aussitôt un `202` portant son identifiant — la corrélation que décrit le [chapitre 4.10](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/887384522/4.10+-+Sample+Flows+informative+March+2025). Quand la réponse arrive, le justificatif est transmis au fournisseur de service sur sa propre URL ; l'état de l'échange, lui, se relit à `GET /requete/:conversation_id`.
 
 ### Côté Evidence Provider (un autre pays demande un justificatif à la France)
@@ -116,7 +116,8 @@ Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'ap
 ```
 app/models/          Objets de valeur du domaine (ActiveModel, sans base) et
                      Conversation, le seul enregistrement persisté ;
-                     directories/ tient les annuaires bouchonnés
+                     directories/ tient l'annuaire des requêteurs et la
+                     façade des annuaires centraux
 app/builders/        Constructeurs des messages sortants, rendant les gabarits
 app/templates/       Gabarits ERB des messages RegRep/ebMS et des enveloppes SOAP
 app/parsers/         Lecture Nokogiri des messages entrants, par URI d'espace de
@@ -137,7 +138,7 @@ features/            Scénarios Cucumber de bout en bout, en Gherkin français,
 
 ## Ce que ne fait pas encore ce dépôt
 
-Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
+Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
 
 ## Glossaire
 

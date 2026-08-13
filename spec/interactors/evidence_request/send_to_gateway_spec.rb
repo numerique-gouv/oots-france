@@ -11,7 +11,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
   let(:exchange) do
     {
       requester: build(:evidence_requester),
-      provider: build(:evidence_provider, access_point: build(:access_point, id: 'DE73524311')),
+      provider: build(:evidence_provider, identifier: build(:ebms_identity, id: 'DE73524311')),
       recipient: build(:access_point, id: 'AP_DE_01'),
       beneficiary: build(:natural_person, eidas_identifier: 'FR/DE/123123123'),
       evidence_type: build(:evidence_type),
