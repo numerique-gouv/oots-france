@@ -1,0 +1,5 @@
+<% { alert: :error, notice: :info }.each do |clef, type| %>
+  <% if flash[clef].present? %>
+    <%= dsfr_alert(type: type, title: flash[clef], size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
+  <% end %>
+<% end %>

@@ -1,0 +1,12 @@
+<%# Le bloc-marque du DSFR se lit sur deux lignes, la seconde après un saut. %>
+<%= dsfr_header(
+      logo_text: safe_join(['République', tag.br, 'Française']),
+      title: 'OOTS-France',
+      tagline: 'Échange transfrontalier de justificatifs',
+      href: root_path,
+    ) do |header| %>
+  <% if admin_section? %>
+    <% header.with_direct_link_simple(title: 'Conversations', path: admin_conversations_path) %>
+    <% header.with_direct_link_simple(title: 'Jobs', path: admin_jobs_path) %>
+  <% end %>
+<% end %>
