@@ -4,11 +4,14 @@ name: Test e2e
 # échange OOTS réel : c'est le seul garde-fou sur le transport, que la suite
 # unitaire simule entièrement. Voir docs/test_e2e.md.
 
+# Déclenchement manuel seulement, tant que `@attente_inscription_fr` écarte les
+# deux scénarios : le profil `bout_en_bout` n'en joue plus aucun, et monter
+# Domibus pendant plusieurs minutes pour zéro scénario coûte sans rien garder.
+# Rétablir les deux déclencheurs en même temps que l'étiquette tombe — c'est
+# l'inscription de la France aux annuaires qui les libère, pas un changement de
+# code ici.
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 # Deux poussées rapprochées empileraient deux exécutions de plusieurs minutes,
 # dont la première n'intéresse déjà plus personne : la plus ancienne est

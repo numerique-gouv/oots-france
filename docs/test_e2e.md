@@ -22,7 +22,7 @@ Les scénarios de bout en bout (`features/`) comblent ce trou : ils exercent la 
 
 ## En intégration continue
 
-Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue ce scénario à chaque `push` et chaque `pull_request`, en montant la pile de zéro. Il automatise ce que l'installation locale demande de faire :
+Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue ce scénario en montant la pile de zéro. Il ne se déclenche plus qu'à la main (`workflow_dispatch`) tant que les deux scénarios sont suspendus : monter Domibus plusieurs minutes pour n'en jouer aucun ne garde rien. Il automatise ce que l'installation locale demande de faire :
 
 | Étape | Script |
 | --- | --- |
@@ -113,6 +113,12 @@ Le test vérifie ces trois points avant de commencer et échoue sur un message e
 
 > [!IMPORTANT]
 > **Les deux scénarios sont suspendus**, par l'étiquette `@attente_inscription_fr` que le profil `bout_en_bout` écarte : ils dépendent d'une inscription de la France aux annuaires centraux qui n'existe pas encore, et non du code. `make e2e` ne joue donc plus rien pour l'instant, et le dire ici est le seul garde-fou contre l'oubli.
+
+### Ce qui en tient lieu, et ce que ça ne couvre pas
+
+`spec/models/directories/common_services_wiring_spec.rb` parcourt le vrai graphe d'objets — seuls le DNS et la passerelle sont doublés, la signature de chaque réponse étant vérifiée pour de bon — et va jusqu'au bout : il affirme que le `eb:To/eb:PartyId` du message soumis **est** la partie que le Data Service Directory a nommée, avec son schéma. C'est la soudure que le bouchon 2 fabriquait de travers, en lisant le point d'accès dans le PMode local ; aucune autre spec ne la voit, puisque toutes reçoivent un `recipient` déjà construit.
+
+Restent hors de portée sans passerelle : le transport AS4 lui-même, la réponse du fournisseur et la remise du justificatif à la démarche. Ce code n'a pas changé en même temps que les annuaires, mais il n'est plus exercé nulle part tant que l'étiquette tient — c'est le prix de la suspension, et il augmente à chaque modification du trajet entrant.
 
 ### Ce qui manque, et comment lever l'étiquette
 
