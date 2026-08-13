@@ -30,7 +30,7 @@ class CommonServicesQuery
 
     body = fetch(url, parameters)
     read = parser.new(body)
-    remember(key, body)
+    remember(url, key, body)
 
     read
   end
@@ -52,10 +52,10 @@ class CommonServicesQuery
 
   # A cache is an optimisation: one that cannot be written must not cost the
   # answer that was already obtained.
-  def remember(key, body)
+  def remember(url, key, body)
     Rails.cache.write(key, body, expires_in: Settings.common_services_cache_duration)
   rescue StandardError => e
-    Rails.logger.warn("Réponse d'annuaire non mise en cache (#{key}) : #{e.message}")
+    Rails.logger.warn("Réponse d'annuaire non mise en cache (#{url}) : #{e.message}")
   end
 
   # The parser belongs to the key because nothing in this signature stops a

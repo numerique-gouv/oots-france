@@ -20,8 +20,8 @@ class CommonServicesSignature
   ALGORITHM = 'ES256'.freeze
   COORDINATE_SIZE = 32
 
-  def initialize(certificates: nil)
-    @certificates = certificates
+  def initialize(trust_store_path: nil)
+    @trust_store_path = trust_store_path
   end
 
   def verify!(body:, digest:, signature:)
@@ -75,7 +75,7 @@ class CommonServicesSignature
   # misbehaving: without this it would surface as a bare OpenSSL error on the
   # first request rather than as something an operator can act on.
   def store
-    path = @certificates || Settings.common_services_certificates
+    path = @trust_store_path || Settings.common_services_certificates
 
     @store ||= OpenSSL::X509::Store.new.tap { |built| built.add_file(path) }
   rescue OpenSSL::X509::StoreError, SystemCallError => e
