@@ -1,5 +1,5 @@
 # language: fr
-@bout_en_bout @attente_inscription_fr
+@bout_en_bout
 Fonctionnalité: Demander un justificatif à un autre État membre
 
   Ces deux scénarios traversent une vraie passerelle Domibus : requête
@@ -10,19 +10,15 @@ Fonctionnalité: Demander un justificatif à un autre État membre
 
   L'échange boucle sur la seule passerelle du PMode d'exemple : l'application se
   répond donc à elle-même, sans dépendre d'un autre État membre pour le
-  transport. Il dépend en revanche des annuaires centraux pour savoir à qui
-  s'adresser, et c'est ce qui met aujourd'hui ces scénarios en attente : la
-  France n'est inscrite ni au Data Service Directory, ni — pour la démarche du
-  scénario d'erreur — à l'Evidence Broker. La requête est donc refusée avant
-  d'atteindre la passerelle, et ces scénarios ne prouveraient plus rien du
-  transport qu'ils existent pour couvrir.
-
-  L'étiquette `@attente_inscription_fr` les écarte de `make e2e` en attendant ;
-  docs/test_e2e.md dit ce qui doit être inscrit pour la retirer.
+  transport. Les annuaires centraux, eux, sont tenus par un double : la France
+  n'y est pas inscrite, et l'attendre laisserait le transport sans filet. Ce que
+  ce double ne couvre pas — la découverte DNS et la conformité des vraies
+  réponses — est éprouvé par la suite unitaire, sur des réponses capturées.
 
   Contexte:
     Étant donné une démarche française déclarée dans l'annuaire
     Et que cette démarche publie ses clés de signature
+    Et que les annuaires centraux désignent la passerelle locale
 
   Scénario: le justificatif revient du fournisseur et parvient à la démarche
     Quand la démarche demande un justificatif pour la procédure "00"

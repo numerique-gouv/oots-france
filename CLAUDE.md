@@ -99,7 +99,7 @@ bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single fi
 
 Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which has no default — `.env.template` leaves it blank and CI sets it to 5433 — and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
 
-CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL and the Schematron validation (`schematron.yml`). `e2e.yml` is manual-only (`workflow_dispatch`) while its two scenarios are suspended — see [docs/test_e2e.md](docs/test_e2e.md). There is no build step: the project runs its sources as-is.
+CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is.
 
 > [!IMPORTANT]
 > **Ruby 4.0.6 is required**, and pinned in six places that must stay in step: `.ruby-version`, `ruby '4.0.6'` in the `Gemfile`, `FROM ruby:4.0.6-slim` in the `Dockerfile`, and the `ruby-version` of all three workflows — `tests.yml`, `e2e.yml` and `schematron.yml`. `grep -rn '4\.0\.6' --exclude-dir=vendor --exclude=Gemfile.lock` finds the lot.

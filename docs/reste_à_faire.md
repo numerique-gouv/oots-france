@@ -40,7 +40,7 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 **La négociation de version, elle, est faite**, et n'a pas demandé de code de tri : le mécanisme et ce que le dépôt en fait sont décrits dans [versions_tdd.md](versions_tdd.md).
 
 > [!IMPORTANT]
-> **La France n'est pas inscrite au Data Service Directory**, ni en acceptation ni en production. Elle a pourtant un type de justificatif publié au Semantic Repository et rattaché à l'exigence de test dans l'Evidence Broker : il ne manque que l'entrée DSD, celle qui porte le point d'accès. Tant qu'elle manque, aucun pays ne peut interroger la France, et le test de bout en bout échoue sur `DSD:ERR:0001`, rendu en `422`. C'est un travail de raccordement, pas de code.
+> **La France n'est pas inscrite au Data Service Directory**, ni en acceptation ni en production. Elle a pourtant un type de justificatif publié au Semantic Repository et rattaché à l'exigence de test dans l'Evidence Broker : il ne manque que l'entrée DSD, celle qui porte le point d'accès. Tant qu'elle manque, aucun pays ne peut interroger la France, et une requête réelle échoue sur `DSD:ERR:0001`, rendu en `422`. C'est un travail de raccordement, pas de code. Le test de bout en bout, lui, double les deux annuaires pour continuer à couvrir le transport — voir [test_e2e.md](test_e2e.md#les-annuaires-centraux-sont-doublés).
 
 ### 2. L'identité de l'usager
 

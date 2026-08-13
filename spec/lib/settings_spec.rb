@@ -123,6 +123,29 @@ RSpec.describe Settings do
     end
   end
 
+  describe '.common_services_base_url' do
+    it 'reads the variable belonging to the service asked for' do
+      with_environment('URL_BASE_EVIDENCE_BROKER' => 'http://web:4001/eb',
+        'URL_BASE_DATA_SERVICE_DIRECTORY' => 'http://web:4001/dsd') do
+        expect(described_class.common_services_base_url('dsd')).to eq('http://web:4001/dsd')
+      end
+    end
+
+    # Nil and not a configuration error: the NAPTR record is what names the
+    # instance when nothing else does.
+    it 'is nil when the variable is unset' do
+      with_environment('URL_BASE_EVIDENCE_BROKER' => nil) do
+        expect(described_class.common_services_base_url('eb')).to be_nil
+      end
+    end
+
+    it 'is nil when the variable is blank' do
+      with_environment('URL_BASE_EVIDENCE_BROKER' => '   ') do
+        expect(described_class.common_services_base_url('eb')).to be_nil
+      end
+    end
+  end
+
   def with_environment(variables)
     anciennes = variables.keys.index_with { |name| ENV.fetch(name, nil) }
     variables.each { |name, value| ENV[name] = value }

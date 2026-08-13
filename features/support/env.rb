@@ -13,7 +13,8 @@ ActionController::Base.allow_rescue = false
 Cucumber::Rails::World.use_transactional_tests = false
 
 Before('@bout_en_bout') do
-  %w[URL_OOTS_FRANCE DONNEES_REQUETEURS].each do |variable|
+  variables = %w[URL_OOTS_FRANCE DONNEES_REQUETEURS] + Settings::COMMON_SERVICES_BASE_URLS.values
+  variables.each do |variable|
     next if ENV[variable].present?
 
     raise "#{variable} n'est pas renseignée : ces scénarios s'exécutent dans le conteneur `web`, " \
@@ -23,4 +24,7 @@ Before('@bout_en_bout') do
   raise 'AVEC_REQUETE_PIECE_JUSTIFICATIVE ne vaut pas true : la route répondrait 501.' unless Settings.evidence_request_enabled?
 end
 
-After('@bout_en_bout') { @fake_requester&.stop }
+After('@bout_en_bout') do
+  @fake_requester&.stop
+  @fake_common_services&.stop
+end

@@ -72,4 +72,31 @@ RSpec.describe CommonServicesInstance do
 
     expect { instance.base_url }.to raise_error(CommonServicesError, /Résolution DNS impossible/)
   end
+
+  context 'when the environment names the instance' do
+    around do |example|
+      ENV['URL_BASE_DATA_SERVICE_DIRECTORY'] = 'http://web:4001/dsd'
+      example.run
+    ensure
+      ENV.delete('URL_BASE_DATA_SERVICE_DIRECTORY')
+    end
+
+    it 'answers that address' do
+      expect(instance.base_url).to eq('http://web:4001/dsd')
+    end
+
+    # A named instance is one no record describes: resolving anyway would fail
+    # wherever DNS is filtered, which is the case this exists to serve.
+    it 'resolves nothing' do
+      instance.base_url
+
+      expect(resolver).not_to have_received(:getresources)
+    end
+
+    it 'leaves the other service to its record' do
+      broker = described_class.new(described_class::EVIDENCE_BROKER)
+
+      expect(broker.base_url).to eq('https://query.cs.acc.oots.tech.ec.europa.eu/dsd/')
+    end
+  end
 end

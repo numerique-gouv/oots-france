@@ -33,6 +33,13 @@ module Settings
   # checking here rather than at the point of use.
   NUMERIC = %w[DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS].freeze
 
+  # Optional, one per Common Service, keyed by the service `CommonServicesInstance`
+  # names.
+  COMMON_SERVICES_BASE_URLS = {
+    'eb' => 'URL_BASE_EVIDENCE_BROKER',
+    'dsd' => 'URL_BASE_DATA_SERVICE_DIRECTORY',
+  }.freeze
+
   class << self
     def verify!
       missing = REQUIRED.reject { |name| present?(ENV.fetch(name, nil)) }
@@ -65,6 +72,12 @@ module Settings
     def common_services_timeout = whole('DELAI_MAX_SERVICES_COMMUNS').to_f / 1000
 
     def common_services_certificates = required('CERTIFICATS_SERVICES_COMMUNS')
+
+    # Chapter 3.4 publishes the address of an instance as a NAPTR record, which
+    # a deployment answering elsewhere — a local double, a caching proxy — has
+    # no way of being named by. Set, this address is that instance; left empty,
+    # the record decides.
+    def common_services_base_url(service) = ENV.fetch(COMMON_SERVICES_BASE_URLS.fetch(service), nil).presence
 
     def domibus_base_url = required('URL_BASE_DOMIBUS')
 

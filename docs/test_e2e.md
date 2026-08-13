@@ -22,7 +22,7 @@ Les scénarios de bout en bout (`features/`) comblent ce trou : ils exercent la 
 
 ## En intégration continue
 
-Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue ce scénario en montant la pile de zéro. Il ne se déclenche plus qu'à la main (`workflow_dispatch`) tant que les deux scénarios sont suspendus : monter Domibus plusieurs minutes pour n'en jouer aucun ne garde rien. Il automatise ce que l'installation locale demande de faire :
+Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue ce scénario en montant la pile de zéro, à chaque poussée sur `main` et sur chaque *pull request*. Il automatise ce que l'installation locale demande de faire :
 
 | Étape | Script |
 | --- | --- |
@@ -84,10 +84,11 @@ Deux scénarios partagent le même montage, et couvrent les deux seules réponse
 | Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
 | Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
 
-L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les deux rôles que l'application n'assure pas :
+L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les trois rôles que l'application n'assure pas :
 
-1. **Faux requêteur** — monté dans un `beforeAll`, arrêté dans un `afterAll` ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
+1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
+3. **Faux annuaires centraux** — `features/support/fake_common_services.rb`, monté par l'étape « les annuaires centraux désignent la passerelle locale » ; voir la section suivante.
 
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
@@ -96,51 +97,49 @@ Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout 
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, la démarche `00` étant la seule servie par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:conversation_id`.
 
+## Les annuaires centraux sont doublés
+
+La France n'est inscrite à aucun des deux annuaires que le trajet interroge : ni au Data Service Directory, qui porterait son point d'accès, ni — pour la démarche du scénario d'erreur — à l'Evidence Broker. Interroger les vrais ferait donc refuser la requête en `422` avant même qu'elle atteigne la passerelle, et ces scénarios ne prouveraient plus rien du transport qu'ils existent pour couvrir. L'inscription est une démarche administrative, décrite dans [reste_à_faire.md](reste_à_faire.md#1-les-common-services) ; l'attendre laisserait le trajet entrant sans filet à chaque modification.
+
+`FakeCommonServices` sert donc les deux annuaires, sur un port unique et sous les chemins que les deux variables d'adresse lui donnent. C'est un vrai serveur HTTP, et il répond comme le [chapitre 3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) l'impose : `application/x-ebrs+xml`, slot `SpecificationIdentifier`, et surtout un en-tête `digest` couvrant le corps plus la signature JWS détachée `oots-response-sig` qui le couvre à son tour. Il engendre pour cela une racine et une feuille au démarrage, et écrit la racine dans le magasin que `CERTIFICATS_SERVICES_COMMUNS` désigne.
+
+> [!IMPORTANT]
+> Le faux annuaire **signe pour de bon**, et la vérification de signature reste donc exercée de bout en bout. Un doublage qui la contournerait par configuration laisserait sans filet la seule chose qui atteste, en production, que l'annuaire répondant est celui de la Commission.
+
+Les réponses viennent de gabarits ERB de `features/support/common_services/`, décalqués des réponses réelles capturées dans [`spec/fixtures/common_services/`](../spec/fixtures/README.md) : l'exigence et le type de justificatif sont ceux que la France publie vraiment, et **le point d'accès est lu dans `IDENTIFIANT_EXPEDITEUR_DOMIBUS` et `TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS`**. C'est ce qui fait boucler l'échange sur la passerelle locale : l'annuaire désigne une partie, et le PMode dit à quelle adresse elle répond. Une requête que le faux annuaire ne sait pas servir — `queryId` inconnu, paramètre obligatoire vide — est **refusée** par un `EB:ERR:0001` / `DSD:ERR:0001`, jamais servie de complaisance.
+
+### Ce que le doublage ne couvre pas
+
+La découverte DNS de l'instance (NAPTR, [chapitre 3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)) est court-circuitée par les deux variables d'adresse, et la conformité des vraies réponses n'est plus éprouvée ici. Les deux le sont par la suite unitaire, sur des réponses capturées sur l'acceptation, et par `spec/models/directories/common_services_wiring_spec.rb`, qui parcourt le vrai graphe d'objets en ne doublant que le DNS et la passerelle, et affirme que le `eb:To/eb:PartyId` du message soumis **est** la partie que le Data Service Directory a nommée.
+
+### Rebrancher les vrais annuaires
+
+Vider `URL_BASE_EVIDENCE_BROKER` et `URL_BASE_DATA_SERVICE_DIRECTORY` dans `.env.oots`, et rendre à `CERTIFICATS_SERVICES_COMMUNS` la valeur `config/certificats/services_communs_acc.pem`. Les deux vont ensemble : un magasin de confiance ne vaut que pour l'annuaire qu'il authentifie. La pile sort alors vers l'acceptation, et le scénario nominal échoue en `422` sur `DSD:ERR:0001` tant que l'inscription manque.
+
 ## Configuration attendue
 
-Le test vérifie ces trois points avant de commencer et échoue sur un message explicite si l'un manque :
+Le test vérifie ces points avant de commencer et échoue sur un message explicite si l'un manque :
 
 | Variable | Valeur attendue |
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : la résolution des annuaires passe par l'environnement d'acceptation, qui est public |
+| `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | `http://web:4001/eb` et `http://web:4001/dsd` : même port, chemins distincts, un nom de service et non `localhost` |
+| `CERTIFICATS_SERVICES_COMMUNS` | `tmp/annuaires_simules.pem`, que le faux annuaire écrit à chaque démarrage |
 
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
-> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Elle n'a plus à être déclarée nulle part localement : c'est l'Evidence Broker d'acceptation qui dit quels types de justificatif chaque démarche appelle.
-
-> [!IMPORTANT]
-> **Les deux scénarios sont suspendus**, par l'étiquette `@attente_inscription_fr` que le profil `bout_en_bout` écarte : ils dépendent d'une inscription de la France aux annuaires centraux qui n'existe pas encore, et non du code. `make e2e` ne joue donc plus rien pour l'instant, et le dire ici est le seul garde-fou contre l'oubli.
-
-### Ce qui en tient lieu, et ce que ça ne couvre pas
-
-`spec/models/directories/common_services_wiring_spec.rb` parcourt le vrai graphe d'objets — seuls le DNS et la passerelle sont doublés, la signature de chaque réponse étant vérifiée pour de bon — et va jusqu'au bout : il affirme que le `eb:To/eb:PartyId` du message soumis **est** la partie que le Data Service Directory a nommée, avec son schéma. C'est la soudure que le bouchon 2 fabriquait de travers, en lisant le point d'accès dans le PMode local ; aucune autre spec ne la voit, puisque toutes reçoivent un `recipient` déjà construit.
-
-Restent hors de portée sans passerelle : le transport AS4 lui-même, la réponse du fournisseur et la remise du justificatif à la démarche. Ce code n'a pas changé en même temps que les annuaires, mais il n'est plus exercé nulle part tant que l'étiquette tient — c'est le prix de la suspension, et il augmente à chaque modification du trajet entrant.
-
-### Ce qui manque, et comment lever l'étiquette
-
-Le trajet part désormais des annuaires réels. La France y est absente de deux façons, et chacune arrête un scénario :
-
-| Scénario | Ce qui manque | Ce que fait le code aujourd'hui |
-| --- | --- | --- |
-| Nominal (`00`) | aucun **service de données** français au Data Service Directory | le DSD répond `DSD:ERR:0001`, traduit en `CountryCodeNotFound`, rendu `422` |
-| Erreur (`T3`) | aucune **exigence** française pour cette démarche à l'Evidence Broker | l'EB répond `EB:ERR:0001`, traduit en `ProcedureCodeNotFound`, rendu `422` |
-
-Le second est le moins évident : la requête est maintenant refusée **avant** d'atteindre la passerelle, alors que ce scénario existe pour éprouver le refus du *fournisseur*. Le rétablir demande une seconde démarche française déclarée à l'EB dont aucun justificatif n'est servi — ce que `EvidenceProvision::AnswerRequest` fait déjà de toute démarche autre que `00`.
-
-Les deux inscriptions relèvent du même travail de raccordement, décrit dans [reste_à_faire.md](reste_à_faire.md#1-les-common-services). Retirer l'étiquette une fois qu'elles sont faites.
-
-> [!IMPORTANT]
-> L'inscription et le PMode local doivent nommer **le même identifiant de partie** : le DSD désigne une partie, pas une URL, et c'est le PMode qui dit à quelle adresse elle répond. C'est ce qui permet à l'échange de boucler sur la passerelle locale tout en passant par l'annuaire réel.
+> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
 
 ## En cas d'échec
 
 | Symptôme | Piste |
 | --- | --- |
 | `501 Not Implemented Yet!` | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` ne vaut pas `true` |
+| `502` avec « Annuaire injoignable » | le faux annuaire ne tourne pas : l'étape « les annuaires centraux désignent la passerelle locale » manque au `Contexte`, ou les deux `URL_BASE_*` ne désignent pas le port sur lequel il écoute |
+| `500` avec « Magasin de confiance des annuaires illisible » | `tmp/annuaires_simules.pem` n'existe pas — le faux annuaire l'écrit à son démarrage, donc aucun scénario ne l'a encore joué |
+| Le faux annuaire répond, mais l'application sert une réponse périmée | le cache des annuaires dure `DUREE_CACHE_SERVICES_COMMUNS` dans le processus du serveur : après modification des gabarits, `docker compose restart web` |
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
 | `422` sur le jeton | le faux requêteur n'est pas joignable depuis le conteneur `web` : le test tourne-t-il bien dans le conteneur ? |
 | `Toujours pas vrai après 90 s`, les deux scénarios | Le service `worker` ne tourne pas — `docker compose ps`. L'exécution des travaux est `:external` : sans lui, ni la notification ni le ramassage périodique n'aboutissent, et les deux scénarios expirent après un 202 immédiat |

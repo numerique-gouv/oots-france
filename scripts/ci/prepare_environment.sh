@@ -144,9 +144,12 @@ esac
 # Un nom de test ici passerait dans le conteneur par `env_file` et ferait rougir
 # la suite unitaire, que rien n'aurait pourtant modifiée.
 #
-# Les annuaires visés sont ceux de l'environnement d'acceptation, qui est
-# public. Le test de bout en bout y résout un fournisseur français réel, dont
-# l'inscription est le préalable décrit dans docs/test_e2e.md.
+# Les deux URL d'annuaire désignent le faux annuaire que la suite de bout en
+# bout monte elle-même, et le magasin de confiance le certificat qu'il engendre
+# au démarrage : c'est ce qui rend `make e2e` reproductible, là où les annuaires
+# centraux réclameraient une inscription de la France que personne ici ne
+# contrôle. Les vider et remettre config/certificats/services_communs_acc.pem
+# rebranche la pile sur l'acceptation — voir docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
@@ -155,11 +158,13 @@ IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
 
-CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
+CERTIFICATS_SERVICES_COMMUNS=tmp/annuaires_simules.pem
 DELAI_MAX_SERVICES_COMMUNS=10000
 DUREE_CACHE_SERVICES_COMMUNS=3600
 ENVIRONNEMENT_SERVICES_COMMUNS=acc
 PAYS_SERVICES_COMMUNS=FR
+URL_BASE_EVIDENCE_BROKER=http://web:4001/eb
+URL_BASE_DATA_SERVICE_DIRECTORY=http://web:4001/dsd
 
 DELAI_MAX_ATTENTE_DOMIBUS=30000
 IDENTIFIANT_EXPEDITEUR_DOMIBUS=blue_gw

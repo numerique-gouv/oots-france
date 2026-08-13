@@ -22,6 +22,9 @@ class CommonServicesInstance
   end
 
   def base_url
+    configured = Settings.common_services_base_url(@service)
+    return configured if configured
+
     Rails.cache.fetch("common_services/instance/#{name}", expires_in: Settings.common_services_cache_duration) do
       resolve
     end

@@ -52,18 +52,22 @@ Les identifiants de la base vivent dans `.env.postgres` (lu par l'image) et dans
 
 ### Les annuaires centraux
 
-L'application interroge les **Common Services réels** — l'Evidence Broker et le Data Service Directory — et non une copie locale. Cinq variables les désignent, toutes écrites par `make setup` avec des valeurs d'acceptation :
+L'application interroge les **Common Services réels** — l'Evidence Broker et le Data Service Directory — et non une copie locale. Sept variables les désignent, toutes écrites par `make setup` :
 
 | Variable | Rôle |
 | --- | --- |
 | `ENVIRONNEMENT_SERVICES_COMMUNS` | `acc` ou `prod` : le segment du nom DNS qui désigne l'environnement |
 | `PAYS_SERVICES_COMMUNS` | le code pays dont l'enregistrement NAPTR nomme l'instance à interroger, `FR` ici |
+| `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | l'adresse de chaque instance. Renseignées, elles remplacent la découverte DNS — le [chapitre 3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) laisse chaque État membre exposer la sienne, et un mandataire de cache ou un double local n'a aucun enregistrement qui le nomme |
 | `CERTIFICATS_SERVICES_COMMUNS` | le magasin PEM vérifiant la signature des réponses. Un fichier par environnement — [`services_communs_acc.pem`](config/certificats/services_communs_acc.pem) et [`services_communs_prod.pem`](config/certificats/services_communs_prod.pem) — parce que la racine d'acceptation porte le suffixe « test » dans son CN et ne doit rien valider en production |
 | `DELAI_MAX_SERVICES_COMMUNS` | délai d'attente d'une réponse, en millisecondes |
 | `DUREE_CACHE_SERVICES_COMMUNS` | durée de fraîcheur des réponses, en secondes |
 
+> [!IMPORTANT]
+> **L'installation locale part doublée** : `make setup` renseigne les deux URL avec celles du faux annuaire que la suite de bout en bout monte elle-même, et fait pointer le magasin sur le certificat qu'il engendre. La France n'étant inscrite à aucun annuaire central, une pile branchée sur les vrais refuserait toute demande. [docs/test_e2e.md](docs/test_e2e.md#rebrancher-les-vrais-annuaires) dit ce qu'il faut vider pour sortir vers l'acceptation.
+
 > [!NOTE]
-> Ces appels sortent vers `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, et la découverte de l'instance demande une **résolution DNS de type NAPTR**. Un réseau qui filtre l'un ou l'autre fait échouer toute demande de justificatif, en `502`, l'annuaire étant alors injoignable plutôt que sans réponse.
+> Une fois rebranchée, la pile sort vers `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, et la découverte de l'instance demande une **résolution DNS de type NAPTR**. Un réseau qui filtre l'un ou l'autre fait échouer toute demande de justificatif, en `502`, l'annuaire étant alors injoignable plutôt que sans réponse.
 
 ## Tests
 

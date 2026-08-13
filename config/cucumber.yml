@@ -2,12 +2,7 @@
 # Les scénarios de bout en bout traversent une passerelle réelle : ils ne
 # peuvent pas tourner sur un runner nu, et sont donc écartés du profil par
 # défaut. `bout_en_bout` est le profil que `make e2e` invoque.
-#
-# `@attente_inscription_fr` écarte en outre ce qui ne dépend pas du code mais
-# de l'inscription de la France aux annuaires centraux : voir docs/test_e2e.md,
-# qui dit ce qui manque et comment lever l'étiquette. Elle est faite pour
-# disparaître, pas pour durer.
 commun = "--publish-quiet --strict"
 %>
 default: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags 'not @wip and not @bout_en_bout' features
-bout_en_bout: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags '@bout_en_bout and not @attente_inscription_fr' features
+bout_en_bout: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags '@bout_en_bout' features
