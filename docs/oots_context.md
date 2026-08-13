@@ -78,7 +78,7 @@ Les messages produits se valident contre les règles Schematron officielles avec
 - [Technical Design Documents (TDD)](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) — la spécification de référence. Chapitres principaux : architecture haut niveau, identité et eID, DSD, Evidence Broker, Semantic Repository, listes de codes, API des Common Services, et l'**EDM** (*Exchange Data Model* : les requêtes, réponses et erreurs, la prévisualisation) — c'est lui que référence l'identifiant de spécification des messages. S'y ajoutent les schémas XML et les règles Schematron de validation.
 - [Historique des versions des TDD](https://ec.europa.eu/digital-building-blocks/sites/display/TDD/OOTS+Technical+Design+Documents+Releases) — chaque version est archivée avec son changelog.
 
-Pour retrouver rapidement le chapitre qui traite d'une question, et les schémas, règles Schematron et listes de codes publiés avec lui : [carte_des_tdd.md](carte_des_tdd.md).
+Pour retrouver rapidement le chapitre qui traite d'une question, et les schémas, règles Schematron et listes de codes publiés avec lui : [carte_des_tdd.md](carte_des_tdd.md). Pour le code et les artefacts publiés ailleurs contre cette même spécification — par la Commission, par les États membres, par des éditeurs : [implementations_europeennes.md](implementations_europeennes.md).
 
 Les trois messages sont alignés sur la **v2.0** (`oots-edm:v2.0`) et validés contre ses règles Schematron. Le versionnement, la cohabitation des versions sur le réseau et les préalables restant à lever sont traités dans [versions_tdd.md](versions_tdd.md).
 

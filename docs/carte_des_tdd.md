@@ -59,6 +59,8 @@ Le texte des chapitres vit sur le wiki ; **tout ce qui est exécutable vit dans 
 > [!TIP]
 > Cloner le dépôt sur l'étiquette de version (`git clone --depth 1 --branch 2.0.1 https://code.europa.eu/oots/tdd/tdd_chapters.git`) évite de naviguer dans l'interface web pour lire un schéma ou une liste de codes. Seul l'accès au registre d'images `code.europa.eu:4567` est parfois bloqué ; le clone HTTPS, lui, passe.
 
+`tdd_chapters` n'est qu'un projet du groupe [`oots`](https://code.europa.eu/oots), qui héberge aussi les implémentations de la Commission. Elles sont inventoriées dans [implementations_europeennes.md](implementations_europeennes.md), avec le code et les artefacts publiés par les États membres.
+
 ## Les valeurs fixes qu'on recherche sans cesse
 
 Rassemblées ici parce qu'elles sont dispersées dans quatre sous-chapitres et qu'on les recherche à chaque fois.
