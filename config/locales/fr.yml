@@ -37,6 +37,13 @@ fr:
         id: L'identifiant
       evidence_provider:
         access_point: Le point d'accès
+      conversation_filter:
+        status: L'état
+        country_code: Le pays
+        evidence_requester_id: Le requêteur
+        procedure_code: La démarche
+        depuis: La date de début
+        jusqu_a: La date de fin
     errors:
       models:
         address:
@@ -47,5 +54,27 @@ fr:
           attributes:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
+        conversation_filter:
+          attributes:
+            status:
+              inclusion: n'est pas un état connu
+            jusqu_a:
+              before_start: est antérieure à la date de début
+          # Invariable, faute de savoir le genre de l'attribut qui le portera.
+          unreadable: est illisible
   evidence_requests:
     inconnue: Cette demande est inconnue.
+  admin:
+    conversations:
+      unreadable: Certains critères n'ont pas pu être lus
+      count:
+        zero: Aucune conversation
+        one: Une conversation
+        other: "%{count} conversations"
+      # Les états que porte `Conversation::STATUSES`, dits à un exploitant.
+      statuses:
+        pending: En attente
+        sent: Envoyée
+        preview_required: Prévisualisation requise
+        delivered: Délivrée
+        failed: Échec

@@ -1,0 +1,16 @@
+<nav class="fr-pagination" role="navigation" aria-label="Pagination">
+  <ul class="fr-pagination__list">
+    <li><%= edge_link('Page précédente', previous_page, 'prev') %></li>
+
+    <% numbers.each do |number| %>
+      <li>
+        <%= link_to number, href(number),
+              class: 'fr-pagination__link',
+              title: "Page #{number}",
+              **(current?(number) ? { 'aria-current': 'page' } : {}) %>
+      </li>
+    <% end %>
+
+    <li><%= edge_link('Page suivante', next_page, 'next') %></li>
+  </ul>
+</nav>

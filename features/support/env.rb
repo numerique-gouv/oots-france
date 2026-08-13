@@ -1,15 +1,13 @@
 require 'cucumber/rails'
 require 'webrick'
 
-# These scenarios cross a real gateway: nothing here is simulated. They are
-# excluded from the default Cucumber profile and only run under `bout_en_bout`,
-# which `make e2e` invokes inside the container.
 ActionController::Base.allow_rescue = false
 
-# No transaction around a scenario: nothing it observes is written by it. The
-# server and the background worker have their own processes and their own
-# database — so these scenarios never query the database, only what the
-# application renders.
+# No transaction around a scenario, because the `bout_en_bout` ones cannot have
+# one: they drive a server and a background worker that run in their own
+# processes, and a transaction held here would hide from them everything it
+# wrote. What the administration scenarios write is undone by DatabaseCleaner,
+# which `cucumber-rails` installs by default and which nothing here disables.
 Cucumber::Rails::World.use_transactional_tests = false
 
 Before('@bout_en_bout') do

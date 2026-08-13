@@ -1,0 +1,63 @@
+<% content_for :title, "Conversation #{@conversation.conversation_id}" %>
+
+<%= dsfr_breadcrumbs do |fil| %>
+  <% fil.with_breadcrumb(label: 'Espace d’administration', href: admin_root_path) %>
+  <% fil.with_breadcrumb(label: 'Conversations', href: admin_conversations_path) %>
+  <% fil.with_breadcrumb(label: @conversation.conversation_id) %>
+<% end %>
+
+<h1 class="fr-h3"><%= @conversation.conversation_id %></h1>
+
+<p><%= render ConversationStatusComponent.new(status: @conversation.status) %></p>
+
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption>Détail de l'échange</caption>
+          <tbody>
+            <tr>
+              <th scope="row">Pays sollicité</th>
+              <td><%= @conversation.country_code %></td>
+            </tr>
+            <tr>
+              <th scope="row">Démarche</th>
+              <td><%= @conversation.procedure_code %></td>
+            </tr>
+            <tr>
+              <th scope="row">Requêteur</th>
+              <td><%= @conversation.evidence_requester_id %></td>
+            </tr>
+            <tr>
+              <th scope="row">Ouverte le</th>
+              <td><%= l(@conversation.created_at, format: :long) %></td>
+            </tr>
+            <tr>
+              <th scope="row">Réglée le</th>
+              <td><%= @conversation.settled_at ? l(@conversation.settled_at, format: :long) : '—' %></td>
+            </tr>
+            <tr>
+              <th scope="row">Code d'erreur EDM</th>
+              <td><%= @conversation.edm_error_code.presence || '—' %></td>
+            </tr>
+            <tr>
+              <th scope="row">Espace de prévisualisation</th>
+              <%# A foreign correspondent chooses this address: it is read, not
+                  followed. An operator console has no business being a
+                  one-click launcher into a site it did not choose. %>
+              <td><code><%= @conversation.preview_location.presence || '—' %></code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @conversation.error_description.present? %>
+  <h2 class="fr-h5 fr-mt-4w">Raison de l'échec</h2>
+  <%= dsfr_callout do %>
+    <%= @conversation.error_description %>
+  <% end %>
+<% end %>

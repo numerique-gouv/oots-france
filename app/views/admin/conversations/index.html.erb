@@ -1,0 +1,66 @@
+<% content_for :title, 'Conversations' %>
+
+<h1>Conversations</h1>
+
+<%= render 'filtre' %>
+
+<% if @filter.errors.any? %>
+  <%# The component wraps its content in a `<p>`, where a list would be
+      invalid HTML. %>
+  <%= dsfr_alert(type: :error, title: t('admin.conversations.unreadable'), html_attributes: { class: 'fr-mb-4w' }) do %>
+    <%= safe_join(@filter.errors.full_messages.map { |message| "#{message}." }, tag.br) %>
+  <% end %>
+<% end %>
+
+<p class="fr-text--sm fr-mb-2w">
+  <%= t('admin.conversations.count', count: @total) %>
+</p>
+
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption>Conversations</caption>
+          <thead>
+            <tr>
+              <th scope="col">Identifiant</th>
+              <th scope="col">État</th>
+              <th scope="col">Pays</th>
+              <th scope="col">Démarche</th>
+              <th scope="col">Requêteur</th>
+              <th scope="col">Ouverte le</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @conversations.each do |conversation| %>
+              <tr>
+                <td>
+                  <%= link_to conversation.conversation_id,
+                        admin_conversation_path(conversation.conversation_id) %>
+                </td>
+                <td><%= render ConversationStatusComponent.new(status: conversation.status) %></td>
+                <td><%= conversation.country_code %></td>
+                <td><%= conversation.procedure_code %></td>
+                <td><%= conversation.evidence_requester_id %></td>
+                <td><%= l(conversation.created_at, format: :short) %></td>
+              </tr>
+            <% end %>
+
+            <% if @conversations.empty? %>
+              <tr>
+                <td colspan="6">Aucune conversation ne correspond à ces critères.</td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%= render PaginationComponent.new(
+      current: @page,
+      pages: @filter.pages(@total),
+      link: ->(page) { admin_conversations_path(@filter.to_query(page: page)) },
+    ) %>

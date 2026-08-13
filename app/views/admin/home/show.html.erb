@@ -1,0 +1,20 @@
+<% content_for :title, 'Espace d’administration' %>
+
+<h1>Espace d'administration</h1>
+
+<div class="fr-grid-row fr-grid-row--gutters">
+  <div class="fr-col-12 fr-col-md-6">
+    <%= dsfr_tile(
+          title: 'Conversations',
+          url: admin_conversations_path,
+          description: "L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.",
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-6">
+    <%= dsfr_tile(
+          title: 'Jobs',
+          url: admin_jobs_path,
+          description: "Les jobs de fond : ce qui reste en file, ce qui a échoué, et la trace de chaque erreur.",
+        ) %>
+  </div>
+</div>
