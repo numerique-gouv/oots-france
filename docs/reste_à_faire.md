@@ -128,6 +128,8 @@ Quatre contrôles manquent, tous assortis d'une réponse d'erreur précise :
 
 **Ce que fait le dépôt.** Rien qui réponde à cette exigence. La `Conversation` retient l'état d'un échange, volontairement sans aucune donnée personnelle, et les erreurs partent dans les journaux applicatifs. Il n'y a ni journal d'échanges, ni conservation des éléments de non-répudiation, ni politique de rétention. C'est le **bouchon 6**.
 
+L'[espace d'administration](espace_administration.md) rend désormais cet état lisible — statut, code d'erreur EDM, raison de l'échec — mais **il ne fait pas office de journal** : il montre l'état courant d'une conversation, là où l'article 17 demande une trace conservée douze mois.
+
 **Ce qu'il faut construire.** Un journal dédié, distinct des journaux techniques, avec sa durée de conservation et ses garanties de confidentialité et d'intégrité. La conception doit trancher tôt une question de fond : ce qui est journalisé de la requête contient des données personnelles, ce qui n'est pas le cas du reste.
 
 ### 8. Les délais d'expiration

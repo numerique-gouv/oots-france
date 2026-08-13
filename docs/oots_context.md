@@ -127,7 +127,11 @@ app/clients/         Frontières HTTP : Domibus, jeu de clés du requêteur,
 app/interactors/     Étapes unitaires ; app/organizers/ les enchaîne
 app/jobs/            Travaux de fond GoodJob : traitement d'un message, ramassage
 app/errors/          Hiérarchie d'exceptions et codes EDM
-app/controllers/     Requête, état d'un échange, JWKS, notifications de la passerelle
+app/controllers/     Requête, état d'un échange, JWKS, notifications de la passerelle,
+                     et admin/ pour l'espace d'administration
+app/views/           Les seules pages HTML : l'accueil et l'espace d'administration
+app/components/      ViewComponent, pour ce que le DSFR ne fournit pas
+app/filters/         Ce qu'une page dérive de ses paramètres de requête
 app/lib/             Settings (seule porte sur l'environnement), horloge, UUID,
                      jeu de clés publiques, production des messages spécimens
 spec/                RSpec, miroir de app/, avec fabriques FactoryBot et les
@@ -139,6 +143,8 @@ features/            Scénarios Cucumber de bout en bout, en Gherkin français,
 ## Ce que ne fait pas encore ce dépôt
 
 Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
+
+Une partie du dépôt échappe à cet inventaire parce qu'elle ne relève d'aucun chapitre : l'**espace d'administration**, par lequel l'équipe qui exploite le service suit l'état des échanges et les jobs de fond. Il observe et n'écrit rien, et rien ne le garde encore — voir [espace_administration.md](espace_administration.md).
 
 ## Glossaire
 

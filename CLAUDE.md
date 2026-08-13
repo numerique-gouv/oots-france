@@ -21,6 +21,8 @@ Two mistakes to recognise. **Inventing** — a technical constraint turned into 
 
 The consequence is worth stating plainly: this application talks to machines. A French service provider calls it, it exchanges ebMS messages with a foreign correspondent, it answers the provider. The one place the specifications put a human in front of a screen is the *Preview Space* of [chapter 4.9](https://ec.europa.eu/digital-building-blocks/sites/pages/viewpage.action?pageId=900013172), which this repository does not implement yet. Until it does, **anything rendering HTML to an end user is out of scope** — and the user reaches the procedure portal, never this component.
 
+The rule is about an *audience*, and one exception faces none: the operator console of [docs/espace_administration.md](docs/espace_administration.md), which renders HTML to the team that runs the deployment, for an operational need no chapter names. It must never grow a screen an end user reaches.
+
 ## Documentation: one fact, one place
 
 Each piece of information has a single owning document; everything else links to it. Do not restate content across files — duplicated docs drift apart and double the maintenance cost.
@@ -38,6 +40,7 @@ Each piece of information has a single owning document; everything else links to
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
+| The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the fact that nothing guards it yet | `docs/espace_administration.md` |
 | Agent conventions and workflow | this file |
 
 When adding documentation, extend the owning file rather than repeating it elsewhere; if two files must mention the same thing, the non-owner keeps one sentence and a link.
@@ -102,7 +105,7 @@ bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single fi
 
 Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which has no default — `.env.template` leaves it blank and CI sets it to 5433 — and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
 
-CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). There is no build step: the project runs its sources as-is.
+CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). The Ruby sources run as they are, with no compilation step; the stylesheets and scripts are the exception — Propshaft serves them from source in development and test and **not at all in production**, where `make assets` must have run first.
 
 > [!IMPORTANT]
 > **Ruby 4.0.6 is required**, and pinned in six places that must stay in step: `.ruby-version`, `ruby '4.0.6'` in the `Gemfile`, `FROM ruby:4.0.6-slim` in the `Dockerfile`, and the `ruby-version` of all three workflows — `tests.yml`, `e2e.yml` and `schematron.yml`. `grep -rn '4\.0\.6' --exclude-dir=vendor --exclude=Gemfile.lock` finds the lot.
@@ -136,12 +139,12 @@ The rules above are the local dialect of a general discipline, described in Vlad
 
 | Layer | Skill's assumption | Here |
 | --- | --- | --- |
-| Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, and deliberately thin — one HTML view, the rest is machine-to-machine |
+| Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, plus `app/filters/` (what a request derives from `params`) and `app/components/` (ViewComponent). Deliberately thin: the operator console and one landing page, the rest is machine-to-machine |
 | Application | `app/services/` | `app/interactors/` and `app/organizers/`. **There is no `app/services/` and none is wanted**: the interactor gem's context and `fail_with_error` are the local contract. Do not propose one |
 | Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **one** record, `Conversation`. "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
 | Infrastructure | `app/jobs/`, `app/mailers/` | `app/clients/` (HTTP), `app/builders/` + `app/templates/` (message serialisation), `app/parsers/` (deserialisation), `app/jobs/`, `Settings`, `Clock`, `UuidGenerator` |
 
-Two corollaries the skill cannot know: `Current` attributes are unused and must stay so — this application has no session, its context travels as explicit arguments; and the specification test is the tool that transfers best as-is, since the question it asks ("does this object do something outside its layer's job?") needs no Rails convention to be answered.
+Two corollaries the skill cannot know: `Current` attributes are unused and must stay so — no code here establishes a session, and context travels as explicit arguments; and the specification test is the tool that transfers best as-is, since the question it asks ("does this object do something outside its layer's job?") needs no Rails convention to be answered.
 
 > [!IMPORTANT]
 > Where the skill and this file disagree, **this file wins** — it describes what the code actually does.

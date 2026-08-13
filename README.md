@@ -23,7 +23,7 @@ $ make up      # à chaque fois
 
 `make down` arrête tout en conservant les volumes.
 
-Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut) et la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`). Que le serveur réponde se vérifie ainsi :
+Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut) et la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin` — voir [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
 
 ```sh
 $ curl "http://localhost:3000/requete/pieceJustificative?codeDemarche=00&codePays=FR"
@@ -151,12 +151,16 @@ Ensuite, changer…
 - dans le fichier `nginx/conf/nginx.conf` : toutes les occurrences de `example.com` en le nom du domaine lié à la machine de développement.
 - dans le fichier `nginx/scripts/init-letsencrypt.sh` : toutes les occurrences de `example.com` en le nom du domaine lié à la machine de développement _et_ l'adresse `user@example.com` en l'adresse mail du développeur qui va demander les certificats.
 
-Lancer ensuite la demande de certificats, qui doit installer les certificats et terminer en succès, puis le serveur :
+Lancer ensuite la demande de certificats, qui doit installer les certificats et terminer en succès, puis compiler les feuilles de style et le serveur :
 
 ```sh
 $ nginx/scripts/init-letsencrypt.sh
+$ make assets
 $ docker compose up nginx
 ```
+
+> [!IMPORTANT]
+> **`make assets` n'est pas facultatif.** Propshaft sert les fichiers depuis les sources en développement et en test, et pas du tout en production : sans cette compilation, les pages arrivent sans style et sans icône. Les fichiers atterrissent dans `public/assets`, à l'intérieur du dépôt — que la composition monte par-dessus l'image, ce qui est la raison pour laquelle les compiler à la construction de l'image ne servirait à rien. À rejouer après toute modification d'une feuille de style.
 
 Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.du.domaine>`.
 
@@ -171,4 +175,5 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
 - [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
+- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le fait que rien ne le protège encore.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).
