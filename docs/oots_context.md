@@ -1,6 +1,6 @@
 # Contexte OOTS — comprendre le projet
 
-> Ce document donne à un humain ou à un agent LLM le contexte nécessaire pour travailler sur ce dépôt sans connaissance préalable d'OOTS. Pour la brique eDelivery (Domibus), voir [domibus_context.md](domibus_context.md).
+> Ce document donne à un humain ou à un agent LLM le contexte nécessaire pour travailler sur ce dépôt sans connaissance préalable d'OOTS. Pour la brique eDelivery (Domibus), voir [domibus_context.md](domibus_context.md). **Un sigle ou un terme inconnu se cherche dans le [glossaire](glossaire.md)**, qui les définit tous en une phrase.
 
 ## Qu'est-ce qu'OOTS ?
 
@@ -24,7 +24,7 @@ Le sens inverse fonctionne aussi : un fournisseur de service français demande u
 | **Domibus** | Implémentation d'eDelivery (webapp Java financée par la Commission européenne) utilisée par la France et la plupart des États membres. Voir [domibus_context.md](domibus_context.md). |
 | **Evidence Requester** | Composant national qui construit et envoie les requêtes de justificatifs vers les autres États membres, pour le compte d'un fournisseur de service national, puis restitue le document (ou l'erreur) reçu. |
 | **Evidence Provider** | Terme des TDD pour l'organisation qui détient le justificatif, inscrite au DSD. Côté français, c'est le système qui écoute eDelivery, interprète les requêtes venues d'ailleurs, interroge les fournisseurs de données nationaux, recueille le consentement de l'usager (*Preview Space*) et renvoie le justificatif. Synonyme employé par l'équipe : « Evidence Responder » (le `responderRole` du PMode désigne, lui, un rôle de transport AS4). |
-| **Common Services** | Base centrale maintenue par la Commission et alimentée par les États membres : **DSD** (*Data Service Directory*, annuaire des fournisseurs de données et points d'accès), **EB** (*Evidence Broker*, quel justificatif pour quelle démarche dans quel pays), **SR** (*Semantic Repository*, structure des justificatifs en données structurées). |
+| **Common Services** | Les trois annuaires centraux maintenus par la Commission et alimentés par les États membres — **EB**, **DSD** et **SR**, définis au [glossaire](glossaire.md) —, interrogés avant d'émettre une requête pour savoir quel justificatif demander, à qui, et sous quelle forme il reviendra. |
 | **[eIDAS](https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32014R0910)** | *electronic IDentification, Authentication and trust Services* : l'authentification transfrontalière des usagers ([règlement (UE) 910/2014](https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32014R0910), révisé par [(UE) 2024/1183](https://eur-lex.europa.eu/eli/reg/2024/1183/oj) — « eIDAS 2 » et le *wallet*). OOTS réutilise l'identité eIDAS pour que l'État qui fournit le document identifie la bonne personne. |
 
 Chaque État membre implémente lui-même les deux côtés, *Evidence Requester* et *Evidence Provider*. L'interopérabilité est garantie par les [**Technical Design Documents (TDD)**](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification exhaustive publiée par la Commission : structure des messages, comportements attendus, règles de validation.
@@ -50,7 +50,7 @@ Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel rép
 
 | Forme | Usage |
 | --- | --- |
-| `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/External/EAS.gc) (*Electronic Address Scheme*), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
+| `urn:cef.eu:names:identifier:EAS:[Code]` | un code de la liste [EAS](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/External/EAS.gc), qui désigne le répertoire d'entreprises d'où sort l'identifiant |
 | `urn:oasis:names:tc:ebcore:partyid-type:unregistered:[Code]` | repli pour une organisation hors de tout répertoire listé, suivi d'un code pays |
 
 **Les organisations françaises sont identifiées par leur SIRET**, soit le code EAS **`0009`** (`IdentifierScheme`). Rien n'était à demander à la Commission pour cela : la liste EAS contient déjà les répertoires français — `0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la configuration : le SIRET du fournisseur est porté par `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est indexé par celui de chaque requêteur.
@@ -60,7 +60,7 @@ Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel rép
 
 ### Les messages échangés
 
-Les messages métier OOTS sont des documents XML au format de registre [**OASIS ebXML RegRep 4.0**](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) (namespaces `rim`, `rs`, `query`) enrichis du profil SDG (`sdg`, `http://data.europa.eu/p4s`), transportés dans des enveloppes [**ebMS3**](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/ebms_core-3.0-spec.html) — *ebXML Messaging Services*, le standard OASIS d'échange de messages métier sur SOAP, dont **AS4** (*Applicability Statement 4*) est un profil restreint. C'est le format des messages que construisent `app/builders/` et leurs gabarits.
+Les messages métier OOTS sont des documents XML au format de registre [**OASIS ebXML RegRep 4.0**](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) (namespaces `rim`, `rs`, `query`) enrichis du profil SDG (`sdg`, `http://data.europa.eu/p4s`), transportés dans des enveloppes [**ebMS3**](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/ebms_core-3.0-spec.html) au profil **AS4**. C'est le format des messages que construisent `app/builders/` et leurs gabarits.
 
 Trois messages circulent :
 
@@ -75,7 +75,7 @@ Les messages produits se valident contre les règles Schematron officielles avec
 ## Spécifications et documentation officielles
 
 - [OOTSHUB](https://ec.europa.eu/digital-building-blocks/wikis/display/OOTS/OOTSHUB+Home) — portail du projet à la Commission européenne.
-- [Technical Design Documents (TDD)](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) — la spécification de référence. Chapitres principaux : architecture haut niveau, identité et eID, DSD, Evidence Broker, Semantic Repository, listes de codes, API des Common Services, et l'**EDM** (*Exchange Data Model* : les requêtes, réponses et erreurs, la prévisualisation) — c'est lui que référence l'identifiant de spécification des messages. S'y ajoutent les schémas XML et les règles Schematron de validation.
+- [Technical Design Documents (TDD)](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) — la spécification de référence. Chapitres principaux : architecture haut niveau, identité et eID, DSD, Evidence Broker, Semantic Repository, listes de codes, API des Common Services, et l'**EDM**, qui définit les requêtes, les réponses, les erreurs et la prévisualisation — c'est lui que référence l'identifiant de spécification des messages. S'y ajoutent les schémas XML et les règles Schematron de validation.
 - [Historique des versions des TDD](https://ec.europa.eu/digital-building-blocks/sites/display/TDD/OOTS+Technical+Design+Documents+Releases) — chaque version est archivée avec son changelog.
 
 Pour retrouver rapidement le chapitre qui traite d'une question, et les schémas, règles Schematron et listes de codes publiés avec lui : [carte_des_tdd.md](carte_des_tdd.md). Pour le code et les artefacts publiés ailleurs contre cette même spécification — par la Commission, par les États membres, par des éditeurs : [implementations_europeennes.md](implementations_europeennes.md).
@@ -139,22 +139,6 @@ features/            Scénarios Cucumber de bout en bout, en Gherkin français,
 
 Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : Common Services réels, fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
 
-## Glossaire : terme des TDD → classe
+## Glossaire
 
-Le code porte les noms des TDD. Ce tableau donne, pour chaque notion, le terme français employé dans cette documentation, celui des spécifications, et la classe qui l'incarne.
-
-| En français, ici | Dans les TDD | Dans le code |
-| --- | --- | --- |
-| Justificatif, pièce justificative | *evidence* | `Attachment`, `EvidenceType` |
-| Démarche (`codeDemarche`) | *procedure* ; `Requirement` côté Evidence Broker | `ProcedureCode` |
-| Requêteur — le fournisseur de service français qui demande, C1 | *Evidence Requester* | `EvidenceRequester` |
-| Fournisseur — l'organisation qui détient le justificatif, C4 | *Evidence Provider* | `EvidenceProvider` |
-| Bénéficiaire — la personne concernée | *natural person* | `NaturalPerson` |
-| Point d'accès — une instance Domibus d'un État membre, C2 ou C3 | *access point* | `AccessPoint` |
-| Identité d'une partie dans l'entête ebMS | *party identifier* et son *scheme* | `EbmsIdentity`, `IdentifierScheme` |
-| Espace de prévisualisation | *preview space* | slot `PreviewLocation` de `ErrorResponseBuilder` |
-| Conversation — l'échange, de la demande à sa réponse | `ConversationId` | `Conversation` |
-| Ce que demande un message — requête, réponse, erreur | *action* de l'entête ebMS | `EbmsAction` |
-
-- **ebMS** : *ebXML Messaging Services*, le standard d'enveloppe des messages (voir [Les messages échangés](#les-messages-échangés)). **AS4** en est un profil, **RegRep** est le format du contenu transporté.
-- **PMode, WS plugin, keystore…** : voir [domibus_context.md](domibus_context.md).
+Les sigles et les termes du domaine — DSD, EDM, ebMS3, requêteur, bouchon… — sont définis en une phrase chacun, avec la classe qui les incarne, dans [glossaire.md](glossaire.md). Ceux qui appartiennent à la passerelle plutôt qu'à OOTS — PMode, WS plugin, keystore — sont dans [domibus_context.md](domibus_context.md#concepts-clés).

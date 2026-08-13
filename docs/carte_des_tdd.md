@@ -1,6 +1,6 @@
 # Carte des TDD — où trouver quoi
 
-> Ce document est une **carte de navigation** dans les [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification d'OOTS. Il ne résume pas leur contenu : il dit quel chapitre répond à quelle question, où sont les artefacts machine, et quelles valeurs fixes reviennent partout. Pour savoir *quelle version viser*, voir [versions_tdd.md](versions_tdd.md) ; pour le contexte d'OOTS lui-même, [oots_context.md](oots_context.md).
+> Ce document est une **carte de navigation** dans les [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification d'OOTS. Il ne résume pas leur contenu : il dit quel chapitre répond à quelle question, où sont les artefacts machine, et quelles valeurs fixes reviennent partout. Pour savoir *quelle version viser*, voir [versions_tdd.md](versions_tdd.md) ; pour le contexte d'OOTS lui-même, [oots_context.md](oots_context.md) ; pour un sigle ou un terme, [glossaire.md](glossaire.md).
 
 Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la ligne 2.x. Les identifiants de page Confluence sont stables au sein d'une livraison ; ils changent à chaque nouvelle version publiée, et cette carte est donc à revérifier à ce moment-là.
 

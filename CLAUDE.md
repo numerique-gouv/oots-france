@@ -3,6 +3,7 @@
 ## Read this first
 
 - [docs/oots_context.md](docs/oots_context.md) — what OOTS is, what this app does, code map, project status. **Read it before touching any code**: OOTS is a spec-driven system and most design decisions come from the EU Technical Design Documents (TDD), not from local preference.
+- [docs/glossaire.md](docs/glossaire.md) — every acronym and domain term in one sentence each (DSD, EDM, ebMS3, *requêteur*, *bouchon*…), with the class that carries it. **Look a word up here rather than guessing from context**, and define no term anywhere else.
 - [docs/domibus_context.md](docs/domibus_context.md) — the eDelivery gateway (Domibus) this app talks to, and how the app drives it.
 - [README.md](README.md) — step-by-step local environment setup.
 - [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end scenario through Domibus: run it after any change to the ebMS payloads or the Domibus plumbing, since the Jest suite mocks the transport away entirely.
@@ -26,7 +27,8 @@ Each piece of information has a single owning document; everything else links to
 
 | Topic | Owner |
 | --- | --- |
-| OOTS ecosystem, specs (TDD), four-corner model, code map, glossary | `docs/oots_context.md` |
+| OOTS ecosystem, specs (TDD), four-corner model, code map | `docs/oots_context.md` |
+| Vocabulary: what an acronym or a domain term means, and the class that carries it | `docs/glossaire.md` |
 | Known gaps and what remains to reach full TDD conformance: chapter-by-chapter inventory, the stubs and how to replace them, the dependencies between workstreams | `docs/reste_à_faire.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Where to find what in the TDD: chapter map with links, where the machine-readable artefacts live, the fixed values (query IDs, DNS template, ebMS constants) | `docs/carte_des_tdd.md` |
@@ -59,7 +61,7 @@ Keep them rare enough to stay meaningful, and put the actionable consequence in 
 
 The domain loses nothing by this — it gains. The vocabulary of the TDD *is* English: `EvidenceRequester`, `NaturalPerson`, `ProcedureCode` are not translations of French names, they are the terms the specifications and the EDM elements themselves use. The ubiquitous language stops being a French layer laid over an English vocabulary and becomes that of the source.
 
-The glossary in [docs/oots_context.md](docs/oots_context.md) maps each TDD term to the class that carries it. Read it before naming anything new.
+The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the class that carries it. Read it before naming anything new, and add the entry there when a change introduces a term — nowhere else defines vocabulary.
 
 Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`: they address the business and belong to the documentation. Their step definitions are code, and are English.
 

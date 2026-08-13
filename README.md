@@ -144,6 +144,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 ## Documentation
 
 - [docs/oots_context.md](docs/oots_context.md) — contexte du projet OOTS : l'écosystème européen, les spécifications, ce que couvre ce dépôt et la cartographie du code. **À lire en premier** pour comprendre le projet.
+- [docs/glossaire.md](docs/glossaire.md) — tous les sigles et termes du domaine, une phrase chacun : DSD, EDM, ebMS3, requêteur, bouchon… **Le seul endroit où le vocabulaire est défini.**
 - [docs/reste_à_faire.md](docs/reste_à_faire.md) — ce qui sépare le dépôt d'une conformité complète aux TDD : inventaire par chapitre, bouchons en place et par quoi les remplacer, dépendances entre chantiers.
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de l'application Domibus (point d'accès eDelivery) : concepts, usage par OOTS-France, installation locale et pièges connus.
 - [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un échange OOTS complet en local, à travers Domibus.

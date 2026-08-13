@@ -5,6 +5,7 @@
 > | Pour… | Voir |
 > | --- | --- |
 > | le contexte métier OOTS, le modèle « quatre coins » | [oots_context.md](oots_context.md) |
+> | un sigle ou un terme du domaine (DSD, EDM, requêteur…) | [glossaire.md](glossaire.md) |
 > | installer Domibus et le configurer en une commande | [README](../README.md) |
 > | refaire cette configuration à la main dans l'interface (Plugin User, certificats, PMode) | [configurer_domibus_via_l_interface.md](configurer_domibus_via_l_interface.md) |
 > | les propriétés de `domibus.properties`, l'API des plugins, la sécurité | [Documentation technique Domibus 5.2](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) |

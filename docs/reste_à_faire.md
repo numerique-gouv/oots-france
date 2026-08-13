@@ -1,6 +1,6 @@
 # Reste à faire pour atteindre les TDD v2.0
 
-> Ce document mesure l'écart entre ce dépôt et la version **2.0.1 (juillet 2026)** des [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification européenne d'OOTS. Il dit ce qui manque, ce que chaque manque coûte, et dans quel ordre les aborder. Pour comprendre OOTS lui-même, lire d'abord [oots_context.md](oots_context.md) ; pour savoir pourquoi c'est la 2.0 qui est visée plutôt que la 1.2, [versions_tdd.md](versions_tdd.md) ; pour retrouver un chapitre des TDD, [carte_des_tdd.md](carte_des_tdd.md).
+> Ce document mesure l'écart entre ce dépôt et la version **2.0.1 (juillet 2026)** des [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification européenne d'OOTS. Il dit ce qui manque, ce que chaque manque coûte, et dans quel ordre les aborder. Pour comprendre OOTS lui-même, lire d'abord [oots_context.md](oots_context.md) ; pour savoir pourquoi c'est la 2.0 qui est visée plutôt que la 1.2, [versions_tdd.md](versions_tdd.md) ; pour retrouver un chapitre des TDD, [carte_des_tdd.md](carte_des_tdd.md) ; pour un sigle ou un terme, [glossaire.md](glossaire.md).
 
 ## Comment lire ce document
 
@@ -25,7 +25,7 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 
 ### 1. Les Common Services
 
-**Ce que c'est.** Trois annuaires centraux, tenus par la Commission et alimentés par les États membres, répondent aux trois questions qu'un pays demandeur se pose : *de quoi ai-je besoin pour cette démarche ?* (l'**Evidence Broker**), *qui, dans le pays visé, détient ce justificatif et à quelle adresse ?* (le **Data Service Directory**), *et sous quelle forme arrive-t-il ?* (le **Semantic Repository**). Sans eux, un pays devrait connaître par avance l'organisation de tous les autres — ce qui est précisément ce qu'OOTS existe pour éviter.
+**Ce que c'est.** Les trois annuaires centraux que sont l'**Evidence Broker**, le **Data Service Directory** et le **Semantic Repository** (définis au [glossaire](glossaire.md)) répondent aux questions qu'un pays demandeur se pose avant d'émettre sa requête. Sans eux, il devrait connaître par avance l'organisation de tous les autres — ce qui est précisément ce qu'OOTS existe pour éviter.
 
 **Ce qu'exige la spécification.** Le [chapitre 3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932907) définit trois appels REST : deux vers l'Evidence Broker ([3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939)) et un vers le Data Service Directory ([3.1.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)). L'instance à interroger se **découvre par le DNS** ([3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)) : chaque État membre a le choix entre l'instance de la Commission et la sienne, et le client doit résoudre un enregistrement NAPTR pour savoir à laquelle s'adresser. Les réponses portent une **signature détachée** que le client doit vérifier, et la version attendue se négocie par un en-tête `Accept-Version` ([3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954)).
 
