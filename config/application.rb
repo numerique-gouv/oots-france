@@ -18,6 +18,12 @@ require "action_cable/engine"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+# Les deux gems du DSFR demandent un `require` explicite : `dsfr/assets` ajoute
+# le CSS, le JS, les polices et les icônes au chemin de Propshaft, et
+# `dsfr/components` branche les aides `dsfr_*` sur ActionView.
+require 'dsfr/assets'
+require 'dsfr/components'
+
 module OotsFrance
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.

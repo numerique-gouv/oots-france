@@ -8,3 +8,30 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+html, body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+body > .fr-container {
+  flex-grow: 1;
+}
+
+/*
+ * Le fieldset du DSFR aligne ses éléments sur `last baseline`, et la ligne de
+ * base d'un `input[type=date]` natif n'est pas celle d'un champ texte : les
+ * champs de période montaient d'une dizaine de pixels au-dessus des autres.
+ * Aligner par le bas ne dépend plus de ce que chaque contrôle place où.
+ *
+ * Restreint aux fieldsets qui portent une date, pour ne rien changer aux
+ * autres. `:has` est acquis : `allow_browser versions: :modern` l'exige déjà.
+ */
+.fr-fieldset:has(input[type="date"]) {
+  align-items: flex-end;
+}
+
+.fr-fieldset .row-break {
+  flex-basis: 100%;
+  height: 0;
+}

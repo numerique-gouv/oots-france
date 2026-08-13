@@ -5,13 +5,10 @@ ruby '4.0.6'
 gem 'rails', '8.1.3.1'
 
 gem 'bootsnap', require: false
-gem 'importmap-rails'
 gem 'pg', '~> 1.6'
 gem 'propshaft'
 gem 'puma', '>= 5.0'
 gem 'rails-i18n'
-gem 'stimulus-rails'
-gem 'turbo-rails'
 gem 'tzinfo-data', platforms: %i[windows jruby]
 
 # Orchestration : une étape par interacteur, un enchaînement par organisateur.

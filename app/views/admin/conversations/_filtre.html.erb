@@ -1,0 +1,66 @@
+<%# `dsfr-view-components` ships no form component at all: the `fr-*` markup
+    is written out here by hand, labels included. %>
+<%= form_with url: admin_conversations_path, method: :get, class: 'fr-mb-4w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend">Filtrer les conversations</legend>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-select-group">
+        <%= form.label :status, 'État', class: 'fr-label' %>
+        <%= form.select :status,
+              Conversation::STATUSES.map { |state| [t("admin.conversations.statuses.#{state}"), state] },
+              { include_blank: 'Tous', selected: @filter.status },
+              class: 'fr-select' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :country_code, 'Pays', class: 'fr-label' %>
+        <%= form.text_field :country_code, value: @filter.country_code,
+              class: 'fr-input', maxlength: 2, placeholder: 'FI' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :procedure_code, 'Démarche', class: 'fr-label' %>
+        <%= form.text_field :procedure_code, value: @filter.procedure_code, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :evidence_requester_id, 'Requêteur', class: 'fr-label' %>
+        <%= form.text_field :evidence_requester_id, value: @filter.evidence_requester_id, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <%# Les deux champs de période vont à la ligne ensemble. Un élément qui
+        prend toute la largeur force la coupure : le flexbox n'a pas de
+        `break-before`. %>
+    <div class="row-break"></div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :depuis, 'Ouverte depuis le', class: 'fr-label' %>
+        <%= form.date_field :depuis, value: @filter.depuis, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :jusqu_a, "Jusqu'au", class: 'fr-label' %>
+        <%= form.date_field :jusqu_a, value: @filter.jusqu_a, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn">Filtrer</button>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <%= link_to 'Réinitialiser', admin_conversations_path, class: 'fr-btn fr-btn--secondary' %>
+    </div>
+  </fieldset>
+<% end %>

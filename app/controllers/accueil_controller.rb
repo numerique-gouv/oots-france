@@ -1,5 +1,6 @@
-# The endpoint the Docker composition and the CI poll to know whether the
-# application is answering.
+# The service's front page. Everything this application does for a machine
+# happens elsewhere; whoever lands here is an operator on their way to the
+# administration space.
 class AccueilController < ApplicationController
-  def index = render(plain: 'OOTS-France')
+  def index; end
 end

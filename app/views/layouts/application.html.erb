@@ -1,15 +1,45 @@
 <!DOCTYPE html>
-<html lang="<%= I18n.locale %>">
+<html lang="<%= I18n.locale %>" data-fr-scheme="system">
   <head>
-    <title>OOTS-France</title>
+    <meta charset="utf-8">
+    <title><%= content_for(:title).presence || 'OOTS-France' %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-    <%= stylesheet_link_tag :app, 'data-turbo-track': 'reload' %>
-    <%= javascript_importmap_tags %>
+
+    <%# La marque de l'État, telle que le DSFR la livre et que `data_pass` la
+        sert. Le manifeste que le DSFR joint n'est pas repris : ses icônes y
+        sont nommées par un chemin de la distribution, et Propshaft sert les
+        nôtres sous une empreinte. %>
+    <link rel="apple-touch-icon" href="<%= image_url('favicons/apple-touch-icon.png') %>">
+    <link rel="icon" href="<%= image_url('favicons/favicon.svg') %>" type="image/svg+xml">
+    <link rel="shortcut icon" href="<%= image_url('favicons/favicon.ico') %>" type="image/x-icon">
+    <%# `dsfr.min` carries the core and the components, and not the icons:
+        those live in the utility sheet, and every `fr-icon-*` class is silent
+        without it. %>
+    <%= stylesheet_link_tag 'dsfr.min' %>
+    <%= stylesheet_link_tag 'utility/dsfr-utility.min' %>
+    <%= stylesheet_link_tag 'application' %>
   </head>
 
   <body>
-    <%= yield %>
+    <%= dsfr_skiplink(label: 'Accès rapide', links: [link_to('Contenu', '#contenu')]) %>
+    <%= render 'layouts/entete' %>
+
+    <div class="fr-container fr-my-4w">
+      <main id="contenu">
+        <%= render 'layouts/messages' %>
+        <%= yield %>
+      </main>
+    </div>
+
+    <%= render 'layouts/pied_de_page' %>
+
+    <%# No theme switcher is offered: `data-fr-scheme="system"` follows the one
+        the system sets, with no JavaScript. That is what lets us leave out the
+        inline script the DSFR otherwise uses against the flash of a wrong
+        theme — and which a content security policy would have to allow. %>
+    <%= javascript_include_tag 'dsfr.module.min', type: 'module' %>
+    <%= javascript_include_tag 'dsfr.nomodule.min', nomodule: true %>
   </body>
 </html>

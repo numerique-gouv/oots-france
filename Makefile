@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup up domibus down test lint lint-fix e2e schematron console shell logs logs-domibus
+.PHONY: help setup up domibus down test lint lint-fix e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -41,6 +41,14 @@ lint-fix: ## RuboCop, autocorrecting what is safe to autocorrect
 
 e2e: ## Cucumber through a real Domibus — needs the stack up, see docs/test_e2e.md
 	$(IN_WEB) cucumber --profile bout_en_bout
+
+# Propshaft serves assets from source in development and test, and not at all
+# in production: without this, the pages there arrive with no stylesheet. The
+# files land in the repository, which the composition mounts over the image —
+# so baking them into the image at build time would achieve nothing.
+assets: ## Compile the stylesheets and scripts production needs
+	$(COMPOSE) run --rm --no-deps -e RAILS_ENV=production -e SECRET_KEY_BASE_DUMMY=1 web \
+		bundle exec rails assets:precompile
 
 schematron: ## The messages we produce, against the rules published with the TDD
 	scripts/validate_schematron.sh
