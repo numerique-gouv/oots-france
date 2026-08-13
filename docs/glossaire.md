@@ -1,0 +1,47 @@
+# Glossaire — les mots d'OOTS
+
+> Ce document est le **seul endroit où le vocabulaire du projet est défini** : un terme, une phrase, et le document qui le traite en détail. Les autres fichiers l'emploient sans le redéfinir. Pour comprendre le système lui-même plutôt qu'un mot isolé, lire [oots_context.md](oots_context.md) ; pour retrouver le chapitre des spécifications qui fait foi, [carte_des_tdd.md](carte_des_tdd.md).
+
+Le code porte les noms anglais des spécifications, la documentation parle français : la colonne de gauche donne les deux, celle de droite la classe qui incarne la notion quand il y en a une.
+
+| Terme | Ce que c'est, en une phrase | Dans le code |
+| --- | --- | --- |
+| **Action** (entête ebMS) | Ce que demande un message : `ExecuteQueryRequest`, `ExecuteQueryResponse` ou `ExceptionResponse`. | `EbmsAction` |
+| **AS4** — *Applicability Statement 4* | Le [profil restreint d'ebMS3](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/profiles/AS4-profile/v1.0/AS4-profile-v1.0.html) qu'emploie eDelivery, où signature, chiffrement et accusé de réception sont obligatoires. | — |
+| **Bénéficiaire** — *natural person* | La personne dont le justificatif est demandé, identifiée par les attributs issus de son authentification eIDAS. | `NaturalPerson` |
+| **Bouchon** | Un endroit où le code écrit une valeur en dur faute d'avoir de quoi la calculer ; ils sont numérotés dans [reste_à_faire.md](reste_à_faire.md) et cités par les commentaires du code. | — |
+| **C1, C2, C3, C4** | Les quatre coins que traverse un message : l'émetteur métier, sa passerelle, la passerelle d'en face, le destinataire métier — voir [le modèle des quatre coins](oots_context.md#le-modèle-des-quatre-coins). | — |
+| **Common Services** | Les trois annuaires centraux — EB, DSD, SR — tenus par la Commission et alimentés par les États membres, qui évitent à chacun de connaître l'organisation de tous les autres. | `Directories::CommonServices` (bouchon 1) |
+| **Conversation** — `ConversationId` | L'échange entier, de la requête à la réponse qui revient plus tard sur une autre connexion, et l'identifiant qui relie les deux moitiés. | `Conversation` |
+| **Démarche** — *procedure* | La procédure administrative pour laquelle un justificatif est demandé (`codeDemarche`) ; l'Evidence Broker l'appelle `Requirement` du côté de ses exigences. | `ProcedureCode` |
+| **DSD** — *Data Service Directory* | L'annuaire qui répond « quel fournisseur, dans ce pays, délivre ce type de justificatif, et à quelle adresse ? » ([chapitre 3.1.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)). | — |
+| **EAS** — *Electronic Address Scheme* | La [liste de codes](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/codelists/External/EAS.gc) qui désigne le répertoire d'où sort un identifiant d'organisation — `0009` pour le SIRET français. | `IdentifierScheme` |
+| **EB** — *Evidence Broker* | L'annuaire qui répond « quels types de justificatif satisfont l'exigence de cette démarche ? » ([chapitre 3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939)). | — |
+| **ebMS3** — *ebXML Messaging Services 3* | Le [standard OASIS](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/ebms_core-3.0-spec.html) d'enveloppe SOAP dans laquelle voyagent les messages métier, et d'où viennent leurs entêtes. | `EbmsAction`, `EbmsIdentity` |
+| **eDelivery** | La [brique européenne](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467110114/eDelivery) de transport sécurisé entre administrations, qui achemine les messages OOTS d'un pays à l'autre. | — |
+| **EDM** — *Exchange Data Model* | La partie des TDD qui définit les messages eux-mêmes — requête, réponse, erreurs, prévisualisation ; c'est elle que référence l'identifiant de spécification. | `EdmSpecification`, `EdmException` |
+| **eIDAS** | Le [cadre européen d'identification électronique](https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32014R0910) dont OOTS réutilise l'authentification, pour que le pays fournisseur identifie la bonne personne. | — |
+| **Fournisseur** — *Evidence Provider* | L'organisation qui détient le justificatif, inscrite au DSD ; c'est le C4 d'une requête. | `EvidenceProvider` |
+| **Justificatif**, pièce justificative — *evidence* | Le document que l'échange transporte, décrit par son type. | `Attachment`, `EvidenceType` |
+| **JWE** — *JSON Web Encryption* | L'[enveloppe chiffrée](https://datatracker.ietf.org/doc/html/rfc7516) par laquelle le fournisseur de service français transmet le bénéficiaire dans son appel. | `BeneficiaryToken` |
+| **MSH** — *Message Service Handler* | L'URL à laquelle une passerelle reçoit les messages AS4, déclarée au PMode — voir [domibus_context.md](domibus_context.md#concepts-clés). | — |
+| **NAPTR** | L'enregistrement DNS par lequel se découvre l'instance de Common Services à interroger ([chapitre 3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)). | — |
+| **OOTS** — *Once-Only Technical System* | Le [système européen](https://ec.europa.eu/digital-building-blocks/wikis/display/OOTS/OOTSHUB+Home) d'échange automatisé et transfrontalier de justificatifs entre administrations. | — |
+| **Partie** — *party* | Une passerelle déclarée au PMode, identifiée par un `partyId` et le schéma d'où il sort ; les autres États membres sont nos parties. | `EbmsIdentity` |
+| **PMode** — *Processing Mode* | Le fichier de configuration central de Domibus, sans lequel la passerelle rejette tout message — voir [domibus_context.md](domibus_context.md#concepts-clés). | — |
+| **Point d'accès** — *access point* | Une passerelle eDelivery d'un État membre, C2 ou C3 de l'échange ; ici, une instance de Domibus. | `AccessPoint` |
+| **Preview Space** — espace de prévisualisation | L'écran, chez le pays fournisseur, où l'usager voit son justificatif et consent à sa transmission ([chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935)). | slot `PreviewLocation` de `ErrorResponseBuilder` |
+| **RegRep** — *OASIS ebXML RegRep 4.0* | Le [format de registre XML](https://docs.oasis-open.org/regrep/regrep-core/v4.0/regrep-core-rim-v4.0.html) du contenu des messages, enrichi du profil `sdg` propre à OOTS. | `app/templates/`, `app/parsers/` |
+| **Requêteur** — *Evidence Requester* | Le fournisseur de service qui demande un justificatif pour le compte de l'usager ; c'est le C1 d'une requête. | `EvidenceRequester` |
+| **Schematron** | Le langage de règles de validation XML dont les TDD publient un [jeu officiel](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/sch), seul contrôle automatique de conformité des messages produits ici. | `scripts/validate_schematron.sh` |
+| **SDG** — *Single Digital Gateway* | Le [règlement (UE) 2018/1724](https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32018R1724) qui fonde OOTS, et le nom du profil XML (`sdg`) que les messages ajoutent à RegRep. | — |
+| **SMP**, **SML** — *Service Metadata Publisher*, *Locator* | La [découverte dynamique](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/467117984/SMP+specifications) de l'adresse et des capacités d'un point d'accès, facultative en 2.0 — voir [versions_tdd.md](versions_tdd.md). | — |
+| **SR** — *Semantic Repository* | L'annuaire qui décrit la structure des justificatifs — modèles de données et listes de codes ; il se consulte à la conception, pas à l'exécution ([chapitre 3.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920)). | — |
+| **TDD** — *Technical Design Documents* | La [spécification d'OOTS](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) publiée par la Commission : structure des messages, comportements attendus, règles de validation. **Ce dépôt l'implémente et n'invente rien.** | — |
+
+## Ce qui se confond le plus souvent
+
+- **EB, DSD, SR** répondent à trois questions successives : *de quoi ai-je besoin pour cette démarche ?*, *qui le fournit dans ce pays ?*, *sous quelle forme arrive-t-il ?*
+- **ebMS3, AS4, RegRep** sont trois couches d'un même message : RegRep est le contenu métier, ebMS3 l'enveloppe qui le transporte, AS4 le profil d'ebMS3 qu'impose eDelivery.
+- **Requêteur et fournisseur** sont des rôles métier, **C1 à C4** des positions sur le trajet d'un message : les coins s'inversent sur la réponse, les rôles non.
+- **DSD et SMP** publient tous deux des adresses, mais pas les mêmes : le DSD dit quelle *organisation* détient un justificatif, le SMP quelles *capacités techniques* a une passerelle.
