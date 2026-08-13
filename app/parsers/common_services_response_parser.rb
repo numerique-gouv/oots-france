@@ -89,11 +89,12 @@ class CommonServicesResponseParser
   #
   # The rule bears on the answer as a whole, which is the level the codes above
   # describe. Two limits follow, both deliberate. A record that publishes no
-  # access service at all is valid to the schema — `minOccurs="0"` on
-  # `sdg:AccessService` — so an answer made only of those is reported here as
-  # unreadable rather than as a country without a provider; no captured
-  # response shows one. And a record that yields nothing while its neighbours
-  # yield something is absorbed by the whole, which no rule of the TDD forbids.
+  # access service breaks `R-DSD-RESP-S014`, which makes `sdg:AccessService`
+  # mandatory, so an answer made only of those is reported here as unreadable
+  # rather than as a country without a provider — a correspondent is not
+  # obliged to honour the rule, and no captured response shows one. And a
+  # record that yields nothing while its neighbours yield something is absorbed
+  # by the whole, which no rule of the TDD forbids.
   def reject_unless_read_something
     return unless @read.is_a?(Enumerable) && @read.none?
 
