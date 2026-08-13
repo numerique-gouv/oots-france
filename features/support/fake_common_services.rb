@@ -64,11 +64,13 @@ class FakeCommonServices
   # One port for both directories, told apart by the path their addresses
   # carry: two ports would double the setup for nothing.
   def port
-    published = Settings::COMMON_SERVICES_BASE_URLS.each_key.map { |service| URI.parse(address(service)).port }
+    published = Settings::COMMON_SERVICES_BASE_URLS.each_key.map { |service| uri(service).port }
     raise "Les deux annuaires simulés doivent partager un port : #{published.inspect}." unless published.uniq.one?
 
     published.first
   end
+
+  def uri(service) = URI.parse(address(service))
 
   def address(service)
     Settings.common_services_base_url(service) ||
@@ -77,7 +79,7 @@ class FakeCommonServices
 
   def mount
     Settings::COMMON_SERVICES_BASE_URLS.each_key do |service|
-      path = "#{URI.parse(address(service)).path.chomp('/')}/#{CommonServicesQuery::SEARCH_PATH}"
+      path = "#{uri(service).path.chomp('/')}/#{CommonServicesQuery::SEARCH_PATH}"
 
       @server.mount_proc(path) { |request, response| answer(service, request.query, response) }
     end
@@ -106,8 +108,8 @@ class FakeCommonServices
   # very requests the scenarios exist to check the application sends.
   def body_for(service, query)
     answer = ANSWERS[query['queryId']]
-    return render('refusal.xml.erb', REFUSALS.fetch(service)) if answer.nil?
-    return render('refusal.xml.erb', REFUSALS.fetch(service)) if answer[:parameters].any? { |name| query[name].blank? }
+    unserved = answer.nil? || answer[:parameters].any? { |name| query[name].blank? }
+    return render('refusal.xml.erb', REFUSALS.fetch(service)) if unserved
 
     render(answer[:template], locals(query, answer[:parameters]))
   end

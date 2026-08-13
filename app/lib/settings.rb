@@ -42,12 +42,7 @@ module Settings
 
   class << self
     def verify!
-      missing = REQUIRED.reject { |name| present?(ENV.fetch(name, nil)) }
-      unless missing.empty?
-        raise ConfigurationError,
-          "Variables d'environnement obligatoires absentes ou vides : #{missing.join(', ')}."
-      end
-
+      reject_unless_present(REQUIRED.reject { |name| present?(ENV.fetch(name, nil)) })
       reject_unless_whole(NUMERIC.reject { |name| whole?(ENV.fetch(name, nil)) })
     end
 
@@ -102,6 +97,13 @@ module Settings
     def identifier_suffix = required('SUFFIXE_IDENTIFIANTS_DOMIBUS')
 
     private
+
+    def reject_unless_present(missing)
+      return if missing.empty?
+
+      raise ConfigurationError,
+        "Variables d'environnement obligatoires absentes ou vides : #{missing.join(', ')}."
+    end
 
     # Named at once, like the absent ones above: correcting one to discover the
     # next on the following deployment is the cycle that check exists to spare.
