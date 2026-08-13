@@ -121,7 +121,7 @@ jobs:
       - name: Démarre l'application et son worker
         run: |
           docker compose up --detach --no-build web worker
-          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/; do sleep 2; done'
+          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/up; do sleep 2; done'
 
       - name: Joue le test e2e
         run: make e2e
