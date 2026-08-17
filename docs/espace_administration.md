@@ -75,24 +75,19 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 
 `make up`, puis `http://localhost:3000/admin` — au port que `PORT_OOTS_FRANCE` publie, décalé dans un worktree. Le compte est `admin@example.com` / `Administration-2026`, posé par `db/seeds.rb`.
 
+Le même seed pose **cinq conversations de démonstration, une par état** de `Conversation::STATUSES`, avec des pays et des démarches distincts : de quoi voir les pastilles, les filtres et la fiche de détail sans passerelle ni requête. Comme le compte, elles ne sont jamais créées en production.
+
 `make setup` charge ce seed. Sur une base déjà installée, il faut l'appeler soi-même, `db:prepare` ne chargeant les seeds qu'à la création de la base :
 
 ```sh
 docker compose run --rm --no-deps web bundle exec rails db:seed
 ```
 
+Il est rejouable : les conversations sont retrouvées par leur identifiant, donc un second passage n'en ajoute pas une deuxième série.
+
+> [!IMPORTANT]
+> **Ces cinq conversations n'ont jamais eu lieu**, et leur identifiant le dit : `00000000-0000-0000-0000-000000000001` à `…005`, là où un vrai identifiant est un UUID tiré par `UuidGenerator`. Aucun message n'a été construit, aucune passerelle appelée. C'est ce qui permet à un exploitant qui en croise une pendant un incident de voir d'un coup d'œil qu'il n'y a rien à chercher — et c'est aussi pourquoi elles ne doivent jamais recevoir d'identifiant vraisemblable.
+
 **Pour y voir de vraies conversations, jouer `make e2e`** : les scénarios de bout en bout appellent le serveur qui tourne, par HTTP, et c'est donc lui qui écrit les conversations — dans la base de développement, pas dans celle des tests. Deux y apparaissent, une `delivered` et une `failed` ; le trajet et ses prérequis sont décrits dans [test_e2e.md](test_e2e.md). Arrêter le `worker` avant de les jouer laisse au contraire les conversations à l'état `sent`, la réponse de la passerelle n'étant jamais dépilée.
-
-À défaut de passerelle, de quoi peupler la liste à la main :
-
-```sh
-make console
-```
-
-```ruby
-Conversation.create!(conversation_id: SecureRandom.uuid, procedure_code: '00', country_code: 'FI',
-                     evidence_requester_id: '00000000000002', status: 'failed',
-                     edm_error_code: 'EDM:ERR:0004', error_description: 'Aucun justificatif correspondant.')
-```
 
 La sonde de santé, elle, a quitté la racine quand celle-ci est devenue une page : elle répond sur `/up`.
