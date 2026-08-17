@@ -15,6 +15,7 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | Page | Contenu |
 | --- | --- |
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
+| `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
 | `/admin` | Les deux entrées ci-dessous. |
 | `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. |
 | `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)). |
@@ -33,14 +34,35 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 
 **Ce n'est pas le journal de l'article 17.** Le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) impose de conserver douze mois la trace de chaque échange ; c'est le [chantier 7](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation), qui demande une table dédiée, une politique de rétention et un arbitrage sur les données personnelles. L'espace montre l'état courant d'une conversation, ce qui ne fait pas une trace d'audit.
 
-> [!WARNING]
-> **L'espace est en accès libre : il n'y a aucune authentification.** Quiconque atteint l'application peut lire l'état de tous les échanges et le tableau de bord des jobs. C'est tenable tant que le service n'est déployé nulle part de public — il n'est pas homologué et le requêtage reste verrouillé par `AVEC_REQUETE_PIECE_JUSTIFICATIVE` —, et cela doit être fermé avant toute mise à disposition réelle. La voie prévue est ProConnect, comme dans [`data_pass`](https://github.com/etalab/data_pass) : la gem [`omniauth-proconnect`](https://github.com/betagouv/omniauth-proconnect) porte le protocole, et le rôle d'un compte se poserait en console.
+## Qui peut y entrer
+
+Un compte, une adresse électronique et un mot de passe : le modèle `Administrator`, le seul enregistrement de ce dépôt qui ne décrive pas un échange. Rien de plus n'est proposé — pas de rôles, pas d'inscription, pas de renouvellement de mot de passe —, parce que l'espace n'a qu'un public, l'équipe qui exploite le service, et qu'un compte y suffit.
+
+Le hachage et la comparaison viennent de Rails : `has_secure_password` par la gem [`bcrypt`](https://github.com/bcrypt-ruby/bcrypt-ruby), et [`authenticate_by`](https://api.rubyonrails.org/classes/ActiveRecord/SecurePassword/ClassMethods.html#method-i-authenticate_by), qui met le même temps à répondre selon que l'adresse existe ou non — sans quoi la page dirait qui est inscrit. La connexion réussie appelle `reset_session` avant de poser l'identifiant du compte, pour qu'une session qu'un attaquant aurait plantée d'avance ne devienne pas une session authentifiée.
+
+`AdminAuthentication` porte la garde. `Admin::BaseController` l'inclut, ce qui couvre toutes les pages écrites ici — et **le tableau de bord de GoodJob est un moteur monté, qu'aucun filtre de l'application n'atteint**. Il est donc fermé autrement, par le crochet `good_job_application_controller` que la gem publie, posé dans `config/initializers/good_job.rb`. C'est la page qui agit, celle qui relance et abandonne des jobs : elle est aussi celle qu'on oublie.
+
+> [!IMPORTANT]
+> **Deux limites à connaître, tenues pour acceptables et non corrigées.** Les fichiers statiques du tableau de bord — son CSS, son JavaScript, ses icônes, servis sous `/admin/jobs/frontend/` — restent joignables sans session : `GoodJob::FrontendsController` descend directement d'`ActionController::Base` et le crochet ne l'atteint pas. Ils ne portent aucune donnée. Et le rafraîchissement automatique du tableau de bord, s'il est activé, se tait quand la session expire : il relit la page par `fetch`, qui suit la redirection sans broncher, et ne trouve dans la page de connexion aucune des régions qu'il remplace — l'écran reste donc figé sur des données périmées, sans message. GoodJob n'envoie rien qui distinguerait ce sondage d'une navigation.
+
+> [!IMPORTANT]
+> **Ce que cette authentification ne fait pas**, et qu'une mise à disposition réelle demandera : aucune limitation du nombre de tentatives, aucune expiration de session, aucun moyen de changer ni de renouveler un mot de passe, et la création d'un compte passe par la console. Le service n'est de toute façon pas homologué et le requêtage reste verrouillé par `AVEC_REQUETE_PIECE_JUSTIFICATIVE`.
+
+En production, le compte se crée à la main — le seed ne pose rien là :
+
+```sh
+make console
+```
+
+```ruby
+Administrator.create!(email: 'prenom.nom@exemple.gouv.fr', password: 'un mot de passe de douze caractères au moins')
+```
 
 ## Le design system
 
 L'espace est au [Système de design de l'État](https://www.systeme-de-design.gouv.fr/) (DSFR), par les gems [`dsfr-view-components`](https://github.com/betagouv/dsfr-view-components) et [`dsfr-assets`](https://github.com/betagouv/dsfr-assets), qui embarquent le CSS, le JavaScript, les polices et les icônes : **ni npm ni Node**. Les deux demandent un `require` explicite, posé dans `config/application.rb`.
 
-Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les composants, `utility/dsfr-utility.min` les icônes — sans elle, toute classe `fr-icon-*` est muette. La gem en livre deux autres, `proconnect-button` et `dsfr.print.min` : la première ne sera à inclure que le jour où un bouton ProConnect existera.
+Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les composants, `utility/dsfr-utility.min` les icônes — sans elle, toute classe `fr-icon-*` est muette. La gem en livre deux autres, `proconnect-button` et `dsfr.print.min`, qui ne sont pas reprises : l'espace se connecte sur un compte local, pas sur un fournisseur d'identité.
 
 Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>` suit le thème du système sans JavaScript. C'est ce qui permet de se passer du script anti-clignotement que le DSFR place sinon en ligne dans le `<head>`, et qu'une politique de sécurité de contenu devrait un jour autoriser nommément.
 
@@ -51,7 +73,13 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 
 ## Y accéder en local
 
-`make up`, puis `http://localhost:3000/admin` — au port que `PORT_OOTS_FRANCE` publie, décalé dans un worktree.
+`make up`, puis `http://localhost:3000/admin` — au port que `PORT_OOTS_FRANCE` publie, décalé dans un worktree. Le compte est `admin@example.com` / `Administration-2026`, posé par `db/seeds.rb`.
+
+`make setup` charge ce seed. Sur une base déjà installée, il faut l'appeler soi-même, `db:prepare` ne chargeant les seeds qu'à la création de la base :
+
+```sh
+docker compose run --rm --no-deps web bundle exec rails db:seed
+```
 
 **Pour y voir de vraies conversations, jouer `make e2e`** : les scénarios de bout en bout appellent le serveur qui tourne, par HTTP, et c'est donc lui qui écrit les conversations — dans la base de développement, pas dans celle des tests. Deux y apparaissent, une `delivered` et une `failed` ; le trajet et ses prérequis sont décrits dans [test_e2e.md](test_e2e.md). Arrêter le `worker` avant de les jouer laisse au contraire les conversations à l'état `sent`, la réponse de la passerelle n'étant jamais dépilée.
 

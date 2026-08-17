@@ -23,7 +23,7 @@ $ make up      # à chaque fois
 
 `make down` arrête tout en conservant les volumes.
 
-Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut) et la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin` — voir [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
+Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut) et la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion — le compte que `make setup` pose et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
 
 ```sh
 $ curl "http://localhost:3000/requete/pieceJustificative?codeDemarche=00&codePays=FR"
@@ -175,5 +175,5 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
 - [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
-- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le fait que rien ne le protège encore.
+- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le compte qui y donne accès.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).
