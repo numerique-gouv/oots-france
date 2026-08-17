@@ -87,10 +87,14 @@ echo "→ Redémarrage de la passerelle, pour activer ses notifications"
 docker compose restart domibus
 scripts/ci/wait_for_domibus.sh
 
-echo "→ PostgreSQL, l'état des conversations et la file des travaux"
+echo "→ PostgreSQL, l'état des conversations et la file des jobs"
 docker compose up --detach postgres
 scripts/ci/wait_for_postgres.sh
 docker compose run --rm --no-deps web bundle exec rails db:prepare
+# `db:prepare` ne charge les seeds que lorsqu'il crée la base : sur une
+# installation déjà faite, il migrerait sans poser le compte d'administration.
+# Le seed est idempotent, donc l'appeler à chaque fois ne coûte rien.
+docker compose run --rm --no-deps web bundle exec rails db:seed
 
 cat <<'FIN'
 
