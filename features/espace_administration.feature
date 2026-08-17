@@ -5,6 +5,10 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   l'état de chaque conversation et, pour celles qui ont échoué, la raison —
   qu'aucune autre interface n'expose. Il observe et n'écrit rien.
 
+  Contexte:
+    Étant donné un compte d'administration
+    Et que je suis connecté à l'espace d'administration
+
   Scénario: la liste donne l'état de chaque conversation
     Étant donné une conversation délivrée avec la Finlande
     Et une conversation en échec avec l'Allemagne

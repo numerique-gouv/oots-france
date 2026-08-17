@@ -1,0 +1,23 @@
+<% content_for :title, 'Connexion à l’espace d’administration' %>
+
+<h1>Connexion</h1>
+
+<p class="fr-text--sm fr-mb-4w">L'espace d'administration est réservé à l'équipe qui exploite le service.</p>
+
+<div class="fr-grid-row">
+  <div class="fr-col-12 fr-col-md-6">
+    <%= form_with url: admin_session_path, method: :post do |form| %>
+      <div class="fr-input-group">
+        <%= form.label :email, 'Adresse électronique', class: 'fr-label' %>
+        <%= form.email_field :email, class: 'fr-input', autocomplete: 'username', autofocus: true, required: true %>
+      </div>
+
+      <div class="fr-input-group">
+        <%= form.label :password, 'Mot de passe', class: 'fr-label' %>
+        <%= form.password_field :password, class: 'fr-input', autocomplete: 'current-password', required: true %>
+      </div>
+
+      <button type="submit" class="fr-btn fr-mt-2w">Se connecter</button>
+    <% end %>
+  </div>
+</div>

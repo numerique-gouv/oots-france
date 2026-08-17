@@ -65,6 +65,9 @@ fr:
   evidence_requests:
     inconnue: Cette demande est inconnue.
   admin:
+    sessions:
+      refused: Adresse ou mot de passe incorrect.
+      signed_out: Vous êtes déconnecté.
     conversations:
       unreadable: Certains critères n'ont pas pu être lus
       count:

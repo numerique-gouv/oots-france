@@ -8,5 +8,13 @@
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: 'Conversations', path: admin_conversations_path) %>
     <% header.with_direct_link_simple(title: 'Jobs', path: admin_jobs_path) %>
+
+    <%# `button_to`, because the application embarks neither Turbo nor
+        `rails-ujs`: a `method: :delete` on an anchor would do nothing. And a
+        custom tool link rather than `with_tool_link`, whose component renders an
+        `<a>` and nothing else. %>
+    <% header.with_custom_tool_link do %>
+      <%= button_to 'Se déconnecter', admin_session_path, method: :delete, class: 'fr-btn' %>
+    <% end %>
   <% end %>
 <% end %>

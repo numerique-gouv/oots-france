@@ -117,6 +117,10 @@ jobs:
           docker compose up --detach postgres
           scripts/ci/wait_for_postgres.sh
           docker compose run --rm --no-deps web bundle exec rails db:prepare
+          # `db:prepare` ne charge les seeds qu'à la création de la base, et le
+          # compte d'administration en vient : voir scripts/setup.sh, avec qui
+          # cette suite d'étapes doit rester en phase.
+          docker compose run --rm --no-deps web bundle exec rails db:seed
 
       - name: Démarre l'application et son worker
         run: |

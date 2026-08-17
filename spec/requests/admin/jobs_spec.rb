@@ -5,11 +5,43 @@ require 'rails_helper'
 RSpec.describe 'Admin::Jobs' do
   describe 'GET /admin/jobs' do
     it 'serves the GoodJob dashboard' do
+      sign_in
+
       get admin_jobs_path
       follow_redirect! while response.redirect?
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('GoodJob')
     end
+
+    # The engine carries no filter of ours: the guard reaches it only through the
+    # load hook of `config/initializers/good_job.rb`, and nothing else in the
+    # suite would notice that hook gone. The 303 is asserted because GoodJob's
+    # own Turbo drops a redirect that is not one on its retry and discard
+    # buttons, and `redirect_to` alone would not see the difference.
+    it 'sends a visitor with no session to the login page' do
+      get admin_jobs_path
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(login_path)
+
+      follow_redirect!
+      expect(response.body).not_to include('GoodJob')
+    end
   end
+
+  # A gem upgrade that renamed or dropped the hook would leave
+  # `ActiveSupport.on_load` waiting for a name nobody fires: no error at boot,
+  # none at request time, and the dashboard public again. The request above goes
+  # red too, but through routing and redirection, so it names the symptom rather
+  # than the cause.
+  it 'carries the guard into the engine controller' do
+    expect(GoodJob::ApplicationController.ancestors).to include(AdminAuthentication)
+  end
+
+  # Once a request has reached the mounted engine, this spec's own
+  # `new_admin_session_path` is resolved against the engine's mount point and
+  # yields `/admin/jobs/admin/session/new`. The application's route helpers,
+  # which is what the guard redirects through, are not narrowed that way.
+  def login_path = Rails.application.routes.url_helpers.new_admin_session_path
 end

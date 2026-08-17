@@ -7,6 +7,7 @@ Le code porte les noms anglais des spécifications, la documentation parle fran�
 | Terme | Ce que c'est, en une phrase | Dans le code |
 | --- | --- | --- |
 | **Action** (entête ebMS) | Ce que demande un message : `ExecuteQueryRequest`, `ExecuteQueryResponse` ou `ExceptionResponse`. | `EbmsAction` |
+| **Administrateur** — *administrator* | Un membre de l'équipe qui exploite le service, seul à pouvoir ouvrir l'[espace d'administration](espace_administration.md) ; jamais un usager d'une démarche. | `Administrator` |
 | **AS4** — *Applicability Statement 4* | Le [profil restreint d'ebMS3](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/profiles/AS4-profile/v1.0/AS4-profile-v1.0.html) qu'emploie eDelivery, où signature, chiffrement et accusé de réception sont obligatoires. | — |
 | **Bénéficiaire** — *natural person* | La personne dont le justificatif est demandé, identifiée par les attributs issus de son authentification eIDAS. | `NaturalPerson` |
 | **Bouchon** | Un endroit où le code écrit une valeur en dur faute d'avoir de quoi la calculer ; ils sont numérotés dans [reste_à_faire.md](reste_à_faire.md) et cités par les commentaires du code. | — |

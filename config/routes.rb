@@ -21,6 +21,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: 'home#show'
+    resource :session, only: %i[new create destroy]
     resources :conversations, only: %i[index show]
   end
 

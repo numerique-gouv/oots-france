@@ -2,6 +2,8 @@ require 'rails_helper'
 
 RSpec.describe 'Admin::Conversations' do
   describe 'GET /admin/conversations' do
+    before { sign_in }
+
     it 'lists the exchanges, most recent first' do
       older = create(:conversation, :delivered, created_at: 2.days.ago)
       newer = create(:conversation, :failed, created_at: 1.hour.ago)
@@ -134,6 +136,8 @@ RSpec.describe 'Admin::Conversations' do
   end
 
   describe 'GET /admin/conversations/:id' do
+    before { sign_in }
+
     it 'shows why an exchange failed, which nothing else exposes' do
       conversation = create(:conversation, :failed)
 
@@ -175,6 +179,34 @@ RSpec.describe 'Admin::Conversations' do
       get admin_conversation_path('inconnue')
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  # The redirect is followed before asserting the absence of the data: the body
+  # of a redirect is Rails' generic stub, which never carries the guarded page
+  # whether the guard fired or not, so asserting on it would prove nothing.
+  describe 'without a session' do
+    it 'shows no exchange and sends the visitor to the login page' do
+      conversation = create(:conversation, :failed)
+
+      get admin_conversations_path
+
+      expect(response).to have_http_status(:see_other)
+      expect(response).to redirect_to(new_admin_session_path)
+
+      follow_redirect!
+      expect(response.body).not_to include(conversation.conversation_id)
+    end
+
+    it 'sends the visitor to the login page rather than to one exchange' do
+      conversation = create(:conversation, :failed)
+
+      get admin_conversation_path(conversation.conversation_id)
+
+      expect(response).to redirect_to(new_admin_session_path)
+
+      follow_redirect!
+      expect(response.body).not_to include(CGI.escapeHTML(conversation.error_description))
     end
   end
 end
