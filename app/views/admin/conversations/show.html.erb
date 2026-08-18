@@ -1,8 +1,8 @@
-<% content_for :title, "Conversation #{@conversation.conversation_id}" %>
+<% content_for :title, t('admin.conversations.show.title', id: @conversation.conversation_id) %>
 
 <%= dsfr_breadcrumbs do |fil| %>
-  <% fil.with_breadcrumb(label: 'Espace d’administration', href: admin_root_path) %>
-  <% fil.with_breadcrumb(label: 'Conversations', href: admin_conversations_path) %>
+  <% fil.with_breadcrumb(label: t('components.directory_breadcrumbs.admin'), href: admin_root_path) %>
+  <% fil.with_breadcrumb(label: t('admin.conversations.index.title'), href: admin_conversations_path) %>
   <% fil.with_breadcrumb(label: @conversation.conversation_id) %>
 <% end %>
 
@@ -15,37 +15,37 @@
     <div class="fr-table__container">
       <div class="fr-table__content">
         <table>
-          <caption>Détail de l'échange</caption>
+          <caption><%= t('admin.conversations.show.caption') %></caption>
           <tbody>
             <tr>
-              <th scope="row">Pays sollicité</th>
+              <th scope="row"><%= t('admin.conversations.show.rows.country') %></th>
               <td><%= @conversation.country_code %></td>
             </tr>
             <tr>
-              <th scope="row">Démarche</th>
+              <th scope="row"><%= t('admin.conversations.attributes.procedure') %></th>
               <td>
                 <%= link_to @conversation.procedure_code,
                       admin_common_services_procedure_path(@conversation.procedure_code) %>
               </td>
             </tr>
             <tr>
-              <th scope="row">Requêteur</th>
+              <th scope="row"><%= t('admin.conversations.attributes.requester') %></th>
               <td><%= @conversation.evidence_requester_id %></td>
             </tr>
             <tr>
-              <th scope="row">Ouverte le</th>
+              <th scope="row"><%= t('admin.conversations.attributes.opened_at') %></th>
               <td><%= l(@conversation.created_at, format: :long) %></td>
             </tr>
             <tr>
-              <th scope="row">Réglée le</th>
+              <th scope="row"><%= t('admin.conversations.show.rows.settled_at') %></th>
               <td><%= @conversation.settled_at ? l(@conversation.settled_at, format: :long) : '—' %></td>
             </tr>
             <tr>
-              <th scope="row">Code d'erreur EDM</th>
+              <th scope="row"><%= t('admin.conversations.show.rows.edm_error_code') %></th>
               <td><%= @conversation.edm_error_code.presence || '—' %></td>
             </tr>
             <tr>
-              <th scope="row">Espace de prévisualisation</th>
+              <th scope="row"><%= t('admin.conversations.show.rows.preview_location') %></th>
               <%# A foreign correspondent chooses this address: it is read, not
                   followed. An operator console has no business being a
                   one-click launcher into a site it did not choose. %>
@@ -59,7 +59,7 @@
 </div>
 
 <p class="fr-mt-2w">
-  <%= link_to 'Simuler cette chaîne de requêtes',
+  <%= link_to t('admin.conversations.show.simulate'),
         admin_common_services_resolution_path(
           procedure_code: @conversation.procedure_code, country_code: @conversation.country_code,
         ),
@@ -67,7 +67,7 @@
 </p>
 
 <% if @conversation.error_description.present? %>
-  <h2 class="fr-h5 fr-mt-4w">Raison de l'échec</h2>
+  <h2 class="fr-h5 fr-mt-4w"><%= t('admin.conversations.show.failure_reason') %></h2>
   <%= dsfr_callout do %>
     <%= @conversation.error_description %>
   <% end %>

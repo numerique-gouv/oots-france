@@ -65,7 +65,7 @@ class CommonServicesInstance
       dns.getresources(name, Resolv::DNS::Resource::IN::NAPTR)
     end
   rescue Resolv::ResolvError => e
-    raise CommonServicesError, "Résolution DNS impossible pour « #{name} » : #{e.message}."
+    raise CommonServicesError, I18n.t('clients.common_services_instance.dns_failure', name:, error: e.message)
   end
 
   # RFC 3403 orders by `order` first, then by `preference` within it.

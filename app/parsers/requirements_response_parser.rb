@@ -34,7 +34,7 @@ class RequirementsResponseParser < CommonServicesResponseParser
   # and what came back would depend on how tolerant the directory happens to be.
   def identifier(declared)
     found = text(declared, './sdg:Identifier')
-    raise CommonServicesError, "L'annuaire a rendu une exigence sans identifiant." if found.blank?
+    raise CommonServicesError, I18n.t('parsers.requirements_response.requirement_without_id') if found.blank?
 
     found
   end

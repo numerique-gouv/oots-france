@@ -5,7 +5,7 @@ class PendingMessagesParser
 
   def initialize(xml)
     @document = Nokogiri::XML(xml)
-    raise UnreadableMessageError, 'Réponse du plugin illisible.' if @document.errors.any?
+    raise UnreadableMessageError, I18n.t('parsers.plugin_unreadable') if @document.errors.any?
   end
 
   def message_ids = all(document, '//soap:Body/ws:listPendingMessagesResponse/messageID').map(&:text)

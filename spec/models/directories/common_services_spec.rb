@@ -77,4 +77,13 @@ RSpec.describe Directories::CommonServices do
       expect { directory.providers(type.id, 'DE') }.to raise_error(CommonServicesError, /injoignable/)
     end
   end
+
+  # `translating` names a refusal with a key rather than a sentence, and only
+  # composes it once a directory has refused: nothing static ties the two.
+  it 'says every refusal it translates' do
+    refused = File.read('app/models/directories/common_services.rb')
+      .scan(/'(models\.directories(?:\.[a-z_]+)+)'/).flatten.uniq
+
+    expect_said(refused)
+  end
 end

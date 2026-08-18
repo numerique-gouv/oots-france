@@ -2,13 +2,14 @@
   <div class="fr-container">
     <div class="fr-footer__body">
       <div class="fr-footer__brand fr-enlarge-link">
-        <p class="fr-logo">République<br>Française</p>
+        <p class="fr-logo"><%= t('layouts.logo_html') %></p>
       </div>
       <div class="fr-footer__content">
         <p class="fr-footer__content-desc">
-          OOTS-France met en œuvre le
-          <a href="https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview" target="_blank" rel="noopener">système technique « une fois pour toutes »</a>
-          du règlement européen sur le portail numérique unique.
+          <%= t('layouts.pied_de_page.about_html',
+                tdd: link_to(t('layouts.pied_de_page.tdd'),
+                  'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview',
+                  target: '_blank', rel: 'noopener')) %>
         </p>
         <ul class="fr-footer__content-list">
           <li class="fr-footer__content-item">

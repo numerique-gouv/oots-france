@@ -69,6 +69,25 @@ The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the
 
 Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`: they address the business and belong to the documentation. Their step definitions are code, and are English.
 
+### Every word a human reads lives in `config/locales/fr.yml`
+
+Not one French sentence remains in `app/` — the operator console, the landing page, the flash messages and the exception messages alike, since the last of those reach a screen through `error_description` and the alerts of the directory pages. A literal in a template is therefore a regression, not a shortcut.
+
+**A key is the path, under `app/`, of the thing that says the string** — `views/` and the extension dropped, the `_` of a partial and the `concerns/` segment dropped — followed by the name of what the string *is*: `admin.conversations.index.empty`, `components.pagination.previous`, `parsers.slot_reading.missing`, `clients.beneficiary_token.invalid`. From the key one finds the file, and from the file one derives the prefix. A string several templates share sits one level above them, where `count` and `statuses` already do. Keys are absolute, `Rails/I18nLazyLookup` being off.
+
+Three rules carry the cases that bite:
+
+- **Prose that carries markup takes a key suffixed `_html`**, and the markup lives in the translation — the emphasis belongs to the sentence, and whoever rewrites it must be able to move it. What varies is interpolated: `t('…lead_html', country: link_to(…))` renders the link and escapes everything else. Never `.html_safe`, never `raw`, and never the address of a link — an URL is not a word.
+- **A translated fragment is never concatenated.** The glue — a space, a comma, an agreement — belongs inside the key, or the sentence cannot be read anywhere.
+- **Where an object cannot know what it is called, the caller passes a symbol and the callee translates it**: `validate!(:requester)`, `require_content(value, 'parsers.…')`, `abandon_conversation(error, :unreadable)`, and the flash, which carries a key so that the login page translates it — GoodJob's dashboard renders under `:en`, a locale this application does not publish.
+
+What legitimately stays in the code: the values the TDD fixes word for word (`EdmException#message`, the `EDM:ERR:*` codes, the query IDs, the directory parameter names), the fields of the JSON answer French procedures parse, and the French grammar `CountryWording` applies to what the code lists publish — a preposition table is not a sentence.
+
+`make i18n` answers the two questions that matter: no key the code asks for is missing, and no key the file carries is unused. CI runs both.
+
+> [!WARNING]
+> **Never run `i18n-tasks normalize`, nor `health` which chains it.** It rewrites the YAML through Psych and takes the comments with it — and those comments are half of what `config/locales/fr.yml` teaches. That is also why `config/i18n-tasks.yml` declares no `data.write`.
+
 ## Comments: only what no name can carry
 
 **The default is no comment.** Name the method, name the variable, extract the predicate — `reject_unless_expected(header)` says what its three lines of comparison say, and cannot drift from them. A comment is written once and trusted for ever after, including long after it has quietly stopped being true; a name is re-read every time the code is.

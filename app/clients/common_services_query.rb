@@ -47,7 +47,7 @@ class CommonServicesQuery
 
     response.body
   rescue Faraday::Error => e
-    raise CommonServicesError, "Annuaire injoignable (#{url}) : #{e.message}."
+    raise CommonServicesError, I18n.t('clients.common_services_query.unreachable', url:, error: e.message)
   end
 
   # A cache is an optimisation: one that cannot be written must not cost the
@@ -55,7 +55,7 @@ class CommonServicesQuery
   def remember(url, key, body)
     Rails.cache.write(key, body, expires_in: Settings.common_services_cache_duration)
   rescue StandardError => e
-    Rails.logger.warn("Réponse d'annuaire non mise en cache (#{url}) : #{e.message}")
+    Rails.logger.warn(I18n.t('clients.common_services_query.not_cached', url:, error: e.message))
   end
 
   # The parser belongs to the key because nothing in this signature stops a

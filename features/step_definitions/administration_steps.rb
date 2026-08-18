@@ -70,7 +70,7 @@ Alors('on me demande de me connecter') do
 end
 
 Alors('on me dit que les identifiants sont refusés') do
-  expect(page).to have_text(I18n.t('admin.sessions.refused'))
+  expect(page).to have_text('Adresse ou mot de passe incorrect.')
   expect(page).to have_button('Se connecter')
 end
 

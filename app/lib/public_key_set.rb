@@ -33,7 +33,7 @@ class PublicKeySet
   # https://datatracker.ietf.org/doc/html/rfc7638
   def thumbprint
     members = THUMBPRINT_MEMBERS.fetch(private_jwk['kty']) do
-      raise ConfigurationError, "Type de clé inconnu : « #{private_jwk['kty']} »."
+      raise ConfigurationError, I18n.t('lib.public_key_set.unknown_key_type', type: private_jwk['kty'])
     end
 
     canonical = members.index_with { |member| private_jwk.fetch(member) }

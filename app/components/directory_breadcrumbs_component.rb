@@ -21,8 +21,9 @@ class DirectoryBreadcrumbsComponent < ViewComponent::Base
   private
 
   def crumbs
-    walked = [['Espace d’administration', helpers.admin_root_path],
-              ['Annuaires centraux', helpers.admin_common_services_root_path], *@trail]
+    walked = [[t('components.directory_breadcrumbs.admin'), helpers.admin_root_path],
+              [t('components.directory_breadcrumbs.directories'), helpers.admin_common_services_root_path],
+              *@trail]
 
     walked[..-2] + [[walked.last.first, nil]]
   end

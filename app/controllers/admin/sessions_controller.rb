@@ -13,7 +13,7 @@ module Admin
       administrator = Administrator.authenticate_by(email: credentials[:email], password: credentials[:password])
 
       unless administrator
-        flash.now[:alert] = t('admin.sessions.refused')
+        flash.now[:alert] = :'admin.sessions.refused'
 
         return render(:new, status: :unprocessable_content)
       end
@@ -29,7 +29,7 @@ module Admin
     def destroy
       reset_session
 
-      redirect_to new_admin_session_path, notice: t('admin.sessions.signed_out')
+      redirect_to new_admin_session_path, notice: :'admin.sessions.signed_out'
     end
 
     # No navigation on the login page: every link it would offer leads somewhere

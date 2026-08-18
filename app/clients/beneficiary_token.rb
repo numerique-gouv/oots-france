@@ -24,7 +24,7 @@ class BeneficiaryToken
       given_name: payload['prenom'],
       date_of_birth: payload['dateNaissance'],
       eidas_identifier: payload['identifiantEidas'],
-    ).validate!('Le bénéficiaire du jeton', error: InvalidTokenError)
+    ).validate!(:token_beneficiary, error: InvalidTokenError)
   rescue InvalidTokenError
     raise
   # Narrow, because a `StandardError` here would also catch the call to the
@@ -35,7 +35,7 @@ class BeneficiaryToken
   rescue JWT::DecodeError, JWE::InvalidData, JWE::DecodeError, JWE::BadCEK,
          JWE::NotImplementedError, JSON::ParserError, OpenSSL::PKey::PKeyError,
          ArgumentError => e
-    raise InvalidTokenError, "Jeton bénéficiaire invalide : #{e.message}"
+    raise InvalidTokenError, I18n.t('clients.beneficiary_token.invalid', error: e.message)
   end
 
   private
@@ -67,8 +67,9 @@ class BeneficiaryToken
     return if header['alg'] == KEY_MANAGEMENT && header['enc'] == CONTENT_ENCRYPTION
 
     raise InvalidTokenError,
-      "Jeton bénéficiaire chiffré en #{header['alg']}/#{header['enc']}, " \
-      "attendu #{KEY_MANAGEMENT}/#{CONTENT_ENCRYPTION}."
+      I18n.t('clients.beneficiary_token.unexpected_algorithms',
+        announced: "#{header['alg']}/#{header['enc']}",
+        expected: "#{KEY_MANAGEMENT}/#{CONTENT_ENCRYPTION}")
   end
 
   def private_key = JWT::JWK.new(Settings.private_key_jwk).signing_key

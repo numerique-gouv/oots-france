@@ -102,7 +102,7 @@ module Settings
       return if missing.empty?
 
       raise ConfigurationError,
-        "Variables d'environnement obligatoires absentes ou vides : #{missing.join(', ')}."
+        I18n.t('lib.settings.missing', names: missing.join(', '))
     end
 
     # Named at once, like the absent ones above: correcting one to discover the
@@ -111,8 +111,9 @@ module Settings
       return if wrong.empty?
 
       raise ConfigurationError,
-        "Variables d'environnement devant être des nombres entiers positifs : " \
-        "#{wrong.map { |name| "#{name} (« #{ENV.fetch(name, nil)} »)" }.join(', ')}."
+        I18n.t('lib.settings.not_whole',
+          names: wrong.map { |name| I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil)) }
+            .join(', '))
     end
 
     def whole?(value) = Integer(value, exception: false)&.positive? || false
@@ -129,7 +130,7 @@ module Settings
       return value if present?(value)
 
       raise ConfigurationError,
-        "La variable d'environnement #{name} est obligatoire et ne peut pas être vide."
+        I18n.t('lib.settings.required', name:)
     end
 
     def present?(value) = value.is_a?(String) && !value.strip.empty?

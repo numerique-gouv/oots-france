@@ -72,15 +72,206 @@ fr:
               before_start: est antérieure à la date de début
           # Invariable, faute de savoir le genre de l'attribut qui le portera.
           unreadable: est illisible
+  accueil:
+    index:
+      lead: >-
+        Ce service échange des justificatifs avec les autres États membres de l'Union européenne,
+        pour le compte des démarches administratives françaises. Il s'adresse à des systèmes,
+        non à des usagers : une personne qui cherche à faire venir un justificatif passe par le
+        portail de la démarche.
+      open_admin: Ouvrir l’espace d’administration
+  layouts:
+    application:
+      # Le nom du service, que le titre de l'onglet, le bloc service de l'entête
+      # et la page d'accueil disent tous les trois.
+      name: OOTS-France
+      skiplink: Accès rapide
+      skiplink_content: Contenu
+    # Le bloc-marque du DSFR se lit sur deux lignes, la seconde après un saut.
+    # L'entête et le pied de page le disent tous les deux.
+    logo_html: République<br>Française
+    entete:
+      tagline: Échange transfrontalier de justificatifs
+      conversations: Conversations
+      directories: Annuaires
+      jobs: Jobs
+      sign_out: Se déconnecter
+    pied_de_page:
+      # L'adresse du lien reste dans le gabarit : `fr.yml` n'a pas à devenir
+      # l'endroit où l'on va corriger un lien mort.
+      about_html: OOTS-France met en œuvre le %{tdd} du règlement européen sur le portail numérique unique.
+      tdd: système technique « une fois pour toutes »
+  components:
+    directory_breadcrumbs:
+      admin: Espace d’administration
+      directories: Annuaires centraux
+    directory_query:
+      section: Requête effectuée
+      identifiers_title: Identifiants
+      # Nommés à l'appel par un symbole : quatre gabarits les affichent, et un
+      # cinquième ne doit pas pouvoir inventer un cinquième intitulé.
+      identifiers:
+        requirement: Exigence
+        evidence_type: Type de justificatif
+    pagination:
+      previous: Page précédente
+      next: Page suivante
+      page: Page %{number}
+  clients:
+    common_services_instance:
+      dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."
+    common_services_query:
+      unreachable: "Annuaire injoignable (%{url}) : %{error}."
+      not_cached: "Réponse d'annuaire non mise en cache (%{url}) : %{error}"
+    code_list:
+      nothing_read: "Liste de codes lue sans y rien trouver (%{list}) : structure inattendue ?"
+    common_services_signature:
+      invalid: Signature invalide sur la réponse de l'annuaire.
+      digest_mismatch: L'empreinte annoncée ne couvre pas la réponse de l'annuaire.
+      not_http_headers: Signature de l'annuaire non conforme au mécanisme HttpHeaders.
+      no_certificate: La réponse de l'annuaire ne porte aucun certificat.
+      certificate_rejected: "Certificat de l'annuaire rejeté par le magasin de confiance : %{error}."
+      header_unreadable: En-tête de signature illisible sur la réponse de l'annuaire.
+      header_unreadable_detail: "En-tête de signature illisible sur la réponse de l'annuaire : %{error}."
+      certificate_unreadable: "Certificat illisible dans la réponse de l'annuaire : %{error}."
+    beneficiary_token:
+      invalid: "Jeton bénéficiaire invalide : %{error}"
+      unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+  lib:
+    public_key_set:
+      unknown_key_type: "Type de clé inconnu : « %{type} »."
+    settings:
+      missing: "Variables d'environnement obligatoires absentes ou vides : %{names}."
+      not_whole: "Variables d'environnement devant être des nombres entiers positifs : %{names}."
+      not_whole_entry: "%{name} (« %{value} »)"
+      required: La variable d'environnement %{name} est obligatoire et ne peut pas être vide.
+  parsers:
+    # Dits par plusieurs lecteurs, d'où leur place au-dessus d'eux.
+    not_a_query_response: Le message reçu n'est pas une QueryResponse.
+    plugin_unreadable: Réponse du plugin illisible.
+    slot_reading:
+      in_received_message: "%{description} dans le message reçu."
+      missing: Slot « %{name} » absent du message reçu.
+      empty: Le slot « %{name} » est vide
+      without: Le slot « %{name} » ne porte pas %{path}
+    evidence_request:
+      not_a_query_request: Le message reçu n'est pas une QueryRequest.
+      no_er_agent: Pas d'agent classé ER dans le message reçu.
+      no_query: Pas de query:Query dans le message reçu.
+      agent_without_id: L'agent classé ER est sans identifiant
+      agent_without_scheme: L'agent classé ER est sans schéma d'identifiant
+      evidence_type_without_id: Le type de justificatif est sans identifiant
+    evidence_response:
+      requester_without_id: L'agent requêteur est sans identifiant
+      requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
+    requirements_response:
+      requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
+    error_response:
+      no_exception: Pas de rs:Exception dans la réponse d'erreur reçue.
+    ebms_header:
+      no_header: Pas d'entête ebMS dans le message reçu.
+      no_sender: Pas d'expéditeur dans l'entête du message reçu.
+    common_services_response:
+      not_a_query_response: La réponse de l'annuaire n'est pas une QueryResponse.
+      unexpected_version: L'annuaire a répondu en %{announced}, et non en %{expected}.
+      unnamed_version: une version sans nom
+      refused_without_reason: L'annuaire a refusé sans dire pourquoi.
+      refused: "L'annuaire a refusé : %{detail}"
+      nothing_readable: >-
+        L'annuaire a répondu avec succès, mais rien n'y était lisible
+        (%{count} objet(s) dans la réponse).
+  models:
+    strict_validation:
+      invalid: "%{subject} : %{errors}."
+      # Le porteur, que l'objet de valeur ne peut pas connaître : une
+      # `EbmsIdentity` ne sait pas si elle décrit un requêteur, un fournisseur
+      # ou un point d'accès.
+      subjects:
+        announced_access_point: Le point d'accès annoncé par l'annuaire
+        announced_evidence_type: Le type de justificatif annoncé par l'annuaire
+        announced_provider: Le fournisseur annoncé par l'annuaire
+        announced_provider_address: L'adresse du fournisseur annoncé par l'annuaire
+        announced_provider_identity: L'identité du fournisseur annoncé par l'annuaire
+        final_recipient: Le destinataire final (C4)
+        french_provider: Le fournisseur français
+        message_sender: L'expéditeur du message reçu
+        original_sender: L'émetteur d'origine (C1)
+        provider: Le fournisseur
+        recipient_access_point: Le point d'accès destinataire (C3)
+        request_beneficiary: Le bénéficiaire de la requête reçue
+        requester: Le requêteur
+        token_beneficiary: Le bénéficiaire du jeton
+    directories:
+      common_services:
+        no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
+        no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
+        unknown_procedure: Code de démarche « %{procedure} » introuvable
+      evidence_requesters:
+        unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
+    country_wording:
+      by: par %{country}
+      # Chaque morceau porte son espace ou sa virgule d'attache : la phrase
+      # entière se relit ici, jamais dans le code qui l'assemble.
+      declaration: Démarche déclarée%{under} %{by}%{requiring}
+      # Un pays déclare volontiers plusieurs fois la même exigence, sous des
+      # intitulés différents.
+      under:
+        one: " sous l'intitulé %{labels}"
+        other: " sous les intitulés %{labels}"
+      requiring:
+        # « avec aucune exigence » n'est pas une phrase qu'on écrit.
+        none: ", sans exigence publiée"
+        some: ", avec %{requirements}"
   evidence_requests:
-    inconnue: Cette demande est inconnue.
+    unknown: Cette demande est inconnue.
+    beneficiary_required: Le bénéficiaire doit être renseigné
+  interactors:
+    # Les huit échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
+    # ne rend que les `errors` qui les accompagnent.
+    failures:
+      common_services_refused: L'annuaire a refusé
+      gateway_refused: La passerelle a refusé le message
+      invalid_token: Jeton bénéficiaire invalide
+      no_evidence_type: Aucun type de justificatif dans ce pays
+      no_provider: Aucun fournisseur dans ce pays
+      unknown_country: Pays inconnu des annuaires
+      unknown_procedure: Démarche inconnue des annuaires
+      unknown_requester: Requêteur inconnu
+    incoming_message:
+      process:
+        exchange_failed: L'échange a échoué
+        exchange_impossible: Échange impossible à mener à son terme
+        unreadable: Message illisible
+        unreadable_logged: "Message illisible (%{id}) : %{error}"
+        unknown_action: "Action ebMS inconnue : « %{action} »."
+        abandoned: "%{reason} : %{error}"
   admin:
     # Le même message pour toutes les listes de l'espace : c'est le filtre qui
     # dit lequel de ses critères est en cause, jamais le titre de l'alerte.
     unreadable: Certains critères n'ont pas pu être lus
     sessions:
+      # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
+      # traduit, dans une requête servie par le backend I18n de l'application.
       refused: Adresse ou mot de passe incorrect.
       signed_out: Vous êtes déconnecté.
+      connection_required: Cette page demande une connexion.
+      new:
+        title: Connexion à l’espace d’administration
+        heading: Connexion
+        lead: L'espace d'administration est réservé à l'équipe qui exploite le service.
+        email: Adresse électronique
+        password: Mot de passe
+        submit: Se connecter
+    home:
+      show:
+        heading: Espace d'administration
+        tiles:
+          conversations: L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.
+          common_services: >-
+            Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences,
+            types de justificatif, fournisseurs.
+          jobs: "Les jobs de fond : ce qui reste en file, ce qui a échoué, et la trace de chaque erreur."
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.
@@ -89,10 +280,66 @@ fr:
           zero: Aucun résultat
           one: Un résultat
           other: "%{count} résultats"
-      resolution:
-        no_evidence_type: Aucun type de justificatif dans ce pays
-        no_provider: Aucun fournisseur dans ce pays
-        common_services_refused: L'annuaire a refusé
+      refus:
+        unreachable: Annuaire injoignable
+      catalogue:
+        show:
+          lead: >-
+            Ce que l'Evidence Broker et le Data Service Directory publient, tel qu'ils le
+            répondent à cette application.
+          tiles:
+            countries:
+              zero: Aucun pays n'a publié de déclaration.
+              one: Un pays, et les démarches qu'il déclare.
+              other: "%{count} pays, et les démarches que chacun déclare."
+            procedures:
+              zero: Aucun code de démarche déclaré.
+              one: Un code de démarche, déclaré par %{countries}.
+              other: "%{count} codes de démarche, déclarés par %{countries}."
+            requirements:
+              zero: Aucune exigence publiée.
+              one: Une exigence, et les types de justificatif qui la satisfont.
+              other: "%{count} exigences, et les types de justificatif qui les satisfont."
+          providers:
+            title: Et les fournisseurs ?
+            body: >-
+              Le Data Service Directory ne répond que sur un couple type de justificatif et
+              pays : il n'existe aucune liste de ses fournisseurs. On y arrive depuis une
+              exigence, puis un type de justificatif.
+      resolutions:
+        show:
+          title: Simuler une chaîne de requêtes
+          lead: >-
+            Les trois questions qu'une requête réelle pose aux annuaires avant d'émettre,
+            dans l'ordre, avec les mêmes clients.
+          legend: Interroger les annuaires
+          procedure: Démarche
+          country: Pays fournisseur
+          submit: Résoudre
+          # L'asymétrie que la page existe pour rendre visible : la démarche est
+          # la nôtre, les types de justificatif appartiennent au pays interrogé.
+          requirements:
+            title: 1. Ce que la démarche exige
+            lead_html: >-
+              Evidence Broker, dans le pays <strong>requêteur</strong> — le nôtre, %{country},
+              puisque la démarche %{procedure} est la nôtre.
+            # Une exigence, d'où l'accord ; l'étape suivante parle d'un type de
+            # justificatif et porte donc ses propres clés.
+            chosen: Retenue
+            choose: Poursuivre avec celle-ci
+          evidence_types:
+            title: 2. Ce qui satisfait cette exigence
+            lead_html: >-
+              Evidence Broker, dans le pays <strong>fournisseur</strong> — %{country},
+              celui qui délivrera le justificatif.
+            chosen: Retenu
+            choose: Poursuivre avec celui-ci
+          providers:
+            title: 3. Qui le délivre, et par où
+            lead_html: >-
+              Data Service Directory, dans le pays <strong>fournisseur</strong> — %{country}.
+              C'est le point d'accès de cette réponse que la requête réelle adresse.
+            detail: point d'accès %{access_point} · destinataire final %{recipient}
       procedures:
         # La démarche d'essai « 00 » ne figure dans aucune liste de codes, et un
         # État membre en déclare de temps en temps une que la liste ignore.
@@ -101,35 +348,145 @@ fr:
           zero: Aucune démarche
           one: Une démarche
           other: "%{count} démarches"
+        index:
+          title: Démarches
+          lead: Une même démarche est déclarée par plusieurs pays, chacun avec son intitulé.
+          search: Rechercher un code, un intitulé, un pays
+          declared_by: Démarche déclarée par
+          empty: Aucune démarche ne correspond à cette recherche.
+        show:
+          title: Démarche %{code}
+          declared_by:
+            zero: Aucun pays n'a déclaré de démarche sous ce code.
+            one: Un pays a déclaré une démarche sous ce code.
+            other: "%{count} pays ont déclaré une démarche sous ce code."
+        country:
+          title: "%{procedure} — %{country}"
       requirements:
         count:
           zero: Aucune exigence
           one: Une exigence
           other: "%{count} exigences"
-      evidence_types:
-        count:
-          zero: Aucun type de justificatif
-          one: Un type de justificatif
-          other: "%{count} types de justificatif"
-      # Un pays déclare volontiers plusieurs fois la même exigence, sous des
-      # intitulés différents.
-      under_label:
-        one: sous l'intitulé
-        other: sous les intitulés
+        # La liste des exigences et celle des justificatifs d'un pays cherchent
+        # toutes deux dans des exigences, et le disent de la même façon.
+        empty: Aucune exigence ne correspond à cette recherche.
+        index:
+          title: Exigences
+          lead_html: >-
+            Ce qu'une démarche impose de prouver. Une même exigence sert des démarches de
+            plusieurs pays <strong>requêteurs</strong>, et ce sont les types de
+            justificatif que chaque pays <strong>fournisseur</strong> publie pour elle qui
+            diffèrent.
+          search: Rechercher une exigence, un pays requêteur, son code
+          card: Voir les justificatifs qui satisfont cette exigence, par pays fournisseur.
+          required_by: Exigé par des démarches de
+        show:
+          # Le repli quand l'annuaire ne publie pas d'intitulé pour l'exigence.
+          title: Exigence
+          see_procedures: Voir les démarches qui l’exigent
+          by_country: Justificatifs satisfaisant cette exigence, par pays
+          lead_html: >-
+            Liste des justificatifs que chaque pays <strong>fournisseur</strong> publie
+            pour cette exigence. Le pays qui l'exige n'est pas celui qui la satisfait : le
+            justificatif est demandé à celui qui le détient.
+          search: Rechercher un pays fournisseur, son code, un type de justificatif
+          # Le titre de la page est loin au-dessus quand on est descendu de vingt
+          # cartes : chacune redit de quelle exigence elle parle.
+          card_html: Ce qui satisfait l'exigence « <em>%{requirement}</em> » %{country}.
+          empty: Aucun type de justificatif ne correspond à cette recherche.
+        country:
+          title: "%{country} — %{requirement}"
+          heading: Démarches de %{country} qui exigent « %{requirement} »
+          lead_html: >-
+            Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a déclaré cette exigence, et l'intitulé
+            qu'il donne à chacune.
+        procedures:
+          title: Démarches — %{requirement}
+          crumb: Démarches qui l’exigent
+          declared_by: Exigence déclarée par
+          heading: Démarches qui exigent « %{requirement} »
+          lead_html: >-
+            Les démarches qui reposent sur cette exigence, et les pays <strong>requêteurs</strong> qui les déclarent.
+          no_country: Aucun pays publié pour cette déclaration.
+      evidence_type_lists:
+        combination_html: Combinaison <strong>%{label}</strong>, exigée d'un bloc
+        see_providers: Voir les fournisseurs
       countries:
         count:
           zero: Aucun pays
           one: Un pays
           other: "%{count} pays"
-        declared:
-          zero: Aucun pays n'a déclaré de démarche sous ce code.
-          one: Un pays a déclaré une démarche sous ce code.
-          other: "%{count} pays ont déclaré une démarche sous ce code."
+        index:
+          title: Pays
+          lead: >-
+            Les États membres qui ont publié au moins une déclaration à l'Evidence
+            Broker. Un pays absent d'ici n'a rien déclaré, ce qui n'est pas la même chose
+            que ne pas être inscrit au Data Service Directory.
+          roles:
+            title: Requêteur ou fournisseur ?
+            body_html: >-
+              Un pays tient deux rôles, et l'annuaire ne répond pas la même chose selon
+              celui qu'on lui demande. <strong>Requêteur</strong>, il déclare ses démarches
+              et ce qu'elles exigent de prouver : c'est ce que ces pages montrent.
+              <strong>Fournisseur</strong>, il délivre les justificatifs qui satisfont une
+              exigence — la sienne ou celle d'un autre —, et cela se lit sous l'exigence.
+            requester_html: En <strong>requêteur</strong> — %{procedures}
+            provider_html: En <strong>fournisseur</strong>
+          # Un fragment traduit ne se concatène pas : la phrase entière, accord
+          # compris, tient dans la clé.
+          declared_procedures:
+            zero: aucune démarche déclarée
+            one: une démarche déclarée
+            other: "%{count} démarches déclarées"
+          search: Rechercher un pays, son code
+          see_procedures: Voir ses démarches
+          see_evidence: Voir ses justificatifs
+          empty: Aucun pays ne correspond à cette recherche.
+        procedures:
+          title: Démarches de %{country}
+          lead_html: >-
+            Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a publié une déclaration, et ce que
+            chacune lui fait exiger. Ce qu'il délivre, lui, se lit sous chaque exigence.
+        procedure:
+          title: "%{country} — %{procedure}"
+        requirements:
+          title: Justificatifs de %{country}
+          crumb: Justificatifs
+          lead_html: >-
+            Ce pays en <strong>fournisseur</strong> : les exigences pour lesquelles il publie un type de justificatif, quel que
+            soit le pays qui les impose. C'est ce qu'un correspondant obtient en lui adressant une requête.
+          search: Rechercher une exigence, un type de justificatif
+          card: Ce qui satisfait cette exigence %{country}.
+          # Une phrase déguisée en donnée : elle s'affiche comme le paramètre
+          # d'une requête que l'Evidence Broker n'accepte pas telle quelle.
+          swept:
+            zero: aucune exigence du catalogue
+            one: l'unique exigence du catalogue
+            other: chacune des %{count} exigences du catalogue
       declarations:
-        count:
-          zero: Aucune déclaration
-          one: Une déclaration
-          other: "%{count} déclarations"
+        role_html: "%{country}, en <strong>requêteur</strong>"
+        lead_html: >-
+          Ce que ce pays exige de prouver pour cette démarche. Chaque exigence mène à ce qui la satisfait, dans
+          <strong>tous</strong> les pays fournisseurs : l'usager qui accomplit cette démarche peut tenir son justificatif
+          de n'importe lequel d'entre eux.
+        no_requirement: Déclaration sans exigence publiée
+        no_detail: Sans description publiée.
+        empty: Aucune déclaration de cette démarche dans ce pays.
+      providers:
+        index:
+          title: Qui délivre « %{evidence_type} » ?
+          heading: Qui délivre « %{evidence_type} » %{country}
+          lead: >-
+            L'organisation qui détient ce justificatif, et le point d'accès par lequel une
+            requête réelle l'atteint.
+          data_service: Service de données
+          level_of_assurance_html: Niveau de garantie <strong>%{level}</strong>
+          service_id_html: Identifiant du service <code>%{id}</code>
+          access_point_html: >-
+            Point d'accès <strong>%{label}</strong>
+            — <code>%{id}</code>,
+            versions déclarées <code>%{versions}</code>
+          empty: Aucun service de données pour ce couple.
     conversations:
       count:
         zero: Aucune conversation
@@ -142,3 +499,37 @@ fr:
         preview_required: Prévisualisation requise
         delivered: Délivrée
         failed: Échec
+      # Ce que la liste met en en-tête de colonne, ce que la fiche met en tête
+      # de ligne et ce que le filtre met en étiquette : le même attribut, dit
+      # une fois.
+      attributes:
+        status: État
+        country: Pays
+        procedure: Démarche
+        requester: Requêteur
+        opened_at: Ouverte le
+      index:
+        title: Conversations
+        caption: Conversations
+        columns:
+          id: Identifiant
+        empty: Aucune conversation ne correspond à ces critères.
+      show:
+        title: Conversation %{id}
+        caption: Détail de l'échange
+        rows:
+          # La fiche nomme le pays par le rôle qu'il tient dans l'échange, là où
+          # la liste et le filtre n'ont la place que de l'attribut.
+          country: Pays sollicité
+          settled_at: Réglée le
+          edm_error_code: Code d'erreur EDM
+          preview_location: Espace de prévisualisation
+        simulate: Simuler cette chaîne de requêtes
+        failure_reason: Raison de l'échec
+      filtre:
+        legend: Filtrer les conversations
+        all: Tous
+        since: Ouverte depuis le
+        until: Jusqu'au
+        submit: Filtrer
+        reset: Réinitialiser

@@ -7,7 +7,7 @@ class EvidenceResponseParser
 
   def initialize(document)
     @response = at(document, '/query:QueryResponse')
-    raise UnreadableMessageError, "Le message reçu n'est pas une QueryResponse." if @response.nil?
+    raise UnreadableMessageError, I18n.t('parsers.not_a_query_response') if @response.nil?
   end
 
   def request_id = attribute(response, 'requestId')
@@ -18,8 +18,8 @@ class EvidenceResponseParser
     name = at(agent, './sdg:Name')
 
     EvidenceRequester.new(
-      id: require_content(identifier&.text, "L'agent requêteur est sans identifiant"),
-      type_id: require_content(attribute(identifier, 'schemeID'), "L'agent requêteur est sans schéma d'identifiant"),
+      id: require_content(identifier&.text, 'parsers.evidence_response.requester_without_id'),
+      type_id: require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_response.requester_without_scheme'),
       name: name&.text,
       language: attribute(name, 'lang'),
     )

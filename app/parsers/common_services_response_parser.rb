@@ -16,7 +16,7 @@ class CommonServicesResponseParser
 
   def initialize(body)
     @response = at(Nokogiri::XML(body), '/query:QueryResponse')
-    raise CommonServicesError, "La réponse de l'annuaire n'est pas une QueryResponse." if @response.nil?
+    raise CommonServicesError, I18n.t('parsers.common_services_response.not_a_query_response') if @response.nil?
 
     reject_unless_expected_version
     reject_unless_successful
@@ -49,8 +49,9 @@ class CommonServicesResponseParser
     return if announced == CommonServicesSpecification::IDENTIFIER
 
     raise CommonServicesError,
-      "L'annuaire a répondu en #{announced.presence || 'une version sans nom'}, " \
-      "et non en #{CommonServicesSpecification::IDENTIFIER}."
+      I18n.t('parsers.common_services_response.unexpected_version',
+        announced: announced.presence || I18n.t('parsers.common_services_response.unnamed_version'),
+        expected: CommonServicesSpecification::IDENTIFIER)
   end
 
   attr_reader :response
@@ -59,7 +60,7 @@ class CommonServicesResponseParser
     return if attribute(response, 'status') == SUCCESS
 
     exception = at(response, './rs:Exception')
-    raise CommonServicesError, "L'annuaire a refusé sans dire pourquoi." if exception.nil?
+    raise CommonServicesError, I18n.t('parsers.common_services_response.refused_without_reason') if exception.nil?
 
     code = attribute(exception, 'code').presence
 
@@ -73,7 +74,7 @@ class CommonServicesResponseParser
   def refusal(exception, code)
     said = [code, attribute(exception, 'message')].compact_blank.join(' : ')
 
-    said.presence || "L'annuaire a refusé : #{exception.to_xml.squish}"
+    said.presence || I18n.t('parsers.common_services_response.refused', detail: exception.to_xml.squish)
   end
 
   def registry_objects = all(response, './rim:RegistryObjectList/rim:RegistryObject')
@@ -99,8 +100,7 @@ class CommonServicesResponseParser
     return unless @read.is_a?(Enumerable) && @read.none?
 
     raise CommonServicesError,
-      "L'annuaire a répondu avec succès, mais rien n'y était lisible " \
-      "(#{registry_objects.size} objet(s) dans la réponse)."
+      I18n.t('parsers.common_services_response.nothing_readable', count: registry_objects.size)
   end
 
   # What the directories publish is indented, so every reading of an element's

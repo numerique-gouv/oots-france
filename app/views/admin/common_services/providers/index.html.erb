@@ -1,17 +1,16 @@
-<% content_for :title, "Qui délivre « #{@evidence_type.display_name} » ?" %>
+<% content_for :title, t('admin.common_services.providers.index.title',
+      evidence_type: @evidence_type.display_name) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
-      ['Exigences', admin_common_services_requirements_path],
+      [t('admin.common_services.requirements.index.title'), admin_common_services_requirements_path],
       [requirement.display_name, admin_common_services_requirement_path(requirement.uuid)],
       [named_country(@country), nil],
     ]) %>
 
-<h1 class="fr-h3">Qui délivre « <%= @evidence_type.display_name %> » <%= in_country(@country) %></h1>
+<h1 class="fr-h3"><%= t('admin.common_services.providers.index.heading',
+      evidence_type: @evidence_type.display_name, country: in_country(@country)) %></h1>
 
-<p class="fr-text--lead">
-  L'organisation qui détient ce justificatif, et le point d'accès par lequel une
-  requête réelle l'atteint.
-</p>
+<p class="fr-text--lead"><%= t('admin.common_services.providers.index.lead') %></p>
 
 <%# Le pays ne se choisit pas : ce type de justificatif est publié par lui, et
     le demander à un autre ne peut que revenir vide. %>
@@ -21,14 +20,16 @@
   <% end %>
 <% else %>
   <% @data_services.each do |service| %>
-    <%= render CardComponent.new(title: service.label || 'Service de données', dense: true) do |carte| %>
+    <%= render CardComponent.new(title: service.label || t('admin.common_services.providers.index.data_service'), dense: true) do |carte| %>
       <code class="entry__tag"><%= service.distribution_format || '—' %></code>
-      Niveau de garantie <strong><%= service.level_of_assurance || '—' %></strong>
+      <%= t('admin.common_services.providers.index.level_of_assurance_html',
+            level: service.level_of_assurance || '—') %>
 
       <%# L'identifiant que le DSD attribue au couple type et pays : c'est lui
           que le bouchon 7 écrit encore en dur dans les requêtes émises, d'où sa
           place sur la carte plutôt que dans le repli technique. %>
-      <br><span class="fr-text--sm">Identifiant du service <code><%= service.id || '—' %></code></span>
+      <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
+            id: service.id || '—') %></span>
 
       <% carte.with_list do %>
         <ul class="entry-list">
@@ -49,9 +50,9 @@
               </span>
 
               <span class="entry__detail">
-                Point d'accès <strong><%= provider.access_point.label || '—' %></strong>
-                — <code><%= provider.access_point.id %></code>,
-                versions déclarées <code><%= provider.access_point.conforms_to.join(', ').presence || '—' %></code>
+                <%= t('admin.common_services.providers.index.access_point_html',
+                      label: provider.access_point.label || '—', id: provider.access_point.id,
+                      versions: provider.access_point.conforms_to.join(', ').presence || '—') %>
               </span>
             </li>
           <% end %>
@@ -61,7 +62,7 @@
   <% end %>
 
   <% if @data_services.empty? %>
-    <p>Aucun service de données pour ce couple.</p>
+    <p><%= t('admin.common_services.providers.index.empty') %></p>
   <% end %>
 <% end %>
 
@@ -70,7 +71,7 @@
     et l'absence ne veut pas dire qu'il n'existe pas. %>
 <%= render DirectoryQueryComponent.new(
       query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
-      identifiers: { 'Exigence' => requirement.id, 'Type de justificatif' => @evidence_type.id },
+      identifiers: { requirement: requirement.id, evidence_type: @evidence_type.id },
       parameters: {
         'evidence-type-classification' => @evidence_type.id,
         'country-code' => @country,

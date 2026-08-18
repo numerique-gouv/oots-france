@@ -14,6 +14,17 @@ RSpec.describe 'Admin::CommonServices::Catalogue' do
     expect(response.body).to include('22 codes de démarche', '27 pays', '53 exigences')
   end
 
+  # The count reads on its own everywhere else, so it is capitalised; sewn into
+  # the middle of a sentence it would carry that capital in with it.
+  it 'sews the country count into the sentence without its capital' do
+    stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_fr')
+
+    get admin_common_services_root_path
+
+    expect(response.body).to include('par un pays')
+    expect(response.body).not_to include('par Un pays')
+  end
+
   it 'leads to both listings' do
     get admin_common_services_root_path
 

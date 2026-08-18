@@ -26,14 +26,16 @@ module Directories
       requirement = first_requirement(procedure_code)
 
       translating(UNKNOWN_EVIDENCE_TYPE, EvidenceTypeNotFound,
-        "Aucun type de justificatif pour la démarche « #{procedure_code} » dans le pays « #{country_code} »") do
+        'models.directories.common_services.no_evidence_type',
+        procedure: procedure_code, country: country_code) do
         @evidence_broker.evidence_types(requirement_id: requirement, country_code:)
       end
     end
 
     def providers(evidence_type_id, country_code)
       translating(NO_PROVIDER, CountryCodeNotFound,
-        "Aucun fournisseur pour le type de justificatif « #{evidence_type_id} » dans le pays « #{country_code} »") do
+        'models.directories.common_services.no_provider',
+        evidence_type: evidence_type_id, country: country_code) do
         @data_service_directory.providers(
           evidence_type_classification: evidence_type_id,
           country_code:,
@@ -46,22 +48,29 @@ module Directories
     # Seule la première exigence est gardée, là où plusieurs exigences d'une
     # même démarche s'ajoutent — voir le chantier 1 de `docs/reste_à_faire.md`.
     def first_requirement(procedure_code)
-      absent = "Code de démarche « #{procedure_code} » introuvable"
-      found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound, absent) do
+      found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound,
+        'models.directories.common_services.unknown_procedure', procedure: procedure_code) do
         @evidence_broker.requirement_identifiers(
           procedure_code:, country_code: Settings.common_services_country_code,
         )
       end
 
-      found.first || raise(ProcedureCodeNotFound, "#{absent}.")
+      found.first || raise(ProcedureCodeNotFound, "#{unknown_procedure(procedure_code)}.")
     end
 
-    def translating(codes, error, message)
+    def unknown_procedure(code)
+      I18n.t('models.directories.common_services.unknown_procedure', procedure: code)
+    end
+
+    # The wording travels as a key, and is built only once a refusal has to be
+    # said: a message composed on the way in would be composed on every read
+    # that succeeds, which is nearly all of them.
+    def translating(codes, error, key, **interpolations)
       yield
     rescue CommonServicesError => e
       raise unless codes.include?(e.code)
 
-      raise error, "#{message} : #{e.message}."
+      raise error, "#{I18n.t(key, **interpolations)} : #{e.message}."
     end
   end
 end

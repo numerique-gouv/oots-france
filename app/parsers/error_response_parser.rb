@@ -6,10 +6,10 @@ class ErrorResponseParser
 
   def initialize(document)
     @response = at(document, '/query:QueryResponse')
-    raise UnreadableMessageError, "Le message reçu n'est pas une QueryResponse." if @response.nil?
+    raise UnreadableMessageError, I18n.t('parsers.not_a_query_response') if @response.nil?
 
     @exception = at(@response, './rs:Exception')
-    raise UnreadableMessageError, "Pas de rs:Exception dans la réponse d'erreur reçue." if @exception.nil?
+    raise UnreadableMessageError, I18n.t('parsers.error_response.no_exception') if @exception.nil?
   end
 
   def request_id = attribute(response, 'requestId')

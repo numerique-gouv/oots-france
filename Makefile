@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup up domibus down test lint lint-fix e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup up domibus down test lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -38,6 +38,10 @@ lint: ## RuboCop alone
 
 lint-fix: ## RuboCop, autocorrecting what is safe to autocorrect
 	$(IN_WEB) rubocop -a
+
+i18n: ## Le fr.yml, contre ce que le code réclame (ni `normalize` ni `health` : voir config/i18n-tasks.yml)
+	$(IN_WEB) i18n-tasks missing
+	$(IN_WEB) i18n-tasks unused
 
 e2e: ## Cucumber through a real Domibus — needs the stack up, see docs/test_e2e.md
 	$(IN_WEB) cucumber --profile bout_en_bout

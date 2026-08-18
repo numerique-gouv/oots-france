@@ -37,7 +37,7 @@ class SystemCheckResponseBuilder < ApplicationBuilder
 
   private
 
-  def provider_identity = @provider.ebms_identity.validate!('Le fournisseur français')
+  def provider_identity = @provider.ebms_identity.validate!(:french_provider)
 
   def provider_names = @provider.descriptions
 
@@ -52,7 +52,7 @@ class SystemCheckResponseBuilder < ApplicationBuilder
 
   def requester_agent
     AgentBuilder.new(
-      identity: @requester.ebms_identity.validate!('Le requêteur'),
+      identity: @requester.ebms_identity.validate!(:requester),
       names: { @requester.language => @requester.name },
     ).render
   end

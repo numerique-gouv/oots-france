@@ -27,6 +27,11 @@ RSpec.describe 'Admin::Jobs' do
 
       follow_redirect!
       expect(response.body).not_to include('GoodJob')
+
+      # The guard runs inside GoodJob's `around_action`, which renders under
+      # `:en`: the flash carries a key rather than a message, and this login
+      # page — an ordinary request — is what translates it.
+      expect(response.body).to include('Cette page demande une connexion.')
     end
   end
 

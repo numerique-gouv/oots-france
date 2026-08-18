@@ -12,7 +12,7 @@ module SlotReading
 
   def slot(name, scope)
     found = at(scope, "./rim:Slot[@name='#{name}']")
-    raise UnreadableMessageError, "Slot « #{name} » absent du message reçu." if found.nil?
+    raise UnreadableMessageError, I18n.t('parsers.slot_reading.missing', name:) if found.nil?
 
     found
   end
@@ -21,21 +21,24 @@ module SlotReading
   # anything whose content is a single `rim:Value`.
   def slot_text(name, scope)
     value = text_at(slot(name, scope), './rim:SlotValue/rim:Value')
-    require_content(value, "Le slot « #{name} » est vide")
+    require_content(value, 'parsers.slot_reading.empty', name:)
   end
 
   # A `rim:AnyValueType`: the tree under the slot value, whatever it is.
   def slot_content(name, scope, path)
     found = at(slot(name, scope), "./rim:SlotValue/#{path}")
-    require_content(found, "Le slot « #{name} » ne porte pas #{path}")
+    require_content(found, 'parsers.slot_reading.without', name:, path:)
   end
 
   # A `rim:CollectionValueType`: its `rim:Element` children, possibly none.
   def slot_elements(name, scope) = all(slot(name, scope), './rim:SlotValue/rim:Element')
 
-  def require_content(value, description)
-    raise UnreadableMessageError, "#{description} dans le message reçu." if value.nil? || value.to_s.strip.empty?
+  # The description travels as a key: what is missing is named by the parser
+  # that looked for it, and where it was looked for is the same sentence for all.
+  def require_content(value, key, **)
+    return value unless value.nil? || value.to_s.strip.empty?
 
-    value
+    raise UnreadableMessageError,
+      I18n.t('parsers.slot_reading.in_received_message', description: I18n.t(key, **))
   end
 end

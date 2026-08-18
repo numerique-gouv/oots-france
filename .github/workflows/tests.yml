@@ -59,6 +59,11 @@ jobs:
 
       - run: bundle exec rubocop
 
+      # Ni `normalize` ni `health` : voir `config/i18n-tasks.yml`.
+      - run: bundle exec i18n-tasks missing
+
+      - run: bundle exec i18n-tasks unused
+
       - run: bundle exec rspec
 
       - run: bundle exec cucumber

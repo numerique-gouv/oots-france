@@ -22,7 +22,7 @@ RSpec.describe DirectoryQueryComponent, type: :component do
   # arriving on the page, and everything to one checking what it read.
   it 'shows the identifiers the answer turns on' do
     render_inline(described_class.new(query_id: 'urn:x',
-      identifiers: { 'Exigence' => 'https://sr.acc.oots.tech.ec.europa.eu/x' }))
+      identifiers: { requirement: 'https://sr.acc.oots.tech.ec.europa.eu/x' }))
 
     expect(page).to have_text('Exigence')
     expect(page).to have_css('code', text: 'https://sr.acc.oots.tech.ec.europa.eu/x')
@@ -32,5 +32,15 @@ RSpec.describe DirectoryQueryComponent, type: :component do
     render_inline(described_class.new(query_id: 'urn:x'))
 
     expect(page).to have_no_text('Identifiants')
+  end
+
+  # The identifiers travel as symbols from five templates: nothing static ties
+  # those call sites to the wordings this component says.
+  it 'says every identifier its callers name' do
+    named = Dir['app/views/**/*.erb']
+      .flat_map { |path| File.read(path).scan(/identifiers: \{([^}]*)\}/m) }
+      .flatten.flat_map { |group| group.scan(/(\w+):/) }.flatten.uniq
+
+    expect_said(named.map { |identifier| "components.directory_query.identifiers.#{identifier}" })
   end
 end

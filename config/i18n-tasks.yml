@@ -1,0 +1,51 @@
+# Ce que l'intégration continue vérifie du `fr.yml` : qu'aucune clé réclamée par
+# le code n'y manque, et qu'aucune clé qu'il porte n'est plus réclamée par
+# personne.
+#
+# > [!IMPORTANT]
+# > Ne jamais lancer `i18n-tasks normalize`, ni `health` qui l'enchaîne : il
+# > réécrit le YAML par Psych et emporte les commentaires, qui disent ici
+# > pourquoi chaque clé existe. Rien ne l'en empêche techniquement — le défaut
+# > de `data.write` vise déjà ce fichier —, c'est une consigne, pas un verrou.
+
+base_locale: fr
+# L'application n'a qu'un public, et le vocabulaire anglais des TDD vit dans le
+# code plutôt que dans une locale.
+locales: [fr]
+
+data:
+  read:
+    - config/locales/%{locale}.yml
+
+search:
+  paths:
+    - app/
+  exclude:
+    - app/assets
+    # Gabarits XML des messages OOTS : pas un mot de français à y chercher.
+    - app/templates
+  # `Rails/I18nLazyLookup` est désactivé : toutes les clés sont absolues.
+  relative_roots: []
+
+ignore_unused:
+  # Rails va chercher ces clés lui-même, d'après le modèle et l'attribut : aucun
+  # `t()` ne les nomme.
+  - activerecord.*
+  - activemodel.*
+  # Composées à l'exécution. Une ligne par ensemble, plutôt qu'un
+  # `search.strict: false` qui bénirait des sous-arbres entiers en silence.
+  - admin.conversations.statuses.*
+  - admin.sessions.{refused,signed_out,connection_required}
+  - components.directory_query.identifiers.*
+  - interactors.failures.*
+  - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
+  - models.strict_validation.subjects.*
+  # Les refus que `translating` reçoit sous forme de clé, et qu'il ne compose
+  # que lorsqu'un annuaire a refusé.
+  - models.directories.common_services.{no_evidence_type,no_provider}
+  # Les descriptions que `require_content` reçoit sous forme de clé, et qu'il
+  # compose avec `parsers.slot_reading.in_received_message`.
+  - parsers.slot_reading.{empty,without}
+  - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
+  - parsers.evidence_response.{requester_without_id,requester_without_scheme}
+  - admin.common_services.procedures.no_label

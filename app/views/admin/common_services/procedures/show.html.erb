@@ -1,14 +1,14 @@
-<% content_for :title, "Démarche #{@procedure.code}" %>
+<% content_for :title, t('admin.common_services.procedures.show.title', code: @procedure.code) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
-      ['Démarches', admin_common_services_procedures_path],
+      [t('admin.common_services.procedures.index.title'), admin_common_services_procedures_path],
       [@procedure.code, nil],
     ]) %>
 
 <h1 class="fr-h3"><%= full_named_procedure(@procedure.code) %></h1>
 
 <p class="fr-text--sm fr-mb-2w">
-  <%= t('admin.common_services.countries.declared', count: @procedure.countries.size) %>
+  <%= t('admin.common_services.procedures.show.declared_by', count: @procedure.countries.size) %>
 </p>
 
 <%# Une démarche n'impose les mêmes exigences nulle part : ce qu'on compare

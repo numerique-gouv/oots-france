@@ -78,11 +78,11 @@ class EvidenceRequestsController < ApplicationController
   def check_beneficiary
     return if query[:beneficiaire].present?
 
-    render json: { erreur: 'Le bénéficiaire doit être renseigné' }, status: :unprocessable_content
+    render json: { erreur: t('evidence_requests.beneficiary_required') }, status: :unprocessable_content
   end
 
   def report_unknown_conversation
-    render json: { erreur: t('evidence_requests.inconnue') }, status: :not_found
+    render json: { erreur: t('evidence_requests.unknown') }, status: :not_found
   end
 
   def report_bad_request(error)

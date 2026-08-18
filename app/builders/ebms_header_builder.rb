@@ -22,10 +22,10 @@ class EbmsHeaderBuilder < ApplicationBuilder
     # Validated like C1 and C4, and for the same reason: an access point with
     # no identity travels to the gateway as a property it accepts and routes
     # nowhere, which shows up only as silence on the other side.
-    @recipient = recipient.validate!("Le point d'accès destinataire (C3)")
+    @recipient = recipient.validate!(:recipient_access_point)
     @sender = sender
-    @original_sender = original_sender.validate!("L'émetteur d'origine (C1)")
-    @final_recipient = final_recipient.validate!('Le destinataire final (C4)')
+    @original_sender = original_sender.validate!(:original_sender)
+    @final_recipient = final_recipient.validate!(:final_recipient)
     @payload_id = payload_id
     @conversation_id = conversation_id
     @attachment = attachment

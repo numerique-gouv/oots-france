@@ -1,13 +1,13 @@
-<% content_for :title, 'Démarches' %>
+<% content_for :title, t('admin.common_services.procedures.index.title') %>
 
-<%= render DirectoryBreadcrumbsComponent.new(trail: [['Démarches', nil]]) %>
+<%= render DirectoryBreadcrumbsComponent.new(trail: [[t('admin.common_services.procedures.index.title'), nil]]) %>
 
-<h1>Démarches</h1>
+<h1><%= t('admin.common_services.procedures.index.title') %></h1>
 
-<p>Une même démarche est déclarée par plusieurs pays, chacun avec son intitulé.</p>
+<p><%= t('admin.common_services.procedures.index.lead') %></p>
 
 <%= render SearchFieldComponent.new(
-      label: 'Rechercher un code, un intitulé, un pays',
+      label: t('admin.common_services.procedures.index.search'),
       id: 'recherche-demarche',
       entries: '#liste-demarches > *',
       tally: '#decompte-demarches',
@@ -31,7 +31,7 @@
           ) do |carte| %>
         <% carte.with_list do %>
           <%= render CountryTagListComponent.new(
-                caption: 'Démarche déclarée par',
+                caption: t('admin.common_services.procedures.index.declared_by'),
                 codes: procedure.countries, names: country_names,
                 link: ->(code) { admin_common_services_procedure_country_path(procedure.code, code) },
               ) %>
@@ -41,6 +41,6 @@
   <% end %>
 </div>
 
-<p id="aucune-demarche" <%= 'hidden' if @procedures.any? %>>Aucune démarche ne correspond à cette recherche.</p>
+<p id="aucune-demarche" <%= 'hidden' if @procedures.any? %>><%= t('admin.common_services.procedures.index.empty') %></p>
 
 <%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

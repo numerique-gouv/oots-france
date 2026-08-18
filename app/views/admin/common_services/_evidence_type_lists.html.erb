@@ -5,7 +5,7 @@
         c'est-à-dire quand ce pays en publie plusieurs. %>
     <% if lists.size > 1 %>
       <li class="entry__group">
-        Combinaison <strong><%= list.label || list.id %></strong>, exigée d'un bloc
+        <%= t('admin.common_services.evidence_type_lists.combination_html', label: list.label || list.id) %>
       </li>
     <% end %>
 
@@ -19,7 +19,7 @@
         <%= link_to admin_common_services_requirement_evidence_type_providers_path(
               requirement.uuid, type.uuid,
             ), class: 'entry__action fr-link' do %>
-          Voir les fournisseurs<span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
+          <%= t('admin.common_services.evidence_type_lists.see_providers') %><span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
         <% end %>
       </li>
     <% end %>

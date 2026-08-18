@@ -1,21 +1,20 @@
-<%# Le bloc-marque du DSFR se lit sur deux lignes, la seconde après un saut. %>
 <%= dsfr_header(
-      logo_text: safe_join(['République', tag.br, 'Française']),
-      title: 'OOTS-France',
-      tagline: 'Échange transfrontalier de justificatifs',
+      logo_text: t('layouts.logo_html'),
+      title: t('layouts.application.name'),
+      tagline: t('layouts.entete.tagline'),
       href: root_path,
     ) do |header| %>
   <% if admin_section? %>
-    <% header.with_direct_link_simple(title: 'Conversations', path: admin_conversations_path) %>
-    <% header.with_direct_link_simple(title: 'Annuaires', path: admin_common_services_root_path) %>
-    <% header.with_direct_link_simple(title: 'Jobs', path: admin_jobs_path) %>
+    <% header.with_direct_link_simple(title: t('layouts.entete.conversations'), path: admin_conversations_path) %>
+    <% header.with_direct_link_simple(title: t('layouts.entete.directories'), path: admin_common_services_root_path) %>
+    <% header.with_direct_link_simple(title: t('layouts.entete.jobs'), path: admin_jobs_path) %>
 
     <%# `button_to`, because the application embarks neither Turbo nor
         `rails-ujs`: a `method: :delete` on an anchor would do nothing. And a
         custom tool link rather than `with_tool_link`, whose component renders an
         `<a>` and nothing else. %>
     <% header.with_custom_tool_link do %>
-      <%= button_to 'Se déconnecter', admin_session_path, method: :delete, class: 'fr-btn' %>
+      <%= button_to t('layouts.entete.sign_out'), admin_session_path, method: :delete, class: 'fr-btn' %>
     <% end %>
   <% end %>
 <% end %>
