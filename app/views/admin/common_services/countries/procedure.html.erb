@@ -1,0 +1,10 @@
+<% content_for :title, "#{named_country(@country)} — #{named_procedure(@procedure.code)}" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Pays', admin_common_services_countries_path],
+      [named_country(@country), nil],
+      ['Démarches', admin_common_services_country_procedures_path(@country)],
+      [@procedure.code, nil],
+    ]) %>
+
+<%= render 'admin/common_services/declarations' %>

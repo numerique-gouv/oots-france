@@ -1,0 +1,6 @@
+<%# Le décompte que le champ de recherche réécrit : `data-tally` lui donne les
+    formes du pluriel, que le navigateur n'a pas. %>
+<p class="fr-text--sm fr-mb-2w" id="<%= id %>" aria-live="polite"
+  data-tally="<%= tally_forms('admin.common_services.results.count') %>">
+  <%= t('admin.common_services.results.count', count:) %>
+</p>

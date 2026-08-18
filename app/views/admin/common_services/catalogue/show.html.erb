@@ -1,0 +1,52 @@
+<% content_for :title, 'Annuaires centraux' %>
+
+<%= render DirectoryBreadcrumbsComponent.new %>
+
+<div class="fr-grid-row fr-grid-row--top fr-mb-2w">
+  <div class="fr-col-12 fr-col-md">
+    <h1>Annuaires centraux</h1>
+  </div>
+  <div class="fr-mt-md-1w fr-ml-md-1w">
+    <%= link_to 'Simuler une chaîne de requêtes', admin_common_services_resolution_path,
+          class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+  </div>
+</div>
+
+<p class="fr-text--lead">
+  Ce que l'Evidence Broker et le Data Service Directory publient, tel qu'ils le
+  répondent à cette application.
+</p>
+
+<div class="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+  <div class="fr-col-12 fr-col-md-4">
+    <%= dsfr_tile(
+          title: 'Pays',
+          url: admin_common_services_countries_path,
+          description: "#{@countries.size} pays, et les démarches que chacun déclare.",
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-4">
+    <%= dsfr_tile(
+          title: 'Démarches',
+          url: admin_common_services_procedures_path,
+          description: "#{@procedures.size} codes de démarche, déclarés par #{@countries.size} pays.",
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-4">
+    <%= dsfr_tile(
+          title: 'Exigences',
+          url: admin_common_services_requirements_path,
+          description: "#{@requirements.size} exigences, et les types de justificatif qui les satisfont.",
+        ) %>
+  </div>
+</div>
+
+<%# Le DSD n'accepte pas de requête sans son type de justificatif et son pays :
+    ses fournisseurs ne se listent pas, ils se demandent. %>
+<%= dsfr_callout(title: 'Et les fournisseurs ?') do %>
+  Le Data Service Directory ne répond que sur un couple type de justificatif et
+  pays : il n'existe aucune liste de ses fournisseurs. On y arrive depuis une
+  exigence, puis un type de justificatif.
+<% end %>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

@@ -1,0 +1,124 @@
+/*
+ * Ce qu'une carte énumère se lit comme une table, et se sépare de ce qui la
+ * décrit. Le pied du DSFR porte tout le reste — sa place dans la carte, ses
+ * marges négatives qui le mènent bord à bord —, il ne manque que le filet.
+ */
+.fr-card .card-list {
+  border-top: 1px solid var(--border-default-grey);
+}
+
+/*
+ * Une carte cliquable a deux moitiés qui ne mènent pas au même endroit : son
+ * corps — titre, description, flèche — mène là où le titre mène ; son pied
+ * énumère, et chacune de ses entrées mène ailleurs.
+ *
+ * L'étendue du lien s'arrête donc au corps, ce que ce `position: relative`
+ * suffit à obtenir : le pseudo-élément que `fr-enlarge-link` étire se place sur
+ * son ancêtre positionné le plus proche, qui devient le corps et non la carte.
+ * Le survol se teinte au même endroit, pour la même raison.
+ *
+ * La spécificité recopie celle du DSFR, `:not(.fr-card--no-icon)` comprise : à
+ * trois classes, la règle ne l'emporterait pas.
+ */
+.fr-card.fr-enlarge-link:not(.fr-card--no-icon) .fr-card__content {
+  position: relative;
+
+  /* La colonne où la flèche se tient, à droite du texte. */
+  padding-right: 4rem;
+
+  /* Le DSFR réserve cinq rem sous le contenu pour l'y loger : elle n'y est
+     plus, et ce trou non plus. */
+  padding-bottom: 2rem;
+}
+
+.fr-card.fr-enlarge-link.card--dense:not(.fr-card--no-icon) .fr-card__content {
+  padding-bottom: 0.75rem;
+}
+
+/*
+ * `fr-enlarge-link` teinte la carte entière au survol — `.fr-enlarge-link:hover`
+ * —, pied compris, alors que celui-ci mène ailleurs. La carte garde donc son
+ * fond, et c'est le corps qui s'allume.
+ */
+.fr-card.fr-enlarge-link:hover {
+  background-color: var(--background-default-grey);
+}
+
+.fr-card.fr-enlarge-link .fr-card__content:hover {
+  background-color: var(--background-alt-grey);
+}
+
+/*
+ * `fr-enlarge-link` étire **chaque** lien de la carte, le DSFR n'en attendant
+ * qu'un : sans ceci, chacune des entrées du pied recouvrirait la carte entière
+ * et la dernière rendue capterait tous les clics. Elles reprennent leur taille,
+ * et leur survol avec.
+ */
+.fr-card.fr-enlarge-link .fr-card__footer a::before {
+  content: none;
+}
+
+/* Dans sa colonne, à hauteur du corps qu'elle prolonge. */
+.fr-card.fr-enlarge-link .fr-card__title a::after {
+  position: absolute;
+  top: 50%;
+  right: 2rem;
+  bottom: auto;
+  transform: translateY(-50%);
+}
+
+.fr-card .fr-card__footer {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/*
+ * Sauf devant des lignes, qui vont bord à bord et portent déjà leur air : celui
+ * du pied ferait un blanc au-dessus de la première et sous la dernière.
+ */
+.fr-card .fr-card__footer:has(.entry-list) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/*
+ * Ce qui clôt le pied d'une carte se range sur les entrées au-dessus de lui,
+ * bord à bord : le pied a des marges négatives que ses enfants n'héritent pas.
+ */
+.fr-card .card-list__query {
+  margin: 0 -2rem;
+}
+
+/*
+ * Le DSFR retrait son accordéon d'un rem, où la carte en retrait de deux, et
+ * décale son volet d'un quart de rem pour loger le halo de focus. Les deux
+ * ensemble alignent l'accordéon sur le titre de la carte.
+ */
+.fr-card .card-list__query .fr-accordion__btn,
+.fr-card .card-list__query .fr-collapse {
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+
+.fr-card .card-list__query .fr-collapse {
+  padding-left: calc(2rem + 0.25rem);
+}
+
+/*
+ * Une table du DSFR porte une marge basse à elle qui la détacherait du bas de
+ * la carte comme d'un bloc voisin. Ici elle la prolonge.
+ */
+.fr-card .card-list .fr-table {
+  margin-bottom: 0;
+}
+
+/*
+ * Une carte dont le titre donne directement sur ce qu'elle énumère : les deux
+ * rem que le DSFR laisse sous le contenu y font un trou, faute de rien à
+ * décrire entre les deux. Après le bloc ci-dessus, à spécificité égale.
+ */
+.fr-card.card--dense .fr-card__content {
+  padding-top: 1.5rem;
+  padding-bottom: 0.75rem;
+}
+

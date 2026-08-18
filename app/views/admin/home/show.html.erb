@@ -3,14 +3,21 @@
 <h1>Espace d'administration</h1>
 
 <div class="fr-grid-row fr-grid-row--gutters">
-  <div class="fr-col-12 fr-col-md-6">
+  <div class="fr-col-12 fr-col-md-4">
     <%= dsfr_tile(
           title: 'Conversations',
           url: admin_conversations_path,
           description: "L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.",
         ) %>
   </div>
-  <div class="fr-col-12 fr-col-md-6">
+  <div class="fr-col-12 fr-col-md-4">
+    <%= dsfr_tile(
+          title: 'Annuaires centraux',
+          url: admin_common_services_root_path,
+          description: "Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences, types de justificatif, fournisseurs.",
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-4">
     <%= dsfr_tile(
           title: 'Jobs',
           url: admin_jobs_path,

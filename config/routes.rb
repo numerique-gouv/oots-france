@@ -23,6 +23,33 @@ Rails.application.routes.draw do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
     resources :conversations, only: %i[index show]
+
+    # Les pages ne portent que des identifiants courts — un code de démarche,
+    # le dernier segment d'une URL du Semantic Repository. L'identifiant entier
+    # nomme un hôte différent en acceptation et en production.
+    namespace :common_services do
+      root to: 'catalogue#show'
+      # Ce qu'un pays tire d'une démarche est une page à soi, et non un filtre :
+      # une démarche n'impose les mêmes exigences nulle part. Elle s'atteint par
+      # deux chemins, qui montrent la même chose et dont chacun garde son fil
+      # d'Ariane — on descend d'une démarche vers un pays, ou l'inverse, et le
+      # chemin parcouru ne se réécrit pas en cours de route.
+      resources :procedures, only: %i[index show], param: :code do
+        get 'countries/:country_code', to: 'procedures#country', as: :country
+      end
+      # Un pays n'a pas de page à lui : il a deux rôles, et chacun la sienne.
+      resources :countries, only: :index, param: :code do
+        get 'procedures', to: 'countries#procedures'
+        get 'procedures/:procedure_code', to: 'countries#procedure', as: :procedure
+        get 'requirements', to: 'countries#requirements'
+      end
+      resource :resolution, only: :show
+      resources :requirements, only: %i[index show] do
+        get 'procedures', to: 'requirements#procedures'
+        get 'countries/:country_code', to: 'requirements#country', as: :country
+        get 'evidence_types/:id/providers', to: 'providers#index', as: :evidence_type_providers
+      end
+    end
   end
 
   mount GoodJob::Engine => '/admin/jobs', as: :admin_jobs

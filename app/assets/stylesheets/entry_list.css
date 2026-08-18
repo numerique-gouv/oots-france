@@ -1,0 +1,124 @@
+/*
+ * Ce qu'une carte énumère, une entrée par ligne.
+ *
+ * Pas un tableau : la plupart de ces listes n'ont qu'une ligne, et trois
+ * en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils
+ * annoncent. Le nom prend la place qui reste, ce qui le qualifie et ce qui y
+ * mène tiennent la droite.
+ */
+.entry-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1rem;
+
+  /* Les marges négatives du pied de carte, pour que le survol et les filets
+     aillent bord à bord comme celui qui sépare le pied du titre. */
+  margin: 0 -2rem;
+  padding: 0.75rem 2rem;
+}
+
+/*
+ * Un filet sépare ce qui n'est pas ensemble, et seulement cela : entre deux
+ * entrées indépendantes, et entre deux groupes. À l'intérieur d'un groupe,
+ * rien — ni sous son intitulé, ni entre ses entrées, qui vont ensemble et se
+ * lisent comme tel.
+ *
+ * Jamais au-dessus de la première non plus : le pied de carte en a déjà un.
+ */
+.entry:not(.entry--grouped) + .entry,
+.entry + .entry__group {
+  border-top: 1px solid var(--border-default-grey);
+}
+
+/*
+ * La base de flex est plus large que la boîte ne le sera souvent : le nom passe
+ * alors seul sur sa ligne et ce qui le suit se replie dessous, au lieu de se
+ * tasser en colonnes étroites à côté de lui.
+ */
+.entry__name {
+  flex: 1 1 24rem;
+  font-weight: 500;
+}
+
+/*
+ * Ce qui qualifie une entrée — un type MIME, un identifiant court — en `code`
+ * plutôt qu'en `fr-badge` : l'étiquette du DSFR met son contenu en capitales,
+ * et « APPLICATION/PDF » n'est plus ce que l'annuaire a publié.
+ */
+.entry__tag {
+  font-size: 0.75rem;
+  color: var(--text-mention-grey);
+  background-color: var(--background-alt-grey);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+}
+
+.entry__action {
+  margin-left: auto;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* Les classes d'icône du DSFR fixent 1,5 rem, ce qui domine un lien de 0,875. */
+.entry__action .fr-icon-arrow-right-line::before {
+  width: 1rem;
+  height: 1rem;
+  vertical-align: -0.125rem;
+}
+
+/* Une adresse du Semantic Repository ne tient pas sur une ligne partagée :
+   elle passe sous le nom plutôt que de la disputer. */
+.entry__detail {
+  flex-basis: 100%;
+  font-size: 0.75rem;
+  color: var(--text-mention-grey);
+  word-break: break-all;
+}
+
+/*
+ * Un groupe n'est pas une entrée mais ce qui rassemble les suivantes : il
+ * s'annonce en retrait, et ce qu'il rassemble se décale sous lui, faute de quoi
+ * rien ne dirait où l'un s'arrête et où le suivant commence.
+ */
+.entry__group {
+  margin: 0 -2rem;
+  padding: 0.75rem 2rem 0.25rem;
+  font-size: 0.875rem;
+  color: var(--text-mention-grey);
+}
+
+.entry--grouped {
+  padding-left: 3rem;
+}
+
+/*
+ * Une liste dont chaque ligne mène quelque part, sans pour autant envelopper la
+ * ligne dans un lien : le lien reste celui qui porte le texte — un seul, que le
+ * clavier et un lecteur d'écran atteignent —, et un pseudo-élément l'étend à la
+ * ligne. D'où le modificateur : une ligne qui porte deux liens ne peut pas.
+ */
+.entry-list--clickable .entry {
+  position: relative;
+}
+
+.entry-list--clickable .entry:hover {
+  background-color: var(--background-alt-blue-france);
+}
+
+.entry-list--clickable .entry__action::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+/* L'entrée que la chaîne a retenue, et qui décide de l'étape suivante. */
+.entry--current {
+  box-shadow: inset 0.25rem 0 0 0 var(--border-action-high-blue-france);
+}

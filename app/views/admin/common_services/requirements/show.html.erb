@@ -1,0 +1,71 @@
+<% content_for :title, @requirement.label || 'Exigence' %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Exigences', admin_common_services_requirements_path],
+      [@requirement.display_name, nil],
+    ]) %>
+
+<div class="fr-grid-row fr-grid-row--top fr-mb-2w">
+  <div class="fr-col-12 fr-col-md">
+    <h1><%= @requirement.display_name %></h1>
+  </div>
+  <div class="fr-mt-md-1w fr-ml-md-1w">
+    <%= link_to 'Voir les démarches qui l’exigent',
+          admin_common_services_requirement_procedures_path(@requirement.uuid),
+          class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+  </div>
+</div>
+
+<% if @requirement.detail.present? %>
+  <p><em><%= @requirement.detail %></em></p>
+<% end %>
+
+<h2 class="fr-h5 fr-mt-6w">Justificatifs satisfaisant cette exigence, par pays</h2>
+
+<%# C'est le principe même d'OOTS, et la raison pour laquelle cette liste n'est
+    pas bornée au pays qui impose l'exigence : le justificatif vient du pays qui
+    le détient, lequel n'est presque jamais celui où la démarche s'accomplit. %>
+<p>
+  Liste des justificatifs que chaque pays <strong>fournisseur</strong> publie
+  pour cette exigence. Le pays qui l'exige n'est pas celui qui la satisfait : le
+  justificatif est demandé à celui qui le détient.
+</p>
+
+<%= render SearchFieldComponent.new(
+      label: 'Rechercher un pays fournisseur, son code, un type de justificatif',
+      id: 'recherche-fournisseur',
+      entries: '#par-pays-fournisseur > *',
+      tally: '#decompte-types',
+      empty: '#aucun-type',
+    ) %>
+
+<%= render 'admin/common_services/results_count', id: 'decompte-types', count: @types_count %>
+
+<div id="par-pays-fournisseur">
+<% @by_country.each do |country, lists| %>
+  <%# Le poids d'une carte est ce que le décompte additionne : un pays compte
+      pour les types qu'il publie, non pour un. %>
+  <div data-tally-weight="<%= lists.sum { |list| list.evidence_types.size } %>">
+  <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
+    <%# Le titre de la page est loin au-dessus quand on est descendu de vingt
+        cartes : chacune redit de quelle exigence elle parle. %>
+    Ce qui satisfait l'exigence « <em><%= @requirement.display_name %></em> » <%= in_country(country) %>.
+
+    <% carte.with_list do %>
+      <%= render 'admin/common_services/evidence_type_lists', lists:, requirement: @requirement %>
+    <% end %>
+  <% end %>
+  </div>
+<% end %>
+</div>
+
+<p id="aucun-type" <%= 'hidden' if @by_country.any? %>>Aucun type de justificatif ne correspond à cette recherche.</p>
+
+<%# L'identifiant est une adresse du Semantic Repository, choisie ailleurs :
+    elle se lit, elle ne se suit pas — la même règle que pour l'espace de
+    prévisualisation d'une conversation. %>
+<%= render DirectoryQueryComponent.new(
+      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      identifiers: { 'Exigence' => @requirement.id },
+      parameters: { 'requirement-id' => @requirement.id },
+    ) %>

@@ -1,0 +1,27 @@
+/*
+ * Un champ de recherche à loupe. Le DSFR en a un — `fr-search-bar` —, mais il
+ * est bâti autour d'un bouton d'envoi : ces champs-ci filtrent à la frappe, et
+ * un bouton qui ne soumettrait rien serait un contrôle inerte de plus.
+ *
+ * La loupe est donc posée dans le champ, décorative, et c'est la classe
+ * `fr-icon-search-line` qui la dessine — le masque et la taille viennent du
+ * DSFR, rien ici ne connaît le tracé.
+ */
+.search-field {
+  position: relative;
+}
+
+.search-field .fr-input {
+  padding-left: 3rem;
+}
+
+.search-field .fr-icon-search-line {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-mention-grey);
+
+  /* Le champ commence sous elle : sans ceci, cliquer la loupe ne le vise pas. */
+  pointer-events: none;
+}

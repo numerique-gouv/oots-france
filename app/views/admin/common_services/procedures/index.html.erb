@@ -1,0 +1,48 @@
+<% content_for :title, 'Démarches' %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [['Démarches', nil]]) %>
+
+<h1>Démarches</h1>
+
+<p>Une même démarche est déclarée par plusieurs pays, chacun avec son intitulé.</p>
+
+<%= render SearchFieldComponent.new(
+      label: 'Rechercher un code, un intitulé, un pays',
+      id: 'recherche-demarche',
+      entries: '#liste-demarches > *',
+      tally: '#decompte-demarches',
+      empty: '#aucune-demarche',
+    ) %>
+
+<%= render 'admin/common_services/results_count', id: 'decompte-demarches', count: @procedures.size %>
+
+<%# Le code et son intitulé font un seul titre : le code seul ne dit rien, et
+    l'intitulé seul ne se retrouve dans aucune requête. La démarche de test
+    « 00 » ne figure dans aucune liste de codes — elle appartient aux
+    environnements d'essai — et s'affiche donc nue. %>
+<div id="liste-demarches">
+  <% @procedures.each do |procedure| %>
+    <div>
+      <%= render CardComponent.new(
+            title: named_procedure(procedure.code),
+            hint: procedure_hint(procedure.code),
+            href: admin_common_services_procedure_path(procedure.code),
+            dense: true, clickable: true,
+          ) do |carte| %>
+        <% carte.with_list do %>
+          <%# Au pied, parce que la carte entière mène à la démarche et couvre
+              son corps : chaque pays mène ailleurs, à ce qu'il en tire. %>
+          <p class="fr-text--sm fr-mb-1v">Démarche déclarée par</p>
+          <%= render CountryTagListComponent.new(
+                codes: procedure.countries, names: country_names,
+                link: ->(code) { admin_common_services_procedure_country_path(procedure.code, code) },
+              ) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<p id="aucune-demarche" <%= 'hidden' if @procedures.any? %>>Aucune démarche ne correspond à cette recherche.</p>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

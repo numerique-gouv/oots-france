@@ -19,7 +19,11 @@
         without it. %>
     <%= stylesheet_link_tag 'dsfr.min' %>
     <%= stylesheet_link_tag 'utility/dsfr-utility.min' %>
-    <%= stylesheet_link_tag 'application' %>
+    <%# Propshaft sert les fichiers tels quels : une feuille par composant est
+        un `<link>` par composant, et non un `@import` qui n'atteindrait pas
+        l'adresse empreintée. %>
+    <%= stylesheet_link_tag 'application', 'card_component', 'country_tag_component', 'procedure_component',
+          'search_field', 'entry_list' %>
   </head>
 
   <body>
@@ -41,5 +45,6 @@
         theme — and which a content security policy would have to allow. %>
     <%= javascript_include_tag 'dsfr.module.min', type: 'module' %>
     <%= javascript_include_tag 'dsfr.nomodule.min', nomodule: true %>
+    <%= javascript_include_tag 'filter', defer: true %>
   </body>
 </html>

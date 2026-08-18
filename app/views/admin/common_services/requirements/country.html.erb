@@ -1,0 +1,40 @@
+<% content_for :title, "#{named_country(@country)} — #{@requirement.display_name}" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Exigences', admin_common_services_requirements_path],
+      [@requirement.display_name, admin_common_services_requirement_path(@requirement.uuid)],
+      [named_country(@country), nil],
+    ]) %>
+
+<h1 class="fr-h3">Démarches de <%= named_country(@country) %> qui exigent « <%= @requirement.display_name %> »</h1>
+
+<p>
+  Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a déclaré cette exigence, et l'intitulé
+  qu'il donne à chacune.
+</p>
+
+<p class="fr-text--sm fr-mb-2w">
+  <%= t('admin.common_services.procedures.count', count: @declared.map(&:procedure_code).uniq.size) %>
+</p>
+
+<%# Une carte par démarche et non par déclaration : un pays en dépose
+    volontiers plusieurs sous un même code, sous des intitulés différents. %>
+<% @declared.group_by(&:procedure_code).each do |code, declared| %>
+  <%= render CardComponent.new(
+        title: named_procedure(code),
+        hint: procedure_hint(code),
+        href: (admin_common_services_procedure_country_path(code, @country) if code.present?),
+        clickable: true,
+      ) do %>
+    <%= declaration_summary(
+          labels: declared.filter_map(&:label),
+          country: @country,
+          requirements: @required[code],
+        ) %>
+  <% end %>
+<% end %>
+
+<%= render DirectoryQueryComponent.new(
+      query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
+      identifiers: { 'Exigence' => @requirement.id },
+    ) %>

@@ -1,0 +1,15 @@
+<%= tag.div class: classes do %>
+  <div class="fr-card__body">
+    <div class="fr-card__content">
+      <%= title_tag { heading } %>
+
+      <% if content.present? %>
+        <div class="fr-card__desc"><%= content %></div>
+      <% end %>
+    </div>
+
+    <% if list? %>
+      <div class="fr-card__footer card-list"><%= list %></div>
+    <% end %>
+  </div>
+<% end %>
