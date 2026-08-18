@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -20,6 +20,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_17_090000) do
     t.string "password_digest", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_administrators_on_email", unique: true
+  end
+
+  create_table "audit_events", force: :cascade do |t|
+    t.string "conversation_id"
+    t.datetime "created_at", null: false
+    t.text "detail"
+    t.string "ebms_action"
+    t.string "edm_error_code"
+    t.string "event_type", null: false
+    t.string "evidence_digest"
+    t.string "evidence_requester_id"
+    t.text "evidence_subject"
+    t.string "evidence_subject_key"
+    t.string "evidence_type_id"
+    t.string "exchange_id"
+    t.string "message_id"
+    t.string "mime_type"
+    t.datetime "occurred_at", null: false
+    t.string "procedure_code"
+    t.string "providing_authority_id"
+    t.string "providing_authority_scheme"
+    t.string "request_id"
+    t.string "requesting_authority_id"
+    t.string "requesting_authority_scheme"
+    t.string "response_id"
+    t.index ["conversation_id"], name: "index_audit_events_on_conversation_id"
+    t.index ["evidence_subject_key"], name: "index_audit_events_on_evidence_subject_key"
+    t.index ["occurred_at"], name: "index_audit_events_on_occurred_at"
   end
 
   create_table "conversations", force: :cascade do |t|

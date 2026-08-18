@@ -4,6 +4,10 @@ RSpec.describe Settings do
   # Those read as numbers need one, the others take anything non-blank.
   def filled = Settings::REQUIRED.index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
 
+  # 1000 satisfies the numeric check for every other duration; retention is read
+  # in months, and twelve is its floor rather than its value.
+  def lawful = filled.merge('DUREE_RETENTION_JOURNAL_MOIS' => '12')
+
   describe '.verify!' do
     it 'passes when every required variable is filled in' do
       with_environment(filled) do
@@ -55,6 +59,53 @@ RSpec.describe Settings do
       with_environment(filled.merge('SUFFIXE_IDENTIFIANTS_DOMIBUS' => '   ')) do
         expect { described_class.verify! }.to raise_error(ConfigurationError, /SUFFIXE_IDENTIFIANTS_DOMIBUS/)
       end
+    end
+  end
+
+  describe 'the retention of the exchange log' do
+    # Keeping it less than twelve months breaks article 17(4) as surely as not
+    # keeping it, and the nightly purge would carry that out silently.
+    it 'refuses a retention shorter than the twelve months the regulation imposes' do
+      with_environment(lawful.merge('DUREE_RETENTION_JOURNAL_MOIS' => '6')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /article 17\(4\)/)
+      end
+    end
+
+    # The one condition a stray `>` in place of `>=` would flip.
+    it 'accepts exactly the floor' do
+      with_environment(lawful) do
+        expect { described_class.verify! }.not_to raise_error
+        expect(described_class.audit_trail_retention).to eq(Settings::LAWFUL_RETENTION_MONTHS.months)
+      end
+    end
+
+    it 'accepts a longer one, the twelve months being a floor' do
+      with_environment(lawful.merge('DUREE_RETENTION_JOURNAL_MOIS' => '24')) do
+        expect { described_class.verify! }.not_to raise_error
+        expect(described_class.audit_trail_retention).to eq(24.months)
+      end
+    end
+  end
+
+  describe '.audit_trail_encryption' do
+    # Read while the framework boots, so it cannot raise: `rails db:test:prepare`
+    # and the task that renders the specimen messages both load the application
+    # without ever reading the log, and neither carries the keys. `REQUIRED`
+    # stays the guard — the three are listed there, so `config.ru` refuses to
+    # serve without them.
+    it 'reads the keys without raising when they are absent' do
+      absent = %w[CLE_CHIFFREMENT_JOURNAL CLE_CHIFFREMENT_DETERMINISTE_JOURNAL SEL_DERIVATION_CLES_JOURNAL]
+        .index_with { nil }
+
+      with_environment(absent) do
+        expect(described_class.audit_trail_encryption.values).to all(be_nil)
+      end
+    end
+
+    it 'is guarded by REQUIRED rather than at the point of use' do
+      expect(Settings::REQUIRED).to include(
+        'CLE_CHIFFREMENT_JOURNAL', 'CLE_CHIFFREMENT_DETERMINISTE_JOURNAL', 'SEL_DERIVATION_CLES_JOURNAL',
+      )
     end
   end
 

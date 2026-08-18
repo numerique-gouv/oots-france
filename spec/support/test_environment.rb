@@ -18,6 +18,15 @@ ENV['ENVIRONNEMENT_SERVICES_COMMUNS'] ||= 'acc'
 ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
 ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'
 ENV['DELAI_MAX_SERVICES_COMMUNS'] ||= '10000'
+ENV['CLE_CHIFFREMENT_JOURNAL'] ||= 'journal_cle_de_chiffrement_pour_la_suite_de_tests'
+ENV['CLE_CHIFFREMENT_DETERMINISTE_JOURNAL'] ||= 'journal_cle_deterministe_pour_la_suite_de_tests'
+ENV['SEL_DERIVATION_CLES_JOURNAL'] ||= 'journal_sel_de_derivation_pour_la_suite_de_tests'
+ENV['DUREE_RETENTION_JOURNAL_MOIS'] ||= '12'
+
+# The four above are read while the framework boots, which happened before this
+# file was loaded: the values just posted would otherwise never reach the
+# encryption Active Record has already configured — from nothing.
+ActiveRecord::Encryption.configure(**Settings.audit_trail_encryption)
 
 # Pinned rather than defaulted, unlike everything above. The suite answers the
 # directory clients from responses captured on the acceptance environment, and
