@@ -99,6 +99,15 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       expect(tags.max).to be > 1
     end
 
+    it 'leads to the procedure from the card body, and lists the countries under it' do
+      get admin_common_services_requirement_procedures_path(test_requirement)
+      card = response.parsed_body.css('.fr-card').first
+
+      expect(card['class']).to include('fr-enlarge-link')
+      expect(card.css('.fr-card__footer .country-tag-list')).to be_present
+      expect(card.css('.fr-card__desc .country-tag-list')).to be_empty
+    end
+
     it 'names the role those countries hold, and leads to what each declares' do
       get admin_common_services_requirement_procedures_path(test_requirement)
 
@@ -111,6 +120,51 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       get admin_common_services_requirement_procedures_path('00000000-0000-0000-0000-999999999999')
 
       expect(response).to have_http_status(:not_found)
+    end
+
+    # Une déclaration publiée sans son code n'appartient à aucune démarche : il
+    # n'y a nulle part où mener, et la flèche du DSFR promettrait le contraire.
+    context 'when a declaration carries no procedure code' do
+      let(:answer) { [unnamed, {}] }
+
+      before { stub_directory_signature }
+
+      it 'lists it without an arrow, since it leads nowhere' do
+        get admin_common_services_requirement_procedures_path(test_requirement)
+        card = response.parsed_body.css('.fr-card').find { |found| found.css('.fr-card__title').text.strip == '—' }
+
+        expect(card['class']).to include('fr-card--no-arrow')
+        expect(card.css('.fr-card__title a')).to be_empty
+      end
+
+      # La seule déclaration estonienne sous X4, privée du code qu'elle porte.
+      # `gsub` parce que l'annuaire republie la même déclaration sous chacune
+      # des exigences qu'elle appelle : la première du fichier est ailleurs.
+      def unnamed
+        common_services_answer('eb_requirements_catalogue').first
+          .gsub(%r{(54d19e6c[^<]*</sdg:Identifier>.*?<sdg:RelatedTo>\s*<sdg:Identifier>)[^<]*}m, '\\1')
+      end
+    end
+
+    context 'when a declaration publishes no jurisdiction' do
+      let(:answer) { [stateless, {}] }
+
+      before { stub_directory_signature }
+
+      it 'says so in the card rather than opening an empty footer' do
+        get admin_common_services_requirement_procedures_path(test_requirement)
+        card = response.parsed_body.css('.fr-card').find { |found| found.text.include?('X4') }
+
+        expect(card.css('.fr-card__desc').text).to include('Aucun pays publié')
+        expect(card.css('.fr-card__footer')).to be_empty
+      end
+
+      # La même déclaration, privée cette fois du pays qui la dépose — et seule
+      # sous son code, sans quoi les autres rempliraient le pied.
+      def stateless
+        common_services_answer('eb_requirements_catalogue').first
+          .gsub(%r{(54d19e6c[^<]*</sdg:Identifier>.*?<sdg:AdminUnitLevel1>)[^<]*}m, '\\1')
+      end
     end
   end
 
