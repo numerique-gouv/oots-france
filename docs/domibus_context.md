@@ -87,7 +87,7 @@ Ce que règle le reste du fichier :
 
 | Élément | Ce qu'il configure |
 | --- | --- |
-| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours |
+| `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours. Les **métadonnées**, elles, survivent au message : `delete_message_metadata="false"` et `retention_metadata_offset="525600"` les gardent douze mois, ce que l'article 17 impose et que le [journal des échanges](journal_des_echanges.md) recoud aux traces applicatives |
 | `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH de `blue_gw` (`http://localhost:8080/domibus/services/msh`) |
 | `<roles>` / `<meps>` / `<agreements>` | Rôles initiateur/répondeur, modèle d'échange « oneway » en « push », et un accord vide (champ imposé par le schéma) |
 | `<properties>` | Rend obligatoires `originalSender` et `finalRecipient` sur chaque message (`fourCornersPropertySet`) |
