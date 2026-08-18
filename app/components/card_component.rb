@@ -25,10 +25,10 @@ class CardComponent < ViewComponent::Base
   # `dense` pour une carte qui n'a rien à décrire entre son titre et ce qu'elle
   # énumère : l'air que le DSFR laisse sous le contenu y fait un trou.
   #
-  # `clickable` étend le lien du titre à la carte entière et lui donne la flèche
-  # du DSFR. Ce qu'elle énumère doit alors vivre dans le pied, seul endroit qui
-  # reste au-dessus de cette étendue : un lien du corps passerait dessous et
-  # cesserait d'être atteignable.
+  # `clickable` étend le lien du titre au corps de la carte et lui donne la
+  # flèche du DSFR. Ce qu'elle énumère doit alors vivre dans le pied, seul
+  # endroit qui reste hors de cette étendue : un lien du corps passerait dessous
+  # et cesserait d'être atteignable.
   def classes
     ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense),
      (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow')]
