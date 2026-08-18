@@ -7,7 +7,7 @@ class SubmittedMessageParser
 
   def initialize(xml)
     @document = Nokogiri::XML(xml)
-    raise UnreadableMessageError, 'Réponse du plugin illisible.' if @document.errors.any?
+    raise UnreadableMessageError, I18n.t('parsers.plugin_unreadable') if @document.errors.any?
   end
 
   def message_id = text_at(document, '//soap:Body/ws:submitResponse/messageID')

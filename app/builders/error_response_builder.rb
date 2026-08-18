@@ -31,7 +31,7 @@ class ErrorResponseBuilder < ApplicationBuilder
 
   def provider_agent
     AgentBuilder.new(
-      identity: @provider.ebms_identity.validate!('Le fournisseur français'),
+      identity: @provider.ebms_identity.validate!(:french_provider),
       names: @provider.descriptions,
       address: @provider.address,
       classification: EvidenceProvider::ERROR_PROVIDER,
@@ -42,7 +42,7 @@ class ErrorResponseBuilder < ApplicationBuilder
   # TDD require them on the agent answering, not on the one being answered.
   def requester_agent
     AgentBuilder.new(
-      identity: @requester.ebms_identity.validate!('Le requêteur'),
+      identity: @requester.ebms_identity.validate!(:requester),
       names: { @requester.language => @requester.name },
     ).render
   end

@@ -1,23 +1,23 @@
-<% content_for :title, 'Connexion à l’espace d’administration' %>
+<% content_for :title, t('admin.sessions.new.title') %>
 
-<h1>Connexion</h1>
+<h1><%= t('admin.sessions.new.heading') %></h1>
 
-<p class="fr-text--sm fr-mb-4w">L'espace d'administration est réservé à l'équipe qui exploite le service.</p>
+<p class="fr-text--sm fr-mb-4w"><%= t('admin.sessions.new.lead') %></p>
 
 <div class="fr-grid-row">
   <div class="fr-col-12 fr-col-md-6">
     <%= form_with url: admin_session_path, method: :post do |form| %>
       <div class="fr-input-group">
-        <%= form.label :email, 'Adresse électronique', class: 'fr-label' %>
+        <%= form.label :email, t('admin.sessions.new.email'), class: 'fr-label' %>
         <%= form.email_field :email, class: 'fr-input', autocomplete: 'username', autofocus: true, required: true %>
       </div>
 
       <div class="fr-input-group">
-        <%= form.label :password, 'Mot de passe', class: 'fr-label' %>
+        <%= form.label :password, t('admin.sessions.new.password'), class: 'fr-label' %>
         <%= form.password_field :password, class: 'fr-input', autocomplete: 'current-password', required: true %>
       </div>
 
-      <button type="submit" class="fr-btn fr-mt-2w">Se connecter</button>
+      <button type="submit" class="fr-btn fr-mt-2w"><%= t('admin.sessions.new.submit') %></button>
     <% end %>
   </div>
 </div>

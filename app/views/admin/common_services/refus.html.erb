@@ -1,13 +1,13 @@
-<% content_for :title, 'Annuaires centraux' %>
+<% content_for :title, t('components.directory_breadcrumbs.directories') %>
 
 <%= render DirectoryBreadcrumbsComponent.new %>
 
-<h1 class="fr-h3">Annuaires centraux</h1>
+<h1 class="fr-h3"><%= t('components.directory_breadcrumbs.directories') %></h1>
 
 <%# Un refus nommé est une réponse : l'annuaire a compris la question et dit
     qu'il n'a rien. Une panne n'en est pas une, et les deux ne se lisent pas
     de la même façon. %>
 <%= dsfr_alert(type: @error.code.present? ? :warning : :error,
-      title: @error.code.presence || 'Annuaire injoignable') do %>
+      title: @error.code.presence || t('admin.common_services.refus.unreachable')) do %>
   <%= @error.message %>
 <% end %>

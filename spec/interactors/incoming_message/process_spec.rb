@@ -134,4 +134,14 @@ RSpec.describe IncomingMessage::Process do
       end
     end
   end
+
+  # The reason travels as a symbol. The branches that give one are exercised
+  # above, but never for the wording their reason resolves to: nothing else
+  # would notice a missing one.
+  it 'says every reason it abandons a conversation for' do
+    given_up = File.read('app/interactors/incoming_message/process.rb')
+      .scan(/abandon_conversation\(\w+, :(\w+)\)/).flatten.uniq
+
+    expect_said(given_up.map { |reason| "interactors.incoming_message.process.#{reason}" })
+  end
 end

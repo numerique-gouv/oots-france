@@ -15,6 +15,16 @@ RSpec.describe ConversationStatusComponent, type: :component do
     expect(page).to have_css('.fr-badge.fr-badge--success', text: 'Délivrée')
   end
 
+  # `default:` lets an unknown state through, and would let a missing wording
+  # through just as quietly — the badge would read `pending` rather than fail.
+  it 'says every state the model has in French' do
+    Conversation::STATUSES.each do |status|
+      render_inline(described_class.new(status:))
+
+      expect(page).to have_css('.fr-badge', text: I18n.t("admin.conversations.statuses.#{status}", raise: true))
+    end
+  end
+
   # An exchange the console does not recognise still has to appear: this page
   # is consulted when something has gone wrong, and is the wrong place to fail.
   it 'shows a state it does not know rather than failing' do

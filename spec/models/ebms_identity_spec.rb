@@ -15,14 +15,14 @@ RSpec.describe EbmsIdentity do
     it 'names the party whose identity is unusable' do
       identity = build(:ebms_identity, id: nil)
 
-      expect { identity.validate!('Le requêteur') }
+      expect { identity.validate!(:requester) }
         .to raise_error(ConfigurationError, /\ALe requêteur : /)
     end
 
     it 'returns itself when valid, so it can be chained' do
       identity = build(:ebms_identity)
 
-      expect(identity.validate!('Le requêteur')).to be(identity)
+      expect(identity.validate!(:requester)).to be(identity)
     end
   end
 

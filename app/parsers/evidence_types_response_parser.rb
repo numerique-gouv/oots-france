@@ -49,6 +49,6 @@ class EvidenceTypesResponseParser < CommonServicesResponseParser
       descriptions: by_language(all(found, './sdg:Title')),
       details: by_language(all(found, './sdg:Description')),
       **(format.present? ? { distribution_format: format } : {}),
-    ).validate!("Le type de justificatif annoncé par l'annuaire", error: CommonServicesError)
+    ).validate!(:announced_evidence_type, error: CommonServicesError)
   end
 end

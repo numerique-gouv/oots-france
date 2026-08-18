@@ -37,7 +37,7 @@ class CommonServicesSignature
     signed = "#{protected_header}.#{SIGNED_HEADER}: #{digest}"
     return if signing_key(header).verify('SHA256', der(decode(encoded)), signed)
 
-    raise CommonServicesError, "Signature invalide sur la réponse de l'annuaire."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.invalid')
   end
 
   private
@@ -46,7 +46,7 @@ class CommonServicesSignature
     expected = "#{DIGEST_ALGORITHM}=#{Base64.strict_encode64(OpenSSL::Digest.digest('SHA256', body.to_s))}"
     return if digest == expected
 
-    raise CommonServicesError, "L'empreinte annoncée ne couvre pas la réponse de l'annuaire."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.digest_mismatch')
   end
 
   def reject_unless_detached(header, payload)
@@ -55,7 +55,7 @@ class CommonServicesSignature
     return if payload.empty? && header['b64'] == false &&
               header.dig('sigD', 'mId') == JADES_MECHANISM && header.dig('sigD', 'pars') == [SIGNED_HEADER]
 
-    raise CommonServicesError, "Signature de l'annuaire non conforme au mécanisme HttpHeaders."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.not_http_headers')
   end
 
   # The chain travels in `x5c`, leaf first. Verifying it against the trust
@@ -63,12 +63,12 @@ class CommonServicesSignature
   # unknown certificate proves only that somebody signed.
   def signing_key(header)
     chain = certificates(header)
-    raise CommonServicesError, "La réponse de l'annuaire ne porte aucun certificat." if chain.empty?
+    raise CommonServicesError, I18n.t('clients.common_services_signature.no_certificate') if chain.empty?
 
     leaf, *intermediates = chain
     return leaf.public_key if store.verify(leaf, intermediates)
 
-    raise CommonServicesError, "Certificat de l'annuaire rejeté par le magasin de confiance : #{store.error_string}."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.certificate_rejected', error: store.error_string)
   end
 
   # A trust store that cannot be read is a deployment fault, not a directory
@@ -84,7 +84,7 @@ class CommonServicesSignature
 
   def split(signature)
     parts = signature.to_s.split('.', -1)
-    raise CommonServicesError, "En-tête de signature illisible sur la réponse de l'annuaire." if parts.size != 3
+    raise CommonServicesError, I18n.t('clients.common_services_signature.header_unreadable') if parts.size != 3
 
     parts
   end
@@ -92,7 +92,7 @@ class CommonServicesSignature
   def decode_header(protected_header)
     JSON.parse(decode(protected_header))
   rescue JSON::ParserError => e
-    raise CommonServicesError, "En-tête de signature illisible sur la réponse de l'annuaire : #{e.message}."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.header_unreadable_detail', error: e.message)
   end
 
   # Everything a correspondent chose arrives here as bytes to be decoded, and
@@ -102,7 +102,7 @@ class CommonServicesSignature
   def certificates(header)
     Array(header['x5c']).map { |encoded| OpenSSL::X509::Certificate.new(Base64.decode64(encoded)) }
   rescue OpenSSL::X509::CertificateError => e
-    raise CommonServicesError, "Certificat illisible dans la réponse de l'annuaire : #{e.message}."
+    raise CommonServicesError, I18n.t('clients.common_services_signature.certificate_unreadable', error: e.message)
   end
 
   def decode(value)

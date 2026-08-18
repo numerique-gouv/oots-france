@@ -1,17 +1,16 @@
-<% content_for :title, "Démarches de #{named_country(@country)}" %>
+<% content_for :title, t('admin.common_services.countries.procedures.title',
+      country: named_country(@country)) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
-      ['Pays', admin_common_services_countries_path],
+      [t('admin.common_services.countries.index.title'), admin_common_services_countries_path],
       [named_country(@country), nil],
-      ['Démarches', nil],
+      [t('admin.common_services.procedures.index.title'), nil],
     ]) %>
 
-<h1 class="fr-h3">Démarches de <%= named_country(@country) %></h1>
+<h1 class="fr-h3"><%= t('admin.common_services.countries.procedures.title',
+      country: named_country(@country)) %></h1>
 
-<p>
-  Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a publié une déclaration, et ce que
-  chacune lui fait exiger. Ce qu'il délivre, lui, se lit sous chaque exigence.
-</p>
+<p><%= t('admin.common_services.countries.procedures.lead_html') %></p>
 
 <p class="fr-text--sm fr-mb-2w"><%= t('admin.common_services.procedures.count', count: @procedures.size) %></p>
 

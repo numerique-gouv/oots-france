@@ -4,7 +4,7 @@ class EbmsHeaderParser
 
   def initialize(document)
     @user_message = at(document, '//eb:Messaging/eb:UserMessage')
-    raise UnreadableMessageError, "Pas d'entête ebMS dans le message reçu." if @user_message.nil?
+    raise UnreadableMessageError, I18n.t('parsers.ebms_header.no_header') if @user_message.nil?
   end
 
   def action = text_at(user_message, './eb:CollaborationInfo/eb:Action')
@@ -18,10 +18,10 @@ class EbmsHeaderParser
   # nowhere, and the failure must show here.
   def sender
     party = at(user_message, './eb:PartyInfo/eb:From/eb:PartyId')
-    raise UnreadableMessageError, "Pas d'expéditeur dans l'entête du message reçu." if party.nil?
+    raise UnreadableMessageError, I18n.t('parsers.ebms_header.no_sender') if party.nil?
 
     AccessPoint.new(id: party.text, type_id: attribute(party, 'type'))
-      .validate!("L'expéditeur du message reçu", error: UnreadableMessageError)
+      .validate!(:message_sender, error: UnreadableMessageError)
   end
 
   # { 'application/x-ebrs+xml' => 'cid:…', 'application/pdf' => 'cid:…' }

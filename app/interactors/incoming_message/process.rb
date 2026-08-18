@@ -22,14 +22,14 @@ module IncomingMessage
     # its own, and a job GoodJob records as failed is then the only signal.
     # Never retried — `retrieveMessage` has erased the message already.
     rescue Faraday::Error => e
-      abandon_conversation(e, "L'échange a échoué")
+      abandon_conversation(e, :exchange_failed)
       raise
     # `EbmsError` drives a 422 back to the caller at fault, and no caller is on
     # this path to receive it. Every subclass is raised while serving that
     # caller's own request, so none can reach here: the net is empty. Stub 9 of
     # `docs/reste_à_faire.md`.
     rescue EbmsError => e
-      abandon_conversation(e, 'Échange impossible à mener à son terme')
+      abandon_conversation(e, :exchange_impossible)
       raise
     end
 
@@ -39,24 +39,35 @@ module IncomingMessage
     # no log, no answer and no trace of a message that did arrive.
     def handler
       HANDLERS.fetch(context.message.action) do
-        raise UnreadableMessageError, "Action ebMS inconnue : « #{context.message.action} »."
+        raise UnreadableMessageError,
+          I18n.t('interactors.incoming_message.process.unknown_action', action: context.message.action)
       end
     end
 
     def give_up(error)
-      Rails.logger.error("Message illisible (#{context.message_id}) : #{error.message}")
+      Rails.logger.error(
+        I18n.t('interactors.incoming_message.process.unreadable_logged', id: context.message_id, error: error.message),
+      )
 
-      abandon_conversation(error, 'Message illisible')
+      abandon_conversation(error, :unreadable)
     end
 
     # Reachable only once the message names its conversation. A retrieval that
     # fails outright leaves nothing to go on — the identifier the gateway gave
     # us is its own — which is why the periodic sweep exists.
+    #
+    # The reason travels as a symbol, `interactors.incoming_message.process`
+    # holding what each one reads as.
     def abandon_conversation(error, reason)
       conversation = Conversation.find_by(conversation_id: context.message&.conversation_id)
       return if conversation.nil? || conversation.settled?
 
-      conversation.failed!(code: nil, description: "#{reason} : #{error.message}")
+      conversation.failed!(code: nil, description: said(error, reason))
+    end
+
+    def said(error, reason)
+      I18n.t('interactors.incoming_message.process.abandoned',
+        reason: I18n.t("interactors.incoming_message.process.#{reason}"), error: error.message)
     end
   end
 end

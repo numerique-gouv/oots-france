@@ -49,6 +49,7 @@ group :development, :test do
 end
 
 group :development do
+  gem 'i18n-tasks', require: false
   gem 'lookbook'
   gem 'rubocop', require: false
   gem 'rubocop-capybara', require: false

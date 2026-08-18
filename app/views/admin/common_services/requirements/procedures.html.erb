@@ -1,14 +1,16 @@
-<% content_for :title, "Démarches — #{@requirement.display_name}" %>
+<% content_for :title, t('admin.common_services.requirements.procedures.title',
+      requirement: @requirement.display_name) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
-      ['Exigences', admin_common_services_requirements_path],
+      [t('admin.common_services.requirements.index.title'), admin_common_services_requirements_path],
       [@requirement.display_name, admin_common_services_requirement_path(@requirement.uuid)],
-      ['Démarches qui l’exigent', nil],
+      [t('admin.common_services.requirements.procedures.crumb'), nil],
     ]) %>
 
-<h1 class="fr-h3">Démarches qui exigent « <%= @requirement.display_name %> »</h1>
+<h1 class="fr-h3"><%= t('admin.common_services.requirements.procedures.heading',
+      requirement: @requirement.display_name) %></h1>
 
-<p>Les démarches qui reposent sur cette exigence, et les pays <strong>requêteurs</strong> qui les déclarent.</p>
+<p><%= t('admin.common_services.requirements.procedures.lead_html') %></p>
 
 <%# Une carte par démarche et non par déclaration : une même exigence est
     déclarée sous un même code par des dizaines de pays. %>
@@ -23,18 +25,18 @@
     <% if published %>
       <% carte.with_list do %>
         <%= render CountryTagListComponent.new(
-              caption: 'Exigence déclarée par',
+              caption: t('admin.common_services.requirements.procedures.declared_by'),
               codes: declared.map(&:country), names: country_names,
               link: ->(one) { admin_common_services_procedure_country_path(code, one) if code.present? },
             ) %>
       <% end %>
     <% else %>
-      Aucun pays publié pour cette déclaration.
+      <%= t('admin.common_services.requirements.procedures.no_country') %>
     <% end %>
   <% end %>
 <% end %>
 
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
-      identifiers: { 'Exigence' => @requirement.id },
+      identifiers: { requirement: @requirement.id },
     ) %>

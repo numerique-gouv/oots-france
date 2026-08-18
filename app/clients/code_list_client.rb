@@ -56,7 +56,7 @@ class CodeListClient
     # donc rien : sans cette ligne, une liste que la Commission aurait déplacée
     # ou restructurée effacerait tous les noms de la console sans laisser la
     # moindre trace, là où une panne réseau en laisse une.
-    Rails.logger.warn("Liste de codes lue sans y rien trouver (#{list}) : structure inattendue ?") if names.empty?
+    Rails.logger.warn(I18n.t('clients.code_list.nothing_read', list:)) if names.empty?
 
     names
   # Large on purpose, and the only place in this application where that is

@@ -8,6 +8,12 @@
 class ApplicationInteractor
   include Interactor
 
+  # The failures this application knows how to say. A `fail_with_error` on a key
+  # absent from here has no wording, and the console would render an empty
+  # alert title.
+  FAILURES = %i[common_services_refused gateway_refused invalid_token no_evidence_type
+                no_provider unknown_country unknown_procedure unknown_requester].freeze
+
   def fail_with_error(key, errors: [])
     context.fail!(error: { key:, errors: })
   end

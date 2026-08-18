@@ -8,7 +8,7 @@ class EvidenceRequestParser
 
   def initialize(document)
     @request = at(document, '/query:QueryRequest')
-    raise UnreadableMessageError, "Le message reçu n'est pas une QueryRequest." if @request.nil?
+    raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
   end
 
   def request_id = attribute(request, 'id')
@@ -26,7 +26,7 @@ class EvidenceRequestParser
       family_name: text_at(person, './sdg:FamilyName'),
       given_name: text_at(person, './sdg:GivenName'),
       date_of_birth: text_at(person, './sdg:DateOfBirth'),
-    ).validate!('Le bénéficiaire de la requête reçue', error: UnreadableMessageError)
+    ).validate!(:request_beneficiary, error: UnreadableMessageError)
   end
 
   # The requester is the agent classified `ER`. OOTS-France, or its foreign
@@ -37,7 +37,7 @@ class EvidenceRequestParser
       .filter_map { |element| at(element, './sdg:Agent') }
       .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceRequester::REQUESTER }
 
-    raise UnreadableMessageError, "Pas d'agent classé ER dans le message reçu." if agent.nil?
+    raise UnreadableMessageError, I18n.t('parsers.evidence_request.no_er_agent') if agent.nil?
 
     build_requester(agent)
   end
@@ -47,7 +47,8 @@ class EvidenceRequestParser
     titles = all(described, './sdg:Title').to_h { |title| [attribute(title, 'lang'), title.text] }
 
     EvidenceType.new(
-      id: require_content(text_at(described, './sdg:EvidenceTypeClassification'), 'Le type de justificatif est sans identifiant'),
+      id: require_content(text_at(described, './sdg:EvidenceTypeClassification'),
+        'parsers.evidence_request.evidence_type_without_id'),
       descriptions: titles,
       distribution_format: text_at(described, './sdg:DistributedAs/sdg:Format'),
     )
@@ -59,7 +60,7 @@ class EvidenceRequestParser
 
   def query
     @query ||= at(request, './query:Query') ||
-               raise(UnreadableMessageError, 'Pas de query:Query dans le message reçu.')
+               raise(UnreadableMessageError, I18n.t('parsers.evidence_request.no_query'))
   end
 
   def build_requester(agent)
@@ -69,8 +70,8 @@ class EvidenceRequestParser
     EvidenceRequester.new(
       # A SIRET is digits, and a reader that parsed numbers would drop its
       # leading zero. Read as text, always.
-      id: require_content(identifier&.text, "L'agent classé ER est sans identifiant"),
-      type_id: require_content(attribute(identifier, 'schemeID'), "L'agent classé ER est sans schéma d'identifiant"),
+      id: require_content(identifier&.text, 'parsers.evidence_request.agent_without_id'),
+      type_id: require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme'),
       name: name&.text,
       language: attribute(name, 'lang'),
     )

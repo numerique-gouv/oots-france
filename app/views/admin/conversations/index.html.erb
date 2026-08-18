@@ -1,6 +1,6 @@
-<% content_for :title, 'Conversations' %>
+<% content_for :title, t('admin.conversations.index.title') %>
 
-<h1>Conversations</h1>
+<h1><%= t('admin.conversations.index.title') %></h1>
 
 <%= render 'filtre' %>
 
@@ -15,15 +15,15 @@
     <div class="fr-table__container">
       <div class="fr-table__content">
         <table>
-          <caption>Conversations</caption>
+          <caption><%= t('admin.conversations.index.caption') %></caption>
           <thead>
             <tr>
-              <th scope="col">Identifiant</th>
-              <th scope="col">État</th>
-              <th scope="col">Pays</th>
-              <th scope="col">Démarche</th>
-              <th scope="col">Requêteur</th>
-              <th scope="col">Ouverte le</th>
+              <th scope="col"><%= t('admin.conversations.index.columns.id') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.status') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.country') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.procedure') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.requester') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.opened_at') %></th>
             </tr>
           </thead>
           <tbody>
@@ -46,7 +46,7 @@
 
             <% if @conversations.empty? %>
               <tr>
-                <td colspan="6">Aucune conversation ne correspond à ces critères.</td>
+                <td colspan="6"><%= t('admin.conversations.index.empty') %></td>
               </tr>
             <% end %>
           </tbody>

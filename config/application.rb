@@ -36,8 +36,16 @@ module OotsFrance
 
     config.time_zone = 'Europe/Paris'
 
-    # The user-facing side is French; the OOTS vocabulary that travels in the
-    # messages is English, and lives in the code rather than in locale files.
+    # One audience, one language: everything a human reads lives in
+    # `config/locales/fr.yml`. The OOTS vocabulary that travels in the messages
+    # is English and stays in the code — it is not a translation of anything,
+    # it is what the specifications name.
+    #
+    # `:en` is nonetheless declared, and must stay. GoodJob's dashboard forces
+    # `I18n.locale` to `:en` for its own rendering, and the pluralisation rule
+    # it then needs — `en.i18n.plural.rule` — is published by `rails-i18n`,
+    # which Rails loads for the declared locales alone. Dropping `:en` takes the
+    # dashboard down with it, and `spec/requests/admin/jobs_spec.rb` says so.
     config.i18n.default_locale = :fr
     config.i18n.available_locales = %i[fr en]
 

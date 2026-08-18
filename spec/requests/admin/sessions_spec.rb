@@ -68,6 +68,16 @@ RSpec.describe 'Admin::Sessions' do
       get admin_root_path
       expect(response).to redirect_to(new_admin_session_path)
     end
+
+    # The flash carries a key, so only a rendered page says whether it resolves.
+    it 'says so on the page it lands on' do
+      sign_in
+
+      delete admin_session_path
+      follow_redirect!
+
+      expect(response.body).to include('Vous êtes déconnecté.')
+    end
   end
 
   # `Administrator.exists?` and not merely a present id in the session: this is
@@ -81,5 +91,15 @@ RSpec.describe 'Admin::Sessions' do
 
       expect(response).to redirect_to(new_admin_session_path)
     end
+  end
+
+  # The key travels as a symbol through the flash and is resolved two steps
+  # later, by `layouts/_messages`: neither end is a lookup `i18n-tasks` can see.
+  it 'says every flash key the space can redirect with' do
+    carried = Dir['app/controllers/**/*.rb']
+      .flat_map { |path| File.read(path).scan(/:'(admin\.sessions\.[a-z_]+)'/) }
+      .flatten.uniq
+
+    expect_said(carried)
   end
 end

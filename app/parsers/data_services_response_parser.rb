@@ -43,11 +43,11 @@ class DataServicesResponseParser < CommonServicesResponseParser
     publisher = at(service, './sdg:Publisher')
 
     EvidenceProvider.new(
-      identifier: identity(publisher, "L'identité du fournisseur annoncé par l'annuaire"),
+      identifier: identity(publisher, :announced_provider_identity),
       access_point: access_point(service),
       descriptions: by_language(all(publisher || service, './sdg:Name')),
       address: address(publisher),
-    ).validate!("Le fournisseur annoncé par l'annuaire", error: CommonServicesError)
+    ).validate!(:announced_provider, error: CommonServicesError)
   end
 
   def identity(scope, subject)
@@ -68,7 +68,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
       type_id: attribute(identifier, 'schemeID'),
       descriptions: by_language(all(service, './sdg:Name')),
       conforms_to: all(service, './sdg:ConformsTo').map { |version| version.text.strip },
-    ).validate!("Le point d'accès annoncé par l'annuaire", error: CommonServicesError)
+    ).validate!(:announced_access_point, error: CommonServicesError)
   end
 
   # Read and validated rather than left to its default, which is France: the
@@ -80,6 +80,6 @@ class DataServicesResponseParser < CommonServicesResponseParser
     written = ADDRESS_LINES.transform_values { |element| found && text(found, "./sdg:#{element}") }
 
     Address.new(**written)
-      .validate!("L'adresse du fournisseur annoncé par l'annuaire", error: CommonServicesError)
+      .validate!(:announced_provider_address, error: CommonServicesError)
   end
 end

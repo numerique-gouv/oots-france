@@ -2,7 +2,7 @@
 <html lang="<%= I18n.locale %>" data-fr-scheme="system">
   <head>
     <meta charset="utf-8">
-    <title><%= content_for(:title).presence || 'OOTS-France' %></title>
+    <title><%= content_for(:title).presence || t('layouts.application.name') %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -27,7 +27,8 @@
   </head>
 
   <body>
-    <%= dsfr_skiplink(label: 'Accès rapide', links: [link_to('Contenu', '#contenu')]) %>
+    <%= dsfr_skiplink(label: t('layouts.application.skiplink'),
+      links: [link_to(t('layouts.application.skiplink_content'), '#contenu')]) %>
     <%= render 'layouts/entete' %>
 
     <div class="fr-container fr-my-4w">

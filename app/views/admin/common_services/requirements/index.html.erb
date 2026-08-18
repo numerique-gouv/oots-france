@@ -1,18 +1,13 @@
-<% content_for :title, 'Exigences' %>
+<% content_for :title, t('admin.common_services.requirements.index.title') %>
 
-<%= render DirectoryBreadcrumbsComponent.new(trail: [['Exigences', nil]]) %>
+<%= render DirectoryBreadcrumbsComponent.new(trail: [[t('admin.common_services.requirements.index.title'), nil]]) %>
 
-<h1>Exigences</h1>
+<h1><%= t('admin.common_services.requirements.index.title') %></h1>
 
-<p>
-  Ce qu'une démarche impose de prouver. Une même exigence sert des démarches de
-  plusieurs pays <strong>requêteurs</strong>, et ce sont les types de
-  justificatif que chaque pays <strong>fournisseur</strong> publie pour elle qui
-  diffèrent.
-</p>
+<p><%= t('admin.common_services.requirements.index.lead_html') %></p>
 
 <%= render SearchFieldComponent.new(
-      label: 'Rechercher une exigence, un pays requêteur, son code',
+      label: t('admin.common_services.requirements.index.search'),
       id: 'recherche-exigence',
       entries: '#liste-exigences > *',
       tally: '#decompte-exigences',
@@ -26,14 +21,14 @@
     <div>
       <%= render CardComponent.new(title: requirement.display_name, dense: true, clickable: true,
             href: admin_common_services_requirement_path(requirement.uuid)) do |carte| %>
-        Voir les justificatifs qui satisfont cette exigence, par pays fournisseur.
+        <%= t('admin.common_services.requirements.index.card') %>
 
         <% carte.with_list do %>
           <%# Ces pays sont ceux qui l'imposent, non ceux qui la satisfont : ils
               mènent donc aux démarches sous lesquelles ils l'ont déclarée, et
               non aux justificatifs qu'ils délivrent. %>
           <%= render CountryTagListComponent.new(
-                caption: 'Exigé par des démarches de',
+                caption: t('admin.common_services.requirements.index.required_by'),
                 codes: requirement.countries, names: country_names,
                 link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
               ) %>
@@ -43,6 +38,6 @@
   <% end %>
 </div>
 
-<p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>>Aucune exigence ne correspond à cette recherche.</p>
+<p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>><%= t('admin.common_services.requirements.empty') %></p>
 
 <%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

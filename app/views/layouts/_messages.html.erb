@@ -1,5 +1,8 @@
+<%# Le flash transporte une clé et non un message : la garde de l'espace
+    d'administration est aussi posée sur le tableau de bord de GoodJob, qui
+    rend sous `:en`, locale que cette application ne publie pas. %>
 <% { alert: :error, notice: :info }.each do |clef, type| %>
   <% if flash[clef].present? %>
-    <%= dsfr_alert(type: type, title: flash[clef], size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
+    <%= dsfr_alert(type: type, title: t(flash[clef]), size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
   <% end %>
 <% end %>

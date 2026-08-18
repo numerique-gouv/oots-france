@@ -37,7 +37,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # declares itself IP alongside it, on every request it relays.
   def requester_agent
     AgentBuilder.new(
-      identity: @requester.ebms_identity.validate!('Le requêteur'),
+      identity: @requester.ebms_identity.validate!(:requester),
       names: { @requester.language => @requester.name },
       address: @requester.address,
       classification: EvidenceRequester::REQUESTER,
@@ -58,7 +58,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # designated, and the TDD ask for neither.
   def provider_agent
     AgentBuilder.new(
-      identity: @provider.ebms_identity.validate!('Le fournisseur'),
+      identity: @provider.ebms_identity.validate!(:provider),
       names: @provider.descriptions,
     ).render
   end

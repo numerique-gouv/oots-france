@@ -1,52 +1,50 @@
-<% content_for :title, 'Annuaires centraux' %>
+<% content_for :title, t('components.directory_breadcrumbs.directories') %>
 
 <%= render DirectoryBreadcrumbsComponent.new %>
 
 <div class="fr-grid-row fr-grid-row--top fr-mb-2w">
   <div class="fr-col-12 fr-col-md">
-    <h1>Annuaires centraux</h1>
+    <h1><%= t('components.directory_breadcrumbs.directories') %></h1>
   </div>
   <div class="fr-mt-md-1w fr-ml-md-1w">
-    <%= link_to 'Simuler une chaîne de requêtes', admin_common_services_resolution_path,
+    <%= link_to t('admin.common_services.resolutions.show.title'), admin_common_services_resolution_path,
           class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
   </div>
 </div>
 
-<p class="fr-text--lead">
-  Ce que l'Evidence Broker et le Data Service Directory publient, tel qu'ils le
-  répondent à cette application.
-</p>
+<p class="fr-text--lead"><%= t('admin.common_services.catalogue.show.lead') %></p>
 
 <div class="fr-grid-row fr-grid-row--gutters fr-mb-4w">
   <div class="fr-col-12 fr-col-md-4">
     <%= dsfr_tile(
-          title: 'Pays',
+          title: t('admin.common_services.countries.index.title'),
           url: admin_common_services_countries_path,
-          description: "#{@countries.size} pays, et les démarches que chacun déclare.",
+          description: t('admin.common_services.catalogue.show.tiles.countries', count: @countries.size),
         ) %>
   </div>
   <div class="fr-col-12 fr-col-md-4">
     <%= dsfr_tile(
-          title: 'Démarches',
+          title: t('admin.common_services.procedures.index.title'),
           url: admin_common_services_procedures_path,
-          description: "#{@procedures.size} codes de démarche, déclarés par #{@countries.size} pays.",
+          description: t('admin.common_services.catalogue.show.tiles.procedures', count: @procedures.size,
+            # Le décompte est écrit pour se lire seul, donc capitalisé : recousu
+            # au milieu d'une phrase, il y remonterait sa majuscule.
+            countries: t('admin.common_services.countries.count', count: @countries.size).downcase),
         ) %>
   </div>
   <div class="fr-col-12 fr-col-md-4">
     <%= dsfr_tile(
-          title: 'Exigences',
+          title: t('admin.common_services.requirements.index.title'),
           url: admin_common_services_requirements_path,
-          description: "#{@requirements.size} exigences, et les types de justificatif qui les satisfont.",
+          description: t('admin.common_services.catalogue.show.tiles.requirements', count: @requirements.size),
         ) %>
   </div>
 </div>
 
 <%# Le DSD n'accepte pas de requête sans son type de justificatif et son pays :
     ses fournisseurs ne se listent pas, ils se demandent. %>
-<%= dsfr_callout(title: 'Et les fournisseurs ?') do %>
-  Le Data Service Directory ne répond que sur un couple type de justificatif et
-  pays : il n'existe aucune liste de ses fournisseurs. On y arrive depuis une
-  exigence, puis un type de justificatif.
+<%= dsfr_callout(title: t('admin.common_services.catalogue.show.providers.title')) do %>
+  <%= t('admin.common_services.catalogue.show.providers.body') %>
 <% end %>
 
 <%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

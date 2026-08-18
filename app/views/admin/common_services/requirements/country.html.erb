@@ -1,17 +1,16 @@
-<% content_for :title, "#{named_country(@country)} — #{@requirement.display_name}" %>
+<% content_for :title, t('admin.common_services.requirements.country.title',
+      country: named_country(@country), requirement: @requirement.display_name) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
-      ['Exigences', admin_common_services_requirements_path],
+      [t('admin.common_services.requirements.index.title'), admin_common_services_requirements_path],
       [@requirement.display_name, admin_common_services_requirement_path(@requirement.uuid)],
       [named_country(@country), nil],
     ]) %>
 
-<h1 class="fr-h3">Démarches de <%= named_country(@country) %> qui exigent « <%= @requirement.display_name %> »</h1>
+<h1 class="fr-h3"><%= t('admin.common_services.requirements.country.heading',
+      country: named_country(@country), requirement: @requirement.display_name) %></h1>
 
-<p>
-  Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a déclaré cette exigence, et l'intitulé
-  qu'il donne à chacune.
-</p>
+<p><%= t('admin.common_services.requirements.country.lead_html') %></p>
 
 <p class="fr-text--sm fr-mb-2w">
   <%= t('admin.common_services.procedures.count', count: @declared.map(&:procedure_code).uniq.size) %>
@@ -36,5 +35,5 @@
 
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
-      identifiers: { 'Exigence' => @requirement.id },
+      identifiers: { requirement: @requirement.id },
     ) %>

@@ -1,25 +1,17 @@
-<% content_for :title, 'Pays' %>
+<% content_for :title, t('admin.common_services.countries.index.title') %>
 
-<%= render DirectoryBreadcrumbsComponent.new(trail: [['Pays', nil]]) %>
+<%= render DirectoryBreadcrumbsComponent.new(trail: [[t('admin.common_services.countries.index.title'), nil]]) %>
 
-<h1>Pays</h1>
+<h1><%= t('admin.common_services.countries.index.title') %></h1>
 
-<p>
-  Les États membres qui ont publié au moins une déclaration à l'Evidence
-  Broker. Un pays absent d'ici n'a rien déclaré, ce qui n'est pas la même chose
-  que ne pas être inscrit au Data Service Directory.
-</p>
+<p><%= t('admin.common_services.countries.index.lead') %></p>
 
-<%= dsfr_callout(title: 'Requêteur ou fournisseur ?') do %>
-  Un pays tient deux rôles, et l'annuaire ne répond pas la même chose selon
-  celui qu'on lui demande. <strong>Requêteur</strong>, il déclare ses démarches
-  et ce qu'elles exigent de prouver : c'est ce que ces pages montrent.
-  <strong>Fournisseur</strong>, il délivre les justificatifs qui satisfont une
-  exigence — la sienne ou celle d'un autre —, et cela se lit sous l'exigence.
+<%= dsfr_callout(title: t('admin.common_services.countries.index.roles.title')) do %>
+  <%= t('admin.common_services.countries.index.roles.body_html') %>
 <% end %>
 
 <%= render SearchFieldComponent.new(
-      label: 'Rechercher un pays, son code',
+      label: t('admin.common_services.countries.index.search'),
       id: 'recherche-pays',
       entries: '#liste-pays > *',
       tally: '#decompte-pays',
@@ -39,18 +31,19 @@
       <ul class="entry-list entry-list--clickable">
         <li class="entry">
           <span class="entry__name">
-            En <strong>requêteur</strong> —
-            <%= t('admin.common_services.procedures.count', count: procedures.size) %> déclarées
+            <%= t('admin.common_services.countries.index.roles.requester_html',
+                  procedures: t('admin.common_services.countries.index.declared_procedures',
+                    count: procedures.size)) %>
           </span>
           <%= link_to admin_common_services_country_procedures_path(code), class: 'entry__action fr-link' do %>
-            Voir ses démarches<span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
+            <%= t('admin.common_services.countries.index.see_procedures') %><span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
           <% end %>
         </li>
 
         <li class="entry">
-          <span class="entry__name">En <strong>fournisseur</strong></span>
+          <span class="entry__name"><%= t('admin.common_services.countries.index.roles.provider_html') %></span>
           <%= link_to admin_common_services_country_requirements_path(code), class: 'entry__action fr-link' do %>
-            Voir ses justificatifs<span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
+            <%= t('admin.common_services.countries.index.see_evidence') %><span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
           <% end %>
         </li>
       </ul>
@@ -60,6 +53,6 @@
 <% end %>
 </div>
 
-<p id="aucun-pays" <%= 'hidden' if @procedures.any? %>>Aucun pays ne correspond à cette recherche.</p>
+<p id="aucun-pays" <%= 'hidden' if @procedures.any? %>><%= t('admin.common_services.countries.index.empty') %></p>
 
 <%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
