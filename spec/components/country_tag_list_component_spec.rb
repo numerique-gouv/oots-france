@@ -34,6 +34,20 @@ RSpec.describe CountryTagListComponent, type: :component do
     expect(page.all('.country-tag').map { |box| box.text.split.last }).to eq(%w[FI FR])
   end
 
+  # Au pied d'une carte, la rangée a quitté la phrase qui l'introduisait : sa
+  # légende dit en quelle qualité ces pays y figurent.
+  it 'says in what capacity the countries appear, when the caller says it' do
+    render_inline(described_class.new(codes: %w[FI], caption: 'Démarche déclarée par'))
+
+    expect(page).to have_css('p', text: 'Démarche déclarée par')
+  end
+
+  it 'opens straight on the row when the caller has nothing to say' do
+    render_inline(described_class.new(codes: %w[FI]))
+
+    expect(page).to have_no_css('p')
+  end
+
   it 'renders nothing at all rather than an empty row' do
     render_inline(described_class.new(codes: []))
 

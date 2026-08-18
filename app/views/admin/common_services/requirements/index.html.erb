@@ -31,10 +31,9 @@
         <% carte.with_list do %>
           <%# Ces pays sont ceux qui l'imposent, non ceux qui la satisfont : ils
               mènent donc aux démarches sous lesquelles ils l'ont déclarée, et
-              non aux justificatifs qu'ils délivrent. Au pied, parce que la
-              carte entière mène à l'exigence et couvre son corps. %>
-          <p class="fr-text--sm fr-mb-1v">Exigé par des démarches de</p>
+              non aux justificatifs qu'ils délivrent. %>
           <%= render CountryTagListComponent.new(
+                caption: 'Exigé par des démarches de',
                 codes: requirement.countries, names: country_names,
                 link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
               ) %>

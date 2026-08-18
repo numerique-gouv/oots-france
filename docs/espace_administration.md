@@ -111,7 +111,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 | `DirectoryBreadcrumbsComponent` | Le fil d'Ariane commun à ces pages, dont le dernier maillon ne porte jamais de lien |
 | `DirectoryQueryComponent` | La requête posée et les identifiants dont la réponse dépend, **repliés dans un accordéon** : on vient lire ce que les annuaires publient, et seulement ensuite, quand la réponse surprend, vérifier ce qui leur a été demandé. En bas de page d'ordinaire ; `embedded:` le range au pied d'une carte, où il clôt une étape de la chaîne de requêtes |
 | `CountryTagComponent` | Un pays : son drapeau, son nom, son code, dans une boîte à bordure fine. L'adresse vient de l'appelant, et son absence dit quelque chose : une étiquette qui aurait l'air cliquable là où rien ne mène affirmerait qu'il y a où aller |
-| `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule |
+| `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule ; `caption:` dit en quelle qualité ils y figurent, au-dessus de la rangée et avec elle |
 | `ProcedureComponent` | Une démarche : son code dans une colonne, son intitulé dans la suivante — un intitulé fait une phrase, qu'une boîte encadrerait comme un paragraphe |
 | `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
 | `ConversationStatusComponent` | L'état d'un échange, en pastille |
