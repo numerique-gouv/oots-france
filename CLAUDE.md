@@ -42,6 +42,7 @@ Each piece of information has a single owning document; everything else links to
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
 | The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the account that opens it | `docs/espace_administration.md` |
+| The exchange log of article 17: what is recorded and where, the encryption and retention of personal data, how to read it back | `docs/journal_des_echanges.md` |
 | Agent conventions and workflow | this file |
 
 When adding documentation, extend the owning file rather than repeating it elsewhere; if two files must mention the same thing, the non-owner keeps one sentence and a link.
@@ -161,7 +162,7 @@ The rules above are the local dialect of a general discipline, described in Vlad
 | --- | --- | --- |
 | Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, plus `app/filters/` (what a request derives from `params`) and `app/components/` (ViewComponent). Deliberately thin: the operator console and one landing page, the rest is machine-to-machine |
 | Application | `app/services/` | `app/interactors/` and `app/organizers/`. **There is no `app/services/` and none is wanted**: the interactor gem's context and `fail_with_error` are the local contract. Do not propose one |
-| Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **two** records: `Conversation`, and `Administrator`, which exists only to open the operator console. "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
+| Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **three** records: `Conversation`, `AuditEvent` (the exchange log of article 17), and `Administrator`, which exists only to open the operator console. "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
 | Infrastructure | `app/jobs/`, `app/mailers/` | `app/clients/` (HTTP), `app/builders/` + `app/templates/` (message serialisation), `app/parsers/` (deserialisation), `app/jobs/`, `Settings`, `Clock`, `UuidGenerator` |
 
 Two corollaries the skill cannot know: `Current` attributes are unused and must stay so — the one session this application establishes is the operator console's login, which puts an id in `session` and reads it back in the filter that guards the console, so nothing needs a request-wide global and context travels as explicit arguments; and the specification test is the tool that transfers best as-is, since the question it asks ("does this object do something outside its layer's job?") needs no Rails convention to be answered.

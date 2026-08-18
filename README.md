@@ -40,7 +40,7 @@ Comptez plusieurs minutes la première fois, dont l'essentiel revient au déploi
 | Étape | Ce qu'elle pose |
 | --- | --- |
 | Environnement | `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, avec des valeurs de développement et une clé de déchiffrement générée à la volée. Une configuration déjà présente est conservée telle quelle |
-| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des conversations et la file des travaux, et son schéma |
+| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des conversations, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, et son schéma |
 | Passerelle | Domibus, avec des certificats à elle, le PMode d'exemple, un compte d'accès à son API, et le redémarrage qui active ses notifications |
 
 Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer reprend ce qui manque. Il transpose ce que [`.github/workflows/e2e.yml`](.github/workflows/e2e.yml) fait sur un runner, et les deux doivent rester en phase.
@@ -170,6 +170,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/glossaire.md](docs/glossaire.md) — tous les sigles et termes du domaine, une phrase chacun : DSD, EDM, ebMS3, requêteur, bouchon… **Le seul endroit où le vocabulaire est défini.**
 - [docs/reste_à_faire.md](docs/reste_à_faire.md) — ce qui sépare le dépôt d'une conformité complète aux TDD : inventaire par chapitre, bouchons en place et par quoi les remplacer, dépendances entre chantiers.
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de l'application Domibus (point d'accès eDelivery) : concepts, usage par OOTS-France, installation locale et pièges connus.
+- [docs/journal_des_echanges.md](docs/journal_des_echanges.md) — le journal que l'article 17 impose de conserver douze mois : ce qu'il consigne, comment ses données personnelles sont protégées, comment le relire.
 - [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un échange OOTS complet en local, à travers Domibus.
 - [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md) — configurer la passerelle geste par geste dans sa console, quand le script ne convient pas.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
