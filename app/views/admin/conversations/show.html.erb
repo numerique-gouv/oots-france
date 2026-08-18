@@ -23,7 +23,10 @@
             </tr>
             <tr>
               <th scope="row">Démarche</th>
-              <td><%= @conversation.procedure_code %></td>
+              <td>
+                <%= link_to @conversation.procedure_code,
+                      admin_common_services_procedure_path(@conversation.procedure_code) %>
+              </td>
             </tr>
             <tr>
               <th scope="row">Requêteur</th>
@@ -54,6 +57,14 @@
     </div>
   </div>
 </div>
+
+<p class="fr-mt-2w">
+  <%= link_to 'Simuler cette chaîne de requêtes',
+        admin_common_services_resolution_path(
+          procedure_code: @conversation.procedure_code, country_code: @conversation.country_code,
+        ),
+        class: 'fr-btn fr-btn--secondary' %>
+</p>
 
 <% if @conversation.error_description.present? %>
   <h2 class="fr-h5 fr-mt-4w">Raison de l'échec</h2>

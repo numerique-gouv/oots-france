@@ -1,0 +1,178 @@
+<% content_for :title, 'Simuler une chaîne de requêtes' %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [['Simuler une chaîne de requêtes', nil]]) %>
+
+<h1 class="fr-h3">Simuler une chaîne de requêtes</h1>
+
+<p class="fr-text--lead">
+  Les trois questions qu'une requête réelle pose aux annuaires avant d'émettre,
+  dans l'ordre, avec les mêmes clients.
+</p>
+
+<%# `dsfr-view-components` ne fournit aucun composant de formulaire. %>
+<%= form_with url: admin_common_services_resolution_path, method: :get, class: 'fr-mb-4w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend">Interroger les annuaires</legend>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :procedure_code, 'Démarche', class: 'fr-label' %>
+        <%= form.text_field :procedure_code, value: @question.procedure_code, class: 'fr-input', placeholder: '00' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :country_code, 'Pays fournisseur', class: 'fr-label' %>
+        <%= form.text_field :country_code, value: @question.country,
+              class: 'fr-input', maxlength: 2, placeholder: 'FI' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn">Résoudre</button>
+    </div>
+  </fieldset>
+<% end %>
+
+<%= render 'admin/erreurs', errors: @question.errors %>
+
+<% if @lookup %>
+  <%# Une étape qui n'a rien rendu est celle où la chaîne s'est arrêtée : son
+      alerte se lit à sa place, pas en tête de page, sinon rien ne dit laquelle
+      des trois a échoué. %>
+  <% arret = capture do %>
+    <% if @lookup.failure? %>
+      <%= dsfr_alert(type: :warning,
+            title: @lookup.refusal&.code.presence || t("admin.common_services.resolution.#{@lookup.error[:key]}"),
+            html_attributes: { class: 'fr-mb-0' }) do %>
+        <%= @lookup.error[:errors].join(' ') %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <%# L'asymétrie que la page existe pour rendre visible : la démarche est la
+      nôtre, les types de justificatif appartiennent au pays interrogé. %>
+  <%= render CardComponent.new(title: '1. Ce que la démarche exige', heading_level: 2, dense: true) do |etape| %>
+    Evidence Broker, dans le pays <strong>requêteur</strong> — le nôtre,
+    <%= link_to named_country(Settings.common_services_country_code),
+          admin_common_services_country_procedures_path(Settings.common_services_country_code) %>,
+    puisque la démarche <%= link_to @question.procedure_code,
+                                 admin_common_services_procedure_path(@question.procedure_code) %> est la nôtre.
+
+    <% etape.with_list do %>
+      <% if @lookup.requirements.blank? %>
+        <%= arret %>
+      <% else %>
+        <ul class="entry-list">
+          <% @lookup.requirements.each do |requirement| %>
+            <li class="entry <%= 'entry--current' if requirement == @lookup.requirement %>">
+              <span class="entry__name">
+                <%= link_to requirement.display_name, admin_common_services_requirement_path(requirement.uuid) %>
+              </span>
+
+              <% if requirement == @lookup.requirement %>
+                <span class="fr-badge fr-badge--sm fr-badge--info">Retenue</span>
+              <% else %>
+                <%= link_to admin_common_services_resolution_path(
+                      @question.to_query(requirement_id: requirement.uuid, evidence_type_id: nil),
+                    ), class: 'entry__action fr-link' do %>
+                  Poursuivre avec celle-ci<span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
+                <% end %>
+              <% end %>
+
+              <code class="entry__detail"><%= requirement.id %></code>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <%= render DirectoryQueryComponent.new(
+            query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
+            parameters: { 'procedure-id' => @question.procedure_code,
+                          'country-code' => Settings.common_services_country_code },
+            embedded: true) %>
+    <% end %>
+  <% end %>
+
+  <% if @lookup.requirement %>
+    <%= render CardComponent.new(title: '2. Ce qui satisfait cette exigence',
+          heading_level: 2, dense: true) do |etape| %>
+      Evidence Broker, dans le pays <strong>fournisseur</strong> —
+      <%= link_to named_country(@question.country), admin_common_services_country_procedures_path(@question.country) %>,
+      celui qui délivrera le justificatif.
+
+      <% etape.with_list do %>
+        <% if @lookup.evidence_type_lists.blank? %>
+          <%= arret %>
+        <% else %>
+          <ul class="entry-list">
+            <% @lookup.evidence_type_lists.flat_map(&:evidence_types).each do |type| %>
+              <li class="entry <%= 'entry--current' if type == @lookup.evidence_type %>">
+                <span class="entry__name">
+                  <%= link_to type.display_name,
+                        admin_common_services_requirement_evidence_type_providers_path(
+                          @lookup.requirement.uuid, type.uuid,
+                        ) %>
+                </span>
+                <code class="entry__tag"><%= type.distribution_format %></code>
+
+                <% if type == @lookup.evidence_type %>
+                  <span class="fr-badge fr-badge--sm fr-badge--info">Retenu</span>
+                <% else %>
+                  <%= link_to admin_common_services_resolution_path(
+                        @question.to_query(evidence_type_id: type.uuid),
+                      ), class: 'entry__action fr-link' do %>
+                    Poursuivre avec celui-ci<span class="fr-icon-arrow-right-line fr-ml-1w" aria-hidden="true"></span>
+                  <% end %>
+                <% end %>
+
+                <code class="entry__detail"><%= type.id %></code>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <%= render DirectoryQueryComponent.new(
+              query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+              parameters: { 'requirement-id' => @lookup.requirement.id, 'country-code' => @question.country },
+              embedded: true) %>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @lookup.evidence_type %>
+    <%= render CardComponent.new(title: '3. Qui le délivre, et par où', heading_level: 2, dense: true) do |etape| %>
+      Data Service Directory, dans le pays <strong>fournisseur</strong> —
+      <%= link_to named_country(@question.country), admin_common_services_country_procedures_path(@question.country) %>.
+      C'est le point d'accès de cette réponse que la requête réelle adresse.
+
+      <% etape.with_list do %>
+        <% if @lookup.data_services.blank? %>
+          <%= arret %>
+        <% else %>
+          <ul class="entry-list">
+            <% @lookup.data_services.flat_map(&:providers).each do |provider| %>
+              <li class="entry">
+                <span class="entry__name"><%= provider.label || provider.identifier.id %></span>
+                <code class="entry__tag"><%= provider.access_point.conforms_to.join(', ').presence || '—' %></code>
+
+                <code class="entry__detail">
+                  point d'accès <%= provider.access_point.id %> ·
+                  destinataire final <%= provider.identifier.id %>
+                </code>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+
+        <%= render DirectoryQueryComponent.new(
+              query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
+              parameters: { 'evidence-type-classification' => @lookup.evidence_type.id,
+                            'country-code' => @question.country,
+                            'specification' => EdmSpecification::IDENTIFIER },
+              embedded: true) %>
+      <% end %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -6,6 +6,7 @@
 class ConversationFilter
   include ActiveModel::Model
   include ActiveModel::Attributes
+  include SubmittedCriteria
 
   PER_PAGE = 25
 
@@ -17,39 +18,12 @@ class ConversationFilter
   attribute :jusqu_a, :date
   attribute :page, :integer, default: 1
 
-  # Derived rather than restated: a second list would be a second place to
-  # remember, and forgetting it there silences a criterion without a word.
-  PERMITTED = attribute_names.map(&:to_sym).freeze
-
   # Those compared as they are. The country is upcased, and the period is an
   # interval rather than a value.
   EXACT = %i[status evidence_requester_id procedure_code].freeze
 
-  # What the operator submitted, before typing made of it what it could:
-  # `ActiveModel::Type::Date` answers `nil` for a string it cannot read, and
-  # `params.permit` drops a permitted key whose value has the wrong shape.
-  # Without this copy, neither leaves any trace to notice.
-  #
-  # Read-only and set at construction, so it cannot drift from the attributes
-  # it is compared against. Built without it — from values already typed, as a
-  # console or a spec does — there is nothing submitted to find fault with.
-  attr_reader :submitted
-
   validates :status, inclusion: { in: Conversation::STATUSES }, allow_blank: true
-  validate :reject_unreadable_criteria
   validate :reject_inverted_period
-
-  def initialize(submitted: {}, **attributes)
-    @submitted = submitted
-    super(**attributes)
-  end
-
-  def self.from(params)
-    new(
-      **params.permit(*PERMITTED).to_h.symbolize_keys,
-      submitted: params.to_unsafe_h.symbolize_keys.slice(*PERMITTED),
-    )
-  end
 
   # A criterion this cannot honour narrows to nothing, and the page says which.
   # Dropping it would show every exchange under a heading claiming the
@@ -73,10 +47,6 @@ class ConversationFilter
   # saying there is something to see.
   def page_within(total) = page.to_i.clamp(1, pages(total))
 
-  def to_query(overrides = {})
-    attributes.symbolize_keys.compact_blank.merge(overrides)
-  end
-
   private
 
   def narrow(scope) = scope.where(exact_matches).where(period)
@@ -95,14 +65,6 @@ class ConversationFilter
     return {} if depuis.nil? && jusqu_a.nil?
 
     { created_at: depuis&.beginning_of_day..jusqu_a&.end_of_day }
-  end
-
-  def reject_unreadable_criteria
-    PERMITTED.each do |name|
-      next if submitted[name].blank? || public_send(name).present?
-
-      errors.add(name, :unreadable)
-    end
   end
 
   # A period read the wrong way round matches nothing, which on screen is

@@ -4,13 +4,7 @@
 
 <%= render 'filtre' %>
 
-<% if @filter.errors.any? %>
-  <%# The component wraps its content in a `<p>`, where a list would be
-      invalid HTML. %>
-  <%= dsfr_alert(type: :error, title: t('admin.conversations.unreadable'), html_attributes: { class: 'fr-mb-4w' }) do %>
-    <%= safe_join(@filter.errors.full_messages.map { |message| "#{message}." }, tag.br) %>
-  <% end %>
-<% end %>
+<%= render 'admin/erreurs', errors: @filter.errors %>
 
 <p class="fr-text--sm fr-mb-2w">
   <%= t('admin.conversations.count', count: @total) %>
@@ -41,7 +35,10 @@
                 </td>
                 <td><%= render ConversationStatusComponent.new(status: conversation.status) %></td>
                 <td><%= conversation.country_code %></td>
-                <td><%= conversation.procedure_code %></td>
+                <td>
+                  <%= link_to conversation.procedure_code,
+                        admin_common_services_procedure_path(conversation.procedure_code) %>
+                </td>
                 <td><%= conversation.evidence_requester_id %></td>
                 <td><%= l(conversation.created_at, format: :short) %></td>
               </tr>
