@@ -13,18 +13,23 @@
 <%# Une carte par démarche et non par déclaration : une même exigence est
     déclarée sous un même code par des dizaines de pays. %>
 <% @requirement.reference_frameworks.group_by(&:procedure_code).each do |code, declared| %>
+  <% published = declared.any? { |one| one.country.present? } %>
   <%= render CardComponent.new(
         title: named_procedure(code),
         hint: procedure_hint(code),
         href: (admin_common_services_procedure_path(code) if code.present?),
-      ) do %>
-    <% if declared.any? { |one| one.country.present? } %>
-      <%= render CountryTagListComponent.new(
-            codes: declared.map(&:country), names: country_names,
-            link: ->(one) { admin_common_services_procedure_country_path(code, one) if code.present? },
-          ) %>
+        dense: published, clickable: true,
+      ) do |carte| %>
+    <% if published %>
+      <% carte.with_list do %>
+        <%= render CountryTagListComponent.new(
+              caption: 'Exigence déclarée par',
+              codes: declared.map(&:country), names: country_names,
+              link: ->(one) { admin_common_services_procedure_country_path(code, one) if code.present? },
+            ) %>
+      <% end %>
     <% else %>
-      <p class="fr-mb-0">Aucun pays publié pour cette déclaration.</p>
+      Aucun pays publié pour cette déclaration.
     <% end %>
   <% end %>
 <% end %>

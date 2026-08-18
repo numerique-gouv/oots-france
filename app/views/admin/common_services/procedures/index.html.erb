@@ -30,10 +30,8 @@
             dense: true, clickable: true,
           ) do |carte| %>
         <% carte.with_list do %>
-          <%# Au pied, parce que la carte entière mène à la démarche et couvre
-              son corps : chaque pays mène ailleurs, à ce qu'il en tire. %>
-          <p class="fr-text--sm fr-mb-1v">Démarche déclarée par</p>
           <%= render CountryTagListComponent.new(
+                caption: 'Démarche déclarée par',
                 codes: procedure.countries, names: country_names,
                 link: ->(code) { admin_common_services_procedure_country_path(procedure.code, code) },
               ) %>

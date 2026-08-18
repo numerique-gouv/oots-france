@@ -26,6 +26,20 @@ RSpec.describe CardComponent, type: :component do
     expect(page).to have_css('.card-list table')
   end
 
+  it 'stretches the title link over the body when the entry is clickable' do
+    render_inline(described_class.new(title: 'R1', href: '/admin/common_services/procedures/R1', clickable: true))
+
+    expect(page).to have_css('.fr-card.fr-enlarge-link')
+    expect(page).to have_no_css('.fr-card--no-arrow')
+  end
+
+  it 'keeps the arrow off an entry with nowhere to go' do
+    render_inline(described_class.new(title: 'R1', clickable: true))
+
+    expect(page).to have_css('.fr-card.fr-card--no-arrow')
+    expect(page).to have_no_css('.fr-enlarge-link')
+  end
+
   it 'leaves out both sections when it carries neither' do
     render_inline(described_class.new(title: 'FR'))
 

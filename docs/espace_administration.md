@@ -102,16 +102,16 @@ Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les 
 
 Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>` suit le thème du système sans JavaScript. C'est ce qui permet de se passer du script anti-clignotement que le DSFR place sinon en ligne dans le `<head>`, et qu'une politique de sécurité de contenu devrait un jour autoriser nommément.
 
-`dsfr-view-components` **ne fournit aucun composant de formulaire** : les formulaires de filtres sont écrits en `fr-*` à la main, étiquettes comprises. Il n'expose ni pagination ni tableau, et sa carte enveloppe la carte entière dans un lien unique — quand une carte d'ici en porte un par ligne. Ce que la gem ne donne pas vit dans `app/components/` :
+`dsfr-view-components` **ne fournit aucun composant de formulaire** : les formulaires de filtres sont écrits en `fr-*` à la main, étiquettes comprises. Il n'expose ni pagination ni tableau, et sa carte enveloppe tout dans un lien unique — quand une carte d'ici garde un lien par ligne dans son pied, sous un titre qui mène ailleurs. Ce que la gem ne donne pas vit dans `app/components/` :
 
 | Composant | Ce qu'il porte |
 | --- | --- |
 | `PaginationComponent` | La pagination du DSFR, et sa logique de fenêtre |
-| `CardComponent` | Une entrée d'une liste, pleine largeur : ce qui la décrit d'un côté, ce qu'elle énumère de l'autre, dans le pied du DSFR sous un filet. `dense:` resserre celle qui n'a rien à décrire entre les deux |
+| `CardComponent` | Une entrée d'une liste, pleine largeur : ce qui la décrit d'un côté, ce qu'elle énumère de l'autre, dans le pied du DSFR sous un filet. `dense:` resserre celle qui n'a rien à décrire entre les deux ; `clickable:` étend le lien du titre au corps et lui donne la flèche du DSFR, le pied gardant ses propres liens |
 | `DirectoryBreadcrumbsComponent` | Le fil d'Ariane commun à ces pages, dont le dernier maillon ne porte jamais de lien |
 | `DirectoryQueryComponent` | La requête posée et les identifiants dont la réponse dépend, **repliés dans un accordéon** : on vient lire ce que les annuaires publient, et seulement ensuite, quand la réponse surprend, vérifier ce qui leur a été demandé. En bas de page d'ordinaire ; `embedded:` le range au pied d'une carte, où il clôt une étape de la chaîne de requêtes |
 | `CountryTagComponent` | Un pays : son drapeau, son nom, son code, dans une boîte à bordure fine. L'adresse vient de l'appelant, et son absence dit quelque chose : une étiquette qui aurait l'air cliquable là où rien ne mène affirmerait qu'il y a où aller |
-| `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule |
+| `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule ; `caption:` dit en quelle qualité ils y figurent, au-dessus de la rangée et avec elle |
 | `ProcedureComponent` | Une démarche : son code dans une colonne, son intitulé dans la suivante — un intitulé fait une phrase, qu'une boîte encadrerait comme un paragraphe |
 | `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
 | `ConversationStatusComponent` | L'état d'un échange, en pastille |
