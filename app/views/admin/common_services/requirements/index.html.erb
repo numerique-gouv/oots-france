@@ -1,0 +1,49 @@
+<% content_for :title, 'Exigences' %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [['Exigences', nil]]) %>
+
+<h1>Exigences</h1>
+
+<p>
+  Ce qu'une démarche impose de prouver. Une même exigence sert des démarches de
+  plusieurs pays <strong>requêteurs</strong>, et ce sont les types de
+  justificatif que chaque pays <strong>fournisseur</strong> publie pour elle qui
+  diffèrent.
+</p>
+
+<%= render SearchFieldComponent.new(
+      label: 'Rechercher une exigence, un pays requêteur, son code',
+      id: 'recherche-exigence',
+      entries: '#liste-exigences > *',
+      tally: '#decompte-exigences',
+      empty: '#aucune-exigence',
+    ) %>
+
+<%= render 'admin/common_services/results_count', id: 'decompte-exigences', count: @requirements.size %>
+
+<div id="liste-exigences">
+  <% @requirements.each do |requirement| %>
+    <div>
+      <%= render CardComponent.new(title: requirement.display_name, dense: true, clickable: true,
+            href: admin_common_services_requirement_path(requirement.uuid)) do |carte| %>
+        Voir les justificatifs qui satisfont cette exigence, par pays fournisseur.
+
+        <% carte.with_list do %>
+          <%# Ces pays sont ceux qui l'imposent, non ceux qui la satisfont : ils
+              mènent donc aux démarches sous lesquelles ils l'ont déclarée, et
+              non aux justificatifs qu'ils délivrent. Au pied, parce que la
+              carte entière mène à l'exigence et couvre son corps. %>
+          <p class="fr-text--sm fr-mb-1v">Exigé par des démarches de</p>
+          <%= render CountryTagListComponent.new(
+                codes: requirement.countries, names: country_names,
+                link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
+              ) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>>Aucune exigence ne correspond à cette recherche.</p>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

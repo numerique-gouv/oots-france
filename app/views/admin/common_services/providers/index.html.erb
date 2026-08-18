@@ -1,0 +1,79 @@
+<% content_for :title, "Qui délivre « #{@evidence_type.display_name} » ?" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Exigences', admin_common_services_requirements_path],
+      [requirement.display_name, admin_common_services_requirement_path(requirement.uuid)],
+      [named_country(@country), nil],
+    ]) %>
+
+<h1 class="fr-h3">Qui délivre « <%= @evidence_type.display_name %> » <%= in_country(@country) %></h1>
+
+<p class="fr-text--lead">
+  L'organisation qui détient ce justificatif, et le point d'accès par lequel une
+  requête réelle l'atteint.
+</p>
+
+<%# Le pays ne se choisit pas : ce type de justificatif est publié par lui, et
+    le demander à un autre ne peut que revenir vide. %>
+<% if @refusal %>
+  <%= dsfr_alert(type: :warning, title: @refusal.code) do %>
+    <%= @refusal.message %>
+  <% end %>
+<% else %>
+  <% @data_services.each do |service| %>
+    <%= render CardComponent.new(title: service.label || 'Service de données', dense: true) do |carte| %>
+      <code class="entry__tag"><%= service.distribution_format || '—' %></code>
+      Niveau de garantie <strong><%= service.level_of_assurance || '—' %></strong>
+
+      <%# L'identifiant que le DSD attribue au couple type et pays : c'est lui
+          que le bouchon 7 écrit encore en dur dans les requêtes émises, d'où sa
+          place sur la carte plutôt que dans le repli technique. %>
+      <br><span class="fr-text--sm">Identifiant du service <code><%= service.id || '—' %></code></span>
+
+      <% carte.with_list do %>
+        <ul class="entry-list">
+          <%# Un fournisseur et son point d'accès sont deux organisations : le
+              premier détient le justificatif, le second achemine le message qui
+              le demande, et une requête réelle adresse le second. %>
+          <% service.providers.each do |provider| %>
+            <li class="entry">
+              <span class="entry__name"><%= provider.label || '—' %></span>
+              <%= render CountryTagComponent.new(code: provider.address.country,
+                    name: country_names[provider.address.country]) %>
+
+              <span class="entry__detail">
+                <code><%= provider.identifier.id %></code> · <%= provider.identifier.type_id %>
+                <% if provider.address.postal_lines.any? %>
+                  <br><%= provider.address.postal_lines.join(', ') %>
+                <% end %>
+              </span>
+
+              <span class="entry__detail">
+                Point d'accès <strong><%= provider.access_point.label || '—' %></strong>
+                — <code><%= provider.access_point.id %></code>,
+                versions déclarées <code><%= provider.access_point.conforms_to.join(', ').presence || '—' %></code>
+              </span>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+    <% end %>
+  <% end %>
+
+  <% if @data_services.empty? %>
+    <p>Aucun service de données pour ce couple.</p>
+  <% end %>
+<% end %>
+
+<%# La console interroge le DSD exactement comme l'application : un service
+    conforme à une autre version d'EDM ne revient donc pas dans cette réponse,
+    et l'absence ne veut pas dire qu'il n'existe pas. %>
+<%= render DirectoryQueryComponent.new(
+      query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
+      identifiers: { 'Exigence' => requirement.id, 'Type de justificatif' => @evidence_type.id },
+      parameters: {
+        'evidence-type-classification' => @evidence_type.id,
+        'country-code' => @country,
+        'specification' => EdmSpecification::IDENTIFIER,
+      },
+    ) %>

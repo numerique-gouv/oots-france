@@ -10,6 +10,7 @@ class EvidenceProvider
   include ActiveModel::Model
   include ActiveModel::Attributes
   include StrictValidation
+  include Described
 
   # Classifications the TDD put on the `sdg:Agent`, by role in the message.
   PROVIDER = 'EP'.freeze

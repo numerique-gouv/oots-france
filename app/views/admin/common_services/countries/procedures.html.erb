@@ -1,0 +1,33 @@
+<% content_for :title, "Démarches de #{named_country(@country)}" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Pays', admin_common_services_countries_path],
+      [named_country(@country), nil],
+      ['Démarches', nil],
+    ]) %>
+
+<h1 class="fr-h3">Démarches de <%= named_country(@country) %></h1>
+
+<p>
+  Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a publié une déclaration, et ce que
+  chacune lui fait exiger. Ce qu'il délivre, lui, se lit sous chaque exigence.
+</p>
+
+<p class="fr-text--sm fr-mb-2w"><%= t('admin.common_services.procedures.count', count: @procedures.size) %></p>
+
+<% @procedures.each do |procedure| %>
+  <%= render CardComponent.new(
+        title: named_procedure(procedure.code),
+        hint: procedure_hint(procedure.code),
+        href: admin_common_services_country_procedure_path(@country, procedure.code),
+        clickable: true,
+      ) do %>
+    <%= declaration_summary(
+          labels: procedure.declarations.filter_map(&:label),
+          country: @country,
+          requirements: procedure.requirements.size,
+        ) %>
+  <% end %>
+<% end %>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

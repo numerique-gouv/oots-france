@@ -1,0 +1,34 @@
+<h1 class="fr-h3"><%= full_named_procedure(@procedure.code) %></h1>
+
+<p class="fr-text--lead"><%= named_country(@country) %>, en <strong>requêteur</strong></p>
+
+<p><%= declaration_summary(
+      labels: @requirements.values.flatten.filter_map(&:label),
+      country: @country,
+      requirements: @requirements.size,
+    ) %>.</p>
+
+<p>
+  Ce que ce pays exige de prouver pour cette démarche. Chaque exigence mène à ce qui la satisfait, dans
+  <strong>tous</strong> les pays fournisseurs : l'usager qui accomplit cette démarche peut tenir son justificatif
+  de n'importe lequel d'entre eux.
+</p>
+
+<%# Une carte par exigence : ce pays peut la déclarer plusieurs fois, sous des
+    intitulés différents, sans qu'elle demande pour autant deux choses. %>
+<% @requirements.each do |_, declared| %>
+  <% exigence = declared.first.requirement %>
+  <%= render CardComponent.new(
+        title: exigence&.display_name || 'Déclaration sans exigence publiée',
+        href: (admin_common_services_requirement_path(exigence.uuid) if exigence),
+        clickable: true,
+      ) do %>
+    <%= exigence&.detail || 'Sans description publiée.' %>
+  <% end %>
+<% end %>
+
+<% if @requirements.empty? %>
+  <p>Aucune déclaration de cette démarche dans ce pays.</p>
+<% end %>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

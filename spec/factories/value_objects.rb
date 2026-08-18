@@ -36,6 +36,43 @@ FactoryBot.define do
     initialize_with { new(**attributes) }
   end
 
+  factory :reference_framework do
+    id { '92c27c13-5c49-439b-a334-683d736a0cb7' }
+    procedure_code { '00' }
+    country { 'FR' }
+    descriptions { { 'EN' => 'Test - FR - MS Procedure' } }
+
+    initialize_with { new(**attributes) }
+  end
+
+  factory :requirement do
+    id { 'https://sr.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000' }
+    descriptions { { 'EN' => '(TEST) Test Requirement' } }
+    reference_frameworks { [build(:reference_framework)] }
+
+    initialize_with { new(**attributes) }
+  end
+
+  factory :evidence_type_list do
+    id { '91ecb80f-c74a-48bd-ad43-2a6f1bdb5a7d' }
+    country { 'FR' }
+    descriptions { { 'EN' => 'FR - Test Evidence Type List' } }
+    evidence_types { [build(:evidence_type)] }
+
+    initialize_with { new(**attributes) }
+  end
+
+  factory :data_service do
+    id { '41170824-15d9-4c16-984e-63b75b937b8c' }
+    evidence_type_classification { build(:evidence_type).id }
+    distribution_format { EvidenceType::PDF }
+    level_of_assurance { 'Substantial' }
+    descriptions { { 'EN' => 'Dummy PDF - FI' } }
+    providers { [build(:evidence_provider)] }
+
+    initialize_with { new(**attributes) }
+  end
+
   factory :evidence_requester do
     id { '00000000000002' }
     name { "Ministère de l'enseignement supérieur" }

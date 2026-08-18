@@ -1,0 +1,30 @@
+<% content_for :title, "Démarche #{@procedure.code}" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Démarches', admin_common_services_procedures_path],
+      [@procedure.code, nil],
+    ]) %>
+
+<h1 class="fr-h3"><%= full_named_procedure(@procedure.code) %></h1>
+
+<p class="fr-text--sm fr-mb-2w">
+  <%= t('admin.common_services.countries.declared', count: @procedure.countries.size) %>
+</p>
+
+<%# Une démarche n'impose les mêmes exigences nulle part : ce qu'on compare
+    d'un pays à l'autre, c'est ce que chacun demande de prouver. %>
+<% @procedure.declarations_by_country.each do |country, declared| %>
+  <%= render CardComponent.new(
+        title: named_country(country),
+        href: admin_common_services_procedure_country_path(@procedure.code, country),
+        clickable: true,
+      ) do %>
+    <%= declaration_summary(
+          labels: declared.filter_map(&:label),
+          country: country,
+          requirements: @procedure.declared_requirements(country).size,
+        ) %>
+  <% end %>
+<% end %>
+
+<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>

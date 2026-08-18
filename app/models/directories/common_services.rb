@@ -34,7 +34,7 @@ module Directories
     def providers(evidence_type_id, country_code)
       translating(NO_PROVIDER, CountryCodeNotFound,
         "Aucun fournisseur pour le type de justificatif « #{evidence_type_id} » dans le pays « #{country_code} »") do
-        @data_service_directory.data_services(
+        @data_service_directory.providers(
           evidence_type_classification: evidence_type_id,
           country_code:,
         )
@@ -43,6 +43,8 @@ module Directories
 
     private
 
+    # Seule la première exigence est gardée, là où plusieurs exigences d'une
+    # même démarche s'ajoutent — voir le chantier 1 de `docs/reste_à_faire.md`.
     def first_requirement(procedure_code)
       absent = "Code de démarche « #{procedure_code} » introuvable"
       found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound, absent) do

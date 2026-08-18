@@ -7,6 +7,7 @@
     ) do |header| %>
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: 'Conversations', path: admin_conversations_path) %>
+    <% header.with_direct_link_simple(title: 'Annuaires', path: admin_common_services_root_path) %>
     <% header.with_direct_link_simple(title: 'Jobs', path: admin_jobs_path) %>
 
     <%# `button_to`, because the application embarks neither Turbo nor

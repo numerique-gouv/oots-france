@@ -12,7 +12,20 @@ class DataServiceDirectoryClient
     @query = query || CommonServicesQuery.new(CommonServicesInstance::DATA_SERVICE_DIRECTORY)
   end
 
+  def providers(evidence_type_classification:, country_code:)
+    read(evidence_type_classification:, country_code:).providers
+  end
+
+  # What the directory publishes about the pairing itself — its own identifier,
+  # the format, the level of assurance — which a message does not carry and an
+  # operator reading the answer wants.
   def data_services(evidence_type_classification:, country_code:)
+    read(evidence_type_classification:, country_code:).data_services
+  end
+
+  private
+
+  def read(evidence_type_classification:, country_code:)
     @query.search(
       {
         queryId: DATA_SERVICES_QUERY,
@@ -21,6 +34,6 @@ class DataServiceDirectoryClient
         specification: EdmSpecification::IDENTIFIER,
       },
       parser: DataServicesResponseParser,
-    ).providers
+    )
   end
 end

@@ -37,6 +37,11 @@ fr:
         id: L'identifiant
       evidence_provider:
         access_point: Le point d'accès
+      resolution_filter:
+        procedure_code: La démarche
+        country_code: Le pays
+        requirement_id: L'exigence
+        evidence_type_id: Le type de justificatif
       conversation_filter:
         status: L'état
         country_code: Le pays
@@ -54,6 +59,11 @@ fr:
           attributes:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
+        resolution_filter:
+          attributes:
+            country_code:
+              format: doit être un code pays à deux lettres
+          unreadable: est illisible
         conversation_filter:
           attributes:
             status:
@@ -65,11 +75,62 @@ fr:
   evidence_requests:
     inconnue: Cette demande est inconnue.
   admin:
+    # Le même message pour toutes les listes de l'espace : c'est le filtre qui
+    # dit lequel de ses critères est en cause, jamais le titre de l'alerte.
+    unreadable: Certains critères n'ont pas pu être lus
     sessions:
       refused: Adresse ou mot de passe incorrect.
       signed_out: Vous êtes déconnecté.
+    common_services:
+      # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
+      # compte change à la frappe, et nommer l'objet dirait le total.
+      results:
+        count:
+          zero: Aucun résultat
+          one: Un résultat
+          other: "%{count} résultats"
+      resolution:
+        no_evidence_type: Aucun type de justificatif dans ce pays
+        no_provider: Aucun fournisseur dans ce pays
+        common_services_refused: L'annuaire a refusé
+      procedures:
+        # La démarche d'essai « 00 » ne figure dans aucune liste de codes, et un
+        # État membre en déclare de temps en temps une que la liste ignore.
+        no_label: Aucun label
+        count:
+          zero: Aucune démarche
+          one: Une démarche
+          other: "%{count} démarches"
+      requirements:
+        count:
+          zero: Aucune exigence
+          one: Une exigence
+          other: "%{count} exigences"
+      evidence_types:
+        count:
+          zero: Aucun type de justificatif
+          one: Un type de justificatif
+          other: "%{count} types de justificatif"
+      # Un pays déclare volontiers plusieurs fois la même exigence, sous des
+      # intitulés différents.
+      under_label:
+        one: sous l'intitulé
+        other: sous les intitulés
+      countries:
+        count:
+          zero: Aucun pays
+          one: Un pays
+          other: "%{count} pays"
+        declared:
+          zero: Aucun pays n'a déclaré de démarche sous ce code.
+          one: Un pays a déclaré une démarche sous ce code.
+          other: "%{count} pays ont déclaré une démarche sous ce code."
+      declarations:
+        count:
+          zero: Aucune déclaration
+          one: Une déclaration
+          other: "%{count} déclarations"
     conversations:
-      unreadable: Certains critères n'ont pas pu être lus
       count:
         zero: Aucune conversation
         one: Une conversation

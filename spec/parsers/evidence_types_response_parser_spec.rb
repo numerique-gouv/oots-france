@@ -56,6 +56,23 @@ RSpec.describe EvidenceTypesResponseParser do
     expect(described_class.new(two_lists).evidence_types.map(&:id)).to eq(%w[https://sr/premier https://sr/second])
   end
 
+  # Within a list every type is needed; two lists answering one requirement are
+  # alternatives. Flattening loses that, which is why the grouping is kept
+  # beside it.
+  it 'keeps the lists the directory groups the types into' do
+    lists = described_class.new(two_lists).evidence_type_lists
+
+    expect(lists.size).to eq(2)
+    expect(lists.map { |list| list.evidence_types.map(&:id) })
+      .to eq([['https://sr/premier'], ['https://sr/second']])
+  end
+
+  # `country-code` being optional on this query, one answer carries the lists
+  # of every member state, and each names the jurisdiction it belongs to.
+  it 'reads the jurisdiction each list belongs to' do
+    expect(described_class.new(body).evidence_type_lists.map(&:country)).to eq(['FR'])
+  end
+
   def two_lists
     body.sub(%r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m) do
       one = Regexp.last_match(1)

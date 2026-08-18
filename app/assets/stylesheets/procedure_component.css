@@ -1,0 +1,10 @@
+.procedure {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.procedure__code {
+  flex: 0 0 3rem;
+  font-weight: 700;
+}

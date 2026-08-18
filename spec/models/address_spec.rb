@@ -28,4 +28,16 @@ RSpec.describe Address do
 
     expect(address.errors.full_messages).to eq(['Le pays doit être un code pays à deux lettres'])
   end
+
+  # Published by the Data Service Directory for a foreign provider, rendered by
+  # the operator console and by no outgoing message.
+  it 'lays the postal lines out as they are written on an envelope' do
+    address = build(:address, country: 'FI', thoroughfare: 'PL 1000', post_code: '50101', post_city_name: 'Mikkeli')
+
+    expect(address.postal_lines).to eq(['PL 1000', '50101 Mikkeli'])
+  end
+
+  it 'has no postal lines when the directory published none' do
+    expect(build(:address, country: 'FI').postal_lines).to be_empty
+  end
 end

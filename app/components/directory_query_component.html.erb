@@ -1,0 +1,20 @@
+<%= render DsfrComponent::AccordionComponent.new(html_attributes: { class: classes }) do |accordion| %>
+  <% accordion.with_section(title: 'Requête effectuée') do %>
+    <div class="fr-text--sm fr-mb-0">
+      <% if identifiers.any? %>
+        <p class="fr-mb-1v"><strong>Identifiants</strong></p>
+        <p class="fr-mb-3v">
+          <% identifiers.each do |name, value| %>
+            <%= name %> <code><%= value %></code><br>
+          <% end %>
+        </p>
+      <% end %>
+
+      <p class="fr-mb-0"><code><%= query_id %></code>
+        <% parameters.each do |name, value| %>
+          <br><code><%= name %></code> = <code><%= value %></code>
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+<% end %>

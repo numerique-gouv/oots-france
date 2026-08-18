@@ -1,0 +1,48 @@
+<% content_for :title, "Justificatifs de #{named_country(@country)}" %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      ['Pays', admin_common_services_countries_path],
+      [named_country(@country), nil],
+      ['Justificatifs', nil],
+    ]) %>
+
+<h1 class="fr-h3">Justificatifs de <%= named_country(@country) %></h1>
+
+<p>
+  Ce pays en <strong>fournisseur</strong> : les exigences pour lesquelles il publie un type de justificatif, quel que
+  soit le pays qui les impose. C'est ce qu'un correspondant obtient en lui adressant une requête.
+</p>
+
+<%= render SearchFieldComponent.new(
+      label: 'Rechercher une exigence, un type de justificatif',
+      id: 'recherche-exigence-fournie',
+      entries: '#exigences-satisfaites > *',
+      tally: '#decompte-exigences-satisfaites',
+      empty: '#aucune-exigence-satisfaite',
+    ) %>
+
+<%= render 'admin/common_services/results_count', id: 'decompte-exigences-satisfaites', count: @published.size %>
+
+<div id="exigences-satisfaites">
+  <% @published.each do |requirement, lists| %>
+    <div>
+      <%= render CardComponent.new(title: requirement.display_name, heading_level: 2) do |carte| %>
+        Ce qui satisfait cette exigence <%= in_country(@country) %>.
+
+        <% carte.with_list do %>
+          <%= render 'admin/common_services/evidence_type_lists', lists:, requirement: %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<p id="aucune-exigence-satisfaite" <%= 'hidden' if @published.any? %>>
+  Aucune exigence ne correspond à cette recherche.
+</p>
+
+<%# Une requête par exigence : l'Evidence Broker n'en a pas qui parte du pays. %>
+<%= render DirectoryQueryComponent.new(
+      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      parameters: { 'requirement-id' => "chacune des #{@swept.size} exigences du catalogue" },
+    ) %>

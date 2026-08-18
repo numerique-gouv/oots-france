@@ -1,0 +1,44 @@
+/*
+ * Un pays dans une boîte à lui, le DSFR n'ayant pas de composant pour ça : son
+ * étiquette (`fr-tag`) se lit comme un état ou un filtre, jamais comme un
+ * endroit où aller, et la moitié de ceux-ci mènent à une page.
+ */
+.country-tag {
+  /* Le souligné que le DSFR peint sous tout `[href]`, remplacé par la bordure
+     basse ci-dessous : c'est un dégradé de fond d'épaisseur fractionnaire, qui
+     se rend différemment selon le décalage sous-pixel de sa rangée. */
+  --underline-img: none;
+
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--border-default-grey);
+  border-radius: 0.25rem;
+  line-height: 1.5rem;
+}
+
+/*
+ * La même boîte entoure un pays qui ne mène nulle part — celui d'une adresse
+ * postale —, donc la bordure basse est ce qui sépare les deux, et elle doit se
+ * voir sans dépendre de la couleur. Le fond du survol est peint par
+ * `a[href]:hover` du DSFR, qui lit `--hover-tint` ; `--active` sert de même à
+ * l'état pressé.
+ */
+a.country-tag {
+  --hover-tint: var(--hover);
+  --idle: transparent;
+  --hover: var(--background-alt-blue-france);
+  --active: var(--background-alt-blue-france-hover);
+
+  color: var(--text-action-high-blue-france);
+  border-bottom: 2px solid currentcolor;
+}
+
+/* Une rangée qui se replie, pour que vingt pays se lisent comme un ensemble. */
+.country-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

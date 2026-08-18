@@ -8,6 +8,12 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/*
+ * Ce qui vaut pour toute page. Ce qui appartient à un composant vit dans une
+ * feuille à son nom, que le gabarit charge à côté de celle-ci : Propshaft sert
+ * les fichiers tels quels, sans les assembler, donc chacune est un `<link>`.
+ */
 html, body {
   height: 100%;
   display: flex;
@@ -34,4 +40,13 @@ body > .fr-container {
 .fr-fieldset .row-break {
   flex-basis: 100%;
   height: 0;
+}
+
+/*
+ * Le DSFR donne un `display` à ses cartes, qui l'emporte sur celui que la
+ * feuille du navigateur attache à `[hidden]` : sans ceci, une entrée que le
+ * filtre de `filter.js` masque resterait affichée.
+ */
+[hidden] {
+  display: none !important;
 }
