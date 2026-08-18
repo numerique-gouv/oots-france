@@ -60,11 +60,12 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 
 ## `common_services/` — ce que les annuaires centraux répondent vraiment
 
-Six réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
+Sept réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
 
 | Fichier | Contenu |
 | --- | --- |
 | `eb_requirements_fr` | Evidence Broker, exigences de la démarche `00` pour la France |
+| `eb_requirements_catalogue` | la même requête **sans aucun paramètre**, tous facultatifs : le catalogue entier, 53 exigences et 687 déclarations de démarche sur 27 pays. C'est ce que lit `Directories::Catalogue` |
 | `eb_requirements_vides` | la même requête pour `T3`, à laquelle la France ne répond rien : `EB:ERR:0001` |
 | `eb_evidence_types_fr`, `eb_evidence_types_fi` | Evidence Broker, types de justificatif satisfaisant l'exigence de test, pour la France et pour la Finlande |
 | `dsd_data_services_fi` | Data Service Directory, le service finlandais qui déclare `oots-edm:v2.0` |

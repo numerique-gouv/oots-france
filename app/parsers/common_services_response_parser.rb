@@ -45,7 +45,7 @@ class CommonServicesResponseParser
   # success whose slots are all missing, which every parser below would report
   # as « this country has no such evidence » rather than « we did not speak ».
   def reject_unless_expected_version
-    announced = text_at(response, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")&.strip
+    announced = text(response, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
     return if announced == CommonServicesSpecification::IDENTIFIER
 
     raise CommonServicesError,
@@ -102,6 +102,10 @@ class CommonServicesResponseParser
       "L'annuaire a répondu avec succès, mais rien n'y était lisible " \
       "(#{registry_objects.size} objet(s) dans la réponse)."
   end
+
+  # What the directories publish is indented, so every reading of an element's
+  # text is followed by the same strip.
+  def text(scope, path) = text_at(scope, path)&.strip
 
   # `lang` is an attribute of the SDG profile, not `xml:lang`, so it is read
   # without a namespace.

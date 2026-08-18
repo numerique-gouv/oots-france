@@ -21,10 +21,29 @@ class EvidenceBrokerClient
     ).requirement_identifiers
   end
 
+  # Both parameters of that query are optional, and dropped rather than sent
+  # empty: asked with neither, the directory answers everything it holds, which
+  # is what a listing wants and what the query above never asks for.
+  def requirements(procedure_code: nil, country_code: nil)
+    @query.search(
+      { queryId: REQUIREMENTS_QUERY, 'procedure-id': procedure_code, 'country-code': country_code }.compact_blank,
+      parser: RequirementsResponseParser,
+    ).requirements
+  end
+
   def evidence_types(requirement_id:, country_code:)
     @query.search(
       { queryId: EVIDENCE_TYPES_QUERY, 'requirement-id': requirement_id, 'country-code': country_code },
       parser: EvidenceTypesResponseParser,
     ).evidence_types
+  end
+
+  # Grouped as the directory groups them, and for every country at once:
+  # `country-code` is optional here, where the query above always names one.
+  def evidence_type_lists(requirement_id:, country_code: nil)
+    @query.search(
+      { queryId: EVIDENCE_TYPES_QUERY, 'requirement-id': requirement_id, 'country-code': country_code }.compact_blank,
+      parser: EvidenceTypesResponseParser,
+    ).evidence_type_lists
   end
 end

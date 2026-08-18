@@ -7,7 +7,7 @@ RSpec.describe Directories::CommonServices do
   let(:broker) do
     instance_double(EvidenceBrokerClient, requirement_identifiers: [requirement], evidence_types: [type])
   end
-  let(:dsd) { instance_double(DataServiceDirectoryClient, data_services: [provider]) }
+  let(:dsd) { instance_double(DataServiceDirectoryClient, providers: [provider]) }
   let(:type) { build(:evidence_type) }
   let(:provider) { build(:evidence_provider) }
 
@@ -61,18 +61,18 @@ RSpec.describe Directories::CommonServices do
     it 'resolves a type and a country to the providers holding it' do
       expect(directory.providers(type.id, 'FI')).to eq([provider])
 
-      expect(dsd).to have_received(:data_services)
+      expect(dsd).to have_received(:providers)
         .with(evidence_type_classification: type.id, country_code: 'FI')
     end
 
     it 'raises on a country the directory holds no provider for' do
-      allow(dsd).to receive(:data_services).and_raise(CommonServicesError.new('vide', code: 'DSD:ERR:0001'))
+      allow(dsd).to receive(:providers).and_raise(CommonServicesError.new('vide', code: 'DSD:ERR:0001'))
 
       expect { directory.providers(type.id, 'DE') }.to raise_error(CountryCodeNotFound, /DE/)
     end
 
     it 'lets an outage through rather than reporting it as an unknown country' do
-      allow(dsd).to receive(:data_services).and_raise(CommonServicesError, 'annuaire injoignable')
+      allow(dsd).to receive(:providers).and_raise(CommonServicesError, 'annuaire injoignable')
 
       expect { directory.providers(type.id, 'DE') }.to raise_error(CommonServicesError, /injoignable/)
     end

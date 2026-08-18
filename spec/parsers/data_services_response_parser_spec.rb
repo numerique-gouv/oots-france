@@ -49,6 +49,47 @@ RSpec.describe DataServicesResponseParser do
       .to raise_error(CommonServicesError, /rien n'y était lisible/)
   end
 
+  # The identifier the directory assigns to the pairing is what an outgoing
+  # request should carry in its `DataServiceEvidenceType` slot, where stub 7
+  # still writes a constant.
+  it 'reads what the directory says about the service itself' do
+    service = described_class.new(body).data_services.first
+
+    expect(service).to have_attributes(
+      id: '41170824-15d9-4c16-984e-63b75b937b8c',
+      evidence_type_classification:
+        'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74',
+      distribution_format: 'application/pdf',
+      level_of_assurance: 'Substantial',
+    )
+    expect(service.descriptions).to include('FI' => 'Testi-PDF')
+  end
+
+  # The versions a gateway declares are what the `specification` parameter of
+  # the query filters on: a service missing from an answer may exist and speak
+  # another version, which nothing else would tell an operator.
+  it 'reads the EDM versions the access service declares' do
+    expect(providers.first.access_point.conforms_to).to eq(['oots-edm:v2.0'])
+    expect(providers.first.access_point.descriptions).to eq('EN' => 'Finland OOTS DEV TDD 2.0.0')
+  end
+
+  # The Finnish capture publishes its country and nothing else, so the three
+  # postal elements are read from an answer built here — the only way to prove
+  # the paths that read them are the right ones.
+  it 'reads the postal lines the directory publishes' do
+    posted = body.sub('<sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>', <<~XML.strip)
+      <sdg:PostCode>50101</sdg:PostCode>
+      <sdg:PostCityName>Mikkeli</sdg:PostCityName>
+      <sdg:Thoroughfare>PL 1000</sdg:Thoroughfare>
+      <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+    XML
+
+    address = described_class.new(posted).providers.first.address
+
+    expect(address.postal_lines).to eq(['PL 1000', '50101 Mikkeli'])
+    expect(address.country).to eq('FI')
+  end
+
   it 'refuses a publisher the directory published without an address' do
     stripped = body.sub(%r{<sdg:Address>.*?</sdg:Address>}m, '')
 

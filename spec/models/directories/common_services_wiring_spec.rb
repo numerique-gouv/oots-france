@@ -14,26 +14,15 @@ RSpec.describe 'Le câblage des annuaires centraux' do
 
   subject(:directory) { Directories::CommonServices.new }
 
-  let(:base) { 'https://query.cs.acc.oots.tech.ec.europa.eu' }
+  let(:base) { DirectoryStubs::ACCEPTANCE }
   let(:requirement) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000' }
 
   before do
-    allow(CommonServicesInstance).to receive(:new) do |service|
-      instance_double(CommonServicesInstance, base_url: "#{base}/#{service}/")
-    end
+    stub_directory_resolution
 
-    stub_directory("#{base}/eb/rest/search", 'requirements-by-procedure', 'eb_requirements_fr')
-    stub_directory("#{base}/eb/rest/search", 'evidence-types-by-requirement', 'eb_evidence_types_fr')
-    stub_directory("#{base}/dsd/rest/search", 'dataservices-by-evidencetype', 'dsd_data_services_fi')
-  end
-
-  # Only the DNS is doubled: the signature of each answer is verified for real,
-  # against the trust store the deployment carries.
-  def stub_directory(url, query_fragment, fixture)
-    body, headers = common_services_answer(fixture)
-
-    stub_request(:get, url).with(query: hash_including('queryId' => a_string_including(query_fragment)))
-      .to_return(body:, headers:)
+    stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_fr')
+    stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fr')
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
   end
 
   it 'enchaîne les deux requêtes de l\'Evidence Broker jusqu\'au type de justificatif' do
@@ -113,7 +102,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   # The chain reports a refusal as the named exception the interactors handle,
   # rather than letting a `CommonServicesError` reach the caller unchanged.
   it 'traduit le refus de l\'annuaire en l\'exception que les interacteurs attendent' do
-    stub_directory("#{base}/dsd/rest/search", 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
     expect { directory.providers('https://sr.acc.oots.tech.ec.europa.eu/x', 'FR') }
       .to raise_error(CountryCodeNotFound, /FR/)
