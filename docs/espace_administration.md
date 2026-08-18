@@ -4,7 +4,7 @@
 
 ## À quoi il sert
 
-Tout le reste de cette application parle à des machines. Un incident s'y constatait jusqu'ici en console : une conversation restée `pending`, un job de fond mort en silence, une requête refusée pour une raison écrite en base et lisible nulle part. L'espace d'administration donne à voir ces trois choses, dans un navigateur, à l'équipe qui exploite le service.
+Tout le reste de cette application parle à des machines. Un incident s'y constatait jusqu'ici en console : une conversation restée `pending`, un job de fond mort en silence, une requête refusée pour une raison écrite en base et lisible nulle part, un annuaire central qu'il fallait interroger à la main pour savoir ce qu'il publie. L'espace d'administration donne à voir ces choses, dans un navigateur, à l'équipe qui exploite le service.
 
 Il **ne touche à aucun échange**. Aucune de ses pages ne modifie une conversation : rien dans les [TDD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) ne prévoit qu'un humain intervienne sur un échange en cours, et un bouton qui le permettrait sortirait du cadre autant qu'il inviterait à s'en servir. Le tableau de bord de GoodJob, lui, agit bien sur les jobs — voir plus bas.
 
@@ -16,16 +16,52 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | --- | --- |
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
-| `/admin` | Les deux entrées ci-dessous. |
+| `/admin` | Les trois entrées ci-dessous. |
 | `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. |
 | `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)). |
+| `/admin/common_services` | L'accueil des annuaires centraux : ce que l'Evidence Broker publie, en nombres, et les trois entrées vers les listes — pays, démarches, exigences. |
+| `/admin/common_services/procedures` | Les codes de démarche que les États membres ont déclarés, avec leur intitulé et les pays qui les déclarent. |
+| `…/procedures/:code` | Les pays qui ont déclaré ce code, et pour chacun le nombre d'exigences qu'il en tire. |
+| `/admin/common_services/countries` | Les États membres qui ont déclaré quelque chose, et combien de démarches chacun déclare. |
+| `…/countries/:pays/procedures` | Ce pays en **requêteur** : les démarches qu'il a déclarées, et pour chacune le nombre d'exigences qu'il en tire. |
+| `…/countries/:pays/requirements` | Ce pays en **fournisseur** : les exigences pour lesquelles il publie un type de justificatif, quel que soit le pays qui les impose. L'Evidence Broker n'ayant pas de requête qui parte d'un pays — la sienne exige une exigence à la fois, `EB:ERR:0002` sans elle —, la page **balaye le catalogue**, une requête par exigence. Elles sont posées **sans nommer de pays**, si bien que les vingt-sept pages de pays se partagent le même jeu de réponses en cache. |
+| `…/procedures/:code/countries/:pays`, `…/countries/:pays/procedures/:code` | Une carte par **exigence** que ce pays-là tire de ce code — et non par déclaration, un pays en déposant volontiers plusieurs sur la même —, avec ce qu'elle demande de prouver. Une page et non un filtre, parce que c'est une autre question : le seul niveau qui montre des exigences, une démarche n'imposant les mêmes nulle part. Elle a **deux adresses pour un seul contenu**, une par sens de descente, pour que le fil d'Ariane ne se réécrive pas sous les pieds de qui l'a parcouru. |
+| `/admin/common_services/requirements` | Les exigences sur lesquelles ces déclarations reposent. |
+| `…/requirements/:uuid` | Une exigence, et **directement** ce qui la satisfait chez **chaque pays fournisseur**, groupé comme l'annuaire le groupe : les types d'une même combinaison sont exigés **ensemble**, deux combinaisons sont des alternatives. |
+| `…/requirements/:uuid/procedures` | L'autre rôle, sur une page à part : les démarches qui reposent sur cette exigence, et les pays **requêteurs** qui les déclarent. |
+| `…/requirements/:uuid/countries/:pays` | Les mêmes déclarations, réduites à un pays **requêteur** : sous quelles démarches il a déclaré cette exigence, et l'intitulé qu'il donne à chacune. Rien n'est redemandé à l'annuaire — le catalogue porte déjà les déclarations. |
+| `…/evidence_types/:uuid/providers` | Ce que le Data Service Directory répond pour ce type de justificatif : le service, son fournisseur, son point d'accès. **Le pays ne s'y choisit pas** — un type est publié par une juridiction, son identifiant au Semantic Repository la porte, et le demander à une autre ne peut que revenir vide. |
+| `/admin/common_services/resolution` | La chaîne de requêtes que `EvidenceRequest::Fetch` pose avant d'émettre, simulée à la demande pour une démarche et un pays. |
 | `/admin/jobs` | Le tableau de bord de [GoodJob](https://github.com/bensheldon/good_job), monté tel quel. Il montre les exécutions de `ProcessIncomingMessageJob` et de `CollectPendingMessagesJob`, et la trace de leurs erreurs. |
+
+### Les pages des annuaires centraux
+
+Ce sont les **seules pages de l'espace qui font sortir des requêtes** : chacune interroge les annuaires de la Commission, par les mêmes clients que le chemin d'une requête réelle. Elles sont derrière la même connexion que le reste — `Admin::CommonServices::BaseController` descend d'`Admin::BaseController` —, ce qui compte davantage ici qu'ailleurs : sans elle, quiconque atteint l'application ferait interroger la Commission par elle. Chaque appel est borné par `DELAI_MAX_SERVICES_COMMUNS` et sa réponse mise en cache pour `DUREE_CACHE_SERVICES_COMMUNS` ; l'essentiel des listes tient dans une seule requête, tous les paramètres de la requête « exigences » de l'Evidence Broker étant facultatifs. Chaque page affiche le `queryId` et les paramètres dont elle lit la réponse.
+
+> [!IMPORTANT]
+> **`country-code` ne désigne pas le même pays d'une requête à l'autre**, et les pages le disent en toutes lettres plutôt que d'afficher « Pays ». Le [chapitre 3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) attache le paramètre de la requête « exigences » au **requêteur** — le pays où la démarche s'accomplit — et celui de la requête « types de justificatif » au **fournisseur** — le pays qui délivre la preuve. `Directories::CommonServices` fait déjà cette distinction sur le chemin d'une requête réelle : les exigences sont lues dans `Settings.common_services_country_code`, les types de justificatif et les fournisseurs dans le pays interrogé.
+
+C'est ce qui décide de la navigation, et non un choix d'ergonomie : **une exigence mène toujours à ce qui la satisfait dans _tous_ les pays fournisseurs**, jamais dans le seul pays d'où l'on vient. Reporter le pays d'une page à la suivante lui ferait changer de rôle en silence, et masquerait ce pour quoi OOTS existe — l'usager qui accomplit une démarche belge peut tenir sa preuve de n'importe quel État membre. Le pays fournisseur se choisit ensuite, au filtre de la page de l'exigence.
+
+Sur la chaîne de requêtes, **l'échec s'affiche à l'étape qui l'a rencontré**, sous son propre titre, et non en tête de page : sans cela, rien ne dirait laquelle des trois s'est arrêtée.
+
+Un annuaire qui **refuse** est une information, pas une panne : la page rend son code — `EB:ERR:0001`, `DSD:ERR:0001` — et répond `200`. Un annuaire **injoignable** répond `502`. Sur la chaîne de requêtes, un refus à la dernière étape laisse affichées les réponses des précédentes, ce qui est justement le cas de la France, absente du Data Service Directory ([chantier 1](reste_à_faire.md#1-les-common-services)).
+
+**Un code s'affiche toujours avec ce qu'il nomme**, et lequel des deux vient en premier dépend de ce qui est nommé : une démarche est connue par son code — `R1 — Demander une attestation d'enregistrement d'une naissance` —, un pays par son nom — `Autriche (AT)` —, le code parce que c'est lui que porte une requête, le nom parce que c'est lui qu'un lecteur reconnaît. Un pays tient dans une boîte, drapeau compris — deux des codes que les annuaires publient n'en portent pourtant aucun, la Grèce étant `EL` et le Royaume-Uni `UK` dans la [convention des institutions européennes](https://ec.europa.eu/eurostat/statistics-explained/index.php?title=Glossary:Country_codes) là où les séquences de drapeaux d'Unicode suivent l'ISO 3166-1, qui dit `GR` et `GB` ; le composant fait la conversion, et affiche le code de l'annuaire ; une démarche, dont l'intitulé fait une phrase, s'étale sur une ligne à elle, code d'un côté et intitulé de l'autre. Un titre, lui, ne peut porter ni l'un ni l'autre — un `<span>` en deux colonnes n'a rien à faire dans un `<h2>` —, donc `CountryTagComponent.label` et `ProcedureComponent.label` portent la règle, que les deux rendus de chacun partagent. Ni l'un ni l'autre des deux annuaires ne publie ces noms : ils viennent des **listes de codes publiées avec la spécification** ([chapitre 3.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952)) — `Procedures-CodeList.gc` pour les démarches, `OOTS_Country-CodeList.gc` pour les pays —, des fichiers [genericode](http://docs.oasis-open.org/codelist/genericode/doc/oasis-code-list-representation-genericode.html) que `CodeListClient` va chercher à la volée dans le dépôt Git de la Commission, à la version que ce dépôt vise. Voir [carte_des_tdd.md](carte_des_tdd.md) pour l'inventaire de ces artefacts ; rien n'est embarqué ici, donc rien n'est à tenir en phase avec une livraison à la main.
+
+> [!NOTE]
+> **Un nom est un ornement**, et le code reste à côté de lui : une liste illisible — dépôt injoignable, fichier déplacé, format changé — coûte les noms et rien d'autre. C'est la seule lecture de cette application qui rattrape `StandardError`, et c'est pour cette raison. La démarche de test `00`, elle, ne figure dans aucune liste : elle appartient aux environnements d'essai, et s'affiche donc toujours nue.
+
+Les adresses du Semantic Repository que ces réponses portent — l'identifiant d'une exigence, la classification d'un type de justificatif — sont rendues en **texte, jamais en lien**, pour la raison qui vaut déjà pour `preview_location`. Les liens des pages ne portent, eux, que des identifiants courts : un code de démarche, le dernier segment d'une URL du Semantic Repository, dont l'hôte diffère entre acceptation et production.
+
+> [!IMPORTANT]
+> **Une absence de fournisseur ne prouve pas qu'il n'en existe pas.** La console interroge le Data Service Directory exactement comme l'application, `specification=oots-edm:v2.0` compris, donc un point d'accès conforme à `v1.0` ou `v1.2` seulement n'apparaît pas dans la réponse. C'est le cas d'`AP_FI_01` en acceptation. La colonne des versions déclarées est ce qui permet de faire la différence lorsqu'un service, lui, revient.
 
 Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, et il expose ses propres boutons de relance et d'abandon. Ceux-ci agissent sur un job, jamais sur un échange — la règle « lecture seule » porte sur les conversations.
 
 ## Ce qu'il ne montre pas
 
-**Aucune donnée personnelle.** La table `conversations` n'en porte aucune, par construction : le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré. L'espace se contente de rendre les colonnes de cette table, et cette propriété doit survivre à toute page qu'on y ajoutera.
+**Aucune donnée personnelle.** La table `conversations` n'en porte aucune, par construction : le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré. Les annuaires centraux, eux, ne publient que des organisations et des catalogues. Cette propriété doit survivre à toute page qu'on ajoutera.
 
 Deux valeurs viennent d'un correspondant étranger et sont traitées comme telles :
 
@@ -66,7 +102,21 @@ Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les 
 
 Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>` suit le thème du système sans JavaScript. C'est ce qui permet de se passer du script anti-clignotement que le DSFR place sinon en ligne dans le `<head>`, et qu'une politique de sécurité de contenu devrait un jour autoriser nommément.
 
-`dsfr-view-components` **ne fournit aucun composant de formulaire** : le formulaire de filtres est écrit en `fr-*` à la main, étiquettes comprises. Il n'expose pas non plus de pagination ni de tableau ; la pagination est un `ViewComponent` local, parce qu'elle porte une logique de fenêtre, le tableau reste un gabarit.
+`dsfr-view-components` **ne fournit aucun composant de formulaire** : les formulaires de filtres sont écrits en `fr-*` à la main, étiquettes comprises. Il n'expose ni pagination ni tableau, et sa carte enveloppe la carte entière dans un lien unique — quand une carte d'ici en porte un par ligne. Ce que la gem ne donne pas vit dans `app/components/` :
+
+| Composant | Ce qu'il porte |
+| --- | --- |
+| `PaginationComponent` | La pagination du DSFR, et sa logique de fenêtre |
+| `CardComponent` | Une entrée d'une liste, pleine largeur : ce qui la décrit d'un côté, ce qu'elle énumère de l'autre, dans le pied du DSFR sous un filet. `dense:` resserre celle qui n'a rien à décrire entre les deux |
+| `DirectoryBreadcrumbsComponent` | Le fil d'Ariane commun à ces pages, dont le dernier maillon ne porte jamais de lien |
+| `DirectoryQueryComponent` | La requête posée et les identifiants dont la réponse dépend, **repliés dans un accordéon** : on vient lire ce que les annuaires publient, et seulement ensuite, quand la réponse surprend, vérifier ce qui leur a été demandé. En bas de page d'ordinaire ; `embedded:` le range au pied d'une carte, où il clôt une étape de la chaîne de requêtes |
+| `CountryTagComponent` | Un pays : son drapeau, son nom, son code, dans une boîte à bordure fine. L'adresse vient de l'appelant, et son absence dit quelque chose : une étiquette qui aurait l'air cliquable là où rien ne mène affirmerait qu'il y a où aller |
+| `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule |
+| `ProcedureComponent` | Une démarche : son code dans une colonne, son intitulé dans la suivante — un intitulé fait une phrase, qu'une boîte encadrerait comme un paragraphe |
+| `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
+| `ConversationStatusComponent` | L'état d'un échange, en pastille |
+
+**Les listes sont des cartes, pas des tableaux** : une carte par entrée, sur toute la largeur, et ce qu'une entrée énumère rendu dans le pied de sa carte — `fr-card__footer` —, séparé par un filet. Un tableau n'y subsiste que là où chaque ligne a plusieurs colonnes à comparer, ce qui est le cas des fournisseurs d'un service ; les types de justificatif d'un pays, eux, tiennent en une ligne chacun — trois en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils annoncent.
 
 > [!IMPORTANT]
 > **Propshaft ne sert aucun fichier en production** — son réglage `config.assets.server` ne vaut qu'en développement et en test. Les pages y arriveraient donc sans style. `make assets` compile ce qu'il faut, et la composition montant le dépôt par-dessus l'image, cette compilation doit avoir lieu dans le dépôt déployé, non à la construction de l'image. Voir [README](../README.md#en-production).
@@ -89,5 +139,7 @@ Il est rejouable : les conversations sont retrouvées par leur identifiant, donc
 > **Ces cinq conversations n'ont jamais eu lieu**, et leur identifiant le dit : `00000000-0000-0000-0000-000000000001` à `…005`, là où un vrai identifiant est un UUID tiré par `UuidGenerator`. Aucun message n'a été construit, aucune passerelle appelée. C'est ce qui permet à un exploitant qui en croise une pendant un incident de voir d'un coup d'œil qu'il n'y a rien à chercher — et c'est aussi pourquoi elles ne doivent jamais recevoir d'identifiant vraisemblable.
 
 **Pour y voir de vraies conversations, jouer `make e2e`** : les scénarios de bout en bout appellent le serveur qui tourne, par HTTP, et c'est donc lui qui écrit les conversations — dans la base de développement, pas dans celle des tests. Deux y apparaissent, une `delivered` et une `failed` ; le trajet et ses prérequis sont décrits dans [test_e2e.md](test_e2e.md). Arrêter le `worker` avant de les jouer laisse au contraire les conversations à l'état `sent`, la réponse de la passerelle n'étant jamais dépilée.
+
+Les pages des annuaires, elles, n'ont besoin de rien de local : elles sortent vers l'acceptation dès lors que `URL_BASE_EVIDENCE_BROKER` et `URL_BASE_DATA_SERVICE_DIRECTORY` sont vides et que `CERTIFICATS_SERVICES_COMMUNS` désigne `config/certificats/services_communs_acc.pem` — la configuration que [test_e2e.md](test_e2e.md#les-annuaires-centraux-sont-doublés) décrit comme celle des vrais annuaires.
 
 La sonde de santé, elle, a quitté la racine quand celle-ci est devenue une page : elle répond sur `/up`.
