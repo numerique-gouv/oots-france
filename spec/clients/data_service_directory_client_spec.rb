@@ -15,13 +15,12 @@ RSpec.describe DataServiceDirectoryClient do
     expect(directory.data_services(evidence_type_classification: classification, country_code: 'FI').size).to eq(1)
   end
 
-  # The same answer read two ways: what the message needs is the organisation
-  # and its access point, what an operator reads is the pairing the directory
-  # published.
+  # One answer, read whole: the pairing an outgoing request adopts, and the
+  # organisations it names, which the message designates as C4.
   it 'answers the organisations holding it, from the same query' do
-    providers = directory.providers(evidence_type_classification: classification, country_code: 'FI')
+    services = directory.data_services(evidence_type_classification: classification, country_code: 'FI')
 
-    expect(providers.map { |provider| provider.identifier.id }).to eq(['FIKEHA02'])
+    expect(services.first.providers.map { |provider| provider.identifier.id }).to eq(['FIKEHA02'])
   end
 
   # Version negotiation happens at the directory rather than here: the service

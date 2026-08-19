@@ -12,10 +12,11 @@ module StrictValidation
   # The carriers this application knows how to name. A closed list and not a
   # scan of the call sites: `data_services_response_parser` passes its subject
   # through a variable, so nothing read from the source would ever see it.
-  SUBJECTS = %i[announced_access_point announced_evidence_type announced_provider
-                announced_provider_address announced_provider_identity final_recipient
-                french_provider message_sender original_sender provider
-                recipient_access_point request_beneficiary requester token_beneficiary].freeze
+  SUBJECTS = %i[announced_access_point announced_data_service announced_evidence_type
+                announced_provider announced_provider_address announced_provider_identity
+                announced_requirement final_recipient french_provider message_sender
+                original_sender provider recipient_access_point request_beneficiary
+                requester token_beneficiary].freeze
 
   # The error class is the caller's to choose, the same value object being
   # built from two provenances: our own configuration failing means the

@@ -91,10 +91,22 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
 
     # A central directory that is down is upstream of the caller in the same
-    # way, and the two keys have to stay in step with `UPSTREAM_FAILURES`.
+    # way, and the three keys have to stay in step with `UPSTREAM_FAILURES`.
     it 'reports a directory that cannot be reached as 502 too' do
       allow(EvidenceRequest::Fetch).to receive(:call)
         .and_return(failure(:common_services_refused, 'Annuaire injoignable.'))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:bad_gateway)
+    end
+
+    # A directory publishing an entry the rules refuse is no more the caller's
+    # doing than one that is down — the difference between the two is what the
+    # journal keeps, not what the status says.
+    it 'reports an entry a directory published against the rules as 502 too' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:invalid_directory_entry, "L'exigence annoncée par l'annuaire : …"))
 
       get '/requete/pieceJustificative', params: parameters
 

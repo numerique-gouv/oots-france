@@ -41,6 +41,7 @@
         <sdg:Requirement>
           <sdg:Identifier>https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42</sdg:Identifier>
           <sdg:Name lang="EN">Proof of tertiary education diploma/certificate/degree</sdg:Name>
+          <sdg:Description lang="EN">Proof that the person holds a diploma awarded by a tertiary education institution.</sdg:Description>
         </sdg:Requirement>
       </rim:Element>
     </rim:SlotValue>
@@ -99,13 +100,15 @@
 <rim:Slot name="EvidenceRequest">
   <rim:SlotValue xsi:type="rim:AnyValueType">
     <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
-      <sdg:Identifier>00000000-0000-0000-0000-000000000000</sdg:Identifier>
+      <sdg:Identifier>41170824-15d9-4c16-984e-63b75b937b8c</sdg:Identifier>
       
 <sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e</sdg:EvidenceTypeClassification>
 <sdg:Title lang="EN">Certificate of Birth</sdg:Title>
+<sdg:Description lang="EN">Birth certificate issued by the civil registration office.</sdg:Description>
     
       <sdg:DistributedAs>
         <sdg:Format>application/pdf</sdg:Format>
+        <sdg:Language>EN</sdg:Language>
       </sdg:DistributedAs>
     </sdg:DataServiceEvidenceType>
   </rim:SlotValue>

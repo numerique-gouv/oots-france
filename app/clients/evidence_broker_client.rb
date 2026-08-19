@@ -14,16 +14,9 @@ class EvidenceBrokerClient
     @query = query || CommonServicesQuery.new(CommonServicesInstance::EVIDENCE_BROKER)
   end
 
-  def requirement_identifiers(procedure_code:, country_code:)
-    @query.search(
-      { queryId: REQUIREMENTS_QUERY, 'procedure-id': procedure_code, 'country-code': country_code },
-      parser: RequirementsResponseParser,
-    ).requirement_identifiers
-  end
-
   # Both parameters of that query are optional, and dropped rather than sent
   # empty: asked with neither, the directory answers everything it holds, which
-  # is what a listing wants and what the query above never asks for.
+  # is what a listing wants and what a request never asks for.
   def requirements(procedure_code: nil, country_code: nil)
     @query.search(
       { queryId: REQUIREMENTS_QUERY, 'procedure-id': procedure_code, 'country-code': country_code }.compact_blank,

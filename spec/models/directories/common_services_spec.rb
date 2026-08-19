@@ -3,19 +3,20 @@ require 'rails_helper'
 RSpec.describe Directories::CommonServices do
   subject(:directory) { described_class.new(evidence_broker: broker, data_service_directory: dsd) }
 
-  let(:requirement) { 'https://sr/requirements/1' }
+  let(:requirement) { build(:requirement) }
   let(:broker) do
-    instance_double(EvidenceBrokerClient, requirement_identifiers: [requirement], evidence_types: [type])
+    instance_double(EvidenceBrokerClient, requirements: [requirement], evidence_types: [type])
   end
-  let(:dsd) { instance_double(DataServiceDirectoryClient, providers: [provider]) }
+  let(:dsd) { instance_double(DataServiceDirectoryClient, data_services: [service]) }
   let(:type) { build(:evidence_type) }
-  let(:provider) { build(:evidence_provider) }
+  let(:service) { build(:data_service) }
 
   describe '#evidence_types_for_procedure' do
     it 'chains the two broker queries, the requirement leading to the types' do
-      expect(directory.evidence_types_for_procedure('00', 'FI')).to eq([type])
+      expect(directory.evidence_types_for_procedure('00', 'FI'))
+        .to eq(described_class::RequiredEvidence.new(requirement:, evidence_types: [type]))
 
-      expect(broker).to have_received(:evidence_types).with(requirement_id: requirement, country_code: 'FI')
+      expect(broker).to have_received(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
     end
 
     # The procedure is ours, so its requirements are read in our jurisdiction;
@@ -23,18 +24,18 @@ RSpec.describe Directories::CommonServices do
     it 'reads the requirements in our own jurisdiction, not in the one asked' do
       directory.evidence_types_for_procedure('00', 'FI')
 
-      expect(broker).to have_received(:requirement_identifiers).with(procedure_code: '00', country_code: 'FR')
+      expect(broker).to have_received(:requirements).with(procedure_code: '00', country_code: 'FR')
     end
 
     it 'raises on a procedure the broker holds no requirement for' do
-      allow(broker).to receive(:requirement_identifiers).and_return([])
+      allow(broker).to receive(:requirements).and_return([])
 
       expect { directory.evidence_types_for_procedure('T9', 'FI') }
         .to raise_error(ProcedureCodeNotFound, /T9/)
     end
 
     it 'turns the broker refusal on an unknown procedure into the same error' do
-      allow(broker).to receive(:requirement_identifiers).and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
+      allow(broker).to receive(:requirements).and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
 
       expect { directory.evidence_types_for_procedure('T9', 'FI') }
         .to raise_error(ProcedureCodeNotFound, /T9/)
@@ -50,31 +51,78 @@ RSpec.describe Directories::CommonServices do
     # An outage is not the caller's fault, and translating it into a 422 would
     # blame them for it.
     it 'lets a failure carrying no code through, rather than blaming the caller' do
-      allow(broker).to receive(:requirement_identifiers).and_raise(CommonServicesError, 'annuaire injoignable')
+      allow(broker).to receive(:requirements).and_raise(CommonServicesError, 'annuaire injoignable')
 
       expect { directory.evidence_types_for_procedure('00', 'FI') }
         .to raise_error(CommonServicesError, /injoignable/)
     end
+
+    # R-EDM-REQ-C008 bounds the shape of that identifier, and a directory is not
+    # obliged to honour it — the console lists such an entry, a message cannot
+    # carry it.
+    it 'refuses a requirement whose identifier no message could carry' do
+      allow(broker).to receive(:requirements).and_return([build(:requirement, id: 'https://sr/exigence/1')])
+
+      expect { directory.evidence_types_for_procedure('00', 'FI') }
+        .to raise_error(InvalidDirectoryEntry, /L'exigence annoncée/)
+    end
   end
 
-  describe '#providers' do
-    it 'resolves a type and a country to the providers holding it' do
-      expect(directory.providers(type.id, 'FI')).to eq([provider])
+  describe '#data_service' do
+    # The service and not the provider alone: a request adopts the record, its
+    # identifier and its distribution included, and the provider is one of the
+    # things that record holds.
+    it 'resolves a type and a country to the service delivering it' do
+      expect(directory.data_service(type.id, 'FI')).to eq(service)
 
-      expect(dsd).to have_received(:providers)
+      expect(dsd).to have_received(:data_services)
         .with(evidence_type_classification: type.id, country_code: 'FI')
     end
 
-    it 'raises on a country the directory holds no provider for' do
-      allow(dsd).to receive(:providers).and_raise(CommonServicesError.new('vide', code: 'DSD:ERR:0001'))
+    # A record published without `sdg:AccessService` breaks R-DSD-RESP-S014;
+    # writing its identifier would pair it with a provider another record
+    # announced, and refusing the exchange would ignore a service that works.
+    it 'keeps the first service that names a provider, not simply the first' do
+      silent = build(:data_service, id: 'a3ff6ed8-1cbf-4a4a-9d20-3fa1c0ef7ac5', providers: [])
+      allow(dsd).to receive(:data_services).and_return([silent, service])
 
-      expect { directory.providers(type.id, 'DE') }.to raise_error(CountryCodeNotFound, /DE/)
+      expect(directory.data_service(type.id, 'FI')).to eq(service)
+    end
+
+    it 'answers nothing when no service names a provider' do
+      allow(dsd).to receive(:data_services).and_return([build(:data_service, providers: [])])
+
+      expect(directory.data_service(type.id, 'FI')).to be_nil
+    end
+
+    # R-EDM-REQ-C026 makes that identifier a UUID, and R-EDM-REQ-C027 the
+    # classification a Semantic Repository URL.
+    it 'refuses a service whose identifier no message could carry' do
+      allow(dsd).to receive(:data_services).and_return([build(:data_service, id: 'service-de-test')])
+
+      expect { directory.data_service(type.id, 'FI') }
+        .to raise_error(InvalidDirectoryEntry, /Le service de données annoncé/)
+    end
+
+    # Refused rather than skipped over: a directory that publishes an entry the
+    # rules refuse says something about that directory, where quietly asking the
+    # next one would hide it until a correspondent rejected the message.
+    it 'refuses on the first service it retained, without falling back on the next' do
+      allow(dsd).to receive(:data_services).and_return([build(:data_service, id: 'service-de-test'), service])
+
+      expect { directory.data_service(type.id, 'FI') }.to raise_error(InvalidDirectoryEntry)
+    end
+
+    it 'raises on a country the directory holds no provider for' do
+      allow(dsd).to receive(:data_services).and_raise(CommonServicesError.new('vide', code: 'DSD:ERR:0001'))
+
+      expect { directory.data_service(type.id, 'DE') }.to raise_error(CountryCodeNotFound, /DE/)
     end
 
     it 'lets an outage through rather than reporting it as an unknown country' do
-      allow(dsd).to receive(:providers).and_raise(CommonServicesError, 'annuaire injoignable')
+      allow(dsd).to receive(:data_services).and_raise(CommonServicesError, 'annuaire injoignable')
 
-      expect { directory.providers(type.id, 'DE') }.to raise_error(CommonServicesError, /injoignable/)
+      expect { directory.data_service(type.id, 'DE') }.to raise_error(CommonServicesError, /injoignable/)
     end
   end
 

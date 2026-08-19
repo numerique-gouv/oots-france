@@ -48,6 +48,7 @@ FactoryBot.define do
   factory :requirement do
     id { 'https://sr.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000' }
     descriptions { { 'EN' => '(TEST) Test Requirement' } }
+    details { { 'EN' => 'Member States may assign their own Evidence Types to this requirement.' } }
     reference_frameworks { [build(:reference_framework)] }
 
     initialize_with { new(**attributes) }
@@ -66,8 +67,10 @@ FactoryBot.define do
     id { '41170824-15d9-4c16-984e-63b75b937b8c' }
     evidence_type_classification { build(:evidence_type).id }
     distribution_format { EvidenceType::PDF }
+    distribution_language { 'EN' }
     level_of_assurance { 'Substantial' }
     descriptions { { 'EN' => 'Dummy PDF - FI' } }
+    details { { 'EN' => 'Test evidence type for test requirement' } }
     providers { [build(:evidence_provider)] }
 
     initialize_with { new(**attributes) }

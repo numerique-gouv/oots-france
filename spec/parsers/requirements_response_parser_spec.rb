@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe RequirementsResponseParser do
-  subject(:identifiers) { described_class.new(body).requirement_identifiers }
+  subject(:requirements) { described_class.new(body).requirements }
 
   let(:body) { common_services_answer('eb_requirements_fr').first }
 
@@ -9,7 +9,7 @@ RSpec.describe RequirementsResponseParser do
   # publishes for smoke tests, which every member state may point its own
   # evidence types at.
   it 'reads the requirement the procedure imposes' do
-    expect(identifiers)
+    expect(requirements.map(&:id))
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000'])
   end
 

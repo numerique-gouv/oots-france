@@ -26,7 +26,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   end
 
   it 'enchaîne les deux requêtes de l\'Evidence Broker jusqu\'au type de justificatif' do
-    types = directory.evidence_types_for_procedure('00', 'FR')
+    types = directory.evidence_types_for_procedure('00', 'FR').evidence_types
 
     expect(types.map(&:id))
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'])
@@ -44,17 +44,32 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   end
 
   it 'résout le fournisseur et son point d\'accès par le Data Service Directory' do
-    provider = directory.providers('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/x', 'FI').first
+    provider = directory
+      .data_service('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/x', 'FI')
+      .providers.first
 
     expect(provider.ebms_identity.id).to eq('FIKEHA02')
     expect(provider.access_point.id).to eq('AP_FI_03')
   end
 
   it 'restreint la recherche de fournisseur à la version que nous produisons' do
-    directory.providers('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/x', 'FI')
+    directory.data_service('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/x', 'FI')
 
     expect(a_request(:get, "#{base}/dsd/rest/search")
       .with(query: hash_including('specification' => EdmSpecification::IDENTIFIER))).to have_been_made
+  end
+
+  # The counterpart of the provider test above, on the requirement: nothing else
+  # runs what the acceptance Evidence Broker actually publishes through
+  # `R-EDM-REQ-C008`, so a drift in the identifiers it serves would surface only
+  # on the wire.
+  it 'accepte l\'exigence que l\'Evidence Broker publie réellement' do
+    resolved = EvidenceRequest::ResolveEvidenceType.call(
+      procedure_code: '00', country_code: 'FR', common_services: directory,
+    )
+
+    expect(resolved).to be_success
+    expect(resolved.requirement.id).to eq(requirement)
   end
 
   # The last hop, and the one nothing else covers. Every spec downstream is
@@ -70,8 +85,9 @@ RSpec.describe 'Le câblage des annuaires centraux' do
 
       EvidenceRequest::SendToGateway.call(
         gateway:, conversation: create(:conversation), recipient: resolved.recipient,
-        provider: resolved.provider, requester: build(:evidence_requester),
-        beneficiary: build(:natural_person), evidence_type: build(:evidence_type),
+        provider: resolved.provider, data_service: resolved.data_service,
+        requester: build(:evidence_requester), beneficiary: build(:natural_person),
+        evidence_type: build(:evidence_type), requirement: build(:requirement),
         procedure_code: ProcedureCode::STUDENT_GRANT, preview_possible: false,
         uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new,
       )
@@ -104,7 +120,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   it 'traduit le refus de l\'annuaire en l\'exception que les interacteurs attendent' do
     stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
-    expect { directory.providers('https://sr.acc.oots.tech.ec.europa.eu/x', 'FR') }
+    expect { directory.data_service('https://sr.acc.oots.tech.ec.europa.eu/x', 'FR') }
       .to raise_error(CountryCodeNotFound, /FR/)
   end
 end

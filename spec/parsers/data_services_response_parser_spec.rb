@@ -49,9 +49,10 @@ RSpec.describe DataServicesResponseParser do
       .to raise_error(CommonServicesError, /rien n'y était lisible/)
   end
 
-  # The identifier the directory assigns to the pairing is what an outgoing
-  # request should carry in its `DataServiceEvidenceType` slot, where stub 7
-  # still writes a constant.
+  # An outgoing request adopts most of this into its `DataServiceEvidenceType`
+  # slot, so what the directory says of the pairing is read and not only what
+  # leads to a provider. The level of assurance is among what chapter 4.5.1 has
+  # a request omit; it is read for the console, which shows it.
   it 'reads what the directory says about the service itself' do
     service = described_class.new(body).data_services.first
 
@@ -60,9 +61,19 @@ RSpec.describe DataServicesResponseParser do
       evidence_type_classification:
         'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74',
       distribution_format: 'application/pdf',
+      distribution_language: 'EN',
       level_of_assurance: 'Substantial',
     )
     expect(service.descriptions).to include('FI' => 'Testi-PDF')
+    expect(service.details).to include('FI' => 'Testitodistetyyppi testivaatimukselle')
+  end
+
+  # Optional in the directory as in a request: absent, the evidence comes back
+  # in any of the available languages.
+  it 'leaves the language nil where the directory published none' do
+    stripped = body.sub(%r{<sdg:Language>.*?</sdg:Language>}m, '')
+
+    expect(described_class.new(stripped).data_services.first.distribution_language).to be_nil
   end
 
   # The versions a gateway declares are what the `specification` parameter of

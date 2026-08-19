@@ -4,22 +4,13 @@
 # Every parameter of that query is optional, so the same answer is either the
 # requirements of one procedure in one jurisdiction, or — asked with nothing —
 # the whole catalogue the Evidence Broker holds. `Directories::Catalogue` reads
-# it the second way; `EvidenceRequest::Fetch` reads it the first, and takes
-# only the identifiers, an identifier being what the second query needs.
+# it the second way, `Directories::CommonServices` the first.
 class RequirementsResponseParser < CommonServicesResponseParser
-  def requirement_identifiers = @read
-
-  attr_reader :requirements
+  def requirements = @read
 
   private
 
-  # The identifiers are what `@read` holds, so that an answer whose records
-  # carry none is still rejected as unreadable — the guarantee the base class
-  # states, unchanged by the rest being read alongside.
-  def read
-    @requirements = records(REQUIREMENT).map { |declared| build(declared) }
-    @requirements.map(&:id)
-  end
+  def read = records(REQUIREMENT).map { |declared| build(declared) }
 
   def build(declared)
     Requirement.new(

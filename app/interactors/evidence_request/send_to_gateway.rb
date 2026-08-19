@@ -31,16 +31,20 @@ module EvidenceRequest
       )
     end
 
-    def body
-      @body ||= EvidenceRequestBuilder.new(
-        requester: context.requester,
-        provider: context.provider,
-        beneficiary: context.beneficiary,
-        evidence_type: context.evidence_type,
-        procedure_code: context.procedure_code,
-        preview_possible: context.preview_possible,
-        uuid: context.uuid,
-      )
+    def body = @body ||= EvidenceRequestBuilder.new(**request_attributes)
+
+    # `context` is aliased once rather than read nine times: each `context.foo`
+    # counts twice against `Metrics/AbcSize`, which this method would otherwise
+    # sit one point under.
+    def request_attributes
+      resolved = context
+
+      {
+        requester: resolved.requester, provider: resolved.provider, beneficiary: resolved.beneficiary,
+        requirement: resolved.requirement, data_service: resolved.data_service,
+        procedure_code: resolved.procedure_code, preview_possible: resolved.preview_possible,
+        uuid: resolved.uuid,
+      }
     end
 
     def envelope

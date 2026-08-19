@@ -7,20 +7,34 @@
 # cited of them carrying 48 — which is why the directory nests them here
 # rather than publishing them apart.
 #
-# Nothing is validated: only `id` is read on the path of a real request, where
-# `RequirementsResponseParser` already refuses an answer without one. A
-# catalogue entry the console can only display half of is still worth
+# Validated on demand rather than on reading: a request writes this into its
+# `Requirements` slot and must refuse an identifier the rules would reject,
+# where a catalogue entry the console can only display half of is still worth
 # displaying.
 class Requirement
   include ActiveModel::Model
   include ActiveModel::Attributes
+  include StrictValidation
   include SemanticRepositoryAsset
   include Described
+
+  # R-EDM-REQ-C008: a Semantic Repository URL ending in a UUID, the optional
+  # midfix naming the environment — `sr.acc` on acceptance, `sr` in production.
+  # Lower-case hexadecimal, that rule carrying no `i` flag.
+  IDENTIFIER = %r{\Ahttps://sr(\.[a-zA-Z]+)?\.oots\.tech\.ec\.europa\.eu/requirements/
+                  [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z}x
 
   attribute :id, :string
 
   # { 'EN' => '(TEST) Test Requirement', 'FI' => 'Testivaatimus' }
   attr_reader :descriptions, :details, :reference_frameworks
+
+  validates :id, format: { with: IDENTIFIER }
+  # R-EDM-REQ-C010 and C094 make `lang` mandatory on the `sdg:Name` and the
+  # `sdg:Description` a request carries; a wording the directory published
+  # without one reaches `by_language` under a nil key, and would go out as
+  # `lang=""`, which both rules refuse as fatal.
+  validate :wordings_name_their_language
 
   def initialize(attributes = {})
     @descriptions = attributes.delete(:descriptions) || {}
@@ -43,4 +57,12 @@ class Requirement
   def countries = reference_frameworks.filter_map { |declared| declared.country.presence }.uniq
 
   def declared_in(country) = reference_frameworks.select { |declared| declared.country == country }
+
+  private
+
+  def wordings_name_their_language
+    return if descriptions.keys.all?(&:present?) && details.keys.all?(&:present?)
+
+    errors.add(:base, :unlabelled_wording)
+  end
 end
