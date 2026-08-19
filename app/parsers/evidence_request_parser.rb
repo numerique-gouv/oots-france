@@ -74,6 +74,9 @@ class EvidenceRequestParser
       type_id: require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme'),
       name: name&.text,
       language: attribute(name, 'lang'),
+      # Read rather than defaulted: `Address` says `FR`, which is exactly the
+      # wrong answer about a foreign requester.
+      address: Address.new(country: agent_country(agent)),
     )
   end
 end

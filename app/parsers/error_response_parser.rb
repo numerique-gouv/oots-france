@@ -14,6 +14,14 @@ class ErrorResponseParser
 
   def request_id = attribute(response, 'requestId')
 
+  # The counterpart of `EvidenceResponseParser#provider_country`, on the agent
+  # classified `ERRP` and in a slot the TDD make a single value.
+  def provider_country
+    agent = slot_content('ErrorProvider', response, './sdg:Agent')
+
+    agent_country(agent) if agent
+  end
+
   # R-EDM-ERR-C026 requires the attribute; nothing guarantees the
   # correspondent obeys, so its absence must not raise.
   def code = attribute(exception, 'code')

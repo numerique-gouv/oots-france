@@ -84,4 +84,10 @@ RSpec.describe EvidenceRequestParser do
 
     RetrievedMessageParser.new(document.to_xml).body
   end
+  # `R-EDM-REQ-C073` impose une adresse sur l'agent classé `ER`, et n'y impose
+  # que le pays : c'est là, et nulle part ailleurs, qu'une requête reçue nomme
+  # le pays qui demande.
+  it 'reads the country the requester declares' do
+    expect(request.requester.address.country).to eq('FR')
+  end
 end

@@ -27,11 +27,30 @@ RSpec.describe AuditEvent do
       expect(event.reload.evidence_subject).to include('Königreich')
     end
 
+    # What prefills the search from an event's page, taken from the subject and
+    # not from the key, whose case `subject_key` has folded away.
+    it 'hands back the criteria that find the same person' do
+      expect(event.subject_criteria).to eq(family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01')
+    end
+
     # Deterministic, and only on this column: it is what article 17 is for —
     # answering which of a person's data travelled — and what chantier 5 will
     # compare a response against.
     it 'can still be looked up by subject' do
       expect(described_class.where(evidence_subject_key: 'königreich|ada|1990-01-01')).to contain_exactly(event)
     end
+  end
+
+  # It lives on the model because three callers share it: the writing, the
+  # search, and the comparison chantier 5 will make against a response.
+  describe '.subject_key' do
+    it 'folds the case, so one person yields one key' do
+      expect(described_class.subject_key(family_name: 'DUPONT', given_name: 'Sophie', date_of_birth: '1965-11-25'))
+        .to eq('dupont|sophie|1965-11-25')
+    end
+  end
+
+  it 'upcases the country whoever wrote it' do
+    expect(create(:audit_event, country_code: 'be').country_code).to eq('BE')
   end
 end

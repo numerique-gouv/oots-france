@@ -30,13 +30,15 @@ RSpec.describe IncomingMessage::SettleConversation do
     end
 
     # What became of the evidence is the last thing chapter 4.8 asks a requester
-    # to log, and the only event no ebMS message stands for.
+    # to log, and one of the two events no ebMS message stands for — the other
+    # being the refusal this application opposes before the gateway.
     it 'journals the delivery, with the fingerprint of what was handed over' do
       settle
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'evidence_delivered',
         conversation_id: conversation.conversation_id,
+        country_code: conversation.country_code,
         evidence_digest: Digest::SHA256.hexdigest(message.evidence),
       )
     end

@@ -124,12 +124,14 @@ RSpec.describe AuditTrail do
   # These never reach the gateway, so no Domibus log holds them.
   describe 'a call this application turns down' do
     it 'records the refusal and its reason' do
-      audit_trail.request_refused(requester_id: '00000000000002', procedure_code: 'T3', reason: 'Démarche inconnue')
+      audit_trail.request_refused(requester_id: '00000000000002', procedure_code: 'T3', country_code: 'FI',
+        reason: 'Démarche inconnue')
 
       expect(journalled).to have_attributes(
         event_type: 'request_refused',
         evidence_requester_id: '00000000000002',
         procedure_code: 'T3',
+        country_code: 'FI',
         detail: 'Démarche inconnue',
         conversation_id: nil,
       )
@@ -141,7 +143,8 @@ RSpec.describe AuditTrail do
       conversation = create(:conversation)
 
       audit_trail.request_refused(
-        requester_id: '00000000000002', procedure_code: '00', reason: 'Connexion refusée', conversation:,
+        requester_id: '00000000000002', procedure_code: '00', country_code: 'FI',
+        reason: 'Connexion refusée', conversation:,
       )
 
       expect(journalled.conversation_id).to eq(conversation.conversation_id)
