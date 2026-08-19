@@ -54,7 +54,7 @@ Il n'y a **aucun chaînage d'empreintes** entre les lignes du journal : le chapi
 
 ## Confidentialité, intégrité, rétention
 
-- **Chiffrement au repos.** `evidence_subject` et `evidence_subject_key` passent par `ActiveRecord::Encryption`, dont les clés viennent de l'environnement via `Settings` (`CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL`). La seconde colonne est chiffrée **en mode déterministe**, donc interrogeable : c'est ce que vise l'article 17, un auditeur devant pouvoir répondre à « quelles données de cette personne ont circulé ». Le prix en est connu — deux clairs égaux donnent deux chiffrés égaux —, et seule cette colonne le paie.
+- **Chiffrement au repos.** `evidence_subject` et `evidence_subject_key` passent par [`ActiveRecord::Encryption`](https://guides.rubyonrails.org/active_record_encryption.html), détaillé plus bas.
 - **Ajout seul.** `AuditEvent#readonly?` interdit toute reprise d'une ligne enregistrée.
 
   > [!WARNING]
@@ -62,6 +62,44 @@ Il n'y a **aucun chaînage d'empreintes** entre les lignes du journal : le chapi
 
 - **Rétention.** `PurgeAuditEventsJob` s'exécute chaque nuit (`config/schedule.yml`) et efface ce qui dépasse `DUREE_RETENTION_JOURNAL_MOIS`. Conserver au-delà du terme est une infraction au même titre que ne pas conserver : l'article 17 fixe douze mois comme un plancher pour l'obligation nationale, et le réglage existe pour un État membre qui en imposerait davantage.
 - **Côté passerelle**, le PMode garde les métadonnées douze mois là où il efface le justificatif aussitôt — voir la ligne `<mpcs>` du [tableau du PMode](domibus_context.md#le-pmode-dexemple).
+
+## Le chiffrement au repos, en détail
+
+### Trois secrets, deux clés
+
+Les trois variables d'environnement ne sont **pas** des clés de chiffrement : ce sont des secrets d'entrée dont Rails dérive les vraies clés, par [PBKDF2](https://datatracker.ietf.org/doc/html/rfc8018#section-5.2)-HMAC-SHA256, vers de l'AES-256-GCM.
+
+| Variable | Ce qu'elle protège |
+| --- | --- |
+| `CLE_CHIFFREMENT_JOURNAL` | les colonnes ordinaires — ici `evidence_subject`, le sujet complet |
+| `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL` | les colonnes déclarées `deterministic: true` — ici `evidence_subject_key`, et elle seule |
+| `SEL_DERIVATION_CLES_JOURNAL` | le sel de la dérivation, commun aux deux |
+
+Le sel n'ouvre rien à lui seul, mais il entre dans les deux dérivations : le changer change les deux clés, donc rend illisible tout ce qui a été écrit. Il se traite comme un secret. Et le minimum de trente-deux caractères vient de là — c'est un mot de passe soumis à une dérivation, pas une clé brute.
+
+`rails db:encryption:init` engendre les trois d'un coup, sous les noms de Rails ; il ne reste qu'à les recopier sous ceux du dépôt.
+
+### Ce que « déterministe » achète, et ce qu'il coûte
+
+Un chiffrement AES a besoin d'un **vecteur d'initialisation**, qui rend chaque opération unique. Toute la différence tient à son origine :
+
+| | ordinaire | `deterministic: true` |
+| --- | --- | --- |
+| le vecteur vient | d'un tirage aléatoire | d'un **SHA-256 du texte clair lui-même** |
+| deux fois la même valeur | deux chiffrés différents | **le même chiffré** |
+| interrogeable par `where` | non | **oui** |
+| ce qui transparaît sans la clé | rien | **l'égalité**, donc les fréquences |
+
+C'est ce qui rend `AuditEvent.where(evidence_subject_key: 'dupont|sophie|1965-11-25')` possible : Rails ne déchiffre rien, il chiffre la valeur cherchée de la même façon, obtient forcément le même chiffré, et compare des octets en base — un `SELECT` ordinaire, servi par l'index. Sur une colonne ordinaire ce serait impossible : chiffrer la même valeur donnerait un chiffré de plus, qui ne correspondrait à aucune ligne, et il faudrait tout charger pour tout déchiffrer en Ruby.
+
+Le prix est réel. Qui obtient un export de la base **sans aucune clé** voit que deux lignes portent la même personne. Il ne sait pas laquelle, mais il peut compter et regrouper — et une analyse de fréquences, croisée avec un peu de contexte extérieur, réidentifie.
+
+D'où le partage : seule la **clé canonique** paie ce prix, et elle ne porte qu'un condensé de la forme `nom|prénom|date`, replié en minuscules pour que deux États membres qui écrivent un nom différemment désignent une seule personne. Le sujet complet — qui porte en plus l'identifiant eIDAS — reste en chiffrement ordinaire. Deux secrets distincts, enfin, font qu'une compromission du secret déterministe, le moins bien protégé par construction, n'ouvre pas la colonne riche.
+
+Autrement dit : on a acheté exactement la capacité que l'article 17 réclame — répondre à « quelles données de cette personne ont circulé » — et on l'a payée sur la plus petite colonne possible.
+
+> [!WARNING]
+> **Perdre l'un des trois secrets rend le journal définitivement illisible.** Il n'existe aucune copie en clair, et aucune rotation n'est câblée : Rails sait en tenir une, en gardant les anciennes clés sous `previous_keys` pour déchiffrer ce qu'elles ont écrit, mais ce dépôt ne le fait pas. Ne jamais régénérer les secrets d'un environnement qui a déjà écrit, sauf à accepter de perdre ce qu'il contient.
 
 ## Le relire
 
