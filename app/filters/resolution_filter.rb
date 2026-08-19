@@ -14,7 +14,7 @@ class ResolutionFilter
   attribute :requirement_id, :string
   attribute :evidence_type_id, :string
 
-  validates :country_code, format: { with: /\A[A-Za-z]{2}\z/, message: :format }, allow_blank: true
+  validates_country_code
 
   def country = country_code.presence&.upcase
 

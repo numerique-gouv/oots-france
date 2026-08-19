@@ -15,6 +15,12 @@ module SubmittedCriteria
   end
 
   class_methods do
+    # Le pays, tel que trois filtres le demandent : deux lettres, la casse
+    # laissée à qui saisit puisqu'ils majusculent tous ce qu'ils comparent.
+    def validates_country_code
+      validates :country_code, format: { with: /\A[A-Za-z]{2}\z/, message: :format }, allow_blank: true
+    end
+
     # Derived rather than restated: a list written out beside the attributes
     # would be a second place to remember, and forgetting it there silences a
     # criterion without a word.

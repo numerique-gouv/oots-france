@@ -23,21 +23,17 @@ class ConversationFilter
   EXACT = %i[status evidence_requester_id procedure_code].freeze
 
   validates :status, inclusion: { in: Conversation::STATUSES }, allow_blank: true
+  validates_country_code
   validate :reject_inverted_period
 
-  # A criterion this cannot honour narrows to nothing, and the page says which.
-  # Dropping it would show every exchange under a heading claiming the
-  # opposite, and nothing on screen would tell an operator the two apart.
   def apply(scope, page)
-    return scope.none unless valid?
-
     narrow(scope)
       .order(created_at: :desc)
       .offset((page - 1) * PER_PAGE)
       .limit(PER_PAGE)
   end
 
-  def total(scope) = valid? ? narrow(scope).count : 0
+  def total(scope) = narrow(scope).count
 
   def pages(total) = [(total.to_f / PER_PAGE).ceil, 1].max
 
@@ -49,7 +45,15 @@ class ConversationFilter
 
   private
 
-  def narrow(scope) = scope.where(exact_matches).where(period)
+  # A criterion this cannot honour narrows to nothing, and the page says which.
+  # The guard lives here rather than in each caller: `narrow` is what every
+  # reading goes through, and dropping a criterion would show every exchange
+  # under a heading claiming the opposite.
+  def narrow(scope)
+    return scope.none unless valid?
+
+    scope.where(exact_matches).where(period)
+  end
 
   # The conditions are passed positionally: `where(**{})` is `where()`, which
   # answers a `WhereChain` waiting for a `not` rather than the relation itself.

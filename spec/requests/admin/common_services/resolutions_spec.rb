@@ -140,6 +140,9 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
     get admin_conversation_path(conversation.conversation_id)
 
     expect(response.parsed_body.css("a[href*='#{admin_common_services_resolution_path}']")).to be_present
-    expect(response.parsed_body.css("a[href='#{admin_common_services_procedure_path('00')}']")).to be_present
+    # La démarche appartient au pays qui requête, donc à la France ici, et non
+    # au correspondant à qui le justificatif est demandé.
+    expect(response.parsed_body.css("a[href='#{admin_common_services_procedure_country_path('00', 'FR')}']"))
+      .to be_present
   end
 end
