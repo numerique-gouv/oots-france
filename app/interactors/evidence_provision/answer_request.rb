@@ -40,6 +40,32 @@ module EvidenceProvision
       else
         context.audit_trail.response_sent(**shared, evidence: answer.evidence)
       end
+
+      settle(answer)
+    end
+
+    # The exchange France opened on receiving the request reaches its end here,
+    # and nowhere else: answering is the whole of what this side does.
+    def settle(answer)
+      conversation = Conversation.find_by(conversation_id: context.message.conversation_id, incoming: true)
+      return unknown_conversation if conversation.nil?
+
+      if answer.exception
+        conversation.failed!(code: answer.exception.code, description: answer.exception.message)
+      else
+        conversation.delivered!
+      end
+    end
+
+    # `IncomingMessage::Process` en ouvre une avant de dispatcher, donc il y en a
+    # toujours une — mais rien dans le code ne l'impose, et une réponse partie
+    # sans que son échange soit réglé laisserait un état « en attente » que rien
+    # ne viendrait démentir. Dit, comme `SettleConversation` le dit.
+    def unknown_conversation
+      Rails.logger.warn(
+        I18n.t('interactors.evidence_provision.answer_request.unknown_conversation',
+          id: context.message.conversation_id),
+      )
     end
 
     def request = context.message.body

@@ -18,15 +18,14 @@ module IncomingMessage
       # an action we cannot name is not an event we can record, and it is the
       # resolution that says so.
       chosen = handler
-      journal
+      record
 
       chosen.call!(context)
     rescue UnreadableMessageError => e
       give_up(e)
-    # Settled first so no user is left waiting, re-raised so the failure is
-    # visible: France answering another member state opens no conversation of
-    # its own, and a job GoodJob records as failed is then the only signal.
-    # Never retried — `retrieveMessage` has erased the message already.
+    # Settled first so no user is left waiting, re-raised so the failure stays
+    # visible in what GoodJob records. Never retried — `retrieveMessage` has
+    # erased the message already.
     rescue Faraday::Error => e
       abandon_conversation(e, :exchange_failed)
       raise
@@ -41,8 +40,13 @@ module IncomingMessage
 
     private
 
-    def journal
+    # What arrives is recorded before it is handled, and whether or not it can
+    # be honoured: the journal always, and an exchange where the request opens
+    # one. Doing it inside the handler would miss the request too malformed to
+    # answer, which is the one an auditor most needs to find.
+    def record
       context.audit_trail.message_received(message: context.message, message_id: context.message_id)
+      OpenConversation.call!(context)
     end
 
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves

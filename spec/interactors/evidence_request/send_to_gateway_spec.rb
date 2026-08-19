@@ -57,6 +57,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
       request_id: start_with('urn:uuid:'),
       requesting_authority_id: '00000000000002',
       providing_authority_id: 'DE73524311',
+      country_code: conversation.country_code,
       evidence_subject_key: 'dupont|sophie|1965-11-25',
     )
   end

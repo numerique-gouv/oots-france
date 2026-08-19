@@ -56,6 +56,7 @@ RSpec.describe 'GET /requete/pieceJustificative' do
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'request_refused',
+        country_code: parameters[:codePays],
         detail: 'Le bénéficiaire doit être renseigné',
       )
     end
@@ -124,6 +125,7 @@ RSpec.describe 'GET /requete/pieceJustificative' do
         event_type: 'request_refused',
         evidence_requester_id: parameters[:idRequeteur],
         procedure_code: parameters[:codeDemarche],
+        country_code: parameters[:codePays],
         detail: 'Jeton invalide',
       )
     end

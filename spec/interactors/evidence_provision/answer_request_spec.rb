@@ -113,10 +113,9 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
-  # France answering another member state opens no conversation of its own:
-  # there is no row to mark failed, and therefore nothing to inspect after the
-  # fact. A submission that fails must not be swallowed, or a foreign
-  # correspondent goes unanswered with nothing but a log line to show for it.
+  # La requête reçue a ouvert son échange : avalée ici, la panne le laisserait
+  # « en attente » d'une suite qui ne viendra jamais, et c'est `Process` qui le
+  # règle en voyant remonter l'erreur.
   it 'lets a failure to submit the answer surface' do
     allow(gateway).to receive(:submit).and_raise(Faraday::ConnectionFailed, 'connexion refusée')
 
@@ -145,5 +144,37 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def code_of(document)
     document.at_xpath('//rs:Exception', 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0')['code']
+  end
+  # Le pont entre « répondre à un autre État membre » et « clore l'échange qu'on
+  # a ouvert en recevant sa requête ». Sans lui, une réponse part et l'échange
+  # reste en attente d'une suite qui ne viendra jamais.
+  describe 'the exchange France opened on receiving the request' do
+    before { create(:conversation, incoming: true, conversation_id: message.conversation_id, country_code: nil) }
+
+    it 'is delivered once the evidence has gone out' do
+      answer
+
+      expect(Conversation.sole).to have_attributes(status: 'delivered')
+    end
+  end
+
+  # Le même identifiant peut désigner un échange que la France a ouvert en
+  # requêtant : le régler ici le dirait livré, et la réponse qu'il attend
+  # vraiment ne le réglerait plus.
+  it 'leaves alone an exchange France opened by asking' do
+    create(:conversation, conversation_id: message.conversation_id, incoming: false)
+    allow(Rails.logger).to receive(:warn)
+
+    answer
+
+    expect(Conversation.sole).to have_attributes(status: 'pending')
+  end
+
+  # `IncomingMessage::Process` en ouvre toujours une, mais rien ne l'impose :
+  # la réponse part quand même, et le dit plutôt que de la laisser filer.
+  it 'answers all the same when no exchange bears the identifier received' do
+    expect(Rails.logger).to receive(:warn).with(/#{message.conversation_id}/)
+
+    expect(answer).to be_a_success
   end
 end

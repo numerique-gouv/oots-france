@@ -51,13 +51,18 @@ class EvidenceRequestsController < ApplicationController
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire, :previsualisationRequise)
   end
 
+  # Mis en majuscules à l'entrée : les deux filtres de la console majuscules ce
+  # qu'on leur demande, et un « fr » écrit tel quel ne répondrait jamais à une
+  # recherche par pays — sur le journal que l'article 17 impose de savoir relire.
+  def country_code = query[:codePays]&.upcase
+
   def exchange
     {
       requester_id: query[:idRequeteur],
       requesters: Directories::EvidenceRequesters.new,
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
-      country_code: query[:codePays],
+      country_code:,
       preview_possible: preview_possible?,
       common_services: Directories::CommonServices.new,
       gateway: DomibusClient.new,
@@ -113,6 +118,7 @@ class EvidenceRequestsController < ApplicationController
     audit_trail.request_refused(
       requester_id: query[:idRequeteur],
       procedure_code: query[:codeDemarche],
+      country_code:,
       reason:,
       conversation:,
     )
