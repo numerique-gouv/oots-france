@@ -52,6 +52,31 @@ Ce qu'elle est — la propriété qui empêche de nier avoir émis ou reçu — 
 
 Il n'y a **aucun chaînage d'empreintes** entre les lignes du journal : le chapitre 4.8 fonde la non-répudiation sur les signatures d'eDelivery, et un chaînage maison serait une invention qui sérialiserait les écritures sans rien prouver de plus.
 
+### Trancher un litige
+
+**Aucune méthode du code ne le fait.** `evidence_digest` est écrit par `AuditTrail` et relu nulle part ailleurs que dans les specs : le dépôt pose les matériaux d'une preuve, pas la procédure qui s'en sert. Un litige se tranche donc à la main, et en trois questions distinctes dont une seule est à notre portée.
+
+| Question | Ce qu'il faut | Où c'est |
+| --- | --- | --- |
+| Ce document est-il celui qui a circulé ? | `evidence_digest` | **dans le journal** — comparaison manuelle |
+| L'autre partie l'a-t-elle bien **envoyé** ? | le `ds:SignedInfo` du message | dans la passerelle, à lire par le `message_id` |
+| L'a-t-elle bien **reçu** ? | l'accusé AS4 signé | dans la passerelle, de même |
+
+La première se règle à la console :
+
+```ruby
+evenement = AuditEvent.find_by(conversation_id: '1589c463-…', event_type: 'evidence_delivered')
+
+Digest::SHA256.hexdigest(File.binread('document_conteste.pdf')) == evenement.evidence_digest
+```
+
+Les deux autres demandent d'ouvrir la page *Message Log* de la console Domibus, d'y retrouver le message par le `message_id` que le journal donne, et d'y lire les métadonnées de non-répudiation.
+
+> [!IMPORTANT]
+> **La première question se règle contre notre propre journal, donc contre nous.** Elle établit qu'un document est bien celui que nous avons consigné — utile pour se disculper, sans valeur pour accuser : rien n'empêche celui qui tient un journal de l'avoir écrit à sa convenance. Seules les deux autres, qui reposent sur une signature de l'autre partie, sont opposables. C'est toute la différence entre une trace et une preuve.
+
+Écrire dès maintenant une méthode qui automatise la première question donnerait l'illusion d'une procédure complète pour ce qu'un `sha256sum` règle déjà. Ce qui débloquerait les deux autres, c'est l'accès aux métadonnées signées de la passerelle, que le plugin WS n'expose pas telles quelles — le [plugin REST](versions_domibus.md) de Domibus 5.2 en donne davantage. Le bon ordre est d'accéder d'abord aux preuves, d'écrire ensuite la procédure qui les recoupe.
+
 ## Confidentialité, intégrité, rétention
 
 - **Chiffrement au repos.** `evidence_subject` et `evidence_subject_key` passent par [`ActiveRecord::Encryption`](https://guides.rubyonrails.org/active_record_encryption.html), détaillé plus bas.
