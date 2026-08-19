@@ -16,9 +16,12 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | --- | --- |
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
-| `/admin` | Les trois entrées ci-dessous. |
-| `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. |
-| `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)). |
+| `/admin` | Les quatre entrées ci-dessous. |
+| `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. |
+| `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
+| `/admin/journal` | Le [journal des échanges](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, démarche, pays, requêteur et période. C'est la seule vue qui porte **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune conversation ne peut représenter. |
+| `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris. |
+| `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne. **Trois champs exacts** : la clé du sujet est chiffrée en mode déterministe, ce qui rend l'égalité interrogeable et rien d'autre. |
 | `/admin/common_services` | L'accueil des annuaires centraux : ce que l'Evidence Broker publie, en nombres, et les trois entrées vers les listes — pays, démarches, exigences. |
 | `/admin/common_services/procedures` | Les codes de démarche que les États membres ont déclarés, avec leur intitulé et les pays qui les déclarent. |
 | `…/procedures/:code` | Les pays qui ont déclaré ce code, et pour chacun le nombre d'exigences qu'il en tire. |
@@ -61,14 +64,16 @@ Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, e
 
 ## Ce qu'il ne montre pas
 
-**Aucune donnée personnelle.** La table `conversations` n'en porte aucune, par construction : le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré. Les annuaires centraux, eux, ne publient que des organisations et des catalogues. Cette propriété doit survivre à toute page qu'on ajoutera.
+**Les pages des conversations et des annuaires ne montrent aucune donnée personnelle**, et cette propriété-là doit survivre à toute page qu'on leur ajoutera : la table `conversations` n'en porte aucune, par construction — le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré —, et les annuaires centraux ne publient que des organisations et des catalogues.
+
+**Les pages du journal, elles, en montrent**, et c'est leur raison d'être : l'article 17 existe pour qu'un auditeur puisse répondre à « quelles données de cette personne ont circulé ». C'est une décision prise pour ces pages-là, et pour elles seules.
 
 Deux valeurs viennent d'un correspondant étranger et sont traitées comme telles :
 
 - **`preview_location`** est rendue en **texte, jamais en lien**. Une console d'exploitation n'a pas à être un lanceur d'un clic vers un site qu'elle ne choisit pas, même quand le modèle a vérifié le schéma de l'adresse.
 - **`error_description`** porte du texte libre, venu d'un correspondant étranger ou d'une panne d'acheminement locale — `EvidenceRequest::SendToGateway` y écrit le message d'une erreur Faraday ; ERB l'échappe dans les deux cas.
 
-**Ce n'est pas le journal de l'article 17.** Celui-ci vit dans sa propre table et a sa propre page, [journal_des_echanges.md](journal_des_echanges.md). L'espace montre l'état courant d'une conversation, ce qui ne fait pas une trace d'audit — et il ne montrera pas le journal : celui-ci porte des données personnelles, ce que cette console s'interdit.
+**L'état d'une conversation n'est pas le journal de l'article 17**, et les deux se consultent séparément : `/admin/conversations` montre où en est un échange, `/admin/journal` ce qu'il a laissé comme trace. Le journal a sa propre page de documentation, [journal_des_echanges.md](journal_des_echanges.md).
 
 ## Qui peut y entrer
 
@@ -115,6 +120,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 | `ProcedureComponent` | Une démarche : son code dans une colonne, son intitulé dans la suivante — un intitulé fait une phrase, qu'une boîte encadrerait comme un paragraphe |
 | `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
 | `ConversationStatusComponent` | L'état d'un échange, en pastille |
+| `EventTypeComponent` | Le type d'un événement du journal, en pastille |
 
 **Les listes sont des cartes, pas des tableaux** : une carte par entrée, sur toute la largeur, et ce qu'une entrée énumère rendu dans le pied de sa carte — `fr-card__footer` —, séparé par un filet. Un tableau n'y subsiste que là où chaque ligne a plusieurs colonnes à comparer, ce qui est le cas des fournisseurs d'un service ; les types de justificatif d'un pays, eux, tiennent en une ligne chacun — trois en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils annoncent.
 
@@ -125,7 +131,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 
 `make up`, puis `http://localhost:3000/admin` — au port que `PORT_OOTS_FRANCE` publie, décalé dans un worktree. Le compte est `admin@example.com` / `Administration-2026`, posé par `db/seeds.rb`.
 
-Le même seed pose **cinq conversations de démonstration, une par état** de `Conversation::STATUSES`, avec des pays et des démarches distincts : de quoi voir les pastilles, les filtres et la fiche de détail sans passerelle ni requête. Comme le compte, elles ne sont jamais créées en production.
+Le même seed pose **un exemple de chaque cas** : cinq échanges émis, un par état de `Conversation::STATUSES`, deux échanges reçus, et entre eux **les huit types d'événement** du journal — refus prononcé avant qu'aucun échange soit ouvert compris, le seul qu'aucune conversation ne porte. Les codes de démarche sont ceux que les annuaires publient réellement, sans quoi les liens mèneraient à des pages vides, et un sujet de justificatif donne à la recherche par personne de quoi répondre. Comme le compte, rien de tout cela n'est créé en production.
 
 `make setup` charge ce seed. Sur une base déjà installée, il faut l'appeler soi-même, `db:prepare` ne chargeant les seeds qu'à la création de la base :
 
