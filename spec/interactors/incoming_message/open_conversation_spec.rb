@@ -31,13 +31,13 @@ RSpec.describe IncomingMessage::OpenConversation do
       expect { described_class.call(message:) }.not_to change(Conversation, :count)
     end
 
-    # L'identifiant vient de l'en-tête du correspondant, à qui la France a fait
-    # connaître les siens en requêtant : adopter l'échange qu'il désigne
-    # laisserait la réponse française régler la requête d'un autre.
-    it 'refuses to adopt an exchange France opened itself' do
-      create(:conversation, conversation_id: 'venue-d-ailleurs', incoming: false)
+    # Le bout en bout boucle sur une passerelle unique : la France y tient ses
+    # deux rôles, et le même identifiant désigne légitimement les deux côtés.
+    it 'adopts without changing it an exchange that bears the same identifier' do
+      create(:conversation, conversation_id: 'venue-d-ailleurs', incoming: false, country_code: 'FI')
 
-      expect { open_conversation }.to raise_error(ActiveRecord::RecordInvalid)
+      expect { open_conversation }.not_to change(Conversation, :count)
+      expect(Conversation.sole).to have_attributes(incoming: false, country_code: 'FI')
     end
 
     # The exchange an auditor most needs to find is the one nobody could honour.

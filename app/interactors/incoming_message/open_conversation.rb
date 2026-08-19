@@ -11,14 +11,14 @@ module IncomingMessage
     def call
       return unless request?
 
-      # Cherché sur le sens autant que sur l'identifiant : celui-ci est repris
-      # tel quel de l'en-tête ebMS du correspondant, à qui la France a fait
-      # connaître les siens en requêtant. Sans le sens, une requête qui en
-      # rejoue un adopterait l'échange sortant qu'il désigne, et la réponse
-      # française le réglerait à la place de celle qu'il attend. L'index unique
-      # fait alors lever plutôt qu'admettre.
-      Conversation.find_or_create_by!(conversation_id: context.message.conversation_id,
-        incoming: true) do |conversation|
+      # Sur le seul identifiant, sans le sens : le scénario de bout en bout
+      # boucle sur une passerelle unique, où la France est ses deux
+      # correspondants et où le même identifiant désigne légitimement les deux
+      # côtés d'un échange. Ce qu'une requête rejouant un identifiant émis par
+      # la France pourrait faire de mal est écarté au règlement, où c'est
+      # l'écriture qui a lieu — ici, adopter une ligne existante n'en change
+      # aucune, le bloc ne jouant qu'à la création.
+      Conversation.find_or_create_by!(conversation_id: context.message.conversation_id) do |conversation|
         conversation.assign_attributes(opened)
       end
     end
@@ -31,6 +31,7 @@ module IncomingMessage
 
     def opened
       {
+        incoming: true,
         procedure_code: readable { request.procedure_code },
         country_code: readable { request.requester.address.country },
         evidence_requester_id: readable { request.requester.id },
