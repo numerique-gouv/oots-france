@@ -14,7 +14,13 @@ module IncomingMessage
     def call
       context.message = context.gateway.retrieve(context.message_id)
 
-      handler.call!(context)
+      # The handler is resolved before the message is journalled, and not after:
+      # an action we cannot name is not an event we can record, and it is the
+      # resolution that says so.
+      chosen = handler
+      journal
+
+      chosen.call!(context)
     rescue UnreadableMessageError => e
       give_up(e)
     # Settled first so no user is left waiting, re-raised so the failure is
@@ -34,6 +40,10 @@ module IncomingMessage
     end
 
     private
+
+    def journal
+      context.audit_trail.message_received(message: context.message, message_id: context.message_id)
+    end
 
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves
     # no log, no answer and no trace of a message that did arrive.

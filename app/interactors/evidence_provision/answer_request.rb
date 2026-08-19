@@ -8,24 +8,45 @@ module EvidenceProvision
   class AnswerRequest < ApplicationInteractor
     EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
 
+    # What France answered, carried rather than left behind in instance
+    # variables: the log needs to know which of the two answers went out, and
+    # the envelope alone no longer says.
+    Answer = Data.define(:envelope, :identifier, :exception, :evidence)
+
     def call
       # Outside the rescue, because a request whose requester cannot be read
       # cannot be answered at all: the response would have no final recipient.
       @requester = request.requester
       @request_id = request.request_id
 
-      context.gateway.submit(answer)
+      answer = chosen_or_invalid
+      submitted = context.gateway.submit(answer.envelope)
+
+      journal(answer, submitted.message_id)
     end
 
     private
 
     attr_reader :requester, :request_id
 
+    def journal(answer, message_id)
+      shared = {
+        message: context.message, requester:, provider: french_provider,
+        request_id:, message_id:, response_id: answer.identifier,
+      }
+
+      if answer.exception
+        context.audit_trail.error_sent(**shared, exception: answer.exception)
+      else
+        context.audit_trail.response_sent(**shared, evidence: answer.evidence)
+      end
+    end
+
     def request = context.message.body
 
     # Readable enough to answer, not enough to serve: `EDM:ERR:0003` rather
     # than silence.
-    def answer
+    def chosen_or_invalid
       chosen_answer
     rescue UnreadableMessageError
       error_envelope(EdmException::INVALID_REQUEST)
@@ -39,19 +60,26 @@ module EvidenceProvision
     end
 
     def system_check_envelope
-      attachment = Attachment.new("cid:#{context.uuid.next}@pdf.oots.fr", Base64.strict_encode64(evidence))
+      served = evidence
+      attachment = attachment_for(served)
       body = SystemCheckResponseBuilder.new(
         requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
         attachment:, request_id:, uuid: context.uuid,
       )
 
-      wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:)
+      Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
+        identifier: body.document_id, exception: nil, evidence: served)
+    end
+
+    def attachment_for(served)
+      Attachment.new("cid:#{context.uuid.next}@pdf.oots.fr", Base64.strict_encode64(served))
     end
 
     def error_envelope(exception)
       body = ErrorResponseBuilder.new(requester:, exception:, request_id:, uuid: context.uuid)
 
-      wrap(body, EbmsAction::EXCEPTION_RESPONSE)
+      Answer.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
+        identifier: body.document_id, exception:, evidence: nil)
     end
 
     # The corners swap on the way back, and the exchange identifier received is

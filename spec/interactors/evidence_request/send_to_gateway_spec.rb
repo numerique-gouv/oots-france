@@ -5,7 +5,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
 
   subject(:send_to_gateway) { described_class.call(gateway:, conversation:, **exchange) }
 
-  let(:gateway) { instance_double(DomibusClient, submit: nil) }
+  let(:gateway) { gateway_accepting_submissions }
   let(:conversation) { create(:conversation) }
 
   let(:exchange) do
@@ -18,6 +18,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
       procedure_code: ProcedureCode::STUDENT_GRANT,
       preview_possible: false,
       uuid: Oots::SequentialUuids.new,
+      audit_trail: AuditTrail.new,
     }
   end
 
@@ -39,6 +40,23 @@ RSpec.describe EvidenceRequest::SendToGateway do
     expect(recipient_of(submitted)).to eq('AP_DE_01')
     expect(property_of(submitted, 'finalRecipient')).to eq('DE73524311')
     expect(property_of(submitted, 'originalSender')).to eq(exchange[:requester].id)
+  end
+
+  # The identifier the gateway gives the message it accepted is the only route
+  # back to the `ds:SignedInfo` it signed, which is how chapter 4.8 reconstitutes
+  # non-repudiation: dropping it would leave the log unable to prove anything.
+  it 'journals the request, under the name the gateway gave it' do
+    send_to_gateway
+
+    expect(AuditEvent.last).to have_attributes(
+      event_type: 'request_sent',
+      conversation_id: conversation.conversation_id,
+      message_id: 'message-passerelle',
+      request_id: start_with('urn:uuid:'),
+      requesting_authority_id: '00000000000002',
+      providing_authority_id: 'DE73524311',
+      evidence_subject_key: 'dupont|sophie|1965-11-25',
+    )
   end
 
   it 'records that the exchange is now waiting on the correspondent' do

@@ -1,8 +1,9 @@
 # The person a piece of evidence is about.
 #
 # Personal data: it comes out of the beneficiary token, travels in the request,
-# and comes back in the response. Nothing here is persisted as such — the
-# retention question belongs to Conversation.
+# and comes back in the response. The exchange log persists it, encrypted, for
+# at least the twelve months article 17 imposes — see `AuditEvent`;
+# `Conversation` deliberately keeps none of it.
 class NaturalPerson
   include ActiveModel::Model
   include ActiveModel::Attributes

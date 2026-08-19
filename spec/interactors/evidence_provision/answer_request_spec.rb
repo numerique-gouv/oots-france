@@ -4,9 +4,9 @@ require 'rails_helper'
 # was covered before — the only path ever exercised was the happy one, and only
 # by the end-to-end scenarios, which need a live gateway.
 RSpec.describe EvidenceProvision::AnswerRequest do
-  subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new) }
+  subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new) }
 
-  let(:gateway) { instance_double(DomibusClient, submit: nil) }
+  let(:gateway) { gateway_accepting_submissions }
   let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
 
   def submitted = gateway_body.then { |body| Nokogiri::XML(decoded_payload(body)) }
@@ -16,6 +16,25 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
     expect(submitted.root.name).to eq('QueryResponse')
     expect(status_of(submitted)).to end_with('Success')
+  end
+
+  # Chapter 4.8 puts the evidence response identifier and the fingerprint of the
+  # evidence among what a provider must log.
+  it 'journals what France answered' do
+    answer
+
+    expect(AuditEvent.last).to have_attributes(
+      event_type: 'response_sent',
+      conversation_id: message.conversation_id,
+      message_id: 'message-passerelle',
+      exchange_id: message.exchange_id,
+      request_id: message.body.request_id,
+      edm_error_code: nil,
+      evidence_digest: Digest::SHA256.hexdigest(Rails.root.join(described_class::EVIDENCE_PATH).binread),
+      # The identifier of France's own answer: chapter 4.8 walks the
+      # non-repudiation chain from it, and it is what `Answer` carries.
+      response_id: identifier_of(submitted),
+    )
   end
 
   it 'attaches the document France holds' do
@@ -37,23 +56,35 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(code_of(submitted)).to eq('EDM:ERR:0004')
     end
+
+    it 'journals the refusal under the code it answered with' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0004')
+    end
   end
 
   # An unsupported optional capability, not an invalid request: the correspondent
   # asked for a distribution format we do not serve.
   describe 'a distribution format it does not serve' do
-    let(:message) { with_body { |body| body.sub('application/pdf', 'application/xml') } }
+    let(:message) { envelope_with_body('requete') { |body| body.sub('application/pdf', 'application/xml') } }
 
     it 'answers EDM:ERR:0007' do
       answer
 
       expect(code_of(submitted)).to eq('EDM:ERR:0007')
     end
+
+    it 'journals the refusal under the code it answered with' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0007')
+    end
   end
 
   describe 'a request it cannot read past the requester' do
     let(:message) do
-      with_body { |body| body.sub(%r{<rim:Slot name="Procedure">.*?</rim:Slot>}m, '') }
+      envelope_with_body('requete') { |body| body.sub(%r{<rim:Slot name="Procedure">.*?</rim:Slot>}m, '') }
     end
 
     # Readable enough to answer, not enough to serve. Silence would teach the
@@ -63,10 +94,16 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(code_of(submitted)).to eq('EDM:ERR:0003')
     end
+
+    it 'journals the refusal under the code it answered with' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003')
+    end
   end
 
   describe 'a request whose requester cannot be read' do
-    let(:message) { with_body { |body| body.gsub('>ER<', '>IP<') } }
+    let(:message) { envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') } }
 
     # No requester means no final recipient: an answer would be addressed to
     # nobody. The failure has to propagate rather than produce such a message.
@@ -102,17 +139,11 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def status_of(document) = document.root['status']
 
-  def code_of(document)
-    document.at_xpath('//rs:Exception', 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0')['code']
+  def identifier_of(document)
+    document.at_xpath("//rim:Slot[@name='EvidenceResponseIdentifier']//rim:Value", SlotReading::NAMESPACES).text
   end
 
-  # The body travels base64-encoded inside the envelope, so it has to be
-  # decoded, altered and encoded back.
-  def with_body
-    document = Nokogiri::XML(real_envelope('requete'))
-    value = document.xpath('//payload/value').first
-    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
-
-    RetrievedMessageParser.new(document.to_xml)
+  def code_of(document)
+    document.at_xpath('//rs:Exception', 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0')['code']
   end
 end

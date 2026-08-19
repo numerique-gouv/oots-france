@@ -49,6 +49,17 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response.parsed_body['erreur']).to eq('Le bénéficiaire doit être renseigné')
     end
 
+    # Refused by a `before_action` rather than by a failed interactor, which is
+    # exactly how a refusal escapes being journalled if nobody looks.
+    it 'journals a refusal pronounced before any interactor runs' do
+      get '/requete/pieceJustificative', params: parameters.except(:beneficiaire)
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'request_refused',
+        detail: 'Le bénéficiaire doit être renseigné',
+      )
+    end
+
     # The resolution itself is `ResolveRequester`'s, and has its own spec: what
     # is checked here is that its structured failure reaches the caller.
     it 'refuses a requester the directory does not know' do
@@ -88,6 +99,21 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       get '/requete/pieceJustificative', params: parameters
 
       expect(response).to have_http_status(:bad_gateway)
+    end
+
+    # A refusal here produces no ebMS message at all, so the gateway holds no
+    # trace of it — and article 17 asks for the errors as much as the exchanges.
+    it 'journals the refusal, which no gateway log would hold' do
+      allow(EvidenceRequest::Fetch).to receive(:call).and_return(failure(:invalid_token, 'Jeton invalide'))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'request_refused',
+        evidence_requester_id: parameters[:idRequeteur],
+        procedure_code: parameters[:codeDemarche],
+        detail: 'Jeton invalide',
+      )
     end
   end
 

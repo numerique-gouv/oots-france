@@ -10,6 +10,7 @@ RSpec.describe IncomingMessage::Process do
         '00000000000002' => { 'nom' => 'Requêteur', 'url' => 'http://localhost:4000' },
       ),
       uuid: UuidGenerator.new,
+      audit_trail: AuditTrail.new,
     }
   end
   let(:gateway) { instance_double(DomibusClient, retrieve: message) }
@@ -21,6 +22,17 @@ RSpec.describe IncomingMessage::Process do
     process
 
     expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
+  end
+
+  # Journalled in `Process`, before the handler: `SettleConversation` returns
+  # early on a conversation it never opened, and the trace would go with it.
+  it 'journals a response naming a conversation it never opened' do
+    allow(gateway).to receive(:retrieve).and_return(RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')))
+
+    process
+
+    expect(AuditEvent.last).to have_attributes(event_type: 'error_received', edm_error_code: 'EDM:ERR:0004')
+    expect(Conversation.count).to eq(0)
   end
 
   it 'hands an incoming response to the interactor that settles the conversation' do
