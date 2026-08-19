@@ -19,15 +19,14 @@ module Settings
       missing = REQUIRED.reject { |name| ENV.fetch(name, nil).to_s.strip.present? }
       return if missing.empty?
 
-      refuse("Variables d'environnement obligatoires absentes ou vides : #{missing.join(', ')}.")
+      refuse(I18n.t('lib.settings.missing', names: missing.join(', ')))
     end
 
     def reject_unless_whole
       wrong = NUMERIC.reject { |name| whole(name)&.positive? }
       return if wrong.empty?
 
-      refuse("Variables d'environnement devant être des nombres entiers positifs : " \
-             "#{wrong.map { |name| "#{name} (« #{ENV.fetch(name, nil)} »)" }.join(', ')}.")
+      refuse(I18n.t('lib.settings.not_whole', names: wrong.map { |name| offender(name) }.join(', ')))
     end
 
     # Keeping the log less than twelve months breaks the obligation as surely as
@@ -40,9 +39,10 @@ module Settings
       months = whole('DUREE_RETENTION_JOURNAL_MOIS')
       return if months.nil? || months >= LAWFUL_RETENTION_MONTHS
 
-      refuse("DUREE_RETENTION_JOURNAL_MOIS vaut #{months} : l'article 17(4) du règlement d'exécution " \
-             "(UE) 2022/1463 impose d'en conserver #{LAWFUL_RETENTION_MONTHS} au minimum.")
+      refuse(I18n.t('lib.settings.retention_below_floor', months:, floor: LAWFUL_RETENTION_MONTHS))
     end
+
+    def offender(name) = I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil))
 
     def whole(name) = Integer(ENV.fetch(name, nil), exception: false)
 

@@ -145,6 +145,7 @@ fr:
       not_whole: "Variables d'environnement devant être des nombres entiers positifs : %{names}."
       not_whole_entry: "%{name} (« %{value} »)"
       required: La variable d'environnement %{name} est obligatoire et ne peut pas être vide.
+      retention_below_floor: "DUREE_RETENTION_JOURNAL_MOIS vaut %{months} : l'article 17(4) du règlement d'exécution (UE) 2022/1463 impose d'en conserver %{floor} au minimum."
   parsers:
     # Dits par plusieurs lecteurs, d'où leur place au-dessus d'eux.
     not_a_query_response: Le message reçu n'est pas une QueryResponse.
