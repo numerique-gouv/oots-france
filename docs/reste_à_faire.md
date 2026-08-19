@@ -79,17 +79,15 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 
 ### 5. Le contenu des messages
 
-**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe et les champs obligatoires, mais plusieurs portent des valeurs de remplissage et d'autres, introduits ou étendus en 2.0, ne sont pas écrits du tout. À la lecture, le dépôt prend ce dont il a besoin et ne contrôle pas le reste — c'est la moitié la moins visible, et celle qui laisse passer des messages non conformes sans rien dire.
+**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, le dépôt prend ce dont il a besoin et ne contrôle pas le reste — c'est la moitié la moins visible, et celle qui laisse passer des messages non conformes sans rien dire.
 
 **Ce qu'exige la spécification.** Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) détaille la requête slot par slot ; le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) donne les règles qu'un message doit satisfaire, dans les deux sens.
 
-**Ce que fait le dépôt, et ce qu'il faut corriger** :
+La requête déclare désormais l'exigence que l'Evidence Broker publie, avec son nom et sa description, et reprend du Data Service Directory le contenu de son `DataServiceEvidenceType` — identifiant du service, classification, titres, descriptions et distribution, langue comprise. Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) lui en fait omettre le niveau de garantie, que seule la console lit. Ce qui manque encore :
 
 | Élément | Aujourd'hui | Attendu |
 | --- | --- | --- |
-| `Requirements` | Un identifiant et un nom écrits en dur dans `EvidenceRequestBuilder` (**bouchon 7**) | L'exigence obtenue de l'Evidence Broker, avec sa description |
-| `DataServiceEvidenceType/Identifier` | Un UUID composé de zéros (**bouchon 7**) | L'identifiant attribué par le Data Service Directory |
-| `DistributedAs` | Le seul format | Le format, la **langue** souhaitée, et le **profil de conformité** pour un justificatif structuré |
+| `DistributedAs/ConformsTo` | Absent | Le **profil de conformité** d'un justificatif structuré, que le Data Service Directory publie et que la France ne demande pas encore |
 | `AssociatedDocumentRequest` | Absent | Demander en même temps une annexe, une traduction ou une version lisible par un humain — nouveauté 2.0 |
 | `EvidenceProviderClassification` | Absent | La précision fournie par l'usager pour désigner le bon fournisseur, en réponse à un `DSD:ERR:0005` (voir chantier 1) |
 | `PreviewLocation`, `ReturnLocation` | Absents | Requis dans le second échange de la prévisualisation (voir chantier 3) |
@@ -181,7 +179,6 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | 3 | Le justificatif français : un PDF d'exemple et une date d'émission fixe | `EvidenceProvision::AnswerRequest`, `SystemCheckResponseBuilder::ISSUING_DATE` | Chantier 4 |
 | 4 | L'identité et l'autorisation : niveau de garantie fixe, annuaire de requêteurs autorisés | `NaturalPerson::LEVEL_OF_ASSURANCE`, `BeneficiaryToken`, `Directories::EvidenceRequesters` | Chantier 2 |
 | 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleConversation` | Chantier 3 |
-| 7 | L'exigence et l'identifiant du type de justificatif demandé | `EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER`, `EvidenceTypeBuilder` | Chantier 5 — les deux valeurs sont désormais **lues** (`Requirement`, `DataService`, et l'[espace d'administration](espace_administration.md) les affiche) ; il reste à les écrire dans les messages |
 | 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
 | 9 | Le filet à erreurs vide du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
 
