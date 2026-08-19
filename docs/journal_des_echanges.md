@@ -45,7 +45,7 @@ L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message 
 
 ## La non-répudiation
 
-Le chapitre la reconstitue en remontant de l'identifiant d'un justificatif jusqu'à l'empreinte signée de son contenu : réponse → `message_id` → métadonnées de non-répudiation de la passerelle → `ds:DigestValue`. **Le journal ne rejoue pas cette chaîne, il donne de quoi la parcourir** : le `message_id`, l'identifiant de requête et celui de réponse.
+Ce qu'elle est — la propriété qui empêche de nier avoir émis ou reçu — est au [glossaire](glossaire.md). Le chapitre la reconstitue en remontant de l'identifiant d'un justificatif jusqu'à l'empreinte signée de son contenu : réponse → `message_id` → métadonnées de non-répudiation de la passerelle → `ds:DigestValue`. **Le journal ne rejoue pas cette chaîne, il donne de quoi la parcourir** : le `message_id`, l'identifiant de requête et celui de réponse.
 
 > [!NOTE]
 > **`evidence_digest` est l'empreinte du justificatif tel que l'application le détient**, et délibérément pas de ce que la passerelle a signé : le `ds:DigestValue` couvre la partie de charge AS4 telle qu'elle voyage — encadrement MIME, et compression sur les legs qui l'activent, ce que `ootsResponseLeg` ne fait justement pas. Les deux ne coïncident donc jamais. Le chemin vers cette signature est le `message_id` ; l'empreinte, elle, répond à l'autre question — un document produit plus tard est-il celui qui a transité.
