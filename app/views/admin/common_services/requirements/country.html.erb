@@ -10,7 +10,7 @@
 <h1 class="fr-h3"><%= t('admin.common_services.requirements.country.heading',
       country: named_country(@country), requirement: @requirement.display_name) %></h1>
 
-<p><%= t('admin.common_services.requirements.country.lead_html') %></p>
+<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.country.lead_html') %></p>
 
 <p class="fr-text--sm fr-mb-2w">
   <%= t('admin.common_services.procedures.count', count: @declared.map(&:procedure_code).uniq.size) %>

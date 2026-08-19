@@ -17,7 +17,7 @@
 </div>
 
 <% if @requirement.detail.present? %>
-  <p><em><%= @requirement.detail %></em></p>
+  <p class="fr-col-12 fr-col-md-8"><em><%= @requirement.detail %></em></p>
 <% end %>
 
 <h2 class="fr-h5 fr-mt-6w"><%= t('admin.common_services.requirements.show.by_country') %></h2>
@@ -25,7 +25,7 @@
 <%# C'est le principe même d'OOTS, et la raison pour laquelle cette liste n'est
     pas bornée au pays qui impose l'exigence : le justificatif vient du pays qui
     le détient, lequel n'est presque jamais celui où la démarche s'accomplit. %>
-<p><%= t('admin.common_services.requirements.show.lead_html') %></p>
+<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.show.lead_html') %></p>
 
 <%= render SearchFieldComponent.new(
       label: t('admin.common_services.requirements.show.search'),

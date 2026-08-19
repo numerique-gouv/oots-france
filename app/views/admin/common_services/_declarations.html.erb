@@ -1,15 +1,15 @@
 <h1 class="fr-h3"><%= full_named_procedure(@procedure.code) %></h1>
 
-<p class="fr-text--lead"><%= t('admin.common_services.declarations.role_html',
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.common_services.declarations.role_html',
       country: named_country(@country)) %></p>
 
-<p><%= declaration_summary(
+<p class="fr-col-12 fr-col-md-8"><%= declaration_summary(
       labels: @requirements.values.flatten.filter_map(&:label),
       country: @country,
       requirements: @requirements.size,
     ) %>.</p>
 
-<p><%= t('admin.common_services.declarations.lead_html') %></p>
+<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.declarations.lead_html') %></p>
 
 <%# Une carte par exigence : ce pays peut la déclarer plusieurs fois, sous des
     intitulés différents, sans qu'elle demande pour autant deux choses. %>
