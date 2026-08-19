@@ -29,9 +29,13 @@ module IncomingMessage
     def deliver(conversation)
       requester = context.requesters.find(conversation.evidence_requester_id)
 
-      context.evidence_forwarder.deliver(context.message.evidence, requester)
+      context.evidence_forwarder.deliver(evidence, requester)
       conversation.delivered!
+
+      context.audit_trail.evidence_delivered(conversation:, evidence:)
     end
+
+    def evidence = context.message.evidence
 
     def record_error(conversation)
       error = context.message.body

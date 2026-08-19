@@ -62,8 +62,11 @@ class EvidenceRequestsController < ApplicationController
       common_services: Directories::CommonServices.new,
       gateway: DomibusClient.new,
       uuid: UuidGenerator.new,
+      audit_trail:,
     }
   end
+
+  def audit_trail = @audit_trail ||= AuditTrail.new
 
   # A bare `previsualisationRequise` with no value counts as true, which is how
   # a flag appears in a query string.
@@ -78,7 +81,10 @@ class EvidenceRequestsController < ApplicationController
   def check_beneficiary
     return if query[:beneficiaire].present?
 
-    render json: { erreur: t('evidence_requests.beneficiary_required') }, status: :unprocessable_content
+    raison = t('evidence_requests.beneficiary_required')
+    refuse(raison)
+
+    render json: { erreur: raison }, status: :unprocessable_content
   end
 
   def report_unknown_conversation
@@ -86,13 +92,29 @@ class EvidenceRequestsController < ApplicationController
   end
 
   def report_bad_request(error)
+    refuse(error.message)
+
     render json: { erreur: error.message }, status: :unprocessable_content
   end
 
   def report_failure(result)
     error = result.error
     status = error[:key].in?(UPSTREAM_FAILURES) ? :bad_gateway : :unprocessable_content
+    reason = error[:errors].join(' ; ')
 
-    render json: { erreur: error[:errors].join(' ; ') }, status:
+    refuse(reason, conversation: result.conversation)
+
+    render json: { erreur: reason }, status:
+  end
+
+  # Every refusal is journalled here rather than where it is raised: these never
+  # reach the gateway, so nothing else holds a trace of them.
+  def refuse(reason, conversation: nil)
+    audit_trail.request_refused(
+      requester_id: query[:idRequeteur],
+      procedure_code: query[:codeDemarche],
+      reason:,
+      conversation:,
+    )
   end
 end

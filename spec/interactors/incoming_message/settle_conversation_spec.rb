@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe IncomingMessage::SettleConversation do
-  subject(:settle) { described_class.call(message:, evidence_forwarder:, requesters:) }
+  subject(:settle) { described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) }
 
   let(:evidence_forwarder) { instance_double(EvidenceForwarder, deliver: nil) }
   let(:requesters) do
@@ -27,6 +27,18 @@ RSpec.describe IncomingMessage::SettleConversation do
       settle
 
       expect(conversation.reload).to have_attributes(status: 'delivered')
+    end
+
+    # What became of the evidence is the last thing chapter 4.8 asks a requester
+    # to log, and the only event no ebMS message stands for.
+    it 'journals the delivery, with the fingerprint of what was handed over' do
+      settle
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'evidence_delivered',
+        conversation_id: conversation.conversation_id,
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence),
+      )
     end
   end
 

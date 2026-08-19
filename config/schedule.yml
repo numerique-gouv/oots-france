@@ -1,15 +1,22 @@
 # Travaux récurrents de GoodJob, lus par `config.good_job.enable_cron`.
 #
-# Un seul : le ramassage de ce que la passerelle nous a notifié sans succès.
-# Il est le filet derrière la notification, et non la voie principale — une
-# notification peut se perdre, son répartiteur peut être arrêté, et une file
-# laissée sans surveillance est un message jamais remis. Il est idempotent par
-# construction : la passerelle efface un message une fois récupéré.
+# Le ramassage est le filet derrière la notification, et non la voie principale
+# — une notification peut se perdre, son répartiteur peut être arrêté, et une
+# file laissée sans surveillance est un message jamais remis. Il est idempotent
+# par construction : la passerelle efface un message une fois récupéré.
+#
+# La purge, elle, exécute la seconde moitié de l'article 17 : conserver douze
+# mois, et ne pas conserver au-delà. Une fois par jour suffit, l'échéance se
+# comptant en mois.
 default: &commun
   ramassage_messages_en_attente:
     cron: '*/2 * * * *'
     class: CollectPendingMessagesJob
     description: Récupère ce que la passerelle garde encore pour nous
+  purge_journal_echanges:
+    cron: '17 3 * * *'
+    class: PurgeAuditEventsJob
+    description: Efface du journal les échanges dont la durée de conservation est écoulée
 
 development: *commun
 test: {}

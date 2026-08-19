@@ -59,6 +59,38 @@ Alors('aucun justificatif n\'est transmis à la démarche') do
   expect(@fake_requester.received_evidence).to be_nil
 end
 
+# The log is the only claim of these scenarios that cannot be read through the
+# application: chapter 4.8 asks for a trace, and the trace is exposed by no
+# route on purpose — it carries personal data.
+Alors('le journal porte l\'échange entier, du départ de la requête à la remise') do
+  patiente_jusqu_a('le journal porte la remise') { journal.exists?(event_type: 'evidence_delivered') }
+
+  # France answers itself over the single gateway of the example PMode, so one
+  # conversation carries both halves of the exchange.
+  expect(journal.pluck(:event_type)).to include(
+    'request_sent', 'request_received', 'response_sent', 'response_received', 'evidence_delivered',
+  )
+
+  depart = journal.find_by!(event_type: 'request_sent')
+  expect(depart.message_id).to be_present
+  expect(depart.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
+
+  # The two halves must name the request identically, or nothing correlates a
+  # response to the request that caused it.
+  expect(journal.pluck(:request_id).compact.uniq).to contain_exactly(depart.request_id)
+
+  remise = journal.find_by!(event_type: 'evidence_delivered')
+  expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(Rails.root.join('assets/drapeau.pdf').binread))
+end
+
+Alors('le journal porte le refus du correspondant') do
+  patiente_jusqu_a('le journal porte le refus') { journal.exists?(event_type: 'error_received') }
+
+  expect(journal.find_by!(event_type: 'error_received').edm_error_code).to eq('EDM:ERR:0004')
+end
+
+def journal = ServerAuditEvent.where(conversation_id: @conversation_id)
+
 def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')
 
 BENEFICIAIRE = { 'nomUsage' => 'Dupont', 'prenom' => 'Sophie', 'dateNaissance' => '1965-11-25' }.freeze

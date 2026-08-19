@@ -17,6 +17,7 @@ class ProcessIncomingMessageJob < ApplicationJob
       evidence_forwarder: EvidenceForwarder.new,
       requesters: Directories::EvidenceRequesters.new,
       uuid: UuidGenerator.new,
+      audit_trail: AuditTrail.new,
     )
   end
 end

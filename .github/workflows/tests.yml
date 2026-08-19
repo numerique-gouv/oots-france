@@ -38,6 +38,13 @@ jobs:
           --health-retries 5
 
     env:
+      # Lues au démarrage du framework, donc avant que `spec/support/` ait pu
+      # poser quoi que ce soit : elles doivent venir de l'environnement du
+      # processus, comme celles de la base. Valeurs de test, sans autre usage.
+      CLE_CHIFFREMENT_JOURNAL: journal_cle_de_chiffrement_pour_integration_continue
+      CLE_CHIFFREMENT_DETERMINISTE_JOURNAL: journal_cle_deterministe_pour_integration_continue
+      SEL_DERIVATION_CLES_JOURNAL: journal_sel_de_derivation_pour_integration_continue
+      DUREE_RETENTION_JOURNAL_MOIS: 12
       HOTE_BASE_DE_DONNEES: localhost
       PORT_BASE_DE_DONNEES: 5432
       UTILISATEUR_BASE_DE_DONNEES: oots_france

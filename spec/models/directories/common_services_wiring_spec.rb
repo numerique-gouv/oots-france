@@ -73,13 +73,13 @@ RSpec.describe 'Le câblage des annuaires centraux' do
         provider: resolved.provider, requester: build(:evidence_requester),
         beneficiary: build(:natural_person), evidence_type: build(:evidence_type),
         procedure_code: ProcedureCode::STUDENT_GRANT, preview_possible: false,
-        uuid: Oots::SequentialUuids.new,
+        uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new,
       )
 
       Nokogiri::XML(gateway_envelope)
     end
 
-    let(:gateway) { instance_double(DomibusClient, submit: nil) }
+    let(:gateway) { gateway_accepting_submissions }
 
     it 'adresse le message à la partie que le Data Service Directory a nommée' do
       expect(text_at(submitted, '//eb:To/eb:PartyId')).to eq('AP_FI_03')

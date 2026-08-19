@@ -68,7 +68,7 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 - **`preview_location`** est rendue en **texte, jamais en lien**. Une console d'exploitation n'a pas à être un lanceur d'un clic vers un site qu'elle ne choisit pas, même quand le modèle a vérifié le schéma de l'adresse.
 - **`error_description`** porte du texte libre, venu d'un correspondant étranger ou d'une panne d'acheminement locale — `EvidenceRequest::SendToGateway` y écrit le message d'une erreur Faraday ; ERB l'échappe dans les deux cas.
 
-**Ce n'est pas le journal de l'article 17.** Le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) impose de conserver douze mois la trace de chaque échange ; c'est le [chantier 7](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation), qui demande une table dédiée, une politique de rétention et un arbitrage sur les données personnelles. L'espace montre l'état courant d'une conversation, ce qui ne fait pas une trace d'audit.
+**Ce n'est pas le journal de l'article 17.** Celui-ci vit dans sa propre table et a sa propre page, [journal_des_echanges.md](journal_des_echanges.md). L'espace montre l'état courant d'une conversation, ce qui ne fait pas une trace d'audit — et il ne montrera pas le journal : celui-ci porte des données personnelles, ce que cette console s'interdit.
 
 ## Qui peut y entrer
 

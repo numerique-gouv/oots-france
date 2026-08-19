@@ -1,0 +1,188 @@
+# Writes the exchange log of chapter 4.8.
+#
+# Injected by keyword like `Clock` and `UuidGenerator`, so a spec can hand in a
+# double and assert on what would have been written.
+#
+# Nothing here decides what an exchange does; it only records that it happened.
+# A failure to write is therefore never caught: a trace the regulation requires,
+# silently missing, is worse than a request that fails loudly.
+class AuditTrail
+  RECEIVED_EVENTS = {
+    EbmsAction::EXECUTE_QUERY_REQUEST => 'request_received',
+    EbmsAction::EXECUTE_QUERY_RESPONSE => 'response_received',
+    EbmsAction::EXCEPTION_RESPONSE => 'error_received',
+  }.freeze
+
+  def request_sent(conversation:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:)
+    record(
+      'request_sent',
+      ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
+      conversation_id: conversation.conversation_id,
+      procedure_code: conversation.procedure_code,
+      evidence_requester_id: conversation.evidence_requester_id,
+      evidence_type_id: evidence_type&.id,
+      request_id:,
+      message_id:,
+      **authorities(requesting: requester, providing: provider),
+      **subject(beneficiary),
+    )
+  end
+
+  # The refusals that never reach the gateway: an unknown procedure, an invalid
+  # token, a directory that would not answer. Article 17 does not reach these —
+  # it covers the request, the response, an error report actually sent, and the
+  # eDelivery events — and neither does Domibus, which sees no message at all.
+  # Recording them is this deployment's own decision: without it, a caller turned
+  # away leaves no trace anywhere.
+  def request_refused(requester_id:, procedure_code:, reason:, conversation: nil)
+    record(
+      'request_refused',
+      conversation_id: conversation&.conversation_id,
+      evidence_requester_id: requester_id,
+      procedure_code:,
+      detail: reason,
+    )
+  end
+
+  # Recorded before the message is dispatched, and not inside the handler that
+  # deals with it: a request too malformed to answer, or a response naming a
+  # conversation we never opened, must be logged all the same.
+  def message_received(message:, message_id:)
+    record(
+      RECEIVED_EVENTS.fetch(message.action),
+      ebms_action: message.action,
+      conversation_id: message.conversation_id,
+      exchange_id: message.exchange_id,
+      message_id:,
+      **(readable { received_body(message) } || {}),
+    )
+  end
+
+  def response_sent(evidence:, **answer)
+    record('response_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
+                            **answered(**answer), **evidence_fingerprint(evidence))
+  end
+
+  def error_sent(exception:, **answer)
+    record('error_sent', ebms_action: EbmsAction::EXCEPTION_RESPONSE,
+      edm_error_code: exception.code, **answered(**answer))
+  end
+
+  def evidence_delivered(conversation:, evidence:)
+    record(
+      'evidence_delivered',
+      conversation_id: conversation.conversation_id,
+      procedure_code: conversation.procedure_code,
+      evidence_requester_id: conversation.evidence_requester_id,
+      **evidence_fingerprint(evidence),
+    )
+  end
+
+  private
+
+  # What the two answers have in common; each names its own event rather than
+  # leaving the log to infer it from an argument that happens to be nil.
+  def answered(message:, requester:, provider:, request_id:, response_id:, message_id:)
+    {
+      conversation_id: message.conversation_id,
+      exchange_id: message.exchange_id,
+      message_id:,
+      request_id:,
+      response_id:,
+      **authorities(requesting: requester, providing: provider),
+    }
+  end
+
+  def record(event_type, **attributes)
+    AuditEvent.create!(event_type:, occurred_at: Time.current, **attributes)
+  end
+
+  def received_body(message)
+    case message.action
+    when EbmsAction::EXECUTE_QUERY_REQUEST then received_request(message.body)
+    when EbmsAction::EXECUTE_QUERY_RESPONSE then received_response(message)
+    when EbmsAction::EXCEPTION_RESPONSE then received_error(message.body)
+    else {}
+    end
+  end
+
+  # Field by field, and not around the whole hash: a literal evaluates every
+  # value before it builds anything, so one unreadable field would discard the
+  # ones already read — and those are exactly what an auditor has left.
+  def received_request(request)
+    {
+      request_id: readable { request.request_id },
+      procedure_code: readable { request.procedure_code },
+      evidence_type_id: readable { request.evidence_type.id },
+      **(readable { requesting_authority(request.requester) } || {}),
+      **providing_authority(french_provider),
+      **(readable { subject(request.beneficiary) } || {}),
+    }
+  end
+
+  def received_response(message)
+    {
+      request_id: readable { message.body.request_id },
+      **evidence_fingerprint(readable { message.evidence }),
+    }
+  end
+
+  def received_error(error)
+    { request_id: readable { error.request_id }, edm_error_code: readable { error.code },
+      detail: readable { error.message } }
+  end
+
+  def authorities(requesting:, providing:)
+    requesting_authority(requesting).merge(providing_authority(providing))
+  end
+
+  def requesting_authority(agent)
+    { requesting_authority_id: agent&.ebms_identity&.id, requesting_authority_scheme: agent&.ebms_identity&.type_id }
+  end
+
+  def providing_authority(agent)
+    { providing_authority_id: agent&.ebms_identity&.id, providing_authority_scheme: agent&.ebms_identity&.type_id }
+  end
+
+  def subject(person)
+    return {} if person.nil?
+
+    {
+      evidence_subject: person.attributes.compact.to_json,
+      evidence_subject_key: subject_key(person),
+    }
+  end
+
+  # The value the deterministic column is queried by, and — from chantier 5 on —
+  # compared against to check that a response describes the person the request
+  # asked about. Case-folded, because two member states spell a name in two
+  # cases and mean one person.
+  def subject_key(person)
+    [person.family_name, person.given_name, person.date_of_birth].join('|').downcase
+  end
+
+  # Of the evidence as this application holds it, and deliberately not of what
+  # the gateway signed: `ds:DigestValue` covers the AS4 payload part as
+  # transmitted — MIME framing, and compression on the legs that enable it — so
+  # the two never coincide. The route to that signature is `message_id`, which
+  # chapter 4.8 traces. This digest answers the other question: whether a
+  # document produced later is the one that went through.
+  def evidence_fingerprint(evidence)
+    return {} if evidence.blank?
+
+    { evidence_digest: Digest::SHA256.hexdigest(evidence), mime_type: RetrievedMessageParser::PDF }
+  end
+
+  # A message we cannot read must still be journalled, so what its body would
+  # have added is dropped rather than raised — the trace is worth more than the
+  # field. The message itself is not swallowed: the caller goes on to fail on
+  # it, and either answers `EDM:ERR:0003` or, when it is the requester that
+  # cannot be read and there is therefore nobody to answer, gives up.
+  def readable
+    yield
+  rescue UnreadableMessageError
+    nil
+  end
+
+  def french_provider = EvidenceProvider.french(**Settings.french_provider_identity)
+end

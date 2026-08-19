@@ -25,26 +25,30 @@ module Settings
     DUREE_CACHE_SERVICES_COMMUNS
     DELAI_MAX_SERVICES_COMMUNS
     CERTIFICATS_SERVICES_COMMUNS
+    CLE_CHIFFREMENT_JOURNAL
+    CLE_CHIFFREMENT_DETERMINISTE_JOURNAL
+    SEL_DERIVATION_CLES_JOURNAL
+    DUREE_RETENTION_JOURNAL_MOIS
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
   # startup like their presence: a delay of « bientôt » would otherwise pass
   # `verify!` and fail on the first request, which is the whole point of
   # checking here rather than at the point of use.
-  NUMERIC = %w[DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS].freeze
+  NUMERIC = %w[DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS].freeze
 
-  # Optional, one per Common Service, keyed by the service `CommonServicesInstance`
-  # names.
+  # Article 17(4) of the implementing regulation, as a floor: a member state may
+  # keep the exchange log longer, never less.
+  LAWFUL_RETENTION_MONTHS = 12
+
+  # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.
   COMMON_SERVICES_BASE_URLS = {
     'eb' => 'URL_BASE_EVIDENCE_BROKER',
     'dsd' => 'URL_BASE_DATA_SERVICE_DIRECTORY',
   }.freeze
 
   class << self
-    def verify!
-      reject_unless_present(REQUIRED.reject { |name| present?(ENV.fetch(name, nil)) })
-      reject_unless_whole(NUMERIC.reject { |name| whole?(ENV.fetch(name, nil)) })
-    end
+    def verify! = Contract.new.verify!
 
     def evidence_request_enabled? = ENV['AVEC_REQUETE_PIECE_JUSTIFICATIVE'] == 'true'
 
@@ -74,6 +78,22 @@ module Settings
     # the record decides.
     def common_services_base_url(service) = ENV.fetch(COMMON_SERVICES_BASE_URLS.fetch(service), nil).presence
 
+    # Read without raising, unlike everything else here: this one is read while
+    # the framework boots, and `rails db:test:prepare` or the task that renders
+    # the specimen messages boot it without ever touching the log. REQUIRED
+    # remains the guard — `config.ru` refuses to serve without the three.
+    def audit_trail_encryption
+      {
+        primary_key: optional('CLE_CHIFFREMENT_JOURNAL'),
+        deterministic_key: optional('CLE_CHIFFREMENT_DETERMINISTE_JOURNAL'),
+        key_derivation_salt: optional('SEL_DERIVATION_CLES_JOURNAL'),
+      }
+    end
+
+    # Article 17(4) of the implementing regulation sets twelve months, and says
+    # so as a floor: a member state may keep them longer, hence a setting.
+    def audit_trail_retention = whole('DUREE_RETENTION_JOURNAL_MOIS').months
+
     def domibus_base_url = required('URL_BASE_DOMIBUS')
 
     def domibus_credentials
@@ -98,32 +118,17 @@ module Settings
 
     private
 
-    def reject_unless_present(missing)
-      return if missing.empty?
-
-      raise ConfigurationError,
-        I18n.t('lib.settings.missing', names: missing.join(', '))
-    end
-
-    # Named at once, like the absent ones above: correcting one to discover the
-    # next on the following deployment is the cycle that check exists to spare.
-    def reject_unless_whole(wrong)
-      return if wrong.empty?
-
-      raise ConfigurationError,
-        I18n.t('lib.settings.not_whole',
-          names: wrong.map { |name| I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil)) }
-            .join(', '))
-    end
-
     def whole?(value) = Integer(value, exception: false)&.positive? || false
 
     def whole(name)
       value = required(name)
-      reject_unless_whole([name]) unless whole?(value)
+      return Integer(value) if whole?(value)
 
-      Integer(value)
+      raise ConfigurationError,
+        I18n.t('lib.settings.not_whole', names: I18n.t('lib.settings.not_whole_entry', name:, value:))
     end
+
+    def optional(name) = ENV.fetch(name, nil).presence
 
     def required(name)
       value = ENV.fetch(name, nil)

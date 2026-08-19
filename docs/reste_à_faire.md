@@ -14,7 +14,7 @@ Les **bouchons** sont les endroits où le code écrit une valeur en dur, faute d
 
 Le protocole fonctionne. Une requête part de France vers un correspondant étranger et une réponse revient ; une requête étrangère arrive en France et reçoit une réponse. Les messages sont construits et lus au format exigé, transportés par une passerelle eDelivery réelle, et validés contre les règles Schematron officielles de la 2.0. L'échange asynchrone — la réponse revient sur une autre connexion, parfois longtemps après — est en place, avec la `Conversation` qui relie les deux moitiés.
 
-Les trois annuaires centraux sont désormais interrogés pour de vrai : découverte DNS, signature des réponses vérifiée, version négociée. Ce qui manque n'est presque jamais le protocole : ce sont les **raccordements au monde réel**. Le dépôt parle correctement, mais au nom d'une identité qui n'a pas été authentifiée, et il n'a aucun justificatif réel à fournir — ni, faute d'inscription au DSD, d'existence pour qui voudrait l'interroger. Un échange complet, aujourd'hui, ne transporte qu'un PDF d'exemple pour la démarche de vérification système.
+Les trois annuaires centraux sont désormais interrogés pour de vrai : découverte DNS, signature des réponses vérifiée, version négociée. Chaque échange laisse par ailleurs une trace conservée douze mois, comme l'article 17 l'impose. Ce qui manque n'est presque jamais le protocole : ce sont les **raccordements au monde réel**. Le dépôt parle correctement, mais au nom d'une identité qui n'a pas été authentifiée, et il n'a aucun justificatif réel à fournir — ni, faute d'inscription au DSD, d'existence pour qui voudrait l'interroger. Un échange complet, aujourd'hui, ne transporte qu'un PDF d'exemple pour la démarche de vérification système.
 
 > [!IMPORTANT]
 > Le système n'est pas homologué. Le requêtage reste verrouillé en production par la variable `AVEC_REQUETE_PIECE_JUSTIFICATIVE` : ne pas l'activer avant homologation. Aucun des chantiers ci-dessous ne lève cette réserve à lui seul.
@@ -128,11 +128,17 @@ Quatre contrôles manquent, tous assortis d'une réponse d'erreur précise :
 
 **Ce qu'exige la spécification.** Le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) énumère, composant par composant, les données à journaliser et les identifiants qui permettent de recoudre un échange à partir de traces éparses. Il décrit aussi comment la non-répudiation se reconstitue, en remontant de l'identifiant d'un justificatif jusqu'à l'empreinte signée de son contenu.
 
-**Ce que fait le dépôt.** Rien qui réponde à cette exigence. La `Conversation` retient l'état d'un échange, volontairement sans aucune donnée personnelle, et les erreurs partent dans les journaux applicatifs. Il n'y a ni journal d'échanges, ni conservation des éléments de non-répudiation, ni politique de rétention. C'est le **bouchon 6**.
+**Ce que fait le dépôt.** Le journal existe : une table dédiée en ajout seul, écrite sur les deux chemins et sur les refus qui n'atteignent jamais la passerelle, avec le sujet du justificatif chiffré au repos et une purge à douze mois. Le PMode garde de son côté les métadonnées et les accusés signés aussi longtemps, là où il efface le justificatif aussitôt. Tout cela est décrit par [journal_des_echanges.md](journal_des_echanges.md), qui en est le propriétaire. Le bouchon 6 est levé.
 
-L'[espace d'administration](espace_administration.md) rend désormais cet état lisible — statut, code d'erreur EDM, raison de l'échec — mais **il ne fait pas office de journal** : il montre l'état courant d'une conversation, là où l'article 17 demande une trace conservée douze mois.
+L'[espace d'administration](espace_administration.md) rend l'état d'une conversation lisible — statut, code d'erreur EDM, raison de l'échec — mais **il ne fait pas office de journal**, et n'en montrera pas : il s'interdit toute donnée personnelle, et le journal en porte.
 
-**Ce qu'il faut construire.** Un journal dédié, distinct des journaux techniques, avec sa durée de conservation et ses garanties de confidentialité et d'intégrité. La conception doit trancher tôt une question de fond : ce qui est journalisé de la requête contient des données personnelles, ce qui n'est pas le cas du reste.
+**Ce qui reste.**
+
+- **La non-répudiation ne se rejoue pas encore de bout en bout.** Le journal donne de quoi parcourir la chaîne du chapitre — identifiant de message, de requête, de réponse, et l'empreinte du justificatif —, mais rien n'automatise le trajet jusqu'au `ds:SignedInfo` que la passerelle a signé. Le faire suppose de lire les métadonnées de non-répudiation de Domibus, que le plugin WS n'expose pas telles quelles.
+- **La couche protocole reste chez la passerelle.** Accusés AS4 et *SOAP faults* vivent dans la base de Domibus ; les deux journaux se recousent à la main, par le `MessageId`.
+- **Rien n'est exposé.** La lecture se fait à la console ou au `psql`. Une interface d'exploitation demanderait d'abord de décider qui peut voir des données personnelles, et l'espace d'administration n'est pas cet endroit.
+- **Trois arrivées ou départs ne laissent aucune ligne**, faute d'avoir de quoi la qualifier ou d'un endroit où l'écrire : une enveloppe SOAP illisible, une action ebMS inconnue, et l'échec de soumission de la réponse française — `EvidenceProvision::AnswerRequest` journalise après `submit`, donc une panne de la passerelle emporte la trace de la tentative.
+- **L'écriture suit l'effet qu'elle relate.** Le justificatif est remis, puis consigné ; la requête est soumise, puis consignée. Un échec d'écriture laisse donc un fait accompli sans trace, et le rejouer est impossible — la passerelle a effacé le message. L'ordre inverse aurait le défaut symétrique, consigner ce qui n'a pas eu lieu ; trancher demande de décider ce qu'on préfère perdre, et cela ne se décide pas en écrivant le journal.
 
 ### 8. Les délais d'expiration
 
@@ -164,7 +170,7 @@ L'[espace d'administration](espace_administration.md) rend désormais cet état 
 
 **Un nettoyage à faire au passage.** Le traitement d'un message entrant rattrape la famille `EbmsError`, qui signifie *l'appel du fournisseur de service français est fautif* et vaut un 422. Toutes ses sous-classes naissent pendant cet appel, donc sur le chemin sortant : aucune ne peut survenir à l'arrivée d'un message. Le filet est vide et gagne à être resserré — c'est ce qui reste d'un questionnement plus large, dont la vraie substance est au [chantier 5](#et-symétriquement-ce-quon-lit) pour la validation, et ici pour la restitution.
 
-**Ce dont ce chantier ne dépend pas.** De la journalisation : la raison de l'échec est déjà écrite en base aujourd'hui, sur la conversation, sans qu'aucun journal existe. L'exposer ne demande rien de plus. Les deux chantiers se ressemblent — tous deux décident du sort d'un incident — mais ils écrivent dans des endroits différents, pour des destinataires différents et avec des contraintes différentes : un appelant veut un code stable tout de suite, un auditeur veut une trace complète pendant douze mois. La seule chose à coordonner, si les deux se font, est le vocabulaire employé de part et d'autre — dans un sens comme dans l'autre.
+**Ce dont ce chantier ne dépend pas.** De la journalisation : la raison de l'échec est écrite sur la conversation, et l'exposer ne demande rien de plus. Que le [journal](journal_des_echanges.md) la consigne aussi ne change pas la question posée ici. Les deux chantiers se ressemblent — tous deux décident du sort d'un incident — mais ils écrivent dans des endroits différents, pour des destinataires différents et avec des contraintes différentes : un appelant veut un code stable tout de suite, un auditeur veut une trace complète pendant douze mois. La seule chose à coordonner, si les deux se font, est le vocabulaire employé de part et d'autre — dans un sens comme dans l'autre.
 
 ## Les bouchons en place
 
@@ -175,7 +181,6 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | 3 | Le justificatif français : un PDF d'exemple et une date d'émission fixe | `EvidenceProvision::AnswerRequest`, `SystemCheckResponseBuilder::ISSUING_DATE` | Chantier 4 |
 | 4 | L'identité et l'autorisation : niveau de garantie fixe, annuaire de requêteurs autorisés | `NaturalPerson::LEVEL_OF_ASSURANCE`, `BeneficiaryToken`, `Directories::EvidenceRequesters` | Chantier 2 |
 | 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleConversation` | Chantier 3 |
-| 6 | La journalisation : aucune trace conforme à l'article 17 | — | Chantier 7 |
 | 7 | L'exigence et l'identifiant du type de justificatif demandé | `EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER`, `EvidenceTypeBuilder` | Chantier 5 — les deux valeurs sont désormais **lues** (`Requirement`, `DataService`, et l'[espace d'administration](espace_administration.md) les affiche) ; il reste à les écrire dans les messages |
 | 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
 | 9 | Le filet à erreurs vide du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
@@ -211,7 +216,7 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | [4.5.3 — Erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Conforme | — |
 | [4.6 — Règles métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) | Partiel | Vérifiées par Schematron sur les messages **produits** ; aucune validation des messages **reçus** |
 | [4.7 — eDelivery](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) | Partiel | Contrôle de cohérence de version en entrée ; SMP à prévoir |
-| [4.8 — Journalisation des échanges](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) | Absent | Tout |
+| [4.8 — Journalisation des échanges](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) | Partiel | La couche métier est écrite et conservée douze mois ; la chaîne de non-répudiation ne se rejoue pas automatiquement |
 | [4.9 — Prévisualisation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935) | Partiel | Second échange, adresse de retour, espace de prévisualisation |
 | [5 — Modèles de données](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932910) | Absent | Dépend d'un justificatif réel à modéliser |
 | [6 — Guidance et UX](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932909) | Sans objet | Rien de normatif |
@@ -232,7 +237,7 @@ L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de m
 | 5. Contenu des messages — écriture | 1, pour les champs qui viennent des annuaires | Rien |
 | 5. Contenu des messages — lecture et validation | — | Rien |
 | 6. Justificatifs structurés | 1, 4, et un modèle de données convenu au niveau européen | Rien |
-| 7. Journalisation | — | Rien |
+| 7. Journalisation | *fait* | Rien de bloqué, mais 5 (lecture) s'appuie sur le journal pour la mémoire des requêtes déjà traitées |
 | 8. Délais d'expiration — délai global d'un aller-retour | — | Rien |
 | 8. Délais d'expiration — les trois intervalles T1/T2/T3 | 3 (les intervalles se définissent autour du flux de prévisualisation) | Rien |
 | 9. Finitions eDelivery | — | 3 (côté demandeur) |
@@ -240,10 +245,9 @@ L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de m
 
 ### Ce qui peut démarrer aujourd'hui, sans rien attendre
 
-Cinq lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
+Quatre lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
 
-- **La validation des messages reçus** (chantier 5, seconde moitié). Elle réutilise les règles Schematron déjà présentes dans le dépôt.
-- **La journalisation** (chantier 7).
+- **La validation des messages reçus** (chantier 5, seconde moitié). Le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) n'assigne le devoir de validation à personne et présente les Schematron comme une preuve de conformité — « *Schematrons are used to prove the correctness of instances* » —, pas comme un composant d'exécution : le mécanisme est à notre main, et `.schematron/` est de toute façon un cache téléchargé dont le XSLT 2.0 est hors de portée de Nokogiri.
 - **Les délais d'expiration** (chantier 8), dans leur forme simple — le délai global d'un aller-retour.
 - **Les points de finition eDelivery restants** (chantier 9) : le contrôle de cohérence de version à l'entrée, et la distinction entre identifiant de conversation et identifiant d'échange.
 - **La restitution des erreurs à l'appelant** (chantier 10). La raison de l'échec est déjà enregistrée : il s'agit de décider ce qu'on en montre.
@@ -259,10 +263,9 @@ Aucun autre chantier n'est *bloqué* par eux, mais leur absence prive de sens ce
 
 ### Les contraintes qui ne sont pas des dépendances
 
-Trois faits pèsent sur le choix sans le déterminer, et méritent d'être posés tels quels :
+Deux faits pèsent sur le choix sans le déterminer, et méritent d'être posés tels quels :
 
-- **La journalisation touche tous les chemins du code.** Elle n'a pas de préalable technique, mais la mener tard signifie repasser sur du code déjà écrit. C'est un coût qui croît avec le temps, pas un blocage.
-- **Elle relève d'une obligation réglementaire**, comme les délais d'expiration : l'article 17 du règlement d'exécution impose de conserver douze mois la trace des échanges. Quelle place cela occupe dans le calendrier d'homologation est une question à instruire avec les personnes qui la conduisent.
+- **La journalisation touchait tous les chemins du code**, ce qui est la raison pour laquelle elle a été menée avant le reste : la mener tard aurait signifié repasser sur du code fraîchement écrit. Le même argument vaut pour les délais d'expiration du chantier 8.
 - **La validation de ce qu'on reçoit décide de ce qu'un correspondant peut diagnostiquer.** Sans elle, un pair qui échoue à échanger avec la France reçoit « requête invalide » sans autre indice. Cela n'empêche aucun développement, mais pèse sur ce que coûte un test pair-à-pair.
 
 > [!NOTE]

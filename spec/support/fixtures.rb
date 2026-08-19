@@ -24,6 +24,18 @@ module Fixtures
     [body, headers]
   end
 
+  # A real envelope whose RegRep body has been altered — how a spec fabricates
+  # a message that is well-formed for the gateway and wrong for the EDM. The
+  # body travels base64-encoded inside the envelope, so it has to be decoded,
+  # altered and encoded back.
+  def envelope_with_body(name)
+    document = Nokogiri::XML(real_envelope(name))
+    value = document.xpath('//payload/value').first
+    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
   private
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read

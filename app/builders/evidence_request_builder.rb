@@ -13,6 +13,11 @@ class EvidenceRequestBuilder < ApplicationBuilder
 
   attr_reader :document_id, :timestamp, :procedure_code, :preview_possible
 
+  # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
+  # This qualified form, and not the bare UUID, is what a correspondent echoes
+  # back as `@requestId` — so it is the form the exchange is correlated by.
+  def request_id = "urn:uuid:#{document_id}"
+
   def initialize(
     requester:, provider:, beneficiary:, evidence_type:, procedure_code:,
     preview_possible: false, clock: Clock.new, uuid: UuidGenerator.new
