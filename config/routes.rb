@@ -24,6 +24,15 @@ Rails.application.routes.draw do
     resource :session, only: %i[new create destroy]
     resources :conversations, only: %i[index show]
 
+    # Le journal se parcourt par ses événements : ce qu'un échange additionne se
+    # lit sur sa propre fiche, sous `/admin/conversations`, que les deux sens
+    # alimentent désormais.
+    namespace :journal do
+      root to: 'events#index'
+      resource :subjects, only: :show
+      resources :events, only: :show
+    end
+
     # Les pages ne portent que des identifiants courts — un code de démarche,
     # le dernier segment d'une URL du Semantic Repository. L'identifiant entier
     # nomme un hôte différent en acceptation et en production.

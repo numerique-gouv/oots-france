@@ -1,0 +1,8 @@
+<%# L'échange qu'un événement nomme n'existe pas toujours : une réponse peut en
+    nommer un que la France n'a jamais ouvert, et un refus écarté avant qu'aucun
+    échange soit ouvert n'en nomme aucun. Un lien mènerait alors à un 404. %>
+<% if event.conversation %>
+  <%= link_to event.conversation_id, admin_conversation_path(event.conversation_id) %>
+<% else %>
+  <%= event.conversation_id.presence || '—' %>
+<% end %>

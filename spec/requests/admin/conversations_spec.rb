@@ -1,6 +1,73 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Conversations' do
+  describe 'both halves of the four-corner model' do
+    before { sign_in }
+
+    # Les deux moitiés du modèle en quatre coins, sur la même liste : ce que la
+    # France demande, et ce qu'on lui demande.
+    describe 'an exchange France did not open' do
+      it 'holds its line, and says which way it goes' do
+        create(:conversation, :delivered, incoming: true, conversation_id: 'venue-d-ailleurs',
+          country_code: nil, procedure_code: nil, evidence_requester_id: nil)
+
+        get admin_conversations_path
+
+        expect(response.body).to include('venue-d-ailleurs')
+        expect(response.body).to include(I18n.t('admin.conversations.directions.incoming'))
+      end
+
+      # Trois colonnes qu'un échange reçu peut ne pas porter : sans garde, le lien
+      # vers la démarche ferait lever la page entière.
+      # La démarche appartient au pays qui requête : la France quand elle demande,
+      # le correspondant quand il demande. `R-EDM-REQ-C073` fait que sa requête
+      # le nomme d'ordinaire — reste le cas où l'agent lui-même était illisible.
+      it 'leaves the procedure without a flag when the requester is a correspondent' do
+        conversation = create(:conversation, :delivered, incoming: true, country_code: nil,
+          procedure_code: ProcedureCode::SYSTEM_CHECK)
+
+        get admin_conversation_path(conversation.conversation_id)
+
+        expect(response.body).not_to include(admin_common_services_procedure_country_path(
+          ProcedureCode::SYSTEM_CHECK, Settings.common_services_country_code,
+        ))
+      end
+
+      # Le pays sollicité, lui, se sait toujours : c'est la France quand on
+      # l'interroge, et le correspondant quand elle demande.
+      it 'names France as the country the evidence is asked of' do
+        conversation = create(:conversation, :delivered, incoming: true, country_code: 'BE')
+
+        get admin_conversation_path(conversation.conversation_id)
+
+        expect(response.body).to include(I18n.t('admin.solicited_country'))
+        expect(response.body).to include(CountryTagComponent.flag(Settings.common_services_country_code))
+      end
+
+      it 'renders its page with none of what only an outgoing exchange knows' do
+        conversation = create(:conversation, incoming: true, country_code: nil, procedure_code: nil,
+          evidence_requester_id: nil)
+
+        get admin_conversation_path(conversation.conversation_id)
+
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    # La fiche porte désormais le journal de l'échange. L'identifiant du message,
+    # lui, ne se lit que sur la fiche de l'événement : le tableau le tait.
+    it 'shows what the journal retains of the exchange' do
+      conversation = create(:conversation, :delivered)
+      event = create(:audit_event, event_type: 'evidence_delivered',
+        conversation_id: conversation.conversation_id)
+
+      get admin_conversation_path(conversation.conversation_id)
+
+      expect(response.body).to include(I18n.t('admin.journal.event_types.evidence_delivered'))
+      expect(response.body).to include(admin_journal_event_path(event))
+    end
+  end
+
   describe 'GET /admin/conversations' do
     before { sign_in }
 

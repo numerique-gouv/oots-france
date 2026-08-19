@@ -1,0 +1,61 @@
+<%# Le même tableau partout où des événements se lisent : la liste entière, ce
+    qu'un échange retient, ce qui a circulé au sujet d'une personne. Trois
+    questions, une seule façon de rendre la réponse. %>
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <%# Masquée à l'œil là où le titre de la page la répète, mais jamais
+              retirée : le RGAA 5.4 veut qu'un tableau de données porte un titre,
+              et un lecteur d'écran l'annonce. %>
+          <%= tag.caption(caption, class: ('fr-sr-only' if local_assigns[:hide_caption])) %>
+          <thead>
+            <tr>
+              <th scope="col"><%= t('admin.journal.number') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.event_type') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.conversation_id') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.procedure_code') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.country_code') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.evidence_requester_id') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.occurred_at') %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% events.each do |event| %>
+              <tr>
+                <%# Le numéro porte le lien : toute ligne en a un, là où deux
+                    types n'ont aucun identifiant de message — un refus prononcé
+                    avant que la passerelle soit appelée, et la remise du
+                    justificatif au requêteur français. %>
+                <td><%= link_to "##{event.id}", admin_journal_event_path(event) %></td>
+                <td><%= render EventTypeComponent.new(event_type: event.event_type) %></td>
+                <td>
+                  <%= render 'admin/journal/conversation_link', event: %>
+                </td>
+                <%# Ce que la ligne porte, sans dire de quel côté chacun se
+                    tenait : le pays est celui du correspondant, et le type dit
+                    assez le sens pour que le lecteur conclue seul. %>
+                <td>
+                  <% if event.procedure_code.present? %>
+                    <%= link_to event.procedure_code,
+                          admin_common_services_procedure_path(event.procedure_code) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+                <td><%= render 'admin/country', country_code: event.country_code %></td>
+                <td><%= event.evidence_requester_id.presence || '—' %></td>
+                <td><%= l(event.occurred_at, format: :short) %></td>
+              </tr>
+            <% end %>
+
+            <% if events.empty? %>
+              <tr><td colspan="7"><%= empty %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

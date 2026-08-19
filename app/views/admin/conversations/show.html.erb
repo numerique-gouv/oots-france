@@ -18,19 +18,23 @@
           <caption><%= t('admin.conversations.show.caption') %></caption>
           <tbody>
             <tr>
-              <th scope="row"><%= t('admin.conversations.show.rows.country') %></th>
-              <td><%= @conversation.country_code %></td>
+              <th scope="row"><%= t('admin.conversations.attributes.direction') %></th>
+              <td><%= t("admin.conversations.directions.#{@conversation.incoming? ? 'incoming' : 'outgoing'}") %></td>
             </tr>
             <tr>
               <th scope="row"><%= t('admin.conversations.attributes.procedure') %></th>
               <td>
-                <%= link_to @conversation.procedure_code,
-                      admin_common_services_procedure_path(@conversation.procedure_code) %>
+                <%= render 'admin/country_procedure', procedure_code: @conversation.procedure_code,
+                                                      country_code: @conversation.requester_country_code %>
               </td>
             </tr>
             <tr>
+              <th scope="row"><%= t('admin.solicited_country') %></th>
+              <td><%= render 'admin/country', country_code: @conversation.solicited_country_code %></td>
+            </tr>
+            <tr>
               <th scope="row"><%= t('admin.conversations.attributes.requester') %></th>
-              <td><%= @conversation.evidence_requester_id %></td>
+              <td><%= @conversation.evidence_requester_id.presence || '—' %></td>
             </tr>
             <tr>
               <th scope="row"><%= t('admin.conversations.attributes.opened_at') %></th>
@@ -58,13 +62,17 @@
   </div>
 </div>
 
-<p class="fr-mt-2w">
-  <%= link_to t('admin.conversations.show.simulate'),
-        admin_common_services_resolution_path(
-          procedure_code: @conversation.procedure_code, country_code: @conversation.country_code,
-        ),
-        class: 'fr-btn fr-btn--secondary' %>
-</p>
+<%# Que sur un échange émis : la simulation rejoue la chaîne d'annuaires que la
+    France parcourt pour demander, et répondre n'en parcourt aucune. %>
+<% if !@conversation.incoming? && @conversation.procedure_code.present? && @conversation.country_code.present? %>
+  <p class="fr-mt-2w">
+    <%= link_to t('admin.conversations.show.simulate'),
+          admin_common_services_resolution_path(
+            procedure_code: @conversation.procedure_code, country_code: @conversation.country_code,
+          ),
+          class: 'fr-btn fr-btn--secondary' %>
+  </p>
+<% end %>
 
 <% if @conversation.error_description.present? %>
   <h2 class="fr-h5 fr-mt-4w"><%= t('admin.conversations.show.failure_reason') %></h2>
@@ -72,3 +80,12 @@
     <%= @conversation.error_description %>
   <% end %>
 <% end %>
+
+<h2 class="fr-h5 fr-mt-4w"><%= t('admin.conversations.show.journal.caption') %></h2>
+
+<p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
+
+<%# La légende répète le titre de section, donc masquée à l'œil : le RGAA 5.4
+    veut qu'un tableau de données porte un titre, et il le garde. %>
+<%= render 'admin/journal/events', events: @events, hide_caption: true, caption: t('admin.conversations.show.journal.caption'),
+      empty: t('admin.conversations.show.journal.empty') %>

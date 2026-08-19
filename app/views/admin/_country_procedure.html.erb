@@ -1,0 +1,11 @@
+<%# La démarche sous le drapeau du pays qui la porte, et le lien vers ce que les
+    annuaires en publient là-bas. Le drapeau ne paraît qu'avec une démarche à
+    qualifier : seul, il ne dirait rien de la ligne où il se trouve. %>
+<% if procedure_code.blank? %>
+  —
+<% elsif country_code.present? %>
+  <%= link_to "#{CountryTagComponent.flag(country_code)} #{procedure_code}",
+        admin_common_services_procedure_country_path(procedure_code, country_code) %>
+<% else %>
+  <%= procedure_code %>
+<% end %>

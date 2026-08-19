@@ -49,3 +49,8 @@ ignore_unused:
   - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
+  # La fiche d'un événement traduit le sous-arbre entier — `t('admin.journal.attributes')`
+  # — pour parcourir les colonnes dans l'ordre où elles y sont déclarées. Le
+  # scanner voit alors une clé feuille et perd de vue ses enfants, y compris ceux
+  # que les en-têtes de tableau nomment un à un.
+  - admin.journal.attributes.*

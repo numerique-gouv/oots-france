@@ -56,6 +56,17 @@ fr:
         procedure_code: La démarche
         depuis: La date de début
         jusqu_a: La date de fin
+      audit_event_filter:
+        event_type: Le type d'événement
+        country_code: Le pays
+        evidence_requester_id: Le requêteur
+        procedure_code: La démarche
+        depuis: La date de début
+        jusqu_a: La date de fin
+      subject_search:
+        family_name: Le nom d'usage
+        given_name: Le prénom
+        date_of_birth: La date de naissance
     errors:
       models:
         address:
@@ -90,9 +101,25 @@ fr:
           attributes:
             status:
               inclusion: n'est pas un état connu
+            country_code:
+              format: doit être un code pays à deux lettres
             jusqu_a:
               before_start: est antérieure à la date de début
           # Invariable, faute de savoir le genre de l'attribut qui le portera.
+          unreadable: est illisible
+        audit_event_filter:
+          attributes:
+            event_type:
+              inclusion: n'est pas un type d'événement connu
+            country_code:
+              format: doit être un code pays à deux lettres
+            jusqu_a:
+              before_start: est antérieure à la date de début
+          unreadable: est illisible
+        subject_search:
+          attributes:
+            date_of_birth:
+              format: doit être une date ISO 8601 (AAAA-MM-JJ)
           unreadable: est illisible
   accueil:
     index:
@@ -117,6 +144,7 @@ fr:
       conversations: Conversations
       directories: Annuaires
       jobs: Jobs
+      journal: Journal
       sign_out: Se déconnecter
     pied_de_page:
       # L'adresse du lien reste dans le gabarit : `fr.yml` n'a pas à devenir
@@ -264,6 +292,9 @@ fr:
       unknown_country: Pays inconnu des annuaires
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
+    evidence_provision:
+      answer_request:
+        unknown_conversation: "Conversation inconnue au moment de répondre : %{id}"
     incoming_message:
       process:
         exchange_failed: L'échange a échoué
@@ -276,6 +307,98 @@ fr:
     # Le même message pour toutes les listes de l'espace : c'est le filtre qui
     # dit lequel de ses critères est en cause, jamais le titre de l'alerte.
     unreadable: Certains critères n'ont pas pu être lus
+    # Le pays à qui le justificatif est demandé : le correspondant quand la
+    # France requête, la France quand on l'interroge. La démarche, elle,
+    # appartient au pays qui requête — les deux ne coïncident jamais.
+    #
+    # Hors de tout bloc `attributes` : la fiche d'un événement parcourt ce
+    # sous-arbre-là et appelle chaque clé sur l'enregistrement, où celle-ci ne
+    # répondrait pas.
+    solicited_country: Pays sollicité
+    filtre:
+      # Le format attendu se dit dans l'étiquette, où il fait partie du nom
+      # accessible du champ : un `placeholder` disparaît à la première frappe et
+      # n'est pas restitué de façon fiable.
+      country_hint: Code à deux lettres, par exemple FI
+    journal:
+      # Hors de `attributes`, que la fiche parcourt en appelant chaque clé sur
+      # l'enregistrement : le numéro y ferait une ligne répétant le titre.
+      number: Événement
+      # L'ordre des clés est celui des colonnes de la fiche d'un événement, qui
+      # les parcourt toutes : le déplacer ici déplace la page.
+      attributes:
+        occurred_at: Survenu le
+        event_type: Type
+        ebms_action: Action ebMS
+        conversation_id: Conversation
+        exchange_id: Échange
+        message_id: Message
+        request_id: Requête
+        response_id: Réponse
+        requesting_authority_id: Autorité requérante
+        requesting_authority_scheme: Schéma de l'autorité requérante
+        providing_authority_id: Autorité fournisseuse
+        providing_authority_scheme: Schéma de l'autorité fournisseuse
+        evidence_requester_id: Requêteur
+        procedure_code: Démarche
+        country_code: Pays
+        evidence_type_id: Type de justificatif
+        evidence_subject: Sujet du justificatif
+        evidence_subject_key: Clé du sujet
+        evidence_digest: Empreinte du justificatif
+        mime_type: Type MIME
+        edm_error_code: Code d'erreur EDM
+        detail: Détail
+      event_types:
+        request_sent: Requête émise
+        request_refused: Requête refusée
+        response_received: Réponse reçue
+        error_received: Erreur reçue
+        evidence_delivered: Justificatif remis
+        request_received: Requête reçue
+        response_sent: Réponse émise
+        error_sent: Erreur émise
+      filtre:
+        legend: Filtrer le journal
+        all: Tous
+        since: Depuis le
+        until: Jusqu'au
+        submit: Filtrer
+        reset: Tout afficher
+      events:
+        count:
+          zero: Aucun événement
+          one: Un événement
+          other: "%{count} événements"
+        index:
+          title: Journal des échanges
+          # Le lien ferme la phrase : une icône de lien sortant au milieu d'une
+          # ligne la coupe en deux.
+          lede_html: >-
+            Chaque requête, chaque réponse et chaque refus, conservés douze mois comme
+            l'impose %{article}.
+          article: l'article 17
+          caption: Les événements du journal, du plus récent au plus ancien
+          empty: Aucun événement ne correspond.
+        show:
+          title: "Événement #%{id}"
+          caption: Tout ce que le journal retient de cet événement
+          same_subject: Tous les échanges concernant cette personne
+      subjects:
+        attributes:
+          family_name: Nom d'usage
+          given_name: Prénom
+          date_of_birth: Date de naissance
+        show:
+          title: Rechercher une personne
+          legend: La personne recherchée
+          exact_only: >-
+            Les trois champs sont obligatoires et se comparent à l'exact. La clé du sujet
+            est chiffrée en mode déterministe : cela rend l'égalité interrogeable, et rien
+            d'autre — ni fragment de nom, ni recherche approchante.
+          submit: Rechercher
+          caption: Les échanges concernant cette personne
+          empty: Aucun échange ne concerne cette personne.
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.
@@ -294,6 +417,9 @@ fr:
         heading: Espace d'administration
         tiles:
           conversations: L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.
+          journal: >-
+            La trace de chaque requête, réponse et refus, conservée douze mois. Porte des
+            données personnelles.
           common_services: >-
             Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences,
             types de justificatif, fournisseurs.
@@ -518,6 +644,11 @@ fr:
         zero: Aucune conversation
         one: Une conversation
         other: "%{count} conversations"
+      # Le sens que porte `Conversation#incoming?` : la France demande, ou on lui
+      # demande.
+      directions:
+        incoming: Reçue
+        outgoing: Émise
       # Les états que porte `Conversation::STATUSES`, dits à un exploitant.
       statuses:
         pending: En attente
@@ -530,12 +661,17 @@ fr:
       # une fois.
       attributes:
         status: État
+        direction: Sens
         country: Pays
         procedure: Démarche
         requester: Requêteur
         opened_at: Ouverte le
       index:
         title: Conversations
+        lede: >-
+          Où en est chaque échange, dans les deux sens : ce que la France demande à un
+          autre État membre, et ce qu'on lui demande. Ce qu'un échange a laissé comme
+          trace se lit sur sa fiche.
         caption: Conversations
         columns:
           id: Identifiant
@@ -544,13 +680,13 @@ fr:
         title: Conversation %{id}
         caption: Détail de l'échange
         rows:
-          # La fiche nomme le pays par le rôle qu'il tient dans l'échange, là où
-          # la liste et le filtre n'ont la place que de l'attribut.
-          country: Pays sollicité
           settled_at: Réglée le
           edm_error_code: Code d'erreur EDM
           preview_location: Espace de prévisualisation
         simulate: Simuler cette chaîne de requêtes
+        journal:
+          caption: Journal des échanges de cette conversation
+          empty: Aucun événement ne porte cet échange.
         failure_reason: Raison de l'échec
       filtre:
         legend: Filtrer les conversations

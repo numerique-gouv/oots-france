@@ -1,0 +1,33 @@
+<% content_for :title, t('admin.journal.events.index.title') %>
+
+<div class="fr-grid-row fr-grid-row--top fr-mb-2w">
+  <div class="fr-col-12 fr-col-md">
+    <h1><%= t('admin.journal.events.index.title') %></h1>
+  </div>
+  <div class="fr-mt-md-1w fr-ml-md-1w">
+    <%= link_to t('admin.journal.subjects.show.title'), admin_journal_subjects_path,
+          class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+  </div>
+</div>
+
+<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8">
+  <%= t('admin.journal.events.index.lede_html',
+        article: link_to(t('admin.journal.events.index.article'),
+          'https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj',
+          target: '_blank', rel: 'noopener')) %>
+</p>
+
+<%= render 'admin/journal/filtre', filter: @filter, url: admin_journal_root_path %>
+
+<%= render 'admin/erreurs', errors: @filter.errors %>
+
+<p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @total) %></p>
+
+<%= render 'admin/journal/events', events: @events, hide_caption: true,
+      caption: t('admin.journal.events.index.caption'), empty: t('admin.journal.events.index.empty') %>
+
+<%= render PaginationComponent.new(
+      current: @page,
+      pages: @filter.pages(@total),
+      link: ->(page) { admin_journal_root_path(@filter.to_query(page: page)) },
+    ) %>

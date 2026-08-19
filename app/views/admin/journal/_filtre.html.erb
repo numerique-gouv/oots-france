@@ -1,0 +1,68 @@
+<%# `dsfr-view-components` ships no form component at all: the `fr-*` markup
+    is written out here by hand, labels included. %>
+<%= form_with url: url, method: :get, class: 'fr-mb-4w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend"><%= t('admin.journal.filtre.legend') %></legend>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-select-group">
+        <%= form.label :event_type, t('admin.journal.attributes.event_type'), class: 'fr-label' %>
+        <%= form.select :event_type,
+              AuditEvent::EVENT_TYPES.map { |type| [t("admin.journal.event_types.#{type}"), type] },
+              { include_blank: t('admin.journal.filtre.all'), selected: filter.event_type },
+              class: 'fr-select' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :country_code, class: 'fr-label' do %>
+          <%= t('admin.journal.attributes.country_code') %>
+          <span class="fr-hint-text"><%= t('admin.filtre.country_hint') %></span>
+        <% end %>
+        <%= form.text_field :country_code, value: filter.country_code,
+              class: 'fr-input', maxlength: 2, placeholder: 'FI' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :procedure_code, t('admin.journal.attributes.procedure_code'), class: 'fr-label' %>
+        <%= form.text_field :procedure_code, value: filter.procedure_code, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :evidence_requester_id, t('admin.journal.attributes.evidence_requester_id'), class: 'fr-label' %>
+        <%= form.text_field :evidence_requester_id, value: filter.evidence_requester_id, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <%# The two period fields wrap together, as on the conversations listing:
+        flexbox has no `break-before`. %>
+    <div class="row-break"></div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :depuis, t('admin.journal.filtre.since'), class: 'fr-label' %>
+        <%= form.date_field :depuis, value: filter.depuis, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :jusqu_a, t('admin.journal.filtre.until'), class: 'fr-label' %>
+        <%= form.date_field :jusqu_a, value: filter.jusqu_a, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn"><%= t('admin.journal.filtre.submit') %></button>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <%= link_to t('admin.journal.filtre.reset'), url, class: 'fr-btn fr-btn--secondary' %>
+    </div>
+  </fieldset>
+<% end %>
