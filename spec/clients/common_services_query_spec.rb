@@ -67,7 +67,7 @@ RSpec.describe CommonServicesQuery do
     stub_directory
 
     expect(search).to be_a(RequirementsResponseParser)
-    expect(search.requirement_identifiers).to be_present
+    expect(search.requirements).to be_present
   end
 
   # The test environment runs on a null store, so caching has to be given a
@@ -155,19 +155,19 @@ RSpec.describe CommonServicesQuery do
       stub_directory
       allow(Rails.cache).to receive(:write).and_raise(Errno::ENOSPC)
 
-      expect(search.requirement_identifiers).to be_present
+      expect(search.requirements).to be_present
     end
 
     # The directory answering differently the second time is what tells a
     # cached body from a body merely fetched again.
     it 'serves what it cached, not what the directory says next' do
       stub_directory
-      first = search.requirement_identifiers
+      first = search.requirements.map(&:id)
 
       other, other_headers = common_services_answer('eb_evidence_types_fr')
       stub_directory(answer: other, sent: other_headers)
 
-      expect(search.requirement_identifiers).to eq(first)
+      expect(search.requirements.map(&:id)).to eq(first)
     end
   end
 end

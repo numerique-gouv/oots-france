@@ -12,13 +12,9 @@ class DataServiceDirectoryClient
     @query = query || CommonServicesQuery.new(CommonServicesInstance::DATA_SERVICE_DIRECTORY)
   end
 
-  def providers(evidence_type_classification:, country_code:)
-    read(evidence_type_classification:, country_code:).providers
-  end
-
-  # What the directory publishes about the pairing itself — its own identifier,
-  # the format, the level of assurance — which a message does not carry and an
-  # operator reading the answer wants.
+  # Everything the directory publishes about the pairing: what a request adopts
+  # into its `DataServiceEvidenceType`, the organisations delivering it, and the
+  # level of assurance no message carries but an operator reads.
   def data_services(evidence_type_classification:, country_code:)
     read(evidence_type_classification:, country_code:).data_services
   end

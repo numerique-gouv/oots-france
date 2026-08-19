@@ -39,8 +39,13 @@
       collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Requirement>
-          <sdg:Identifier><%= EvidenceRequestBuilder::REQUIREMENT_IDENTIFIER %></sdg:Identifier>
-          <sdg:Name lang="EN"><%= EvidenceRequestBuilder::REQUIREMENT_NAME %></sdg:Name>
+          <sdg:Identifier><%= escape(requirement.id) %></sdg:Identifier>
+<%- requirement.descriptions.each do |language, name| -%>
+          <sdg:Name lang="<%= escape(language) %>"><%= escape(name) %></sdg:Name>
+<%- end -%>
+<%- requirement.details.each do |language, description| -%>
+          <sdg:Description lang="<%= escape(language) %>"><%= escape(description) %></sdg:Description>
+<%- end -%>
         </sdg:Requirement>
       </rim:Element>
     </rim:SlotValue>
@@ -69,7 +74,7 @@
     </rim:Slot>
     <rim:Slot name="EvidenceRequest">
       <rim:SlotValue xsi:type="rim:AnyValueType">
-<%= evidence_type %>
+<%= data_service_evidence_type %>
       </rim:SlotValue>
     </rim:Slot>
   </query:Query>

@@ -4,14 +4,7 @@
 # Corners: C1 is the requester, C4 the provider. They swap on the responses,
 # which is why each message states them rather than deriving them.
 class EvidenceRequestBuilder < ApplicationBuilder
-  # Hard-coded. The slot is required by R-EDM-REQ-S011 and must hold at least
-  # one element (R-EDM-REQ-S052), but its content should come from the Evidence
-  # Broker, which this deployment does not read yet. Stub 7 of
-  # `docs/reste_à_faire.md`.
-  REQUIREMENT_IDENTIFIER = 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42'.freeze
-  REQUIREMENT_NAME = 'Proof of tertiary education diploma/certificate/degree'.freeze
-
-  attr_reader :document_id, :timestamp, :procedure_code, :preview_possible
+  attr_reader :document_id, :timestamp, :procedure_code, :preview_possible, :requirement
 
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
   # This qualified form, and not the bare UUID, is what a correspondent echoes
@@ -19,13 +12,14 @@ class EvidenceRequestBuilder < ApplicationBuilder
   def request_id = "urn:uuid:#{document_id}"
 
   def initialize(
-    requester:, provider:, beneficiary:, evidence_type:, procedure_code:,
+    requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:,
     preview_possible: false, clock: Clock.new, uuid: UuidGenerator.new
   )
     @requester = requester
     @provider = provider
     @beneficiary_person = beneficiary
-    @requested_type = evidence_type
+    @requirement = requirement
+    @data_service = data_service
     @procedure_code = procedure_code
     @preview_possible = preview_possible
     @timestamp = clock.now
@@ -70,5 +64,5 @@ class EvidenceRequestBuilder < ApplicationBuilder
 
   def beneficiary = NaturalPersonBuilder.new(person: @beneficiary_person).render
 
-  def evidence_type = EvidenceTypeBuilder.new(evidence_type: @requested_type).render
+  def data_service_evidence_type = EvidenceTypeBuilder.new(data_service: @data_service).render
 end

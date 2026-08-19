@@ -14,6 +14,10 @@ module Directories
     UNKNOWN_EVIDENCE_TYPE = %w[EB:ERR:0001 EB:ERR:0002].freeze
     NO_PROVIDER = %w[DSD:ERR:0001 DSD:ERR:0002].freeze
 
+    # What a request needs to name what it asks for: the requirement it has to
+    # declare (R-EDM-REQ-S011), and the evidence types that satisfy it.
+    RequiredEvidence = Data.define(:requirement, :evidence_types)
+
     def initialize(evidence_broker: nil, data_service_directory: nil)
       @evidence_broker = evidence_broker || EvidenceBrokerClient.new
       @data_service_directory = data_service_directory || DataServiceDirectoryClient.new
@@ -22,40 +26,62 @@ module Directories
     # Two queries, and they do not take the same country: a procedure is ours,
     # so its requirements are read in our own jurisdiction, where the evidence
     # types that meet them are read in the country being asked.
+    #
+    # The requirement comes back alongside the types because a request writes it
+    # into its `Requirements` slot (R-EDM-REQ-S011): asking the Evidence Broker
+    # again for it would be a second round trip for a value already in hand.
     def evidence_types_for_procedure(procedure_code, country_code)
       requirement = first_requirement(procedure_code)
 
-      translating(UNKNOWN_EVIDENCE_TYPE, EvidenceTypeNotFound,
+      types = translating(UNKNOWN_EVIDENCE_TYPE, EvidenceTypeNotFound,
         'models.directories.common_services.no_evidence_type',
         procedure: procedure_code, country: country_code) do
-        @evidence_broker.evidence_types(requirement_id: requirement, country_code:)
+        @evidence_broker.evidence_types(requirement_id: requirement.id, country_code:)
       end
+
+      RequiredEvidence.new(requirement:, evidence_types: types)
     end
 
-    def providers(evidence_type_id, country_code)
-      translating(NO_PROVIDER, CountryCodeNotFound,
+    # One service and not the providers it publishes: chapter 4.5.1 has a
+    # request adopt this record into its `DataServiceEvidenceType`, identifier
+    # and distribution included — things a provider on its own does not carry.
+    #
+    # The first that names a provider, rather than simply the first: a record
+    # published without `sdg:AccessService` breaks R-DSD-RESP-S014, and writing
+    # its identifier would pair it with a provider another record announced.
+    def data_service(evidence_type_id, country_code)
+      published = translating(NO_PROVIDER, CountryCodeNotFound,
         'models.directories.common_services.no_provider',
         evidence_type: evidence_type_id, country: country_code) do
-        @data_service_directory.providers(
+        @data_service_directory.data_services(
           evidence_type_classification: evidence_type_id,
           country_code:,
         )
       end
+
+      vetted(published.find { |service| service.providers.any? }, :announced_data_service)
     end
 
     private
+
+    # Vetted here rather than when the directory was read: what this façade
+    # hands back goes into a message, where the console lists what a directory
+    # publishes as it publishes it — and the console does not come through here
+    # (see `DirectoryLookup::Resolve`).
+    def vetted(published, subject) = published&.validate!(subject, error: InvalidDirectoryEntry)
 
     # Seule la première exigence est gardée, là où plusieurs exigences d'une
     # même démarche s'ajoutent — voir le chantier 1 de `docs/reste_à_faire.md`.
     def first_requirement(procedure_code)
       found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound,
         'models.directories.common_services.unknown_procedure', procedure: procedure_code) do
-        @evidence_broker.requirement_identifiers(
+        @evidence_broker.requirements(
           procedure_code:, country_code: Settings.common_services_country_code,
         )
       end
 
-      found.first || raise(ProcedureCodeNotFound, "#{unknown_procedure(procedure_code)}.")
+      vetted(found.first, :announced_requirement) ||
+        raise(ProcedureCodeNotFound, "#{unknown_procedure(procedure_code)}.")
     end
 
     def unknown_procedure(code)

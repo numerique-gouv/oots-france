@@ -15,6 +15,8 @@ RSpec.describe EvidenceRequest::SendToGateway do
       recipient: build(:access_point, id: 'AP_DE_01'),
       beneficiary: build(:natural_person, eidas_identifier: 'FR/DE/123123123'),
       evidence_type: build(:evidence_type),
+      requirement: build(:requirement),
+      data_service: build(:data_service),
       procedure_code: ProcedureCode::STUDENT_GRANT,
       preview_possible: false,
       uuid: Oots::SequentialUuids.new,

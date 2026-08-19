@@ -1,10 +1,16 @@
 <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
-  <sdg:Identifier>00000000-0000-0000-0000-000000000000</sdg:Identifier>
-  <sdg:EvidenceTypeClassification><%= escape(evidence_type.id) %></sdg:EvidenceTypeClassification>
-<%- evidence_type.descriptions.each do |language, title| -%>
+  <sdg:Identifier><%= escape(data_service.id) %></sdg:Identifier>
+  <sdg:EvidenceTypeClassification><%= escape(data_service.evidence_type_classification) %></sdg:EvidenceTypeClassification>
+<%- data_service.descriptions.each do |language, title| -%>
   <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
 <%- end -%>
+<%- data_service.details.each do |language, description| -%>
+  <sdg:Description lang="<%= escape(language) %>"><%= escape(description) %></sdg:Description>
+<%- end -%>
   <sdg:DistributedAs>
-    <sdg:Format><%= escape(evidence_type.distribution_format) %></sdg:Format>
+    <sdg:Format><%= escape(data_service.distribution_format) %></sdg:Format>
+<%- if data_service.distribution_language.present? -%>
+    <sdg:Language><%= escape(data_service.distribution_language) %></sdg:Language>
+<%- end -%>
   </sdg:DistributedAs>
 </sdg:DataServiceEvidenceType>

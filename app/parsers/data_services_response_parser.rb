@@ -32,6 +32,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
       distribution_format: text(declared, './sdg:DistributedAs/sdg:Format'),
+      distribution_language: text(declared, './sdg:DistributedAs/sdg:Language'),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),

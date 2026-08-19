@@ -26,7 +26,7 @@
             level: service.level_of_assurance || '—') %>
 
       <%# L'identifiant que le DSD attribue au couple type et pays : c'est lui
-          que le bouchon 7 écrit encore en dur dans les requêtes émises, d'où sa
+          qu'une requête émise écrit dans son `DataServiceEvidenceType`, d'où sa
           place sur la carte plutôt que dans le repli technique. %>
       <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
             id: service.id || '—') %></span>

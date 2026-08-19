@@ -47,7 +47,7 @@ module Oots
 
     def request
       body = EvidenceRequestBuilder.new(
-        requester:, provider: german_provider, beneficiary:, evidence_type:,
+        requester:, provider: german_provider, beneficiary:, requirement:, data_service:,
         procedure_code: ProcedureCode::STUDENT_GRANT,
         clock:, uuid:,
       )
@@ -149,6 +149,25 @@ module Oots
         id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
         descriptions: { 'EN' => 'Certificate of Birth' },
         distribution_format: EvidenceType::PDF,
+      )
+    end
+
+    def requirement
+      @requirement ||= Requirement.new(
+        id: 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42',
+        descriptions: { 'EN' => 'Proof of tertiary education diploma/certificate/degree' },
+        details: { 'EN' => 'Proof that the person holds a diploma awarded by a tertiary education institution.' },
+      )
+    end
+
+    def data_service
+      @data_service ||= DataService.new(
+        id: '41170824-15d9-4c16-984e-63b75b937b8c',
+        evidence_type_classification: evidence_type.id,
+        distribution_format: EvidenceType::PDF,
+        distribution_language: 'EN',
+        descriptions: evidence_type.descriptions,
+        details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
       )
     end
   end

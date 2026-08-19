@@ -12,7 +12,7 @@
 class EvidenceRequestsController < ApplicationController
   # Neither the gateway nor the central directories are the caller's to fix,
   # and a 422 would blame them for an outage upstream.
-  UPSTREAM_FAILURES = %i[gateway_refused common_services_refused].freeze
+  UPSTREAM_FAILURES = %i[gateway_refused common_services_refused invalid_directory_entry].freeze
 
   rescue_from EbmsError, with: :report_bad_request
 

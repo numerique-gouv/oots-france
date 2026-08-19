@@ -33,6 +33,13 @@ fr:
       evidence_type:
         id: L'identifiant
         distribution_format: Le format de distribution
+      requirement:
+        id: L'identifiant
+      data_service:
+        id: L'identifiant
+        evidence_type_classification: Le type de justificatif
+        distribution_format: Le format de distribution
+        distribution_language: La langue de distribution
       evidence_requester:
         id: L'identifiant
       evidence_provider:
@@ -59,6 +66,21 @@ fr:
           attributes:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
+        requirement:
+          attributes:
+            id:
+              format: doit être une URL du dépôt sémantique terminée par un UUID
+          # Invariable, faute de savoir laquelle des formulations est en cause.
+          unlabelled_wording: une formulation ne nomme pas sa langue
+        data_service:
+          attributes:
+            id:
+              format: doit être un UUID
+            evidence_type_classification:
+              format: doit être une URL du dépôt sémantique terminée par un UUID
+            distribution_language:
+              format: doit être un code langue de deux lettres majuscules
+          unlabelled_wording: une formulation ne nomme pas sa langue
         resolution_filter:
           attributes:
             country_code:
@@ -189,10 +211,12 @@ fr:
       # ou un point d'accès.
       subjects:
         announced_access_point: Le point d'accès annoncé par l'annuaire
+        announced_data_service: Le service de données annoncé par l'annuaire
         announced_evidence_type: Le type de justificatif annoncé par l'annuaire
         announced_provider: Le fournisseur annoncé par l'annuaire
         announced_provider_address: L'adresse du fournisseur annoncé par l'annuaire
         announced_provider_identity: L'identité du fournisseur annoncé par l'annuaire
+        announced_requirement: L'exigence annoncée par l'annuaire
         final_recipient: Le destinataire final (C4)
         french_provider: Le fournisseur français
         message_sender: L'expéditeur du message reçu
@@ -227,12 +251,13 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
   interactors:
-    # Les huit échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # Les neuf échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
     failures:
       common_services_refused: L'annuaire a refusé
       gateway_refused: La passerelle a refusé le message
+      invalid_directory_entry: L'annuaire a publié une entrée qu'un message ne peut pas porter
       invalid_token: Jeton bénéficiaire invalide
       no_evidence_type: Aucun type de justificatif dans ce pays
       no_provider: Aucun fournisseur dans ce pays

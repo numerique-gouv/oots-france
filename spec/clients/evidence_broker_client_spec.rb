@@ -9,7 +9,7 @@ RSpec.describe EvidenceBrokerClient do
     allow(query).to receive(:search)
       .and_return(RequirementsResponseParser.new(common_services_answer('eb_requirements_fr').first))
 
-    expect(broker.requirement_identifiers(procedure_code: '00', country_code: 'FR'))
+    expect(broker.requirements(procedure_code: '00', country_code: 'FR').map(&:id))
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000'])
 
     expect(query).to have_received(:search).with(

@@ -26,8 +26,8 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     expect(response.body).to include('Keha v. 2.0', 'FIKEHA02', 'AP_FI_03')
   end
 
-  # The identifier the directory assigns to the pairing, which stub 7 does not
-  # yet read: outgoing requests carry a constant of their own.
+  # The identifier the directory assigns to the pairing, which an outgoing
+  # request writes into its `DataServiceEvidenceType` slot.
   it 'shows what the directory says of the service itself' do
     visit_providers
 

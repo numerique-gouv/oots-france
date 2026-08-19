@@ -15,6 +15,9 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 | `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq messages, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
 
 > [!IMPORTANT]
+> **La requête, elle, a été refaite depuis.** `messages/requete.xml` et `soap/requete.soumission.xml` ne sont plus ce que Node émettait : le bouchon 7 y écrivait une exigence et un identifiant de service en dur, là où le dépôt écrit désormais ce que les annuaires publient. Ces deux fichiers disent donc ce que les TDD exigent, et non ce qu'un code antérieur produisait ; les règles Schematron du chapitre 4.5.1 en sont le juge. Le reste du corpus garde sa provenance.
+
+> [!IMPORTANT]
 > Ces fichiers portent deux bizarreries du code d'origine, que la version Rails ne reproduit **pas** : le contenu base64 d'une pièce jointe y est entouré de parenthèses littérales (`<value>(…)</value>`), ce qui n'est pas du base64 et ne passait que parce qu'un décodeur MIME ignore les caractères hors alphabet ; et les titres d'un type de justificatif au-delà du premier y sont joints par une virgule. Le test de bout en bout, qui traverse une vraie passerelle, juge cet écart et le valide.
 
 ## `incoming/reel/` — ce que la passerelle envoie vraiment
