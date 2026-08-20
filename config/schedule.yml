@@ -8,6 +8,10 @@
 # The purge carries out the second half of article 17: keep for twelve months,
 # and do not keep beyond. Once a day is enough, the term being counted in
 # months.
+#
+# The expiry runs to the minute, chapter 4.4 expressing its intervals in
+# minutes: a coarser sweep would make the delay observed differ from the one
+# configured.
 default: &commun
   ramassage_messages_en_attente:
     cron: '*/2 * * * *'
@@ -17,6 +21,10 @@ default: &commun
     cron: '17 3 * * *'
     class: PurgeAuditEventsJob
     description: Efface du journal les échanges dont la durée de conservation est écoulée
+  expiration_conversations:
+    cron: '* * * * *'
+    class: ExpireConversationsJob
+    description: Clôt les échanges qu'aucune réponse n'a réglés dans le délai imparti
 
 development: *commun
 test: {}

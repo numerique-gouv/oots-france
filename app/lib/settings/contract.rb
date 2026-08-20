@@ -11,6 +11,7 @@ module Settings
       reject_unless_present
       reject_unless_whole
       reject_unless_lawful_retention
+      reject_unless_timeouts_ordered
     end
 
     private
@@ -40,6 +41,23 @@ module Settings
       return if months.nil? || months >= LAWFUL_RETENTION_MONTHS
 
       refuse(I18n.t('lib.settings.retention_below_floor', months:, floor: LAWFUL_RETENTION_MONTHS))
+    end
+
+    # Chapter 4.4: « The timeout interval used by Online Procedure Portals shall
+    # be configured to a value that exceeds the timeout interval of the Data
+    # Service and also takes into account the time needed for transmission and
+    # processing of the response including eDelivery. » Set the other way round,
+    # this side gives up while the correspondent may still answer, and then
+    # receives the answer to an exchange it has closed.
+    #
+    # After `reject_unless_whole` and for its reason: a `nil` here can only mean
+    # a variable dropped from NUMERIC.
+    def reject_unless_timeouts_ordered
+      requester = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES')
+      provider = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES')
+      return if requester.nil? || provider.nil? || requester > provider
+
+      refuse(I18n.t('lib.settings.timeouts_out_of_order', requester:, provider:))
     end
 
     def offender(name) = I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil))

@@ -47,20 +47,47 @@ class Conversation < ApplicationRecord
     format: { with: %r{\Ahttps?://}, message: :format },
     allow_nil: true
 
+  # Chapter 4.4, table « Evidence Exchange Timeouts »: past the interval the
+  # deployment configures, an exchange this side opened and nobody settled is a
+  # failure. Counted from the opening, the one instant that does not move —
+  # `updated_at` follows every write and `settled_at` is what expiring writes.
+  #
+  # Outgoing only. Where France answers, the timeout is an act of emission and
+  # `EvidenceProvision::AnswerRequest` carries it out while the correspondent is
+  # still addressable; a row written here would name an error nobody was sent.
+  scope :expired, -> { where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago) }
+
   # Where France asks, an exchange goes pending → sent → delivered, preview
   # aside; where it answers, pending → delivered or failed. The two states in
   # between describe the requesting side alone.
-  def sent! = settle(status: 'sent', settled_at: nil)
+  def sent! = settle({ status: 'sent', settled_at: nil })
 
-  def preview_required!(location) = settle(status: 'preview_required', preview_location: location)
+  def preview_required!(location) = answered(status: 'preview_required', preview_location: location)
 
-  def delivered! = settle(status: 'delivered')
+  def delivered! = answered(status: 'delivered')
 
   def failed!(code:, description:)
-    settle(status: 'failed', edm_error_code: code, error_description: description)
+    answered(status: 'failed', edm_error_code: code, error_description: description)
+  end
+
+  # The `failed` status and `EDM:ERR:0005`, not a status of its own: a
+  # correspondent that times out on us answers exactly this code, and both must
+  # read the same.
+  #
+  # Straight to `settle` and not through `failed!`: this writes a presumption,
+  # which overrules nothing.
+  def expire!
+    settle({ status: 'failed', edm_error_code: EdmException::TIMEOUT.code,
+             error_description: I18n.t('models.conversation.expired'), presumed_at: Time.current })
   end
 
   def settled? = !status.in?(IN_PROGRESS)
+
+  # Settled by this side giving up rather than by anything a correspondent said.
+  # Recorded when `expire!` writes it, not read back from what it wrote: a
+  # correspondent reaching its own deadline answers `EDM:ERR:0005` too, and the
+  # two must not be told apart by a code they share.
+  def presumed? = presumed_at.present?
 
   # Chapter 4.4 correlates a response to its request by this identifier. An
   # exchange recording none is not an exchange recording a different one: those
@@ -82,13 +109,27 @@ class Conversation < ApplicationRecord
 
   private
 
-  # The fallback sweep can pick up a message the push notification also
-  # delivered, so two workers race to record two outcomes on one exchange.
-  # `with_lock` and not a bare guard, which both would pass before either
+  # What an answer records, as opposed to what `expire!` presumes. An answer may
+  # overrule the presumption — the one settled state nothing actually produced,
+  # which an answer refutes by arriving — where the presumption overrules
+  # nothing: a guess never displaces what happened.
+  #
+  # The error columns are cleared unless the answer names its own, so that an
+  # exchange which stops failing stops naming a failure.
+  def answered(attributes)
+    settle({ edm_error_code: nil, error_description: nil, presumed_at: nil }.merge(attributes),
+      over_presumption: true)
+  end
+
+  # Two races meet here, and this lock decides both. The fallback sweep can pick
+  # up a message the push notification also delivered, so two workers record two
+  # outcomes on one exchange; and `ExpireConversationsJob` runs on its own
+  # worker, so it can reach a row an answer has settled since its batch was
+  # read. `with_lock` and not a bare guard, which both would pass before either
   # committed; `update!` and not `update_all`, which would skip the validations.
-  def settle(attributes)
+  def settle(attributes, over_presumption: false)
     with_lock do
-      return self if settled?
+      return self if settled? && !(over_presumption && presumed?)
 
       update!({ settled_at: Time.current }.merge(attributes))
     end

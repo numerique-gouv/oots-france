@@ -163,6 +163,20 @@ fr:
       identifiers:
         requirement: Exigence
         evidence_type: Type de justificatif
+    edm_error_code:
+      chapter: Chapitre 4.5.3 des TDD, qui définit les huit codes (nouvelle fenêtre)
+      # Les huit codes de la liste publiée avec les TDD, glosés pour un
+      # exploitant. Le libellé que porte le message, lui, reste dans
+      # `EdmException#message` : c'est celui qui part sur le fil, mot pour mot.
+      codes:
+        "EDM:ERR:0001": Authentification échouée
+        "EDM:ERR:0002": Autorisation manquante
+        "EDM:ERR:0003": Requête syntaxiquement ou sémantiquement invalide
+        "EDM:ERR:0004": Objet introuvable
+        "EDM:ERR:0005": Délai d'expiration dépassé
+        "EDM:ERR:0006": Objet référencé impossible à résoudre
+        "EDM:ERR:0007": Fonction ou capacité facultative non prise en charge
+        "EDM:ERR:0008": Requête dont la syntaxe ou la sémantique doit être corrigée
     pagination:
       previous: Page précédente
       next: Page suivante
@@ -187,6 +201,9 @@ fr:
     beneficiary_token:
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+  jobs:
+    expire_conversations_job:
+      failed: "Expiration impossible pour l'échange %{id} : %{error}"
   lib:
     audit_trail:
       unreadable_field: "Champ « %{field} » illisible, absent de la ligne de journal : %{error}"
@@ -198,6 +215,7 @@ fr:
       not_whole_entry: "%{name} (« %{value} »)"
       required: La variable d'environnement %{name} est obligatoire et ne peut pas être vide.
       retention_below_floor: "DUREE_RETENTION_JOURNAL_MOIS vaut %{months} : l'article 17(4) du règlement d'exécution (UE) 2022/1463 impose d'en conserver %{floor} au minimum."
+      timeouts_out_of_order: "DELAI_EXPIRATION_REQUETEUR_MINUTES vaut %{requester} et DELAI_EXPIRATION_FOURNISSEUR_MINUTES %{provider} : le chapitre 4.4 des TDD impose que le délai d'attente d'une réponse dépasse celui qu'on s'accorde pour en produire une, transport compris."
   parsers:
     # Dits par plusieurs lecteurs, d'où leur place au-dessus d'eux.
     not_a_query_response: Le message reçu n'est pas une QueryResponse.
@@ -231,6 +249,7 @@ fr:
     ebms_header:
       no_header: Pas d'entête ebMS dans le message reçu.
       no_sender: Pas d'expéditeur dans l'entête du message reçu.
+      timestamp_unreadable: "Horodatage illisible dans l'entête du message reçu : « %{value} »."
     common_services_response:
       not_a_query_response: La réponse de l'annuaire n'est pas une QueryResponse.
       unexpected_version: L'annuaire a répondu en %{announced}, et non en %{expected}.
@@ -241,6 +260,10 @@ fr:
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
   models:
+    # La raison que `Conversation#expire!` inscrit, et que la console lit sous
+    # « Raison de l'échec ».
+    conversation:
+      expired: Le correspondant n'a pas répondu dans le délai imparti.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une

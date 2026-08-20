@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_20_120100) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -61,6 +61,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_20_120100) do
     t.text "error_description"
     t.string "evidence_requester_id"
     t.boolean "incoming", default: false, null: false
+    t.datetime "presumed_at"
     t.text "preview_location"
     t.string "procedure_code"
     t.string "request_id"

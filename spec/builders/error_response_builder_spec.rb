@@ -28,6 +28,7 @@ RSpec.describe ErrorResponseBuilder do
     'erreur' => EdmException::OBJECT_NOT_FOUND,
     'erreurRequeteInvalide' => EdmException::INVALID_REQUEST,
     'erreurCapaciteNonSupportee' => EdmException::UNSUPPORTED_CAPABILITY,
+    'erreurExpiration' => EdmException::TIMEOUT,
   }.each do |fixture, exception|
     it "renders the #{exception.code} response as the reference message has it" do
       rendered = described_class.new(**attributes, exception:).render

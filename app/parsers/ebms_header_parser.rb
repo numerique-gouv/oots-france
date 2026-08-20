@@ -18,6 +18,18 @@ class EbmsHeaderParser
   # and the two must agree — see `EdmSpecification`.
   def specification_id = property('SpecificationId')
 
+  # The instant the sending gateway stamped, and the only origin a timeout of
+  # chapter 4.4 can be counted from: our own reception says when we took the
+  # message in hand, not when it arrived — `retention_undownloaded` lets the
+  # gateway hold one for two and a half days, which the periodic sweep then
+  # brings back as if it were new.
+  def sent_at
+    stamped = text_at(user_message, './eb:MessageInfo/eb:Timestamp')
+    Time.zone.iso8601(stamped.to_s)
+  rescue ArgumentError
+    raise UnreadableMessageError, I18n.t('parsers.ebms_header.timestamp_unreadable', value: stamped)
+  end
+
   # Where the message came from, and therefore where our answer goes. Read as an
   # access point rather than a bare string: a response without a recipient goes
   # nowhere, and the failure must show here.

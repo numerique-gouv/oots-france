@@ -4,10 +4,21 @@ require 'rails_helper'
 # was covered before — the only path ever exercised was the happy one, and only
 # by the end-to-end scenarios, which need a live gateway.
 RSpec.describe EvidenceProvision::AnswerRequest do
+  include ActiveSupport::Testing::TimeHelpers
+
   subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new) }
 
   let(:gateway) { gateway_accepting_submissions }
   let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
+
+  # The instant the fixtures of `incoming/reel/` were captured on a real gateway.
+  # Their ebMS timestamp ages with the calendar, so every request of this file
+  # would turn into a timeout of chapter 4.4 as the days pass; pinning the clock
+  # there keeps them inside the interval. Named rather than read off `message`,
+  # which one group deliberately makes unreadable.
+  CAPTURED_AT = '2026-08-11T09:22:22.000Z'.freeze
+
+  before { travel_to(Time.zone.parse(CAPTURED_AT)) }
 
   def submitted = gateway_body.then { |body| Nokogiri::XML(decoded_payload(body)) }
 
@@ -174,6 +185,86 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
         expect(status_of(submitted)).to end_with('Success')
       end
+    end
+  end
+
+  # Chapter 4.4: a Data Service implementing timeout « shall return a timeout
+  # exception response … instead of a successful response when the process of
+  # processing the request exceeds a configured timeout value ».
+  describe 'a request older than the interval France gives itself' do
+    before { travel_to(message.sent_at + Settings.provider_timeout + 1.second) }
+
+    it 'answers the timeout exception rather than the evidence' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0005')
+    end
+
+    it 'settles the exchange France opened under that code' do
+      conversation = create(:conversation, incoming: true, conversation_id: message.conversation_id,
+        country_code: nil, procedure_code: nil, evidence_requester_id: nil)
+
+      answer
+
+      expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0005')
+    end
+
+    it 'journals the error it sent' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0005')
+    end
+
+    # « instead of a successful response », and not instead of any response: the
+    # two refusals above the guard keep their code however late the request.
+    context 'when the procedure is one France does not serve' do
+      let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+
+      it 'refuses it as unknown rather than as expired' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0004')
+      end
+    end
+
+    context 'when the distribution format is one France does not serve' do
+      let(:message) { envelope_with_body('requete') { |body| body.sub('application/pdf', 'application/xml') } }
+
+      it 'refuses it as unsupported rather than as expired' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0007')
+      end
+    end
+  end
+
+  # Counting the interval is the first thing the provider side asks of an
+  # arriving message, and the answer can be unreadable. It reaches the same net
+  # as any other unreadable field, rather than escaping as an exception nobody
+  # answers.
+  describe 'a request whose timestamp cannot be read' do
+    let(:message) do
+      document = Nokogiri::XML(real_envelope('requete'))
+      document.xpath('//*[local-name()="Timestamp"]').first.content = ''
+
+      RetrievedMessageParser.new(document.to_xml)
+    end
+
+    it 'answers EDM:ERR:0003 rather than raising' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+    end
+  end
+
+  # A strict inequality: the instant the interval runs out is still inside it.
+  describe 'a request sitting exactly on the interval France gives itself' do
+    before { travel_to(message.sent_at + Settings.provider_timeout) }
+
+    it 'still serves the evidence' do
+      answer
+
+      expect(status_of(submitted)).to end_with('Success')
     end
   end
 

@@ -92,9 +92,16 @@ module EvidenceProvision
 
       return error_envelope(EdmException::OBJECT_NOT_FOUND) unless request.procedure_code == ProcedureCode::SYSTEM_CHECK
       return error_envelope(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
+      return error_envelope(EdmException::TIMEOUT) if expired?
 
       system_check_envelope
     end
+
+    # Chapter 4.4: a Data Service implementing timeout « shall return a timeout
+    # exception response … instead of a successful response ». Hence its place
+    # last, where the successful answer is chosen: a procedure nobody serves is
+    # worth `EDM:ERR:0004` however late the request.
+    def expired? = context.message.sent_at < Settings.provider_timeout.ago
 
     # The version travels twice, in the ebMS property and in the body slot, and
     # the two must agree. `request.validate!` pins the body to the same
