@@ -39,9 +39,9 @@ end
 if Rails.env.development?
   person = NaturalPerson.new(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
 
-  # One exchange per state France can reach, both directions, and between them
-  # every one of the eight event types — so that no page of the console stands
-  # empty and none shows only its easy case.
+  # One outgoing exchange per state France can reach, two received ones, and
+  # between them every one of the eight event types — so that no page of the
+  # console stands empty and none shows only its easy case.
   #
   # The codes are ones the directories actually publish: `00` is the OOTS system
   # check, the rest are procedures of the TDD. A demonstration wearing a code
@@ -87,9 +87,9 @@ if Rails.env.development?
     incoming = exchange.fetch(:incoming, false)
     opened = rank.days.ago
 
-    # Le sens est dans la recherche et non dans la reprise : `incoming` est en
-    # lecture seule une fois la ligne écrite, et une démonstration rejouée
-    # retrouve la sienne plutôt que de la retourner.
+    # The direction is in the lookup and not in the update: `incoming` is
+    # read-only once the row is written, and a demonstration replayed finds its
+    # own row rather than turning it round.
     conversation = Conversation.find_or_initialize_by(
       conversation_id: format('00000000-0000-0000-0000-%012d', rank + 1),
       incoming:,
@@ -134,7 +134,7 @@ if Rails.env.development?
     )
   end
 
-  puts "#{demonstrations.count { |one| !one.incoming? }} conversations émises, " \
-       "#{demonstrations.count(&:incoming?)} reçues, une par état."
+  puts "#{demonstrations.count { |one| !one.incoming? }} conversations émises, une par état, " \
+       "#{demonstrations.count(&:incoming?)} reçues."
   puts "#{AuditEvent.count} événements de journal, dont un refus sans échange."
 end

@@ -11,8 +11,8 @@
 
 <p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.declarations.lead_html') %></p>
 
-<%# Une carte par exigence : ce pays peut la déclarer plusieurs fois, sous des
-    intitulés différents, sans qu'elle demande pour autant deux choses. %>
+<%# One card per requirement: this country may declare it several times, under
+    different wordings, without its asking for two things. %>
 <% @requirements.each do |_, declared| %>
   <% exigence = declared.first.requirement %>
   <%= render CardComponent.new(

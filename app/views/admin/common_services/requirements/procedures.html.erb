@@ -12,8 +12,8 @@
 
 <p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.procedures.lead_html') %></p>
 
-<%# Une carte par démarche et non par déclaration : une même exigence est
-    déclarée sous un même code par des dizaines de pays. %>
+<%# One card per procedure and not per declaration: one requirement is
+    declared under one code by dozens of countries. %>
 <% @requirement.reference_frameworks.group_by(&:procedure_code).each do |code, declared| %>
   <% published = declared.any? { |one| one.country.present? } %>
   <%= render CardComponent.new(

@@ -19,7 +19,7 @@
           <tbody>
             <tr>
               <th scope="row"><%= t('admin.conversations.attributes.direction') %></th>
-              <td><%= t("admin.conversations.directions.#{@conversation.incoming? ? 'incoming' : 'outgoing'}") %></td>
+              <td><%= t("admin.conversations.directions.#{@conversation.direction}") %></td>
             </tr>
             <tr>
               <th scope="row"><%= t('admin.conversations.attributes.procedure') %></th>
@@ -62,8 +62,8 @@
   </div>
 </div>
 
-<%# Que sur un échange émis : la simulation rejoue la chaîne d'annuaires que la
-    France parcourt pour demander, et répondre n'en parcourt aucune. %>
+<%# On an outgoing exchange only: the simulation replays the chain of
+    directories France walks in order to ask, and answering walks none. %>
 <% if !@conversation.incoming? && @conversation.procedure_code.present? && @conversation.country_code.present? %>
   <p class="fr-mt-2w">
     <%= link_to t('admin.conversations.show.simulate'),
@@ -85,7 +85,7 @@
 
 <p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
 
-<%# La légende répète le titre de section, donc masquée à l'œil : le RGAA 5.4
-    veut qu'un tableau de données porte un titre, et il le garde. %>
+<%# The caption repeats the section title, so it is hidden from the eye: RGAA
+    5.4 wants a data table to carry a title, and it keeps one. %>
 <%= render 'admin/journal/events', events: @events, hide_caption: true, caption: t('admin.conversations.show.journal.caption'),
       empty: t('admin.conversations.show.journal.empty') %>

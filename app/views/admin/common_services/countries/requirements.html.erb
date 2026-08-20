@@ -40,7 +40,8 @@
   <%= t('admin.common_services.requirements.empty') %>
 </p>
 
-<%# Une requête par exigence : l'Evidence Broker n'en a pas qui parte du pays. %>
+<%# One query per requirement: the Evidence Broker has none that starts from
+    the country. %>
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
       parameters: { 'requirement-id' =>

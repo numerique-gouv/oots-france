@@ -122,8 +122,8 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
   end
 
   # An operator following a failed exchange arrives with the form filled in.
-  # Ces pages font sortir des requêtes vers les annuaires de la Commission : la
-  # garde de l'espace vaut pour elles comme pour le reste.
+  # These pages send queries out to the Commission's directories: the console's
+  # guard holds for them as for the rest.
   it 'asks the directories nothing at all without a session' do
     reset!
 
@@ -140,8 +140,8 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
     get admin_conversation_path(conversation.conversation_id)
 
     expect(response.parsed_body.css("a[href*='#{admin_common_services_resolution_path}']")).to be_present
-    # La démarche appartient au pays qui requête, donc à la France ici, et non
-    # au correspondant à qui le justificatif est demandé.
+    # The procedure belongs to the country that requests, so to France here, and
+    # not to the correspondent the evidence is asked of.
     expect(response.parsed_body.css("a[href='#{admin_common_services_procedure_country_path('00', 'FR')}']"))
       .to be_present
   end

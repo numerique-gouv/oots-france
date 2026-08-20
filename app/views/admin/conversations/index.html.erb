@@ -17,9 +17,9 @@
     <div class="fr-table__container">
       <div class="fr-table__content">
         <table>
-          <%# Masquée à l'œil : le titre de la page la répète mot pour mot. Jamais
-              retirée pour autant — le RGAA 5.4 veut qu'un tableau de données
-              porte un titre, et un lecteur d'écran l'annonce. %>
+          <%# Hidden from the eye: the page title repeats it word for word.
+              Never removed for all that — RGAA 5.4 wants a data table to carry
+              a title, and a screen reader announces it. %>
           <%= tag.caption(t('admin.conversations.index.caption'), class: 'fr-sr-only') %>
           <thead>
             <tr>
@@ -41,7 +41,7 @@
                 </td>
                 <td><%= render ConversationStatusComponent.new(status: conversation.status) %></td>
                 <td>
-                  <%= t("admin.conversations.directions.#{conversation.incoming? ? 'incoming' : 'outgoing'}") %>
+                  <%= t("admin.conversations.directions.#{conversation.direction}") %>
                 </td>
                 <td>
                   <%= render 'admin/country_procedure', procedure_code: conversation.procedure_code,

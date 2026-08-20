@@ -40,10 +40,12 @@ module IncomingMessage
 
     private
 
-    # What arrives is recorded before it is handled, and whether or not it can
-    # be honoured: the journal always, and an exchange where the request opens
-    # one. Doing it inside the handler would miss the request too malformed to
-    # answer, which is the one an auditor most needs to find.
+    # Recorded before it is handled, so that a request too malformed to answer
+    # — the one an auditor most needs to find — is journalled all the same.
+    #
+    # Two arrivals still leave no line: an unreadable SOAP envelope, and an ebMS
+    # action we cannot name, which `handler` refuses just above. Neither can be
+    # qualified as an event. Workstream 7 of `docs/reste_à_faire.md`.
     def record
       context.audit_trail.message_received(message: context.message, message_id: context.message_id)
       OpenConversation.call!(context)

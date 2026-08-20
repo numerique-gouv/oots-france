@@ -19,20 +19,20 @@
           <tbody>
             <%# Every column that carries something, decrypted subject included:
                 this is the page one comes to in order to know, and withholding a
-                field here would send the reader to a console to read it. %>
+                field here would send the reader to a console to read it. The
+                type alone is left out, the badge above the table saying it, as
+                an exchange's own page does with its status. %>
             <% t('admin.journal.attributes').each do |name, label| %>
               <% value = @event.public_send(name) %>
-              <% next if value.blank? %>
+              <% next if value.blank? || name == :event_type %>
               <tr>
                 <th scope="row"><%= label %></th>
                 <td>
-                  <%# Rendus comme le tableau les rend : la fiche ne doit rien
-                      dire de moins, ni le dire autrement. %>
+                  <%# Rendered as the table renders them: the detail page must
+                      say nothing less, nor say it differently. %>
                   <% case name %>
                   <% when :occurred_at %>
                     <%= l(value, format: :long) %>
-                  <% when :event_type %>
-                    <%= render EventTypeComponent.new(event_type: value) %>
                   <% when :conversation_id %>
                     <%= render 'admin/journal/conversation_link', event: @event %>
                   <% when :procedure_code %>

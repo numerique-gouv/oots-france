@@ -94,6 +94,22 @@ RSpec.describe AuditEventFilter do
     expect(refused.errors).to be_of_kind(:depuis, :unreadable)
   end
 
+  it 'refuses an unreadable end date as it does a start date' do
+    create(:audit_event)
+    refused = submitted(jusqu_a: 'pas-une-date')
+
+    expect(refused.apply(AuditEvent.all, 1)).to be_empty
+    expect(refused.errors).to be_of_kind(:jusqu_a, :unreadable)
+  end
+
+  # The heading is read before the list: a count standing over an empty listing
+  # would say there is something to see where the filter narrowed to nothing.
+  it 'reports no total it cannot stand behind' do
+    create(:audit_event)
+
+    expect(submitted(depuis: 'pas-une-date').total(AuditEvent.all)).to eq(0)
+  end
+
   describe 'paging' do
     it 'clamps a page below the first' do
       expect(described_class.new(page: -3).page_within(4 * described_class::PER_PAGE)).to eq(1)

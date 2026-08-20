@@ -11,13 +11,13 @@ module IncomingMessage
     def call
       return unless request?
 
-      # Sur le seul identifiant, sans le sens : le scénario de bout en bout
-      # boucle sur une passerelle unique, où la France est ses deux
-      # correspondants et où le même identifiant désigne légitimement les deux
-      # côtés d'un échange. Ce qu'une requête rejouant un identifiant émis par
-      # la France pourrait faire de mal est écarté au règlement, où c'est
-      # l'écriture qui a lieu — ici, adopter une ligne existante n'en change
-      # aucune, le bloc ne jouant qu'à la création.
+      # On the identifier alone, without the direction: the end-to-end scenario
+      # loops through a single gateway, where France is both its correspondents
+      # and one identifier legitimately names both sides of an exchange.
+      #
+      # Adopting an existing row writes nothing to it, the block running only on
+      # creation, and `EvidenceProvision::AnswerRequest` settles an exchange
+      # France received and no other.
       Conversation.find_or_create_by!(conversation_id: context.message.conversation_id) do |conversation|
         conversation.assign_attributes(opened)
       end

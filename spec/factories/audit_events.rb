@@ -6,14 +6,21 @@ FactoryBot.define do
     procedure_code { ProcedureCode::SYSTEM_CHECK }
     evidence_requester_id { '00000000000002' }
 
+    # Composed as `AuditTrail` composes it, and never by hand: a deterministic
+    # column is only searchable by a value built exactly as it was stored, so a
+    # factory spelling the key out could prove a search that no exchange answers.
     trait :about_sophie do
-      evidence_subject { { family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25' }.to_json }
-      evidence_subject_key { 'dupont|sophie|1965-11-25' }
+      transient { person { { family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25' } } }
+
+      evidence_subject { person.to_json }
+      evidence_subject_key { AuditEvent.subject_key(**person) }
     end
 
     trait :about_a_person do
-      evidence_subject { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' }.to_json }
-      evidence_subject_key { 'königreich|ada|1990-01-01' }
+      transient { person { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' } } }
+
+      evidence_subject { person.to_json }
+      evidence_subject_key { AuditEvent.subject_key(**person) }
     end
   end
 end

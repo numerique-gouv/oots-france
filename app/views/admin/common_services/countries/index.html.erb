@@ -20,9 +20,9 @@
 
 <%= render 'admin/common_services/results_count', id: 'decompte-pays', count: @procedures.size %>
 
-<%# Les deux rôles, un lien chacun : c'est ici qu'ils se séparent, et le
-    décompte n'existe que du côté requêteur — l'Evidence Broker n'a pas de
-    requête qui parte d'un pays fournisseur. %>
+<%# The two roles, one link each: this is where they part, and the tally
+    exists on the requesting side alone — the Evidence Broker has no query that
+    starts from a providing country. %>
 <div id="liste-pays">
 <% @procedures.each do |code, procedures| %>
   <div>

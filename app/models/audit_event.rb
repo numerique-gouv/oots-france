@@ -29,7 +29,9 @@ class AuditEvent < ApplicationRecord
   # carries more than it.
   SUBJECT_FIELDS = %i[family_name given_name date_of_birth].freeze
 
-  # The value the deterministic column is queried by. Case-folded, because two
+  # The value the deterministic column is queried by, and — from workstream 5 of
+  # `docs/reste_à_faire.md` on — compared against to check that a response
+  # describes the person the request asked about. Case-folded, because two
   # member states spell a name in two cases and mean one person.
   #
   # It lives here rather than where it is written: a deterministic column can
@@ -54,15 +56,18 @@ class AuditEvent < ApplicationRecord
   # Which end of the gateway a message went through. Two events are no ebMS
   # message at all — a refusal pronounced before the gateway was called, and the
   # handing of the evidence to the French requester — and neither list holds
-  # them. The pages read the type and the country as they are recorded, and draw
-  # their own conclusion.
+  # them.
+  #
+  # Read by `db/seeds.rb` alone, to decide which demonstration events carry a
+  # message identifier. No page reads them: they derive the direction from the
+  # type and the country as recorded.
   SENT_BY_FRANCE = %w[request_sent response_sent error_sent].freeze
   RECEIVED_BY_FRANCE = %w[request_received response_received error_received].freeze
 
-  # Le pendant du `has_many` de `Conversation`, joint par l'identifiant ebMS.
-  # `optional`, et sans contrainte en base : un refus prononcé avant qu'aucun
-  # échange soit ouvert n'en nomme aucun, et une réponse peut en nommer un que la
-  # France n'a jamais ouvert.
+  # The counterpart of `Conversation`'s `has_many`, joined by the ebMS
+  # identifier. `optional`, and with no database constraint: a refusal pronounced
+  # before any exchange was opened names none, and a response can name one France
+  # never opened.
   belongs_to :conversation, primary_key: :conversation_id,
     optional: true, inverse_of: :audit_events
 

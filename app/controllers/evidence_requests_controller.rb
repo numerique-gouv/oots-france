@@ -51,9 +51,9 @@ class EvidenceRequestsController < ApplicationController
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire, :previsualisationRequise)
   end
 
-  # Mis en majuscules à l'entrée : les deux filtres de la console majuscules ce
-  # qu'on leur demande, et un « fr » écrit tel quel ne répondrait jamais à une
-  # recherche par pays — sur le journal que l'article 17 impose de savoir relire.
+  # Upcased on the way in: both console filters upcase what they are asked, so
+  # an `fr` stored as written would answer no search by country — on the very
+  # log article 17 requires to be readable back.
   def country_code = query[:codePays]&.upcase
 
   def exchange

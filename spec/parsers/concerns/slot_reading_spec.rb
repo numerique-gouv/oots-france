@@ -12,9 +12,9 @@ RSpec.describe SlotReading do
     expect_said(written)
   end
 
-  # `R-EDM-REQ-C073` n'impose de l'adresse d'un agent que le pays, et les
-  # fixtures de référence l'écrivent toutes en majuscules : ce que fait la
-  # lecture d'un correspondant moins soigneux ne se voit que d'ici.
+  # `R-EDM-REQ-C073` requires nothing of an agent's address but the country, and
+  # the reference fixtures all write it upper case: what reading a less careful
+  # correspondent does is visible only from here.
   describe 'the country an agent declares' do
     let(:reader) do
       Class.new {
@@ -40,8 +40,8 @@ RSpec.describe SlotReading do
       expect(reader.agent_country(agent('BE'))).to eq('BE')
     end
 
-    # Stocké tel quel, il ne répondrait jamais à un filtre par pays — le journal
-    # garde ce qu'il a pu lire, et rien de ce qu'il ne peut pas relire.
+    # Stored as written, it would answer no filter by country — the log keeps
+    # what it could read, and nothing it cannot read back.
     it 'drops what is not shaped like a country code' do
       expect(reader.agent_country(agent('France'))).to be_nil
     end

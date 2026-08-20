@@ -27,8 +27,9 @@
           title: t('admin.common_services.procedures.index.title'),
           url: admin_common_services_procedures_path,
           description: t('admin.common_services.catalogue.show.tiles.procedures', count: @procedures.size,
-            # Le décompte est écrit pour se lire seul, donc capitalisé : recousu
-            # au milieu d'une phrase, il y remonterait sa majuscule.
+            # The tally is written to be read on its own, hence capitalised:
+            # stitched into the middle of a sentence, it would carry its
+            # capital in.
             countries: t('admin.common_services.countries.count', count: @countries.size).downcase),
         ) %>
   </div>
@@ -41,8 +42,8 @@
   </div>
 </div>
 
-<%# Le DSD n'accepte pas de requête sans son type de justificatif et son pays :
-    ses fournisseurs ne se listent pas, ils se demandent. %>
+<%# The Data Service Directory takes no query without an evidence type and a
+    country: its providers are not listed, they are asked for. %>
 <%= dsfr_callout(title: t('admin.common_services.catalogue.show.providers.title')) do %>
   <%= t('admin.common_services.catalogue.show.providers.body') %>
 <% end %>

@@ -4,8 +4,8 @@ RSpec.describe 'Admin::Conversations' do
   describe 'both halves of the four-corner model' do
     before { sign_in }
 
-    # Les deux moitiés du modèle en quatre coins, sur la même liste : ce que la
-    # France demande, et ce qu'on lui demande.
+    # Both halves of the four-corner model, on one listing: what France asks,
+    # and what is asked of it.
     describe 'an exchange France did not open' do
       it 'holds its line, and says which way it goes' do
         create(:conversation, :delivered, incoming: true, conversation_id: 'venue-d-ailleurs',
@@ -17,11 +17,12 @@ RSpec.describe 'Admin::Conversations' do
         expect(response.body).to include(I18n.t('admin.conversations.directions.incoming'))
       end
 
-      # Trois colonnes qu'un échange reçu peut ne pas porter : sans garde, le lien
-      # vers la démarche ferait lever la page entière.
-      # La démarche appartient au pays qui requête : la France quand elle demande,
-      # le correspondant quand il demande. `R-EDM-REQ-C073` fait que sa requête
-      # le nomme d'ordinaire — reste le cas où l'agent lui-même était illisible.
+      # Three columns a received exchange may not carry: unguarded, the link to
+      # the procedure would raise on the whole page.
+      # The procedure belongs to the country that requests: France when it asks,
+      # the correspondent when the correspondent asks. `R-EDM-REQ-C073` means its
+      # request usually names it — leaving the case where the agent itself could
+      # not be read.
       it 'leaves the procedure without a flag when the requester is a correspondent' do
         conversation = create(:conversation, :delivered, incoming: true, country_code: nil,
           procedure_code: ProcedureCode::SYSTEM_CHECK)
@@ -33,8 +34,8 @@ RSpec.describe 'Admin::Conversations' do
         ))
       end
 
-      # Le pays sollicité, lui, se sait toujours : c'est la France quand on
-      # l'interroge, et le correspondant quand elle demande.
+      # The solicited country, on the other hand, is always known: France when
+      # France is queried, the correspondent when France asks.
       it 'names France as the country the evidence is asked of' do
         conversation = create(:conversation, :delivered, incoming: true, country_code: 'BE')
 
@@ -54,8 +55,8 @@ RSpec.describe 'Admin::Conversations' do
       end
     end
 
-    # La fiche porte désormais le journal de l'échange. L'identifiant du message,
-    # lui, ne se lit que sur la fiche de l'événement : le tableau le tait.
+    # The detail page carries the exchange's log. The message identifier is read
+    # on the event's own page alone: the table keeps it back.
     it 'shows what the journal retains of the exchange' do
       conversation = create(:conversation, :delivered)
       event = create(:audit_event, event_type: 'evidence_delivered',

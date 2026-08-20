@@ -4,7 +4,7 @@ RSpec.describe IncomingMessage::OpenConversation do
   subject(:open_conversation) { described_class.call(message:) }
 
   let(:body) { instance_double(EvidenceRequestParser, procedure_code: '00', requester:) }
-  let(:requester) { EvidenceRequester.new(id: '00000000000009', type_id: '0002') }
+  let(:requester) { EvidenceRequester.new(id: '00000000000009', type_id: '0002', address: Address.new(country: 'FI')) }
 
   context 'when a member state asks France' do
     let(:message) do
@@ -12,14 +12,17 @@ RSpec.describe IncomingMessage::OpenConversation do
         conversation_id: 'venue-d-ailleurs', body:)
     end
 
-    # Answering leaves a row where asking does: the listing that used to show
-    # only what France requested now shows both halves of the four-corner model.
+    # Answering leaves a row where asking does, so the listing carries both
+    # halves of the four-corner model: what France asks, and what it is asked.
     it 'opens an exchange of its own' do
       open_conversation
 
       expect(Conversation.sole).to have_attributes(
         conversation_id: 'venue-d-ailleurs', incoming: true,
         procedure_code: '00', evidence_requester_id: '00000000000009', status: 'pending',
+        # `R-EDM-REQ-C073` puts it on the agent classified `ER`: the country
+        # that asks, and never France's own.
+        country_code: 'FI',
       )
     end
 
@@ -31,8 +34,8 @@ RSpec.describe IncomingMessage::OpenConversation do
       expect { described_class.call(message:) }.not_to change(Conversation, :count)
     end
 
-    # Le bout en bout boucle sur une passerelle unique : la France y tient ses
-    # deux rôles, et le même identifiant désigne légitimement les deux côtés.
+    # The end-to-end scenario loops through a single gateway: France holds both
+    # its roles there, and one identifier legitimately names both sides.
     it 'adopts without changing it an exchange that bears the same identifier' do
       create(:conversation, conversation_id: 'venue-d-ailleurs', incoming: false, country_code: 'FI')
 

@@ -21,7 +21,7 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
 | `/admin/journal` | Le [journal des échanges](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, démarche, pays, requêteur et période. C'est la seule vue qui porte **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune conversation ne peut représenter. |
 | `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris. |
-| `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne. **Trois champs exacts** : la clé du sujet est chiffrée en mode déterministe, ce qui rend l'égalité interrogeable et rien d'autre. |
+| `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne. **Trois champs exacts**, pour la raison qu'expose [journal_des_echanges.md](journal_des_echanges.md#le-chiffrement-au-repos-en-détail). |
 | `/admin/common_services` | L'accueil des annuaires centraux : ce que l'Evidence Broker publie, en nombres, et les trois entrées vers les listes — pays, démarches, exigences. |
 | `/admin/common_services/procedures` | Les codes de démarche que les États membres ont déclarés, avec leur intitulé et les pays qui les déclarent. |
 | `…/procedures/:code` | Les pays qui ont déclaré ce code, et pour chacun le nombre d'exigences qu'il en tire. |
@@ -66,7 +66,7 @@ Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, e
 
 **Les pages des conversations et des annuaires ne montrent aucune donnée personnelle**, et cette propriété-là doit survivre à toute page qu'on leur ajoutera : la table `conversations` n'en porte aucune, par construction — le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré —, et les annuaires centraux ne publient que des organisations et des catalogues.
 
-**Les pages du journal, elles, en montrent**, et c'est leur raison d'être : l'article 17 existe pour qu'un auditeur puisse répondre à « quelles données de cette personne ont circulé ». C'est une décision prise pour ces pages-là, et pour elles seules.
+**Les pages du journal, elles, en montrent**, et c'est leur raison d'être — [journal_des_echanges.md](journal_des_echanges.md#le-relire) dit laquelle. C'est une décision prise pour ces pages-là, et pour elles seules.
 
 Deux valeurs viennent d'un correspondant étranger et sont traitées comme telles :
 

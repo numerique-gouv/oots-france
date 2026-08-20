@@ -22,9 +22,10 @@
 
 <h2 class="fr-h5 fr-mt-6w"><%= t('admin.common_services.requirements.show.by_country') %></h2>
 
-<%# C'est le principe même d'OOTS, et la raison pour laquelle cette liste n'est
-    pas bornée au pays qui impose l'exigence : le justificatif vient du pays qui
-    le détient, lequel n'est presque jamais celui où la démarche s'accomplit. %>
+<%# This is the very principle of OOTS, and why this list is not bounded to the
+    country that imposes the requirement: the evidence comes from the country
+    that holds it, which is almost never the one where the procedure is carried
+    out. %>
 <p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.show.lead_html') %></p>
 
 <%= render SearchFieldComponent.new(
@@ -39,12 +40,12 @@
 
 <div id="par-pays-fournisseur">
 <% @by_country.each do |country, lists| %>
-  <%# Le poids d'une carte est ce que le décompte additionne : un pays compte
-      pour les types qu'il publie, non pour un. %>
+  <%# The weight of a card is what the tally adds up: a country counts for the
+      evidence types it publishes, not for one. %>
   <div data-tally-weight="<%= lists.sum { |list| list.evidence_types.size } %>">
   <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
-    <%# Le titre de la page est loin au-dessus quand on est descendu de vingt
-        cartes : chacune redit de quelle exigence elle parle. %>
+    <%# The page title is far above once one has scrolled past twenty cards:
+        each says again which requirement it speaks of. %>
     <%= t('admin.common_services.requirements.show.card_html',
           requirement: @requirement.display_name, country: in_country(country)) %>
 
@@ -58,9 +59,9 @@
 
 <p id="aucun-type" <%= 'hidden' if @by_country.any? %>><%= t('admin.common_services.requirements.show.empty') %></p>
 
-<%# L'identifiant est une adresse du Semantic Repository, choisie ailleurs :
-    elle se lit, elle ne se suit pas — la même règle que pour l'espace de
-    prévisualisation d'une conversation. %>
+<%# The identifier is a Semantic Repository address, chosen elsewhere: it is
+    read, not followed — the same rule as for a conversation's preview
+    space. %>
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
       identifiers: { requirement: @requirement.id },

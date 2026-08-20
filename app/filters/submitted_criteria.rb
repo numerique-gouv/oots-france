@@ -15,8 +15,8 @@ module SubmittedCriteria
   end
 
   class_methods do
-    # Le pays, tel que trois filtres le demandent : deux lettres, la casse
-    # laissée à qui saisit puisqu'ils majusculent tous ce qu'ils comparent.
+    # The country, as three filters ask for it: two letters, the case left to
+    # whoever types since they all upcase what they compare.
     def validates_country_code
       validates :country_code, format: { with: /\A[A-Za-z]{2}\z/, message: :format }, allow_blank: true
     end

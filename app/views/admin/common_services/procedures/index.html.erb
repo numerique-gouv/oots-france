@@ -16,10 +16,9 @@
 
 <%= render 'admin/common_services/results_count', id: 'decompte-demarches', count: @procedures.size %>
 
-<%# Le code et son intitulé font un seul titre : le code seul ne dit rien, et
-    l'intitulé seul ne se retrouve dans aucune requête. La démarche de test
-    « 00 » ne figure dans aucune liste de codes — elle appartient aux
-    environnements d'essai — et s'affiche donc nue. %>
+<%# The code and its wording make one title: the code alone says nothing, and
+    the wording alone appears in no query. The test procedure « 00 » is in no
+    code list — it belongs to the test environments — and so shows bare. %>
 <div id="liste-demarches">
   <% @procedures.each do |procedure| %>
     <div>

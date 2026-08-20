@@ -50,9 +50,9 @@ RSpec.describe 'Admin::Journal::Subjects' do
     expect(response.body).to include(CGI.escapeHTML(
       I18n.t('activemodel.errors.models.subject_search.attributes.date_of_birth.format'),
     ))
-    # Et surtout pas le message de la recherche vide : dire « aucun échange ne
-    # concerne cette personne » d'une recherche qui n'a pas eu lieu affirme sur
-    # la personne ce qu'on ne sait que de la requête.
+    # And above all not the empty-search message: saying « aucun échange ne
+    # concerne cette personne » of a search that never ran asserts about the
+    # person what is only known about the query.
     expect(response.body).not_to include(I18n.t('admin.journal.subjects.show.empty'))
   end
 

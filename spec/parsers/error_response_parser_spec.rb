@@ -61,9 +61,9 @@ RSpec.describe ErrorResponseParser do
     end
   end
 
-  # `R-EDM-REQ-C073` et son équivalent pour l'erreur imposent une adresse sur
-  # l'agent classé `ERRP`, et n'y imposent que le pays : c'est de là que se lit
-  # le pays d'où le refus est venu.
+  # `R-EDM-REQ-C073` and its counterpart for the error require an address on the
+  # agent classified `ERRP`, and require nothing of it but the country: that is
+  # where the country the refusal came from is read.
   it 'reads the country the refusal came from' do
     expect(error.provider_country).to eq('FR')
   end

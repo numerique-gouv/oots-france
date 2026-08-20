@@ -27,9 +27,9 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(Conversation.count).to eq(0)
     end
 
-    # Ce que la ligne porte, sans dire de quel côté chacun se tenait : la
-    # démarche mène à sa page, le pays est celui du correspondant, et c'est au
-    # lecteur de conclure — le type le dit assez.
+    # What the row carries, without saying which side each stood on: the
+    # procedure leads to its page, the country is the correspondent's, and it is
+    # for the reader to conclude — the event type says enough.
     it 'leads to the procedure and names the country of the correspondent' do
       create(:audit_event, event_type: 'request_sent', procedure_code: 'S1', country_code: 'FI')
 
@@ -110,8 +110,8 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.body).to include('message-de-la-passerelle', 'Königreich')
     end
 
-    # Le lien qui préremplit la recherche : c'est `subject_criteria` qui le
-    # compose, depuis le sujet et non depuis la clé, dont la casse est perdue.
+    # The link that prefills the search: `subject_criteria` composes it, from the
+    # subject and not from the key, whose case is lost.
     it 'links to what else concerns the same person, with the case unspoilt' do
       event = create(:audit_event, :about_a_person)
 
@@ -122,8 +122,8 @@ RSpec.describe 'Admin::Journal::Events' do
       ))
     end
 
-    # Elle porte la seule raison écrite du refus, et son échange n'existe pas :
-    # rien d'autre ne mène à elle.
+    # It carries the only written reason for the refusal, and its exchange does
+    # not exist: nothing else leads to it.
     it 'opens the page of a refusal that never opened an exchange' do
       event = create(:audit_event, event_type: 'request_refused', conversation_id: nil,
         detail: 'Le bénéficiaire doit être renseigné')

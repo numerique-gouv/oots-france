@@ -23,18 +23,18 @@ class Conversation < ApplicationRecord
 
   IN_PROGRESS = %w[pending sent].freeze
 
-  # Le journal de cet échange, joint par l'identifiant ebMS et non par la clé
-  # primaire — c'est lui que les deux tables portent.
+  # The log of this exchange, joined by the ebMS identifier and not by the
+  # primary key — that identifier is what both tables carry.
   #
-  # `dependent: nil`, dit explicitement : les deux durées de vie sont
-  # indépendantes. Le journal s'efface à son propre terme, que
-  # `PurgeAuditEventsJob` tient, et rien ne purge les conversations ; une trace
-  # légale ne doit jamais tomber avec l'état opérationnel qu'elle relate.
+  # `dependent: nil`, said explicitly: the two lifetimes are independent. The log
+  # is erased at its own term, which `PurgeAuditEventsJob` keeps, and nothing
+  # purges conversations; a legal trace must never fall with the operational
+  # state it relates.
   has_many :audit_events, -> { order(occurred_at: :asc) }, dependent: nil,
     primary_key: :conversation_id, foreign_key: :conversation_id, inverse_of: :conversation
 
-  # Figé à l'ouverture : les deux lectures de `country_code` en dépendent, et le
-  # retourner ferait dire à `requester_country_code` le pays sollicité.
+  # Fixed at opening: both readings of `country_code` depend on it, and turning
+  # it round would make `requester_country_code` name the solicited country.
   attr_readonly :incoming
 
   validates :conversation_id, presence: true, uniqueness: true
@@ -61,6 +61,9 @@ class Conversation < ApplicationRecord
   end
 
   def settled? = !status.in?(IN_PROGRESS)
+
+  # Which way the exchange runs, as the console words it.
+  def direction = incoming? ? :incoming : :outgoing
 
   # Whose procedure this is. A procedure belongs to the country that requests —
   # `Directories::CommonServices#first_requirement` asks the Evidence Broker
