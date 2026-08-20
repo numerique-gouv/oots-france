@@ -56,7 +56,7 @@ class AuditTrail
       conversation_id: message.conversation_id,
       exchange_id: message.exchange_id,
       message_id:,
-      **(readable { received_body(message) } || {}),
+      **(readable(:body) { received_body(message) } || {}),
     )
   end
 
@@ -65,9 +65,28 @@ class AuditTrail
                             **answered(**answer), **evidence_fingerprint(evidence))
   end
 
+  # `detail` names the rule the refused request broke, so that the journal says
+  # what the correspondent was told and not merely that they were told
+  # something.
   def error_sent(exception:, **answer)
     record('error_sent', ebms_action: EbmsAction::EXCEPTION_RESPONSE,
-      edm_error_code: exception.code, **answered(**answer))
+      edm_error_code: exception.code, detail: exception.detail, **answered(**answer))
+  end
+
+  # What a response was turned away for, chapter 4.4 naming two grounds. The
+  # arrival has its own line already — `IncomingMessage::Process` journals
+  # before it dispatches — and this one says what became of it, so that an
+  # exchange left waiting can be accounted for later.
+  def response_refused(conversation:, reason:)
+    record(
+      'response_refused',
+      conversation_id: conversation.conversation_id,
+      procedure_code: conversation.procedure_code,
+      country_code: conversation.country_code,
+      evidence_requester_id: conversation.evidence_requester_id,
+      request_id: conversation.request_id,
+      detail: reason,
+    )
   end
 
   def evidence_delivered(conversation:, evidence:)
@@ -119,12 +138,12 @@ class AuditTrail
   # ones already read — and those are exactly what an auditor has left.
   def received_request(request)
     {
-      request_id: readable { request.request_id },
-      procedure_code: readable { request.procedure_code },
-      evidence_type_id: readable { request.evidence_type.id },
+      request_id: readable(:request_id) { request.request_id },
+      procedure_code: readable(:procedure_code) { request.procedure_code },
+      evidence_type_id: readable(:evidence_type_id) { request.evidence_type.id },
       **requesting_party(request),
       **providing_authority(french_provider),
-      **(readable { AuditEvent.subject(request.beneficiary) } || {}),
+      **(readable(:evidence_subject) { AuditEvent.subject(request.beneficiary) } || {}),
     }
   end
 
@@ -132,23 +151,39 @@ class AuditTrail
   # the country within it: that is where a received request names the country
   # asking, and the only place it does.
   def requesting_party(request)
-    requester = readable { request.requester }
+    requester = readable(:requesting_authority) { request.requester }
     return {} if requester.nil?
 
     { country_code: requester.address.country, **requesting_authority(requester) }
   end
 
+  # Chapter 4.8 asks the response flow for both parties, the response identifier
+  # and the evidence identifier; the country comes from the providing agent,
+  # which is also the party that answered.
   def received_response(message)
+    provider = readable(:providing_authority) { message.body.provider }
+
     {
-      request_id: readable { message.body.request_id },
-      country_code: readable { message.body.provider_country },
-      **evidence_fingerprint(readable { message.evidence }),
+      **response_correlation(message),
+      country_code: provider&.address&.country,
+      **authorities(requesting: readable(:requesting_authority) { message.body.requester }, providing: provider),
+      **evidence_fingerprint(readable(:evidence_digest) { message.evidence }),
+    }
+  end
+
+  # The three identifiers chapter 4.8 asks the response flow for: the request
+  # answered, the response itself, and the evidence it carries.
+  def response_correlation(message)
+    {
+      request_id: readable(:request_id) { message.body.request_id },
+      response_id: readable(:response_id) { message.body.response_id },
+      evidence_identifier: readable(:evidence_identifier) { message.body.evidence_identifier },
     }
   end
 
   def received_error(error)
-    { request_id: readable { error.request_id }, edm_error_code: readable { error.code },
-      country_code: readable { error.provider_country }, detail: readable { error.message } }
+    { request_id: readable(:request_id) { error.request_id }, edm_error_code: readable(:edm_error_code) { error.code },
+      country_code: readable(:country_code) { error.provider_country }, detail: readable(:detail) { error.message } }
   end
 
   def authorities(requesting:, providing:)
@@ -177,12 +212,17 @@ class AuditTrail
 
   # A message we cannot read must still be journalled, so what its body would
   # have added is dropped rather than raised — the trace is worth more than the
-  # field. The message itself is not swallowed: the caller goes on to fail on
-  # it, and either answers `EDM:ERR:0003` or, when it is the requester that
-  # cannot be read and there is therefore nobody to answer, gives up.
-  def readable
+  # field.
+  #
+  # Said aloud all the same, because on the response side nothing else will:
+  # `SettleConversation` takes the evidence from the envelope and the requester
+  # from the exchange, never from the body, so the two parties chapter 4.8 asks
+  # for can go missing from the one row that records them while the exchange
+  # succeeds. A degraded row is then at least findable in the logs.
+  def readable(field)
     yield
-  rescue UnreadableMessageError
+  rescue UnreadableMessageError => e
+    Rails.logger.warn(I18n.t('lib.audit_trail.unreadable_field', field:, error: e.message))
     nil
   end
 

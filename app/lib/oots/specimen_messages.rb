@@ -21,7 +21,10 @@ module Oots
     # a code never confronted with the rules.
     ERROR_SPECIMENS = {
       'erreur' => EdmException::OBJECT_NOT_FOUND,
-      'erreurRequeteInvalide' => EdmException::INVALID_REQUEST,
+      # The one specimen carrying a `detail`, so that the rules are asked
+      # whether an exception naming the rule it refused conforms. No
+      # `R-EDM-ERR-*` constrains the attribute, and nothing else would prove it.
+      'erreurRequeteInvalide' => EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S016'),
       'erreurCapaciteNonSupportee' => EdmException::UNSUPPORTED_CAPABILITY,
     }.freeze
 

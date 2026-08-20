@@ -188,6 +188,8 @@ fr:
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
   lib:
+    audit_trail:
+      unreadable_field: "Champ « %{field} » illisible, absent de la ligne de journal : %{error}"
     public_key_set:
       unknown_key_type: "Type de clé inconnu : « %{type} »."
     settings:
@@ -207,6 +209,13 @@ fr:
       without: Le slot « %{name} » ne porte pas %{path}
     evidence_request:
       not_a_query_request: Le message reçu n'est pas une QueryRequest.
+      # Les règles du chapitre 4.6 que la France tranche avant de répondre.
+      slot_required: La requête reçue doit porter exactement un slot « %{name} ».
+      unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
+      unnamed_specification: une version sans nom
+      evidence_subject_not_alone: >-
+        La requête reçue doit décrire soit une personne physique, soit une
+        personne morale, et une seule (%{count} déclarée(s)).
       no_er_agent: Pas d'agent classé ER dans le message reçu.
       no_query: Pas de query:Query dans le message reçu.
       agent_without_id: L'agent classé ER est sans identifiant
@@ -295,7 +304,17 @@ fr:
     evidence_provision:
       answer_request:
         unknown_conversation: "Conversation inconnue au moment de répondre : %{id}"
+        # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
+        # refuser, et la version que l'entête annonce sans que le corps la
+        # confirme.
+        request_replayed: "Identifiant de requête déjà traité : %{id}"
+        unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
+        unnamed_version: une version sans nom
     incoming_message:
+      settle_conversation:
+        unknown: "Conversation inconnue : %{id}"
+        already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"
+        foreign_request: "Réponse ignorée, elle ne porte pas l'identifiant de requête de l'échange %{id}"
       process:
         exchange_failed: L'échange a échoué
         exchange_impossible: Échange impossible à mener à son terme
@@ -345,6 +364,9 @@ fr:
         evidence_type_id: Type de justificatif
         evidence_subject: Sujet du justificatif
         evidence_subject_key: Clé du sujet
+        # Le justificatif lui-même : l'identifiant que le fournisseur lui donne,
+        # puis l'empreinte de ce que la France en a reçu.
+        evidence_identifier: Identifiant du justificatif
         evidence_digest: Empreinte du justificatif
         mime_type: Type MIME
         edm_error_code: Code d'erreur EDM
@@ -358,6 +380,7 @@ fr:
         request_received: Requête reçue
         response_sent: Réponse émise
         error_sent: Erreur émise
+        response_refused: Réponse écartée
       filtre:
         legend: Filtrer le journal
         all: Tous

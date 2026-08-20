@@ -17,9 +17,14 @@ class AuditEvent < ApplicationRecord
   # reach that far — it covers the request, the response, an error report
   # actually sent, and the eDelivery events — so recording it is this
   # deployment's own decision, taken because nothing else would hold the trace.
+  # `response_refused` is its counterpart on the way in: chapter 4.4 has a
+  # portal not process a response that answers a request it already answered, or
+  # that names a request of someone else's. Nothing goes back to the
+  # correspondent — the TDD open no error path that way — so the journal is the
+  # only place the decision can be read afterwards.
   EVENT_TYPES = %w[
     request_sent request_refused response_received error_received evidence_delivered
-    request_received response_sent error_sent
+    request_received response_sent error_sent response_refused
   ].freeze
 
   encrypts :evidence_subject
@@ -29,10 +34,10 @@ class AuditEvent < ApplicationRecord
   # carries more than it.
   SUBJECT_FIELDS = %i[family_name given_name date_of_birth].freeze
 
-  # The value the deterministic column is queried by, and — from workstream 5 of
-  # `docs/reste_à_faire.md` on — compared against to check that a response
-  # describes the person the request asked about. Case-folded, because two
-  # member states spell a name in two cases and mean one person.
+  # The value the deterministic column is queried by, so that an auditor can
+  # answer the question article 17 exists for: which data of this person
+  # travelled? Case-folded, because two member states spell a name in two cases
+  # and mean one person.
   #
   # It lives here rather than where it is written: a deterministic column can
   # only be searched by a value built exactly as it was stored, so whoever
@@ -72,6 +77,26 @@ class AuditEvent < ApplicationRecord
     optional: true, inverse_of: :audit_events
 
   scope :about_subject, ->(key) { where(evidence_subject_key: key).order(occurred_at: :desc) }
+
+  # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
+  # were used in previously processed requests. »
+  #
+  # `except` is the gateway message identifier of the request being handled,
+  # which already has its own line here: `IncomingMessage::Process` journals
+  # before it dispatches, so without it every request would look like its own
+  # replay.
+  #
+  # Applied only when given: `where.not(message_id: nil)` reads as `IS NOT
+  # NULL`, which would silently drop from the seen set any arrival that carried
+  # no message identifier rather than exclude the one being handled.
+  def self.request_already_received?(request_id, except: nil)
+    return false if request_id.blank?
+
+    seen = where(event_type: 'request_received', request_id:)
+    seen = seen.where.not(message_id: except) if except.present?
+
+    seen.exists?
+  end
 
   validates :occurred_at, presence: true
   validates :event_type, inclusion: { in: EVENT_TYPES }

@@ -71,6 +71,33 @@ RSpec.describe AuditTrail do
         country_code: 'FR',
       )
     end
+
+    # Chapter 4.8 asks the response flow for both parties, the response
+    # identifier and the evidence identifier. The correlation identifiers come
+    # from the header either way, so what is missing here is detail rather than
+    # trace — but it is the detail an auditor reconciles a document by.
+    it 'records the identifiers chapter 4.8 asks the response flow for' do
+      expect(journalled).to have_attributes(
+        request_id: message.body.request_id,
+        response_id: message.body.response_id,
+        evidence_identifier: message.body.evidence_identifier,
+      )
+    end
+
+    it 'records both parties of the exchange' do
+      expect(journalled).to have_attributes(
+        requesting_authority_id: message.body.requester.ebms_identity.id,
+        requesting_authority_scheme: message.body.requester.ebms_identity.type_id,
+        providing_authority_id: message.body.provider.ebms_identity.id,
+        providing_authority_scheme: message.body.provider.ebms_identity.type_id,
+      )
+    end
+
+    # No personal data on this side: chapter 4.8 lists the evidence subject in
+    # the request flow, where the journal already holds it, and not here.
+    it 'records no subject' do
+      expect(journalled).to have_attributes(evidence_subject: nil, evidence_subject_key: nil)
+    end
   end
 
   describe 'an answer that refuses' do

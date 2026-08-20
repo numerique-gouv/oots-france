@@ -38,4 +38,40 @@ RSpec.describe EdmException do
   it 'freezes the constants, so a caller cannot alter the shared table' do
     expect(described_class::ALL).to all(be_frozen)
   end
+
+  # Chapter 4.5.3 gives `rs:Exception` an optional `detail` for the technical
+  # particulars of one failure, where `message` is fixed by the code list and
+  # says the same thing every time.
+  describe 'the detail one occurrence carries' do
+    subject(:detailed) { described_class::INVALID_REQUEST.with_detail('R-EDM-REQ-S016') }
+
+    it 'carries none by default' do
+      expect(described_class::INVALID_REQUEST.detail).to be_nil
+    end
+
+    it 'answers with a copy carrying it' do
+      expect(detailed.detail).to eq('R-EDM-REQ-S016')
+    end
+
+    it 'leaves the shared constant untouched' do
+      detailed
+
+      expect(described_class::INVALID_REQUEST.detail).to be_nil
+    end
+
+    it 'keeps the code and the message the code list fixes' do
+      expect(detailed).to have_attributes(code: 'EDM:ERR:0003', type: 'rs:InvalidRequestExceptionType',
+        message: described_class::INVALID_REQUEST.message)
+    end
+
+    it 'freezes the copy too, so it is no more alterable than the original' do
+      expect(detailed).to be_frozen
+    end
+
+    # A refusal that has nothing to add — an unreadable slot rather than a named
+    # rule — must not turn into a second object saying as much as the first.
+    it 'answers with the constant itself when there is nothing to say' do
+      expect(described_class::INVALID_REQUEST.with_detail(nil)).to be(described_class::INVALID_REQUEST)
+    end
+  end
 end

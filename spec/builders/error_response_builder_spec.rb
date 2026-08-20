@@ -40,6 +40,28 @@ RSpec.describe ErrorResponseBuilder do
     expect(Nokogiri::XML(response).errors).to be_empty
   end
 
+  # Optional per chapter 4.5.3, so written only when there is one: an empty
+  # attribute would say a diagnosis was attempted and yielded nothing.
+  describe 'the detail attribute' do
+    subject(:exception_element) { Nokogiri::XML(response).at_xpath('//rs:Exception', namespaces) }
+
+    it 'is absent when the exception carries no detail' do
+      expect(exception_element.attribute('detail')).to be_nil
+    end
+
+    context 'when the exception names the rule it refused' do
+      let(:attributes) { super().merge(exception: EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S016')) }
+
+      it 'writes it beside the code' do
+        expect(exception_element['detail']).to eq('R-EDM-REQ-S016')
+      end
+
+      it 'keeps the message the code list fixes' do
+        expect(exception_element['message']).to eq(EdmException::INVALID_REQUEST.message)
+      end
+    end
+  end
+
   # The corners swap: on a request the requester is C1, here it is us who
   # answer, and we are classified ERRP rather than EP — an error is not a
   # delivery.

@@ -33,6 +33,27 @@ RSpec.describe EvidenceRequest::SendToGateway do
     expect(conversation_of(submitted)).to eq(conversation.conversation_id)
   end
 
+  # Chapter 4.4 correlates a response to its request by this identifier, and
+  # kept nowhere it could never be compared: `SettleConversation` reads it back
+  # to tell our answer from a message that is not ours.
+  it 'records on the exchange the request identifier it sent' do
+    send_to_gateway
+
+    expect(conversation.reload.request_id).to eq(request_id_of(submitted))
+  end
+
+  # Before the submission, and not after: the answer can come back before
+  # `submit` has returned, and a response arriving first would find nothing to
+  # compare itself against.
+  it 'records it before handing anything to the gateway' do
+    allow(gateway).to receive(:submit) do
+      expect(conversation.reload.request_id).to be_present
+      instance_double(SubmittedMessageParser, message_id: 'message-passerelle')
+    end
+
+    send_to_gateway
+  end
+
   # The submission is addressed to the party the PMode declares, while the
   # corners of the four-corner model are the requester and the provider
   # themselves. Confusing the two produces a message the gateway routes nowhere.
@@ -114,4 +135,10 @@ RSpec.describe EvidenceRequest::SendToGateway do
   def recipient_of(document) = text_at(document, '//eb:To/eb:PartyId')
 
   def property_of(document, name) = text_at(document, "//eb:Property[@name=\"#{name}\"]")
+
+  def request_id_of(document)
+    at(document, '//payload/value')
+      .then { |value| Nokogiri::XML(Base64.decode64(value.text)) }
+      .then { |body| attribute(body.root, 'id') }
+  end
 end

@@ -9,15 +9,44 @@ module IncomingMessage
       # A conversation we never opened: logged and not raised, there being
       # nobody to report it to.
       if conversation.nil?
-        Rails.logger.warn("Conversation inconnue : #{context.message.conversation_id}")
+        Rails.logger.warn(I18n.t('interactors.incoming_message.settle_conversation.unknown',
+          id: context.message.conversation_id))
         return
       end
 
       context.conversation = conversation
-      settle(conversation)
+      settle(conversation) if processable?(conversation)
     end
 
     private
+
+    # Chapter 4.4: « An Online Procedure Portal MUST NOT process responses that
+    # use request identifiers of previous requests to which it already received
+    # a response. » Refused before the branch, so a duplicate is turned away
+    # whether it carries evidence or an error.
+    #
+    # Nothing is answered and nothing is settled: the TDD open no error path
+    # from a portal back to a provider, and failing the exchange would rob the
+    # genuine answer of the conversation it still has to reach.
+    def processable?(conversation)
+      return refuse(conversation, :already_settled) if conversation.settled?
+      return refuse(conversation, :foreign_request) unless conversation.answers?(context.message.body.request_id)
+
+      true
+    end
+
+    # Journalled as well as logged: this deployment's own rule, written where
+    # `error_sent` already applies it — a refusal whose reason is not recorded
+    # cannot be answered for afterwards, and nothing else holds this one.
+    def refuse(conversation, reason)
+      Rails.logger.warn(
+        I18n.t("interactors.incoming_message.settle_conversation.#{reason}",
+          id: conversation.conversation_id),
+      )
+      context.audit_trail.response_refused(conversation:, reason: reason.to_s)
+
+      false
+    end
 
     def settle(conversation)
       case context.message.action
