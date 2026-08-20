@@ -46,7 +46,13 @@
             </tr>
             <tr>
               <th scope="row"><%= t('admin.conversations.show.rows.edm_error_code') %></th>
-              <td><%= @conversation.edm_error_code.presence || '—' %></td>
+              <td>
+                <% if @conversation.edm_error_code.present? %>
+                  <%= render EdmErrorCodeComponent.new(code: @conversation.edm_error_code) %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
             </tr>
             <tr>
               <th scope="row"><%= t('admin.conversations.show.rows.preview_location') %></th>

@@ -163,6 +163,20 @@ fr:
       identifiers:
         requirement: Exigence
         evidence_type: Type de justificatif
+    edm_error_code:
+      chapter: Chapitre 4.5.3 des TDD, qui définit les huit codes (nouvelle fenêtre)
+      # Les huit codes de la liste publiée avec les TDD, glosés pour un
+      # exploitant. Le libellé que porte le message, lui, reste dans
+      # `EdmException#message` : c'est celui qui part sur le fil, mot pour mot.
+      codes:
+        "EDM:ERR:0001": Authentification échouée
+        "EDM:ERR:0002": Autorisation manquante
+        "EDM:ERR:0003": Requête syntaxiquement ou sémantiquement invalide
+        "EDM:ERR:0004": Objet introuvable
+        "EDM:ERR:0005": Délai d'expiration dépassé
+        "EDM:ERR:0006": Objet référencé impossible à résoudre
+        "EDM:ERR:0007": Fonction ou capacité facultative non prise en charge
+        "EDM:ERR:0008": Requête dont la syntaxe ou la sémantique doit être corrigée
     pagination:
       previous: Page précédente
       next: Page suivante

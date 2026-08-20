@@ -1,0 +1,9 @@
+<% if wording %>
+  <%= link_to EdmErrorCodeComponent::CHAPTER_URL, class: 'fr-link',
+        target: '_blank', rel: 'noopener', title: t('components.edm_error_code.chapter') do %>
+    <%= code %><span class="fr-icon-external-link-line fr-ml-1w" aria-hidden="true"></span>
+  <% end %>
+  <span class="fr-hint-text"><%= wording %></span>
+<% else %>
+  <%= code %>
+<% end %>

@@ -73,6 +73,8 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 - **`preview_location`** est rendue en **texte, jamais en lien**. Une console d'exploitation n'a pas à être un lanceur d'un clic vers un site qu'elle ne choisit pas, même quand le modèle a vérifié le schéma de l'adresse.
 - **`error_description`** porte du texte libre, venu d'un correspondant étranger ou d'une panne d'acheminement locale — `EvidenceRequest::SendToGateway` y écrit le message d'une erreur Faraday ; ERB l'échappe dans les deux cas.
 
+**`edm_error_code`, lui, est glosé plutôt que rendu nu.** `EdmErrorCodeComponent` dit en français ce que le code signifie et lie vers le [chapitre 4.5.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938), qui définit les huit. Un seul lien pour les huit : la liste publiée ne porte qu'un URN pour l'ensemble, sans ancre par code. Et un code hors de ces huit — qu'un correspondant non conforme peut envoyer — s'affiche sans lien, pointer ce chapitre lui ferait dire ce qu'il ne dit pas.
+
 **L'état d'une conversation n'est pas le journal de l'article 17**, et les deux se consultent séparément : `/admin/conversations` montre où en est un échange, `/admin/journal` ce qu'il a laissé comme trace. Le journal a sa propre page de documentation, [journal_des_echanges.md](journal_des_echanges.md).
 
 ## Qui peut y entrer
