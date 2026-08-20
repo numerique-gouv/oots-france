@@ -79,7 +79,7 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 
 ### 5. Le contenu des messages
 
-**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, le dépôt prend ce dont il a besoin et ne contrôle pas le reste — c'est la moitié la moins visible, et celle qui laisse passer des messages non conformes sans rien dire.
+**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, les règles qui décident si la France répond sont désormais appliquées, et un refus nomme la règle qu'il applique ; ce qui manque encore tient au contenu d'une réponse, pas à sa recevabilité.
 
 **Ce qu'exige la spécification.** Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) détaille la requête slot par slot ; le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) donne les règles qu'un message doit satisfaire, dans les deux sens.
 
@@ -97,18 +97,14 @@ Du côté de la réponse ([4.5.2](https://ec.europa.eu/digital-building-blocks/s
 
 #### Et symétriquement, ce qu'on lit
 
-La validation des messages reçus est bien plus mince que leur écriture, et c'est le manque le moins visible de tout ce document : le dépôt lit ce dont il a besoin, et ne vérifie pas le reste.
+Les messages reçus sont désormais contrôlés, là où le dépôt se contentait de lire ce dont il avait besoin. Une requête étrangère est confrontée aux règles du [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) qu'un lecteur peut trancher sans schéma — présence de `SpecificationIdentifier`, `PossibilityForPreview` et `ExplicitRequestGiven`, valeur fixe de la version, exclusivité de la personne physique et de la personne morale — et ce qui les enfreint reçoit un `EDM:ERR:0003` **dont l'attribut `detail` nomme la règle appliquée**. La cohérence de version entre l'en-tête de transport et le corps est vérifiée au même endroit, faute d'en avoir un meilleur (voir chantier 9). Les deux devoirs de corrélation du [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) sont tenus : une requête rejouant un identifiant déjà traité est refusée — le [journal](journal_des_echanges.md) en porte la mémoire, aucune conversation n'existant du côté fournisseur — et une réponse dont l'identifiant de requête n'est pas celui de l'échange n'est pas traitée, la conversation conservant désormais cet identifiant.
 
-Concrètement, une requête étrangère est aujourd'hui acceptée dès lors que les quelques champs que le code consulte sont présents. Une requête sans `PossibilityForPreview`, sans `ExplicitRequestGiven`, déclarant à la fois une personne physique et une personne morale, ou annonçant une version de spécification que le corps du message contredit, est traitée sans broncher. Les règles du [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) et celles de l'en-tête de transport ([4.7.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932948)) ne sont vérifiées que sur les messages **produits**, par Schematron, jamais sur ceux reçus.
+Le Schematron officiel reste le juge des messages **produits**, ce qu'il est censé être : le chapitre 4.6 n'assigne le devoir de validation à personne et présente ses Schematron comme une manière de prouver la conformité d'instances, pas comme un composant d'exécution.
 
-Quatre contrôles manquent, tous assortis d'une réponse d'erreur précise :
+> [!IMPORTANT]
+> **Aucun chapitre ne demande de comparer la personne décrite dans une réponse à celle de la requête.** Le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) impose au *fournisseur* de placer le *Minimum Data Set* de la requête dans `sdg:IsAbout` — « *to confirm identity matching* » — et énonce ainsi la finalité de l'élément sans commander au destinataire de faire le contrôle ; le [chapitre 2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) ne l'assigne pas davantage, la seule revérification d'identité qu'il nomme étant celle de l'espace de prévisualisation ([4.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935)) ; et le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) liste *Evidence Subject* dans le flux requête, où le journal l'enregistre déjà, et pas dans le flux réponse. Ce que le [chapitre 4.10](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932922) confie au portail à la réception, c'est la **corrélation par identifiants**, et rien d'autre.
 
-- **Valider la requête reçue contre les règles métier** et refuser par un `EDM:ERR:0003` ce qui les enfreint. Les TDD prévoient explicitement que les violations de l'en-tête soient signalées ainsi, et non par une erreur de transport.
-- **Dire ce qui n'allait pas.** L'attribut `detail` de l'exception existe pour porter la règle violée ; le dépôt ne l'écrit jamais, ni dans son modèle d'exception ni dans son gabarit. Un correspondant reçoit donc « requête syntaxiquement ou sémantiquement invalide » et rien d'autre — de quoi rendre un diagnostic impossible à distance.
-- **Rejeter une requête déjà traitée.** Le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) impose qu'un identifiant de requête ne serve qu'une fois et qu'un fournisseur refuse les répétitions. Rien ne les détecte.
-- **Vérifier qu'une réponse répond bien à la requête envoyée.** Le même chapitre corrèle réponse et requête par l'identifiant de requête. Le dépôt, lui, ne retrouve la conversation que par l'identifiant de conversation : l'identifiant de requête est lu, renvoyé, mais **jamais conservé**, donc jamais comparé. Une réponse portant un identifiant de requête qui n'est pas le nôtre serait acceptée.
-
-À quoi s'ajoute, sur le contenu même : le dépôt ne lit pas les métadonnées du justificatif reçu, et **ne vérifie pas que la personne décrite dans la réponse est celle qui figurait dans la requête** — un contrôle que la spécification demande explicitement.
+Ce qui reste à lire d'une réponse : le dépôt en tire l'identifiant du justificatif que le chapitre 4.8 réclame, l'identifiant de la réponse et les deux autorités. Les quatre autres éléments de `sdg:EvidenceMetadata` — `IssuingDate`, `IssuingAuthority`, `IsConformantTo`, `Distribution` — ne sont pas lus : `R-EDM-RESP-S062` les impose à l'émetteur, aucun chapitre n'en demande la conservation, et côté portail aucun chemin d'erreur ne repart vers le fournisseur, si bien qu'un refus détruirait l'échange sans que personne l'apprenne.
 
 ### 6. Les justificatifs structurés
 
@@ -153,7 +149,7 @@ L'[espace d'administration](espace_administration.md) le donne à lire, sous `/a
 
 **Ce qu'il faut construire** :
 
-- **Vérifier la cohérence de version à l'entrée.** La 2.0 fait voyager la version deux fois : dans l'en-tête de transport et dans le corps du message. Elles doivent concorder, et un message où elles divergent doit être **rejeté**. Le dépôt écrit bien les deux, mais ne contrôle pas celles qu'il reçoit.
+- **La cohérence de version à l'entrée est faite**, au chantier 5 faute d'un meilleur endroit : `R-EDM-ebMS-019` et `-038` sur la propriété de l'en-tête, `R-EDM-REQ-S005` et `C001` sur le slot du corps, l'un et l'autre épinglés sur la même constante — la concordance en découle. Reste ici la version que le fournisseur *annonce* dans le DSD, que la requête ne confronte pas encore à celle qu'elle émet.
 - **Distinguer conversation et échange.** En 2.0, l'identifiant de conversation désigne un **usager et sa session**, et peut couvrir plusieurs justificatifs demandés à la suite ; l'identifiant d'échange désigne un aller-retour. Le dépôt en crée un de chaque par requête, ce qui les confond. La distinction devient nécessaire dès la prévisualisation, où les deux échanges partagent le même identifiant d'échange.
 - **La découverte dynamique par SMP** est facultative en 2.0 et annoncée comme obligatoire par la suite. À prévoir, pas à faire maintenant.
 
@@ -165,7 +161,7 @@ L'[espace d'administration](espace_administration.md) le donne à lire, sous `/a
 
 **Ce qu'il faut trancher.** Ce qui remonte à l'appelant, et sous quelle forme : la description brute est écrite pour un journal, pas pour un tiers, et peut nommer des détails d'infrastructure. Il faut donc décider d'un vocabulaire d'erreurs stable côté interface nationale, distinct des messages internes.
 
-**Un nettoyage à faire au passage.** Le traitement d'un message entrant rattrape la famille `EbmsError`, qui signifie *l'appel du fournisseur de service français est fautif* et vaut un 422. Toutes ses sous-classes naissent pendant cet appel, donc sur le chemin sortant : aucune ne peut survenir à l'arrivée d'un message. Le filet est vide et gagne à être resserré — c'est ce qui reste d'un questionnement plus large, dont la vraie substance est au [chantier 5](#et-symétriquement-ce-quon-lit) pour la validation, et ici pour la restitution.
+**Un nettoyage à faire au passage.** Le traitement d'un message entrant rattrape la famille `EbmsError`, qui signifie *l'appel du fournisseur de service français est fautif* et vaut un 422. Le filet n'est pas vide pour autant : `IncomingMessage::SettleConversation` interroge l'annuaire des requêteurs pour savoir où remettre le justificatif, et `EvidenceRequesterNotFound` y survient dès que l'annuaire ne porte plus le requêteur de l'échange. Retirer le `rescue` laisserait alors la conversation bloquée en `sent`. Ce qu'il faut resserrer, c'est donc sa largeur — une famille entière rattrapée pour une sous-classe — et non son existence.
 
 **Ce dont ce chantier ne dépend pas.** De la journalisation : la raison de l'échec est écrite sur la conversation, et l'exposer ne demande rien de plus. Que le [journal](journal_des_echanges.md) la consigne aussi ne change pas la question posée ici. Les deux chantiers se ressemblent — tous deux décident du sort d'un incident — mais ils écrivent dans des endroits différents, pour des destinataires différents et avec des contraintes différentes : un appelant veut un code stable tout de suite, un auditeur veut une trace complète pendant douze mois. La seule chose à coordonner, si les deux se font, est le vocabulaire employé de part et d'autre — dans un sens comme dans l'autre.
 
@@ -179,7 +175,7 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | 4 | L'identité et l'autorisation : niveau de garantie fixe, annuaire de requêteurs autorisés | `NaturalPerson::LEVEL_OF_ASSURANCE`, `BeneficiaryToken`, `Directories::EvidenceRequesters` | Chantier 2 |
 | 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleConversation` | Chantier 3 |
 | 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
-| 9 | Le filet à erreurs vide du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
+| 9 | Le filet à erreurs trop large du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
 
 ## Ce qui est déjà conforme
 
