@@ -38,6 +38,7 @@ ignore_unused:
   - components.directory_query.identifiers.*
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
+  - interactors.incoming_message.settle_conversation.{already_settled,foreign_request}
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.
@@ -46,6 +47,8 @@ ignore_unused:
   # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}
   - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
+  # The rules `validate!` names, each composed from the identifier that failed.
+  - parsers.evidence_request.{slot_required,unexpected_specification,evidence_subject_not_alone}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

@@ -13,7 +13,7 @@ class RetrievedMessageParser
     @header = EbmsHeaderParser.new(@document)
   end
 
-  delegate :action, :conversation_id, :exchange_id, :sender, to: :header
+  delegate :action, :conversation_id, :exchange_id, :sender, :specification_id, to: :header
 
   # The ebMS action decides, and it alone: a response status says nothing about
   # the body's shape, and the exception type carries a prefix that identifies no

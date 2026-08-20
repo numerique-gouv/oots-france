@@ -77,18 +77,27 @@ Une exécution réussie affiche :
 
 ## Ce que les scénarios jouent
 
-Deux scénarios partagent le même montage, et couvrent les deux seules réponses que le code de production sache produire :
+Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les deux seules réponses que le code de production sache produire :
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
 | Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
 | Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
 
-L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les trois rôles que l'application n'assure pas :
+[`reception_de_requete.feature`](../features/reception_de_requete.feature) la met en **fournisseur** et couvre ce qu'elle refuse :
+
+| Scénario | Ce qui est forgé | Ce que la France répond |
+| --- | --- | --- |
+| Slot obligatoire manquant | une requête sans `PossibilityForPreview` | `EDM:ERR:0003`, `detail="R-EDM-REQ-S009"` |
+| Deux sujets déclarés | une personne morale ajoutée à la personne physique | `EDM:ERR:0003`, `detail="R-EDM-REQ-S016"` |
+| Identifiant rejoué | la même requête soumise deux fois | la première servie, la seconde refusée par `EDM:ERR:0003` |
+
+L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
 
 1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
 3. **Faux annuaires centraux** — `features/support/fake_common_services.rb`, monté par l'étape « les annuaires centraux désignent la passerelle locale » ; voir la section suivante.
+4. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
 
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.

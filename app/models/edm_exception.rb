@@ -22,6 +22,11 @@ class EdmException
   attribute :severity, :string, default: ERROR
   attribute :code, :string
 
+  # What went wrong, for whoever has to diagnose it from the other side of
+  # Europe. Optional per chapter 4.5.3, constrained by no `R-EDM-ERR-*` rule,
+  # and distinct from `message`, which the code list fixes word for word.
+  attribute :detail, :string
+
   AUTHENTICATION = new(
     type: 'rs:AuthenticationExceptionType',
     message: 'Failed Authentication',
@@ -77,4 +82,13 @@ class EdmException
   ].freeze
 
   def preview_required? = severity == PREVIEW_REQUIRED
+
+  # The eight constants are frozen singletons, so an occurrence that has
+  # something to say about itself takes a copy rather than mutating the one
+  # every other occurrence shares.
+  def with_detail(detail)
+    return self if detail.blank?
+
+    self.class.new(attributes.merge('detail' => detail)).freeze
+  end
 end

@@ -2,18 +2,25 @@ module EvidenceRequest
   # Builds the request and hands it to Domibus.
   class SendToGateway < ApplicationInteractor
     def call
+      conversation = context.conversation
+
+      # Before the submission and not after: chapter 4.4 correlates a response to
+      # its request by this identifier, and the answer can come back before
+      # `submit` has returned.
+      conversation.update!(request_id: body.request_id)
+
       # The gateway names the message it accepted, and that name is the only way
       # back to the `ds:SignedInfo` it signed — the non-repudiation chapter 4.8
       # traces from an evidence identifier. Kept, therefore, and not discarded.
       submitted = context.gateway.submit(envelope)
-      context.conversation.sent!
+      conversation.sent!
 
       journal(submitted.message_id)
     # `UnreadableMessageError` as well as `Faraday::Error`: the gateway can
     # answer 200 with a body we cannot read, and from the caller's point of view
     # that is the same problem — the gateway — not a fault of theirs.
     rescue Faraday::Error, UnreadableMessageError => e
-      context.conversation.failed!(code: nil, description: e.message)
+      conversation.failed!(code: nil, description: e.message)
       fail_with_error(:gateway_refused, errors: [e.message])
     end
 

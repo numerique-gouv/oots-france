@@ -30,9 +30,11 @@ module IncomingMessage
       abandon_conversation(e, :exchange_failed)
       raise
     # `EbmsError` drives a 422 back to the caller at fault, and no caller is on
-    # this path to receive it. Every subclass is raised while serving that
-    # caller's own request, so none can reach here: the net is empty. Stub 9 of
-    # `docs/reste_à_faire.md`.
+    # this path to receive it. One subclass does reach here all the same:
+    # `SettleConversation` asks the directory where to hand the evidence over,
+    # and `EvidenceRequesterNotFound` is raised there whenever the directory no
+    # longer holds the requester of the exchange. What is too wide is the family
+    # caught for that one subclass. Stub 9 of `docs/reste_à_faire.md`.
     rescue EbmsError => e
       abandon_conversation(e, :exchange_impossible)
       raise

@@ -38,6 +38,9 @@
 <%- if exception.code.present? -%>
                 code="<%= escape(exception.code) %>"
 <%- end -%>
+<%- if exception.detail.present? -%>
+                detail="<%= escape(exception.detail) %>"
+<%- end -%>
                 >
     <rim:Slot name="Timestamp">
       <rim:SlotValue xsi:type="rim:DateTimeValueType">

@@ -8,6 +8,10 @@ module EvidenceProvision
   class AnswerRequest < ApplicationInteractor
     EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
 
+    # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
+    # detail names the chapter where every other one names a rule.
+    REPLAYED_IDENTIFIER = 'TDD 4.4: request identifier already used'.freeze
+
     # What France answered, carried rather than left behind in instance
     # variables: the log needs to know which of the two answers went out, and
     # the envelope alone no longer says.
@@ -73,19 +77,52 @@ module EvidenceProvision
     def request = context.message.body
 
     # Readable enough to answer, not enough to serve: `EDM:ERR:0003` rather
-    # than silence.
+    # than silence. The exception is bound and not dropped — what it names is
+    # the whole of what a correspondent will learn about their own mistake.
     def chosen_or_invalid
       chosen_answer
-    rescue UnreadableMessageError
-      error_envelope(EdmException::INVALID_REQUEST)
+    rescue UnreadableMessageError => e
+      error_envelope(EdmException::INVALID_REQUEST.with_detail(e.detail))
     end
 
     def chosen_answer
+      reject_unless_expected_version
+      request.validate!
+      reject_if_already_answered
+
       return error_envelope(EdmException::OBJECT_NOT_FOUND) unless request.procedure_code == ProcedureCode::SYSTEM_CHECK
       return error_envelope(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
 
       system_check_envelope
     end
+
+    # The version travels twice, in the ebMS property and in the body slot, and
+    # the two must agree. `request.validate!` pins the body to the same
+    # constant, so checking the header against it settles the pair — the
+    # coherence workstream 9 of `docs/reste_à_faire.md` asks for.
+    def reject_unless_expected_version
+      announced = context.message.specification_id
+      return if EdmSpecification.matches?(announced)
+
+      refuse(announced.blank? ? 'R-EDM-ebMS-019' : 'R-EDM-ebMS-038',
+        I18n.t('interactors.evidence_provision.answer_request.unexpected_version',
+          announced: announced.presence || I18n.t('interactors.evidence_provision.answer_request.unnamed_version'),
+          expected: EdmSpecification::IDENTIFIER))
+    end
+
+    # Chapter 4.4: « A Data Service MUST reject requests that use identifiers
+    # that were used in previously processed requests. » The journal holds the
+    # only memory of it — no `Conversation` on the provider side carries a
+    # request identifier — and the arriving message has a line there already,
+    # `IncomingMessage::Process` journalling before it dispatches.
+    def reject_if_already_answered
+      return unless AuditEvent.request_already_received?(request_id, except: context.message_id)
+
+      refuse(REPLAYED_IDENTIFIER,
+        I18n.t('interactors.evidence_provision.answer_request.request_replayed', id: request_id))
+    end
+
+    def refuse(detail, message) = raise(UnreadableMessageError.new(message, detail:))
 
     def system_check_envelope
       served = evidence

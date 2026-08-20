@@ -73,6 +73,72 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # Chapter 4.6, on a request that is well formed and still not one France may
+  # answer. Each refusal names the rule it applied, which is the whole of what
+  # the correspondent will learn.
+  describe 'the business rules it checks' do
+    it 'accepts the request a real gateway delivered' do
+      expect(request.validate!).to be(request)
+    end
+
+    EvidenceRequestParser::REQUIRED_SLOTS.each do |name, rule|
+      it "refuses a request with no #{name} slot, under #{rule}" do
+        amputated = with_body { |body| body.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m, '') }
+
+        expect { amputated.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
+      end
+    end
+
+    it 'refuses a request declaring the same mandatory slot twice' do
+      doubled = with_body do |body|
+        body.sub(%r{<rim:Slot name="ExplicitRequestGiven">.*?</rim:Slot>}m) { |slot| slot * 2 }
+      end
+
+      expect { doubled.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S010')))
+    end
+
+    it 'refuses a request announcing another version of the data model' do
+      dated = with_body { |body| body.sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0') }
+
+      expect { dated.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+    end
+
+    # The slot is there, so R-EDM-REQ-S005 is satisfied and it is the value that
+    # fails. What the message says of it has to hold without one to name.
+    it 'refuses a request whose version slot is present but empty' do
+      emptied = with_body do |body|
+        body.sub(/(<rim:Slot name="SpecificationIdentifier">.*?<rim:Value>)[^<]*/m, '\\1')
+      end
+
+      expect { emptied.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+    end
+
+    # R-EDM-REQ-S016: either one or the other, and never both. France models no
+    # legal person yet, so the slot is fabricated here — the rule counts slots,
+    # not what they contain.
+    it 'refuses a request declaring both a natural and a legal person' do
+      doubled = with_body do |body|
+        body.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) do |slot|
+          "#{slot}\n<rim:Slot name=\"LegalPerson\"><rim:SlotValue/></rim:Slot>"
+        end
+      end
+
+      expect { doubled.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S016')))
+    end
+
+    it 'refuses a request declaring no evidence subject at all' do
+      amputated = with_body { |body| body.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m, '') }
+
+      expect { amputated.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S016')))
+    end
+  end
+
   # The body travels base64-encoded inside the envelope, so a fixture cannot be
   # edited in place: it has to be decoded, altered, and encoded back. Editing
   # the envelope string directly changes nothing at all — silently.

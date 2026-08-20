@@ -136,4 +136,29 @@ RSpec.describe Conversation do
 
     expect(AuditEvent.count).to eq(1)
   end
+
+  # Chapter 4.4 correlates a response to its request by this identifier, and
+  # the exchange is the only thing that remembers which one it sent.
+  describe '#answers?' do
+    subject(:conversation) { build(:conversation, request_id: 'urn:uuid:11111111-1111-4111-8111-111111111111') }
+
+    it 'recognises the identifier it sent' do
+      expect(conversation.answers?('urn:uuid:11111111-1111-4111-8111-111111111111')).to be(true)
+    end
+
+    it 'refuses an identifier that is not the one it sent' do
+      expect(conversation.answers?('urn:uuid:22222222-2222-4222-8222-222222222222')).to be(false)
+    end
+
+    # Unknown is not different: exchanges opened before the column existed carry
+    # nothing to compare against, and refusing them would break the ones in
+    # flight at deployment.
+    context 'when the exchange recorded no identifier' do
+      subject(:conversation) { build(:conversation, request_id: nil) }
+
+      it 'accepts what it cannot compare' do
+        expect(conversation.answers?('urn:uuid:22222222-2222-4222-8222-222222222222')).to be(true)
+      end
+    end
+  end
 end

@@ -105,6 +105,116 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003')
     end
+
+    # A slot the reader could not find is not a rule with a number: the answer
+    # degrades to the bare code rather than inventing an identifier for it.
+    it 'writes no detail when no rule names the failure' do
+      answer
+
+      expect(detail_of(submitted)).to be_nil
+    end
+  end
+
+  # Chapter 4.6 through and through: a request that is well formed and still not
+  # one France may answer. What the correspondent gets back names the rule.
+  describe 'a request that breaks a business rule' do
+    let(:message) do
+      envelope_with_body('requete') { |body| body.sub(%r{<rim:Slot name="PossibilityForPreview">.*?</rim:Slot>}m, '') }
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule it applied' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-S009')
+    end
+
+    # Article 17 asks for the errors as much as the exchanges, and a refusal
+    # whose reason is not recorded cannot be answered for afterwards.
+    it 'journals the rule alongside the code' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-S009')
+    end
+  end
+
+  # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
+  # were used in previously processed requests. »
+  describe 'a request whose identifier has already been answered' do
+    subject(:answer) do
+      described_class.call(message:, gateway:, message_id: 'message-en-cours',
+        uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new)
+    end
+
+    before do
+      create(:audit_event, event_type: 'request_received', request_id: message.body.request_id,
+        message_id: 'message-precedent')
+    end
+
+    it 'refuses it rather than serving the evidence twice' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq(described_class::REPLAYED_IDENTIFIER)
+    end
+
+    # `IncomingMessage::Process` journals an arrival before it dispatches, so
+    # the request being answered has a line of its own here. Counting it would
+    # make every request its own replay.
+    context 'when the only line is the arrival of this very message' do
+      before do
+        AuditEvent.delete_all
+        create(:audit_event, event_type: 'request_received', request_id: message.body.request_id,
+          message_id: 'message-en-cours')
+      end
+
+      it 'serves the evidence' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+    end
+  end
+
+  # The version travels twice, and no rule says the two must agree: each is
+  # pinned to the same literal on its own — R-EDM-ebMS-038 for the header
+  # property, R-EDM-REQ-C001 for the body slot — so they agree by transitivity,
+  # and a header saying otherwise is a message no reading can reconcile.
+  describe 'a request whose header contradicts its body on the version' do
+    let(:message) do
+      RetrievedMessageParser.new(real_envelope('requete').sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0'))
+    end
+
+    it 'answers EDM:ERR:0003 naming the ebMS rule' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-ebMS-038')
+    end
+  end
+
+  # R-EDM-ebMS-019 makes the property mandatory, where -038 fixes its value: two
+  # rules, two details on the wire, and a correspondent who omitted the property
+  # is not one who declared the wrong version.
+  describe 'a request whose header omits the version altogether' do
+    # Removed as a node and not by a substitution: the prefix a gateway binds to
+    # the ebMS namespace is its own, so only an XPath bound by URI finds the
+    # property — and `remove` raises if it ever stops being there, where a regex
+    # that matched nothing would leave the test passing on an intact envelope.
+    let(:message) do
+      envelope = Nokogiri::XML(real_envelope('requete'))
+      envelope.at_xpath("//eb:Property[@name='SpecificationId']", OotsNamespaces::NAMESPACES).remove
+
+      RetrievedMessageParser.new(envelope.to_xml)
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule that requires the property' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-ebMS-019')
+    end
   end
 
   describe 'a request whose requester cannot be read' do
@@ -147,8 +257,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     document.at_xpath("//rim:Slot[@name='EvidenceResponseIdentifier']//rim:Value", SlotReading::NAMESPACES).text
   end
 
-  def code_of(document)
-    document.at_xpath('//rs:Exception', 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0')['code']
+  def code_of(document) = exception_of(document)['code']
+
+  def detail_of(document) = exception_of(document)['detail']
+
+  def exception_of(document)
+    document.at_xpath('//rs:Exception', 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0')
   end
   # The bridge between answering another member state and closing the exchange
   # opened on receiving its request. Without it, an answer goes out and the

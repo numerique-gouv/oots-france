@@ -13,6 +13,11 @@ class EbmsHeaderParser
 
   def exchange_id = property('ExchangeId')
 
+  # R-EDM-ebMS-019 requires the property, R-EDM-ebMS-038 fixes its value. It is
+  # the same version the body declares in its `SpecificationIdentifier` slot,
+  # and the two must agree — see `EdmSpecification`.
+  def specification_id = property('SpecificationId')
+
   # Where the message came from, and therefore where our answer goes. Read as an
   # access point rather than a bare string: a response without a recipient goes
   # nowhere, and the failure must show here.

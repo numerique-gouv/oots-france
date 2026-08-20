@@ -1,14 +1,42 @@
 # An `ExecuteQueryRequest` a foreign correspondent addressed to France.
 #
-# Everything it cannot read raises UnreadableMessageError, which becomes an
+# Everything it cannot read raises UnreadableMessageError, and so does
+# everything `validate!` refuses — a request naming two evidence subjects is
+# perfectly readable and still not one France may answer. Both become an
 # `EDM:ERR:0003` response: a correspondent left without an answer learns
 # nothing about what was wrong with what they sent.
 class EvidenceRequestParser
   include SlotReading
 
+  # The slots chapter 4.6 makes mandatory that nothing else here would notice
+  # missing, each under the rule that requires it. `Procedure`, `Requirements`
+  # and the rest are demanded by the readers below, which raise on their own.
+  REQUIRED_SLOTS = {
+    'SpecificationIdentifier' => 'R-EDM-REQ-S005',
+    'PossibilityForPreview' => 'R-EDM-REQ-S009',
+    'ExplicitRequestGiven' => 'R-EDM-REQ-S010',
+  }.freeze
+
   def initialize(document)
     @request = at(document, '/query:QueryRequest')
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
+  end
+
+  # The business rules of chapter 4.6 France settles before answering at all —
+  # those a reader can decide without a schema. Each raises under its own
+  # identifier, which travels to the `detail` of the `EDM:ERR:0003` the
+  # correspondent receives.
+  #
+  # Checked here and not by Schematron: chapter 4.6 assigns the duty of
+  # validating to nobody and presents its Schematrons as a way to prove
+  # instances correct, which is what they still do on the messages this
+  # repository produces.
+  def validate!
+    REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
+    require_expected_specification
+    require_one_evidence_subject
+
+    self
   end
 
   def request_id = attribute(request, 'id')
@@ -57,6 +85,36 @@ class EvidenceRequestParser
   private
 
   attr_reader :request
+
+  # `= 1` and not `>= 1`: the rules count the slot, and two of the same name
+  # leave which one is meant undecided.
+  def require_slot(name, rule)
+    return if all(request, "./rim:Slot[@name='#{name}']").one?
+
+    refuse(rule, 'parsers.evidence_request.slot_required', name:)
+  end
+
+  def require_expected_specification
+    declared = text_at(request, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
+    return if EdmSpecification.matches?(declared)
+
+    refuse('R-EDM-REQ-C001', 'parsers.evidence_request.unexpected_specification',
+      announced: declared.presence || I18n.t('parsers.evidence_request.unnamed_specification'),
+      expected: EdmSpecification::IDENTIFIER)
+  end
+
+  # R-EDM-REQ-S016: either a natural person or a legal one, and never both.
+  def require_one_evidence_subject
+    declared = all(query, "./rim:Slot[@name='NaturalPerson']").size +
+               all(query, "./rim:Slot[@name='LegalPerson']").size
+    return if declared == 1
+
+    refuse('R-EDM-REQ-S016', 'parsers.evidence_request.evidence_subject_not_alone', count: declared)
+  end
+
+  def refuse(rule, key, **)
+    raise UnreadableMessageError.new(I18n.t(key, **), detail: rule)
+  end
 
   def query
     @query ||= at(request, './query:Query') ||

@@ -8,6 +8,7 @@ class EventTypeComponent < ViewComponent::Base
     'error_sent' => :warning,
     'error_received' => :warning,
     'request_refused' => :error,
+    'response_refused' => :error,
   }.freeze
 
   def initialize(event_type:)

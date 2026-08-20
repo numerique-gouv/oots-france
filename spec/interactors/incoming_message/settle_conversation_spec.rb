@@ -12,6 +12,95 @@ RSpec.describe IncomingMessage::SettleConversation do
   let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
   let!(:conversation) { create(:conversation, conversation_id: message.conversation_id).tap(&:sent!) }
 
+  # Chapter 4.4: « An Online Procedure Portal MUST NOT process responses that
+  # use request identifiers of previous requests to which it already received a
+  # response. » Neither refusal answers the correspondent — the TDD open no
+  # error path back from a portal to a provider.
+  describe 'what it refuses to process' do
+    context 'when the exchange has already been answered' do
+      before { conversation.delivered! }
+
+      # Not merely « does not settle twice »: `deliver` hands the evidence over
+      # before it marks the exchange delivered, so a duplicate not turned away
+      # here reaches the French service provider a second time.
+      it 'does not hand the evidence over again' do
+        settle
+
+        expect(evidence_forwarder).not_to have_received(:deliver)
+      end
+    end
+
+    context 'when the response carries an identifier that is not ours' do
+      before { conversation.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000') }
+
+      it 'does not hand the evidence over' do
+        settle
+
+        expect(evidence_forwarder).not_to have_received(:deliver)
+      end
+
+      # Left pending on purpose: the message was not ours to begin with, and
+      # failing the exchange would rob the genuine answer of the conversation it
+      # still has to reach.
+      it 'leaves the exchange waiting for the answer it did ask for' do
+        settle
+
+        expect(conversation.reload).to have_attributes(status: 'sent')
+      end
+    end
+
+    # The guard sits above the branch on the ebMS action, so an error response is
+    # turned away on the same two grounds as one carrying evidence. Moving it
+    # down into `deliver` would look like a simplification and would silently
+    # stop refusing duplicate error responses.
+    context 'when a duplicate error response arrives on a settled exchange' do
+      let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
+
+      before { conversation.delivered! }
+
+      it 'leaves the outcome the exchange already reached' do
+        settle
+
+        expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+      end
+    end
+
+    # Nothing goes back to the correspondent, so the journal is the only place
+    # the decision can be read afterwards — an exchange left waiting has to be
+    # accountable for.
+    it 'journals what the response was turned away for' do
+      conversation.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000')
+
+      settle
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'response_refused',
+        conversation_id: conversation.conversation_id,
+        detail: 'foreign_request',
+      )
+    end
+
+    # An identifier we never recorded is not a different one: exchanges opened
+    # before the column existed carry none.
+    context 'when the exchange records no request identifier' do
+      it 'delivers, rather than refusing what it cannot compare' do
+        settle
+
+        expect(evidence_forwarder).to have_received(:deliver)
+      end
+    end
+
+    context 'when the response echoes the identifier the request carried' do
+      before { conversation.update!(request_id: message.body.request_id) }
+
+      it 'delivers' do
+        settle
+
+        expect(evidence_forwarder).to have_received(:deliver)
+      end
+    end
+  end
+
   describe 'an answer carrying evidence' do
     # Resolved from the directory, which is what carries the address the
     # forwarder posts to: an identifier alone would deliver the evidence

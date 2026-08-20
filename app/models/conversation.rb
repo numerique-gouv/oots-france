@@ -62,6 +62,12 @@ class Conversation < ApplicationRecord
 
   def settled? = !status.in?(IN_PROGRESS)
 
+  # Chapter 4.4 correlates a response to its request by this identifier. An
+  # exchange recording none is not an exchange recording a different one: those
+  # opened before the column existed carry nothing to compare against, and
+  # refusing them would break the ones in flight at deployment.
+  def answers?(request_id) = self.request_id.blank? || self.request_id == request_id
+
   # Which way the exchange runs, as the console words it.
   def direction = incoming? ? :incoming : :outgoing
 
