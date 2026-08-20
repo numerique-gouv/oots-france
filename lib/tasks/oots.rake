@@ -4,10 +4,10 @@ namespace :oots do
     destination = arguments[:destination]
     raise ArgumentError, 'Usage : rake "oots:messages[répertoire]"' if destination.blank?
 
-    # Des valeurs par défaut, et non des variables obligatoires : la validation
-    # Schematron tourne sur un runner nu, sans passerelle ni fichier
-    # d'environnement, et n'a besoin que de la structure des messages. Une
-    # configuration réelle, si elle est là, l'emporte.
+    # Defaults, and not mandatory variables: the Schematron validation runs on a
+    # bare runner, with no gateway and no environment file, and needs nothing but
+    # the structure of the messages. A real configuration, where there is one,
+    # wins.
     ENV['SUFFIXE_IDENTIFIANTS_DOMIBUS'] ||= 'oots.eu'
     ENV['IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'AP_FR_01'
     ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'

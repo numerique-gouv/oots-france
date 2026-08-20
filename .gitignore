@@ -8,16 +8,16 @@ docker-compose.override.yml
 CLAUDE.local.md
 .worktrees/
 
-# artefacts de validation Schematron (téléchargés)
+# Schematron validation artefacts (downloaded)
 .schematron/
 
-# clé de déchiffrement des credentials Rails : jamais versionnée
+# Rails credentials decryption key: never versioned
 /config/master.key
 
-# configuration locale de Bundler
+# Bundler's local configuration
 /.bundle
 
-# journaux et fichiers temporaires
+# logs and temporary files
 /log/*
 /tmp/*
 !/log/.keep
@@ -25,11 +25,11 @@ CLAUDE.local.md
 /tmp/pids/*
 !/tmp/pids/.keep
 
-# ressources compilées par Propshaft
+# assets compiled by Propshaft
 /public/assets
 
-# gems installées localement
+# gems installed locally
 /vendor/bundle
 
-# rapport de couverture SimpleCov
+# SimpleCov coverage report
 /coverage

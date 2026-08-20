@@ -1,33 +1,33 @@
 /*
- * Ce qu'une carte énumère se lit comme une table, et se sépare de ce qui la
- * décrit. Le pied du DSFR porte tout le reste — sa place dans la carte, ses
- * marges négatives qui le mènent bord à bord —, il ne manque que le filet.
+ * What a card lists reads as a table, and parts from what describes the card.
+ * The DSFR footer carries all the rest — its place in the card, the negative
+ * margins that take it edge to edge — only the rule is missing.
  */
 .fr-card .card-list {
   border-top: 1px solid var(--border-default-grey);
 }
 
 /*
- * Une carte cliquable a deux moitiés qui ne mènent pas au même endroit : son
- * corps — titre, description, flèche — mène là où le titre mène ; son pied
- * énumère, et chacune de ses entrées mène ailleurs.
+ * A clickable card has two halves that do not lead to the same place: its body
+ * — title, description, arrow — leads where the title leads; its footer lists,
+ * and each of its entries leads elsewhere.
  *
- * L'étendue du lien s'arrête donc au corps, ce que ce `position: relative`
- * suffit à obtenir : le pseudo-élément que `fr-enlarge-link` étire se place sur
- * son ancêtre positionné le plus proche, qui devient le corps et non la carte.
- * Le survol se teinte au même endroit, pour la même raison.
+ * The reach of the link therefore stops at the body, which this
+ * `position: relative` is enough to obtain: the pseudo-element `fr-enlarge-link`
+ * stretches is placed on its nearest positioned ancestor, which becomes the body
+ * and not the card. The hover tint lands in the same place, for the same reason.
  *
- * La spécificité recopie celle du DSFR, `:not(.fr-card--no-icon)` comprise : à
- * trois classes, la règle ne l'emporterait pas.
+ * The specificity copies the DSFR's, `:not(.fr-card--no-icon)` included: at
+ * three classes, the rule would not win.
  */
 .fr-card.fr-enlarge-link:not(.fr-card--no-icon) .fr-card__content {
   position: relative;
 
-  /* La colonne où la flèche se tient, à droite du texte. */
+  /* The column the arrow stands in, to the right of the text. */
   padding-right: 4rem;
 
-  /* Le DSFR réserve cinq rem sous le contenu pour l'y loger : elle n'y est
-     plus, et ce trou non plus. */
+  /* The DSFR reserves five rem under the content to house it: it is no longer
+     there, and neither is that hole. */
   padding-bottom: 2rem;
 }
 
@@ -36,9 +36,9 @@
 }
 
 /*
- * `fr-enlarge-link` teinte la carte entière au survol — `.fr-enlarge-link:hover`
- * —, pied compris, alors que celui-ci mène ailleurs. La carte garde donc son
- * fond, et c'est le corps qui s'allume.
+ * `fr-enlarge-link` tints the whole card on hover — `.fr-enlarge-link:hover` —
+ * footer included, where the footer leads elsewhere. The card therefore keeps
+ * its background, and it is the body that lights up.
  */
 .fr-card.fr-enlarge-link:hover {
   background-color: var(--background-default-grey);
@@ -49,16 +49,16 @@
 }
 
 /*
- * `fr-enlarge-link` étire **chaque** lien de la carte, le DSFR n'en attendant
- * qu'un : sans ceci, chacune des entrées du pied recouvrirait la carte entière
- * et la dernière rendue capterait tous les clics. Elles reprennent leur taille,
- * et leur survol avec.
+ * `fr-enlarge-link` stretches **every** link in the card, the DSFR expecting
+ * only one: without this, each footer entry would cover the whole card and the
+ * last one rendered would capture every click. They take back their own size,
+ * and their hover with it.
  */
 .fr-card.fr-enlarge-link .fr-card__footer a::before {
   content: none;
 }
 
-/* Dans sa colonne, à hauteur du corps qu'elle prolonge. */
+/* In its column, level with the body it extends. */
 .fr-card.fr-enlarge-link .fr-card__title a::after {
   position: absolute;
   top: 50%;
@@ -73,8 +73,8 @@
 }
 
 /*
- * Sauf devant des lignes, qui vont bord à bord et portent déjà leur air : celui
- * du pied ferait un blanc au-dessus de la première et sous la dernière.
+ * Except before rows, which go edge to edge and already carry their own room:
+ * the footer's would make a blank above the first and under the last.
  */
 .fr-card .fr-card__footer:has(.entry-list) {
   padding-top: 0;
@@ -82,17 +82,17 @@
 }
 
 /*
- * Ce qui clôt le pied d'une carte se range sur les entrées au-dessus de lui,
- * bord à bord : le pied a des marges négatives que ses enfants n'héritent pas.
+ * What closes a card's footer ranges itself on the entries above it, edge to
+ * edge: the footer has negative margins its children do not inherit.
  */
 .fr-card .card-list__query {
   margin: 0 -2rem;
 }
 
 /*
- * Le DSFR retrait son accordéon d'un rem, où la carte en retrait de deux, et
- * décale son volet d'un quart de rem pour loger le halo de focus. Les deux
- * ensemble alignent l'accordéon sur le titre de la carte.
+ * The DSFR indents its accordion by one rem, where the card indents by two, and
+ * shifts its panel by a quarter rem to house the focus halo. The two together
+ * align the accordion on the card's title.
  */
 .fr-card .card-list__query .fr-accordion__btn,
 .fr-card .card-list__query .fr-collapse {
@@ -105,17 +105,17 @@
 }
 
 /*
- * Une table du DSFR porte une marge basse à elle qui la détacherait du bas de
- * la carte comme d'un bloc voisin. Ici elle la prolonge.
+ * A DSFR table carries a bottom margin of its own that would detach it from the
+ * foot of the card as from a neighbouring block. Here it extends it.
  */
 .fr-card .card-list .fr-table {
   margin-bottom: 0;
 }
 
 /*
- * Une carte dont le titre donne directement sur ce qu'elle énumère : les deux
- * rem que le DSFR laisse sous le contenu y font un trou, faute de rien à
- * décrire entre les deux. Après le bloc ci-dessus, à spécificité égale.
+ * A card whose title opens straight onto what it lists: the two rem the DSFR
+ * leaves under the content make a hole there, there being nothing to describe
+ * in between. After the block above, at equal specificity.
  */
 .fr-card.card--dense .fr-card__content {
   padding-top: 1.5rem;

@@ -1,30 +1,30 @@
 #!/bin/sh
-# Génère les certificats de démonstration dont Domibus a besoin en local.
+# Generates the demonstration certificates Domibus needs locally.
 #
-# Le PMode d'exemple fait dialoguer Domibus avec lui-même (partie unique
-# « blue_gw », voir docs/domibus_context.md) : les certificats auto-signés
-# produits ici servent donc à la fois d'identité de la passerelle (keystore) et
-# de seules autorités de confiance (truststore).
+# The example PMode has Domibus talk to itself (a single party, `blue_gw`, see
+# docs/domibus_context.md): the self-signed certificates produced here therefore
+# serve both as the gateway's identity (keystore) and as its only trust anchors
+# (truststore).
 #
-# Depuis Domibus 5.1, la sécurité se décrit par « profil » plutôt que par un
-# fichier de politique, et le profil impose les alias — voir
-# docs/domibus_context.md. Pour la partie blue_gw et le profil rsa :
+# Since Domibus 5.1, security is described by a "profile" rather than by a policy
+# file, and the profile imposes the aliases — see docs/domibus_context.md. For
+# the blue_gw party and the rsa profile:
 #
-#   keystore    blue_gw_rsa_sign      clé privée de signature
-#               blue_gw_rsa_decrypt   clé privée de déchiffrement
-#   truststore  blue_gw_rsa_sign      certificat vérifiant la signature du pair
-#               blue_gw_rsa_encrypt   certificat chiffrant à destination du pair
+#   keystore    blue_gw_rsa_sign      private signing key
+#               blue_gw_rsa_decrypt   private decryption key
+#   truststore  blue_gw_rsa_sign      certificate verifying the peer's signature
+#               blue_gw_rsa_encrypt   certificate encrypting towards the peer
 #
-# La passerelle se parlant à elle-même, les deux certificats du truststore sont
-# ceux des deux clés du keystore.
+# The gateway talking to itself, the two truststore certificates are those of the
+# two keystore keys.
 #
-# Usage : scripts/generate_certificates.sh [validité en jours ; 3650 par défaut]
+# Usage: scripts/generate_certificates.sh [validity in days; 3650 by default]
 #
-# La variable DESTINATION permet d'écrire ailleurs que dans domibus/keystores —
-# utile lorsque ce répertoire appartient au conteneur et n'est pas accessible.
+# The DESTINATION variable writes somewhere other than domibus/keystores — handy
+# when that directory belongs to the container and is not reachable.
 #
-# Ces certificats sont réservés au poste de développement : ne jamais les
-# réutiliser sur un environnement réel.
+# These certificates are for the development machine only: never reuse them on a
+# real environment.
 
 set -e
 
@@ -34,11 +34,11 @@ ALIAS_SIGNATURE="${PARTIE}_${PROFIL}_sign"
 ALIAS_DECHIFFREMENT="${PARTIE}_${PROFIL}_decrypt"
 ALIAS_CHIFFREMENT="${PARTIE}_${PROFIL}_encrypt"
 
-# Un seul mot de passe protège les magasins et les clés privées qu'ils
-# contiennent : Domibus ne sait pas les dissocier. Les notes de version 5.1.9
-# rangent EDELIVERY-13917, « Possibility to upload a keystore with a keystore
-# password that is not the same as the password for the private keys », parmi
-# les *Known Issues* — c'est une limitation connue, non une fonctionnalité.
+# One password protects the stores and the private keys they hold: Domibus
+# cannot tell them apart. The 5.1.9 release notes file EDELIVERY-13917,
+# "Possibility to upload a keystore with a keystore password that is not the same
+# as the password for the private keys", under *Known Issues* — a known
+# limitation, not a feature.
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
 VALIDITE="${1:-3650}"
 
@@ -56,8 +56,8 @@ for fichier in "$KEYSTORE" "$TRUSTSTORE"; do
   fi
 done
 
-# keytool n'est pas toujours installé sur la machine hôte ; à défaut, on
-# l'exécute depuis une image Docker contenant un JRE.
+# keytool is not always installed on the host machine; failing that, it is run
+# from a Docker image carrying a JRE.
 lanceKeytool() {
   if command -v keytool > /dev/null 2>&1; then
     (cd "$DESTINATION" && keytool "$@")
@@ -68,13 +68,13 @@ lanceKeytool() {
   fi
 }
 
-# PKCS#12, format par défaut de Java depuis la 9 (JEP 229), plutôt que JKS,
-# propriétaire et déprécié. Domibus le supporte, mais deux réserves détaillées
-# dans docs/versions_domibus.md valent d'être connues : son téléversement ne
-# convertit que le truststore — d'où les propriétés imposées au démarrage dans
-# docker-compose.yml —, et la documentation signale qu'un PKCS#12 lu sous
-# Java 21 peut échouer sur « Could not load key store: keystore password was
-# incorrect ».
+# PKCS#12, Java's default format since 9 (JEP 229), rather than JKS, which is
+# proprietary and deprecated. Domibus supports it, but two reservations detailed
+# in docs/versions_domibus.md are worth knowing: uploading it converts the
+# truststore only — hence the properties forced at start-up in
+# docker-compose.yml — and the documentation reports that a PKCS#12 read under
+# Java 21 can fail on "Could not load key store: keystore password was
+# incorrect".
 genereCle() {
   lanceKeytool -genkeypair -alias "$1" -dname "CN=$PARTIE" \
     -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity "$VALIDITE" \
@@ -82,10 +82,10 @@ genereCle() {
     -storepass "$MOT_DE_PASSE_MAGASINS" -keypass "$MOT_DE_PASSE_MAGASINS"
 }
 
-# Le certificat est exporté depuis le keystore puis réimporté dans le
-# truststore sous l'alias qu'attend le profil de sécurité — celui de la
-# signature garde son nom, celui du déchiffrement devient « _encrypt » côté
-# pair, puisque c'est avec lui que le pair chiffre à notre intention.
+# The certificate is exported from the keystore then imported back into the
+# truststore under the alias the security profile expects — the signing one keeps
+# its name, the decryption one becomes `_encrypt` on the peer side, since that is
+# what the peer encrypts towards us with.
 importeCertificat() {
   lanceKeytool -exportcert -alias "$1" -rfc \
     -keystore "$KEYSTORE" -storepass "$MOT_DE_PASSE_MAGASINS" \

@@ -34,8 +34,8 @@ RSpec.describe CountryTagListComponent, type: :component do
     expect(page.all('.country-tag').map { |box| box.text.split.last }).to eq(%w[FI FR])
   end
 
-  # Au pied d'une carte, la rangée a quitté la phrase qui l'introduisait : sa
-  # légende dit en quelle qualité ces pays y figurent.
+  # In a card's footer the row has left the sentence that introduced it: its
+  # caption says in what capacity these countries appear there.
   it 'says in what capacity the countries appear, when the caller says it' do
     render_inline(described_class.new(codes: %w[FI], caption: 'Démarche déclarée par'))
 

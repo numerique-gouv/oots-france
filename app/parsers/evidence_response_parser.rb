@@ -12,6 +12,17 @@ class EvidenceResponseParser
 
   def request_id = attribute(response, 'requestId')
 
+  # Where a response names the country it came from, and the only place it does.
+  # A collection here, where the error carries a single agent — the TDD shape the
+  # two slots differently.
+  def provider_country
+    agent = slot_elements('EvidenceProvider', response)
+      .filter_map { |element| at(element, './sdg:Agent') }
+      .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceProvider::PROVIDER }
+
+    agent_country(agent) if agent
+  end
+
   def requester
     agent = slot_content('EvidenceRequester', response, './sdg:Agent')
     identifier = at(agent, './sdg:Identifier')

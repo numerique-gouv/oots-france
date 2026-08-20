@@ -1,43 +1,43 @@
 class CreateAuditEvents < ActiveRecord::Migration[8.1]
   def change
     create_table :audit_events do |table|
-      # L'instant et la nature de ce qu'on consigne. Le journal est en ajout
-      # seul : aucune ligne n'est jamais reprise, donc pas de `updated_at`.
+      # The moment and the nature of what is recorded. The log is append-only:
+      # no row is ever taken up again, hence no `updated_at`.
       table.datetime :occurred_at, null: false
       table.string :event_type, null: false
       table.string :ebms_action
 
-      # Les identifiants de corrélation que le chapitre 4.8 énumère. Ce sont eux
-      # qui permettent de recoudre un échange à partir de traces éparses — les
-      # nôtres, celles de la passerelle, celles du correspondant.
+      # The correlation identifiers chapter 4.8 enumerates. They are what makes
+      # it possible to sew an exchange back together from scattered traces —
+      # ours, the gateway's, the correspondent's.
       table.string :conversation_id
       table.string :exchange_id
       table.string :message_id
       table.string :request_id
       table.string :response_id
 
-      # Les deux coins, avec leur schéma d'identifiant : un SIRET nu ne désigne
-      # personne hors de France.
+      # The two corners, with their identifier scheme: a bare SIRET designates
+      # nobody outside France.
       table.string :requesting_authority_id
       table.string :requesting_authority_scheme
       table.string :providing_authority_id
       table.string :providing_authority_scheme
 
-      # Le fournisseur de service français qui a appelé notre API. Aucun
-      # chapitre ne le nomme — il est en deçà de la frontière — mais sans lui on
-      # ne sait pas au nom de qui l'échange a eu lieu.
+      # The French service provider that called our API. No chapter names it —
+      # it stands on this side of the border — but without it there is no
+      # knowing on whose behalf the exchange took place.
       table.string :evidence_requester_id
 
       table.string :procedure_code
       table.string :evidence_type_id
 
-      # Données personnelles, chiffrées au repos. `evidence_subject_key` l'est en
-      # mode déterministe pour rester interrogeable : l'article 17 existe pour
-      # qu'on puisse répondre à « quelles données de cette personne ont circulé ».
+      # Personal data, encrypted at rest. `evidence_subject_key` deterministically
+      # so, to stay queryable: article 17 exists so that what data about a given
+      # person travelled can be answered.
       table.text :evidence_subject
       table.string :evidence_subject_key
 
-      # L'empreinte de la pièce, jamais la pièce.
+      # The fingerprint of the evidence, never the evidence.
       table.string :evidence_digest
       table.string :mime_type
 

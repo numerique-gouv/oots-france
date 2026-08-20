@@ -37,8 +37,8 @@ Rails.application.configure do
   # ActionMailer::Base.deliveries array.
   config.action_mailer.delivery_method = :test
 
-  # Les jobs ne s'exécutent pas dans la suite : ce qui est vérifié, c'est
-  # qu'ils sont mis en file. Le traitement lui-même a ses propres spécifications.
+  # Jobs do not run in the suite: what is checked is that they are enqueued. The
+  # processing itself has specs of its own.
   config.active_job.queue_adapter = :test
 
   # Set host to be used by links generated in mailer templates.

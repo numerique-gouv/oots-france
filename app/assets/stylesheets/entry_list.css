@@ -1,10 +1,9 @@
 /*
- * Ce qu'une carte énumère, une entrée par ligne.
+ * What a card lists, one entry per row.
  *
- * Pas un tableau : la plupart de ces listes n'ont qu'une ligne, et trois
- * en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils
- * annoncent. Le nom prend la place qui reste, ce qui le qualifie et ce qui y
- * mène tiennent la droite.
+ * Not a table: most of these listings hold a single row, and three column
+ * headings above one row weigh more than what they announce. The name takes the
+ * room that is left; what qualifies it and what leads from it hold the right.
  */
 .entry-list {
   margin: 0;
@@ -18,19 +17,18 @@
   align-items: baseline;
   gap: 0.5rem 1rem;
 
-  /* Les marges négatives du pied de carte, pour que le survol et les filets
-     aillent bord à bord comme celui qui sépare le pied du titre. */
+  /* The negative margins of the card footer, so hover and rules go edge to
+     edge like the one separating the footer from the title. */
   margin: 0 -2rem;
   padding: 0.75rem 2rem;
 }
 
 /*
- * Un filet sépare ce qui n'est pas ensemble, et seulement cela : entre deux
- * entrées indépendantes, et entre deux groupes. À l'intérieur d'un groupe,
- * rien — ni sous son intitulé, ni entre ses entrées, qui vont ensemble et se
- * lisent comme tel.
+ * A rule separates what is not together, and only that: between two independent
+ * entries, and between two groups. Inside a group, nothing — neither under its
+ * heading nor between its entries, which belong together and read as such.
  *
- * Jamais au-dessus de la première non plus : le pied de carte en a déjà un.
+ * Never above the first either: the card footer already has one.
  */
 .entry:not(.entry--grouped) + .entry,
 .entry + .entry__group {
@@ -38,9 +36,9 @@
 }
 
 /*
- * La base de flex est plus large que la boîte ne le sera souvent : le nom passe
- * alors seul sur sa ligne et ce qui le suit se replie dessous, au lieu de se
- * tasser en colonnes étroites à côté de lui.
+ * The flex basis is wider than the box will often be: the name then goes alone
+ * on its row and what follows wraps underneath, instead of packing into narrow
+ * columns beside it.
  */
 .entry__name {
   flex: 1 1 24rem;
@@ -48,9 +46,9 @@
 }
 
 /*
- * Ce qui qualifie une entrée — un type MIME, un identifiant court — en `code`
- * plutôt qu'en `fr-badge` : l'étiquette du DSFR met son contenu en capitales,
- * et « APPLICATION/PDF » n'est plus ce que l'annuaire a publié.
+ * What qualifies an entry — a MIME type, a short identifier — as `code` rather
+ * than `fr-badge`: the DSFR tag upcases its content, and « APPLICATION/PDF » is
+ * no longer what the directory published.
  */
 .entry__tag {
   font-size: 0.75rem;
@@ -66,15 +64,15 @@
   white-space: nowrap;
 }
 
-/* Les classes d'icône du DSFR fixent 1,5 rem, ce qui domine un lien de 0,875. */
+/* The DSFR icon classes fix 1.5 rem, which towers over a 0.875 link. */
 .entry__action .fr-icon-arrow-right-line::before {
   width: 1rem;
   height: 1rem;
   vertical-align: -0.125rem;
 }
 
-/* Une adresse du Semantic Repository ne tient pas sur une ligne partagée :
-   elle passe sous le nom plutôt que de la disputer. */
+/* A Semantic Repository address does not fit on a shared row: it goes under
+   the name rather than fight it for the room. */
 .entry__detail {
   flex-basis: 100%;
   font-size: 0.75rem;
@@ -83,9 +81,9 @@
 }
 
 /*
- * Un groupe n'est pas une entrée mais ce qui rassemble les suivantes : il
- * s'annonce en retrait, et ce qu'il rassemble se décale sous lui, faute de quoi
- * rien ne dirait où l'un s'arrête et où le suivant commence.
+ * A group is not an entry but what gathers the ones that follow: it announces
+ * itself set back, and what it gathers is indented under it, failing which
+ * nothing would say where one stops and the next begins.
  */
 .entry__group {
   margin: 0 -2rem;
@@ -99,10 +97,10 @@
 }
 
 /*
- * Une liste dont chaque ligne mène quelque part, sans pour autant envelopper la
- * ligne dans un lien : le lien reste celui qui porte le texte — un seul, que le
- * clavier et un lecteur d'écran atteignent —, et un pseudo-élément l'étend à la
- * ligne. D'où le modificateur : une ligne qui porte deux liens ne peut pas.
+ * A listing whose every row leads somewhere, without wrapping the row in a
+ * link: the link stays the one carrying the text — a single one, which the
+ * keyboard and a screen reader reach — and a pseudo-element stretches it across
+ * the row. Hence the modifier: a row carrying two links cannot.
  */
 .entry-list--clickable .entry {
   position: relative;
@@ -118,7 +116,7 @@
   inset: 0;
 }
 
-/* L'entrée que la chaîne a retenue, et qui décide de l'étape suivante. */
+/* The entry the chain settled on, and which decides the next step. */
 .entry--current {
   box-shadow: inset 0.25rem 0 0 0 var(--border-action-high-blue-france);
 }

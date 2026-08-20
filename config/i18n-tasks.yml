@@ -1,16 +1,15 @@
-# Ce que l'intégration continue vérifie du `fr.yml` : qu'aucune clé réclamée par
-# le code n'y manque, et qu'aucune clé qu'il porte n'est plus réclamée par
-# personne.
+# What continuous integration checks of `fr.yml`: that no key the code asks for
+# is missing from it, and that no key it carries is asked for by nobody.
 #
 # > [!IMPORTANT]
-# > Ne jamais lancer `i18n-tasks normalize`, ni `health` qui l'enchaîne : il
-# > réécrit le YAML par Psych et emporte les commentaires, qui disent ici
-# > pourquoi chaque clé existe. Rien ne l'en empêche techniquement — le défaut
-# > de `data.write` vise déjà ce fichier —, c'est une consigne, pas un verrou.
+# > Never run `i18n-tasks normalize`, nor `health` which chains it: it rewrites
+# > the YAML through Psych and takes the comments with it, and those say here
+# > why each key exists. Nothing stops it technically — the `data.write` default
+# > already targets this file — it is an instruction, not a lock.
 
 base_locale: fr
-# L'application n'a qu'un public, et le vocabulaire anglais des TDD vit dans le
-# code plutôt que dans une locale.
+# The application has one audience, and the English vocabulary of the TDD lives
+# in the code rather than in a locale.
 locales: [fr]
 
 data:
@@ -22,30 +21,35 @@ search:
     - app/
   exclude:
     - app/assets
-    # Gabarits XML des messages OOTS : pas un mot de français à y chercher.
+    # XML templates of the OOTS messages: not one French word to look for.
     - app/templates
-  # `Rails/I18nLazyLookup` est désactivé : toutes les clés sont absolues.
+  # `Rails/I18nLazyLookup` is off: every key is absolute.
   relative_roots: []
 
 ignore_unused:
-  # Rails va chercher ces clés lui-même, d'après le modèle et l'attribut : aucun
-  # `t()` ne les nomme.
+  # Rails looks these keys up itself, from the model and the attribute: no
+  # `t()` names them.
   - activerecord.*
   - activemodel.*
-  # Composées à l'exécution. Une ligne par ensemble, plutôt qu'un
-  # `search.strict: false` qui bénirait des sous-arbres entiers en silence.
+  # Composed at run time. One line per set, rather than a
+  # `search.strict: false` that would bless whole subtrees in silence.
   - admin.conversations.statuses.*
   - admin.sessions.{refused,signed_out,connection_required}
   - components.directory_query.identifiers.*
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
   - models.strict_validation.subjects.*
-  # Les refus que `translating` reçoit sous forme de clé, et qu'il ne compose
-  # que lorsqu'un annuaire a refusé.
+  # The refusals `translating` receives as a key, and composes only once a
+  # directory has refused.
   - models.directories.common_services.{no_evidence_type,no_provider}
-  # Les descriptions que `require_content` reçoit sous forme de clé, et qu'il
-  # compose avec `parsers.slot_reading.in_received_message`.
+  # The descriptions `require_content` receives as a key, and composes with
+  # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}
   - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
+  # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`
+  # — to walk the columns in the order they are declared there. The scanner then
+  # sees a leaf key and loses sight of its children, including the ones the table
+  # headings name one by one.
+  - admin.journal.attributes.*

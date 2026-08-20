@@ -40,6 +40,34 @@ module EvidenceProvision
       else
         context.audit_trail.response_sent(**shared, evidence: answer.evidence)
       end
+
+      settle(answer)
+    end
+
+    # The exchange France opened on receiving the request reaches its end here
+    # once an answer has gone out: answering is the whole of what this side does.
+    # A submission that never got through is settled by
+    # `IncomingMessage::Process`, which sees the failure come back up.
+    def settle(answer)
+      conversation = Conversation.find_by(conversation_id: context.message.conversation_id, incoming: true)
+      return unknown_conversation if conversation.nil?
+
+      if answer.exception
+        conversation.failed!(code: answer.exception.code, description: answer.exception.message)
+      else
+        conversation.delivered!
+      end
+    end
+
+    # `IncomingMessage::Process` opens one before dispatching, so there always
+    # is one — but nothing in the code compels it, and an answer gone out with
+    # its exchange unsettled would leave a pending state nothing would ever
+    # contradict. Said aloud, as `SettleConversation` says it.
+    def unknown_conversation
+      Rails.logger.warn(
+        I18n.t('interactors.evidence_provision.answer_request.unknown_conversation',
+          id: context.message.conversation_id),
+      )
     end
 
     def request = context.message.body

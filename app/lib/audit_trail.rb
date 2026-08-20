@@ -19,12 +19,13 @@ class AuditTrail
       ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
       conversation_id: conversation.conversation_id,
       procedure_code: conversation.procedure_code,
+      country_code: conversation.country_code,
       evidence_requester_id: conversation.evidence_requester_id,
       evidence_type_id: evidence_type&.id,
       request_id:,
       message_id:,
       **authorities(requesting: requester, providing: provider),
-      **subject(beneficiary),
+      **AuditEvent.subject(beneficiary),
     )
   end
 
@@ -34,12 +35,13 @@ class AuditTrail
   # eDelivery events — and neither does Domibus, which sees no message at all.
   # Recording them is this deployment's own decision: without it, a caller turned
   # away leaves no trace anywhere.
-  def request_refused(requester_id:, procedure_code:, reason:, conversation: nil)
+  def request_refused(requester_id:, procedure_code:, country_code:, reason:, conversation: nil)
     record(
       'request_refused',
       conversation_id: conversation&.conversation_id,
       evidence_requester_id: requester_id,
       procedure_code:,
+      country_code:,
       detail: reason,
     )
   end
@@ -73,6 +75,7 @@ class AuditTrail
       'evidence_delivered',
       conversation_id: conversation.conversation_id,
       procedure_code: conversation.procedure_code,
+      country_code: conversation.country_code,
       evidence_requester_id: conversation.evidence_requester_id,
       **evidence_fingerprint(evidence),
     )
@@ -89,6 +92,11 @@ class AuditTrail
       message_id:,
       request_id:,
       response_id:,
+      # Where France answers, the country the answer goes to is the one the
+      # request named — `R-EDM-REQ-C073` requiring it on the agent classified
+      # `ER`. Our own response carries no address for that agent: the TDD ask
+      # for one on the party answering, not on the party answered.
+      country_code: requester&.address&.country,
       **authorities(requesting: requester, providing: provider),
     }
   end
@@ -114,22 +122,33 @@ class AuditTrail
       request_id: readable { request.request_id },
       procedure_code: readable { request.procedure_code },
       evidence_type_id: readable { request.evidence_type.id },
-      **(readable { requesting_authority(request.requester) } || {}),
+      **requesting_party(request),
       **providing_authority(french_provider),
-      **(readable { subject(request.beneficiary) } || {}),
+      **(readable { AuditEvent.subject(request.beneficiary) } || {}),
     }
+  end
+
+  # `R-EDM-REQ-C073` requires an address on the agent classified `ER`, and only
+  # the country within it: that is where a received request names the country
+  # asking, and the only place it does.
+  def requesting_party(request)
+    requester = readable { request.requester }
+    return {} if requester.nil?
+
+    { country_code: requester.address.country, **requesting_authority(requester) }
   end
 
   def received_response(message)
     {
       request_id: readable { message.body.request_id },
+      country_code: readable { message.body.provider_country },
       **evidence_fingerprint(readable { message.evidence }),
     }
   end
 
   def received_error(error)
     { request_id: readable { error.request_id }, edm_error_code: readable { error.code },
-      detail: readable { error.message } }
+      country_code: readable { error.provider_country }, detail: readable { error.message } }
   end
 
   def authorities(requesting:, providing:)
@@ -142,23 +161,6 @@ class AuditTrail
 
   def providing_authority(agent)
     { providing_authority_id: agent&.ebms_identity&.id, providing_authority_scheme: agent&.ebms_identity&.type_id }
-  end
-
-  def subject(person)
-    return {} if person.nil?
-
-    {
-      evidence_subject: person.attributes.compact.to_json,
-      evidence_subject_key: subject_key(person),
-    }
-  end
-
-  # The value the deterministic column is queried by, and — from chantier 5 on —
-  # compared against to check that a response describes the person the request
-  # asked about. Case-folded, because two member states spell a name in two
-  # cases and mean one person.
-  def subject_key(person)
-    [person.family_name, person.given_name, person.date_of_birth].join('|').downcase
   end
 
   # Of the evidence as this application holds it, and deliberately not of what

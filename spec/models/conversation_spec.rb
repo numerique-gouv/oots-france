@@ -81,4 +81,59 @@ RSpec.describe Conversation do
 
     expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
   end
+
+  # A procedure belongs to the country that requests, and the solicited country
+  # is the one the evidence is asked of: `incoming` says which of `country_code`
+  # and France holds each role.
+  describe 'the two countries an exchange stands between' do
+    it 'has France asking a correspondent when France asks' do
+      expect(build(:conversation, incoming: false, country_code: 'FI')).to have_attributes(
+        requester_country_code: Settings.common_services_country_code,
+        solicited_country_code: 'FI',
+      )
+    end
+
+    it 'has a correspondent asking France when France answers' do
+      expect(build(:conversation, incoming: true, country_code: 'BE')).to have_attributes(
+        requester_country_code: 'BE',
+        solicited_country_code: Settings.common_services_country_code,
+      )
+    end
+  end
+
+  # What an outgoing exchange always knows, a received one may not: a body too
+  # malformed to read names nothing at all.
+  it 'requires of an outgoing exchange what only it always knows' do
+    expect(build(:conversation, incoming: false, country_code: nil)).not_to be_valid
+    expect(build(:conversation, incoming: true, country_code: nil, procedure_code: nil,
+      evidence_requester_id: nil)).to be_valid
+  end
+
+  # The direction does not turn round: both readings of `country_code` depend on
+  # it, and a received exchange calling itself outgoing would name France as the
+  # requester.
+  it 'refuses to change direction once it is open' do
+    conversation = create(:conversation, incoming: true, country_code: 'BE')
+
+    expect { conversation.update!(incoming: false) }
+      .to raise_error(ActiveRecord::ReadonlyAttributeError)
+    expect(conversation.reload.requester_country_code).to eq('BE')
+  end
+
+  # Eight write sites for two columns, and no source agrees on case: both
+  # filters upcase what they are asked.
+  it 'upcases the country whoever wrote it' do
+    expect(create(:conversation, country_code: 'fi').country_code).to eq('FI')
+  end
+
+  # Neither `dependent:` nor a database constraint: the two lifetimes are
+  # independent, and a legal trace does not fall with the state it relates.
+  it 'keeps its journal when it is destroyed' do
+    conversation = create(:conversation)
+    create(:audit_event, conversation_id: conversation.conversation_id)
+
+    conversation.destroy!
+
+    expect(AuditEvent.count).to eq(1)
+  end
 end

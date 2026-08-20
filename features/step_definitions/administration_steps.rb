@@ -84,3 +84,52 @@ def sign_in(password)
   fill_in 'Mot de passe', with: password
   click_button 'Se connecter'
 end
+
+# The one event no exchange carries: a caller turned away before anything was
+# opened. Both directions have a row now, so this is what the journal holds and
+# the conversations listing, by construction, cannot.
+Étantdonné("une requête refusée avant qu'aucun échange soit ouvert") do
+  @exchange = 'requeteur-econduit'
+  create(:audit_event, event_type: 'request_refused', conversation_id: nil,
+    evidence_requester_id: @exchange, detail: 'Le bénéficiaire doit être renseigné')
+end
+
+Étantdonné("un échange reçu d'un autre État membre") do
+  @exchange = 'echange-recu'
+  create(:conversation, :delivered, incoming: true, conversation_id: @exchange,
+    country_code: nil, procedure_code: ProcedureCode::SYSTEM_CHECK)
+end
+
+Étantdonné('un échange concernant Sophie Dupont') do
+  @exchange = 'echange-de-sophie'
+  create(:audit_event, :about_sophie, conversation_id: @exchange)
+end
+
+Quand("j'ouvre le journal des échanges") do
+  visit admin_journal_root_path
+end
+
+Quand('je recherche la personne {string} {string} née le {string}') do |family_name, given_name, date_of_birth|
+  visit admin_journal_subjects_path(family_name:, given_name:, date_of_birth:)
+end
+
+Alors('je vois cet échange dans le journal') do
+  expect(page).to have_text(@exchange)
+end
+
+Alors('je vois ce refus dans le journal') do
+  expect(page).to have_text(@exchange)
+end
+
+Alors('je vois cet échange avec le sens {string}') do |direction|
+  ligne = find('tbody tr', text: @exchange)
+
+  expect(ligne).to have_text(direction)
+end
+
+Alors('je ne le vois pas dans la liste des conversations') do
+  visit admin_conversations_path
+
+  expect(page).to have_text(I18n.t('admin.conversations.index.title'))
+  expect(page).to have_no_text(@exchange)
+end

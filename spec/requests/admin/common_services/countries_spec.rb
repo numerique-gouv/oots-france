@@ -30,8 +30,8 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       expect(named).to include('Allemagne (DE)', 'Finlande (FI)', 'France (FR)')
     end
 
-    # Les deux rôles se séparent ici : ce qu'un pays exige, et ce qu'il sait
-    # prouver. Le décompte n'existe que du premier côté.
+    # The two roles part here: what a country requires, and what it can prove.
+    # The tally exists on the first side alone.
     it 'leads from each country to each of the two roles it holds' do
       get admin_common_services_countries_path
 
@@ -44,8 +44,8 @@ RSpec.describe 'Admin::CommonServices::Countries' do
   describe 'GET /admin/common_services/countries/:code/requirements' do
     before { stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fr') }
 
-    # L'Evidence Broker n'a pas de requête qui parte d'un pays : la sienne exige
-    # une exigence à la fois, donc la page les balaye toutes.
+    # The Evidence Broker has no query that starts from a country: its own takes
+    # one requirement at a time, so the page sweeps them all.
     it 'sweeps the catalogue to find what that country publishes' do
       get admin_common_services_country_requirements_path('FR')
 
@@ -54,8 +54,8 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       expect(response.body).to include('FR - Test Evidence Type')
     end
 
-    # Sans nommer de pays : les vingt-sept pages de pays se partagent alors les
-    # mêmes réponses en cache, là où un `country-code` en ferait vingt-sept jeux.
+    # Naming no country: the twenty-seven country pages then share the same
+    # cached responses, where a `country-code` would make twenty-seven sets.
     it 'asks the directory without naming the country it narrows on' do
       get admin_common_services_country_requirements_path('FR')
 

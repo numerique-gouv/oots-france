@@ -16,8 +16,8 @@ RSpec.describe SearchFieldComponent, type: :component do
     expect(input['data-filter-empty']).to eq('#aucun')
   end
 
-  # Un champ dont la seule étiquette est son texte de substitution n'en a plus
-  # dès qu'on y tape.
+  # A field whose only label is its placeholder has none left the moment
+  # someone types into it.
   it 'keeps a label off screen behind the placeholder' do
     render_inline(field)
 
@@ -25,7 +25,7 @@ RSpec.describe SearchFieldComponent, type: :component do
     expect(page).to have_css('input#recherche-pays[placeholder="Rechercher un pays"]')
   end
 
-  # Rien n'est soumis : le champ filtre ce qui est déjà rendu.
+  # Nothing is submitted: the field filters what is already rendered.
   it 'carries no form and no button' do
     render_inline(field)
 
@@ -33,7 +33,7 @@ RSpec.describe SearchFieldComponent, type: :component do
     expect(page).to have_no_button
   end
 
-  # La loupe double le texte de substitution, qui dit déjà « Rechercher ».
+  # The magnifier doubles the placeholder, which already says « Rechercher ».
   it 'flies a magnifier no screen reader announces' do
     render_inline(field)
 

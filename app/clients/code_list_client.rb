@@ -33,9 +33,9 @@ class CodeListClient
 
   def country_names = names(COUNTRIES).transform_values { |name| name.sub(ARTICLE, '') }
 
-  # Cet article-là, que rien d'autre ne publie : sans lui, une phrase française
-  # ne sait pas situer un pays — « en Belgique », mais « aux Pays-Bas » et
-  # « à Chypre », qui n'en porte aucun.
+  # That article, which nothing else publishes: without it a French sentence
+  # cannot place a country — « en Belgique », but « aux Pays-Bas » and
+  # « à Chypre », which carries none.
   def country_articles = names(COUNTRIES).transform_values { |name| name[ARTICLE, :article] }
 
   private
@@ -52,10 +52,10 @@ class CodeListClient
     body = connection.get(list).body
     names = GenericodeParser.new(body).names(code_column: 'code', name_column: FRENCH_NAMES.fetch(list))
 
-    # Une réponse qui arrive et ne donne rien n'est pas une panne, et ne lève
-    # donc rien : sans cette ligne, une liste que la Commission aurait déplacée
-    # ou restructurée effacerait tous les noms de la console sans laisser la
-    # moindre trace, là où une panne réseau en laisse une.
+    # A response that arrives and yields nothing is not an outage, and raises
+    # nothing: without this line, a code list the Commission has moved or
+    # restructured would empty every name from the console without leaving a
+    # trace, where a network failure leaves one.
     Rails.logger.warn(I18n.t('clients.code_list.nothing_read', list:)) if names.empty?
 
     names

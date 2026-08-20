@@ -2,6 +2,8 @@
 
 <h1><%= t('admin.conversations.index.title') %></h1>
 
+<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8"><%= t('admin.conversations.index.lede') %></p>
+
 <%= render 'filtre' %>
 
 <%= render 'admin/erreurs', errors: @filter.errors %>
@@ -15,13 +17,17 @@
     <div class="fr-table__container">
       <div class="fr-table__content">
         <table>
-          <caption><%= t('admin.conversations.index.caption') %></caption>
+          <%# Hidden from the eye: the page title repeats it word for word.
+              Never removed for all that — RGAA 5.4 wants a data table to carry
+              a title, and a screen reader announces it. %>
+          <%= tag.caption(t('admin.conversations.index.caption'), class: 'fr-sr-only') %>
           <thead>
             <tr>
               <th scope="col"><%= t('admin.conversations.index.columns.id') %></th>
               <th scope="col"><%= t('admin.conversations.attributes.status') %></th>
-              <th scope="col"><%= t('admin.conversations.attributes.country') %></th>
+              <th scope="col"><%= t('admin.conversations.attributes.direction') %></th>
               <th scope="col"><%= t('admin.conversations.attributes.procedure') %></th>
+              <th scope="col"><%= t('admin.solicited_country') %></th>
               <th scope="col"><%= t('admin.conversations.attributes.requester') %></th>
               <th scope="col"><%= t('admin.conversations.attributes.opened_at') %></th>
             </tr>
@@ -34,19 +40,22 @@
                         admin_conversation_path(conversation.conversation_id) %>
                 </td>
                 <td><%= render ConversationStatusComponent.new(status: conversation.status) %></td>
-                <td><%= conversation.country_code %></td>
                 <td>
-                  <%= link_to conversation.procedure_code,
-                        admin_common_services_procedure_path(conversation.procedure_code) %>
+                  <%= t("admin.conversations.directions.#{conversation.direction}") %>
                 </td>
-                <td><%= conversation.evidence_requester_id %></td>
+                <td>
+                  <%= render 'admin/country_procedure', procedure_code: conversation.procedure_code,
+                                                        country_code: conversation.requester_country_code %>
+                </td>
+                <td><%= render 'admin/country', country_code: conversation.solicited_country_code %></td>
+                <td><%= conversation.evidence_requester_id.presence || '—' %></td>
                 <td><%= l(conversation.created_at, format: :short) %></td>
               </tr>
             <% end %>
 
             <% if @conversations.empty? %>
               <tr>
-                <td colspan="6"><%= t('admin.conversations.index.empty') %></td>
+                <td colspan="7"><%= t('admin.conversations.index.empty') %></td>
               </tr>
             <% end %>
           </tbody>

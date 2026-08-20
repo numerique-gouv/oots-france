@@ -1,8 +1,7 @@
-# La configuration vient exclusivement de l'environnement, comme le reste du
-# dépôt : aucun fichier de configuration à tenir en phase, et les mêmes
-# variables valent en local, dans la composition Docker et en intégration
-# continue. Les valeurs par défaut décrivent le service `postgres` de
-# `docker-compose.yml`.
+# Configuration comes from the environment alone, as everywhere else in this
+# repository: no configuration file to keep in step, and the same variables hold
+# locally, in the Docker compose stack and in continuous integration. The
+# defaults describe the `postgres` service of `docker-compose.yml`.
 default: &default
   adapter: postgresql
   encoding: unicode

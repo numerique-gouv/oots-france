@@ -1,12 +1,12 @@
 /*
- * Un pays dans une boîte à lui, le DSFR n'ayant pas de composant pour ça : son
- * étiquette (`fr-tag`) se lit comme un état ou un filtre, jamais comme un
- * endroit où aller, et la moitié de ceux-ci mènent à une page.
+ * A country in a box of its own, the DSFR having no component for it: its tag
+ * (`fr-tag`) reads as a state or a filter, never as somewhere to go, and half
+ * of these lead to a page.
  */
 .country-tag {
-  /* Le souligné que le DSFR peint sous tout `[href]`, remplacé par la bordure
-     basse ci-dessous : c'est un dégradé de fond d'épaisseur fractionnaire, qui
-     se rend différemment selon le décalage sous-pixel de sa rangée. */
+  /* The underline the DSFR paints under every `[href]`, replaced by the bottom
+     border below: it is a background gradient of fractional thickness, which
+     renders differently with the sub-pixel offset of its row. */
   --underline-img: none;
 
   display: inline-block;
@@ -17,11 +17,11 @@
 }
 
 /*
- * La même boîte entoure un pays qui ne mène nulle part — celui d'une adresse
- * postale —, donc la bordure basse est ce qui sépare les deux, et elle doit se
- * voir sans dépendre de la couleur. Le fond du survol est peint par
- * `a[href]:hover` du DSFR, qui lit `--hover-tint` ; `--active` sert de même à
- * l'état pressé.
+ * The same box surrounds a country that leads nowhere — the one in a postal
+ * address — so the bottom border is what separates the two, and it must be
+ * visible without depending on colour. The hover background is painted by the
+ * DSFR's `a[href]:hover`, which reads `--hover-tint`; `--active` serves the
+ * pressed state the same way.
  */
 a.country-tag {
   --hover-tint: var(--hover);
@@ -33,7 +33,7 @@ a.country-tag {
   border-bottom: 2px solid currentcolor;
 }
 
-/* Une rangée qui se replie, pour que vingt pays se lisent comme un ensemble. */
+/* A row that wraps, so twenty countries read as one set. */
 .country-tag-list {
   display: flex;
   flex-wrap: wrap;

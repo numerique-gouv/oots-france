@@ -1,13 +1,13 @@
 #!/bin/sh
-# Interroge Domibus après un échec du test e2e, pour savoir ce que la passerelle
-# a fait du message.
+# Queries Domibus after an end-to-end failure, to learn what the gateway did
+# with the message.
 #
-# Les logs Tomcat sont noyés sous les appels de l'écouteur (un par seconde) : ce
-# script va chercher l'information utile là où elle est structurée — le journal
-# des messages, celui des erreurs, et les certificats réellement chargés.
+# The Tomcat logs are drowned under the listener's calls (one a second): this
+# script goes for the useful information where it is structured — the message
+# log, the error log, and the certificates actually loaded.
 #
-# Usage : scripts/ci/diagnose_domibus.sh
-# N'échoue jamais : il ne sert qu'à documenter un échec déjà constaté.
+# Usage: scripts/ci/diagnose_domibus.sh
+# Never fails: it only documents a failure already observed.
 
 URL_DOMIBUS="${URL_DOMIBUS:-http://localhost:${PORT_DOMIBUS:-8180}/domibus}"
 DOMIBUS_ADMIN="${DOMIBUS_ADMIN:-admin}"
@@ -26,8 +26,8 @@ JETON=$(awk '/XSRF-TOKEN/ { print $7 }' "$BOCAL")
 montre() {
   echo
   echo "───────── $1"
-  # Le préfixe `)]}',` d'Angular saute avant affichage ; `python3` remet en
-  # forme ce qui est du JSON et laisse passer le reste tel quel.
+  # Angular's `)]}',` prefix is dropped before display; `python3` reformats what
+  # is JSON and lets the rest through as it is.
   curl -sS -b "$BOCAL" -H "X-XSRF-TOKEN: $JETON" "$URL_DOMIBUS/$2" \
     | tail -c +7 \
     | python3 -c "
@@ -43,15 +43,15 @@ except ValueError:
 montre "Journal des messages" "rest/internal/user/messagelog?page=0&pageSize=20&orderBy=received&asc=false"
 montre "Journal des erreurs" "rest/internal/user/errorlogs?page=0&pageSize=20&orderBy=timestamp&asc=false"
 
-# Les deux magasins se lisent par la même API depuis Domibus 5.2 : plus besoin
-# d'aller ouvrir le fichier au `keytool` dans le conteneur, comme l'imposait
-# 5.0.4 faute de route pour le keystore.
+# Both stores are read through the same API since Domibus 5.2: no need to open
+# the file with `keytool` inside the container, as 5.0.4 required for want of a
+# keystore route.
 #
-# Ce sont les alias qu'il faut regarder en premier : les profils de sécurité
-# les imposent (blue_gw_rsa_sign, blue_gw_rsa_decrypt côté keystore ;
-# blue_gw_rsa_sign, blue_gw_rsa_encrypt côté truststore), et un alias qui
-# s'en écarte fait échouer la signature ou le chiffrement sans autre symptôme
-# qu'un message jamais acquitté.
+# The aliases are what to look at first: the security profiles impose them
+# (blue_gw_rsa_sign, blue_gw_rsa_decrypt on the keystore side; blue_gw_rsa_sign,
+# blue_gw_rsa_encrypt on the truststore side), and an alias that departs from
+# them makes signing or encryption fail with no symptom other than a message
+# never acknowledged.
 montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
 montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
 montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"

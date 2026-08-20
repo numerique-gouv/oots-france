@@ -81,9 +81,9 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     expect(response.body).to include('Annuaire injoignable')
   end
 
-  # Un lien gardé d'un autre type de justificatif porte encore son pays dans
-  # l'adresse. C'est la liste qui publie le type qui décide, faute de quoi la
-  # réponse serait vide sans que rien ne dise pourquoi.
+  # A link kept from another evidence type still carries its country in the
+  # address. The list that publishes the type is what decides, failing which the
+  # response would come back empty with nothing to say why.
   it 'ignores a country the address still carries' do
     get admin_common_services_requirement_evidence_type_providers_path(
       test_requirement, finnish_type, country_code: 'IT',

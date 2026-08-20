@@ -1,34 +1,34 @@
 module Admin
   module CommonServices
     class RequirementsController < BaseController
-      # Rendues en entier : les exigences publiées tiennent dans une page, et le
-      # champ de recherche les filtre côté navigateur.
+      # Rendered whole: the published requirements fit on one page, and the
+      # search field filters them in the browser.
       def index
         @requirements = catalogue.requirements
       end
 
-      # Cette page n'est pas imbriquée sous une exigence : elle en nomme une par
-      # `id`, là où celle des fournisseurs la reçoit en `requirement_id`.
+      # This page is not nested under a requirement: it names one by `id`,
+      # where the providers' page receives it as `requirement_id`.
       #
-      # Aucun pays n'est nommé à l'annuaire : ce paramètre est facultatif sur
-      # cette requête, et la réponse porte alors les combinaisons de tous les
-      # pays à la fois. Vingt-sept au plus, que le champ de recherche filtre côté
-      # navigateur.
+      # No country is named to the directory: the parameter is optional on this
+      # query, and the response then carries every country's combinations at
+      # once — twenty-seven at most, which the search field filters in the
+      # browser.
       def show
         @requirement = found!(catalogue.requirement(params[:id]))
         @types_count = lists.sum { |list| list.evidence_types.size }
         @by_country = by_country
       end
 
-      # Ce qui l'impose, sur une page à part : c'est l'autre rôle, et la page
-      # de l'exigence répond déjà d'un bout à l'autre à la question du premier.
+      # What imposes it, on a page of its own: that is the other role, and the
+      # requirement's own page already answers the first one end to end.
       def procedures
         @requirement = requirement
       end
 
-      # Les démarches d'un seul pays requêteur. Rien n'est redemandé à
-      # l'annuaire : le catalogue porte déjà les déclarations, et c'est leur
-      # juridiction qui les trie.
+      # The procedures of a single requesting country. Nothing is asked of the
+      # directory again: the catalogue already carries the declarations, and it
+      # is their jurisdiction that sorts them.
       def country
         @requirement = requirement
         @country = params[:country_code]
@@ -36,8 +36,8 @@ module Admin
 
         found!(@declared.presence)
 
-        # Ce que chaque démarche exige de ce pays, cette exigence comprise : le
-        # catalogue le porte déjà, une carte n'en montrant qu'une seule.
+        # What each procedure requires of this country, this requirement
+        # included: the catalogue already carries it, a card showing only one.
         @required = @declared.filter_map(&:procedure_code).uniq.index_with do |code|
           catalogue.procedure(code).declared_requirements(@country).size
         end

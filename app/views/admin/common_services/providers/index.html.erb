@@ -10,10 +10,10 @@
 <h1 class="fr-h3"><%= t('admin.common_services.providers.index.heading',
       evidence_type: @evidence_type.display_name, country: in_country(@country)) %></h1>
 
-<p class="fr-text--lead"><%= t('admin.common_services.providers.index.lead') %></p>
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.common_services.providers.index.lead') %></p>
 
-<%# Le pays ne se choisit pas : ce type de justificatif est publié par lui, et
-    le demander à un autre ne peut que revenir vide. %>
+<%# The country is not chosen: this evidence type is published by it, and
+    asking another can only come back empty. %>
 <% if @refusal %>
   <%= dsfr_alert(type: :warning, title: @refusal.code) do %>
     <%= @refusal.message %>
@@ -25,17 +25,18 @@
       <%= t('admin.common_services.providers.index.level_of_assurance_html',
             level: service.level_of_assurance || '—') %>
 
-      <%# L'identifiant que le DSD attribue au couple type et pays : c'est lui
-          qu'une requête émise écrit dans son `DataServiceEvidenceType`, d'où sa
-          place sur la carte plutôt que dans le repli technique. %>
+      <%# The identifier the Data Service Directory assigns to the evidence
+          type and country pair: it is what an outgoing request writes into its
+          `DataServiceEvidenceType`, hence its place on the card rather than in
+          the technical fold. %>
       <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
             id: service.id || '—') %></span>
 
       <% carte.with_list do %>
         <ul class="entry-list">
-          <%# Un fournisseur et son point d'accès sont deux organisations : le
-              premier détient le justificatif, le second achemine le message qui
-              le demande, et une requête réelle adresse le second. %>
+          <%# An evidence provider and its access point are two organisations:
+              the first holds the evidence, the second carries the message that
+              asks for it, and a real request addresses the second. %>
           <% service.providers.each do |provider| %>
             <li class="entry">
               <span class="entry__name"><%= provider.label || '—' %></span>
@@ -66,9 +67,9 @@
   <% end %>
 <% end %>
 
-<%# La console interroge le DSD exactement comme l'application : un service
-    conforme à une autre version d'EDM ne revient donc pas dans cette réponse,
-    et l'absence ne veut pas dire qu'il n'existe pas. %>
+<%# The console queries the Data Service Directory exactly as the application
+    does: a data service conforming to another EDM version therefore does not
+    come back in this response, and absence does not mean it does not exist. %>
 <%= render DirectoryQueryComponent.new(
       query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
       identifiers: { requirement: requirement.id, evidence_type: @evidence_type.id },

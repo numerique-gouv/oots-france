@@ -51,13 +51,18 @@ class EvidenceRequestsController < ApplicationController
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire, :previsualisationRequise)
   end
 
+  # Upcased on the way in: both console filters upcase what they are asked, so
+  # an `fr` stored as written would answer no search by country — on the very
+  # log article 17 requires to be readable back.
+  def country_code = query[:codePays]&.upcase
+
   def exchange
     {
       requester_id: query[:idRequeteur],
       requesters: Directories::EvidenceRequesters.new,
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
-      country_code: query[:codePays],
+      country_code:,
       preview_possible: preview_possible?,
       common_services: Directories::CommonServices.new,
       gateway: DomibusClient.new,
@@ -113,6 +118,7 @@ class EvidenceRequestsController < ApplicationController
     audit_trail.request_refused(
       requester_id: query[:idRequeteur],
       procedure_code: query[:codeDemarche],
+      country_code:,
       reason:,
       conversation:,
     )

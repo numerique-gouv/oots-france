@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_19_160000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -24,6 +24,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
 
   create_table "audit_events", force: :cascade do |t|
     t.string "conversation_id"
+    t.string "country_code"
     t.datetime "created_at", null: false
     t.text "detail"
     t.string "ebms_action"
@@ -52,13 +53,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_18_120000) do
 
   create_table "conversations", force: :cascade do |t|
     t.string "conversation_id", null: false
-    t.string "country_code", null: false
+    t.string "country_code"
     t.datetime "created_at", null: false
     t.string "edm_error_code"
     t.text "error_description"
-    t.string "evidence_requester_id", null: false
+    t.string "evidence_requester_id"
+    t.boolean "incoming", default: false, null: false
     t.text "preview_location"
-    t.string "procedure_code", null: false
+    t.string "procedure_code"
     t.datetime "settled_at"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false

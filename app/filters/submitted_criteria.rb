@@ -15,6 +15,12 @@ module SubmittedCriteria
   end
 
   class_methods do
+    # The country, as three filters ask for it: two letters, the case left to
+    # whoever types since they all upcase what they compare.
+    def validates_country_code
+      validates :country_code, format: { with: /\A[A-Za-z]{2}\z/, message: :format }, allow_blank: true
+    end
+
     # Derived rather than restated: a list written out beside the attributes
     # would be a second place to remember, and forgetting it there silences a
     # criterion without a word.

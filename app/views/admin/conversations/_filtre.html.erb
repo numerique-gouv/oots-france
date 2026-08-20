@@ -16,7 +16,10 @@
 
     <div class="fr-fieldset__element fr-fieldset__element--inline">
       <div class="fr-input-group">
-        <%= form.label :country_code, t('admin.conversations.attributes.country'), class: 'fr-label' %>
+        <%= form.label :country_code, class: 'fr-label' do %>
+          <%= t('admin.conversations.attributes.country') %>
+          <span class="fr-hint-text"><%= t('admin.filtre.country_hint') %></span>
+        <% end %>
         <%= form.text_field :country_code, value: @filter.country_code,
               class: 'fr-input', maxlength: 2, placeholder: 'FI' %>
       </div>
@@ -36,9 +39,8 @@
       </div>
     </div>
 
-    <%# Les deux champs de période vont à la ligne ensemble. Un élément qui
-        prend toute la largeur force la coupure : le flexbox n'a pas de
-        `break-before`. %>
+    <%# The two period fields wrap together. An element taking the whole width
+        forces the break: flexbox has no `break-before`. %>
     <div class="row-break"></div>
 
     <div class="fr-fieldset__element fr-fieldset__element--inline">

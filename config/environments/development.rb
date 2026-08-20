@@ -68,10 +68,9 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
-  # La passerelle nous appelle par son nom de service dans le réseau Docker —
-  # `web:3000` — que le contrôle d'hôte de Rails refuse par défaut, avec un 403
-  # que rien ne distingue d'un refus d'authentification. En développement, la
-  # pile est de toute façon locale.
+  # The gateway calls us by our service name on the Docker network — `web:3000`
+  # — which Rails' host check refuses by default, with a 403 nothing tells apart
+  # from an authentication refusal. In development the stack is local anyway.
   config.hosts.clear
 
   # Uncomment if you wish to allow Action Cable access from any origin.

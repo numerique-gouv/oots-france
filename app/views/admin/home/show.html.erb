@@ -3,21 +3,28 @@
 <h1><%= t('admin.home.show.heading') %></h1>
 
 <div class="fr-grid-row fr-grid-row--gutters">
-  <div class="fr-col-12 fr-col-md-4">
-    <%= dsfr_tile(
-          title: t('admin.conversations.index.title'),
-          url: admin_conversations_path,
-          description: t('admin.home.show.tiles.conversations'),
-        ) %>
-  </div>
-  <div class="fr-col-12 fr-col-md-4">
+  <div class="fr-col-12 fr-col-md-3">
     <%= dsfr_tile(
           title: t('components.directory_breadcrumbs.directories'),
           url: admin_common_services_root_path,
           description: t('admin.home.show.tiles.common_services'),
         ) %>
   </div>
-  <div class="fr-col-12 fr-col-md-4">
+  <div class="fr-col-12 fr-col-md-3">
+    <%= dsfr_tile(
+          title: t('admin.conversations.index.title'),
+          url: admin_conversations_path,
+          description: t('admin.home.show.tiles.conversations'),
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-3">
+    <%= dsfr_tile(
+          title: t('admin.journal.events.index.title'),
+          url: admin_journal_root_path,
+          description: t('admin.home.show.tiles.journal'),
+        ) %>
+  </div>
+  <div class="fr-col-12 fr-col-md-3">
     <%= dsfr_tile(
           title: t('layouts.entete.jobs'),
           url: admin_jobs_path,

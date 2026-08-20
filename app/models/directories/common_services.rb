@@ -70,8 +70,8 @@ module Directories
     # (see `DirectoryLookup::Resolve`).
     def vetted(published, subject) = published&.validate!(subject, error: InvalidDirectoryEntry)
 
-    # Seule la première exigence est gardée, là où plusieurs exigences d'une
-    # même démarche s'ajoutent — voir le chantier 1 de `docs/reste_à_faire.md`.
+    # Only the first requirement is kept, where several requirements of one
+    # procedure accumulate — workstream 1 of `docs/reste_à_faire.md`.
     def first_requirement(procedure_code)
       found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound,
         'models.directories.common_services.unknown_procedure', procedure: procedure_code) do

@@ -10,7 +10,7 @@ module Admin
           .sort_by { |code, _| named_or_code(code) }
       end
 
-      # Ce pays en requêteur.
+      # This country as a requester.
       def procedures
         @country = params[:country_code]
         @procedures = catalogue.procedures_in(@country)
@@ -18,15 +18,15 @@ module Admin
         found!(@procedures.presence)
       end
 
-      # Ce pays en fournisseur, l'autre moitié de son rôle. Le balayage que ça
-      # demande appartient au catalogue, qui sait ce qu'un refus y vaut.
+      # This country as a provider, the other half of its role. The sweep that
+      # takes belongs to the catalogue, which knows what a refusal is worth.
       def requirements
         @country = params[:country_code]
         @swept = catalogue.requirements
         @published = catalogue.published_in(@country)
       end
 
-      # La même page que `procedures#country`, atteinte par l'autre bout.
+      # The same page as `procedures#country`, reached from the other end.
       def procedure = read_declarations
     end
   end

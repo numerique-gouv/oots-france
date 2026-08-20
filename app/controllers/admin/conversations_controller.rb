@@ -11,6 +11,7 @@ module Admin
 
     def show
       @conversation = Conversation.find_by!(conversation_id: params.expect(:id))
+      @events = @conversation.audit_events.to_a
     end
   end
 end

@@ -1,22 +1,23 @@
 Rails.application.routes.draw do
   root 'accueil#index'
 
-  # La sonde que l'intégration continue interroge, après avoir démarré la
-  # composition, pour savoir quand l'application répond.
+  # The probe continuous integration polls, once it has started the compose
+  # stack, to learn when the application answers.
   get '/up', to: 'rails/health#show', as: :rails_health_check
 
   get '/auth/cles_publiques', to: 'auth#cles_publiques'
 
-  # Le chemin est celui que les démarches appellent déjà ; il n'a pas de raison
-  # de changer parce que l'implémentation, elle, change.
+  # The path is the one the procedures already call; it has no reason to change
+  # because the implementation behind it does.
   get '/requete/pieceJustificative', to: 'evidence_requests#create'
 
-  # L'échange se règle après coup, sur une autre connexion : la démarche relit
-  # ici l'état de la conversation dont elle a reçu l'identifiant. La route est
-  # gloutonne : tout ce qui doit vivre sous /requete se déclare avant elle.
+  # The exchange settles afterwards, on another connection: the procedure reads
+  # back here the state of the conversation whose identifier it was given. The
+  # route is greedy: whatever must live under /requete is declared before it.
   get '/requete/:conversation_id', to: 'evidence_requests#show', as: :conversation
 
-  # C'est Domibus qui appelle, depuis le réseau : la route est authentifiée.
+  # Domibus is the caller, and it calls from the network: the route is
+  # authenticated.
   post '/domibus/notifications', to: 'domibus_notifications#create'
 
   namespace :admin do
@@ -24,20 +25,29 @@ Rails.application.routes.draw do
     resource :session, only: %i[new create destroy]
     resources :conversations, only: %i[index show]
 
-    # Les pages ne portent que des identifiants courts — un code de démarche,
-    # le dernier segment d'une URL du Semantic Repository. L'identifiant entier
-    # nomme un hôte différent en acceptation et en production.
+    # The log is walked through its events: what one exchange adds up to is
+    # read on its own page, under `/admin/conversations`, which both directions
+    # now feed.
+    namespace :journal do
+      root to: 'events#index'
+      resource :subjects, only: :show
+      resources :events, only: :show
+    end
+
+    # The pages carry short identifiers only — a procedure code, the last
+    # segment of a Semantic Repository URL. The whole identifier names a
+    # different host in acceptance and in production.
     namespace :common_services do
       root to: 'catalogue#show'
-      # Ce qu'un pays tire d'une démarche est une page à soi, et non un filtre :
-      # une démarche n'impose les mêmes exigences nulle part. Elle s'atteint par
-      # deux chemins, qui montrent la même chose et dont chacun garde son fil
-      # d'Ariane — on descend d'une démarche vers un pays, ou l'inverse, et le
-      # chemin parcouru ne se réécrit pas en cours de route.
+      # What a country draws from a procedure is a page of its own, and not a
+      # filter: a procedure imposes the same requirements nowhere. It is reached
+      # by two paths, which show the same thing and each of which keeps its own
+      # breadcrumb — one descends from a procedure to a country, or the reverse,
+      # and the path walked is not rewritten along the way.
       resources :procedures, only: %i[index show], param: :code do
         get 'countries/:country_code', to: 'procedures#country', as: :country
       end
-      # Un pays n'a pas de page à lui : il a deux rôles, et chacun la sienne.
+      # A country has no page of its own: it has two roles, and each has one.
       resources :countries, only: :index, param: :code do
         get 'procedures', to: 'countries#procedures'
         get 'procedures/:procedure_code', to: 'countries#procedure', as: :procedure

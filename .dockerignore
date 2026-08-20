@@ -9,11 +9,11 @@ tmp
 vendor/bundle
 .bundle
 .env*
-# Exceptions nommées une à une, et surtout sans joker : un motif de
-# ré-inclusion contenant `*` empêche BuildKit d'élaguer les répertoires exclus.
-# Il parcourt alors tout l'arbre, `domibus/` compris, dont il ne peut pas lire le
-# contenu quand le conteneur tourne — la construction échoue sur
-# « open domibus: permission denied ».
+# Exceptions named one by one, and above all without a wildcard: a re-inclusion
+# pattern containing `*` stops BuildKit pruning the excluded directories. It then
+# walks the whole tree, `domibus/` included, whose contents it cannot read while
+# the container is running — the build fails on
+# "open domibus: permission denied".
 !.env.template
 !.env.oots.template
 !.env.domibus.template

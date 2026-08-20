@@ -122,8 +122,8 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       expect(response).to have_http_status(:not_found)
     end
 
-    # Une déclaration publiée sans son code n'appartient à aucune démarche : il
-    # n'y a nulle part où mener, et la flèche du DSFR promettrait le contraire.
+    # A declaration published without its code belongs to no procedure: there is
+    # nowhere to lead, and the DSFR arrow would promise the opposite.
     context 'when a declaration carries no procedure code' do
       let(:answer) { [unnamed, {}] }
 
@@ -137,9 +137,9 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
         expect(card.css('.fr-card__title a')).to be_empty
       end
 
-      # La seule déclaration estonienne sous X4, privée du code qu'elle porte.
-      # `gsub` parce que l'annuaire republie la même déclaration sous chacune
-      # des exigences qu'elle appelle : la première du fichier est ailleurs.
+      # The one Estonian declaration under X4, stripped of the code it carries.
+      # `gsub` because the directory republishes the same declaration under each
+      # of the requirements it calls on: the first in the file is elsewhere.
       def unnamed
         common_services_answer('eb_requirements_catalogue').first
           .gsub(%r{(54d19e6c[^<]*</sdg:Identifier>.*?<sdg:RelatedTo>\s*<sdg:Identifier>)[^<]*}m, '\\1')
@@ -159,8 +159,8 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
         expect(card.css('.fr-card__footer')).to be_empty
       end
 
-      # La même déclaration, privée cette fois du pays qui la dépose — et seule
-      # sous son code, sans quoi les autres rempliraient le pied.
+      # The same declaration, stripped this time of the country that files it —
+      # and alone under its code, or the others would fill the footer.
       def stateless
         common_services_answer('eb_requirements_catalogue').first
           .gsub(%r{(54d19e6c[^<]*</sdg:Identifier>.*?<sdg:AdminUnitLevel1>)[^<]*}m, '\\1')

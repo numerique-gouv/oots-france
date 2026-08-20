@@ -5,8 +5,8 @@
 # away, though — one comes here to read what the directories hold, and only
 # afterwards, when the answer surprises, to check what was asked for it.
 class DirectoryQueryComponent < ViewComponent::Base
-  # `embedded` pour celui qui clôt le pied d'une carte plutôt qu'une page : il
-  # s'y range sur les entrées au-dessus de lui, au lieu de s'en détacher.
+  # `embedded` for the one that closes a card's footer rather than a page: it
+  # ranges itself on the entries above rather than standing apart from them.
   def initialize(query_id:, parameters: {}, identifiers: {}, embedded: false)
     @query_id = query_id
     @parameters = parameters.compact_blank

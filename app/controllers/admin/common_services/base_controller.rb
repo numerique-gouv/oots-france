@@ -22,8 +22,8 @@ module Admin
 
       def country_names = @country_names ||= code_lists.country_names
 
-      # Pour un titre, qui ne peut pas porter d'étiquette : un `<p>` n'a rien à
-      # faire dans un `<h2>`. La règle, elle, est celle du composant.
+      # For a heading, which cannot carry a label: a `<p>` has no business
+      # inside an `<h2>`. The rule itself belongs to the component.
       def named_country(code) = CountryTagComponent.label(code, country_names[code])
 
       def wording
@@ -42,8 +42,8 @@ module Admin
 
       def data_service_directory = @data_service_directory ||= DataServiceDirectoryClient.new
 
-      # Les intitulés des codes de démarche, que l'annuaire ne publie pas : il
-      # ne rend que le code, et son intitulé vit dans la liste de codes.
+      # The wording of a procedure code, which the directory does not publish:
+      # it returns the code alone, and the wording lives in the code list.
       def procedure_names = @procedure_names ||= code_lists.procedure_names
 
       def named_procedure(code) = ProcedureComponent.label(code, procedure_names[code])
@@ -52,20 +52,20 @@ module Admin
 
       def full_named_procedure(code) = ProcedureComponent.label(code, procedure_names[code], limit: nil)
 
-      # Les deux descentes vers cette page — par la démarche, par le pays — lui
-      # posent la même question ; seul le fil d'Ariane les distingue.
+      # Both ways down to this page — by procedure, by country — put the same
+      # question to it; only the breadcrumb tells them apart.
       def read_declarations
         @country = params[:country_code]
         @procedure = found!(catalogue.procedure(params[:procedure_code]))
         @requirements = @procedure.declared_requirements(@country)
       end
 
-      # Les deux pages qui vivent sous une exigence la retrouvent de la même
-      # façon, et lui posent la même question.
+      # The two pages that live under a requirement find it the same way, and
+      # put the same question to it.
       def requirement = @requirement ||= found!(catalogue.requirement(params[:requirement_id]))
 
-      # Aucun pays n'est nommé : ce paramètre est facultatif sur cette requête,
-      # et la réponse porte alors les combinaisons de tous les pays à la fois.
+      # No country is named: the parameter is optional on this query, and the
+      # response then carries every country's combinations at once.
       def evidence_type_lists
         @evidence_type_lists ||= evidence_broker.evidence_type_lists(requirement_id: requirement.id)
       end

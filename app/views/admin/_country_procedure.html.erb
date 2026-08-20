@@ -1,0 +1,12 @@
+<%# The procedure under the flag of the country that carries it, and the link
+    to what the directories publish about it there. The flag appears only where
+    there is a procedure to qualify: alone, it would say nothing about the row
+    it sits in. %>
+<% if procedure_code.blank? %>
+  —
+<% elsif country_code.present? %>
+  <%= link_to "#{CountryTagComponent.flag(country_code)} #{procedure_code}",
+        admin_common_services_procedure_country_path(procedure_code, country_code) %>
+<% else %>
+  <%= procedure_code %>
+<% end %>

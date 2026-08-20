@@ -74,4 +74,13 @@ RSpec.describe RetrievedMessageParser do
 
     expect(described_class.new(renamed).action).to eq(EbmsAction::EXECUTE_QUERY_REQUEST)
   end
+
+  # `R-EDM-REQ-C073` and its counterpart for the response require an address on
+  # the agent classified `EP`, and require nothing of it but the country: that is
+  # where the country the response came from is read.
+  it 'reads the country the provider answered from' do
+    message = described_class.new(real_envelope('reponseAvecPieceJointe'))
+
+    expect(message.body.provider_country).to eq('FR')
+  end
 end

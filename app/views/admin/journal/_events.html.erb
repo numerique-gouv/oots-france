@@ -1,0 +1,62 @@
+<%# The same table wherever events are read: the whole listing, what one
+    exchange holds, what travelled about one person. Three questions, one way
+    of rendering the answer. %>
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <%# Hidden from the eye where the page title repeats it, but never
+              removed: RGAA 5.4 wants a data table to carry a title, and a
+              screen reader announces it. %>
+          <%= tag.caption(caption, class: ('fr-sr-only' if local_assigns[:hide_caption])) %>
+          <thead>
+            <tr>
+              <th scope="col"><%= t('admin.journal.number') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.event_type') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.conversation_id') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.procedure_code') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.country_code') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.evidence_requester_id') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.occurred_at') %></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% events.each do |event| %>
+              <tr>
+                <%# The number carries the link: every row has one, where two
+                    event types have no message identifier at all — a refusal
+                    pronounced before the gateway was called, and the handing of
+                    the evidence to the French requester. %>
+                <td><%= link_to "##{event.id}", admin_journal_event_path(event) %></td>
+                <td><%= render EventTypeComponent.new(event_type: event.event_type) %></td>
+                <td>
+                  <%= render 'admin/journal/conversation_link', event: %>
+                </td>
+                <%# What the row carries, without saying which side each stood
+                    on: the country is the correspondent's, and the event type
+                    says enough of the direction for the reader to conclude
+                    alone. %>
+                <td>
+                  <% if event.procedure_code.present? %>
+                    <%= link_to event.procedure_code,
+                          admin_common_services_procedure_path(event.procedure_code) %>
+                  <% else %>
+                    —
+                  <% end %>
+                </td>
+                <td><%= render 'admin/country', country_code: event.country_code %></td>
+                <td><%= event.evidence_requester_id.presence || '—' %></td>
+                <td><%= l(event.occurred_at, format: :short) %></td>
+              </tr>
+            <% end %>
+
+            <% if events.empty? %>
+              <tr><td colspan="7"><%= empty %></td></tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

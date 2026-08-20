@@ -31,6 +31,7 @@ RSpec.describe AuditTrail do
         requesting_authority_id: '00000000000002',
         requesting_authority_scheme: 'urn:cef.eu:names:identifier:EAS:0009',
         providing_authority_id: Settings.french_provider_identity[:id],
+        country_code: 'FR',
       )
     end
 
@@ -67,6 +68,7 @@ RSpec.describe AuditTrail do
         event_type: 'response_received',
         evidence_digest: Digest::SHA256.hexdigest(message.evidence),
         mime_type: 'application/pdf',
+        country_code: 'FR',
       )
     end
   end
@@ -81,6 +83,7 @@ RSpec.describe AuditTrail do
         event_type: 'error_received',
         edm_error_code: 'EDM:ERR:0004',
         detail: 'Object not found',
+        country_code: 'FR',
       )
     end
   end
@@ -98,6 +101,8 @@ RSpec.describe AuditTrail do
         request_id: 'urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700',
         procedure_code: '00',
         requesting_authority_id: nil,
+        # The country travels on that same agent's address, and nowhere else.
+        country_code: nil,
         # Never unreadable — it comes from our own configuration — so it must
         # not go down with the correspondent's.
         providing_authority_id: Settings.french_provider_identity[:id],
@@ -124,12 +129,14 @@ RSpec.describe AuditTrail do
   # These never reach the gateway, so no Domibus log holds them.
   describe 'a call this application turns down' do
     it 'records the refusal and its reason' do
-      audit_trail.request_refused(requester_id: '00000000000002', procedure_code: 'T3', reason: 'Démarche inconnue')
+      audit_trail.request_refused(requester_id: '00000000000002', procedure_code: 'T3', country_code: 'FI',
+        reason: 'Démarche inconnue')
 
       expect(journalled).to have_attributes(
         event_type: 'request_refused',
         evidence_requester_id: '00000000000002',
         procedure_code: 'T3',
+        country_code: 'FI',
         detail: 'Démarche inconnue',
         conversation_id: nil,
       )
@@ -141,7 +148,8 @@ RSpec.describe AuditTrail do
       conversation = create(:conversation)
 
       audit_trail.request_refused(
-        requester_id: '00000000000002', procedure_code: '00', reason: 'Connexion refusée', conversation:,
+        requester_id: '00000000000002', procedure_code: '00', country_code: 'FI',
+        reason: 'Connexion refusée', conversation:,
       )
 
       expect(journalled.conversation_id).to eq(conversation.conversation_id)

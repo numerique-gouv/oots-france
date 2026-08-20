@@ -1,0 +1,61 @@
+<% content_for :title, t('admin.journal.events.show.title', id: @event.id) %>
+
+<%= dsfr_breadcrumbs do |fil| %>
+  <% fil.with_breadcrumb(label: t('components.directory_breadcrumbs.admin'), href: admin_root_path) %>
+  <% fil.with_breadcrumb(label: t('admin.journal.events.index.title'), href: admin_journal_root_path) %>
+  <% fil.with_breadcrumb(label: t('admin.journal.events.show.title', id: @event.id)) %>
+<% end %>
+
+<h1 class="fr-h3"><%= t('admin.journal.events.show.title', id: @event.id) %></h1>
+
+<p><%= render EventTypeComponent.new(event_type: @event.event_type) %></p>
+
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption><%= t('admin.journal.events.show.caption') %></caption>
+          <tbody>
+            <%# Every column that carries something, decrypted subject included:
+                this is the page one comes to in order to know, and withholding a
+                field here would send the reader to a console to read it. The
+                type alone is left out, the badge above the table saying it, as
+                an exchange's own page does with its status. %>
+            <% t('admin.journal.attributes').each do |name, label| %>
+              <% value = @event.public_send(name) %>
+              <% next if value.blank? || name == :event_type %>
+              <tr>
+                <th scope="row"><%= label %></th>
+                <td>
+                  <%# Rendered as the table renders them: the detail page must
+                      say nothing less, nor say it differently. %>
+                  <% case name %>
+                  <% when :occurred_at %>
+                    <%= l(value, format: :long) %>
+                  <% when :conversation_id %>
+                    <%= render 'admin/journal/conversation_link', event: @event %>
+                  <% when :procedure_code %>
+                    <%= link_to value, admin_common_services_procedure_path(value) %>
+                  <% when :country_code %>
+                    <%= render 'admin/country', country_code: value %>
+                  <% else %>
+                    <code><%= value %></code>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<% if @event.evidence_subject_key.present? %>
+  <p class="fr-mt-2w">
+    <%= link_to t('admin.journal.events.show.same_subject'),
+          admin_journal_subjects_path(@event.subject_criteria),
+          class: 'fr-btn fr-btn--secondary' %>
+  </p>
+<% end %>

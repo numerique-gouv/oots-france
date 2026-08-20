@@ -33,6 +33,20 @@ module SlotReading
   # A `rim:CollectionValueType`: its `rim:Element` children, possibly none.
   def slot_elements(name, scope) = all(slot(name, scope), './rim:SlotValue/rim:Element')
 
+  # The country an agent declares, under the address that `R-EDM-REQ-C073` and
+  # its response and error counterparts impose on it — the only thing they
+  # impose there.
+  #
+  # Upcased, and kept only if it is shaped like a country code: a correspondent
+  # writing `fr` would otherwise be stored as written, and never match a filter,
+  # which upcases what it is asked. What is not a code at all is dropped rather
+  # than stored unusable — the journal keeps what it could read.
+  def agent_country(agent)
+    code = text_at(agent, './sdg:Address/sdg:AdminUnitLevel1').to_s.upcase
+
+    code if code.match?(/\A[A-Z]{2}\z/)
+  end
+
   # The description travels as a key: what is missing is named by the parser
   # that looked for it, and where it was looked for is the same sentence for all.
   def require_content(value, key, **)

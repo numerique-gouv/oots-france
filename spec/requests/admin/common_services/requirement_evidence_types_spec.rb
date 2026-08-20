@@ -18,9 +18,9 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     expect(response.body).to include('Un résultat')
   end
 
-  # Vingt-quatre cartes plus bas, le titre de la page est hors de l'écran : la
-  # préposition suit l'article de la liste de codes, faute de quoi la phrase
-  # dirait « en Pays-Bas ».
+  # Twenty-four cards down, the page title is off screen: the preposition
+  # follows the article from the code list, failing which the sentence would
+  # read « en Pays-Bas ».
   it 'says on each card which requirement, and situates the jurisdiction' do
     stub_code_list(countries: { 'FR' => 'France (la)' })
 
@@ -63,8 +63,8 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     expect(weights.sum).to eq(1)
   end
 
-  # Le type porte sa juridiction : l'adresse n'a pas à la répéter, et la
-  # répéter permettait de la contredire.
+  # The evidence type carries its own jurisdiction: the address need not repeat
+  # it, and repeating it would allow the two to contradict each other.
   it 'leads to the providers of a type without naming a country in the address' do
     get admin_common_services_requirement_path(test_requirement)
 
@@ -72,8 +72,8 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     expect(response.parsed_body.css("a[href*='country_code']")).to be_empty
   end
 
-  # Deux combinaisons sont des alternatives, et les types de l'une sont exigés
-  # ensemble : le mot ne se dit que là où il tranche quelque chose.
+  # Two combinations are alternatives, and the evidence types within one are
+  # required together: the word is said only where it settles something.
   it 'names the combination only where a country publishes more than one' do
     stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
 
@@ -91,8 +91,8 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     expect(response.body).to include('Combinaison', "exigée d'un bloc")
   end
 
-  # Une seconde combinaison, pour le même pays, fabriquée à partir de la
-  # capture : la fixture n'en porte qu'une.
+  # A second combination, for the same country, built from the captured
+  # response: the fixture carries only one.
   def two_combinations
     common_services_answer('eb_evidence_types_fr').first.sub(
       %r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m,

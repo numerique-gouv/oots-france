@@ -3,7 +3,7 @@
 L'[article 17 du règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj) impose de conserver **douze mois** la trace de chaque échange de justificatif, et le [chapitre 4.8 des TDD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) énumère, composant par composant, ce qu'il faut y consigner. Cette page décrit ce que le dépôt en écrit, où, et comment le relire. Ce qui manque encore relève de [reste_à_faire.md](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation).
 
 > [!IMPORTANT]
-> **Le journal porte des données personnelles**, contrairement au reste de la base. Le chapitre nomme l'*Evidence subject information* parmi ce qu'un requêteur et un fournisseur doivent consigner : le sujet du justificatif est donc enregistré, chiffré au repos, et effacé au terme de la conservation. Cette page est le seul endroit du dépôt où cette propriété est vraie — la table `conversations` et l'[espace d'administration](espace_administration.md) n'en portent aucune, par construction.
+> **Le journal porte des données personnelles**, contrairement au reste de la base. Le chapitre nomme l'*Evidence subject information* parmi ce qu'un requêteur et un fournisseur doivent consigner : le sujet du justificatif est donc enregistré, chiffré au repos, et effacé au terme de la conservation. La table `conversations` n'en porte aucune, par construction, et de l'[espace d'administration](espace_administration.md) seules les pages du journal en montrent.
 
 ## Deux couches, un identifiant commun
 
@@ -37,6 +37,9 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | `request_received` | un État membre a interrogé la France | `IncomingMessage::Process` |
 | `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::AnswerRequest` |
 | `error_sent` | la France a refusé | `EvidenceProvision::AnswerRequest` |
+
+> [!NOTE]
+> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les huit types le portent, de deux sources. Là où la France demande, il vient de la conversation. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
 
 L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant une conversation jamais ouverte, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 
@@ -128,7 +131,9 @@ Autrement dit : on a acheté exactement la capacité que l'article 17 réclame �
 
 ## Le relire
 
-Il n'y a **pas de page d'administration**, délibérément : la console pose qu'elle ne montre aucune donnée personnelle, et le journal en porte. La lecture se fait à la console Rails ou au `psql`.
+Le journal se consulte depuis l'[espace d'administration](espace_administration.md), sous `/admin/journal` : la liste des événements, la fiche de l'un d'eux, les échanges tels qu'ils s'additionnent, la chronologie de l'un, et la recherche par personne. Ces pages **montrent des données personnelles**, contrairement au reste de la console, et c'est leur raison d'être — l'article 17 existe pour qu'on puisse répondre à « quelles données de cette personne ont circulé ». Elles sont derrière le même compte que le reste, et aucune trace de consultation n'est tenue : aucun chapitre ne la demande.
+
+La console Rails et le `psql` restent ouverts pour ce qu'une page ne fait pas :
 
 ```ruby
 # La chronologie d'un échange, par son identifiant de conversation

@@ -1,27 +1,27 @@
 #!/bin/sh
-# Attend que la webapp Domibus soit déployée et réponde.
+# Waits for the Domibus webapp to be deployed and answering.
 #
-# Le conteneur tourne avec le pilote de journalisation `none` (voir
-# docker-compose.yml) : impossible de guetter le message de fin de démarrage de
-# Tomcat dans les logs. On interroge donc l'API.
+# The container runs with the `none` logging driver (see docker-compose.yml):
+# there is no watching for Tomcat's start-up message in the logs. So the API is
+# queried instead.
 #
-# Depuis Domibus 5.2, la console préfixe ses routes par le rôle qu'elles
-# exigent : `rest/public/**` est justement la famille qui répond sans
-# authentification, et `application/title` en fait partie. C'est plus sûr que
-# l'ancienne `rest/application/name`, qui n'était publique que par accident.
+# Since Domibus 5.2 the console prefixes its routes with the role they require:
+# `rest/public/**` is precisely the family that answers without authentication,
+# and `application/title` belongs to it. That is safer than `rest/application/name`,
+# which was public only by accident.
 #
-# Usage : scripts/ci/wait_for_domibus.sh [délai max en secondes ; 600 par défaut]
+# Usage: scripts/ci/wait_for_domibus.sh [timeout in seconds; 600 by default]
 
 set -e
 
-# Le port se lit dans `.env` à défaut d'être dans l'environnement : `make` ne
-# charge pas ce fichier, et `docker compose`, qui le lit pour publier le port,
-# n'en propage rien au shell. Sans cette lecture, la cible `make domibus`
-# sonderait 8180 sur une installation qui a changé `PORT_DOMIBUS` — ce que
-# scripts/worktree.sh recommande pour faire tourner deux piles en parallèle.
+# The port is read from `.env` when it is not in the environment: `make` does
+# not load that file, and `docker compose`, which reads it to publish the port,
+# propagates none of it to the shell. Without this read, the `make domibus`
+# target would probe 8180 on an installation that changed `PORT_DOMIBUS` — which
+# scripts/worktree.sh recommends in order to run two stacks in parallel.
 #
-# Prélevé par `sed` plutôt que chargé par `.` : `.env` porte aussi un mot de
-# passe, dont rien ne garantit qu'il traverse une interprétation par le shell.
+# Taken out with `sed` rather than sourced with `.`: `.env` also carries a
+# password, and nothing guarantees it survives an interpretation by the shell.
 RACINE=$(cd "$(dirname "$0")/../.." && pwd)
 [ -n "$PORT_DOMIBUS" ] || [ ! -f "$RACINE/.env" ] || \
   PORT_DOMIBUS=$(sed -n 's/^PORT_DOMIBUS=//p' "$RACINE/.env" | head -n 1)

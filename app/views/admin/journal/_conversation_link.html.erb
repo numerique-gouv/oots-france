@@ -1,0 +1,8 @@
+<%# The exchange an event names does not always exist: a response can name one
+    France never opened, and a refusal turned away before any exchange was
+    opened names none. A link would then lead to a 404. %>
+<% if event.conversation %>
+  <%= link_to event.conversation_id, admin_conversation_path(event.conversation_id) %>
+<% else %>
+  <%= event.conversation_id.presence || '—' %>
+<% end %>

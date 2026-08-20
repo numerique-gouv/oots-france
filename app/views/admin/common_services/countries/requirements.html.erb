@@ -10,7 +10,7 @@
 <h1 class="fr-h3"><%= t('admin.common_services.countries.requirements.title',
       country: named_country(@country)) %></h1>
 
-<p><%= t('admin.common_services.countries.requirements.lead_html') %></p>
+<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.countries.requirements.lead_html') %></p>
 
 <%= render SearchFieldComponent.new(
       label: t('admin.common_services.countries.requirements.search'),
@@ -40,7 +40,8 @@
   <%= t('admin.common_services.requirements.empty') %>
 </p>
 
-<%# Une requête par exigence : l'Evidence Broker n'en a pas qui parte du pays. %>
+<%# One query per requirement: the Evidence Broker has none that starts from
+    the country. %>
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
       parameters: { 'requirement-id' =>

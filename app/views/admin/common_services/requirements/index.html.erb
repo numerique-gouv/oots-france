@@ -4,7 +4,7 @@
 
 <h1><%= t('admin.common_services.requirements.index.title') %></h1>
 
-<p><%= t('admin.common_services.requirements.index.lead_html') %></p>
+<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.index.lead_html') %></p>
 
 <%= render SearchFieldComponent.new(
       label: t('admin.common_services.requirements.index.search'),
@@ -24,9 +24,9 @@
         <%= t('admin.common_services.requirements.index.card') %>
 
         <% carte.with_list do %>
-          <%# Ces pays sont ceux qui l'imposent, non ceux qui la satisfont : ils
-              mènent donc aux démarches sous lesquelles ils l'ont déclarée, et
-              non aux justificatifs qu'ils délivrent. %>
+          <%# These countries are the ones that impose it, not the ones that
+              satisfy it: they lead to the procedures they declared it under,
+              and not to the evidence they deliver. %>
           <%= render CountryTagListComponent.new(
                 caption: t('admin.common_services.requirements.index.required_by'),
                 codes: requirement.countries, names: country_names,

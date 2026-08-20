@@ -29,3 +29,19 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
     Quand j'ouvre la fiche de la conversation allemande
     Alors je lis le code d'erreur "EDM:ERR:0004"
     Et je lis la raison de l'échec de la conversation allemande
+
+  Scénario: le journal garde le refus qu'aucun échange ne porte
+    Étant donné une requête refusée avant qu'aucun échange soit ouvert
+    Quand j'ouvre le journal des échanges
+    Alors je vois ce refus dans le journal
+    Et je ne le vois pas dans la liste des conversations
+
+  Scénario: un échange reçu tient sa ligne comme un échange émis
+    Étant donné un échange reçu d'un autre État membre
+    Quand j'ouvre la liste des conversations
+    Alors je vois cet échange avec le sens "Reçue"
+
+  Scénario: retrouver ce qui a circulé au sujet d'une personne
+    Étant donné un échange concernant Sophie Dupont
+    Quand je recherche la personne "Dupont" "Sophie" née le "1965-11-25"
+    Alors je vois cet échange dans le journal

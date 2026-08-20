@@ -1,6 +1,6 @@
-<%# Le flash transporte une clé et non un message : la garde de l'espace
-    d'administration est aussi posée sur le tableau de bord de GoodJob, qui
-    rend sous `:en`, locale que cette application ne publie pas. %>
+<%# The flash carries a key and not a message: the operator console's guard is
+    also set on GoodJob's dashboard, which renders under `:en`, a locale this
+    application does not publish. %>
 <% { alert: :error, notice: :info }.each do |clef, type| %>
   <% if flash[clef].present? %>
     <%= dsfr_alert(type: type, title: t(flash[clef]), size: :md, html_attributes: { class: 'fr-mb-4w' }) %>

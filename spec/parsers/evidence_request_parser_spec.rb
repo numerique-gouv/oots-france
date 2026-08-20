@@ -84,4 +84,10 @@ RSpec.describe EvidenceRequestParser do
 
     RetrievedMessageParser.new(document.to_xml).body
   end
+  # `R-EDM-REQ-C073` requires an address on the agent classified `ER`, and
+  # requires nothing of it but the country: that is where, and nowhere else, a
+  # received request names the country that asks.
+  it 'reads the country the requester declares' do
+    expect(request.requester.address.country).to eq('FR')
+  end
 end

@@ -1,11 +1,10 @@
-# Configuration Dependabot.
+# Dependabot configuration.
 #
-# Sans ce fichier, seules les mises à jour de sécurité sont proposées, et les
-# demandes de tirage ouvertes ne sont plus rebasées une fois périmées : quatre
-# d'entre elles avaient ainsi vieilli six mois en visant des versions
-# elles-mêmes redevenues vulnérables entre-temps.
+# Without this file, only security updates are offered, and open pull requests
+# stop being rebased once they go stale: some of them aged for months while
+# aiming at versions that had themselves become vulnerable in the meantime.
 #
-# Documentation :
+# Documentation:
 # https://docs.github.com/fr/code-security/dependabot/working-with-dependabot/dependabot-options-reference
 version: 2
 
@@ -19,8 +18,8 @@ updates:
       timezone: Europe/Paris
     open-pull-requests-limit: 10
     groups:
-      # Une seule demande de tirage par lot : les montées de version des
-      # dépendances de développement n'ont pas à être revues une par une.
+      # One pull request per group: bumps of the development dependencies do not
+      # have to be reviewed one by one.
       developpement:
         dependency-type: development
       production:

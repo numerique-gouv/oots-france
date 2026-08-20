@@ -60,4 +60,11 @@ RSpec.describe ErrorResponseParser do
       expect(error.description).to eq('Missing Authorization')
     end
   end
+
+  # `R-EDM-REQ-C073` and its counterpart for the error require an address on the
+  # agent classified `ERRP`, and require nothing of it but the country: that is
+  # where the country the refusal came from is read.
+  it 'reads the country the refusal came from' do
+    expect(error.provider_country).to eq('FR')
+  end
 end

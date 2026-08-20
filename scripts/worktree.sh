@@ -1,11 +1,11 @@
 #!/bin/sh
-# Crée un worktree git pour travailler en parallèle (agents LLM ou humains).
-# Le worktree est créé dans .worktrees/ (répertoire non versionné), avec une
-# branche du même nom, et les fichiers d'environnement non versionnés y sont
-# recopiés — leurs ports décalés pour que la pile du worktree puisse tourner en
-# même temps que celle du dépôt principal.
+# Creates a git worktree for working in parallel (LLM agents or humans). The
+# worktree is created under .worktrees/ (an unversioned directory), with a branch
+# of the same name, and the unversioned environment files are copied into it —
+# their ports shifted so the worktree's stack can run at the same time as the
+# main checkout's.
 #
-# Usage : scripts/worktree.sh <nom-de-branche>
+# Usage: scripts/worktree.sh <branch-name>
 
 set -e
 
@@ -15,15 +15,15 @@ if [ -z "$1" ]; then
 fi
 
 NOM="$1"
-# Lancé depuis un worktree, --show-toplevel renverrait la racine de ce
-# worktree, et le nouveau worktree s'y retrouverait imbriqué : on remonte au
-# dépôt principal, dont --git-common-dir donne toujours le répertoire .git.
+# Run from a worktree, --show-toplevel would return that worktree's root and the
+# new worktree would end up nested inside it: we climb back to the main checkout,
+# whose .git directory --git-common-dir always gives.
 RACINE="$(dirname "$(cd "$(git rev-parse --git-common-dir)" && pwd)")"
 CHEMIN="$RACINE/.worktrees/$NOM"
 
-# Les ports qu'un .env publie sur l'hôte, lus au lieu d'être énumérés ici :
-# `web`, `domibus` et `postgres` n'en écrivent aucun en dur, donc ajouter une
-# variable `PORT_` à .env suffit à la faire décaler avec les autres.
+# The ports a .env publishes on the host, read instead of being listed here:
+# `web`, `domibus` and `postgres` hard-code none of them, so adding a `PORT_`
+# variable to .env is enough for it to be shifted with the others.
 ports_declares() {
   [ -f "$1" ] || return 0
   sed -n 's/^PORT_[A-Z_0-9]*=\([0-9][0-9]*\).*/\1/p' "$1"
@@ -31,25 +31,25 @@ ports_declares() {
 
 DECALAGE_MAX=99
 
-# Tout le décalage se calcule à partir de ce fichier.
+# The whole shift is computed from this file.
 if [ ! -r "$RACINE/.env" ]; then
   echo "❌ $RACINE/.env introuvable ou illisible." >&2
   echo "   Lancer \`make setup\` dans le dépôt principal avant de créer un worktree." >&2
   exit 1
 fi
 
-# Une ligne `PORT_` hors de cette forme serait ignorée partout — ni réservée,
-# ni décalée, ni affichée — et la pile du worktree publierait ce port-là sur
-# celui du voisin. Deux formes s'y glissent facilement :
+# A `PORT_` line outside this shape would be ignored everywhere — neither
+# reserved, nor shifted, nor displayed — and the worktree's stack would publish
+# that port on a neighbour's. Two shapes slip in easily:
 #
-# Un espace après le `=`, que le gabarit laisse avant son commentaire. Docker
-# compose ne reconnaît d'ailleurs un commentaire de fin de ligne que précédé
-# d'une espace : `PORT_X=8180#note` vaut pour lui la valeur `8180#note`, qu'il
-# refuse en `invalid hostPort`.
+# A space after the `=`, which the template leaves before its comment. Docker
+# compose, for that matter, recognises an end-of-line comment only when it is
+# preceded by a space: `PORT_X=8180#note` is to it the value `8180#note`, which
+# it refuses with `invalid hostPort`.
 #
-# Un zéro de tête, plus insidieux : `port_pris` compare des chaînes, donc le
-# `03001` réservé par un voisin ne correspond jamais au `3001` calculé ici, et
-# les deux piles se retrouvent sur le même port sans un mot.
+# A leading zero, more insidious: `port_pris` compares strings, so the `03001` a
+# neighbour reserved never matches the `3001` computed here, and the two stacks
+# end up on the same port without a word.
 refuse_ports_mal_formes() {
   MAL_FORMEES="$(grep -n '^PORT_' "$1" | grep -vE '^[0-9]+:PORT_[A-Z_0-9]*=[1-9][0-9]*([[:space:]].*)?$' || true)"
   [ -n "$MAL_FORMEES" ] || return 0
@@ -63,10 +63,10 @@ refuse_ports_mal_formes() {
 
 refuse_ports_mal_formes "$RACINE/.env"
 
-# Un .env de worktree illisible ne peut pas être ignoré : les ports qu'il
-# réserve resteraient invisibles et deux piles se les disputeraient. Le
-# détecter ici plutôt que dans la substitution ci-dessous, dont l'échec
-# arrêterait le script sous `set -e` sur le seul message de `sed`.
+# An unreadable worktree .env cannot be passed over: the ports it reserves would
+# stay invisible and two stacks would fight over them. Detected here rather than
+# in the substitution below, whose failure would stop the script under `set -e`
+# on nothing but `sed`'s own message.
 for fichier in "$RACINE"/.worktrees/*/.env; do
   [ -e "$fichier" ] || continue
   if [ ! -r "$fichier" ]; then
@@ -78,11 +78,11 @@ done
 
 PORTS_PRINCIPAUX="$(ports_declares "$RACINE/.env")"
 
-# Ce que le .env déclare est validé une fois ici, où le fichier fautif peut
-# encore être nommé. Sans quoi : une liste vide fait retenir un décalage sans
-# qu'aucun port n'ait été testé, un zéro de tête est lu en octal par
-# l'arithmétique du shell, et une valeur assez grande la fait déborder sur un
-# « Illegal number » qui ne dit ni le fichier ni la ligne.
+# What the .env declares is validated once here, where the offending file can
+# still be named. Failing which: an empty list makes a shift be retained with no
+# port tested at all, a leading zero is read as octal by the shell's arithmetic,
+# and a large enough value overflows it into an `Illegal number` that names
+# neither the file nor the line.
 if [ -z "$PORTS_PRINCIPAUX" ]; then
   echo "❌ Aucune variable PORT_ exploitable dans $RACINE/.env." >&2
   echo "   La compléter à partir de .env.template." >&2
@@ -96,9 +96,9 @@ rejette_port() {
 }
 
 for port in $PORTS_PRINCIPAUX; do
-  # La forme d'abord, la plage ensuite : six chiffres sont déjà absurdes pour
-  # un port, et le motif écarte du même coup les valeurs qu'aucune arithmétique
-  # 64 bits ne représente, sur lesquelles la comparaison échouerait.
+  # The shape first, the range after: six digits are already absurd for a port,
+  # and the pattern rules out at the same stroke the values no 64-bit arithmetic
+  # can represent, on which the comparison would fail.
   case "$port" in 0*|??????*) rejette_port "$port" ;; esac
   [ "$port" -le $((65535 - DECALAGE_MAX)) ] || rejette_port "$port"
 done
@@ -113,14 +113,14 @@ if ! command -v ss >/dev/null 2>&1; then
   echo "   seront évités, pas ceux qu'un autre programme écoute déjà." >&2
 fi
 
-# Un port est pris s'il est déclaré par un .env du dépôt, et à défaut s'il
-# écoute. C'est la déclaration qui porte le garde-fou : elle voit les piles
-# éteintes, qui gardent leurs ports, et elle vaut pour tout worktree du dépôt
-# quel que soit le démon Docker qui l'exécute.
+# A port is taken if a .env of this repository declares it, and failing that if
+# it is listening. The declaration is what carries the guard rail: it sees the
+# stopped stacks, which keep their ports, and it holds for every worktree of the
+# repository whatever Docker daemon runs it.
 #
-# `ss` ne rattrape que le port occupé sans être déclaré nulle part, et sur le
-# seul démon local : un port alloué par un démon voisin lui échappe. Là où `ss`
-# n'existe pas, la déclaration joue seule.
+# `ss` only catches the port that is occupied without being declared anywhere,
+# and on the local daemon alone: a port allocated by a neighbouring daemon
+# escapes it. Where `ss` does not exist, the declaration plays alone.
 port_pris() {
   if echo "$PORTS_RESERVES" | grep -qx "$1"; then
     return 0
@@ -135,9 +135,9 @@ pile_libre() {
   return 0
 }
 
-# Un décalage unique pour toute la pile : la console Domibus d'un worktree
-# décalé de 7 répond sur 8187 quand son serveur répond sur 3007. Les ports d'une
-# même pile restent ainsi lisibles ensemble.
+# One shift for the whole stack: the Domibus console of a worktree shifted by 7
+# answers on 8187 when its server answers on 3007. The ports of one stack stay
+# readable together that way.
 DECALAGE=1
 while ! pile_libre "$DECALAGE"; do
   DECALAGE=$((DECALAGE + 1))
@@ -154,15 +154,15 @@ else
   git worktree add -b "$NOM" "$CHEMIN"
 fi
 
-# La valeur s'arrête au premier caractère non numérique, ce qui préserve un
-# `# commentaire` de fin de ligne — le .env du dépôt en porte un par port.
+# The value stops at the first non-numeric character, which preserves an
+# end-of-line `# comment` — the repository's .env carries one per port.
 #
-# `[ -n "$ligne" ]` en plus de `read` : sur une dernière ligne non terminée par
-# un saut de ligne, `read` remplit la variable mais rend un statut non nul, et
-# la boucle abandonnerait cette dernière ligne sans rien signaler.
+# `[ -n "$ligne" ]` on top of `read`: on a last line not terminated by a newline,
+# `read` fills the variable but returns a non-zero status, and the loop would
+# abandon that last line without saying a word.
 #
-# `printf` et non `echo` : celui de dash interprète les antislashs sans `-e`,
-# et couperait en deux un mot de passe qui en contient un.
+# `printf` and not `echo`: dash's own interprets backslashes without `-e`, and
+# would cut in two a password that contains one.
 decale_ports() {
   while IFS= read -r ligne || [ -n "$ligne" ]; do
     case "$ligne" in
@@ -178,17 +178,17 @@ decale_ports() {
   done
 }
 
-# Les URLs que l'application annonce d'elle-même visent ces mêmes ports publiés
-# — URL_OOTS_FRANCE la première. Les laisser sur ceux du dépôt principal ferait
-# pointer le worktree vers la pile du voisin. Ce qui vise un nom de service
-# docker (`http://domibus:8080`, `http://web:4000`) ne bouge pas : ces ports-là
-# sont internes au réseau du conteneur.
+# The URLs the application announces of itself aim at these same published ports
+# — URL_OOTS_FRANCE first of all. Leaving them on the main checkout's would point
+# the worktree at a neighbour's stack. What aims at a docker service name
+# (`http://domibus:8080`, `http://web:4000`) does not move: those ports are
+# internal to the container network.
 #
-# Deux expressions par port, faute d'un `\b` que seul GNU sed connaît : le port
-# suivi d'un non-chiffre, et le port en fin de ligne. L'approximation est plus
-# large qu'une frontière de mot, qui ne coupe pas entre un chiffre et une
-# lettre — sans effet sur les URLs du dépôt, où un port finit toujours la ligne
-# ou précède un `/`.
+# Two expressions per port, for want of a `\b` only GNU sed knows: the port
+# followed by a non-digit, and the port at end of line. The approximation is
+# wider than a word boundary, which does not cut between a digit and a letter —
+# with no effect on the repository's URLs, where a port always ends the line or
+# precedes a `/`.
 REECRITURE_URLS=""
 for port in $PORTS_PRINCIPAUX; do
   REECRITURE_URLS="$REECRITURE_URLS
@@ -196,26 +196,25 @@ s|localhost:$port\\([^0-9]\\)|localhost:$((port + DECALAGE))\\1|g
 s|localhost:$port\$|localhost:$((port + DECALAGE))|g"
 done
 
-# Les `.env*` sont pris par motif, ce qui dispense d'en tenir la liste ;
-# `docker-compose.override.yml` ne suit aucun motif et reste nommé, donc un
-# futur fichier de configuration hors `.env*` sera à ajouter ici.
+# The `.env*` are taken by pattern, which spares keeping a list of them;
+# `docker-compose.override.yml` follows no pattern and stays named, so a future
+# configuration file outside `.env*` will have to be added here.
 #
-# Seul .env voit ses `PORT_` décalés, parce que lui seul les publie sur l'hôte.
-# Ceux des autres fichiers désignent un port à l'intérieur du réseau docker —
-# `PORT_BASE_DE_DONNEES` est le 5432 sur lequel écoute le conteneur, que le
-# décalage ferait viser dans le vide.
+# Only .env has its `PORT_` shifted, because it alone publishes them on the host.
+# Those of the other files designate a port inside the docker network —
+# `PORT_BASE_DE_DONNEES` is the 5432 the container listens on, which shifting
+# would aim into the void.
 for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
-  # Ces deux gardes doivent rester hors du pipeline ci-dessous : dans le `case`
-  # qui l'alimente, `continue` ne quitterait que le sous-shell de gauche, et
-  # `sed` créerait un fichier vide au lieu que le fichier soit sauté.
+  # These two guards must stay outside the pipeline below: in the `case` that
+  # feeds it, `continue` would leave only the left-hand subshell, and `sed` would
+  # create an empty file instead of the file being skipped.
   case "$source" in *.template) continue ;; esac
   [ -f "$source" ] || continue
 
-  # Lecture puis transformation, et non les deux dans un pipeline : celui-ci ne
-  # rend que le statut de son dernier élément tant que `pipefail` n'est pas
-  # activé, ce que ce script ne fait pas. Un fichier illisible ferait sinon
-  # réussir `sed` sur une entrée vide, donc écrire une destination vide en
-  # annonçant le succès.
+  # Read then transform, and not both in a pipeline: a pipeline returns only the
+  # status of its last element as long as `pipefail` is off, which this script
+  # leaves it. An unreadable file would otherwise make `sed` succeed on empty
+  # input, and so write an empty destination while announcing success.
   if ! LIGNES="$(case "$source" in
     */.env) decale_ports < "$source" ;;
     *) cat "$source" ;;
@@ -225,12 +224,12 @@ for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
     exit 1
   fi
 
-  # Les URLs se décalent aux mêmes conditions que les ports, et pour la même
-  # raison : seul `.env` désigne l'hôte. Ailleurs, un `localhost` est vu depuis
-  # un conteneur — `URL_OOTS_FRANCE` sert au scénario de bout en bout, qui
-  # tourne dans `web` et y joint le serveur sur son port interne. Le décaler
-  # l'enverrait sur un port que rien n'écoute, et `make e2e` échouerait dans
-  # tout worktree.
+  # The URLs shift on the same conditions as the ports, and for the same reason:
+  # only `.env` designates the host. Elsewhere a `localhost` is seen from inside
+  # a container — `URL_OOTS_FRANCE` serves the end-to-end scenario, which runs in
+  # `web` and reaches the server there on its internal port. Shifting it would
+  # send it to a port nothing listens on, and `make e2e` would fail in every
+  # worktree.
   case "$source" in
     */.env) printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" ;;
     *) printf '%s\n' "$LIGNES" ;;

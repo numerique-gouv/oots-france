@@ -1,7 +1,7 @@
 #!/bin/sh
-# Attend que la base de l'application accepte des connexions.
+# Waits for the application's database to accept connections.
 #
-# Usage : scripts/ci/wait_for_postgres.sh [délai max en secondes ; 120 par défaut]
+# Usage: scripts/ci/wait_for_postgres.sh [timeout in seconds; 120 by default]
 
 set -e
 
@@ -10,10 +10,9 @@ RACINE=$(cd "$(dirname "$0")/../.." && pwd)
 [ -n "$POSTGRES_USER" ] || [ ! -f "$RACINE/.env.postgres" ] || \
   POSTGRES_USER=$(sed -n 's/^POSTGRES_USER=//p' "$RACINE/.env.postgres" | head -n 1)
 
-# Exigé plutôt que remplacé par un défaut : `pg_isready` répondrait tout aussi
-# bien avec un rôle inexistant, donc un défaut ne ferait que masquer un
-# .env.postgres incomplet jusqu'à ce que l'application, elle, échoue à se
-# connecter.
+# Required rather than defaulted: `pg_isready` would answer just as well with a
+# role that does not exist, so a default would only mask an incomplete
+# .env.postgres until the application itself failed to connect.
 if [ -z "$POSTGRES_USER" ]; then
   echo "❌ POSTGRES_USER introuvable, ni dans l'environnement ni dans $RACINE/.env.postgres." >&2
   exit 1
@@ -31,9 +30,9 @@ while true; do
   fi
 
   if [ $(($(date +%s) - DEBUT)) -gt "$DELAI_MAX" ]; then
-    # Voir wait_for_mysql.sh : la sonde tait son erreur à chaque tour, l'état du
-    # service est donc le seul moyen de distinguer une base lente d'un conteneur
-    # mort dès la première seconde.
+    # See wait_for_mysql.sh: the probe silences its own error on every round, so
+    # the service state is the only way to tell a slow database from a container
+    # that died in the first second.
     echo "❌ PostgreSQL n'a pas répondu après ${DELAI_MAX} s. État du service :" >&2
     docker compose ps postgres >&2
     docker compose logs --tail 20 postgres >&2

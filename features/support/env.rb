@@ -3,6 +3,13 @@ require 'webrick'
 
 ActionController::Base.allow_rescue = false
 
+# France's own country code, which `Conversation` reads to say which of its two
+# countries is which: a page of the operator console therefore depends on it,
+# and not only the directory clients. Set here rather than borrowed from
+# `spec/support/test_environment.rb`, which erases the directory URLs the
+# end-to-end scenarios precisely need.
+ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
+
 # No transaction around a scenario, because the `bout_en_bout` ones cannot have
 # one: they drive a server and a background worker that run in their own
 # processes, and a transaction held here would hide from them everything it

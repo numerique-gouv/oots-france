@@ -1,0 +1,53 @@
+<% content_for :title, t('admin.journal.subjects.show.title') %>
+
+<%= dsfr_breadcrumbs do |fil| %>
+  <% fil.with_breadcrumb(label: t('components.directory_breadcrumbs.admin'), href: admin_root_path) %>
+  <% fil.with_breadcrumb(label: t('admin.journal.events.index.title'), href: admin_journal_root_path) %>
+  <% fil.with_breadcrumb(label: t('admin.journal.subjects.show.title')) %>
+<% end %>
+
+<h1><%= t('admin.journal.subjects.show.title') %></h1>
+
+<%= dsfr_callout do %>
+  <%= t('admin.journal.subjects.show.exact_only') %>
+<% end %>
+
+<%= form_with url: admin_journal_subjects_path, method: :get, class: 'fr-mb-4w fr-mt-4w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend"><%= t('admin.journal.subjects.show.legend') %></legend>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :family_name, t('admin.journal.subjects.attributes.family_name'), class: 'fr-label' %>
+        <%= form.text_field :family_name, value: @search.family_name, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :given_name, t('admin.journal.subjects.attributes.given_name'), class: 'fr-label' %>
+        <%= form.text_field :given_name, value: @search.given_name, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :date_of_birth, t('admin.journal.subjects.attributes.date_of_birth'), class: 'fr-label' %>
+        <%= form.date_field :date_of_birth, value: @search.date_of_birth, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn"><%= t('admin.journal.subjects.show.submit') %></button>
+    </div>
+  </fieldset>
+<% end %>
+
+<%= render 'admin/erreurs', errors: @search.errors %>
+
+<% if @search.searched? %>
+  <p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
+
+  <%= render 'admin/journal/events', events: @events,
+        caption: t('admin.journal.subjects.show.caption'), empty: t('admin.journal.subjects.show.empty') %>
+<% end %>

@@ -1,14 +1,13 @@
-# La version est épinglée sur un correctif précis, comme l'était celle de Node
-# avant elle, et doit rester en phase avec `.ruby-version` et la matrice de
-# `.github/workflows/tests.yml`. Un `ruby:4.0` flottant laisserait une image en
-# cache dériver loin derrière l'intégration continue, et le symptôme serait un
-# `make e2e` local qui échoue sur un Ruby que le workflow n'exerce
-# jamais. Après toute montée de version ici : `docker compose build --pull web`.
+# The version is pinned to an exact patch, and must stay in step with
+# `.ruby-version` and the matrix of `.github/workflows/tests.yml`. A floating
+# `ruby:4.0` would let a cached image drift far behind continuous integration,
+# and the symptom would be a local `make e2e` failing on a Ruby the workflow
+# never exercises. After any bump here: `docker compose build --pull web`.
 FROM ruby:4.0.6-slim
 
-# `libpq-dev` pour l'extension native de `pg`, `libyaml-dev` pour Psych,
-# `build-essential` pour compiler les gems natives, `git` parce que Bundler en a
-# besoin dès qu'une gem vient d'un dépôt.
+# `libpq-dev` for `pg`'s native extension, `libyaml-dev` for Psych,
+# `build-essential` to compile native gems, `git` because Bundler needs it as
+# soon as a gem comes from a repository.
 RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y \
       build-essential curl git libpq-dev libyaml-dev pkg-config && \
@@ -16,10 +15,9 @@ RUN apt-get update -qq && \
 
 WORKDIR /usr/src/app
 
-# Les gems s'installent hors de `/usr/src/app`, à l'emplacement par défaut de
-# l'image : la composition monte le dépôt sur ce répertoire, et des gems
-# installées dessous seraient masquées par ce montage. C'est le problème que le
-# volume nommé `node_modules` réglait du temps de Node ; ici il ne se pose pas.
+# The gems install outside `/usr/src/app`, at the image's default location: the
+# compose stack mounts the repository onto that directory, and gems installed
+# underneath would be masked by the mount.
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
