@@ -135,13 +135,15 @@ L'[espace d'administration](espace_administration.md) le donne à lire, sous `/a
 
 ### 8. Les délais d'expiration
 
-**Ce que c'est.** Un échange qui implique un humain peut durer une heure ; un échange automatique doit échouer vite. Sans délais convenus, un demandeur attend indéfiniment une réponse qui ne viendra pas, et un fournisseur garde ouverts des liens qui devraient être périmés.
+**Ce que c'est.** Un échange qui implique un humain peut durer une heure ; un échange automatique doit échouer vite. Sans délais convenus, un requêteur attend indéfiniment une réponse qui ne viendra pas, et un fournisseur garde ouverts des liens qui devraient être périmés.
 
-**Ce qu'exige la spécification.** Le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) fixe trois intervalles — cinq minutes pour le premier aller-retour, quinze pour que l'usager suive le lien, quarante pour qu'il consulte et décide — chacun majoré d'une minute côté demandeur, pour absorber le transport. Un fournisseur qui dépasse son délai doit renvoyer une erreur d'expiration plutôt que rien ; un demandeur qui dépasse le sien doit conclure à l'échec.
+**Ce qu'exige la spécification.** Le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) fixe trois intervalles — cinq minutes pour le premier aller-retour, quinze pour que l'usager suive le lien, quarante pour qu'il consulte et décide — chacun majoré d'une minute du côté qui attend, pour absorber le transport. Un fournisseur qui dépasse son délai doit renvoyer une erreur d'expiration plutôt que rien ; un requêteur qui dépasse le sien doit conclure à l'échec. Le chapitre impose par ailleurs que le délai soit **configurable**, et que celui du requêteur dépasse celui du fournisseur.
 
-**Ce que fait le dépôt.** Aucun délai n'est configuré ni surveillé. Une conversation dont la réponse ne revient jamais reste indéfiniment en cours.
+**Ce que fait le dépôt.** Le premier aller-retour est tenu des deux côtés. `DELAI_EXPIRATION_REQUETEUR_MINUTES` et `DELAI_EXPIRATION_FOURNISSEUR_MINUTES` portent les deux valeurs du tableau 4.4.3, et le contrôle de contrat refuse de démarrer si la première ne dépasse pas la seconde. Côté requêteur, `ExpireConversationsJob` balaie chaque minute les échanges que la France a ouverts et qu'aucune réponse n'a réglés, et les clôt en `failed` sous `EDM:ERR:0005` — le code même qu'un correspondant expirant sur nous aurait répondu, pour que les deux se lisent pareil. Côté fournisseur, `EvidenceProvision::AnswerRequest` répond cette erreur au lieu du justificatif quand la requête a dépassé le délai.
 
-**Ce qu'il faut construire.** Des délais configurables, un travail de fond qui clôt les conversations expirées, et l'émission de l'erreur d'expiration côté fournisseur.
+L'échéance du fournisseur se compte depuis l'**horodatage ebMS du message**, et non depuis notre réception : `CollectPendingMessagesJob` peut retirer de la passerelle un message qu'elle a gardé deux jours et demi, et l'ancrer sur notre réception ferait servir un justificatif à un requêteur ayant conclu à l'échec l'avant-veille. C'est aussi la seule horloge que les deux côtés partagent, et celle dont l'arithmétique du tableau dépend.
+
+**Ce qu'il faut construire.** Les intervalles T2 et T3 se définissent autour de la prévisualisation et attendent le [chantier 3](#3-la-prévisualisation) — dont les conversations en `preview_required`, que `settled?` tient aujourd'hui pour réglées et qu'aucun délai ne rouvre. Reste la règle multiplicative, `Total Timeout = (T1+T2+T3) × Number of Requirements` : le jour où plusieurs exigences voyagent dans un même échange, l'échéance cesse d'être une constante de déploiement et devient une propriété de la ligne, donc une colonne. Et une conversation entrante dont le worker est mort entre l'ouverture et la réponse reste `pending` : le balayage ne la touche pas, faute de pouvoir émettre quoi que ce soit — le message a été détruit à sa récupération.
 
 ### 9. Les finitions eDelivery
 
@@ -202,7 +204,7 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | [3.6 — API commune](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) | Conforme | — |
 | [3.7 — Sécurité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932927) | À vérifier | Profil TLS à confronter à la configuration réelle |
 | [3.8 — Journalisation des annuaires](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932917) | Hors périmètre | Ne concerne que l'opérateur d'un annuaire |
-| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Délais d'expiration ; distinction conversation / échange ; unicité et corrélation des identifiants de requête |
+| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Intervalles T2/T3 de la prévisualisation ; règle multiplicative par nombre d'exigences ; distinction conversation / échange |
 | [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Partiel | Voir le tableau du chantier 5 |
 | [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Partiel | Documents complémentaires, réponse différée, langue et conformité |
 | [4.5.3 — Erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Conforme | — |
@@ -230,17 +232,16 @@ L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de m
 | 5. Contenu des messages — lecture et validation | — | Rien |
 | 6. Justificatifs structurés | 1, 4, et un modèle de données convenu au niveau européen | Rien |
 | 7. Journalisation | *fait* | Rien de bloqué, mais 5 (lecture) s'appuie sur le journal pour la mémoire des requêtes déjà traitées |
-| 8. Délais d'expiration — délai global d'un aller-retour | — | Rien |
+| 8. Délais d'expiration — délai global d'un aller-retour | *fait* | Rien |
 | 8. Délais d'expiration — les trois intervalles T1/T2/T3 | 3 (les intervalles se définissent autour du flux de prévisualisation) | Rien |
 | 9. Finitions eDelivery | — | 3 (côté demandeur) |
 | 10. Restitution des erreurs | — | Rien |
 
 ### Ce qui peut démarrer aujourd'hui, sans rien attendre
 
-Quatre lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
+Trois lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
 
 - **La validation des messages reçus** (chantier 5, seconde moitié). Le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) n'assigne le devoir de validation à personne et présente les Schematron comme une preuve de conformité — « *Schematrons are used to prove the correctness of instances* » —, pas comme un composant d'exécution : le mécanisme est à notre main, et `.schematron/` est de toute façon un cache téléchargé dont le XSLT 2.0 est hors de portée de Nokogiri.
-- **Les délais d'expiration** (chantier 8), dans leur forme simple — le délai global d'un aller-retour.
 - **Les points de finition eDelivery restants** (chantier 9) : le contrôle de cohérence de version à l'entrée, et la distinction entre identifiant de conversation et identifiant d'échange.
 - **La restitution des erreurs à l'appelant** (chantier 10). La raison de l'échec est déjà enregistrée : il s'agit de décider ce qu'on en montre.
 
@@ -257,7 +258,7 @@ Aucun autre chantier n'est *bloqué* par eux, mais leur absence prive de sens ce
 
 Deux faits pèsent sur le choix sans le déterminer, et méritent d'être posés tels quels :
 
-- **La journalisation touchait tous les chemins du code**, ce qui est la raison pour laquelle elle a été menée avant le reste : la mener tard aurait signifié repasser sur du code fraîchement écrit. Le même argument vaut pour les délais d'expiration du chantier 8.
+- **La journalisation touchait tous les chemins du code**, ce qui est la raison pour laquelle elle a été menée avant le reste : la mener tard aurait signifié repasser sur du code fraîchement écrit. Le même argument valait pour les délais d'expiration du chantier 8, menés pour cette raison peu après.
 - **La validation de ce qu'on reçoit décide de ce qu'un correspondant peut diagnostiquer.** Sans elle, un pair qui échoue à échanger avec la France reçoit « requête invalide » sans autre indice. Cela n'empêche aucun développement, mais pèse sur ce que coûte un test pair-à-pair.
 
 > [!NOTE]
