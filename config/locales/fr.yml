@@ -337,6 +337,7 @@ fr:
       settle_conversation:
         unknown: "Conversation inconnue : %{id}"
         already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"
+        already_delivering: "Réponse ignorée, un autre traitement remet déjà le justificatif de l'échange %{id}"
         foreign_request: "Réponse ignorée, elle ne porte pas l'identifiant de requête de l'échange %{id}"
       process:
         exchange_failed: L'échange a échoué

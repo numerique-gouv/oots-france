@@ -63,7 +63,14 @@ module IncomingMessage
     # arrived, and that decision holds: the sweep may expire the row while the
     # evidence is being handed over, and `Conversation#settle` lets this answer
     # overrule the presumption it made.
+    #
+    # What it cannot do is hold across the handover, which is why
+    # `claim_delivery!` guards it. Nothing gives that reservation back: a POST
+    # that raises settles the exchange in `IncomingMessage::Process`, and
+    # releasing after one that reached the requester would license a second.
     def deliver(conversation)
+      return refuse(conversation, :already_delivering) unless conversation.claim_delivery!
+
       requester = context.requesters.find(conversation.evidence_requester_id)
 
       context.evidence_forwarder.deliver(evidence, requester)

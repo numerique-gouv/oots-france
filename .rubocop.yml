@@ -201,8 +201,11 @@ Rails/RedundantActiveRecordAllMethod:
   Exclude:
     - "spec/**/*"
 
+# Claiming a delivery is precisely a write that must bypass the read-validate-
+# write cycle: that is what makes it atomic.
 Rails/SkipsModelValidations:
   Exclude:
+    - "app/models/conversation.rb"
     - "spec/**/*_spec.rb"
 
 Rails/UnknownEnv:
