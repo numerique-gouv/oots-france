@@ -138,6 +138,8 @@ valide erreurRequeteInvalide EDM-ERR-C
 valide erreurRequeteInvalide EDM-ERR-S
 valide erreurCapaciteNonSupportee EDM-ERR-C
 valide erreurCapaciteNonSupportee EDM-ERR-S
+valide erreurExpiration EDM-ERR-C
+valide erreurExpiration EDM-ERR-S
 
 # The ebMS headers fall under a rule of their own, whose contexts are anchored
 # on `//eb:Messaging`: the document `EbmsHeaderBuilder` produces is enough for
@@ -147,6 +149,7 @@ valide reponse.entete EDM-ebMS
 valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS
 valide erreurCapaciteNonSupportee.entete EDM-ebMS
+valide erreurExpiration.entete EDM-ebMS
 
 # Code 2 for a rule violation, distinct from the 1 any other failure returns
 # (download, compilation): the caller can then retry a network fluke without

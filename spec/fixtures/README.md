@@ -11,8 +11,8 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 
 | Répertoire | Contenu |
 | --- | --- |
-| `reference/messages/` | Les cinq messages RegRep (`requete`, `reponse`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
-| `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq messages, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
+| `reference/messages/` | Les six messages RegRep (`requete`, `reponse`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`, `erreurExpiration`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
+| `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq premiers d'entre eux — l'enveloppe ne varie pas d'un code d'erreur à l'autre, et `erreurExpiration` n'en a donc pas —, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
 
 > [!IMPORTANT]
 > **La requête, elle, a été refaite depuis.** `messages/requete.xml` et `soap/requete.soumission.xml` ne sont plus ce que Node émettait : le bouchon 7 y écrivait une exigence et un identifiant de service en dur, là où le dépôt écrit désormais ce que les annuaires publient. Ces deux fichiers disent donc ce que les TDD exigent, et non ce qu'un code antérieur produisait ; les règles Schematron du chapitre 4.5.1 en sont le juge. Le reste du corpus garde sa provenance.

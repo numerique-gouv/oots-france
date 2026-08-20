@@ -21,6 +21,12 @@ RSpec.describe RetrievedMessageParser do
     it 'hands the body to the request parser' do
       expect(message.body).to be_a(EvidenceRequestParser)
     end
+
+    # The origin a timeout of chapter 4.4 is counted from, and the only clock
+    # both sides share: our own reception says when we took the message in hand.
+    it 'reads the instant the sending gateway stamped' do
+      expect(message.sent_at).to eq(Time.zone.parse('2026-08-11T09:22:22.000Z'))
+    end
   end
 
   describe 'an incoming response with evidence' do
@@ -56,6 +62,16 @@ RSpec.describe RetrievedMessageParser do
     it 'refuses an envelope with no ebMS header' do
       expect { described_class.new('<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"/>') }
         .to raise_error(UnreadableMessageError, /Pas d'entête ebMS/)
+    end
+
+    # Without it there is no counting the interval of chapter 4.4, and a request
+    # answered as though it were fresh is what that interval exists to prevent.
+    it 'refuses an envelope whose timestamp it cannot read' do
+      document = Nokogiri::XML(real_envelope('requete'))
+      document.xpath('//*[local-name()="Timestamp"]').first.content = ''
+
+      expect { described_class.new(document.to_xml).sent_at }
+        .to raise_error(UnreadableMessageError, /Horodatage illisible/)
     end
 
     it 'refuses an action it does not know, rather than guessing' do

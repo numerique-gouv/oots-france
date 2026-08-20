@@ -235,6 +235,7 @@ fr:
     ebms_header:
       no_header: Pas d'entête ebMS dans le message reçu.
       no_sender: Pas d'expéditeur dans l'entête du message reçu.
+      timestamp_unreadable: "Horodatage illisible dans l'entête du message reçu : « %{value} »."
     common_services_response:
       not_a_query_response: La réponse de l'annuaire n'est pas une QueryResponse.
       unexpected_version: L'annuaire a répondu en %{announced}, et non en %{expected}.

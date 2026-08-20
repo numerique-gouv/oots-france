@@ -26,6 +26,7 @@ module Oots
       # `R-EDM-ERR-*` constrains the attribute, and nothing else would prove it.
       'erreurRequeteInvalide' => EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S016'),
       'erreurCapaciteNonSupportee' => EdmException::UNSUPPORTED_CAPABILITY,
+      'erreurExpiration' => EdmException::TIMEOUT,
     }.freeze
 
     def initialize(destination)
