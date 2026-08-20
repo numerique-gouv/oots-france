@@ -10,9 +10,9 @@
  */
 
 /*
- * Ce qui vaut pour toute page. Ce qui appartient à un composant vit dans une
- * feuille à son nom, que le gabarit charge à côté de celle-ci : Propshaft sert
- * les fichiers tels quels, sans les assembler, donc chacune est un `<link>`.
+ * What holds for every page. What belongs to a component lives in a stylesheet
+ * of its name, which the layout loads alongside this one: Propshaft serves
+ * files as they are, without bundling them, so each is a `<link>`.
  */
 html, body {
   height: 100%;
@@ -25,13 +25,13 @@ body > .fr-container {
 }
 
 /*
- * Le fieldset du DSFR aligne ses éléments sur `last baseline`, et la ligne de
- * base d'un `input[type=date]` natif n'est pas celle d'un champ texte : les
- * champs de période montaient d'une dizaine de pixels au-dessus des autres.
- * Aligner par le bas ne dépend plus de ce que chaque contrôle place où.
+ * The DSFR fieldset aligns its elements on `last baseline`, and the baseline of
+ * a native `input[type=date]` is not that of a text field: left alone, the
+ * period fields ride ten-odd pixels above the others. Aligning on the bottom
+ * depends on nothing each control places where.
  *
- * Restreint aux fieldsets qui portent une date, pour ne rien changer aux
- * autres. `:has` est acquis : `allow_browser versions: :modern` l'exige déjà.
+ * Restricted to fieldsets that carry a date, so nothing changes for the others.
+ * `:has` is a given: `allow_browser versions: :modern` already requires it.
  */
 .fr-fieldset:has(input[type="date"]) {
   align-items: flex-end;
@@ -43,9 +43,9 @@ body > .fr-container {
 }
 
 /*
- * Le DSFR donne un `display` à ses cartes, qui l'emporte sur celui que la
- * feuille du navigateur attache à `[hidden]` : sans ceci, une entrée que le
- * filtre de `filter.js` masque resterait affichée.
+ * The DSFR gives its cards a `display`, which wins over the one the browser's
+ * own stylesheet attaches to `[hidden]`: without this, an entry hidden by the
+ * filter in `filter.js` would stay on screen.
  */
 [hidden] {
   display: none !important;

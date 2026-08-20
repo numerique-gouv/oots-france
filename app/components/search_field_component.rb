@@ -20,8 +20,8 @@ class SearchFieldComponent < ViewComponent::Base
 
   attr_reader :label, :id
 
-  # L'intitulé sert aussi de texte de substitution : un champ dont la seule
-  # étiquette est ce texte n'en a plus dès qu'on y tape.
+  # The label doubles as the placeholder: a field whose only label is that
+  # placeholder has none left the moment someone types into it.
   def field
     tag.input(class: 'fr-input', type: 'search', id:, autocomplete: 'off', placeholder: label,
       data: { filter: @entries, filter_tally: @tally, filter_empty: @empty })

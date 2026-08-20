@@ -1,7 +1,7 @@
 <%
-# Les scénarios de bout en bout traversent une passerelle réelle : ils ne
-# peuvent pas tourner sur un runner nu, et sont donc écartés du profil par
-# défaut. `bout_en_bout` est le profil que `make e2e` invoque.
+# The end-to-end scenarios cross a real gateway: they cannot run on a bare
+# runner, and are therefore kept out of the default profile. `bout_en_bout` is
+# the profile `make e2e` invokes.
 commun = "--publish-quiet --strict"
 %>
 default: <%= commun %> --format <%= ENV['CUCUMBER_FORMAT'] || 'pretty' %> --tags 'not @wip and not @bout_en_bout' features

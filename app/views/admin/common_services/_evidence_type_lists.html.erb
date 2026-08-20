@@ -1,8 +1,8 @@
 <ul class="entry-list entry-list--clickable">
   <% lists.each do |list| %>
-    <%# Deux combinaisons sont des alternatives, et les types de l'une sont
-        exigés ensemble : le mot ne se dit que là où il tranche quelque chose,
-        c'est-à-dire quand ce pays en publie plusieurs. %>
+    <%# Two combinations are alternatives, and the evidence types within one
+        are required together: the word is said only where it settles
+        something, which is when this country publishes more than one. %>
     <% if lists.size > 1 %>
       <li class="entry__group">
         <%= t('admin.common_services.evidence_type_lists.combination_html', label: list.label || list.id) %>
@@ -13,9 +13,9 @@
       <li class="entry <%= 'entry--grouped' if lists.size > 1 %>">
         <span class="entry__name"><%= type.display_name %></span>
         <code class="entry__tag"><%= type.distribution_format %></code>
-        <%# La flèche dans un `span` plutôt que par `fr-link--icon-right` : cette
-            classe peint l'icône dans les pseudo-éléments du lien, dont la
-            feuille de style a besoin pour l'étendre à la ligne. %>
+        <%# The arrow in a `span` rather than through `fr-link--icon-right`:
+            that class paints the icon into the link's pseudo-elements, which
+            the stylesheet needs in order to stretch it across the row. %>
         <%= link_to admin_common_services_requirement_evidence_type_providers_path(
               requirement.uuid, type.uuid,
             ), class: 'entry__action fr-link' do %>

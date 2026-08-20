@@ -24,6 +24,20 @@ RSpec.describe IncomingMessage::Process do
     expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
   end
 
+  # Opened here from the body that was parsed here, and asserted on the whole
+  # path rather than on a double: what `OpenConversation` reads is the message
+  # `Process` retrieved, and nothing else says the two are the same object.
+  it 'opens the exchange an incoming request names' do
+    allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+
+    process
+
+    expect(Conversation.sole).to have_attributes(
+      conversation_id: message.conversation_id, incoming: true,
+      procedure_code: '00', country_code: 'FR', evidence_requester_id: '00000000000002',
+    )
+  end
+
   # Journalled in `Process`, before the handler: `SettleConversation` returns
   # early on a conversation it never opened, and the trace would go with it.
   it 'journals a response naming a conversation it never opened' do

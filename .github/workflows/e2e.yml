@@ -1,8 +1,8 @@
 name: Test e2e
 
-# Le test e2e monte la pile complète (MySQL + Domibus + application) et joue un
-# échange OOTS réel : c'est le seul garde-fou sur le transport, que la suite
-# unitaire simule entièrement. Voir docs/test_e2e.md.
+# The end-to-end test raises the whole stack (MySQL + Domibus + application) and
+# plays a real OOTS exchange: it is the only guard rail on the transport, which
+# the unit suite simulates entirely. See docs/test_e2e.md.
 
 on:
   push:
@@ -10,11 +10,11 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Deux poussées rapprochées empileraient deux exécutions de plusieurs minutes,
-# dont la première n'intéresse déjà plus personne : la plus ancienne est
-# abandonnée. Le groupe porte sur la branche — `github.head_ref` pour une PR, où
-# `github.ref` vaudrait `refs/pull/…/merge`, différent à chaque commit et donc
-# incapable de rapprocher deux exécutions successives.
+# Two pushes close together would stack two runs of several minutes, the first of
+# which already interests nobody: the older one is abandoned. The group keys on
+# the branch — `github.head_ref` for a PR, where `github.ref` would be
+# `refs/pull/…/merge`, different on every commit and therefore unable to bring
+# two successive runs together.
 concurrency:
   group: e2e-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
@@ -22,14 +22,14 @@ concurrency:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Le déploiement de la webapp Domibus prend plusieurs minutes.
+    # Deploying the Domibus webapp takes several minutes.
     timeout-minutes: 30
 
-    # Secrets jetables : ils vivent dans une passerelle éphémère et disparaissent
-    # avec le runner. Ils sont portés au niveau du job parce que deux étapes
-    # doivent les voir identiques — la préparation de l'environnement, qui les
-    # écrit dans .env et .env.oots, et la configuration de Domibus, qui crée le
-    # compte correspondant et génère les magasins de certificats.
+    # Throwaway secrets: they live in an ephemeral gateway and disappear with the
+    # runner. They are carried at job level because two steps must see them
+    # identical — preparing the environment, which writes them into .env and
+    # .env.oots, and configuring Domibus, which creates the matching account and
+    # generates the certificate stores.
     env:
       LOGIN_API_REST: oots_ci
       MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
@@ -38,9 +38,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # Le runner a besoin de Ruby pour lui-même, et non pour l'application :
-      # `prepare_environment.sh` produit la clé privée de déchiffrement avec la
-      # bibliothèque standard. Les gems, elles, vivent dans l'image `web`.
+      # The runner needs Ruby for itself, and not for the application:
+      # `prepare_environment.sh` produces the private decryption key with the
+      # standard library. The gems live in the `web` image.
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '4.0.6'
@@ -50,19 +50,18 @@ jobs:
         run: scripts/ci/prepare_environment.sh
 
       - name: Récupère les images Domibus et MySQL
-        # Le registre de la Commission coupe parfois la connexion pendant
-        # l'authentification (« connection reset by peer ») : on retente, plutôt
-        # que de teindre en rouge une PR pour une raison étrangère au code.
+        # The Commission's registry sometimes cuts the connection during
+        # authentication ("connection reset by peer"): we retry, rather than turn
+        # a PR red for a reason foreign to the code.
         #
-        # Le `exit 1` final est nécessaire : l'état de sortie de la boucle est
-        # celui du `sleep`, donc un succès même après trois échecs.
+        # The final `exit 1` is necessary: the loop's exit status is the
+        # `sleep`'s, and so a success even after three failures.
         run: |
           for tentative in 1 2 3; do
-            # `docker compose pull` n'a pas de délai propre : une connexion
-            # établie puis muette le ferait attendre jusqu'au plafond du job.
-            # Le borner transforme un blocage en échec, que la boucle sait
-            # reprendre — cinq minutes, là où la récupération en demande moins
-            # d'une en temps normal.
+            # `docker compose pull` has no timeout of its own: a connection
+            # established then silent would make it wait until the job's own
+            # ceiling. Bounding it turns a hang into a failure the loop knows how
+            # to retry — five minutes, where the pull takes under one normally.
             timeout 300 docker compose pull mysql domibus && exit 0
             echo "Échec de récupération (tentative $tentative), nouvelle tentative…"
             sleep 15
@@ -70,11 +69,11 @@ jobs:
           exit 1
 
       - name: Démarre MySQL
-        # MySQL démarre seul en premier : le conteneur crée la base à sa
-        # première exécution, et Domibus échoue s'il se connecte trop tôt.
+        # MySQL starts alone first: the container creates the database on its
+        # first run, and Domibus fails if it connects too early.
         #
-        # L'attente est celle de scripts/setup.sh, et non une reprise locale :
-        # les deux chemins d'installation doivent se comporter pareil.
+        # The wait is the one from scripts/setup.sh, and not a local rewrite: both
+        # installation paths must behave the same.
         run: |
           docker compose up --detach mysql
           scripts/ci/wait_for_mysql.sh
@@ -83,43 +82,42 @@ jobs:
         run: docker compose up --detach domibus
 
       - name: Construit l'image de l'application
-        # Pendant que Tomcat déploie la webapp, ce qui prend 35 à 45 s :
-        # construire ici occupe ce temps mort, et l'attente qui suit s'en trouve
-        # réduite d'autant.
+        # While Tomcat deploys the webapp, which takes 35 to 45 s: building here
+        # fills that dead time, and the wait that follows is shortened by as much.
         #
-        # Le contexte de build doit pour cela ignorer ./domibus, que le conteneur
-        # a créé et n'ouvre qu'à lui : voir le commentaire du `.dockerignore`,
-        # dont les motifs de ré-inclusion restent sans joker pour que BuildKit
-        # puisse élaguer la branche.
+        # For that the build context must ignore ./domibus, which the container
+        # created and opens to itself alone: see the `.dockerignore` comment,
+        # whose re-inclusion patterns stay free of wildcards so that BuildKit can
+        # prune the branch.
         run: docker compose build web
 
       - name: Attend que Domibus réponde
         run: scripts/ci/wait_for_domibus.sh
 
       - name: Configure Domibus (magasins, PMode, Plugin User)
-        # Le script génère lui-même les certificats : ceux livrés avec l'image
-        # sont publics et partagés par toutes les installations. Il finit par un
-        # message AS4 de test, qui doit revenir acquitté.
+        # The script generates the certificates itself: those shipped with the
+        # image are public and shared by every installation. It ends with a test
+        # AS4 message, which must come back acknowledged.
         run: scripts/configure_domibus.sh
 
       - name: Redémarre la passerelle pour appliquer la notification
-        # Les bascules du plugin se posent par l'API, mais pas les règles :
-        # `wsplugin.push.rules` est marquée non modifiable et ne vit que dans le
-        # fichier de propriétés du plugin, que `configure_domibus.sh` écrit. Elles
-        # ne prennent effet qu'ici.
+        # The plugin's switches are set through the API, but not the rules:
+        # `wsplugin.push.rules` is marked non-writable and lives only in the
+        # plugin's properties file, which `configure_domibus.sh` writes. They take
+        # effect only here.
         run: |
           docker compose restart domibus
           scripts/ci/wait_for_domibus.sh
 
       - name: Démarre PostgreSQL et prépare le schéma
-        # L'état des conversations y vit, et la file des jobs GoodJob aussi.
+        # The state of the conversations lives there, and so does GoodJob's queue.
         run: |
           docker compose up --detach postgres
           scripts/ci/wait_for_postgres.sh
           docker compose run --rm --no-deps web bundle exec rails db:prepare
-          # `db:prepare` ne charge les seeds qu'à la création de la base, et le
-          # compte d'administration en vient : voir scripts/setup.sh, avec qui
-          # cette suite d'étapes doit rester en phase.
+          # `db:prepare` loads the seeds only when it creates the database, and
+          # the administrator account comes from them: see scripts/setup.sh, with
+          # which this sequence of steps must stay in step.
           docker compose run --rm --no-deps web bundle exec rails db:seed
 
       - name: Démarre l'application et son worker
@@ -136,12 +134,12 @@ jobs:
 
       - name: Logs Domibus en cas d'échec
         if: failure()
-        # `docker compose logs domibus` ne renvoie rien : le service tourne avec
-        # le pilote de journalisation `none`.
+        # `docker compose logs domibus` returns nothing: the service runs with the
+        # `none` logging driver.
         #
-        # domibus-error.log d'abord : son appender filtre à WARN, donc il porte
-        # les refus de Domibus sans une ligne de bruit. catalina.out ensuite,
-        # pour ce qui relève de Tomcat ou de CXF et n'atteint pas ce fichier.
+        # domibus-error.log first: its appender filters at WARN, so it carries
+        # Domibus's refusals without a line of noise. catalina.out next, for what
+        # belongs to Tomcat or CXF and does not reach that file.
         run: |
           docker compose exec -T domibus tail -n 200 logs/domibus-error.log || true
           docker compose exec -T domibus tail -n 100 logs/catalina.out || true

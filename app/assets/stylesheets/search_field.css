@@ -1,11 +1,11 @@
 /*
- * Un champ de recherche à loupe. Le DSFR en a un — `fr-search-bar` —, mais il
- * est bâti autour d'un bouton d'envoi : ces champs-ci filtrent à la frappe, et
- * un bouton qui ne soumettrait rien serait un contrôle inerte de plus.
+ * A search field with a magnifier. The DSFR has one — `fr-search-bar` — but it
+ * is built around a submit button: these fields filter as one types, and a
+ * button that would submit nothing is one more inert control.
  *
- * La loupe est donc posée dans le champ, décorative, et c'est la classe
- * `fr-icon-search-line` qui la dessine — le masque et la taille viennent du
- * DSFR, rien ici ne connaît le tracé.
+ * The magnifier is therefore set inside the field, decorative, and the
+ * `fr-icon-search-line` class is what draws it — the mask and the size come
+ * from the DSFR, nothing here knows the path.
  */
 .search-field {
   position: relative;
@@ -22,6 +22,7 @@
   transform: translateY(-50%);
   color: var(--text-mention-grey);
 
-  /* Le champ commence sous elle : sans ceci, cliquer la loupe ne le vise pas. */
+  /* The field starts underneath it: without this, clicking the magnifier does
+     not target the field. */
   pointer-events: none;
 }

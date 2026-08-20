@@ -1,35 +1,34 @@
-// Un filtre côté client : la page rend tout ce que l'annuaire a répondu, et le
-// champ masque les entrées qui ne correspondent pas à ce qui est tapé.
+// A client-side filter: the page renders everything the directory answered,
+// and the field hides the entries that do not match what is typed.
 //
-// Côté serveur, il faudrait une requête et un rechargement par frappe pour
-// autant, alors que ces listes tiennent en quelques dizaines d'entrées déjà
-// chargées.
+// Server-side, the same would take a request and a reload per keystroke, where
+// these listings hold a few dozen entries already loaded.
 //
-// Le décompte est réécrit à partir des formes que le serveur a rendues dans
-// `data-tally` : les pluriels français vivent dans `config/locales/fr.yml` et
-// nulle part ailleurs, `COUNT` y tenant la place du nombre.
+// The tally is rewritten from the forms the server rendered into `data-tally`:
+// the French plurals live in `config/locales/fr.yml` and nowhere else, `COUNT`
+// standing there for the number.
 
 const flatten = (text) =>
   text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
 
-// Les mots d'une entrée : tout ce qui n'est ni lettre ni chiffre sépare, si
-// bien qu'un code entre parenthèses — « (AT) » — se cherche comme un mot.
+// The words of an entry: anything that is neither letter nor digit separates,
+// so a code in brackets — « (AT) » — is searched for as a word.
 const words = (text) => flatten(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
 
-// Chaque terme tapé doit commencer un mot de l'entrée. Cherchée n'importe où
-// dans le texte, la paire de lettres d'un code de pays se retrouverait dans la
-// moitié des intitulés — « AT » dans « certificat ».
+// Each term typed must begin a word of the entry. Searched anywhere in the
+// text, the two letters of a country code would turn up in half the wordings —
+// « AT » inside « certificat ».
 const matches = (found, terms) =>
   terms.every((term) => found.some((word) => word.startsWith(term)))
 
 const say = (forms, count) => (forms[count] || forms.other).replace('COUNT', count)
 
-// Une entrée pèse ce qu'elle contient — un pays fournisseur compte pour ses
-// types de justificatif —, et une pour elle-même à défaut.
+// An entry weighs what it holds — a providing country counts for its evidence
+// types — and one for itself failing that.
 const weight = (item) => Number(item.dataset.tallyWeight || 1)
 
 const wire = (input) => {
-  // Les mots d'une entrée sont relevés une fois : le texte rendu ne bouge plus.
+  // The words of an entry are taken once: the rendered text no longer moves.
   const items = Array.from(document.querySelectorAll(input.dataset.filter))
     .map((element) => ({ element, words: words(element.textContent) }))
   const tally = document.querySelector(input.dataset.filterTally)

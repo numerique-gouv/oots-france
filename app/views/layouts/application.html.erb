@@ -7,10 +7,10 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%# La marque de l'État, telle que le DSFR la livre et que `data_pass` la
-        sert. Le manifeste que le DSFR joint n'est pas repris : ses icônes y
-        sont nommées par un chemin de la distribution, et Propshaft sert les
-        nôtres sous une empreinte. %>
+    <%# The State's brand, as the DSFR ships it and `data_pass` serves it. The
+        manifest the DSFR attaches is not reused: its icons are named there by a
+        path within the distribution, and Propshaft serves ours under a
+        digest. %>
     <link rel="apple-touch-icon" href="<%= image_url('favicons/apple-touch-icon.png') %>">
     <link rel="icon" href="<%= image_url('favicons/favicon.svg') %>" type="image/svg+xml">
     <link rel="shortcut icon" href="<%= image_url('favicons/favicon.ico') %>" type="image/x-icon">
@@ -19,9 +19,9 @@
         without it. %>
     <%= stylesheet_link_tag 'dsfr.min' %>
     <%= stylesheet_link_tag 'utility/dsfr-utility.min' %>
-    <%# Propshaft sert les fichiers tels quels : une feuille par composant est
-        un `<link>` par composant, et non un `@import` qui n'atteindrait pas
-        l'adresse empreintée. %>
+    <%# Propshaft serves files as they are: one stylesheet per component is one
+        `<link>` per component, and not an `@import` that would not reach the
+        digested address. %>
     <%= stylesheet_link_tag 'application', 'card_component', 'country_tag_component', 'procedure_component',
           'search_field', 'entry_list' %>
   </head>

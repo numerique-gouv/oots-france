@@ -1,9 +1,9 @@
 name: Validation Schematron
 
-# Confronte les messages produits par le code aux règles Schematron publiées
-# avec les TDD. Contrairement à `e2e.yml`, aucune passerelle n'est nécessaire :
-# les messages sont sérialisés par les classes de `src/ebms/`, puis validés hors
-# ligne. Voir la section « Validation des messages » du README.
+# Confronts the messages the code produces with the Schematron rules published
+# with the TDD. Unlike `e2e.yml`, no gateway is needed: the messages are
+# serialised by the builders of `app/builders/`, then validated offline. See the
+# README's "Validation des messages" section.
 
 on:
   push:
@@ -21,30 +21,30 @@ jobs:
     timeout-minutes: 15
 
     env:
-      # Une seule source pour la version validée : le script la reçoit en
-      # argument, la clé de cache la porte, et les deux ne peuvent pas diverger.
+      # One source for the validated version: the script receives it as an
+      # argument and the cache key carries it, so the two cannot diverge.
       VERSION_TDD: 2.0.1
 
     steps:
       - uses: actions/checkout@v7
 
-      # Les messages sont rendus par les constructeurs du dépôt, via la tâche
-      # `oots:messages` : l'application doit donc pouvoir se charger.
+      # The messages are rendered by the repository's builders, through the
+      # `oots:messages` task: the application must therefore be able to load.
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '4.0.6'
           bundler-cache: true
 
-      # Le runner embarque un JDK, mais lequel dépend de l'image : le fixer
-      # évite qu'une mise à jour de l'image change le moteur XSLT sous nos pieds.
+      # The runner carries a JDK, but which one depends on the image: fixing it
+      # stops an image update changing the XSLT engine under our feet.
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
 
-      # Saxon, SchXslt et la trentaine de fichiers Schematron ne changent pas
-      # tant que la version des TDD ne bouge pas ; leur compilation en XSLT non
-      # plus, et c'est elle qui coûte. Le cache la rejoue en quelques secondes.
+      # Saxon, SchXslt and the thirty-odd Schematron files do not change as long
+      # as the TDD version does not; nor does their compilation to XSLT, and that
+      # is what costs. The cache replays it in seconds.
       - name: Restaure les artefacts de validation
         uses: actions/cache@v6
         with:
@@ -52,18 +52,17 @@ jobs:
           key: schematron-${{ env.VERSION_TDD }}
 
       - name: Valide les messages contre les règles des TDD ${{ env.VERSION_TDD }}
-        # Les règles sont téléchargées depuis code.europa.eu, dont les coupures
-        # sont sans rapport avec le code de la PR : on retente plutôt que de la
-        # teindre en rouge (même raison que la récupération des images dans
-        # `e2e.yml`). Une règle violée sort en 2 et n'est pas rejouée : elle ne
-        # guérirait pas d'une seconde tentative, et masquer 45 s d'attente
-        # derrière un verdict acquis n'aide personne.
+        # The rules are downloaded from code.europa.eu, whose outages have
+        # nothing to do with the PR's code: we retry rather than turn it red (the
+        # same reason as the image pulls in `e2e.yml`). A violated rule exits 2
+        # and is not replayed: it would not heal on a second attempt, and hiding
+        # 45 s of waiting behind a settled verdict helps nobody.
         #
-        # Le `exit 1` final est nécessaire : l'état de sortie de la boucle est
-        # celui du `sleep`, donc un succès même après trois échecs.
+        # The final `exit 1` is necessary: the loop's exit status is the
+        # `sleep`'s, and so a success even after three failures.
         #
-        # `BAVARD` détaille les slots facultatifs absents : sur un runner, la
-        # sortie est la seule trace qui reste pour comprendre un échec.
+        # `BAVARD` details the optional slots that are absent: on a runner the
+        # output is the only trace left to understand a failure.
         env:
           BAVARD: '1'
         run: |

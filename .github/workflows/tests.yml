@@ -1,8 +1,8 @@
 name: Tests unitaires
 
-# Style puis suite RSpec, sur un runner nu : le transport ebMS y est entièrement
-# simulé. Le garde-fou sur les échanges réels est le workflow `e2e.yml`, et
-# celui sur la conformité des messages est `schematron.yml`.
+# Style then the RSpec suite, on a bare runner: the ebMS transport is entirely
+# simulated there. The guard rail on real exchanges is the `e2e.yml` workflow,
+# and the one on message conformance is `schematron.yml`.
 
 on:
   push:
@@ -17,11 +17,11 @@ jobs:
 
     strategy:
       matrix:
-        # À tenir en phase avec `.ruby-version` et le `FROM` du `Dockerfile`.
+        # To keep in step with `.ruby-version` and the `Dockerfile`'s `FROM`.
         ruby-version: ['4.0.6']
 
-    # La suite touche la base : l'état des conversations y vit, et la file
-    # des jobs GoodJob aussi.
+    # The suite touches the database: the state of the conversations lives there,
+    # and so does GoodJob's queue.
     services:
       postgres:
         image: postgres:18-alpine
@@ -38,9 +38,9 @@ jobs:
           --health-retries 5
 
     env:
-      # Lues au démarrage du framework, donc avant que `spec/support/` ait pu
-      # poser quoi que ce soit : elles doivent venir de l'environnement du
-      # processus, comme celles de la base. Valeurs de test, sans autre usage.
+      # Read when the framework boots, so before `spec/support/` could set
+      # anything: they have to come from the process environment, like the
+      # database's own. Test values, with no other use.
       CLE_CHIFFREMENT_JOURNAL: journal_cle_de_chiffrement_pour_integration_continue
       CLE_CHIFFREMENT_DETERMINISTE_JOURNAL: journal_cle_deterministe_pour_integration_continue
       SEL_DERIVATION_CLES_JOURNAL: journal_sel_de_derivation_pour_integration_continue
@@ -58,7 +58,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          # Installe les gems et les met en cache, sans étape supplémentaire.
+          # Installs the gems and caches them, with no separate step.
           bundler-cache: true
 
       - name: Prépare la base de test

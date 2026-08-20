@@ -53,9 +53,9 @@ RSpec.describe CodeListClient do
     expect(client.country_names).to eq('AT' => 'Autriche', 'CY' => 'Chypre')
   end
 
-  # Cet article est ce qui décide de la préposition d'une phrase française :
-  # « en Autriche », mais « aux Pays-Bas » et « à Chypre », qui n'en porte
-  # aucun.
+  # That article is what decides the preposition of a French sentence:
+  # « en Autriche », but « aux Pays-Bas » and « à Chypre », which carries
+  # none.
   it 'reads that article apart, for the countries that carry one' do
     stub_code_list(countries: { 'AT' => 'Autriche (l’)', 'NL' => 'Pays-Bas (les)', 'CY' => 'Chypre' })
 

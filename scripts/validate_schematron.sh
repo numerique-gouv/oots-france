@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Valide les messages produits par ce dépôt contre les règles Schematron
-# officielles des TDD. Exclu de la suite unitaire : la validation télécharge
-# des artefacts et exige Java (via Docker si Java n'est pas installé).
+# Validates the messages this repository produces against the official
+# Schematron rules of the TDD. Kept out of the unit suite: validation downloads
+# artefacts and requires Java (through Docker where Java is not installed).
 #
-# Usage : scripts/validate_schematron.sh [version_tdd]
+# Usage: scripts/validate_schematron.sh [tdd_version]
 #
-# Sortie : 0 si les messages sont conformes, 2 si une règle est violée, 1 pour
-# toute autre défaillance (téléchargement, compilation).
+# Exit: 0 if the messages conform, 2 if a rule is violated, 1 for any other
+# failure (download, compilation).
 set -Eeuo pipefail
 
-# `set -e` propagerait tel quel le code de sortie de l'outil défaillant, or
-# Saxon rend 2 sur un fichier introuvable — le code que ce script réserve à
-# « règle violée ». La CI y lirait une non-conformité et refuserait de rejouer.
+# `set -e` would propagate the failing tool's exit code as it is, and Saxon
+# returns 2 on a file it cannot find — the code this script reserves for "rule
+# violated". CI would read a non-conformance there and refuse to replay.
 trap 'exit 1' ERR
 
 VERSION_TDD="${1:-2.0.1}"
@@ -32,15 +32,15 @@ telechargeArtefactTdd() {
     "https://code.europa.eu/api/v4/projects/$PROJET_GITLAB/repository/files/$encode/raw?ref=$VERSION_TDD"
 }
 
-# Chaque artefact est produit sous un nom provisoire, puis déplacé à sa place
-# définitive une fois complet : une interruption ne laisse jamais derrière elle
-# un fichier tronqué ou un répertoire à demi rempli que sa seule présence ferait
-# ensuite passer pour valide. Sans quoi une coupure réseau en cours de
-# téléchargement se figerait dans le cache de l'intégration continue, et
-# l'échec ne se résorberait qu'en invalidant la clé à la main.
+# Each artefact is produced under a provisional name, then moved into its final
+# place once complete: an interruption never leaves behind a truncated file or a
+# half-filled directory that its mere presence would later pass off as valid.
+# Failing which, a network cut mid-download would freeze into the continuous
+# integration cache, and the failure would clear only by invalidating the key by
+# hand.
 find "$outils" -name '*.partiel' -exec rm -rf {} + 2> /dev/null || true
 
-# ---------------------------------------------------------------- outillage
+# ----------------------------------------------------------------- tooling
 if [ ! -f "$outils/saxon.jar" ]; then
   echo "→ Téléchargement de Saxon-HE $VERSION_SAXON"
   curl -sSf -o "$outils/saxon.jar.partiel" \
@@ -57,7 +57,7 @@ if [ ! -d "$outils/schxslt" ]; then
   mv "$outils/schxslt.partiel" "$outils/schxslt"
 fi
 
-# `java` n'est pas installé partout ; Docker prend le relais le cas échéant.
+# `java` is not installed everywhere; Docker takes over where it is not.
 if command -v java > /dev/null 2>&1; then
   saxon() { java -jar "$outils/saxon.jar" "$@"; }
 else
@@ -67,16 +67,15 @@ else
   }
 fi
 
-# ------------------------------------------------------- règles Schematron
+# ------------------------------------------------------- Schematron rules
 SCHEMATRONS=(EDM-REQ-C EDM-REQ-S EDM-RESP-C EDM-RESP-S EDM-ERR-C EDM-ERR-S EDM-ebMS)
 
 mkdir -p "$outils/sch"
 
-# Chaque règle est gardée par son propre fichier, et non par la présence du
-# répertoire : l'intégration continue met `.schematron` en cache sous une clé
-# qui ne dépend que de la version des TDD, si bien qu'une règle ajoutée ici ne
-# serait jamais récupérée sur un cache déjà chaud. Le couple `.partiel` + `mv`
-# conserve l'atomicité par artefact.
+# Each rule is guarded by its own file, and not by the presence of the
+# directory: continuous integration caches `.schematron` under a key that depends
+# only on the TDD version, so a rule added here would never be fetched onto an
+# already warm cache. The `.partiel` + `mv` pair keeps atomicity per artefact.
 for regle in "${SCHEMATRONS[@]}"; do
   if [ ! -f "$outils/sch/$regle.sch" ]; then
     echo "→ Téléchargement de la règle $regle des TDD $VERSION_TDD"
@@ -85,8 +84,8 @@ for regle in "${SCHEMATRONS[@]}"; do
   fi
 done
 
-# Les listes de codes incluses par les règles se récupèrent en bloc : leur
-# répertoire n'apparaît qu'une fois toutes téléchargées.
+# The code lists the rules include are fetched as a block: their directory
+# appears only once they have all been downloaded.
 if [ ! -d "$outils/sch/codelist-include" ]; then
   echo "→ Téléchargement des listes de codes des TDD $VERSION_TDD"
   mkdir -p "$outils/sch/codelist-include.partiel"
@@ -112,7 +111,7 @@ for regle in "${SCHEMATRONS[@]}"; do
   fi
 done
 
-# ------------------------------------------------------ messages à valider
+# ----------------------------------------------------- messages to validate
 echo "→ Production des messages par le code du dépôt"
 (cd "$racine" && bundle exec rake "oots:messages[$messages]")
 
@@ -140,18 +139,18 @@ valide erreurRequeteInvalide EDM-ERR-S
 valide erreurCapaciteNonSupportee EDM-ERR-C
 valide erreurCapaciteNonSupportee EDM-ERR-S
 
-# Les entêtes ebMS relèvent d'une règle à part, dont les contextes sont ancrés
-# sur `//eb:Messaging` : le document que produit `Entete#enXML()` lui suffit,
-# sans l'enveloppe SOAP qui l'entoure sur le fil.
+# The ebMS headers fall under a rule of their own, whose contexts are anchored
+# on `//eb:Messaging`: the document `EbmsHeaderBuilder` produces is enough for
+# it, without the SOAP envelope that surrounds it on the wire.
 valide requete.entete EDM-ebMS
 valide reponse.entete EDM-ebMS
 valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS
 valide erreurCapaciteNonSupportee.entete EDM-ebMS
 
-# Code 2 pour une violation de règle, distinct du 1 que rend toute autre
-# défaillance (téléchargement, compilation) : l'appelant peut ainsi retenter un
-# aléa réseau sans rejouer une non-conformité, qui elle ne guérira pas seule.
+# Code 2 for a rule violation, distinct from the 1 any other failure returns
+# (download, compilation): the caller can then retry a network fluke without
+# replaying a non-conformance, which will not heal on its own.
 if [ "$enEchec" -ne 0 ]; then
   echo
   echo "✗ Des règles Schematron sont violées."

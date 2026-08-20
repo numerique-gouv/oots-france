@@ -1,6 +1,6 @@
 <% if errors.any? %>
-  <%# Le composant enveloppe son contenu dans un `<p>`, où une liste serait du
-      HTML invalide. %>
+  <%# The component wraps its content in a `<p>`, where a list would be
+      invalid HTML. %>
   <%= dsfr_alert(type: :error, title: t('admin.unreadable'), html_attributes: { class: 'fr-mb-4w' }) do %>
     <%= safe_join(errors.full_messages.map { |message| "#{message}." }, tag.br) %>
   <% end %>

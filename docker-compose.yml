@@ -5,15 +5,14 @@ x-domibus: &env-domibus
 x-oots: &configuration-base
   build:
     context: .
-  # Une seule image pour `web`, `worker` et `test` : sans ce nom explicite,
-  # Compose en dérive un par service et `docker compose build web` n'en
-  # construirait qu'un des trois.
+  # One image for `web`, `worker` and `test`: without this explicit name,
+  # Compose derives one per service and `docker compose build web` would build
+  # only one of the three.
   image: oots-france-app
   env_file:
     - ./.env.oots
-  # Les gems vivent dans `/usr/local/bundle`, hors du répertoire monté : ce
-  # montage-ci ne les masque donc pas, et aucun volume nommé n'est nécessaire
-  # là où `node_modules` en réclamait un.
+  # The gems live in `/usr/local/bundle`, outside the mounted directory: this
+  # mount therefore does not mask them, and no named volume is needed.
   volumes:
     - .:/usr/src/app
 
@@ -50,14 +49,14 @@ services:
 
   web:
     <<: *configuration-base
-    # Le fichier de PID vit dans le répertoire monté depuis l'hôte : un
-    # conteneur tué en laisse un, et `rails server` refuse alors de démarrer en
-    # annonçant un serveur déjà lancé qui n'existe plus. Le retirer ici est sans
-    # risque, un seul serveur tournant par conteneur.
+    # The PID file lives in the directory mounted from the host: a killed
+    # container leaves one behind, and `rails server` then refuses to start,
+    # announcing a server already running that no longer exists. Removing it here
+    # is safe, only one server running per container.
     #
-    # `exec` n'est pas cosmétique : sans lui, `sh` reste PID 1 et reçoit seul le
-    # SIGTERM de `docker compose stop`, sans le relayer. Le serveur est alors
-    # tué au SIGKILL à l'expiration du délai de grâce, sans avoir rien fermé.
+    # `exec` is not cosmetic: without it, `sh` stays PID 1 and alone receives the
+    # SIGTERM from `docker compose stop`, without relaying it. The server is then
+    # killed by SIGKILL when the grace period expires, having closed nothing.
     command: "sh -c 'rm -f tmp/pids/server.pid && exec bundle exec rails server -b 0.0.0.0'"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
@@ -65,9 +64,8 @@ services:
      - domibus
      - postgres
 
-  # Le worker tourne dans son propre processus : c'est ce qui impose que
-  # l'état des conversations soit partagé et persistant, là où l'application
-  # Node se contentait d'un annonceur interne au processus.
+  # The worker runs in a process of its own: that is what makes the state of the
+  # conversations have to be shared and persistent.
   worker:
     <<: *configuration-base
     command: "bundle exec good_job start"
@@ -78,17 +76,16 @@ services:
     image: postgres:18-alpine
     env_file:
       - ./.env.postgres
-    # Publié pour que la suite puisse tourner hors conteneur, avec
-    # `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=`, suivi de la valeur
-    # que `.env` donne à `PORT_POSTGRES`. Celle de référence, 5433, diffère de
-    # 5432 pour ne pas heurter un PostgreSQL déjà installé sur la machine.
+    # Published so the suite can run outside the container, with
+    # `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=`, followed by the
+    # value `.env` gives `PORT_POSTGRES`. The reference one, 5433, differs from
+    # 5432 so as not to collide with a PostgreSQL already installed locally.
     ports:
       - "${PORT_POSTGRES}:5432"
-    # Monté sur `/var/lib/postgresql` et non sur son sous-répertoire `data` :
-    # depuis la version 18, l'image range les données dans un sous-répertoire
-    # nommé d'après la version majeure, pour permettre un `pg_upgrade --link`
-    # sans franchir de frontière de montage. Monter `data` directement fait
-    # échouer le démarrage.
+    # Mounted on `/var/lib/postgresql` and not on its `data` subdirectory: since
+    # version 18 the image stores the data in a subdirectory named after the
+    # major version, to allow a `pg_upgrade --link` without crossing a mount
+    # boundary. Mounting `data` directly makes start-up fail.
     volumes:
       - postgres_data:/var/lib/postgresql
 
@@ -99,24 +96,24 @@ services:
       - DB_TYPE=MySQL
       - DB_HOST=mysql
       - DB_PORT=3306
-      # L'image ne réécrit que ces deux niveaux dans logback.xml, et laisse
-      # eu.domibus à DEBUG. INFO ne suffirait pas : l'authentification de chaque
-      # requête journalise « [SEC-001] Unsecure login is allowed » à ce
-      # niveau-là. Ce que WARN écarte reste consultable dans
-      # logs/domibus-error.log, dont le seuil est justement WARN.
+      # The image rewrites only these two levels in logback.xml, and leaves
+      # eu.domibus at DEBUG. INFO would not be enough: the authentication of each
+      # request logs « [SEC-001] Unsecure login is allowed » at that level. What
+      # WARN sets aside stays readable in logs/domibus-error.log, whose threshold
+      # is precisely WARN.
       #
-      # Ces deux variables ne sont lues qu'à la création de ./domibus : pour
-      # changer un niveau sur une pile qui tourne, modifier domibus/logback.xml,
-      # que Domibus relit toutes les 10 s.
+      # These two variables are read only when ./domibus is created: to change a
+      # level on a running stack, edit domibus/logback.xml, which Domibus
+      # re-reads every 10 s.
       - LOGGER_LEVEL_EU_DOMIBUS=WARN
-      # Passer org.apache.cxf à INFO fait apparaître les enveloppes SOAP.
+      # Setting org.apache.cxf to INFO makes the SOAP envelopes appear.
       - LOGGER_LEVEL_ORG_APACHE_CXF=WARN
       - CHECK_DEFAULT_PASSWD=false
       - KEYSTORE_PASSWD=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
       - TRUSTSTORE_PASSWD=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
-      # L'entrypoint de l'image injecte SERVER_INIT_PROPERTIES dans JAVA_OPTS.
-      # C'est le seul moyen de fixer une propriété qui ne soit pas perdue à la
-      # prochaine réinitialisation de ./domibus par l'image.
+      # The image's entrypoint injects SERVER_INIT_PROPERTIES into JAVA_OPTS.
+      # It is the only way to fix a property that is not lost the next time the
+      # image reinitialises ./domibus.
       - >-
         SERVER_INIT_PROPERTIES=
         -Ddomibus.metrics.slf4j.reporter.enable=false

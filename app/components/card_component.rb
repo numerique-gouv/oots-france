@@ -22,13 +22,13 @@ class CardComponent < ViewComponent::Base
     super()
   end
 
-  # `dense` pour une carte qui n'a rien à décrire entre son titre et ce qu'elle
-  # énumère : l'air que le DSFR laisse sous le contenu y fait un trou.
+  # `dense` for a card with nothing to describe between its title and what it
+  # lists: the room the DSFR leaves under the content reads as a hole.
   #
-  # `clickable` étend le lien du titre au corps de la carte et lui donne la
-  # flèche du DSFR. Ce qu'elle énumère doit alors vivre dans le pied, seul
-  # endroit qui reste hors de cette étendue : un lien du corps passerait dessous
-  # et cesserait d'être atteignable.
+  # `clickable` stretches the title's link over the body of the card and gives
+  # it the DSFR arrow. What the card lists must then live in the footer, the one
+  # place left outside that reach: a link in the body would fall under it and
+  # stop being reachable.
   def classes
     ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense),
      (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow')]

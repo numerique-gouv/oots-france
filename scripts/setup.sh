@@ -1,23 +1,23 @@
 #!/bin/sh
-# Monte une installation locale complète à partir d'un dépôt fraîchement cloné :
-# fichiers d'environnement, bases de données, passerelle configurée, schéma
-# appliqué. Après quoi `make up` suffit à lancer l'application.
+# Raises a complete local installation from a freshly cloned repository:
+# environment files, databases, configured gateway, schema applied. After which
+# `make up` is enough to start the application.
 #
-# C'est la transposition locale de ce que .github/workflows/e2e.yml fait sur un
-# runner : les deux suites d'étapes doivent rester en phase, faute de quoi une
-# installation qui marche en CI cesse de marcher sur un poste.
+# This is the local transposition of what .github/workflows/e2e.yml does on a
+# runner: the two sequences of steps must stay in step, failing which an install
+# that works in CI stops working on a machine.
 #
-# Usage : make setup   (ou scripts/setup.sh)
+# Usage: make setup   (or scripts/setup.sh)
 #
-# Rejouable : une configuration existante est conservée, et chaque étape se
-# contente de ce qui lui manque.
+# Replayable: an existing configuration is kept, and each step does only what it
+# is missing.
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-# Les valeurs d'un .env* ne sont pas chargeables par un `.` : elles portent des
-# accolades JSON et des `&`. On y prélève celles dont la suite a besoin.
+# The values of a .env* cannot be sourced with `.`: they carry JSON braces and
+# `&`. The ones the rest needs are taken out of it.
 lisVariable() {
   valeur=$(sed -n "s/^$1=//p" "$2" | head -n 1)
   if [ -z "$valeur" ]; then
@@ -38,51 +38,51 @@ if [ -z "$MANQUANTS" ]; then
   echo "  Déjà présents : conservés tels quels."
 else
   echo "  Manquants :$MANQUANTS"
-  # Sur une installation partielle, prepare_environment.sh s'arrête de lui-même
-  # plutôt que d'écraser ce qui existe déjà. Nommer les absents ici est le seul
-  # moyen de le savoir : son propre refus ne cite que les fichiers présents.
+  # On a partial installation, prepare_environment.sh stops of its own accord
+  # rather than overwrite what is already there. Naming the missing ones here is
+  # the only way to know: its own refusal cites the files that are present.
   scripts/ci/prepare_environment.sh
 fi
 
-# Exportées pour scripts/configure_domibus.sh, qui exige les identifiants plutôt
-# que de les déduire : le compte qu'il crée dans la passerelle doit être celui
-# que l'application lui présentera.
+# Exported for scripts/configure_domibus.sh, which requires the credentials
+# rather than deriving them: the account it creates in the gateway must be the
+# one the application will present to it.
 PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
 MOT_DE_PASSE_MAGASINS=$(lisVariable MOT_DE_PASSE_MAGASINS .env)
 LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
 MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
 export PORT_DOMIBUS MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
 
-# La base de Domibus se crée au premier démarrage du conteneur, et la passerelle
-# échoue si elle s'y connecte avant.
+# Domibus's database is created on the container's first start, and the gateway
+# fails if it connects before that.
 echo "→ MySQL, la base de la passerelle"
 docker compose up --detach mysql
 scripts/ci/wait_for_mysql.sh
 
 echo "→ Passerelle Domibus"
-# Le répertoire de configuration est un montage lié, que l'image peuple à son
-# premier démarrage. Le créer ici plutôt que de laisser faire le démon : sous
-# une VM à système de fichiers partagé, il échoue à en changer le propriétaire
-# et refuse alors de démarrer le conteneur.
+# The configuration directory is a bind mount, which the image populates on its
+# first start. Created here rather than left to the daemon: under a VM with a
+# shared filesystem, the daemon fails to change its owner and then refuses to
+# start the container.
 mkdir -p domibus
 docker compose up --detach domibus
 
-# Le déploiement de la webapp par Tomcat est long : construire ici occupe ce
-# temps mort plutôt que de l'attendre.
+# Tomcat takes a long time to deploy the webapp: building here fills that dead
+# time rather than waiting it out.
 echo "→ Image de l'application, pendant le déploiement de la webapp"
 docker compose build web
 
 scripts/ci/wait_for_domibus.sh
 
-# Les certificats livrés avec l'image sont publics et partagés par toutes les
-# installations : le script en génère d'autres. Il finit par un message AS4 de
-# test, dont il attend l'acquittement.
+# The certificates shipped with the image are public and shared by every
+# installation: the script generates others. It ends with a test AS4 message,
+# whose acknowledgement it waits for.
 echo "→ Configuration de la passerelle : magasins, PMode, compte d'accès"
 scripts/configure_domibus.sh
 
-# Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par
-# l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le
-# script précédent écrit, et ne prennent effet qu'ici.
+# The notification rules (`wsplugin.push.rules`) cannot be changed through the
+# API: they live only in the plugin's properties file, which the previous script
+# writes, and take effect only here.
 echo "→ Redémarrage de la passerelle, pour activer ses notifications"
 docker compose restart domibus
 scripts/ci/wait_for_domibus.sh
@@ -91,9 +91,9 @@ echo "→ PostgreSQL, l'état des conversations et la file des jobs"
 docker compose up --detach postgres
 scripts/ci/wait_for_postgres.sh
 docker compose run --rm --no-deps web bundle exec rails db:prepare
-# `db:prepare` ne charge les seeds que lorsqu'il crée la base : sur une
-# installation déjà faite, il migrerait sans poser le compte d'administration.
-# Le seed est idempotent, donc l'appeler à chaque fois ne coûte rien.
+# `db:prepare` loads the seeds only when it creates the database: on an install
+# already made, it would migrate without laying down the administrator account.
+# The seed is idempotent, so calling it every time costs nothing.
 docker compose run --rm --no-deps web bundle exec rails db:seed
 
 cat <<'FIN'

@@ -11,8 +11,8 @@
   <%= t('admin.common_services.procedures.show.declared_by', count: @procedure.countries.size) %>
 </p>
 
-<%# Une démarche n'impose les mêmes exigences nulle part : ce qu'on compare
-    d'un pays à l'autre, c'est ce que chacun demande de prouver. %>
+<%# A procedure imposes the same requirements nowhere: what is compared from
+    one country to the next is what each asks to have proved. %>
 <% @procedure.declarations_by_country.each do |country, declared| %>
   <%= render CardComponent.new(
         title: named_country(country),

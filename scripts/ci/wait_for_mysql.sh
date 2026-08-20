@@ -1,31 +1,30 @@
 #!/bin/sh
-# Attend que la base de Domibus accepte des connexions.
+# Waits for Domibus's database to accept connections.
 #
-# La sonde est un `mysqladmin ping` **sur TCP**, et non la présence de « ready
-# for connections » dans les journaux : l'image en écrit deux, une pour
-# l'instance temporaire qui crée la base au premier démarrage, une pour le
-# serveur définitif. Guetter le message rend donc la main pendant
-# l'initialisation, juste avant un redémarrage — et Domibus, lancé dans la
-# foulée, échoue à se connecter.
+# The probe is a `mysqladmin ping` **over TCP**, and not the presence of "ready
+# for connections" in the logs: the image writes two of those, one for the
+# temporary instance that creates the database on first start, one for the final
+# server. Watching for the message therefore returns during initialisation, just
+# before a restart — and Domibus, started right after, fails to connect.
 #
-# Le `-h 127.0.0.1` est ce qui fait la différence : l'instance d'initialisation
-# écoute sur une socket Unix seulement, jamais sur le réseau. Y répondre prouve
-# que c'est bien le serveur définitif qui est en place.
+# The `-h 127.0.0.1` is what makes the difference: the initialisation instance
+# listens on a Unix socket only, never on the network. Answering there proves it
+# is the final server that is in place.
 #
-# Usage : scripts/ci/wait_for_mysql.sh [délai max en secondes ; 300 par défaut]
+# Usage: scripts/ci/wait_for_mysql.sh [timeout in seconds; 300 by default]
 
 set -e
 
 RACINE=$(cd "$(dirname "$0")/../.." && pwd)
 
-# Le mot de passe se prélève par `sed` plutôt qu'en chargeant le fichier : rien
-# ne garantit qu'il traverse une interprétation par le shell.
+# The password is taken out with `sed` rather than by sourcing the file:
+# nothing guarantees it survives an interpretation by the shell.
 [ -n "$MYSQL_ROOT_PASSWORD" ] || [ ! -f "$RACINE/.env.domibus" ] || \
   MYSQL_ROOT_PASSWORD=$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' "$RACINE/.env.domibus" | head -n 1)
 
-# Le laisser vide donnerait un `-p` nu, sur lequel `mysqladmin` réclame le mot de
-# passe — sur une invite que la redirection de la sonde rend invisible, et qui
-# ferait attendre le délai entier sans qu'on sache pourquoi.
+# Leaving it empty would give a bare `-p`, on which `mysqladmin` asks for the
+# password — on a prompt the probe's redirection makes invisible, and which
+# would burn the whole timeout with nothing to say why.
 if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
   echo "❌ MYSQL_ROOT_PASSWORD introuvable, ni dans l'environnement ni dans $RACINE/.env.domibus." >&2
   exit 1
@@ -44,9 +43,9 @@ while true; do
   fi
 
   if [ $(($(date +%s) - DEBUT)) -gt "$DELAI_MAX" ]; then
-    # La sonde tait sa propre erreur à chaque tour, sans quoi elle inonderait la
-    # sortie pendant tout le démarrage. L'état du service est donc le seul moyen
-    # de distinguer une base lente d'un conteneur mort dès la première seconde.
+    # The probe silences its own error on every round, or it would flood the
+    # output for the whole start-up. The service state is therefore the only way
+    # to tell a slow database from a container that died in the first second.
     echo "❌ MySQL n'a pas répondu après ${DELAI_MAX} s. État du service :" >&2
     docker compose ps mysql >&2
     docker compose logs --tail 20 mysql >&2

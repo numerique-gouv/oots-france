@@ -1,23 +1,23 @@
 #!/bin/sh
-# Écrit les fichiers .env* attendus par docker compose, avec des valeurs jetables
-# destinées à l'intégration continue (cf. docs/test_e2e.md) et à l'installation
-# locale, que scripts/setup.sh monte par-dessus.
+# Writes the .env* files docker compose expects, with throwaway values meant for
+# continuous integration (see docs/test_e2e.md) and for the local install, which
+# scripts/setup.sh layers on top.
 #
-# Aucune valeur n'est un secret : la base, la passerelle et la clé de
-# déchiffrement sont recréées à chaque exécution et détruites avec le runner.
+# No value here is a secret: the database, the gateway and the decryption key are
+# recreated on every run and destroyed with the runner.
 #
-# Usage : scripts/ci/prepare_environment.sh
+# Usage: scripts/ci/prepare_environment.sh
 #
-# Variables reconnues :
-#   FORCER=1  écrase les fichiers existants (voir la garde ci-dessous)
+# Recognised variables:
+#   FORCER=1  overwrites existing files (see the guard below)
 
 set -e
 
 FICHIERS=".env .env.domibus .env.oots .env.postgres"
 
-# Ces fichiers ne sont pas versionnés : les écraser détruit une configuration
-# locale irrécupérable. Sur un runner ils n'existent pas, et le script écrit
-# sans rien demander ; ailleurs il s'arrête, à moins d'un FORCER=1 explicite.
+# These files are not versioned: overwriting them destroys a local configuration
+# nothing can recover. On a runner they do not exist and the script writes
+# without asking; elsewhere it stops, short of an explicit FORCER=1.
 EXISTANTS=""
 for fichier in $FICHIERS; do
   [ -e "$fichier" ] && EXISTANTS="$EXISTANTS $fichier"
@@ -30,27 +30,28 @@ if [ -n "$EXISTANTS" ] && [ "$FORCER" != "1" ]; then
   exit 1
 fi
 
-# Ces identifiants doivent être les mêmes que ceux passés à
-# scripts/configure_domibus.sh : c'est le compte que le script crée dans Domibus
-# et celui avec lequel l'application s'y authentifie.
+# These credentials must be the same as those passed to
+# scripts/configure_domibus.sh: this is the account the script creates in Domibus
+# and the one the application authenticates with.
 #
-# Domibus impose au mot de passe 16 à 32 caractères, avec majuscule, minuscule,
-# chiffre et caractère spécial : plus court, il est rejeté à la création.
+# Domibus requires the password to be 16 to 32 characters, with an upper case, a
+# lower case, a digit and a special character: any shorter and it is refused at
+# creation.
 LOGIN_API_REST="${LOGIN_API_REST:-oots_ci}"
 MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:-Ci-OotsFrance-2026!}"
 
-# Ce mot de passe protège les magasins de certificats. La passerelle le lit
-# depuis .env, les scripts depuis l'environnement : le prendre d'ici garantit
-# que les deux voient la même valeur, comme pour les identifiants ci-dessus.
+# This password protects the certificate stores. The gateway reads it from .env,
+# the scripts from the environment: taking it from here guarantees both see the
+# same value, as for the credentials above.
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
 
-# Les identifiants que Domibus posera sur ses notifications vers nous. Ils
-# doivent être les mêmes ici et dans `wsplugin.push.auth.*` côté passerelle,
-# que scripts/configure_domibus.sh renseigne.
+# The credentials Domibus will put on its notifications towards us. They must be
+# the same here and in `wsplugin.push.auth.*` on the gateway side, which
+# scripts/configure_domibus.sh fills in.
 LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
 MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
 
-# Heredoc non quoté : les valeurs ci-dessus doivent être substituées.
+# Unquoted heredoc: the values above must be substituted.
 cat > .env <<FIN
 PORT_DOMIBUS=8180
 PORT_OOTS_FRANCE=3000
@@ -67,19 +68,19 @@ DB_USER=domibus
 DB_PASS=domibus_ci
 FIN
 
-# Le runner d'intégration continue installe Ruby pour lui-même ; un poste de
-# développement n'a que Git et Docker pour prérequis, d'où le repli sur l'image
-# officielle. La version se lit dans .ruby-version plutôt que d'être écrite ici :
-# le dépôt épingle déjà la même valeur en plusieurs endroits, et n'en veut pas un
-# de plus.
+# The continuous integration runner installs Ruby for itself; a development
+# machine has only Git and Docker as prerequisites, hence the fallback on the
+# official image. The version is read from .ruby-version rather than written
+# here: the repository already pins the same value in several places, and wants
+# no more of them.
 executeRuby() {
   if command -v ruby >/dev/null 2>&1; then
     ruby "$@"
     return
   fi
 
-  # Sans cette garde, l'absence du fichier donnerait le tag `ruby:-slim` et une
-  # erreur de référence Docker, sans rapport visible avec sa cause.
+  # Without this guard, a missing file would give the tag `ruby:-slim` and a
+  # Docker reference error, with no visible relation to its cause.
   if [ ! -f .ruby-version ]; then
     echo "❌ .ruby-version introuvable : lancer ce script depuis la racine du dépôt." >&2
     exit 1
@@ -88,16 +89,16 @@ executeRuby() {
   docker run --rm "ruby:$(cat .ruby-version)-slim" ruby "$@"
 }
 
-# La clé privée de déchiffrement est générée à la volée : rien à versionner, et
-# chaque exécution repart d'un secret neuf. La bibliothèque standard de Ruby
-# suffit, sans gem.
+# The private decryption key is generated on the fly: nothing to version, and
+# every run starts from a fresh secret. Ruby's standard library is enough, with
+# no gem.
 #
-# RSA-OAEP-256, et non plus ECDH-ES : c'est le seul algorithme de gestion de clé
-# que les gems Ruby traitent réellement — celle qu'emploie déjà `apistration`.
-# Rien ne l'impose côté OOTS : ce jeton est l'interface entre une démarche
-# française et cette brique, qu'aucun chapitre des TDD ne contraint. La route
-# qui publie la clé le fait par soustraction des composantes secrètes, donc le
-# type de clé reste libre et le choix réversible.
+# RSA-OAEP-256, and not ECDH-ES: it is the only key management algorithm the Ruby
+# gems actually handle — the one `apistration` already uses. Nothing on the OOTS
+# side requires it: this token is the interface between a French procedure and
+# this component, which no TDD chapter constrains. The route that publishes the
+# key does so by subtracting the secret components, so the key type stays free
+# and the choice reversible.
 CLE_PRIVEE_JWK_EN_BASE64=$(executeRuby -ropenssl -rjson -rbase64 -e '
 cle = OpenSSL::PKey::RSA.generate(2048)
 b64 = ->(bn) { Base64.urlsafe_encode64(bn.to_s(2), padding: false) }
@@ -112,24 +113,24 @@ jwk = {
 puts Base64.strict_encode64(JSON.generate(jwk))
 ')
 
-# Une sortie tronquée ou polluée serait recopiée telle quelle dans .env.oots.
-# `Settings.verify!` ne l'y rattraperait pas : il n'écarte que les valeurs vides,
-# et celle-ci n'en est pas une. L'échec n'apparaîtrait donc qu'au premier
-# déchiffrement d'un jeton, loin d'ici. Le contrôle reste en `base64` seul : la
-# machine qui a eu besoin du repli Docker ci-dessus n'a toujours pas de Ruby pour
-# relire ce qu'il a produit.
+# Output that is truncated or polluted would be copied into .env.oots as it is.
+# `Settings.verify!` would not catch it there: it only rejects empty values, and
+# this one is not empty. The failure would therefore surface only at the first
+# token decryption, far from here. The check stays on `base64` alone: the machine
+# that needed the Docker fallback above still has no Ruby to read back what it
+# produced.
 #
-# Le décodage est sorti du tube pour que son code de sortie soit celui qu'on
-# teste : dans un tube, seul le dernier compte, et `base64 -d` écrit sur stdout
-# tout ce qu'il a su décoder avant d'échouer.
+# The decoding is taken out of the pipe so that its exit code is the one tested:
+# in a pipe only the last one counts, and `base64 -d` writes to stdout everything
+# it managed to decode before failing.
 CLE_JWK_DECODEE=$(echo "$CLE_PRIVEE_JWK_EN_BASE64" | base64 -d 2>/dev/null) || {
   echo "❌ La clé JWK produite n'est pas du base64 valide." >&2
   exit 1
 }
 
-# `qi` est le dernier champ que le générateur écrit, et `}` ferme l'objet :
-# chercher `kty`, qui vient en tête, laisserait passer une clé tronquée juste
-# après — donc amputée de tout le matériel cryptographique.
+# `qi` is the last field the generator writes, and `}` closes the object:
+# looking for `kty`, which comes first, would let through a key truncated right
+# after it — and so stripped of all the cryptographic material.
 case "$CLE_JWK_DECODEE" in
   *'"qi"'*'}') ;;
   *)
@@ -138,18 +139,18 @@ case "$CLE_JWK_DECODEE" in
     ;;
 esac
 
-# Le fournisseur français garde son identité réelle plutôt qu'un nom de test :
-# elle est recopiée dans le `ErrorProvider` des messages de référence de
-# spec/fixtures/, et `spec/support/test_environment.rb` ne la pose qu'en `||=`.
-# Un nom de test ici passerait dans le conteneur par `env_file` et ferait rougir
-# la suite unitaire, que rien n'aurait pourtant modifiée.
+# The French provider keeps its real identity rather than a test name: that
+# identity is copied into the `ErrorProvider` of the reference messages in
+# spec/fixtures/, and `spec/support/test_environment.rb` only sets it with `||=`.
+# A test name here would reach the container through `env_file` and turn the unit
+# suite red, though nothing in it had changed.
 #
-# Les deux URL d'annuaire désignent le faux annuaire que la suite de bout en
-# bout monte elle-même, et le magasin de confiance le certificat qu'il engendre
-# au démarrage : c'est ce qui rend `make e2e` reproductible, là où les annuaires
-# centraux réclameraient une inscription de la France que personne ici ne
-# contrôle. Les vider et remettre config/certificats/services_communs_acc.pem
-# rebranche la pile sur l'acceptation — voir docs/test_e2e.md.
+# The two directory URLs designate the fake directory the end-to-end suite raises
+# itself, and the trust store the certificate it generates at start-up: that is
+# what makes `make e2e` reproducible, where the central directories would demand
+# a registration of France nobody here controls. Emptying them and putting
+# config/certificats/services_communs_acc.pem back wires the stack onto
+# acceptance — see docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
@@ -189,19 +190,19 @@ MOT_DE_PASSE_BASE_DE_DONNEES=oots_france
 NOM_BASE_DE_DONNEES=oots_france
 FIN
 
-# Les mêmes valeurs, sous les noms qu'attend l'image PostgreSQL. Elles doivent
-# rester en phase avec celles ci-dessus, comme .env.domibus l'impose déjà entre
-# MYSQL_USER et DB_USER.
+# The same values, under the names the PostgreSQL image expects. They must stay
+# in step with those above, as .env.domibus already requires between MYSQL_USER
+# and DB_USER.
 cat > .env.postgres <<'FIN'
 POSTGRES_USER=oots_france
 POSTGRES_PASSWORD=oots_france
 POSTGRES_DB=oots_france
 FIN
 
-# Les templates déclarent le contrat : toute variable que l'un d'eux nomme doit
-# être écrite ici. Sans ce contrôle, l'oubli d'une variable nouvellement
-# obligatoire ne se voit qu'au démarrage de la pile, deux étapes plus loin, sous
-# la forme d'une attente qui expire sans rien dire.
+# The templates declare the contract: every variable one of them names must be
+# written here. Without this check, forgetting a newly mandatory variable shows
+# only when the stack starts, two steps further on, as a wait that expires with
+# nothing to say.
 ERREURS=""
 signale() {
   ERREURS="${ERREURS:+$ERREURS
@@ -209,10 +210,10 @@ signale() {
 }
 
 for fichier in $FICHIERS; do
-  # Un template absent ferait échouer le `sed` ci-dessous dans une substitution
-  # de commande, dont le shell ne regarde pas le statut : la boucle tournerait à
-  # vide et le contrôle passerait, rétablissant l'attente muette qu'il existe
-  # justement pour empêcher.
+  # A missing template would make the `sed` below fail inside a command
+  # substitution, whose status the shell does not look at: the loop would run
+  # empty and the check would pass, restoring the very silent wait it exists to
+  # prevent.
   if [ ! -r "$fichier.template" ]; then
     signale "❌ $fichier.template introuvable : le contrat ne peut pas être vérifié."
     continue
@@ -228,8 +229,8 @@ for fichier in $FICHIERS; do
   fi
 done
 
-# Les quatre fichiers sont rapportés d'un coup : sortir au premier fautif
-# masquerait les suivants, et coûterait autant d'allers-retours que de fichiers.
+# All four files are reported at once: exiting on the first offender would mask
+# the ones after it, and cost as many round trips as there are files.
 if [ -n "$ERREURS" ]; then
   echo "$ERREURS" >&2
   echo "   Compléter scripts/ci/prepare_environment.sh." >&2

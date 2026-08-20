@@ -1,13 +1,13 @@
-# Travaux récurrents de GoodJob, lus par `config.good_job.enable_cron`.
+# GoodJob's recurring jobs, read by `config.good_job.enable_cron`.
 #
-# Le ramassage est le filet derrière la notification, et non la voie principale
-# — une notification peut se perdre, son répartiteur peut être arrêté, et une
-# file laissée sans surveillance est un message jamais remis. Il est idempotent
-# par construction : la passerelle efface un message une fois récupéré.
+# The sweep is the net behind the notification, and not the main road — a
+# notification can be lost, its dispatcher can be stopped, and a queue left
+# unwatched is a message never delivered. It is idempotent by construction: the
+# gateway erases a message once it has been retrieved.
 #
-# La purge, elle, exécute la seconde moitié de l'article 17 : conserver douze
-# mois, et ne pas conserver au-delà. Une fois par jour suffit, l'échéance se
-# comptant en mois.
+# The purge carries out the second half of article 17: keep for twelve months,
+# and do not keep beyond. Once a day is enough, the term being counted in
+# months.
 default: &commun
   ramassage_messages_en_attente:
     cron: '*/2 * * * *'

@@ -12,14 +12,14 @@ gem 'puma', '>= 5.0'
 gem 'rails-i18n'
 gem 'tzinfo-data', platforms: %i[windows jruby]
 
-# Orchestration : une étape par interacteur, un enchaînement par organisateur.
+# Orchestration: one step per interactor, one sequence per organizer.
 gem 'interactor'
 
-# Messages OOTS : gabarits ERB en sortie, XPath en entrée.
+# OOTS messages: ERB templates on the way out, XPath on the way in.
 gem 'nokogiri'
 
-# Jeton bénéficiaire : JWE chiffré pour nous, contenant un JWT signé par le
-# requêteur. RSA-OAEP-256 / A256GCM.
+# Beneficiary token: a JWE encrypted for us, holding a JWT signed by the
+# requester. RSA-OAEP-256 / A256GCM.
 gem 'jwe'
 gem 'jwt'
 

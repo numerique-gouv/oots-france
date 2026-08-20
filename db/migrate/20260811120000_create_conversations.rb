@@ -1,21 +1,21 @@
 class CreateConversations < ActiveRecord::Migration[8.1]
   def change
     create_table :conversations do |table|
-      # L'identifiant qui voyage dans l'entête ebMS et qui rapproche une réponse
-      # de la requête qui l'a provoquée. C'est la seule prise : la passerelle ne
-      # rend rien d'autre qui permette de faire le lien.
+      # The identifier that travels in the ebMS header and brings a response
+      # together with the request that caused it. It is the only handle: the
+      # gateway returns nothing else that makes the link.
       table.string :conversation_id, null: false
       table.string :status, null: false, default: 'pending'
 
-      # De quoi reprendre l'échange et retrouver à qui répondre. Aucune donnée
-      # personnelle ici : le bénéficiaire vit dans le jeton que le requêteur
-      # fournit, et il n'a pas à être conservé pour que la conversation avance.
+      # What it takes to resume the exchange and find who to answer. No personal
+      # data here: the beneficiary lives in the token the requester supplies, and
+      # need not be kept for the conversation to advance.
       table.string :procedure_code, null: false
       table.string :country_code, null: false
       table.string :evidence_requester_id, null: false
 
-      # L'espace de prévisualisation du fournisseur étranger, quand il exige
-      # que l'usager s'y rende avant de délivrer le justificatif.
+      # The foreign provider's preview space, where it requires the user to go
+      # there before it will deliver the evidence.
       table.text :preview_location
 
       table.string :edm_error_code

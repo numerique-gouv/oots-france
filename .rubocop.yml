@@ -21,10 +21,10 @@ AllCops:
     - "vendor/**/*"
     - "tmp/**/*"
     - ".worktrees/**/*"
-    # Écrit par le générateur de `cucumber-rails` et réécrit à chaque montée de
-    # version : le corriger reviendrait à le corriger de nouveau ensuite. Ses
-    # tâches ne chargent délibérément pas l'environnement Rails, ce que
-    # `Rails/RakeEnvironment` ne peut pas savoir.
+    # Written by the `cucumber-rails` generator and rewritten at every version
+    # bump: correcting it would only mean correcting it again afterwards. Its
+    # tasks deliberately do not load the Rails environment, which
+    # `Rails/RakeEnvironment` cannot know.
     - "lib/tasks/cucumber.rake"
 
 FactoryBot/FactoryAssociationWithStrategy:
@@ -101,17 +101,16 @@ Metrics/MethodLength:
     - hash
     - array
 
-# Le défaut que ce contrôle prévient — des arguments positionnels qu'on finit
-# par confondre — n'existe pas avec des mots-clés, nommés à l'appel comme à la
-# définition. Or une entête ebMS a réellement une dizaine de champs
-# indépendants, chacun imposé par la spécification : les regrouper dans un objet
-# ne ferait que déplacer la liste.
+# The defect this cop prevents — positional arguments one ends up confusing —
+# does not exist with keywords, named at the call site as at the definition. And
+# an ebMS header really does have a dozen independent fields, each required by
+# the specification: grouping them into an object would only move the list.
 Metrics/ParameterLists:
   CountKeywordArgs: false
 
-# Les définitions de pas emploient les mots-clés Gherkin français que Cucumber
-# expose — `Étantdonné`, `Alors` —, et les scénarios sont en français par
-# décision explicite : ce ne sont pas des identifiants que nous choisissons.
+# The step definitions use the French Gherkin keywords Cucumber exposes —
+# `Étantdonné`, `Alors` — and the scenarios are French by explicit decision:
+# these are not identifiers we choose.
 Naming/AsciiIdentifiers:
   Exclude:
     - "features/**/*"
@@ -128,8 +127,9 @@ Naming/PredicateMethod:
 Naming/VariableNumber:
   Enabled: false
 
-# Le domaine est anglais, mais la documentation et les messages destinés à
-# des humains restent français : les commentaires accentués sont normaux ici.
+# Comments are English, but they quote what humans read — a French wording from
+# `fr.yml`, a country name from a code list: accented characters are normal
+# here.
 Style/AsciiComments:
   Enabled: false
 
