@@ -198,10 +198,15 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   # rules, two details on the wire, and a correspondent who omitted the property
   # is not one who declared the wrong version.
   describe 'a request whose header omits the version altogether' do
+    # Removed as a node and not by a substitution: the prefix a gateway binds to
+    # the ebMS namespace is its own, so only an XPath bound by URI finds the
+    # property — and `remove` raises if it ever stops being there, where a regex
+    # that matched nothing would leave the test passing on an intact envelope.
     let(:message) do
-      RetrievedMessageParser.new(
-        real_envelope('requete').sub(%r{<[^>]*Property name="SpecificationId">.*?</[^>]*Property>}m, ''),
-      )
+      envelope = Nokogiri::XML(real_envelope('requete'))
+      envelope.at_xpath("//eb:Property[@name='SpecificationId']", OotsNamespaces::NAMESPACES).remove
+
+      RetrievedMessageParser.new(envelope.to_xml)
     end
 
     it 'answers EDM:ERR:0003 naming the rule that requires the property' do
