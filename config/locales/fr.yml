@@ -198,6 +198,7 @@ fr:
       not_whole_entry: "%{name} (« %{value} »)"
       required: La variable d'environnement %{name} est obligatoire et ne peut pas être vide.
       retention_below_floor: "DUREE_RETENTION_JOURNAL_MOIS vaut %{months} : l'article 17(4) du règlement d'exécution (UE) 2022/1463 impose d'en conserver %{floor} au minimum."
+      timeouts_out_of_order: "DELAI_EXPIRATION_REQUETEUR_MINUTES vaut %{requester} et DELAI_EXPIRATION_FOURNISSEUR_MINUTES %{provider} : le chapitre 4.4 des TDD impose que le délai d'attente d'une réponse dépasse celui qu'on s'accorde pour en produire une, transport compris."
   parsers:
     # Dits par plusieurs lecteurs, d'où leur place au-dessus d'eux.
     not_a_query_response: Le message reçu n'est pas une QueryResponse.

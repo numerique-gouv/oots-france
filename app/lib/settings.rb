@@ -29,13 +29,18 @@ module Settings
     CLE_CHIFFREMENT_DETERMINISTE_JOURNAL
     SEL_DERIVATION_CLES_JOURNAL
     DUREE_RETENTION_JOURNAL_MOIS
+    DELAI_EXPIRATION_REQUETEUR_MINUTES
+    DELAI_EXPIRATION_FOURNISSEUR_MINUTES
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
   # startup like their presence: a delay of « bientôt » would otherwise pass
   # `verify!` and fail on the first request, which is the whole point of
   # checking here rather than at the point of use.
-  NUMERIC = %w[DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS].freeze
+  NUMERIC = %w[
+    DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS
+    DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES
+  ].freeze
 
   # Article 17(4) of the implementing regulation, as a floor: a member state may
   # keep the exchange log longer, never less.
@@ -93,6 +98,14 @@ module Settings
     # Article 17(4) of the implementing regulation sets twelve months, and says
     # so as a floor: a member state may keep them longer, hence a setting.
     def audit_trail_retention = whole('DUREE_RETENTION_JOURNAL_MOIS').months
+
+    # The two columns of the timeout table of chapter 4.4.3, « ER side » and
+    # « EP side », in the unit the chapter asks for: « all timeout intervals
+    # within the system should be expressed in minutes ». The first must exceed
+    # the second, which `Settings::Contract` refuses to start without.
+    def requester_timeout = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES').minutes
+
+    def provider_timeout = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES').minutes
 
     def domibus_base_url = required('URL_BASE_DOMIBUS')
 

@@ -1,8 +1,15 @@
 require 'rails_helper'
 
 RSpec.describe Settings do
-  # Those read as numbers need one, the others take anything non-blank.
-  def filled = Settings::REQUIRED.index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
+  # Those read as numbers need one, the others take anything non-blank. The two
+  # timeouts take the values of the table of chapter 4.4.3 instead of the common
+  # 1000: the contract refuses them equal, which indexing every number on one
+  # value would make them.
+  def filled
+    Settings::REQUIRED
+      .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
+      .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
+  end
 
   # 1000 satisfies the numeric check for every other duration; retention is read
   # in months, and twelve is its floor rather than its value.
@@ -83,6 +90,35 @@ RSpec.describe Settings do
       with_environment(lawful.merge('DUREE_RETENTION_JOURNAL_MOIS' => '24')) do
         expect { described_class.verify! }.not_to raise_error
         expect(described_class.audit_trail_retention).to eq(24.months)
+      end
+    end
+  end
+
+  # Chapter 4.4: the interval an Online Procedure Portal waits « shall be
+  # configured to a value that exceeds the timeout interval of the Data
+  # Service ». Set the other way round, this side gives up while the
+  # correspondent may still answer.
+  describe 'the two expiry intervals' do
+    it 'refuses a requester interval shorter than the provider one' do
+      inverted = { 'DELAI_EXPIRATION_REQUETEUR_MINUTES' => '2', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '10' }
+
+      with_environment(filled.merge(inverted)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /chapitre 4\.4/)
+      end
+    end
+
+    # The condition a stray `>=` in place of `>` would flip: equal leaves the
+    # buffer the table spends on transport at zero.
+    it 'refuses them equal' do
+      with_environment(filled.merge('DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '6')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /chapitre 4\.4/)
+      end
+    end
+
+    it 'reads both in minutes' do
+      with_environment(filled) do
+        expect(described_class.requester_timeout).to eq(6.minutes)
+        expect(described_class.provider_timeout).to eq(5.minutes)
       end
     end
   end
