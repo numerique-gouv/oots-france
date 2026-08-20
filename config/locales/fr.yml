@@ -187,6 +187,9 @@ fr:
     beneficiary_token:
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+  jobs:
+    expire_conversations_job:
+      failed: "Expiration impossible pour l'échange %{id} : %{error}"
   lib:
     audit_trail:
       unreadable_field: "Champ « %{field} » illisible, absent de la ligne de journal : %{error}"
@@ -242,6 +245,10 @@ fr:
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
   models:
+    # La raison que `Conversation#expire!` inscrit, et que la console lit sous
+    # « Raison de l'échec ».
+    conversation:
+      expired: Le correspondant n'a pas répondu dans le délai imparti.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une

@@ -42,6 +42,127 @@ RSpec.describe Conversation do
     end
   end
 
+  # Chapter 4.4, table 4.4.3: past the interval it configures, an exchange this
+  # side opened and nobody answered is a failure, not a wait.
+  describe 'expiring' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    # `include` and not `contain_exactly`: the scope answers for the whole table,
+    # and the end-to-end scenarios commit their own exchanges into the test
+    # database — `Cucumber::Rails::World.use_transactional_tests` is false there.
+    # An example may only speak for the rows it made.
+    it 'takes an outgoing exchange nobody has settled' do
+      overdue = create(:conversation, :sent, created_at: Settings.requester_timeout.ago - 1.minute)
+
+      expect(described_class.expired).to include(overdue)
+    end
+
+    it 'takes one still waiting to be submitted, which nobody will answer either' do
+      overdue = create(:conversation, created_at: Settings.requester_timeout.ago - 1.minute)
+
+      expect(described_class.expired).to include(overdue)
+    end
+
+    it 'leaves an exchange already settled, however old' do
+      settled = %i[delivered failed preview_required].map do |outcome|
+        create(:conversation, outcome, created_at: Settings.requester_timeout.ago - 1.day)
+      end
+
+      expect(described_class.expired).not_to include(*settled)
+    end
+
+    # Where France answers, the timeout is an act of emission that
+    # `EvidenceProvision::AnswerRequest` carries out: a row written here would
+    # name an error nobody was ever sent.
+    it 'leaves an exchange a correspondent addressed to France' do
+      received = create(:conversation, incoming: true, country_code: 'BE', procedure_code: nil,
+        evidence_requester_id: nil, created_at: Settings.requester_timeout.ago - 1.day)
+
+      expect(described_class.expired).not_to include(received)
+    end
+
+    it 'leaves one sitting exactly on the cutoff' do
+      freeze_time do
+        borderline = create(:conversation, :sent, created_at: Settings.requester_timeout.ago)
+
+        expect(described_class.expired).not_to include(borderline)
+      end
+    end
+
+    # The same code a correspondent that times out on us would have answered:
+    # who noticed the timeout must not change how the exchange reads.
+    it 'reads as a failure under EDM:ERR:0005' do
+      conversation.expire!
+
+      expect(conversation).to have_attributes(
+        status: 'failed',
+        edm_error_code: 'EDM:ERR:0005',
+        error_description: "Le correspondant n'a pas répondu dans le délai imparti.",
+      )
+      expect(conversation.settled_at).to be_present
+    end
+
+    it 'leaves alone an exchange a response settled first' do
+      conversation.delivered!
+
+      described_class.find(conversation.id).expire!
+
+      expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+    end
+
+    # `EDM:ERR:0005` is a code a correspondent answers too, and France answers it
+    # itself to a request that reached its deadline. Only what `expire!` wrote
+    # is a presumption, and only the record says so.
+    it 'reads no presumption into an answer carrying the very same code' do
+      conversation.failed!(code: 'EDM:ERR:0005', description: 'Exceeding timeout period')
+
+      described_class.find(conversation.id).failed!(code: 'EDM:ERR:0003', description: 'Rejouée')
+
+      expect(conversation.reload.edm_error_code).to eq('EDM:ERR:0005')
+    end
+
+    it 'forgets the presumption once an answer has refuted it' do
+      conversation.expire!
+
+      described_class.find(conversation.id).delivered!
+
+      expect(conversation.reload.presumed_at).to be_nil
+    end
+
+    # The other way round: an answer arrives on an exchange this side had given
+    # up on, and settles it.
+    it 'lets an answer overrule the guess' do
+      conversation.expire!
+
+      described_class.find(conversation.id).delivered!
+
+      expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil,
+        error_description: nil)
+    end
+
+    # Every answer, not only the delivery — and a refusal is the likeliest of
+    # them, a correspondent answering at last that it holds nothing. An exchange
+    # that stops failing on our guess must name the failure it was told of, or
+    # none at all.
+    it 'clears what the guess wrote when a preview is asked for instead' do
+      conversation.expire!
+
+      described_class.find(conversation.id).preview_required!('https://previsualisation.example.si/espace')
+
+      expect(conversation.reload).to have_attributes(status: 'preview_required', edm_error_code: nil,
+        error_description: nil, presumed_at: nil)
+    end
+
+    it 'lets a refusal that arrives at last replace the guess' do
+      conversation.expire!
+
+      described_class.find(conversation.id).failed!(code: 'EDM:ERR:0004', description: 'Object not found')
+
+      expect(conversation.reload).to have_attributes(edm_error_code: 'EDM:ERR:0004',
+        error_description: 'Object not found', presumed_at: nil)
+    end
+  end
+
   describe 'the preview location' do
     # Last line of defence on a value a foreign correspondent chose, which is
     # rendered as a link target in a user's browser.

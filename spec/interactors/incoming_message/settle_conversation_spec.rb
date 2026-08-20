@@ -101,6 +101,28 @@ RSpec.describe IncomingMessage::SettleConversation do
     end
   end
 
+  # An expiry is a guess that no answer will come, and this one did. Chapter 4.4
+  # forbids processing a response to a request « to which it already received a
+  # response » — an exchange the sweep gave up on received none, so this answer
+  # is the first, however late.
+  describe 'an answer arriving after the sweep gave the exchange up' do
+    let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
+
+    before { conversation.expire! }
+
+    it 'hands the evidence over all the same' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver)
+    end
+
+    it 'records the delivery, overruling the presumption' do
+      settle
+
+      expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+    end
+  end
+
   describe 'an answer carrying evidence' do
     # Resolved from the directory, which is what carries the address the
     # forwarder posts to: an identifier alone would deliver the evidence
@@ -140,6 +162,19 @@ RSpec.describe IncomingMessage::SettleConversation do
       settle
 
       expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+    end
+
+    # The likeliest of the late answers: a correspondent that says at last it
+    # holds nothing. The caller is owed the code it was told, not the one this
+    # side guessed while waiting for it.
+    context 'when it arrives after the sweep gave the exchange up' do
+      before { conversation.expire! }
+
+      it 'records what the correspondent said, in place of the guess' do
+        settle
+
+        expect(conversation.reload).to have_attributes(edm_error_code: 'EDM:ERR:0004', presumed_at: nil)
+      end
     end
   end
 

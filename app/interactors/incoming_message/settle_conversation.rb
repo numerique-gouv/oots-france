@@ -25,11 +25,15 @@ module IncomingMessage
     # a response. » Refused before the branch, so a duplicate is turned away
     # whether it carries evidence or an error.
     #
+    # An exchange the sweep gave up on has received no response at all, so that
+    # rule does not reach it: this answer is the first, however late, and
+    # settling it is what refutes the presumption.
+    #
     # Nothing is answered and nothing is settled: the TDD open no error path
     # from a portal back to a provider, and failing the exchange would rob the
     # genuine answer of the conversation it still has to reach.
     def processable?(conversation)
-      return refuse(conversation, :already_settled) if conversation.settled?
+      return refuse(conversation, :already_settled) if conversation.settled? && !conversation.presumed?
       return refuse(conversation, :foreign_request) unless conversation.answers?(context.message.body.request_id)
 
       true
@@ -55,6 +59,10 @@ module IncomingMessage
       end
     end
 
+    # `processable?` decided on the exchange as it stood when the message
+    # arrived, and that decision holds: the sweep may expire the row while the
+    # evidence is being handed over, and `Conversation#settle` lets this answer
+    # overrule the presumption it made.
     def deliver(conversation)
       requester = context.requesters.find(conversation.evidence_requester_id)
 
