@@ -95,6 +95,30 @@ class Conversation < ApplicationRecord
   # refusing them would break the ones in flight at deployment.
   def answers?(request_id) = self.request_id.blank? || self.request_id == request_id
 
+  # `IncomingMessage::SettleConversation` turns away a response to an exchange
+  # already answered, deciding on the exchange as it read it — and what that
+  # decision protects is an HTTP call nothing takes back, so two workers pass
+  # the guard before either writes. This is the reservation only one of them
+  # takes: a single statement moves the column from free to taken, and the row
+  # count says who moved it. Under `read committed` the loser re-evaluates the
+  # condition against the row the winner committed, and matches nothing.
+  #
+  # It lapses once it is itself past the interval `expired` applies — which is
+  # always after the exchange has passed it too, a reservation being taken on a
+  # row that already exists and therefore never standing older than it. So
+  # nothing overtakes a handover under way while the exchange is still one
+  # nobody has given up on, however slow — `EvidenceForwarder` sets no deadline
+  # of its own. Past that, the sweep has given the exchange up, and a
+  # reservation nobody could release — a worker killed mid-handover writes
+  # nothing back — must stop holding a row no answer could otherwise reach.
+  def claim_delivery!
+    row = self.class.where(id:)
+
+    row.where(delivering_at: nil)
+      .or(row.where(delivering_at: ...Settings.requester_timeout.ago))
+      .update_all(delivering_at: Time.current) == 1
+  end
+
   # Which way the exchange runs, as the console words it.
   def direction = incoming? ? :incoming : :outgoing
 

@@ -208,6 +208,113 @@ RSpec.describe IncomingMessage::SettleConversation do
     end
   end
 
+  # Two responses for one exchange — two ebMS messages, so the destructive read
+  # of `retrieveMessage` turns neither away. `processable?` cannot decide
+  # between them: both read the row before either writes, and the handover is a
+  # POST nothing takes back.
+  describe 'a second response arriving while the first is being handed over' do
+    # The counter is what bounds the recursion: the second pass is refused
+    # before it reaches the forwarder, and were it not, the example would fail
+    # on the count rather than run away.
+    before do
+      arrivals = 0
+
+      allow(evidence_forwarder).to receive(:deliver) do
+        arrivals += 1
+        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+      end
+    end
+
+    it 'hands the evidence over once' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver).once
+    end
+
+    # Article 17 answers for what was handed over, so two lines for one
+    # handover misstate the exchange as plainly as two handovers would.
+    it 'records one delivery and the refusal of the other response' do
+      settle
+
+      expect(AuditEvent.where(conversation_id: conversation.conversation_id).pluck(:event_type, :detail))
+        .to contain_exactly(%w[response_refused already_delivering], ['evidence_delivered', nil])
+    end
+
+    it 'settles the exchange as delivered' do
+      settle
+
+      expect(conversation.reload).to have_attributes(status: 'delivered')
+    end
+  end
+
+  # The race above always ends with the winner delivering. This one is the
+  # exchange whose winner never comes back — the reservation stands, and the
+  # loser must still be turned away rather than hand the evidence over.
+  context 'when another worker holds the reservation' do
+    before { Conversation.find(conversation.id).claim_delivery! }
+
+    it 'does not hand the evidence over' do
+      settle
+
+      expect(evidence_forwarder).not_to have_received(:deliver)
+    end
+
+    it 'leaves the exchange for the worker that took it' do
+      settle
+
+      expect(conversation.reload).to have_attributes(status: 'sent')
+    end
+  end
+
+  # The reservation is deliberately one-way: `IncomingMessage::Process` settles
+  # the exchange on a handover that raises, so giving it back would only let a
+  # later response re-enter a delivery whose outcome nobody knows.
+  it 'keeps the reservation when the handover fails' do
+    allow(evidence_forwarder).to receive(:deliver).and_raise(Faraday::ConnectionFailed, 'connexion refusée')
+
+    expect { settle }.to raise_error(Faraday::ConnectionFailed)
+    expect(conversation.reload.delivering_at).to be_present
+  end
+
+  # `processable?` lets a presumed exchange through, so two late responses both
+  # reach the handover — the one composition where the exchange's own age can no
+  # longer tell the reservation anything.
+  context 'when the sweep had already given the exchange up' do
+    before do
+      conversation.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
+      conversation.expire!
+
+      arrivals = 0
+
+      allow(evidence_forwarder).to receive(:deliver) do
+        arrivals += 1
+        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+      end
+    end
+
+    it 'hands the evidence over once' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver).once
+    end
+
+    it 'settles the exchange as delivered, the answer refuting the presumption' do
+      settle
+
+      expect(conversation.reload).to have_attributes(status: 'delivered', presumed_at: nil)
+    end
+  end
+
+  # The reason travels as a symbol. The branches that give one are exercised
+  # above, but never for the wording it resolves to: nothing else would notice a
+  # missing one.
+  it 'says every reason it turns a response away for' do
+    refused = File.read('app/interactors/incoming_message/settle_conversation.rb')
+      .scan(/refuse\(conversation, :(\w+)\)/).flatten.uniq
+
+    expect_said(refused.map { |reason| "interactors.incoming_message.settle_conversation.#{reason}" })
+  end
+
   # A notification for an exchange we never opened: a message meant for someone
   # else, or one that outlived its conversation. Recorded, not raised — there is
   # nobody to report it to.

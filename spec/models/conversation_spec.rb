@@ -163,6 +163,57 @@ RSpec.describe Conversation do
     end
   end
 
+  # Two workers, each holding its own instance of the row: the pattern the rest
+  # of this file uses, and the only one that reproduces what threads would.
+  describe 'claiming a delivery' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    it 'lets one worker through and turns the other away' do
+      expect(conversation.claim_delivery!).to be(true)
+
+      expect(described_class.find(conversation.id).claim_delivery!).to be(false)
+    end
+
+    # `EvidenceForwarder` sets no deadline and retries twice, so a handover may
+    # run long. What keeps it from being overtaken is that the reservation is
+    # younger than the exchange, which the sweep gives up on first.
+    it 'holds a reservation while the exchange is still one nobody gave up on' do
+      conversation.update_columns(created_at: Settings.requester_timeout.ago + 1.minute)
+      conversation.claim_delivery!
+
+      expect(described_class.find(conversation.id).claim_delivery!).to be(false)
+    end
+
+    it 'lets a reservation go once it is itself past the timeout' do
+      conversation.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
+        delivering_at: Settings.requester_timeout.ago - 1.minute)
+
+      expect(described_class.find(conversation.id).claim_delivery!).to be(true)
+    end
+
+    # An exchange the sweep gave up on is past the timeout by definition, so
+    # its age alone would let every late answer through — and two arriving at
+    # once would both hand the evidence over.
+    it 'holds a fresh reservation on an exchange the sweep gave up on' do
+      conversation.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
+      conversation.expire!
+      conversation.claim_delivery!
+
+      expect(described_class.find(conversation.id).claim_delivery!).to be(false)
+    end
+
+    # The bound is exclusive, like the one `expired` applies: a reservation
+    # sitting exactly on it has not passed it.
+    it 'holds one sitting exactly on the cutoff' do
+      freeze_time do
+        conversation.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
+          delivering_at: Settings.requester_timeout.ago)
+
+        expect(described_class.find(conversation.id).claim_delivery!).to be(false)
+      end
+    end
+  end
+
   describe 'the preview location' do
     # Last line of defence on a value a foreign correspondent chose, which is
     # rendered as a link target in a user's browser.

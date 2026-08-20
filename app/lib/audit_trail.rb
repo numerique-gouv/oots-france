@@ -73,7 +73,8 @@ class AuditTrail
       edm_error_code: exception.code, detail: exception.detail, **answered(**answer))
   end
 
-  # What a response was turned away for, chapter 4.4 naming two grounds. The
+  # What a response was turned away for — the two grounds chapter 4.4 names,
+  # and the reservation this deployment adds so that one of them holds. The
   # arrival has its own line already — `IncomingMessage::Process` journals
   # before it dispatches — and this one says what became of it, so that an
   # exchange left waiting can be accounted for later.

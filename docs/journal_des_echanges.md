@@ -25,7 +25,7 @@ Ce que la passerelle ne peut pas fournir, et qui justifie la couche métier :
 
 ## Ce qui est consigné
 
-Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTrail` (`app/lib/`). Huit types :
+Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTrail` (`app/lib/`). Neuf types :
 
 | Type | Quand | Écrit par |
 | --- | --- | --- |
@@ -34,6 +34,7 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | `response_received` | un correspondant a répondu avec un justificatif | `IncomingMessage::Process` |
 | `error_received` | un correspondant a refusé | `IncomingMessage::Process` |
 | `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleConversation` |
+| `response_refused` | une réponse est écartée sans régler l'échange | `IncomingMessage::SettleConversation` |
 | `request_received` | un État membre a interrogé la France | `IncomingMessage::Process` |
 | `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::AnswerRequest` |
 | `error_sent` | la France a refusé | `EvidenceProvision::AnswerRequest` |
@@ -42,7 +43,7 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 > **Un refus consigne la règle qu'il applique, quand une règle le nomme.** `error_sent` porte alors dans `detail` l'identifiant `R-EDM-*` que la France a opposé au correspondant, le même que l'attribut `detail` de la `rs:Exception` partie sur le fil. Les refus qui n'appliquent aucune règle nommée — une démarche inconnue, un format non servi, un slot que le lecteur n'a pas trouvé — laissent le champ vide plutôt que d'inventer un identifiant. Un refus dont la raison *est* connue et n'est pas consignée ne peut pas être justifié après coup, et l'article 17 couvre les rapports d'erreur autant que les échanges.
 
 > [!NOTE]
-> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les huit types le portent, de deux sources. Là où la France demande, il vient de la conversation. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
+> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les neuf types le portent, de deux sources. Là où la France demande, il vient de la conversation. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
 
 L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant une conversation jamais ouverte, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 

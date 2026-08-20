@@ -38,7 +38,7 @@ ignore_unused:
   - components.directory_query.identifiers.*
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
-  - interactors.incoming_message.settle_conversation.{already_settled,foreign_request}
+  - interactors.incoming_message.settle_conversation.{already_settled,already_delivering,foreign_request}
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.
