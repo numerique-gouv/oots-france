@@ -30,17 +30,29 @@
                 <td>
                   <%# Rendered as the table renders them: the detail page must
                       say nothing less, nor say it differently. %>
-                  <% case name %>
-                  <% when :occurred_at %>
-                    <%= l(value, format: :long) %>
-                  <% when :conversation_id %>
-                    <%= render 'admin/journal/conversation_link', event: @event %>
-                  <% when :procedure_code %>
-                    <%= link_to value, admin_common_services_procedure_path(value) %>
-                  <% when :country_code %>
-                    <%= render 'admin/country', country_code: value %>
+                  <% cell = capture do %>
+                    <% case name %>
+                    <% when :occurred_at %>
+                      <%= l(value, format: :long) %>
+                    <% when :conversation_id %>
+                      <%= render 'admin/journal/conversation_link', event: @event %>
+                    <% when :procedure_code %>
+                      <%= link_to value, admin_common_services_procedure_path(value) %>
+                    <% when :country_code %>
+                      <%= render 'admin/country', country_code: value %>
+                    <% else %>
+                      <code><%= value %></code>
+                    <% end %>
+                  <% end %>
+
+                  <%# The mark wraps the cell instead of replacing it, so a column
+                      with a reading of its own keeps it the day it is encrypted.
+                      Which columns those are is read from the record, never from
+                      a list copied here. %>
+                  <% if AuditEvent.encrypted_attributes.include?(name) %>
+                    <%= render(DecryptedValueComponent.new) { cell } %>
                   <% else %>
-                    <code><%= value %></code>
+                    <%= cell %>
                   <% end %>
                 </td>
               </tr>

@@ -1,0 +1,27 @@
+/*
+ * The two columns the journal has to decrypt to show, marked so that they do not
+ * read as the twenty that carry nothing personal. The warning register is what
+ * says it: the value is not an error, it is one to handle with care.
+ *
+ * Colours come from the DSFR's own tokens and never from a literal — the layout
+ * sets `data-fr-scheme="system"`, so the dark theme is reachable.
+ */
+.decrypted-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  color: var(--text-default-warning);
+  background-color: var(--background-contrast-warning);
+}
+
+/*
+ * The DSFR fixes 1.5 rem, which towers over the value beside it. Resized through
+ * `--icon-size` and not through `width`/`height`, because the same variable also
+ * feeds the `vertical-align` the DSFR computes: overriding the box alone would
+ * leave the icon aligned for a size it no longer has.
+ */
+.decrypted-value__icon::before {
+  --icon-size: 1rem;
+}

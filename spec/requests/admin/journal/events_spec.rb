@@ -110,6 +110,46 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.body).to include('message-de-la-passerelle', 'Königreich')
     end
 
+    # The console shows personal data on this page alone, and nothing in a table
+    # of twenty columns would say which two the reader is looking at.
+    it 'marks the columns it had to decrypt, and only those' do
+      event = create(:audit_event, :about_a_person, message_id: 'message-de-la-passerelle')
+
+      get admin_journal_event_path(event)
+
+      expect(marked_rows(response).map { |row| row.at_css('th').text }).to contain_exactly(
+        I18n.t('admin.journal.attributes.evidence_subject'),
+        I18n.t('admin.journal.attributes.evidence_subject_key'),
+      )
+    end
+
+    # Most lines of the journal name nobody — a request sent, a refusal — and a
+    # padlock on one of those would say the opposite of what it means.
+    it 'marks nothing on an event that names no person' do
+      create(:audit_event, event_type: 'request_sent').tap do |event|
+        get admin_journal_event_path(event)
+      end
+
+      expect(marked_rows(response)).to be_empty
+    end
+
+    # The two columns coincide with what the model encrypts, so nothing would
+    # tell a list written out here from one read off the record. Moving the
+    # record's answer proves which of the two the page obeys — and proves at the
+    # same time that the mark wraps the column's own reading instead of
+    # replacing it, the link surviving under the padlock.
+    it 'marks what the record declares encrypted, keeping the column its reading' do
+      allow(AuditEvent).to receive(:encrypted_attributes).and_return(Set[:procedure_code])
+      event = create(:audit_event, procedure_code: 'S1')
+
+      get admin_journal_event_path(event)
+
+      expect(marked_rows(response).map { |row| row.at_css('th').text })
+        .to contain_exactly(I18n.t('admin.journal.attributes.procedure_code'))
+      expect(marked_rows(response).first.at_css('.decrypted-value a'))
+        .to have_attributes(text: 'S1')
+    end
+
     # The link that prefills the search: `subject_criteria` composes it, from the
     # subject and not from the key, whose case is lost.
     it 'links to what else concerns the same person, with the case unspoilt' do
@@ -139,5 +179,9 @@ RSpec.describe 'Admin::Journal::Events' do
 
       expect(response).to have_http_status(:not_found)
     end
+  end
+
+  def marked_rows(response)
+    response.parsed_body.css('tbody tr').select { |row| row.at_css('.decrypted-value') }
   end
 end
