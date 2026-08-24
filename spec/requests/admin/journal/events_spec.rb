@@ -165,6 +165,28 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(montre.text.strip).to eq(event.exchange_id)
     end
 
+    # Glossed, as the exchange's own page glosses it: a bare `EDM:ERR:0004` says
+    # nothing to whoever meets it during an incident.
+    it 'says in French what an EDM code means, and points at the chapter' do
+      event = create(:audit_event, event_type: 'error_received', edm_error_code: 'EDM:ERR:0004')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include(I18n.t('components.edm_error_code.codes.EDM:ERR:0004'))
+      expect(response.parsed_body.css("a[href='#{EdmErrorCodeComponent::CHAPTER_URL}']")).not_to be_empty
+    end
+
+    # A correspondent outside the eight codes gets no link: that chapter defines
+    # the eight, and pointing at it would make it say what it does not.
+    it 'leaves a code the chapter does not define without a link' do
+      event = create(:audit_event, event_type: 'error_received', edm_error_code: 'EDM:ERR:9999')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include('EDM:ERR:9999')
+      expect(response.parsed_body.css("a[href='#{EdmErrorCodeComponent::CHAPTER_URL}']")).to be_empty
+    end
+
     # The console shows personal data on this page alone, and nothing in a table
     # of twenty columns would say which two the reader is looking at.
     it 'marks the columns it had to decrypt, and only those' do

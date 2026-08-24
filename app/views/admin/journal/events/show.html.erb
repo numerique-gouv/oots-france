@@ -40,6 +40,8 @@
                       <%= link_to value, admin_common_services_procedure_path(value) %>
                     <% when :country_code %>
                       <%= render 'admin/country', country_code: value %>
+                    <% when :edm_error_code %>
+                      <%= render EdmErrorCodeComponent.new(code: value) %>
                     <% else %>
                       <code><%= value %></code>
                     <% end %>
