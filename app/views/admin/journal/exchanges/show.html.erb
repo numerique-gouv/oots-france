@@ -55,6 +55,10 @@
               <td><%= @exchange.settled_at ? l(@exchange.settled_at, format: :long) : '—' %></td>
             </tr>
             <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.show.rows.response_available_at') %></th>
+              <td><%= @exchange.response_available_at ? l(@exchange.response_available_at, format: :long) : '—' %></td>
+            </tr>
+            <tr>
               <th scope="row"><%= t('admin.journal.exchanges.show.rows.edm_error_code') %></th>
               <td>
                 <% if @exchange.edm_error_code.present? %>

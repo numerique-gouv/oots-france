@@ -200,6 +200,58 @@ RSpec.describe Exchange do
     end
   end
 
+  # Chapter 4.5.2: a correspondent announcing the evidence for later has
+  # answered, and the portal comes back with a new Evidence Request « at the
+  # time of availability ». So the exchange ends here, carrying the date.
+  describe 'deferring' do
+    subject(:exchange) { create(:exchange, :sent) }
+
+    let(:announced) { Time.zone.parse('2026-09-01T08:00:00Z') }
+
+    it 'records the announced date and settles the exchange' do
+      exchange.deferred!(announced)
+
+      expect(exchange).to have_attributes(status: 'deferred', response_available_at: announced)
+      expect(exchange.settled_at).to be_present
+      expect(exchange).to be_settled
+    end
+
+    it 'is not an error, and names none' do
+      exchange.deferred!(announced)
+
+      expect(exchange).to have_attributes(edm_error_code: nil, error_description: nil)
+    end
+
+    # An announcement is a response, so it refutes the guess the sweep wrote —
+    # the same way a delivery or a refusal does.
+    it 'overrules a presumed expiry' do
+      exchange.expire!
+
+      described_class.find(exchange.id).deferred!(announced)
+
+      expect(exchange.reload).to have_attributes(status: 'deferred', edm_error_code: nil,
+        error_description: nil, presumed_at: nil)
+    end
+
+    it 'leaves alone an exchange a response settled first' do
+      exchange.delivered!
+
+      described_class.find(exchange.id).deferred!(announced)
+
+      expect(exchange.reload).to have_attributes(status: 'delivered', response_available_at: nil)
+    end
+
+    # `IN_PROGRESS` leaves the state out, so the sweep never reaches it — which
+    # is what keeps an exchange from being called a failure until a date that
+    # may be weeks away.
+    it 'is never picked up by the expiry sweep, however old' do
+      exchange.deferred!(announced)
+      exchange.update_columns(created_at: 1.year.ago)
+
+      expect(described_class.expired).not_to include(exchange)
+    end
+  end
+
   # Two workers, each holding its own instance of the row: the pattern the rest
   # of this file uses, and the only one that reproduces what threads would.
   describe 'claiming a delivery' do

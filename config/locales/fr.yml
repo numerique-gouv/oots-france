@@ -481,6 +481,7 @@ fr:
           pending: En attente
           sent: Envoyé
           preview_required: Prévisualisation requise
+          deferred: Différé
           delivered: Délivré
           failed: Échec
         # Ce que la fiche met en tête de ligne.
@@ -495,6 +496,7 @@ fr:
           caption: Détail de l'échange
           rows:
             settled_at: Réglé le
+            response_available_at: Réponse annoncée pour le
             edm_error_code: Code d'erreur EDM
             preview_location: Espace de prévisualisation
           # Ce que le lien de la ligne « Conversation » promet : la page de la

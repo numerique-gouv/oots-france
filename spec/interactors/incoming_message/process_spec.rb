@@ -111,6 +111,31 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
+  # Only the deferral of chapter 4.5.2 excuses a response without evidence, and
+  # it says so in its status. One claiming `Success` and carrying nothing is
+  # unreadable, which is what this side has always made of it.
+  describe 'a response claiming success and carrying no evidence' do
+    let(:message) do
+      namespaces = OotsNamespaces::NAMESPACES
+      document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
+      document.xpath('//eb:PartInfo', namespaces).find { |part|
+        part.at_xpath('.//eb:Property[@name="MimeType"]', namespaces)&.text == RetrievedMessageParser::PDF
+      }.remove
+
+      RetrievedMessageParser.new(document.to_xml)
+    end
+
+    let!(:conversation) do
+      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+    end
+
+    it 'settles the exchange as a failure' do
+      process
+
+      expect(conversation.reload).to have_attributes(status: 'failed')
+    end
+  end
+
   # There is nothing to fall back on here: the identifier the gateway gave us
   # is its own, and only the message it refuses to hand over would have named
   # the exchange. Logged, and no more — which is why the sweep exists.

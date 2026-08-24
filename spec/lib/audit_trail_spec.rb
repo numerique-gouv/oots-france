@@ -100,6 +100,31 @@ RSpec.describe AuditTrail do
     end
   end
 
+  # A deferral is journalled like any other response received: the body carries
+  # neither evidence metadata nor a PDF payload, and `readable` is what keeps
+  # both absences from costing the line itself.
+  describe 'an answer announcing the evidence for later' do
+    let(:message) { RetrievedMessageParser.new(built_envelope('reponseDifferee')) }
+
+    before { audit_trail.message_received(message:, message_id: 'message-passerelle') }
+
+    it 'records the arrival, with no fingerprint to record' do
+      expect(journalled).to have_attributes(
+        event_type: 'response_received',
+        evidence_digest: nil,
+        mime_type: nil,
+      )
+    end
+
+    it 'still records what correlates the answer to its request' do
+      expect(journalled).to have_attributes(
+        conversation_id: message.conversation_id,
+        request_id: message.body.request_id,
+        response_id: message.body.response_id,
+      )
+    end
+  end
+
   describe 'an answer that refuses' do
     let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 

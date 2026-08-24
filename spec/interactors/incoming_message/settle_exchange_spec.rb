@@ -155,6 +155,79 @@ RSpec.describe IncomingMessage::SettleExchange do
     end
   end
 
+  # Chapter 4.5.2: a status of `Unavailable` announces the evidence for later
+  # and carries none. It is an answer, not a failure — and not the tort the
+  # missing PDF payload used to make it, an exchange settled « illisible » and
+  # closed to the request that would have retrieved the document.
+  describe 'an answer announcing the evidence for later' do
+    let(:message) { RetrievedMessageParser.new(built_envelope('reponseDifferee')) }
+
+    it 'records the date the correspondent announced' do
+      settle
+
+      expect(exchange.reload).to have_attributes(
+        status: 'deferred',
+        response_available_at: Time.zone.parse('2026-08-07T10:00:00Z'),
+      )
+    end
+
+    it 'does not read the exchange as a failure' do
+      settle
+
+      expect(exchange.reload).to have_attributes(edm_error_code: nil, error_description: nil)
+    end
+
+    it 'hands nothing over, there being nothing to hand over' do
+      settle
+
+      expect(evidence_forwarder).not_to have_received(:deliver)
+    end
+
+    # The reservation exists to keep two workers from handing the same document
+    # over twice. Taking it for an answer that hands nothing over would leave it
+    # standing on an exchange no delivery is coming to.
+    it 'reserves no delivery' do
+      settle
+
+      expect(exchange.reload.delivering_at).to be_nil
+    end
+
+    # Chapter 4.4 again: the announcement is the response this request received,
+    # so the document arrives on a new Evidence Request, never on this one. The
+    # guard that turns it away is `already_settled`, which `processable?` reads
+    # before it ever compares the two request identifiers.
+    it 'turns away the evidence when it arrives on the exchange the announcement settled' do
+      exchange.update!(request_id: message.body.request_id)
+      settle
+
+      described_class.call(message: RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')),
+        evidence_forwarder:, requesters:, audit_trail: AuditTrail.new)
+
+      expect(evidence_forwarder).not_to have_received(:deliver)
+      expect(AuditEvent.last).to have_attributes(event_type: 'response_refused', detail: 'already_settled')
+    end
+
+    # `R-EDM-RESP-S045` makes the slot mandatory, and a correspondent that omits
+    # it has still not failed: the exchange ends announced, with no date to show.
+    context 'when the announcement names no readable date' do
+      let(:message) do
+        document = Nokogiri::XML(built_envelope('reponseDifferee'))
+        value = document.xpath('//payload/value').first
+        value.content = Base64.strict_encode64(
+          Base64.decode64(value.text).sub(%r{<rim:Slot name="ResponseAvailableDateTime">.*?</rim:Slot>}m, ''),
+        )
+
+        RetrievedMessageParser.new(document.to_xml)
+      end
+
+      it 'settles the exchange all the same' do
+        settle
+
+        expect(exchange.reload).to have_attributes(status: 'deferred', response_available_at: nil)
+      end
+    end
+  end
+
   describe 'a refusal' do
     let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 

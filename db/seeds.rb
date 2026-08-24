@@ -48,7 +48,11 @@ if Rails.env.development?
   # nobody declares would link to a page with nothing on it.
   #
   # `country_code` is the correspondent's either way: the country France asks,
-  # and the country asking France. `conversation` gathers several exchanges under one user's session, as
+  # and the country asking France. Appended to, never inserted into: the rank of
+  # an entry is its identifier, so a new one slipped in the middle renames every
+  # one after it and a replay collides with the rows it wrote last time.
+  #
+  # `conversation` gathers several exchanges under one user's session, as
   # chapter 4.4 allows: the first two are Sophie Dupont asking for two
   # different pieces of evidence in a row, so the console has a conversation
   # worth following from one exchange to the other.
@@ -72,6 +76,9 @@ if Rails.env.development?
       edm_error_code: 'EDM:ERR:0004',
       error_description: 'La France ne détient pas ce justificatif.',
       events: %w[request_received error_sent] },
+    { status: 'deferred', country_code: 'ES', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      response_available_at: 8.days.from_now,
+      events: %w[request_sent response_received] },
   ]
 
   # What each type of event actually carries, as `AuditTrail` writes it: every
