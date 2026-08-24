@@ -447,7 +447,7 @@ fr:
         show:
           title: "Événement #%{id}"
           caption: Tout ce que le journal retient de cet événement
-          same_subject: Tous les échanges concernant cette personne
+          same_subject: Tous les évènements concernant cette personne
       subjects:
         attributes:
           family_name: Nom d'usage
@@ -461,8 +461,8 @@ fr:
             est chiffrée en mode déterministe : cela rend l'égalité interrogeable, et rien
             d'autre — ni fragment de nom, ni recherche approchante.
           submit: Rechercher
-          caption: Les échanges concernant cette personne
-          empty: Aucun échange ne concerne cette personne.
+          caption: Les évènements concernant cette personne
+          empty: Aucun évènement ne concerne cette personne.
       exchanges:
         # Le segment de route, tel que le fil d'Ariane le nomme : ni l'un ni
         # l'autre n'a de liste, le journal étant la seule.
