@@ -9,8 +9,8 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       beneficiaire: 'un-jeton-chiffré',
     }
   end
-  let(:conversation) { create(:conversation) }
-  let(:fetch_result) { Interactor::Context.build(conversation:) }
+  let(:exchange) { create(:exchange) }
+  let(:fetch_result) { Interactor::Context.build(exchange:) }
 
   before do
     allow(Settings).to receive_messages(
@@ -26,7 +26,9 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     get '/requete/pieceJustificative', params: parameters
 
     expect(response).to have_http_status(:accepted)
-    expect(response.parsed_body).to include('conversation' => conversation.conversation_id, 'statut' => 'pending')
+    expect(response.parsed_body).to include(
+      'echange' => exchange.exchange_id, 'conversation' => exchange.conversation_id, 'statut' => 'pending',
+    )
   end
 
   describe 'the feature flag' do
@@ -131,20 +133,55 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # Chapter 4.4 lets the Procedure Portal assign the conversation identifier, so
+  # that two requests can be said to be one user's.
+  describe 'the conversation the caller may name' do
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative',
+        params: parameters.merge(idConversation: '5fe50e16-d6b8-4005-b5ec-0ab097f34448')
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(conversation_id: '5fe50e16-d6b8-4005-b5ec-0ab097f34448'))
+    end
+
+    it 'leaves it to be minted when the caller names none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(conversation_id: nil))
+    end
+
+    # `R-EDM-ebMS-017` is FATAL, and the value would travel in the header of
+    # every message of this exchange. Refused before anything is decrypted or
+    # any directory called.
+    it 'refuses one that is not a UUID, before calling anything' do
+      get '/requete/pieceJustificative', params: parameters.merge(idConversation: 'pas-un-uuid')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    it 'journals that refusal, which no gateway log would hold' do
+      get '/requete/pieceJustificative', params: parameters.merge(idConversation: 'pas-un-uuid')
+
+      expect(AuditEvent.sole).to have_attributes(event_type: 'request_refused',
+        detail: I18n.t('evidence_requests.conversation_invalid'))
+    end
+  end
+
   # The exchange settles on another connection entirely, so this is where a
   # caller holding the identifier learns how it ended.
   describe 'reading the state back' do
     it 'reports the EDM code a correspondent refused with' do
-      conversation.failed!(code: 'EDM:ERR:0004', description: 'Object not found')
+      exchange.failed!(code: 'EDM:ERR:0004', description: 'Object not found')
 
-      get "/requete/#{conversation.conversation_id}"
+      get "/requete/#{exchange.exchange_id}"
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body).to include('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
     end
 
     it 'answers 404 for an exchange it never opened' do
-      get '/requete/une-conversation-inconnue'
+      get '/requete/un-echange-inconnu'
 
       expect(response).to have_http_status(:not_found)
       expect(response.parsed_body['erreur']).to be_present

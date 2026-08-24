@@ -2,44 +2,42 @@
 Fonctionnalité: Suivre les échanges depuis l'espace d'administration
 
   L'espace d'administration donne à voir ce que les échanges ont déjà écrit :
-  l'état de chaque conversation et, pour celles qui ont échoué, la raison —
-  qu'aucune autre interface n'expose. Il observe et n'écrit rien.
+  le journal des événements, où l'on cherche, et sous lui la fiche d'un échange
+  et celle d'une conversation, où l'on descend. Il observe et n'écrit rien.
 
   Contexte:
     Étant donné un compte d'administration
     Et que je suis connecté à l'espace d'administration
 
-  Scénario: la liste donne l'état de chaque conversation
-    Étant donné une conversation délivrée avec la Finlande
-    Et une conversation en échec avec l'Allemagne
-    Quand j'ouvre la liste des conversations
-    Alors je vois la conversation finlandaise avec l'état "Délivrée"
-    Et je vois la conversation allemande avec l'état "Échec"
+  Scénario: le journal se restreint à un seul échange
+    Étant donné un échange délivré avec la Finlande
+    Et un échange en échec avec l'Allemagne
+    Quand j'ouvre le journal des événements
+    Et que je filtre sur l'échange allemand
+    Alors je vois les événements de l'échange allemand
+    Et je ne vois plus ceux de l'échange finlandais
 
-  Scénario: filtrer sur un état ne laisse que les conversations concernées
-    Étant donné une conversation délivrée avec la Finlande
-    Et une conversation en échec avec l'Allemagne
-    Quand j'ouvre la liste des conversations
-    Et que je filtre sur l'état "Échec"
-    Alors je ne vois plus la conversation finlandaise
-    Et je vois la conversation allemande avec l'état "Échec"
-
-  Scénario: la fiche d'une conversation dit pourquoi l'échange a échoué
-    Étant donné une conversation en échec avec l'Allemagne
-    Quand j'ouvre la fiche de la conversation allemande
+  Scénario: la fiche d'un échange dit pourquoi il a échoué
+    Étant donné un échange en échec avec l'Allemagne
+    Quand j'ouvre la fiche de l'échange allemand
     Alors je lis le code d'erreur "EDM:ERR:0004"
-    Et je lis la raison de l'échec de la conversation allemande
+    Et je lis la raison de l'échec de l'échange allemand
+
+  Scénario: la conversation rassemble les échanges d'une même session
+    Étant donné deux échanges d'un même usager
+    Quand j'ouvre la conversation de cet usager
+    Alors je vois les deux échanges, chacun avec son journal
 
   Scénario: le journal garde le refus qu'aucun échange ne porte
     Étant donné une requête refusée avant qu'aucun échange soit ouvert
-    Quand j'ouvre le journal des échanges
+    Quand j'ouvre le journal des événements
     Alors je vois ce refus dans le journal
-    Et je ne le vois pas dans la liste des conversations
+    Et il ne nomme ni échange ni conversation
 
-  Scénario: un échange reçu tient sa ligne comme un échange émis
+  Scénario: un échange reçu tient sa fiche comme un échange émis
     Étant donné un échange reçu d'un autre État membre
-    Quand j'ouvre la liste des conversations
-    Alors je vois cet échange avec le sens "Reçue"
+    Quand j'ouvre la fiche de cet échange
+    Alors je vois cet échange avec le sens "Reçu"
 
   Scénario: retrouver ce qui a circulé au sujet d'une personne
     Étant donné un échange concernant Sophie Dupont

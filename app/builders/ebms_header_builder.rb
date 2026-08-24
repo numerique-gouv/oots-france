@@ -15,7 +15,7 @@ class EbmsHeaderBuilder < ApplicationBuilder
   # response, and only the message knows which way it travels.
   def initialize(
     action:, recipient:, original_sender:, final_recipient:, payload_id:,
-    conversation_id: nil, exchange_id: nil, attachment: EmptyAttachment.new,
+    conversation_id:, exchange_id:, attachment: EmptyAttachment.new,
     sender: AccessPoint.sender, clock: Clock.new, uuid: UuidGenerator.new
   )
     @action = action
@@ -31,9 +31,11 @@ class EbmsHeaderBuilder < ApplicationBuilder
     @attachment = attachment
     @timestamp = clock.now
     @message_id = "#{uuid.next}@#{Settings.identifier_suffix}"
-    # A provider reuses the exchange identifier it received, so that both legs
-    # of the exchange can be tied together; a requester mints a new one.
-    @exchange_id = exchange_id || uuid.next
+    # Both required, and neither minted here. Chapter 4.4 has every message of
+    # one exchange reuse its `ExchangeId` — a value drawn at serialisation time
+    # would be a new one per message, which is the correlation the preview
+    # depends on, lost.
+    @exchange_id = exchange_id
   end
 
   protected

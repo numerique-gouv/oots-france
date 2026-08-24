@@ -63,7 +63,7 @@ RSpec.describe AuditEvent do
 
   # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
   # were used in previously processed requests. » The journal is the only memory
-  # of it — no `Conversation` on the provider side carries a request identifier.
+  # of it — no `Exchange` on the provider side carries a request identifier.
   describe '.request_already_received?' do
     let(:identifier) { 'urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700' }
 

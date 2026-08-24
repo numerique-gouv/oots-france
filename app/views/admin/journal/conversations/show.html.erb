@@ -1,96 +1,42 @@
-<% content_for :title, t('admin.journal.conversations.show.title', id: @conversation.conversation_id) %>
+<% content_for :title, t('admin.journal.conversations.show.title', id: @conversation_id) %>
 
 <%= render JournalBreadcrumbsComponent.new(trail: [
-      [t('admin.journal.conversations.index.title'), admin_journal_conversations_path],
-      [@conversation.conversation_id, nil],
+      [t('admin.journal.conversations.section'), nil],
+      [@conversation_id, nil],
     ]) %>
 
-<h1 class="fr-h3"><%= @conversation.conversation_id %></h1>
+<h1 class="fr-h3"><%= t('admin.journal.conversations.show.title', id: @conversation_id) %></h1>
 
-<p><%= render ConversationStatusComponent.new(status: @conversation.status) %></p>
+<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8">
+  <%= t('admin.journal.conversations.show.lede') %>
+</p>
 
-<div class="fr-table fr-table--bordered">
-  <div class="fr-table__wrapper">
-    <div class="fr-table__container">
-      <div class="fr-table__content">
-        <table>
-          <caption><%= t('admin.journal.conversations.show.caption') %></caption>
-          <tbody>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.attributes.direction') %></th>
-              <td><%= t("admin.journal.conversations.directions.#{@conversation.direction}") %></td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.attributes.procedure') %></th>
-              <td>
-                <%= render 'admin/country_procedure', procedure_code: @conversation.procedure_code,
-                                                      country_code: @conversation.requester_country_code %>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.solicited_country') %></th>
-              <td><%= render 'admin/country', country_code: @conversation.solicited_country_code %></td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.attributes.requester') %></th>
-              <td><%= @conversation.evidence_requester_id.presence || '—' %></td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.attributes.opened_at') %></th>
-              <td><%= l(@conversation.created_at, format: :long) %></td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.show.rows.settled_at') %></th>
-              <td><%= @conversation.settled_at ? l(@conversation.settled_at, format: :long) : '—' %></td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.show.rows.edm_error_code') %></th>
-              <td>
-                <% if @conversation.edm_error_code.present? %>
-                  <%= render EdmErrorCodeComponent.new(code: @conversation.edm_error_code) %>
-                <% else %>
-                  —
-                <% end %>
-              </td>
-            </tr>
-            <tr>
-              <th scope="row"><%= t('admin.journal.conversations.show.rows.preview_location') %></th>
-              <%# A foreign correspondent chooses this address: it is read, not
-                  followed. An operator console has no business being a
-                  one-click launcher into a site it did not choose. %>
-              <td><code><%= @conversation.preview_location.presence || '—' %></code></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+<p class="fr-text--sm fr-mb-4w"><%= t('admin.journal.exchanges.count', count: @exchanges.size) %></p>
+
+<%# One table per exchange, in the order they were opened: the conversation is
+    a sequence of round trips, and merging their events into a single listing
+    would lose which belongs to which. %>
+<% @exchanges.each do |exchange| %>
+  <div class="fr-mb-6w">
+    <h2 class="fr-h5 fr-mb-1w">
+      <%= link_to t('admin.journal.exchanges.show.title', id: exchange.exchange_id),
+            admin_journal_exchange_path(exchange.exchange_id) %>
+    </h2>
+
+    <p class="fr-mb-2w">
+      <%= render ExchangeStatusComponent.new(status: exchange.status) %>
+      <span class="fr-text--sm fr-ml-1w">
+        <%= t("admin.journal.exchanges.directions.#{exchange.direction}") %> ·
+        <%= exchange.procedure_code.presence || '—' %> ·
+        <%= l(exchange.created_at, format: :long) %>
+      </span>
+    </p>
+
+    <%# The heading above already names the exchange, so the caption is hidden
+        rather than dropped: RGAA 5.4 wants a data table to carry a title, and a
+        screen reader announces it where an eye would only read it twice. %>
+    <%= render 'admin/journal/events', events: exchange.audit_events, hide_caption: true,
+          caption: t('admin.journal.conversations.show.journal', id: exchange.exchange_id),
+          empty: t('admin.journal.conversations.show.empty') %>
   </div>
-</div>
-
-<%# On an outgoing exchange only: the simulation replays the chain of
-    directories France walks in order to ask, and answering walks none. %>
-<% if !@conversation.incoming? && @conversation.procedure_code.present? && @conversation.country_code.present? %>
-  <p class="fr-mt-2w">
-    <%= link_to t('admin.journal.conversations.show.simulate'),
-          admin_common_services_resolution_path(
-            procedure_code: @conversation.procedure_code, country_code: @conversation.country_code,
-          ),
-          class: 'fr-btn fr-btn--secondary' %>
-  </p>
 <% end %>
-
-<% if @conversation.error_description.present? %>
-  <h2 class="fr-h5 fr-mt-4w"><%= t('admin.journal.conversations.show.failure_reason') %></h2>
-  <%= dsfr_callout do %>
-    <%= @conversation.error_description %>
-  <% end %>
-<% end %>
-
-<h2 class="fr-h5 fr-mt-4w"><%= t('admin.journal.conversations.show.journal.caption') %></h2>
-
-<p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
-
-<%# The caption repeats the section title, so it is hidden from the eye: RGAA
-    5.4 wants a data table to carry a title, and it keeps one. %>
-<%= render 'admin/journal/events', events: @events, hide_caption: true, caption: t('admin.journal.conversations.show.journal.caption'),
-      empty: t('admin.journal.conversations.show.journal.empty') %>

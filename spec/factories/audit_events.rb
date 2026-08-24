@@ -2,7 +2,8 @@ FactoryBot.define do
   factory :audit_event do
     occurred_at { Time.current }
     event_type { 'request_sent' }
-    conversation_id { 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01' }
+    exchange_id { 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01' }
+    conversation_id { '5fe50e16-d6b8-4005-b5ec-0ab097f34001' }
     procedure_code { ProcedureCode::SYSTEM_CHECK }
     evidence_requester_id { '00000000000002' }
 

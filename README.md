@@ -40,7 +40,7 @@ Comptez plusieurs minutes la première fois, dont l'essentiel revient au déploi
 | Étape | Ce qu'elle pose |
 | --- | --- |
 | Environnement | `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, avec des valeurs de développement et une clé de déchiffrement générée à la volée. Une configuration déjà présente est conservée telle quelle |
-| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des conversations, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, et son schéma |
+| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des échanges, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, et son schéma |
 | Passerelle | Domibus, avec des certificats à elle, le PMode d'exemple, un compte d'accès à son API, et le redémarrage qui active ses notifications |
 
 Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer reprend ce qui manque. Il transpose ce que [`.github/workflows/e2e.yml`](.github/workflows/e2e.yml) fait sur un runner, et les deux doivent rester en phase.

@@ -19,7 +19,7 @@ RSpec.describe AuditEventFilter do
     expect(narrowed(event_type: 'request_sent')).to contain_exactly(sent)
   end
 
-  it 'upcases the country, as the conversation filter does' do
+  it 'upcases the country, as the exchange filter does' do
     finnish = create(:audit_event, country_code: 'FI')
 
     expect(narrowed(country_code: 'fi')).to contain_exactly(finnish)
@@ -50,6 +50,25 @@ RSpec.describe AuditEventFilter do
     create(:audit_event, procedure_code: '02')
 
     expect(narrowed(procedure_code: '01')).to contain_exactly(procedure)
+  end
+
+  # The two identifiers chapter 4.4 keeps apart, narrowed on separately: this
+  # listing is how an exchange and a conversation are reached, neither having a
+  # listing of its own.
+  it 'narrows on the exchange alone' do
+    wanted = create(:audit_event, exchange_id: '88888888-8888-8888-8888-888888888801')
+    create(:audit_event, exchange_id: '88888888-8888-8888-8888-888888888802')
+
+    expect(narrowed(exchange_id: '88888888-8888-8888-8888-888888888801')).to contain_exactly(wanted)
+  end
+
+  it 'narrows on the conversation alone' do
+    session = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'
+    first = create(:audit_event, conversation_id: session, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-000000000001')
+    second = create(:audit_event, conversation_id: session, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-000000000002')
+    create(:audit_event, conversation_id: '5fe50e16-d6b8-4005-b5ec-0ab097f34449')
+
+    expect(narrowed(conversation_id: session)).to contain_exactly(first, second)
   end
 
   it 'narrows on the requester alone' do

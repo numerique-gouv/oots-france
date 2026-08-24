@@ -11,7 +11,7 @@ module Admin
         # exist would lead to a 404, and asking row by row would make
         # twenty-five queries. `includes` and not `joins` — an event whose
         # exchange is missing must stay visible.
-        @events = @filter.apply(scope, @page).includes(:conversation).to_a
+        @events = @filter.apply(scope, @page).includes(:exchange).to_a
       end
 
       def show

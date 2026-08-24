@@ -33,12 +33,12 @@ ignore_unused:
   - activemodel.*
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
-  - admin.journal.conversations.statuses.*
+  - admin.journal.exchanges.statuses.*
   - admin.sessions.{refused,signed_out,connection_required}
   - components.directory_query.identifiers.*
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
-  - interactors.incoming_message.settle_conversation.{already_settled,already_delivering,foreign_request}
+  - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.

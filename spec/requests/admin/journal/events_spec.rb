@@ -13,33 +13,33 @@ RSpec.describe 'Admin::Journal::Events' do
         .to eq(I18n.t('admin.journal.events.index.title'))
     end
 
-    it 'leads to the conversations' do
+    it 'leads to the search by person' do
       get admin_journal_root_path
 
-      expect(response.parsed_body.css("a[href='#{admin_journal_conversations_path}']")).not_to be_empty
+      expect(response.parsed_body.css("a[href='#{admin_journal_subjects_path}']")).not_to be_empty
     end
 
     it 'lists the events, most recent first' do
-      older = create(:audit_event, occurred_at: 2.days.ago, conversation_id: 'ancienne')
-      newer = create(:audit_event, occurred_at: 1.hour.ago, conversation_id: 'recente')
+      older = create(:audit_event, occurred_at: 2.days.ago, exchange_id: 'ancienne')
+      newer = create(:audit_event, occurred_at: 1.hour.ago, exchange_id: 'recente')
 
       get admin_journal_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body.index(newer.conversation_id)).to be < response.body.index(older.conversation_id)
+      expect(response.body.index(newer.exchange_id)).to be < response.body.index(older.exchange_id)
     end
 
     # A refusal never opens an exchange, and a crash between journalling an
     # arrival and opening its own leaves the same shape. A listing built by
     # joining would make either disappear, which is why this page starts from
     # the events.
-    it 'shows an exchange that has no local conversation' do
-      create(:audit_event, event_type: 'request_received', conversation_id: 'sans-conversation-locale')
+    it 'shows an exchange that has no local exchange' do
+      create(:audit_event, event_type: 'request_received', exchange_id: 'sans-exchange-locale')
 
       get admin_journal_root_path
 
-      expect(response.body).to include('sans-conversation-locale')
-      expect(Conversation.count).to eq(0)
+      expect(response.body).to include('sans-exchange-locale')
+      expect(Exchange.count).to eq(0)
     end
 
     # What the row carries, without saying which side each stood on: the
@@ -56,18 +56,46 @@ RSpec.describe 'Admin::Journal::Events' do
 
     it 'invents neither where the event recorded neither' do
       create(:audit_event, event_type: 'response_received', procedure_code: nil, country_code: nil,
-        conversation_id: 'sans-rien')
+        exchange_id: 'sans-rien')
 
       get admin_journal_root_path
 
-      ligne = response.parsed_body.css('tbody tr').find { |row| row.text.include?('sans-rien') }
+      # The listing abbreviates the identifiers, so the row is found by the whole
+      # one the link carries in its title rather than by its text.
+      ligne = response.parsed_body.css('tbody tr').find { |row| row.to_html.include?('sans-rien') }
 
       expect(ligne.text).not_to include(CountryTagComponent.flag(Settings.common_services_country_code))
     end
 
+    # The `title` carries the whole identifier whether the label is abbreviated
+    # or not, so an assertion on the body proves nothing about which was
+    # rendered: the link's own text is the only thing that tells them apart.
+    it 'abbreviates the identifiers it lists, keeping the whole one reachable' do
+      event = create(:audit_event, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01')
+
+      get admin_journal_root_path
+
+      montre = response.parsed_body.css("[title='#{event.exchange_id}']").first
+      expect(montre.text.strip).to eq('…3a1b01')
+    end
+
+    # The conversation page is built from the exchanges naming it and answers 404
+    # when none does — so a response naming a conversation France never opened
+    # must read as text, exactly as its exchange already does.
+    it 'offers no link to a conversation no exchange names' do
+      event = create(:audit_event, event_type: 'response_received',
+        exchange_id: '88888888-8888-8888-8888-888888888899',
+        conversation_id: '5fe50e16-d6b8-4005-b5ec-0ab097f39999')
+
+      get admin_journal_root_path
+
+      expect(response.parsed_body.css("[title='#{event.conversation_id}']")).not_to be_empty
+      expect(response.parsed_body.css("a[title='#{event.conversation_id}']")).to be_empty
+    end
+
     it 'narrows on an event type' do
-      create(:audit_event, event_type: 'request_sent', conversation_id: 'emise')
-      create(:audit_event, event_type: 'error_received', conversation_id: 'refusee')
+      create(:audit_event, event_type: 'request_sent', exchange_id: 'emise')
+      create(:audit_event, event_type: 'error_received', exchange_id: 'refusee')
 
       get admin_journal_root_path(event_type: 'error_received')
 
@@ -78,7 +106,7 @@ RSpec.describe 'Admin::Journal::Events' do
     # The filter refuses it rather than ignoring it: widening a listing under a
     # heading claiming the opposite is what `SubmittedCriteria` exists to stop.
     it 'refuses an unknown event type rather than widening the listing' do
-      create(:audit_event, conversation_id: 'visible-sans-filtre')
+      create(:audit_event, exchange_id: 'visible-sans-filtre')
 
       get admin_journal_root_path(event_type: 'charabia')
 
@@ -109,7 +137,7 @@ RSpec.describe 'Admin::Journal::Events' do
   # A refusal turned away before any exchange was opened names none, so it
   # carries no link — but the journal still holds it.
   it 'shows a refusal that never opened an exchange' do
-    create(:audit_event, event_type: 'request_refused', conversation_id: nil, detail: 'jeton invalide')
+    create(:audit_event, event_type: 'request_refused', exchange_id: nil, detail: 'jeton invalide')
 
     get admin_journal_root_path
 
@@ -123,6 +151,40 @@ RSpec.describe 'Admin::Journal::Events' do
       get admin_journal_event_path(event)
 
       expect(response.body).to include('message-de-la-passerelle', 'Königreich')
+    end
+
+    # The counterpart of the listing's abbreviation: a page with room shows the
+    # identifier whole, and adding `abbreviated:` here would go unnoticed
+    # without this.
+    it 'shows the identifier whole, where the listing abbreviates it' do
+      event = create(:audit_event, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01')
+
+      get admin_journal_event_path(event)
+
+      montre = response.parsed_body.css("[title='#{event.exchange_id}']").first
+      expect(montre.text.strip).to eq(event.exchange_id)
+    end
+
+    # Glossed, as the exchange's own page glosses it: a bare `EDM:ERR:0004` says
+    # nothing to whoever meets it during an incident.
+    it 'says in French what an EDM code means, and points at the chapter' do
+      event = create(:audit_event, event_type: 'error_received', edm_error_code: 'EDM:ERR:0004')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include(I18n.t('components.edm_error_code.codes.EDM:ERR:0004'))
+      expect(response.parsed_body.css("a[href='#{EdmErrorCodeComponent::CHAPTER_URL}']")).not_to be_empty
+    end
+
+    # A correspondent outside the eight codes gets no link: that chapter defines
+    # the eight, and pointing at it would make it say what it does not.
+    it 'leaves a code the chapter does not define without a link' do
+      event = create(:audit_event, event_type: 'error_received', edm_error_code: 'EDM:ERR:9999')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include('EDM:ERR:9999')
+      expect(response.parsed_body.css("a[href='#{EdmErrorCodeComponent::CHAPTER_URL}']")).to be_empty
     end
 
     # The console shows personal data on this page alone, and nothing in a table
@@ -180,7 +242,7 @@ RSpec.describe 'Admin::Journal::Events' do
     # It carries the only written reason for the refusal, and its exchange does
     # not exist: nothing else leads to it.
     it 'opens the page of a refusal that never opened an exchange' do
-      event = create(:audit_event, event_type: 'request_refused', conversation_id: nil,
+      event = create(:audit_event, event_type: 'request_refused', exchange_id: nil,
         detail: 'Le bénéficiaire doit être renseigné')
 
       get admin_journal_event_path(event)

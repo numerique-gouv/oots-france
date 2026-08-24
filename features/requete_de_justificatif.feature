@@ -27,9 +27,13 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et le document reçu est celui que le fournisseur détient
     Et le journal porte l'échange entier, du départ de la requête à la remise
 
+  Scénario: deux demandes d'un même usager tiennent dans une seule conversation
+    Quand la démarche demande deux justificatifs pour le même usager
+    Alors les deux requêtes portent la même conversation et deux échanges distincts
+
   Scénario: le fournisseur ne connaît pas la démarche et le dit
     Quand la démarche demande un justificatif pour la procédure "T3"
     Alors la démarche reçoit tout de suite l'identifiant de l'échange
-    Et la conversation finit par porter le code d'erreur "EDM:ERR:0004"
+    Et l'échange finit par porter le code d'erreur "EDM:ERR:0004"
     Et aucun justificatif n'est transmis à la démarche
     Et le journal porte le refus du correspondant

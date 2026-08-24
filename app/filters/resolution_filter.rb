@@ -19,7 +19,7 @@ class ResolutionFilter
   def country = country_code.presence&.upcase
 
   # Nothing goes out until both are named: the page opens on a form, and an
-  # operator arriving from a conversation finds it already filled in.
+  # operator arriving from an exchange finds it already filled in.
   def asked? = valid? && procedure_code.present? && country.present?
 
   # Compacted after the overrides rather than before — the opposite of the

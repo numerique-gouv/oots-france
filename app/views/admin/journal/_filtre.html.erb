@@ -39,8 +39,27 @@
       </div>
     </div>
 
-    <%# The two period fields wrap together, as on the conversations listing:
-        flexbox has no `break-before`. %>
+    <%# Chapter 4.4 keeps the two apart, and so does the filter: one narrows to
+        a single round trip, the other to everything one user's session left
+        behind. They take a line of their own — a UUID is thirty-six characters,
+        and two fields that size would push the rest off the row. %>
+    <div class="row-break"></div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :exchange_id, t('admin.journal.attributes.exchange_id'), class: 'fr-label' %>
+        <%= form.text_field :exchange_id, value: filter.exchange_id, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :conversation_id, t('admin.journal.attributes.conversation_id'), class: 'fr-label' %>
+        <%= form.text_field :conversation_id, value: filter.conversation_id, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <%# The two period fields wrap together: flexbox has no `break-before`. %>
     <div class="row-break"></div>
 
     <div class="fr-fieldset__element fr-fieldset__element--inline">

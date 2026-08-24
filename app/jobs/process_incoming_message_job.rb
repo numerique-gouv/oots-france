@@ -3,7 +3,7 @@
 #
 # **No `retry_on`, deliberately.** The PMode carries `retention_downloaded="0"`,
 # so `retrieveMessage` erased the message on the first attempt and a retry
-# fails before it can even name the conversation it belonged to. Transient
+# fails before it can even name the exchange it belonged to. Transient
 # failures are absorbed one level down, by the retry policy of `DomibusClient`
 # and `EvidenceForwarder`, which repeats a call without repeating the
 # destructive read.

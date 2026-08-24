@@ -1,21 +1,21 @@
 module IncomingMessage
-  # Records what a correspondent answered, on the conversation that asked. Kept
+  # Records what a correspondent answered, on the exchange that asked. Kept
   # on the record and not held in memory: the process that receives the answer
   # is rarely the one that asked.
-  class SettleConversation < ApplicationInteractor
+  class SettleExchange < ApplicationInteractor
     def call
-      conversation = Conversation.find_by(conversation_id: context.message.conversation_id)
+      exchange = Exchange.find_by(exchange_id: context.message.exchange_id)
 
-      # A conversation we never opened: logged and not raised, there being
+      # An exchange we never opened: logged and not raised, there being
       # nobody to report it to.
-      if conversation.nil?
-        Rails.logger.warn(I18n.t('interactors.incoming_message.settle_conversation.unknown',
-          id: context.message.conversation_id))
+      if exchange.nil?
+        Rails.logger.warn(I18n.t('interactors.incoming_message.settle_exchange.unknown',
+          id: context.message.exchange_id))
         return
       end
 
-      context.conversation = conversation
-      settle(conversation) if processable?(conversation)
+      context.exchange = exchange
+      settle(exchange) if processable?(exchange)
     end
 
     private
@@ -31,10 +31,10 @@ module IncomingMessage
     #
     # Nothing is answered and nothing is settled: the TDD open no error path
     # from a portal back to a provider, and failing the exchange would rob the
-    # genuine answer of the conversation it still has to reach.
-    def processable?(conversation)
-      return refuse(conversation, :already_settled) if conversation.settled? && !conversation.presumed?
-      return refuse(conversation, :foreign_request) unless conversation.answers?(context.message.body.request_id)
+    # genuine answer of the exchange it still has to reach.
+    def processable?(exchange)
+      return refuse(exchange, :already_settled) if exchange.settled? && !exchange.presumed?
+      return refuse(exchange, :foreign_request) unless exchange.answers?(context.message.body.request_id)
 
       true
     end
@@ -42,55 +42,55 @@ module IncomingMessage
     # Journalled as well as logged: this deployment's own rule, written where
     # `error_sent` already applies it — a refusal whose reason is not recorded
     # cannot be answered for afterwards, and nothing else holds this one.
-    def refuse(conversation, reason)
+    def refuse(exchange, reason)
       Rails.logger.warn(
-        I18n.t("interactors.incoming_message.settle_conversation.#{reason}",
-          id: conversation.conversation_id),
+        I18n.t("interactors.incoming_message.settle_exchange.#{reason}",
+          id: exchange.exchange_id),
       )
-      context.audit_trail.response_refused(conversation:, reason: reason.to_s)
+      context.audit_trail.response_refused(exchange:, reason: reason.to_s)
 
       false
     end
 
-    def settle(conversation)
+    def settle(exchange)
       case context.message.action
-      when EbmsAction::EXECUTE_QUERY_RESPONSE then deliver(conversation)
-      when EbmsAction::EXCEPTION_RESPONSE then record_error(conversation)
+      when EbmsAction::EXECUTE_QUERY_RESPONSE then deliver(exchange)
+      when EbmsAction::EXCEPTION_RESPONSE then record_error(exchange)
       end
     end
 
     # `processable?` decided on the exchange as it stood when the message
     # arrived, and that decision holds: the sweep may expire the row while the
-    # evidence is being handed over, and `Conversation#settle` lets this answer
+    # evidence is being handed over, and `Exchange#settle` lets this answer
     # overrule the presumption it made.
     #
     # What it cannot do is hold across the handover, which is why
     # `claim_delivery!` guards it. Nothing gives that reservation back: a POST
     # that raises settles the exchange in `IncomingMessage::Process`, and
     # releasing after one that reached the requester would license a second.
-    def deliver(conversation)
-      return refuse(conversation, :already_delivering) unless conversation.claim_delivery!
+    def deliver(exchange)
+      return refuse(exchange, :already_delivering) unless exchange.claim_delivery!
 
-      requester = context.requesters.find(conversation.evidence_requester_id)
+      requester = context.requesters.find(exchange.evidence_requester_id)
 
       context.evidence_forwarder.deliver(evidence, requester)
-      conversation.delivered!
+      exchange.delivered!
 
-      context.audit_trail.evidence_delivered(conversation:, evidence:)
+      context.audit_trail.evidence_delivered(exchange:, evidence:)
     end
 
     def evidence = context.message.evidence
 
-    def record_error(conversation)
+    def record_error(exchange)
       error = context.message.body
 
       # An authorisation error naming a usable preview location asks for a
       # detour, not a failure. One naming nowhere usable is a failure like any
       # other — better than sending a user to a link we could not vet.
       if error.preview_required? && error.preview_location?
-        conversation.preview_required!(error.preview_location)
+        exchange.preview_required!(error.preview_location)
       else
-        conversation.failed!(code: error.code, description: error.description)
+        exchange.failed!(code: error.code, description: error.description)
       end
     end
   end

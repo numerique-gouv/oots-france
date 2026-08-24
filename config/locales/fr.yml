@@ -1,16 +1,23 @@
 fr:
-  # `Conversation` est le seul modèle persisté : ses traductions vivent sous
-  # `activerecord`, que Rails interroge d'après le `i18n_scope` de la classe.
+  # `Exchange` est le seul modèle persisté dont une validation s'adresse à un
+  # humain : ses traductions vivent sous `activerecord`, que Rails interroge
+  # d'après le `i18n_scope` de la classe.
   # Sous `activemodel`, elles ne seraient jamais trouvées — la validation
   # échouerait bien, mais avec le message générique de Rails.
   activerecord:
     attributes:
-      conversation:
+      exchange:
+        exchange_id: L'identifiant d'échange
+        conversation_id: L'identifiant de conversation
         preview_location: L'adresse de prévisualisation
     errors:
       models:
-        conversation:
+        exchange:
           attributes:
+            exchange_id:
+              format: doit être un UUID
+            conversation_id:
+              format: doit être un UUID
             preview_location:
               format: doit être une adresse http ou https
   activemodel:
@@ -49,15 +56,18 @@ fr:
         country_code: Le pays
         requirement_id: L'exigence
         evidence_type_id: Le type de justificatif
-      conversation_filter:
+      exchange_filter:
         status: L'état
         country_code: Le pays
         evidence_requester_id: Le requêteur
         procedure_code: La démarche
+        conversation_id: La conversation
         depuis: La date de début
         jusqu_a: La date de fin
       audit_event_filter:
         event_type: Le type d'événement
+        exchange_id: L'identifiant d'échange
+        conversation_id: L'identifiant de conversation
         country_code: Le pays
         evidence_requester_id: Le requêteur
         procedure_code: La démarche
@@ -97,7 +107,7 @@ fr:
             country_code:
               format: doit être un code pays à deux lettres
           unreadable: est illisible
-        conversation_filter:
+        exchange_filter:
           attributes:
             status:
               inclusion: n'est pas un état connu
@@ -206,7 +216,7 @@ fr:
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
   jobs:
-    expire_conversations_job:
+    expire_exchanges_job:
       failed: "Expiration impossible pour l'échange %{id} : %{error}"
   lib:
     audit_trail:
@@ -264,9 +274,9 @@ fr:
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
   models:
-    # La raison que `Conversation#expire!` inscrit, et que la console lit sous
+    # La raison que `Exchange#expire!` inscrit, et que la console lit sous
     # « Raison de l'échec ».
-    conversation:
+    exchange:
       expired: Le correspondant n'a pas répondu dans le délai imparti.
     strict_validation:
       invalid: "%{subject} : %{errors}."
@@ -314,6 +324,7 @@ fr:
   evidence_requests:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
+    conversation_invalid: L'identifiant de conversation doit être un UUID
   interactors:
     # Les neuf échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
@@ -330,7 +341,7 @@ fr:
       unknown_requester: Requêteur inconnu
     evidence_provision:
       answer_request:
-        unknown_conversation: "Conversation inconnue au moment de répondre : %{id}"
+        unknown_exchange: "Échange inconnu au moment de répondre : %{id}"
         # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
         # refuser, et la version que l'entête annonce sans que le corps la
         # confirme.
@@ -338,8 +349,10 @@ fr:
         unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
         unnamed_version: une version sans nom
     incoming_message:
-      settle_conversation:
-        unknown: "Conversation inconnue : %{id}"
+      open_exchange:
+        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
+      settle_exchange:
+        unknown: "Échange inconnu : %{id}"
         already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"
         already_delivering: "Réponse ignorée, un autre traitement remet déjà le justificatif de l'échange %{id}"
         foreign_request: "Réponse ignorée, elle ne porte pas l'identifiant de requête de l'échange %{id}"
@@ -422,7 +435,7 @@ fr:
           one: Un événement
           other: "%{count} événements"
         index:
-          title: Journal des échanges
+          title: Journal des événements
           # Le lien ferme la phrase : une icône de lien sortant au milieu d'une
           # ligne la coupe en deux.
           lede_html: >-
@@ -434,7 +447,7 @@ fr:
         show:
           title: "Événement #%{id}"
           caption: Tout ce que le journal retient de cet événement
-          same_subject: Tous les échanges concernant cette personne
+          same_subject: Tous les événements concernant cette personne
       subjects:
         attributes:
           family_name: Nom d'usage
@@ -448,64 +461,61 @@ fr:
             est chiffrée en mode déterministe : cela rend l'égalité interrogeable, et rien
             d'autre — ni fragment de nom, ni recherche approchante.
           submit: Rechercher
-          caption: Les échanges concernant cette personne
-          empty: Aucun échange ne concerne cette personne.
-      conversations:
+          caption: Les événements concernant cette personne
+          empty: Aucun événement ne concerne cette personne.
+      exchanges:
+        # Le segment de route, tel que le fil d'Ariane le nomme : ni l'un ni
+        # l'autre n'a de liste, le journal étant la seule.
+        section: Échanges
         count:
-          zero: Aucune conversation
-          one: Une conversation
-          other: "%{count} conversations"
-        # Le sens que porte `Conversation#incoming?` : la France demande, ou on lui
+          zero: Aucun échange
+          one: Un échange
+          other: "%{count} échanges"
+        # Le sens que porte `Exchange#incoming?` : la France demande, ou on lui
         # demande.
         directions:
-          incoming: Reçue
-          outgoing: Émise
-        # Les états que porte `Conversation::STATUSES`, dits à un exploitant.
+          incoming: Reçu
+          outgoing: Émis
+        # Les états que porte `Exchange::STATUSES`, dits à un exploitant.
         statuses:
           pending: En attente
-          sent: Envoyée
+          sent: Envoyé
           preview_required: Prévisualisation requise
-          delivered: Délivrée
+          delivered: Délivré
           failed: Échec
-        # Ce que la liste met en en-tête de colonne, ce que la fiche met en tête
-        # de ligne et ce que le filtre met en étiquette : le même attribut, dit
-        # une fois.
+        # Ce que la fiche met en tête de ligne.
         attributes:
-          status: État
           direction: Sens
-          country: Pays
           procedure: Démarche
           requester: Requêteur
-          opened_at: Ouverte le
-        index:
-          title: Conversations
-          lede: >-
-            Où en est chaque échange, dans les deux sens : ce que la France demande à un
-            autre État membre, et ce qu'on lui demande. Ce qu'un échange a laissé comme
-            trace se lit sur sa fiche.
-          caption: Conversations
-          columns:
-            id: Identifiant
-          empty: Aucune conversation ne correspond à ces critères.
+          opened_at: Ouvert le
+          conversation: Conversation
         show:
-          title: Conversation %{id}
+          title: Échange %{id}
           caption: Détail de l'échange
           rows:
-            settled_at: Réglée le
+            settled_at: Réglé le
             edm_error_code: Code d'erreur EDM
             preview_location: Espace de prévisualisation
+          # Ce que le lien de la ligne « Conversation » promet : la page de la
+          # session, que le chapitre 4.7 donne pour ce qui rend le suivi possible.
+          same_conversation: Tous les échanges de cette conversation
           simulate: Simuler cette chaîne de requêtes
           journal:
-            caption: Journal des échanges de cette conversation
+            caption: Journal de cet échange
             empty: Aucun événement ne porte cet échange.
           failure_reason: Raison de l'échec
-        filtre:
-          legend: Filtrer les conversations
-          all: Tous
-          since: Ouverte depuis le
-          until: Jusqu'au
-          submit: Filtrer
-          reset: Réinitialiser
+      # Une conversation n'a pas d'enregistrement : la page est bâtie des
+      # échanges qui la nomment, un tableau d'événements par échange.
+      conversations:
+        section: Conversations
+        show:
+          title: Conversation %{id}
+          lede: >-
+            Tout ce qu'a laissé la session d'un usager : chaque échange qu'elle couvre, et
+            sous chacun les événements qu'il a laissés au journal.
+          journal: "Le journal de l'échange %{id}"
+          empty: Aucun événement ne porte cet échange.
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.

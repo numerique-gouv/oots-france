@@ -8,12 +8,12 @@
 # `expire!` row by row and not `update_all`: each transition takes the lock that
 # keeps a response arriving at the same instant from being overwritten, and
 # `update_all` would take none, nor run the validations.
-class ExpireConversationsJob < ApplicationJob
+class ExpireExchangesJob < ApplicationJob
   queue_as :default
 
   def perform
-    Conversation.expired.find_each do |conversation|
-      expire(conversation)
+    Exchange.expired.find_each do |exchange|
+      expire(exchange)
     end
   end
 
@@ -25,8 +25,8 @@ class ExpireConversationsJob < ApplicationJob
   # them for ever, the cron replaying the same walk each minute. What the batch
   # query itself raises is another matter, and stays out: it strands nothing
   # beyond the current minute.
-  def expire(conversation)
-    conversation.expire!
+  def expire(exchange)
+    exchange.expire!
   # `StandardError` and not the Active Record family alone: the promise above
   # holds whatever the cause, and `expire!` runs validations and callbacks —
   # `NormalisesCountryCode` upcasing a string whose encoding has been corrupted
@@ -39,8 +39,8 @@ class ExpireConversationsJob < ApplicationJob
   # apart.
   rescue StandardError => e
     Rails.logger.error(
-      I18n.t('jobs.expire_conversations_job.failed',
-        id: conversation.conversation_id, error: "#{e.class}: #{e.message}"),
+      I18n.t('jobs.expire_exchanges_job.failed',
+        id: exchange.exchange_id, error: "#{e.class}: #{e.message}"),
     )
   end
 end

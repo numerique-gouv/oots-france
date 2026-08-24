@@ -201,12 +201,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
 
     it 'settles the exchange France opened under that code' do
-      conversation = create(:conversation, incoming: true, conversation_id: message.conversation_id,
+      exchange = create(:exchange, incoming: true, exchange_id: message.exchange_id,
         country_code: nil, procedure_code: nil, evidence_requester_id: nil)
 
       answer
 
-      expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0005')
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0005')
     end
 
     it 'journals the error it sent' do
@@ -359,12 +359,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   # opened on receiving its request. Without it, an answer goes out and the
   # exchange stays pending a sequel that is never coming.
   describe 'the exchange France opened on receiving the request' do
-    before { create(:conversation, incoming: true, conversation_id: message.conversation_id, country_code: nil) }
+    before { create(:exchange, incoming: true, exchange_id: message.exchange_id, country_code: nil) }
 
     it 'is delivered once the evidence has gone out' do
       answer
 
-      expect(Conversation.sole).to have_attributes(status: 'delivered')
+      expect(Exchange.sole).to have_attributes(status: 'delivered')
     end
 
     # A refusal settles the exchange as surely as an answer does: what the
@@ -376,7 +376,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       it 'fails under the code France answered with' do
         answer
 
-        expect(Conversation.sole).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+        expect(Exchange.sole).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
       end
     end
   end
@@ -385,18 +385,18 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   # it here would call it delivered, and the response it is really waiting for
   # would no longer settle it.
   it 'leaves alone an exchange France opened by asking' do
-    create(:conversation, conversation_id: message.conversation_id, incoming: false)
+    create(:exchange, exchange_id: message.exchange_id, incoming: false)
     allow(Rails.logger).to receive(:warn)
 
     answer
 
-    expect(Conversation.sole).to have_attributes(status: 'pending')
+    expect(Exchange.sole).to have_attributes(status: 'pending')
   end
 
   # `IncomingMessage::Process` always opens one, but nothing compels it: the
   # answer goes out all the same, and says so rather than letting it slip.
   it 'answers all the same when no exchange bears the identifier received' do
-    expect(Rails.logger).to receive(:warn).with(/#{message.conversation_id}/)
+    expect(Rails.logger).to receive(:warn).with(/#{message.exchange_id}/)
 
     expect(answer).to be_a_success
   end

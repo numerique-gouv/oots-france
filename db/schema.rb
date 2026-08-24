@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_21_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_24_120100) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -49,11 +49,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_090000) do
     t.string "response_id"
     t.index ["conversation_id"], name: "index_audit_events_on_conversation_id"
     t.index ["evidence_subject_key"], name: "index_audit_events_on_evidence_subject_key"
+    t.index ["exchange_id"], name: "index_audit_events_on_exchange_id"
     t.index ["occurred_at"], name: "index_audit_events_on_occurred_at"
     t.index ["request_id"], name: "index_audit_events_on_request_id"
   end
 
-  create_table "conversations", force: :cascade do |t|
+  create_table "exchanges", force: :cascade do |t|
     t.string "conversation_id", null: false
     t.string "country_code"
     t.datetime "created_at", null: false
@@ -61,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_090000) do
     t.string "edm_error_code"
     t.text "error_description"
     t.string "evidence_requester_id"
+    t.string "exchange_id", null: false
     t.boolean "incoming", default: false, null: false
     t.datetime "presumed_at"
     t.text "preview_location"
@@ -69,8 +71,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_21_090000) do
     t.datetime "settled_at"
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
-    t.index ["conversation_id"], name: "index_conversations_on_conversation_id", unique: true
-    t.index ["status"], name: "index_conversations_on_status"
+    t.index ["conversation_id"], name: "index_exchanges_on_conversation_id"
+    t.index ["exchange_id"], name: "index_exchanges_on_exchange_id", unique: true
+    t.index ["status"], name: "index_exchanges_on_status"
   end
 
   create_table "good_job_batches", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|

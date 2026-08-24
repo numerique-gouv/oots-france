@@ -3,7 +3,7 @@ require 'webrick'
 
 ActionController::Base.allow_rescue = false
 
-# France's own country code, which `Conversation` reads to say which of its two
+# France's own country code, which `Exchange` reads to say which of its two
 # countries is which: a page of the operator console therefore depends on it,
 # and not only the directory clients. Set here rather than borrowed from
 # `spec/support/test_environment.rb`, which erases the directory URLs the

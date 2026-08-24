@@ -12,9 +12,9 @@ Rails.application.routes.draw do
   get '/requete/pieceJustificative', to: 'evidence_requests#create'
 
   # The exchange settles afterwards, on another connection: the procedure reads
-  # back here the state of the conversation whose identifier it was given. The
+  # back here the state of the exchange whose identifier it was given. The
   # route is greedy: whatever must live under /requete is declared before it.
-  get '/requete/:conversation_id', to: 'evidence_requests#show', as: :conversation
+  get '/requete/:exchange_id', to: 'evidence_requests#show', as: :exchange
 
   # Domibus is the caller, and it calls from the network: the route is
   # authenticated.
@@ -24,14 +24,16 @@ Rails.application.routes.draw do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
 
-    # The log is walked through its events: what one exchange adds up to is
-    # read on its own page, under `/admin/journal/conversations`, which both
-    # directions feed.
+    # The log is walked through its events, and only through them: the listing
+    # is the one at the root, narrowed by whichever identifier one holds. An
+    # exchange and a conversation have a page each, reached from an event —
+    # they group these events, and neither is a listing one starts from.
     namespace :journal do
       root to: 'events#index'
       resource :subjects, only: :show
       resources :events, only: :show
-      resources :conversations, only: %i[index show]
+      resources :exchanges, only: :show
+      resources :conversations, only: :show
     end
 
     # The pages carry short identifiers only — a procedure code, the last

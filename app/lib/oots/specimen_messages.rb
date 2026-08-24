@@ -14,7 +14,11 @@ module Oots
     TIMESTAMP = '2026-08-06T10:00:00.000Z'.freeze
 
     REQUEST_ID = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'.freeze
+    # One conversation covering every specimen, and one exchange identifier per
+    # message: chapter 4.4 has a conversation span the exchanges of one user's
+    # session, and each exchange keep its own identifier.
     CONVERSATION_ID = 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24'.freeze
+    EXCHANGE_ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7'.freeze
 
     # A specimen for every code the repository emits: the exception type changes
     # with the code and the rules constrain it, so a code never produced here is
@@ -111,6 +115,7 @@ module Oots
       EbmsHeaderBuilder.new(
         recipient: german_access_point,
         conversation_id: CONVERSATION_ID,
+        exchange_id: EXCHANGE_ID,
         clock:, uuid:,
         **attributes,
       ).render

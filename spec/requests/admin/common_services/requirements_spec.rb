@@ -69,7 +69,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     end
 
     # The identifier is a Semantic Repository address, chosen elsewhere: it is
-    # read, not followed — the rule the preview location of a conversation
+    # read, not followed — the rule the preview location of an exchange
     # already follows.
     it 'renders the Semantic Repository identifier as text, never as a link' do
       get admin_common_services_requirement_path(test_requirement)

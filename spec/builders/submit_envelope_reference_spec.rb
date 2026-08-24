@@ -77,6 +77,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   end
 
   CONVERSATION_ID = 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24'.freeze
+  EXCHANGE_ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7'.freeze
   REQUEST_ID = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'.freeze
 
   # Assembled by the very class the interactors use, so the frozen references
@@ -90,6 +91,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
       original_sender: original_sender(action),
       final_recipient: final_recipient(action),
       conversation_id: CONVERSATION_ID,
+      exchange_id: EXCHANGE_ID,
       sender: french_access_point,
       clock: frozen_clock,
       uuid:,

@@ -169,17 +169,20 @@ RSpec.describe AuditTrail do
       )
     end
 
-    # A refusal by the gateway comes later than the others: `OpenConversation`
+    # A refusal by the gateway comes later than the others: `OpenExchange`
     # has run, so there is an exchange to hang the refusal on.
-    it 'names the conversation when one was already opened' do
-      conversation = create(:conversation)
+    it 'names both the exchange and the conversation when one was already opened' do
+      exchange = create(:exchange)
 
       audit_trail.request_refused(
         requester_id: '00000000000002', procedure_code: '00', country_code: 'FI',
-        reason: 'Connexion refusée', conversation:,
+        reason: 'Connexion refusée', exchange:,
       )
 
-      expect(journalled.conversation_id).to eq(conversation.conversation_id)
+      expect(journalled).to have_attributes(
+        exchange_id: exchange.exchange_id,
+        conversation_id: exchange.conversation_id,
+      )
     end
   end
 end

@@ -3,7 +3,7 @@
 # Personal data: it comes out of the beneficiary token, travels in the request,
 # and comes back in the response. The exchange log persists it, encrypted, for
 # at least the twelve months article 17 imposes — see `AuditEvent`;
-# `Conversation` deliberately keeps none of it.
+# `Exchange` deliberately keeps none of it.
 class NaturalPerson
   include ActiveModel::Model
   include ActiveModel::Attributes

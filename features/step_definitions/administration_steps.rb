@@ -1,6 +1,8 @@
+# Les adjectifs s'accordent avec « échange », masculin, tel que les scénarios
+# les écrivent.
 COUNTRIES = {
-  'finlandaise' => 'FI',
-  'allemande' => 'DE',
+  'finlandais' => 'FI',
+  'allemand' => 'DE',
 }.freeze
 
 # Created in a step and not once for the whole run: `cucumber-rails` cleans the
@@ -13,16 +15,16 @@ end
   sign_in(@administrator.password)
 end
 
-Étantdonné('une conversation délivrée avec la Finlande') do
-  create(:conversation, :delivered, country_code: COUNTRIES.fetch('finlandaise'))
+Étantdonné('un échange délivré avec la Finlande') do
+  echange = create(:exchange, :delivered, country_code: COUNTRIES.fetch('finlandais'))
+  create(:audit_event, event_type: 'evidence_delivered', exchange_id: echange.exchange_id,
+    conversation_id: echange.conversation_id)
 end
 
-Étantdonné("une conversation en échec avec l'Allemagne") do
-  create(:conversation, :failed, country_code: COUNTRIES.fetch('allemande'))
-end
-
-Quand("j'ouvre la liste des conversations") do
-  visit admin_journal_conversations_path
+Étantdonné("un échange en échec avec l'Allemagne") do
+  echange = create(:exchange, :failed, country_code: COUNTRIES.fetch('allemand'))
+  create(:audit_event, event_type: 'error_received', exchange_id: echange.exchange_id,
+    conversation_id: echange.conversation_id)
 end
 
 Quand("j'ouvre le tableau de bord des jobs") do
@@ -37,31 +39,36 @@ Quand('je me déconnecte') do
   click_button 'Se déconnecter'
 end
 
-Quand("j'ouvre la fiche de la conversation {word}") do |nationality|
-  visit admin_journal_conversation_path(conversation_named(nationality).conversation_id)
+Quand("j'ouvre la fiche de l'échange {word}") do |nationality|
+  visit admin_journal_exchange_path(exchange_named(nationality).exchange_id)
 end
 
-Quand("je filtre sur l'état {string}") do |state|
-  select state, from: 'status'
-  click_button 'Filtrer'
+Quand("je filtre sur l'échange {word}") do |nationality|
+  fill_in I18n.t('admin.journal.attributes.exchange_id'), with: exchange_named(nationality).exchange_id
+  click_button I18n.t('admin.journal.filtre.submit')
 end
 
-Alors("je vois la conversation {word} avec l'état {string}") do |nationality, state|
-  ligne = find('tbody tr', text: conversation_named(nationality).conversation_id)
-
-  expect(ligne).to have_text(state)
+# The listing abbreviates both identifiers — two UUIDs a row would leave no
+# room for anything else — and carries the whole one in the link's title. That
+# is what a scenario has to look at.
+Alors("je vois les événements de l'échange {word}") do |nationality|
+  expect(page).to have_css("a[title='#{exchange_named(nationality).exchange_id}']")
 end
 
-Alors('je ne vois plus la conversation {word}') do |nationality|
-  expect(page).to have_no_text(conversation_named(nationality).conversation_id)
+Alors("je ne vois plus ceux de l'échange {word}") do |nationality|
+  expect(page).to have_no_css("a[title='#{exchange_named(nationality).exchange_id}']")
+end
+
+Alors("je ne vois plus l'échange {word}") do |nationality|
+  expect(page).to have_no_text(exchange_named(nationality).exchange_id)
 end
 
 Alors("je lis le code d'erreur {string}") do |code|
   expect(page).to have_text(code)
 end
 
-Alors("je lis la raison de l'échec de la conversation {word}") do |nationality|
-  expect(page).to have_text(conversation_named(nationality).error_description)
+Alors("je lis la raison de l'échec de l'échange {word}") do |nationality|
+  expect(page).to have_text(exchange_named(nationality).error_description)
 end
 
 Alors('on me demande de me connecter') do
@@ -74,8 +81,8 @@ Alors('on me dit que les identifiants sont refusés') do
   expect(page).to have_button('Se connecter')
 end
 
-def conversation_named(nationality)
-  Conversation.find_by!(country_code: COUNTRIES.fetch(nationality))
+def exchange_named(nationality)
+  Exchange.find_by!(country_code: COUNTRIES.fetch(nationality))
 end
 
 def sign_in(password)
@@ -87,25 +94,25 @@ end
 
 # The one event no exchange carries: a caller turned away before anything was
 # opened. Both directions have a row now, so this is what the journal holds and
-# the conversations listing, by construction, cannot.
+# the exchange listing, by construction, cannot.
 Étantdonné("une requête refusée avant qu'aucun échange soit ouvert") do
   @exchange = 'requeteur-econduit'
-  create(:audit_event, event_type: 'request_refused', conversation_id: nil,
+  create(:audit_event, event_type: 'request_refused', exchange_id: nil, conversation_id: nil,
     evidence_requester_id: @exchange, detail: 'Le bénéficiaire doit être renseigné')
 end
 
 Étantdonné("un échange reçu d'un autre État membre") do
-  @exchange = 'echange-recu'
-  create(:conversation, :delivered, incoming: true, conversation_id: @exchange,
+  @exchange = '88888888-8888-8888-8888-888888888801'
+  create(:exchange, :delivered, incoming: true, exchange_id: @exchange,
     country_code: nil, procedure_code: ProcedureCode::SYSTEM_CHECK)
 end
 
 Étantdonné('un échange concernant Sophie Dupont') do
-  @exchange = 'echange-de-sophie'
-  create(:audit_event, :about_sophie, conversation_id: @exchange)
+  @exchange = '88888888-8888-8888-8888-888888888802'
+  create(:audit_event, :about_sophie, exchange_id: @exchange)
 end
 
-Quand("j'ouvre le journal des échanges") do
+Quand("j'ouvre le journal des événements") do
   visit admin_journal_root_path
 end
 
@@ -113,8 +120,10 @@ Quand('je recherche la personne {string} {string} née le {string}') do |family_
   visit admin_journal_subjects_path(family_name:, given_name:, date_of_birth:)
 end
 
+# Whole in the title, abbreviated in the text — and not always a link: an event
+# may name an exchange this side never opened, which reads as plain text.
 Alors('je vois cet échange dans le journal') do
-  expect(page).to have_text(@exchange)
+  expect(page).to have_css("[title='#{@exchange}']", visible: :all)
 end
 
 Alors('je vois ce refus dans le journal') do
@@ -122,14 +131,38 @@ Alors('je vois ce refus dans le journal') do
 end
 
 Alors('je vois cet échange avec le sens {string}') do |direction|
-  ligne = find('tbody tr', text: @exchange)
-
-  expect(ligne).to have_text(direction)
+  expect(page).to have_text(direction)
 end
 
-Alors('je ne le vois pas dans la liste des conversations') do
-  visit admin_journal_conversations_path
+Alors('il ne nomme ni échange ni conversation') do
+  ligne = find('tbody tr', text: @exchange)
 
-  expect(page).to have_text(I18n.t('admin.journal.conversations.index.title'))
-  expect(page).to have_no_text(@exchange)
+  expect(ligne).to have_text('—')
+end
+
+# Chapter 4.4 has one conversation cover the exchanges of a single user's
+# session; the page is what gathers them, an exchange having no listing of its
+# own any more.
+Étantdonné("deux échanges d'un même usager") do
+  @conversation = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'
+  @echanges = Array.new(2) do
+    echange = create(:exchange, :delivered, conversation_id: @conversation)
+    create(:audit_event, event_type: 'request_sent', exchange_id: echange.exchange_id,
+      conversation_id: @conversation)
+    echange
+  end
+end
+
+Quand("j'ouvre la conversation de cet usager") do
+  visit admin_journal_conversation_path(@conversation)
+end
+
+Alors('je vois les deux échanges, chacun avec son journal') do
+  @echanges.each { |echange| expect(page).to have_text(echange.exchange_id) }
+
+  expect(page).to have_table(count: @echanges.size)
+end
+
+Quand("j'ouvre la fiche de cet échange") do
+  visit admin_journal_exchange_path(@exchange)
 end

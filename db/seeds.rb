@@ -21,7 +21,7 @@ else
   puts "Compte d'administration : #{administrator.email} / Administration-2026"
 end
 
-# One exchange per state of `Conversation::STATUSES`, so that the administration
+# One exchange per state of `Exchange::STATUSES`, so that the administration
 # space has its badges, its filters and its detail page to show. Nothing here
 # ever happened: no message was built, no gateway was called, and their
 # identifiers say so — a real one is a UUID that `UuidGenerator` drew, never a
@@ -32,7 +32,7 @@ end
 # a test database is never looked at, and rows in it that no example asked for
 # make the suite red on a developer's machine while the CI, whose database is
 # never seeded, stays green. Five examples fail that way — the filter's paging
-# and its no-criterion case, and the uniqueness matcher on `Conversation`.
+# and its no-criterion case, and the uniqueness matcher on `Exchange`.
 #
 # Keyed on their identifier rather than created outright, so replaying the seed
 # does not pile up a second set.
@@ -49,13 +49,18 @@ if Rails.env.development?
   #
   # `country_code` is the correspondent's either way: the country France asks,
   # and the country asking France.
-  exchanges = [
+  #
+  # `conversation` gathers several exchanges under one user's session, as
+  # chapter 4.4 allows: the first two are Sophie Dupont asking for two
+  # different pieces of evidence in a row, so the console has a conversation
+  # worth following from one exchange to the other.
+  scenarios = [
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
-      events: %w[request_sent response_received evidence_delivered] },
+      conversation: 1, events: %w[request_sent response_received evidence_delivered] },
     { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::STUDENT_GRANT,
       edm_error_code: 'EDM:ERR:0004',
       error_description: "Le fournisseur n'a pas trouvé de justificatif correspondant.",
-      events: %w[request_sent error_received] },
+      conversation: 1, events: %w[request_sent error_received] },
     { status: 'preview_required', country_code: 'SI', procedure_code: 'S1',
       preview_location: 'https://previsualisation.example.si/consentement',
       events: %w[request_sent error_received] },
@@ -82,49 +87,56 @@ if Rails.env.development?
   carries_requester = %w[request_sent request_refused evidence_delivered].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
-  demonstrations = exchanges.each_with_index.map do |exchange, rank|
-    events = exchange[:events]
-    incoming = exchange.fetch(:incoming, false)
+  demonstrations = scenarios.each_with_index.map do |scenario, rank|
+    events = scenario[:events]
+    incoming = scenario.fetch(:incoming, false)
     opened = rank.days.ago
+
+    # One conversation of its own unless the scenario joins another: the two
+    # identifiers are distinct, and the demonstration would teach otherwise if
+    # they were derived from one another.
+    conversation_id = format('00000000-0000-0000-0001-%012d', scenario.fetch(:conversation, rank + 1))
 
     # The direction is in the lookup and not in the update: `incoming` is
     # read-only once the row is written, and a demonstration replayed finds its
     # own row rather than turning it round.
-    conversation = Conversation.find_or_initialize_by(
-      conversation_id: format('00000000-0000-0000-0000-%012d', rank + 1),
+    exchange = Exchange.find_or_initialize_by(
+      exchange_id: format('00000000-0000-0000-0000-%012d', rank + 1),
       incoming:,
     )
 
-    conversation.update!(
-      exchange.except(:events, :incoming).merge(
+    exchange.update!(
+      scenario.except(:events, :incoming, :conversation).merge(
+        conversation_id:,
         evidence_requester_id: incoming ? '00000000000009' : '00000000000002',
         created_at: opened,
-        settled_at: (opened unless exchange[:status].in?(Conversation::IN_PROGRESS)),
+        settled_at: (opened unless scenario[:status].in?(Exchange::IN_PROGRESS)),
       ),
     )
 
     events.each_with_index do |event_type, step|
-      next if AuditEvent.exists?(conversation_id: conversation.conversation_id, event_type:)
+      next if AuditEvent.exists?(exchange_id: exchange.exchange_id, event_type:)
 
       AuditEvent.create!(
         event_type:,
         occurred_at: opened + (step * 7).minutes,
-        conversation_id: conversation.conversation_id,
-        procedure_code: (conversation.procedure_code if event_type.in?(carries_procedure)),
-        country_code: conversation.country_code,
-        evidence_requester_id: (conversation.evidence_requester_id if event_type.in?(carries_requester)),
+        exchange_id: exchange.exchange_id,
+        conversation_id: exchange.conversation_id,
+        procedure_code: (exchange.procedure_code if event_type.in?(carries_procedure)),
+        country_code: exchange.country_code,
+        evidence_requester_id: (exchange.evidence_requester_id if event_type.in?(carries_requester)),
         message_id: (format('%s@domibus.eu', SecureRandom.uuid) if event_type.in?(carries_message)),
-        edm_error_code: (conversation.edm_error_code if event_type.start_with?('error')),
-        detail: (conversation.error_description if event_type.start_with?('error')),
+        edm_error_code: (exchange.edm_error_code if event_type.start_with?('error')),
+        detail: (exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
       )
     end
 
-    conversation
+    exchange
   end
 
   # The eighth type, and the only event no exchange carries: a caller turned away
-  # before anything was opened. It is what the journal holds and the conversation
+  # before anything was opened. It is what the journal holds and the exchange
   # list, by construction, cannot.
   unless AuditEvent.exists?(event_type: 'request_refused')
     AuditEvent.create!(
@@ -134,7 +146,8 @@ if Rails.env.development?
     )
   end
 
-  puts "#{demonstrations.count { |one| !one.incoming? }} conversations émises, une par état, " \
-       "#{demonstrations.count(&:incoming?)} reçues."
+  puts "#{demonstrations.count { |one| !one.incoming? }} échanges émis, un par état, " \
+       "#{demonstrations.count(&:incoming?)} reçus, " \
+       "sur #{demonstrations.map(&:conversation_id).uniq.count} conversations."
   puts "#{AuditEvent.count} événements de journal, dont un refus sans échange."
 end

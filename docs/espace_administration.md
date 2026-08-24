@@ -4,9 +4,9 @@
 
 ## À quoi il sert
 
-Tout le reste de cette application parle à des machines. Un incident s'y constatait jusqu'ici en console : une conversation restée `pending`, un job de fond mort en silence, une requête refusée pour une raison écrite en base et lisible nulle part, un annuaire central qu'il fallait interroger à la main pour savoir ce qu'il publie. L'espace d'administration donne à voir ces choses, dans un navigateur, à l'équipe qui exploite le service.
+Tout le reste de cette application parle à des machines. Un incident s'y constatait jusqu'ici en console : un échange resté `pending`, un job de fond mort en silence, une requête refusée pour une raison écrite en base et lisible nulle part, un annuaire central qu'il fallait interroger à la main pour savoir ce qu'il publie. L'espace d'administration donne à voir ces choses, dans un navigateur, à l'équipe qui exploite le service.
 
-Il **ne touche à aucun échange**. Aucune de ses pages ne modifie une conversation : rien dans les [TDD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) ne prévoit qu'un humain intervienne sur un échange en cours, et un bouton qui le permettrait sortirait du cadre autant qu'il inviterait à s'en servir. Le tableau de bord de GoodJob, lui, agit bien sur les jobs — voir plus bas.
+Il **ne touche à aucun échange**. Aucune de ses pages ne modifie un échange : rien dans les [TDD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview) ne prévoit qu'un humain intervienne sur un échange en cours, et un bouton qui le permettrait sortirait du cadre autant qu'il inviterait à s'en servir. Le tableau de bord de GoodJob, lui, agit bien sur les jobs — voir plus bas.
 
 Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépôt dans ce cas : aucun chapitre ne la demande. Elle répond à un besoin d'exploitation, ce qui explique qu'elle ne figure pas à l'inventaire de [reste_à_faire.md](reste_à_faire.md).
 
@@ -17,11 +17,11 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
 | `/admin` | Les trois entrées ci-dessous. |
-| `/admin/journal` | Le [journal des échanges](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, démarche, pays, requêteur et période. C'est la seule vue qui porte **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune conversation ne peut représenter. |
+| `/admin/journal` | **La seule liste de la console**, intitulée « Journal des événements » parce que c'est ce qu'elle liste : le [journal de l'article 17](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, **échange**, **conversation**, démarche, pays, requêteur et période. C'est là qu'on cherche, et de là qu'on descend. Elle porte aussi **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune autre page ne peut représenter. |
 | `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris. |
 | `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne. **Trois champs exacts**, pour la raison qu'expose [journal_des_echanges.md](journal_des_echanges.md#le-chiffrement-au-repos-en-détail). |
-| `/admin/journal/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. |
-| `/admin/journal/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
+| `/admin/journal/conversations/:id` | Ce qu'a laissé la session d'un usager : **un tableau d'événements par échange** que la conversation couvre, dans l'ordre où ils ont été ouverts. La conversation n'a pas d'enregistrement — le chapitre 4.4 en fait un identifiant que plusieurs échanges partagent —, la page est donc bâtie de ceux qui la nomment. |
+| `/admin/journal/exchanges/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. La ligne « Conversation » mène à la page de la session. |
 | `/admin/common_services` | L'accueil des annuaires centraux : ce que l'Evidence Broker publie, en nombres, et les trois entrées vers les listes — pays, démarches, exigences. |
 | `/admin/common_services/procedures` | Les codes de démarche que les États membres ont déclarés, avec leur intitulé et les pays qui les déclarent. |
 | `…/procedures/:code` | Les pays qui ont déclaré ce code, et pour chacun le nombre d'exigences qu'il en tire. |
@@ -60,11 +60,11 @@ Les adresses du Semantic Repository que ces réponses portent — l'identifiant 
 > [!IMPORTANT]
 > **Une absence de fournisseur ne prouve pas qu'il n'en existe pas.** La console interroge le Data Service Directory exactement comme l'application, `specification=oots-edm:v2.0` compris, donc un point d'accès conforme à `v1.0` ou `v1.2` seulement n'apparaît pas dans la réponse. C'est le cas d'`AP_FI_01` en acceptation. La colonne des versions déclarées est ce qui permet de faire la différence lorsqu'un service, lui, revient.
 
-Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, et il expose ses propres boutons de relance et d'abandon. Ceux-ci agissent sur un job, jamais sur un échange — la règle « lecture seule » porte sur les conversations.
+Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, et il expose ses propres boutons de relance et d'abandon. Ceux-ci agissent sur un job, jamais sur un échange — la règle « lecture seule » porte sur les échanges.
 
 ## Ce qu'il ne montre pas
 
-**Les pages des conversations et des annuaires ne montrent aucune donnée personnelle**, et cette propriété-là doit survivre à toute page qu'on leur ajoutera : la table `conversations` n'en porte aucune, par construction — le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré —, et les annuaires centraux ne publient que des organisations et des catalogues.
+**Les pages des échanges et des annuaires ne montrent aucune donnée personnelle**, et cette propriété-là doit survivre à toute page qu'on leur ajoutera : la table `exchanges` n'en porte aucune, par construction — le bénéficiaire vit dans le jeton que le requêteur fournit et n'est jamais enregistré —, et les annuaires centraux ne publient que des organisations et des catalogues.
 
 **Les pages du journal, elles, en montrent**, et c'est leur raison d'être — [journal_des_echanges.md](journal_des_echanges.md#le-relire) dit laquelle. C'est une décision prise pour ces pages-là, et pour elles seules.
 
@@ -77,7 +77,12 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 
 **`edm_error_code`, lui, est glosé plutôt que rendu nu.** `EdmErrorCodeComponent` dit en français ce que le code signifie et lie vers le [chapitre 4.5.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938), qui définit les huit. Un seul lien pour les huit : la liste publiée ne porte qu'un URN pour l'ensemble, sans ancre par code. Et un code hors de ces huit — qu'un correspondant non conforme peut envoyer — s'affiche sans lien, pointer ce chapitre lui ferait dire ce qu'il ne dit pas.
 
-**L'état d'une conversation n'est pas le journal de l'article 17**, et les deux se lisent séparément : `/admin/journal` montre ce qu'un échange a laissé comme trace, `/admin/journal/conversations` où il en est. Les conversations tiennent sous le journal parce qu'on les y cherche — une ligne du journal mène à la conversation qu'elle concerne —, non parce que l'une serait un extrait de l'autre. Le journal a sa propre page de documentation, [journal_des_echanges.md](journal_des_echanges.md).
+**Une seule liste, deux pages de regroupement.** Le chapitre 4.4 distingue trois niveaux — une conversation couvre des échanges, un échange laisse des événements — et la console les rend dans cet ordre : on cherche au grain le plus fin, celui de l'événement, puis on descend. Ni l'échange ni la conversation n'ont de liste à eux : « tous les échanges » n'est pas une question qu'on se pose en arrivant, et les deux identifiants sont des critères du journal.
+
+> [!NOTE]
+> **L'écran s'appelle « Journal des événements », le journal s'appelle « journal des échanges ».** Le second est le nom que le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) donne à la chose — *Evidence Exchange Logging* — et que [journal_des_echanges.md](journal_des_echanges.md) garde. Le premier dit ce que la page liste, maintenant qu'« échange » désigne un objet précis qu'une ligne du journal ne porte pas toujours.
+
+**Les deux identifiants sont abrégés dans la liste**, en « …c1bc68 », et rendus entiers dans l'attribut `title` du lien comme sur la page où il mène : deux UUID de trente-six caractères par ligne ne laisseraient rien aux colonnes qu'un exploitant lit d'abord.
 
 ## Qui peut y entrer
 
@@ -123,7 +128,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 | `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule ; `caption:` dit en quelle qualité ils y figurent, au-dessus de la rangée et avec elle |
 | `ProcedureComponent` | Une démarche : son code dans une colonne, son intitulé dans la suivante — un intitulé fait une phrase, qu'une boîte encadrerait comme un paragraphe |
 | `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
-| `ConversationStatusComponent` | L'état d'un échange, en pastille |
+| `ExchangeStatusComponent` | L'état d'un échange, en pastille |
 | `EventTypeComponent` | Le type d'un événement du journal, en pastille |
 | `DecryptedValueComponent` | Une valeur qu'il a fallu déchiffrer pour l'afficher : cadenas ouvert, fond du registre d'avertissement, et le sens du cadenas écrit hors écran — une icône seule ne le dit qu'à l'œil |
 
@@ -136,7 +141,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 
 `make up`, puis `http://localhost:3000/admin` — au port que `PORT_OOTS_FRANCE` publie, décalé dans un worktree. Le compte est `admin@example.com` / `Administration-2026`, posé par `db/seeds.rb`.
 
-Le même seed pose **un exemple de chaque cas** : cinq échanges émis, un par état de `Conversation::STATUSES`, deux échanges reçus, et entre eux **les huit types d'événement** du journal — refus prononcé avant qu'aucun échange soit ouvert compris, le seul qu'aucune conversation ne porte. Les codes de démarche sont ceux que les annuaires publient réellement, sans quoi les liens mèneraient à des pages vides, et un sujet de justificatif donne à la recherche par personne de quoi répondre. Comme le compte, rien de tout cela n'est créé en production.
+Le même seed pose **un exemple de chaque cas** : cinq échanges émis, un par état d'`Exchange::STATUSES`, deux échanges reçus, et entre eux **les huit types d'événement** du journal — refus prononcé avant qu'aucun échange soit ouvert compris, le seul qu'aucun échange ne porte. Les deux premiers partagent une conversation, de sorte que le lien qui mène d'un échange au reste de sa session ait quelque chose à montrer. Les codes de démarche sont ceux que les annuaires publient réellement, sans quoi les liens mèneraient à des pages vides, et un sujet de justificatif donne à la recherche par personne de quoi répondre. Comme le compte, rien de tout cela n'est créé en production.
 
 `make setup` charge ce seed. Sur une base déjà installée, il faut l'appeler soi-même, `db:prepare` ne chargeant les seeds qu'à la création de la base :
 
@@ -144,12 +149,12 @@ Le même seed pose **un exemple de chaque cas** : cinq échanges émis, un par �
 docker compose run --rm --no-deps web bundle exec rails db:seed
 ```
 
-Il est rejouable : les conversations sont retrouvées par leur identifiant, donc un second passage n'en ajoute pas une deuxième série.
+Il est rejouable : les échanges sont retrouvés par leur identifiant, donc un second passage n'en ajoute pas une deuxième série.
 
 > [!IMPORTANT]
-> **Ces cinq conversations n'ont jamais eu lieu**, et leur identifiant le dit : `00000000-0000-0000-0000-000000000001` à `…005`, là où un vrai identifiant est un UUID tiré par `UuidGenerator`. Aucun message n'a été construit, aucune passerelle appelée. C'est ce qui permet à un exploitant qui en croise une pendant un incident de voir d'un coup d'œil qu'il n'y a rien à chercher — et c'est aussi pourquoi elles ne doivent jamais recevoir d'identifiant vraisemblable.
+> **Ces cinq échanges n'ont jamais eu lieu**, et leur identifiant le dit : `00000000-0000-0000-0000-000000000001` à `…005`, et `00000000-0000-0000-0001-…` pour leurs conversations, là où un vrai identifiant est un UUID tiré par `UuidGenerator`. Aucun message n'a été construit, aucune passerelle appelée. C'est ce qui permet à un exploitant qui en croise un pendant un incident de voir d'un coup d'œil qu'il n'y a rien à chercher — et c'est aussi pourquoi ils ne doivent jamais recevoir d'identifiant vraisemblable.
 
-**Pour y voir de vraies conversations, jouer `make e2e`** : les scénarios de bout en bout appellent le serveur qui tourne, par HTTP, et c'est donc lui qui écrit les conversations — dans la base de développement, pas dans celle des tests. Deux y apparaissent, une `delivered` et une `failed` ; le trajet et ses prérequis sont décrits dans [test_e2e.md](test_e2e.md). Arrêter le `worker` avant de les jouer laisse au contraire les conversations à l'état `sent`, la réponse de la passerelle n'étant jamais dépilée.
+**Pour y voir de vrais échanges, jouer `make e2e`** : les scénarios de bout en bout appellent le serveur qui tourne, par HTTP, et c'est donc lui qui écrit les échanges — dans la base de développement, pas dans celle des tests. Deux y apparaissent, un `delivered` et un `failed` ; le trajet et ses prérequis sont décrits dans [test_e2e.md](test_e2e.md). Arrêter le `worker` avant de les jouer laisse au contraire les échanges à l'état `sent`, la réponse de la passerelle n'étant jamais dépilée.
 
 Les pages des annuaires, elles, n'ont besoin de rien de local : elles sortent vers l'acceptation dès lors que `URL_BASE_EVIDENCE_BROKER` et `URL_BASE_DATA_SERVICE_DIRECTORY` sont vides et que `CERTIFICATS_SERVICES_COMMUNS` désigne `config/certificats/services_communs_acc.pem` — la configuration que [test_e2e.md](test_e2e.md#les-annuaires-centraux-sont-doublés) décrit comme celle des vrais annuaires.
 
