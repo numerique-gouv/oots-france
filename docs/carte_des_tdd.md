@@ -21,7 +21,7 @@ Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la 
 | --- | --- |
 | [3.1.4 — Interface de requête du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | L'appel REST qui donne les fournisseurs d'un type de justificatif dans un pays, et le format de sa réponse. |
 | [3.2.4 — Interface de requête de l'Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Les deux appels REST : les exigences d'une démarche, puis les types de justificatif qui les satisfont. |
-| [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | La description des modèles de données et des listes de codes. Consulté à la conception, pas à l'exécution. |
+| [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Le catalogue des actifs sémantiques et de leurs distributions, sur `code.europa.eu`. Aucun échange n'oblige à l'appeler ; il se consulte à la conception. |
 | [3.4 — Distribution des Common Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Comment on **découvre** l'instance à interroger (enregistrements DNS NAPTR), et pourquoi mettre un cache devant. |
 | [3.5.1 — Listes de codes communes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Le catalogue des listes de codes, avec l'URL de chaque fichier Genericode. |
 | [3.5.2 — Classifications propres à un État membre](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932945) | Les listes nationales servant à désigner le bon fournisseur (« dans quelle ville êtes-vous né ? »). |
