@@ -1,7 +1,7 @@
 <% content_for :title, t('admin.journal.exchanges.show.title', id: @exchange.exchange_id) %>
 
 <%= render JournalBreadcrumbsComponent.new(trail: [
-      [t('admin.journal.exchanges.index.title'), admin_journal_exchanges_path],
+      [t('admin.journal.exchanges.section'), nil],
       [@exchange.exchange_id, nil],
     ]) %>
 
@@ -27,7 +27,7 @@
                   listing narrowed to it. %>
               <td>
                 <%= link_to @exchange.conversation_id,
-                      admin_journal_exchanges_path(conversation_id: @exchange.conversation_id),
+                      admin_journal_conversation_path(@exchange.conversation_id),
                       title: t('admin.journal.exchanges.show.same_conversation') %>
               </td>
             </tr>

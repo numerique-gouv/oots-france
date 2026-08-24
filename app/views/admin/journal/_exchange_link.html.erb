@@ -1,8 +1,11 @@
 <%# The exchange an event names does not always exist: a response can name one
     France never opened, and a refusal turned away before any exchange was
-    opened names none. A link would then lead to a 404. %>
+    opened names none. A link would then lead to a 404.
+
+    Abbreviated where a listing asks for it, whole on a page that has room. %>
+<% label = local_assigns[:abbreviated] ? abbreviated_identifier(event.exchange_id) : event.exchange_id %>
 <% if event.exchange %>
-  <%= link_to event.exchange_id, admin_journal_exchange_path(event.exchange_id) %>
+  <%= link_to label, admin_journal_exchange_path(event.exchange_id), title: event.exchange_id %>
 <% else %>
-  <%= event.exchange_id.presence || '—' %>
+  <%= event.exchange_id.presence ? tag.span(label, title: event.exchange_id) : '—' %>
 <% end %>

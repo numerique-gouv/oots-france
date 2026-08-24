@@ -7,13 +7,13 @@ RSpec.describe 'Admin::Exchanges' do
     # Both halves of the four-corner model, on one listing: what France asks,
     # and what is asked of it.
     describe 'an exchange France did not open' do
-      it 'holds its line, and says which way it goes' do
-        create(:exchange, :delivered, incoming: true, exchange_id: 'venue-d-ailleurs',
+      it 'says which way it goes' do
+        exchange = create(:exchange, :delivered, incoming: true,
           country_code: nil, procedure_code: nil, evidence_requester_id: nil)
 
-        get admin_journal_exchanges_path
+        get admin_journal_exchange_path(exchange.exchange_id)
 
-        expect(response.body).to include('venue-d-ailleurs')
+        expect(response.body).to include(exchange.exchange_id)
         expect(response.body).to include(I18n.t('admin.journal.exchanges.directions.incoming'))
       end
 
@@ -69,158 +69,6 @@ RSpec.describe 'Admin::Exchanges' do
     end
   end
 
-  describe 'GET /admin/journal/exchanges' do
-    before { sign_in }
-
-    it 'says where the reader stands' do
-      get admin_journal_exchanges_path
-
-      expect(response.parsed_body.css(".fr-breadcrumb__link[aria-current='true']").text)
-        .to eq(I18n.t('admin.journal.exchanges.index.title'))
-    end
-
-    it 'lists the exchanges, most recent first' do
-      older = create(:exchange, :delivered, created_at: 2.days.ago)
-      newer = create(:exchange, :failed, created_at: 1.hour.ago)
-
-      get admin_journal_exchanges_path
-
-      expect(response).to have_http_status(:ok)
-      expect(response.body.index(newer.exchange_id))
-        .to be < response.body.index(older.exchange_id)
-    end
-
-    it 'narrows on a status' do
-      delivered = create(:exchange, :delivered)
-      failed = create(:exchange, :failed)
-
-      get admin_journal_exchanges_path(status: 'delivered')
-
-      expect(response.body).to include(delivered.exchange_id)
-      expect(response.body).not_to include(failed.exchange_id)
-    end
-
-    it 'narrows on the country, whatever its case' do
-      finnish = create(:exchange, country_code: 'FI')
-      french = create(:exchange, country_code: 'FR')
-
-      get admin_journal_exchanges_path(country_code: 'fi')
-
-      expect(response.body).to include(finnish.exchange_id)
-      expect(response.body).not_to include(french.exchange_id)
-    end
-
-    it 'narrows on the requester' do
-      wanted = create(:exchange, evidence_requester_id: '11111111111111')
-      other = create(:exchange, evidence_requester_id: '22222222222222')
-
-      get admin_journal_exchanges_path(evidence_requester_id: '11111111111111')
-
-      expect(response.body).to include(wanted.exchange_id)
-      expect(response.body).not_to include(other.exchange_id)
-    end
-
-    it 'narrows on the conversation' do
-      session = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'
-      wanted = create(:exchange, conversation_id: session)
-      other = create(:exchange)
-
-      get admin_journal_exchanges_path(conversation_id: session)
-
-      expect(response.body).to include(wanted.exchange_id)
-      expect(response.body).not_to include(other.exchange_id)
-    end
-
-    it 'narrows on the procedure' do
-      wanted = create(:exchange, procedure_code: '00')
-      other = create(:exchange, procedure_code: '01')
-
-      get admin_journal_exchanges_path(procedure_code: '00')
-
-      expect(response.body).to include(wanted.exchange_id)
-      expect(response.body).not_to include(other.exchange_id)
-    end
-
-    it 'narrows on a period' do
-      old = create(:exchange, created_at: 10.days.ago)
-      recent = create(:exchange, created_at: 1.day.ago)
-
-      get admin_journal_exchanges_path(depuis: 3.days.ago.to_date.iso8601)
-
-      expect(response.body).to include(recent.exchange_id)
-      expect(response.body).not_to include(old.exchange_id)
-    end
-
-    # Dropping a criterion would show every exchange under a heading claiming
-    # otherwise, and nothing on screen tells the two apart.
-    describe 'a criterion it cannot honour' do
-      it 'shows nothing for a status the model does not have, and says so' do
-        exchange = create(:exchange, :delivered)
-
-        get admin_journal_exchanges_path(status: 'livree')
-
-        expect(response.body).not_to include(exchange.exchange_id)
-        expect(response.parsed_body.css('.fr-alert--error')).not_to be_empty
-      end
-
-      # The alert is looked for by its class rather than by its wording, which
-      # belongs to a locale file and may be rephrased without the behaviour
-      # changing.
-      it 'shows nothing for a date it cannot read, and says so' do
-        exchange = create(:exchange, :delivered)
-
-        get admin_journal_exchanges_path(depuis: 'pas-une-date')
-
-        expect(response.body).not_to include(exchange.exchange_id)
-        expect(response.parsed_body.css('.fr-alert--error')).not_to be_empty
-      end
-
-      it 'says so when the period is read the wrong way round' do
-        create(:exchange, :delivered)
-
-        get admin_journal_exchanges_path(depuis: '2026-08-20', jusqu_a: '2026-08-10')
-
-        expect(response.parsed_body.css('.fr-alert--error')).not_to be_empty
-      end
-    end
-
-    describe 'paging' do
-      it 'offers pagination beyond one page' do
-        create_list(:exchange, ExchangeFilter::PER_PAGE + 1, :delivered)
-
-        get admin_journal_exchanges_path
-
-        expect(response.body).to include('fr-pagination')
-      end
-
-      it 'carries the active criteria into the page links' do
-        create_list(:exchange, ExchangeFilter::PER_PAGE + 1, :failed)
-
-        get admin_journal_exchanges_path(status: 'failed')
-
-        expect(response.body).to include(CGI.escapeHTML(admin_journal_exchanges_path(status: 'failed', page: 2)))
-      end
-
-      # PostgreSQL refuses an offset wider than a 64-bit integer, and answered
-      # this with a 500 before the page was clamped.
-      it 'survives a page number no database could offset to' do
-        create(:exchange, :delivered)
-
-        get admin_journal_exchanges_path(page: '99999999999999999999999999')
-
-        expect(response).to have_http_status(:ok)
-      end
-
-      it 'never claims a total it does not show' do
-        create(:exchange, :delivered)
-
-        get admin_journal_exchanges_path(page: 999_999)
-
-        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.index.empty'))
-      end
-    end
-  end
-
   describe 'GET /admin/journal/exchanges/:id' do
     before { sign_in }
 
@@ -243,7 +91,7 @@ RSpec.describe 'Admin::Exchanges' do
       get admin_journal_exchange_path(exchange.exchange_id)
 
       expect(response.body).to include(exchange.conversation_id)
-      expect(response.body).to include(admin_journal_exchanges_path(conversation_id: exchange.conversation_id))
+      expect(response.body).to include(admin_journal_conversation_path(exchange.conversation_id))
     end
 
     it 'shows a dash where an exchange has nothing to show' do
@@ -284,18 +132,6 @@ RSpec.describe 'Admin::Exchanges' do
   # of a redirect is Rails' generic stub, which never carries the guarded page
   # whether the guard fired or not, so asserting on it would prove nothing.
   describe 'without a session' do
-    it 'shows no exchange and sends the visitor to the login page' do
-      exchange = create(:exchange, :failed)
-
-      get admin_journal_exchanges_path
-
-      expect(response).to have_http_status(:see_other)
-      expect(response).to redirect_to(new_admin_session_path)
-
-      follow_redirect!
-      expect(response.body).not_to include(exchange.exchange_id)
-    end
-
     it 'sends the visitor to the login page rather than to one exchange' do
       exchange = create(:exchange, :failed)
 

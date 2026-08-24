@@ -1,8 +1,9 @@
 # Everything the journal listings derive from the query string: which events to
 # show, in which order, and which page of them.
 #
-# Sibling of `ExchangeFilter`, and deliberately its twin: an operator who
-# has learnt one listing of this console has learnt the other.
+# The one listing of this console: an exchange and a conversation are reached
+# by narrowing it, not by a listing of their own — they are groupings of these
+# events, and the event is the only grain one searches at.
 class AuditEventFilter
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -11,6 +12,8 @@ class AuditEventFilter
   PER_PAGE = 25
 
   attribute :event_type, :string
+  attribute :exchange_id, :string
+  attribute :conversation_id, :string
   attribute :procedure_code, :string
   attribute :country_code, :string
   attribute :evidence_requester_id, :string
@@ -18,7 +21,7 @@ class AuditEventFilter
   attribute :jusqu_a, :date
   attribute :page, :integer, default: 1
 
-  EXACT = %i[event_type procedure_code evidence_requester_id].freeze
+  EXACT = %i[event_type exchange_id conversation_id procedure_code evidence_requester_id].freeze
 
   validates :event_type, inclusion: { in: AuditEvent::EVENT_TYPES }, allow_blank: true
   validates_country_code

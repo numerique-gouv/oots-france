@@ -13,10 +13,10 @@ RSpec.describe 'Admin::Journal::Events' do
         .to eq(I18n.t('admin.journal.events.index.title'))
     end
 
-    it 'leads to the exchanges' do
+    it 'leads to the search by person' do
       get admin_journal_root_path
 
-      expect(response.parsed_body.css("a[href='#{admin_journal_exchanges_path}']")).not_to be_empty
+      expect(response.parsed_body.css("a[href='#{admin_journal_subjects_path}']")).not_to be_empty
     end
 
     it 'lists the events, most recent first' do
@@ -60,9 +60,37 @@ RSpec.describe 'Admin::Journal::Events' do
 
       get admin_journal_root_path
 
-      ligne = response.parsed_body.css('tbody tr').find { |row| row.text.include?('sans-rien') }
+      # The listing abbreviates the identifiers, so the row is found by the whole
+      # one the link carries in its title rather than by its text.
+      ligne = response.parsed_body.css('tbody tr').find { |row| row.to_html.include?('sans-rien') }
 
       expect(ligne.text).not_to include(CountryTagComponent.flag(Settings.common_services_country_code))
+    end
+
+    # The `title` carries the whole identifier whether the label is abbreviated
+    # or not, so an assertion on the body proves nothing about which was
+    # rendered: the link's own text is the only thing that tells them apart.
+    it 'abbreviates the identifiers it lists, keeping the whole one reachable' do
+      event = create(:audit_event, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01')
+
+      get admin_journal_root_path
+
+      montre = response.parsed_body.css("[title='#{event.exchange_id}']").first
+      expect(montre.text.strip).to eq('…3a1b01')
+    end
+
+    # The conversation page is built from the exchanges naming it and answers 404
+    # when none does — so a response naming a conversation France never opened
+    # must read as text, exactly as its exchange already does.
+    it 'offers no link to a conversation no exchange names' do
+      event = create(:audit_event, event_type: 'response_received',
+        exchange_id: '88888888-8888-8888-8888-888888888899',
+        conversation_id: '5fe50e16-d6b8-4005-b5ec-0ab097f39999')
+
+      get admin_journal_root_path
+
+      expect(response.parsed_body.css("[title='#{event.conversation_id}']")).not_to be_empty
+      expect(response.parsed_body.css("a[title='#{event.conversation_id}']")).to be_empty
     end
 
     it 'narrows on an event type' do
@@ -123,6 +151,18 @@ RSpec.describe 'Admin::Journal::Events' do
       get admin_journal_event_path(event)
 
       expect(response.body).to include('message-de-la-passerelle', 'Königreich')
+    end
+
+    # The counterpart of the listing's abbreviation: a page with room shows the
+    # identifier whole, and adding `abbreviated:` here would go unnoticed
+    # without this.
+    it 'shows the identifier whole, where the listing abbreviates it' do
+      event = create(:audit_event, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b01')
+
+      get admin_journal_event_path(event)
+
+      montre = response.parsed_body.css("[title='#{event.exchange_id}']").first
+      expect(montre.text.strip).to eq(event.exchange_id)
     end
 
     # The console shows personal data on this page alone, and nothing in a table

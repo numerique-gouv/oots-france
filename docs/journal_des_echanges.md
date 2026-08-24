@@ -135,7 +135,7 @@ Autrement dit : on a acheté exactement la capacité que l'article 17 réclame �
 
 ## Le relire
 
-Le journal se consulte depuis l'[espace d'administration](espace_administration.md), sous `/admin/journal` : la liste des événements, la fiche de l'un d'eux, les échanges tels qu'ils s'additionnent, la chronologie de l'un, et la recherche par personne. Ces pages **montrent des données personnelles**, contrairement au reste de la console, et c'est leur raison d'être — l'article 17 existe pour qu'on puisse répondre à « quelles données de cette personne ont circulé ». Elles sont derrière le même compte que le reste, et aucune trace de consultation n'est tenue : aucun chapitre ne la demande.
+Le journal se consulte sous `/admin/journal`, dont l'[espace d'administration](espace_administration.md) détaille les pages. Elles **montrent des données personnelles**, contrairement au reste de la console, et c'est leur raison d'être — l'article 17 existe pour qu'on puisse répondre à « quelles données de cette personne ont circulé ». Elles sont derrière le même compte que le reste, et aucune trace de consultation n'est tenue : aucun chapitre ne la demande.
 
 La console Rails et le `psql` restent ouverts pour ce qu'une page ne fait pas :
 

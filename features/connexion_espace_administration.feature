@@ -5,9 +5,9 @@ Fonctionnalité: Se connecter à l'espace d'administration
   demande la connexion, y compris le tableau de bord des jobs, qui est un
   moteur monté et qu'aucun filtre de l'application n'atteint.
 
-  Scénario: sans connexion, la liste des échanges n'est pas lisible
+  Scénario: sans connexion, le journal n'est pas lisible
     Étant donné un échange en échec avec l'Allemagne
-    Quand j'ouvre la liste des échanges
+    Quand j'ouvre le journal des évènements
     Alors on me demande de me connecter
     Et je ne vois plus l'échange allemand
 
@@ -24,5 +24,5 @@ Fonctionnalité: Se connecter à l'espace d'administration
     Étant donné un compte d'administration
     Et que je suis connecté à l'espace d'administration
     Quand je me déconnecte
-    Et que j'ouvre la liste des échanges
+    Et que j'ouvre le journal des évènements
     Alors on me demande de me connecter

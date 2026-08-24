@@ -1,0 +1,42 @@
+<% content_for :title, t('admin.journal.conversations.show.title', id: @conversation_id) %>
+
+<%= render JournalBreadcrumbsComponent.new(trail: [
+      [t('admin.journal.conversations.section'), nil],
+      [@conversation_id, nil],
+    ]) %>
+
+<h1 class="fr-h3"><%= t('admin.journal.conversations.show.title', id: @conversation_id) %></h1>
+
+<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8">
+  <%= t('admin.journal.conversations.show.lede') %>
+</p>
+
+<p class="fr-text--sm fr-mb-4w"><%= t('admin.journal.exchanges.count', count: @exchanges.size) %></p>
+
+<%# One table per exchange, in the order they were opened: the conversation is
+    a sequence of round trips, and merging their events into a single listing
+    would lose which belongs to which. %>
+<% @exchanges.each do |exchange| %>
+  <div class="fr-mb-6w">
+    <h2 class="fr-h5 fr-mb-1w">
+      <%= link_to t('admin.journal.exchanges.show.title', id: exchange.exchange_id),
+            admin_journal_exchange_path(exchange.exchange_id) %>
+    </h2>
+
+    <p class="fr-mb-2w">
+      <%= render ExchangeStatusComponent.new(status: exchange.status) %>
+      <span class="fr-text--sm fr-ml-1w">
+        <%= t("admin.journal.exchanges.directions.#{exchange.direction}") %> ·
+        <%= exchange.procedure_code.presence || '—' %> ·
+        <%= l(exchange.created_at, format: :long) %>
+      </span>
+    </p>
+
+    <%# The heading above already names the exchange, so the caption is hidden
+        rather than dropped: RGAA 5.4 wants a data table to carry a title, and a
+        screen reader announces it where an eye would only read it twice. %>
+    <%= render 'admin/journal/events', events: exchange.audit_events, hide_caption: true,
+          caption: t('admin.journal.conversations.show.journal', id: exchange.exchange_id),
+          empty: t('admin.journal.conversations.show.empty') %>
+  </div>
+<% end %>

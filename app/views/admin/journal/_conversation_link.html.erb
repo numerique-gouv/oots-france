@@ -1,0 +1,18 @@
+<%# The conversation an event names leads to what one user's session left
+    behind — but that page is built from the exchanges naming it, and answers
+    404 when none does. A response can name a conversation France never opened,
+    exactly as it can name an exchange, so the link is posted only where an
+    exchange of this very conversation is at hand: it is then the one the page
+    will find. Read from the association the listing already loaded, so no row
+    costs a query of its own. %>
+<% known = event.exchange&.conversation_id == event.conversation_id %>
+<% if event.conversation_id.present? %>
+  <% label = local_assigns[:abbreviated] ? abbreviated_identifier(event.conversation_id) : event.conversation_id %>
+  <% if known %>
+    <%= link_to label, admin_journal_conversation_path(event.conversation_id), title: event.conversation_id %>
+  <% else %>
+    <%= tag.span(label, title: event.conversation_id) %>
+  <% end %>
+<% else %>
+  —
+<% end %>

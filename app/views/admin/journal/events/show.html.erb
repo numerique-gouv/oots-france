@@ -35,7 +35,7 @@
                     <% when :exchange_id %>
                       <%= render 'admin/journal/exchange_link', event: @event %>
                     <% when :conversation_id %>
-                      <%= link_to value, admin_journal_exchanges_path(conversation_id: value) %>
+                      <%= render 'admin/journal/conversation_link', event: @event %>
                     <% when :procedure_code %>
                       <%= link_to value, admin_common_services_procedure_path(value) %>
                     <% when :country_code %>

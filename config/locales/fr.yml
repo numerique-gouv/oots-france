@@ -66,6 +66,8 @@ fr:
         jusqu_a: La date de fin
       audit_event_filter:
         event_type: Le type d'événement
+        exchange_id: L'identifiant d'échange
+        conversation_id: L'identifiant de conversation
         country_code: Le pays
         evidence_requester_id: Le requêteur
         procedure_code: La démarche
@@ -433,7 +435,7 @@ fr:
           one: Un événement
           other: "%{count} événements"
         index:
-          title: Journal des échanges
+          title: Journal des évènements
           # Le lien ferme la phrase : une icône de lien sortant au milieu d'une
           # ligne la coupe en deux.
           lede_html: >-
@@ -462,6 +464,9 @@ fr:
           caption: Les échanges concernant cette personne
           empty: Aucun échange ne concerne cette personne.
       exchanges:
+        # Le segment de route, tel que le fil d'Ariane le nomme : ni l'un ni
+        # l'autre n'a de liste, le journal étant la seule.
+        section: Échanges
         count:
           zero: Aucun échange
           one: Un échange
@@ -478,27 +483,13 @@ fr:
           preview_required: Prévisualisation requise
           delivered: Délivré
           failed: Échec
-        # Ce que la liste met en en-tête de colonne, ce que la fiche met en tête
-        # de ligne et ce que le filtre met en étiquette : le même attribut, dit
-        # une fois.
+        # Ce que la fiche met en tête de ligne.
         attributes:
-          status: État
           direction: Sens
-          country: Pays
           procedure: Démarche
           requester: Requêteur
           opened_at: Ouvert le
           conversation: Conversation
-        index:
-          title: Échanges
-          lede: >-
-            Où en est chaque échange, dans les deux sens : ce que la France demande à un
-            autre État membre, et ce qu'on lui demande. Ce qu'un échange a laissé comme
-            trace se lit sur sa fiche.
-          caption: Échanges
-          columns:
-            id: Identifiant
-          empty: Aucun échange ne correspond à ces critères.
         show:
           title: Échange %{id}
           caption: Détail de l'échange
@@ -506,24 +497,25 @@ fr:
             settled_at: Réglé le
             edm_error_code: Code d'erreur EDM
             preview_location: Espace de prévisualisation
-          # Ce que le lien de la ligne « Conversation » promet : les autres
-          # échanges de la même session, que le chapitre 4.7 donne pour ce qui
-          # rend le suivi possible.
+          # Ce que le lien de la ligne « Conversation » promet : la page de la
+          # session, que le chapitre 4.7 donne pour ce qui rend le suivi possible.
           same_conversation: Tous les échanges de cette conversation
           simulate: Simuler cette chaîne de requêtes
           journal:
-            # Pas « journal des échanges de cet échange » : « journal des
-            # échanges » est le nom du journal de l'article 17.
             caption: Journal de cet échange
             empty: Aucun événement ne porte cet échange.
           failure_reason: Raison de l'échec
-        filtre:
-          legend: Filtrer les échanges
-          all: Tous
-          since: Ouvert depuis le
-          until: Jusqu'au
-          submit: Filtrer
-          reset: Réinitialiser
+      # Une conversation n'a pas d'enregistrement : la page est bâtie des
+      # échanges qui la nomment, un tableau d'évènements par échange.
+      conversations:
+        section: Conversations
+        show:
+          title: Conversation %{id}
+          lede: >-
+            Tout ce qu'a laissé la session d'un usager : chaque échange qu'elle couvre, et
+            sous chacun les évènements qu'il a laissés au journal.
+          journal: "Le journal de l'échange %{id}"
+          empty: Aucun événement ne porte cet échange.
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.

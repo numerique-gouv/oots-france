@@ -16,15 +16,15 @@ end
 end
 
 Étantdonné('un échange délivré avec la Finlande') do
-  create(:exchange, :delivered, country_code: COUNTRIES.fetch('finlandais'))
+  echange = create(:exchange, :delivered, country_code: COUNTRIES.fetch('finlandais'))
+  create(:audit_event, event_type: 'evidence_delivered', exchange_id: echange.exchange_id,
+    conversation_id: echange.conversation_id)
 end
 
 Étantdonné("un échange en échec avec l'Allemagne") do
-  create(:exchange, :failed, country_code: COUNTRIES.fetch('allemand'))
-end
-
-Quand("j'ouvre la liste des échanges") do
-  visit admin_journal_exchanges_path
+  echange = create(:exchange, :failed, country_code: COUNTRIES.fetch('allemand'))
+  create(:audit_event, event_type: 'error_received', exchange_id: echange.exchange_id,
+    conversation_id: echange.conversation_id)
 end
 
 Quand("j'ouvre le tableau de bord des jobs") do
@@ -43,15 +43,20 @@ Quand("j'ouvre la fiche de l'échange {word}") do |nationality|
   visit admin_journal_exchange_path(exchange_named(nationality).exchange_id)
 end
 
-Quand("je filtre sur l'état {string}") do |state|
-  select state, from: 'status'
-  click_button 'Filtrer'
+Quand("je filtre sur l'échange {word}") do |nationality|
+  fill_in I18n.t('admin.journal.attributes.exchange_id'), with: exchange_named(nationality).exchange_id
+  click_button I18n.t('admin.journal.filtre.submit')
 end
 
-Alors("je vois l'échange {word} avec l'état {string}") do |nationality, state|
-  ligne = find('tbody tr', text: exchange_named(nationality).exchange_id)
+# The listing abbreviates both identifiers — two UUIDs a row would leave no
+# room for anything else — and carries the whole one in the link's title. That
+# is what a scenario has to look at.
+Alors("je vois les évènements de l'échange {word}") do |nationality|
+  expect(page).to have_css("a[title='#{exchange_named(nationality).exchange_id}']")
+end
 
-  expect(ligne).to have_text(state)
+Alors("je ne vois plus ceux de l'échange {word}") do |nationality|
+  expect(page).to have_no_css("a[title='#{exchange_named(nationality).exchange_id}']")
 end
 
 Alors("je ne vois plus l'échange {word}") do |nationality|
@@ -107,7 +112,7 @@ end
   create(:audit_event, :about_sophie, exchange_id: @exchange)
 end
 
-Quand("j'ouvre le journal des échanges") do
+Quand("j'ouvre le journal des évènements") do
   visit admin_journal_root_path
 end
 
@@ -115,8 +120,10 @@ Quand('je recherche la personne {string} {string} née le {string}') do |family_
   visit admin_journal_subjects_path(family_name:, given_name:, date_of_birth:)
 end
 
+# Whole in the title, abbreviated in the text — and not always a link: an event
+# may name an exchange this side never opened, which reads as plain text.
 Alors('je vois cet échange dans le journal') do
-  expect(page).to have_text(@exchange)
+  expect(page).to have_css("[title='#{@exchange}']", visible: :all)
 end
 
 Alors('je vois ce refus dans le journal') do
@@ -124,14 +131,38 @@ Alors('je vois ce refus dans le journal') do
 end
 
 Alors('je vois cet échange avec le sens {string}') do |direction|
-  ligne = find('tbody tr', text: @exchange)
-
-  expect(ligne).to have_text(direction)
+  expect(page).to have_text(direction)
 end
 
-Alors('je ne le vois pas dans la liste des échanges') do
-  visit admin_journal_exchanges_path
+Alors('il ne nomme ni échange ni conversation') do
+  ligne = find('tbody tr', text: @exchange)
 
-  expect(page).to have_text(I18n.t('admin.journal.exchanges.index.title'))
-  expect(page).to have_no_text(@exchange)
+  expect(ligne).to have_text('—')
+end
+
+# Chapter 4.4 has one conversation cover the exchanges of a single user's
+# session; the page is what gathers them, an exchange having no listing of its
+# own any more.
+Étantdonné("deux échanges d'un même usager") do
+  @conversation = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'
+  @echanges = Array.new(2) do
+    echange = create(:exchange, :delivered, conversation_id: @conversation)
+    create(:audit_event, event_type: 'request_sent', exchange_id: echange.exchange_id,
+      conversation_id: @conversation)
+    echange
+  end
+end
+
+Quand("j'ouvre la conversation de cet usager") do
+  visit admin_journal_conversation_path(@conversation)
+end
+
+Alors('je vois les deux échanges, chacun avec son journal') do
+  @echanges.each { |echange| expect(page).to have_text(echange.exchange_id) }
+
+  expect(page).to have_table(count: @echanges.size)
+end
+
+Quand("j'ouvre la fiche de cet échange") do
+  visit admin_journal_exchange_path(@exchange)
 end
