@@ -48,16 +48,14 @@ if Rails.env.development?
   # nobody declares would link to a page with nothing on it.
   #
   # `country_code` is the correspondent's either way: the country France asks,
-  # and the country asking France.
-  #
-  # `conversation` gathers several exchanges under one user's session, as
+  # and the country asking France. `conversation` gathers several exchanges under one user's session, as
   # chapter 4.4 allows: the first two are Sophie Dupont asking for two
   # different pieces of evidence in a row, so the console has a conversation
   # worth following from one exchange to the other.
   scenarios = [
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
       conversation: 1, events: %w[request_sent response_received evidence_delivered] },
-    { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::STUDENT_GRANT,
+    { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       edm_error_code: 'EDM:ERR:0004',
       error_description: "Le fournisseur n'a pas trouvé de justificatif correspondant.",
       conversation: 1, events: %w[request_sent error_received] },
@@ -70,7 +68,7 @@ if Rails.env.development?
       procedure_code: ProcedureCode::SYSTEM_CHECK,
       events: %w[request_received response_sent] },
     { incoming: true, status: 'failed', country_code: 'IT',
-      procedure_code: ProcedureCode::STUDENT_GRANT,
+      procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       edm_error_code: 'EDM:ERR:0004',
       error_description: 'La France ne détient pas ce justificatif.',
       events: %w[request_received error_sent] },

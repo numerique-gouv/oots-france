@@ -56,7 +56,7 @@ module Oots
     def request
       body = EvidenceRequestBuilder.new(
         requester:, provider: german_provider, beneficiary:, requirement:, data_service:,
-        procedure_code: ProcedureCode::STUDENT_GRANT,
+        procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         clock:, uuid:,
       )
 

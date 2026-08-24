@@ -101,7 +101,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   def request_body
     EvidenceRequestBuilder.new(
       requester:, provider: german_provider, beneficiary:, requirement:, data_service:,
-      procedure_code: ProcedureCode::STUDENT_GRANT,
+      procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       clock: frozen_clock, uuid:,
     )
   end

@@ -139,7 +139,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
-> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
+> `T3` — la reconnaissance académique de diplômes, selon `Procedures-CodeList.gc` — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
 
 ## En cas d'échec
 

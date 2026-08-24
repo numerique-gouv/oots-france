@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe EvidenceRequest::ResolveEvidenceType do
   subject(:resolve) do
-    described_class.call(procedure_code: ProcedureCode::STUDENT_GRANT, country_code: 'FI', common_services:)
+    described_class.call(procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, country_code: 'FI', common_services:)
   end
 
   let(:common_services) do
@@ -40,7 +40,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
     resolve
 
     expect(common_services).to have_received(:evidence_types_for_procedure)
-      .with(ProcedureCode::STUDENT_GRANT, 'FI')
+      .with(ProcedureCode::DIPLOMA_RECOGNITION, 'FI')
   end
 
   # Reported as a failure of its own rather than left to surface as a nil three
@@ -50,18 +50,18 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
 
     it 'fails, naming the procedure' do
       expect(resolve).to be_failure
-      expect(resolve.error).to include(key: :no_evidence_type, errors: [ProcedureCode::STUDENT_GRANT])
+      expect(resolve.error).to include(key: :no_evidence_type, errors: [ProcedureCode::DIPLOMA_RECOGNITION])
     end
   end
 
   describe 'a procedure the broker does not declare' do
     it 'fails, rather than raising at the caller' do
       allow(common_services).to receive(:evidence_types_for_procedure)
-        .and_raise(ProcedureCodeNotFound, "Code de démarche « #{ProcedureCode::STUDENT_GRANT} » introuvable.")
+        .and_raise(ProcedureCodeNotFound, "Code de démarche « #{ProcedureCode::DIPLOMA_RECOGNITION} » introuvable.")
 
       expect(resolve).to be_failure
       expect(resolve.error).to include(key: :unknown_procedure)
-      expect(resolve.error[:errors].first).to include(ProcedureCode::STUDENT_GRANT)
+      expect(resolve.error[:errors].first).to include(ProcedureCode::DIPLOMA_RECOGNITION)
     end
   end
 
