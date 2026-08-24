@@ -7,7 +7,7 @@ Fonctionnalité: Se connecter à l'espace d'administration
 
   Scénario: sans connexion, le journal n'est pas lisible
     Étant donné un échange en échec avec l'Allemagne
-    Quand j'ouvre le journal des évènements
+    Quand j'ouvre le journal des événements
     Alors on me demande de me connecter
     Et je ne vois plus l'échange allemand
 
@@ -24,5 +24,5 @@ Fonctionnalité: Se connecter à l'espace d'administration
     Étant donné un compte d'administration
     Et que je suis connecté à l'espace d'administration
     Quand je me déconnecte
-    Et que j'ouvre le journal des évènements
+    Et que j'ouvre le journal des événements
     Alors on me demande de me connecter

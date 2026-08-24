@@ -51,7 +51,7 @@ end
 # The listing abbreviates both identifiers — two UUIDs a row would leave no
 # room for anything else — and carries the whole one in the link's title. That
 # is what a scenario has to look at.
-Alors("je vois les évènements de l'échange {word}") do |nationality|
+Alors("je vois les événements de l'échange {word}") do |nationality|
   expect(page).to have_css("a[title='#{exchange_named(nationality).exchange_id}']")
 end
 
@@ -112,7 +112,7 @@ end
   create(:audit_event, :about_sophie, exchange_id: @exchange)
 end
 
-Quand("j'ouvre le journal des évènements") do
+Quand("j'ouvre le journal des événements") do
   visit admin_journal_root_path
 end
 

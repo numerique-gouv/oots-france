@@ -2,7 +2,7 @@
 Fonctionnalité: Suivre les échanges depuis l'espace d'administration
 
   L'espace d'administration donne à voir ce que les échanges ont déjà écrit :
-  le journal des évènements, où l'on cherche, et sous lui la fiche d'un échange
+  le journal des événements, où l'on cherche, et sous lui la fiche d'un échange
   et celle d'une conversation, où l'on descend. Il observe et n'écrit rien.
 
   Contexte:
@@ -12,9 +12,9 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   Scénario: le journal se restreint à un seul échange
     Étant donné un échange délivré avec la Finlande
     Et un échange en échec avec l'Allemagne
-    Quand j'ouvre le journal des évènements
+    Quand j'ouvre le journal des événements
     Et que je filtre sur l'échange allemand
-    Alors je vois les évènements de l'échange allemand
+    Alors je vois les événements de l'échange allemand
     Et je ne vois plus ceux de l'échange finlandais
 
   Scénario: la fiche d'un échange dit pourquoi il a échoué
@@ -30,7 +30,7 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
 
   Scénario: le journal garde le refus qu'aucun échange ne porte
     Étant donné une requête refusée avant qu'aucun échange soit ouvert
-    Quand j'ouvre le journal des évènements
+    Quand j'ouvre le journal des événements
     Alors je vois ce refus dans le journal
     Et il ne nomme ni échange ni conversation
 

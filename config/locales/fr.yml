@@ -435,7 +435,7 @@ fr:
           one: Un événement
           other: "%{count} événements"
         index:
-          title: Journal des évènements
+          title: Journal des événements
           # Le lien ferme la phrase : une icône de lien sortant au milieu d'une
           # ligne la coupe en deux.
           lede_html: >-
@@ -447,7 +447,7 @@ fr:
         show:
           title: "Événement #%{id}"
           caption: Tout ce que le journal retient de cet événement
-          same_subject: Tous les évènements concernant cette personne
+          same_subject: Tous les événements concernant cette personne
       subjects:
         attributes:
           family_name: Nom d'usage
@@ -461,8 +461,8 @@ fr:
             est chiffrée en mode déterministe : cela rend l'égalité interrogeable, et rien
             d'autre — ni fragment de nom, ni recherche approchante.
           submit: Rechercher
-          caption: Les évènements concernant cette personne
-          empty: Aucun évènement ne concerne cette personne.
+          caption: Les événements concernant cette personne
+          empty: Aucun événement ne concerne cette personne.
       exchanges:
         # Le segment de route, tel que le fil d'Ariane le nomme : ni l'un ni
         # l'autre n'a de liste, le journal étant la seule.
@@ -506,14 +506,14 @@ fr:
             empty: Aucun événement ne porte cet échange.
           failure_reason: Raison de l'échec
       # Une conversation n'a pas d'enregistrement : la page est bâtie des
-      # échanges qui la nomment, un tableau d'évènements par échange.
+      # échanges qui la nomment, un tableau d'événements par échange.
       conversations:
         section: Conversations
         show:
           title: Conversation %{id}
           lede: >-
             Tout ce qu'a laissé la session d'un usager : chaque échange qu'elle couvre, et
-            sous chacun les évènements qu'il a laissés au journal.
+            sous chacun les événements qu'il a laissés au journal.
           journal: "Le journal de l'échange %{id}"
           empty: Aucun événement ne porte cet échange.
     sessions:
