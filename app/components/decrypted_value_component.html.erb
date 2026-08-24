@@ -1,0 +1,10 @@
+<span class="decrypted-value">
+  <%# A screen reader is told to skip the padlock, so the meaning can only come
+      from the text beside it. The tooltip rides on the hidden span rather than
+      on the wrapper: a sighted reader gets it, and a screen reader still reads
+      the wording once, from that text. %>
+  <span class="decrypted-value__icon fr-icon-lock-unlock-line" aria-hidden="true"
+        title="<%= label %>"></span>
+  <span class="fr-sr-only"><%= label %></span>
+  <%= content %>
+</span>

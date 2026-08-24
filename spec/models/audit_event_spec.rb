@@ -39,6 +39,13 @@ RSpec.describe AuditEvent do
     it 'can still be looked up by subject' do
       expect(described_class.where(evidence_subject_key: 'königreich|ada|1990-01-01')).to contain_exactly(event)
     end
+
+    # The event's page walks `admin.journal.attributes` and marks with a padlock
+    # whatever it had to decrypt. A column encrypted but absent from that tree is
+    # shown nowhere, so the padlock announcing it would never appear either.
+    it 'gives every encrypted column a row on the page that marks it' do
+      expect(described_class.encrypted_attributes).to all(be_in(I18n.t('admin.journal.attributes').keys))
+    end
   end
 
   # It lives on the model because three callers share it: the writing, the

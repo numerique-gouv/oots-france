@@ -68,6 +68,8 @@ Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, e
 
 **Les pages du journal, elles, en montrent**, et c'est leur raison d'être — [journal_des_echanges.md](journal_des_echanges.md#le-relire) dit laquelle. C'est une décision prise pour ces pages-là, et pour elles seules.
 
+Ce qui les distingue est **marqué à l'écran** : sur la fiche d'un événement, les valeurs qu'il a fallu déchiffrer pour les afficher portent un cadenas ouvert et un fond qui les détache, quand les vingt autres colonnes n'en portent pas. Rien d'autre dans la console ne montrant de données personnelles, un lecteur n'a aucune raison d'en attendre au milieu d'un tableau, et le cadenas dit autant que la valeur était chiffrée au repos qu'elle ne l'est plus sous ses yeux. Ce sont **les colonnes que le modèle déclare chiffrées** qui le reçoivent, et non une liste tenue dans un gabarit : une colonne chiffrée plus tard héritera de la marque sans qu'on y pense.
+
 Deux valeurs viennent d'un correspondant étranger et sont traitées comme telles :
 
 - **`preview_location`** est rendue en **texte, jamais en lien**. Une console d'exploitation n'a pas à être un lanceur d'un clic vers un site qu'elle ne choisit pas, même quand le modèle a vérifié le schéma de l'adresse.
@@ -123,6 +125,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 | `SearchFieldComponent` | Le champ qui filtre une liste dans le navigateur : son étiquette hors écran, sa loupe, et de quoi réécrire le décompte au-dessus |
 | `ConversationStatusComponent` | L'état d'un échange, en pastille |
 | `EventTypeComponent` | Le type d'un événement du journal, en pastille |
+| `DecryptedValueComponent` | Une valeur qu'il a fallu déchiffrer pour l'afficher : cadenas ouvert, fond du registre d'avertissement, et le sens du cadenas écrit hors écran — une icône seule ne le dit qu'à l'œil |
 
 **Les listes sont des cartes, pas des tableaux** : une carte par entrée, sur toute la largeur, et ce qu'une entrée énumère rendu dans le pied de sa carte — `fr-card__footer` —, séparé par un filet. Un tableau n'y subsiste que là où chaque ligne a plusieurs colonnes à comparer, ce qui est le cas des fournisseurs d'un service ; les types de justificatif d'un pays, eux, tiennent en une ligne chacun — trois en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils annoncent.
 

@@ -152,6 +152,10 @@ fr:
       about_html: OOTS-France met en œuvre le %{tdd} du règlement européen sur le portail numérique unique.
       tdd: système technique « une fois pour toutes »
   components:
+    # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
+    # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
+    decrypted_value:
+      label: Donnée personnelle déchiffrée
     directory_breadcrumbs:
       admin: Espace d’administration
       directories: Annuaires centraux
