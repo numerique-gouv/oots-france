@@ -2,6 +2,9 @@
 
 > Ce document mesure l'écart entre ce dépôt et la version **2.0.1 (juillet 2026)** des [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification européenne d'OOTS. Il dit ce qui manque, ce que chaque manque coûte, et dans quel ordre les aborder. Pour comprendre OOTS lui-même, lire d'abord [oots_context.md](oots_context.md) ; pour savoir pourquoi c'est la 2.0 qui est visée plutôt que la 1.2, [versions_tdd.md](versions_tdd.md) ; pour retrouver un chapitre des TDD, [carte_des_tdd.md](carte_des_tdd.md) ; pour un sigle ou un terme, [glossaire.md](glossaire.md).
 
+> [!WARNING]
+> **L'avancement du projet se suit désormais dans [Linear](https://linear.app/pole-api/team/OOTS/all), pas ici.** Ce document décrit l'état du dépôt au 24 août 2026 et n'est plus tenu à jour au fil de l'eau : ce qui reste à faire est transféré en projets et en tickets dans l'équipe OOTS, qui font foi sur ce qui est en cours, fait ou abandonné.
+
 ## Comment lire ce document
 
 Chaque chantier est présenté de la même façon : **ce que c'est** en langage courant, **ce que la spécification exige**, **ce que fait le dépôt aujourd'hui**, **ce qu'il faut construire**. Un lecteur non technique peut ne lire que le premier paragraphe de chaque chantier, la [synthèse par chapitre](#inventaire-chapitre-par-chapitre) et les [dépendances entre chantiers](#dépendances-entre-chantiers) : il en aura une image juste.
