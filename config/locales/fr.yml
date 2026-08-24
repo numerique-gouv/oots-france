@@ -141,7 +141,6 @@ fr:
     logo_html: République<br>Française
     entete:
       tagline: Échange transfrontalier de justificatifs
-      conversations: Conversations
       directories: Annuaires
       jobs: Jobs
       journal: Journal
@@ -152,12 +151,13 @@ fr:
       about_html: OOTS-France met en œuvre le %{tdd} du règlement européen sur le portail numérique unique.
       tdd: système technique « une fois pour toutes »
   components:
+    admin_breadcrumbs:
+      admin: Espace d’administration
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     decrypted_value:
       label: Donnée personnelle déchiffrée
     directory_breadcrumbs:
-      admin: Espace d’administration
       directories: Annuaires centraux
     directory_query:
       section: Requête effectuée
@@ -450,6 +450,62 @@ fr:
           submit: Rechercher
           caption: Les échanges concernant cette personne
           empty: Aucun échange ne concerne cette personne.
+      conversations:
+        count:
+          zero: Aucune conversation
+          one: Une conversation
+          other: "%{count} conversations"
+        # Le sens que porte `Conversation#incoming?` : la France demande, ou on lui
+        # demande.
+        directions:
+          incoming: Reçue
+          outgoing: Émise
+        # Les états que porte `Conversation::STATUSES`, dits à un exploitant.
+        statuses:
+          pending: En attente
+          sent: Envoyée
+          preview_required: Prévisualisation requise
+          delivered: Délivrée
+          failed: Échec
+        # Ce que la liste met en en-tête de colonne, ce que la fiche met en tête
+        # de ligne et ce que le filtre met en étiquette : le même attribut, dit
+        # une fois.
+        attributes:
+          status: État
+          direction: Sens
+          country: Pays
+          procedure: Démarche
+          requester: Requêteur
+          opened_at: Ouverte le
+        index:
+          title: Conversations
+          lede: >-
+            Où en est chaque échange, dans les deux sens : ce que la France demande à un
+            autre État membre, et ce qu'on lui demande. Ce qu'un échange a laissé comme
+            trace se lit sur sa fiche.
+          caption: Conversations
+          columns:
+            id: Identifiant
+          empty: Aucune conversation ne correspond à ces critères.
+        show:
+          title: Conversation %{id}
+          caption: Détail de l'échange
+          rows:
+            settled_at: Réglée le
+            edm_error_code: Code d'erreur EDM
+            preview_location: Espace de prévisualisation
+          simulate: Simuler cette chaîne de requêtes
+          journal:
+            caption: Journal des échanges de cette conversation
+            empty: Aucun événement ne porte cet échange.
+          failure_reason: Raison de l'échec
+        filtre:
+          legend: Filtrer les conversations
+          all: Tous
+          since: Ouverte depuis le
+          until: Jusqu'au
+          submit: Filtrer
+          reset: Réinitialiser
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.
@@ -467,7 +523,6 @@ fr:
       show:
         heading: Espace d'administration
         tiles:
-          conversations: L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.
           journal: >-
             La trace de chaque requête, réponse et refus, conservée douze mois. Porte des
             données personnelles.
@@ -690,59 +745,3 @@ fr:
             — <code>%{id}</code>,
             versions déclarées <code>%{versions}</code>
           empty: Aucun service de données pour ce couple.
-    conversations:
-      count:
-        zero: Aucune conversation
-        one: Une conversation
-        other: "%{count} conversations"
-      # Le sens que porte `Conversation#incoming?` : la France demande, ou on lui
-      # demande.
-      directions:
-        incoming: Reçue
-        outgoing: Émise
-      # Les états que porte `Conversation::STATUSES`, dits à un exploitant.
-      statuses:
-        pending: En attente
-        sent: Envoyée
-        preview_required: Prévisualisation requise
-        delivered: Délivrée
-        failed: Échec
-      # Ce que la liste met en en-tête de colonne, ce que la fiche met en tête
-      # de ligne et ce que le filtre met en étiquette : le même attribut, dit
-      # une fois.
-      attributes:
-        status: État
-        direction: Sens
-        country: Pays
-        procedure: Démarche
-        requester: Requêteur
-        opened_at: Ouverte le
-      index:
-        title: Conversations
-        lede: >-
-          Où en est chaque échange, dans les deux sens : ce que la France demande à un
-          autre État membre, et ce qu'on lui demande. Ce qu'un échange a laissé comme
-          trace se lit sur sa fiche.
-        caption: Conversations
-        columns:
-          id: Identifiant
-        empty: Aucune conversation ne correspond à ces critères.
-      show:
-        title: Conversation %{id}
-        caption: Détail de l'échange
-        rows:
-          settled_at: Réglée le
-          edm_error_code: Code d'erreur EDM
-          preview_location: Espace de prévisualisation
-        simulate: Simuler cette chaîne de requêtes
-        journal:
-          caption: Journal des échanges de cette conversation
-          empty: Aucun événement ne porte cet échange.
-        failure_reason: Raison de l'échec
-      filtre:
-        legend: Filtrer les conversations
-        all: Tous
-        since: Ouverte depuis le
-        until: Jusqu'au
-        submit: Filtrer
-        reset: Réinitialiser

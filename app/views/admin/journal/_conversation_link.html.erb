@@ -2,7 +2,7 @@
     France never opened, and a refusal turned away before any exchange was
     opened names none. A link would then lead to a 404. %>
 <% if event.conversation %>
-  <%= link_to event.conversation_id, admin_conversation_path(event.conversation_id) %>
+  <%= link_to event.conversation_id, admin_journal_conversation_path(event.conversation_id) %>
 <% else %>
   <%= event.conversation_id.presence || '—' %>
 <% end %>

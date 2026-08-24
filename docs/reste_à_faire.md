@@ -129,7 +129,7 @@ Sur la réponse reçue, le dépôt tire l'identifiant du justificatif que le cha
 
 **Ce que fait le dépôt.** Le journal existe : une table dédiée en ajout seul, écrite sur les deux chemins et sur les refus qui n'atteignent jamais la passerelle, avec le sujet du justificatif chiffré au repos et une purge à douze mois. Le PMode garde de son côté les métadonnées et les accusés signés aussi longtemps, là où il efface le justificatif aussitôt. Tout cela est décrit par [journal_des_echanges.md](journal_des_echanges.md), qui en est le propriétaire. Le bouchon 6 est levé.
 
-L'[espace d'administration](espace_administration.md) le donne à lire, sous `/admin/journal` : la liste des événements, la fiche de l'un d'eux, et la recherche par personne. Le journal d'un échange donné se lit, lui, sur la fiche de cet échange, sous `/admin/conversations` — que les deux sens alimentent désormais, si bien qu'une seule liste porte tout ce qui circule.
+L'[espace d'administration](espace_administration.md) le donne à lire, sous `/admin/journal` : la liste des événements, la fiche de l'un d'eux, et la recherche par personne. Le journal d'un échange donné se lit, lui, sur la fiche de cet échange, sous `/admin/journal/conversations` — que les deux sens alimentent, si bien qu'une seule liste porte tout ce qui circule.
 
 **Ce qui reste.**
 

@@ -4,6 +4,21 @@ RSpec.describe 'Admin::Journal::Events' do
   before { sign_in }
 
   describe 'GET /admin/journal' do
+    # An equality and not a presence: the DSFR marks as current whatever crumb
+    # carries no address, so two of them would read as two places at once.
+    it 'says where the reader stands' do
+      get admin_journal_root_path
+
+      expect(response.parsed_body.css(".fr-breadcrumb__link[aria-current='true']").text)
+        .to eq(I18n.t('admin.journal.events.index.title'))
+    end
+
+    it 'leads to the conversations' do
+      get admin_journal_root_path
+
+      expect(response.parsed_body.css("a[href='#{admin_journal_conversations_path}']")).not_to be_empty
+    end
+
     it 'lists the events, most recent first' do
       older = create(:audit_event, occurred_at: 2.days.ago, conversation_id: 'ancienne')
       newer = create(:audit_event, occurred_at: 1.hour.ago, conversation_id: 'recente')

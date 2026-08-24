@@ -21,7 +21,7 @@ RSpec.describe ConversationStatusComponent, type: :component do
     Conversation::STATUSES.each do |status|
       render_inline(described_class.new(status:))
 
-      expect(page).to have_css('.fr-badge', text: I18n.t("admin.conversations.statuses.#{status}", raise: true))
+      expect(page).to have_css('.fr-badge', text: I18n.t("admin.journal.conversations.statuses.#{status}", raise: true))
     end
   end
 
