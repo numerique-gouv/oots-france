@@ -11,6 +11,8 @@ module IncomingMessage
     def call
       return unless request?
 
+      refuse_unless_identified
+
       # On the exchange identifier alone, without the direction: chapter 4.4
       # requires every message of one exchange to reuse it, and the end-to-end
       # scenario loops through a single gateway, where France is both its
@@ -25,6 +27,37 @@ module IncomingMessage
     end
 
     private
+
+    # `R-EDM-ebMS-019` requires the `ExchangeId` property — `-018` only counts
+    # them — and the ebMS3 envelope requires the `eb:ConversationId` element,
+    # `R-EDM-ebMS-017` fixing its shape alone. A request carrying neither names
+    # nothing to open a row under. Refused the way an action we cannot name is refused,
+    # so that `IncomingMessage::Process` gives up on its own terms — the arrival
+    # is already journalled by then — rather than letting the row's own
+    # validation raise where nothing catches it.
+    #
+    # No answer goes back: chapter 4.7 has a response reuse the `ExchangeId` of
+    # its request, so there is none to build a conformant one with. The journal
+    # is therefore the only place the decision can be read afterwards, and the
+    # arrival alone would not say why nothing followed it — the sweep that
+    # settles an exchange finds none to settle, this one having no identifier.
+    def refuse_unless_identified
+      return if context.message.exchange_id.present? && context.message.conversation_id.present?
+
+      reason = I18n.t('interactors.incoming_message.open_exchange.unidentified')
+      journal_refusal(reason)
+
+      raise UnreadableMessageError, reason
+    end
+
+    def journal_refusal(reason)
+      context.audit_trail.request_refused(
+        requester_id: readable { request.requester.id },
+        procedure_code: readable { request.procedure_code },
+        country_code: readable { request.requester.address.country },
+        reason:,
+      )
+    end
 
     def request? = context.message.action == EbmsAction::EXECUTE_QUERY_REQUEST
 

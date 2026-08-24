@@ -61,6 +61,59 @@ RSpec.describe IncomingMessage::OpenExchange do
     end
   end
 
+  # `R-EDM-ebMS-019` makes the `ExchangeId` property mandatory, and the ebMS3
+  # envelope the `eb:ConversationId` element, so a request carrying neither
+  # names nothing to open a row under. It must be
+  # refused where `IncomingMessage::Process` can give up on it — the arrival is
+  # journalled by then — and never let the row's own validation raise where
+  # nothing catches it: `retrieveMessage` has already erased the message, so an
+  # uncaught failure loses it for good.
+  context 'when the header names no exchange' do
+    it 'refuses a request carrying no exchange identifier' do
+      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION, body:)
+
+      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
+        .to raise_error(UnreadableMessageError)
+    end
+
+    it 'refuses a request carrying no conversation identifier' do
+      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        exchange_id: FOREIGN_EXCHANGE, conversation_id: nil, body:)
+
+      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
+        .to raise_error(UnreadableMessageError)
+    end
+
+    it 'opens nothing' do
+      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        exchange_id: nil, conversation_id: nil, body:)
+
+      suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
+
+      expect(Exchange.count).to eq(0)
+    end
+
+    # Nothing goes back to the correspondent and no exchange row carries the
+    # decision, so the journal is the only place it can be read afterwards —
+    # `docs/journal_des_echanges.md` asks a refusal whose reason is known to
+    # record it.
+    it 'journals why nothing followed the arrival' do
+      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION, body:)
+
+      suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
+
+      expect(AuditEvent.sole).to have_attributes(
+        event_type: 'request_refused',
+        evidence_requester_id: '00000000000009',
+        procedure_code: '00',
+        country_code: 'FI',
+        detail: I18n.t('interactors.incoming_message.open_exchange.unidentified'),
+      )
+    end
+  end
+
   # A response or an error names an exchange France opened itself.
   context 'when a correspondent answers France' do
     let(:message) do

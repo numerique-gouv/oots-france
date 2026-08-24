@@ -347,6 +347,8 @@ fr:
         unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
         unnamed_version: une version sans nom
     incoming_message:
+      open_exchange:
+        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
       settle_exchange:
         unknown: "Échange inconnu : %{id}"
         already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"
