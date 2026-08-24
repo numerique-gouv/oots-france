@@ -1,12 +1,24 @@
 <% content_for :title, t('admin.journal.events.index.title') %>
 
 <div class="fr-grid-row fr-grid-row--top fr-mb-2w">
-  <div class="fr-col-12 fr-col-md">
+  <div class="fr-col-12 fr-col-md-7">
     <h1><%= t('admin.journal.events.index.title') %></h1>
   </div>
-  <div class="fr-mt-md-1w fr-ml-md-1w">
-    <%= link_to t('admin.journal.subjects.show.title'), admin_journal_subjects_path,
-          class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+  <div class="fr-col-12 fr-col-md-5 fr-mt-md-1w">
+    <%# `fr-btns-group--icon-right` is what tells the DSFR that these icons
+        accompany a label: without it, the stylesheet reads a group whose buttons
+        carry an `fr-icon-*` class as icon-only and squares them off, clipping the
+        wording. %>
+    <ul class="fr-btns-group fr-btns-group--inline-md fr-btns-group--icon-right fr-btns-group--right">
+      <li>
+        <%= link_to t('admin.journal.subjects.show.title'), admin_journal_subjects_path,
+              class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+      </li>
+      <li>
+        <%= link_to t('admin.conversations.index.title'), admin_conversations_path,
+              class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+      </li>
+    </ul>
   </div>
 </div>
 

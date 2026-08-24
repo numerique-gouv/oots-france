@@ -6,7 +6,6 @@
     ) do |header| %>
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: t('layouts.entete.directories'), path: admin_common_services_root_path) %>
-    <% header.with_direct_link_simple(title: t('layouts.entete.conversations'), path: admin_conversations_path) %>
     <% header.with_direct_link_simple(title: t('layouts.entete.journal'), path: admin_journal_root_path) %>
     <% header.with_direct_link_simple(title: t('layouts.entete.jobs'), path: admin_jobs_path) %>
 

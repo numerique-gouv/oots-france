@@ -4,6 +4,12 @@ RSpec.describe 'Admin::Journal::Events' do
   before { sign_in }
 
   describe 'GET /admin/journal' do
+    it 'leads to the conversations' do
+      get admin_journal_root_path
+
+      expect(response.parsed_body.css("a[href='#{admin_conversations_path}']")).not_to be_empty
+    end
+
     it 'lists the events, most recent first' do
       older = create(:audit_event, occurred_at: 2.days.ago, conversation_id: 'ancienne')
       newer = create(:audit_event, occurred_at: 1.hour.ago, conversation_id: 'recente')

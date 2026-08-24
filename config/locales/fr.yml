@@ -141,7 +141,6 @@ fr:
     logo_html: République<br>Française
     entete:
       tagline: Échange transfrontalier de justificatifs
-      conversations: Conversations
       directories: Annuaires
       jobs: Jobs
       journal: Journal
@@ -467,7 +466,6 @@ fr:
       show:
         heading: Espace d'administration
         tiles:
-          conversations: L'état de chaque échange de justificatif, et la raison de ceux qui ont échoué.
           journal: >-
             La trace de chaque requête, réponse et refus, conservée douze mois. Porte des
             données personnelles.

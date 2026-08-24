@@ -16,8 +16,8 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | --- | --- |
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
-| `/admin` | Les quatre entrées ci-dessous. |
-| `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. |
+| `/admin` | Les trois entrées ci-dessous. |
+| `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. On y accède depuis `/admin/journal` — l'accueil de l'espace et sa navigation n'y mènent pas, l'état d'un échange se cherchant à partir de sa trace. |
 | `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
 | `/admin/journal` | Le [journal des échanges](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, démarche, pays, requêteur et période. C'est la seule vue qui porte **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune conversation ne peut représenter. |
 | `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris. |
