@@ -1,6 +1,11 @@
 FactoryBot.define do
-  factory :conversation do
-    sequence(:conversation_id) { |n| "e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b#{format('%02d', n)}" }
+  factory :exchange do
+    # The whole last group is the counter, so the value stays a UUID however
+    # many the suite draws — `R-EDM-ebMS-017` and `-037` require one.
+    sequence(:exchange_id) { |n| format('e0a6a5b7-6b2e-4b9c-9a63-%012d', n) }
+    # Its own by default: two exchanges belong to one conversation only when a
+    # spec says so, by passing the same value to both.
+    sequence(:conversation_id) { |n| format('5fe50e16-d6b8-4005-b5ec-%012d', n) }
     procedure_code { ProcedureCode::SYSTEM_CHECK }
     country_code { 'FR' }
     evidence_requester_id { '00000000000002' }

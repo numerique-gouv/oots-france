@@ -134,10 +134,10 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
       .with(query: hash_including({}))).not_to have_been_made
   end
 
-  it 'is reached from a conversation, carrying its procedure and its country' do
-    conversation = create(:conversation, :failed, procedure_code: '00', country_code: 'FI')
+  it 'is reached from an exchange, carrying its procedure and its country' do
+    exchange = create(:exchange, :failed, procedure_code: '00', country_code: 'FI')
 
-    get admin_journal_conversation_path(conversation.conversation_id)
+    get admin_journal_exchange_path(exchange.exchange_id)
 
     expect(response.parsed_body.css("a[href*='#{admin_common_services_resolution_path}']")).to be_present
     # The procedure belongs to the country that requests, so to France here, and

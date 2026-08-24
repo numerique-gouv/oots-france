@@ -1,0 +1,107 @@
+<% content_for :title, t('admin.journal.exchanges.show.title', id: @exchange.exchange_id) %>
+
+<%= render JournalBreadcrumbsComponent.new(trail: [
+      [t('admin.journal.exchanges.index.title'), admin_journal_exchanges_path],
+      [@exchange.exchange_id, nil],
+    ]) %>
+
+<h1 class="fr-h3"><%= @exchange.exchange_id %></h1>
+
+<p><%= render ExchangeStatusComponent.new(status: @exchange.status) %></p>
+
+<div class="fr-table fr-table--bordered">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption><%= t('admin.journal.exchanges.show.caption') %></caption>
+          <tbody>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.attributes.direction') %></th>
+              <td><%= t("admin.journal.exchanges.directions.#{@exchange.direction}") %></td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.attributes.conversation') %></th>
+              <%# Chapter 4.4 has one conversation cover the exchanges of a
+                  single user's session, so the identifier leads to them: the
+                  listing narrowed to it. %>
+              <td>
+                <%= link_to @exchange.conversation_id,
+                      admin_journal_exchanges_path(conversation_id: @exchange.conversation_id),
+                      title: t('admin.journal.exchanges.show.same_conversation') %>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.attributes.procedure') %></th>
+              <td>
+                <%= render 'admin/country_procedure', procedure_code: @exchange.procedure_code,
+                                                      country_code: @exchange.requester_country_code %>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.solicited_country') %></th>
+              <td><%= render 'admin/country', country_code: @exchange.solicited_country_code %></td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.attributes.requester') %></th>
+              <td><%= @exchange.evidence_requester_id.presence || '—' %></td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.attributes.opened_at') %></th>
+              <td><%= l(@exchange.created_at, format: :long) %></td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.show.rows.settled_at') %></th>
+              <td><%= @exchange.settled_at ? l(@exchange.settled_at, format: :long) : '—' %></td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.show.rows.edm_error_code') %></th>
+              <td>
+                <% if @exchange.edm_error_code.present? %>
+                  <%= render EdmErrorCodeComponent.new(code: @exchange.edm_error_code) %>
+                <% else %>
+                  —
+                <% end %>
+              </td>
+            </tr>
+            <tr>
+              <th scope="row"><%= t('admin.journal.exchanges.show.rows.preview_location') %></th>
+              <%# A foreign correspondent chooses this address: it is read, not
+                  followed. An operator console has no business being a
+                  one-click launcher into a site it did not choose. %>
+              <td><code><%= @exchange.preview_location.presence || '—' %></code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%# On an outgoing exchange only: the simulation replays the chain of
+    directories France walks in order to ask, and answering walks none. %>
+<% if !@exchange.incoming? && @exchange.procedure_code.present? && @exchange.country_code.present? %>
+  <p class="fr-mt-2w">
+    <%= link_to t('admin.journal.exchanges.show.simulate'),
+          admin_common_services_resolution_path(
+            procedure_code: @exchange.procedure_code, country_code: @exchange.country_code,
+          ),
+          class: 'fr-btn fr-btn--secondary' %>
+  </p>
+<% end %>
+
+<% if @exchange.error_description.present? %>
+  <h2 class="fr-h5 fr-mt-4w"><%= t('admin.journal.exchanges.show.failure_reason') %></h2>
+  <%= dsfr_callout do %>
+    <%= @exchange.error_description %>
+  <% end %>
+<% end %>
+
+<h2 class="fr-h5 fr-mt-4w"><%= t('admin.journal.exchanges.show.journal.caption') %></h2>
+
+<p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
+
+<%# The caption repeats the section title, so it is hidden from the eye: RGAA
+    5.4 wants a data table to carry a title, and it keeps one. %>
+<%= render 'admin/journal/events', events: @events, hide_caption: true, caption: t('admin.journal.exchanges.show.journal.caption'),
+      empty: t('admin.journal.exchanges.show.journal.empty') %>

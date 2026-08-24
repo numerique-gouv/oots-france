@@ -3,11 +3,11 @@
 L'[article 17 du règlement d'exécution (UE) 2022/1463](https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj) impose de conserver **douze mois** la trace de chaque échange de justificatif, et le [chapitre 4.8 des TDD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) énumère, composant par composant, ce qu'il faut y consigner. Cette page décrit ce que le dépôt en écrit, où, et comment le relire. Ce qui manque encore relève de [reste_à_faire.md](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation).
 
 > [!IMPORTANT]
-> **Le journal porte des données personnelles**, contrairement au reste de la base. Le chapitre nomme l'*Evidence subject information* parmi ce qu'un requêteur et un fournisseur doivent consigner : le sujet du justificatif est donc enregistré, chiffré au repos, et effacé au terme de la conservation. La table `conversations` n'en porte aucune, par construction, et de l'[espace d'administration](espace_administration.md) seules les pages du journal en montrent.
+> **Le journal porte des données personnelles**, contrairement au reste de la base. Le chapitre nomme l'*Evidence subject information* parmi ce qu'un requêteur et un fournisseur doivent consigner : le sujet du justificatif est donc enregistré, chiffré au repos, et effacé au terme de la conservation. La table `exchanges` n'en porte aucune, par construction, et de l'[espace d'administration](espace_administration.md) seules les pages du journal en montrent.
 
 ## Deux couches, un identifiant commun
 
-Le chapitre répartit la charge entre deux couches que le `eb:ConversationId` relie :
+Le chapitre répartit la charge entre deux couches que le `message_id` de la passerelle relie :
 
 | Couche | Ce qu'elle consigne | Qui l'écrit |
 | --- | --- | --- |
@@ -33,8 +33,8 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | `request_refused` | l'appel d'un fournisseur de service français est refusé **avant** la passerelle | `EvidenceRequestsController` |
 | `response_received` | un correspondant a répondu avec un justificatif | `IncomingMessage::Process` |
 | `error_received` | un correspondant a refusé | `IncomingMessage::Process` |
-| `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleConversation` |
-| `response_refused` | une réponse est écartée sans régler l'échange | `IncomingMessage::SettleConversation` |
+| `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleExchange` |
+| `response_refused` | une réponse est écartée sans régler l'échange | `IncomingMessage::SettleExchange` |
 | `request_received` | un État membre a interrogé la France | `IncomingMessage::Process` |
 | `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::AnswerRequest` |
 | `error_sent` | la France a refusé | `EvidenceProvision::AnswerRequest` |
@@ -43,9 +43,9 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 > **Un refus consigne la règle qu'il applique, quand une règle le nomme.** `error_sent` porte alors dans `detail` l'identifiant `R-EDM-*` que la France a opposé au correspondant, le même que l'attribut `detail` de la `rs:Exception` partie sur le fil. Les refus qui n'appliquent aucune règle nommée — une démarche inconnue, un format non servi, un slot que le lecteur n'a pas trouvé — laissent le champ vide plutôt que d'inventer un identifiant. Un refus dont la raison *est* connue et n'est pas consignée ne peut pas être justifié après coup, et l'article 17 couvre les rapports d'erreur autant que les échanges.
 
 > [!NOTE]
-> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les neuf types le portent, de deux sources. Là où la France demande, il vient de la conversation. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
+> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les neuf types le portent, de deux sources. Là où la France demande, il vient de l'échange. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
 
-L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant une conversation jamais ouverte, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
+L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant un échange jamais ouvert, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 
 > [!WARNING]
 > **Deux arrivées ne laissent aucune ligne** : une enveloppe SOAP illisible, et une action ebMS inconnue. Dans le premier cas il n'y a pas encore de message à consigner ; dans le second, une action qu'on ne sait pas nommer n'est pas un événement qu'on sait qualifier. Les deux partent au journal applicatif, et la couche protocole les garde côté passerelle. Ce qui manque pour les couvrir vraiment est inventorié au [chantier 7](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation).
@@ -72,7 +72,7 @@ Il n'y a **aucun chaînage d'empreintes** entre les lignes du journal : le chapi
 La première se règle à la console :
 
 ```ruby
-evenement = AuditEvent.find_by(conversation_id: '1589c463-…', event_type: 'evidence_delivered')
+evenement = AuditEvent.find_by(exchange_id: '1647038b-…', event_type: 'evidence_delivered')
 
 Digest::SHA256.hexdigest(File.binread('document_conteste.pdf')) == evenement.evidence_digest
 ```
@@ -140,7 +140,10 @@ Le journal se consulte depuis l'[espace d'administration](espace_administration.
 La console Rails et le `psql` restent ouverts pour ce qu'une page ne fait pas :
 
 ```ruby
-# La chronologie d'un échange, par son identifiant de conversation
+# La chronologie d'un échange, par son identifiant d'échange
+AuditEvent.where(exchange_id: '1647038b-…').order(:occurred_at)
+
+# Tout ce qu'un usager a demandé dans une même session, par sa conversation
 AuditEvent.where(conversation_id: '1589c463-…').order(:occurred_at)
 
 # Ce qui a circulé au sujet d'une personne — la question de l'article 17

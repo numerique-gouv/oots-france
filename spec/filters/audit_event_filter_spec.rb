@@ -19,7 +19,7 @@ RSpec.describe AuditEventFilter do
     expect(narrowed(event_type: 'request_sent')).to contain_exactly(sent)
   end
 
-  it 'upcases the country, as the conversation filter does' do
+  it 'upcases the country, as the exchange filter does' do
     finnish = create(:audit_event, country_code: 'FI')
 
     expect(narrowed(country_code: 'fi')).to contain_exactly(finnish)

@@ -1,11 +1,11 @@
 require 'rails_helper'
 
-RSpec.describe ConversationFilter do
+RSpec.describe ExchangeFilter do
   def filter(params) = described_class.from(ActionController::Parameters.new(params))
 
   def results(params)
     built = filter(params)
-    built.apply(Conversation.all, built.page_within(built.total(Conversation.all)))
+    built.apply(Exchange.all, built.page_within(built.total(Exchange.all)))
   end
 
   describe '.from' do
@@ -16,30 +16,42 @@ RSpec.describe ConversationFilter do
 
   describe 'narrowing' do
     it 'keeps everything when nothing is asked' do
-      create(:conversation, :delivered)
-      create(:conversation, :failed)
+      create(:exchange, :delivered)
+      create(:exchange, :failed)
 
       expect(results({}).count).to eq(2)
     end
 
+    # Chapter 4.7: all the messages sharing a conversation « relate to that
+    # person », which is what makes tracing and diagnosis possible. The console
+    # gets there by narrowing the listing rather than by a page of its own.
+    it 'gathers the exchanges of one conversation' do
+      session = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'
+      first = create(:exchange, conversation_id: session)
+      second = create(:exchange, conversation_id: session)
+      create(:exchange)
+
+      expect(results(conversation_id: session)).to contain_exactly(first, second)
+    end
+
     it 'combines criteria' do
-      wanted = create(:conversation, :failed, country_code: 'FI')
-      create(:conversation, :failed, country_code: 'DE')
-      create(:conversation, :delivered, country_code: 'FI')
+      wanted = create(:exchange, :failed, country_code: 'FI')
+      create(:exchange, :failed, country_code: 'DE')
+      create(:exchange, :delivered, country_code: 'FI')
 
       expect(results(status: 'failed', country_code: 'FI')).to contain_exactly(wanted)
     end
 
     it 'narrows on the procedure alone' do
-      wanted = create(:conversation, procedure_code: '00')
-      create(:conversation, procedure_code: '01')
+      wanted = create(:exchange, procedure_code: '00')
+      create(:exchange, procedure_code: '01')
 
       expect(results(procedure_code: '00')).to contain_exactly(wanted)
     end
 
     it 'narrows on the requester alone' do
-      wanted = create(:conversation, evidence_requester_id: '11111111111111')
-      create(:conversation, evidence_requester_id: '22222222222222')
+      wanted = create(:exchange, evidence_requester_id: '11111111111111')
+      create(:exchange, evidence_requester_id: '22222222222222')
 
       expect(results(evidence_requester_id: '11111111111111')).to contain_exactly(wanted)
     end
@@ -47,23 +59,23 @@ RSpec.describe ConversationFilter do
 
   describe 'the period' do
     it 'takes whole days at both ends' do
-      inside = create(:conversation, created_at: Time.zone.parse('2026-08-10 23:30'))
-      create(:conversation, created_at: Time.zone.parse('2026-08-11 00:30'))
-      create(:conversation, created_at: Time.zone.parse('2026-08-09 23:30'))
+      inside = create(:exchange, created_at: Time.zone.parse('2026-08-10 23:30'))
+      create(:exchange, created_at: Time.zone.parse('2026-08-11 00:30'))
+      create(:exchange, created_at: Time.zone.parse('2026-08-09 23:30'))
 
       expect(results(depuis: '2026-08-10', jusqu_a: '2026-08-10')).to contain_exactly(inside)
     end
 
     it 'is open when only its start is given' do
-      recent = create(:conversation, created_at: Time.zone.parse('2026-08-11 12:00'))
-      create(:conversation, created_at: Time.zone.parse('2026-08-09 12:00'))
+      recent = create(:exchange, created_at: Time.zone.parse('2026-08-11 12:00'))
+      create(:exchange, created_at: Time.zone.parse('2026-08-09 12:00'))
 
       expect(results(depuis: '2026-08-10')).to contain_exactly(recent)
     end
 
     it 'is open when only its end is given' do
-      old = create(:conversation, created_at: Time.zone.parse('2026-08-09 12:00'))
-      create(:conversation, created_at: Time.zone.parse('2026-08-11 12:00'))
+      old = create(:exchange, created_at: Time.zone.parse('2026-08-09 12:00'))
+      create(:exchange, created_at: Time.zone.parse('2026-08-11 12:00'))
 
       expect(results(jusqu_a: '2026-08-10')).to contain_exactly(old)
     end
@@ -73,14 +85,14 @@ RSpec.describe ConversationFilter do
   # a heading claiming otherwise, and nothing on screen tells the two apart.
   describe 'a criterion it cannot honour' do
     it 'refuses a status that is not one of the model’s' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
 
       expect(results(status: 'inexistant')).to be_empty
       expect(filter(status: 'inexistant')).not_to be_valid
     end
 
     it 'refuses a date it cannot read, rather than dropping it' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
 
       expect(results(depuis: 'pas-une-date')).to be_empty
     end
@@ -95,13 +107,13 @@ RSpec.describe ConversationFilter do
     # `params.permit` drops a permitted key whose value has the wrong shape,
     # which would otherwise widen the list in silence.
     it 'refuses a criterion submitted with the wrong shape' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
 
       expect(results(status: %w[delivered failed])).to be_empty
     end
 
     it 'refuses an unreadable end date as it does a start date' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
       refused = filter(jusqu_a: 'pas-une-date')
 
       expect(results(jusqu_a: 'pas-une-date')).to be_empty
@@ -122,9 +134,9 @@ RSpec.describe ConversationFilter do
     end
 
     it 'reports no total it cannot stand behind' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
 
-      expect(filter(depuis: 'pas-une-date').total(Conversation.all)).to eq(0)
+      expect(filter(depuis: 'pas-une-date').total(Exchange.all)).to eq(0)
     end
 
     # Built from values already typed rather than from a query string, there is
@@ -136,7 +148,7 @@ RSpec.describe ConversationFilter do
 
   describe 'paging' do
     it 'cuts into pages' do
-      create_list(:conversation, described_class::PER_PAGE + 3, :delivered)
+      create_list(:exchange, described_class::PER_PAGE + 3, :delivered)
 
       expect(results({}).size).to eq(described_class::PER_PAGE)
       expect(results(page: 2).size).to eq(3)
@@ -167,7 +179,7 @@ RSpec.describe ConversationFilter do
     # PostgreSQL refuses an offset wider than a 64-bit integer, and answered it
     # with a 500 before the clamp existed.
     it 'clamps a page no database could offset to' do
-      create(:conversation, :delivered)
+      create(:exchange, :delivered)
 
       expect { results(page: '99999999999999999999999999').to_a }.not_to raise_error
     end

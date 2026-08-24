@@ -1,14 +1,14 @@
 module IncomingMessage
   # Fetches a message the gateway is holding and does with it what its ebMS
   # action calls for: answer a request addressed to France, or settle the
-  # conversation a correspondent is answering.
+  # exchange a correspondent is answering.
   #
   # Dispatched here rather than organised, because only one handler applies.
   class Process < ApplicationInteractor
     HANDLERS = {
       EbmsAction::EXECUTE_QUERY_REQUEST => EvidenceProvision::AnswerRequest,
-      EbmsAction::EXECUTE_QUERY_RESPONSE => SettleConversation,
-      EbmsAction::EXCEPTION_RESPONSE => SettleConversation,
+      EbmsAction::EXECUTE_QUERY_RESPONSE => SettleExchange,
+      EbmsAction::EXCEPTION_RESPONSE => SettleExchange,
     }.freeze
 
     def call
@@ -27,16 +27,16 @@ module IncomingMessage
     # visible in what GoodJob records. Never retried — `retrieveMessage` has
     # erased the message already.
     rescue Faraday::Error => e
-      abandon_conversation(e, :exchange_failed)
+      abandon_exchange(e, :exchange_failed)
       raise
     # `EbmsError` drives a 422 back to the caller at fault, and no caller is on
     # this path to receive it. One subclass does reach here all the same:
-    # `SettleConversation` asks the directory where to hand the evidence over,
+    # `SettleExchange` asks the directory where to hand the evidence over,
     # and `EvidenceRequesterNotFound` is raised there whenever the directory no
     # longer holds the requester of the exchange. What is too wide is the family
     # caught for that one subclass. Stub 9 of `docs/reste_à_faire.md`.
     rescue EbmsError => e
-      abandon_conversation(e, :exchange_impossible)
+      abandon_exchange(e, :exchange_impossible)
       raise
     end
 
@@ -50,7 +50,7 @@ module IncomingMessage
     # qualified as an event. Workstream 7 of `docs/reste_à_faire.md`.
     def record
       context.audit_trail.message_received(message: context.message, message_id: context.message_id)
-      OpenConversation.call!(context)
+      OpenExchange.call!(context)
     end
 
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves
@@ -67,20 +67,20 @@ module IncomingMessage
         I18n.t('interactors.incoming_message.process.unreadable_logged', id: context.message_id, error: error.message),
       )
 
-      abandon_conversation(error, :unreadable)
+      abandon_exchange(error, :unreadable)
     end
 
-    # Reachable only once the message names its conversation. A retrieval that
+    # Reachable only once the message names its exchange. A retrieval that
     # fails outright leaves nothing to go on — the identifier the gateway gave
     # us is its own — which is why the periodic sweep exists.
     #
     # The reason travels as a symbol, `interactors.incoming_message.process`
     # holding what each one reads as.
-    def abandon_conversation(error, reason)
-      conversation = Conversation.find_by(conversation_id: context.message&.conversation_id)
-      return if conversation.nil? || conversation.settled?
+    def abandon_exchange(error, reason)
+      exchange = Exchange.find_by(exchange_id: context.message&.exchange_id)
+      return if exchange.nil? || exchange.settled?
 
-      conversation.failed!(code: nil, description: said(error, reason))
+      exchange.failed!(code: nil, description: said(error, reason))
     end
 
     def said(error, reason)

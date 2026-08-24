@@ -13,33 +13,33 @@ RSpec.describe 'Admin::Journal::Events' do
         .to eq(I18n.t('admin.journal.events.index.title'))
     end
 
-    it 'leads to the conversations' do
+    it 'leads to the exchanges' do
       get admin_journal_root_path
 
-      expect(response.parsed_body.css("a[href='#{admin_journal_conversations_path}']")).not_to be_empty
+      expect(response.parsed_body.css("a[href='#{admin_journal_exchanges_path}']")).not_to be_empty
     end
 
     it 'lists the events, most recent first' do
-      older = create(:audit_event, occurred_at: 2.days.ago, conversation_id: 'ancienne')
-      newer = create(:audit_event, occurred_at: 1.hour.ago, conversation_id: 'recente')
+      older = create(:audit_event, occurred_at: 2.days.ago, exchange_id: 'ancienne')
+      newer = create(:audit_event, occurred_at: 1.hour.ago, exchange_id: 'recente')
 
       get admin_journal_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body.index(newer.conversation_id)).to be < response.body.index(older.conversation_id)
+      expect(response.body.index(newer.exchange_id)).to be < response.body.index(older.exchange_id)
     end
 
     # A refusal never opens an exchange, and a crash between journalling an
     # arrival and opening its own leaves the same shape. A listing built by
     # joining would make either disappear, which is why this page starts from
     # the events.
-    it 'shows an exchange that has no local conversation' do
-      create(:audit_event, event_type: 'request_received', conversation_id: 'sans-conversation-locale')
+    it 'shows an exchange that has no local exchange' do
+      create(:audit_event, event_type: 'request_received', exchange_id: 'sans-exchange-locale')
 
       get admin_journal_root_path
 
-      expect(response.body).to include('sans-conversation-locale')
-      expect(Conversation.count).to eq(0)
+      expect(response.body).to include('sans-exchange-locale')
+      expect(Exchange.count).to eq(0)
     end
 
     # What the row carries, without saying which side each stood on: the
@@ -56,7 +56,7 @@ RSpec.describe 'Admin::Journal::Events' do
 
     it 'invents neither where the event recorded neither' do
       create(:audit_event, event_type: 'response_received', procedure_code: nil, country_code: nil,
-        conversation_id: 'sans-rien')
+        exchange_id: 'sans-rien')
 
       get admin_journal_root_path
 
@@ -66,8 +66,8 @@ RSpec.describe 'Admin::Journal::Events' do
     end
 
     it 'narrows on an event type' do
-      create(:audit_event, event_type: 'request_sent', conversation_id: 'emise')
-      create(:audit_event, event_type: 'error_received', conversation_id: 'refusee')
+      create(:audit_event, event_type: 'request_sent', exchange_id: 'emise')
+      create(:audit_event, event_type: 'error_received', exchange_id: 'refusee')
 
       get admin_journal_root_path(event_type: 'error_received')
 
@@ -78,7 +78,7 @@ RSpec.describe 'Admin::Journal::Events' do
     # The filter refuses it rather than ignoring it: widening a listing under a
     # heading claiming the opposite is what `SubmittedCriteria` exists to stop.
     it 'refuses an unknown event type rather than widening the listing' do
-      create(:audit_event, conversation_id: 'visible-sans-filtre')
+      create(:audit_event, exchange_id: 'visible-sans-filtre')
 
       get admin_journal_root_path(event_type: 'charabia')
 
@@ -109,7 +109,7 @@ RSpec.describe 'Admin::Journal::Events' do
   # A refusal turned away before any exchange was opened names none, so it
   # carries no link — but the journal still holds it.
   it 'shows a refusal that never opened an exchange' do
-    create(:audit_event, event_type: 'request_refused', conversation_id: nil, detail: 'jeton invalide')
+    create(:audit_event, event_type: 'request_refused', exchange_id: nil, detail: 'jeton invalide')
 
     get admin_journal_root_path
 
@@ -180,7 +180,7 @@ RSpec.describe 'Admin::Journal::Events' do
     # It carries the only written reason for the refusal, and its exchange does
     # not exist: nothing else leads to it.
     it 'opens the page of a refusal that never opened an exchange' do
-      event = create(:audit_event, event_type: 'request_refused', conversation_id: nil,
+      event = create(:audit_event, event_type: 'request_refused', exchange_id: nil,
         detail: 'Le bénéficiaire doit être renseigné')
 
       get admin_journal_event_path(event)

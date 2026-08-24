@@ -1,7 +1,7 @@
 # Everything the journal listings derive from the query string: which events to
 # show, in which order, and which page of them.
 #
-# Sibling of `ConversationFilter`, and deliberately its twin: an operator who
+# Sibling of `ExchangeFilter`, and deliberately its twin: an operator who
 # has learnt one listing of this console has learnt the other.
 class AuditEventFilter
   include ActiveModel::Model

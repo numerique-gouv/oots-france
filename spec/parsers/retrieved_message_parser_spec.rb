@@ -10,8 +10,18 @@ RSpec.describe RetrievedMessageParser do
       expect(message.action).to eq(EbmsAction::EXECUTE_QUERY_REQUEST)
     end
 
+    # Against the literal values the envelope carries, and never against each
+    # other: chapter 4.4 keeps the two apart, and the header puts them in two
+    # different places — the conversation in `eb:CollaborationInfo`, the
+    # exchange in a `eb:MessageProperties` property. Reading one where the other
+    # stands is the mistake this repository just spent a branch correcting, and
+    # only a fixed value catches it.
     it 'reads the conversation the exchange belongs to' do
-      expect(message.conversation_id).to be_present
+      expect(message.conversation_id).to eq('1589c463-ccb7-4c0e-8044-c7198d844c16')
+    end
+
+    it 'reads the exchange the message is one of' do
+      expect(message.exchange_id).to eq('1647038b-7eaf-4711-b738-d5d83f96fa7b')
     end
 
     it 'reads the sender, which is where the answer goes' do

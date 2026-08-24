@@ -5,13 +5,13 @@ module EvidenceRequest
   # This is what the application did in a single chain of eighty lines, which
   # resolved the directories, decrypted, sent, *waited*, redirected and caught.
   # The waiting is gone: the answer arrives through a gateway notification, and
-  # the conversation is what ties the two together.
+  # the exchange is what ties the two together.
   class Fetch < ApplicationOrganizer
     organize ResolveRequester,
       DecryptBeneficiary,
       ResolveEvidenceType,
       ResolveProvider,
-      OpenConversation,
+      OpenExchange,
       SendToGateway
   end
 end

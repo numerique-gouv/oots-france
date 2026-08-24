@@ -4,7 +4,7 @@ module Admin
     class SubjectsController < BaseController
       def show
         @search = SubjectSearch.from(params)
-        @events = @search.events.includes(:conversation).to_a
+        @events = @search.events.includes(:exchange).to_a
       end
     end
   end

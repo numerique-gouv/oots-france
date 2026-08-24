@@ -35,21 +35,25 @@ class FakeCorrespondent
     AlteredBody.new(render: block_given? ? yield(rendered) : rendered, document_id: body.document_id)
   end
 
-  # Answers the conversation identifier France will open the exchange under,
-  # which is what a scenario reads the journal by. Minted here rather than
-  # reused, so a replay arrives as its own exchange, as a real one would.
+  # Answers the exchange identifier France will open the exchange under, which
+  # is what a scenario reads the journal by. Minted here rather than reused, so
+  # a replay arrives as its own exchange, as a real one would.
+  #
+  # The conversation is minted alongside and kept apart, as chapter 4.4 keeps
+  # them apart: a correspondent that reused one for the other would let a spec
+  # pass against an application that confused them.
   def submit(body)
-    conversation_id = uuid.next
-    gateway.submit(envelope(body, conversation_id))
+    exchange_id = uuid.next
+    gateway.submit(envelope(body, exchange_id, uuid.next))
 
-    conversation_id
+    exchange_id
   end
 
   private
 
   attr_reader :requester, :provider, :uuid, :gateway
 
-  def envelope(body, conversation_id)
+  def envelope(body, exchange_id, conversation_id)
     OutgoingEnvelopeBuilder.new(
       body:,
       action: EbmsAction::EXECUTE_QUERY_REQUEST,
@@ -57,6 +61,7 @@ class FakeCorrespondent
       original_sender: requester.ebms_identity,
       final_recipient: provider.ebms_identity,
       conversation_id:,
+      exchange_id:,
       uuid:,
     ).render
   end

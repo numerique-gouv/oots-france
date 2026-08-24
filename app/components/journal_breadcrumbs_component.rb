@@ -1,5 +1,5 @@
 # The trail the pages of the exchange log hang from — its events, the search by
-# person, and the conversations they add up to.
+# person, and the exchanges they add up to.
 class JournalBreadcrumbsComponent < AdminBreadcrumbsComponent
   private
 

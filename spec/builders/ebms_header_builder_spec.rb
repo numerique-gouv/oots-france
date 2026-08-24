@@ -11,6 +11,7 @@ RSpec.describe EbmsHeaderBuilder do
       final_recipient: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
       payload_id: 'cid:1a2b3c4d-0000-4000-8000-000000000000@oots.eu',
       conversation_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24',
+      exchange_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
       sender: AccessPoint.new(id: 'AP_FR_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'),
       clock: frozen_clock,
       uuid: sequential_uuids,
@@ -21,12 +22,22 @@ RSpec.describe EbmsHeaderBuilder do
     expect(header).to be_equivalent_xml_to(reference_header('requete'))
   end
 
-  # R-EDM-ebMS-017 requires a UUID in the element whenever it is present, so
-  # an exchange without a conversation omits it rather than emitting it empty.
-  it 'omits the conversation identifier when there is none, rather than emitting it empty' do
-    rendered = described_class.new(**attributes, conversation_id: nil).render
+  # R-EDM-ebMS-018: exactly four, and R-EDM-ebMS-019 names them. A fifth —
+  # a `ConversationId` property, which the header carries in
+  # `eb:CollaborationInfo` instead — would be a FATAL violation.
+  it 'carries the four message properties the rules name, and no other' do
+    names = Nokogiri::XML(header)
+      .xpath('//eb:MessageProperties/eb:Property/@name',
+        'eb' => 'http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/')
+      .map(&:value)
 
-    expect(rendered).not_to include('ConversationId')
+    expect(names).to contain_exactly('originalSender', 'finalRecipient', 'ExchangeId', 'SpecificationId')
+  end
+
+  # Chapter 4.4 has every message of one exchange reuse its `ExchangeId`, so the
+  # builder is given one and never draws its own.
+  it 'writes the exchange identifier it was given' do
+    expect(header).to include('<eb:Property name="ExchangeId">7c9e6679-7425-40de-944b-e07fc1f90ae7</eb:Property>')
   end
 
   it 'declares the RegRep body as a payload' do
@@ -63,8 +74,11 @@ RSpec.describe EbmsHeaderBuilder do
   end
 
   describe 'the exchange identifier' do
-    it 'mints a new one when none is given, as a requester does' do
-      expect(header).to match(/name="ExchangeId">[0-9a-f-]{36}</)
+    # Chapter 4.4 has every message of one exchange reuse it, so a builder that
+    # drew its own would break the correlation the preview depends on: there is
+    # no default, and a caller that names none cannot build a header at all.
+    it 'refuses to build a header that names no exchange' do
+      expect { described_class.new(**attributes.except(:exchange_id)) }.to raise_error(ArgumentError)
     end
 
     # A provider answers under the identifier it received: that is what ties

@@ -102,9 +102,9 @@ L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'appli
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
 
-Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre une `Conversation`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::AnswerRequest` y répond avec `assets/drapeau.pdf`, et la notification de cette réponse règle la conversation. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
+Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::AnswerRequest` y répond avec `assets/drapeau.pdf`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
-Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, la démarche `00` étant la seule servie par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:conversation_id`.
+Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, la démarche `00` étant la seule servie par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
 
 ## Les annuaires centraux sont doublés
 

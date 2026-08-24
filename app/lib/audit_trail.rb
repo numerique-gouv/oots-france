@@ -13,14 +13,11 @@ class AuditTrail
     EbmsAction::EXCEPTION_RESPONSE => 'error_received',
   }.freeze
 
-  def request_sent(conversation:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:)
+  def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:)
     record(
       'request_sent',
       ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
-      conversation_id: conversation.conversation_id,
-      procedure_code: conversation.procedure_code,
-      country_code: conversation.country_code,
-      evidence_requester_id: conversation.evidence_requester_id,
+      **borne_by(exchange),
       evidence_type_id: evidence_type&.id,
       request_id:,
       message_id:,
@@ -35,10 +32,11 @@ class AuditTrail
   # eDelivery events — and neither does Domibus, which sees no message at all.
   # Recording them is this deployment's own decision: without it, a caller turned
   # away leaves no trace anywhere.
-  def request_refused(requester_id:, procedure_code:, country_code:, reason:, conversation: nil)
+  def request_refused(requester_id:, procedure_code:, country_code:, reason:, exchange: nil)
     record(
       'request_refused',
-      conversation_id: conversation&.conversation_id,
+      conversation_id: exchange&.conversation_id,
+      exchange_id: exchange&.exchange_id,
       evidence_requester_id: requester_id,
       procedure_code:,
       country_code:,
@@ -47,8 +45,8 @@ class AuditTrail
   end
 
   # Recorded before the message is dispatched, and not inside the handler that
-  # deals with it: a request too malformed to answer, or a response naming a
-  # conversation we never opened, must be logged all the same.
+  # deals with it: a request too malformed to answer, or a response naming an
+  # exchange we never opened, must be logged all the same.
   def message_received(message:, message_id:)
     record(
       RECEIVED_EVENTS.fetch(message.action),
@@ -78,30 +76,38 @@ class AuditTrail
   # arrival has its own line already — `IncomingMessage::Process` journals
   # before it dispatches — and this one says what became of it, so that an
   # exchange left waiting can be accounted for later.
-  def response_refused(conversation:, reason:)
+  def response_refused(exchange:, reason:)
     record(
       'response_refused',
-      conversation_id: conversation.conversation_id,
-      procedure_code: conversation.procedure_code,
-      country_code: conversation.country_code,
-      evidence_requester_id: conversation.evidence_requester_id,
-      request_id: conversation.request_id,
+      **borne_by(exchange),
+      request_id: exchange.request_id,
       detail: reason,
     )
   end
 
-  def evidence_delivered(conversation:, evidence:)
+  def evidence_delivered(exchange:, evidence:)
     record(
       'evidence_delivered',
-      conversation_id: conversation.conversation_id,
-      procedure_code: conversation.procedure_code,
-      country_code: conversation.country_code,
-      evidence_requester_id: conversation.evidence_requester_id,
+      **borne_by(exchange),
       **evidence_fingerprint(evidence),
     )
   end
 
   private
+
+  # Both identifiers of chapter 4.4, and never one alone: the exchange's is what
+  # joins these rows to the exchange they belong to, and the conversation's is
+  # what gathers the exchanges of one user's session — what chapter 4.7 gives
+  # the `ConversationId` for: tracking a user's interactions, and troubleshooting.
+  def borne_by(exchange)
+    {
+      conversation_id: exchange.conversation_id,
+      exchange_id: exchange.exchange_id,
+      procedure_code: exchange.procedure_code,
+      country_code: exchange.country_code,
+      evidence_requester_id: exchange.evidence_requester_id,
+    }
+  end
 
   # What the two answers have in common; each names its own event rather than
   # leaving the log to infer it from an argument that happens to be nil.
@@ -216,7 +222,7 @@ class AuditTrail
   # field.
   #
   # Said aloud all the same, because on the response side nothing else will:
-  # `SettleConversation` takes the evidence from the envelope and the requester
+  # `SettleExchange` takes the evidence from the envelope and the requester
   # from the exchange, never from the body, so the two parties chapter 4.8 asks
   # for can go missing from the one row that records them while the exchange
   # succeeds. A degraded row is then at least findable in the logs.

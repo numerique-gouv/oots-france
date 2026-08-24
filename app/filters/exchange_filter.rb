@@ -1,9 +1,9 @@
-# Everything the conversation list derives from the query string: which
+# Everything the exchange list derives from the query string: which
 # exchanges to show, in which order, and which page of them.
 #
-# It sits above the model on purpose — `Conversation` knows nothing of
+# It sits above the model on purpose — `Exchange` knows nothing of
 # `params` — and below the controller, which builds no query of its own.
-class ConversationFilter
+class ExchangeFilter
   include ActiveModel::Model
   include ActiveModel::Attributes
   include SubmittedCriteria
@@ -11,6 +11,7 @@ class ConversationFilter
   PER_PAGE = 25
 
   attribute :status, :string
+  attribute :conversation_id, :string
   attribute :country_code, :string
   attribute :evidence_requester_id, :string
   attribute :procedure_code, :string
@@ -20,9 +21,9 @@ class ConversationFilter
 
   # Those compared as they are. The country is upcased, and the period is an
   # interval rather than a value.
-  EXACT = %i[status evidence_requester_id procedure_code].freeze
+  EXACT = %i[status evidence_requester_id procedure_code conversation_id].freeze
 
-  validates :status, inclusion: { in: Conversation::STATUSES }, allow_blank: true
+  validates :status, inclusion: { in: Exchange::STATUSES }, allow_blank: true
   validates_country_code
   validate :reject_inverted_period
 

@@ -17,9 +17,7 @@
     <eb:CollaborationInfo>
       <eb:Service type="<%= EbmsHeaderBuilder::SERVICE_TYPE %>"><%= EbmsHeaderBuilder::SERVICE %></eb:Service>
       <eb:Action><%= action %></eb:Action>
-<%- if conversation_id.present? -%>
       <eb:ConversationId><%= escape(conversation_id) %></eb:ConversationId>
-<%- end -%>
     </eb:CollaborationInfo>
     <eb:MessageProperties>
       <eb:Property name="originalSender" type="<%= escape(original_sender.type_id) %>"><%= escape(original_sender.id) %></eb:Property>

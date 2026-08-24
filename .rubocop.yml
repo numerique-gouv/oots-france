@@ -205,7 +205,7 @@ Rails/RedundantActiveRecordAllMethod:
 # write cycle: that is what makes it atomic.
 Rails/SkipsModelValidations:
   Exclude:
-    - "app/models/conversation.rb"
+    - "app/models/exchange.rb"
     - "spec/**/*_spec.rb"
 
 Rails/UnknownEnv:

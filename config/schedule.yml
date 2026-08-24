@@ -21,9 +21,9 @@ default: &commun
     cron: '17 3 * * *'
     class: PurgeAuditEventsJob
     description: Efface du journal les échanges dont la durée de conservation est écoulée
-  expiration_conversations:
+  expiration_exchanges:
     cron: '* * * * *'
-    class: ExpireConversationsJob
+    class: ExpireExchangesJob
     description: Clôt les échanges qu'aucune réponse n'a réglés dans le délai imparti
 
 development: *commun

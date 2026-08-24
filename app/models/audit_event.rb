@@ -1,7 +1,7 @@
 # One line of the exchange log chapter 4.8 requires, and that article 17 of the
 # implementing regulation says must survive twelve months.
 #
-# Distinct from `Conversation`, which holds the current state of an exchange and
+# Distinct from `Exchange`, which holds the current state of an exchange and
 # carries no personal data: this one is a trace, it is append-only, and it does
 # carry personal data — the chapter names *Evidence subject information* among
 # what a requester and a provider must log.
@@ -69,11 +69,12 @@ class AuditEvent < ApplicationRecord
   SENT_BY_FRANCE = %w[request_sent response_sent error_sent].freeze
   RECEIVED_BY_FRANCE = %w[request_received response_received error_received].freeze
 
-  # The counterpart of `Conversation`'s `has_many`, joined by the ebMS
-  # identifier. `optional`, and with no database constraint: a refusal pronounced
-  # before any exchange was opened names none, and a response can name one France
-  # never opened.
-  belongs_to :conversation, primary_key: :conversation_id,
+  # The counterpart of `Exchange`'s `has_many`, joined by the identifier of the
+  # exchange — the one chapter 4.4 requires every message of it to reuse, where
+  # a conversation may cover several. `optional`, and with no database
+  # constraint: a refusal pronounced before any exchange was opened names none,
+  # and a response can name one France never opened.
+  belongs_to :exchange, primary_key: :exchange_id,
     optional: true, inverse_of: :audit_events
 
   scope :about_subject, ->(key) { where(evidence_subject_key: key).order(occurred_at: :desc) }

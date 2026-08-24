@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe IncomingMessage::SettleConversation do
+RSpec.describe IncomingMessage::SettleExchange do
   subject(:settle) { described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) }
 
   let(:evidence_forwarder) { instance_double(EvidenceForwarder, deliver: nil) }
@@ -10,7 +10,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     )
   end
   let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
-  let!(:conversation) { create(:conversation, conversation_id: message.conversation_id).tap(&:sent!) }
+  let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
 
   # Chapter 4.4: « An Online Procedure Portal MUST NOT process responses that
   # use request identifiers of previous requests to which it already received a
@@ -18,7 +18,7 @@ RSpec.describe IncomingMessage::SettleConversation do
   # error path back from a portal to a provider.
   describe 'what it refuses to process' do
     context 'when the exchange has already been answered' do
-      before { conversation.delivered! }
+      before { exchange.delivered! }
 
       # Not merely « does not settle twice »: `deliver` hands the evidence over
       # before it marks the exchange delivered, so a duplicate not turned away
@@ -31,7 +31,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     end
 
     context 'when the response carries an identifier that is not ours' do
-      before { conversation.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000') }
+      before { exchange.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000') }
 
       it 'does not hand the evidence over' do
         settle
@@ -40,12 +40,12 @@ RSpec.describe IncomingMessage::SettleConversation do
       end
 
       # Left pending on purpose: the message was not ours to begin with, and
-      # failing the exchange would rob the genuine answer of the conversation it
+      # failing the exchange would rob the genuine answer of the exchange it
       # still has to reach.
       it 'leaves the exchange waiting for the answer it did ask for' do
         settle
 
-        expect(conversation.reload).to have_attributes(status: 'sent')
+        expect(exchange.reload).to have_attributes(status: 'sent')
       end
     end
 
@@ -56,12 +56,12 @@ RSpec.describe IncomingMessage::SettleConversation do
     context 'when a duplicate error response arrives on a settled exchange' do
       let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 
-      before { conversation.delivered! }
+      before { exchange.delivered! }
 
       it 'leaves the outcome the exchange already reached' do
         settle
 
-        expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+        expect(exchange.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
       end
     end
 
@@ -69,13 +69,13 @@ RSpec.describe IncomingMessage::SettleConversation do
     # the decision can be read afterwards — an exchange left waiting has to be
     # accountable for.
     it 'journals what the response was turned away for' do
-      conversation.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000')
+      exchange.update!(request_id: 'urn:uuid:00000000-0000-4000-8000-000000000000')
 
       settle
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'response_refused',
-        conversation_id: conversation.conversation_id,
+        exchange_id: exchange.exchange_id,
         detail: 'foreign_request',
       )
     end
@@ -91,7 +91,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     end
 
     context 'when the response echoes the identifier the request carried' do
-      before { conversation.update!(request_id: message.body.request_id) }
+      before { exchange.update!(request_id: message.body.request_id) }
 
       it 'delivers' do
         settle
@@ -108,7 +108,7 @@ RSpec.describe IncomingMessage::SettleConversation do
   describe 'an answer arriving after the sweep gave the exchange up' do
     let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
-    before { conversation.expire! }
+    before { exchange.expire! }
 
     it 'hands the evidence over all the same' do
       settle
@@ -119,7 +119,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'records the delivery, overruling the presumption' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+      expect(exchange.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
     end
   end
 
@@ -134,10 +134,10 @@ RSpec.describe IncomingMessage::SettleConversation do
         .with(start_with('%PDF'), have_attributes(id: '00000000000002', url: 'http://localhost:4000'))
     end
 
-    it 'records the conversation as delivered' do
+    it 'records the exchange as delivered' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'delivered')
+      expect(exchange.reload).to have_attributes(status: 'delivered')
     end
 
     # What became of the evidence is the last thing chapter 4.8 asks a requester
@@ -148,8 +148,8 @@ RSpec.describe IncomingMessage::SettleConversation do
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'evidence_delivered',
-        conversation_id: conversation.conversation_id,
-        country_code: conversation.country_code,
+        exchange_id: exchange.exchange_id,
+        country_code: exchange.country_code,
         evidence_digest: Digest::SHA256.hexdigest(message.evidence),
       )
     end
@@ -161,19 +161,19 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'records the EDM code, which is what the caller can act on' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
     end
 
     # The likeliest of the late answers: a correspondent that says at last it
     # holds nothing. The caller is owed the code it was told, not the one this
     # side guessed while waiting for it.
     context 'when it arrives after the sweep gave the exchange up' do
-      before { conversation.expire! }
+      before { exchange.expire! }
 
       it 'records what the correspondent said, in place of the guess' do
         settle
 
-        expect(conversation.reload).to have_attributes(edm_error_code: 'EDM:ERR:0004', presumed_at: nil)
+        expect(exchange.reload).to have_attributes(edm_error_code: 'EDM:ERR:0004', presumed_at: nil)
       end
     end
   end
@@ -186,7 +186,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'records where to send the user' do
       settle
 
-      expect(conversation.reload).to have_attributes(
+      expect(exchange.reload).to have_attributes(
         status: 'preview_required',
         preview_location: 'https://previsualisation.example.si/espace?jeton=abc',
       )
@@ -204,7 +204,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'records a failure rather than a link' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'failed', preview_location: nil)
+      expect(exchange.reload).to have_attributes(status: 'failed', preview_location: nil)
     end
   end
 
@@ -236,14 +236,14 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'records one delivery and the refusal of the other response' do
       settle
 
-      expect(AuditEvent.where(conversation_id: conversation.conversation_id).pluck(:event_type, :detail))
+      expect(AuditEvent.where(exchange_id: exchange.exchange_id).pluck(:event_type, :detail))
         .to contain_exactly(%w[response_refused already_delivering], ['evidence_delivered', nil])
     end
 
     it 'settles the exchange as delivered' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'delivered')
+      expect(exchange.reload).to have_attributes(status: 'delivered')
     end
   end
 
@@ -251,7 +251,7 @@ RSpec.describe IncomingMessage::SettleConversation do
   # exchange whose winner never comes back — the reservation stands, and the
   # loser must still be turned away rather than hand the evidence over.
   context 'when another worker holds the reservation' do
-    before { Conversation.find(conversation.id).claim_delivery! }
+    before { Exchange.find(exchange.id).claim_delivery! }
 
     it 'does not hand the evidence over' do
       settle
@@ -262,7 +262,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'leaves the exchange for the worker that took it' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'sent')
+      expect(exchange.reload).to have_attributes(status: 'sent')
     end
   end
 
@@ -273,7 +273,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     allow(evidence_forwarder).to receive(:deliver).and_raise(Faraday::ConnectionFailed, 'connexion refusée')
 
     expect { settle }.to raise_error(Faraday::ConnectionFailed)
-    expect(conversation.reload.delivering_at).to be_present
+    expect(exchange.reload.delivering_at).to be_present
   end
 
   # `processable?` lets a presumed exchange through, so two late responses both
@@ -281,8 +281,8 @@ RSpec.describe IncomingMessage::SettleConversation do
   # longer tell the reservation anything.
   context 'when the sweep had already given the exchange up' do
     before do
-      conversation.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
-      conversation.expire!
+      exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
+      exchange.expire!
 
       arrivals = 0
 
@@ -301,7 +301,7 @@ RSpec.describe IncomingMessage::SettleConversation do
     it 'settles the exchange as delivered, the answer refuting the presumption' do
       settle
 
-      expect(conversation.reload).to have_attributes(status: 'delivered', presumed_at: nil)
+      expect(exchange.reload).to have_attributes(status: 'delivered', presumed_at: nil)
     end
   end
 
@@ -309,17 +309,17 @@ RSpec.describe IncomingMessage::SettleConversation do
   # above, but never for the wording it resolves to: nothing else would notice a
   # missing one.
   it 'says every reason it turns a response away for' do
-    refused = File.read('app/interactors/incoming_message/settle_conversation.rb')
-      .scan(/refuse\(conversation, :(\w+)\)/).flatten.uniq
+    refused = File.read('app/interactors/incoming_message/settle_exchange.rb')
+      .scan(/refuse\(exchange, :(\w+)\)/).flatten.uniq
 
-    expect_said(refused.map { |reason| "interactors.incoming_message.settle_conversation.#{reason}" })
+    expect_said(refused.map { |reason| "interactors.incoming_message.settle_exchange.#{reason}" })
   end
 
   # A notification for an exchange we never opened: a message meant for someone
-  # else, or one that outlived its conversation. Recorded, not raised — there is
+  # else, or one that outlived its exchange. Recorded, not raised — there is
   # nobody to report it to.
-  it 'does not fail on a conversation it does not know' do
-    Conversation.delete_all
+  it 'does not fail on an exchange it does not know' do
+    Exchange.delete_all
 
     expect { settle }.not_to raise_error
   end

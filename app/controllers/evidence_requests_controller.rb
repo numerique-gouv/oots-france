@@ -7,6 +7,10 @@
 # request that caused it, and the evidence itself is delivered to the caller's
 # own endpoint when it arrives.
 #
+# It receives the conversation identifier too. Chapter 4.4 lets the caller
+# assign that one, to say that two requests are the same user's; one that does
+# not needs the value back to lead its user through a second.
+#
 # Sending inline rather than from a job keeps the beneficiary token out of the
 # queue, where it would be personal data written to disk.
 class EvidenceRequestsController < ApplicationController
@@ -16,39 +20,42 @@ class EvidenceRequestsController < ApplicationController
 
   rescue_from EbmsError, with: :report_bad_request
 
-  rescue_from ActiveRecord::RecordNotFound, with: :report_unknown_conversation
+  rescue_from ActiveRecord::RecordNotFound, with: :report_unknown_exchange
 
   before_action :check_feature_flag
   before_action :check_beneficiary, only: :create
+  before_action :check_conversation_id, only: :create
 
   def create
-    result = EvidenceRequest::Fetch.call(**exchange)
+    result = EvidenceRequest::Fetch.call(**fetch_arguments)
 
     return report_failure(result) unless result.success?
 
-    render json: state_of(result.conversation), status: :accepted
+    render json: state_of(result.exchange), status: :accepted
   end
 
   def show
-    render json: state_of(Conversation.find_by!(conversation_id: params.expect(:conversation_id)))
+    render json: state_of(Exchange.find_by!(exchange_id: params.expect(:exchange_id)))
   end
 
   private
 
   # The EDM code travels with the state: a correspondent that refuses says why,
   # and that reason is the only thing the caller can act on.
-  def state_of(conversation)
+  def state_of(exchange)
     {
-      conversation: conversation.conversation_id,
-      statut: conversation.status,
-      codeErreur: conversation.edm_error_code,
-      adressePrevisualisation: conversation.preview_location,
+      echange: exchange.exchange_id,
+      conversation: exchange.conversation_id,
+      statut: exchange.status,
+      codeErreur: exchange.edm_error_code,
+      adressePrevisualisation: exchange.preview_location,
     }.compact
   end
 
   # A query string and not a form: the caller is a server-side integration.
   def query
-    @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire, :previsualisationRequise)
+    @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
+      :previsualisationRequise, :idConversation)
   end
 
   # Upcased on the way in: both console filters upcase what they are asked, so
@@ -56,9 +63,10 @@ class EvidenceRequestsController < ApplicationController
   # log article 17 requires to be readable back.
   def country_code = query[:codePays]&.upcase
 
-  def exchange
+  def fetch_arguments
     {
       requester_id: query[:idRequeteur],
+      conversation_id: query[:idConversation],
       requesters: Directories::EvidenceRequesters.new,
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
@@ -92,7 +100,21 @@ class EvidenceRequestsController < ApplicationController
     render json: { erreur: raison }, status: :unprocessable_content
   end
 
-  def report_unknown_conversation
+  # `R-EDM-ebMS-017` requires a UUID, and the rule is FATAL: a value of another
+  # shape would travel in the header of every message of this exchange. Refused
+  # here rather than on the way out, so that nothing is decrypted and no
+  # directory is called for a request that cannot be sent.
+  def check_conversation_id
+    supplied = query[:idConversation]
+    return if supplied.blank? || supplied.match?(Exchange::UUID)
+
+    raison = t('evidence_requests.conversation_invalid')
+    refuse(raison)
+
+    render json: { erreur: raison }, status: :unprocessable_content
+  end
+
+  def report_unknown_exchange
     render json: { erreur: t('evidence_requests.unknown') }, status: :not_found
   end
 
@@ -107,20 +129,20 @@ class EvidenceRequestsController < ApplicationController
     status = error[:key].in?(UPSTREAM_FAILURES) ? :bad_gateway : :unprocessable_content
     reason = error[:errors].join(' ; ')
 
-    refuse(reason, conversation: result.conversation)
+    refuse(reason, exchange: result.exchange)
 
     render json: { erreur: reason }, status:
   end
 
   # Every refusal is journalled here rather than where it is raised: these never
   # reach the gateway, so nothing else holds a trace of them.
-  def refuse(reason, conversation: nil)
+  def refuse(reason, exchange: nil)
     audit_trail.request_refused(
       requester_id: query[:idRequeteur],
       procedure_code: query[:codeDemarche],
       country_code:,
       reason:,
-      conversation:,
+      exchange:,
     )
   end
 end

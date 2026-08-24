@@ -25,37 +25,41 @@ RSpec.describe IncomingMessage::Process do
   end
 
   # Opened here from the body that was parsed here, and asserted on the whole
-  # path rather than on a double: what `OpenConversation` reads is the message
+  # path rather than on a double: what `OpenExchange` reads is the message
   # `Process` retrieved, and nothing else says the two are the same object.
   it 'opens the exchange an incoming request names' do
     allow(EvidenceProvision::AnswerRequest).to receive(:call!)
 
     process
 
-    expect(Conversation.sole).to have_attributes(
-      conversation_id: message.conversation_id, incoming: true,
+    # Both identifiers, read from a real envelope by the real parser: chapter 4.4
+    # keeps them apart, and the fixtures carry two different values, so an
+    # assertion on one alone would pass on code that stored the other twice.
+    expect(Exchange.sole).to have_attributes(
+      exchange_id: message.exchange_id, conversation_id: message.conversation_id, incoming: true,
       procedure_code: '00', country_code: 'FR', evidence_requester_id: '00000000000002',
     )
+    expect(message.exchange_id).not_to eq(message.conversation_id)
   end
 
-  # Journalled in `Process`, before the handler: `SettleConversation` returns
-  # early on a conversation it never opened, and the trace would go with it.
-  it 'journals a response naming a conversation it never opened' do
+  # Journalled in `Process`, before the handler: `SettleExchange` returns
+  # early on an exchange it never opened, and the trace would go with it.
+  it 'journals a response naming an exchange it never opened' do
     allow(gateway).to receive(:retrieve).and_return(RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')))
 
     process
 
     expect(AuditEvent.last).to have_attributes(event_type: 'error_received', edm_error_code: 'EDM:ERR:0004')
-    expect(Conversation.count).to eq(0)
+    expect(Exchange.count).to eq(0)
   end
 
-  it 'hands an incoming response to the interactor that settles the conversation' do
+  it 'hands an incoming response to the interactor that settles the exchange' do
     allow(gateway).to receive(:retrieve).and_return(RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')))
-    allow(IncomingMessage::SettleConversation).to receive(:call!)
+    allow(IncomingMessage::SettleExchange).to receive(:call!)
 
     process
 
-    expect(IncomingMessage::SettleConversation).to have_received(:call!)
+    expect(IncomingMessage::SettleExchange).to have_received(:call!)
   end
 
   describe 'an action it does not know' do
@@ -81,11 +85,11 @@ RSpec.describe IncomingMessage::Process do
   end
 
   describe 'a message whose body it cannot read' do
-    # The header parses — so the conversation is known — and the body does not.
+    # The header parses — so the exchange is known — and the body does not.
     let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 
-    let!(:conversation) do
-      create(:conversation, conversation_id: message.conversation_id).tap(&:sent!)
+    let!(:exchange) do
+      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
     end
 
     before { allow(message).to receive(:body).and_raise(UnreadableMessageError, 'corps illisible') }
@@ -100,16 +104,16 @@ RSpec.describe IncomingMessage::Process do
 
     # Left in `sent`, the exchange would stay open for ever on an answer that
     # has already arrived and been discarded.
-    it 'marks the conversation waiting on it as failed rather than leaving it hanging' do
+    it 'marks the exchange waiting on it as failed rather than leaving it hanging' do
       process
 
-      expect(conversation.reload).to have_attributes(status: 'failed')
+      expect(exchange.reload).to have_attributes(status: 'failed')
     end
   end
 
   # There is nothing to fall back on here: the identifier the gateway gave us
   # is its own, and only the message it refuses to hand over would have named
-  # the conversation. Logged, and no more — which is why the sweep exists.
+  # the exchange. Logged, and no more — which is why the sweep exists.
   it 'can only log when the message itself is unreadable' do
     allow(gateway).to receive(:retrieve).and_raise(UnreadableMessageError, 'enveloppe illisible')
     allow(Rails.logger).to receive(:error)
@@ -122,17 +126,17 @@ RSpec.describe IncomingMessage::Process do
   # two halves of it together. Split in two, the half that re-raises passes
   # whether the rescue is there or not — an unrescued error reaches the caller
   # just as surely — and would keep a green tick over a clause someone deleted.
-  describe 'a message that names its conversation but cannot be seen through' do
+  describe 'a message that names its exchange but cannot be seen through' do
     let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
-    let!(:conversation) do
-      create(:conversation, conversation_id: message.conversation_id).tap(&:sent!)
+    let!(:exchange) do
+      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
     end
 
     # Retrying is not an option: the PMode erases a message once retrieved, so a
     # second attempt would read nothing and would no longer even know which
-    # conversation it concerned. Nor is staying quiet: France answering another
-    # member state opens no conversation of its own, so on that path a job
+    # exchange it concerned. Nor is staying quiet: France answering another
+    # member state opens no exchange of its own, so on that path a job
     # recorded as failed is the only signal there is.
     describe 'a network failure after the message was retrieved' do
       before do
@@ -140,23 +144,23 @@ RSpec.describe IncomingMessage::Process do
           .and_raise(Faraday::ConnectionFailed, 'connexion refusée')
       end
 
-      it 'settles the conversation, and still lets the failure surface' do
+      it 'settles the exchange, and still lets the failure surface' do
         expect { process }.to raise_error(Faraday::ConnectionFailed)
-        expect(conversation.reload).to have_attributes(status: 'failed')
+        expect(exchange.reload).to have_attributes(status: 'failed')
       end
     end
 
     # `EbmsError` serves the synchronous path, where the controller turns it
     # into a 422 for the caller at fault. Nothing catches it in a job, so
-    # unless this path settles the conversation itself it stays in `sent` for
+    # unless this path settles the exchange itself it stays in `sent` for
     # ever. Ours to fix, not the correspondent's: the entry is missing from the
     # directory the environment carries, and no retry conjures it back.
     describe 'an answer whose requester the directory no longer holds' do
       before { collaborators[:requesters] = Directories::EvidenceRequesters.new({}) }
 
-      it 'settles the conversation, and still lets the failure surface' do
+      it 'settles the exchange, and still lets the failure surface' do
         expect { process }.to raise_error(EvidenceRequesterNotFound)
-        expect(conversation.reload).to have_attributes(status: 'failed')
+        expect(exchange.reload).to have_attributes(status: 'failed')
       end
     end
   end
@@ -164,9 +168,9 @@ RSpec.describe IncomingMessage::Process do
   # The reason travels as a symbol. The branches that give one are exercised
   # above, but never for the wording their reason resolves to: nothing else
   # would notice a missing one.
-  it 'says every reason it abandons a conversation for' do
+  it 'says every reason it abandons an exchange for' do
     given_up = File.read('app/interactors/incoming_message/process.rb')
-      .scan(/abandon_conversation\(\w+, :(\w+)\)/).flatten.uniq
+      .scan(/abandon_exchange\(\w+, :(\w+)\)/).flatten.uniq
 
     expect_said(given_up.map { |reason| "interactors.incoming_message.process.#{reason}" })
   end

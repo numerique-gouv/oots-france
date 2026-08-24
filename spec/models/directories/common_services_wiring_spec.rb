@@ -84,7 +84,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
       )
 
       EvidenceRequest::SendToGateway.call(
-        gateway:, conversation: create(:conversation), recipient: resolved.recipient,
+        gateway:, exchange: create(:exchange), recipient: resolved.recipient,
         provider: resolved.provider, data_service: resolved.data_service,
         requester: build(:evidence_requester), beneficiary: build(:natural_person),
         evidence_type: build(:evidence_type), requirement: build(:requirement),

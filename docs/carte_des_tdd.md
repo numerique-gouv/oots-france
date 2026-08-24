@@ -33,7 +33,7 @@ Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la 
 
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
-| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | La liste des slots et leur cardinalité, la corrélation (`ConversationId`, `ExchangeId`) et les **délais d'expiration** T1/T2/T3. |
+| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | La liste des slots et leur cardinalité, la corrélation — `ConversationId` pour l'usager et sa session, `ExchangeId` pour un aller-retour — et les **délais d'expiration** T1/T2/T3. |
 | [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Slot par slot, avec exemple XML. La référence à ouvrir avant de toucher à `evidence_request.xml.erb`. |
 | [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Idem pour la réponse, dont l'**empaquetage** introduit en 2.0 (justificatif principal + traductions, annexes, version lisible). |
 | [4.5.3 — Réponse d'erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Les huit exceptions, et le cas particulier qui redirige vers la prévisualisation. |

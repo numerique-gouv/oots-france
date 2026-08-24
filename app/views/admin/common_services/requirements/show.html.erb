@@ -60,7 +60,7 @@
 <p id="aucun-type" <%= 'hidden' if @by_country.any? %>><%= t('admin.common_services.requirements.show.empty') %></p>
 
 <%# The identifier is a Semantic Repository address, chosen elsewhere: it is
-    read, not followed — the same rule as for a conversation's preview
+    read, not followed — the same rule as for an exchange's preview
     space. %>
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,

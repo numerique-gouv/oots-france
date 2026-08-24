@@ -22,18 +22,33 @@ end
 end
 
 Quand('la démarche demande un justificatif pour la procédure {string}') do |procedure|
-  token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
+  @response = demande(procedure)
+end
 
-  @response = Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
-    codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
-  })
+# Chapter 4.4: the conversation identifies the user and their session, and the
+# portal is the one that knows two requests are the same person's. It says so by
+# naming the same conversation twice.
+#
+# On a procedure no evidence is served for, deliberately: what is asserted here
+# is what the two requests are given at once, and a scenario that also set a
+# delivery going would hand its PDF to the next scenario's requester, the two
+# listening on one port.
+Quand('la démarche demande deux justificatifs pour le même usager') do
+  @premier = etat_de(demande('T3', conversation: SESSION_USAGER))
+  @second = etat_de(demande('T3', conversation: SESSION_USAGER))
+end
+
+Alors('les deux requêtes portent la même conversation et deux échanges distincts') do
+  expect(@premier['conversation']).to eq(SESSION_USAGER)
+  expect(@second['conversation']).to eq(SESSION_USAGER)
+  expect(@second['echange']).not_to eq(@premier['echange'])
 end
 
 Alors('la démarche reçoit tout de suite l\'identifiant de l\'échange') do
   expect(@response.status).to eq(202)
 
-  @conversation_id = JSON.parse(@response.body)['conversation']
-  expect(@conversation_id).to be_present
+  @exchange_id = JSON.parse(@response.body)['echange']
+  expect(@exchange_id).to be_present
 end
 
 Alors('le justificatif finit par être transmis à la démarche') do
@@ -46,12 +61,12 @@ Alors('le document reçu est celui que le fournisseur détient') do
   expect(@fake_requester.received_evidence.b).to eq(attendu.b)
 end
 
-Alors('la conversation finit par porter le code d\'erreur {string}') do |code|
+Alors('l\'échange finit par porter le code d\'erreur {string}') do |code|
   # Read through the application, not from the database: the scenarios run in a
   # different Rails environment from the server, and therefore against a
   # different database.
   patiente_jusqu_a("l'échange porte #{code}") do
-    JSON.parse(Faraday.get("#{oots_france_url}/requete/#{@conversation_id}").body)['codeErreur'] == code
+    JSON.parse(Faraday.get("#{oots_france_url}/requete/#{@exchange_id}").body)['codeErreur'] == code
   end
 end
 
@@ -66,7 +81,7 @@ Alors('le journal porte l\'échange entier, du départ de la requête à la remi
   patiente_jusqu_a('le journal porte la remise') { journal.exists?(event_type: 'evidence_delivered') }
 
   # France answers itself over the single gateway of the example PMode, so one
-  # conversation carries both halves of the exchange.
+  # exchange identifier carries both halves of it.
   expect(journal.pluck(:event_type)).to include(
     'request_sent', 'request_received', 'response_sent', 'response_received', 'evidence_delivered',
   )
@@ -89,7 +104,27 @@ Alors('le journal porte le refus du correspondant') do
   expect(journal.find_by!(event_type: 'error_received').edm_error_code).to eq('EDM:ERR:0004')
 end
 
-def journal = ServerAuditEvent.where(conversation_id: @conversation_id)
+def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
+
+# One user's session, named by the portal rather than left to the application:
+# `R-EDM-ebMS-017` wants a UUID, and the same one twice is what makes the two
+# requests one conversation.
+SESSION_USAGER = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'.freeze
+
+def demande(procedure, conversation: nil)
+  token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
+
+  Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
+    codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
+    idConversation: conversation,
+  }.compact)
+end
+
+def etat_de(response)
+  expect(response.status).to eq(202)
+
+  JSON.parse(response.body)
+end
 
 def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')
 

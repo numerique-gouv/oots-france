@@ -1,7 +1,13 @@
-# The state of one exchange, shared and persisted: the worker that receives a
+# One evidence exchange, shared and persisted: the worker that receives a
 # gateway notification is rarely the one that handled the request, and a state
 # held in memory would leave each blind to the other. Chapter 4.9 will need it
 # too, to tie a second request to the first across a foreign preview space.
+#
+# Chapter 4.4 keeps two identifiers apart, and so does this table. `exchange_id`
+# names this exchange, and every message of it carries that value — which is
+# what keeps a preview's two round trips one exchange. `conversation_id`
+# names a single authenticated user and their session, so it may cover several
+# exchanges and is deliberately not unique.
 #
 # Both directions get a row. `incoming` says which: France asking a
 # correspondent, or a correspondent asking France. `country_code` holds the
@@ -14,7 +20,7 @@
 #
 # **No personal data.** The beneficiary lives in the token the requester
 # supplies, and the exchange advances without keeping it.
-class Conversation < ApplicationRecord
+class Exchange < ApplicationRecord
   include NormalisesCountryCode
 
   # `preview_required` — the correspondent wants the user to visit its own
@@ -23,21 +29,41 @@ class Conversation < ApplicationRecord
 
   IN_PROGRESS = %w[pending sent].freeze
 
-  # The log of this exchange, joined by the ebMS identifier and not by the
-  # primary key — that identifier is what both tables carry.
+  # `R-EDM-ebMS-017` and `-037`: both identifiers travel in the ebMS header and
+  # must be expressed as UUIDs. Public because the requester interface refuses a
+  # conversation identifier of another shape before doing any work with it.
+  UUID = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+
+  # Chapter 4.4 requires every message of one exchange to reuse its
+  # `ExchangeId`, which makes it — and not the conversation, that may cover
+  # several exchanges — what joins an exchange to its log. Joined by that
+  # identifier and not by the primary key: it is what both tables carry.
   #
   # `dependent: nil`, said explicitly: the two lifetimes are independent. The log
   # is erased at its own term, which `PurgeAuditEventsJob` keeps, and nothing
-  # purges conversations; a legal trace must never fall with the operational
+  # purges exchanges; a legal trace must never fall with the operational
   # state it relates.
   has_many :audit_events, -> { order(occurred_at: :asc) }, dependent: nil,
-    primary_key: :conversation_id, foreign_key: :conversation_id, inverse_of: :conversation
+    primary_key: :exchange_id, foreign_key: :exchange_id, inverse_of: :exchange
 
   # Fixed at opening: both readings of `country_code` depend on it, and turning
   # it round would make `requester_country_code` name the solicited country.
   attr_readonly :incoming
 
-  validates :conversation_id, presence: true, uniqueness: true
+  validates :exchange_id, presence: true, uniqueness: true
+  validates :conversation_id, presence: true
+
+  # `R-EDM-ebMS-017` and `R-EDM-ebMS-037` require both to be UUIDs, and both
+  # rules are FATAL. They bind whoever emits, so they are asked of this side
+  # only: an exchange a correspondent malformed must still be recorded, or
+  # nothing accounts for it afterwards.
+  #
+  # Nothing refuses such a message yet — validating what arrives is workstream 5
+  # of `docs/reste_à_faire.md` — and `EvidenceProvision::AnswerRequest` reuses
+  # the identifiers it received, so a malformed one travels back out in the
+  # answer France signs.
+  validates :exchange_id, :conversation_id, format: { with: UUID, message: :format }, unless: :incoming?
+
   validates :procedure_code, :country_code, :evidence_requester_id, presence: true, unless: :incoming?
   validates :status, inclusion: { in: STATUSES }
 
@@ -78,7 +104,7 @@ class Conversation < ApplicationRecord
   # which overrules nothing.
   def expire!
     settle({ status: 'failed', edm_error_code: EdmException::TIMEOUT.code,
-             error_description: I18n.t('models.conversation.expired'), presumed_at: Time.current })
+             error_description: I18n.t('models.exchange.expired'), presumed_at: Time.current })
   end
 
   def settled? = !status.in?(IN_PROGRESS)
@@ -95,7 +121,7 @@ class Conversation < ApplicationRecord
   # refusing them would break the ones in flight at deployment.
   def answers?(request_id) = self.request_id.blank? || self.request_id == request_id
 
-  # `IncomingMessage::SettleConversation` turns away a response to an exchange
+  # `IncomingMessage::SettleExchange` turns away a response to an exchange
   # already answered, deciding on the exchange as it read it — and what that
   # decision protects is an HTTP call nothing takes back, so two workers pass
   # the guard before either writes. This is the reservation only one of them
@@ -147,7 +173,7 @@ class Conversation < ApplicationRecord
 
   # Two races meet here, and this lock decides both. The fallback sweep can pick
   # up a message the push notification also delivered, so two workers record two
-  # outcomes on one exchange; and `ExpireConversationsJob` runs on its own
+  # outcomes on one exchange; and `ExpireExchangesJob` runs on its own
   # worker, so it can reach a row an answer has settled since its batch was
   # read. `with_lock` and not a bare guard, which both would pass before either
   # committed; `update!` and not `update_all`, which would skip the validations.

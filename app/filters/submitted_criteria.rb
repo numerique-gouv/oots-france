@@ -60,7 +60,7 @@ module SubmittedCriteria
   # The test holds for the types the filters carry today — `:string` and
   # `:date`, which come back nil when unreadable. It does not generalise:
   # `ActiveModel::Type::Integer` reads what it cannot make sense of as zero, so
-  # a filter carrying one checks it itself — `ConversationFilter` does for its
+  # a filter carrying one checks it itself — `ExchangeFilter` does for its
   # page number — and a `:boolean` attribute would need the same care.
   def unreadable?(name) = submitted[name].present? && public_send(name).blank?
 

@@ -14,7 +14,7 @@
             <tr>
               <th scope="col"><%= t('admin.journal.number') %></th>
               <th scope="col"><%= t('admin.journal.attributes.event_type') %></th>
-              <th scope="col"><%= t('admin.journal.attributes.conversation_id') %></th>
+              <th scope="col"><%= t('admin.journal.attributes.exchange_id') %></th>
               <th scope="col"><%= t('admin.journal.attributes.procedure_code') %></th>
               <th scope="col"><%= t('admin.journal.attributes.country_code') %></th>
               <th scope="col"><%= t('admin.journal.attributes.evidence_requester_id') %></th>
@@ -31,7 +31,7 @@
                 <td><%= link_to "##{event.id}", admin_journal_event_path(event) %></td>
                 <td><%= render EventTypeComponent.new(event_type: event.event_type) %></td>
                 <td>
-                  <%= render 'admin/journal/conversation_link', event: %>
+                  <%= render 'admin/journal/exchange_link', event: %>
                 </td>
                 <%# What the row carries, without saying which side each stood
                     on: the country is the correspondent's, and the event type

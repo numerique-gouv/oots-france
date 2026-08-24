@@ -72,7 +72,7 @@ module Admin
 
       # A 404 for something that never was a record: `RecordNotFound` is what
       # Rails maps to that status, and an unknown procedure is answered here
-      # exactly as an unknown conversation is next door.
+      # exactly as an unknown exchange is next door.
       def found!(entry)
         raise ActiveRecord::RecordNotFound if entry.nil?
 

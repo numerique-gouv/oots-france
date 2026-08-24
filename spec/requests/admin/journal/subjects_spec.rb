@@ -6,19 +6,19 @@ RSpec.describe 'Admin::Journal::Subjects' do
   let(:person) { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' } }
 
   it 'finds every exchange concerning a person' do
-    matching = create(:audit_event, :about_a_person, conversation_id: 'la-sienne')
-    other = create(:audit_event, conversation_id: 'une-other')
+    matching = create(:audit_event, :about_a_person, exchange_id: 'la-sienne')
+    other = create(:audit_event, exchange_id: 'une-other')
 
     get admin_journal_subjects_path(person)
 
-    expect(response.body).to include(matching.conversation_id)
-    expect(response.body).not_to include(other.conversation_id)
+    expect(response.body).to include(matching.exchange_id)
+    expect(response.body).not_to include(other.exchange_id)
   end
 
   # The key folds the case: two member states spell a name differently and
   # mean one person.
   it 'ignores the case the name was typed in' do
-    create(:audit_event, :about_a_person, conversation_id: 'la-sienne')
+    create(:audit_event, :about_a_person, exchange_id: 'la-sienne')
 
     get admin_journal_subjects_path(person.merge(family_name: 'KÖNIGREICH'))
 
@@ -28,7 +28,7 @@ RSpec.describe 'Admin::Journal::Subjects' do
   # Two fields build no key: searching anyway would hand back the whole journal
   # under a heading claiming the opposite.
   it 'searches nothing until all three fields are given' do
-    create(:audit_event, :about_a_person, conversation_id: 'la-sienne')
+    create(:audit_event, :about_a_person, exchange_id: 'la-sienne')
 
     get admin_journal_subjects_path(family_name: 'Königreich', given_name: 'Ada')
 
@@ -58,7 +58,7 @@ RSpec.describe 'Admin::Journal::Subjects' do
 
   # Equality and nothing else: no prefix, no fragment.
   it 'matches nothing on a name that is merely close' do
-    create(:audit_event, :about_a_person, conversation_id: 'la-sienne')
+    create(:audit_event, :about_a_person, exchange_id: 'la-sienne')
 
     get admin_journal_subjects_path(person.merge(family_name: 'Königreic'))
 

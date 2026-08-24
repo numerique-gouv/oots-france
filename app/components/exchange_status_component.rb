@@ -2,7 +2,7 @@
 #
 # The colour is a reading of the state, not a property of it: the model says an
 # exchange failed, this says that reads as an error.
-class ConversationStatusComponent < ViewComponent::Base
+class ExchangeStatusComponent < ViewComponent::Base
   BADGES = {
     'pending' => :new,
     'sent' => :info,
@@ -20,7 +20,7 @@ class ConversationStatusComponent < ViewComponent::Base
   # ActionView, and a ViewComponent does not inherit from it.
   def call
     render(DsfrComponent::BadgeComponent.new(status: BADGES.fetch(@status, :info), size: :sm)) do
-      t("admin.journal.conversations.statuses.#{@status}", default: @status)
+      t("admin.journal.exchanges.statuses.#{@status}", default: @status)
     end
   end
 end

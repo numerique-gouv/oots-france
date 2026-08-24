@@ -87,7 +87,7 @@ echo "→ Redémarrage de la passerelle, pour activer ses notifications"
 docker compose restart domibus
 scripts/ci/wait_for_domibus.sh
 
-echo "→ PostgreSQL, l'état des conversations et la file des jobs"
+echo "→ PostgreSQL, l'état des échanges et la file des jobs"
 docker compose up --detach postgres
 scripts/ci/wait_for_postgres.sh
 docker compose run --rm --no-deps web bundle exec rails db:prepare

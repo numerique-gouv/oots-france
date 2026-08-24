@@ -53,24 +53,24 @@ module EvidenceProvision
     # A submission that never got through is settled by
     # `IncomingMessage::Process`, which sees the failure come back up.
     def settle(answer)
-      conversation = Conversation.find_by(conversation_id: context.message.conversation_id, incoming: true)
-      return unknown_conversation if conversation.nil?
+      exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
+      return unknown_exchange if exchange.nil?
 
       if answer.exception
-        conversation.failed!(code: answer.exception.code, description: answer.exception.message)
+        exchange.failed!(code: answer.exception.code, description: answer.exception.message)
       else
-        conversation.delivered!
+        exchange.delivered!
       end
     end
 
     # `IncomingMessage::Process` opens one before dispatching, so there always
     # is one — but nothing in the code compels it, and an answer gone out with
     # its exchange unsettled would leave a pending state nothing would ever
-    # contradict. Said aloud, as `SettleConversation` says it.
-    def unknown_conversation
+    # contradict. Said aloud, as `SettleExchange` says it.
+    def unknown_exchange
       Rails.logger.warn(
-        I18n.t('interactors.evidence_provision.answer_request.unknown_conversation',
-          id: context.message.conversation_id),
+        I18n.t('interactors.evidence_provision.answer_request.unknown_exchange',
+          id: context.message.exchange_id),
       )
     end
 
@@ -119,7 +119,7 @@ module EvidenceProvision
 
     # Chapter 4.4: « A Data Service MUST reject requests that use identifiers
     # that were used in previously processed requests. » The journal holds the
-    # only memory of it — no `Conversation` on the provider side carries a
+    # only memory of it — no `Exchange` on the provider side carries a
     # request identifier — and the arriving message has a line there already,
     # `IncomingMessage::Process` journalling before it dispatches.
     def reject_if_already_answered
