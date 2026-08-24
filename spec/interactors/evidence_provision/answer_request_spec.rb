@@ -80,6 +80,77 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
+  # Chapter 4.5.2: France holds no document it merely has to wait for, so one
+  # procedure is designated to answer the announcement — stub 10. What matters
+  # is that the message exists and is confronted with the response rules.
+  describe 'the procedure it answers with a deferral' do
+    let(:message) { request_for(ProcedureCode::BIRTH_REGISTRATION) }
+
+    it 'answers a response whose status announces the evidence for later' do
+      answer
+
+      expect(submitted.root.name).to eq('QueryResponse')
+      expect(status_of(submitted)).to end_with('Unavailable')
+    end
+
+    # `R-EDM-RESP-S045`: the slot a deferral must carry, and that
+    # `R-EDM-RESP-S014` forbids to any other status.
+    it 'names the date the evidence will be available' do
+      answer
+
+      expect(available_at_of(submitted))
+        .to eq((Time.current + DeferredResponseBuilder::DEFERRAL).utc.iso8601(3))
+    end
+
+    it 'attaches no document, having none to attach' do
+      answer
+
+      expect(Nokogiri::XML(gateway_body).xpath('//payload').size).to eq(1)
+    end
+
+    # A response did go out, and it carried nothing: the journal says both.
+    it 'journals a response sent, with no fingerprint' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'response_sent', edm_error_code: nil, evidence_digest: nil,
+        response_id: identifier_of(submitted),
+      )
+    end
+
+    it 'settles the exchange France opened as deferred, carrying the date' do
+      create(:exchange, incoming: true, exchange_id: message.exchange_id, country_code: nil)
+
+      answer
+
+      expect(Exchange.sole).to have_attributes(
+        status: 'deferred',
+        response_available_at: Time.current + DeferredResponseBuilder::DEFERRAL,
+      )
+    end
+
+    # The guard on the distribution format sits above the deferral, and this is
+    # the only example that reads it on a procedure other than the system check.
+    it 'refuses a format it does not serve before announcing anything' do
+      allow(message.body).to receive(:evidence_type)
+        .and_return(EvidenceType.new(id: 'x', descriptions: {}, distribution_format: 'application/xml'))
+
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0007')
+    end
+
+    # Chapter 4.4 wants an exceeded interval answered « instead of a successful
+    # response »: a correspondent that has given up has no use for a date.
+    it 'answers the timeout instead once the request is past its interval' do
+      travel_to(Time.zone.parse(CAPTURED_AT) + Settings.provider_timeout + 1.second)
+
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0005')
+    end
+  end
+
   # An unsupported optional capability, not an invalid request: the correspondent
   # asked for a distribution format we do not serve.
   describe 'a distribution format it does not serve' do
@@ -343,6 +414,16 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   def decoded_payload(envelope) = Base64.decode64(Nokogiri::XML(envelope).at_xpath('//payload/value').text)
 
   def status_of(document) = document.root['status']
+
+  def available_at_of(document)
+    document.at_xpath("//rim:Slot[@name='ResponseAvailableDateTime']//rim:Value", SlotReading::NAMESPACES)&.text
+  end
+
+  def request_for(procedure_code)
+    envelope_with_body('requete') do |body|
+      body.sub(/(<rim:Slot name="Procedure">.*?<rim:Value>)[^<]*/m, "\\1#{procedure_code}")
+    end
+  end
 
   def identifier_of(document)
     document.at_xpath("//rim:Slot[@name='EvidenceResponseIdentifier']//rim:Value", SlotReading::NAMESPACES).text

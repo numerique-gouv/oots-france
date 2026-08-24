@@ -40,6 +40,7 @@ module Oots
     def write_all
       write('requete', *request)
       write('reponse', *system_check_response)
+      write('reponseDifferee', *deferred_response)
 
       ERROR_SPECIMENS.each { |name, exception| write(name, *error_response(exception)) }
     end
@@ -93,6 +94,20 @@ module Oots
         payload_id: payload_id(body.document_id),
         attachment:,
       )
+    end
+
+    def deferred_response
+      body = DeferredResponseBuilder.new(requester:, request_id: REQUEST_ID, clock:, uuid:)
+
+      [
+        body.render,
+        header(
+          action: EbmsAction::EXECUTE_QUERY_RESPONSE,
+          original_sender: french_provider.ebms_identity,
+          final_recipient: requester.ebms_identity,
+          payload_id: payload_id(body.document_id),
+        ),
+      ]
     end
 
     def error_response(exception)

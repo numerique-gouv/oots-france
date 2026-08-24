@@ -1,0 +1,60 @@
+<query:QueryResponse
+        xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+        xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        xmlns:sdg="http://data.europa.eu/p4s"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Unavailable"
+        requestId="urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v2.0</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>1a2b3c4d-0000-4000-8000-000000000009</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-08-06T10:00:00.000Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="ResponseAvailableDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-08-07T10:00:00.000Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000001</sdg:Identifier>
+  <sdg:Name lang="FR">Direction interministérielle du numérique</sdg:Name>
+  <sdg:Address>
+    <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+  </sdg:Address>
+  <sdg:Classification>EP</sdg:Classification>
+</sdg:Agent>
+
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000002</sdg:Identifier>
+  <sdg:Name lang="FR">Ministère de l'enseignement supérieur</sdg:Name>
+</sdg:Agent>
+
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:RegistryObjectList/>
+</query:QueryResponse>

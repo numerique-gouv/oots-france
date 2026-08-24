@@ -1,0 +1,48 @@
+<query:QueryResponse
+        xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+        xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+        xmlns:sdg="http://data.europa.eu/p4s"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Unavailable"
+        requestId="<%= escape(request_id) %>">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= EdmSpecification::IDENTIFIER %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(document_id) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value><%= timestamp %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="ResponseAvailableDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value><%= available_at.iso8601(3) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+<%= provider_agent %>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<%= requester_agent %>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:RegistryObjectList/>
+</query:QueryResponse>

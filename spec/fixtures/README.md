@@ -11,7 +11,7 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 
 | Répertoire | Contenu |
 | --- | --- |
-| `reference/messages/` | Les six messages RegRep (`requete`, `reponse`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`, `erreurExpiration`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
+| `reference/messages/` | Les sept messages RegRep (`requete`, `reponse`, `reponseDifferee`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`, `erreurExpiration`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
 | `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq premiers d'entre eux — l'enveloppe ne varie pas d'un code d'erreur à l'autre, et `erreurExpiration` n'en a donc pas —, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
 
 > [!IMPORTANT]
@@ -48,6 +48,7 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 | `requete.demarcheInconnue.xml` | Démarche `T3`, à laquelle la réponse est `EDM:ERR:0004` |
 | `requete.sansProcedure.xml`, `requete.sansRequeteur.xml` | Les incomplétudes qui valent `EDM:ERR:0003` |
 | `reponseAvecPieceJointe.xml` | Une `ExecuteQueryResponse` portant un justificatif |
+| `reponseDifferee.xml` | Une `ExecuteQueryResponse` de statut `Unavailable` : elle annonce une date et **ne porte aucune charge PDF**, ce qu'aucune altération de `reponseAvecPieceJointe` ne sait produire |
 | `erreurAutorisationRequise.xml` | `EDM:ERR:0002` avec son slot `PreviewLocation` et sa sévérité `PreviewRequired` |
 | `erreurObjetIntrouvable.xml` | `EDM:ERR:0004` |
 | `erreurSansCode.xml` | L'attribut `code` omis, que `R-EDM-ERR-C026` impose pourtant : la lecture doit s'en passer plutôt que buter dessus |
