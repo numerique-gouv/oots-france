@@ -23,15 +23,15 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
-    resources :conversations, only: %i[index show]
 
     # The log is walked through its events: what one exchange adds up to is
-    # read on its own page, under `/admin/conversations`, which both directions
-    # now feed.
+    # read on its own page, under `/admin/journal/conversations`, which both
+    # directions feed.
     namespace :journal do
       root to: 'events#index'
       resource :subjects, only: :show
       resources :events, only: :show
+      resources :conversations, only: %i[index show]
     end
 
     # The pages carry short identifiers only — a procedure code, the last

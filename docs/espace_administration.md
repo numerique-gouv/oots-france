@@ -17,11 +17,11 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
 | `/admin` | Les trois entrées ci-dessous. |
-| `/admin/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. On y accède depuis `/admin/journal` — l'accueil de l'espace et sa navigation n'y mènent pas, l'état d'un échange se cherchant à partir de sa trace. |
-| `/admin/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
 | `/admin/journal` | Le [journal des échanges](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, démarche, pays, requêteur et période. C'est la seule vue qui porte **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune conversation ne peut représenter. |
 | `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris. |
 | `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne. **Trois champs exacts**, pour la raison qu'expose [journal_des_echanges.md](journal_des_echanges.md#le-chiffrement-au-repos-en-détail). |
+| `/admin/journal/conversations` | La liste des échanges, du plus récent au plus ancien, filtrable par état, pays, démarche, requêteur et période. L'état est rendu en pastille DSFR. **Les deux sens y figurent** : ce que la France demande, et ce qu'on lui demande. |
+| `/admin/journal/conversations/:id` | Le détail d'un échange, **`error_description` comprise** — la raison d'un échec, qu'aucune autre interface n'expose (voir le [chantier 10](reste_à_faire.md#10-ce-que-lappelant-apprend-dun-échec)) — et, sous lui, **le journal de cet échange**. |
 | `/admin/common_services` | L'accueil des annuaires centraux : ce que l'Evidence Broker publie, en nombres, et les trois entrées vers les listes — pays, démarches, exigences. |
 | `/admin/common_services/procedures` | Les codes de démarche que les États membres ont déclarés, avec leur intitulé et les pays qui les déclarent. |
 | `…/procedures/:code` | Les pays qui ont déclaré ce code, et pour chacun le nombre d'exigences qu'il en tire. |
@@ -77,7 +77,7 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 
 **`edm_error_code`, lui, est glosé plutôt que rendu nu.** `EdmErrorCodeComponent` dit en français ce que le code signifie et lie vers le [chapitre 4.5.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938), qui définit les huit. Un seul lien pour les huit : la liste publiée ne porte qu'un URN pour l'ensemble, sans ancre par code. Et un code hors de ces huit — qu'un correspondant non conforme peut envoyer — s'affiche sans lien, pointer ce chapitre lui ferait dire ce qu'il ne dit pas.
 
-**L'état d'une conversation n'est pas le journal de l'article 17**, et les deux se consultent séparément : `/admin/conversations` montre où en est un échange, `/admin/journal` ce qu'il a laissé comme trace. Le journal a sa propre page de documentation, [journal_des_echanges.md](journal_des_echanges.md).
+**L'état d'une conversation n'est pas le journal de l'article 17**, et les deux se lisent séparément : `/admin/journal` montre ce qu'un échange a laissé comme trace, `/admin/journal/conversations` où il en est. Les conversations tiennent sous le journal parce qu'on les y cherche — une ligne du journal mène à la conversation qu'elle concerne —, non parce que l'une serait un extrait de l'autre. Le journal a sa propre page de documentation, [journal_des_echanges.md](journal_des_echanges.md).
 
 ## Qui peut y entrer
 
@@ -117,7 +117,7 @@ Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>
 | --- | --- |
 | `PaginationComponent` | La pagination du DSFR, et sa logique de fenêtre |
 | `CardComponent` | Une entrée d'une liste, pleine largeur : ce qui la décrit d'un côté, ce qu'elle énumère de l'autre, dans le pied du DSFR sous un filet. `dense:` resserre celle qui n'a rien à décrire entre les deux ; `clickable:` étend le lien du titre au corps et lui donne la flèche du DSFR, le pied gardant ses propres liens |
-| `DirectoryBreadcrumbsComponent` | Le fil d'Ariane commun à ces pages, dont le dernier maillon ne porte jamais de lien |
+| `AdminBreadcrumbsComponent` | Le fil d'Ariane d'une section de l'espace : l'espace, la racine de la section, puis ce que la page ajoute. Le dernier maillon ne porte jamais de lien, ce qui le marque comme courant. Chaque section le sous-classe pour nommer sa racine — `DirectoryBreadcrumbsComponent` pour les annuaires, `JournalBreadcrumbsComponent` pour le journal |
 | `DirectoryQueryComponent` | La requête posée et les identifiants dont la réponse dépend, **repliés dans un accordéon** : on vient lire ce que les annuaires publient, et seulement ensuite, quand la réponse surprend, vérifier ce qui leur a été demandé. En bas de page d'ordinaire ; `embedded:` le range au pied d'une carte, où il clôt une étape de la chaîne de requêtes |
 | `CountryTagComponent` | Un pays : son drapeau, son nom, son code, dans une boîte à bordure fine. L'adresse vient de l'appelant, et son absence dit quelque chose : une étiquette qui aurait l'air cliquable là où rien ne mène affirmerait qu'il y a où aller |
 | `CountryTagListComponent` | Les pays d'une entrée, en rangée qui se replie et espace toute seule ; `caption:` dit en quelle qualité ils y figurent, au-dessus de la rangée et avec elle |

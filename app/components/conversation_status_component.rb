@@ -20,7 +20,7 @@ class ConversationStatusComponent < ViewComponent::Base
   # ActionView, and a ViewComponent does not inherit from it.
   def call
     render(DsfrComponent::BadgeComponent.new(status: BADGES.fetch(@status, :info), size: :sm)) do
-      t("admin.conversations.statuses.#{@status}", default: @status)
+      t("admin.journal.conversations.statuses.#{@status}", default: @status)
     end
   end
 end

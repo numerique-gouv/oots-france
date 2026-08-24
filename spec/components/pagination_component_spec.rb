@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe PaginationComponent, type: :component do
   def component(current:, pages:)
-    described_class.new(current:, pages:, link: ->(page) { "/admin/conversations?page=#{page}" })
+    described_class.new(current:, pages:, link: ->(page) { "/admin/journal/conversations?page=#{page}" })
   end
 
   describe '#render?' do

@@ -16,7 +16,7 @@ RSpec.describe 'Admin::Home' do
     it 'offers the conversations neither as a tile nor in the navigation' do
       get admin_root_path
 
-      expect(response.parsed_body.css("a[href='#{admin_conversations_path}']")).to be_empty
+      expect(response.parsed_body.css("a[href='#{admin_journal_conversations_path}']")).to be_empty
     end
 
     it 'carries the navigation' do

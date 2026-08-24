@@ -33,7 +33,7 @@ ignore_unused:
   - activemodel.*
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
-  - admin.conversations.statuses.*
+  - admin.journal.conversations.statuses.*
   - admin.sessions.{refused,signed_out,connection_required}
   - components.directory_query.identifiers.*
   - interactors.failures.*

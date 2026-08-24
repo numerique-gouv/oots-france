@@ -22,7 +22,7 @@ end
 end
 
 Quand("j'ouvre la liste des conversations") do
-  visit admin_conversations_path
+  visit admin_journal_conversations_path
 end
 
 Quand("j'ouvre le tableau de bord des jobs") do
@@ -38,7 +38,7 @@ Quand('je me déconnecte') do
 end
 
 Quand("j'ouvre la fiche de la conversation {word}") do |nationality|
-  visit admin_conversation_path(conversation_named(nationality).conversation_id)
+  visit admin_journal_conversation_path(conversation_named(nationality).conversation_id)
 end
 
 Quand("je filtre sur l'état {string}") do |state|
@@ -128,8 +128,8 @@ Alors('je vois cet échange avec le sens {string}') do |direction|
 end
 
 Alors('je ne le vois pas dans la liste des conversations') do
-  visit admin_conversations_path
+  visit admin_journal_conversations_path
 
-  expect(page).to have_text(I18n.t('admin.conversations.index.title'))
+  expect(page).to have_text(I18n.t('admin.journal.conversations.index.title'))
   expect(page).to have_no_text(@exchange)
 end

@@ -1,5 +1,7 @@
 <% content_for :title, t('admin.journal.events.index.title') %>
 
+<%= render JournalBreadcrumbsComponent.new %>
+
 <div class="fr-grid-row fr-grid-row--top fr-mb-2w">
   <div class="fr-col-12 fr-col-md-7">
     <h1><%= t('admin.journal.events.index.title') %></h1>
@@ -15,7 +17,7 @@
               class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
       </li>
       <li>
-        <%= link_to t('admin.conversations.index.title'), admin_conversations_path,
+        <%= link_to t('admin.journal.conversations.index.title'), admin_journal_conversations_path,
               class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
       </li>
     </ul>

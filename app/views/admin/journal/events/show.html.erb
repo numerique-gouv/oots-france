@@ -1,10 +1,8 @@
 <% content_for :title, t('admin.journal.events.show.title', id: @event.id) %>
 
-<%= dsfr_breadcrumbs do |fil| %>
-  <% fil.with_breadcrumb(label: t('components.directory_breadcrumbs.admin'), href: admin_root_path) %>
-  <% fil.with_breadcrumb(label: t('admin.journal.events.index.title'), href: admin_journal_root_path) %>
-  <% fil.with_breadcrumb(label: t('admin.journal.events.show.title', id: @event.id)) %>
-<% end %>
+<%= render JournalBreadcrumbsComponent.new(
+      trail: [[t('admin.journal.events.show.title', id: @event.id), nil]],
+    ) %>
 
 <h1 class="fr-h3"><%= t('admin.journal.events.show.title', id: @event.id) %></h1>
 
