@@ -27,7 +27,7 @@ RSpec.describe EvidenceRequestBuilder do
         descriptions: { 'EN' => 'Certificate of Birth' },
         details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
       ),
-      procedure_code: ProcedureCode::STUDENT_GRANT,
+      procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       clock: instance_double(Clock, now: '2026-08-06T10:00:00.000Z'),
       uuid: instance_double(UuidGenerator, next: '1a2b3c4d-0000-4000-8000-000000000000'),
     }

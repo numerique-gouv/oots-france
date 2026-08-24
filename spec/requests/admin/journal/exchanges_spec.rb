@@ -55,6 +55,33 @@ RSpec.describe 'Admin::Exchanges' do
       end
     end
 
+    # What an operator has to be able to read of a deferred exchange: chapter
+    # 4.5.2 announces a date, and the exchange is settled on it rather than
+    # failed.
+    describe 'an exchange a correspondent deferred' do
+      it 'reads the announced date on the page' do
+        exchange = create(:exchange, :deferred,
+          response_available_at: Time.zone.parse('2026-09-01T08:00:00Z'))
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).to include(I18n.t('admin.journal.exchanges.show.rows.response_available_at'))
+        expect(response.body).to include(I18n.l(exchange.response_available_at, format: :long))
+        expect(response.body).to include(I18n.t('admin.journal.exchanges.statuses.deferred'))
+      end
+
+      # The row is unconditional, so an exchange nobody deferred shows the
+      # heading and no date — never a blank the reader has to interpret.
+      it 'keeps the row, empty, on an exchange nobody deferred' do
+        exchange = create(:exchange, :delivered)
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).to include(I18n.t('admin.journal.exchanges.show.rows.response_available_at'))
+        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.statuses.deferred'))
+      end
+    end
+
     # The detail page carries the exchange's log. The message identifier is read
     # on the event's own page alone: the table keeps it back.
     it 'shows what the journal retains of the exchange' do

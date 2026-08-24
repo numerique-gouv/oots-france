@@ -77,6 +77,8 @@ Deux valeurs viennent d'un correspondant étranger et sont traitées comme telle
 
 **`edm_error_code`, lui, est glosé plutôt que rendu nu.** `EdmErrorCodeComponent` dit en français ce que le code signifie et lie vers le [chapitre 4.5.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938), qui définit les huit. Un seul lien pour les huit : la liste publiée ne porte qu'un URN pour l'ensemble, sans ancre par code. Et un code hors de ces huit — qu'un correspondant non conforme peut envoyer — s'affiche sans lien, pointer ce chapitre lui ferait dire ce qu'il ne dit pas.
 
+**Un échange en `deferred` n'est pas un échec.** Le correspondant a répondu qu'il servira le justificatif plus tard, et la fiche donne la date sous « Réponse annoncée pour le ». L'échange est **réglé** : le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) veut que le requêteur revienne par une nouvelle requête à cette date, de sorte que rien d'autre n'arrivera sur celui-ci — et que le balayage d'expiration, qui ne prend que les échanges en cours, ne le clôt jamais en erreur.
+
 **Une seule liste, deux pages de regroupement.** Le chapitre 4.4 distingue trois niveaux — une conversation couvre des échanges, un échange laisse des événements — et la console les rend dans cet ordre : on cherche au grain le plus fin, celui de l'événement, puis on descend. Ni l'échange ni la conversation n'ont de liste à eux : « tous les échanges » n'est pas une question qu'on se pose en arrivant, et les deux identifiants sont des critères du journal.
 
 > [!NOTE]

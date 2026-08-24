@@ -60,15 +60,18 @@ Une exécution réussie affiche :
 
 ```
   Scénario: le justificatif revient du fournisseur et parvient à la démarche
+  Scénario: deux demandes d'un même usager tiennent dans une seule conversation
+  Scénario: le fournisseur annonce le justificatif pour plus tard
   Scénario: le fournisseur ne connaît pas la démarche et le dit
+  … et les trois scénarios de réception
 
-2 scenarios (2 passed)
-12 steps (12 passed)
-0m2.7s
+7 scenarios (7 passed)
+45 steps (45 passed)
+0m9.0s
 ```
 
 > [!NOTE]
-> Ces deux ou trois secondes tiennent au cron du répartiteur de notifications, que `scripts/configure_domibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
+> Ces quelques secondes tiennent au cron du répartiteur de notifications, que `scripts/configure_domibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
 
 > [!IMPORTANT]
 > Les scénarios s'exécutent **dans le conteneur `web`** (c'est ce que fait `make e2e`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://web:4000` — un nom de service, et non `localhost` : le justificatif est retransmis par le travailleur de fond, qui tourne dans un autre conteneur que le scénario. Avec `localhost`, il n'y trouverait personne.
@@ -77,12 +80,16 @@ Une exécution réussie affiche :
 
 ## Ce que les scénarios jouent
 
-Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les deux seules réponses que le code de production sache produire :
+Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire, plus la conversation qui peut en couvrir plusieurs :
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
 | Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
+| Une conversation, deux échanges | `T3` deux fois | deux échanges distincts sous le `ConversationId` que la démarche a fourni |
+| Réponse différée | `R1` | une réponse de statut `Unavailable` : l'échange passe en `deferred` et l'appelant lit la date dans `dateDisponibilite`, sans qu'aucun justificatif circule |
 | Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
+
+Le justificatif d'une réponse différée n'est **pas** attendu sur le même échange : le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) veut une nouvelle requête à la date annoncée, et c'est le scénario nominal qui joue cette requête-là.
 
 [`reception_de_requete.feature`](../features/reception_de_requete.feature) la met en **fournisseur** et couvre ce qu'elle refuse :
 
@@ -139,7 +146,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
-> `T3` — la demande de bourse étudiante des TDD — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
+> `T3` — la reconnaissance académique de diplômes, selon `Procedures-CodeList.gc` — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
 
 ## En cas d'échec
 

@@ -2,8 +2,10 @@ module EvidenceProvision
   # Answers a request another member state addressed to France.
   #
   # France holds one document today: the PDF it returns for procedure `00`, the
-  # OOTS system check. Every other procedure is refused with `EDM:ERR:0004` —
-  # the expected behaviour as long as no real provider is connected. Stub 3 of
+  # OOTS system check. Procedure `R1` is answered with a deferral instead, so
+  # that the announcement of chapter 4.5.2 is produced somewhere — stub 10.
+  # Every other procedure is refused with `EDM:ERR:0004`, the expected behaviour
+  # as long as no real provider is connected. Stub 3 of
   # `docs/reste_à_faire.md`.
   class AnswerRequest < ApplicationInteractor
     EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
@@ -13,9 +15,14 @@ module EvidenceProvision
     REPLAYED_IDENTIFIER = 'TDD 4.4: request identifier already used'.freeze
 
     # What France answered, carried rather than left behind in instance
-    # variables: the log needs to know which of the two answers went out, and
+    # variables: the log needs to know which of the three answers went out, and
     # the envelope alone no longer says.
-    Answer = Data.define(:envelope, :identifier, :exception, :evidence)
+    #
+    # Exactly one of `exception`, `evidence` and `available_at` is set — refusal,
+    # document, announcement — and the two others are nil. Nothing enforces it
+    # but the three constructors below, which is what lets `journal` and `settle`
+    # tell the three apart on two questions rather than three.
+    Answer = Data.define(:envelope, :identifier, :exception, :evidence, :available_at)
 
     def call
       # Outside the rescue, because a request whose requester cannot be read
@@ -58,6 +65,8 @@ module EvidenceProvision
 
       if answer.exception
         exchange.failed!(code: answer.exception.code, description: answer.exception.message)
+      elsif answer.available_at
+        exchange.deferred!(answer.available_at)
       else
         exchange.delivered!
       end
@@ -90,11 +99,16 @@ module EvidenceProvision
       request.validate!
       reject_if_already_answered
 
-      return error_envelope(EdmException::OBJECT_NOT_FOUND) unless request.procedure_code == ProcedureCode::SYSTEM_CHECK
+      return error_envelope(EdmException::OBJECT_NOT_FOUND) unless recognised_procedure?
       return error_envelope(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
       return error_envelope(EdmException::TIMEOUT) if expired?
+      return deferred_envelope if request.procedure_code == ProcedureCode::BIRTH_REGISTRATION
 
       system_check_envelope
+    end
+
+    def recognised_procedure?
+      request.procedure_code.in?([ProcedureCode::SYSTEM_CHECK, ProcedureCode::BIRTH_REGISTRATION])
     end
 
     # Chapter 4.4: a Data Service implementing timeout « shall return a timeout
@@ -140,7 +154,16 @@ module EvidenceProvision
       )
 
       Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
-        identifier: body.document_id, exception: nil, evidence: served)
+        identifier: body.document_id, exception: nil, evidence: served, available_at: nil)
+    end
+
+    # After the timeout, for the reason `expired?` gives: a correspondent that
+    # has already given up has no use for an appointment.
+    def deferred_envelope
+      body = DeferredResponseBuilder.new(requester:, request_id:, uuid: context.uuid)
+
+      Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
+        identifier: body.document_id, exception: nil, evidence: nil, available_at: body.available_at)
     end
 
     def attachment_for(served)
@@ -151,7 +174,7 @@ module EvidenceProvision
       body = ErrorResponseBuilder.new(requester:, exception:, request_id:, uuid: context.uuid)
 
       Answer.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
-        identifier: body.document_id, exception:, evidence: nil)
+        identifier: body.document_id, exception:, evidence: nil, available_at: nil)
     end
 
     # The corners swap on the way back, and the exchange identifier received is

@@ -180,6 +180,28 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response.parsed_body).to include('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
     end
 
+    # Chapter 4.5.2: « the Online Procedure Portal may use this information to
+    # inform the user to pause the procedure and to return at a later point ».
+    # Without the date the portal learns that it gets nothing, never when to
+    # come back and ask again.
+    it 'reports the date a correspondent announced the evidence for' do
+      exchange.deferred!(Time.zone.parse('2026-09-01T08:00:00Z'))
+
+      get "/requete/#{exchange.exchange_id}"
+
+      expect(response.parsed_body).to include(
+        'statut' => 'deferred', 'dateDisponibilite' => '2026-09-01T10:00:00+02:00',
+      )
+    end
+
+    it 'says nothing of a date on an exchange nobody deferred' do
+      exchange.delivered!
+
+      get "/requete/#{exchange.exchange_id}"
+
+      expect(response.parsed_body).not_to have_key('dateDisponibilite')
+    end
+
     it 'answers 404 for an exchange it never opened' do
       get '/requete/un-echange-inconnu'
 

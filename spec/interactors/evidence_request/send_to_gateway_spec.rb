@@ -17,7 +17,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
       evidence_type: build(:evidence_type),
       requirement: build(:requirement),
       data_service: build(:data_service),
-      procedure_code: ProcedureCode::STUDENT_GRANT,
+      procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       preview_possible: false,
       uuid: Oots::SequentialUuids.new,
       audit_trail: AuditTrail.new,

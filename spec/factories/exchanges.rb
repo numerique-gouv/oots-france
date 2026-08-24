@@ -20,6 +20,12 @@ FactoryBot.define do
       settled_at { Time.current }
     end
 
+    trait :deferred do
+      status { 'deferred' }
+      response_available_at { 3.days.from_now }
+      settled_at { Time.current }
+    end
+
     trait :delivered do
       status { 'delivered' }
       settled_at { Time.current }

@@ -80,7 +80,7 @@ Classés par poids décroissant. Les trois premiers sont des conditions d'existe
 
 ### 5. Le contenu des messages
 
-**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, les règles qui décident si la France répond sont désormais appliquées, et un refus nomme la règle qu'il applique ; ce qui manque encore est du côté des réponses reçues, dont le dépôt ne lit ni le statut ni la moitié des métadonnées.
+**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, les règles qui décident si la France répond sont désormais appliquées, et un refus nomme la règle qu'il applique ; ce qui manque encore est du côté des réponses reçues, dont le dépôt lit désormais le statut mais toujours pas la moitié des métadonnées.
 
 **Ce qu'exige la spécification.** Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) détaille la requête slot par slot, le [4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) la réponse ; le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) donne les règles qu'un message doit satisfaire, dans les deux sens.
 
@@ -104,12 +104,15 @@ Le Schematron officiel reste le juge des messages **produits**, ce qu'il est cen
 | `LegalPerson`, `AuthorizedRepresentative`, `AuthorizedRepresentativeLegalPerson` | Absents | Requis dès qu'une démarche porte sur une personne morale, ou qu'un tiers agit pour le sujet (voir chantier 2) |
 | Les attributs de personne étendus en 2.0 | Absents | `BirthName`, `PlaceOfBirth`, `Gender`, `Nationality`, `CountryOfBirth`, `CountryOfResidence`, adresse, téléphone, courriel — tous facultatifs, et tous sans source tant que l'usager n'est pas authentifié (voir chantier 2), qui décide aussi du `schemeID` : `eidas2` pour un portefeuille, avec le niveau de garantie alors figé à `High` |
 
-Sur la réponse produite : joindre des **documents complémentaires** (annexe, traduction, version lisible) et déclarer leur lien avec le justificatif principal ; déclarer une réponse **différée**, quand le document existe mais ne sera disponible que plus tard ; porter la langue, le profil de conformité et la période de validité.
+Sur la réponse produite : joindre des **documents complémentaires** (annexe, traduction, version lisible) et déclarer leur lien avec le justificatif principal ; porter la langue, le profil de conformité et la période de validité. La réponse **différée**, elle, est produite et lue : voir ci-dessous.
 
 Sur la réponse reçue, le dépôt tire l'identifiant du justificatif que le chapitre 4.8 réclame, l'identifiant de la réponse et les deux autorités. Les quatre autres éléments de `sdg:EvidenceMetadata` — `IssuingDate`, `IssuingAuthority`, `IsConformantTo`, `Distribution` — ne sont pas lus : `R-EDM-RESP-S062` les impose à l'émetteur, aucun chapitre n'en demande la conservation, et côté portail aucun chemin d'erreur ne repart vers le fournisseur, si bien qu'un refus détruirait l'échange sans que personne l'apprenne.
 
-> [!WARNING]
-> **Une réponse différée fait échouer l'échange, puis condamne la vraie réponse.** `EvidenceResponseParser` ne lit pas l'attribut `status` : une réponse `Unavailable`, par laquelle un fournisseur annonce la date à laquelle le document sera disponible (`R-EDM-RESP-C005`), ne porte aucun justificatif, donc `IncomingMessage::Process` la juge illisible et passe l'échange en `failed` — un état réglé, où le justificatif envoyé plus tard est refusé en `already_settled`. Lire `status` et `ResponseAvailableDateTime` ne dépend d'aucun autre chantier.
+**La réponse différée est traitée des deux côtés.** Un fournisseur qui ne peut pas servir le document tout de suite répond une `QueryResponse` de statut `Unavailable` portant un slot `ResponseAvailableDateTime` ([4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951), `R-EDM-RESP-S045`). `EvidenceResponseParser` lit les deux, l'échange se règle en `deferred` en portant la date, et le fournisseur de service français la relit dans `dateDisponibilite` — car c'est la date qui lui dit quand revenir. Le chapitre est explicite sur la suite : « *At the time of availability a new Evidence Request must be made* ». Le justificatif ne revient donc **jamais** sur le même échange, et le refus d'une seconde réponse portant le même identifiant de requête — que le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) impose — reste entier. Côté émission, la France annonce une réponse différée pour la démarche `R1` : c'est le **bouchon 10**.
+
+Une limite connue reste, et elle n'est pas propre à ce mécanisme :
+
+- **L'annonce partielle n'est pas traitée.** Le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) prévoit — en prose, sans règle numérotée — qu'une réponse `Unavailable` porte les pièces déjà disponibles quand un type de justificatif en compte plusieurs — la liste des objets n'est vide que « typically ». Le dépôt ne lit qu'une pièce jointe, et une annonce en portant une la perdrait : c'est le **bouchon 8**, les justificatifs multiples, pas une lacune de la réponse différée.
 
 ### 6. Les justificatifs structurés
 
@@ -187,6 +190,7 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleExchange` | Chantier 3 |
 | 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
 | 9 | Le filet à erreurs trop large du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
+| 10 | La réponse différée : une démarche dédiée, et une date annoncée qui n'est qu'un décalage fixe | `ProcedureCode::BIRTH_REGISTRATION`, `DeferredResponseBuilder::DEFERRAL` | Chantier 4 |
 
 ## Ce qui est déjà conforme
 
@@ -215,7 +219,7 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 | [3.8 — Journalisation des annuaires](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932917) | Hors périmètre | Ne concerne que l'opérateur d'un annuaire |
 | [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Intervalles T2/T3 de la prévisualisation ; règle multiplicative par nombre d'exigences |
 | [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Partiel | Voir le tableau du chantier 5 |
-| [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Partiel | Documents complémentaires, langue et conformité ; la réponse différée n'est ni écrite ni lue |
+| [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Partiel | Documents complémentaires, langue et conformité ; la réponse différée, elle, est écrite et lue |
 | [4.5.3 — Erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Conforme | — |
 | [4.6 — Règles métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) | Partiel | Les règles qu'un lecteur ne tranche pas sans schéma, sur les requêtes reçues ; une réponse reçue, elle, n'est confrontée à aucune |
 | [4.7 — eDelivery](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) | Partiel | Contrôle de cohérence de version en entrée ; SMP à prévoir |

@@ -70,6 +70,20 @@ Alors('l\'échange finit par porter le code d\'erreur {string}') do |code|
   end
 end
 
+Alors('l\'échange finit par porter l\'état {string}') do |statut|
+  patiente_jusqu_a("l'échange porte l'état #{statut}") { etat_de_l_echange['statut'] == statut }
+end
+
+# Chapter 4.5.2: the announcement is what sends the procedure portal back with a
+# new Evidence Request « at the time of availability », so the date has to reach
+# the caller and not merely the console.
+Alors('la démarche apprend la date à laquelle le justificatif sera disponible') do
+  annoncee = etat_de_l_echange['dateDisponibilite']
+
+  expect(annoncee).to be_present
+  expect(Time.zone.parse(annoncee)).to be > Time.current
+end
+
 Alors('aucun justificatif n\'est transmis à la démarche') do
   expect(@fake_requester.received_evidence).to be_nil
 end
@@ -98,6 +112,16 @@ Alors('le journal porte l\'échange entier, du départ de la requête à la remi
   expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(Rails.root.join('assets/drapeau.pdf').binread))
 end
 
+Alors('le journal porte l\'annonce du correspondant') do
+  patiente_jusqu_a("le journal porte l'annonce") { journal.exists?(event_type: 'response_received') }
+
+  # A response did go out and did come back, and it carried no document: both
+  # halves say so by the absence of a fingerprint.
+  expect(journal.pluck(:event_type)).to include('request_sent', 'request_received', 'response_sent',
+    'response_received')
+  expect(journal.pluck(:evidence_digest).compact).to be_empty
+end
+
 Alors('le journal porte le refus du correspondant') do
   patiente_jusqu_a('le journal porte le refus') { journal.exists?(event_type: 'error_received') }
 
@@ -124,6 +148,10 @@ def etat_de(response)
   expect(response.status).to eq(202)
 
   JSON.parse(response.body)
+end
+
+def etat_de_l_echange
+  JSON.parse(Faraday.get("#{oots_france_url}/requete/#{@exchange_id}").body)
 end
 
 def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')

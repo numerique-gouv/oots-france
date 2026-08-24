@@ -132,6 +132,8 @@ valide requete EDM-REQ-C
 valide requete EDM-REQ-S
 valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
+valide reponseDifferee EDM-RESP-C
+valide reponseDifferee EDM-RESP-S
 valide erreur EDM-ERR-C
 valide erreur EDM-ERR-S
 valide erreurRequeteInvalide EDM-ERR-C
@@ -146,6 +148,7 @@ valide erreurExpiration EDM-ERR-S
 # it, without the SOAP envelope that surrounds it on the wire.
 valide requete.entete EDM-ebMS
 valide reponse.entete EDM-ebMS
+valide reponseDifferee.entete EDM-ebMS
 valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS
 valide erreurCapaciteNonSupportee.entete EDM-ebMS

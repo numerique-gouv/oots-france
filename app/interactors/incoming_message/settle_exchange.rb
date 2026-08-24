@@ -54,9 +54,21 @@ module IncomingMessage
 
     def settle(exchange)
       case context.message.action
-      when EbmsAction::EXECUTE_QUERY_RESPONSE then deliver(exchange)
+      when EbmsAction::EXECUTE_QUERY_RESPONSE then respond(exchange)
       when EbmsAction::EXCEPTION_RESPONSE then record_error(exchange)
       end
+    end
+
+    # Chapter 4.5.2: a response whose status announces the evidence for later
+    # carries none, and is not a failure. Read before the evidence — which is
+    # exactly what a deferral has not — and before `claim_delivery!`, which
+    # would reserve a handover nothing is going to make.
+    def respond(exchange)
+      body = context.message.body
+
+      return exchange.deferred!(body.response_available_at) if body.unavailable?
+
+      deliver(exchange)
     end
 
     # `processable?` decided on the exchange as it stood when the message

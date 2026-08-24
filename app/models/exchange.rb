@@ -24,8 +24,9 @@ class Exchange < ApplicationRecord
   include NormalisesCountryCode
 
   # `preview_required` — the correspondent wants the user to visit its own
-  # space before it will answer.
-  STATUSES = %w[pending sent preview_required delivered failed].freeze
+  # space before it will answer. `deferred` — it answered that the evidence
+  # will exist later, and named when, where it said so.
+  STATUSES = %w[pending sent preview_required deferred delivered failed].freeze
 
   IN_PROGRESS = %w[pending sent].freeze
 
@@ -83,12 +84,18 @@ class Exchange < ApplicationRecord
   # still addressable; a row written here would name an error nobody was sent.
   scope :expired, -> { where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago) }
 
-  # Where France asks, an exchange goes pending → sent → delivered, preview
-  # aside; where it answers, pending → delivered or failed. The two states in
-  # between describe the requesting side alone.
+  # Where France asks, an exchange goes pending → sent → delivered, preview and
+  # deferral aside; where it answers, pending → delivered, deferred or failed.
+  # `preview_required` describes the requesting side alone.
   def sent! = settle({ status: 'sent', settled_at: nil })
 
   def preview_required!(location) = answered(status: 'preview_required', preview_location: location)
+
+  # A correspondent announcing a date has answered, and chapter 4.5.2 sends the
+  # portal back with a new Evidence Request « at the time of availability ». So
+  # a settled state and not a waiting one — nothing further arrives on this
+  # exchange, and `IN_PROGRESS` leaves it out.
+  def deferred!(available_at) = answered(status: 'deferred', response_available_at: available_at)
 
   def delivered! = answered(status: 'delivered')
 

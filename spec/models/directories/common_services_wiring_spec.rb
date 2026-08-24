@@ -88,7 +88,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
         provider: resolved.provider, data_service: resolved.data_service,
         requester: build(:evidence_requester), beneficiary: build(:natural_person),
         evidence_type: build(:evidence_type), requirement: build(:requirement),
-        procedure_code: ProcedureCode::STUDENT_GRANT, preview_possible: false,
+        procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, preview_possible: false,
         uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new,
       )
 
