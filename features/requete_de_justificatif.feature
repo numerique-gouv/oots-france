@@ -2,7 +2,7 @@
 @bout_en_bout
 Fonctionnalité: Demander un justificatif à un autre État membre
 
-  Ces deux scénarios traversent une vraie passerelle Domibus : requête
+  Ces quatre scénarios traversent une vraie passerelle Domibus : requête
   construite, soumise au plugin WS, transportée en AS4, reçue, traitée, réponse
   renvoyée, justificatif retransmis à la démarche. La suite unitaire simule
   entièrement ce transport ; c'est ici, et ici seulement, qu'un PMode absent, un
@@ -30,6 +30,14 @@ Fonctionnalité: Demander un justificatif à un autre État membre
   Scénario: deux demandes d'un même usager tiennent dans une seule conversation
     Quand la démarche demande deux justificatifs pour le même usager
     Alors les deux requêtes portent la même conversation et deux échanges distincts
+
+  Scénario: le fournisseur annonce le justificatif pour plus tard
+    Quand la démarche demande un justificatif pour la procédure "R1"
+    Alors la démarche reçoit tout de suite l'identifiant de l'échange
+    Et l'échange finit par porter l'état "deferred"
+    Et la démarche apprend la date à laquelle le justificatif sera disponible
+    Et aucun justificatif n'est transmis à la démarche
+    Et le journal porte l'annonce du correspondant
 
   Scénario: le fournisseur ne connaît pas la démarche et le dit
     Quand la démarche demande un justificatif pour la procédure "T3"
