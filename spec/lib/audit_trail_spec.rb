@@ -52,6 +52,17 @@ RSpec.describe AuditTrail do
     it 'records the business context' do
       expect(journalled).to have_attributes(procedure_code: '00', evidence_type_id: end_with('00000000-0000-0000-0000-000000000000'))
     end
+
+    # Chapter 4.8, in both its tables: « MIME type and full content of first
+    # MIME part ». Byte for byte and not `include`: what is kept is what
+    # circulated, and Domibus erased it as it handed it over.
+    it 'keeps the first MIME part whole, under the type the correspondent declared' do
+      expect(journalled).to have_attributes(
+        regrep_mime_type: 'application/x-ebrs+xml',
+        regrep_body: message.first_part.content,
+      )
+      expect(journalled.regrep_body).to start_with('<?xml').and include('QueryRequest')
+    end
   end
 
   describe 'an answer carrying evidence' do
@@ -67,7 +78,7 @@ RSpec.describe AuditTrail do
       expect(journalled).to have_attributes(
         event_type: 'response_received',
         evidence_digest: Digest::SHA256.hexdigest(message.evidence),
-        mime_type: 'application/pdf',
+        evidence_mime_type: 'application/pdf',
         country_code: 'FR',
       )
     end
@@ -98,6 +109,15 @@ RSpec.describe AuditTrail do
     it 'records no subject' do
       expect(journalled).to have_attributes(evidence_subject: nil, evidence_subject_key: nil)
     end
+
+    # The chapter asks for the *first* part. The evidence travels in a second
+    # one, and it is the fingerprint that stands for it — the journal is not
+    # where a PDF is kept.
+    it 'keeps the metadata document and never the evidence beside it' do
+      expect(journalled.regrep_body).to eq(message.first_part.content)
+      expect(journalled.regrep_body).to include('QueryResponse')
+      expect(journalled.regrep_body).not_to include('%PDF')
+    end
   end
 
   # A deferral is journalled like any other response received: the body carries
@@ -112,7 +132,7 @@ RSpec.describe AuditTrail do
       expect(journalled).to have_attributes(
         event_type: 'response_received',
         evidence_digest: nil,
-        mime_type: nil,
+        evidence_mime_type: nil,
       )
     end
 
@@ -122,6 +142,10 @@ RSpec.describe AuditTrail do
         request_id: message.body.request_id,
         response_id: message.body.response_id,
       )
+    end
+
+    it 'keeps the announcement itself' do
+      expect(journalled.regrep_body).to eq(message.first_part.content)
     end
   end
 
@@ -137,6 +161,11 @@ RSpec.describe AuditTrail do
         detail: 'Object not found',
         country_code: 'FR',
       )
+    end
+
+    it 'keeps the rs:Exception as it arrived' do
+      expect(journalled.regrep_body).to eq(message.first_part.content)
+      expect(journalled.regrep_body).to include('rs:Exception', 'EDM:ERR:0004')
     end
   end
 
@@ -176,6 +205,65 @@ RSpec.describe AuditTrail do
         request_id: nil,
       )
     end
+
+    # The whole point of reading the part past Nokogiri: the bytes nobody could
+    # make sense of are the ones an auditor most needs, and the gateway has
+    # already destroyed them.
+    it 'keeps the bytes it could make nothing of' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled.regrep_body).to include('Charabia')
+      expect(journalled).to have_attributes(regrep_mime_type: 'application/x-ebrs+xml', request_id: nil)
+    end
+  end
+
+  # Nothing in the TDD fixes an encoding, and the chapter asks for the content
+  # whole. Kept as it came, then, rather than refused or transcoded — the log
+  # holds what circulated, well formed or not, and the console showing it garbled
+  # is a defect of the screen, not of the trace.
+  describe 'a message whose first part is not encoded in UTF-8' do
+    let(:message) { envelope_with_body('requete') { "<query:QueryRequest>\xE9</query:QueryRequest>" } }
+
+    it 'keeps the bytes as they came' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(
+        event_type: 'request_received',
+        regrep_mime_type: 'application/x-ebrs+xml',
+      )
+      expect(journalled.regrep_body.bytes).to include(0xE9)
+    end
+  end
+
+  # What the header declares, and not what it ought to declare: chapter 4.7.1
+  # fixes `eb:PartInfo[1]` as the RegRep document, so a correspondent placing
+  # something else there is the discrepancy an auditor comes to see.
+  describe 'a message whose first part is not the one the chapter fixes' do
+    let(:message) do
+      RetrievedMessageParser.new(real_envelope('requete').sub('application/x-ebrs+xml', 'application/pdf'))
+    end
+
+    it 'records the type as declared, uncorrected' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(event_type: 'request_received', regrep_mime_type: 'application/pdf')
+      expect(journalled.regrep_body).to include('QueryRequest')
+    end
+  end
+
+  describe 'a message announcing a part that is not there' do
+    let(:message) { envelope_without('requete', '//ws:retrieveMessageResponse/payload') }
+
+    it 'records the arrival all the same, with nothing to show for the part' do
+      expect { audit_trail.message_received(message:, message_id: 'message-passerelle') }.not_to raise_error
+
+      expect(journalled).to have_attributes(
+        event_type: 'request_received',
+        regrep_mime_type: nil,
+        regrep_body: nil,
+        conversation_id: '1589c463-ccb7-4c0e-8044-c7198d844c16',
+      )
+    end
   end
 
   # These never reach the gateway, so no Domibus log holds them.
@@ -208,6 +296,36 @@ RSpec.describe AuditTrail do
         exchange_id: exchange.exchange_id,
         conversation_id: exchange.conversation_id,
       )
+    end
+  end
+
+  # Chapter 4.8 asks both its tables for it, so the duty runs both ways. What
+  # France emits is
+  # journalled from the envelope that carried it, so the log holds the message
+  # as submitted and not a second rendering of it.
+  describe 'what the journal keeps of what France sends' do
+    let(:first_part) { MimePart.new(mime_type: 'application/x-ebrs+xml', content: '<query:QueryRequest/>') }
+
+    it 'keeps the request it submitted' do
+      audit_trail.request_sent(exchange: create(:exchange), requester: nil, provider: nil, beneficiary: nil,
+        evidence_type: nil, request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:)
+
+      expect(journalled).to have_attributes(
+        event_type: 'request_sent',
+        regrep_mime_type: 'application/x-ebrs+xml',
+        regrep_body: '<query:QueryRequest/>',
+      )
+    end
+
+    it 'keeps the answer and the refusal alike' do
+      answered = { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
+                   request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle', first_part: }
+
+      audit_trail.response_sent(**answered, evidence: nil)
+      expect(journalled).to have_attributes(event_type: 'response_sent', regrep_body: first_part.content)
+
+      audit_trail.error_sent(**answered, exception: EdmException::OBJECT_NOT_FOUND)
+      expect(journalled).to have_attributes(event_type: 'error_sent', regrep_body: first_part.content)
     end
   end
 end

@@ -16,7 +16,9 @@ module EvidenceProvision
 
     # What France answered, carried rather than left behind in instance
     # variables: the log needs to know which of the three answers went out, and
-    # the envelope alone no longer says.
+    # the envelope alone no longer says. It holds the envelope's builder, which
+    # is what both `submit` and the journal read — the one rendering it twice
+    # would mint a second message identifier.
     #
     # Exactly one of `exception`, `evidence` and `available_at` is set — refusal,
     # document, announcement — and the two others are nil. Nothing enforces it
@@ -31,7 +33,7 @@ module EvidenceProvision
       @request_id = request.request_id
 
       answer = chosen_or_invalid
-      submitted = context.gateway.submit(answer.envelope)
+      submitted = context.gateway.submit(answer.envelope.render)
 
       journal(answer, submitted.message_id)
     end
@@ -41,10 +43,7 @@ module EvidenceProvision
     attr_reader :requester, :request_id
 
     def journal(answer, message_id)
-      shared = {
-        message: context.message, requester:, provider: french_provider,
-        request_id:, message_id:, response_id: answer.identifier,
-      }
+      shared = answered(answer, message_id)
 
       if answer.exception
         context.audit_trail.error_sent(**shared, exception: answer.exception)
@@ -53,6 +52,17 @@ module EvidenceProvision
       end
 
       settle(answer)
+    end
+
+    # What both answers record of the message that went out, the first MIME part
+    # chapter 4.8 asks for included — read from the envelope that carried it, so
+    # the log holds what was submitted and not a second rendering of it.
+    def answered(answer, message_id)
+      {
+        message: context.message, requester:, provider: french_provider,
+        request_id:, message_id:, response_id: answer.identifier,
+        first_part: answer.envelope.first_part,
+      }
     end
 
     # The exchange France opened on receiving the request reaches its end here
@@ -179,6 +189,9 @@ module EvidenceProvision
 
     # The corners swap on the way back, and the exchange identifier received is
     # reused: that is what ties both legs of one exchange together.
+    #
+    # The builder and not its render: `journal` reads the first MIME part back
+    # from it, and rendering twice would mint a second message identifier.
     def wrap(body, action, attachment: EmptyAttachment.new)
       OutgoingEnvelopeBuilder.new(
         body:,
@@ -190,7 +203,7 @@ module EvidenceProvision
         conversation_id: context.message.conversation_id,
         exchange_id: context.message.exchange_id,
         uuid: context.uuid,
-      ).render
+      )
     end
 
     def evidence = Rails.root.join(EVIDENCE_PATH).binread

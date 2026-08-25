@@ -9,13 +9,7 @@ module EvidenceRequest
       # `submit` has returned.
       exchange.update!(request_id: body.request_id)
 
-      # The gateway names the message it accepted, and that name is the only way
-      # back to the `ds:SignedInfo` it signed — the non-repudiation chapter 4.8
-      # traces from an evidence identifier. Kept, therefore, and not discarded.
-      submitted = context.gateway.submit(envelope)
-      exchange.sent!
-
-      journal(submitted.message_id)
+      journal(submit(exchange))
     # `UnreadableMessageError` as well as `Faraday::Error`: the gateway can
     # answer 200 with a body we cannot read, and from the caller's point of view
     # that is the same problem — the gateway — not a fault of theirs.
@@ -26,6 +20,16 @@ module EvidenceRequest
 
     private
 
+    # The gateway names the message it accepted, and that name is the only way
+    # back to the `ds:SignedInfo` it signed — the non-repudiation chapter 4.8
+    # traces from an evidence identifier. Kept, therefore, and not discarded.
+    def submit(exchange)
+      submitted = context.gateway.submit(envelope.render)
+      exchange.sent!
+
+      submitted.message_id
+    end
+
     def journal(message_id)
       context.audit_trail.request_sent(
         exchange: context.exchange,
@@ -35,6 +39,7 @@ module EvidenceRequest
         evidence_type: context.evidence_type,
         request_id: body.request_id,
         message_id:,
+        first_part: envelope.first_part,
       )
     end
 
@@ -54,7 +59,13 @@ module EvidenceRequest
       }
     end
 
+    # Memoised, and the builder rather than its render: the journal reads back
+    # the very part that was submitted.
     def envelope
+      @envelope ||= build_envelope
+    end
+
+    def build_envelope
       resolved = context
       exchange = resolved.exchange
 
@@ -67,7 +78,7 @@ module EvidenceRequest
         conversation_id: exchange.conversation_id,
         exchange_id: exchange.exchange_id,
         uuid: resolved.uuid,
-      ).render
+      )
     end
   end
 end

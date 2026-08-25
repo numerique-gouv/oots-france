@@ -112,6 +112,34 @@ Alors('le journal porte l\'échange entier, du départ de la requête à la remi
   expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(Rails.root.join('assets/drapeau.pdf').binread))
 end
 
+# Chapter 4.8 asks both its tables for « MIME type and full content of first
+# MIME part ». The unit suite mocks the transport away, so only here can the
+# bytes be shown to survive it — France answers itself over the single gateway
+# of the example PMode, so what went out is what came back, and the two rows
+# must hold the same document.
+Alors('le journal porte le corps RegRep de chaque message, tel qu\'il a circulé') do
+  emis = journal.where(event_type: AuditEvent::SENT_BY_FRANCE)
+  porteurs = journal.where(event_type: AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE)
+
+  expect(emis).not_to be_empty
+  expect(porteurs.count).to eq(emis.count * 2)
+  expect(porteurs.pluck(:regrep_mime_type).uniq).to contain_exactly('application/x-ebrs+xml')
+
+  # Read by its root rather than matched on a prefix: only some of the templates
+  # open on an XML declaration. `all(...)` is left alone too — in this world it
+  # resolves to Capybara's finder, not the RSpec matcher.
+  racines = porteurs.pluck(:regrep_body).map { |corps| Nokogiri::XML(corps, &:strict).root.name }
+  expect(racines.uniq - %w[QueryRequest QueryResponse]).to be_empty
+
+  # France answers itself over the single gateway of the example PMode, so each
+  # leg is journalled twice — once as it left, once as it came back. The two
+  # rows must hold the same document, or the gateway altered what it carried.
+  emis.find_each do |depart|
+    arrivee = journal.find_by!(event_type: depart.event_type.sub('_sent', '_received'))
+    expect(arrivee.regrep_body).to eq(depart.regrep_body)
+  end
+end
+
 Alors('le journal porte l\'annonce du correspondant') do
   patiente_jusqu_a("le journal porte l'annonce") { journal.exists?(event_type: 'response_received') }
 

@@ -28,6 +28,7 @@
               <td>
                 <%= link_to @exchange.conversation_id,
                       admin_journal_conversation_path(@exchange.conversation_id),
+                      class: 'fr-link fr-link--sm',
                       title: t('admin.journal.exchanges.show.same_conversation') %>
               </td>
             </tr>
@@ -70,10 +71,10 @@
             </tr>
             <tr>
               <th scope="row"><%= t('admin.journal.exchanges.show.rows.preview_location') %></th>
-              <%# A foreign correspondent chooses this address: it is read, not
-                  followed. An operator console has no business being a
-                  one-click launcher into a site it did not choose. %>
-              <td><code><%= @exchange.preview_location.presence || '—' %></code></td>
+              <%# A foreign correspondent chooses this address, so the scheme is
+                  vetted before it becomes an `href`: what a browser cannot open
+                  stays the text it was. %>
+              <td><code><%= external_link(@exchange.preview_location.presence || '—') %></code></td>
             </tr>
           </tbody>
         </table>

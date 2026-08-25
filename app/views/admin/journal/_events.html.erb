@@ -29,7 +29,7 @@
                     event types have no message identifier at all — a refusal
                     pronounced before the gateway was called, and the handing of
                     the evidence to the French requester. %>
-                <td><%= link_to "##{event.id}", admin_journal_event_path(event) %></td>
+                <td><%= link_to "##{event.id}", admin_journal_event_path(event), class: 'fr-link fr-link--sm' %></td>
                 <td>
                   <%= render 'admin/journal/exchange_link', event:, abbreviated: true %>
                 </td>
@@ -44,7 +44,8 @@
                 <td>
                   <% if event.procedure_code.present? %>
                     <%= link_to event.procedure_code,
-                          admin_common_services_procedure_path(event.procedure_code) %>
+                          admin_common_services_procedure_path(event.procedure_code),
+                          class: 'fr-link fr-link--sm' %>
                   <% else %>
                     —
                   <% end %>

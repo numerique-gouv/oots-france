@@ -17,6 +17,13 @@ FactoryBot.define do
       evidence_subject_key { AuditEvent.subject_key(**person) }
     end
 
+    # The first MIME part as it circulated, which chapter 4.8 has the log keep
+    # whole in both directions.
+    trait :with_regrep_body do
+      regrep_mime_type { 'application/x-ebrs+xml' }
+      regrep_body { '<query:QueryRequest id="urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700"/>' }
+    end
+
     trait :about_a_person do
       transient { person { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' } } }
 

@@ -88,6 +88,23 @@ RSpec.describe EvidenceRequest::SendToGateway do
     )
   end
 
+  # Chapter 4.8 asks the request flow for « MIME type and full content of first
+  # MIME part », in the first of its two tables. Compared against what
+  # the gateway was actually handed, so the log cannot hold a second rendering
+  # that merely resembles the message that went out.
+  it 'journals the very first MIME part it submitted' do
+    send_to_gateway
+
+    # Forced back to UTF-8: base64 decodes to bytes, and what the journal holds
+    # is text.
+    carried = Base64.strict_decode64(submitted.at_xpath('//payload/value').text).force_encoding(Encoding::UTF_8)
+
+    expect(AuditEvent.last).to have_attributes(
+      regrep_mime_type: 'application/x-ebrs+xml',
+      regrep_body: carried,
+    )
+  end
+
   it 'records that the exchange is now waiting on the correspondent' do
     send_to_gateway
 

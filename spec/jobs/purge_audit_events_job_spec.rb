@@ -5,8 +5,11 @@ RSpec.describe PurgeAuditEventsJob do
 
   # Article 17(4) sets twelve months, and sets them as a term as much as a duty:
   # past it, the log holds personal data nobody is entitled to keep.
+  # The body lives on the row rather than in a table of its own, so the purge
+  # takes it without having to know about it: what article 17 gives a term to
+  # includes the message as it circulated.
   it 'erases what is older than the retention, and only that' do
-    old = create(:audit_event, occurred_at: 13.months.ago)
+    old = create(:audit_event, :with_regrep_body, occurred_at: 13.months.ago)
     recent = create(:audit_event, occurred_at: 11.months.ago)
 
     described_class.perform_now

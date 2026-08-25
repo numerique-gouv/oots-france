@@ -30,6 +30,12 @@ class AuditEvent < ApplicationRecord
   encrypts :evidence_subject
   encrypts :evidence_subject_key, deterministic: true
 
+  # The first MIME part chapter 4.8 has kept whole carries the evidence subject
+  # in clear, so it belongs to the same class of data as the column above.
+  # Ordinary encryption, not deterministic: nothing ever searches by it, and
+  # determinism is a cost `evidence_subject_key` alone has a reason to pay.
+  encrypts :regrep_body
+
   # What the canonical key is built from, named here because `NaturalPerson`
   # carries more than it.
   SUBJECT_FIELDS = %i[family_name given_name date_of_birth].freeze

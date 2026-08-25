@@ -111,6 +111,30 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
+  # The seam between the two: `AuditTrail` swallows an unreadable first part so
+  # the line survives, and this interactor rescues the same exception to abandon
+  # the exchange. The one must not reach the other, or a message whose bytes we
+  # merely could not keep would be treated as a message we could not read.
+  describe 'a message whose first MIME part cannot be captured' do
+    let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
+
+    before { allow(message).to receive(:first_part).and_raise(UnreadableMessageError, 'partie illisible') }
+
+    it 'journals the arrival without the part, and dispatches all the same' do
+      allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+
+      process
+
+      expect(AuditEvent.find_by(event_type: 'request_received', exchange_id: message.exchange_id)).to have_attributes(
+        regrep_mime_type: nil,
+        regrep_body: nil,
+        request_id: 'urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700',
+      )
+      expect(Exchange.find_by(exchange_id: message.exchange_id)).to be_present
+      expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
+    end
+  end
+
   # Only the deferral of chapter 4.5.2 excuses a response without evidence, and
   # it says so in its status. One claiming `Success` and carrying nothing is
   # unreadable, which is what this side has always made of it.

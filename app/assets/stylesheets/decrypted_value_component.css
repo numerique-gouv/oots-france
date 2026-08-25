@@ -1,6 +1,6 @@
 /*
- * The two columns the journal has to decrypt to show, marked so that they do not
- * read as the twenty that carry nothing personal. The warning register is what
+ * The columns the journal has to decrypt to show, marked so that they do not
+ * read as the others that carry nothing personal. The warning register is what
  * says it: the value is not an error, it is one to handle with care.
  *
  * Colours come from the DSFR's own tokens and never from a literal — the layout
@@ -24,4 +24,18 @@
  */
 .decrypted-value__icon::before {
   --icon-size: 1rem;
+}
+
+/*
+ * A value that renders as a block — the RegRep document, folded — puts the
+ * padlock beside the first line of the box rather than halfway down it.
+ *
+ * On the baseline and not on the top edge: that first line is a button, whose
+ * padding makes its box taller than its text, so aligning the boxes leaves the
+ * padlock riding above the wording it marks. Nor on the centre, which the
+ * unfolded document would drag hundreds of pixels down.
+ */
+.decrypted-value--block {
+  display: flex;
+  align-items: baseline;
 }

@@ -1,0 +1,14 @@
+<div class="regrep-body">
+  <button class="fr-btn fr-btn--tertiary-no-outline fr-btn--sm" type="button"
+          aria-expanded="false" aria-controls="<%= RegrepBodyComponent::REGION_ID %>">
+    <%= summary %>
+  </button>
+
+  <%# A box one can only scroll with a pointer fails WCAG 2.1.1, so it takes a
+      `tabindex` — and a focusable region takes a name. %>
+  <div class="fr-collapse" id="<%= RegrepBodyComponent::REGION_ID %>">
+    <div class="regrep-body__content" role="region" tabindex="0" aria-label="<%= summary %>">
+      <pre><code><%= displayed %></code></pre>
+    </div>
+  </div>
+</div>

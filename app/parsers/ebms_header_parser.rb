@@ -41,12 +41,24 @@ class EbmsHeaderParser
       .validate!(:message_sender, error: UnreadableMessageError)
   end
 
-  # { 'application/x-ebrs+xml' => 'cid:…', 'application/pdf' => 'cid:…' }
-  def payload_identifiers
-    all(user_message, './eb:PayloadInfo/eb:PartInfo').to_h do |part|
-      [part_property(part, 'MimeType'), attribute(part, 'href')]
+  # The parts in the order the header declares them, which is what chapter 4.8
+  # asks the log for: « full content of first MIME part », the first one and not
+  # the one whose type happens to suit.
+  #
+  # A request and an exception leave no room for doubt — `R-EDM-ebMS-023` allows
+  # them one part and `R-EDM-ebMS-030` fixes its type, both fatal. A response is
+  # weaker: `R-EDM-ebMS-032` asks for the RegRep document first, but only at
+  # warning severity, so a correspondent can put something else there and still
+  # break no fatal rule. Reading by position and recording what was declared is
+  # what makes that gap visible; reading by type would hide it.
+  def payload_parts
+    all(user_message, './eb:PayloadInfo/eb:PartInfo').map do |part|
+      { mime_type: part_property(part, 'MimeType'), href: attribute(part, 'href') }
     end
   end
+
+  # { 'application/x-ebrs+xml' => 'cid:…', 'application/pdf' => 'cid:…' }
+  def payload_identifiers = payload_parts.to_h { |part| part.values_at(:mime_type, :href) }
 
   private
 

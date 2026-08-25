@@ -19,6 +19,22 @@ RSpec.describe DecryptedValueComponent, type: :component do
     expect(page).to have_css(".decrypted-value__icon[title='#{wording}']")
   end
 
+  # A folded document is a `<div>`, and `<span>` takes phrasing content only:
+  # the inline wrapper would make the markup invalid around the one column that
+  # needs it most.
+  it 'wraps a block value in a block of its own' do
+    render_inline(described_class.new(block: true)) { '<div>un document</div>'.html_safe }
+
+    expect(page).to have_css('div.decrypted-value.decrypted-value--block div', text: 'un document')
+  end
+
+  it 'stays inline for everything else' do
+    render_inline(described_class.new) { 'peu importe' }
+
+    expect(page).to have_css('span.decrypted-value')
+    expect(page).to have_no_css('.decrypted-value--block')
+  end
+
   # `evidence_subject` carries the name a foreign correspondent wrote. Nothing
   # here escapes it — ViewComponent renders through ActionView, which does — so
   # what this holds shut is a later `raw` or `html_safe` on the way in.

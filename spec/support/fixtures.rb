@@ -36,6 +36,18 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # A real envelope with one of its elements taken out — how a spec fabricates a
+  # message the gateway would have accepted and this application cannot read.
+  # Through Nokogiri and not a regexp: the fixtures bind the ebMS namespace to
+  # whatever prefix Domibus chose that day, so a pattern on the prefix silently
+  # matches nothing.
+  def envelope_without(name, xpath)
+    document = Nokogiri::XML(real_envelope(name))
+    document.xpath(xpath, OotsNamespaces::NAMESPACES).each(&:remove)
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
   private
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read
