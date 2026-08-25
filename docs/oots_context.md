@@ -142,7 +142,7 @@ features/            Scénarios Cucumber de bout en bout, en Gherkin français,
 
 ## Ce que ne fait pas encore ce dépôt
 
-Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. Inventaire complet, bouchons en place et par quoi les remplacer, dépendances entre chantiers : [reste_à_faire.md](reste_à_faire.md).
+Les manques portent sur les raccordements au reste du système, pas sur le protocole lui-même : fournisseurs de données nationaux, Preview Space, réconciliation d'identité, persistance et journalisation, homologation de sécurité. État macro chapitre par chapitre, avec le projet qui porte chaque manque : [reste_à_faire.md](reste_à_faire.md).
 
 Une partie du dépôt échappe à cet inventaire parce qu'elle ne relève d'aucun chapitre : l'**espace d'administration**, par lequel l'équipe qui exploite le service suit l'état des échanges et les jobs de fond. Il observe et n'écrit rien, et rien ne le garde encore — voir [espace_administration.md](espace_administration.md).
 

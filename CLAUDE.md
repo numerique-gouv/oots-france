@@ -19,6 +19,8 @@ The job is to build what the [Technical Design Documents](https://ec.europa.eu/d
 
 Two mistakes to recognise. **Inventing** — a technical constraint turned into a user-visible behaviour, a convenience added because it seemed helpful. **Reconducting** — carrying a behaviour forward because the application this one replaces had it, which proves only that someone once wrote it.
 
+**The same discipline applies to every dependency, not only to the TDD.** What Domibus, eDelivery or a Commission directory does is settled by **its published documentation and its source**, never by memory and never by inference from a local experiment. Read the doc first; read the code when the doc is silent — Domibus is open, and its behaviour is often only in there. An experiment then *confirms* what one has read; it is a poor way to *discover* it, because it shows one version's behaviour on one configuration and says nothing about what is guaranteed.
+
 The consequence is worth stating plainly: this application talks to machines. A French service provider calls it, it exchanges ebMS messages with a foreign correspondent, it answers the provider. The one place the specifications put a human in front of a screen is the *Preview Space* of [chapter 4.9](https://ec.europa.eu/digital-building-blocks/sites/pages/viewpage.action?pageId=900013172), which this repository does not implement yet. Until it does, **anything rendering HTML to an end user is out of scope** — and the user reaches the procedure portal, never this component.
 
 The rule is about an *audience*, and one exception faces none: the operator console of [docs/espace_administration.md](docs/espace_administration.md), which renders HTML to the team that runs the deployment, for an operational need no chapter names. It must never grow a screen an end user reaches.
@@ -70,6 +72,8 @@ The domain loses nothing by this — it gains. The vocabulary of the TDD *is* En
 The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the class that carries it. Read it before naming anything new, and add the entry there when a change introduces a term — nowhere else defines vocabulary.
 
 Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`: they address the business and belong to the documentation. Their step definitions are code, and are English.
+
+**Infrastructure vocabulary stays English inside French prose** — a *job*, a *worker*, a *build*, never « un travail » or « un ouvrier ». These are the words the tools print, the words a log line carries and the words one types to search; translating them severs the prose from the thing it describes. This holds in documentation, in commit messages and **in URLs**, where a translated segment outlives the page that introduced it. The test is simple: if the word appears in the output of a command we run, it keeps that spelling.
 
 ### Every word a human reads lives in `config/locales/fr.yml`
 
@@ -149,6 +153,7 @@ CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL,
 - **Specs mirror `app/`** (`spec/**/*_spec.rb`), with FactoryBot factories and the reference messages of `spec/fixtures/` — see its README for what each directory is worth as evidence. New behaviour comes with specs.
 - **`db/seeds.rb` is part of the change, not an afterthought.** It is the only data the operator console is ever read against by hand, so a column it never fills is a page nobody has actually looked at. Extend it whenever a change adds a column the console shows, renames one, or alters what a writer records — and **make it say what the code writes, never more**: fill a field exactly where the production path fills it, leave it empty everywhere that path leaves it empty. A demonstration that fills every column teaches the console to lie, and the lie is then read as documentation. Where a value can be the real one — a digest of the document actually served — prefer it, so that a procedure the docs describe can be walked on the seeds rather than only read.
 - Config comes from environment variables only (no config files); new variables must be added to the relevant `.env*.template` with a French comment, **and** to `scripts/ci/prepare_environment.sh`, whose own contract check fails otherwise. Never commit real `.env*` files or secrets.
+- **Nothing is in service yet, so nothing is owed backward compatibility.** No deployment holds data anyone would mourn: a schema change is **one migration**, not a three-step dance with a compatibility window, and the seeds are rebuilt rather than migrated. Adopt the modern form of an API outright instead of keeping the inherited one alongside because it still works — carrying two shapes costs a reader forever to spare a rewrite once. **This licence expires the day the system goes into service**; it was true on 2026-08-25, and [docs/oots_context.md](docs/oots_context.md) is where that status is recorded. Re-read it before relying on this.
 
 ### Layered design — apply it while writing, not after
 
@@ -191,6 +196,7 @@ scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-bra
 Rules:
 
 - One worktree = one branch = one task. Work, commit, then merge/PR from the main checkout; remove with `git worktree remove .worktrees/<nom>`.
+- **Agents that write must be isolated, one worktree each.** Two agents editing the same checkout corrupt each other silently: one stages what the other is mid-way through writing, a `git add -A` sweeps in a neighbour's half-finished file, and a branch switch moves the ground under a third. Agents that only *read* share a checkout safely — the rule is about writing. When several write in parallel, give each its own worktree, or run them one at a time.
 - `.worktrees/` is ignored everywhere (git, ESLint, Jest, Docker build context) so worktrees don't interfere with the main checkout.
 - `make test` works out of the box in a worktree: docker compose derives its project name from the directory, so containers and volumes are isolated per worktree.
 - **The full stack runs in as many worktrees at once as there are free ports.** The script gives each worktree the smallest offset, between +1 and +99, whose whole port set is free — free meaning neither listening nor already written into another worktree's `.env`, since a stopped stack still owns its ports. One offset applies to every port of a stack, so the worktree on 3007 has its Domibus console on 8187. The Domibus/MySQL volumes are fresh per worktree, so the gateway must be configured there too — `make setup` inside the worktree does it, keeping the `.env*` the script copied in.
@@ -209,6 +215,8 @@ Rules:
 | [`ship-plan`](.claude/skills/ship-plan/SKILL.md) | Pushes an implemented plan, opens the PR, hands it to `review-loop`, records the decisions on the ticket |
 
 Everything else under `.claude/` is workshop material and stays local: `plans/`, `audits/`, `reviews/`, `reprises/`, and `settings.local.json`. It is dated prose written for one moment of one task, and versioning it would age badly.
+
+Local does not mean arbitrary — the skills read these directories, so their shape is a convention like any other. A plan goes to `.claude/plans/AAAA-MM-JJ-<sujet>.md` and is written **at the moment it is submitted for approval**, not after; a review to `.claude/reviews/`, an audit to `.claude/audits/`, same naming. One file per subject, keeping only the last revision: re-writing a plan overwrites its file, and a changed date renames it rather than leaving two versions side by side. `ship-plan` looks for the plan there, and finds nothing if it went elsewhere.
 
 > [!IMPORTANT]
 > **A skill is read by whoever works here next, human or agent.** Keep them free of anything personal — an absolute path from one machine, a token, the name of a local VM. What a skill needs from the environment, it names as a variable or asks for.

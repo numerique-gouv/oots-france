@@ -115,6 +115,14 @@ dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
    `gh pr create` : titre et corps dérivés du plan dans `.claude/plans/`
    (reprendre son sujet et son résumé) plutôt que de `--fill` sur les
    messages de commit, qui sont écrits à la maille du commit, pas de la PR.
+
+   > [!WARNING]
+   > **Le corps passe par `--body-file`, jamais par `--body` en ligne.**
+   > Écrire le markdown dans un fichier, puis `gh pr create --body-file
+   > <fichier>`. Un corps de PR contient des backticks ; dans un heredoc ou
+   > une chaîne du shell, ils **s'exécutent**, et ce qui part sur GitHub est
+   > la sortie d'une commande à la place du texte. La même règle vaut pour
+   > `gh pr edit`, `gh issue create` et tout corps de message multiligne.
    Si une PR existe déjà pour cette branche (`gh pr view` réussit), reprendre
    son URL au lieu d'en créer une seconde.
 
@@ -181,7 +189,7 @@ dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
    reste sur `In Review` jusqu'au merge.
 
 6. **Remettre à jour la description de la PR** (`gh pr edit <url> --title …
-   --body …`) une fois `review-loop` revenu avec 0 finding bloquant : la
+   --body-file …`) une fois `review-loop` revenu avec 0 finding bloquant : la
    relecture ne porte que sur l'état final, pas sur l'historique de la
    revue — donc pas de commentaire de PR listant ce qui a été corrigé.
    Réécrire titre et corps à partir de la liste de commits finale (`git log
@@ -232,6 +240,19 @@ dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
 
    **Dire que le ticket attend le merge pour passer `Done`** : ce skill l'a
    laissé sur `In Review`, et c'est délibéré.
+
+   > [!IMPORTANT]
+   > **Le merge appelle trois gestes, et aucun ne se fait tout seul** :
+   > passer le ticket `Done`, retirer le worktree, supprimer la branche
+   > (locale **et** distante). Les énoncer tous les trois en rendant compte,
+   > parce que celui qu'on oublie ne se voit pas : un worktree abandonné garde
+   > ses ports réservés, et une branche fusionnée qui traîne se propose encore
+   > à qui ouvre une PR des semaines plus tard.
+   >
+   > `gh pr merge --delete-branch` échoue à nettoyer quand on l'appelle depuis
+   > un worktree — il tente un `checkout main` déjà pris par le checkout
+   > principal. Le merge, lui, a bien eu lieu : vérifier avant de rejouer quoi
+   > que ce soit, puis finir à la main.
 
    **Dire que l'historique a été refondu et repoussé**, puisque les SHA ont
    changé sous les pieds de qui suivait la PR, et laisser de quoi revenir en

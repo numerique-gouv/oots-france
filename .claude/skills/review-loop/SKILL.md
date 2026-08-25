@@ -331,6 +331,28 @@ Une passe :
    automatique de conformité aux TDD. Puis **repousser** (`git push` over
    https, jamais `--force`).
 
+   > [!IMPORTANT]
+   > **Un test qui passe ne prouve pas qu'il teste quelque chose.** Pour tout
+   > correctif de comportement, la vérification est en trois temps :
+   > **désactiver le correctif, voir le test rougir, le remettre.** Un test
+   > écrit après le correctif passe souvent pour des raisons qui n'ont rien à
+   > voir avec lui — une fixture qui satisfait déjà l'assertion, un chemin que
+   > l'exécution n'atteint pas, une garde en amont qui absorbe le cas. Sans
+   > l'avoir vu rougir, on n'a pas vérifié le correctif : on a vérifié que la
+   > suite passe toujours, ce qu'on savait déjà.
+   >
+   > La même exigence vaut pour ce qu'on **écrit** dans le fichier de revue et
+   > dans le compte rendu : « vérifié » ne se dit que de ce qu'on a vu
+   > échouer puis réussir. Annoncer une vérification qu'on n'a pas faite est
+   > le seul défaut de cette boucle qui la rende inutile — tout le reste se
+   > rattrape à la passe suivante.
+
+   > [!TIP]
+   > **PR ouverte, la CI fait foi : lire `gh pr checks`, ne pas rejouer la
+   > suite en local par-dessus.** Elle tourne déjà, sur un environnement
+   > propre que la machine locale n'imite pas. Rejouer coûte des minutes et
+   > masque justement les écarts d'environnement qu'on veut voir.
+
 6. Un finding bloquant a-t-il été confirmé à cette passe (revue **ou** CI) ?
    - Oui → repasser à l'étape 1 pour une nouvelle passe.
    - Non → ne sortir qu'une fois la CI du dernier push **verte** : c'est le
@@ -338,6 +360,12 @@ Une passe :
      l'étape 1. Vert → passer à l'étape 7.
 
 7. **Refondre l'historique**, en local, puis s'arrêter.
+
+   > [!NOTE]
+   > **Après une refonte, les SHA ne désignent plus rien.** Ils changent tous,
+   > et une signature les change encore. Désigner un commit **par son
+   > message** dans une revue, un compte rendu ou une conversation ; un SHA
+   > qu'on ne retrouve plus est normal, pas le signe d'une perte.
 
    Une branche qui converge après plusieurs passes porte un historique écrit
    par la boucle et non par le travail : trois versions successives du même
