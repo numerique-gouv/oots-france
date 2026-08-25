@@ -22,7 +22,10 @@
                 an exchange's own page does with its status. %>
             <% t('admin.journal.attributes').each do |name, label| %>
               <% value = @event.public_send(name) %>
-              <% next if value.blank? || name == :event_type %>
+              <%# Emptiness tested without `blank?`, which matches a regexp and
+                  so raises on the RegRep body when a correspondent sent bytes
+                  that are not valid UTF-8 — bytes the journal keeps whole. %>
+              <% next if name == :event_type || value.to_s.empty? %>
               <tr>
                 <th scope="row"><%= label %></th>
                 <td>
@@ -42,6 +45,8 @@
                       <%= render 'admin/country', country_code: value %>
                     <% when :edm_error_code %>
                       <%= render EdmErrorCodeComponent.new(code: value) %>
+                    <% when :regrep_body %>
+                      <%= render RegrepBodyComponent.new(body: value) %>
                     <% else %>
                       <code><%= value %></code>
                     <% end %>
@@ -52,7 +57,7 @@
                       Which columns those are is read from the record, never from
                       a list copied here. %>
                   <% if AuditEvent.encrypted_attributes.include?(name) %>
-                    <%= render(DecryptedValueComponent.new) { cell } %>
+                    <%= render(DecryptedValueComponent.new(block: name == :regrep_body)) { cell } %>
                   <% else %>
                     <%= cell %>
                   <% end %>

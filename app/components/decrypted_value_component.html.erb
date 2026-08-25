@@ -1,4 +1,4 @@
-<span class="decrypted-value">
+<%= content_tag(tag_name, class: ['decrypted-value', modifier]) do %>
   <%# A screen reader is told to skip the padlock, so the meaning can only come
       from the text beside it. The tooltip rides on the hidden span rather than
       on the wrapper: a sighted reader gets it, and a screen reader still reads
@@ -7,4 +7,4 @@
         title="<%= label %>"></span>
   <span class="fr-sr-only"><%= label %></span>
   <%= content %>
-</span>
+<% end %>

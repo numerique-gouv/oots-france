@@ -1,0 +1,22 @@
+/*
+ * The RegRep document of an event, folded under the button that names its size.
+ * It is bounded and made to scroll on both axes rather than allowed to grow: XML
+ * carries long lines, and a page that widens with one is a page no column of the
+ * table beside it survives.
+ *
+ * Colours come from the DSFR's own tokens and never from a literal — the layout
+ * sets `data-fr-scheme="system"`, so the dark theme is reachable.
+ */
+.regrep-body__content {
+  max-block-size: 24rem;
+  overflow: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--border-default-grey);
+  background-color: var(--background-alt-grey);
+}
+
+.regrep-body__content pre {
+  margin: 0;
+  white-space: pre;
+  font-size: 0.75rem;
+}

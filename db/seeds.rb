@@ -92,6 +92,22 @@ if Rails.env.development?
   carries_requester = %w[request_sent request_refused evidence_delivered].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
+  # The first MIME part travels with the message, so the events that carry one
+  # carry it. A stand-in and not a real message: the console page has to be
+  # readable by hand, and nothing here is evidence of anything.
+  regrep_body = lambda do |event_type|
+    return {} unless event_type.in?(carries_message)
+
+    { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+      regrep_body: format(<<~XML, id: SecureRandom.uuid) }
+        <?xml version="1.0" encoding="UTF-8"?>
+        <query:QueryRequest xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                            id="urn:uuid:%<id>s">
+          <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
+        </query:QueryRequest>
+      XML
+  end
+
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
     events = scenario[:events]
     incoming = scenario.fetch(:incoming, false)
@@ -134,6 +150,7 @@ if Rails.env.development?
         edm_error_code: (exchange.edm_error_code if event_type.start_with?('error')),
         detail: (exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
+        **regrep_body.call(event_type),
       )
     end
 

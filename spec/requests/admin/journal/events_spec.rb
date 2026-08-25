@@ -200,6 +200,55 @@ RSpec.describe 'Admin::Journal::Events' do
       )
     end
 
+    # Chapter 4.8 has the log keep the message whole; the page is where an
+    # auditor reads it back, folded so that it does not push the rest away.
+    it 'shows the RegRep document, folded behind a control the keyboard reaches' do
+      event = create(:audit_event, :with_regrep_body)
+
+      get admin_journal_event_path(event)
+
+      page = response.parsed_body
+      button = page.at_css("button[aria-controls='#{RegrepBodyComponent::REGION_ID}']")
+
+      expect(button).to be_present
+      expect(page.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include('QueryRequest')
+    end
+
+    # The document is bytes a correspondent chose, and the page renders them
+    # verbatim: escaped by ERB, never `raw`, or the journal would be a way of
+    # running someone else's markup in the console.
+    it 'escapes what the correspondent sent' do
+      event = create(:audit_event, :with_regrep_body, regrep_body: '<script>alert(1)</script>')
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.css('script').map(&:text)).not_to include('alert(1)')
+      expect(response.body).to include('&lt;script&gt;')
+    end
+
+    # No chapter fixes an encoding, so the journal keeps a body that is not valid
+    # UTF-8 rather than refuse it. The page is then the one place that cannot show
+    # what is not text — and it must degrade, not fall over: a crash here would
+    # hold every other column of that event hostage to one.
+    it 'renders an event whose body is not valid UTF-8' do
+      body = +"<query:QueryRequest>\xE9</query:QueryRequest>"
+      event = create(:audit_event, :with_regrep_body, regrep_body: body.force_encoding(Encoding::UTF_8))
+
+      get admin_journal_event_path(event)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include('QueryRequest')
+    end
+
+    it 'marks the document it had to decrypt as it marks the subject' do
+      event = create(:audit_event, :with_regrep_body)
+
+      get admin_journal_event_path(event)
+
+      expect(marked_rows(response).map { |row| row.at_css('th').text })
+        .to include(I18n.t('admin.journal.attributes.regrep_body'))
+    end
+
     # Most lines of the journal name nobody — a request sent, a refusal — and a
     # padlock on one of those would say the opposite of what it means.
     it 'marks nothing on an event that names no person' do

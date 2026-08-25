@@ -165,6 +165,10 @@ fr:
       admin: Espace d’administration
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
+    # Le bouton qui déplie le corps RegRep d'un événement : il en annonce la
+    # taille, un document de métadonnées faisant plusieurs kilo-octets.
+    regrep_body:
+      summary: Afficher le corps (%{size})
     decrypted_value:
       label: Donnée personnelle déchiffrée
     directory_breadcrumbs:
