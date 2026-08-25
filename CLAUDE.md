@@ -98,7 +98,7 @@ Four things survive that default, because no identifier can hold them:
 - **What a specification requires**, with its reference — `R-EDM-ERR-C022`, `R-EDM-REQ-S052`, [RFC 7638](https://datatracker.ietf.org/doc/html/rfc7638), a TDD chapter. The rule is not ours, and the code that obeys it cannot state where it comes from.
 - **What a foreign system does**, when its behaviour is why the code has the shape it has: `retention_downloaded="0"` in the PMode erasing a message the instant it is retrieved, Domibus binding one prefix to two namespaces inside a single envelope. A reader cannot discover either from this repository.
 - **Why the obvious alternative is wrong**, where taking it fails silently or dangerously: fixing the JWE algorithms instead of reading them from the token, vetting the scheme of a preview URL a correspondent chose.
-- **What is a stub**, naming the Linear issue that removes it — `Stub, tracked as OOTS-58.` The issue travels with the line it describes; an inventory kept beside the code does not.
+- **What is a stub**, naming the Linear issue that removes it — `Stub, tracked as OOTS-58.` The comment is the source of truth, since it travels with the line it describes; [docs/reste_à_faire.md](docs/reste_à_faire.md#les-bouchons) recaps them all, and adding a stub means adding its row there.
 
 Everything else goes: no restating the code in prose, no walking the reader through a method line by line, no explaining a name that should have been better in the first place. Two sentences is the usual size of what remains.
 

@@ -41,6 +41,23 @@ Les trois annuaires centraux sont désormais interrogés pour de vrai : découve
 
 Deux chantiers n'avancent pas par le seul code : **l'identité**, qui suppose de trancher le fournisseur d'identité et de s'y raccorder, et **le fournisseur de données**, qui suppose l'accord d'un détenteur de justificatifs et l'accès à son interface. S'y ajoute une décision qui n'appartient pas à ce dépôt et que le chapitre 2 renvoie six fois à l'État membre : la **politique nationale de rapprochement d'identité**. Leur délai est celui d'accords à obtenir, pas d'un développement.
 
+## Les bouchons
+
+Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un comportement de façade, faute d'avoir de quoi faire mieux. Chacun se déclare dans le commentaire qui le porte, en nommant le ticket chargé de le retirer ; `grep -rn 'Stub' app/` les retrouve tous, et fait foi si ce tableau prend du retard.
+
+| Bouchon | Où | Retiré par |
+| --- | --- | --- |
+| Le niveau de garantie, figé à `High` faute d'authentification eIDAS | `NaturalPerson::LEVEL_OF_ASSURANCE` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| Le jeton du bénéficiaire, qui atteste l'émetteur mais jamais sa qualité pour agir au nom de la personne déclarée | `BeneficiaryToken` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| L'annuaire des requêteurs français autorisés, tenu en JSON, à la place de l'autorisation que le bénéficiaire devrait donner | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| Le justificatif servi : un PDF d'exemple, seul document que la France détienne | `EvidenceProvision::AnswerRequest`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| La démarche `R1`, dédiée à la réponse différée pour que l'annonce du 4.5.2 soit produite quelque part | `ProcedureCode`, `EvidenceProvision::AnswerRequest` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| La date d'émission du justificatif, figée : aucun document réel à dater | `SystemCheckResponseBuilder::ISSUING_DATE` | [OOTS-84](https://linear.app/pole-api/issue/OOTS-84) |
+| La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
+| Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
+
+Quatre autres commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : la validation des identifiants reçus ([OOTS-115](https://linear.app/pole-api/issue/OOTS-115)), la première exigence seule retenue ([OOTS-49](https://linear.app/pole-api/issue/OOTS-49)), la cohérence de version annoncée ([OOTS-55](https://linear.app/pole-api/issue/OOTS-55)) et les deux arrivées qui ne laissent aucune trace ([OOTS-99](https://linear.app/pole-api/issue/OOTS-99)).
+
 ## Ce qui est déjà conforme
 
 À ne pas refaire, et à ne pas casser en avançant :
