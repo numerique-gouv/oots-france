@@ -4,16 +4,40 @@
 
 Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la ligne 2.x. Les identifiants de page Confluence sont stables au sein d'une livraison ; ils changent à chaque nouvelle version publiée, et cette carte est donc à revérifier à ce moment-là.
 
+> [!IMPORTANT]
+> **Une page de chapitre qui paraît vide n'est pas inaccessible : c'est une page mère.** Le wiki en compte deux sortes, et les liens de cette carte tiennent compte des deux — mais il faut le savoir dès qu'on s'écarte d'ici.
+>
+> * Les chapitres **1** et **2** sont des pages d'accueil **sans aucun contenu** : leur texte vit dans des sous-pages.
+> * Les chapitres **5** et **3.3** ont bien du texte, mais **n'affichent pas leur arbre de sous-pages** à un visiteur anonyme — rien n'indique qu'il en existe.
+>
+> Dans les deux cas, l'API REST anonyme de Confluence énumère les enfants d'une page :
+>
+> ```sh
+> curl -s 'https://ec.europa.eu/digital-building-blocks/sites/rest/api/content/973932912/child/page' | jq '.results[] | {id, title}'
+> ```
+>
+> **Le réflexe** : avant d'écrire qu'un chapitre « ne dit rien » sur un sujet, interroger `child/page`. C'est ainsi qu'on a retrouvé le 2.3 — *Representation* —, que rien ne signalait et qui porte deux `MUST`. Comme les identifiants de page, cette arborescence est à revérifier à chaque version publiée.
+
 ## Les six chapitres
 
 | Chapitre | Ce à quoi il répond |
 | --- | --- |
-| [1 — Introduction, architecture haut niveau](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932911) | Qui sont les acteurs, que fait chacun, quel est le déroulé d'un échange de bout en bout. Le seul chapitre à lire en entier avant tout le reste. |
-| [2 — Identification, authentification, réconciliation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) | Quels attributs d'identité voyagent, d'où ils viennent, comment le fournisseur retrouve la bonne personne dans ses registres. |
+| [1 — Introduction, architecture haut niveau](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932933) | Qui sont les acteurs, que fait chacun, quel est le déroulé d'un échange de bout en bout. Le seul chapitre à lire en entier avant tout le reste. |
+| [2 — Identification, authentification, réconciliation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932924) | Quels attributs d'identité voyagent, d'où ils viennent, comment le fournisseur retrouve la bonne personne dans ses registres. Trois sous-chapitres, détaillés ci-dessous. |
 | [3 — Common Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932907) | Les trois annuaires centraux et leurs API : quel justificatif pour quelle démarche, quel fournisseur pour quel justificatif, quelle structure pour quel justificatif. |
 | [4 — Échange de justificatifs](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932908) | Le format exact des messages, leurs règles de validation, leur transport, la prévisualisation, la journalisation. **C'est le chapitre que ce dépôt implémente.** |
 | [5 — Modèles de données](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932910) | La méthode pour définir un justificatif structuré (et non un PDF opaque). |
 | [6 — Guidance et recommandations UX](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932909) | Deux renvois vers des documents hors wiki. Rien de normatif. |
+
+## Chapitre 2 — les sous-chapitres qui servent
+
+La page du chapitre est vide : tout son contenu est ici.
+
+| Sous-chapitre | Ce qu'on y trouve |
+| --- | --- |
+| [2.1 — Identité et rapprochement des enregistrements](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932924) | Les attributs qui voyagent, les pays qui dérivent leur identifiant par destinataire, et le rapprochement dans les registres — dont le seuil est renvoyé six fois à la politique nationale. |
+| [2.2 — Services de sécurité eID additionnels](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932937) | Ce qu'un État membre peut offrir au-delà de l'authentification elle-même. |
+| [2.3 — Représentation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932915) | Le cas où un tiers agit pour le sujet : les deux formes de représentant, et l'attribut sectoriel qui exprime l'étendue du pouvoir. Deux `MUST` que rien d'autre ne porte. |
 
 ## Chapitre 3 — les sous-chapitres qui servent
 
@@ -55,6 +79,9 @@ Le texte des chapitres vit sur le wiki ; **tout ce qui est exécutable vit dans 
 | [`OOTS-EDM/sch/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/sch) | Les règles Schematron, celles que joue `scripts/validate_schematron.sh`. |
 | [`OOTS-EDM/codelists/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/codelists) | Les listes de codes au format Genericode. |
 | [`OOTS-EDM/xml/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/xml) | Les messages d'exemple publiés avec la spécification. |
+
+> [!WARNING]
+> **La prose d'un chapitre et sa règle Schematron divergent parfois**, dans les deux sens : une règle `FATAL` peut n'exister que dans le `.sch` sans figurer au wiki, et une règle publiée au wiki peut y être plus étroite qu'elle ne l'est dans le fichier. Lire les deux avant de conclure sur ce qu'une règle exige, et signaler l'écart plutôt que de le trancher en silence.
 
 > [!TIP]
 > Cloner le dépôt sur l'étiquette de version (`git clone --depth 1 --branch 2.0.1 https://code.europa.eu/oots/tdd/tdd_chapters.git`) évite de naviguer dans l'interface web pour lire un schéma ou une liste de codes. Seul l'accès au registre d'images `code.europa.eu:4567` est parfois bloqué ; le clone HTTPS, lui, passe.

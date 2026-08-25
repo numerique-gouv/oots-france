@@ -6,8 +6,8 @@
 # classified `EP` here, and its slot is a collection, where the requester's is a
 # single value — an asymmetry the TDD impose, not one chosen here.
 class SystemCheckResponseBuilder < ApplicationBuilder
-  # Hard-coded: France holds no real evidence to date it. Stub 3 of
-  # `docs/reste_à_faire.md`.
+  # Hard-coded: France holds no real evidence to date it. Stub, tracked as
+  # OOTS-84.
   ISSUING_DATE = '1970-03-03'.freeze
 
   attr_reader :request_id, :timestamp, :beneficiary, :evidence_type, :attachment,

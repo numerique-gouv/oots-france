@@ -3,10 +3,10 @@ module EvidenceProvision
   #
   # France holds one document today: the PDF it returns for procedure `00`, the
   # OOTS system check. Procedure `R1` is answered with a deferral instead, so
-  # that the announcement of chapter 4.5.2 is produced somewhere — stub 10.
-  # Every other procedure is refused with `EDM:ERR:0004`, the expected behaviour
-  # as long as no real provider is connected. Stub 3 of
-  # `docs/reste_à_faire.md`.
+  # that the announcement of chapter 4.5.2 is produced somewhere. Every other
+  # procedure is refused with `EDM:ERR:0004`, the expected behaviour as long as
+  # no real provider is connected — both the dedicated procedure and the sample
+  # evidence are stubs, tracked as OOTS-82.
   class AnswerRequest < ApplicationInteractor
     EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
 
@@ -130,7 +130,7 @@ module EvidenceProvision
     # The version travels twice, in the ebMS property and in the body slot, and
     # the two must agree. `request.validate!` pins the body to the same
     # constant, so checking the header against it settles the pair — the
-    # coherence workstream 9 of `docs/reste_à_faire.md` asks for.
+    # coherence OOTS-55 asks for.
     def reject_unless_expected_version
       announced = context.message.specification_id
       return if EdmSpecification.matches?(announced)

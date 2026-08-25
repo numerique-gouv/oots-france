@@ -2,7 +2,7 @@
 # JWT **signed by the requester**, wrapped in a JWE **encrypted for us**. Our
 # private key opens the envelope, the requester's public key authenticates what
 # is inside — attesting the sender, never its standing to act for the
-# beneficiary declared. Stub 4 of `docs/reste_à_faire.md`.
+# beneficiary declared. Stub, tracked as OOTS-58.
 class BeneficiaryToken
   # Fixed here, and not read from the token: letting a token name the algorithm
   # used to open it is an algorithm-confusion surface where the attacker picks

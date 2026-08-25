@@ -71,7 +71,7 @@ module Directories
     def vetted(published, subject) = published&.validate!(subject, error: InvalidDirectoryEntry)
 
     # Only the first requirement is kept, where several requirements of one
-    # procedure accumulate — workstream 1 of `docs/reste_à_faire.md`.
+    # procedure accumulate — OOTS-49.
     def first_requirement(procedure_code)
       found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound,
         'models.directories.common_services.unknown_procedure', procedure: procedure_code) do

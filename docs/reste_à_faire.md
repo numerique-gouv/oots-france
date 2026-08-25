@@ -1,17 +1,9 @@
 # Reste à faire pour atteindre les TDD v2.0
 
-> Ce document mesure l'écart entre ce dépôt et la version **2.0.1 (juillet 2026)** des [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), la spécification européenne d'OOTS. Il dit ce qui manque, ce que chaque manque coûte, et dans quel ordre les aborder. Pour comprendre OOTS lui-même, lire d'abord [oots_context.md](oots_context.md) ; pour savoir pourquoi c'est la 2.0 qui est visée plutôt que la 1.2, [versions_tdd.md](versions_tdd.md) ; pour retrouver un chapitre des TDD, [carte_des_tdd.md](carte_des_tdd.md) ; pour un sigle ou un terme, [glossaire.md](glossaire.md).
+> Ce document donne l'**état macro** de l'écart entre ce dépôt et la version **2.0.1 (juillet 2026)** des [Technical Design Documents](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview), chapitre par chapitre. Pour comprendre OOTS lui-même, lire d'abord [oots_context.md](oots_context.md) ; pour savoir pourquoi c'est la 2.0 qui est visée plutôt que la 1.2, [versions_tdd.md](versions_tdd.md) ; pour retrouver un chapitre des TDD, [carte_des_tdd.md](carte_des_tdd.md) ; pour un sigle ou un terme, [glossaire.md](glossaire.md).
 
-> [!WARNING]
-> **L'avancement du projet se suit désormais dans [Linear](https://linear.app/pole-api/team/OOTS/all), pas ici.** Ce document décrit l'état du dépôt au 24 août 2026 et n'est plus tenu à jour au fil de l'eau : ce qui reste à faire est transféré en projets et en tickets dans l'équipe OOTS, qui font foi sur ce qui est en cours, fait ou abandonné.
-
-## Comment lire ce document
-
-Chaque chantier est présenté de la même façon : **ce que c'est** en langage courant, **ce que la spécification exige**, **ce que fait le dépôt aujourd'hui**, **ce qu'il faut construire**. Un lecteur non technique peut ne lire que le premier paragraphe de chaque chantier, la [synthèse par chapitre](#inventaire-chapitre-par-chapitre) et les [dépendances entre chantiers](#dépendances-entre-chantiers) : il en aura une image juste.
-
-Ce document **ne propose pas d'ordre de travail**. Il décrit ce qui contraint techniquement l'enchaînement des chantiers ; l'arbitrage, lui, appartient à l'équipe.
-
-Les **bouchons** sont les endroits où le code écrit une valeur en dur, faute d'avoir de quoi la calculer. Ils sont numérotés et cette numérotation est citée dans les commentaires du code ; **elle ne doit pas changer sans mettre à jour ces commentaires**.
+> [!IMPORTANT]
+> **Le travail se suit dans [Linear](https://linear.app/pole-api/team/OOTS/all), pas ici.** Chaque ligne de l'inventaire ci-dessous nomme le projet qui la porte ; ce sont les tickets qui disent ce qui est en cours, fait ou abandonné, et eux seuls. Ce document ne décrit ni les tâches, ni leur ordre, ni leurs dépendances — Linear porte les trois, et un inventaire tenu en double diverge en une semaine.
 
 ## Où en est le dépôt aujourd'hui
 
@@ -22,174 +14,49 @@ Les trois annuaires centraux sont désormais interrogés pour de vrai : découve
 > [!IMPORTANT]
 > Le système n'est pas homologué. Le requêtage reste verrouillé en production par la variable `AVEC_REQUETE_PIECE_JUSTIFICATIVE` : ne pas l'activer avant homologation. Aucun des chantiers ci-dessous ne lève cette réserve à lui seul.
 
-## Les dix chantiers
+## Inventaire chapitre par chapitre
 
-Classés par poids décroissant. Les trois premiers sont des conditions d'existence : sans eux, aucun échange réel n'est possible, quelle que soit la qualité des messages. Le dixième est le seul qui ne mesure pas un écart aux TDD.
-
-### 1. Les Common Services
-
-**Ce que c'est.** Les trois annuaires centraux que sont l'**Evidence Broker**, le **Data Service Directory** et le **Semantic Repository** (définis au [glossaire](glossaire.md)) répondent aux questions qu'un pays demandeur se pose avant d'émettre sa requête. Sans eux, il devrait connaître par avance l'organisation de tous les autres — ce qui est précisément ce qu'OOTS existe pour éviter.
-
-**Ce qu'exige la spécification.** Le [chapitre 3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932907) définit trois appels REST : deux vers l'Evidence Broker ([3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939)) et un vers le Data Service Directory ([3.1.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)). L'instance à interroger se **découvre par le DNS** ([3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)) : chaque État membre a le choix entre l'instance de la Commission et la sienne, et le client doit résoudre un enregistrement NAPTR pour savoir à laquelle s'adresser. Les réponses portent une **signature détachée** que le client doit vérifier, et la version attendue se négocie par un en-tête `Accept-Version` ([3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954)).
-
-**Ce que fait le dépôt.** Les trois appels sont branchés sur les annuaires réels. L'instance à interroger est découverte par NAPTR (`CommonServicesInstance`), les requêtes portent `Accept-Version: oots-cs:v2.0`, la **signature détachée de chaque réponse est vérifiée** contre les racines publiques de la Commission (`CommonServicesSignature`), et les réponses sont mises en cache. `Directories::CommonServices` n'est plus qu'une façade au-dessus de `EvidenceBrokerClient` et `DataServiceDirectoryClient`. Le bouchon 1 est levé, et le bouchon 2 avec lui : le DSD fournit le point d'accès.
-
-**Ce qui reste.** Trois conséquences, que ce raccordement rend possibles sans les traiter :
-
-- **Le choix de l'usager.** Quand plusieurs types de justificatif ou plusieurs fournisseurs conviennent, les TDD veulent que l'usager tranche. Le code garde le premier de la liste, silencieusement — `EvidenceRequest::ResolveEvidenceType` et `EvidenceRequest::ResolveProvider`. La requête émise reste valide : elle demande l'une des preuves qui conviennent, au lieu de laisser choisir.
-- **Les exigences suivantes de la démarche, elles, sont perdues.** `Directories::CommonServices#first_requirement` ne garde que la première exigence rendue par l'Evidence Broker, et ce raccourci-là n'est pas du même ordre que le précédent : plusieurs exigences d'une même démarche ne sont pas des alternatives. Le [chapitre 3.2.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) ne donne d'opérateur logique qu'un cran plus bas — « *Evidence Types of an Evidence Type List are combined via the logic operator "AND". Evidence Type Lists that fulfill the same Requirement are combined via the logic operator "OR"* » —, et n'en donne aucun entre exigences ; sa règle du `NoMatch`, qui oblige un État membre à déclarer une liste vide plutôt qu'à omettre une exigence qu'il ne peut pas satisfaire, suppose que chacune reçoit une réponse. La Slovénie déclare ainsi deux exigences sous `S1` — une preuve de naissance **et** une preuve de citoyenneté —, dont l'application ne demanderait que la première. Une requête à laquelle il manque une preuve n'est pas une requête dégradée, c'est une requête à laquelle la démarche ne peut pas aboutir.
-- **Le dialogue de désambiguïsation.** Quand un pays a plusieurs fournisseurs pour un même justificatif, le DSD répond une erreur `DSD:ERR:0005` qui demande une précision à poser à l'usager — « dans quelle ville êtes-vous né ? ». Le code et son message atteignent l'appelant, mais rien ne les distingue d'un autre refus : `DSD:ERR:0005` ne figure dans aucune des listes de `Directories::CommonServices` et ressort en `common_services_refused`. La question, elle, n'est pas posée.
-
-**La négociation de version, elle, est faite**, et n'a pas demandé de code de tri : le mécanisme et ce que le dépôt en fait sont décrits dans [versions_tdd.md](versions_tdd.md).
-
-> [!IMPORTANT]
-> **La France n'est pas inscrite au Data Service Directory**, ni en acceptation ni en production. Elle a pourtant un type de justificatif publié au Semantic Repository et rattaché à l'exigence de test dans l'Evidence Broker : il ne manque que l'entrée DSD, celle qui porte le point d'accès. Tant qu'elle manque, aucun pays ne peut interroger la France, et une requête réelle échoue sur `DSD:ERR:0001`, rendu en `422`. C'est un travail de raccordement, pas de code. Le test de bout en bout, lui, double les deux annuaires pour continuer à couvrir le transport — voir [test_e2e.md](test_e2e.md#les-annuaires-centraux-sont-doublés).
-
-### 2. L'identité de l'usager
-
-**Ce que c'est.** OOTS transporte des données personnelles d'une administration à une autre. Ce qui autorise ce transport, c'est que l'usager s'est authentifié avec une identité numérique reconnue dans toute l'Union — **eIDAS** — et que les attributs issus de cette authentification voyagent dans la requête, permettant à l'administration étrangère de retrouver la bonne personne dans ses propres registres.
-
-**Ce qu'exige la spécification.** Le [chapitre 2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) impose que le demandeur authentifie l'usager par un moyen d'identification notifié, et joigne à la requête les attributs obtenus ainsi que le **niveau de garantie** de ce moyen. La requête doit pouvoir décrire une personne physique, une personne morale, et les cas de représentation — un dirigeant agissant pour sa société, un tiers agissant pour un particulier.
-
-**Ce que fait le dépôt.** Le fournisseur de service français transmet le bénéficiaire dans un jeton chiffré, qu'il signe. Cette signature atteste **qui a envoyé le jeton**, jamais que cet émetteur avait qualité pour agir au nom du bénéficiaire déclaré ; l'annuaire des requêteurs autorisés tient lieu de garde-fou. Le niveau de garantie est écrit en dur à `High`. C'est le **bouchon 4**. Par ailleurs, seule la personne physique est modélisée : ni personne morale, ni représentant.
-
-**Ce qu'il faut construire.** Le raccordement à un nœud eIDAS, ou à FranceConnect+ selon le cadre retenu, est la pièce maîtresse et dépasse ce dépôt. À son échelle, il reste : modéliser la personne morale et les deux formes de représentant ; porter les attributs facultatifs qui améliorent la réconciliation (nom de naissance, lieu de naissance, adresse, nationalité) ; appliquer la liste des pays dont l'identifiant unique ne doit **pas** être transmis, parce qu'il est dérivé par pays destinataire et n'aurait aucun sens ailleurs ; et transporter l'attribut sectoriel qui exprime l'étendue d'un pouvoir de représentation.
-
-### 3. La prévisualisation
-
-**Ce que c'est.** Le règlement donne à l'usager le droit de **voir le justificatif avant qu'il ne serve**, et de refuser qu'il serve. Ce droit s'exerce chez le pays qui fournit le document, pas chez celui qui le demande : l'usager quitte le portail de démarche, va voir son document sur un site étranger, décide, puis revient. C'est le seul endroit de tout OOTS où un humain est devant un écran.
-
-**Ce qu'exige la spécification.** Le [chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935) décrit deux échanges successifs. Le premier reçoit en réponse une erreur particulière portant l'adresse de l'espace de prévisualisation. Le second, envoyé pendant que l'usager consulte, recopie cette adresse et ajoute — c'est une nouveauté de la 2.0 — l'**adresse de retour** vers laquelle renvoyer l'usager. La réponse à ce second échange n'arrive qu'une fois l'usager décidé, et ne contient que ce qu'il a accepté. Les deux échanges se corrèlent par le même identifiant d'échange.
-
-**Ce que fait le dépôt.** Côté demandeur, la moitié du chemin est faite : l'erreur de redirection est reconnue, l'adresse de prévisualisation est extraite, son schéma est vérifié — un correspondant ne peut pas y glisser un `javascript:` — et elle est rendue à l'appelant. Mais **le second échange n'est jamais émis** : ni le slot d'adresse de prévisualisation, ni celui d'adresse de retour n'existent dans le gabarit de requête, et aucune adresse de retour n'est fabriquée. L'identifiant d'échange, lui, est désormais conservé sur l'échange, prêt à être réemployé par le second aller-retour. Côté fournisseur, il n'y a **aucun espace de prévisualisation** : la France répond immédiatement, même quand la requête déclare la prévisualisation nécessaire. C'est le **bouchon 5**.
-
-**Ce qu'il faut construire.** Côté demandeur : les deux slots, la fabrication d'une adresse de retour à usage unique et à durée limitée, le point d'entrée qui accueille le retour, et la reprise de la démarche là où l'usager l'avait laissée. Côté fournisseur : un espace de prévisualisation complet — c'est la seule interface humaine du dépôt, et le seul endroit où les règles d'accessibilité s'appliquent.
-
-> [!WARNING]
-> Tant que la prévisualisation manque côté fournisseur, la France ne peut pas servir un justificatif portant sur une personne physique dans le cas général : les TDD interdisent de renvoyer le document sans prévisualisation quand la requête la déclare requise. La démarche de vérification système y échappe parce qu'elle ne transporte aucune donnée réelle.
-
-### 4. Le fournisseur de données français
-
-**Ce que c'est.** Quand un pays étranger demande un justificatif à la France, il faut bien que quelqu'un le détienne. C'est le rôle d'une administration ou d'un opérateur national — l'API Diplômes pour un diplôme, l'état civil pour un acte de naissance.
-
-**Ce qu'exige la spécification.** Le [chapitre 1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932911) attend d'un *Data Service* qu'il valide la requête, retrouve la personne dans ses registres, et rende le document accompagné de ses métadonnées — émetteur, date d'émission, type, période de validité.
-
-**Ce que fait le dépôt.** Pour la démarche `00`, la vérification système d'OOTS, la France renvoie un PDF d'exemple ; toute autre démarche reçoit une erreur « objet introuvable ». La date d'émission du document est écrite en dur, faute d'un vrai document à dater. C'est le **bouchon 3**.
-
-**Ce qu'il faut construire.** Un client par fournisseur de données raccordé, et la réconciliation d'identité qui va avec : les TDD imposent qu'en l'absence de correspondance **unique**, aucun justificatif ne soit renvoyé et une erreur soit émise. Zéro correspondance et deux correspondances se traitent pareil : par un refus.
-
-### 5. Le contenu des messages
-
-**Ce que c'est.** Deux moitiés dissymétriques. À l'écriture, les messages ont la bonne enveloppe, les champs obligatoires et — depuis que le bouchon 7 est levé — l'exigence et le service de données que les annuaires ont nommés ; d'autres éléments, introduits ou étendus en 2.0, ne sont toujours pas écrits. À la lecture, les règles qui décident si la France répond sont désormais appliquées, et un refus nomme la règle qu'il applique ; ce qui manque encore est du côté des réponses reçues, dont le dépôt lit désormais le statut mais toujours pas la moitié des métadonnées.
-
-**Ce qu'exige la spécification.** Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) détaille la requête slot par slot, le [4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) la réponse ; le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) donne les règles qu'un message doit satisfaire, dans les deux sens.
-
-**Ce que fait le dépôt.** La requête déclare désormais l'exigence que l'Evidence Broker publie, avec son nom et sa description, et reprend du Data Service Directory le contenu de son `DataServiceEvidenceType` — identifiant du service, classification, titres, descriptions et distribution, langue comprise. Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) lui en fait omettre le niveau de garantie, que seule la console lit. La réponse, elle, porte l'empaquetage introduit en 2.0 dans sa forme minimale : un paquet, un justificatif principal, correctement classé.
-
-Les messages reçus sont désormais contrôlés, là où le dépôt se contentait de lire ce dont il avait besoin. Une requête étrangère est confrontée aux règles du [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) qu'un lecteur peut trancher sans schéma — présence de `SpecificationIdentifier`, `PossibilityForPreview` et `ExplicitRequestGiven`, valeur fixe de la version, exclusivité de la personne physique et de la personne morale — et ce qui les enfreint reçoit un `EDM:ERR:0003` **dont l'attribut `detail` nomme la règle appliquée**. La cohérence de version entre l'en-tête de transport et le corps est vérifiée au même endroit, faute d'en avoir un meilleur (voir chantier 9). Les deux devoirs de corrélation du [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) sont tenus : une requête rejouant un identifiant déjà traité est refusée — le [journal](journal_des_echanges.md) en porte la mémoire, aucun échange n'existant du côté fournisseur — et une réponse dont l'identifiant de requête n'est pas celui de l'échange n'est pas traitée, l'échange conservant désormais cet identifiant.
-
-Le Schematron officiel reste le juge des messages **produits**, ce qu'il est censé être : le chapitre 4.6 n'assigne le devoir de validation à personne et présente ses Schematron comme une manière de prouver la conformité d'instances, pas comme un composant d'exécution.
-
-> [!IMPORTANT]
-> **Aucun chapitre ne demande de comparer la personne décrite dans une réponse à celle de la requête.** Le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) impose au *fournisseur* de placer le *Minimum Data Set* de la requête dans `sdg:IsAbout` — « *to confirm identity matching* » — et énonce ainsi la finalité de l'élément sans commander au destinataire de faire le contrôle ; le [chapitre 2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) ne l'assigne pas davantage, la seule revérification d'identité qu'il nomme étant celle de l'espace de prévisualisation ([4.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935)) ; et le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) liste *Evidence Subject* dans le flux requête, où le journal l'enregistre déjà, et pas dans le flux réponse. Ce que le [chapitre 4.10](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932922) confie au portail à la réception, c'est la **corrélation par identifiants**, et rien d'autre.
-
-**Ce qui reste.** Sur la requête émise :
-
-| Élément | Aujourd'hui | Attendu |
-| --- | --- | --- |
-| `DistributedAs/ConformsTo` | Absent | Le **profil de conformité** d'un justificatif structuré, que le Data Service Directory publie et que la France ne demande pas encore |
-| `AssociatedDocumentRequest` | Absent | Demander en même temps une annexe, une traduction ou une version lisible par un humain — nouveauté 2.0 |
-| `EvidenceProviderClassification` | Absent | La précision fournie par l'usager pour désigner le bon fournisseur, en réponse à un `DSD:ERR:0005` (voir chantier 1) |
-| `PreviewLocation`, `ReturnLocation` | Absents | Requis dans le second échange de la prévisualisation (voir chantier 3) |
-| `LegalPerson`, `AuthorizedRepresentative`, `AuthorizedRepresentativeLegalPerson` | Absents | Requis dès qu'une démarche porte sur une personne morale, ou qu'un tiers agit pour le sujet (voir chantier 2) |
-| Les attributs de personne étendus en 2.0 | Absents | `BirthName`, `PlaceOfBirth`, `Gender`, `Nationality`, `CountryOfBirth`, `CountryOfResidence`, adresse, téléphone, courriel — tous facultatifs, et tous sans source tant que l'usager n'est pas authentifié (voir chantier 2), qui décide aussi du `schemeID` : `eidas2` pour un portefeuille, avec le niveau de garantie alors figé à `High` |
-
-Sur la réponse produite : joindre des **documents complémentaires** (annexe, traduction, version lisible) et déclarer leur lien avec le justificatif principal ; porter la langue, le profil de conformité et la période de validité. La réponse **différée**, elle, est produite et lue : voir ci-dessous.
-
-Sur la réponse reçue, le dépôt tire l'identifiant du justificatif que le chapitre 4.8 réclame, l'identifiant de la réponse et les deux autorités. Les quatre autres éléments de `sdg:EvidenceMetadata` — `IssuingDate`, `IssuingAuthority`, `IsConformantTo`, `Distribution` — ne sont pas lus : `R-EDM-RESP-S062` les impose à l'émetteur, aucun chapitre n'en demande la conservation, et côté portail aucun chemin d'erreur ne repart vers le fournisseur, si bien qu'un refus détruirait l'échange sans que personne l'apprenne.
-
-**La réponse différée est traitée des deux côtés.** Un fournisseur qui ne peut pas servir le document tout de suite répond une `QueryResponse` de statut `Unavailable` portant un slot `ResponseAvailableDateTime` ([4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951), `R-EDM-RESP-S045`). `EvidenceResponseParser` lit les deux, l'échange se règle en `deferred` en portant la date, et le fournisseur de service français la relit dans `dateDisponibilite` — car c'est la date qui lui dit quand revenir. Le chapitre est explicite sur la suite : « *At the time of availability a new Evidence Request must be made* ». Le justificatif ne revient donc **jamais** sur le même échange, et le refus d'une seconde réponse portant le même identifiant de requête — que le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) impose — reste entier. Côté émission, la France annonce une réponse différée pour la démarche `R1` : c'est le **bouchon 10**.
-
-Une limite connue reste, et elle n'est pas propre à ce mécanisme :
-
-- **L'annonce partielle n'est pas traitée.** Le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) prévoit — en prose, sans règle numérotée — qu'une réponse `Unavailable` porte les pièces déjà disponibles quand un type de justificatif en compte plusieurs — la liste des objets n'est vide que « typically ». Le dépôt ne lit qu'une pièce jointe, et une annonce en portant une la perdrait : c'est le **bouchon 8**, les justificatifs multiples, pas une lacune de la réponse différée.
-
-### 6. Les justificatifs structurés
-
-**Ce que c'est.** Un PDF se lit par un humain ; une administration qui le reçoit doit ressaisir ce qu'il contient. Un justificatif **structuré** est le même document exprimé en données, exploitable directement. C'est l'apport principal de la 2.0, et ce qui permet aussi de n'envoyer que ce qui est nécessaire — un extrait de l'acte de naissance plutôt que l'acte entier.
-
-**Ce qu'exige la spécification.** Les [chapitres 3.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) et [5](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932910) décrivent les modèles de données publiés au Semantic Repository et la méthode pour en définir. Un justificatif structuré déclare le modèle auquel il se conforme, par une URL stable. Un format structuré sans modèle correspondant doit être accompagné d'une version lisible par un humain.
-
-**Ce que fait le dépôt.** Rien : le seul format traité de bout en bout est le PDF, écrit en dur aussi bien dans la lecture des messages reçus que dans le type de pièce jointe attendu. C'est le **bouchon 8**.
-
-**Ce qu'il faut construire.** Élargir la chaîne aux formats de la liste officielle, gérer plusieurs pièces jointes dans un même message, et porter puis vérifier la déclaration de conformité au modèle.
-
-### 7. La journalisation et la non-répudiation
-
-**Ce que c'est.** Le règlement d'exécution impose de garder trace de chaque échange pendant douze mois : qui a demandé quoi, à qui, quand, et ce qui a été répondu. Cette trace sert aux audits, aux contrôles de sécurité, et à trancher un litige — prouver qu'un document a bien été envoyé, et qu'il n'a pas été modifié en route.
-
-**Ce qu'exige la spécification.** Le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) énumère, composant par composant, les données à journaliser et les identifiants qui permettent de recoudre un échange à partir de traces éparses. Il décrit aussi comment la non-répudiation se reconstitue, en remontant de l'identifiant d'un justificatif jusqu'à l'empreinte signée de son contenu.
-
-**Ce que fait le dépôt.** Le journal existe : une table dédiée en ajout seul, écrite sur les deux chemins et sur les refus qui n'atteignent jamais la passerelle, avec le sujet du justificatif et le corps RegRep entier chiffrés au repos et une purge à douze mois. Les six types qui correspondent à un message ebMS gardent la première partie MIME telle qu'elle a circulé, dans les deux sens — ce que la passerelle ne peut pas tenir, `retention_downloaded="0"` lui faisant effacer la charge dès la remise. Le PMode garde de son côté les métadonnées et les accusés signés aussi longtemps, là où il efface le justificatif aussitôt. Tout cela est décrit par [journal_des_echanges.md](journal_des_echanges.md), qui en est le propriétaire. Le bouchon 6 est levé.
-
-L'[espace d'administration](espace_administration.md) le donne à lire, sous `/admin/journal` : la liste des événements — la seule de la console —, la fiche de l'un d'eux, et la recherche par personne. On y descend vers un échange ou vers une conversation, qui ont chacun leur page et portent le journal de ce qu'ils couvrent.
-
-**Ce qui reste.**
-
-- **La non-répudiation ne se rejoue pas encore de bout en bout.** Le journal donne de quoi parcourir la chaîne du chapitre — identifiant de message, de requête, de réponse, et l'empreinte du justificatif —, mais rien n'automatise le trajet jusqu'au `ds:SignedInfo` que la passerelle a signé. Le faire suppose de lire les métadonnées de non-répudiation de Domibus, que le plugin WS n'expose pas telles quelles.
-- **La couche protocole reste chez la passerelle.** Accusés AS4 et *SOAP faults* vivent dans la base de Domibus ; les deux journaux se recousent à la main, par le `MessageId`.
-- **Trois arrivées ou départs ne laissent aucune ligne**, faute d'avoir de quoi la qualifier ou d'un endroit où l'écrire : une enveloppe SOAP illisible, une action ebMS inconnue, et l'échec de soumission de la réponse française — `EvidenceProvision::AnswerRequest` journalise après `submit`, donc une panne de la passerelle emporte la trace de la tentative.
-- **Deux champs de corrélation manquent**, tous deux écrivables sans attendre : l'**identifiant de contenu MIME** des pièces référencées par `rim:RepositoryItemRef`, dont `evidence_fingerprint` n'écrit que le type sous `evidence_mime_type`, et la **`PreviewLocation`**, que le chapitre réclame dans les deux flux et qu'`Exchange` seul retient — `AuditTrail#received_error` n'en consigne rien.
-- **Les identifiants de partie ne sont lus que du corps.** Le chapitre les demande deux fois, une fois depuis les slots RegRep et une fois depuis `originalSender` et `finalRecipient` de l'en-tête eDelivery, que `EbmsHeaderParser` ne lit pas. À l'émission les deux coïncident, le même `EbmsIdentity` servant aux deux ; à la réception rien ne le garantit, et c'est manifestement l'écart que le chapitre veut rendre constatable.
-- **L'écriture suit l'effet qu'elle relate.** Le justificatif est remis, puis consigné ; la requête est soumise, puis consignée. Un échec d'écriture laisse donc un fait accompli sans trace, et le rejouer est impossible — la passerelle a effacé le message. L'ordre inverse aurait le défaut symétrique, consigner ce qui n'a pas eu lieu ; trancher demande de décider ce qu'on préfère perdre, et cela ne se décide pas en écrivant le journal.
-- **Un travailleur tué en pleine remise laisse un justificatif remis que rien n'atteste.** `Exchange#claim_delivery!` réserve l'échange avant le POST, mais un processus tué net n'écrit rien en retour : ni le statut `delivered`, ni la ligne `evidence_delivered`. Le balayage présume alors l'échange perdu, et une seconde réponse du correspondant, arrivant après que la réservation a cessé d'être opposable, remet le justificatif une deuxième fois. C'est le prix d'une borne de caducité : sans elle, une réservation orpheline bloquerait à jamais un échange qui n'a rien reçu. Les départager demanderait d'écrire avant l'effet — donc de dire `delivered` un échange qui ne l'est pas encore —, ce qui échange un défaut contre un mensonge et relève du même arbitrage que le point ci-dessus.
-
-### 8. Les délais d'expiration
-
-**Ce que c'est.** Un échange qui implique un humain peut durer une heure ; un échange automatique doit échouer vite. Sans délais convenus, un requêteur attend indéfiniment une réponse qui ne viendra pas, et un fournisseur garde ouverts des liens qui devraient être périmés.
-
-**Ce qu'exige la spécification.** Le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) fixe trois intervalles — cinq minutes pour le premier aller-retour, quinze pour que l'usager suive le lien, quarante pour qu'il consulte et décide — chacun majoré d'une minute du côté qui attend, pour absorber le transport. Un fournisseur qui dépasse son délai doit renvoyer une erreur d'expiration plutôt que rien ; un requêteur qui dépasse le sien doit conclure à l'échec. Le chapitre impose par ailleurs que le délai soit **configurable**, et que celui du requêteur dépasse celui du fournisseur.
-
-**Ce que fait le dépôt.** Le premier aller-retour est tenu des deux côtés. `DELAI_EXPIRATION_REQUETEUR_MINUTES` et `DELAI_EXPIRATION_FOURNISSEUR_MINUTES` portent les deux valeurs du tableau 4.4.3, et le contrôle de contrat refuse de démarrer si la première ne dépasse pas la seconde. Côté requêteur, `ExpireExchangesJob` balaie chaque minute les échanges que la France a ouverts et qu'aucune réponse n'a réglés, et les clôt en `failed` sous `EDM:ERR:0005` — le code même qu'un correspondant expirant sur nous aurait répondu, pour que les deux se lisent pareil. Côté fournisseur, `EvidenceProvision::AnswerRequest` répond cette erreur au lieu du justificatif quand la requête a dépassé le délai.
-
-L'échéance du fournisseur se compte depuis l'**horodatage ebMS du message**, et non depuis notre réception : `CollectPendingMessagesJob` peut retirer de la passerelle un message qu'elle a gardé deux jours et demi, et l'ancrer sur notre réception ferait servir un justificatif à un requêteur ayant conclu à l'échec l'avant-veille. C'est aussi la seule horloge que les deux côtés partagent, et celle dont l'arithmétique du tableau dépend.
-
-**Ce qu'il faut construire.** Les intervalles T2 et T3 se définissent autour de la prévisualisation et attendent le [chantier 3](#3-la-prévisualisation) — dont les échanges en `preview_required`, que `settled?` tient aujourd'hui pour réglées et qu'aucun délai ne rouvre. Reste la règle multiplicative, `Total Timeout = (T1+T2+T3) × Number of Requirements` : le jour où plusieurs exigences voyagent dans un même échange, l'échéance cesse d'être une constante de déploiement et devient une propriété de la ligne, donc une colonne. Et un échange entrant dont le worker est mort entre l'ouverture et la réponse reste `pending` : le balayage ne la touche pas, faute de pouvoir émettre quoi que ce soit — le message a été détruit à sa récupération.
-
-### 9. Les finitions eDelivery
-
-**Ce que c'est.** Le transport lui-même, assuré par la passerelle Domibus, est déjà conforme pour l'essentiel. Restent des points de détail, mais qui sont des règles fermes.
-
-**Ce qu'il faut construire** :
-
-- **La cohérence de version à l'entrée est faite**, au chantier 5 faute d'un meilleur endroit : `R-EDM-ebMS-019` et `-038` sur la propriété de l'en-tête, `R-EDM-REQ-S005` et `C001` sur le slot du corps, l'un et l'autre épinglés sur la même constante — la concordance en découle. Reste ici la version que le fournisseur *annonce* dans le DSD, que la requête ne confronte pas encore à celle qu'elle émet.
-- **La distinction entre conversation et échange est faite.** L'identifiant de conversation désigne un **usager et sa session** et peut couvrir plusieurs justificatifs demandés à la suite — le démarcheur le fournit par `idConversation`, ou le dépôt le frappe ; l'identifiant d'échange désigne un aller-retour, est conservé sur l'échange et sera réemployé par les deux allers-retours de la prévisualisation. `Exchange` porte les deux, la corrélation d'un message reçu se faisant sur l'échange.
-- **La découverte dynamique par SMP** est facultative en 2.0 et annoncée comme obligatoire par la suite. À prévoir, pas à faire maintenant.
-
-### 10. Ce que l'appelant apprend d'un échec
-
-**Ce que c'est.** Le seul chantier de cette liste qui ne soit pas un écart aux TDD. Les spécifications ne disent rien de l'interface entre un fournisseur de service français et cette application — elles s'arrêtent aux frontières nationales. C'est donc une dette de conception, pas un défaut de conformité ; elle est ici parce qu'elle se paie au même endroit que le reste.
-
-**Le problème.** Un échange peut mourir sans qu'aucun correspondant étranger ait répondu : la passerelle est injoignable, le message reçu est illisible, l'échange expire. Le fournisseur de service relit alors l'état de son échange et n'y lit **que le statut**. La raison est pourtant enregistrée — la colonne `error_description` existe et est remplie — mais elle n'est exposée nulle part, et le code d'erreur EDM reste vide puisqu'aucun correspondant n'en a fourni. Un intégrateur voit son échange échouer sans jamais savoir pourquoi.
-
-**Ce qu'il faut trancher.** Ce qui remonte à l'appelant, et sous quelle forme : la description brute est écrite pour un journal, pas pour un tiers, et peut nommer des détails d'infrastructure. Il faut donc décider d'un vocabulaire d'erreurs stable côté interface nationale, distinct des messages internes.
-
-**Un nettoyage à faire au passage.** Le traitement d'un message entrant rattrape la famille `EbmsError`, qui signifie *l'appel du fournisseur de service français est fautif* et vaut un 422. Le filet n'est pas vide pour autant : `IncomingMessage::SettleExchange` interroge l'annuaire des requêteurs pour savoir où remettre le justificatif, et `EvidenceRequesterNotFound` y survient dès que l'annuaire ne porte plus le requêteur de l'échange. Retirer le `rescue` laisserait alors l'échange bloqué en `sent`. Ce qu'il faut resserrer, c'est donc sa largeur — une famille entière rattrapée pour une sous-classe — et non son existence.
-
-**Ce dont ce chantier ne dépend pas.** De la journalisation : la raison de l'échec est écrite sur l'échange, et l'exposer ne demande rien de plus. Que le [journal](journal_des_echanges.md) la consigne aussi ne change pas la question posée ici. Les deux chantiers se ressemblent — tous deux décident du sort d'un incident — mais ils écrivent dans des endroits différents, pour des destinataires différents et avec des contraintes différentes : un appelant veut un code stable tout de suite, un auditeur veut une trace complète pendant douze mois. La seule chose à coordonner, si les deux se font, est le vocabulaire employé de part et d'autre — dans un sens comme dans l'autre.
-
-## Les bouchons en place
-
-Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **Cette numérotation est citée dans les commentaires du code.**
-
-| N° | Bouchon | Où | Remplacé par |
+| Chapitre | État | Ce qui manque | Projet qui le porte |
 | --- | --- | --- | --- |
-| 3 | Le justificatif français : un PDF d'exemple et une date d'émission fixe | `EvidenceProvision::AnswerRequest`, `SystemCheckResponseBuilder::ISSUING_DATE` | Chantier 4 |
-| 4 | L'identité et l'autorisation : niveau de garantie fixe, annuaire de requêteurs autorisés | `NaturalPerson::LEVEL_OF_ASSURANCE`, `BeneficiaryToken`, `Directories::EvidenceRequesters` | Chantier 2 |
-| 5 | La prévisualisation : second échange jamais émis, aucun espace côté fournisseur | `EvidenceRequestBuilder`, `IncomingMessage::SettleExchange` | Chantier 3 |
-| 8 | Le PDF comme seul format traité | `RetrievedMessageParser::PDF`, `Attachment::MIME_TYPE`, `EvidenceType::PDF` | Chantier 6 |
-| 9 | Le filet à erreurs trop large du chemin entrant, et la raison d'un échec jamais rendue à l'appelant | `IncomingMessage::Process`, `EvidenceRequestsController#state_of` | Chantier 10 |
-| 10 | La réponse différée : une démarche dédiée, et une date annoncée qui n'est qu'un décalage fixe | `ProcedureCode::BIRTH_REGISTRATION`, `DeferredResponseBuilder::DEFERRAL` | Chantier 4 |
+| [1 — Architecture](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932933) | Partiel | Les deux rôles existent ; l'espace de prévisualisation, non | [La prévisualisation](https://linear.app/pole-api/project/oots-france-la-previsualisation-4fdca9e30c9e) |
+| [2 — Identité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932924) | Absent | eIDAS, personne morale, représentation, réconciliation | [L'identité de l'usager](https://linear.app/pole-api/project/oots-france-lidentite-de-lusager-5c4bb4528542) |
+| [3.1 — DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | Partiel | Le dialogue de désambiguïsation `DSD:ERR:0005`, et le `DSD:ERR:0006` qui sanctionne la valeur réémise | [Common Services](https://linear.app/pole-api/project/oots-france-common-services-ce-qui-reste-8202ee4f0bad) |
+| [3.2 — Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Partiel | Une seule exigence de démarche est portée, là où le chapitre en admet plusieurs | [Common Services](https://linear.app/pole-api/project/oots-france-common-services-ce-qui-reste-8202ee4f0bad) |
+| [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Sans objet aujourd'hui | Son catalogue ne publie **aucun** modèle de justificatif : rien à déclarer tant qu'il reste vide | [Les justificatifs structurés](https://linear.app/pole-api/project/oots-france-les-justificatifs-structures-9e839ab7e2bb) |
+| [3.4 — Distribution](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Partiel | Découverte DNS et cache faits ; le cache mandataire reste une option de déploiement | [Common Services](https://linear.app/pole-api/project/oots-france-common-services-ce-qui-reste-8202ee4f0bad) |
+| [3.5 — Listes de codes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Sans objet | Rien de normatif : le chapitre publie les listes, et l'appartenance d'une valeur à la sienne relève des règles métier du 4.6 | — |
+| [3.6 — API commune](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) | Conforme | — | — |
+| [3.7 — Sécurité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932927) | À vérifier | Profil TLS à confronter à la configuration réelle | [Common Services](https://linear.app/pole-api/project/oots-france-common-services-ce-qui-reste-8202ee4f0bad) |
+| [3.8 — Journalisation des annuaires](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932917) | Hors périmètre | L'obligation pèse sur qui **fournit** un service commun ou opère un registre national, pas sur le client que nous sommes | — |
+| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Intervalles T2/T3 de la prévisualisation ; le traitement **séquentiel** de plusieurs exigences, dont le total `(T1+T2+T3) × N` est un budget de conversation et non d'échange | [Les délais d'expiration](https://linear.app/pole-api/project/oots-france-les-delais-dexpiration-30e461a5b3fd) |
+| [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Partiel | Profil de conformité, documents associés, personne morale et représentation | [Le contenu des messages](https://linear.app/pole-api/project/oots-france-le-contenu-des-messages-ce-qui-reste-3a919c31d872) |
+| [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Partiel | Documents complémentaires et leur association, langue et conformité ; la réponse différée, elle, est écrite et lue | [Le contenu des messages](https://linear.app/pole-api/project/oots-france-le-contenu-des-messages-ce-qui-reste-3a919c31d872) |
+| [4.5.3 — Erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Conforme | La raison d'un échec reste toutefois invisible de l'appelant français | [Ce que l'appelant apprend d'un échec](https://linear.app/pole-api/project/oots-france-ce-que-lappelant-apprend-dun-echec-dc714196a489) |
+| [4.6 — Règles métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) | Partiel | Les règles qu'un lecteur ne tranche pas sans schéma, sur les requêtes reçues ; une réponse reçue, elle, n'est confrontée à aucune | [Le contenu des messages](https://linear.app/pole-api/project/oots-france-le-contenu-des-messages-ce-qui-reste-3a919c31d872) |
+| [4.7 — eDelivery](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) | Partiel | Contrôle de cohérence de version en entrée ; SMP 2.1, optionnel en 2.0, à prévoir | [Common Services](https://linear.app/pole-api/project/oots-france-common-services-ce-qui-reste-8202ee4f0bad) |
+| [4.8 — Journalisation des échanges](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) | Partiel | La couche métier est écrite et conservée douze mois, corps RegRep compris ; la chaîne de non-répudiation se parcourt à la main | [La journalisation](https://linear.app/pole-api/project/oots-france-la-journalisation-ce-qui-reste-80edc56f6965) |
+| [4.9 — Prévisualisation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935) | Absent | Second échange, adresse de retour, espace de prévisualisation | [La prévisualisation](https://linear.app/pole-api/project/oots-france-la-previsualisation-4fdca9e30c9e) |
+| [5 — Modèles de données](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932910) | Sans objet | N'impose rien : c'est une **méthode de gouvernance** pour définir un modèle, et le règlement « *does not mandate use of (only) structured evidence types* » | — |
+| [6 — Guidance et UX](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932909) | Sans objet | Rien de normatif | — |
+
+Deux chantiers n'avancent pas par le seul code : **l'identité**, qui suppose de trancher le fournisseur d'identité et de s'y raccorder, et **le fournisseur de données**, qui suppose l'accord d'un détenteur de justificatifs et l'accès à son interface. S'y ajoute une décision qui n'appartient pas à ce dépôt et que le chapitre 2 renvoie six fois à l'État membre : la **politique nationale de rapprochement d'identité**. Leur délai est celui d'accords à obtenir, pas d'un développement.
+
+## Les bouchons
+
+Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un comportement de façade, faute d'avoir de quoi faire mieux. Chacun se déclare dans le commentaire qui le porte, en nommant le ticket chargé de le retirer ; `grep -rn 'Stub' app/` les retrouve tous, et fait foi si ce tableau prend du retard.
+
+| Bouchon | Où | Retiré par |
+| --- | --- | --- |
+| Le niveau de garantie, figé à `High` faute d'authentification eIDAS | `NaturalPerson::LEVEL_OF_ASSURANCE` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| Le jeton du bénéficiaire, qui atteste l'émetteur mais jamais sa qualité pour agir au nom de la personne déclarée | `BeneficiaryToken` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| L'annuaire des requêteurs français autorisés, tenu en JSON, à la place de l'autorisation que le bénéficiaire devrait donner | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| Le justificatif servi : un PDF d'exemple, seul document que la France détienne | `EvidenceProvision::AnswerRequest`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| La démarche `R1`, dédiée à la réponse différée pour que l'annonce du 4.5.2 soit produite quelque part | `ProcedureCode`, `EvidenceProvision::AnswerRequest` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| La date d'émission du justificatif, figée : aucun document réel à dater | `SystemCheckResponseBuilder::ISSUING_DATE` | [OOTS-84](https://linear.app/pole-api/issue/OOTS-84) |
+| La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
+| Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
+
+Quatre autres commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : la validation des identifiants reçus ([OOTS-115](https://linear.app/pole-api/issue/OOTS-115)), la première exigence seule retenue ([OOTS-49](https://linear.app/pole-api/issue/OOTS-49)), la cohérence de version annoncée ([OOTS-55](https://linear.app/pole-api/issue/OOTS-55)) et les deux arrivées qui ne laissent aucune trace ([OOTS-99](https://linear.app/pole-api/issue/OOTS-99)).
 
 ## Ce qui est déjà conforme
 
@@ -201,77 +68,4 @@ Récapitulatif des valeurs écrites en dur, avec l'endroit où les remplacer. **
 - Les huit codes d'erreur, transcrits de la liste officielle, et le cas particulier qui redirige vers la prévisualisation.
 - L'échange asynchrone : la réponse revient sur une autre connexion, l'appelant reçoit aussitôt l'identifiant de l'échange, et celui-ci relie les deux moitiés sans qu'aucun processus n'attende.
 - L'identification des organisations françaises par leur SIRET, avec le schéma d'identifiant que les TDD imposent.
-
-## Inventaire chapitre par chapitre
-
-| Chapitre | État | Ce qui manque |
-| --- | --- | --- |
-| [1 — Architecture](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932911) | Partiel | Les deux rôles existent ; l'espace de prévisualisation, non |
-| [2 — Identité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932912) | Absent | eIDAS, personne morale, représentation, réconciliation |
-| [3.1 — DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | Partiel | Le dialogue de désambiguïsation `DSD:ERR:0005` |
-| [3.2 — Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Conforme | — |
-| [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Absent | Modèles de données structurés |
-| [3.4 — Distribution](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Partiel | Découverte DNS et cache faits ; le cache mandataire reste une option de déploiement |
-| [3.5 — Listes de codes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Sans objet | Rien de normatif : le chapitre publie les listes, et l'appartenance d'une valeur à la sienne relève des règles métier du 4.6 |
-| [3.6 — API commune](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) | Conforme | — |
-| [3.7 — Sécurité](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932927) | À vérifier | Profil TLS à confronter à la configuration réelle |
-| [3.8 — Journalisation des annuaires](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932917) | Hors périmètre | Ne concerne que l'opérateur d'un annuaire |
-| [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | Partiel | Intervalles T2/T3 de la prévisualisation ; règle multiplicative par nombre d'exigences |
-| [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Partiel | Voir le tableau du chantier 5 |
-| [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Partiel | Documents complémentaires, langue et conformité ; la réponse différée, elle, est écrite et lue |
-| [4.5.3 — Erreur](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932938) | Conforme | — |
-| [4.6 — Règles métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) | Partiel | Les règles qu'un lecteur ne tranche pas sans schéma, sur les requêtes reçues ; une réponse reçue, elle, n'est confrontée à aucune |
-| [4.7 — eDelivery](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) | Partiel | Contrôle de cohérence de version en entrée ; SMP à prévoir |
-| [4.8 — Journalisation des échanges](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) | Partiel | La couche métier est écrite et conservée douze mois, corps RegRep compris ; la chaîne de non-répudiation ne se rejoue pas automatiquement |
-| [4.9 — Prévisualisation](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935) | Partiel | Second échange, adresse de retour, espace de prévisualisation |
-| [5 — Modèles de données](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932910) | Absent | Dépend d'un justificatif réel à modéliser |
-| [6 — Guidance et UX](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932909) | Sans objet | Rien de normatif |
-
-## Dépendances entre chantiers
-
-L'ordre dans lequel mener ces chantiers est un arbitrage — de calendrier, de moyens, de priorité politique — et il appartient à l'équipe. Cette section n'en propose aucun : elle décrit seulement **ce qui contraint réellement**, pour que la décision se prenne en connaissance de cause. Tout ce qui n'apparaît pas ici est libre.
-
-### Tableau des dépendances
-
-| Chantier | Ne peut aboutir qu'après | Son achèvement débloque |
-| --- | --- | --- |
-| 1. Common Services | *fait* | 5 (écriture), 6 |
-| 2. Identité de l'usager | Une décision hors dépôt : quel fournisseur d'identité | Rien de bloqué, mais donne leur valeur aux attributs de 3, 4 et 5 |
-| 3. Prévisualisation — côté demandeur | — | Rien |
-| 3. Prévisualisation — côté fournisseur | 4 (avoir un document à montrer) | Rien |
-| 4. Fournisseur de données français | Un raccordement hors dépôt : accord et interface d'un détenteur | 3 (côté fournisseur), 6 |
-| 5. Contenu des messages — écriture | 1, pour les champs qui viennent des annuaires | Rien |
-| 5. Contenu des messages — lecture et validation | — | Rien |
-| 6. Justificatifs structurés | 1, 4, et un modèle de données convenu au niveau européen | Rien |
-| 7. Journalisation | *fait* | Rien de bloqué, mais 5 (lecture) s'appuie sur le journal pour la mémoire des requêtes déjà traitées |
-| 8. Délais d'expiration — délai global d'un aller-retour | *fait* | Rien |
-| 8. Délais d'expiration — les trois intervalles T1/T2/T3 | 3 (les intervalles se définissent autour du flux de prévisualisation) | Rien |
-| 9. Finitions eDelivery | — | Rien |
-| 10. Restitution des erreurs | — | Rien |
-
-### Ce qui peut démarrer aujourd'hui, sans rien attendre
-
-Trois lots ne dépendent d'aucun autre chantier ni d'aucun tiers, et peuvent donc être menés en parallèle ou dans n'importe quel ordre :
-
-- **La validation des messages reçus** (chantier 5, seconde moitié). Le [chapitre 4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) n'assigne le devoir de validation à personne et présente les Schematron comme une preuve de conformité — « *Schematrons are used to prove the correctness of instances* » —, pas comme un composant d'exécution : le mécanisme est à notre main, et `.schematron/` est de toute façon un cache téléchargé dont le XSLT 2.0 est hors de portée de Nokogiri.
-- **Les points de finition eDelivery restants** (chantier 9) : la version que le fournisseur annonce dans le DSD, que la requête ne confronte pas encore à celle qu'elle émet.
-- **La restitution des erreurs à l'appelant** (chantier 10). La raison de l'échec est déjà enregistrée : il s'agit de décider ce qu'on en montre.
-
-### Ce qui ne dépend pas de ce dépôt
-
-Deux chantiers n'avancent pas par le seul code, et leur délai est celui d'accords à obtenir :
-
-- **L'identité** (chantier 2) suppose de trancher le fournisseur d'identité et de s'y raccorder.
-- **Le fournisseur de données** (chantier 4) suppose l'accord d'un détenteur de justificatifs et l'accès à son interface.
-
-Aucun autre chantier n'est *bloqué* par eux, mais leur absence prive de sens ce que les autres transportent : un niveau de garantie écrit en dur reste écrit en dur quelle que soit la qualité du message qui le porte.
-
-### Les contraintes qui ne sont pas des dépendances
-
-Deux faits pèsent sur le choix sans le déterminer, et méritent d'être posés tels quels :
-
-- **La journalisation touchait tous les chemins du code**, ce qui est la raison pour laquelle elle a été menée avant le reste : la mener tard aurait signifié repasser sur du code fraîchement écrit. Le même argument valait pour les délais d'expiration du chantier 8, menés pour cette raison peu après.
-- **La validation de ce qu'on reçoit décide de ce qu'un correspondant peut diagnostiquer.** Sans elle, un pair qui échoue à échanger avec la France reçoit « requête invalide » sans autre indice. Cela n'empêche aucun développement, mais pèse sur ce que coûte un test pair-à-pair.
-
-> [!NOTE]
-> Un préalable ne relève d'aucun chantier : vérifier auprès du Service Desk que les outils de validation et le prochain Projectathon acceptent la v2.0. Développer contre une spécification qu'on ne peut pas faire valider par un pair est le seul risque sérieux du choix de version — il est détaillé dans [versions_tdd.md](versions_tdd.md).
+- La journalisation de l'article 17, et la clôture des échanges qu'aucune réponse ne règle.

@@ -8,8 +8,8 @@
 # answers, and the agents are classified the same way.
 class DeferredResponseBuilder < ApplicationBuilder
   # Hard-coded: France defers no real document, so the announced date is an
-  # offset from the answer rather than an availability anyone computed. Stub 10
-  # of `docs/reste_à_faire.md`.
+  # offset from the answer rather than an availability anyone computed. Stub,
+  # tracked as OOTS-91.
   DEFERRAL = 1.day
 
   attr_reader :request_id, :timestamp, :available_at, :document_id
