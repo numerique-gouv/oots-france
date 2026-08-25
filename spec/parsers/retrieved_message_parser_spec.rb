@@ -28,6 +28,15 @@ RSpec.describe RetrievedMessageParser do
       expect(message.sender).to be_a(AccessPoint).and(be_valid)
     end
 
+    # Chapter 4.8 asks the log for « MIME type and full content of first MIME
+    # part », and `retention_downloaded="0"` gives it one chance to take them.
+    it 'reads the first MIME part, type as declared and bytes as sent' do
+      expect(message.first_part).to have_attributes(
+        mime_type: 'application/x-ebrs+xml',
+        content: a_string_including('QueryRequest'),
+      )
+    end
+
     it 'hands the body to the request parser' do
       expect(message.body).to be_a(EvidenceRequestParser)
     end
@@ -108,5 +117,98 @@ RSpec.describe RetrievedMessageParser do
     message = described_class.new(real_envelope('reponseAvecPieceJointe'))
 
     expect(message.body.provider_country).to eq('FR')
+  end
+
+  # By position and not by type. On a response `R-EDM-ebMS-032` asks for the
+  # RegRep document first at warning severity only, so a correspondent can put
+  # something else there and break no fatal rule: recording what they declared
+  # is what makes the discrepancy visible, and correcting it would hide it.
+  describe 'a message whose first part declares another type' do
+    subject(:message) do
+      described_class.new(real_envelope('requete').sub('application/x-ebrs+xml', 'application/pdf'))
+    end
+
+    it 'reads it as declared' do
+      expect(message.first_part.mime_type).to eq('application/pdf')
+      expect(message.first_part.content).to include('QueryRequest')
+    end
+  end
+
+  describe 'a message that declares no part at all' do
+    subject(:message) { envelope_without('requete', '//eb:PayloadInfo/eb:PartInfo') }
+
+    it 'refuses rather than invent one' do
+      expect { message.first_part }.to raise_error(UnreadableMessageError, /aucune partie MIME/)
+    end
+  end
+
+  describe 'a message announcing a part it does not carry' do
+    subject(:message) { envelope_without('requete', '//ws:retrieveMessageResponse/payload') }
+
+    it 'refuses rather than hand back nothing' do
+      expect { message.first_part }.to raise_error(UnreadableMessageError, /annoncée mais absente/)
+    end
+  end
+
+  # `attribute` resolves a missing attribute to nil, so an unguarded lookup would
+  # compare nil to nil and match the first payload that declares no identifier —
+  # handing back another part's bytes as if they were the one announced. In an
+  # evidentiary log a plausible wrong value is worse than none: the absence shows,
+  # the error does not.
+  describe 'a message whose first part announces no payload at all' do
+    subject(:message) do
+      document = Nokogiri::XML(real_envelope('requete'))
+      document.at_xpath('//eb:PayloadInfo/eb:PartInfo', OotsNamespaces::NAMESPACES).remove_attribute('href')
+      document.at_xpath('//ws:retrieveMessageResponse/payload', OotsNamespaces::NAMESPACES)
+        .remove_attribute('payloadId')
+
+      described_class.new(document.to_xml)
+    end
+
+    it 'refuses rather than hand back whichever payload declares no identifier' do
+      expect { message.first_part }.to raise_error(UnreadableMessageError, /ne désigne aucune charge/)
+    end
+  end
+
+  # Guarded where the payload it designates is concerned, and deliberately not
+  # here: a part that declares no type still arrived, and the journal records
+  # the gap rather than refusing the bytes over it.
+  describe 'a message whose first part declares no type' do
+    subject(:message) do
+      document = Nokogiri::XML(real_envelope('requete'))
+      document.at_xpath("//eb:PartInfo/eb:PartProperties/eb:Property[@name='MimeType']",
+        OotsNamespaces::NAMESPACES).remove
+
+      described_class.new(document.to_xml)
+    end
+
+    it 'hands back the content under no type at all' do
+      expect(message.first_part).to have_attributes(mime_type: nil, content: a_string_including('QueryRequest'))
+    end
+  end
+
+  # No chapter fixes an encoding — 4.7.2 profiles `MimeType` and `CompressionType`,
+  # and not the `CharacterSet` property the AS4 profile recommends — and chapter
+  # 4.8 asks for the content whole. What arrived is archived, well formed or not.
+  describe 'a first part that is not encoded in UTF-8' do
+    subject(:message) { envelope_with_body('requete') { "<query:QueryRequest>\xE9</query:QueryRequest>" } }
+
+    it 'hands back the bytes as they came, without transcoding them' do
+      content = message.first_part.content
+
+      expect(content.bytes).to include(0xE9)
+      expect(content.encoding).to eq(Encoding::UTF_8)
+    end
+  end
+
+  # The reading goes past Nokogiri on purpose: bytes nobody can parse are the
+  # ones an auditor most needs, and the gateway has already destroyed them.
+  describe 'a message whose body is not XML at all' do
+    subject(:message) { envelope_with_body('requete') { 'pas du tout du XML' } }
+
+    it 'still hands back the bytes' do
+      expect(message.first_part.content).to eq('pas du tout du XML')
+      expect { message.body }.to raise_error(UnreadableMessageError)
+    end
   end
 end

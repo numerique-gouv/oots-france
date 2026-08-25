@@ -52,6 +52,18 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     )
   end
 
+  # Chapter 4.8 asks the response flow for « MIME type and full content of first
+  # MIME part » too, in the second of its two tables. Read against
+  # what the gateway was handed, so no second rendering can stand in for it.
+  it 'journals the very first MIME part it submitted' do
+    answer
+
+    expect(AuditEvent.last).to have_attributes(
+      regrep_mime_type: 'application/x-ebrs+xml',
+      regrep_body: decoded_payload(gateway_body),
+    )
+  end
+
   it 'attaches the document France holds' do
     answer
 
@@ -77,6 +89,13 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0004',
         country_code: 'FR')
+    end
+
+    it 'keeps the rs:Exception it sent, as it sent it' do
+      answer
+
+      expect(AuditEvent.last.regrep_body).to eq(decoded_payload(gateway_body))
+      expect(AuditEvent.last.regrep_body).to include('rs:Exception')
     end
   end
 
@@ -411,7 +430,11 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
   end
 
-  def decoded_payload(envelope) = Base64.decode64(Nokogiri::XML(envelope).at_xpath('//payload/value').text)
+  # Forced back to UTF-8: base64 decodes to bytes, and both the parsers and the
+  # journal work in text.
+  def decoded_payload(envelope)
+    Base64.decode64(Nokogiri::XML(envelope).at_xpath('//payload/value').text).force_encoding(Encoding::UTF_8)
+  end
 
   def status_of(document) = document.root['status']
 

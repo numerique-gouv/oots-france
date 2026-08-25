@@ -260,6 +260,16 @@ fr:
       requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
     error_response:
       no_exception: Pas de rs:Exception dans la réponse d'erreur reçue.
+    retrieved_message:
+      unreadable_envelope: Enveloppe SOAP illisible.
+      unknown_action: "Action ebMS inconnue : « %{action} »."
+      unreadable_body: Corps RegRep illisible.
+      no_payload: Pas de charge « %{type} » dans le message reçu.
+      # La première partie MIME que le chapitre 4.8 fait consigner : l'entête doit
+      # en déclarer une, et la charge qu'elle désigne doit être là.
+      no_part: Le message reçu ne déclare aucune partie MIME.
+      part_without_href: La première partie MIME du message reçu ne désigne aucune charge.
+      payload_missing: Charge « %{id} » annoncée mais absente.
     ebms_header:
       no_header: Pas d'entête ebMS dans le message reçu.
       no_sender: Pas d'expéditeur dans l'entête du message reçu.
@@ -409,9 +419,15 @@ fr:
         # puis l'empreinte de ce que la France en a reçu.
         evidence_identifier: Identifiant du justificatif
         evidence_digest: Empreinte du justificatif
-        mime_type: Type MIME
+        evidence_mime_type: Type MIME du justificatif
+        # La première partie MIME, que le chapitre 4.8 fait conserver dans les
+        # deux sens : son type tel que l'expéditeur l'a déclaré, ici, puis le
+        # corps lui-même, qui ferme la liste — seul champ qui ne tient pas sur
+        # une ligne.
+        regrep_mime_type: Type MIME du corps RegRep
         edm_error_code: Code d'erreur EDM
         detail: Détail
+        regrep_body: Corps RegRep
       event_types:
         request_sent: Requête émise
         request_refused: Requête refusée

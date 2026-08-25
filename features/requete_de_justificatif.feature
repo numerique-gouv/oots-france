@@ -26,6 +26,7 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et le justificatif finit par être transmis à la démarche
     Et le document reçu est celui que le fournisseur détient
     Et le journal porte l'échange entier, du départ de la requête à la remise
+    Et le journal porte le corps RegRep de chaque message, tel qu'il a circulé
 
   Scénario: deux demandes d'un même usager tiennent dans une seule conversation
     Quand la démarche demande deux justificatifs pour le même usager
@@ -45,3 +46,4 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et l'échange finit par porter le code d'erreur "EDM:ERR:0004"
     Et aucun justificatif n'est transmis à la démarche
     Et le journal porte le refus du correspondant
+    Et le journal porte le corps RegRep de chaque message, tel qu'il a circulé

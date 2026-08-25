@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_24_130000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_25_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -32,17 +32,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_24_130000) do
     t.string "event_type", null: false
     t.string "evidence_digest"
     t.string "evidence_identifier"
+    t.string "evidence_mime_type"
     t.string "evidence_requester_id"
     t.text "evidence_subject"
     t.string "evidence_subject_key"
     t.string "evidence_type_id"
     t.string "exchange_id"
     t.string "message_id"
-    t.string "mime_type"
     t.datetime "occurred_at", null: false
     t.string "procedure_code"
     t.string "providing_authority_id"
     t.string "providing_authority_scheme"
+    t.text "regrep_body"
+    t.string "regrep_mime_type"
     t.string "request_id"
     t.string "requesting_authority_id"
     t.string "requesting_authority_scheme"

@@ -8,7 +8,7 @@ class RetrievedMessageParser
 
   def initialize(xml)
     @document = Nokogiri::XML(xml)
-    raise UnreadableMessageError, 'Enveloppe SOAP illisible.' if @document.errors.any?
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unreadable_envelope') if @document.errors.any?
 
     @header = EbmsHeaderParser.new(@document)
   end
@@ -23,11 +23,30 @@ class RetrievedMessageParser
               when EbmsAction::EXECUTE_QUERY_REQUEST then EvidenceRequestParser.new(body_document)
               when EbmsAction::EXECUTE_QUERY_RESPONSE then EvidenceResponseParser.new(body_document)
               when EbmsAction::EXCEPTION_RESPONSE then ErrorResponseParser.new(body_document)
-              else raise UnreadableMessageError, "Action ebMS inconnue : « #{action} »."
+              else raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unknown_action', action:)
               end
   end
 
   def evidence = payload(PDF)
+
+  # The first MIME part as it arrived, bytes and declared type: chapter 4.8 asks
+  # both its tables for it, and `retention_downloaded="0"` has Domibus erase the
+  # message the instant `retrieveMessage` returns — nothing can read it twice.
+  #
+  # Read past Nokogiri deliberately, and by position rather than by type: a body
+  # too malformed to parse is the one an auditor most needs the bytes of, and
+  # `body_document` would raise before it.
+  def first_part
+    declared = header.payload_parts.first
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_part') if declared.nil?
+    # Guarded like the identifier `payload` looks up, and for a sharper reason:
+    # a missing attribute reads as nil on both sides, so an unguarded lookup
+    # would match the first payload declaring no identifier and hand back its
+    # bytes as the announced part.
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.part_without_href') if declared[:href].nil?
+
+    MimePart.new(mime_type: declared[:mime_type], content: as_text(payload_at(declared[:href])))
+  end
 
   private
 
@@ -36,7 +55,7 @@ class RetrievedMessageParser
   def body_document
     @body_document ||= begin
       parsed = Nokogiri::XML(payload(REGREP))
-      raise UnreadableMessageError, 'Corps RegRep illisible.' if parsed.errors.any?
+      raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unreadable_body') if parsed.errors.any?
 
       parsed
     end
@@ -44,13 +63,25 @@ class RetrievedMessageParser
 
   def payload(mime_type)
     identifier = header.payload_identifiers[mime_type]
-    raise UnreadableMessageError, "Pas de charge « #{mime_type} » dans le message reçu." if identifier.nil?
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_payload', type: mime_type) if identifier.nil?
 
+    payload_at(identifier)
+  end
+
+  # Base64 decodes to bytes; the journal keeps this part as text, so they are
+  # tagged and never transcoded. Bytes that are not valid UTF-8 are kept as they
+  # came: no chapter fixes an encoding — 4.7.2 profiles `MimeType` and
+  # `CompressionType`, and not the `CharacterSet` property the AS4 profile
+  # recommends — and chapter 4.8 asks for the content whole. What is archived is
+  # therefore what arrived, well formed or not: this is a log, not a validator.
+  def as_text(bytes) = bytes.force_encoding(Encoding::UTF_8)
+
+  def payload_at(identifier)
     encoded = all(document, '//soap:Body/ws:retrieveMessageResponse/payload')
       .find { |payload| attribute(payload, 'payloadId') == identifier }
       &.then { |payload| text_at(payload, './value') }
 
-    raise UnreadableMessageError, "Charge « #{identifier} » annoncée mais absente." if encoded.nil?
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.payload_missing', id: identifier) if encoded.nil?
 
     Base64.decode64(encoded)
   end

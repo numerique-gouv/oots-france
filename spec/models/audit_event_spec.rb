@@ -27,6 +27,18 @@ RSpec.describe AuditEvent do
       expect(event.reload.evidence_subject).to include('Königreich')
     end
 
+    # The RegRep document carries the subject in clear inside its own XML, so it
+    # is of the same class as the column above and answers to the same key.
+    it 'is unreadable in the RegRep document as well' do
+      kept = create(:audit_event, :with_regrep_body)
+      stored = described_class.connection.select_value(
+        "SELECT regrep_body FROM audit_events WHERE id = #{kept.id}",
+      )
+
+      expect(stored).not_to include('QueryRequest')
+      expect(kept.reload.regrep_body).to include('QueryRequest')
+    end
+
     # What prefills the search from an event's page, taken from the subject and
     # not from the key, whose case `subject_key` has folded away.
     it 'hands back the criteria that find the same person' do

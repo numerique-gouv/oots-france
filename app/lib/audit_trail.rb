@@ -13,7 +13,7 @@ class AuditTrail
     EbmsAction::EXCEPTION_RESPONSE => 'error_received',
   }.freeze
 
-  def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:)
+  def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:, first_part:)
     record(
       'request_sent',
       ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
@@ -23,6 +23,7 @@ class AuditTrail
       message_id:,
       **authorities(requesting: requester, providing: provider),
       **AuditEvent.subject(beneficiary),
+      **circulated(first_part),
     )
   end
 
@@ -54,6 +55,10 @@ class AuditTrail
       conversation_id: message.conversation_id,
       exchange_id: message.exchange_id,
       message_id:,
+      # Its own reading, and not one of `received_body`'s fields: a body Nokogiri
+      # refuses is exactly the one whose bytes an auditor needs, and the chapter
+      # asks for them whether or not anything could be made of them.
+      **circulated(readable(:regrep_body) { message.first_part }),
       **(readable(:body) { received_body(message) } || {}),
     )
   end
@@ -111,7 +116,7 @@ class AuditTrail
 
   # What the two answers have in common; each names its own event rather than
   # leaving the log to infer it from an argument that happens to be nil.
-  def answered(message:, requester:, provider:, request_id:, response_id:, message_id:)
+  def answered(message:, requester:, provider:, request_id:, response_id:, message_id:, first_part:)
     {
       conversation_id: message.conversation_id,
       exchange_id: message.exchange_id,
@@ -124,7 +129,17 @@ class AuditTrail
       # for one on the party answering, not on the party answered.
       country_code: requester&.address&.country,
       **authorities(requesting: requester, providing: provider),
+      **circulated(first_part),
     }
+  end
+
+  # Chapter 4.8, in both its tables: « MIME type and full content of first MIME
+  # part ». Written from one value so that a part read only halfway writes
+  # neither column rather than a type nothing backs.
+  def circulated(part)
+    return {} if part.nil?
+
+    { regrep_mime_type: part.mime_type, regrep_body: part.content }
   end
 
   def record(event_type, **attributes)
@@ -214,7 +229,7 @@ class AuditTrail
   def evidence_fingerprint(evidence)
     return {} if evidence.blank?
 
-    { evidence_digest: Digest::SHA256.hexdigest(evidence), mime_type: RetrievedMessageParser::PDF }
+    { evidence_digest: Digest::SHA256.hexdigest(evidence), evidence_mime_type: RetrievedMessageParser::PDF }
   end
 
   # A message we cannot read must still be journalled, so what its body would
