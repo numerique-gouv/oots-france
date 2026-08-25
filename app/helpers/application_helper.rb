@@ -16,10 +16,12 @@ module ApplicationHelper
   # they are whatever the correspondent wrote, and `link_to` escapes the HTML
   # without looking at the scheme — `javascript:…` in an `href` runs on our own
   # origin. What a browser cannot open reads as the plain text it already was.
+  #
+  # Small, both callers showing it in a cell of a detail table.
   def external_link(address)
     return address unless opens_in_a_browser?(address)
 
-    link_to address, address, class: 'fr-link', target: '_blank', rel: 'noopener'
+    link_to address, address, class: 'fr-link fr-link--sm', target: '_blank', rel: 'noopener'
   end
 
   private

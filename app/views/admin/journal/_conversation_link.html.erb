@@ -9,7 +9,8 @@
 <% if event.conversation_id.present? %>
   <% label = local_assigns[:abbreviated] ? abbreviated_identifier(event.conversation_id) : event.conversation_id %>
   <% if known %>
-    <%= link_to label, admin_journal_conversation_path(event.conversation_id), title: event.conversation_id %>
+    <%= link_to label, admin_journal_conversation_path(event.conversation_id),
+          class: 'fr-link fr-link--sm', title: event.conversation_id %>
   <% else %>
     <%= tag.span(label, title: event.conversation_id) %>
   <% end %>
