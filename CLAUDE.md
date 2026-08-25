@@ -44,6 +44,7 @@ Each piece of information has a single owning document; everything else links to
 | The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the account that opens it | `docs/espace_administration.md` |
 | The exchange log of article 17: what is recorded and where, the encryption and retention of personal data, how to read it back | `docs/journal_des_echanges.md` |
 | Agent conventions and workflow | this file |
+| What each versioned skill does, and what stays local under `.claude/` | this file, section [What lives in `.claude/`](#what-lives-in-claude) |
 
 When adding documentation, extend the owning file rather than repeating it elsewhere; if two files must mention the same thing, the non-owner keeps one sentence and a link.
 
@@ -197,7 +198,22 @@ Rules:
 - **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/preparEnvironnement.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
 - Claude Code users: the built-in worktree isolation (e.g. `EnterWorktree` or agents with `isolation: "worktree"`) is fine too; copy the `.env*` files in if the task needs Docker.
 
+## What lives in `.claude/`
+
+**Two directories are versioned, and only two: `.claude/skills/` and `.claude/agents/`.** They describe *how work is done on this repository* — the review loop, the shipping sequence, the control of the backlog against the TDD — so they belong to the repository for the same reason this file does: a convention nobody can read is a convention nobody follows.
+
+| Skill | What it does |
+| --- | --- |
+| [`tdd-nerd`](.claude/skills/tdd-nerd/SKILL.md) | Confronts the Linear backlog with the text of the specifications, chapter by chapter, and corrects what departs from it |
+| [`review-loop`](.claude/skills/review-loop/SKILL.md) | Review → fixes on an open PR, until a pass finds no blocking finding, then reshapes the history |
+| [`ship-plan`](.claude/skills/ship-plan/SKILL.md) | Pushes an implemented plan, opens the PR, hands it to `review-loop`, records the decisions on the ticket |
+
+Everything else under `.claude/` is workshop material and stays local: `plans/`, `audits/`, `reviews/`, `reprises/`, and `settings.local.json`. It is dated prose written for one moment of one task, and versioning it would age badly.
+
+> [!IMPORTANT]
+> **A skill is read by whoever works here next, human or agent.** Keep them free of anything personal — an absolute path from one machine, a token, the name of a local VM. What a skill needs from the environment, it names as a variable or asks for.
+
 ## Boundaries
 
-- Do not commit anything under `docs/prompts/` (git-ignored internal notes), `.env*` (except templates), `domibus/` runtime config, or `CLAUDE.local.md`.
+- Do not commit anything under `docs/prompts/` (git-ignored internal notes), `.env*` (except templates), `domibus/` runtime config, `CLAUDE.local.md`, or the workshop directories of `.claude/` listed above.
 - The `domibus/` directory holds a **demo, self-signed** setup for local development only — its keystores are generated on the developer's machine by `scripts/generate_certificates.sh` and must never be committed nor reused for real environments. Treat anything resembling production credentials or certificates as off-limits.
