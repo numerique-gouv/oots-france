@@ -92,20 +92,76 @@ if Rails.env.development?
   carries_requester = %w[request_sent request_refused evidence_delivered].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
-  # The first MIME part travels with the message, so the events that carry one
-  # carry it. A stand-in and not a real message: the console page has to be
-  # readable by hand, and nothing here is evidence of anything.
-  regrep_body = lambda do |event_type|
-    return {} unless event_type.in?(carries_message)
+  # One shape per message the TDD define: a request, an answer, and an answer
+  # that refuses — the last being a `QueryResponse` carrying an `rs:Exception`,
+  # and not a document of its own.
+  demonstration_body = lambda do |event_type|
+    id = SecureRandom.uuid
 
-    { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: format(<<~XML, id: SecureRandom.uuid) }
+    case event_type
+    when 'request_sent', 'request_received'
+      format(<<~XML, id:)
         <?xml version="1.0" encoding="UTF-8"?>
         <query:QueryRequest xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
                             id="urn:uuid:%<id>s">
           <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryRequest>
       XML
+    when 'error_sent', 'error_received'
+      format(<<~XML, id:)
+        <?xml version="1.0" encoding="UTF-8"?>
+        <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                             xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+                             requestId="urn:uuid:%<id>s"
+                             status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
+          <rs:Exception code="EDM:ERR:0004"/>
+          <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
+        </query:QueryResponse>
+      XML
+    else
+      format(<<~XML, id:)
+        <?xml version="1.0" encoding="UTF-8"?>
+        <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                             requestId="urn:uuid:%<id>s"
+                             status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+          <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
+        </query:QueryResponse>
+      XML
+    end
+  end
+
+  # What the evidence leaves in the journal, where `AuditTrail#evidence_fingerprint`
+  # writes it: the two answers that carry a document, and the handover to the
+  # French requester. A deferred answer announces a date and carries nothing, so
+  # it gets neither column — as the code leaves both empty there.
+  #
+  # The digest is the real one of the document France serves, so that the
+  # procedure `journal_des_echanges.md` describes for settling a dispute can be
+  # walked on demonstration data rather than only read.
+  carries_evidence = %w[response_sent response_received evidence_delivered].freeze
+  served_evidence = Rails.root.join(EvidenceProvision::AnswerRequest::EVIDENCE_PATH).binread
+
+  evidence_fingerprint = lambda do |event_type, exchange|
+    return {} unless event_type.in?(carries_evidence) && exchange.status != 'deferred'
+
+    { evidence_digest: Digest::SHA256.hexdigest(served_evidence),
+      evidence_mime_type: RetrievedMessageParser::PDF }
+  end
+
+  # The first MIME part travels with the message, so the events that carry one
+  # carry it — and each carries the shape its own message would have. A stand-in
+  # and not a real message: the console page has to be readable by hand, and
+  # nothing here is evidence of anything.
+  #
+  # The shape matters all the same. A demonstration answering a request with the
+  # body of a request would teach the console, and whoever reads it, that the two
+  # look alike — where the whole point of keeping the body is to show what each
+  # message actually said.
+  regrep_body = lambda do |event_type|
+    return {} unless event_type.in?(carries_message)
+
+    { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+      regrep_body: demonstration_body.call(event_type) }
   end
 
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
@@ -151,6 +207,7 @@ if Rails.env.development?
         detail: (exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
         **regrep_body.call(event_type),
+        **evidence_fingerprint.call(event_type, exchange),
       )
     end
 
