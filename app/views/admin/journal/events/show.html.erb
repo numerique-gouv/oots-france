@@ -43,6 +43,8 @@
                       <%= link_to value, admin_common_services_procedure_path(value) %>
                     <% when :country_code %>
                       <%= render 'admin/country', country_code: value %>
+                    <% when :evidence_type_id %>
+                      <%= external_link(value) %>
                     <% when :edm_error_code %>
                       <%= render EdmErrorCodeComponent.new(code: value) %>
                     <% when :regrep_body %>

@@ -55,7 +55,7 @@ Un annuaire qui **refuse** est une information, pas une panne : la page rend son
 > [!NOTE]
 > **Un nom est un ornement**, et le code reste à côté de lui : une liste illisible — dépôt injoignable, fichier déplacé, format changé — coûte les noms et rien d'autre. C'est la seule lecture de cette application qui rattrape `StandardError`, et c'est pour cette raison. La démarche de test `00`, elle, ne figure dans aucune liste : elle appartient aux environnements d'essai, et s'affiche donc toujours nue.
 
-Les adresses du Semantic Repository que ces réponses portent — l'identifiant d'une exigence, la classification d'un type de justificatif — sont rendues en **texte, jamais en lien**, pour la raison qui vaut déjà pour `preview_location`. Les liens des pages ne portent, eux, que des identifiants courts : un code de démarche, le dernier segment d'une URL du Semantic Repository, dont l'hôte diffère entre acceptation et production.
+Les adresses du Semantic Repository que ces réponses portent — l'identifiant d'une exigence, la classification d'un type de justificatif — y sont rendues en **texte** ; c'est le journal, et lui seul, qui en fait des liens (voir plus bas). Les liens *internes* de ces pages, eux, ne portent que des identifiants courts : un code de démarche, le dernier segment d'une URL du Semantic Repository, dont l'hôte diffère entre acceptation et production.
 
 > [!IMPORTANT]
 > **Une absence de fournisseur ne prouve pas qu'il n'en existe pas.** La console interroge le Data Service Directory exactement comme l'application, `specification=oots-edm:v2.0` compris, donc un point d'accès conforme à `v1.0` ou `v1.2` seulement n'apparaît pas dans la réponse. C'est le cas d'`AP_FI_01` en acceptation. La colonne des versions déclarées est ce qui permet de faire la différence lorsqu'un service, lui, revient.
@@ -72,7 +72,7 @@ Ce qui les distingue est **marqué à l'écran** : sur la fiche d'un événement
 
 Deux valeurs viennent d'un correspondant étranger et sont traitées comme telles :
 
-- **`preview_location`** est rendue en **texte, jamais en lien**. Une console d'exploitation n'a pas à être un lanceur d'un clic vers un site qu'elle ne choisit pas, même quand le modèle a vérifié le schéma de l'adresse.
+- **`preview_location`** et la **classification du type de justificatif** sont des adresses, et la console les ouvre — `external_link` d'`ApplicationHelper` les rend en lien, `target="_blank"` et `rel="noopener"`. Toutes deux viennent d'un message reçu, donc du correspondant : **le schéma est vérifié avant de devenir un `href`**, `link_to` échappant le HTML sans jamais regarder le schéma, et `javascript:…` s'exécutant sur notre propre origine. Ce qu'un navigateur ne sait pas ouvrir reste le texte qu'il était.
 - **`error_description`** porte du texte libre, venu d'un correspondant étranger ou d'une panne d'acheminement locale — `EvidenceRequest::SendToGateway` y écrit le message d'une erreur Faraday ; ERB l'échappe dans les deux cas.
 - **`regrep_body`** est le message d'un correspondant, mot pour mot. Il est rendu **verbatim et échappé** — jamais re-sérialisé, le [chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) demandant le contenu tel qu'il a circulé, et un passage par Nokogiri en changerait les octets. Aucune route ne le sert en téléchargement : offrir des octets choisis par un tiers sous leur propre type MIME ouvrirait une surface que rien ne réclame.
 

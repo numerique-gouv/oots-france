@@ -129,14 +129,28 @@ RSpec.describe 'Admin::Exchanges' do
       expect(response.body).to include('—')
     end
 
-    # A foreign correspondent chooses this address: it is read, not followed.
-    it 'offers the preview address as text and never as a link' do
+    it 'opens the preview address rather than leave it to be copied by hand' do
       exchange = create(:exchange, :preview_required)
 
       get admin_journal_exchange_path(exchange.exchange_id)
 
-      expect(response.body).to include(exchange.preview_location)
-      expect(response.parsed_body.css("a[href='#{exchange.preview_location}']")).to be_empty
+      lien = response.parsed_body.at_css("a[href='#{exchange.preview_location}']")
+
+      expect(lien).to be_present
+      expect(lien[:rel]).to include('noopener')
+    end
+
+    # A correspondent chooses this address, and `link_to` escapes the HTML
+    # without ever looking at the scheme: `javascript:` in an `href` would run
+    # on our own origin.
+    it 'refuses to make an address a browser cannot open into a link' do
+      exchange = create(:exchange, :preview_required)
+      exchange.update_column(:preview_location, 'javascript:alert(1)')
+
+      get admin_journal_exchange_path(exchange.exchange_id)
+
+      expect(response.body).to include('javascript:alert(1)')
+      expect(response.parsed_body.css('a[href^="javascript:"]')).to be_empty
     end
 
     it 'escapes what a correspondent wrote' do

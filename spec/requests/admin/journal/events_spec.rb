@@ -200,6 +200,28 @@ RSpec.describe 'Admin::Journal::Events' do
       )
     end
 
+    # The Semantic Repository names an evidence type by a URL; an operator who
+    # wants to know what a classification covers should not have to copy it.
+    it 'opens the evidence type classification the Semantic Repository names' do
+      classification = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748'
+      event = create(:audit_event, evidence_type_id: classification)
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.at_css("a[href='#{classification}']")).to be_present
+    end
+
+    # It is read off a received message, so it is whatever the correspondent
+    # wrote — and `link_to` escapes the HTML without looking at the scheme.
+    it 'leaves as text an evidence type identifier a browser cannot open' do
+      event = create(:audit_event, evidence_type_id: 'javascript:alert(1)')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include('javascript:alert(1)')
+      expect(response.parsed_body.css('a[href^="javascript:"]')).to be_empty
+    end
+
     # Chapter 4.8 has the log keep the message whole; the page is where an
     # auditor reads it back, folded so that it does not push the rest away.
     it 'shows the RegRep document, folded behind a control the keyboard reaches' do
