@@ -34,7 +34,7 @@ module IncomingMessage
     # `SettleExchange` asks the directory where to hand the evidence over,
     # and `EvidenceRequesterNotFound` is raised there whenever the directory no
     # longer holds the requester of the exchange. What is too wide is the family
-    # caught for that one subclass. Stub 9 of `docs/reste_à_faire.md`.
+    # caught for that one subclass. Stub, tracked as OOTS-110.
     rescue EbmsError => e
       abandon_exchange(e, :exchange_impossible)
       raise
@@ -47,7 +47,7 @@ module IncomingMessage
     #
     # Two arrivals still leave no line: an unreadable SOAP envelope, and an ebMS
     # action we cannot name, which `handler` refuses just above. Neither can be
-    # qualified as an event. Workstream 7 of `docs/reste_à_faire.md`.
+    # qualified as an event. Tracked as OOTS-99.
     def record
       context.audit_trail.message_received(message: context.message, message_id: context.message_id)
       OpenExchange.call!(context)

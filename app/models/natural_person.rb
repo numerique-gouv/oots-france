@@ -10,7 +10,7 @@ class NaturalPerson
   include StrictValidation
 
   # Hard-coded: the real level should come from the eIDAS authentication, which
-  # this deployment does not yet perform. Stub 4 of `docs/reste_à_faire.md`.
+  # this deployment does not yet perform. Stub, tracked as OOTS-58.
   LEVEL_OF_ASSURANCE = 'High'.freeze
 
   attribute :eidas_identifier, :string

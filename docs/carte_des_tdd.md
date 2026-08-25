@@ -56,6 +56,9 @@ Le texte des chapitres vit sur le wiki ; **tout ce qui est exécutable vit dans 
 | [`OOTS-EDM/codelists/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/codelists) | Les listes de codes au format Genericode. |
 | [`OOTS-EDM/xml/`](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/xml) | Les messages d'exemple publiés avec la spécification. |
 
+> [!WARNING]
+> **La prose d'un chapitre et sa règle Schematron divergent parfois**, dans les deux sens : une règle `FATAL` peut n'exister que dans le `.sch` sans figurer au wiki, et une règle publiée au wiki peut y être plus étroite qu'elle ne l'est dans le fichier. Lire les deux avant de conclure sur ce qu'une règle exige, et signaler l'écart plutôt que de le trancher en silence.
+
 > [!TIP]
 > Cloner le dépôt sur l'étiquette de version (`git clone --depth 1 --branch 2.0.1 https://code.europa.eu/oots/tdd/tdd_chapters.git`) évite de naviguer dans l'interface web pour lire un schéma ou une liste de codes. Seul l'accès au registre d'images `code.europa.eu:4567` est parfois bloqué ; le clone HTTPS, lui, passe.
 

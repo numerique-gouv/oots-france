@@ -59,10 +59,9 @@ class Exchange < ApplicationRecord
   # only: an exchange a correspondent malformed must still be recorded, or
   # nothing accounts for it afterwards.
   #
-  # Nothing refuses such a message yet — validating what arrives is workstream 5
-  # of `docs/reste_à_faire.md` — and `EvidenceProvision::AnswerRequest` reuses
-  # the identifiers it received, so a malformed one travels back out in the
-  # answer France signs.
+  # Nothing refuses such a message yet — validating what arrives is OOTS-115 —
+  # and `EvidenceProvision::AnswerRequest` reuses the identifiers it received,
+  # so a malformed one travels back out in the answer France signs.
   validates :exchange_id, :conversation_id, format: { with: UUID, message: :format }, unless: :incoming?
 
   validates :procedure_code, :country_code, :evidence_requester_id, presence: true, unless: :incoming?

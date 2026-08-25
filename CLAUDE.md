@@ -31,7 +31,7 @@ Each piece of information has a single owning document; everything else links to
 | --- | --- |
 | OOTS ecosystem, specs (TDD), four-corner model, code map | `docs/oots_context.md` |
 | Vocabulary: what an acronym or a domain term means, and the class that carries it | `docs/glossaire.md` |
-| Known gaps and what remains to reach full TDD conformance: chapter-by-chapter inventory, the stubs and how to replace them, the dependencies between workstreams | `docs/reste_à_faire.md` |
+| Macro state of TDD conformance: the chapter-by-chapter inventory, and the Linear project carrying each gap. Tasks, their order and their dependencies live in Linear, not here | `docs/reste_à_faire.md` |
 | TDD versioning, version negotiation, v1.x → v2.0 migration, which version to target | `docs/versions_tdd.md` |
 | Where to find what in the TDD: chapter map with links, where the machine-readable artefacts live, the fixed values (query IDs, DNS template, ebMS constants) | `docs/carte_des_tdd.md` |
 | OOTS code published elsewhere: the Commission's own implementations, other Member States' repositories, reusable third-party components, and what each is worth | `docs/implementations_europeennes.md` |
@@ -98,7 +98,7 @@ Four things survive that default, because no identifier can hold them:
 - **What a specification requires**, with its reference — `R-EDM-ERR-C022`, `R-EDM-REQ-S052`, [RFC 7638](https://datatracker.ietf.org/doc/html/rfc7638), a TDD chapter. The rule is not ours, and the code that obeys it cannot state where it comes from.
 - **What a foreign system does**, when its behaviour is why the code has the shape it has: `retention_downloaded="0"` in the PMode erasing a message the instant it is retrieved, Domibus binding one prefix to two namespaces inside a single envelope. A reader cannot discover either from this repository.
 - **Why the obvious alternative is wrong**, where taking it fails silently or dangerously: fixing the JWE algorithms instead of reading them from the token, vetting the scheme of a preview URL a correspondent chose.
-- **What is a stub**, with its number in [docs/reste_à_faire.md](docs/reste_à_faire.md).
+- **What is a stub**, naming the Linear issue that removes it — `Stub, tracked as OOTS-58.` The issue travels with the line it describes; an inventory kept beside the code does not.
 
 Everything else goes: no restating the code in prose, no walking the reader through a method line by line, no explaining a name that should have been better in the first place. Two sentences is the usual size of what remains.
 

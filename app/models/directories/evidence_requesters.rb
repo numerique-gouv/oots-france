@@ -1,6 +1,6 @@
 module Directories
   # The French service providers allowed to ask this deployment for evidence,
-  # indexed by SIRET. Stub 4 of `docs/reste_à_faire.md`: it stands in for the
+  # indexed by SIRET. Stub, tracked as OOTS-58: it stands in for the
   # authorisation the beneficiary should give, which an eIDAS identity will
   # eventually carry.
   #
