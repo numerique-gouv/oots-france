@@ -4,7 +4,12 @@
 /nginx/
 docs/prompts/
 docker-compose.override.yml
-.claude/
+# Le travail d'atelier reste local (plans, audits, revues, reprises) ; les
+# skills et les agents, eux, sont versionnés : ils décrivent comment on
+# travaille sur ce dépôt.
+.claude/*
+!.claude/agents/
+!.claude/skills/
 CLAUDE.local.md
 .worktrees/
 
