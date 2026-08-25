@@ -12,13 +12,13 @@ Le chapitre répartit la charge entre deux couches que le `message_id` de la pas
 | Couche | Ce qu'elle consigne | Qui l'écrit |
 | --- | --- | --- |
 | **protocole** | accusés de réception AS4, empreintes signées des parties MIME (`ds:SignedInfo`), *SOAP faults* | Domibus |
-| **métier** | contenu RegRep, sujet du justificatif, erreurs applicatives, requêteur, devenir de la pièce | ce dépôt, dans `audit_events` |
+| **métier** | corps RegRep entier, sujet du justificatif, erreurs applicatives, requêteur, devenir de la pièce | ce dépôt, dans `audit_events` |
 
 Les deux se lisent ensemble : le `message_id` que la table consigne est celui que la page *Message Log* de la console Domibus filtre, et c'est le pont entre les deux journaux.
 
 Ce que la passerelle ne peut pas fournir, et qui justifie la couche métier :
 
-- **le contenu RegRep**, qu'elle ne lit pas — identifiant de requête, type de justificatif, code de démarche, **sujet du justificatif**, code d'erreur EDM ;
+- **le contenu RegRep**, qu'elle ne lit pas — identifiant de requête, type de justificatif, code de démarche, **sujet du justificatif**, code d'erreur EDM — et le **corps lui-même**, que `retention_downloaded="0"` lui fait effacer dès la remise ;
 - **ce qui ne l'atteint jamais** : une requête refusée ici (démarche inconnue, jeton invalide) ne produit aucun message ebMS, donc aucune trace côté passerelle. L'article 17 ne va pas jusque-là — il couvre la requête, la réponse, le rapport d'erreur effectivement émis et les événements eDelivery — et c'est une décision propre à ce déploiement : sans elle, un appelant éconduit ne laisse de trace nulle part ;
 - **le requêteur applicatif**, le fournisseur de service français qui a appelé l'API, distinct du C1 ebMS ;
 - **la durée** : la rétention de la passerelle est courte par défaut, et l'obligation des douze mois pèse sur le requêteur et le fournisseur, jamais sur le point d'accès.
@@ -47,6 +47,24 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 
 L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant un échange jamais ouvert, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 
+### La première partie MIME
+
+Les deux tableaux du chapitre réclament, en obligatoire et dans les deux sens, « *MIME type and full content of first MIME part* » : le document de métadonnées RegRep, c'est-à-dire la requête, la réponse ou l'`rs:Exception` **telle qu'elle a circulé**. C'est ce que portent `regrep_mime_type` et `regrep_body`, sur les six types qui correspondent à un message ebMS — les trois émis et les trois reçus. Les trois autres n'en portent pas : `request_refused` n'atteint jamais la passerelle, `response_refused` et `evidence_delivered` commentent une arrivée qui a déjà sa ligne.
+
+Trois choix méritent d'être dits, parce qu'aucun nom de colonne ne les porte.
+
+- **Le corps est consigné même quand il est illisible.** La lecture passe délibérément à côté de Nokogiri : des octets dont personne n'a rien pu tirer sont exactement ceux qu'un auditeur cherchera, et la passerelle les a déjà détruits. Une ligne peut donc porter un corps entier et aucun des champs qu'on en tire d'ordinaire.
+- **Le type est celui qui a été *déclaré*, jamais corrigé.** Le [chapitre 4.7.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932953) fixe `eb:PartInfo[1]` à `application/x-ebrs+xml`, et la lecture se fait par **position** et non par type : un correspondant qui déclare autre chose laisse la trace de ce qu'il a fait, là où une lecture par type n'aurait rien laissé du tout.
+- **La redite avec les colonnes voisines est voulue.** `request_id`, `procedure_code` ou `evidence_subject` s'extraient tous du même corps. Les colonnes sont ce sur quoi la console filtre et cherche ; le corps est ce que le chapitre exige. Reparser le second pour économiser les premières échangerait une obligation contre une commodité.
+
+> [!IMPORTANT]
+> **Ce qui n'est pas consigné à la réception est irrécupérable.** Le PMode porte `retention_downloaded="0"` : la passerelle efface le message à l'instant où `retrieveMessage` répond. Il n'y a pas de seconde lecture, donc pas de rattrapage — c'est la raison pour laquelle la capture précède tout traitement.
+
+Deux arrivées laissent la paire vide sans que ce soit un défaut du journal, et toutes deux viennent du message reçu : un en-tête qui ne déclare aucune partie MIME, et une première partie qui ne désigne aucune charge ou dont la charge annoncée est absente. La ligne est alors écrite sans la paire plutôt que perdue avec elle, et l'avertissement qui la nomme part au journal applicatif.
+
+> [!NOTE]
+> **Un corps qui n'est pas en UTF-8 est conservé tel quel, pas écarté.** Aucun chapitre ne fixe d'encodage — le [4.7.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932948) profile `MimeType` et `CompressionType`, et pas la propriété `CharacterSet` que recommande le profil [AS4](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/profiles/AS4-profile/v1.0/AS4-profile-v1.0.html) — et le chapitre 4.8 réclame le contenu entier. Ce qui est archivé est donc ce qui est arrivé, bien formé ou non : un journal consigne, il ne valide pas. Un corps sans déclaration d'encodage et hors UTF-8 est d'ailleurs une erreur fatale au sens de [XML 1.0 §4.3.3](https://www.w3.org/TR/xml/#charencoding) — raison de plus pour le conserver, puisque c'est précisément ce qu'un litige portera. La colonne étant chiffrée, ses octets voyagent en base64 et PostgreSQL ne les inspecte jamais. La fiche l'affiche alors en caractères de remplacement, ce qui est un défaut de l'écran et non de la trace : la colonne, elle, rend exactement ce qui a circulé. En contrepartie, une ligne peut porter des octets qu'un `to_json` refuserait — ce qu'un export à écrire devra savoir.
+
 > [!WARNING]
 > **Deux arrivées ne laissent aucune ligne** : une enveloppe SOAP illisible, et une action ebMS inconnue. Dans le premier cas il n'y a pas encore de message à consigner ; dans le second, une action qu'on ne sait pas nommer n'est pas un événement qu'on sait qualifier. Les deux partent au journal applicatif, et la couche protocole les garde côté passerelle. Ce qui manque pour les couvrir vraiment est inventorié au [chantier 7](reste_à_faire.md#7-la-journalisation-et-la-non-répudiation).
 
@@ -65,14 +83,18 @@ Il n'y a **aucun chaînage d'empreintes** entre les lignes du journal : le chapi
 
 | Question | Ce qu'il faut | Où c'est |
 | --- | --- | --- |
+| Qu'a-t-on demandé, et que nous a-t-on répondu ? | `regrep_body` | **dans le journal** — le message se relit tel quel |
 | Ce document est-il celui qui a circulé ? | `evidence_digest` | **dans le journal** — comparaison manuelle |
 | L'autre partie l'a-t-elle bien **envoyé** ? | le `ds:SignedInfo` du message | dans la passerelle, à lire par le `message_id` |
 | L'a-t-elle bien **reçu** ? | l'accusé AS4 signé | dans la passerelle, de même |
 
-La première se règle à la console :
+Les deux premières se règlent à la console :
 
 ```ruby
 evenement = AuditEvent.find_by(exchange_id: '1647038b-…', event_type: 'evidence_delivered')
+
+# Ce qui a circulé, mot pour mot — la requête, la réponse ou l'`rs:Exception`.
+puts AuditEvent.find_by(exchange_id: '1647038b-…', event_type: 'request_sent').regrep_body
 
 Digest::SHA256.hexdigest(File.binread('document_conteste.pdf')) == evenement.evidence_digest
 ```
@@ -80,13 +102,13 @@ Digest::SHA256.hexdigest(File.binread('document_conteste.pdf')) == evenement.evi
 Les deux autres demandent d'ouvrir la page *Message Log* de la console Domibus, d'y retrouver le message par le `message_id` que le journal donne, et d'y lire les métadonnées de non-répudiation.
 
 > [!IMPORTANT]
-> **La première question se règle contre notre propre journal, donc contre nous.** Elle établit qu'un document est bien celui que nous avons consigné — utile pour se disculper, sans valeur pour accuser : rien n'empêche celui qui tient un journal de l'avoir écrit à sa convenance. Seules les deux autres, qui reposent sur une signature de l'autre partie, sont opposables. C'est toute la différence entre une trace et une preuve.
+> **Les deux premières questions se règlent contre notre propre journal, donc contre nous.** Elles établissent ce que nous avons consigné — utile pour se disculper, sans valeur pour accuser : rien n'empêche celui qui tient un journal de l'avoir écrit à sa convenance. Seules les deux autres, qui reposent sur une signature de l'autre partie, sont opposables. C'est toute la différence entre une trace et une preuve. Conserver le corps entier ne change pas cette frontière : cela donne de quoi dire *quoi*, jamais de quoi prouver *qui*.
 
-Écrire dès maintenant une méthode qui automatise la première question donnerait l'illusion d'une procédure complète pour ce qu'un `sha256sum` règle déjà. Ce qui débloquerait les deux autres, c'est l'accès aux métadonnées signées de la passerelle, que le plugin WS n'expose pas telles quelles — le [plugin REST](versions_domibus.md) de Domibus 5.2 en donne davantage. Le bon ordre est d'accéder d'abord aux preuves, d'écrire ensuite la procédure qui les recoupe.
+Écrire dès maintenant une méthode qui automatise la question du condensé donnerait l'illusion d'une procédure complète pour ce qu'un `sha256sum` règle déjà. Ce qui débloquerait les deux autres, c'est l'accès aux métadonnées signées de la passerelle, que le plugin WS n'expose pas telles quelles — le [plugin REST](versions_domibus.md) de Domibus 5.2 en donne davantage. Le bon ordre est d'accéder d'abord aux preuves, d'écrire ensuite la procédure qui les recoupe.
 
 ## Confidentialité, intégrité, rétention
 
-- **Chiffrement au repos.** `evidence_subject` et `evidence_subject_key` passent par [`ActiveRecord::Encryption`](https://guides.rubyonrails.org/active_record_encryption.html), détaillé plus bas.
+- **Chiffrement au repos.** `evidence_subject`, `evidence_subject_key` et `regrep_body` passent par [`ActiveRecord::Encryption`](https://guides.rubyonrails.org/active_record_encryption.html), détaillé plus bas. Le corps RegRep y est parce qu'il porte le bloc `sdg:Person` en clair : c'est la même donnée que le sujet, sous une autre forme, et elle appelle la même protection. Rails le comprime avant de le chiffrer, ce que son guide annonce comme « *up to 30% of the storage space for larger payloads* » — le coût sur disque reste donc sous la taille brute.
 - **Ajout seul.** `AuditEvent#readonly?` interdit toute reprise d'une ligne enregistrée.
 
   > [!WARNING]
@@ -103,7 +125,7 @@ Les trois variables d'environnement ne sont **pas** des clés de chiffrement : c
 
 | Variable | Ce qu'elle protège |
 | --- | --- |
-| `CLE_CHIFFREMENT_JOURNAL` | les colonnes ordinaires — ici `evidence_subject`, le sujet complet |
+| `CLE_CHIFFREMENT_JOURNAL` | les colonnes ordinaires — ici `evidence_subject`, le sujet complet, et `regrep_body`, le message tel qu'il a circulé |
 | `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL` | les colonnes déclarées `deterministic: true` — ici `evidence_subject_key`, et elle seule |
 | `SEL_DERIVATION_CLES_JOURNAL` | le sel de la dérivation, commun aux deux |
 
@@ -126,7 +148,7 @@ C'est ce qui rend `AuditEvent.where(evidence_subject_key: 'dupont|sophie|1965-11
 
 Le prix est réel. Qui obtient un export de la base **sans aucune clé** voit que deux lignes portent la même personne. Il ne sait pas laquelle, mais il peut compter et regrouper — et une analyse de fréquences, croisée avec un peu de contexte extérieur, réidentifie.
 
-D'où le partage : seule la **clé canonique** paie ce prix, et elle ne porte qu'un condensé de la forme `nom|prénom|date`, replié en minuscules pour que deux États membres qui écrivent un nom différemment désignent une seule personne. Le sujet complet — qui porte en plus l'identifiant eIDAS — reste en chiffrement ordinaire. Deux secrets distincts, enfin, font qu'une compromission du secret déterministe, le moins bien protégé par construction, n'ouvre pas la colonne riche.
+D'où le partage : seule la **clé canonique** paie ce prix, et elle ne porte qu'un condensé de la forme `nom|prénom|date`, replié en minuscules pour que deux États membres qui écrivent un nom différemment désignent une seule personne. Le sujet complet — qui porte en plus l'identifiant eIDAS — et le corps RegRep, qui les porte tous deux dans son XML, restent en chiffrement ordinaire : rien ne les cherche, donc rien ne justifie qu'ils fuient une égalité. Deux secrets distincts, enfin, font qu'une compromission du secret déterministe, le moins bien protégé par construction, n'ouvre pas la colonne riche.
 
 Autrement dit : on a acheté exactement la capacité que l'article 17 réclame — répondre à « quelles données de cette personne ont circulé » — et on l'a payée sur la plus petite colonne possible.
 
