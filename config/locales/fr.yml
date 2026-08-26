@@ -253,6 +253,13 @@ fr:
       evidence_subject_not_alone: >-
         La requête reçue doit décrire soit une personne physique, soit une
         personne morale, et une seule (%{count} déclarée(s)).
+      # R-EDM-REQ-S004 : l'identifiant est refusé à la lecture, faute de quoi la
+      # France le réémettrait dans une réponse qui enfreindrait R-EDM-RESP-S004
+      # ou R-EDM-ERR-S004.
+      request_id_not_a_uuid: >-
+        L'identifiant de la requête reçue (%{id}) n'est pas un UUID préfixé
+        « urn:uuid: ».
+      unnamed_request_id: absent
       no_er_agent: Pas d'agent classé ER dans le message reçu.
       no_query: Pas de query:Query dans le message reçu.
       agent_without_id: L'agent classé ER est sans identifiant

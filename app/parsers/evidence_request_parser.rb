@@ -17,6 +17,12 @@ class EvidenceRequestParser
     'ExplicitRequestGiven' => 'R-EDM-REQ-S010',
   }.freeze
 
+  # `R-EDM-REQ-S004`, copied from the Schematron rather than tightened: the rule
+  # constrains neither the version nibble nor the variant one, so a reader that
+  # asked for RFC 4122 in full would refuse identifiers the specification
+  # accepts.
+  IDENTIFIER = /\Aurn:uuid:\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/i
+
   def initialize(document)
     @request = at(document, '/query:QueryRequest')
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
@@ -39,7 +45,22 @@ class EvidenceRequestParser
     self
   end
 
-  def request_id = attribute(request, 'id')
+  # Refused here, at the read, and not among the checks of `validate!`: every
+  # caller reads this attribute for its own reasons — `AnswerRequest` before it
+  # validates anything, `AuditTrail` without ever validating — and an identifier
+  # that breaks `R-EDM-REQ-S004` must reach none of them.
+  #
+  # What is at stake is the answer, not the request: `R-EDM-RESP-S004` and
+  # `R-EDM-ERR-S004` hold `@requestId` to the same shape, so echoing back what
+  # was received would have France sign a response that breaks a fatal rule.
+  # An absent attribute is refused the same way, having nothing to echo at all.
+  def request_id
+    identifier = attribute(request, 'id').to_s.strip
+    return identifier if identifier.match?(IDENTIFIER)
+
+    refuse('R-EDM-REQ-S004', 'parsers.evidence_request.request_id_not_a_uuid',
+      id: identifier.presence || I18n.t('parsers.evidence_request.unnamed_request_id'))
+  end
 
   def procedure_code = slot_text('Procedure', request)
 

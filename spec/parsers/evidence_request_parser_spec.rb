@@ -17,6 +17,65 @@ RSpec.describe EvidenceRequestParser do
     expect(request.request_id).to start_with('urn:uuid:')
   end
 
+  # `R-EDM-REQ-S004` (FATAL). Refused at the read and not among the checks of
+  # `validate!`, because `R-EDM-RESP-S004` and `R-EDM-ERR-S004` hold the answer
+  # to the same shape: echoing back what was received would have France sign a
+  # response that breaks a fatal rule of its own.
+  describe 'the identifier of the request' do
+    def with_identifier(value)
+      with_body { |body| body.sub(/id="urn:uuid:[^"]*"/, value.nil? ? '' : %(id="#{value}")) }
+    end
+
+    it 'refuses one that is not a UUID, under R-EDM-REQ-S004' do
+      expect { with_identifier('pas-un-uuid').request_id }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S004')))
+    end
+
+    it 'refuses one whose groups are not the shape the rule fixes' do
+      expect { with_identifier('urn:uuid:cdd87e02-2bdc-4ce6-bdc979e05adae700').request_id }
+        .to raise_error(UnreadableMessageError)
+    end
+
+    it 'refuses a bare UUID, the `urn:uuid:` prefix being part of the rule' do
+      expect { with_identifier('cdd87e02-2bdc-4ce6-bdc9-79e05adae700').request_id }
+        .to raise_error(UnreadableMessageError)
+    end
+
+    # Nothing in the rules requires the attribute at all, and a request without
+    # one leaves the answer nothing to echo — which `R-EDM-RESP-S003` forbids.
+    it 'refuses a request carrying no identifier at all' do
+      expect { with_identifier(nil).request_id }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S004')))
+    end
+
+    # The Schematron matches with the `i` flag, which covers the literal prefix
+    # as much as the hexadecimal: both are asserted, so that splitting the
+    # pattern in two would be caught.
+    it 'accepts one written in upper case, the rule being case-insensitive' do
+      expect(with_identifier('urn:uuid:CDD87E02-2BDC-4CE6-BDC9-79E05ADAE700').request_id)
+        .to eq('urn:uuid:CDD87E02-2BDC-4CE6-BDC9-79E05ADAE700')
+    end
+
+    it 'accepts one whose prefix itself is upper case' do
+      expect(with_identifier('URN:UUID:cdd87e02-2bdc-4ce6-bdc9-79e05adae700').request_id)
+        .to eq('URN:UUID:cdd87e02-2bdc-4ce6-bdc9-79e05adae700')
+    end
+
+    # The rule constrains neither the version nibble nor the variant one. A
+    # reader asking for RFC 4122 in full would refuse what the TDD accept.
+    it 'accepts one whose version and variant nibbles are anything' do
+      expect(with_identifier('urn:uuid:00000000-0000-0000-0000-000000000000').request_id)
+        .to eq('urn:uuid:00000000-0000-0000-0000-000000000000')
+    end
+
+    # The rules match on `normalize-space()`, so surrounding blanks are licit;
+    # echoing them back would not be.
+    it 'accepts one padded with blanks, and hands back the trimmed value' do
+      expect(with_identifier('  urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700  ').request_id)
+        .to eq('urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700')
+    end
+  end
+
   it 'reads whom the evidence is about' do
     expect(request.beneficiary)
       .to have_attributes(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')

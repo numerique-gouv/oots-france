@@ -29,8 +29,8 @@ module EvidenceProvision
     def call
       # Outside the rescue, because a request whose requester cannot be read
       # cannot be answered at all: the response would have no final recipient.
+      # The request identifier, read inside it, is the opposite case.
       @requester = request.requester
-      @request_id = request.request_id
 
       answer = chosen_or_invalid
       envelope = answer.envelope.render
@@ -119,7 +119,15 @@ module EvidenceProvision
     # Readable enough to answer, not enough to serve: `EDM:ERR:0003` rather
     # than silence. The exception is bound and not dropped — what it names is
     # the whole of what a correspondent will learn about their own mistake.
+    #
+    # The identifier is read here and not beside the requester, so that
+    # `R-EDM-REQ-S004` refusing it leaves `request_id` nil: the answer then
+    # carries no `requestId` at all rather than one that would break
+    # `R-EDM-ERR-S004`. This is also the only place that can produce that nil,
+    # and it produces `INVALID_REQUEST` with it — which is what `R-EDM-ERR-C025`
+    # demands of a response omitting the attribute, and of no other.
     def chosen_or_invalid
+      @request_id = request.request_id
       chosen_answer
     rescue UnreadableMessageError => e
       error_envelope(EdmException::INVALID_REQUEST.with_detail(e.detail))

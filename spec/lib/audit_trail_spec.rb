@@ -191,6 +191,36 @@ RSpec.describe AuditTrail do
     end
   end
 
+  # `R-EDM-REQ-S004` makes the parser refuse an identifier of the wrong shape,
+  # and this reader is the one that meets that refusal first: chapter 4.8 has
+  # the arrival journalled before anything is made of the body. The line must
+  # therefore survive it — an arrival nobody recorded is what article 17
+  # forbids, and the identifier is the only field that cannot be kept.
+  describe 'a request whose own identifier is not a UUID' do
+    let(:message) { envelope_with_body('requete') { |body| body.sub(/id="urn:uuid:[^"]*"/, 'id="pas-un-uuid"') } }
+
+    it 'records the arrival, keeping every field but the one it could not read' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(
+        event_type: 'request_received',
+        request_id: nil,
+        procedure_code: '00',
+        requesting_authority_id: '00000000000002',
+        country_code: 'FR',
+      )
+    end
+
+    # The column goes empty, the body does not: chapter 4.8 asks for the first
+    # MIME part whole, and that is where what the correspondent actually wrote
+    # survives — the only place an operator can still read it.
+    it 'keeps in the body the identifier it refused to record' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled.regrep_body).to include('pas-un-uuid')
+    end
+  end
+
   # Article 17 asks for the errors as much as the exchanges: a message too
   # malformed to answer is exactly the one an operator will come looking for.
   describe 'a message whose body cannot be read' do
