@@ -40,11 +40,20 @@ etape() {
   FICHIER="$SOUS_AGENTS/agent-$1.jsonl"
   TICKET=$2
 
-  # 0. « merged » : PR fusionnée, affaires rangées. Le seul état qui prime
-  #    sur un verdict, et le seul que l'ouvrier n'écrit pas lui-même —
-  #    il ne merge jamais.
-  DECLAREE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
+  ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
+  DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
+
+  # 0. « merged » : PR fusionnée, affaires rangées.
   [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
+
+  # 0 bis. Une étape déclarée *après* que l'ouvrier a parlé prime sur son
+  #    verdict : c'est la parole la plus fraîche, et c'est ce qui permet
+  #    d'écrire « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et
+  #    dont la PR a divergé depuis. Comparer les dates plutôt qu'énumérer
+  #    les mots, pour n'avoir aucun vocabulaire en dur ici.
+  if [ -n "$DECLAREE" ] && [ "$ETAPE" -nt "$FICHIER" ]; then
+    printf '%s' "$DECLAREE"; return
+  fi
 
   # 1. Un des cinq verdicts en queue de transcript : l'ouvrier a rendu la
   #    main, et c'est le dernier mot. Trois des cinq attendent une réponse.

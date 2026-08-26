@@ -84,12 +84,23 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     | grep -oE '^OOTS-[0-9]+')
   [ -n "$TICKET" ] || continue
 
+  ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
+  DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
+
   # « merged » retire l'ouvrier de l'affichage : sa PR est fusionnée et ses
   # affaires rangées, il n'a plus rien à dire et sa ligne prendrait la place
-  # de celle d'un vivant. C'est le seul état qui prime sur un verdict — et
-  # le seul que l'ouvrier n'écrit pas lui-même, puisqu'il ne merge jamais.
-  ETAPE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
-  [ "$ETAPE" = merged ] && continue
+  # de celle d'un vivant. Le seul que l'ouvrier n'écrit pas lui-même,
+  # puisqu'il ne merge jamais.
+  [ "$DECLAREE" = merged ] && continue
+
+  # Une étape déclarée *après* que l'ouvrier a parlé prime sur son verdict :
+  # c'est la parole la plus fraîche, et c'est ce qui fait apparaître
+  # « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et dont la PR a
+  # divergé depuis. Comme un verdict, elle s'affiche sans délai.
+  if [ -n "$DECLAREE" ] && [ "$ETAPE" -nt "$F" ]; then
+    RENDUS="$RENDUS  ⚒ $TICKET ($DECLAREE)"
+    continue
+  fi
 
   # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main.
   VERDICT=$(tail -6 "$F" 2>/dev/null \
