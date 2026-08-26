@@ -25,7 +25,7 @@ Ce que la passerelle ne peut pas fournir, et qui justifie la couche métier :
 
 ## Ce qui est consigné
 
-Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTrail` (`app/lib/`). Neuf types :
+Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTrail` (`app/lib/`). Douze types :
 
 | Type | Quand | Écrit par |
 | --- | --- | --- |
@@ -38,18 +38,21 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | `request_received` | un État membre a interrogé la France | `IncomingMessage::Process` |
 | `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::AnswerRequest` |
 | `error_sent` | la France a refusé | `EvidenceProvision::AnswerRequest` |
+| `message_unreadable` | l'enveloppe rendue par la passerelle n'a pas pu être lue | `IncomingMessage::Process` |
+| `message_unhandled` | l'action ebMS du message ne désigne aucun traitement | `IncomingMessage::Process` |
+| `answer_not_sent` | la passerelle n'a pas pris la réponse que la France lui tendait | `EvidenceProvision::AnswerRequest` |
 
 > [!NOTE]
 > **Un refus consigne la règle qu'il applique, quand une règle le nomme.** `error_sent` porte alors dans `detail` l'identifiant `R-EDM-*` que la France a opposé au correspondant, le même que l'attribut `detail` de la `rs:Exception` partie sur le fil. Les refus qui n'appliquent aucune règle nommée — une démarche inconnue, un format non servi, un slot que le lecteur n'a pas trouvé — laissent le champ vide plutôt que d'inventer un identifiant. Un refus dont la raison *est* connue et n'est pas consignée ne peut pas être justifié après coup, et l'article 17 couvre les rapports d'erreur autant que les échanges.
 
 > [!NOTE]
-> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Les neuf types le portent, de deux sources. Là où la France demande, il vient de l'échange. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
+> **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Dix types sur douze le portent, de deux sources — les deux qui ne le portent pas sont ceux d'une arrivée dont aucun corps n'a pu être lu, `message_unreadable` et `message_unhandled`, le pays ne se lisant que dans l'adresse d'un agent. Là où la France demande, il vient de l'échange. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
 
 L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant un échange jamais ouvert, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 
 ### La première partie MIME
 
-Les deux tableaux du chapitre réclament, en obligatoire et dans les deux sens, « *MIME type and full content of first MIME part* » : le document de métadonnées RegRep, c'est-à-dire la requête, la réponse ou l'`rs:Exception` **telle qu'elle a circulé**. C'est ce que portent `regrep_mime_type` et `regrep_body`, sur les six types qui correspondent à un message ebMS — les trois émis et les trois reçus. Les trois autres n'en portent pas : `request_refused` n'atteint jamais la passerelle, `response_refused` et `evidence_delivered` commentent une arrivée qui a déjà sa ligne.
+Les deux tableaux du chapitre réclament, en obligatoire et dans les deux sens, « *MIME type and full content of first MIME part* » : le document de métadonnées RegRep, c'est-à-dire la requête, la réponse ou l'`rs:Exception` **telle qu'elle a circulé**. C'est ce que portent `regrep_mime_type` et `regrep_body`, sur les six types qui correspondent à un message ebMS — les trois émis et les trois reçus. Deux des trois types d'exploitation en portent aussi, pour une raison qui leur est propre : `message_unhandled` parce que le message est bel et bien arrivé, et `answer_not_sent` parce que le document que la France avait fabriqué n'existe nulle part ailleurs. Les quatre autres n'en portent pas : `request_refused` n'atteint jamais la passerelle, `response_refused` et `evidence_delivered` commentent une arrivée qui a déjà sa ligne, et `message_unreadable` n'a pas d'enveloppe d'où en tirer un.
 
 Trois choix méritent d'être dits, parce qu'aucun nom de colonne ne les porte.
 
@@ -65,8 +68,18 @@ Deux arrivées laissent la paire vide sans que ce soit un défaut du journal, et
 > [!NOTE]
 > **Un corps qui n'est pas en UTF-8 est conservé tel quel, pas écarté.** Aucun chapitre ne fixe d'encodage — le [4.7.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932948) profile `MimeType` et `CompressionType`, et pas la propriété `CharacterSet` que recommande le profil [AS4](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/profiles/AS4-profile/v1.0/AS4-profile-v1.0.html) — et le chapitre 4.8 réclame le contenu entier. Ce qui est archivé est donc ce qui est arrivé, bien formé ou non : un journal consigne, il ne valide pas. Un corps sans déclaration d'encodage et hors UTF-8 est d'ailleurs une erreur fatale au sens de [XML 1.0 §4.3.3](https://www.w3.org/TR/xml/#charencoding) — raison de plus pour le conserver, puisque c'est précisément ce qu'un litige portera. La colonne étant chiffrée, ses octets voyagent en base64 et PostgreSQL ne les inspecte jamais. La fiche l'affiche alors en caractères de remplacement, ce qui est un défaut de l'écran et non de la trace : la colonne, elle, rend exactement ce qui a circulé. En contrepartie, une ligne peut porter des octets qu'un `to_json` refuserait — ce qu'un export à écrire devra savoir.
 
-> [!WARNING]
-> **Deux arrivées ne laissent aucune ligne** : une enveloppe SOAP illisible, et une action ebMS inconnue. Dans le premier cas il n'y a pas encore de message à consigner ; dans le second, une action qu'on ne sait pas nommer n'est pas un événement qu'on sait qualifier. Les deux partent au journal applicatif, et la couche protocole les garde côté passerelle. Ce qui manque pour les couvrir vraiment est porté par le projet [La journalisation](https://linear.app/pole-api/project/oots-france-la-journalisation-ce-qui-reste-80edc56f6965).
+### Les trois lignes qui disent qu'il ne s'est rien passé d'autre
+
+Le [§3.3 du chapitre 4.8](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932926) confie la journalisation des `soap:Fault` et des erreurs AS4 au **point d'accès** — « *All logging related to these messages and the events they report is handled at the level of eDelivery Access Points* » — et une soumission qui n'aboutit pas n'a de ligne dans aucun de ses quatre tableaux, ceux-ci décrivant des messages qui ont circulé. Les trois types ci-dessous ne sont donc pas une exigence du chapitre : ce sont des décisions d'exploitation, du même ordre que `request_refused`, et prises pour la même raison — sans elles, un message perdu et une réponse française non remise ne laissent de trace nulle part, pas même à la passerelle, qui ne les a jamais vus.
+
+Chacune porte ce qui a pu en être tiré, et rien de plus : une trace incomplète vaut mieux qu'aucune, mais une colonne remplie de ce qu'on n'a pas lu ferait mentir le journal.
+
+- **`message_unreadable`** — le greffon WS a répondu quelque chose que le parser refuse. Il n'y a pas d'en-tête, donc ni échange, ni action, ni partie MIME : la ligne porte le `message_id` que la passerelle avait donné, et la raison. C'est peu, et c'est exactement ce qu'il faut — ce `message_id` est l'entrée dans la page *Message Log*, où la couche protocole a gardé ce que celle-ci n'a pas pu lire. Les octets refusés, eux, sont la réponse de *notre* greffon et non le message du correspondant : ils n'ont rien à faire dans `regrep_body`.
+- **`message_unhandled`** — l'action ebMS ne désigne aucun traitement. L'en-tête se lit, donc la ligne porte l'action, les deux identifiants de corrélation et la première partie MIME, que `RetrievedMessageParser` lit par position et non par action. Le pays manque : il ne se lit que dans l'adresse d'un agent, et le parser refuse de produire un corps pour une action qu'il ne sait pas nommer.
+- **`answer_not_sent`** — la passerelle n'a pas pris la réponse. `Exchange` enregistre bien l'échec, mais il ne porte aucun message : la ligne est le seul endroit où subsiste le document que la France venait de fabriquer. Pas de `message_id`, la passerelle n'ayant rien nommé, et pas d'`evidence_digest`, cette empreinte répondant à « ce document est-il celui qui a circulé » alors que rien n'a circulé.
+
+> [!NOTE]
+> **Une passerelle qui ne répond pas ne produit aucune de ces lignes**, et c'est voulu : `retrieveMessage` consomme le message quand il aboutit, donc un appel qui n'a pas abouti est un appel que la collecte périodique peut refaire — `CollectPendingMessagesJob` reprend ce que la passerelle détient encore, et un message collecté deux fois n'y est plus la seconde. Une enveloppe illisible reçue en 200, elle, est une perte : cet appel-là, lui, a abouti.
 
 ## La non-répudiation
 

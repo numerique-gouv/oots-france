@@ -33,14 +33,35 @@ module EvidenceProvision
       @request_id = request.request_id
 
       answer = chosen_or_invalid
-      submitted = context.gateway.submit(answer.envelope.render)
+      envelope = answer.envelope.render
 
-      journal(answer, submitted.message_id)
+      journal(answer, submit(answer, envelope))
     end
 
     private
 
     attr_reader :requester, :request_id
+
+    # The one departure that would otherwise vanish whole: France has built an
+    # answer, the gateway has not taken it, and nothing else holds the document
+    # — `Exchange` records the failure but carries no message.
+    #
+    # The exception is re-raised unchanged, so `IncomingMessage::Process` settles
+    # the exchange either way. Only one of the two then reaches what GoodJob
+    # records: that interactor re-raises a `Faraday::Error`, where an
+    # `UnreadableMessageError` ends in its `give_up`, which logs and stops. This
+    # row is the only durable trace of the second case, the application log
+    # rotating on its own schedule.
+    #
+    # The envelope is rendered by the caller and not here: what this rescue
+    # means is that the gateway did not take our answer, and a body that could
+    # not be built in the first place is another matter.
+    def submit(answer, envelope)
+      context.gateway.submit(envelope).message_id
+    rescue Faraday::Error, UnreadableMessageError => e
+      context.audit_trail.answer_not_sent(**answered(answer, nil), exception: answer.exception, reason: e.message)
+      raise
+    end
 
     def journal(answer, message_id)
       shared = answered(answer, message_id)

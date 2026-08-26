@@ -327,5 +327,59 @@ RSpec.describe AuditTrail do
       audit_trail.error_sent(**answered, exception: EdmException::OBJECT_NOT_FOUND)
       expect(journalled).to have_attributes(event_type: 'error_sent', regrep_body: first_part.content)
     end
+
+    # One line covers both answers, so it is the only one that has to work out
+    # which it is holding. Asserted here rather than only through the
+    # interactor, where the choice of answer and the failure to send it are
+    # entangled.
+    it 'keeps the answer the gateway would not take, refusal and document alike' do
+      unsent = { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
+                 request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: nil, first_part: }
+
+      audit_trail.answer_not_sent(**unsent, reason: 'connexion refusée')
+      expect(journalled).to have_attributes(
+        event_type: 'answer_not_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
+        edm_error_code: nil, message_id: nil, detail: 'connexion refusée',
+        regrep_body: first_part.content,
+      )
+
+      audit_trail.answer_not_sent(**unsent, exception: EdmException::OBJECT_NOT_FOUND, reason: 'connexion refusée')
+      expect(journalled).to have_attributes(
+        ebms_action: EbmsAction::EXCEPTION_RESPONSE, edm_error_code: 'EDM:ERR:0004',
+      )
+    end
+  end
+
+  # An arrival nobody can make anything of still leaves a line: an incomplete
+  # trace is worth more than none, and the gateway has erased the message by the
+  # time we know we cannot use it.
+  describe 'a message whose action no handler claims' do
+    let(:message) { RetrievedMessageParser.new(real_envelope('requete').sub('ExecuteQueryRequest', 'SomethingElse')) }
+
+    it 'names the action, and keeps what the header did carry' do
+      audit_trail.message_unhandled(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(
+        event_type: 'message_unhandled',
+        ebms_action: 'SomethingElse',
+        conversation_id: '1589c463-ccb7-4c0e-8044-c7198d844c16',
+        exchange_id: '1647038b-7eaf-4711-b738-d5d83f96fa7b',
+        message_id: 'message-passerelle',
+        detail: 'Aucun traitement pour l\'action ebMS « SomethingElse »',
+      )
+    end
+
+    # The same net as every other unreadable field: what the body would have
+    # added is dropped rather than raised, so the line survives without it.
+    it 'writes the line without the part when the part cannot be read either' do
+      allow(message).to receive(:first_part).and_raise(UnreadableMessageError, 'partie illisible')
+
+      audit_trail.message_unhandled(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(
+        event_type: 'message_unhandled', ebms_action: 'SomethingElse',
+        regrep_mime_type: nil, regrep_body: nil,
+      )
+    end
   end
 end

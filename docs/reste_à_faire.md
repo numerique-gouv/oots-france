@@ -56,7 +56,7 @@ Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un 
 | La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
 | Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
 
-Quatre autres commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : la validation des identifiants reçus ([OOTS-115](https://linear.app/pole-api/issue/OOTS-115)), la première exigence seule retenue ([OOTS-49](https://linear.app/pole-api/issue/OOTS-49)), la cohérence de version annoncée ([OOTS-55](https://linear.app/pole-api/issue/OOTS-55)) et les deux arrivées qui ne laissent aucune trace ([OOTS-99](https://linear.app/pole-api/issue/OOTS-99)).
+Trois autres commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : la validation des identifiants reçus ([OOTS-115](https://linear.app/pole-api/issue/OOTS-115)), la première exigence seule retenue ([OOTS-49](https://linear.app/pole-api/issue/OOTS-49)) et la cohérence de version annoncée ([OOTS-55](https://linear.app/pole-api/issue/OOTS-55)).
 
 ## Ce qui est déjà conforme
 

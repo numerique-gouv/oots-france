@@ -328,6 +328,101 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
+  # The one departure that would otherwise vanish whole. `Exchange` does record
+  # the failure, but it carries no message, and the gateway never took the
+  # answer: nothing else holds the document France had built.
+  describe 'a gateway that will not take the answer' do
+    let(:gateway) { instance_double(DomibusClient) }
+
+    before { allow(gateway).to receive(:submit).and_raise(Faraday::ConnectionFailed, 'connexion refusée') }
+
+    it 'journals the attempt, and still lets the failure surface' do
+      expect { answer }.to raise_error(Faraday::ConnectionFailed)
+
+      expect(AuditEvent.sole).to have_attributes(
+        event_type: 'answer_not_sent',
+        ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
+        conversation_id: message.conversation_id,
+        exchange_id: message.exchange_id,
+        request_id: message.body.request_id,
+        country_code: 'FR',
+        edm_error_code: nil,
+        detail: 'connexion refusée',
+        # The gateway never named the message, there being none: a line
+        # carrying one would send an auditor to a *Message Log* that has
+        # nothing under it.
+        message_id: nil,
+      )
+    end
+
+    # The whole reason the line exists, asserted against what the gateway was
+    # handed rather than against a second rendering of the same builder.
+    it 'keeps the body of the answer that never went out' do
+      expect { answer }.to raise_error(Faraday::ConnectionFailed)
+
+      expect(AuditEvent.sole).to have_attributes(
+        regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+        regrep_body: decoded_payload(gateway_body),
+      )
+    end
+
+    context 'when what France was answering was a refusal' do
+      let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+
+      it 'journals the code the refusal carried, under the action of an exception' do
+        expect { answer }.to raise_error(Faraday::ConnectionFailed)
+
+        expect(AuditEvent.sole).to have_attributes(
+          event_type: 'answer_not_sent', ebms_action: EbmsAction::EXCEPTION_RESPONSE,
+          edm_error_code: 'EDM:ERR:0004',
+        )
+      end
+    end
+
+    # The gateway answering 200 with a body we cannot read is the same problem
+    # from here: the answer is no more submitted than if the connection had
+    # dropped.
+    context 'when the gateway answers something we cannot read' do
+      before { allow(gateway).to receive(:submit).and_raise(UnreadableMessageError, 'réponse du greffon illisible') }
+
+      it 'journals the attempt all the same' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(AuditEvent.sole).to have_attributes(
+          event_type: 'answer_not_sent', detail: 'réponse du greffon illisible',
+        )
+      end
+    end
+  end
+
+  # The boundary `submit` documents, and which nothing else holds: a body that
+  # could not be built is not the gateway turning our answer away, and a line
+  # saying it was would send an auditor looking at a gateway that was never
+  # asked.
+  describe 'an envelope that cannot be rendered at all' do
+    before do
+      envelope = instance_double(OutgoingEnvelopeBuilder)
+      allow(envelope).to receive(:render).and_raise(UnreadableMessageError, 'enveloppe irrendue')
+      allow(OutgoingEnvelopeBuilder).to receive(:new).and_return(envelope)
+    end
+
+    it 'journals nothing, the gateway never having been asked' do
+      expect { answer }.to raise_error(UnreadableMessageError)
+
+      expect(AuditEvent.count).to eq(0)
+      expect(gateway).not_to have_received(:submit)
+    end
+  end
+
+  # The failure of the submission, and not of the answer as a whole: an answer
+  # the gateway took has its own line, and a second one would have an auditor
+  # count one answer twice.
+  it 'writes no line for an answer the gateway did take' do
+    answer
+
+    expect(AuditEvent.where(event_type: 'answer_not_sent')).to be_empty
+  end
+
   # Counting the interval is the first thing the provider side asks of an
   # arriving message, and the answer can be unreadable. It reaches the same net
   # as any other unreadable field, rather than escaping as an exception nobody

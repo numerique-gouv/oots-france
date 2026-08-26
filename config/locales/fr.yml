@@ -225,6 +225,7 @@ fr:
   lib:
     audit_trail:
       unreadable_field: "Champ « %{field} » illisible, absent de la ligne de journal : %{error}"
+      unhandled_action: "Aucun traitement pour l'action ebMS « %{action} »"
     public_key_set:
       unknown_key_type: "Type de clé inconnu : « %{type} »."
     settings:
@@ -442,6 +443,13 @@ fr:
         response_sent: Réponse émise
         error_sent: Erreur émise
         response_refused: Réponse écartée
+        # Les trois qui disent qu'il ne s'est rien passé d'autre : un message
+        # dont l'enveloppe n'a pas pu être lue, un dont l'action ne désigne
+        # aucun traitement, et une réponse française que la passerelle n'a pas
+        # prise.
+        message_unreadable: Message illisible
+        message_unhandled: Message non traité
+        answer_not_sent: Réponse non remise
       filtre:
         legend: Filtrer le journal
         all: Tous

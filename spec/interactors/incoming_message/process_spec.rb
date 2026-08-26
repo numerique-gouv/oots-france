@@ -82,6 +82,31 @@ RSpec.describe IncomingMessage::Process do
     it 'does not raise, the message being gone from the gateway anyway' do
       expect { process }.not_to raise_error
     end
+
+    # The application log rotates and is addressed to whoever runs the
+    # deployment; this line is addressed to an auditor and lasts twelve months.
+    it 'journals the arrival, naming the action and keeping the body' do
+      process
+
+      expect(AuditEvent.sole).to have_attributes(
+        event_type: 'message_unhandled',
+        ebms_action: 'SomethingElse',
+        message_id: 'un-message',
+        exchange_id: message.exchange_id,
+        conversation_id: message.conversation_id,
+        regrep_mime_type: RetrievedMessageParser::REGREP,
+      )
+      expect(AuditEvent.sole.regrep_body).to include('QueryRequest')
+    end
+
+    # `sole` above already says it, and this says why it matters: a line
+    # claiming a request was received would have the replay check of chapter 4.4
+    # turn away the correspondent's next attempt at the same identifier.
+    it 'writes no line claiming the message was received' do
+      process
+
+      expect(AuditEvent.where(event_type: 'request_received')).to be_empty
+    end
   end
 
   describe 'a message whose body it cannot read' do
@@ -162,13 +187,36 @@ RSpec.describe IncomingMessage::Process do
 
   # There is nothing to fall back on here: the identifier the gateway gave us
   # is its own, and only the message it refuses to hand over would have named
-  # the exchange. Logged, and no more — which is why the sweep exists.
-  it 'can only log when the message itself is unreadable' do
-    allow(gateway).to receive(:retrieve).and_raise(UnreadableMessageError, 'enveloppe illisible')
-    allow(Rails.logger).to receive(:error)
+  # the exchange. Which is why the sweep exists — and why the line the journal
+  # keeps is worth what its `message_id` opens in the console's *Message Log*.
+  describe 'a message whose envelope cannot be read at all' do
+    before { allow(gateway).to receive(:retrieve).and_raise(UnreadableMessageError, 'enveloppe illisible') }
 
-    expect { process }.not_to raise_error
-    expect(Rails.logger).to have_received(:error).with(/enveloppe illisible/)
+    it 'logs it, and does not raise' do
+      allow(Rails.logger).to receive(:error)
+
+      expect { process }.not_to raise_error
+      expect(Rails.logger).to have_received(:error).with(/enveloppe illisible/)
+    end
+
+    it 'journals the identifier the gateway gave, and the reason nothing else could be read' do
+      process
+
+      expect(AuditEvent.sole).to have_attributes(
+        event_type: 'message_unreadable', message_id: 'un-message', detail: 'enveloppe illisible',
+        exchange_id: nil, ebms_action: nil, regrep_body: nil,
+      )
+    end
+
+    # A gateway that answered nothing erased nothing: the message is still
+    # pending and the sweep will come back for it, so a line saying it was lost
+    # would be false.
+    it 'writes no line when the gateway did not answer at all' do
+      allow(gateway).to receive(:retrieve).and_raise(Faraday::ConnectionFailed, 'connexion refusée')
+
+      expect { process }.to raise_error(Faraday::ConnectionFailed)
+      expect(AuditEvent.count).to eq(0)
+    end
   end
 
   # Both failures below are answered the same way, and each example asserts the
