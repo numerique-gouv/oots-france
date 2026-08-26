@@ -33,6 +33,13 @@ module Oots
       'erreurExpiration' => EdmException::TIMEOUT,
     }.freeze
 
+    # The one form nothing else produces: `R-EDM-ERR-C025` (FATAL) lets a
+    # response omit `requestId` when — and only when — its exception is
+    # `rs:InvalidRequestExceptionType`, which is what France answers a request
+    # whose own identifier broke `R-EDM-REQ-S004`. Last, so that the sequential
+    # identifiers of the seven specimens above do not shift.
+    IDENTIFIERLESS_SPECIMEN = 'erreurSansIdentifiantDeRequete'.freeze
+
     def initialize(destination)
       @destination = Pathname.new(destination)
     end
@@ -43,6 +50,8 @@ module Oots
       write('reponseDifferee', *deferred_response)
 
       ERROR_SPECIMENS.each { |name, exception| write(name, *error_response(exception)) }
+      write(IDENTIFIERLESS_SPECIMEN,
+        *error_response(EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S004'), request_id: nil))
     end
 
     private
@@ -110,9 +119,9 @@ module Oots
       ]
     end
 
-    def error_response(exception)
+    def error_response(exception, request_id: REQUEST_ID)
       body = ErrorResponseBuilder.new(
-        requester:, exception:, request_id: REQUEST_ID, clock:, uuid:,
+        requester:, exception:, request_id:, clock:, uuid:,
       )
 
       [

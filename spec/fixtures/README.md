@@ -11,8 +11,11 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 
 | Répertoire | Contenu |
 | --- | --- |
-| `reference/messages/` | Les sept messages RegRep (`requete`, `reponse`, `reponseDifferee`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`, `erreurExpiration`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont eux que `scripts/validate_schematron.sh` confronte aux règles des TDD. |
+| `reference/messages/` | Les sept messages RegRep (`requete`, `reponse`, `reponseDifferee`, `erreur`, `erreurRequeteInvalide`, `erreurCapaciteNonSupportee`, `erreurExpiration`), chacun en corps (`.xml`) et en entête ebMS (`.entete.xml`). Ce sont les documents que les constructeurs Rails doivent rendre ; `scripts/validate_schematron.sh`, lui, refait rendre ses spécimens par le code (`rake oots:messages`) avant de les confronter aux règles des TDD. |
 | `reference/soap/` | Les enveloppes soumises au plugin WS : `<message>.soumission.xml` pour les cinq premiers d'entre eux — l'enveloppe ne varie pas d'un code d'erreur à l'autre, et `erreurExpiration` n'en a donc pas —, plus `listeMessagesEnAttente` (avec et sans filtre de conversation) et `recuperationMessage`. Comparées par `spec/builders/submit_envelope_reference_spec.rb` — ce que la passerelle reçoit est l'enveloppe, pas le corps seul. |
+
+> [!NOTE]
+> **Un huitième spécimen n'a pas de jumeau ici** : `erreurSansIdentifiantDeRequete`, la réponse d'erreur dépourvue de `requestId` que `R-EDM-ERR-C025` n'autorise que sous `rs:InvalidRequestExceptionType`. Node ne l'a jamais produite, et un attendu que le code du dépôt aurait lui-même écrit ne prouverait rien de plus que ce gabarit dit déjà. Ses juges sont `scripts/validate_schematron.sh` et `spec/builders/error_response_builder_spec.rb`.
 
 > [!IMPORTANT]
 > **La requête, elle, a été refaite depuis.** `messages/requete.xml` et `soap/requete.soumission.xml` ne sont plus ce que Node émettait : le bouchon 7 y écrivait une exigence et un identifiant de service en dur, là où le dépôt écrit désormais ce que les annuaires publient. Ces deux fichiers disent donc ce que les TDD exigent, et non ce qu'un code antérieur produisait ; les règles Schematron du chapitre 4.5.1 en sont le juge. Le reste du corpus garde sa provenance.

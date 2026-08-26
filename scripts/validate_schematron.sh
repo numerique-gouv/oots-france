@@ -142,6 +142,10 @@ valide erreurCapaciteNonSupportee EDM-ERR-C
 valide erreurCapaciteNonSupportee EDM-ERR-S
 valide erreurExpiration EDM-ERR-C
 valide erreurExpiration EDM-ERR-S
+# La seule forme sans `requestId`, que `R-EDM-ERR-C025` n'autorise que sous
+# `rs:InvalidRequestExceptionType` : rien d'autre ne confronte cette règle.
+valide erreurSansIdentifiantDeRequete EDM-ERR-C
+valide erreurSansIdentifiantDeRequete EDM-ERR-S
 
 # The ebMS headers fall under a rule of their own, whose contexts are anchored
 # on `//eb:Messaging`: the document `EbmsHeaderBuilder` produces is enough for
@@ -153,6 +157,7 @@ valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS
 valide erreurCapaciteNonSupportee.entete EDM-ebMS
 valide erreurExpiration.entete EDM-ebMS
+valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 
 # Code 2 for a rule violation, distinct from the 1 any other failure returns
 # (download, compilation): the caller can then retry a network fluke without
