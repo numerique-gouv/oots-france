@@ -210,7 +210,7 @@ temps**.
 
 ```sh
 mkdir -p <principal>/.claude/etapes
-printf 'implementation\n' > <principal>/.claude/etapes/OOTS-<n>
+printf 'opening\n' > <principal>/.claude/etapes/OOTS-<n>
 ```
 
 `<principal>` est le checkout principal déduit plus haut, pour la même raison
@@ -219,19 +219,30 @@ ton worktree. Le fichier porte ton ticket, et rien d'autre ne l'écrit — deux
 ouvriers ne se marchent pas dessus.
 
 **Un mot, en anglais** — c'est un état d'outillage, il se lit à côté de
-`running` : `opening`, `plan`, `implementation`, `screen`, `review`,
-`resolving conflicts`. N'écris pas là tes verdicts (§ « Ce que tu rends ») :
-ils se lisent dans ton transcript.
+`running`. Chaque temps a le sien, et il n'y en a aucun à inventer :
+
+| En entrant dans | Écris |
+| --- | --- |
+| § 1, ouvrir | `opening` |
+| § 2, planifier | `plan` |
+| § 4, implémenter | `implementation` |
+| § 4 bis, l'écran | `screen` |
+| § 5, livrer | `review` |
+| § « Reprendre sur conflit » | `resolving conflicts` |
+
+Le § 3 n'en a pas : il ne se traverse pas, il gouverne le § 4 tout du long.
+Et **`opening` est le premier**, celui que tu écris en lisant le ticket : une
+étape d'exécution déclarée alors que tu n'as pas encore de plan fait mentir
+l'affichage pendant l'heure où il servait le plus.
+
+N'écris pas là tes verdicts (§ « Ce que tu rends ») : ils se lisent dans ton
+transcript.
 
 **Ton verdict ne te fige pas.** Ce qui s'affiche est le plus récent entre ce
 fichier et l'instant où tu as prononcé ton dernier verdict — pas ton dernier
 geste : travailler ne périme pas ce que tu as déclaré. Un ouvrier relancé
 après avoir rendu `LIVRÉ` redevient donc visible en déclarant son étape, et
 le reste tant qu'il n'a pas rendu le verdict suivant.
-
-Deux mots ne sont pas les tiens, parce qu'ils appartiennent à qui merge :
-`merged`, qui te retire de la statusline, et `resolving conflicts`, que la
-session pose en te renvoyant le conflit.
 
 Un seul mot ne t'appartient pas : **`merged`**, que pose qui fusionne ta PR
 et range tes affaires. Il te retire de la statusline — une fois la branche
