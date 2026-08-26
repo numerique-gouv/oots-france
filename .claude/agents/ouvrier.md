@@ -277,8 +277,9 @@ backfill. Dis-le dans le plan plutôt que de le laisser deviner.
 Lance la suite unitaire localement avant de pousser. **Ne monte pas la pile
 Domibus et ne joue pas `make e2e`** : le bout-en-bout tourne en CI
 (`e2e.yml`), et trois agents montant chacun mysql + domibus étoufferaient la
-VM. `review-loop` exige déjà une CI verte pour converger — c'est là que le
-e2e est vérifié.
+VM. La CI est donc le seul endroit où le bout-en-bout est joué, et tu ne
+rends jamais la main sans l'avoir lue : `review-loop` l'exige pour converger
+(§ 5), et le § 4 bis l'attend avant de rendre l'écran.
 
 ### 4 bis. Deux temps, quand le ticket touche à l'UI
 
@@ -294,7 +295,14 @@ cycle de revue entier, puisque l'écran va changer. Alors arrête-toi avant :
 1. pousse la branche ;
 2. ouvre la PR **en brouillon** — `gh pr create --draft` — et laisse le
    ticket sur `In Progress` : rien n'est prêt à être relu ;
-3. **pose les captures sur le ticket Linear**, qui est le seul canal propre
+3. **mets la CI sous surveillance tout de suite, sans l'attendre** : `gh pr
+   checks <url> --watch` en tâche de fond (`Bash(run_in_background: true)`),
+   puis enchaîne sur les captures — elles occupent utilement l'attente. Un
+   brouillon déclenche les trois workflows comme une PR ordinaire, tous
+   posés sur `pull_request` sans condition de brouillon : `e2e.yml` tourne
+   donc bel et bien, et c'est le seul endroit où le bout-en-bout est joué
+   (§ 4) ;
+4. **pose les captures sur le ticket Linear**, qui est le seul canal propre
    pour une image (GitHub n'a pas d'API d'attachement : une capture n'entre
    dans une PR qu'en étant committée sur la branche, ce qui ne se fait pas).
    Prends l'écran avec `mcp__chrome-devtools__take_screenshot`, écris le
@@ -308,8 +316,25 @@ cycle de revue entier, puisque l'écran va changer. Alors arrête-toi avant :
    puis le `PUT` par `curl --data-binary @<fichier>` avec **tous** les
    en-têtes signés recopiés verbatim (une casse changée donne un 403), puis
    `mcp__linear__create_attachment_from_upload(issue: …, assetUrl: …)` ;
-4. mets le lien des captures et l'URL locale dans le corps de la PR ;
-5. rends un verdict `ÉCRAN` et arrête-toi là.
+5. mets le lien des captures et l'URL locale dans le corps de la PR ;
+6. **récupère le verdict de la CI et itère dessus jusqu'au vert.** C'est ici
+   qu'elle s'attend, puisque `review-loop` ne viendra qu'après la reprise de
+   l'écran : personne d'autre que toi ne la lira d'ici là. Rouge, c'est un
+   correctif à faire, pas une observation à rapporter — lis les logs (`gh run
+   view <run-id> --log-failed`), corrige, repousse, remets sous surveillance,
+   recommence. Un écran rendu sur une CI rouge fait porter à l'utilisateur
+   une panne que tu étais seul à pouvoir lire, et qui n'a rien à voir avec
+   les mots et les couleurs qu'on lui demande de trancher.
+
+   Deux limites, les mêmes que celles de `review-loop` (étape 4bis, qui porte
+   aussi la façon de lire un CodeQL en échec — son statut ne dit jamais quoi) :
+   si le **même** check échoue deux fois de suite malgré un correctif, ou si
+   l'échec ne vient visiblement pas du code (flakiness d'infra, runner qui ne
+   monte pas la stack Domibus), arrête d'itérer. Rends quand même l'écran :
+   la passe humaine n'a pas à attendre un runner. Mais dis-le sur la ligne
+   `CI` du verdict — quel check, ce que ses logs montrent, ce que tu as
+   tenté — plutôt que de le laisser découvrir ;
+7. rends un verdict `ÉCRAN` et arrête-toi là.
 
 L'utilisateur reprend ensuite l'écran au clavier, dans ce worktree, et la
 convergence n'a lieu qu'après, sur l'écran validé.
@@ -389,6 +414,7 @@ Worktree : <chemin>  (à supprimer après merge)
 ÉCRAN
 Ticket : OOTS-<n> — <url>  (statut : In Progress)
 PR     : <url>  (brouillon)
+CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté>
 Écran  : http://localhost:<port>/<route>
 Captures : <lien(s) de l'attachement Linear>
 Fait   : <ce que l'écran montre aujourd'hui>
@@ -421,7 +447,9 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
   Le ticket dit quoi faire ; le chapitre dit à quoi ça doit ressembler. Un
   plan qui ne cite aucun chapitre est un plan que tu n'as pas fini.
 - **Ne fais pas converger un écran avant sa passe humaine** : sur un ticket
-  UI, `review-loop` vient après la reprise de l'écran, jamais avant.
+  UI, `review-loop` vient après la reprise de l'écran, jamais avant. Mais
+  **ne rends jamais un écran sur une CI que tu n'as pas lue** : c'est le
+  seul contrôle que ce chemin court-circuite, et le seul qui joue le e2e.
 - **Ne merge jamais**, et ne passe jamais le ticket `Done` : le merge est le
   geste de l'utilisateur, et c'est lui qui clôt.
 - **Ne supprime pas ton worktree** : la PR n'est pas mergée quand tu finis.
