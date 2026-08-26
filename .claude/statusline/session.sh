@@ -32,6 +32,7 @@ CONTEXTE=$(lire '.context_window.used_percentage')
 TRANSCRIPT=$(lire '.transcript_path')
 RACINE=$(lire '.workspace.current_dir')
 SESSION=$(lire '.rate_limits.five_hour.used_percentage')
+REMISE_A=$(lire '.rate_limits.five_hour.resets_at')
 
 BRANCHE=$(git -C "${RACINE:-.}" branch --show-current 2>/dev/null)
 
@@ -49,7 +50,21 @@ if [ -n "$SESSION" ]; then
   elif [ "$SESSION" -ge 75 ]; then TEINTE=$(printf '\033[33m')
   else TEINTE=''; fi
   [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
-  LIGNE1="$LIGNE1 · ${TEINTE}${SESSION}% session${NEUTRE}"
+
+  # `resets_at` est l'instant, en secondes Unix, où la fenêtre repart à zéro —
+  # ce qu'on veut lire, c'est le délai qui reste. Sous l'heure il se compte en
+  # minutes : « dans 0 h » à quarante minutes de la coupure serait faux au
+  # moment précis où le nombre commence à servir.
+  RESTE=''
+  if [ -n "$REMISE_A" ]; then
+    SECONDES=$(( REMISE_A - $(date +%s) ))
+    if [ "$SECONDES" -le 0 ]; then RESTE=''
+    elif [ "$SECONDES" -lt 3600 ]; then RESTE=", resets in $(( (SECONDES + 59) / 60 )) min"
+    else RESTE=", resets in $(( (SECONDES + 1800) / 3600 ))h"
+    fi
+  fi
+
+  LIGNE1="$LIGNE1 · ${TEINTE}${SESSION}% session${RESTE}${NEUTRE}"
 fi
 
 # Les indices ferment la ligne, en gris : ils sont toujours vrais, donc ne
