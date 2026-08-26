@@ -118,8 +118,17 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   LIGNE=$(tail -6 "$F" 2>/dev/null \
     | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
     | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
-  VERDICT=${LIGNE#*$(printf '\t')}
-  PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+  VERDICT=''
+  PRONONCE=''
+  # Le test porte sur la ligne, jamais sur ce que `date` en tire : `date -d ""`
+  # ne rend pas la main vide, GNU date lit la chaîne vide comme « aujourd'hui à
+  # minuit ». Un ouvrier n'ayant rendu aucun verdict héritait donc de minuit,
+  # que toute étape déclarée depuis dépasse — et il s'affichait en permanence,
+  # sans jamais passer par la garde qui suit.
+  if [ -n "$LIGNE" ]; then
+    VERDICT=${LIGNE#*$(printf '\t')}
+    PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+  fi
 
   # Une étape déclarée *après* que le verdict a été prononcé prime sur lui :
   # c'est la parole la plus fraîche, et c'est ce qui fait apparaître
