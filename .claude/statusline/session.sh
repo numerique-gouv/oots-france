@@ -65,7 +65,8 @@ SOUS_AGENTS="${TRANSCRIPT%.jsonl}/subagents"
 [ -d "$SOUS_AGENTS" ] || exit 0
 
 MAINTENANT=$(date +%s)
-OUVRIERS=""
+RENDUS=""
+ENDORMIS=""
 UN_ACTIF=""
 
 for F in "$SOUS_AGENTS"/agent-*.jsonl; do
@@ -84,31 +85,38 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
 
   DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
 
-  # Un ouvrier qui vient d'agir est affiché par le panneau : ne pas le
-  # redoubler ici. Et tant qu'un seul travaille, le panneau ne masque aucune
-  # ligne — c'est sa règle : il n'escamote qu'une fois *tout* endormi. Cette
-  # ligne-ci ne sert donc qu'au cas où plus rien n'est affiché en dessous.
+  # Mêmes libellés que le panneau d'agents, à qui cette ligne se substitue
+  # quand il escamote : deux vocabulaires pour cinq états seraient deux
+  # choses à apprendre pour une seule.
+  #
+  # Un verdict, c'est l'ouvrier qui rend la main — et l'instant précis où on
+  # le cherche des yeux. Il s'affiche donc sans délai : ni la garde qui suit,
+  # ni le travail d'un autre ouvrier ne le retiennent. Le redoublement avec
+  # le panneau, qui garde sa ligne une demi-minute, coûte moins cher que la
+  # demi-minute d'aveuglement qu'on paie sinon.
+  case "$VERDICT" in
+    LIVRÉ)     RENDUS="$RENDUS  ⚒ $TICKET (delivered)";          continue ;;
+    ÉCRAN)     RENDUS="$RENDUS  ⚒ $TICKET (screen to review)";   continue ;;
+    PLAN)      RENDUS="$RENDUS  ⚒ $TICKET (plan to approve)";    continue ;;
+    ARBITRAGE) RENDUS="$RENDUS  ⚒ $TICKET (waiting for answer)"; continue ;;
+    BLOQUÉ)    RENDUS="$RENDUS  ⚒ $TICKET (blocked)";            continue ;;
+  esac
+
+  # Sans verdict, il travaille encore. Celui qui vient d'agir est affiché par
+  # le panneau : ne pas le redoubler ici. Et tant qu'un seul travaille, le
+  # panneau ne masque aucune ligne — c'est sa règle, il n'escamote qu'une
+  # fois *tout* endormi. Les endormis ne servent donc qu'au cas où plus rien
+  # n'est affiché en dessous.
   if [ "$DEPUIS_S" -lt 45 ]; then
     UN_ACTIF=1
     continue
   fi
 
-  # Mêmes libellés que le panneau d'agents, à qui cette ligne se substitue
-  # quand il escamote : deux vocabulaires pour cinq états seraient deux
-  # choses à apprendre pour une seule.
-  case "$VERDICT" in
-    LIVRÉ)     ETAT='delivered' ;;
-    ÉCRAN)     ETAT='screen to review' ;;
-    PLAN)      ETAT='plan to approve' ;;
-    ARBITRAGE) ETAT='waiting for answer' ;;
-    BLOQUÉ)    ETAT='blocked' ;;
-    *)         ETAT="asleep $(( DEPUIS_S / 60 )) min" ;;
-  esac
-
-  OUVRIERS="$OUVRIERS  ⚒ $TICKET ($ETAT)"
+  ENDORMIS="$ENDORMIS  ⚒ $TICKET (asleep $(( DEPUIS_S / 60 )) min)"
 done
 
-[ -z "$UN_ACTIF" ] && [ -n "$OUVRIERS" ] \
-  && printf '%s\n' "$(printf '%s' "$OUVRIERS" | sed 's/^  //')"
+[ -n "$UN_ACTIF" ] && ENDORMIS=""
+OUVRIERS="$RENDUS$ENDORMIS"
+[ -n "$OUVRIERS" ] && printf '%s\n' "$(printf '%s' "$OUVRIERS" | sed 's/^  //')"
 
 exit 0
