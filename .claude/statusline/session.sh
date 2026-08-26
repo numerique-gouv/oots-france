@@ -1,0 +1,114 @@
+#!/bin/sh
+# Déclarée par `.claude/settings.json`.
+#
+# Statusline : une ligne disant ce que la session fait, indices du pied de
+# page compris — et une seconde, seulement quand des ouvriers dorment.
+#
+# Le panneau d'agents masque une ligne inactive 30 s après que *tout* le
+# panneau s'est endormi, et un ouvrier passe l'essentiel d'une passe de revue
+# endormi à attendre ses relecteurs. Cette ligne-là, elle, ne se cache jamais.
+#
+# Un ouvrier se reconnaît à la première invite de son transcript, qui vaut
+# « OOTS-<n> », et son état se lit à son dernier bloc de texte : le fichier
+# d'agent lui impose de terminer sur l'un des cinq verdicts.
+
+# Une statusline personnalisée éteint les indices du pied de page (`esc to
+# interrupt`, `? for shortcuts`…) et aucun réglage ne les rallume : on les
+# réimprime donc soi-même, au bout de la première ligne. Libellés verbatim,
+# ce sont ceux que Claude Code affiche — à éditer ici pour en ajouter ou en
+# retirer (`shift+tab for permission modes` est le troisième).
+INDICES='? for shortcuts · esc to interrupt'
+
+ENTREE=$(cat)
+
+# Diagnostic : tant que le fichier témoin existe, on garde la dernière entrée
+# reçue — c'est la seule façon de savoir ce que le harnais passe vraiment.
+[ -f ~/.claude/.statusline-debug ] \
+  && printf '%s\n' "$ENTREE" > ~/.claude/.statusline-derniere-entree.json
+lire() { printf '%s' "$ENTREE" | jq -r "$1 // empty" 2>/dev/null; }
+
+MODELE=$(lire '.model.display_name')
+CONTEXTE=$(lire '.context_window.used_percentage')
+TRANSCRIPT=$(lire '.transcript_path')
+RACINE=$(lire '.workspace.current_dir')
+SESSION=$(lire '.rate_limits.five_hour.used_percentage')
+
+BRANCHE=$(git -C "${RACINE:-.}" branch --show-current 2>/dev/null)
+
+# --- première ligne : où l'on est ---
+LIGNE1="${MODELE:-?}"
+[ -n "$BRANCHE" ] && LIGNE1="$LIGNE1 · $BRANCHE"
+[ -n "$CONTEXTE" ] && LIGNE1="$LIGNE1 · ${CONTEXTE}% context"
+
+# La limite de session : la fenêtre de cinq heures de `rate_limits`, celle qui
+# arrête le travail en cours de route — elle seule, et rien d'autre de ce que
+# `rate_limits` porte. La couleur porte l'alerte, pour n'avoir pas à lire le
+# nombre.
+if [ -n "$SESSION" ]; then
+  if [ "$SESSION" -ge 90 ]; then TEINTE=$(printf '\033[31m')
+  elif [ "$SESSION" -ge 75 ]; then TEINTE=$(printf '\033[33m')
+  else TEINTE=''; fi
+  [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
+  LIGNE1="$LIGNE1 · ${TEINTE}${SESSION}% session${NEUTRE}"
+fi
+
+# Les indices ferment la ligne, en gris : ils sont toujours vrais, donc ne
+# doivent jamais concurrencer ce qui change.
+[ -n "$INDICES" ] && LIGNE1="$LIGNE1 $(printf '\033[2m')· ${INDICES}$(printf '\033[0m')"
+
+printf '%s\n' "$LIGNE1"
+
+# --- seconde ligne, s'il y a lieu : les ouvriers endormis ---
+[ -n "$TRANSCRIPT" ] || exit 0
+# Le transcript est <projet>/<session>.jsonl, ses sous-agents <projet>/<session>/subagents.
+SOUS_AGENTS="${TRANSCRIPT%.jsonl}/subagents"
+[ -d "$SOUS_AGENTS" ] || exit 0
+
+MAINTENANT=$(date +%s)
+OUVRIERS=""
+UN_ACTIF=""
+
+for F in "$SOUS_AGENTS"/agent-*.jsonl; do
+  [ -f "$F" ] || continue
+
+  # Premier tour = l'invite qu'on lui a passée. « OOTS-<n> » signe un ouvrier.
+  TICKET=$(head -1 "$F" 2>/dev/null \
+    | jq -r 'select(.type=="user") | (.message.content | if type=="string" then . else "" end)' 2>/dev/null \
+    | grep -oE '^OOTS-[0-9]+')
+  [ -n "$TICKET" ] || continue
+
+  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main.
+  VERDICT=$(tail -6 "$F" 2>/dev/null \
+    | jq -rc 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' 2>/dev/null \
+    | grep -oE '^(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)' | tail -1)
+
+  DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
+
+  # Un ouvrier qui vient d'agir est affiché par le panneau : ne pas le
+  # redoubler ici. Et tant qu'un seul travaille, le panneau ne masque aucune
+  # ligne — c'est sa règle : il n'escamote qu'une fois *tout* endormi. Cette
+  # ligne-ci ne sert donc qu'au cas où plus rien n'est affiché en dessous.
+  if [ "$DEPUIS_S" -lt 45 ]; then
+    UN_ACTIF=1
+    continue
+  fi
+
+  # Mêmes libellés que le panneau d'agents, à qui cette ligne se substitue
+  # quand il escamote : deux vocabulaires pour cinq états seraient deux
+  # choses à apprendre pour une seule.
+  case "$VERDICT" in
+    LIVRÉ)     ETAT='delivered' ;;
+    ÉCRAN)     ETAT='screen to review' ;;
+    PLAN)      ETAT='plan to approve' ;;
+    ARBITRAGE) ETAT='waiting for answer' ;;
+    BLOQUÉ)    ETAT='blocked' ;;
+    *)         ETAT="asleep $(( DEPUIS_S / 60 )) min" ;;
+  esac
+
+  OUVRIERS="$OUVRIERS  ⚒ $TICKET ($ETAT)"
+done
+
+[ -z "$UN_ACTIF" ] && [ -n "$OUVRIERS" ] \
+  && printf '%s\n' "$(printf '%s' "$OUVRIERS" | sed 's/^  //')"
+
+exit 0
