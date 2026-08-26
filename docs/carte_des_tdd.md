@@ -5,25 +5,23 @@
 Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la ligne 2.x. Les identifiants de page Confluence sont stables au sein d'une livraison ; ils changent à chaque nouvelle version publiée, et cette carte est donc à revérifier à ce moment-là.
 
 > [!IMPORTANT]
-> **Une page de chapitre qui paraît vide n'est pas inaccessible.** Le wiki en compte trois sortes, et les liens de cette carte tiennent compte des trois — mais il faut le savoir dès qu'on s'écarte d'ici.
+> **Le wiki se lit très bien dans un navigateur ; c'est à nos outils qu'il échappe.** Un agent qui interroge ce wiki par `WebFetch`, par `curl` ou par l'API REST en verra, selon la voie choisie, une page vide, une page sans sommaire, ou un chapitre entier qui « ne dit rien ». Rien de tout cela n'est vrai. Deux pièges, et leur contournement.
 >
-> * Les chapitres **1** et **2** sont des pages d'accueil **sans aucun contenu** : leur texte vit dans des sous-pages.
-> * Les chapitres **5** et **3.3** ont bien du texte, mais **n'affichent pas leur arbre de sous-pages** à un visiteur anonyme — rien n'indique qu'il en existe.
-> * Le chapitre **4.6** n'a ni texte ni sous-page : son contenu est **injecté depuis Git** par un macro `html-bobswift`, et aucun outil qui lit la page ne le voit.
->
-> Pour les deux premières sortes, l'API REST anonyme de Confluence énumère les enfants d'une page :
+> **1. Le sommaire d'un chapitre est rendu en JavaScript.** Les pages d'accueil des chapitres n'ont pour tout contenu qu'un macro `rw-pagetree`, que le HTML servi laisse vide : la page du chapitre 4 ne mentionne aucun de ses dix sous-chapitres, et l'index de la version n'en lie aucun non plus. Dans un navigateur, la barre latérale les affiche tous. Pour les énumérer sans navigateur, l'API REST :
 >
 > ```sh
-> curl -s 'https://ec.europa.eu/digital-building-blocks/sites/rest/api/content/973932912/child/page' | jq '.results[] | {id, title}'
+> curl -s 'https://ec.europa.eu/digital-building-blocks/sites/rest/api/content/973932908/child/page' | jq '.results[] | {id, title}'
 > ```
 >
-> Pour la troisième, le texte se lit directement dans `tdd_chapters`, au tag de version, sous `OOTS-EDM/xlsx/html/<chapitre>.html` — pour le 4.6, les 154 000 caractères de règles `R-EDM-*` que la page du wiki ne rend jamais :
+> **2. Les chapitres de règles métier injectent leur contenu par un macro.** Quatre pages sont dans ce cas — [3.1.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932949) (DSD), [3.2.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932955) (EB), [4.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928) (EDM) et [4.7.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932948) (en-tête ebMS) — et leur `body.storage` ne fait que quelques kilo-octets. **Le macro s'expand pourtant côté serveur** : `curl -L` sur l'URL de la page rend les 339 règles du 4.6, et `body.view` de l'API aussi. C'est `body.storage` qu'il ne faut pas demander.
 >
 > ```sh
-> curl -s 'https://code.europa.eu/oots/tdd/tdd_chapters/-/raw/2.0.1/OOTS-EDM/xlsx/html/4.6.html'
+> curl -sL 'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932928' | grep -c 'R-EDM-'
 > ```
 >
-> **Le réflexe** : avant d'écrire qu'un chapitre « ne dit rien » sur un sujet, interroger `child/page`, et si la réponse est vide, aller voir dans Git. C'est ainsi qu'on a retrouvé le 2.3 — *Representation* —, que rien ne signalait et qui porte deux `MUST`. Comme les identifiants de page, cette arborescence est à revérifier à chaque version publiée.
+> Les mêmes règles sont aussi publiées en Git, ce qui reste le plus commode pour les lire en masse : `OOTS-EDM/xlsx/html/<chapitre>.html` au tag de version.
+>
+> **Le réflexe** : avant d'écrire qu'un chapitre « ne dit rien » sur un sujet, vérifier par quelle voie on l'a lu. Un `WebFetch` qui ne rend rien d'un chapitre de règles n'est pas un chapitre muet, c'est un outil qui a résumé 500 Ko en trois phrases. C'est ainsi qu'on a retrouvé le 2.3 — *Representation* —, que rien ne signalait dans nos notes et qui porte deux `MUST`.
 
 ## Les six chapitres
 
@@ -38,7 +36,7 @@ Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la 
 
 ## Chapitre 2 — les sous-chapitres qui servent
 
-La page du chapitre est vide : tout son contenu est ici.
+La page du chapitre ne porte qu'un sommaire : tout son contenu est ici.
 
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
@@ -51,7 +49,9 @@ La page du chapitre est vide : tout son contenu est ici.
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
 | [3.1.4 — Interface de requête du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | L'appel REST qui donne les fournisseurs d'un type de justificatif dans un pays, et le format de sa réponse. |
+| [3.1.7 — Règles métier du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932949) | Les règles que doivent respecter les objets publiés au DSD et les réponses qu'il rend. Contenu injecté par macro : voir l'encadré du haut. |
 | [3.2.4 — Interface de requête de l'Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Les deux appels REST : les exigences d'une démarche, puis les types de justificatif qui les satisfont. |
+| [3.2.6 — Règles métier de l'Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932955) | Idem pour l'Evidence Broker. Contenu injecté par macro. |
 | [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Le catalogue des actifs sémantiques et de leurs distributions, sur `code.europa.eu`. Aucun échange n'oblige à l'appeler ; il se consulte à la conception. |
 | [3.4 — Distribution des Common Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Comment on **découvre** l'instance à interroger (enregistrements DNS NAPTR), et pourquoi mettre un cache devant. |
 | [3.5.1 — Listes de codes communes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Le catalogue des listes de codes, avec l'URL de chaque fichier Genericode. |
@@ -64,6 +64,7 @@ La page du chapitre est vide : tout son contenu est ici.
 
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
+| [4.3 — Exigences métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932929) | Ce que l'échange doit garantir, dont les exigences de sécurité du lien national qu'un fournisseur doit tenir. |
 | [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | La liste des slots et leur cardinalité, la corrélation — `ConversationId` pour l'usager et sa session, `ExchangeId` pour un aller-retour — et les **délais d'expiration** T1/T2/T3. |
 | [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Slot par slot, avec exemple XML. La référence à ouvrir avant de toucher à `evidence_request.xml.erb`. |
 | [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Idem pour la réponse, dont l'**empaquetage** introduit en 2.0 (justificatif principal + traductions, annexes, version lisible). |
