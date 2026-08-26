@@ -219,9 +219,19 @@ ton worktree. Le fichier porte ton ticket, et rien d'autre ne l'écrit — deux
 ouvriers ne se marchent pas dessus.
 
 **Un mot, en anglais** — c'est un état d'outillage, il se lit à côté de
-`running` : `opening`, `plan`, `implementation`, `screen`, `review`. N'écris
-pas là tes verdicts (§ « Ce que tu rends ») — ceux-là se lisent dans ton
-transcript et priment sur ce fichier.
+`running` : `opening`, `plan`, `implementation`, `screen`, `review`,
+`resolving conflicts`. N'écris pas là tes verdicts (§ « Ce que tu rends ») :
+ils se lisent dans ton transcript.
+
+**Ton verdict ne te fige pas.** Ce qui s'affiche est le plus récent entre ce
+fichier et l'instant où tu as prononcé ton dernier verdict — pas ton dernier
+geste : travailler ne périme pas ce que tu as déclaré. Un ouvrier relancé
+après avoir rendu `LIVRÉ` redevient donc visible en déclarant son étape, et
+le reste tant qu'il n'a pas rendu le verdict suivant.
+
+Deux mots ne sont pas les tiens, parce qu'ils appartiennent à qui merge :
+`merged`, qui te retire de la statusline, et `resolving conflicts`, que la
+session pose en te renvoyant le conflit.
 
 Un seul mot ne t'appartient pas : **`merged`**, que pose qui fusionne ta PR
 et range tes affaires. Il te retire de la statusline — une fois la branche
@@ -468,6 +478,44 @@ verdict `LIVRÉ` selon la règle ci-dessus, dès qu'un changement se voit :
 c'est le moment où l'utilisateur relit avant de merger, et un lien lui
 épargne d'aller chercher son port.
 
+## Reprendre sur conflit, quand une autre PR est passée avant la tienne
+
+Tu rends la main sur une CI verte et une PR `MERGEABLE`. Ça ne le reste pas :
+une autre PR mergée entre-temps peut rendre la tienne conflictuelle, et
+personne ne le voit avant que l'utilisateur essaie de merger. La session te
+relance alors avec le résumé de ce que l'autre PR a changé.
+
+**C'est toi qui rebases, pas celui qui merge.** Tu as le contexte de ton
+côté du conflit ; lui n'a que le diff. Résoudre à sa place, c'est arbitrer
+sans savoir ce que ta ligne défendait.
+
+1. Déclare `resolving conflicts` (§ « Déclare ton étape »). La session l'a
+   peut-être écrit en te relançant ; écris-le quand même, c'est la règle
+   générale et c'est ce qui rend l'affichage juste quand c'est toi qui
+   découvres le conflit.
+2. `git fetch origin main`, puis rebase tes commits dessus — jamais un merge
+   de `main` dans ta branche, qui rendrait illisible l'historique que
+   `review-loop` vient de refondre.
+3. **Résous en gardant les deux apports.** Deux tickets qui touchent le même
+   fichier y font le plus souvent deux choses complémentaires : le conflit
+   est textuel, pas conceptuel. Si les deux s'excluent réellement, c'est un
+   arbitrage — rends `ARBITRAGE` plutôt que de trancher.
+4. Rejoue la vérification **en entier** — `make test`, `make schematron`, et
+   `make e2e` si l'un des deux côtés touche aux charges ebMS. Ta propre suite
+   qui repasse ne prouve rien sur ce que l'autre PR a apporté : c'est
+   précisément là qu'une régression passe inaperçue. Vérifie nommément que ce
+   que l'autre a ajouté est toujours là.
+5. Repousse en `--force-with-lease`.
+
+**Ne rends la main qu'une fois la PR de nouveau fusionnable** :
+`gh pr view <n> --json mergeable` dit `MERGEABLE` et la CI est repassée au
+vert. Attends-la dans ton tour — `gh run watch`, ou une boucle sur
+`gh pr checks` — plutôt que de rendre un verdict provisoire : chaque
+main rendue est une relance manuelle, et le ticket dort entre-temps.
+
+Ton verdict reste `LIVRÉ`, avec une ligne de plus disant sur quoi tu as
+rebasé et ce que tu as gardé de l'autre côté. Tu ne merges toujours pas.
+
 ## Ce que tu rends
 
 Ton texte final **est** la valeur de retour : la session qui t'a lancé le lit,
@@ -578,6 +626,10 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
   la PR, ou en question ouverte.
 - **Si `rebase` ou `merge` refuse des fichiers pourtant propres**, c'est la
   sandbox : rejoue avec `git -c core.checkStat=minimal`.
+- **Ne résous jamais un conflit en écrasant le côté d'en face** — ni
+  `--ours`, ni `--theirs`, ni un `checkout` du fichier entier. Une PR déjà
+  mergée est du travail relu et accepté ; la faire disparaître ne se voit sur
+  aucune suite verte.
 - **Ne joue pas `i18n-tasks normalize` ni `health`** : ils réécrivent
   `config/locales/fr.yml` et emportent ses commentaires. `make i18n` est le
   contrôle.
