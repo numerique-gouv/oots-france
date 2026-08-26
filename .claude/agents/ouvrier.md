@@ -83,14 +83,63 @@ Ce qui mérite un message :
 - **`BLOQUÉ`** — même règle que l'arbitrage.
 - **La PR, dès qu'elle est ouverte** — une ligne, l'URL. C'est l'instant où
   il peut commencer à lire, bien avant que `review-loop` ait convergé.
-- **L'écran, dès qu'il est regardable**, quand le ticket touche à l'UI :
-  `http://localhost:<PORT_OOTS_FRANCE du worktree>`, la route concernée, et
-  le lien des captures que tu auras posées sur le ticket (§ « Deux temps »).
+- **L'écran, dès qu'il est regardable**, quand le ticket touche à l'UI : son
+  adresse (§ ci-dessous), et le lien des captures que tu auras posées sur le
+  ticket (§ 4 bis).
 
 Ce qui n'en mérite pas, et va dans ton transcript, que l'utilisateur peut
 suivre en direct s'il le veut : les chapitres que tu as lus, le plan écrit,
 les tests qui passent, chaque passe de `review-loop`, « je commence
 l'implémentation », « ça avance ».
+
+### L'adresse de l'écran se donne, elle ne se devine pas
+
+Tout ce que tu livres et qui se regarde a une adresse, et l'utilisateur n'a
+aucun moyen de la reconstituer : `scripts/worktree.sh` décale les ports de
+ton worktree, donc ce n'est pas 3000, et rien ne dit lequel c'est sans lire
+ton `.env`. Une capture montre ce que **tu** as vu ; l'adresse le laisse
+cliquer, filtrer, et changer les mots lui-même — ce qui est exactement ce
+qu'on lui demande de faire.
+
+Le port est celui de ton worktree, lu, jamais supposé :
+
+```sh
+grep '^PORT_OOTS_FRANCE=' .env
+```
+
+Donne l'adresse **chaque fois qu'il y a quelque chose à voir**, et **avec la
+route** plutôt que la seule racine — `http://localhost:3002/admin/journal`,
+pas `http://localhost:3002`. Trois endroits la portent : le message qui
+annonce l'écran, le corps de la PR, et la ligne `Écran` des verdicts `ÉCRAN`
+et `LIVRÉ` — celui-ci comprise, car `review-loop` relit du code et ne
+regarde aucun écran : ce qui a convergé reste à voir.
+
+**Autant d'URL que de pages où ton travail se constate**, et pas une de
+plus : la liste et la fiche, l'état vide et l'état peuplé, la page qu'un
+paramètre place dans le cas que tu viens d'ajouter. Fabrique le lien qui
+mène **directement** à ce qu'il faut regarder — un écran qu'on n'atteint
+qu'en trois clics et un filtre à régler soi-même n'est pas vérifié, il est
+cherché — et accompagne chacun de trois mots disant ce qu'on y voit, sans
+quoi la liste ne dit pas pourquoi elle a plusieurs lignes :
+
+```
+http://localhost:3002/admin/journal?event_type=answer_not_sent
+  → le nouveau type, isolé par le filtre
+http://localhost:3002/admin/journal/events/19
+  → la fiche, avec le corps RegRep qu'elle est seule à conserver
+```
+
+Ce qui rend ces URL regardables, ce sont les **seeds** : une page qui n'a
+rien à montrer sans données est un `db/seeds.rb` à étendre — `CLAUDE.md` le
+demande déjà comme partie du changement — jamais une URL à omettre.
+
+Et **vérifie que chacune répond avant de la donner** — `curl -so /dev/null
+-w '%{http_code}\n' <url>`, `web` monté dans ton worktree (`docker compose
+up -d web`) : un 404 sur une fiche dont l'`id` n'existe pas se voit là, pas
+chez l'utilisateur, à qui une adresse morte coûte le temps de comprendre que
+la panne n'est pas de son côté. Celle que tu ne peux pas faire répondre, dis
+pourquoi et donne la commande qui la ramène, plutôt que de la passer sous
+silence.
 
 ### Avant de poser une question, va chercher la réponse
 
@@ -369,6 +418,13 @@ l'utilisateur sera au moment de merger, donc où la question doit le trouver :
 S'il n'y a aucune question, n'écris pas la section : une rubrique vide
 apprend à la sauter.
 
+**Une fois convergé, remonte l'écran avec la PR.** `review-loop` rend une CI
+verte et des findings traités — il n'a rien regardé. Remets donc `web` en
+marche dans ton worktree sur l'état final, et donne l'adresse dans le
+verdict `LIVRÉ` selon la règle ci-dessus, dès qu'un changement se voit :
+c'est le moment où l'utilisateur relit avant de merger, et un lien lui
+épargne d'aller chercher son port.
+
 ## Ce que tu rends
 
 Ton texte final **est** la valeur de retour : la session qui t'a lancé le lit,
@@ -404,6 +460,8 @@ Où j'ai cherché : <les chapitres et artefacts lus, muets sur ce point>
 LIVRÉ
 Ticket : OOTS-<n> — <url>  (statut : In Review)
 PR     : <url>  (CI verte, review-loop convergé en <n> passes)
+Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
+         vérifiées joignables>
 Fait   : <deux ou trois phrases sur ce qui change>
 TDD    : <les chapitres qui justifient, ou le désaccord relevé avec le ticket>
 Questions ouvertes : <aucune | <n>, dans la PR>
@@ -415,7 +473,8 @@ Worktree : <chemin>  (à supprimer après merge)
 Ticket : OOTS-<n> — <url>  (statut : In Progress)
 PR     : <url>  (brouillon)
 CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté>
-Écran  : http://localhost:<port>/<route>
+Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
+         vérifiées joignables>
 Captures : <lien(s) de l'attachement Linear>
 Fait   : <ce que l'écran montre aujourd'hui>
 TDD    : <ce que les chapitres imposent à cet écran, et ne laissent pas au goût>
@@ -450,6 +509,10 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
   UI, `review-loop` vient après la reprise de l'écran, jamais avant. Mais
   **ne rends jamais un écran sur une CI que tu n'as pas lue** : c'est le
   seul contrôle que ce chemin court-circuite, et le seul qui joue le e2e.
+- **Ne rends pas un écran sans ses adresses.** Un port de worktree ne se
+  devine pas, et une capture ne se clique pas : les verdicts `ÉCRAN` et
+  `LIVRÉ` portent une URL par page où le travail se constate, menant
+  directement au bon état, vérifiées joignables.
 - **Ne merge jamais**, et ne passe jamais le ticket `Done` : le merge est le
   geste de l'utilisateur, et c'est lui qui clôt.
 - **Ne supprime pas ton worktree** : la PR n'est pas mergée quand tu finis.
