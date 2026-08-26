@@ -27,11 +27,16 @@ ENTREE=$(cat)
   && printf '%s\n' "$ENTREE" > ~/.claude/.statusline-derniere-entree.json
 lire() { printf '%s' "$ENTREE" | jq -r "$1 // empty" 2>/dev/null; }
 
+# Les pourcentages arrivent en flottants — `44.381909…` —, et l'arrondi n'est
+# pas qu'une affaire d'affichage : `[ 44.38 -ge 90 ]` n'est pas une comparaison
+# valide en shell, si bien que la teinte d'alerte ne s'allumait jamais.
+lire_pourcent() { printf '%s' "$ENTREE" | jq -r "($1 // empty) | round" 2>/dev/null; }
+
 MODELE=$(lire '.model.display_name')
-CONTEXTE=$(lire '.context_window.used_percentage')
+CONTEXTE=$(lire_pourcent '.context_window.used_percentage')
 TRANSCRIPT=$(lire '.transcript_path')
 RACINE=$(lire '.workspace.current_dir')
-SESSION=$(lire '.rate_limits.five_hour.used_percentage')
+SESSION=$(lire_pourcent '.rate_limits.five_hour.used_percentage')
 REMISE_A=$(lire '.rate_limits.five_hour.resets_at')
 
 BRANCHE=$(git -C "${RACINE:-.}" branch --show-current 2>/dev/null)
