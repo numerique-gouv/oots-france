@@ -16,6 +16,86 @@ RSpec.describe 'db/seeds.rb' do
     expect(Exchange.distinct.pluck(:status)).to match_array(Exchange::STATUSES)
   end
 
+  # The demonstration is the only data the console is ever read against by hand,
+  # so a column it never fills is a page nobody has looked at. Asserted on the
+  # two the code fills differently rather than on the whole row: the evidence
+  # identifier rides on the document, so an answer that carried one names it and
+  # a deferral names nothing.
+  it 'names the evidence on the responses that carried one, and on no other event' do
+    replay
+
+    named = AuditEvent.where.not(evidence_identifier: nil)
+
+    expect(named.pluck(:event_type).uniq).to match_array(%w[response_sent response_received])
+    expect(named.count).to eq(2)
+  end
+
+  # The correlation of chapter 4.8: a request and the answer to it name one
+  # request identifier, which is the whole of what following an exchange means.
+  #
+  # Presence asserted before equality, and not `compact`ed away: a list holding
+  # one identifier and one nil has exactly as many distinct values as a list
+  # holding the same identifier twice, so dropping the nils would pass the very
+  # regression this guards against.
+  it 'gives the events of one exchange the identifiers that tie them together' do
+    replay
+
+    answered = AuditEvent.where(event_type: %w[request_received response_sent])
+      .where(exchange_id: Exchange.find_by(incoming: true, status: 'delivered').exchange_id)
+      .index_by(&:event_type)
+
+    expect(answered.keys).to contain_exactly('request_received', 'response_sent')
+    expect(answered.values.map(&:request_id)).to all(be_present)
+    expect(answered.values.map(&:request_id).uniq.size).to eq(1)
+  end
+
+  # One action per message, and the three the TDD define: asserted on the whole
+  # set rather than on a sample, a wrong constant on one line of the table
+  # being exactly the kind of fault a sample walks past.
+  it 'names every message by the action it carried' do
+    replay
+
+    circulated = AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE
+    pairs = AuditEvent.where(event_type: circulated).distinct.pluck(:event_type, :ebms_action)
+
+    expect(pairs.size).to eq(circulated.size)
+    expect(pairs.to_h).to eq(
+      'request_sent' => EbmsAction::EXECUTE_QUERY_REQUEST,
+      'request_received' => EbmsAction::EXECUTE_QUERY_REQUEST,
+      'response_sent' => EbmsAction::EXECUTE_QUERY_RESPONSE,
+      'response_received' => EbmsAction::EXECUTE_QUERY_RESPONSE,
+      'error_sent' => EbmsAction::EXCEPTION_RESPONSE,
+      'error_received' => EbmsAction::EXCEPTION_RESPONSE,
+    )
+  end
+
+  # The answer's own identifier, which fewer events carry than the request's,
+  # and which the two sides do not spell alike — the demonstration would teach
+  # one shape for both if nothing held them apart.
+  it 'names the answer only where France or its correspondent built one' do
+    replay
+
+    expect(AuditEvent.where.not(response_id: nil).distinct.pluck(:event_type))
+      .to contain_exactly('response_sent', 'response_received', 'error_sent', 'answer_not_sent')
+
+    expect(AuditEvent.where.not(request_id: nil).pluck(:request_id)).to all(start_with('urn:uuid:'))
+    expect(AuditEvent.where.not(response_id: nil).pluck(:response_id)).to all(match(/\A\h{8}-(\h{4}-){3}\h{12}\z/))
+  end
+
+  # The answer the gateway would not take names the request it answered, read
+  # back from the arrival rather than drawn again: a `find_by` that missed would
+  # leave the one line holding that answer correlated to nothing.
+  it 'ties the answer the gateway refused to the request it was answering' do
+    replay
+
+    unsent = AuditEvent.find_by(event_type: 'answer_not_sent')
+    arrived = AuditEvent.find_by(exchange_id: unsent.exchange_id, event_type: 'request_received')
+
+    expect(unsent.request_id).to be_present
+    expect(unsent.request_id).to eq(arrived.request_id)
+    expect(unsent.response_id).to be_present
+  end
+
   # The seed narrates what it wrote, which the suite has no use for.
   def replay
     allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('development'))

@@ -94,9 +94,15 @@ class AuditTrail
     )
   end
 
+  # Chapter 4.8's response table asks for the evidence identifier from the
+  # requester and from the data service alike: what `response_correlation` reads
+  # off an arriving response, France writes here of the one it sends. Both
+  # columns come off the one value a deferral leaves nil, so an answer carrying
+  # no document names none.
   def response_sent(evidence:, **answer)
     record('response_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
-                            **answered(**answer), **evidence_fingerprint(evidence))
+      evidence_identifier: evidence&.identifier, **answered(**answer),
+      **evidence_fingerprint(evidence&.content))
   end
 
   # `detail` names the rule the refused request broke, so that the journal says

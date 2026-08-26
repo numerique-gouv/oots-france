@@ -185,7 +185,8 @@ module EvidenceProvision
       )
 
       Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
-        identifier: body.document_id, exception: nil, evidence: served, available_at: nil)
+        identifier: body.document_id, exception: nil,
+        evidence: Evidence.new(content: served, identifier: body.evidence_id), available_at: nil)
     end
 
     # After the timeout, for the reason `expired?` gives: a correspondent that

@@ -99,6 +99,25 @@ if Rails.env.development?
   carries_requester = %w[request_sent request_refused evidence_delivered].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
+  # The ebMS action, which every message names and nothing else does: what
+  # circulated is one of the three the TDD define, and `AuditTrail` writes it
+  # from the constant where France speaks and from the header where it listens.
+  ebms_actions = {
+    'request_sent' => EbmsAction::EXECUTE_QUERY_REQUEST,
+    'request_received' => EbmsAction::EXECUTE_QUERY_REQUEST,
+    'response_sent' => EbmsAction::EXECUTE_QUERY_RESPONSE,
+    'response_received' => EbmsAction::EXECUTE_QUERY_RESPONSE,
+    'error_sent' => EbmsAction::EXCEPTION_RESPONSE,
+    'error_received' => EbmsAction::EXCEPTION_RESPONSE,
+  }.freeze
+
+  # The response identifier, which a shorter list carries than the request one:
+  # every message of an exchange names the request it belongs to — that shared
+  # value is the whole of what correlating means — where a request names no
+  # answer, and a received error carries no response identifier of its own, its
+  # reader taking the code and the request it answers and no identifier beyond.
+  carries_response_id = %w[response_sent response_received error_sent].freeze
+
   # One shape per message the TDD define: a request, an answer, and an answer
   # that refuses — the last being a `QueryResponse` carrying an `rs:Exception`,
   # and not a document of its own.
@@ -155,6 +174,18 @@ if Rails.env.development?
       evidence_mime_type: RetrievedMessageParser::PDF }
   end
 
+  # The identifier the provider gave the document, which chapter 4.8 has both
+  # ends of a response log. A shorter list than the fingerprint's: the handover
+  # to the French requester leaves no line naming it, `AuditTrail` recording
+  # there only what the exchange and the document itself say.
+  names_evidence = %w[response_sent response_received].freeze
+
+  evidence_identifier = lambda do |event_type, exchange|
+    return {} unless event_type.in?(names_evidence) && exchange.status != 'deferred'
+
+    { evidence_identifier: SecureRandom.uuid }
+  end
+
   # The first MIME part travels with the message, so the events that carry one
   # carry it — and each carries the shape its own message would have. A stand-in
   # and not a real message: the console page has to be readable by hand, and
@@ -180,6 +211,15 @@ if Rails.env.development?
     # identifiers are distinct, and the demonstration would teach otherwise if
     # they were derived from one another.
     conversation_id = format('00000000-0000-0000-0001-%012d', scenario.fetch(:conversation, rank + 1))
+
+    # Drawn once per exchange, so that the events of one exchange name the same
+    # request and the same answer — the correlation an auditor follows.
+    #
+    # Each in the form its own message carries, which are not the same:
+    # `R-EDM-REQ-S004` prefixes a request identifier `urn:uuid:`, where the
+    # `EvidenceResponseIdentifier` slot holds the bare UUID a builder drew.
+    request_id = format('urn:uuid:%s', SecureRandom.uuid)
+    response_id = SecureRandom.uuid
 
     # The direction is in the lookup and not in the update: `incoming` is
     # read-only once the row is written, and a demonstration replayed finds its
@@ -210,11 +250,15 @@ if Rails.env.development?
         country_code: exchange.country_code,
         evidence_requester_id: (exchange.evidence_requester_id if event_type.in?(carries_requester)),
         message_id: (format('%s@domibus.eu', SecureRandom.uuid) if event_type.in?(carries_message)),
+        ebms_action: ebms_actions[event_type],
+        request_id: (request_id if event_type.in?(carries_message)),
+        response_id: (response_id if event_type.in?(carries_response_id)),
         edm_error_code: (exchange.edm_error_code if event_type.start_with?('error')),
         detail: (exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
         **regrep_body.call(event_type),
         **evidence_fingerprint.call(event_type, exchange),
+        **evidence_identifier.call(event_type, exchange),
       )
     end
 
@@ -272,12 +316,21 @@ if Rails.env.development?
   refused_by_gateway = demonstrations.last
 
   unless AuditEvent.exists?(event_type: 'answer_not_sent')
+    # The request identifier is read back from the arrival rather than drawn
+    # again: this line answers that request, and an answer naming a request
+    # nobody made would teach the console that the two never correlate. The
+    # response identifier is its own — France minted one, and it never left.
+    answered_request = AuditEvent.find_by(exchange_id: refused_by_gateway.exchange_id,
+      event_type: 'request_received')
+
     AuditEvent.create!(
       event_type: 'answer_not_sent', occurred_at: refused_by_gateway.created_at + 7.minutes,
       ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
       conversation_id: refused_by_gateway.conversation_id,
       exchange_id: refused_by_gateway.exchange_id,
       country_code: refused_by_gateway.country_code,
+      request_id: answered_request&.request_id,
+      response_id: SecureRandom.uuid,
       detail: '503 Service Unavailable',
       regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
       regrep_body: demonstration_body.call('response_sent'),

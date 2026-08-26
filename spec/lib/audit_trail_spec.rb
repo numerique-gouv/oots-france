@@ -305,6 +305,10 @@ RSpec.describe AuditTrail do
   # as submitted and not a second rendering of it.
   describe 'what the journal keeps of what France sends' do
     let(:first_part) { MimePart.new(mime_type: 'application/x-ebrs+xml', content: '<query:QueryRequest/>') }
+    let(:answered) do
+      { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
+        request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle', first_part: }
+    end
 
     it 'keeps the request it submitted' do
       audit_trail.request_sent(exchange: create(:exchange), requester: nil, provider: nil, beneficiary: nil,
@@ -318,14 +322,31 @@ RSpec.describe AuditTrail do
     end
 
     it 'keeps the answer and the refusal alike' do
-      answered = { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
-                   request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle', first_part: }
-
       audit_trail.response_sent(**answered, evidence: nil)
       expect(journalled).to have_attributes(event_type: 'response_sent', regrep_body: first_part.content)
 
       audit_trail.error_sent(**answered, exception: EdmException::OBJECT_NOT_FOUND)
-      expect(journalled).to have_attributes(event_type: 'error_sent', regrep_body: first_part.content)
+      expect(journalled).to have_attributes(event_type: 'error_sent', regrep_body: first_part.content,
+        evidence_identifier: nil)
+    end
+
+    # Chapter 4.8 asks the response flow for the evidence identifier from the
+    # data service as much as from the requester, so what France answers with
+    # says which document it was — and an answer carrying none says so by
+    # leaving the column empty rather than by inventing a value.
+    it 'names the evidence its own answer carried, and names none when it carried none' do
+      carried = Evidence.new(content: 'un document', identifier: 'urn:uuid:z')
+
+      audit_trail.response_sent(**answered, evidence: carried)
+      expect(journalled).to have_attributes(
+        event_type: 'response_sent', evidence_identifier: 'urn:uuid:z',
+        evidence_digest: Digest::SHA256.hexdigest('un document'),
+      )
+
+      audit_trail.response_sent(**answered, evidence: nil)
+      expect(journalled).to have_attributes(
+        event_type: 'response_sent', evidence_identifier: nil, evidence_digest: nil,
+      )
     end
 
     # One line covers both answers, so it is the only one that has to work out

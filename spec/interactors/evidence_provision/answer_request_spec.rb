@@ -45,6 +45,11 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       # The identifier of France's own answer: chapter 4.8 walks the
       # non-repudiation chain from it, and it is what `Answer` carries.
       response_id: identifier_of(submitted),
+      # And the identifier of the document that answer carried, which the same
+      # chapter asks the data service for as much as the requester. Read back
+      # from the message the gateway was handed, so nothing but the value that
+      # circulated can satisfy it.
+      evidence_identifier: evidence_identifier_of(submitted),
       # Where France answers, the country logged is the one the request named:
       # `R-EDM-REQ-C073` puts it on the agent classified `ER`, and France's own
       # response carries no address for that agent.
@@ -88,7 +93,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       answer
 
       expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0004',
-        country_code: 'FR')
+        country_code: 'FR', evidence_identifier: nil)
     end
 
     it 'keeps the rs:Exception it sent, as it sent it' do
@@ -133,6 +138,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'response_sent', edm_error_code: nil, evidence_digest: nil,
+        evidence_identifier: nil,
         response_id: identifier_of(submitted),
       )
     end
@@ -545,6 +551,13 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def identifier_of(document)
     document.at_xpath("//rim:Slot[@name='EvidenceResponseIdentifier']//rim:Value", SlotReading::NAMESPACES).text
+  end
+
+  # « Evidence/Identifier value in EvidenceMetadata Slot (RegRep4) », as chapter
+  # 4.8 designates it: the identifier of the document, not of the answer.
+  def evidence_identifier_of(document)
+    document.at_xpath("//rim:Slot[@name='EvidenceMetadata']//sdg:Evidence/sdg:Identifier",
+      SlotReading::NAMESPACES).text
   end
 
   def code_of(document) = exception_of(document)['code']
