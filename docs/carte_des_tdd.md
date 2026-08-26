@@ -5,18 +5,25 @@
 Les liens pointent vers la **v2.0.1 (juillet 2026)**, dernière livraison de la ligne 2.x. Les identifiants de page Confluence sont stables au sein d'une livraison ; ils changent à chaque nouvelle version publiée, et cette carte est donc à revérifier à ce moment-là.
 
 > [!IMPORTANT]
-> **Une page de chapitre qui paraît vide n'est pas inaccessible : c'est une page mère.** Le wiki en compte deux sortes, et les liens de cette carte tiennent compte des deux — mais il faut le savoir dès qu'on s'écarte d'ici.
+> **Une page de chapitre qui paraît vide n'est pas inaccessible.** Le wiki en compte trois sortes, et les liens de cette carte tiennent compte des trois — mais il faut le savoir dès qu'on s'écarte d'ici.
 >
 > * Les chapitres **1** et **2** sont des pages d'accueil **sans aucun contenu** : leur texte vit dans des sous-pages.
 > * Les chapitres **5** et **3.3** ont bien du texte, mais **n'affichent pas leur arbre de sous-pages** à un visiteur anonyme — rien n'indique qu'il en existe.
+> * Le chapitre **4.6** n'a ni texte ni sous-page : son contenu est **injecté depuis Git** par un macro `html-bobswift`, et aucun outil qui lit la page ne le voit.
 >
-> Dans les deux cas, l'API REST anonyme de Confluence énumère les enfants d'une page :
+> Pour les deux premières sortes, l'API REST anonyme de Confluence énumère les enfants d'une page :
 >
 > ```sh
 > curl -s 'https://ec.europa.eu/digital-building-blocks/sites/rest/api/content/973932912/child/page' | jq '.results[] | {id, title}'
 > ```
 >
-> **Le réflexe** : avant d'écrire qu'un chapitre « ne dit rien » sur un sujet, interroger `child/page`. C'est ainsi qu'on a retrouvé le 2.3 — *Representation* —, que rien ne signalait et qui porte deux `MUST`. Comme les identifiants de page, cette arborescence est à revérifier à chaque version publiée.
+> Pour la troisième, le texte se lit directement dans `tdd_chapters`, au tag de version, sous `OOTS-EDM/xlsx/html/<chapitre>.html` — pour le 4.6, les 154 000 caractères de règles `R-EDM-*` que la page du wiki ne rend jamais :
+>
+> ```sh
+> curl -s 'https://code.europa.eu/oots/tdd/tdd_chapters/-/raw/2.0.1/OOTS-EDM/xlsx/html/4.6.html'
+> ```
+>
+> **Le réflexe** : avant d'écrire qu'un chapitre « ne dit rien » sur un sujet, interroger `child/page`, et si la réponse est vide, aller voir dans Git. C'est ainsi qu'on a retrouvé le 2.3 — *Representation* —, que rien ne signalait et qui porte deux `MUST`. Comme les identifiants de page, cette arborescence est à revérifier à chaque version publiée.
 
 ## Les six chapitres
 
