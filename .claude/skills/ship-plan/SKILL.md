@@ -263,9 +263,6 @@ dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
    git tag -d sauvegarde-<sujet>         # ou s'en débarrasser
    ```
 
-   Les commits refondus ne sont pas signés : le signaler, à l'utilisateur de
-   resigner s'il y tient.
-
 ## Garde-fous
 
 - Jamais de `--force` push.
