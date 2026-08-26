@@ -150,7 +150,7 @@ RSpec.describe IncomingMessage::SettleExchange do
         event_type: 'evidence_delivered',
         exchange_id: exchange.exchange_id,
         country_code: exchange.country_code,
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence),
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
       )
     end
   end

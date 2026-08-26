@@ -23,12 +23,16 @@ RSpec.describe OutgoingEnvelopeBuilder do
   end
 
   # Chapter 4.7.1 fixes the type of `eb:PartInfo[1]`, and chapter 4.8 has the
-  # log keep both it and the content whole.
+  # log keep both it and the content whole. The reference is the one the header
+  # declares and the submission carries, minted once for both.
   it 'hands back the part it put in the envelope' do
-    carried = Nokogiri::XML(builder.render).at_xpath('//payload/value').text
+    envelope = Nokogiri::XML(builder.render)
+    carried = envelope.at_xpath('//payload/value').text
 
     expect(builder.first_part).to eq(
-      MimePart.new(mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE, content: Base64.strict_decode64(carried)),
+      MimePart.new(mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+        content_id: envelope.at_xpath('//payload')['payloadId'],
+        content: Base64.strict_decode64(carried)),
     )
   end
 

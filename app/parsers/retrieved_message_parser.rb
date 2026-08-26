@@ -27,7 +27,20 @@ class RetrievedMessageParser
               end
   end
 
-  def evidence = payload(PDF)
+  # The evidence as it arrived, and the part that carried it: chapter 4.8 asks
+  # the response flow for « MIME type and MIME content identifier » of evidence
+  # content referenced by a `rim:RepositoryItemRef`, and the reference it names
+  # is the `href` of the `eb:PartInfo` — the same `cid:` on both sides.
+  #
+  # Looked up by type, as the payload itself is: the identifier is recorded from
+  # the header rather than read back from the body, which nothing here parses
+  # for it.
+  def evidence
+    declared = payload_part(PDF)
+
+    MimePart.new(mime_type: declared[:mime_type], content_id: declared[:href],
+      content: payload_at(declared[:href]))
+  end
 
   # The first MIME part as it arrived, bytes and declared type: chapter 4.8 asks
   # both its tables for it, and `retention_downloaded="0"` has Domibus erase the
@@ -45,7 +58,8 @@ class RetrievedMessageParser
     # bytes as the announced part.
     raise UnreadableMessageError, I18n.t('parsers.retrieved_message.part_without_href') if declared[:href].nil?
 
-    MimePart.new(mime_type: declared[:mime_type], content: as_text(payload_at(declared[:href])))
+    MimePart.new(mime_type: declared[:mime_type], content_id: declared[:href],
+      content: as_text(payload_at(declared[:href])))
   end
 
   private
@@ -61,11 +75,13 @@ class RetrievedMessageParser
     end
   end
 
-  def payload(mime_type)
-    identifier = header.payload_identifiers[mime_type]
-    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_payload', type: mime_type) if identifier.nil?
+  def payload(mime_type) = payload_at(payload_part(mime_type)[:href])
 
-    payload_at(identifier)
+  def payload_part(mime_type)
+    declared = header.payload_parts.find { |part| part[:mime_type] == mime_type && part[:href] }
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_payload', type: mime_type) if declared.nil?
+
+    declared
   end
 
   # Base64 decodes to bytes; the journal keeps this part as text, so they are

@@ -77,7 +77,7 @@ RSpec.describe AuditTrail do
     it 'records the fingerprint of the evidence, and never the evidence' do
       expect(journalled).to have_attributes(
         event_type: 'response_received',
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence),
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
         evidence_mime_type: 'application/pdf',
         country_code: 'FR',
       )
@@ -334,7 +334,10 @@ RSpec.describe AuditTrail do
   # journalled from the envelope that carried it, so the log holds the message
   # as submitted and not a second rendering of it.
   describe 'what the journal keeps of what France sends' do
-    let(:first_part) { MimePart.new(mime_type: 'application/x-ebrs+xml', content: '<query:QueryRequest/>') }
+    let(:first_part) do
+      MimePart.new(mime_type: 'application/x-ebrs+xml', content_id: 'cid:x@oots.fr',
+        content: '<query:QueryRequest/>')
+    end
     let(:answered) do
       { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
         request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle', first_part: }
@@ -365,7 +368,8 @@ RSpec.describe AuditTrail do
     # says which document it was — and an answer carrying none says so by
     # leaving the column empty rather than by inventing a value.
     it 'names the evidence its own answer carried, and names none when it carried none' do
-      carried = Evidence.new(content: 'un document', identifier: 'urn:uuid:z')
+      carried = Evidence.new(identifier: 'urn:uuid:z',
+        part: MimePart.new(mime_type: 'application/pdf', content_id: 'cid:doc@pdf.oots.fr', content: 'un document'))
 
       audit_trail.response_sent(**answered, evidence: carried)
       expect(journalled).to have_attributes(

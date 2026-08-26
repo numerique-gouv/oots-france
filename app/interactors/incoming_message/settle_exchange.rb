@@ -85,12 +85,14 @@ module IncomingMessage
 
       requester = context.requesters.find(exchange.evidence_requester_id)
 
-      context.evidence_forwarder.deliver(evidence, requester)
+      context.evidence_forwarder.deliver(evidence.content, requester)
       exchange.delivered!
 
       context.audit_trail.evidence_delivered(exchange:, evidence:)
     end
 
+    # The part and not its bytes: the journal records the reference the response
+    # made of it as well as what it held.
     def evidence = context.message.evidence
 
     def record_error(exchange)

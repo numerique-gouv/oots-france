@@ -102,7 +102,7 @@ class AuditTrail
   def response_sent(evidence:, **answer)
     record('response_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
       evidence_identifier: evidence&.identifier, **answered(**answer),
-      **evidence_fingerprint(evidence&.content))
+      **evidence_fingerprint(evidence&.part))
   end
 
   # `detail` names the rule the refused request broke, so that the journal says
@@ -281,10 +281,14 @@ class AuditTrail
   # the two never coincide. The route to that signature is `message_id`, which
   # chapter 4.8 traces. This digest answers the other question: whether a
   # document produced later is the one that went through.
-  def evidence_fingerprint(evidence)
-    return {} if evidence.blank?
+  # Written from the one part, so that an answer carrying no document names
+  # neither type nor digest, rather than a row asserting half of what the
+  # chapter asks for. The type is the one declared, never a constant: on the way
+  # in it is what the correspondent announced.
+  def evidence_fingerprint(part)
+    return {} if part.nil? || part.content.blank?
 
-    { evidence_digest: Digest::SHA256.hexdigest(evidence), evidence_mime_type: RetrievedMessageParser::PDF }
+    { evidence_digest: Digest::SHA256.hexdigest(part.content), evidence_mime_type: part.mime_type }
   end
 
   # A message we cannot read must still be journalled, so what its body would

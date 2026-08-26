@@ -56,7 +56,7 @@ RSpec.describe RetrievedMessageParser do
     end
 
     it 'decodes the evidence, which is a PDF' do
-      expect(message.evidence).to start_with('%PDF')
+      expect(message.evidence.content).to start_with('%PDF')
     end
   end
 
