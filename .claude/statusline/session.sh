@@ -64,6 +64,12 @@ printf '%s\n' "$LIGNE1"
 SOUS_AGENTS="${TRANSCRIPT%.jsonl}/subagents"
 [ -d "$SOUS_AGENTS" ] || exit 0
 
+# Le checkout principal, où l'étape se déclare : `.claude/` est git-ignored
+# donc absent des worktrees. `--git-common-dir` vaut la même chose depuis
+# n'importe lequel d'entre eux.
+PRINCIPAL=$(git -C "${RACINE:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+[ -n "$PRINCIPAL" ] && PRINCIPAL=$(dirname "$PRINCIPAL")
+
 MAINTENANT=$(date +%s)
 RENDUS=""
 ENDORMIS=""
@@ -77,6 +83,13 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     | jq -r 'select(.type=="user") | (.message.content | if type=="string" then . else "" end)' 2>/dev/null \
     | grep -oE '^OOTS-[0-9]+')
   [ -n "$TICKET" ] || continue
+
+  # « merged » retire l'ouvrier de l'affichage : sa PR est fusionnée et ses
+  # affaires rangées, il n'a plus rien à dire et sa ligne prendrait la place
+  # de celle d'un vivant. C'est le seul état qui prime sur un verdict — et
+  # le seul que l'ouvrier n'écrit pas lui-même, puisqu'il ne merge jamais.
+  ETAPE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
+  [ "$ETAPE" = merged ] && continue
 
   # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main.
   VERDICT=$(tail -6 "$F" 2>/dev/null \

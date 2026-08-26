@@ -40,6 +40,12 @@ etape() {
   FICHIER="$SOUS_AGENTS/agent-$1.jsonl"
   TICKET=$2
 
+  # 0. « merged » : PR fusionnée, affaires rangées. Le seul état qui prime
+  #    sur un verdict, et le seul que l'ouvrier n'écrit pas lui-même —
+  #    il ne merge jamais.
+  DECLAREE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
+  [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
+
   # 1. Un des cinq verdicts en queue de transcript : l'ouvrier a rendu la
   #    main, et c'est le dernier mot. Trois des cinq attendent une réponse.
   if [ -f "$FICHIER" ]; then
@@ -57,7 +63,6 @@ etape() {
 
   # 2. Ce que l'ouvrier déclare lui-même, la seule qui sache le distinguer
   #    d'un autre temps de la même longueur. Voir `.claude/agents/ouvrier.md`.
-  DECLAREE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
   [ -n "$DECLAREE" ] && { printf '%s' "$DECLAREE"; return; }
 
   # 3. À défaut — ouvrier lancé avant cette convention, ou muet — les jalons
