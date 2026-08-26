@@ -211,6 +211,7 @@ Rules:
 | Skill | What it does |
 | --- | --- |
 | [`tdd-nerd`](.claude/skills/tdd-nerd/SKILL.md) | Confronts the Linear backlog with the text of the specifications, chapter by chapter, and corrects what departs from it |
+| [`plan-issue`](.claude/skills/plan-issue/SKILL.md) | Plans one issue against the text of the specifications, writes the plan and gets it approved before a line of code is written |
 | [`review-loop`](.claude/skills/review-loop/SKILL.md) | Review → fixes on an open PR, until a pass finds no blocking finding, then reshapes the history |
 | [`ship-plan`](.claude/skills/ship-plan/SKILL.md) | Pushes an implemented plan, opens the PR, hands it to `review-loop`, records the decisions on the ticket |
 

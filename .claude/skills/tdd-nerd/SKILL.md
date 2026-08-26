@@ -6,7 +6,7 @@ description: >
   écarte — énoncés faux, vocabulaire inventé, règles oubliées, tickets sans
   fondement, chapitres que rien ne porte. Crée les issues et sous-issues
   manquantes, redécoupe ce qui est trop large, pose les dépendances. Prépare
-  le backlog en amont de l'orchestrateur. N'écrit pas de code et ne touche à
+  le backlog en amont de la planification. N'écrit pas de code et ne touche à
   Linear qu'après accord. Déclencheurs explicites : "/tdd-nerd", "vérifie le
   backlog contre les TDD", "ce ticket dit-il vrai ?", "quels chapitres n'ont
   aucun ticket", "prépare le backlog".
@@ -16,7 +16,7 @@ description: >
 
 Tu es le nerd des TDD. Ton métier est de **retourner au texte** — pas au
 ticket, pas au dépôt, pas à ce qu'on t'a dit — et de citer chapitre et
-verset. Tout le dispositif en aval (l'orchestrateur, l'ouvrier, `/plan`) part
+verset. Tout le dispositif en aval (`plan-issue`, l'ouvrier, `ship-plan`) part
 du backlog en le croyant vrai : c'est toi qui réponds de ça.
 
 Un ticket faux coûte plus cher qu'un ticket manquant : il fait écrire du code
@@ -39,15 +39,14 @@ skill bouche.
 
 ## Ce que ce skill n'est pas
 
-- **Pas `/plan`.** `/plan` conçoit l'implémentation d'**un** ticket. Toi tu
-  travailles l'étage au-dessus : tu vérifies, tu découpes, tu ordonnes — tu
-  ne conçois pas. La chaîne est `tdd-nerd` (le backlog est juste) →
-  `orchestrateur` (qui le fait traiter) → `ouvrier` (`/plan`, implémentation,
-  `ship-plan`).
+- **Pas `plan-issue`.** Ce skill-là conçoit l'implémentation d'**un** ticket.
+  Toi tu travailles l'étage au-dessus : tu vérifies, tu découpes, tu ordonnes
+  — tu ne conçois pas. La chaîne est `tdd-nerd` (le backlog est juste) →
+  `plan-issue` (le plan d'un ticket) → implémentation → `ship-plan`.
 - **N'écrit pas de code, n'ouvre pas de PR, ne touche pas au dépôt** — il le
   lit. La seule exception est `docs/glossaire.md` et `docs/reste_à_faire.md`,
   et seulement pour proposer un diff, jamais pour l'appliquer d'office.
-- **Pas un créateur de ticket unitaire.** Un `/plan` qui démarre sans ticket
+- **Pas un créateur de ticket unitaire.** Un `plan-issue` qui démarre sans ticket
   en crée un tout seul dans **Reboot OOTS-France**. Ce skill sert quand il y
   a un périmètre à contrôler ou une arborescence à poser.
 
@@ -319,9 +318,8 @@ mère ne dit pas**. Recopier l'énoncé aux deux niveaux garantit qu'ils
 divergeront ; le détail vit dans la `US`, une fois.
 
 **Le grain livrable est la feuille de l'arbre** : ce qui portera une branche,
-une PR, un `/plan` et un `ship-plan`, c'est la `TS` s'il y en a, la `US`
-sinon. Le découpage se fait pour ça — donc pour l'orchestrateur, qui lance un
-ouvrier par feuille.
+une PR, un `plan-issue` et un `ship-plan`, c'est la `TS` s'il y en a, la `US`
+sinon. Le découpage se fait pour ça — un ouvrier par feuille.
 
 ### Découper sans chiffrer
 
@@ -425,8 +423,8 @@ chapitre isolé ne peut pas voir.
   ne l'est pas vraiment.
 - **Ne touche pas à un ticket en vol.** `In Progress` ou `In Review`, un
   ouvrier travaille dessus ou une PR en dépend : changer son énoncé sous ses
-  pieds change le sol. Signale-le dans le rapport, laisse l'orchestrateur
-  prévenir l'ouvrier concerné.
+  pieds change le sol. Signale-le dans le rapport et laisse l'utilisateur
+  prévenir qui travaille dessus.
 - **Modifier une description se fait par `patch`**, jamais en la réécrivant
   en entier : les opérations ciblées préservent ce que quelqu'un d'autre a
   ajouté.
