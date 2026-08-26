@@ -6,10 +6,13 @@ description: >
   écarte — énoncés faux, vocabulaire inventé, règles oubliées, tickets sans
   fondement, chapitres que rien ne porte. Crée les issues et sous-issues
   manquantes, redécoupe ce qui est trop large, pose les dépendances. Prépare
-  le backlog en amont de la planification. N'écrit pas de code et ne touche à
-  Linear qu'après accord. Déclencheurs explicites : "/tdd-nerd", "vérifie le
-  backlog contre les TDD", "ce ticket dit-il vrai ?", "quels chapitres n'ont
-  aucun ticket", "prépare le backlog".
+  le backlog en amont de la planification. Tranche seul la nature, la
+  priorité, le parent et le découpage de chaque ticket, selon des règles de
+  grooming écrites ; ne remonte que les arbitrages produit, et soumet le tout
+  en un bloc. N'écrit pas de code et n'écrit dans Linear qu'après accord.
+  Déclencheurs explicites : "/tdd-nerd", "vérifie le backlog contre les TDD",
+  "ce ticket dit-il vrai ?", "quels chapitres n'ont aucun ticket", "prépare le
+  backlog".
 ---
 
 # tdd-nerd
@@ -202,33 +205,57 @@ Deux sources de manques à croiser, sans les confondre avec des autorités :
 
 ## La forme de ce qu'on crée
 
-Les sept statuts de l'équipe sont `Backlog`, `Todo`, `In Progress`,
-`In Review`, `Done`, `Canceled`, `Duplicate`. N'en créer aucun autre.
+Les huit statuts de l'équipe sont `Backlog`, `Todo`, `In Progress`, `Blocked`,
+`In Review`, `Done`, `Canceled`, `Duplicate`. N'en créer aucun autre, et
+**relis-les au début de chaque passe** (`list_issue_statuses`) plutôt que de
+te fier à cette liste : `Blocked` y a été ajouté sans que ce fichier le sache.
 
-### Ce qui ne devient pas une issue
+> [!IMPORTANT]
+> **`Blocked` est de type `started` : un ticket bloqué est un ticket en vol.**
+> Il compte donc dans ce à quoi tu ne touches pas, au même titre qu'un
+> `In Progress` — quelqu'un l'a démarré, s'est heurté à quelque chose, et
+> l'énoncé sous ses pieds est celui qu'il relira en reprenant.
+>
+> Ce statut est aussi ce qui rend tenable la règle de priorité ci-dessous :
+> un travail qui attend un accord extérieur se dit par son **statut**, pas en
+> gonflant sa priorité.
+
+### Choisir la nature — un manque, une case, sans demander
 
 **Le premier niveau est ce que quelqu'un lit en filtrant, et son coût est
 l'attention de cette personne.** Un contrôle inverse produit facilement dix
-`US` là où quatre suffisent. Avant de créer, classe chaque manque en trois :
+`US` là où quatre suffisent. Ce tableau tranche seul : prends les lignes dans
+l'ordre et arrête-toi à la première qui s'applique.
 
-- **Du travail d'implémentation qui se tient seul** — c'est une `US`, et il
-  faut pouvoir la défendre comme telle. Ne la fais pas descendre d'un niveau
-  pour faire baisser un compte : c'est aussi malhonnête que de tout créer.
-- **Une tranche d'un chantier existant** — c'est une `TS` sous une `US` déjà
-  là. La plupart des manques du contrôle inverse sont dans ce cas : ils
-  complètent un ticket plutôt qu'ils n'ouvrent un sujet.
-- **Une décision ou une question** — « trancher si… », « décider si… »,
-  « vérifier auprès du Service Desk… ». **Celles-ci ne pèsent pas comme un
-  chantier.** Verse-les dans le ticket qui porte déjà ce rôle, ou dans celui
-  qu'elles bloquent, sous forme de règle de gestion ou de question ouverte.
-  N'ouvre une issue de décision que lorsqu'elle bloque du travail réel et que
-  personne ne la porte — une politique nationale, un accord à obtenir.
+| Si le manque… | Alors | Parent |
+| --- | --- | --- |
+| est une décision **déjà rendue** dont personne ne retrouvera le motif | `[Décision] <la décision, pas la question>` | — |
+| se répond par une **étude bornée**, dont le livrable est une réponse et non du code | `[Spike] <ce qu'on cherche à savoir>` | le ticket qu'il débloque, s'il existe |
+| est une **question ouverte** que les TDD ne tranchent pas | rien de créé — verse-la dans le ticket qu'elle bloque, ou dans celui qui porte déjà ce rôle | — |
+| **complète** un ticket existant sans ouvrir de sujet | `TS - …` | la `US` qu'il complète |
+| est du travail technique qui ne sert **aucune** `US` existante | `TS - …` | — |
+| ouvre un sujet qu'on peut relire comme un tout | `US - …` | jamais |
+
+**Le préfixe dit la nature, le parent dit la décomposition, et les deux sont
+indépendants.** Une `TS` sans parent est normale — c'est du travail technique
+qui ne découpe rien. Une `US` n'a **jamais** de parent : si tu es tenté de lui
+en donner un, c'est une `TS`.
+
+> [!IMPORTANT]
+> **Une décision rendue est un objet du backlog ; une décision en attente n'en
+> est pas un.** La première se perd si rien ne la porte — six mois plus tard,
+> personne ne sait plus pourquoi le code ne fait pas la chose évidente, et
+> quelqu'un la refait. Son titre énonce **ce qui a été décidé**, jamais ce
+> qu'on se demandait : `[Décision] Pas de validation applicative des
+> identifiants sortants — le Schematron la porte en CI`. La seconde n'est
+> qu'une ligne dans le ticket qu'elle bloque, jusqu'à ce qu'elle soit rendue.
 
 > [!TIP]
 > Une **`US` parapluie** pour raccrocher des `TS` orphelines est presque
-> toujours un mauvais signe : si aucun parent réel n'existe, c'est que le
-> manque ouvre bien un sujet. Cherche le parent d'abord ; ne fabrique pas une
-> mère pour héberger un compte.
+> toujours un mauvais signe : si aucun parent réel n'existe, la `TS` reste au
+> premier niveau, et c'est très bien. Ne fabrique pas une mère pour héberger
+> un compte — pas plus que tu ne descends une `US` d'un niveau pour en faire
+> baisser un.
 
 Quand un lot de créations vient d'un même contrôle, **pose-lui un label**
 (`create_issue_label`, par exemple `audit-tdd-AAAA-MM`) : on peut alors
@@ -303,40 +330,99 @@ Quatre choses à ne pas rater dans ce gabarit :
   test`, `make schematron`, `make e2e`). Elle tient lieu de définition de
   fini.
 
-**Priorité** — le seul signal d'ordonnancement, puisqu'il n'y a pas
-d'estimation : `1 Urgent` = MUST, `2 High` = SHOULD, `3 Medium` = COULD,
-`4 Low` = pas maintenant. Ne pas tout mettre en `Urgent` : une priorité que
-tout le monde porte n'ordonne rien.
+### Priorité — la seule chose qui ordonne, donc à calculer, pas à ressentir
 
-### La sous-issue — `TS - `
+Il n'y a **ni estimation ni cycle** sur cette équipe : la priorité porte seule
+tout l'ordonnancement. Elle ne se déduit pas de la force normative seule —
+« MUST donc Urgent » remplit la colonne `Urgent` et n'ordonne plus rien.
 
-`save_issue(parentId: "OOTS-nn", title: "TS - …", team: "OOTS", project: …)`.
+Elle se calcule sur **trois questions**, dans cet ordre :
 
-Une tranche technique d'une `US`. Elle porte un titre précis, son parent, sa
-priorité — et une description **seulement si elle dit quelque chose que la
-mère ne dit pas**. Recopier l'énoncé aux deux niveaux garantit qu'ils
-divergeront ; le détail vit dans la `US`, une fois.
+1. **Le code enfreint-il la règle aujourd'hui**, sur un chemin qui tourne — ou
+   bien ne la satisfait-il pas encore ?
+2. **Quelle est la force** de la règle : `FATAL` au Schematron / `MUST`,
+   `SHOULD`, `COULD` ?
+3. **Est-ce lançable maintenant**, ou bloqué par autre chose ?
+
+| | Le code **enfreint** | Le code **ne fait pas encore** |
+| --- | --- | --- |
+| `FATAL` / `MUST` | `1 Urgent` | `2 High` |
+| `SHOULD` | `2 High` | `3 Medium` |
+| `COULD`, confort, outillage | `3 Medium` | `4 Low` |
+
+La distinction de la première colonne est celle qui compte : **produire un
+message invalide est plus grave que ne pas produire de message du tout.** Un
+correspondant qui reçoit de la France un message qu'une règle `FATAL` rejette
+est un incident ; une fonctionnalité absente est un manque. Les deux se
+corrigent, pas dans le même ordre.
+
+> [!IMPORTANT]
+> **Un ticket bloqué n'est pas urgent — il est bloqué.** Un travail qui attend
+> un accord extérieur, un accès, une réponse du Service Desk, ne peut pas être
+> pris demain matin : lui laisser `1 Urgent` ment à quiconque trie par
+> priorité, et noie les tickets réellement lançables. Pose son `blockedBy`,
+> et descends-le d'un cran tant qu'il est bloqué — **le cran se reprend le
+> jour où le bloqueur tombe**, et c'est au bloqueur, lui, de porter la
+> priorité du travail qu'il retient.
+>
+> C'est la faute la plus répandue du backlog actuel : sur sept `1 Urgent`
+> ouverts, **quatre attendent un accord qui n'appartient pas à l'équipe.**
+
+Une dernière règle, qui n'est pas une consigne de tri mais d'honnêteté :
+**la priorité d'un ticket que tu ne fondes sur aucun chapitre ne se déduit de
+rien.** Outillage, dette, exploitation — dis pourquoi tu la choisis, en une
+phrase, dans le ticket.
+
+### La tranche technique — `TS - `
+
+`save_issue(title: "TS - …", team: "OOTS", project: …)`, avec un `parentId`
+**si et seulement si** elle découpe une `US` existante.
+
+Elle porte un titre précis, sa priorité — et une description **seulement si
+elle dit quelque chose que sa mère ne dit pas**. Recopier l'énoncé aux deux
+niveaux garantit qu'ils divergeront ; le détail vit dans la `US`, une fois.
+Une `TS` sans mère, elle, porte son énoncé complet : personne d'autre ne le
+porte.
 
 **Le grain livrable est la feuille de l'arbre** : ce qui portera une branche,
 une PR, un `plan-issue` et un `ship-plan`, c'est la `TS` s'il y en a, la `US`
 sinon. Le découpage se fait pour ça — un ouvrier par feuille.
 
-### Découper sans chiffrer
+### Le plafond : une feuille = une PR
 
-Il n'y a pas d'estimation, donc « trop gros » se juge à la lecture. Les signes
-qui imposent de fendre une `US` en `TS` :
+Il n'y a pas d'estimation ici, mais « trop gros » se mesure quand même, et il
+faut le mesurer **avant** de créer, pas quand le ticket résiste.
 
-- elle touche **plusieurs couches** (`app/parsers/` **et**
-  `app/interactors/` **et** une migration) et chaque morceau se relit seul ;
-- deux morceaux peuvent **avancer en parallèle**, ou par des mains
-  différentes ;
-- une partie est **prête** et l'autre **attend** quelque chose ;
-- sa section « Critères d'acceptance » dépasse la demi-douzaine de lignes.
+La référence est empirique, et vérifiable : l'équipe **Passe Marché**, dans le
+même espace Linear, tient un backlog depuis juillet 2025. Sur ses cinq cents
+issues et ses vingt-cinq sprints, **aucune n'a jamais dépassé 8 points**, et
+le délai médian entre création et clôture est de **quinze jours** — constant
+sur les deux moitiés de la période. Ce n'est pas l'échelle qui se transpose,
+c'est le plafond : rien n'entre dans le backlog qui ne se livre en une
+quinzaine.
 
-Et le signe inverse, tout aussi important : **ne pas découper ce qui se livre
-d'un coup**. Trois `TS` sous une `US` qui tient en une PR coûtent plus à suivre
-qu'à faire. En cas de doute, une seule `US` — on la fendra le jour où elle
+Transposé ici, où l'unité est le passage d'un ouvrier : **une feuille est ce
+qui tient dans une PR relisible d'un seul tenant.** Quatre signaux disent
+qu'elle n'y tient pas, et un seul suffit à fendre :
+
+- plus de **six critères d'acceptance** ;
+- plus de **deux couches** touchées (`app/parsers/` **et**
+  `app/interactors/` **et** une migration) ;
+- une partie est **prête** et l'autre **attend** — on fend à la couture, pour
+  que la moitié prête parte ;
+- son titre a besoin d'un **« et »** pour être vrai.
+
+Et le signal inverse, aussi important : **ne pas fendre ce qui se livre d'un
+coup.** Trois `TS` sous une `US` qui tient en une PR coûtent plus à suivre
+qu'à faire. En cas de doute, une seule feuille — on la fendra le jour où elle
 résiste.
+
+> [!TIP]
+> **Fendre à la couture des dépendances est ce qui rapporte le plus.** Une
+> `US` dont la moitié attend un accord extérieur bloque entièrement tant
+> qu'elle n'est pas fendue ; fendue, sa moitié libre part tout de suite. C'est
+> le seul découpage qui change la date de livraison plutôt que le confort de
+> lecture — cherche-le en premier.
 
 ### Les dépendances
 
@@ -355,7 +441,7 @@ l'arbre, poser les relations ensuite.
   label thématique (`create_issue_label`) quand un thème traverse plusieurs
   projets et qu'on voudra le filtrer — pas pour redire le nom du projet, que
   Linear filtre déjà. Le label d'un lot de créations est le cas type : voir
-  [Ce qui ne devient pas une issue](#ce-qui-ne-devient-pas-une-issue).
+  [Choisir la nature](#choisir-la-nature--un-manque-une-case-sans-demander).
 - **Assignation** : **ne jamais assigner de sa propre initiative.** Répartir
   le travail, ici, veut dire le découper en lots indépendants ; qui les prend
   n'est pas notre décision.
@@ -375,12 +461,33 @@ l'arbre, poser les relations ensuite.
    une ligne par ticket avec son verdict et sa citation, puis la liste des
    créations proposées, puis les manques du contrôle inverse. C'est ce
    document qu'on relit, pas la conversation.
-5. **Soumettre.** Présente le rapport et demande l'accord — par
-   `AskUserQuestion` quand les décisions se listent, en prose quand elles
-   s'expliquent. Sépare ce qui est factuel (« le chapitre dit X, le ticket dit
-   Y ») de ce qui est un arbitrage (« faut-il annuler ce ticket ? »).
-6. **Appliquer**, et seulement ce qui a été accordé. Créer l'arbre d'abord,
+5. **Trancher — seul, et entièrement.** Chaque constat repart avec sa nature,
+   sa priorité, son parent, ses dépendances et son découpage, décidés par les
+   règles ci-dessus. **Ne remonte aucune de ces questions.** Un manque dont tu
+   dis « `US` ou `TS` ? », « quelle priorité ? », « faut-il le fendre ? » est
+   un manque que tu n'as pas fini d'instruire : les règles y répondent, et si
+   elles n'y répondent pas, c'est **elles** qu'il faut corriger, dans ce
+   fichier, en le disant.
+6. **Soumettre en un seul geste.** Un tableau récapitulatif de tout ce qui
+   sera écrit — une ligne par création, une par patch, une par relation — et
+   une demande d'accord. Pas une question par décision : l'utilisateur relit
+   un plan, il n'arbitre pas à ta place. Réserve `AskUserQuestion` aux seuls
+   **arbitrages produit** listés plus bas ; le reste se présente en prose,
+   déjà tranché.
+7. **Appliquer**, et seulement ce qui a été accordé. Créer l'arbre d'abord,
    les relations ensuite. Reporte dans le rapport ce qui a été fait.
+
+**Ce qui reste à l'utilisateur, et rien d'autre :**
+
+| Question | Pourquoi elle ne t'appartient pas |
+| --- | --- |
+| Fermer un ticket (`Canceled`, `Duplicate`) | Un arbitrage produit, irréversible dans la lecture qu'en font les autres |
+| Changer le périmètre d'un **projet** | Le projet est ce qui structure la vue de tout le monde |
+| Trancher une question que les TDD laissent ouverte | Ce serait inventer — voir la doctrine |
+| Toucher un ticket **en vol** | Quelqu'un travaille dessus |
+
+Tout le reste — créer, découper, prioriser, reparenter, poser une dépendance,
+patcher un énoncé faux — **se décide sans demander, et se soumet en bloc.**
 
 Trois choses à savoir sur cette étape, apprises en la ratant :
 
@@ -418,12 +525,14 @@ chapitre isolé ne peut pas voir.
 
 ## Garde-fous
 
-- **Rien dans Linear avant l'accord de l'étape 5.** C'est le garde-fou
+- **Rien dans Linear avant l'accord de l'étape 6.** C'est le garde-fou
   principal : tout le reste est rattrapable, un backlog réécrit sans accord
-  ne l'est pas vraiment.
-- **Ne touche pas à un ticket en vol.** `In Progress` ou `In Review`, un
-  ouvrier travaille dessus ou une PR en dépend : changer son énoncé sous ses
-  pieds change le sol. Signale-le dans le rapport et laisse l'utilisateur
+  ne l'est pas vraiment. Il porte sur l'**écriture**, jamais sur la décision —
+  décider est ton travail, écrire est ce qui se soumet.
+- **Ne touche pas à un ticket en vol.** Les trois statuts de type `started` —
+  `In Progress`, `Blocked`, `In Review` — disent qu'un ouvrier travaille
+  dessus, s'y est heurté, ou qu'une PR en dépend : changer son énoncé sous
+  ses pieds change le sol. Signale-le dans le rapport et laisse l'utilisateur
   prévenir qui travaille dessus.
 - **Modifier une description se fait par `patch`**, jamais en la réécrivant
   en entier : les opérations ciblées préservent ce que quelqu'un d'autre a
@@ -432,8 +541,12 @@ chapitre isolé ne peut pas voir.
   arbitrages produit : les proposer, laisser l'utilisateur les appliquer.
 - **Un verdict sans citation n'existe pas.** Si tu n'as pas retrouvé le
   passage, ton verdict est « je n'ai pas tranché », et tu le dis.
-- **Ne pas estimer**, ne pas créer de statut ni de champ, ne pas écrire dans
-  une autre équipe que `OOTS`.
+- **Ne pas estimer.** L'équipe n'emploie pas les points : aucune de ses issues
+  n'en porte, et elle n'a aucun cycle. Le plafond de découpage tient sans eux
+  — voir [Le plafond : une feuille = une PR](#le-plafond--une-feuille--une-pr).
+  Si cela change un jour, c'est l'équipe qui le décidera, pas un contrôle.
+- **Ne pas créer de statut ni de champ**, ne pas écrire dans une autre équipe
+  que `OOTS`.
 - **Ne jamais faire dépendre un ticket d'une maquette.** Il n'y en a pas, y
   compris pour la console d'administration, qui se dessine en composants
   [DSFR](https://www.systeme-de-design.gouv.fr/) — un ticket dit quels
