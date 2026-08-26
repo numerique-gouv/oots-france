@@ -63,8 +63,12 @@ if Rails.env.development?
       edm_error_code: 'EDM:ERR:0004',
       error_description: "Le fournisseur n'a pas trouvé de justificatif correspondant.",
       conversation: 1, events: %w[request_sent error_received] },
+    # `preview_required!` ne pose pas de code sur l'échange — il n'y en a pas à
+    # poser, la prévisualisation n'étant pas un échec —, mais l'erreur reçue en
+    # portait un, et `AuditTrail#received_error` l'inscrit sur l'événement.
     { status: 'preview_required', country_code: 'SI', procedure_code: 'S1',
       preview_location: 'https://previsualisation.example.si/consentement',
+      message_error_code: EdmException::AUTHORIZATION.code,
       events: %w[request_sent error_received] },
     { status: 'sent', country_code: 'NL', procedure_code: 'S1', events: %w[request_sent] },
     { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },
@@ -86,6 +90,20 @@ if Rails.env.development?
       procedure_code: ProcedureCode::SYSTEM_CHECK,
       error_description: "L'échange a échoué : 503 Service Unavailable",
       events: %w[request_received] },
+    # Une requête dont l'identifiant même enfreint `R-EDM-REQ-S004`. La France
+    # refuse en `EDM:ERR:0003` et sa réponse ne porte aucun `requestId` — la
+    # seule omission que `R-EDM-ERR-C025` autorise. Le journal n'en garde donc
+    # pas d'identifiant de requête, ni sur l'arrivée ni sur le refus : ce que
+    # `AuditTrail` n'a pas su lire, il laisse vide. Le corps conservé, lui,
+    # porte l'identifiant tel qu'il a circulé, faute de quoi la fiche ne dirait
+    # pas ce qui a été refusé.
+    { incoming: true, status: 'failed', country_code: 'HU',
+      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      edm_error_code: EdmException::INVALID_REQUEST.code,
+      error_description: EdmException::INVALID_REQUEST.message,
+      error_detail: 'R-EDM-REQ-S004',
+      request_id: nil, request_id_as_sent: 'pas-un-uuid',
+      events: %w[request_received error_sent] },
   ]
 
   # What each type of event actually carries, as `AuditTrail` writes it: every
@@ -121,34 +139,38 @@ if Rails.env.development?
   # One shape per message the TDD define: a request, an answer, and an answer
   # that refuses — the last being a `QueryResponse` carrying an `rs:Exception`,
   # and not a document of its own.
-  demonstration_body = lambda do |event_type|
-    id = SecureRandom.uuid
+  #
+  # L'identifiant est celui de l'échange démontré, et non un tiré au sort : un
+  # corps dont le `requestId` ne correspond à rien apprendrait à lire la fiche
+  # sans la croire. Là où il manque, l'attribut est omis et non laissé vide —
+  # `R-EDM-ERR-C025` n'autorise cette omission que sous
+  # `rs:InvalidRequestExceptionType`, et c'est la seule réponse qui en use.
+  demonstration_body = lambda do |event_type, sent: nil, echoed: nil, code: nil|
+    request_id_attribute = %( requestId="#{echoed}") if echoed.present?
 
     case event_type
     when 'request_sent', 'request_received'
-      format(<<~XML, id:)
+      format(<<~XML, id: sent)
         <?xml version="1.0" encoding="UTF-8"?>
         <query:QueryRequest xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
-                            id="urn:uuid:%<id>s">
+                            id="%<id>s">
           <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryRequest>
       XML
     when 'error_sent', 'error_received'
-      format(<<~XML, id:)
+      format(<<~XML, request_id: request_id_attribute, code:)
         <?xml version="1.0" encoding="UTF-8"?>
         <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
-                             xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
-                             requestId="urn:uuid:%<id>s"
+                             xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"%<request_id>s
                              status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
-          <rs:Exception code="EDM:ERR:0004"/>
+          <rs:Exception code="%<code>s"/>
           <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryResponse>
       XML
     else
-      format(<<~XML, id:)
+      format(<<~XML, request_id: request_id_attribute)
         <?xml version="1.0" encoding="UTF-8"?>
-        <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
-                             requestId="urn:uuid:%<id>s"
+        <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"%<request_id>s
                              status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
           <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryResponse>
@@ -195,11 +217,11 @@ if Rails.env.development?
   # body of a request would teach the console, and whoever reads it, that the two
   # look alike — where the whole point of keeping the body is to show what each
   # message actually said.
-  regrep_body = lambda do |event_type|
+  regrep_body = lambda do |event_type, sent:, echoed:, code:|
     return {} unless event_type.in?(carries_message)
 
     { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: demonstration_body.call(event_type) }
+      regrep_body: demonstration_body.call(event_type, sent:, echoed:, code:) }
   end
 
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
@@ -218,8 +240,16 @@ if Rails.env.development?
     # Each in the form its own message carries, which are not the same:
     # `R-EDM-REQ-S004` prefixes a request identifier `urn:uuid:`, where the
     # `EvidenceResponseIdentifier` slot holds the bare UUID a builder drew.
-    request_id = format('urn:uuid:%s', SecureRandom.uuid)
+    # Nul quand le correspondant en a envoyé un que rien ne pouvait lire ; le
+    # corps, lui, garde ce qui a circulé, ce que la colonne ne peut pas faire.
+    request_id = scenario.fetch(:request_id, format('urn:uuid:%s', SecureRandom.uuid))
+    circulated_id = scenario.fetch(:request_id_as_sent, request_id)
     response_id = SecureRandom.uuid
+
+    # Le code que le message d'erreur portait, que les deux écrivains
+    # d'`AuditTrail` lisent du message et non de l'échange : le plus souvent le
+    # même, sauf là où l'échange n'en garde aucun.
+    message_error_code = scenario[:message_error_code] || scenario[:edm_error_code]
 
     # The direction is in the lookup and not in the update: `incoming` is
     # read-only once the row is written, and a demonstration replayed finds its
@@ -230,12 +260,17 @@ if Rails.env.development?
     )
 
     exchange.update!(
-      scenario.except(:events, :incoming, :conversation).merge(
-        conversation_id:,
-        evidence_requester_id: incoming ? '00000000000009' : '00000000000002',
-        created_at: opened,
-        settled_at: (opened unless scenario[:status].in?(Exchange::IN_PROGRESS)),
-      ),
+      scenario.except(:events, :incoming, :conversation, :error_detail, :request_id,
+        :request_id_as_sent, :message_error_code).merge(
+          conversation_id:,
+          # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
+          # n'a encore quitté n'en porte pas, et rien n'en écrit côté
+          # fournisseur, où l'identifiant ne vit que dans le journal.
+          request_id: (request_id unless incoming || scenario[:status] == 'pending'),
+          evidence_requester_id: incoming ? '00000000000009' : '00000000000002',
+          created_at: opened,
+          settled_at: (opened unless scenario[:status].in?(Exchange::IN_PROGRESS)),
+        ),
     )
 
     events.each_with_index do |event_type, step|
@@ -253,10 +288,12 @@ if Rails.env.development?
         ebms_action: ebms_actions[event_type],
         request_id: (request_id if event_type.in?(carries_message)),
         response_id: (response_id if event_type.in?(carries_response_id)),
-        edm_error_code: (exchange.edm_error_code if event_type.start_with?('error')),
-        detail: (exchange.error_description if event_type.start_with?('error')),
+        edm_error_code: (message_error_code if event_type.start_with?('error')),
+        # `AuditTrail#error_sent` inscrit la règle que la requête a enfreinte,
+        # là où l'échange garde le libellé que la liste de codes fixe.
+        detail: (scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
-        **regrep_body.call(event_type),
+        **regrep_body.call(event_type, sent: circulated_id, echoed: request_id, code: message_error_code),
         **evidence_fingerprint.call(event_type, exchange),
         **evidence_identifier.call(event_type, exchange),
       )
@@ -305,7 +342,8 @@ if Rails.env.development?
       # Leaving the pair empty would teach the console that this type never has
       # a body, where the code writes one whenever the part reads.
       regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: demonstration_body.call('request_received'),
+      regrep_body: demonstration_body.call('request_received',
+        sent: format('urn:uuid:%s', SecureRandom.uuid)),
     )
   end
 
@@ -313,7 +351,9 @@ if Rails.env.development?
   # holds it: the gateway never took it, so there is no message identifier and
   # no evidence digest — that digest says whether a document is the one that
   # went through, and none did.
-  refused_by_gateway = demonstrations.last
+  # Désigné par son pays et non par sa place dans la liste : les scénarios
+  # s'ajoutent en fin, et `last` suivrait le dernier venu.
+  refused_by_gateway = demonstrations.find { |one| one.incoming? && one.country_code == 'PL' }
 
   unless AuditEvent.exists?(event_type: 'answer_not_sent')
     # The request identifier is read back from the arrival rather than drawn
@@ -333,7 +373,7 @@ if Rails.env.development?
       response_id: SecureRandom.uuid,
       detail: '503 Service Unavailable',
       regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: demonstration_body.call('response_sent'),
+      regrep_body: demonstration_body.call('response_sent', echoed: answered_request&.request_id),
     )
   end
 

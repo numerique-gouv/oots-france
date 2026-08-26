@@ -246,6 +246,49 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
+  # `R-EDM-REQ-S004` (FATAL) on the request, `R-EDM-ERR-S004` on the answer, and
+  # `R-EDM-ERR-C025` (FATAL) between the two: the one response that may omit
+  # `requestId` is an `rs:InvalidRequestExceptionType`, which is exactly what
+  # France answers here. Recopying the malformed identifier would have France
+  # sign a response breaking a fatal rule; inventing one would answer a request
+  # nobody made.
+  describe 'a request whose own identifier is not a UUID' do
+    let(:message) do
+      envelope_with_body('requete') { |body| body.sub(/id="urn:uuid:[^"]*"/, 'id="pas-un-uuid"') }
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule the identifier broke' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-S004')
+    end
+
+    it 'omits requestId rather than echoing what it refused' do
+      answer
+
+      expect(submitted.root.attribute('requestId')).to be_nil
+    end
+
+    it 'settles the exchange in failure, as any other refusal does' do
+      create(:exchange, incoming: true, exchange_id: message.exchange_id, country_code: nil)
+
+      answer
+
+      expect(Exchange.sole).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0003')
+    end
+
+    # The journal keeps what it could read: an identifier it could not read is
+    # left empty rather than recorded malformed, and the refusal is recorded
+    # all the same.
+    it 'journals the refusal with no request identifier' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-S004', request_id: nil)
+    end
+  end
+
   # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
   # were used in previously processed requests. »
   describe 'a request whose identifier has already been answered' do

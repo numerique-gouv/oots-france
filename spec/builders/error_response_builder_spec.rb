@@ -63,6 +63,34 @@ RSpec.describe ErrorResponseBuilder do
     end
   end
 
+  # `R-EDM-ERR-C025` (FATAL): a response omitting `requestId` MUST carry
+  # `rs:InvalidRequestExceptionType` and no other. That is the one thing France
+  # can answer a request whose own identifier broke `R-EDM-REQ-S004` — writing
+  # the malformed value back would break `R-EDM-ERR-S004` instead, and inventing
+  # one would answer a request nobody made.
+  describe 'the requestId attribute' do
+    subject(:root) { Nokogiri::XML(response).root }
+
+    it 'echoes the identifier of the request answered' do
+      expect(root['requestId']).to eq('urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797')
+    end
+
+    context 'when the request had no readable identifier' do
+      let(:attributes) do
+        super().merge(request_id: nil, exception: EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S004'))
+      end
+
+      it 'omits the attribute rather than writing an empty one' do
+        expect(root.attribute('requestId')).to be_nil
+      end
+
+      it 'still answers, under the one exception type the rule allows' do
+        expect(Nokogiri::XML(response).at_xpath('//rs:Exception', namespaces)['xsi:type'])
+          .to eq('rs:InvalidRequestExceptionType')
+      end
+    end
+  end
+
   # The corners swap: on a request the requester is C1, here it is us who
   # answer, and we are classified ERRP rather than EP — an error is not a
   # delivery.
