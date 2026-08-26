@@ -93,19 +93,27 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   # puisqu'il ne merge jamais.
   [ "$DECLAREE" = merged ] && continue
 
-  # Une étape déclarée *après* que l'ouvrier a parlé prime sur son verdict :
+  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main, avec
+  # l'instant où il l'a prononcé.
+  LIGNE=$(tail -6 "$F" 2>/dev/null \
+    | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
+    | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+  VERDICT=${LIGNE#*$(printf '\t')}
+  PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+
+  # Une étape déclarée *après* que le verdict a été prononcé prime sur lui :
   # c'est la parole la plus fraîche, et c'est ce qui fait apparaître
   # « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et dont la PR a
   # divergé depuis. Comme un verdict, elle s'affiche sans délai.
-  if [ -n "$DECLAREE" ] && [ "$ETAPE" -nt "$F" ]; then
+  #
+  # On compare à l'horodatage de la ligne du verdict, jamais à la date du
+  # transcript : celle-ci avance au moindre outil, donc l'ouvrier qui reprend
+  # son travail effacerait la déclaration qu'on vient d'écrire.
+  DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
+  if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
     RENDUS="$RENDUS  ⚒ $TICKET ($DECLAREE)"
     continue
   fi
-
-  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main.
-  VERDICT=$(tail -6 "$F" 2>/dev/null \
-    | jq -rc 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' 2>/dev/null \
-    | grep -oE '^(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)' | tail -1)
 
   DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
 
