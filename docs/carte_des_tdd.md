@@ -49,7 +49,9 @@ La page du chapitre ne porte qu'un sommaire : tout son contenu est ici.
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
 | [3.1.4 — Interface de requête du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957) | L'appel REST qui donne les fournisseurs d'un type de justificatif dans un pays, et le format de sa réponse. |
+| [3.1.7 — Règles métier du DSD](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932949) | Les règles que doivent respecter les objets publiés au DSD et les réponses qu'il rend. Contenu injecté par macro : voir l'encadré du haut. |
 | [3.2.4 — Interface de requête de l'Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932939) | Les deux appels REST : les exigences d'une démarche, puis les types de justificatif qui les satisfont. |
+| [3.2.6 — Règles métier de l'Evidence Broker](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932955) | Idem pour l'Evidence Broker. Contenu injecté par macro. |
 | [3.3 — Semantic Repository](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932920) | Le catalogue des actifs sémantiques et de leurs distributions, sur `code.europa.eu`. Aucun échange n'oblige à l'appeler ; il se consulte à la conception. |
 | [3.4 — Distribution des Common Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) | Comment on **découvre** l'instance à interroger (enregistrements DNS NAPTR), et pourquoi mettre un cache devant. |
 | [3.5.1 — Listes de codes communes](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952) | Le catalogue des listes de codes, avec l'URL de chaque fichier Genericode. |
@@ -62,6 +64,7 @@ La page du chapitre ne porte qu'un sommaire : tout son contenu est ici.
 
 | Sous-chapitre | Ce qu'on y trouve |
 | --- | --- |
+| [4.3 — Exigences métier](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932929) | Ce que l'échange doit garantir, dont les exigences de sécurité du lien national qu'un fournisseur doit tenir. |
 | [4.4 — Modèle de requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) | La liste des slots et leur cardinalité, la corrélation — `ConversationId` pour l'usager et sa session, `ExchangeId` pour un aller-retour — et les **délais d'expiration** T1/T2/T3. |
 | [4.5.1 — Requête](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) | Slot par slot, avec exemple XML. La référence à ouvrir avant de toucher à `evidence_request.xml.erb`. |
 | [4.5.2 — Réponse](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) | Idem pour la réponse, dont l'**empaquetage** introduit en 2.0 (justificatif principal + traductions, annexes, version lisible). |
