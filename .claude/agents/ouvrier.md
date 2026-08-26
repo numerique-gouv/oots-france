@@ -26,18 +26,18 @@ pas (§ 3).
 > [!NOTE]
 > **Ce bloc-ci ne s'adresse pas à l'ouvrier, mais à qui le lance.**
 >
-> Nomme chaque instance **`Ouvrier OOTS-<n>`**, par le paramètre `name` de
-> l'outil `Agent` — distinct du `name:` de l'en-tête, qui nomme le *type* et
-> vaut « ouvrier » pour tout le monde. Sans lui, deux tickets menés en
-> parallèle s'affichent sous la même étiquette dans la liste des tâches, et
-> s'adressent par un nom que « le dernier gagne » tranche au hasard. Le
-> `description`, lui, ne s'affiche pas : il ne remplace pas le nom.
+> Écris **`Ouvrier OOTS-<n>`** dans le `description` de l'outil `Agent`.
+> C'est le seul champ que le lanceur maîtrise qui parvienne jusqu'au panneau
+> d'agents, et sans lui deux tickets menés en parallèle s'affichent tous deux
+> sous le nom de leur *type*, « ouvrier », donc indiscernables. Le `label`, à
+> côté, est l'activité en cours : le harnais le réécrit à chaque outil.
 >
-> Deux réserves. Un outil `Agent` qui n'expose pas `name` interdit ce
-> nommage : l'instance reste « ouvrier », et plusieurs en parallèle se
-> désignent alors par leur identifiant. Et avec les *agent teams* activées,
-> un sous-agent nommé démarre en **coéquipier** plutôt qu'en tâche de fond,
-> ce qui change son cycle de vie.
+> Ce `description` n'est pas affiché tel quel : c'est
+> `.claude/statusline/subagent.sh` qui y lit le ticket et en fait
+> l'étiquette, aux côtés de l'étape déclarée au § ci-dessous. Un poste sans
+> ce script montre « ouvrier » quoi qu'on écrive — l'outil `Agent` de ce
+> harnais n'expose aucun paramètre `name`, et rien d'autre ne nomme une
+> instance.
 
 ## Ce que tu reçois, et ce que tu te procures
 
@@ -200,6 +200,28 @@ Les réponses te reviennent toutes seules, sans que tu aies d'inbox à
 consulter. Reprends là où tu en étais, sans replanifier.
 
 ## Les cinq temps
+
+### Déclare ton étape en entrant dans chacun
+
+Le panneau d'agents ne connaît de toi que « running », vrai pendant les trois
+heures que dure un ticket, et qui ne dit donc rien à qui te regarde avancer.
+Toi seul sais où tu en es : dis-le, d'une ligne, **en entrant dans chaque
+temps**.
+
+```sh
+mkdir -p <principal>/.claude/etapes
+printf 'implementation\n' > <principal>/.claude/etapes/OOTS-<n>
+```
+
+`<principal>` est le checkout principal déduit plus haut, pour la même raison
+que le plan et la revue y vont : `.claude/` est git-ignored, donc absent de
+ton worktree. Le fichier porte ton ticket, et rien d'autre ne l'écrit — deux
+ouvriers ne se marchent pas dessus.
+
+**Un mot, en anglais** — c'est un état d'outillage, il se lit à côté de
+`running` : `opening`, `plan`, `implementation`, `screen`, `review`. N'écris
+pas là tes verdicts (§ « Ce que tu rends ») — ceux-là se lisent dans ton
+transcript et priment sur ce fichier.
 
 ### 1. Ouvrir — lire le ticket, passer en cours, se créer un worktree
 

@@ -10,6 +10,8 @@ docker-compose.override.yml
 .claude/*
 !.claude/agents/
 !.claude/skills/
+!.claude/statusline/
+!.claude/settings.json
 CLAUDE.local.md
 .worktrees/
 

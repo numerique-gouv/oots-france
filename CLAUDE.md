@@ -206,7 +206,12 @@ Rules:
 
 ## What lives in `.claude/`
 
-**Two directories are versioned, and only two: `.claude/skills/` and `.claude/agents/`.** They describe *how work is done on this repository* — the review loop, the shipping sequence, the control of the backlog against the TDD — so they belong to the repository for the same reason this file does: a convention nobody can read is a convention nobody follows.
+**Three directories are versioned, plus one file: `.claude/skills/`, `.claude/agents/`, `.claude/statusline/` and `.claude/settings.json`.** They describe *how work is done on this repository* — the review loop, the shipping sequence, the control of the backlog against the TDD, and what a screen shows of an agent at work — so they belong to the repository for the same reason this file does: a convention nobody can read is a convention nobody follows.
+
+`.claude/statusline/` names each `ouvrier` by its ticket and its stage in the agents panel, in place of the `running` the harness would otherwise show for the three hours a ticket lasts. It reads its contract from `.claude/agents/ouvrier.md` — the five verdicts, the stage declared in `.claude/etapes/` — so the two only stay in step by travelling together. `.claude/settings.json` is what points the harness at them, through `${CLAUDE_PROJECT_DIR}` so that no machine's paths leak in; being project settings, it overrides whatever `~/.claude/settings.json` declares, here and nowhere else.
+
+> [!IMPORTANT]
+> `.claude/settings.json` makes this repository run a shell command on the machine of whoever opens it, under the same workspace-trust gate as a hook. Anything added there is read by every clone, so it stays limited to what a status line needs.
 
 | Skill | What it does |
 | --- | --- |
