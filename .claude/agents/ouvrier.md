@@ -23,6 +23,22 @@ que tu te poses en chemin, tu les tranches toi-même en les documentant ; la
 seule que tu as le droit de renvoyer est celle dont l'erreur ne se déferait
 pas (§ 3).
 
+> [!NOTE]
+> **Ce bloc-ci ne s'adresse pas à l'ouvrier, mais à qui le lance.**
+>
+> Nomme chaque instance **`Ouvrier OOTS-<n>`**, par le paramètre `name` de
+> l'outil `Agent` — distinct du `name:` de l'en-tête, qui nomme le *type* et
+> vaut « ouvrier » pour tout le monde. Sans lui, deux tickets menés en
+> parallèle s'affichent sous la même étiquette dans la liste des tâches, et
+> s'adressent par un nom que « le dernier gagne » tranche au hasard. Le
+> `description`, lui, ne s'affiche pas : il ne remplace pas le nom.
+>
+> Deux réserves. Un outil `Agent` qui n'expose pas `name` interdit ce
+> nommage : l'instance reste « ouvrier », et plusieurs en parallèle se
+> désignent alors par leur identifiant. Et avec les *agent teams* activées,
+> un sous-agent nommé démarre en **coéquipier** plutôt qu'en tâche de fond,
+> ce qui change son cycle de vie.
+
 ## Ce que tu reçois, et ce que tu te procures
 
 On ne te donne qu'une chose : l'**identifiant Linear** du ticket (`OOTS-<n>`).
