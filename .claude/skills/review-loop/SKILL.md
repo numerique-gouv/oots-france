@@ -384,11 +384,16 @@ Une passe :
    déduit de là, il ne se fixe pas d'avance.
 
    ```sh
-   git tag -f sauvegarde-<sujet> HEAD      # avant de toucher à quoi que ce soit
+   git -c tag.gpgsign=false tag -f sauvegarde-<sujet> HEAD   # avant de toucher à quoi que ce soit
    BASE=$(git merge-base origin/main HEAD)
    # refonte : reset --hard "$BASE", puis reconstruire les commits
    git diff sauvegarde-<sujet> HEAD        # DOIT être vide
    ```
+
+   Le `-c tag.gpgsign=false` n'est pas décoratif : `tag.gpgsign` est activé,
+   et un tag signé exige un message, si bien que `git tag -f <nom> HEAD` échoue
+   sur `fatal: no tag message?`. Une sauvegarde est un repère local et jetable,
+   elle n'a rien à signer.
 
    **La vérification qui compte porte sur l'arbre final, pas sur chaque
    commit** : `git diff` entre la sauvegarde et le nouveau HEAD doit être
@@ -427,9 +432,7 @@ Une passe :
    d'être de tout le reste : un ouvrier qui rend son verdict pendant que
    l'e2e tourne annonce une livraison que la minute suivante peut démentir.
 
-   Signaler que les commits refondus arrivent non signés, à l'utilisateur de
-   resigner s'il y tient. Puis lui laisser de quoi revenir en arrière, ou
-   solder :
+   Laisser de quoi revenir en arrière, ou solder :
 
    ```sh
    git reset --hard sauvegarde-<sujet>   # revenir à l'historique d'avant
