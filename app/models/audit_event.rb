@@ -22,9 +22,17 @@ class AuditEvent < ApplicationRecord
   # that names a request of someone else's. Nothing goes back to the
   # correspondent — the TDD open no error path that way — so the journal is the
   # only place the decision can be read afterwards.
+  #
+  # The last three are of that same family, and chapter 4.8 §3.3 says as much by
+  # omission: it hands the logging of AS4 errors and SOAP faults to the access
+  # points, and gives a submission that never got through no line at all, its
+  # four tables describing messages that circulated. What they buy is that a
+  # message we could not read, one we could not handle, and an answer France
+  # built and failed to hand over stop being invisible.
   EVENT_TYPES = %w[
     request_sent request_refused response_received error_received evidence_delivered
     request_received response_sent error_sent response_refused
+    message_unreadable message_unhandled answer_not_sent
   ].freeze
 
   encrypts :evidence_subject
@@ -64,10 +72,12 @@ class AuditEvent < ApplicationRecord
     }
   end
 
-  # Which end of the gateway a message went through. Two events are no ebMS
-  # message at all — a refusal pronounced before the gateway was called, and the
-  # handing of the evidence to the French requester — and neither list holds
-  # them.
+  # The three ebMS messages the TDD define, in each direction: which end of the
+  # gateway one of them went through. The other six types are not one of those
+  # three, each for its own reason — a refusal pronounced before the gateway was
+  # called, the handing of the evidence to the French requester, a response
+  # turned away that already has its own line, an answer the gateway never took,
+  # and the two arrivals whose action named none of the three.
   #
   # Read by `db/seeds.rb` alone, to decide which demonstration events carry a
   # message identifier. No page reads them: they derive the direction from the

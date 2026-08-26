@@ -79,6 +79,13 @@ if Rails.env.development?
     { status: 'deferred', country_code: 'ES', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
       response_available_at: 8.days.from_now,
       events: %w[request_sent response_received] },
+    # France answered and the gateway did not take the answer: the exchange
+    # fails with no EDM code, as `IncomingMessage::Process` leaves it, and the
+    # answer that never went out gets its line just below.
+    { incoming: true, status: 'failed', country_code: 'PL',
+      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      error_description: "L'échange a échoué : 503 Service Unavailable",
+      events: %w[request_received] },
   ]
 
   # What each type of event actually carries, as `AuditTrail` writes it: every
@@ -225,8 +232,61 @@ if Rails.env.development?
     )
   end
 
+  # The three that say nothing else happened. Each carries exactly what its
+  # writer in `AuditTrail` can fill, and a demonstration filling more would
+  # teach the console to lie: an envelope the parser refused leaves only what
+  # the gateway called it, since there is no header to read anything else from;
+  # an action no handler claims leaves that action and the identifiers the
+  # header did carry, but no country, which is only ever read from an agent's
+  # address in the body.
+  unless AuditEvent.exists?(event_type: 'message_unreadable')
+    AuditEvent.create!(
+      event_type: 'message_unreadable', occurred_at: 2.hours.ago,
+      message_id: format('%s@domibus.eu', SecureRandom.uuid),
+      detail: 'Enveloppe illisible',
+    )
+  end
+
+  unless AuditEvent.exists?(event_type: 'message_unhandled')
+    AuditEvent.create!(
+      event_type: 'message_unhandled', occurred_at: 3.hours.ago,
+      ebms_action: 'SomethingElse',
+      conversation_id: '00000000-0000-0000-0001-000000000010',
+      exchange_id: '00000000-0000-0000-0000-000000000010',
+      message_id: format('%s@domibus.eu', SecureRandom.uuid),
+      detail: I18n.t('lib.audit_trail.unhandled_action', action: 'SomethingElse'),
+      # The body of a request, because that is what an unknown action arrives
+      # carrying: `first_part` reads by position, so a correspondent who names
+      # its action wrongly still hands over a well-formed RegRep document.
+      # Leaving the pair empty would teach the console that this type never has
+      # a body, where the code writes one whenever the part reads.
+      regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+      regrep_body: demonstration_body.call('request_received'),
+    )
+  end
+
+  # The answer France built for the exchange above, kept because nothing else
+  # holds it: the gateway never took it, so there is no message identifier and
+  # no evidence digest — that digest says whether a document is the one that
+  # went through, and none did.
+  refused_by_gateway = demonstrations.last
+
+  unless AuditEvent.exists?(event_type: 'answer_not_sent')
+    AuditEvent.create!(
+      event_type: 'answer_not_sent', occurred_at: refused_by_gateway.created_at + 7.minutes,
+      ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
+      conversation_id: refused_by_gateway.conversation_id,
+      exchange_id: refused_by_gateway.exchange_id,
+      country_code: refused_by_gateway.country_code,
+      detail: '503 Service Unavailable',
+      regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+      regrep_body: demonstration_body.call('response_sent'),
+    )
+  end
+
   puts "#{demonstrations.count { |one| !one.incoming? }} échanges émis, un par état, " \
        "#{demonstrations.count(&:incoming?)} reçus, " \
        "sur #{demonstrations.map(&:conversation_id).uniq.count} conversations."
-  puts "#{AuditEvent.count} événements de journal, dont un refus sans échange."
+  puts "#{AuditEvent.count} événements de journal, dont un refus sans échange " \
+       "et trois arrivées ou départs qui ne laissent rien d'autre."
 end

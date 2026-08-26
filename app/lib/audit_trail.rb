@@ -45,20 +45,51 @@ class AuditTrail
     )
   end
 
+  # An envelope the parser refused, which leaves only what the gateway itself
+  # named: no header, therefore no exchange, no action and no part. The bytes are
+  # the WS plugin's answer and not the correspondent's message, so they do not
+  # belong in `regrep_body`, which holds the RegRep document as it circulated.
+  #
+  # `message_id` is what the line is worth: it is the way into the *Message Log*
+  # of the console, where the protocol layer kept what this one could not.
+  def message_unreadable(message_id:, reason:)
+    record('message_unreadable', message_id:, detail: reason)
+  end
+
+  # A message whose action no handler claims. Its header still reads, so it says
+  # as much of itself as any arrival does. What it cannot say is the country: the
+  # parser refuses to make a body out of an action it cannot name, and a country
+  # is only ever read from an agent's address inside one.
+  def message_unhandled(message:, message_id:)
+    record(
+      'message_unhandled',
+      **arrived(message, message_id),
+      detail: I18n.t('lib.audit_trail.unhandled_action', action: message.action),
+    )
+  end
+
+  # An answer France built and failed to hand to its own gateway. Nothing
+  # circulated, so there is no message identifier and no evidence digest — that
+  # digest answers whether a document is the one that went through, and none
+  # did. What the line is for is the RegRep body: the gateway never took it, and
+  # no other place holds it.
+  def answer_not_sent(reason:, exception: nil, **answer)
+    record(
+      'answer_not_sent',
+      ebms_action: exception ? EbmsAction::EXCEPTION_RESPONSE : EbmsAction::EXECUTE_QUERY_RESPONSE,
+      edm_error_code: exception&.code,
+      detail: reason,
+      **answered(**answer),
+    )
+  end
+
   # Recorded before the message is dispatched, and not inside the handler that
   # deals with it: a request too malformed to answer, or a response naming an
   # exchange we never opened, must be logged all the same.
   def message_received(message:, message_id:)
     record(
       RECEIVED_EVENTS.fetch(message.action),
-      ebms_action: message.action,
-      conversation_id: message.conversation_id,
-      exchange_id: message.exchange_id,
-      message_id:,
-      # Its own reading, and not one of `received_body`'s fields: a body Nokogiri
-      # refuses is exactly the one whose bytes an auditor needs, and the chapter
-      # asks for them whether or not anything could be made of them.
-      **circulated(readable(:regrep_body) { message.first_part }),
+      **arrived(message, message_id),
       **(readable(:body) { received_body(message) } || {}),
     )
   end
@@ -99,6 +130,24 @@ class AuditTrail
   end
 
   private
+
+  # What a message that did arrive says of itself, before anything is made of
+  # its body: the action, the two identifiers of chapter 4.4, and the first MIME
+  # part — the last read by position, so an action no handler claims carries one
+  # just as a request does.
+  #
+  # The part gets its own reading, and not one of `received_body`'s fields: a
+  # body Nokogiri refuses is exactly the one whose bytes an auditor needs, and
+  # the chapter asks for them whether or not anything could be made of them.
+  def arrived(message, message_id)
+    {
+      ebms_action: message.action,
+      conversation_id: message.conversation_id,
+      exchange_id: message.exchange_id,
+      message_id:,
+      **circulated(readable(:regrep_body) { message.first_part }),
+    }
+  end
 
   # Both identifiers of chapter 4.4, and never one alone: the exchange's is what
   # joins these rows to the exchange they belong to, and the conversation's is

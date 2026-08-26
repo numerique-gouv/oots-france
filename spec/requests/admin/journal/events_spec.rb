@@ -93,14 +93,17 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.parsed_body.css("a[title='#{event.conversation_id}']")).to be_empty
     end
 
+    # The markers are shaped like the neighbouring one, and deliberately not
+    # like French words: the page also renders every type's label in its filter,
+    # so a marker that reads as one would match a label and never a listing.
     it 'narrows on an event type' do
-      create(:audit_event, event_type: 'request_sent', exchange_id: 'emise')
-      create(:audit_event, event_type: 'error_received', exchange_id: 'refusee')
+      create(:audit_event, event_type: 'request_sent', exchange_id: 'exclu-par-le-filtre')
+      create(:audit_event, event_type: 'error_received', exchange_id: 'attendu-du-filtre')
 
       get admin_journal_root_path(event_type: 'error_received')
 
-      expect(response.body).to include('refusee')
-      expect(response.body).not_to include('emise')
+      expect(response.body).to include('attendu-du-filtre')
+      expect(response.body).not_to include('exclu-par-le-filtre')
     end
 
     # The filter refuses it rather than ignoring it: widening a listing under a
@@ -117,6 +120,22 @@ RSpec.describe 'Admin::Journal::Events' do
 
   # Rendered, not merely raised: `full_messages` is what looks the translation
   # up, and a missing key takes the whole page down with it.
+  # The three types record that nothing else happened, so each has a badge and a
+  # label of its own — both derived from `EVENT_TYPES`, which is exactly why a
+  # type added without them would go unnoticed until an operator met it.
+  it 'shows the three lines that record that nothing else happened' do
+    create(:audit_event, event_type: 'message_unreadable', message_id: 'un-message',
+      exchange_id: nil, conversation_id: nil, procedure_code: nil, evidence_requester_id: nil)
+    create(:audit_event, event_type: 'message_unhandled', ebms_action: 'SomethingElse')
+    create(:audit_event, event_type: 'answer_not_sent', message_id: nil)
+
+    get admin_journal_root_path
+
+    %w[message_unreadable message_unhandled answer_not_sent].each do |type|
+      expect(response.body).to include(CGI.escapeHTML(I18n.t("admin.journal.event_types.#{type}")))
+    end
+  end
+
   it 'names on screen a criterion it could not read' do
     get admin_journal_root_path(procedure_code: %w[a b])
 
@@ -151,6 +170,21 @@ RSpec.describe 'Admin::Journal::Events' do
       get admin_journal_event_path(event)
 
       expect(response.body).to include('message-de-la-passerelle', 'Königreich')
+    end
+
+    # The emptiest line the journal can hold: an envelope the parser refused
+    # names no exchange, no conversation, no country and no procedure, so every
+    # cell but two is blank. The page has to render it all the same — it is the
+    # one an auditor reaches from a gateway message identifier and nothing else.
+    it 'shows a line whose every correlation field is empty' do
+      event = create(:audit_event, event_type: 'message_unreadable', message_id: 'un-message',
+        exchange_id: nil, conversation_id: nil, procedure_code: nil, evidence_requester_id: nil,
+        detail: 'Enveloppe illisible')
+
+      get admin_journal_event_path(event)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('un-message', 'Enveloppe illisible')
     end
 
     # The counterpart of the listing's abbreviation: a page with room shows the

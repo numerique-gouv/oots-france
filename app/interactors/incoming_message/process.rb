@@ -12,11 +12,11 @@ module IncomingMessage
     }.freeze
 
     def call
-      context.message = context.gateway.retrieve(context.message_id)
+      context.message = fetched
 
       # The handler is resolved before the message is journalled, and not after:
-      # an action we cannot name is not an event we can record, and it is the
-      # resolution that says so.
+      # the two are different events, and it is the resolution that tells them
+      # apart.
       chosen = handler
       record
 
@@ -42,21 +42,36 @@ module IncomingMessage
 
     private
 
+    # Journalled here rather than in `give_up`, which catches the same exception
+    # raised from anywhere: by the time a handler is running, the message has a
+    # line already, and a second one would say an arrival was lost that was not.
+    #
+    # A `Faraday::Error` is deliberately not journalled: `retrieveMessage`
+    # consumes a message when it succeeds, so a call that did not is one the
+    # sweep can simply make again — `CollectPendingMessagesJob` collects
+    # whatever the gateway still holds, and a message collected twice is not
+    # there the second time. An answer that did arrive and could not be read is
+    # the loss, that call having succeeded.
+    def fetched
+      context.gateway.retrieve(context.message_id)
+    rescue UnreadableMessageError => e
+      context.audit_trail.message_unreadable(message_id: context.message_id, reason: e.message)
+      raise
+    end
+
     # Recorded before it is handled, so that a request too malformed to answer
     # — the one an auditor most needs to find — is journalled all the same.
-    #
-    # Two arrivals still leave no line: an unreadable SOAP envelope, and an ebMS
-    # action we cannot name, which `handler` refuses just above. Neither can be
-    # qualified as an event. Tracked as OOTS-99.
     def record
       context.audit_trail.message_received(message: context.message, message_id: context.message_id)
       OpenExchange.call!(context)
     end
 
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves
-    # no log, no answer and no trace of a message that did arrive.
+    # no answer and no trace of what the message asked for.
     def handler
       HANDLERS.fetch(context.message.action) do
+        context.audit_trail.message_unhandled(message: context.message, message_id: context.message_id)
+
         raise UnreadableMessageError,
           I18n.t('interactors.incoming_message.process.unknown_action', action: context.message.action)
       end
