@@ -398,8 +398,11 @@ Une passe :
    et reconstruire à la main des états intermédiaires est précisément ce qui
    peut produire un commit qui ne tient pas debout tout seul.
 
-   La CI verte de l'étape 6 reste valable après refonte, l'arbre étant
-   identique au bit près : le dire, plutôt que d'en relancer une pour rien.
+   L'arbre étant identique au bit près, la CI de l'étape 6 dit déjà ce que
+   celle d'après la refonte dira — mais elle le dit d'un SHA que la PR ne
+   porte plus. Ce n'est pas la même affirmation, et l'écart n'est pas
+   théorique : une suite qui monte une stack Domibus échoue parfois sans que
+   le code y soit pour rien.
 
    **Pousser, mais seulement si tout est vérifié** — arbre identique à la
    sauvegarde, et scripts qui s'analysent à chaque commit :
@@ -413,6 +416,16 @@ Une passe :
    faut surtout pas écraser. **Si une seule vérification échoue, ne pas
    pousser** : rendre la main en disant laquelle, la sauvegarde étant encore
    en place.
+
+   **Puis attendre que la CI de ce push soit verte, et ne rendre la main
+   qu'après** — `gh pr checks <url> --watch`. Le force-push en a lancé une
+   nouvelle : tant qu'elle tourne, la convergence n'est pas prouvée sur le
+   SHA que la PR porte, et « livré » se dirait d'un état que personne n'a vu
+   vert. Rouge, c'est un bloquant comme un autre : retour à l'étape 1.
+
+   C'est la seule attente qui reste après l'étape 6, et elle est la raison
+   d'être de tout le reste : un ouvrier qui rend son verdict pendant que
+   l'e2e tourne annonce une livraison que la minute suivante peut démentir.
 
    Signaler que les commits refondus arrivent non signés, à l'utilisateur de
    resigner s'il y tient. Puis lui laisser de quoi revenir en arrière, ou
