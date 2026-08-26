@@ -40,12 +40,36 @@ etape() {
   FICHIER="$SOUS_AGENTS/agent-$1.jsonl"
   TICKET=$2
 
+  ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
+  DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
+
+  # 0. « merged » : PR fusionnée, affaires rangées.
+  [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
+
   # 1. Un des cinq verdicts en queue de transcript : l'ouvrier a rendu la
-  #    main, et c'est le dernier mot. Trois des cinq attendent une réponse.
+  #    main. Trois des cinq attendent une réponse.
+  #
+  #    Une étape déclarée *après* que le verdict a été prononcé prime sur
+  #    lui : c'est la parole la plus fraîche, et c'est ce qui permet
+  #    d'écrire « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et
+  #    dont la PR a divergé depuis. Comparer les dates plutôt qu'énumérer
+  #    les mots, pour n'avoir aucun vocabulaire en dur ici.
+  #
+  #    On compare à l'horodatage de la ligne du verdict, jamais à la date du
+  #    transcript : celle-ci avance au moindre outil, donc l'ouvrier qui
+  #    reprend son travail effacerait la déclaration qu'on vient d'écrire.
   if [ -f "$FICHIER" ]; then
-    VERDICT=$(tail -6 "$FICHIER" 2>/dev/null \
-      | jq -rc 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' 2>/dev/null \
-      | grep -oE '^(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)' | tail -1)
+    LIGNE=$(tail -6 "$FICHIER" 2>/dev/null \
+      | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
+      | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+    VERDICT=${LIGNE#*$(printf '\t')}
+    PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+    DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
+
+    if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
+      printf '%s' "$DECLAREE"; return
+    fi
+
     case "$VERDICT" in
       LIVRÉ)     printf 'delivered';          return ;;
       ÉCRAN)     printf 'screen to review';   return ;;
@@ -57,7 +81,6 @@ etape() {
 
   # 2. Ce que l'ouvrier déclare lui-même, la seule qui sache le distinguer
   #    d'un autre temps de la même longueur. Voir `.claude/agents/ouvrier.md`.
-  DECLAREE=$(head -1 "$PRINCIPAL/.claude/etapes/$TICKET" 2>/dev/null | tr -d '\r\n')
   [ -n "$DECLAREE" ] && { printf '%s' "$DECLAREE"; return; }
 
   # 3. À défaut — ouvrier lancé avant cette convention, ou muet — les jalons

@@ -223,6 +223,11 @@ ouvriers ne se marchent pas dessus.
 pas là tes verdicts (§ « Ce que tu rends ») — ceux-là se lisent dans ton
 transcript et priment sur ce fichier.
 
+Un seul mot ne t'appartient pas : **`merged`**, que pose qui fusionne ta PR
+et range tes affaires. Il te retire de la statusline — une fois la branche
+partie et le ticket clos, ta ligne ne ferait plus que prendre la place d'un
+vivant. Toi, tu ne merges jamais (§ « Garde-fous ») : ne l'écris pas.
+
 ### 1. Ouvrir — lire le ticket, passer en cours, se créer un worktree
 
 Lis la description et les commentaires du ticket en entier (`get_issue`,

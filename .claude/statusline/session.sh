@@ -64,6 +64,12 @@ printf '%s\n' "$LIGNE1"
 SOUS_AGENTS="${TRANSCRIPT%.jsonl}/subagents"
 [ -d "$SOUS_AGENTS" ] || exit 0
 
+# Le checkout principal, où l'étape se déclare : `.claude/` est git-ignored
+# donc absent des worktrees. `--git-common-dir` vaut la même chose depuis
+# n'importe lequel d'entre eux.
+PRINCIPAL=$(git -C "${RACINE:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+[ -n "$PRINCIPAL" ] && PRINCIPAL=$(dirname "$PRINCIPAL")
+
 MAINTENANT=$(date +%s)
 RENDUS=""
 ENDORMIS=""
@@ -78,10 +84,36 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     | grep -oE '^OOTS-[0-9]+')
   [ -n "$TICKET" ] || continue
 
-  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main.
-  VERDICT=$(tail -6 "$F" 2>/dev/null \
-    | jq -rc 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' 2>/dev/null \
-    | grep -oE '^(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)' | tail -1)
+  ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
+  DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
+
+  # « merged » retire l'ouvrier de l'affichage : sa PR est fusionnée et ses
+  # affaires rangées, il n'a plus rien à dire et sa ligne prendrait la place
+  # de celle d'un vivant. Le seul que l'ouvrier n'écrit pas lui-même,
+  # puisqu'il ne merge jamais.
+  [ "$DECLAREE" = merged ] && continue
+
+  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main, avec
+  # l'instant où il l'a prononcé.
+  LIGNE=$(tail -6 "$F" 2>/dev/null \
+    | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
+    | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+  VERDICT=${LIGNE#*$(printf '\t')}
+  PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+
+  # Une étape déclarée *après* que le verdict a été prononcé prime sur lui :
+  # c'est la parole la plus fraîche, et c'est ce qui fait apparaître
+  # « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et dont la PR a
+  # divergé depuis. Comme un verdict, elle s'affiche sans délai.
+  #
+  # On compare à l'horodatage de la ligne du verdict, jamais à la date du
+  # transcript : celle-ci avance au moindre outil, donc l'ouvrier qui reprend
+  # son travail effacerait la déclaration qu'on vient d'écrire.
+  DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
+  if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
+    RENDUS="$RENDUS  ⚒ $TICKET ($DECLAREE)"
+    continue
+  fi
 
   DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
 
