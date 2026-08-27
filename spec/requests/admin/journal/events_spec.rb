@@ -256,6 +256,34 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.parsed_body.css('a[href^="javascript:"]')).to be_empty
     end
 
+    # The journal keeps the preview address as it arrived, unvetted — a log
+    # archives, it does not vet — so the page is the last place the scheme is
+    # looked at before a browser follows it.
+    it 'opens the preview space a correspondent asked the user to be sent to' do
+      espace = 'https://previsualisation.example.si/espace?jeton=abc'
+      event = create(:audit_event, event_type: 'error_received', preview_location: espace)
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.at_css("a[href='#{espace}']")).to be_present
+    end
+
+    # The one the column exists to keep: a foreign correspondent chose it, and
+    # `javascript:` would run on our own origin.
+    #
+    # What this guards is the vetting, not the routing to it: the `else` branch
+    # renders escaped text with no anchor at all, so dropping the column from the
+    # `case` would leave this green. Its twin above is what pins the routing.
+    it 'leaves as text a preview address a browser cannot open' do
+      event = create(:audit_event, event_type: 'error_received',
+        preview_location: 'javascript:alert(document.domain)')
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include('javascript:alert(document.domain)')
+      expect(response.parsed_body.css('a[href^="javascript:"]')).to be_empty
+    end
+
     # Chapter 4.8 has the log keep the message whole; the page is where an
     # auditor reads it back, folded so that it does not push the rest away.
     it 'shows the RegRep document, folded behind a control the keyboard reaches' do

@@ -150,6 +150,9 @@ if Rails.env.development?
     # Le slot que `R-EDM-ERR-C022` attache à la sévérité `PreviewRequired`, et
     # d'où `AuditTrail#received_error` tire sa colonne : le corps conservé doit
     # porter ce dont la colonne d'à côté prétend venir.
+    # Décalé exprès : le résultat est interpolé à la colonne 2 du corps, donc
+    # c'est ce décalage-là qui le fait sortir droit. Redresser la source ici
+    # tordrait le XML que la fiche affiche.
     exception_element =
       if preview.present?
         format(<<~XML.chomp, code:, preview:)

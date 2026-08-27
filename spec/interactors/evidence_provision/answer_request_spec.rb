@@ -144,7 +144,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'response_sent', edm_error_code: nil, evidence_digest: nil,
-        evidence_identifier: nil,
+        evidence_mime_type: nil, evidence_content_id: nil, evidence_identifier: nil,
         response_id: identifier_of(submitted),
       )
     end

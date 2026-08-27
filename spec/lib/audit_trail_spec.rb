@@ -159,6 +159,7 @@ RSpec.describe AuditTrail do
         event_type: 'response_received',
         evidence_digest: nil,
         evidence_mime_type: nil,
+        evidence_content_id: nil,
       )
     end
 
@@ -172,6 +173,55 @@ RSpec.describe AuditTrail do
 
     it 'keeps the announcement itself' do
       expect(journalled.regrep_body).to eq(message.first_part.content)
+    end
+
+    # Chapter 4.5.2 lets this answer carry no document, so looking for one and
+    # failing is not news. An application log that says « unreadable field » on
+    # the ordinary case is worth nothing on the malformed one.
+    it 'reports no unreadable field for the document it never claimed to carry' do
+      allow(Rails.logger).to receive(:warn)
+
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(Rails.logger).not_to have_received(:warn)
+    end
+  end
+
+  # The half of the guard that gives the silence above its worth: a part was
+  # announced and could not be read, which is the one case left that warns.
+  describe 'an answer announcing evidence its envelope does not carry' do
+    let(:message) { RetrievedMessageParser.new(envelope_without_evidence_payload) }
+
+    it 'names the field it could not read, and writes the line without it' do
+      allow(Rails.logger).to receive(:warn)
+
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(Rails.logger).to have_received(:warn).with(/evidence/)
+      expect(journalled).to have_attributes(
+        event_type: 'response_received',
+        evidence_digest: nil, evidence_mime_type: nil, evidence_content_id: nil,
+      )
+    end
+  end
+
+  # The fingerprint is read from the header and the payload, never from the
+  # RegRep document — so a body Nokogiri refuses does not take with it the one
+  # thing chapter 4.8 keeps to prove which document went through. Reading the
+  # status instead of the header would have coupled the two.
+  describe 'an answer whose body cannot be read, beside evidence that can' do
+    let(:message) { RetrievedMessageParser.new(envelope_with_unreadable_body) }
+
+    it 'still fingerprints the evidence the envelope did carry' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(
+        event_type: 'response_received',
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+        evidence_mime_type: 'application/pdf',
+        evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
+        request_id: nil,
+      )
     end
   end
 
@@ -195,9 +245,20 @@ RSpec.describe AuditTrail do
     end
 
     # A refusal that names nowhere leaves the column empty, rather than a value
-    # the message never carried.
-    it 'names no preview location, the refusal carrying none' do
+    # the message never carried — and says nothing to the application log about
+    # it: `R-EDM-ERR-C022` puts the slot on one severity only, so its absence
+    # here is the ordinary case. Warning on it would drown the warnings that
+    # mean a correspondent really did send something unreadable.
+    it 'names no preview location, the refusal carrying none, and says nothing of it' do
       expect(journalled.preview_location).to be_nil
+    end
+
+    it 'reports no unreadable field on a refusal that is perfectly readable' do
+      allow(Rails.logger).to receive(:warn)
+
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(Rails.logger).not_to have_received(:warn)
     end
   end
 
@@ -222,8 +283,9 @@ RSpec.describe AuditTrail do
 
   # An address France refused to follow is exactly the one a dispute will be
   # about, so the journal keeps it as it arrived: a log archives, it does not
-  # vet. The scheme is vetted where it decides something — `SettleExchange`,
-  # which sends a user there, and the console, which makes an `href` of it.
+  # vet. The scheme is vetted where it decides something — the value the exchange
+  # keeps and hands back to the French service provider, which is what sends the
+  # user there, and the console, which makes an `href` of it.
   describe 'a preview at an address France would not follow' do
     let(:message) { RetrievedMessageParser.new(hostile_preview('javascript:alert(document.domain)')) }
 
@@ -504,6 +566,22 @@ RSpec.describe AuditTrail do
         regrep_mime_type: nil, regrep_body: nil,
       )
     end
+  end
+
+  # The `eb:PartInfo` stays: the header keeps announcing a part the body of the
+  # envelope no longer delivers.
+  def envelope_without_evidence_payload
+    document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
+    document.xpath('//payload').find { |payload| payload['payloadId'].include?('pdf') }.remove
+
+    document.to_xml
+  end
+
+  def envelope_with_unreadable_body
+    document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
+    document.xpath('//payload/value').first.content = Base64.strict_encode64('<query:QueryResponse')
+
+    document.to_xml
   end
 
   def hostile_preview(location)

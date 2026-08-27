@@ -12,17 +12,20 @@ module SlotReading
   private
 
   def slot(name, scope)
-    found = at(scope, "./rim:Slot[@name='#{name}']")
+    found = find_slot(name, scope)
     raise UnreadableMessageError, I18n.t('parsers.slot_reading.missing', name:) if found.nil?
 
     found
   end
 
+  def find_slot(name, scope) = at(scope, "./rim:Slot[@name='#{name}']")
+
   # A `rim:StringValueType`, `rim:DateTimeValueType`, `rim:BooleanValueType`…
   # anything whose content is a single `rim:Value`.
-  def slot_text(name, scope)
-    value = text_at(slot(name, scope), './rim:SlotValue/rim:Value')
-    require_content(value, 'parsers.slot_reading.empty', name:)
+  def slot_text(name, scope) = slot_value(slot(name, scope), name)
+
+  def slot_value(found, name)
+    require_content(text_at(found, './rim:SlotValue/rim:Value'), 'parsers.slot_reading.empty', name:)
   end
 
   # A slot the message is allowed not to carry, where absence is an answer and
@@ -34,10 +37,10 @@ module SlotReading
   #
   # A slot that is present and empty still raises: that one is malformed.
   def optional_slot_text(name, scope)
-    found = at(scope, "./rim:Slot[@name='#{name}']")
+    found = find_slot(name, scope)
     return if found.nil?
 
-    require_content(text_at(found, './rim:SlotValue/rim:Value'), 'parsers.slot_reading.empty', name:)
+    slot_value(found, name)
   end
 
   # A `rim:AnyValueType`: the tree under the slot value, whatever it is.

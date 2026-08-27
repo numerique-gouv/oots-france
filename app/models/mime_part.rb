@@ -11,7 +11,13 @@
 #
 # What each field holds is another matter, and none is guaranteed well formed on
 # the way in: `mime_type` is nil when an arriving `eb:PartInfo` declares no
-# `MimeType` property, and `content` is tagged UTF-8 without being validated as
-# such. What a correspondent sent is kept as sent — a log archives, it does not
-# vet. One built for a message going out carries neither surprise.
+# `MimeType` property. What a correspondent sent is kept as sent — a log
+# archives, it does not vet. One built for a message going out carries neither
+# surprise.
+#
+# `content` carries no uniform encoding, and must not be assumed to: the RegRep
+# body is tagged UTF-8 without being validated as such, where the evidence keeps
+# the bytes it arrived or was read as. Nothing transcodes either — the evidence
+# is hashed and handed to the requester as the bytes it is, and the body is
+# archived whole.
 MimePart = Data.define(:mime_type, :content_id, :content)
