@@ -45,6 +45,13 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 > [!IMPORTANT]
 > **`Todo` prime sur `Backlog`, mais ne décide pas.** Arbitré le 2026-08-27 : à contenu équivalent, prends le `Todo` d'abord ; prends un `Backlog` dès qu'il est **plus actionnable** qu'un `Todo` — ce qui arrive souvent, `tdd-nerd` y déposant des tickets complets quand `Todo` abrite des tickets d'arbitrage. Le statut ordonne, le contenu admet : un `Todo` dont le corps réclame une décision produit reste hors du lot, et piocher en `Backlog` se dit en une ligne (« OOTS-131 est en Backlog, son énoncé est complet »).
 
+> [!IMPORTANT]
+> **À rang égal, prends le ticket techniquement fermé.** L'objectif du dépôt, énoncé le 2026-08-27, est de « s'approcher le plus possible des TDD 2.0 complètes, sans prendre encore les décisions produits ». Un ticket est techniquement fermé quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire : les `TS` le sont plus souvent que les `US`, et c'est ce qui rend une session rentable.
+>
+> Un ticket dont l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre à arbitrer — coûte un aller-retour et rend moins de conformité par jeton dépensé, même bien écrit. Il n'est pas *écarté* pour autant : la règle du choix conservateur (§ 5) permet de le livrer quand même. Mais il passe **après**, tant qu'il reste du techniquement fermé à prendre.
+>
+> Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout.
+
 Relis les statuts (`list_issue_statuses`) plutôt qu'une liste écrite ailleurs : ils ont déjà changé sans prévenir.
 
 ## 2. Regarder ce que les tickets vont toucher
