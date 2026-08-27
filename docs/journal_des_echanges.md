@@ -30,7 +30,7 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | Type | Quand | Écrit par |
 | --- | --- | --- |
 | `request_sent` | la requête est partie, et la passerelle l'a nommée | `EvidenceRequest::SendToGateway` |
-| `request_refused` | l'appel d'un fournisseur de service français est refusé **avant** la passerelle | `EvidenceRequestsController` |
+| `request_refused` | une requête est refusée sans qu'aucun message ebMS n'en résulte : l'appel d'un fournisseur français **avant** tout envoi à la passerelle, ou la requête d'un correspondant **sans qu'aucune réponse ne reparte** — celle-ci a bien transité par la passerelle, qui en garde trace dans son *Message Log*, mais rien ne lui répond | `EvidenceRequestsController`, `IncomingMessage::OpenExchange`, `EvidenceProvision::AnswerRequest` |
 | `response_received` | un correspondant a répondu avec un justificatif | `IncomingMessage::Process` |
 | `error_received` | un correspondant a refusé | `IncomingMessage::Process` |
 | `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleExchange` |
@@ -44,9 +44,14 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 
 > [!NOTE]
 > **Un refus consigne la règle qu'il applique, quand une règle le nomme.** `error_sent` porte alors dans `detail` l'identifiant `R-EDM-*` que la France a opposé au correspondant, le même que l'attribut `detail` de la `rs:Exception` partie sur le fil. Les refus qui n'appliquent aucune règle nommée — une démarche inconnue, un format non servi, un slot que le lecteur n'a pas trouvé — laissent le champ vide plutôt que d'inventer un identifiant. Un refus dont la raison *est* connue et n'est pas consignée ne peut pas être justifié après coup, et l'article 17 couvre les rapports d'erreur autant que les échanges.
+>
+> Un refus qui ne peut **pas** partir nomme sa règle dans `request_refused`, faute d'`error_sent` où la mettre. C'est le cas d'une requête dont l'`eb:ConversationId` ou l'`ExchangeId` n'est pas un UUID, que [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `-037` exigent tous deux en `FATAL` : le [chapitre 4.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932919) fait réutiliser l'`ExchangeId` de la requête à toute réponse de l'échange, donc l'`rs:Exception` qui dirait le refus porterait l'identifiant qu'on refuse et l'enfreindrait à son tour. La ligne du journal est alors le seul endroit où la décision se relit.
 
 > [!NOTE]
 > **`country_code` désigne le correspondant**, quel que soit le sens : le pays sollicité quand la France requête, le pays qui requête quand elle répond. Dix types sur douze le portent, de deux sources — les deux qui ne le portent pas sont ceux d'une arrivée dont aucun corps n'a pu être lu, `message_unreadable` et `message_unhandled`, le pays ne se lisant que dans l'adresse d'un agent. Là où la France demande, il vient de l'échange. Là où un message arrive ou part en réponse, il se lit dans l'adresse que [`R-EDM-REQ-C073`](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932930) et ses équivalents imposent sur l'agent qui parle — classé `ER` dans une requête, `EP` dans une réponse, `ERRP` dans une erreur, et n'exigeant qu'un pays. La démarche, elle, n'est nommée que par une requête.
+
+> [!NOTE]
+> **Les deux identifiants sont consignés sous la forme que les règles comparent, et non sous celle qui est arrivée.** [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `-037` confrontent l'`eb:ConversationId` et l'`ExchangeId` à `normalize-space(text())` : les espaces qui les entourent ne font pas partie de la valeur, et `EbmsHeaderParser` les retire donc avant que quiconque les lise. C'est la seule entorse assumée au principe ci-dessus — ce qui est rogné n'est pas une information mais une mise en forme, et la garder ferait diverger la ligne du journal de la ligne d'`exchanges`, qui sert de clé de corrélation. Le reste de l'entête n'est pas normalisé : `R-EDM-ebMS-038` compare la valeur brute, et le parseur fait de même.
 
 L'arrivée est consignée dans `IncomingMessage::Process`, avant que le message ne soit confié à son gestionnaire : une requête dont le **corps** est trop malformé pour être honorée, ou une réponse nommant un échange jamais ouvert, laissent une trace tout de même — ce que le corps aurait ajouté est alors simplement absent, champ par champ.
 

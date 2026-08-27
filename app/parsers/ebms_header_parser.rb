@@ -9,9 +9,17 @@ class EbmsHeaderParser
 
   def action = text_at(user_message, './eb:CollaborationInfo/eb:Action')
 
-  def conversation_id = text_at(user_message, './eb:CollaborationInfo/eb:ConversationId')
+  # `R-EDM-ebMS-017` and `-037` both compare what they constrain through
+  # `normalize-space()`, where `-038` next door compares the raw string value:
+  # for these two identifiers, and for them alone, surrounding whitespace is not
+  # part of the value, and a correspondent whose gateway indents its header
+  # sends one the rules accept. Read the same way here, or this side refuses a
+  # conformant request — and loses the correlation chapter 4.4 builds on
+  # `ExchangeId`, a correspondent indenting its request and not its response
+  # otherwise naming two different exchanges.
+  def conversation_id = normalised(text_at(user_message, './eb:CollaborationInfo/eb:ConversationId'))
 
-  def exchange_id = property('ExchangeId')
+  def exchange_id = normalised(property('ExchangeId'))
 
   # R-EDM-ebMS-019 requires the property, R-EDM-ebMS-038 fixes its value. It is
   # the same version the body declares in its `SpecificationIdentifier` slot,
@@ -63,6 +71,11 @@ class EbmsHeaderParser
   private
 
   attr_reader :user_message
+
+  # What `normalize-space()` does that matters here. It also collapses inner
+  # runs, which no value either rule could accept would survive anyway: inner
+  # whitespace fails the UUID pattern whether it is collapsed or not.
+  def normalised(value) = value&.strip
 
   def property(name) = text_at(user_message, "./eb:MessageProperties/eb:Property[@name='#{name}']")
 

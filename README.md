@@ -99,6 +99,8 @@ Chaque message est validé sur deux plans : son corps RegRep contre les règles 
 
 Le script sort en `0` si les messages sont conformes, en `2` si une règle est violée, et en `1` pour toute autre défaillance — un téléchargement interrompu, par exemple. La CI rejoue les seconds, jamais les premiers.
 
+**Un spécimen fait exception : `identifiantsMalformes.entete`, qu'on attend *refusé*.** Un lot dont tout est conforme prouve que le dépôt respecte les règles, jamais qu'une règle donnée mord — l'expression rationnelle `Exchange::UUID` ne s'attesterait alors qu'elle-même. Cet entête-là porte donc deux identifiants qui ne sont pas des UUID, et il n'est compté ✓ que si ce sont **exactement** [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `R-EDM-ebMS-037` qui le refusent : une règle attendue qui ne refuse pas, ou une règle de plus qui refuse, font échouer la validation comme n'importe quelle non-conformité. C'est ce qui adosse à l'artefact publié le refus qu'oppose `EvidenceProvision::AnswerRequest` à une requête dont les identifiants sont malformés.
+
 > [!NOTE]
 > C'est une validation autonome : elle ne dépend d'aucun autre État membre, à la différence des [Testing Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) de la Commission, qui restent le juge de paix avant toute interopérabilité réelle.
 

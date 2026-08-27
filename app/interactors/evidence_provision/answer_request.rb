@@ -14,6 +14,18 @@ module EvidenceProvision
     # detail names the chapter where every other one names a rule.
     REPLAYED_IDENTIFIER = 'TDD 4.4: request identifier already used'.freeze
 
+    # The two identifiers the ebMS header carries, each under the FATAL rule
+    # that fixes its shape, and named as the rule's own context names it. Both
+    # assertions are made of the document and of no party, so they bind whoever
+    # emits — a value a correspondent chose is ours the moment we sign it again.
+    #
+    # Ordered as the header presents them, so a request malforming both is
+    # refused on the conversation and a reader of the journal knows which.
+    UUID_RULES = {
+      conversation_id: { rule: 'R-EDM-ebMS-017', element: 'eb:ConversationId' },
+      exchange_id: { rule: 'R-EDM-ebMS-037', element: 'ExchangeId' },
+    }.freeze
+
     # What France answered, carried rather than left behind in instance
     # variables: the log needs to know which of the three answers went out, and
     # the envelope alone no longer says. It holds the envelope's builder, which
@@ -27,6 +39,8 @@ module EvidenceProvision
     Answer = Data.define(:envelope, :identifier, :exception, :evidence, :available_at)
 
     def call
+      reject_unless_identifiers_are_uuids
+
       # Outside the rescue, because a request whose requester cannot be read
       # cannot be answered at all: the response would have no final recipient.
       # The request identifier, read inside it, is the opposite case.
@@ -91,7 +105,6 @@ module EvidenceProvision
     # A submission that never got through is settled by
     # `IncomingMessage::Process`, which sees the failure come back up.
     def settle(answer)
-      exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
       return unknown_exchange if exchange.nil?
 
       if answer.exception
@@ -112,6 +125,18 @@ module EvidenceProvision
         I18n.t('interactors.evidence_provision.answer_request.unknown_exchange',
           id: context.message.exchange_id),
       )
+    end
+
+    # The row `IncomingMessage::OpenExchange` wrote on receiving this request —
+    # or none, where that interactor adopted a row of the other direction, which
+    # it matches on the identifier alone.
+    #
+    # `defined?` and not `||=`: nil is a legitimate answer here, and `||=` would
+    # ask the database again every time it is read.
+    def exchange
+      return @exchange if defined?(@exchange)
+
+      @exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
     end
 
     def request = context.message.body
@@ -155,6 +180,41 @@ module EvidenceProvision
     # last, where the successful answer is chosen: a procedure nobody serves is
     # worth `EDM:ERR:0004` however late the request.
     def expired? = context.message.sent_at < Settings.provider_timeout.ago
+
+    # `wrap` reuses both identifiers of the request in the envelope France signs,
+    # so a malformed one goes back out under our own signature and breaks
+    # `R-EDM-ebMS-017` or `-037` on our side, where it broke them on the
+    # correspondent's.
+    #
+    # Called from `call`, and deliberately not from `chosen_answer` where the two
+    # rejections below live: theirs becomes an error response, which `wrap` would
+    # dress in the very identifiers being refused. Nothing conformant can carry
+    # this refusal at all — chapter 4.4 has every message of one exchange reuse
+    # its `ExchangeId`, so an exception would repeat the invalid value, and a
+    # fresh one would name a different exchange. So nothing goes back, and the
+    # journal is the only place the decision can be read afterwards.
+    def reject_unless_identifiers_are_uuids
+      UUID_RULES.each do |name, rule|
+        value = context.message.public_send(name)
+        refuse_malformed(rule, value) unless value.to_s.match?(Exchange::UUID)
+      end
+    end
+
+    # Hung on the exchange `IncomingMessage::OpenExchange` has already opened, so
+    # the refusal joins the arrival that `IncomingMessage::Process` journalled
+    # before dispatching. The reason names the rule, as `error_sent` does for the
+    # refusals that do go back.
+    def refuse_malformed(rule, value)
+      reason = I18n.t('interactors.evidence_provision.answer_request.malformed_identifier',
+        element: rule[:element], value:, rule: rule[:rule])
+
+      context.audit_trail.request_refused(
+        requester_id: exchange&.evidence_requester_id, procedure_code: exchange&.procedure_code,
+        country_code: exchange&.country_code, reason:, exchange:,
+      )
+
+      refuse(rule[:rule], reason)
+    end
 
     # The version travels twice, in the ebMS property and in the body slot, and
     # the two must agree. `request.validate!` pins the body to the same

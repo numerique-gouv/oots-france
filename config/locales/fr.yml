@@ -370,6 +370,12 @@ fr:
         request_replayed: "Identifiant de requête déjà traité : %{id}"
         unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
         unnamed_version: une version sans nom
+        # Un refus qui ne part pas au correspondant : la réponse réutiliserait
+        # l'identifiant qu'on lui reproche. La règle est nommée pour le journal,
+        # qui est alors le seul endroit où la décision se relit.
+        malformed_identifier: >-
+          L'identifiant %{element} « %{value} » n'est pas un UUID, que %{rule} exige : aucune réponse
+          ne peut être signée sur cet échange.
     incoming_message:
       open_exchange:
         unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.

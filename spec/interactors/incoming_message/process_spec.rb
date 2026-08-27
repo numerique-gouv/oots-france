@@ -62,6 +62,27 @@ RSpec.describe IncomingMessage::Process do
     expect(IncomingMessage::SettleExchange).to have_received(:call!)
   end
 
+  # `R-EDM-ebMS-017` and `-037` bind whoever emits, so France cannot answer under
+  # an identifier a correspondent malformed. What has to survive the refusal is
+  # the account of it: the arrival is journalled, the exchange is opened and then
+  # settled, and only the emission stops.
+  describe 'a request whose ebMS identifiers are not UUIDs' do
+    let(:message) do
+      envelope_where('requete', "//eb:UserMessage/eb:MessageProperties/eb:Property[@name='ExchangeId']",
+        'pas-un-uuid')
+    end
+
+    # The gateway double carries no `submit`, so an answer built in spite of the
+    # rules fails the example instead of passing unnoticed.
+    it 'journals the arrival and the refusal, and settles the exchange unanswered' do
+      process
+
+      expect(AuditEvent.pluck(:event_type)).to eq(%w[request_received request_refused])
+      expect(AuditEvent.last.detail).to include('R-EDM-ebMS-037')
+      expect(Exchange.sole).to have_attributes(exchange_id: 'pas-un-uuid', incoming: true, status: 'failed')
+    end
+  end
+
   describe 'an action it does not know' do
     let(:message) do
       RetrievedMessageParser.new(real_envelope('requete').sub('ExecuteQueryRequest', 'SomethingElse'))
