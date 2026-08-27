@@ -37,17 +37,25 @@ const wire = (input) => {
 
   const apply = () => {
     const terms = words(input.value)
-    let shown = 0
+    let counted = 0
+    let entries = 0
 
     items.forEach((item) => {
       const kept = matches(item.words, terms)
 
       item.element.hidden = !kept
-      if (kept) shown += weight(item.element)
+      if (!kept) return
+
+      entries += 1
+      counted += weight(item.element)
     })
 
-    if (tally) tally.textContent = say(forms, shown)
-    if (empty) empty.hidden = shown > 0
+    if (tally) tally.textContent = say(forms, counted)
+    // The empty state answers « is anything left on screen », which is not what
+    // the tally counts: an entry can be shown and weigh nothing, a country
+    // declaring it issues no evidence type being one. Keyed on the tally, the
+    // page would say nothing matches under an entry the reader can see.
+    if (empty) empty.hidden = entries > 0
   }
 
   input.addEventListener('input', apply)

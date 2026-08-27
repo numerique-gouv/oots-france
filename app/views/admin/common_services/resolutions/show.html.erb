@@ -104,6 +104,10 @@
           <%= arret %>
         <% else %>
           <ul class="entry-list">
+            <% @lookup.evidence_type_lists.select(&:no_match?).each do |list| %>
+              <%= render 'admin/common_services/no_match', list: %>
+            <% end %>
+
             <% @lookup.evidence_type_lists.flat_map(&:evidence_types).each do |type| %>
               <li class="entry <%= 'entry--current' if type == @lookup.evidence_type %>">
                 <span class="entry__name">

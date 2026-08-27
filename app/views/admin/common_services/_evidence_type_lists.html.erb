@@ -9,6 +9,10 @@
       </li>
     <% end %>
 
+    <% if list.no_match? %>
+      <%= render 'admin/common_services/no_match', list:, grouped: lists.size > 1 %>
+    <% end %>
+
     <% list.evidence_types.each do |type| %>
       <li class="entry <%= 'entry--grouped' if lists.size > 1 %>">
         <span class="entry__name"><%= type.display_name %></span>

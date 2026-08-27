@@ -17,7 +17,8 @@ class EvidenceTypesResponseParser < CommonServicesResponseParser
   private
 
   # The flattened types are what `@read` holds, so that an answer whose lists
-  # are all empty is still rejected as unreadable.
+  # are all empty is still rejected as unreadable — unless one of them says its
+  # emptiness is deliberate.
   def read
     @lists = records(REQUIREMENT).flat_map do |declared|
       all(declared, './sdg:EvidenceTypeList').map { |found| build_list(found) }
@@ -26,11 +27,27 @@ class EvidenceTypesResponseParser < CommonServicesResponseParser
     @lists.flat_map(&:evidence_types)
   end
 
+  # An explicitly empty list is a reading, not a failure to read. Chapter 3.2.4
+  # has a member state declare `NoMatch` to say it knows no evidence of its own
+  # satisfies the requirement in that jurisdiction, where `EB:ERR:0001` means
+  # the broker holds no information at all — « the Evidence Broker does not
+  # construct NoMatch automatically ».
+  def nothing_readable? = super && !declared_empty?
+
+  # `R-EB-EVI-S015` bears on one list — it excuses a list without evidence types
+  # only under `NoMatch` — so **every** empty list has to say so for the answer
+  # to count as read. One that stays silent is an answer we failed to read even
+  # beside a neighbour that declared itself, and `country-code` being optional
+  # here, that neighbour is often another member state entirely.
+  def declared_empty? = @lists.any? && @lists.all?(&:no_match?)
+
   def build_list(found)
     EvidenceTypeList.new(
       id: text(found, './sdg:Identifier'),
       country: text(found, './sdg:Jurisdiction/sdg:AdminUnitLevel1').presence,
       descriptions: by_language(all(found, './sdg:Name')),
+      match_type: text(found, './sdg:MatchType').presence,
+      match_descriptions: by_language(all(found, './sdg:MatchDescription')),
       evidence_types: all(found, './sdg:EvidenceType').map { |type| build(type) },
     )
   end

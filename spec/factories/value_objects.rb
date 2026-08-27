@@ -68,6 +68,14 @@ FactoryBot.define do
     descriptions { { 'EN' => 'FR - Test Evidence Type List' } }
     evidence_types { [build(:evidence_type)] }
 
+    # A member state declaring it issues nothing under this jurisdiction
+    # (chapter 3.2.4): empty on purpose, and saying so.
+    trait :no_match do
+      match_type { EvidenceTypeList::NO_MATCH }
+      match_descriptions { { 'EN' => 'No MS-issued evidence available for SMEs in Dutch Speaking Community' } }
+      evidence_types { [] }
+    end
+
     initialize_with { new(**attributes) }
   end
 

@@ -71,6 +71,26 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       expect(response.parsed_body.css('#exigences-satisfaites > *')).to be_empty
     end
 
+    # This page announces what a country publishes, and counts it. A declaration
+    # of non-delivery says the opposite, so it belongs to neither the listing
+    # nor the tally — and the tally is read without opening a single card. The
+    # declaration has its page, the requirement's.
+    context 'when the country declares it issues nothing' do
+      before do
+        stub_directory_signature
+        stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
+      end
+
+      it 'neither lists the requirement nor counts it among those it satisfies' do
+        get admin_common_services_country_requirements_path('FR')
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body.css('#exigences-satisfaites > *')).to be_empty
+        expect(response.body).not_to include('Ce pays déclare ne délivrer aucun justificatif')
+        expect(response.parsed_body.css('#aucune-exigence-satisfaite').attr('hidden')).to be_nil
+      end
+    end
+
     # Only the empty result set is a result of the sweep. Any other refusal is
     # the page's, since swallowing it would drop a requirement from the listing
     # for a reason that is not "this country publishes nothing".
