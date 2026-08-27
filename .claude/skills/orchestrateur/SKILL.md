@@ -167,7 +167,15 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 > for w in .worktrees/*/; do printf '%-44s' "$w"; grep -h '^PORT_OOTS_FRANCE=' "$w/.env"; done
 > ```
 >
-> Un doublon se déplace à la main dans le worktree du **dernier** lancé, dont la pile n'est pas encore montée. [OOTS-148](https://linear.app/pole-api/issue/OOTS-148) corrige le script ; cette vérification tombera avec lui.
+> **[OOTS-148](https://linear.app/pole-api/issue/OOTS-148) a corrigé le script** : `scripts/worktree.sh` sérialise désormais par un `flock` sur `.worktrees/.verrou`, et deux créations simultanées ne peuvent plus recevoir le même décalage.
+>
+> **Sauf si `flock` manque.** Le script avertit alors et continue — le bon choix, sans quoi il serait inutilisable là où personne ne parallélise —, mais la garantie tombe et c'est toi qui parallélises. `command -v flock >/dev/null || echo 'pas de flock : lance les ouvriers un par un'` avant un lot, et la vérification ci-dessous redevient obligatoire dans ce cas :
+>
+> ```sh
+> for w in .worktrees/*/; do printf '%-44s' "$w"; grep -h '^PORT_OOTS_FRANCE=' "$w/.env"; done
+> ```
+>
+> Un doublon se déplace à la main dans le worktree du **dernier** lancé, dont la pile n'est pas encore montée.
 
 ## 5. Accompagner — le travail est là, pas au lancement
 
