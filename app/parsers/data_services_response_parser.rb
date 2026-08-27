@@ -31,13 +31,28 @@ class DataServicesResponseParser < CommonServicesResponseParser
     DataService.new(
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
-      distribution_format: text(declared, './sdg:DistributedAs/sdg:Format'),
-      distribution_language: text(declared, './sdg:DistributedAs/sdg:Language'),
+      **distributed_as(at(declared, './sdg:DistributedAs')),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
       providers: all(declared, './sdg:AccessService').map { |service| build(service) },
     )
+  end
+
+  # Read from one and the same distribution, and not each from the record: a
+  # directory publishes several, which is what R-DSD-RESP-C039 and C041 are
+  # written around, and a path anchored higher would take the format of the
+  # first and the data model of another — a request asking for a PDF against an
+  # XML schema, which nothing downstream would question. Asking for more than
+  # one distribution is OOTS-129's.
+  def distributed_as(published)
+    return {} if published.nil?
+
+    {
+      distribution_format: text(published, './sdg:Format'),
+      distribution_language: text(published, './sdg:Language'),
+      distribution_conforms_to: text(published, './sdg:ConformsTo'),
+    }
   end
 
   def build(service)

@@ -19,9 +19,14 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # back as `@requestId` — so it is the form the exchange is correlated by.
   def request_id = "urn:uuid:#{document_id}"
 
+  # Nothing national feeds `associated_documents` yet, and the default is what
+  # every caller but the specimen messages takes: `EvidenceResponseParser` reads
+  # only the `MainEvidence` of an answer, so an annex or a translation asked for
+  # here would be dropped on the way back. OOTS-90 is what makes them readable,
+  # and what a national parameter would then be worth publishing for.
   def initialize(
     requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:,
-    preview_possible: false, clock: Clock.new, uuid: UuidGenerator.new
+    associated_documents: [], preview_possible: false, clock: Clock.new, uuid: UuidGenerator.new
   )
     @requester = requester
     @provider = provider
@@ -29,6 +34,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
     @requirement = requirement
     @data_service = data_service
     @procedure_code = procedure_code
+    @associated_documents = associated_documents
     @preview_possible = preview_possible
     @timestamp = clock.now
     @document_id = uuid.next
@@ -86,5 +92,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
     end
   end
 
-  def data_service_evidence_type = EvidenceTypeBuilder.new(data_service: @data_service).render
+  def data_service_evidence_type
+    EvidenceTypeBuilder.new(data_service: @data_service, associated_documents: @associated_documents).render
+  end
 end

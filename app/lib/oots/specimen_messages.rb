@@ -98,6 +98,7 @@ module Oots
       body = EvidenceRequestBuilder.new(
         requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
+        associated_documents: [AssociatedDocument::TRANSLATION],
         clock:, uuid:,
       )
 
@@ -250,12 +251,19 @@ module Oots
       )
     end
 
+    # The data model is here on a PDF, which R-DSD-RESP-C067 says no conformant
+    # directory publishes, and that is the point: R-EDM-REQ-C107 is FATAL on a
+    # data model written beside an unstructured format, so this is the only
+    # shape in which the rules can judge that the request leaves it out. A
+    # specimen carrying none would satisfy C107 by having nothing to omit.
     def data_service
       @data_service ||= DataService.new(
         id: '41170824-15d9-4c16-984e-63b75b937b8c',
         evidence_type_classification: evidence_type.id,
         distribution_format: EvidenceType::PDF,
         distribution_language: 'EN',
+        distribution_conforms_to:
+          'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40',
         descriptions: evidence_type.descriptions,
         details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
       )

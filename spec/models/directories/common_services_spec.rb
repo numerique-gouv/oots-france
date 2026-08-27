@@ -104,6 +104,17 @@ RSpec.describe Directories::CommonServices do
         .to raise_error(InvalidDirectoryEntry, /Le service de données annoncé/)
     end
 
+    # R-DSD-RESP-C010 bounds the data model the directory may publish, and the
+    # request carries that value back word for word: an entry breaking it would
+    # reach a correspondent as a URL pointing at nothing.
+    it 'refuses a service whose data model no message could carry' do
+      published = build(:data_service, distribution_conforms_to: 'https://sr.oots.tech.ec.europa.eu/distributions/1')
+      allow(dsd).to receive(:data_services).and_return([published])
+
+      expect { directory.data_service(type.id, 'FI') }
+        .to raise_error(InvalidDirectoryEntry, /Le modèle de données/)
+    end
+
     # Refused rather than skipped over: a directory that publishes an entry the
     # rules refuse says something about that directory, where quietly asking the
     # next one would hide it until a correspondent rejected the message.
