@@ -122,11 +122,14 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 >
 > ```sh
 > touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
-> jq -r '"fenêtre 5 h : \(.rate_limits.five_hour.used_percentage)% — reset \(.rate_limits.five_hour.resets_at|strflocaltime("%H:%M"))",
->         "semaine     : \(.rate_limits.seven_day.used_percentage)%",
->         "contexte    : \(.context_window.total_input_tokens) / \(.context_window.context_window_size)"' \
+> jq -r --argjson m 20 '.rate_limits.five_hour as $f |
+>   "reste \(100 - $f.used_percentage)% ≈ \((($m * (100 - $f.used_percentage) / 100) * 10 | floor) / 10) M jetons",
+>   "recharge \($f.resets_at | localtime | strftime("%H:%M")), dans \((($f.resets_at - now) / 60 | floor)) min",
+>   "semaine  \(.rate_limits.seven_day.used_percentage)%"' \
 >    ~/.claude/.statusline-derniere-entree.json
 > ```
+>
+> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire. Le `--argjson m 20` est la taille de fenêtre étalonnée ci-dessus : c'est le seul chiffre à reprendre après un changement de forfait.
 >
 > **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 >
