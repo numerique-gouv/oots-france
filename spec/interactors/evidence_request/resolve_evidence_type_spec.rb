@@ -65,6 +65,40 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
     end
   end
 
+  # Chapter 3.2.4 separates two answers a caller must not receive as one, and it
+  # is the parser that tells them apart — which is why this reads the real chain
+  # from the bytes of an answer: the doubles above it cannot see that step. A
+  # `NoMatch` is a success and must arrive as « Aucun type de justificatif dans
+  # ce pays », where `EB:ERR:0001` is a refusal and stays one.
+  #
+  # The signature is doubled, and only it: the `NoMatch` body is fabricated from
+  # a capture, so the digest the Commission signed does not cover it.
+  describe 'the two ways a country can hold nothing' do
+    subject(:resolved) do
+      described_class.call(procedure_code: '00', country_code: 'FR', common_services: Directories::CommonServices.new)
+    end
+
+    before do
+      stub_directory_resolution
+      stub_directory_signature
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_fr')
+    end
+
+    it 'reports an explicit NoMatch as this country having no evidence type' do
+      stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
+
+      expect(resolved).to be_failure
+      expect(resolved.error).to include(key: :no_evidence_type, errors: ['00'])
+    end
+
+    it 'keeps a refusal by EB:ERR:0001 a refusal' do
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides')
+
+      expect(resolved).to be_failure
+      expect(resolved.error).to include(key: :unknown_procedure)
+    end
+  end
+
   # A directory that is down is not the caller's fault: the controller answers
   # 502 on this key, where every other failure of this step is a 422.
   describe 'a directory that cannot be reached' do

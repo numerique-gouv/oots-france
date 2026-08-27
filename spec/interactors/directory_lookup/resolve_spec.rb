@@ -87,6 +87,26 @@ RSpec.describe DirectoryLookup::Resolve do
     end
   end
 
+  # Chapter 3.2.4: a country declaring `NoMatch` answered, and the page must
+  # keep what it said. The chain stops all the same, the Data Service Directory
+  # having no evidence type to be asked about.
+  describe 'when the country declares it issues nothing' do
+    let(:lists) { build(:evidence_type_list, :no_match) }
+
+    it 'keeps the declaration on screen and never reaches the last step' do
+      expect(lookup).to be_failure
+      expect(lookup.error).to include(key: :no_evidence_type, errors: ['FI'])
+      expect(lookup.evidence_type_lists.map(&:no_match?)).to eq([true])
+      expect(data_service_directory).not_to have_received(:data_services)
+    end
+
+    # A declaration is not a refusal, and the console tells them apart by that:
+    # nothing here carries a code the directory named.
+    it 'reports no refusal, the directory having refused nothing' do
+      expect(lookup.refusal).to be_nil
+    end
+  end
+
   # A refusal in the middle must stop the chain there — the Data Service
   # Directory has nothing to be asked about — while leaving the first answer up.
   describe 'when the middle step refuses' do
