@@ -1,0 +1,20 @@
+<%# An empty list is not a gap in the page: chapter 3.2.4 has a member state
+    declare `NoMatch` to say it knows it issues nothing under this
+    jurisdiction, where `EB:ERR:0001` would mean the broker holds nothing at
+    all. The reason it may attach is what lets a reader look elsewhere. %>
+<li class="entry <%= 'entry--grouped' if local_assigns[:grouped] %>">
+  <span class="entry__name"><%= t('admin.common_services.no_match.declared') %></span>
+  <%# The reason travels in the member state's own language — the chapter has
+      them write it in a widely understood one, so rarely French — and the
+      passage carries it, failing which a screen reader reads English aloud in
+      French (RGAA 8.7). Omitted rather than left empty where the directory
+      published no `lang`. `R-EB-EVI-C045` makes the attribute mandatory and
+      names `EN` as its default, but that default is the publisher's to apply:
+      a directory that dropped it may as well have published French, and
+      declaring a language we do not know is how a screen reader is made to
+      mispronounce confidently. %>
+  <% if list.match_description.present? %>
+    <%= tag.span(list.match_description, class: 'fr-hint-text',
+          lang: list.match_description_language&.downcase.presence) %>
+  <% end %>
+</li>

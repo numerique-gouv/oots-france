@@ -716,6 +716,12 @@ fr:
       evidence_type_lists:
         combination_html: Combinaison <strong>%{label}</strong>, exigée d'un bloc
         see_providers: Voir les fournisseurs
+      # Ce que le pays déclare, et non ce que l'annuaire ignore : le chapitre
+      # 3.2.4 sépare ce cas d'`EB:ERR:0001`, qui dit que l'Evidence Broker n'a
+      # aucune information. La raison, quand l'annuaire en publie une, s'affiche
+      # telle quelle sous cette phrase.
+      no_match:
+        declared: Ce pays déclare ne délivrer aucun justificatif pour cette exigence.
       countries:
         count:
           zero: Aucun pays

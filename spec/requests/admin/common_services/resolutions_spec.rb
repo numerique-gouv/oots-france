@@ -134,6 +134,49 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
       .with(query: hash_including({}))).not_to have_been_made
   end
 
+  # The step answered, and answered « nothing », which the chapter separates
+  # from the refusal above: leaving it blank would put the reader in front of
+  # the very confusion this page exists to dispel.
+  it 'says what a country declaring an explicit NoMatch answered, at its step' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement',
+      evidence_types_declaring_no_match(reason: 'Evidence planned but not yet issued'))
+
+    get admin_common_services_resolution_path(procedure_code: '00', country_code: 'FI')
+
+    expect(response.body)
+      .to include('Ce pays déclare ne délivrer aucun justificatif', 'Evidence planned but not yet issued')
+  end
+
+  # The alert that names where the chain stopped is deliberately absent here:
+  # it belongs to a step that has nothing to show, and this one answered. The
+  # declaration is the answer, and repeating « aucun type de justificatif » in
+  # a warning above it would read as a failure rather than as what the country
+  # said.
+  it 'shows the declaration alone, without the alert that names a stopped step' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
+
+    get admin_common_services_resolution_path(procedure_code: '00', country_code: 'FI')
+
+    expect(response.body).to include('Ce pays déclare ne délivrer aucun justificatif')
+    expect(response.parsed_body.css('.fr-alert--warning')).to be_empty
+  end
+
+  # A declaration does not displace what the country does publish: the chain
+  # runs to its end, a type is chosen, and the declaration is shown beside it
+  # rather than instead of it.
+  it 'shows a declaration beside the type the resolution went on to choose' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement',
+      evidence_types_declaring_no_match_beside_types)
+
+    get admin_common_services_resolution_path(procedure_code: '00', country_code: 'FI')
+
+    expect(response.body).to include('Ce pays déclare ne délivrer aucun justificatif')
+    expect(response.parsed_body.css('.entry--current')).not_to be_empty
+  end
+
   it 'is reached from an exchange, carrying its procedure and its country' do
     exchange = create(:exchange, :failed, procedure_code: '00', country_code: 'FI')
 

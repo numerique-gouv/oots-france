@@ -99,6 +99,99 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     ) { "#{Regexp.last_match(1)}#{Regexp.last_match(1).sub('869a6748', 'ffffffff')}" }
   end
 
+  # A list the directory publishes empty on purpose (chapter 3.2.4) would show
+  # as a card with nothing in it, which reads as a page that failed rather than
+  # as the declaration it is.
+  describe 'une déclaration explicite de non-délivrance' do
+    before do
+      stub_directory_signature
+      stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match(reason:))
+    end
+
+    let(:reason) { 'No MS-issued evidence available for SMEs in Dutch Speaking Community' }
+
+    it 'says the country declares it issues nothing, and why' do
+      get admin_common_services_requirement_path(test_requirement)
+
+      expect(response.body).to include('Ce pays déclare ne délivrer aucun justificatif', reason)
+    end
+
+    # `sdg:MatchDescription` is optional, and the declaration stands without it.
+    it 'says it even where the directory published no reason' do
+      stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
+
+      get admin_common_services_requirement_path(test_requirement)
+
+      expect(response.body).to include('Ce pays déclare ne délivrer aucun justificatif')
+    end
+
+    # The reason is published in the member state's own language, and the page
+    # is French: unmarked, a screen reader reads the English aloud in French
+    # (RGAA 8.7).
+    it 'declares the language the reason is written in' do
+      get admin_common_services_requirement_path(test_requirement)
+
+      expect(response.parsed_body.css('.fr-hint-text[lang=en]').text).to include(reason)
+    end
+
+    # `R-EB-EVI-C045` makes `lang` mandatory and names `EN` as its default, and
+    # nothing enforces either on the wire. The default is the publisher's to
+    # apply: guessing it here would declare a language we do not know.
+    it 'leaves the attribute out where the directory declared no language' do
+      stub_directory_body('eb', 'evidence-types-by-requirement',
+        evidence_types_declaring_no_match(reason:).sub(' lang="EN">No MS-issued', '>No MS-issued'))
+
+      get admin_common_services_requirement_path(test_requirement)
+
+      expect(response.body).to include(reason)
+      expect(response.parsed_body.css('.fr-hint-text[lang]')).to be_empty
+    end
+
+    # The precondition of the empty state below, and the whole reason `filter.js`
+    # counts entries apart from the tally: this card is on screen and weighs
+    # nothing, the tally weighing evidence types. Keyed on that weight, the page
+    # announced that nothing matched under a card the reader had before them.
+    it 'shows a card that weighs nothing, the country publishing no type' do
+      get admin_common_services_requirement_path(test_requirement)
+
+      entries = response.parsed_body.css('#par-pays-fournisseur > *')
+
+      expect(entries.size).to eq(1)
+      expect(entries.first['data-tally-weight']).to eq('0')
+    end
+
+    # Only what the server renders. What decides the empty state once the page
+    # is live is `filter.js`, which no suite of this repository can exercise —
+    # that half is verified in a browser, and this pins the other.
+    it 'renders its empty state hidden, the declaration being a card of its own' do
+      get admin_common_services_requirement_path(test_requirement)
+
+      expect(response.parsed_body.css('#aucun-type').attr('hidden')).to be_present
+    end
+  end
+
+  # A country may publish one combination and declare it issues nothing under
+  # another, the jurisdictions differing. The page shows both, each named.
+  it 'renders a declaration beside a combination that carries types' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match_beside_types)
+
+    get admin_common_services_requirement_path(test_requirement)
+
+    expect(response.body).to include('FR - Test Evidence Type', 'Ce pays déclare ne délivrer aucun justificatif')
+    expect(response.body).to include('Combinaison')
+  end
+
+  # The other side of that condition: a search that really turns up nothing
+  # still says so.
+  it 'keeps its empty state for a requirement no country satisfies' do
+    stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides')
+
+    get admin_common_services_requirement_path(test_requirement)
+
+    expect(response.body).to include('EB:ERR:0001')
+  end
+
   it 'answers 404 for a requirement the directory does not publish' do
     get admin_common_services_requirement_path('00000000-0000-0000-0000-999999999999')
 
