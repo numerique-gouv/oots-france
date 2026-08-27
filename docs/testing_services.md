@@ -119,6 +119,6 @@ Une base de connaissances ouverte, que les équipes nationales alimentent elles-
 ## Ce que ça change pour ce dépôt
 
 - Le validateur en ligne est utilisable **tout de suite, sans compte**, et couvre la validation croisée que le contrôle Schematron local ne fait pas : c'est le complément naturel de `make schematron` après une modification des gabarits ou des builders.
-- Les annuaires bouchonnés du composant 2 offrent un troisième point de comparaison, entre le faux annuaire que monte le test de bout en bout et l'acceptation — voir [test_e2e.md](test_e2e.md).
+- Les annuaires bouchonnés du composant 2 offrent un point de comparaison en regard de l'acceptation, que le dépôt interroge partout ailleurs — dans la suite unitaire sur réponses capturées, et pour de bon dans le [test de bout en bout](test_e2e.md#les-annuaires-centraux-sont-les-vrais).
 - Le raccordement AS4 au C3 de la plateforme demande un échange de certificats avec l'équipe de test, et l'attribution d'un `partyId` : c'est une démarche à engager, pas une configuration à écrire.
 - Le bureau d'assistance et le sous-groupe *Testing and deployment* sont les canaux prévus pour les questions ; le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk) en donne les adresses.

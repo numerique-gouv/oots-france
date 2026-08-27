@@ -99,12 +99,11 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 | Deux sujets déclarés | une personne morale ajoutée à la personne physique | `EDM:ERR:0003`, `detail="R-EDM-REQ-S016"` |
 | Identifiant rejoué | la même requête soumise deux fois | la première servie, la seconde refusée par `EDM:ERR:0003` |
 
-L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
+L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les trois rôles que l'application n'assure pas :
 
 1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
-3. **Faux annuaires centraux** — `features/support/fake_common_services.rb`, monté par l'étape « les annuaires centraux désignent la passerelle locale » ; voir la section suivante.
-4. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
+3. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
 
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
@@ -113,24 +112,30 @@ Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout 
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, la démarche `00` étant la seule servie par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
 
-## Les annuaires centraux sont doublés
+## Les annuaires centraux sont les vrais
 
-La France n'est inscrite à aucun des deux annuaires que le trajet interroge : ni au Data Service Directory, qui porterait son point d'accès, ni — pour la démarche du scénario d'erreur — à l'Evidence Broker. Interroger les vrais ferait donc refuser la requête en `422` avant même qu'elle atteigne la passerelle, et ces scénarios ne prouveraient plus rien du transport qu'ils existent pour couvrir. L'inscription est une démarche administrative, décrite dans [reste_à_faire.md](reste_à_faire.md) ; l'attendre laisserait le trajet entrant sans filet à chaque modification.
+La France est inscrite à l'Evidence Broker et au Data Service Directory de l'acceptation, et ces scénarios les interrogent pour de bon. Rien n'est doublé du côté des annuaires : la découverte DNS du [chapitre 3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) résout `fr.{eb,dsd}.v1.cs.acc.oots.tech.ec.europa.eu` vers l'instance de la Commission, les deux requêtes de l'Evidence Broker rendent l'exigence puis le type de justificatif, et le Data Service Directory nomme le point d'accès `AP_FR_01` — celui-là même que le PMode d'exemple déclare, ce qui fait boucler l'échange sur la passerelle locale.
 
-`FakeCommonServices` sert donc les deux annuaires, sur un port unique et sous les chemins que les deux variables d'adresse lui donnent. C'est un vrai serveur HTTP, et il répond comme le [chapitre 3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) l'impose : `application/x-ebrs+xml`, slot `SpecificationIdentifier`, et surtout un en-tête `digest` couvrant le corps plus la signature JWS détachée `oots-response-sig` qui le couvre à son tour. Il engendre pour cela une racine et une feuille au démarrage, et écrit la racine dans le magasin que `CERTIFICATS_SERVICES_COMMUNS` désigne.
+C'est ce que les deux variables d'adresse court-circuitaient ; le [README](../README.md) dit pourquoi les laisser vides.
+
+La signature détachée `oots-response-sig` du [chapitre 3.6.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932954) est vérifiée sur chaque réponse, contre `config/certificats/services_communs_acc.pem` : la chaîne `EC-OOTS-CS-ACC` → `CommisSign - 2 test` → `European Commission Root CA - 2 test`. Le contrôle porte donc sur la racine qui fait foi, et non plus sur une racine que le test s'était donnée.
 
 > [!IMPORTANT]
-> Le faux annuaire **signe pour de bon**, et la vérification de signature reste donc exercée de bout en bout. Un doublage qui la contournerait par configuration laisserait sans filet la seule chose qui atteste, en production, que l'annuaire répondant est celui de la Commission.
+> **Vérifier à la main demande l'en-tête `Accept-Version`.** L'annuaire rend les identifiants sous une forme qui dépend de la version demandée, à la même adresse : en `oots-cs:v2.0`, celle que `CommonServicesQuery` pose sur chaque appel, ils portent le segment d'environnement (`https://sr.acc.oots.tech.ec.europa.eu/…`) ; en `oots-cs:v1.0`, et **sans en-tête**, ils ne le portent pas. Un `curl` nu lit donc la v1 et fait conclure à tort que le dépôt écrit la mauvaise forme.
 
-Les réponses viennent de gabarits ERB de `features/support/common_services/`, décalqués des réponses réelles capturées dans [`spec/fixtures/common_services/`](../spec/fixtures/README.md) : l'exigence et le type de justificatif sont ceux que la France publie vraiment, et **le point d'accès est lu dans `IDENTIFIANT_EXPEDITEUR_DOMIBUS` et `TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS`**. C'est ce qui fait boucler l'échange sur la passerelle locale : l'annuaire désigne une partie, et le PMode dit à quelle adresse elle répond. Une requête que le faux annuaire ne sait pas servir — `queryId` inconnu, paramètre obligatoire vide — est **refusée** par un `EB:ERR:0001` / `DSD:ERR:0001`, jamais servie de complaisance.
+```sh
+curl -sG 'https://query.cs.acc.oots.tech.ec.europa.eu/eb/rest/search' \
+  -H 'Accept: application/x-ebrs+xml' -H 'Accept-Version: oots-cs:v2.0' \
+  --data-urlencode 'queryId=urn:fdc:oots:eb:ebxml-regrep:queries:requirements-by-procedure-and-jurisdiction' \
+  --data-urlencode 'procedure-id=00' --data-urlencode 'country-code=FR'
+```
 
-### Ce que le doublage ne couvre pas
+### Ce que cela coûte
 
-La découverte DNS de l'instance (NAPTR, [chapitre 3.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916)) est court-circuitée par les deux variables d'adresse, et la conformité des vraies réponses n'est plus éprouvée ici. Les deux le sont par la suite unitaire, sur des réponses capturées sur l'acceptation, et par `spec/models/directories/common_services_wiring_spec.rb`, qui parcourt le vrai graphe d'objets en ne doublant que le DNS et la passerelle, et affirme que le `eb:To/eb:PartyId` du message soumis **est** la partie que le Data Service Directory a nommée.
+La CI gagne une **dépendance sortante** : `e2e.yml` ne demandait jusqu'ici rien à l'extérieur hors ses images. Chaque exécution dépend désormais de la disponibilité de l'acceptation, de la validité de la chaîne ci-dessus, et de ce que personne n'a édité l'entrée française entre-temps. C'est un coût assumé — sans lui, la découverte DNS et la conformité des vraies réponses ne seraient éprouvées nulle part —, mais un rouge d'origine extérieure doit se diagnostiquer et non s'ignorer : le tableau « En cas d'échec » ci-dessous dit lequel est lequel.
 
-### Rebrancher les vrais annuaires
-
-Vider `URL_BASE_EVIDENCE_BROKER` et `URL_BASE_DATA_SERVICE_DIRECTORY` dans `.env.oots`, et rendre à `CERTIFICATS_SERVICES_COMMUNS` la valeur `config/certificats/services_communs_acc.pem`. Les deux vont ensemble : un magasin de confiance ne vaut que pour l'annuaire qu'il authentifie. La pile sort alors vers l'acceptation, et le scénario nominal échoue en `422` sur `DSD:ERR:0001` tant que l'inscription manque.
+> [!WARNING]
+> L'Evidence Broker rend **deux** exigences pour `00` / FR, et `Directories::CommonServices#first_requirement` ne garde que la première — la limite connue d'[OOTS-49](https://linear.app/pole-api/issue/OOTS-49). `ffffffff-…` arrive en tête aujourd'hui, donc la chaîne tient ; rien ne garantit cet ordre, et l'autre exigence (`00000000-…`) ne rend plus aucun type français.
 
 ## Configuration attendue
 
@@ -140,22 +145,27 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | `http://web:4001/eb` et `http://web:4001/dsd` : même port, chemins distincts, un nom de service et non `localhost` |
-| `CERTIFICATS_SERVICES_COMMUNS` | `tmp/annuaires_simules.pem`, que le faux annuaire écrit à chaque démarrage |
+| `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | **vides**, faute de quoi elles remplacent la découverte DNS |
+| `CERTIFICATS_SERVICES_COMMUNS` | `config/certificats/services_communs_acc.pem`, la racine de la Commission pour l'acceptation |
+| `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : les deux segments du nom NAPTR à résoudre |
 
 > [!NOTE]
 > Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
-> `T3` — la reconnaissance académique de diplômes, selon `Procedures-CodeList.gc` — n'est là que pour exercer ce refus de bout en bout. Le faux annuaire répond pour elle comme pour `00` : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
+> `T3` — la reconnaissance académique de diplômes, selon `Procedures-CodeList.gc` — n'est là que pour exercer ce refus de bout en bout. L'annuaire répond pour elle comme pour `00`, les trois démarches françaises de test remontant la même exigence : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
 
 ## En cas d'échec
 
 | Symptôme | Piste |
 | --- | --- |
 | `501 Not Implemented Yet!` | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` ne vaut pas `true` |
-| `502` avec « Annuaire injoignable » | le faux annuaire ne tourne pas : l'étape « les annuaires centraux désignent la passerelle locale » manque au `Contexte`, ou les deux `URL_BASE_*` ne désignent pas le port sur lequel il écoute |
-| `500` avec « Magasin de confiance des annuaires illisible » | `tmp/annuaires_simules.pem` n'existe pas — le faux annuaire l'écrit à son démarrage, donc aucun scénario ne l'a encore joué |
-| Le faux annuaire répond, mais l'application sert une réponse périmée | le cache des annuaires dure `DUREE_CACHE_SERVICES_COMMUNS` dans le processus du serveur : après modification des gabarits, `docker compose restart web` |
+| « `URL_BASE_…` est renseignée » au démarrage du scénario | un `.env.oots` antérieur au retrait du double nomme encore le faux annuaire : vider les deux variables |
+| `502` avec « Annuaire injoignable » | l'acceptation ne répond pas, ou le HTTPS sortant et la résolution NAPTR sont filtrés sur le réseau qui joue le test |
+| `500` avec « Magasin de confiance des annuaires illisible » | `CERTIFICATS_SERVICES_COMMUNS` ne désigne pas `config/certificats/services_communs_acc.pem` |
+| `500`, signature refusée | la chaîne `EC-OOTS-CS-ACC` → `CommisSign - 2 test` → racine a été renouvelée : reprendre `config/certificats/services_communs_acc.pem` |
+| `422` avec `EB:ERR:0001` à l'étape des types | l'ordre des deux exigences de `00` / FR a bougé et `first_requirement` retient `00000000-…` — [OOTS-49](https://linear.app/pole-api/issue/OOTS-49) |
+| `422` avec `DSD:ERR:0001` | l'entrée française du Data Service Directory a été éditée ou retirée |
+| L'application sert une réponse d'annuaire périmée | le cache dure `DUREE_CACHE_SERVICES_COMMUNS` dans le processus du serveur : `docker compose restart web` |
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
 | `422` sur le jeton | le faux requêteur n'est pas joignable depuis le conteneur `web` : le test tourne-t-il bien dans le conteneur ? |
 | `Toujours pas vrai après 90 s`, les deux scénarios | Le service `worker` ne tourne pas — `docker compose ps`. L'exécution des travaux est `:external` : sans lui, ni la notification ni le ramassage périodique n'aboutissent, et les deux scénarios expirent après un 202 immédiat |

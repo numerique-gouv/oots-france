@@ -17,6 +17,16 @@ class FakeCorrespondent
 
   BENEFICIARY = { family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25' }.freeze
 
+  # What a real correspondent would have read from the central directories for a
+  # French procedure: the requirement the Evidence Broker returns for FR, and the
+  # evidence type classification it leads to. Nothing on the receiving side reads
+  # either — `EvidenceProvision::AnswerRequest` decides on the procedure code and
+  # on `evidence_type.pdf?` — so they are here for the request to look like one
+  # that was actually discovered.
+  REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff'.freeze
+  EVIDENCE_TYPE =
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
+
   def initialize(requester:, gateway: DomibusClient.new, uuid: UuidGenerator.new)
     @requester = requester
     @gateway = gateway
@@ -69,7 +79,7 @@ class FakeCorrespondent
   def beneficiary = NaturalPerson.new(**BENEFICIARY)
 
   def requirement
-    Requirement.new(id: FakeCommonServices::REQUIREMENT, descriptions: { 'EN' => 'Test requirement' })
+    Requirement.new(id: REQUIREMENT, descriptions: { 'EN' => 'Test requirement' })
   end
 
   # The evidence type France serves: a PDF, under the classification its own
@@ -77,7 +87,7 @@ class FakeCorrespondent
   def data_service
     DataService.new(
       id: '41170824-15d9-4c16-984e-63b75b937b8c',
-      evidence_type_classification: FakeCommonServices::EVIDENCE_TYPE,
+      evidence_type_classification: EVIDENCE_TYPE,
       distribution_format: EvidenceType::PDF,
       distribution_language: 'EN',
       descriptions: { 'EN' => 'FR - Test Evidence Type' },

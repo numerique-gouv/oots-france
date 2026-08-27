@@ -145,12 +145,12 @@ esac
 # A test name here would reach the container through `env_file` and turn the unit
 # suite red, though nothing in it had changed.
 #
-# The two directory URLs designate the fake directory the end-to-end suite raises
-# itself, and the trust store the certificate it generates at start-up: that is
-# what makes `make e2e` reproducible, where the central directories would demand
-# a registration of France nobody here controls. Emptying them and putting
-# config/certificats/services_communs_acc.pem back wires the stack onto
-# acceptance — see docs/test_e2e.md.
+# The two directory URLs are left empty so that chapter 3.4's DNS discovery is
+# what names the instance to query, as it does in production: filled, they would
+# replace it, and they exist only for a deployment no NAPTR record can name — a
+# caching proxy. The trust store goes with them, a store being worth only for
+# the directory it authenticates. The end-to-end suite therefore reaches the
+# Commission's acceptance instance — see docs/test_e2e.md.
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
@@ -159,13 +159,13 @@ IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
 
-CERTIFICATS_SERVICES_COMMUNS=tmp/annuaires_simules.pem
+CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
 DELAI_MAX_SERVICES_COMMUNS=10000
 DUREE_CACHE_SERVICES_COMMUNS=3600
 ENVIRONNEMENT_SERVICES_COMMUNS=acc
 PAYS_SERVICES_COMMUNS=FR
-URL_BASE_EVIDENCE_BROKER=http://web:4001/eb
-URL_BASE_DATA_SERVICE_DIRECTORY=http://web:4001/dsd
+URL_BASE_EVIDENCE_BROKER=
+URL_BASE_DATA_SERVICE_DIRECTORY=
 
 DELAI_MAX_ATTENTE_DOMIBUS=30000
 IDENTIFIANT_EXPEDITEUR_DOMIBUS=AP_FR_01

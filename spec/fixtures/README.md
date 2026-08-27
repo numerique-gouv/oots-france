@@ -87,4 +87,4 @@ Sept réponses capturées sur l'**environnement d'acceptation** des Common Servi
 > **Ne pas retoucher ces fichiers.** Leur signature couvre les octets du corps : changer un caractère la casse, et `spec/clients/common_services_signature_spec.rb` — qui vérifie la vraie signature de la Commission — vire au rouge. Un cas de figure qui demande un corps différent se fabrique dans la spec, à partir de la fixture, jamais en éditant la fixture.
 
 > [!NOTE]
-> Le test de bout en bout n'emploie pas ces captures : son faux annuaire signe lui-même, et rend donc des gabarits, décalqués d'ici mais fabriqués — `features/support/common_services/`. Ce sont deux choses différentes, et seule celle-ci fait foi. Voir [test_e2e.md](../../docs/test_e2e.md#les-annuaires-centraux-sont-doublés).
+> Le test de bout en bout n'emploie pas ces captures : il interroge les annuaires en direct. Les deux suites vérifient donc la même chaîne de confiance, sur des réponses obtenues autrement — figées ici, fraîches là-bas. Voir [test_e2e.md](../../docs/test_e2e.md#les-annuaires-centraux-sont-les-vrais).

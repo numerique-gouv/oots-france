@@ -5,9 +5,8 @@ ActionController::Base.allow_rescue = false
 
 # France's own country code, which `Exchange` reads to say which of its two
 # countries is which: a page of the operator console therefore depends on it,
-# and not only the directory clients. Set here rather than borrowed from
-# `spec/support/test_environment.rb`, which erases the directory URLs the
-# end-to-end scenarios precisely need.
+# and not only the directory clients. Set here because Cucumber loads nothing
+# from `spec/`, where the unit suite pins the same value.
 ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
 
 # No transaction around a scenario, because the `bout_en_bout` ones cannot have
@@ -18,7 +17,7 @@ ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
 Cucumber::Rails::World.use_transactional_tests = false
 
 Before('@bout_en_bout') do
-  variables = %w[URL_OOTS_FRANCE DONNEES_REQUETEURS] + Settings::COMMON_SERVICES_BASE_URLS.values
+  variables = %w[URL_OOTS_FRANCE DONNEES_REQUETEURS]
   variables.each do |variable|
     next if ENV[variable].present?
 
@@ -27,9 +26,20 @@ Before('@bout_en_bout') do
   end
 
   raise 'AVEC_REQUETE_PIECE_JUSTIFICATIVE ne vaut pas true : la route répondrait 501.' unless Settings.evidence_request_enabled?
+
+  # The mirror of the check above: these two must be *empty*, since a filled one
+  # replaces the DNS discovery these scenarios exist to exercise. An `.env.oots`
+  # predating the removal of the directory double still names a server nothing
+  # starts any more, and the scenario would fail on a connection error naming a
+  # host rather than on this.
+  Settings::COMMON_SERVICES_BASE_URLS.each_value do |variable|
+    next if ENV[variable].blank?
+
+    raise "#{variable} est renseignée : ces scénarios interrogent les vrais annuaires, " \
+          'et une adresse explicite court-circuite la découverte DNS. Voir docs/test_e2e.md.'
+  end
 end
 
 After('@bout_en_bout') do
   @fake_requester&.stop
-  @fake_common_services&.stop
 end

@@ -115,7 +115,7 @@ Rassemblées ici parce qu'elles sont dispersées dans quatre sous-chapitres et q
 ```
 
 > [!IMPORTANT]
-> **L'URL de base ne se déduit pas du gabarit, elle se résout.** En production l'enregistrement rend `https://query.cs.oots.tech.ec.europa.eu/`, qui ne porte aucun segment `prod` ; en acceptation, `https://query.cs.acc.oots.tech.ec.europa.eu/`. Les enregistrements ne sont pas génériques : `v9`, ou un code pays inexistant, ne résolvent rien.
+> **L'URL de base ne se déduit pas du gabarit, elle se résout.** En production l'enregistrement rend `https://query.cs.oots.tech.ec.europa.eu/<eb|dsd>/`, qui ne porte aucun segment `prod` ; en acceptation, `https://query.cs.acc.oots.tech.ec.europa.eu/<eb|dsd>/`. Le segment du service est dans l'enregistrement, pas ajouté par l'appelant. Les enregistrements ne sont pas génériques : `v9`, ou un code pays inexistant, ne résolvent rien.
 
 **Les valeurs figées des messages** (chapitres [4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) et [4.7.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932953)) :
 

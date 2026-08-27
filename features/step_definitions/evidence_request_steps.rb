@@ -13,10 +13,6 @@ INTERVALLE = 1
   @fake_requester = FakeRequester.new.start(URI.parse(@requester.url).port)
 end
 
-Étantdonné('les annuaires centraux désignent la passerelle locale') do
-  @fake_common_services = FakeCommonServices.new.start
-end
-
 Étantdonné('cette démarche publie ses clés de signature') do
   expect(Faraday.get("#{@requester.url}/auth/cles_publiques").status).to eq(200)
 end
