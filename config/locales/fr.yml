@@ -50,6 +50,7 @@ fr:
         evidence_type_classification: Le type de justificatif
         distribution_format: Le format de distribution
         distribution_language: La langue de distribution
+        distribution_conforms_to: Le modèle de données de la distribution
       evidence_requester:
         id: L'identifiant
       evidence_provider:
@@ -110,6 +111,8 @@ fr:
               format: doit être une URL du dépôt sémantique terminée par un UUID
             distribution_language:
               format: doit être un code langue de deux lettres majuscules
+            distribution_conforms_to:
+              format: doit être une URL du dépôt sémantique sous « datamodels/ »
           unlabelled_wording: une formulation ne nomme pas sa langue
         resolution_filter:
           attributes:

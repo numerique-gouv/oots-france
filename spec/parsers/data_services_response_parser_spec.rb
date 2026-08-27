@@ -76,6 +76,40 @@ RSpec.describe DataServicesResponseParser do
     expect(described_class.new(stripped).data_services.first.distribution_language).to be_nil
   end
 
+  # Chapter 4.5.1 has the request carry the data model back: without it a
+  # correspondent asked for XML does not know which model to produce it against.
+  # R-DSD-RESP-C039 and C041 are what oblige the directory to publish one.
+  it 'reads the data model the directory publishes for the distribution' do
+    model = 'https://sr.acc.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40'
+    published = body.sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{model}</sdg:ConformsTo></sdg:DistributedAs>")
+
+    expect(described_class.new(published).data_services.first.distribution_conforms_to).to eq(model)
+  end
+
+  it 'leaves the data model nil where the directory published none' do
+    expect(described_class.new(body).data_services.first.distribution_conforms_to).to be_nil
+  end
+
+  # A directory publishes one distribution per format — C039 and C041 are
+  # written around that — and the three elements must be read from one and the
+  # same: paths anchored on the record would take the format of the first and
+  # the data model of another, and pair a PDF with an XML schema in a request
+  # nothing downstream would question. Asking for several is OOTS-129's.
+  it 'reads the format and the data model from one and the same distribution' do
+    published = body.sub('</sdg:DistributedAs>', <<~XML.strip)
+      </sdg:DistributedAs>
+      <sdg:DistributedAs>
+        <sdg:Format>application/xml</sdg:Format>
+        <sdg:Language>FI</sdg:Language>
+        <sdg:ConformsTo>https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth</sdg:ConformsTo>
+      </sdg:DistributedAs>
+    XML
+
+    expect(described_class.new(published).data_services.first)
+      .to have_attributes(distribution_format: 'application/pdf', distribution_language: 'EN',
+        distribution_conforms_to: nil)
+  end
+
   # The versions a gateway declares are what the `specification` parameter of
   # the query filters on: a service missing from an answer may exist and speak
   # another version, which nothing else would tell an operator.

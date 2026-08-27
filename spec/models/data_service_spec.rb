@@ -102,6 +102,62 @@ RSpec.describe DataService do
           .to raise_error(ConfigurationError, /La langue de distribution/)
       end
     end
+
+    # R-DSD-RESP-C010: the data model the directory publishes is a Semantic
+    # Repository URL under `datamodels/`, with or without an environment midfix.
+    it 'accepts the data model URL the directory publishes, in production as in acceptance' do
+      [
+        'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40',
+        'https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth',
+      ].each do |published|
+        accepted = build(:data_service, distribution_conforms_to: published)
+
+        expect(accepted.validate!(:announced_data_service)).to be_a(described_class)
+      end
+    end
+
+    # The v1.0 prefix, which R-EDM-REQ-C034 still tolerates on a request and
+    # R-DSD-RESP-C010 no longer lets a directory publish: the value is validated
+    # on the rule governing where it comes from, the narrower of the two.
+    it 'refuses the v1.0 prefix the directory may no longer publish' do
+      published = 'https://sr.oots.tech.ec.europa.eu/distributions/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40'
+
+      expect { build(:data_service, distribution_conforms_to: published).validate!(:announced_data_service) }
+        .to raise_error(ConfigurationError, /Le modèle de données/)
+    end
+
+    it 'refuses a data model that is not a Semantic Repository URL at all' do
+      published = 'SDG-CertificateOfBirth'
+
+      expect { build(:data_service, distribution_conforms_to: published).validate!(:announced_data_service) }
+        .to raise_error(ConfigurationError, /Le modèle de données/)
+    end
+
+    # Optional twice over: R-DSD-RESP-C039 only makes it mandatory on a
+    # structured distribution, and R-DSD-RESP-C067 forbids it on the others.
+    it 'accepts a service the directory published no data model for' do
+      expect(build(:data_service, distribution_conforms_to: nil).validate!(:announced_data_service))
+        .to be_a(described_class)
+    end
+  end
+
+  # Which side of R-EDM-REQ-C107 the requested format falls on, and so whether
+  # the request may name a data model beside it.
+  describe '#structured_distribution?' do
+    it 'is true of the two media types the code list marks structured' do
+      %w[application/xml application/json].each do |format|
+        expect(build(:data_service, distribution_format: format)).to be_structured_distribution
+      end
+    end
+
+    # The four R-EDM-REQ-C107 names, and then a format the list does not carry:
+    # the rule is fatal in one direction only, so an unknown format is treated
+    # as the one where writing nothing is safe.
+    it 'is false of the unstructured ones, and of a format the list does not carry' do
+      %w[application/pdf image/jpeg image/png image/svg+xml application/zip].each do |format|
+        expect(build(:data_service, distribution_format: format)).not_to be_structured_distribution
+      end
+    end
   end
 
   it 'prefers the French name to the English one' do
