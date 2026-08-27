@@ -66,10 +66,31 @@ class AuditEvent < ApplicationRecord
   def self.subject(person)
     return {} if person.nil?
 
-    {
-      evidence_subject: person.attributes.compact.to_json,
-      evidence_subject_key: subject_key(**person.attributes.symbolize_keys.slice(*SUBJECT_FIELDS)),
-    }
+    described = person.attributes.compact
+
+    { evidence_subject: described.to_json, evidence_subject_key: canonical_key(described) }
+  end
+
+  # A subject that does not carry the three fields gets no key. Chapter 4.5.1
+  # lets the evidence subject be an organisation, which has neither a given name
+  # nor a date of birth, and a key composed of anything else would be searchable
+  # by nothing: `SubjectSearch` only ever builds the triplet. The key is a local
+  # convenience and not a chapter's demand, so its absence costs the trace
+  # nothing — `evidence_subject` still holds everything that was read.
+  #
+  # Decided on the fields and not on the class of what is passed, because how
+  # the key is composed belongs to the journal and not to the subject: a value
+  # object serves the templates and the builders too, where a column of this
+  # table means nothing.
+  #
+  # It rests on every subject reaching here having been validated first, which
+  # both the builders of `NaturalPerson` do — `BeneficiaryToken` and
+  # `EvidenceRequestParser` — since a person short of one field would otherwise
+  # lose the key silently rather than fail.
+  def self.canonical_key(described)
+    fields = described.symbolize_keys.slice(*SUBJECT_FIELDS)
+
+    subject_key(**fields) if fields.size == SUBJECT_FIELDS.size
   end
 
   # The three ebMS messages the TDD define, in each direction: which end of the

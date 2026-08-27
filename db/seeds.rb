@@ -39,6 +39,17 @@ end
 if Rails.env.development?
   person = NaturalPerson.new(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
 
+  # Le second sujet que le chapitre 4.5.1 autorise. Il donne à la console sa
+  # ligne sans clé canonique : `evidence_subject` renseigné, `evidence_subject_key`
+  # vide, et le bouton qui liste les autres événements du même sujet absent de la
+  # fiche — ce que le code écrit d'une personne morale, et qu'une démonstration
+  # n'affichant que des personnes physiques laisserait croire impossible.
+  organisation = LegalPerson.new(
+    eidas_identifier: 'FR/DE/A2635542Y',
+    legal_name: 'Établissements Dupont & Fils',
+    identifiers: { 'VAT' => 'FR12345678901' },
+  )
+
   # One outgoing exchange per state France can reach, two received ones, and
   # between them every one of the eight event types — so that no page of the
   # console stands empty and none shows only its easy case.
@@ -104,6 +115,11 @@ if Rails.env.development?
       error_detail: 'R-EDM-REQ-S004',
       request_id: nil, request_id_as_sent: 'pas-un-uuid',
       events: %w[request_received error_sent] },
+    # Le sujet du justificatif est une personne morale, ce que
+    # `R-EDM-REQ-S016` autorise autant qu'une personne physique.
+    { incoming: true, status: 'delivered', country_code: 'AT',
+      procedure_code: ProcedureCode::SYSTEM_CHECK, subject: organisation,
+      events: %w[request_received response_sent] },
   ]
 
   # What each type of event actually carries, as `AuditTrail` writes it: every
@@ -294,7 +310,7 @@ if Rails.env.development?
 
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :request_id,
-        :request_id_as_sent, :message_error_code).merge(
+        :request_id_as_sent, :message_error_code, :subject).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
           # n'a encore quitté n'en porte pas, et rien n'en écrit côté
@@ -336,7 +352,7 @@ if Rails.env.development?
         # `AuditTrail#error_sent` inscrit la règle que la requête a enfreinte,
         # là où l'échange garde le libellé que la liste de codes fixe.
         detail: (scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')),
-        **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
+        **(event_type.start_with?('request') ? AuditEvent.subject(scenario.fetch(:subject, person)) : {}),
         preview_location: declared_preview,
         **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
           code: message_error_code, preview: declared_preview),

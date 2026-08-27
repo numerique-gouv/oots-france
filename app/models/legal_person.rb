@@ -1,8 +1,10 @@
 # The organisation a piece of evidence is about, where the subject is not a
 # natural person (chapter 4.5.1, "Legal Person slot").
 #
-# Personal data, and it travels in the request. The exchange log does not
-# record it yet: `AuditEvent::SUBJECT_FIELDS` are those of a natural person.
+# Personal data, and it travels in the request. The exchange log records it,
+# encrypted, like the natural person it stands in for — without the canonical
+# key, which `AuditEvent::SUBJECT_FIELDS` compose out of a birth an
+# organisation does not have.
 class LegalPerson
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -37,6 +39,13 @@ class LegalPerson
     @identifiers = attributes.delete(:identifiers) || {}
     super
   end
+
+  # `identifiers` lives outside the attribute API for want of an `ActiveModel`
+  # `Hash` type, and the exchange log writes the evidence subject from
+  # `attributes`: left out, the journal would say an organisation carried no VAT
+  # number where the request carried one. Empty rather than absent is the same
+  # silence, so it is written as absent.
+  def attributes = super.merge('identifiers' => identifiers.presence)
 
   private
 
