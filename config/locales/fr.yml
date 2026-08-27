@@ -371,12 +371,13 @@ fr:
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
   interactors:
-    # Les neuf échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # Les dix échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
     failures:
       common_services_refused: L'annuaire a refusé
       gateway_refused: La passerelle a refusé le message
+      invalid_configuration: Cette installation ne peut pas construire le message
       invalid_directory_entry: L'annuaire a publié une entrée qu'un message ne peut pas porter
       invalid_token: Jeton bénéficiaire invalide
       no_evidence_type: Aucun type de justificatif dans ce pays
@@ -399,6 +400,13 @@ fr:
         malformed_identifier: >-
           L'identifiant %{element} « %{value} » n'est pas un UUID, que %{rule} exige : aucune réponse
           ne peut être signée sur cet échange.
+    evidence_request:
+      send_to_gateway:
+        # La panne est nommée comme locale : aucune des huit exceptions du
+        # chapitre 4.5.3 ne décrit un émetteur incapable de construire son
+        # propre message, et l'échange ne porte donc aucun code EDM. La
+        # description est le seul endroit qui dit à qui la panne appartient.
+        invalid_configuration: "La configuration de cette installation ne permet pas de construire la requête : %{error}"
     incoming_message:
       open_exchange:
         unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.

@@ -157,6 +157,74 @@ RSpec.describe EvidenceRequest::SendToGateway do
     end
   end
 
+  # An unusable requester rather than a stubbed builder: the `validate!` calls
+  # sit in the private methods `evidence_request.xml.erb` interpolates, so only
+  # the real render reaches them. A double raising `ConfigurationError` would
+  # prove nothing of the path the code takes.
+  describe 'a requester whose identity no message can carry' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:fetch_arguments) do
+      super().merge(requester: EvidenceRequester.new(id: '00000000000002', type_id: '  '))
+    end
+
+    it 'settles the exchange as failed rather than leaving it to the expiry sweep' do
+      send_to_gateway
+
+      expect(exchange.reload.status).to eq('failed')
+    end
+
+    # The description is the only thing left to say whose failure it is, chapter
+    # 4.5.3 having no code for this one — hence both halves asserted.
+    it "records no EDM code, and says the failure is this deployment's" do
+      send_to_gateway
+
+      expect(exchange.reload).to have_attributes(
+        edm_error_code: nil,
+        error_description: a_string_matching(/cette installation/).and(a_string_including('Le requêteur')),
+      )
+    end
+
+    it 'fails the interactor rather than raising' do
+      expect(send_to_gateway).to be_failure
+      expect(send_to_gateway.error).to include(key: :invalid_configuration)
+    end
+
+    # Settled here and not left hanging, the sweep of chapter 4.4 no longer has
+    # anything to requalify: the exchange is already out of `IN_PROGRESS`.
+    it 'leaves the expiry sweep nothing to requalify' do
+      send_to_gateway
+
+      travel_to(Settings.requester_timeout.from_now + 1.second) do
+        expect(Exchange.expired).not_to include(exchange)
+
+        ExpireExchangesJob.perform_now
+
+        expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+      end
+    end
+  end
+
+  # The gateway has accepted the message by the time the journal is written, so
+  # abandoning the exchange here would deny an answer that is genuinely coming:
+  # `SettleExchange` refuses a settled exchange as `already_settled`. Hence the
+  # rescue on `submit` rather than on the whole of `call`.
+  describe 'a failure raised after the gateway has accepted the message' do
+    let(:fetch_arguments) { super().merge(audit_trail: failing_audit_trail) }
+
+    let(:failing_audit_trail) do
+      instance_double(AuditTrail).tap do |trail|
+        allow(trail).to receive(:request_sent).and_raise(ConfigurationError, 'journal impossible')
+      end
+    end
+
+    it 'leaves the exchange sent rather than abandoning it' do
+      expect { send_to_gateway }.to raise_error(ConfigurationError)
+
+      expect(exchange.reload.status).to eq('sent')
+    end
+  end
+
   def gateway_envelope
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
   end

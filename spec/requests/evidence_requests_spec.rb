@@ -94,7 +94,7 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
 
     # A central directory that is down is upstream of the caller in the same
-    # way, and the three keys have to stay in step with `UPSTREAM_FAILURES`.
+    # way, and the keys have to stay in step with `FAILURE_STATUSES`.
     it 'reports a directory that cannot be reached as 502 too' do
       allow(EvidenceRequest::Fetch).to receive(:call)
         .and_return(failure(:common_services_refused, 'Annuaire injoignable.'))
@@ -114,6 +114,20 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       get '/requete/pieceJustificative', params: parameters
 
       expect(response).to have_http_status(:bad_gateway)
+    end
+
+    # Neither 422 nor 502: a message this deployment cannot build is upstream of
+    # nobody, and a 422 would send the caller correcting a request that was
+    # never in question. Structured all the same, so the failure reaches them as
+    # an answer they can read rather than as an unhandled exception.
+    it 'reports a configuration it cannot build a message from as a structured 500' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:invalid_configuration, 'La configuration de cette installation ne permet pas de construire la requête : Le requêteur : …'))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:internal_server_error)
+      expect(response.parsed_body).to include('erreur' => /cette installation/)
     end
 
     # A refusal here produces no ebMS message at all, so the gateway holds no

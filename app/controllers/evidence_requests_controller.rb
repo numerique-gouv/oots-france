@@ -14,9 +14,17 @@
 # Sending inline rather than from a job keeps the beneficiary token out of the
 # queue, where it would be personal data written to disk.
 class EvidenceRequestsController < ApplicationController
-  # Neither the gateway nor the central directories are the caller's to fix,
-  # and a 422 would blame them for an outage upstream.
-  UPSTREAM_FAILURES = %i[gateway_refused common_services_refused invalid_directory_entry].freeze
+  # Neither the gateway nor the central directories are the caller's to fix, and
+  # a 422 would blame them for an outage upstream — while a configuration this
+  # deployment cannot build a message from is upstream of nobody, and would send
+  # the caller correcting a request that was never in question. Anything else is
+  # theirs, hence the 422 the lookup falls back to.
+  FAILURE_STATUSES = {
+    common_services_refused: :bad_gateway,
+    gateway_refused: :bad_gateway,
+    invalid_configuration: :internal_server_error,
+    invalid_directory_entry: :bad_gateway,
+  }.freeze
 
   rescue_from EbmsError, with: :report_bad_request
 
@@ -132,7 +140,7 @@ class EvidenceRequestsController < ApplicationController
 
   def report_failure(result)
     error = result.error
-    status = error[:key].in?(UPSTREAM_FAILURES) ? :bad_gateway : :unprocessable_content
+    status = FAILURE_STATUSES.fetch(error[:key], :unprocessable_content)
     reason = error[:errors].join(' ; ')
 
     refuse(reason, exchange: result.exchange)
