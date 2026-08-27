@@ -78,9 +78,9 @@ module Settings
     def common_services_certificates = required('CERTIFICATS_SERVICES_COMMUNS')
 
     # Chapter 3.4 publishes the address of an instance as a NAPTR record, which
-    # a deployment answering elsewhere — a local double, a caching proxy — has
-    # no way of being named by. Set, this address is that instance; left empty,
-    # the record decides.
+    # a deployment answering elsewhere — a caching proxy — has no way of being
+    # named by. Set, this address is that instance; left empty, the record
+    # decides, which is what every configuration here does.
     def common_services_base_url(service) = ENV.fetch(COMMON_SERVICES_BASE_URLS.fetch(service), nil).presence
 
     # Read without raising, unlike everything else here: this one is read while
