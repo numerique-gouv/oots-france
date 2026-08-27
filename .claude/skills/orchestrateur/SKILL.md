@@ -43,7 +43,7 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 | Le ticket est en vol (`In Progress`, `Blocked`, `In Review`) | Quelqu'un y est, ou un ouvrier arrêté doit y revenir |
 
 > [!IMPORTANT]
-> **Le statut Linear ne dit pas la disponibilité : juge sur le contenu.** `Todo` abrite des tickets d'arbitrage, et `tdd-nerd` dépose en `Backlog` des tickets complets et prenables. Piocher hors `Todo` est normal — mais **dis-le** (« OOTS-131 est en Backlog, son énoncé est complet »), et **demande une fois pour toutes** si `Todo` veut dire « prêt à prendre » ici ; si oui, ça se consigne dans les conventions du dépôt.
+> **`Todo` prime sur `Backlog`, mais ne décide pas.** Arbitré le 2026-08-27 : à contenu équivalent, prends le `Todo` d'abord ; prends un `Backlog` dès qu'il est **plus actionnable** qu'un `Todo` — ce qui arrive souvent, `tdd-nerd` y déposant des tickets complets quand `Todo` abrite des tickets d'arbitrage. Le statut ordonne, le contenu admet : un `Todo` dont le corps réclame une décision produit reste hors du lot, et piocher en `Backlog` se dit en une ligne (« OOTS-131 est en Backlog, son énoncé est complet »).
 
 Relis les statuts (`list_issue_statuses`) plutôt qu'une liste écrite ailleurs : ils ont déjà changé sans prévenir.
 
