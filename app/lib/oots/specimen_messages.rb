@@ -40,6 +40,22 @@ module Oots
     # identifiers of the seven specimens above do not shift.
     IDENTIFIERLESS_SPECIMEN = 'erreurSansIdentifiantDeRequete'.freeze
 
+    # The one specimen this repository must never emit, and the only one the
+    # validation expects to be refused: `R-EDM-ebMS-017` and `-037` are FATAL,
+    # and every other specimen satisfies them, so nothing else asks whether they
+    # bite. `EvidenceProvision::AnswerRequest` turns away a request carrying such
+    # a pair rather than reuse it in the answer France signs; this is what says
+    # the rules it invokes refuse what it claims they refuse.
+    #
+    # A header alone: the two rules anchor on the ebMS header, and no RegRep body
+    # carries either identifier.
+    MALFORMED_IDENTIFIERS_SPECIMEN = 'identifiantsMalformes'.freeze
+
+    # Neither is a UUID, and they differ so that a report naming one is not read
+    # as naming the other.
+    MALFORMED_CONVERSATION_ID = 'pas-un-uuid'.freeze
+    MALFORMED_EXCHANGE_ID = 'ni-celui-ci'.freeze
+
     def initialize(destination)
       @destination = Pathname.new(destination)
     end
@@ -52,6 +68,11 @@ module Oots
       ERROR_SPECIMENS.each { |name, exception| write(name, *error_response(exception)) }
       write(IDENTIFIERLESS_SPECIMEN,
         *error_response(EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S004'), request_id: nil))
+
+      # Last for the reason the specimen above is last: `header` draws a message
+      # identifier from the sequence, and the specimens the rules accept must not
+      # shift because of the one they refuse.
+      write_header(MALFORMED_IDENTIFIERS_SPECIMEN, malformed_header)
     end
 
     private
@@ -60,8 +81,10 @@ module Oots
 
     def write(name, body, header)
       destination.join("#{name}.xml").write(body)
-      destination.join("#{name}.entete.xml").write(header.strip)
+      write_header(name, header)
     end
+
+    def write_header(name, header) = destination.join("#{name}.entete.xml").write(header.strip)
 
     def request
       body = EvidenceRequestBuilder.new(
@@ -133,6 +156,22 @@ module Oots
           payload_id: payload_id(body.document_id),
         ),
       ]
+    end
+
+    # The header of a request in every respect but its two identifiers, so that
+    # the rules refuse those and nothing else — `R-EDM-ebMS-026` and `-027`
+    # constrain the part reference just as tightly, and a specimen sloppy there
+    # would be refused for the wrong reason. Hence a drawn identifier and not a
+    # literal: it is the shape a body would have given.
+    def malformed_header
+      header(
+        action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        original_sender: requester.ebms_identity,
+        final_recipient: german_provider.ebms_identity,
+        payload_id: payload_id(uuid.next),
+        conversation_id: MALFORMED_CONVERSATION_ID,
+        exchange_id: MALFORMED_EXCHANGE_ID,
+      )
     end
 
     def header(**attributes)

@@ -119,13 +119,23 @@ echo "→ Production des messages par le code du dépôt"
 enEchec=0
 valide() {
   local message="$1" regle="$2"
+  shift 2
   saxon -s:"$messages/$message.xml" -xsl:"$outils/sch/$regle.xsl" -o:"$messages/$message.$regle.svrl" \
     > /dev/null
 
   if ! python3 "$racine/scripts/summarize_schematron.py" \
-    "$messages/$message.$regle.svrl" "$message" "$regle" ${BAVARD:+--bavard}; then
+    "$messages/$message.$regle.svrl" "$message" "$regle" ${BAVARD:+--bavard} "$@"; then
     enEchec=1
   fi
+}
+
+# Le seul spécimen qu'on attend refusé, et le seul contrôle qui dise qu'une
+# règle mord : les autres, tous conformes, ne prouvent qu'une chose — que le
+# dépôt les respecte. Le verdict est inversé, et il exige que ce soient les
+# règles nommées qui refusent, et aucune autre.
+refuse() {
+  local message="$1" regle="$2" regles="$3"
+  valide "$message" "$regle" "--refus=$regles"
 }
 
 valide requete EDM-REQ-C
@@ -159,6 +169,11 @@ valide erreurCapaciteNonSupportee.entete EDM-ebMS
 valide erreurExpiration.entete EDM-ebMS
 valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 
+# Les deux règles FATAL que `EvidenceProvision::AnswerRequest` invoque pour
+# refuser de répondre à une requête dont les identifiants ne sont pas des UUID.
+# Sans ce spécimen, l'expression rationnelle du dépôt ne s'atteste qu'elle-même.
+refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017,R-EDM-ebMS-037
+
 # Code 2 for a rule violation, distinct from the 1 any other failure returns
 # (download, compilation): the caller can then retry a network fluke without
 # replaying a non-conformance, which will not heal on its own.
@@ -169,4 +184,4 @@ if [ "$enEchec" -ne 0 ]; then
 fi
 
 echo
-echo "✓ Les messages et leurs entêtes ebMS sont conformes aux TDD $VERSION_TDD."
+echo "✓ Les messages et leurs entêtes ebMS sont conformes aux TDD $VERSION_TDD, et le spécimen malformé est refusé."
