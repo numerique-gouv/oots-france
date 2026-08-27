@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<db:configuration xmlns:db="http://domibus.eu/configuration" party="blue_gw">
+<db:configuration xmlns:db="http://domibus.eu/configuration" party="AP_FR_01">
   <mpcs>
     <mpc name="defaultMpc" qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC" enabled="true" default="true" retention_downloaded="0" retention_undownloaded="3600" delete_message_metadata="false" retention_metadata_offset="525600" retention_sent_success="3600" retention_sent_failure="3600"/>
   </mpcs>
@@ -12,10 +12,10 @@
 
     <parties>
       <partyIdTypes>
-        <partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"/>
+        <partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"/>
       </partyIdTypes>
-      <party name="blue_gw" endpoint="http://localhost:8080/domibus/services/msh" allowChunking="false">
-        <identifier partyId="blue_gw" partyIdType="partyTypeUrn"/>
+      <party name="AP_FR_01" endpoint="http://localhost:8080/domibus/services/msh" allowChunking="false">
+        <identifier partyId="AP_FR_01" partyIdType="partyTypeUrn"/>
       </party>
     </parties>
 
@@ -82,11 +82,11 @@
 
     <process name="ootsProcess" agreement="agreementEmpty" mep="oneway" binding="push" initiatorRole="defaultInitiatorRole" responderRole="defaultInitiatorRole">
       <initiatorParties>
-        <initiatorParty name="blue_gw"/>
+        <initiatorParty name="AP_FR_01"/>
       </initiatorParties>
 
       <responderParties>
-        <responderParty name="blue_gw"/>
+        <responderParty name="AP_FR_01"/>
       </responderParties>
 
       <legs>

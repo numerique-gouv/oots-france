@@ -22,7 +22,7 @@ RSpec.describe EvidenceProvider do
   # answers as `FIKEHA02` behind the access point `AP_FI_03`.
   it 'keeps its own identity apart from the access point carrying messages to it' do
     provider = build(:evidence_provider, identifier: build(:ebms_identity, id: 'FIKEHA02'),
-      access_point: build(:access_point, id: 'AP_FI_03'))
+      access_point: build(:access_point, :foreign, id: 'AP_FI_03'))
 
     expect(provider.ebms_identity.id).to eq('FIKEHA02')
     expect(provider.access_point.id).to eq('AP_FI_03')

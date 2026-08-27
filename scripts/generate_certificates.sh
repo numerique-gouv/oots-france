@@ -1,19 +1,19 @@
 #!/bin/sh
 # Generates the demonstration certificates Domibus needs locally.
 #
-# The example PMode has Domibus talk to itself (a single party, `blue_gw`, see
+# The example PMode has Domibus talk to itself (a single party, `AP_FR_01`, see
 # docs/domibus_context.md): the self-signed certificates produced here therefore
 # serve both as the gateway's identity (keystore) and as its only trust anchors
 # (truststore).
 #
 # Since Domibus 5.1, security is described by a "profile" rather than by a policy
 # file, and the profile imposes the aliases — see docs/domibus_context.md. For
-# the blue_gw party and the rsa profile:
+# the AP_FR_01 party and the rsa profile:
 #
-#   keystore    blue_gw_rsa_sign      private signing key
-#               blue_gw_rsa_decrypt   private decryption key
-#   truststore  blue_gw_rsa_sign      certificate verifying the peer's signature
-#               blue_gw_rsa_encrypt   certificate encrypting towards the peer
+#   keystore    AP_FR_01_rsa_sign      private signing key
+#               AP_FR_01_rsa_decrypt   private decryption key
+#   truststore  AP_FR_01_rsa_sign      certificate verifying the peer's signature
+#               AP_FR_01_rsa_encrypt   certificate encrypting towards the peer
 #
 # The gateway talking to itself, the two truststore certificates are those of the
 # two keystore keys.
@@ -28,7 +28,7 @@
 
 set -e
 
-PARTIE="blue_gw"
+PARTIE="AP_FR_01"
 PROFIL="rsa"
 ALIAS_SIGNATURE="${PARTIE}_${PROFIL}_sign"
 ALIAS_DECHIFFREMENT="${PARTIE}_${PROFIL}_decrypt"

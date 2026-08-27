@@ -13,8 +13,16 @@ FactoryBot.define do
   end
 
   factory :access_point do
-    id { 'blue_gw' }
-    type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots' }
+    id { 'AP_FR_01' }
+    type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR' }
+
+    # A correspondent's gateway, whose scheme is its own Member State's to
+    # choose: the country-coded French one would make `AP_DE_01` announce
+    # itself under a scheme Germany never registered.
+    trait :foreign do
+      id { 'AP_DE_01' }
+      type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots' }
+    end
 
     initialize_with { new(**attributes) }
   end

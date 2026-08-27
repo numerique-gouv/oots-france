@@ -12,7 +12,7 @@ RSpec.describe EvidenceRequest::SendToGateway do
     {
       requester: build(:evidence_requester),
       provider: build(:evidence_provider, identifier: build(:ebms_identity, id: 'DE73524311')),
-      recipient: build(:access_point, id: 'AP_DE_01'),
+      recipient: build(:access_point, :foreign),
       beneficiary: build(:natural_person, eidas_identifier: 'FR/DE/123123123'),
       evidence_type: build(:evidence_type),
       requirement: build(:requirement),
@@ -68,6 +68,20 @@ RSpec.describe EvidenceRequest::SendToGateway do
     expect(recipient_of(submitted)).to eq('AP_DE_01')
     expect(property_of(submitted, 'finalRecipient')).to eq('DE73524311')
     expect(property_of(submitted, 'originalSender')).to eq(fetch_arguments[:requester].id)
+  end
+
+  # Chapter 4.7 pairs the DSD's `AccessService/Identifier` with the PMode party
+  # and its `schemeID` with that party's type: the two travel together, and a
+  # gateway that announces itself under a name its PMode does not declare has
+  # its message refused. Nothing else in the suite renders the sender the
+  # environment configures — the builders' specs all pass one explicitly. The
+  # two values expected below are the ones `spec/support/test_environment.rb`
+  # posts, travelling here through `Settings` and `AccessPoint.sender`.
+  it 'announces itself under the identity the configuration gives the gateway' do
+    send_to_gateway
+
+    expect(sender_of(submitted)).to eq('AP_FR_01')
+    expect(sender_scheme_of(submitted)).to eq('urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR')
   end
 
   # The identifier the gateway gives the message it accepted is the only route
@@ -155,6 +169,10 @@ RSpec.describe EvidenceRequest::SendToGateway do
   def conversation_of(document) = text_at(document, '//eb:ConversationId')
 
   def recipient_of(document) = text_at(document, '//eb:To/eb:PartyId')
+
+  def sender_of(document) = text_at(document, '//eb:From/eb:PartyId')
+
+  def sender_scheme_of(document) = attribute(at(document, '//eb:From/eb:PartyId'), 'type')
 
   def property_of(document, name) = text_at(document, "//eb:Property[@name=\"#{name}\"]")
 

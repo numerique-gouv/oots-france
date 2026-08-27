@@ -38,7 +38,7 @@ LOGIN_API_REST="${LOGIN_API_REST:?doit être renseigné, et correspondre à celu
 MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
 FICHIER_PMODE="${FICHIER_PMODE:-exemples/configuration_PMode_Domibus.xml}"
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
-PARTIE="blue_gw"
+PARTIE="AP_FR_01"
 
 # The directory mounted into the gateway, where the plugin's properties live.
 REPERTOIRE_DOMIBUS="${REPERTOIRE_DOMIBUS:-domibus}"

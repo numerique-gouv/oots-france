@@ -33,6 +33,9 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
   | truststore | `<partie>_rsa_encrypt` | certificat chiffrant à destination du pair |
 
   L'alias unique par partie, qui suffisait avant les profils, ne suffit plus : un alias qui s'en écarte fait échouer la signature ou le chiffrement, sans autre symptôme qu'un message jamais acquitté. `scripts/generate_certificates.sh` produit les quatre.
+
+  > [!IMPORTANT]
+  > **Renommer la partie périme les magasins**, puisque son nom est dans les quatre alias — et les alias de `docker-compose.yml` (`domibus.security.profile.rsa.key.private.*.alias`), qui les nomment à la JVM, se renomment avec. Ce que ça demande dépend du flux : `scripts/configure_domibus.sh` **sans** `REPERTOIRE_MAGASINS` engendre des magasins neufs dans un répertoire temporaire et les téléverse, donc le rejouer suffit ; avec `REPERTOIRE_MAGASINS` pointé sur un répertoire existant il lit ce qu'il y trouve sans rien régénérer, et il faut y repasser `scripts/generate_certificates.sh` d'abord — après avoir supprimé les magasins qu'il [refuse d'écraser](configurer_domibus_via_l_interface.md#configurer-les-certificats).
 - **MPC** (*Message Partition Channel*) : la file dans laquelle les messages attendent d'être récupérés, avec sa politique de rétention.
 - **Utilisateur console vs Plugin User** : les comptes « Users » servent à l'interface web d'administration ; les comptes « Plugin Users » servent aux applications clientes (comme OOTS-France) pour s'authentifier sur les API. Les deux jeux d'identifiants sont indépendants.
 - **Plugins** : Domibus expose ses messages aux applications métier via des plugins — ici le **WS plugin** (SOAP, namespace `http://eu.domibus.wsplugin/`). Les plugins JMS et filesystem existent mais ne sont pas utilisés ; un plugin REST est apparu en 5.2.1 et exige ce cœur-là, donc ne s'installe pas sur la 5.2 en place — pourquoi, et ce qu'il faudrait pour l'adopter, dans [versions_domibus.md](versions_domibus.md).
@@ -81,14 +84,14 @@ Passé ce délai, la passerelle cesse d'essayer. Le message, lui, **reste récup
 
 ## Le PMode d'exemple
 
-[`exemples/configuration_PMode_Domibus.xml`](../exemples/configuration_PMode_Domibus.xml) est le PMode à charger en développement. Il déclare une **unique partie, `blue_gw`, placée des deux côtés de l'échange** : notre Domibus dialogue donc avec lui-même. C'est volontaire — cela permet de jouer tout le cycle requête → réponse en local sans dépendre d'une seconde instance distante, donc sans autre État membre. Deux conséquences : le même certificat auto-signé sert de keystore *et* de truststore (Domibus doit faire confiance à son propre certificat), et un message émis revient par la file d'entrée du même Domibus.
+[`exemples/configuration_PMode_Domibus.xml`](../exemples/configuration_PMode_Domibus.xml) est le PMode à charger en développement. Il déclare une **unique partie, `AP_FR_01`, placée des deux côtés de l'échange** : notre Domibus dialogue donc avec lui-même. C'est volontaire — cela permet de jouer tout le cycle requête → réponse en local sans dépendre d'une seconde instance distante, donc sans autre État membre. Deux conséquences : le même certificat auto-signé sert de keystore *et* de truststore (Domibus doit faire confiance à son propre certificat), et un message émis revient par la file d'entrée du même Domibus.
 
 Ce que règle le reste du fichier :
 
 | Élément | Ce qu'il configure |
 | --- | --- |
 | `<mpcs>` | Rétention : `retention_downloaded="0"` (message téléchargé effacé aussitôt), `retention_undownloaded`, `retention_sent_success` et `retention_sent_failure` à `3600` — en **minutes**, soit 2,5 jours. Les **métadonnées**, elles, survivent au message : `delete_message_metadata="false"` et `retention_metadata_offset="525600"` les gardent douze mois, ce que l'article 17 impose et que le [journal des échanges](journal_des_echanges.md) recoud aux traces applicatives |
-| `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH de `blue_gw` (`http://localhost:8080/domibus/services/msh`) |
+| `<parties>` | Le schéma de nommage OOTS des identifiants et l'endpoint MSH d'`AP_FR_01` (`http://localhost:8080/domibus/services/msh`). Le [chapitre 4.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) permet la forme `urn:oasis:names:tc:ebcore:partyid-type:unregistered:[code pays]` et impose que le `PartyId` comme son `type` soient traités **en respectant la casse** |
 | `<roles>` / `<meps>` / `<agreements>` | Rôles initiateur/répondeur, modèle d'échange « oneway » en « push », et un accord vide (champ imposé par le schéma) |
 | `<properties>` | Rend obligatoires `originalSender` et `finalRecipient` sur chaque message (`fourCornersPropertySet`) |
 | `<securities>` | Signature **et** chiffrement, décrits par le profil `rsa` (voir « Profil de sécurité » plus haut) |
