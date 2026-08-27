@@ -186,6 +186,13 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 >
 > Et quand tu remontes, remonte **avec ta recommandation et ce que l'erreur coûterait**, jamais la question nue.
 
+> [!WARNING]
+> **Sans réponse, ne t'arrête pas : prends le choix conservateur et ouvre une issue.** Arbitré le 2026-08-27 — « si jamais je suis pas là pour décider […] fait le choix conservateur et fait une issue. » Un lot ne se met pas en attente d'un humain absent.
+>
+> Le choix conservateur est celui qui **n'engage rien et se défait** : ne pas publier le nom, ne pas écrire la valeur, laisser le périmètre coupé, garder le comportement existant. En cas de doute, c'est celui qui laisse le moins de traces chez un tiers — un paramètre non publié s'ajoute en une ligne, un nom publié ne se retire plus.
+>
+> L'issue porte alors **la question, les options, et ce que le choix conservateur a coûté** — pas seulement « à trancher ». Elle est le point de reprise : sans elle, la question est perdue et le ticket suivant la reposera. Et **résume ces issues avant la fin de la session** : c'est là que l'utilisateur les retrouve.
+
 **Quand un ouvrier conteste son ticket, il a souvent raison** : le ticket n'est pas la spécification, et il a lu le chapitre. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures signées — il avait raison, il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sinon le suivant refait le détour. Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche.
 
 **Sur un `ÉCRAN`, va voir.** Faire suivre le verdict laisse l'utilisateur devant une question nue ; un écran se regarde en deux minutes. Ouvre les URL avec `mcp__chrome-devtools__*` — `navigate_page`, `take_snapshot` pour l'arbre d'accessibilité, `take_screenshot` pour voir. Deux défauts ont été trouvés ainsi qu'aucun ouvrier n'avait vus : trois énoncés d'état vide autour d'une carte pleine, et un texte anglais sans attribut `lang` dans une page française, que le [RGAA](https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/) sanctionne (critère 8.7 ; la compétence `accessibility:rgaa-dev` couvre ce contrôle). L'ouvrier étant arrêté, son arbre ne bouge plus : tu peux y monter `web`, **mais n'y écris rien**.
