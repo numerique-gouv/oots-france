@@ -4,7 +4,8 @@
 #
 # A missing slot raises rather than returning nil, which would surface much
 # later as a message addressed to nobody; unreadable requests are answered with
-# `EDM:ERR:0003`.
+# `EDM:ERR:0003`. That holds for the slots a rule requires, which is nearly all
+# of them — `optional_slot_text` carries the exception.
 module SlotReading
   include OotsNamespaces
 
@@ -22,6 +23,21 @@ module SlotReading
   def slot_text(name, scope)
     value = text_at(slot(name, scope), './rim:SlotValue/rim:Value')
     require_content(value, 'parsers.slot_reading.empty', name:)
+  end
+
+  # A slot the message is allowed not to carry, where absence is an answer and
+  # not a failure: `R-EDM-ERR-C022` attaches `PreviewLocation` to one severity
+  # and to no other, so every ordinary error legitimately omits it. Read through
+  # `slot_text` instead, its absence would be reported as an unreadable field on
+  # the majority of arrivals, and the warnings that say a message really was
+  # malformed would be lost in them.
+  #
+  # A slot that is present and empty still raises: that one is malformed.
+  def optional_slot_text(name, scope)
+    found = at(scope, "./rim:Slot[@name='#{name}']")
+    return if found.nil?
+
+    require_content(text_at(found, './rim:SlotValue/rim:Value'), 'parsers.slot_reading.empty', name:)
   end
 
   # A `rim:AnyValueType`: the tree under the slot value, whatever it is.

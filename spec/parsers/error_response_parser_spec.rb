@@ -36,6 +36,30 @@ RSpec.describe ErrorResponseParser do
       expect(error.preview_location).to eq('https://previsualisation.example.si/espace?jeton=abc')
     end
 
+    # The two readers part company on an address France will not follow: the
+    # journal keeps what arrived — chapter 4.8 has the requester log it, and a
+    # refused address is the one a dispute is about — where nothing may act on
+    # it. Pinned here rather than only through `AuditTrail`, which is one
+    # consumer of a distinction that belongs to the parser.
+    it 'declares an unusable address that it refuses to hand out' do
+      hostile = RetrievedMessageParser.new(
+        envelope_with_preview('javascript:alert(document.domain)'),
+      ).body
+
+      expect(hostile.declared_preview_location).to eq('javascript:alert(document.domain)')
+      expect(hostile.preview_location).to be_nil
+    end
+
+    # `R-EDM-ERR-C022` puts the slot on this severity and on no other, so an
+    # ordinary refusal carries none — and reading it must not report the message
+    # as malformed, which would drown the warnings that mean it really is.
+    it 'names no address, and does not refuse the message, when the slot is absent' do
+      ordinary = RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')).body
+
+      expect(ordinary.declared_preview_location).to be_nil
+      expect(ordinary.preview_location).to be_nil
+    end
+
     # The type is `rs:AuthorizationExceptionType`, whose prefix is bound in the
     # document and could be anything. The severity says the same thing without
     # that trap, and R-EDM-ERR-C022 is what ties it to the preview slot.
@@ -66,5 +90,14 @@ RSpec.describe ErrorResponseParser do
   # where the country the refusal came from is read.
   it 'reads the country the refusal came from' do
     expect(error.provider_country).to eq('FR')
+  end
+
+  def envelope_with_preview(location)
+    document = Nokogiri::XML(built_envelope('erreurAutorisationRequise'))
+    value = document.xpath('//payload/value').first
+    body = Base64.decode64(value.text).sub(/(<rim:Slot name="PreviewLocation">.*?<rim:Value>)[^<]*/m, "\\1#{location}")
+    value.content = Base64.strict_encode64(body)
+
+    document.to_xml
   end
 end

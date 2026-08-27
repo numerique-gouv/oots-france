@@ -45,10 +45,19 @@ class ErrorResponseParser
   # The slot as it arrived, unvetted: chapter 4.8 has the requester log the
   # preview location of an error response, and an address we refused to follow
   # is exactly the one a dispute will be about. A log archives, it does not vet.
-  def declared_preview_location = slot_text('PreviewLocation', exception)
+  #
+  # Optional, because `R-EDM-ERR-C022` puts the slot on one severity only: an
+  # error that asks for no preview names none, and that is not a defect.
+  def declared_preview_location = optional_slot_text('PreviewLocation', exception)
 
-  # The address anything may act on, which is another question: `SettleExchange`
-  # sends a user there and a template turns it into an `href`.
+  # The address anything may act on, which is another question: the exchange
+  # keeps it, `EvidenceRequestsController` hands it back to the French service
+  # provider — which is what sends the user there, this component rendering
+  # nothing to one — and the console turns it into an `href`.
+  #
+  # Nil rather than raising whether the slot is absent or unusable, as the note
+  # above says it should be: asking for a preview without saying where is a
+  # failed exchange, not an unreadable message.
   def preview_location
     location = declared_preview_location
 
