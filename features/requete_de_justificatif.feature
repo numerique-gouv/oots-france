@@ -10,15 +10,18 @@ Fonctionnalité: Demander un justificatif à un autre État membre
 
   L'échange boucle sur la seule passerelle du PMode d'exemple : l'application se
   répond donc à elle-même, sans dépendre d'un autre État membre pour le
-  transport. Les annuaires centraux, eux, sont tenus par un double : la France
-  n'y est pas inscrite, et l'attendre laisserait le transport sans filet. Ce que
-  ce double ne couvre pas — la découverte DNS et la conformité des vraies
-  réponses — est éprouvé par la suite unitaire, sur des réponses capturées.
+  transport. Les annuaires centraux, eux, sont les vrais : la France est
+  inscrite à l'acceptation, et ces scénarios sortent donc jusqu'à Bruxelles pour
+  découvrir l'instance par le DNS, lire l'exigence, le type de justificatif et
+  le point d'accès, et vérifier la signature de chaque réponse.
+
+  Ils dépendent par là de la disponibilité de l'acceptation et de l'entrée
+  française : un rouge peut venir de l'extérieur du dépôt, et
+  docs/test_e2e.md dit comment le distinguer d'une régression.
 
   Contexte:
     Étant donné une démarche française déclarée dans l'annuaire
     Et que cette démarche publie ses clés de signature
-    Et que les annuaires centraux désignent la passerelle locale
 
   Scénario: le justificatif revient du fournisseur et parvient à la démarche
     Quand la démarche demande un justificatif pour la procédure "00"

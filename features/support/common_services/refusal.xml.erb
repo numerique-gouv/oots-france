@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<query:QueryResponse xmlns:sdg="http://data.europa.eu/p4s" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
-    <rim:Slot name="SpecificationIdentifier">
-        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
-            <rim:Value><%= CommonServicesSpecification::IDENTIFIER %></rim:Value>
-        </rim:SlotValue>
-    </rim:Slot>
-    <rs:Exception xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rs:ObjectNotFoundExceptionType" code="<%= escape(code) %>" detail="EMPTY_RESULT" message="<%= escape(message) %>" severity="urn:oasis:names:tc:ebxml-regrep:ErrorSeverityType:Error"/>
-</query:QueryResponse>
