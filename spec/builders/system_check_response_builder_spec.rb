@@ -78,6 +78,24 @@ RSpec.describe SystemCheckResponseBuilder do
     expect(rendered).not_to include('schemeID="eidas"')
   end
 
+  # `sdg:IsAbout` is an `xs:choice`, and R-EDM-RESP-S042 (FATAL) makes its legal
+  # branch narrower than the `LegalPerson` slot of the request: what the whole
+  # response does with that is asserted here, the branch itself in
+  # `spec/builders/evidence_subject_builder_spec.rb`.
+  describe 'a response about a legal person' do
+    subject(:is_about) do
+      company = build(:legal_person, identifiers: { 'VAT' => 'FR12345678901' })
+      rendered = described_class.new(**attributes, beneficiary: company).render
+
+      Nokogiri::XML(rendered).at_xpath('//sdg:IsAbout', namespaces)
+    end
+
+    it 'states the organisation and no natural person' do
+      expect(is_about.element_children.map(&:name)).to eq(['LegalPerson'])
+      expect(is_about.at_xpath('.//sdg:LegalName', namespaces).text).to eq('Établissements Dupont & Fils')
+    end
+  end
+
   it 'escapes a requester name read from the request it answers' do
     hostile = EvidenceRequester.french(id: '00000000000002', name: '</sdg:Name><sdg:Injecté/>')
     rendered = described_class.new(**attributes, requester: hostile).render

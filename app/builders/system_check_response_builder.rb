@@ -56,4 +56,8 @@ class SystemCheckResponseBuilder < ApplicationBuilder
       names: { @requester.language => @requester.name },
     ).render
   end
+
+  # `sdg:IsAbout` is an `xs:choice`, and the branch is the subject's to name:
+  # the builder picks it from the type it is given.
+  def evidence_subject = EvidenceSubjectBuilder.new(beneficiary:).render
 end

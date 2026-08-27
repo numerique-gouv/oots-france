@@ -146,6 +146,11 @@ valide requetePersonneMorale EDM-REQ-C
 valide requetePersonneMorale EDM-REQ-S
 valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
+# La même réponse, à propos d'une personne morale : `sdg:IsAbout` étant un
+# `xs:choice`, rien d'autre ne confronte la forme réduite que R-EDM-RESP-S042
+# impose à la branche morale.
+valide reponsePersonneMorale EDM-RESP-C
+valide reponsePersonneMorale EDM-RESP-S
 valide reponseDifferee EDM-RESP-C
 valide reponseDifferee EDM-RESP-S
 valide erreur EDM-ERR-C
@@ -167,6 +172,7 @@ valide erreurSansIdentifiantDeRequete EDM-ERR-S
 valide requete.entete EDM-ebMS
 valide requetePersonneMorale.entete EDM-ebMS
 valide reponse.entete EDM-ebMS
+valide reponsePersonneMorale.entete EDM-ebMS
 valide reponseDifferee.entete EDM-ebMS
 valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS

@@ -1,0 +1,8 @@
+<sdg:NaturalPerson>
+<%- if person.eidas_identifier.present? -%>
+  <sdg:Identifier schemeID="eidas"><%= escape(person.eidas_identifier) %></sdg:Identifier>
+<%- end -%>
+  <sdg:FamilyName><%= escape(person.family_name) %></sdg:FamilyName>
+  <sdg:GivenName><%= escape(person.given_name) %></sdg:GivenName>
+  <sdg:DateOfBirth><%= escape(person.date_of_birth) %></sdg:DateOfBirth>
+</sdg:NaturalPerson>

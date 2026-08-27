@@ -64,6 +64,10 @@ class EvidenceRequestParser
 
   def procedure_code = slot_text('Procedure', request)
 
+  # R-EDM-REQ-S016 admits a `LegalPerson` here too; reading it is OOTS-61.
+  # Until then a request about an organisation is refused for a missing slot,
+  # and the response side that would answer it — `EvidenceSubjectBuilder` — is
+  # reachable only from the specimens.
   def beneficiary
     person = slot_content('NaturalPerson', query, './sdg:Person')
 
