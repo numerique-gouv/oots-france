@@ -237,6 +237,12 @@ Et **`opening` est le premier**, celui que tu écris en lisant le ticket : une
 étape d'exécution déclarée alors que tu n'as pas encore de plan fait mentir
 l'affichage pendant l'heure où il servait le plus.
 
+**Une étape ne s'éteint pas toute seule** : elle s'affiche jusqu'à ce que tu
+en déclares une autre. Donc un détour qui se termine se déclare aussi — le
+conflit résolu, tu reviens au § 5 et tu réécris `review`. Sans ça
+`resolving conflicts` reste affiché jusqu'au merge : ton verdict ne l'efface
+pas, il est plus ancien que ta déclaration (voir juste en dessous).
+
 N'écris pas là tes verdicts (§ « Ce que tu rends ») : ils se lisent dans ton
 transcript.
 
@@ -523,7 +529,8 @@ sans savoir ce que ta ligne défendait.
    qui repasse ne prouve rien sur ce que l'autre PR a apporté : c'est
    précisément là qu'une régression passe inaperçue. Vérifie nommément que ce
    que l'autre a ajouté est toujours là.
-5. Repousse en `--force-with-lease`.
+5. Repousse en `--force-with-lease`, puis **redéclare `review`** : le rebase
+   fini, tu es revenu au § 5, et c'est la CI que tu attends désormais.
 
 **Ne rends la main qu'une fois la PR de nouveau fusionnable** :
 `gh pr view <n> --json mergeable` dit `MERGEABLE` et la CI est repassée au
