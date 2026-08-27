@@ -50,6 +50,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       # from the message the gateway was handed, so nothing but the value that
       # circulated can satisfy it.
       evidence_identifier: evidence_identifier_of(submitted),
+      # « For evidence content referenced using `rim:RepositoryItemRef`
+      # elements, MIME type and MIME content identifier », starred for the data
+      # service too. Read back from the reference the submitted body makes of
+      # the attachment, so a second `cid:` minted beside it would not pass.
+      evidence_mime_type: Attachment::MIME_TYPE,
+      evidence_content_id: repository_item_ref_of(submitted),
       # Where France answers, the country logged is the one the request named:
       # `R-EDM-REQ-C073` puts it on the agent classified `ER`, and France's own
       # response carries no address for that agent.
@@ -789,6 +795,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   def evidence_identifier_of(document)
     document.at_xpath("//rim:Slot[@name='EvidenceMetadata']//sdg:Evidence/sdg:Identifier",
       SlotReading::NAMESPACES).text
+  end
+
+  # The reference the body makes of the attachment, which the ebMS header
+  # declares under the same `cid:`.
+  def repository_item_ref_of(document)
+    document.at_xpath('//rim:RepositoryItemRef/@xlink:href', OotsNamespaces::NAMESPACES).value
   end
 
   def code_of(document) = exception_of(document)['code']

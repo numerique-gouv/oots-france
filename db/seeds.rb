@@ -145,8 +145,23 @@ if Rails.env.development?
   # sans la croire. Là où il manque, l'attribut est omis et non laissé vide —
   # `R-EDM-ERR-C025` n'autorise cette omission que sous
   # `rs:InvalidRequestExceptionType`, et c'est la seule réponse qui en use.
-  demonstration_body = lambda do |event_type, sent: nil, echoed: nil, code: nil|
+  demonstration_body = lambda do |event_type, sent: nil, echoed: nil, code: nil, preview: nil|
     request_id_attribute = %( requestId="#{echoed}") if echoed.present?
+    # Le slot que `R-EDM-ERR-C022` attache à la sévérité `PreviewRequired`, et
+    # d'où `AuditTrail#received_error` tire sa colonne : le corps conservé doit
+    # porter ce dont la colonne d'à côté prétend venir.
+    exception_element =
+      if preview.present?
+        format(<<~XML.chomp, code:, preview:)
+          <rs:Exception code="%<code>s">
+              <rim:Slot name="PreviewLocation">
+                <rim:SlotValue><rim:Value>%<preview>s</rim:Value></rim:SlotValue>
+              </rim:Slot>
+            </rs:Exception>
+        XML
+      else
+        format('<rs:Exception code="%<code>s"/>', code:)
+      end
 
     case event_type
     when 'request_sent', 'request_received'
@@ -158,12 +173,13 @@ if Rails.env.development?
         </query:QueryRequest>
       XML
     when 'error_sent', 'error_received'
-      format(<<~XML, request_id: request_id_attribute, code:)
+      format(<<~XML, request_id: request_id_attribute, exception: exception_element)
         <?xml version="1.0" encoding="UTF-8"?>
         <query:QueryResponse xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                             xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
                              xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"%<request_id>s
                              status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
-          <rs:Exception code="%<code>s"/>
+          %<exception>s
           <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryResponse>
       XML
@@ -189,11 +205,25 @@ if Rails.env.development?
   carries_evidence = %w[response_sent response_received evidence_delivered].freeze
   served_evidence = Rails.root.join(EvidenceProvision::AnswerRequest::EVIDENCE_PATH).binread
 
-  evidence_fingerprint = lambda do |event_type, exchange|
+  # The `cid:` of the part that carried the document, which chapter 4.8 has the
+  # response flow log beside its type: it is what ties the attachment to the
+  # `rim:RepositoryItemRef` naming it. Minted where the answer was — France's own
+  # suffix where France answered, the correspondent's where it received.
+  evidence_content_id = lambda do |exchange|
+    # `AnswerRequest#attachment_for` mints the French one under this suffix; a
+    # correspondent's is its own, so a demonstration wearing ours both ways would
+    # teach the console that France attached what it received.
+    suffix = exchange.incoming? ? 'pdf.oots.fr' : "pdf.oots.#{exchange.country_code.downcase}"
+
+    format('cid:%s@%s', SecureRandom.uuid, suffix)
+  end
+
+  evidence_fingerprint = lambda do |event_type, exchange, content_id|
     return {} unless event_type.in?(carries_evidence) && exchange.status != 'deferred'
 
     { evidence_digest: Digest::SHA256.hexdigest(served_evidence),
-      evidence_mime_type: RetrievedMessageParser::PDF }
+      evidence_mime_type: RetrievedMessageParser::PDF,
+      evidence_content_id: content_id }
   end
 
   # The identifier the provider gave the document, which chapter 4.8 has both
@@ -217,11 +247,11 @@ if Rails.env.development?
   # body of a request would teach the console, and whoever reads it, that the two
   # look alike — where the whole point of keeping the body is to show what each
   # message actually said.
-  regrep_body = lambda do |event_type, sent:, echoed:, code:|
+  regrep_body = lambda do |event_type, sent:, echoed:, code:, preview:|
     return {} unless event_type.in?(carries_message)
 
     { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: demonstration_body.call(event_type, sent:, echoed:, code:) }
+      regrep_body: demonstration_body.call(event_type, sent:, echoed:, code:, preview:) }
   end
 
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
@@ -273,8 +303,19 @@ if Rails.env.development?
         ),
     )
 
+    # Drawn once per exchange, like the two identifiers above: the answer and the
+    # handover name the same attachment, which is the correlation an auditor
+    # follows from the body's `rim:RepositoryItemRef`.
+    content_id = evidence_content_id.call(exchange)
+
     events.each_with_index do |event_type, step|
       next if AuditEvent.exists?(exchange_id: exchange.exchange_id, event_type:)
+
+      # L'adresse que le correspondant a déclarée, et que `received_error` seul
+      # inscrit : la France n'émet aucune prévisualisation, faute d'espace où
+      # l'ouvrir. Le corps conservé porte le slot d'où elle vient, sans quoi la
+      # fiche montrerait une colonne que le message d'à côté ne dit pas.
+      declared_preview = (exchange.preview_location if event_type == 'error_received')
 
       AuditEvent.create!(
         event_type:,
@@ -293,8 +334,10 @@ if Rails.env.development?
         # là où l'échange garde le libellé que la liste de codes fixe.
         detail: (scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')),
         **(event_type.start_with?('request') ? AuditEvent.subject(person) : {}),
-        **regrep_body.call(event_type, sent: circulated_id, echoed: request_id, code: message_error_code),
-        **evidence_fingerprint.call(event_type, exchange),
+        preview_location: declared_preview,
+        **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
+          code: message_error_code, preview: declared_preview),
+        **evidence_fingerprint.call(event_type, exchange, content_id),
         **evidence_identifier.call(event_type, exchange),
       )
     end

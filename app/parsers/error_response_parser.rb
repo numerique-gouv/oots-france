@@ -42,8 +42,15 @@ class ErrorResponseParser
   # exchange, not an unreadable message.
   ACCEPTED_SCHEMES = %w[http https].freeze
 
+  # The slot as it arrived, unvetted: chapter 4.8 has the requester log the
+  # preview location of an error response, and an address we refused to follow
+  # is exactly the one a dispute will be about. A log archives, it does not vet.
+  def declared_preview_location = slot_text('PreviewLocation', exception)
+
+  # The address anything may act on, which is another question: `SettleExchange`
+  # sends a user there and a template turns it into an `href`.
   def preview_location
-    location = slot_text('PreviewLocation', exception)
+    location = declared_preview_location
 
     location if usable?(location)
   end

@@ -151,6 +151,7 @@ RSpec.describe IncomingMessage::SettleExchange do
         exchange_id: exchange.exchange_id,
         country_code: exchange.country_code,
         evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+        evidence_content_id: message.evidence.content_id,
       )
     end
   end

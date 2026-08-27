@@ -83,6 +83,19 @@ RSpec.describe AuditTrail do
       )
     end
 
+    # « For evidence content referenced using `rim:RepositoryItemRef` elements,
+    # MIME type and MIME content identifier », which chapter 4.8 stars for the
+    # requester, the access points and the data service alike. The identifier is
+    # what ties the attachment to the reference the body makes of it — the same
+    # `cid:` on both sides — and, through `message_id`, to the part the gateway
+    # signed.
+    it 'records the reference the response made of the attachment' do
+      expect(journalled.evidence_content_id)
+        .to eq('cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr')
+        .and eq(Nokogiri::XML(journalled.regrep_body)
+          .at_xpath('//rim:RepositoryItemRef/@xlink:href', OotsNamespaces::NAMESPACES).value)
+    end
+
     # Chapter 4.8 asks the response flow for both parties, the response
     # identifier and the evidence identifier. The correlation identifiers come
     # from the header either way, so what is missing here is detail rather than
@@ -92,6 +105,19 @@ RSpec.describe AuditTrail do
         request_id: message.body.request_id,
         response_id: message.body.response_id,
         evidence_identifier: message.body.evidence_identifier,
+      )
+    end
+
+    # The chain chapter 4.8 describes, as far as the journal takes it: from the
+    # identifier the provider gave the document, one row yields the eDelivery
+    # message identifier and the reference of the part inside it — which is
+    # where the gateway's signed metadata are read from.
+    it 'lets the non-repudiation chain be walked from the evidence identifier' do
+      entry = AuditEvent.find_by(evidence_identifier: message.body.evidence_identifier)
+
+      expect(entry).to have_attributes(
+        message_id: 'message-passerelle',
+        evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
       )
     end
 
@@ -166,6 +192,45 @@ RSpec.describe AuditTrail do
     it 'keeps the rs:Exception as it arrived' do
       expect(journalled.regrep_body).to eq(message.first_part.content)
       expect(journalled.regrep_body).to include('rs:Exception', 'EDM:ERR:0004')
+    end
+
+    # A refusal that names nowhere leaves the column empty, rather than a value
+    # the message never carried.
+    it 'names no preview location, the refusal carrying none' do
+      expect(journalled.preview_location).to be_nil
+    end
+  end
+
+  # Chapter 4.8 lists « Preview Location » among what an evidence requester logs
+  # of an error response, in both flows. Chapter 4.4 §4.3.2 says what it is
+  # worth beyond the detour: the address « may provide an additional correlation
+  # of complex flows beside `ExchangeId` », being reused by the request that
+  # follows.
+  describe 'an answer asking for a preview' do
+    let(:message) { RetrievedMessageParser.new(built_envelope('erreurAutorisationRequise')) }
+
+    before { audit_trail.message_received(message:, message_id: 'message-passerelle') }
+
+    it 'records the address the correspondent declared' do
+      expect(journalled).to have_attributes(
+        event_type: 'error_received',
+        edm_error_code: EdmException::AUTHORIZATION.code,
+        preview_location: 'https://previsualisation.example.si/espace?jeton=abc',
+      )
+    end
+  end
+
+  # An address France refused to follow is exactly the one a dispute will be
+  # about, so the journal keeps it as it arrived: a log archives, it does not
+  # vet. The scheme is vetted where it decides something — `SettleExchange`,
+  # which sends a user there, and the console, which makes an `href` of it.
+  describe 'a preview at an address France would not follow' do
+    let(:message) { RetrievedMessageParser.new(hostile_preview('javascript:alert(document.domain)')) }
+
+    it 'records it all the same, as declared' do
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(journalled.preview_location).to eq('javascript:alert(document.domain)')
     end
   end
 
@@ -375,11 +440,14 @@ RSpec.describe AuditTrail do
       expect(journalled).to have_attributes(
         event_type: 'response_sent', evidence_identifier: 'urn:uuid:z',
         evidence_digest: Digest::SHA256.hexdigest('un document'),
+        evidence_mime_type: 'application/pdf',
+        evidence_content_id: 'cid:doc@pdf.oots.fr',
       )
 
       audit_trail.response_sent(**answered, evidence: nil)
       expect(journalled).to have_attributes(
         event_type: 'response_sent', evidence_identifier: nil, evidence_digest: nil,
+        evidence_mime_type: nil, evidence_content_id: nil,
       )
     end
 
@@ -436,5 +504,14 @@ RSpec.describe AuditTrail do
         regrep_mime_type: nil, regrep_body: nil,
       )
     end
+  end
+
+  def hostile_preview(location)
+    document = Nokogiri::XML(built_envelope('erreurAutorisationRequise'))
+    value = document.xpath('//payload/value').first
+    body = Base64.decode64(value.text).sub(/(<rim:Slot name="PreviewLocation">.*?<rim:Value>)[^<]*/m, "\\1#{location}")
+    value.content = Base64.strict_encode64(body)
+
+    document.to_xml
   end
 end

@@ -258,9 +258,15 @@ class AuditTrail
     }
   end
 
+  # Chapter 4.8 lists « Preview Location » among what an evidence requester logs
+  # of an error response, next to the error report itself. Recorded as declared
+  # and not as `preview_location` vets it: the address France refused to follow
+  # is the one an auditor will ask about, and the scheme is vetted where it
+  # matters — where a user is sent, and where a template makes an `href`.
   def received_error(error)
     { request_id: readable(:request_id) { error.request_id }, edm_error_code: readable(:edm_error_code) { error.code },
-      country_code: readable(:country_code) { error.provider_country }, detail: readable(:detail) { error.message } }
+      country_code: readable(:country_code) { error.provider_country }, detail: readable(:detail) { error.message },
+      preview_location: readable(:preview_location) { error.declared_preview_location } }
   end
 
   def authorities(requesting:, providing:)
@@ -281,14 +287,23 @@ class AuditTrail
   # the two never coincide. The route to that signature is `message_id`, which
   # chapter 4.8 traces. This digest answers the other question: whether a
   # document produced later is the one that went through.
+  # `evidence_content_id` is the other half of the row chapter 4.8 asks the
+  # response flow for: « for evidence content referenced using
+  # `rim:RepositoryItemRef` elements, MIME type and MIME content identifier ».
+  # It is what ties the attachment to the reference the body makes of it, and —
+  # with `message_id` — to the part the gateway signed.
+  #
   # Written from the one part, so that an answer carrying no document names
-  # neither type nor digest, rather than a row asserting half of what the
-  # chapter asks for. The type is the one declared, never a constant: on the way
-  # in it is what the correspondent announced.
+  # neither type, nor reference, nor digest, rather than a row asserting a third
+  # of what the chapter asks for.
   def evidence_fingerprint(part)
     return {} if part.nil? || part.content.blank?
 
-    { evidence_digest: Digest::SHA256.hexdigest(part.content), evidence_mime_type: part.mime_type }
+    {
+      evidence_digest: Digest::SHA256.hexdigest(part.content),
+      evidence_mime_type: part.mime_type,
+      evidence_content_id: part.content_id,
+    }
   end
 
   # A message we cannot read must still be journalled, so what its body would
