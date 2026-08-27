@@ -114,7 +114,13 @@ parce que l'application remplacée le faisait).
 
 ## Le contrôle, ticket par ticket
 
-Huit questions, dans cet ordre. Les trois premières se répondent en lisant le
+**Question zéro — le ticket a-t-il un corps ?** Elle passe avant les autres parce qu'elle les rend possibles : on ne confronte pas au chapitre une description vide, ni un titre suivi d'une phrase. Un tel ticket n'est pas mauvais, il est **inexistant** — et il coûte plus qu'un ticket faux, parce qu'il occupe une place dans la file sans que rien n'y soit prenable. Vu le 2026-08-26 : `OOTS-127` en tête de la file, écarté d'un lot d'ouvriers pour cette seule raison, sa priorité n'y changeant rien.
+
+Alors **écris-le**, au lieu de le signaler. Tu as sous la main tout ce qu'il faut : le titre dit le sujet, le chapitre dit la règle, et la forme est celle du § [La forme de ce qu'on crée](#la-forme-de-ce-quon-crée), la même que pour une issue que tu créerais de zéro — en-tête, règles de gestion sourcées, critères d'acceptance, vérification. C'est le verdict `À RÉDIGER`, et c'est le meilleur rapport qualité-prix du contrôle : un ticket qui existait déjà, que personne ne pouvait prendre, et qui devient prenable pour le prix d'une lecture de chapitre.
+
+Deux limites, qui sont celles de tout le skill. Tu rédiges ce que le chapitre dicte, **jamais ce qu'il ne dit pas** : si le titre promet un comportement qu'aucun chapitre ne fonde, le verdict est `SANS FONDEMENT`, pas `À RÉDIGER`. Et tu ne touches pas à un ticket **en vol** — un corps vide sur un ticket `In Progress` veut dire que quelqu'un le tient déjà, et écrire dessous lui passerait sous les pieds.
+
+Puis huit questions, dans cet ordre. Les trois premières se répondent en lisant le
 chapitre ; les suivantes en lisant le ticket à la lumière du chapitre ; la
 dernière en lisant le **code** à la lumière du chapitre.
 
@@ -161,6 +167,7 @@ Un et un seul par ticket, pour que le rapport se relise :
 | Verdict | Ce qu'il veut dire | Ce qu'il déclenche |
 | --- | --- | --- |
 | `CONFORME` | le ticket dit vrai et complet | rien |
+| `À RÉDIGER` | il n'a pas de corps, ou une phrase qui n'en tient pas lieu | écrire la description entière depuis le chapitre, à la forme du § [La forme de ce qu'on crée](#la-forme-de-ce-quon-crée) |
 | `À CORRIGER` | son énoncé diffère du chapitre | un `patch` de la description |
 | `À COMPLÉTER` | le chapitre impose plus | des sous-issues `TS - ` |
 | `À DÉCOUPER` | plusieurs chapitres en un ticket | un redécoupage `US`/`TS` |
