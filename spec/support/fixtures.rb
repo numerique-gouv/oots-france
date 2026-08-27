@@ -48,6 +48,23 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The complement of the above: a real envelope with one of its elements given
+  # another value — how a spec fabricates a message the gateway would have
+  # accepted and a TDD rule refuses. Same binding by URI, for the same reason.
+  def envelope_where(name, xpath, value)
+    document = Nokogiri::XML(real_envelope(name))
+    replace(document, xpath, value)
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
+  # Bang-free but still loud: `at_xpath` returns nil for a path that matches
+  # nothing, and assigning to nil raises — where a substitution matching nothing
+  # would leave the spec passing on an intact envelope.
+  def replace(document, xpath, value)
+    document.at_xpath(xpath, OotsNamespaces::NAMESPACES).content = value
+  end
+
   private
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read

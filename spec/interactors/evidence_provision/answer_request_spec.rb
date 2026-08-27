@@ -542,6 +542,156 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
+  # `R-EDM-ebMS-017` and `-037` are both FATAL, and both are asked of the
+  # document rather than of a party: they bind whoever emits. France answering
+  # under an identifier a correspondent malformed breaks them on France's side,
+  # the answer reusing what the request carried — and nothing conformant can say
+  # so back, chapter 4.4 having every message of one exchange reuse its
+  # `ExchangeId`. So the refusal is silent, and the journal holds it alone.
+  describe 'a request whose ebMS identifiers are not UUIDs' do
+    # What `IncomingMessage::Process` has already done by the time a handler
+    # runs: the arrival is journalled and the exchange is open, malformed
+    # identifier and all — an exchange a correspondent malformed must stay
+    # recorded.
+    let(:opened) do
+      create(:exchange, incoming: true, exchange_id: message.exchange_id,
+        conversation_id: message.conversation_id, procedure_code: '00', country_code: 'FI')
+    end
+
+    before { opened }
+
+    context "when it is the exchange's" do
+      let(:message) { request_with(:exchange_id, 'pas-un-uuid') }
+
+      it 'submits nothing to the gateway' do
+        expect { answer }.to raise_error(UnreadableMessageError, /pas-un-uuid/)
+        expect(gateway).not_to have_received(:submit)
+      end
+
+      # The malformed value in its own column, and the fields read off the
+      # exchange rather than off the request: `refuse_malformed` runs before the
+      # body is touched, so the row it writes can only come from the one
+      # `OpenExchange` opened.
+      it 'journals the refusal, naming the rule it broke' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(AuditEvent.last).to have_attributes(
+          event_type: 'request_refused',
+          exchange_id: 'pas-un-uuid',
+          conversation_id: message.conversation_id,
+          procedure_code: '00',
+          country_code: 'FI',
+          evidence_requester_id: opened.evidence_requester_id,
+          detail: include('R-EDM-ebMS-037'),
+        )
+      end
+    end
+
+    context "when it is the conversation's" do
+      let(:message) { request_with(:conversation_id, 'ni-celui-ci') }
+
+      it 'submits nothing to the gateway' do
+        expect { answer }.to raise_error(UnreadableMessageError, /ni-celui-ci/)
+        expect(gateway).not_to have_received(:submit)
+      end
+
+      it 'journals the refusal, naming the rule it broke' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(AuditEvent.last).to have_attributes(
+          event_type: 'request_refused',
+          exchange_id: message.exchange_id,
+          conversation_id: 'ni-celui-ci',
+          detail: include('R-EDM-ebMS-017'),
+        )
+      end
+    end
+
+    # One refusal and not two: the first identifier the header presents settles
+    # it, which is also the lower of the two rule numbers. Pinned rather than
+    # left open, so that a reader of the journal knows which of the two a line
+    # names when both were wrong.
+    context 'when both are malformed' do
+      let(:message) do
+        document = Nokogiri::XML(real_envelope('requete'))
+        replace(document, IDENTIFIER_PATHS[:conversation_id], 'ni-lui')
+        replace(document, IDENTIFIER_PATHS[:exchange_id], 'ni-lautre')
+
+        RetrievedMessageParser.new(document.to_xml)
+      end
+
+      it 'refuses once, on the conversation identifier' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(AuditEvent.where(event_type: 'request_refused').pluck(:detail))
+          .to contain_exactly(include('R-EDM-ebMS-017'))
+      end
+    end
+
+    # Values close enough to a UUID to pass a lax reading of the rule: a group one
+    # digit short, a digit that is not hexadecimal, and a valid one preceded by
+    # a line of its own.
+    #
+    # The third pins the anchors of `Exchange::UUID`. Ruby's `^`/`$` match at line
+    # boundaries and not at the ends of the string, so a pattern written that way
+    # accepts this value — and trimming cannot help, the break being inside it
+    # where neither `strip` nor `normalize-space` reaches. The refusal here reads
+    # the constant through `match?`, which nothing guards; only its use in
+    # `validates` is, Rails rejecting a multiline-anchored pattern outright.
+    %W[1647038b-7eaf-4711-b738-d5d83f96fa7 1647038b-7eaf-4711-b738-d5d83f96fazb
+       pas-un-uuid\n1647038b-7eaf-4711-b738-d5d83f96fa7b].each do |near_miss|
+      context "when it only looks like a UUID (#{near_miss.inspect})" do
+        let(:message) { request_with(:exchange_id, near_miss) }
+
+        it 'refuses it too' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+          expect(gateway).not_to have_received(:submit)
+        end
+      end
+    end
+
+    # No exchange at all to hang the refusal on. `IncomingMessage::Process` opens
+    # one before dispatching, so this does not arise today — but nothing in the
+    # code compels it, exactly as `unknown_exchange` says of the settling path.
+    # What the journal must never lose is the refused value itself, and the
+    # reason carries it whether or not a row does.
+    context 'when no exchange was opened at all' do
+      let(:message) { request_with(:exchange_id, 'pas-un-uuid') }
+      let(:opened) { nil }
+
+      it 'still journals the refusal, with the malformed value in its reason' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(gateway).not_to have_received(:submit)
+        expect(AuditEvent.last).to have_attributes(
+          event_type: 'request_refused',
+          detail: include('R-EDM-ebMS-037').and(include('pas-un-uuid')),
+        )
+      end
+    end
+  end
+
+  # The mirror of the block above, and the case that says the refusal is not
+  # merely strict but *right*: both rules compare what they constrain through
+  # `normalize-space()`, so a correspondent whose gateway indents its header
+  # sends an identifier the rules accept. Refusing it would drop a conformant
+  # request in silence — the very failure this ticket exists to prevent, turned
+  # around.
+  # `IncomingMessage::OpenExchange` turns these away before any handler runs, so
+  # this interactor never meets one in production. Pinned all the same: it is a
+  # unit of its own, and a reordering of the two guards would otherwise let an
+  # unidentified request through to `wrap` unnoticed.
+  describe 'a request whose ebMS identifiers are missing altogether' do
+    let(:message) { envelope_without('requete', IDENTIFIER_PATHS[:exchange_id]) }
+
+    before { create(:exchange, incoming: true, conversation_id: message.conversation_id) }
+
+    it 'refuses it rather than answering under an identifier it does not have' do
+      expect { answer }.to raise_error(UnreadableMessageError, /R-EDM-ebMS-037/)
+      expect(gateway).not_to have_received(:submit)
+    end
+  end
+
   describe 'a request whose requester cannot be read' do
     let(:message) { envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') } }
 
@@ -572,6 +722,22 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def gateway_body
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
+  end
+
+  # Each identifier addressed by the very path its rule anchors on:
+  # `R-EDM-ebMS-017` on the `eb:ConversationId` of the collaboration,
+  # `R-EDM-ebMS-037` on the `ExchangeId` message property. Written whole rather
+  # than as the element alone, so that what a spec malforms is what the rule
+  # reads, and not merely something that shares its name.
+  IDENTIFIER_PATHS = {
+    conversation_id: '//eb:UserMessage/eb:CollaborationInfo/eb:ConversationId',
+    exchange_id: "//eb:UserMessage/eb:MessageProperties/eb:Property[@name='ExchangeId']",
+  }.freeze
+
+  # A real request whose header carries the given value for one of the two
+  # identifiers, well-formed or not.
+  def request_with(identifier, value)
+    envelope_where('requete', IDENTIFIER_PATHS.fetch(identifier), value)
   end
 
   # Forced back to UTF-8: base64 decodes to bytes, and both the parsers and the
