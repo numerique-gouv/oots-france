@@ -677,6 +677,28 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   # sends an identifier the rules accept. Refusing it would drop a conformant
   # request in silence — the very failure this ticket exists to prevent, turned
   # around.
+  # Both identifiers, and not just one: they are read through the same helper, so
+  # a spec covering `ExchangeId` alone would let `eb:ConversationId` quietly lose
+  # its normalisation.
+  {
+    exchange_id: ['//eb:Property[@name="ExchangeId"]', '1647038b-7eaf-4711-b738-d5d83f96fa7b'],
+    conversation_id: ['//eb:ConversationId', '1589c463-ccb7-4c0e-8044-c7198d844c16'],
+  }.each do |identifier, (submitted_path, expected)|
+    describe "a request whose #{identifier} is valid but surrounded by whitespace" do
+      let(:message) { request_with(identifier, "\n      #{expected}\n    ") }
+
+      before { create(:exchange, incoming: true, exchange_id: message.exchange_id) }
+
+      it 'answers it, and answers under the trimmed identifier' do
+        answer
+
+        submitted = Nokogiri::XML(gateway_body).at_xpath(submitted_path, OotsNamespaces::NAMESPACES)
+
+        expect(submitted.text).to eq(expected)
+      end
+    end
+  end
+
   # `IncomingMessage::OpenExchange` turns these away before any handler runs, so
   # this interactor never meets one in production. Pinned all the same: it is a
   # unit of its own, and a reordering of the two guards would otherwise let an
