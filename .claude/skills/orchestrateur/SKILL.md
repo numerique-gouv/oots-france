@@ -153,6 +153,15 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 > [!IMPORTANT]
 > **Pas d'`isolation: "worktree"`.** L'ouvrier se crée le sien avec [`scripts/worktree.sh`](../../../scripts/worktree.sh), qui recopie les `.env*` git-ignorés et **décale les ports de toute la pile**. Dans un worktree nu, il ne peut ni lancer `web` ni donner l'adresse de son écran.
 
+> [!WARNING]
+> **Le même message fait courir les créations de worktree : compare leurs ports juste après.** `scripts/worktree.sh` établit le décalage libre en lisant les `.env` des worktrees existants, **avant** d'écrire le sien — deux ouvriers lancés ensemble observent donc le même état et réclament le même décalage. Constaté le 2026-08-27 : les worktrees d'OOTS-60 et d'OOTS-86 ont tous deux reçu `3001/5434/8181`, et seule la vigilance de l'un des deux l'a rattrapé, ce sur quoi on ne peut pas compter.
+>
+> ```sh
+> for w in .worktrees/*/; do printf '%-44s' "$w"; grep -h '^PORT_OOTS_FRANCE=' "$w/.env"; done
+> ```
+>
+> Un doublon se déplace à la main dans le worktree du **dernier** lancé, dont la pile n'est pas encore montée. [OOTS-148](https://linear.app/pole-api/issue/OOTS-148) corrige le script ; cette vérification tombera avec lui.
+
 ## 5. Accompagner — le travail est là, pas au lancement
 
 | Verdict | Ce que tu en fais |
