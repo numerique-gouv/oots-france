@@ -18,7 +18,7 @@ description: >
 
 Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de front, tu les accompagnes jusqu'à la PR. Tu ne produis pas de code : des décisions.
 
-Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — cinq verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
+Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — six verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
 
 Tu n'es ni [`tdd-nerd`](../tdd-nerd/SKILL.md), qui corrige le backlog contre les spécifications (un ticket faux se lui renvoie, il ne se réécrit pas en passant), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
 
@@ -132,6 +132,8 @@ Agent(subagent_type: "ouvrier",
 
 Le `description` nomme l'instance dans le panneau d'agents et **est le seul champ qui y parvienne** — [`subagent.sh`](../../statusline/subagent.sh) le lit, l'ouvrier dit pourquoi. Sans lui, trois ouvriers deviennent indiscernables.
 
+**Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan — c'est ce qui évite de traîner le contexte de la conception dans l'écriture du code. Le second lancement est identique au premier : l'ouvrier voit le plan sur disque et reprend à l'implémentation. Quand une question avait été posée, mets la réponse dans le prompt **et** en commentaire du ticket, pour qu'elle survive au contexte.
+
 **Le prompt est l'identifiant du ticket, rien d'autre** : l'ouvrier lit, se crée son worktree, déduit le reste. Seule exception, ce que lui seul ne peut pas savoir : qu'un autre travaille dans le même fichier (§ 2).
 
 > [!IMPORTANT]
@@ -141,7 +143,8 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 
 | Verdict | Ce que tu en fais |
 | --- | --- |
-| `PLAN` | Réponds : approuve, ou dis ce qui change. Un mot y coûte des minutes plutôt que des heures |
+| `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
+| `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
 | `ÉCRAN` | **Va regarder l'écran toi-même** avant d'en référer |
 | `LIVRÉ` | Vérifie ce qui compte, ouvre l'écran s'il y en a un, rends la PR |
@@ -169,5 +172,5 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
 - **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste.
-- **Ne relance pas un second ouvrier sur le même ticket** : reprends celui qui existe par `SendMessage`. Un nouveau repart d'un contexte vide sur une branche déjà écrite.
+- **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis).
 - **Ne dépasse pas le plafond du § 3** : au-delà, tout ralentit ensemble et rien ne finit plus tôt.
