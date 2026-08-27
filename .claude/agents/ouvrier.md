@@ -410,7 +410,10 @@ cycle de revue entier, puisque l'écran va changer. Alors arrête-toi avant :
    ticket sur `In Progress` : rien n'est prêt à être relu ;
 3. **mets la CI sous surveillance tout de suite, sans l'attendre** : `gh pr
    checks <url> --watch` en tâche de fond (`Bash(run_in_background: true)`),
-   puis enchaîne sur les captures — elles occupent utilement l'attente. Un
+   puis enchaîne sur les captures — elles occupent utilement l'attente.
+   « Sans l'attendre » vaut tant qu'il te reste à faire : une fois les
+   captures posées, tu attends le verdict en bloquant plutôt que de rendre
+   la main, comme le dit le premier des garde-fous. Un
    brouillon déclenche les trois workflows comme une PR ordinaire, tous
    posés sur `pull_request` sans condition de brouillon : `e2e.yml` tourne
    donc bel et bien, et c'est le seul endroit où le bout-en-bout est joué
@@ -595,6 +598,14 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
 
 ## Garde-fous
 
+- **Une attente n'est pas un verdict : ne termine jamais ton tour sur « j'attends ».** « La CI tourne », « un relecteur n'a pas fini » ne sont pas des choses à rendre — ce sont des choses à attendre. Un tour qui se conclut là-dessus réveille la session qui t'a lancé pour rien, et il faut ensuite te relancer à la main pour que tu constates ce que tu aurais vu en restant. Tant qu'il te reste du travail qui ne dépend pas du résultat attendu, fais-le pendant que la surveillance tourne en tâche de fond (§ 5). **Quand il ne t'en reste plus, attends en bloquant, dans ton propre tour** :
+
+  ```sh
+  gh pr checks <n> --watch   # rend la main une fois les checks terminés ;
+                             # son code de sortie dit si l'un a échoué
+  ```
+
+  Donne-lui un `timeout` large — `e2e.yml` prend plusieurs minutes. Même chose pour un sous-agent de revue dont tu attends le résultat : attends-le, ne conclus pas à côté. Les cinq verdicts sont des états d'arrivée ; aucun ne veut dire « toujours en cours ».
 - **N'entre pas en mode plan** (`EnterPlanMode`, `ExitPlanMode`) : les deux
   attendent un utilisateur assis dans ta session, que tu n'as pas. Le § 2
   fait approuver le plan par le canal qui, lui, existe — c'est `plan-issue`
