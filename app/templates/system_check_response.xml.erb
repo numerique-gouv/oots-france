@@ -48,14 +48,7 @@
               <sdg:Evidence>
                 <sdg:Identifier><%= escape(evidence_id) %></sdg:Identifier>
                 <sdg:IsAbout>
-                  <sdg:NaturalPerson>
-<%- if beneficiary.eidas_identifier.present? -%>
-                    <sdg:Identifier schemeID="eidas"><%= escape(beneficiary.eidas_identifier) %></sdg:Identifier>
-<%- end -%>
-                    <sdg:FamilyName><%= escape(beneficiary.family_name) %></sdg:FamilyName>
-                    <sdg:GivenName><%= escape(beneficiary.given_name) %></sdg:GivenName>
-                    <sdg:DateOfBirth><%= escape(beneficiary.date_of_birth) %></sdg:DateOfBirth>
-                  </sdg:NaturalPerson>
+<%= evidence_subject %>
                 </sdg:IsAbout>
                 <sdg:IssuingAuthority>
                   <sdg:Identifier schemeID="<%= escape(provider_identity.type_id) %>"><%= escape(provider_identity.id) %></sdg:Identifier>

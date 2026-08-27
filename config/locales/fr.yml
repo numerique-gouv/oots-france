@@ -214,6 +214,8 @@ fr:
   builders:
     evidence_request_builder:
       unknown_subject: "Sujet de justificatif d'un type que la requête ne sait pas écrire : « %{type} »."
+    evidence_subject_builder:
+      unknown_subject: "Sujet de justificatif d'un type que la réponse ne sait pas écrire : « %{type} »."
   clients:
     common_services_instance:
       dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."
