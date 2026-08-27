@@ -27,7 +27,7 @@ RSpec.describe 'db/seeds.rb' do
     named = AuditEvent.where.not(evidence_identifier: nil)
 
     expect(named.pluck(:event_type).uniq).to match_array(%w[response_sent response_received])
-    expect(named.count).to eq(2)
+    expect(named.count).to eq(3)
   end
 
   # The correlation of chapter 4.8: a request and the answer to it name one
@@ -41,7 +41,7 @@ RSpec.describe 'db/seeds.rb' do
     replay
 
     answered = AuditEvent.where(event_type: %w[request_received response_sent])
-      .where(exchange_id: Exchange.find_by(incoming: true, status: 'delivered').exchange_id)
+      .where(exchange_id: Exchange.find_by(incoming: true, status: 'delivered', country_code: 'BE').exchange_id)
       .index_by(&:event_type)
 
     expect(answered.keys).to contain_exactly('request_received', 'response_sent')
@@ -94,6 +94,19 @@ RSpec.describe 'db/seeds.rb' do
     expect(unsent.request_id).to be_present
     expect(unsent.request_id).to eq(arrived.request_id)
     expect(unsent.response_id).to be_present
+  end
+
+  # Chapter 4.5.1 lets the evidence subject be an organisation, which has
+  # neither a given name nor a date of birth: the demonstration carries one, so
+  # that the journal page is read at least once against a line whose subject
+  # search is legitimately unavailable.
+  it 'records an organisation as an evidence subject, and gives it no canonical key' do
+    replay
+
+    about_an_organisation = AuditEvent.where(event_type: 'request_received', evidence_subject_key: nil)
+
+    expect(about_an_organisation.count).to eq(1)
+    expect(about_an_organisation.first.evidence_subject).to include('legal_name')
   end
 
   # The seed narrates what it wrote, which the suite has no use for.

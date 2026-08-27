@@ -49,6 +49,34 @@ RSpec.describe AuditTrail do
       expect(journalled.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
     end
 
+    # Chapter 4.5.1 lets the evidence subject be an organisation, and chapter
+    # 4.8 asks for the subject either way. Before the reading existed, the key
+    # composed itself out of fields an organisation has none of and raised an
+    # `ArgumentError` — which `readable` does not catch, so the whole line was
+    # lost with it.
+    describe 'when the subject is a legal person' do
+      before do
+        AuditEvent.delete_all
+        audit_trail.message_received(message: envelope_about_an_organisation, message_id: 'message-passerelle')
+      end
+
+      it 'records the organisation, with the identifiers it declared' do
+        expect(JSON.parse(journalled.evidence_subject)).to eq(
+          'eidas_identifier' => 'FR/DE/A2635542Y',
+          'legal_name' => 'Établissements Dupont & Fils',
+          'identifiers' => { 'VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57' },
+        )
+      end
+
+      it 'records no canonical key, an organisation having nothing to compose one from' do
+        expect(journalled.evidence_subject_key).to be_nil
+      end
+
+      it 'records the rest of the request all the same' do
+        expect(journalled).to have_attributes(event_type: 'request_received', procedure_code: '00')
+      end
+    end
+
     it 'records the business context' do
       expect(journalled).to have_attributes(procedure_code: '00', evidence_type_id: end_with('00000000-0000-0000-0000-000000000000'))
     end

@@ -181,6 +181,9 @@ Le prix est réel. Qui obtient un export de la base **sans aucune clé** voit qu
 
 D'où le partage : seule la **clé canonique** paie ce prix, et elle ne porte qu'un condensé de la forme `nom|prénom|date`, replié en minuscules pour que deux États membres qui écrivent un nom différemment désignent une seule personne. Le sujet complet — qui porte en plus l'identifiant eIDAS — et le corps RegRep, qui les porte tous deux dans son XML, restent en chiffrement ordinaire : rien ne les cherche, donc rien ne justifie qu'ils fuient une égalité. Deux secrets distincts, enfin, font qu'une compromission du secret déterministe, le moins bien protégé par construction, n'ouvre pas la colonne riche.
 
+> [!NOTE]
+> **Une personne morale sujet du justificatif est consignée sans clé canonique.** Le [chapitre 4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) autorise l'organisation autant que la personne physique, et `evidence_subject` la porte entière — raison sociale, identifiant eIDAS, et les `Identifier` facultatifs du chapitre 4.5.1, sous le schéma que `R-EDM-REQ-C054` exige de chacun. `evidence_subject_key`, elle, reste vide : la clé se compose d'un nom, d'un prénom et d'une date de naissance, qu'une organisation n'a pas — et une clé d'une autre forme ne serait cherchable par rien, la recherche de la console ne sachant composer que ce triplet. C'est le partage ci-dessus appliqué : la colonne déterministe ne paie sa fuite d'égalité que là où quelque chose la cherche. La fiche s'en accommode, le bouton qui liste les autres événements du même sujet ne s'affichant que quand la clé est renseignée. Rendre le journal cherchable par personne morale demanderait une recherche à part, donc un écran.
+
 Autrement dit : on a acheté exactement la capacité que l'article 17 réclame — répondre à « quelles données de cette personne ont circulé » — et on l'a payée sur la plus petite colonne possible.
 
 > [!WARNING]

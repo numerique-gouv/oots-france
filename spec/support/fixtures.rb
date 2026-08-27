@@ -71,6 +71,45 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The request the real envelope carries, about an organisation instead of the
+  # person it names. `R-EDM-REQ-S016` admits one evidence subject and never two,
+  # so the `NaturalPerson` slot gives way rather than being joined.
+  #
+  # Through a block: in a replacement string `sub` reads `\1` and `\&` as
+  # backreferences, and the slot comes from the caller.
+  #
+  # The body is relabelled UTF-8, which the XML declaration says it is and
+  # `Base64.decode64` cannot know: an organisation named with an accent would
+  # otherwise meet a string Ruby holds as bytes.
+  def envelope_about_an_organisation(subject = legal_person_slot)
+    envelope_with_body('requete') do |body|
+      body.dup.force_encoding(Encoding::UTF_8)
+        .sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) { subject }
+    end
+  end
+
+  # The `LegalPerson` slot of chapter 4.5.1, in the order `sdg:LegalPersonType`
+  # imposes: the optional `Identifier` precedes the mandatory
+  # `LegalPersonIdentifier`, the sequence being what the schema says it is.
+  #
+  # The company name carries an ampersand on purpose, so that the escaping
+  # travels as far as the parser.
+  def legal_person_slot
+    <<~XML
+      <rim:Slot name="LegalPerson">
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+          <sdg:LegalPerson>
+            <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+            <sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>
+            <sdg:Identifier schemeID="LEI">969500HBOM1RJXTLZ57</sdg:Identifier>
+            <sdg:LegalPersonIdentifier schemeID="eidas">FR/DE/A2635542Y</sdg:LegalPersonIdentifier>
+            <sdg:LegalName>Établissements Dupont &amp; Fils</sdg:LegalName>
+          </sdg:LegalPerson>
+        </rim:SlotValue>
+      </rim:Slot>
+    XML
+  end
+
   # A real envelope with one of its elements taken out — how a spec fabricates a
   # message the gateway would have accepted and this application cannot read.
   # Through Nokogiri and not a regexp: the fixtures bind the ebMS namespace to

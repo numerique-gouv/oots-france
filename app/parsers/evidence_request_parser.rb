@@ -64,22 +64,16 @@ class EvidenceRequestParser
 
   def procedure_code = slot_text('Procedure', request)
 
-  # R-EDM-REQ-S016 admits a `LegalPerson` here too; reading it is OOTS-61.
-  # Until then a request about an organisation is refused for a missing slot,
-  # and the response side that would answer it — `EvidenceSubjectBuilder` — is
-  # reachable only from the specimens.
+  # `R-EDM-REQ-S016` lets the subject be a person or an organisation, and the
+  # slot the request carries says which. A request carrying both is refused by
+  # `validate!` before anything answers it, so the order here only decides what
+  # a journal line shows of a message nothing will reply to — and it can show
+  # nothing at all: a malformed `LegalPerson` slot raises where a well-formed
+  # `NaturalPerson` sat beside it, and `AuditTrail#readable` drops the field.
+  # Falling back on the other slot would only move the loss, no order sparing
+  # both, and would answer a message the rule refuses in a way no chapter names.
   def beneficiary
-    person = slot_content('NaturalPerson', query, './sdg:Person')
-
-    # Validated here rather than trusted: an incomplete person would otherwise
-    # reach the templates, where `escape(nil)` renders an empty element — a
-    # message that violates the specification instead of a failure that says so.
-    NaturalPerson.new(
-      eidas_identifier: text_at(person, './sdg:Identifier'),
-      family_name: text_at(person, './sdg:FamilyName'),
-      given_name: text_at(person, './sdg:GivenName'),
-      date_of_birth: text_at(person, './sdg:DateOfBirth'),
-    ).validate!(:request_beneficiary, error: UnreadableMessageError)
+    find_slot('LegalPerson', query) ? legal_person : natural_person
   end
 
   # The requester is the agent classified `ER`. OOTS-France, or its foreign
@@ -144,6 +138,57 @@ class EvidenceRequestParser
   def query
     @query ||= at(request, './query:Query') ||
                raise(UnreadableMessageError, I18n.t('parsers.evidence_request.no_query'))
+  end
+
+  # Validated here rather than trusted: an incomplete person would otherwise
+  # reach the templates, where `escape(nil)` renders an empty element — a
+  # message that violates the specification instead of a failure that says so.
+  def natural_person
+    person = slot_content('NaturalPerson', query, './sdg:Person')
+
+    NaturalPerson.new(
+      eidas_identifier: text_at(person, './sdg:Identifier'),
+      family_name: text_at(person, './sdg:FamilyName'),
+      given_name: text_at(person, './sdg:GivenName'),
+      date_of_birth: text_at(person, './sdg:DateOfBirth'),
+    ).validate!(:request_beneficiary, error: UnreadableMessageError)
+  end
+
+  # `R-EDM-REQ-S047`: the slot value carries an `sdg:LegalPerson` of the `p4s`
+  # namespace. The symmetry with the person above stops at the slot: a natural
+  # person travels in a request as `sdg:Person` and in a response as
+  # `sdg:NaturalPerson`, where an organisation is an `sdg:LegalPerson` on both
+  # sides.
+  def legal_person
+    organisation = slot_content('LegalPerson', query, './sdg:LegalPerson')
+
+    LegalPerson.new(
+      eidas_identifier: text_at(organisation, './sdg:LegalPersonIdentifier'),
+      legal_name: text_at(organisation, './sdg:LegalName'),
+      identifiers: legal_identifiers(organisation),
+    ).validate!(:request_legal_person, error: UnreadableMessageError)
+  end
+
+  # The optional identifiers of chapter 4.5.1 — nought or more, no rule
+  # numbering that cardinality — keyed by the scheme `R-EDM-REQ-C054` requires
+  # each of them to name. One naming none is refused rather than filed under a
+  # nil key, where it would designate nothing. That the scheme is one the code
+  # list publishes is `LegalPerson`'s to say, `R-EDM-REQ-C055` being fatal.
+  #
+  # Two identifiers of one scheme leave only the last, and that is deliberate:
+  # `R-EDM-REQ-C054` asserts the attribute's presence and nothing more, the
+  # schema admitting `maxOccurs="unbounded"`, so such a request is conformant
+  # and refusing it would invent a rule. What is lost is a column of the
+  # journal — `regrep_body` keeps the message whole, and the response echoes
+  # none of these identifiers, `R-EDM-RESP-S042` admitting only the eIDAS one
+  # and the legal name.
+  def legal_identifiers(organisation)
+    all(organisation, './sdg:Identifier').to_h do |identifier|
+      scheme = require_content(attribute(identifier, 'schemeID'),
+        'parsers.evidence_request.legal_identifier_without_scheme')
+
+      [scheme, identifier.text]
+    end
   end
 
   def build_requester(agent)

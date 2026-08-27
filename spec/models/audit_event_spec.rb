@@ -69,6 +69,49 @@ RSpec.describe AuditEvent do
     end
   end
 
+  describe '.subject' do
+    it 'writes a natural person under the key an auditor searches by' do
+      expect(described_class.subject(build(:natural_person))).to eq(
+        evidence_subject: '{"family_name":"Dupont","given_name":"Sophie","date_of_birth":"1965-11-25"}',
+        evidence_subject_key: 'dupont|sophie|1965-11-25',
+      )
+    end
+
+    # Chapter 4.5.1 lets the evidence subject be an organisation. It has neither
+    # a given name nor a date of birth, so the canonical key has nothing to
+    # compose — and would be searchable by nothing if it had, `SubjectSearch`
+    # only ever building the triplet.
+    it 'writes an organisation without a canonical key' do
+      expect(described_class.subject(build(:legal_person))).to include(evidence_subject_key: nil)
+    end
+
+    # The identifiers live outside the attribute API for want of a `Hash` type.
+    # Dropped here, the journal would say an organisation carried no VAT number
+    # where the request carried one. Asserted whole, so that a field falling out
+    # of `attributes` shows up as well as one staying in.
+    it 'keeps the optional identifiers of an organisation' do
+      subject = described_class.subject(build(:legal_person, identifiers: { 'VAT' => 'FR12345678901' }))
+
+      expect(JSON.parse(subject[:evidence_subject])).to eq(
+        'eidas_identifier' => 'FR/DE/A2635542Y',
+        'legal_name' => 'Établissements Dupont & Fils',
+        'identifiers' => { 'VAT' => 'FR12345678901' },
+      )
+    end
+
+    # Absent and not `{}`: an empty table and no table are the same silence, and
+    # the console would otherwise show an empty row for identifiers nobody sent.
+    it 'names no identifiers at all for an organisation that declared none' do
+      subject = described_class.subject(build(:legal_person))
+
+      expect(JSON.parse(subject[:evidence_subject]).keys).to contain_exactly('eidas_identifier', 'legal_name')
+    end
+
+    it 'says nothing at all of a message that named no subject' do
+      expect(described_class.subject(nil)).to eq({})
+    end
+  end
+
   it 'upcases the country whoever wrote it' do
     expect(create(:audit_event, country_code: 'be').country_code).to eq('BE')
   end

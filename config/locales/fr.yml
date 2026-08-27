@@ -282,6 +282,9 @@ fr:
       agent_without_id: L'agent classé ER est sans identifiant
       agent_without_scheme: L'agent classé ER est sans schéma d'identifiant
       evidence_type_without_id: Le type de justificatif est sans identifiant
+      # R-EDM-REQ-C054 : un identifiant facultatif de la personne morale nomme
+      # son schéma ; sans lui, il ne désigne rien.
+      legal_identifier_without_scheme: Un identifiant de la personne morale est sans schéma
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
@@ -343,6 +346,7 @@ fr:
         provider: Le fournisseur
         recipient_access_point: Le point d'accès destinataire (C3)
         request_beneficiary: Le bénéficiaire de la requête reçue
+        request_legal_person: La personne morale sujet de la requête reçue
         requester: Le requêteur
         token_beneficiary: Le bénéficiaire du jeton
     directories:

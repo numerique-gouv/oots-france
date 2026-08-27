@@ -47,6 +47,7 @@ ignore_unused:
   # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}
   - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
+  - parsers.evidence_request.legal_identifier_without_scheme
   # The rules the parser names, each composed from the identifier that failed —
   # the first three from `validate!`, the last from `request_id`, which refuses
   # at the read rather than in a pass of its own.
