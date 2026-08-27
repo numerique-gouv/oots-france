@@ -630,11 +630,12 @@ Mesuré le 2026-08-27 sur trois ouvriers : **~5 M de jetons neufs chacun, et 92 
 - **Une attente n'est pas un verdict : ne termine jamais ton tour sur « j'attends ».** « La CI tourne », « un relecteur n'a pas fini » ne sont pas des choses à rendre — ce sont des choses à attendre. Un tour qui se conclut là-dessus réveille la session qui t'a lancé pour rien, et il faut ensuite te relancer à la main pour que tu constates ce que tu aurais vu en restant. Tant qu'il te reste du travail qui ne dépend pas du résultat attendu, fais-le pendant que la surveillance tourne en tâche de fond (§ 5). **Quand il ne t'en reste plus, attends en bloquant, dans ton propre tour** :
 
   ```sh
-  gh pr checks <n> --watch   # rend la main une fois les checks terminés ;
-                             # son code de sortie dit si l'un a échoué
+  timeout 240 gh pr checks <n> --watch --interval 30
+  #   0 → tout est vert          1 → un check a échoué
+  # 124 → toujours en cours, relance la même commande
   ```
 
-  Donne-lui un `timeout` large — `e2e.yml` prend plusieurs minutes. Même chose pour un sous-agent de revue dont tu attends le résultat : attends-le, ne conclus pas à côté. Les six verdicts sont des états d'arrivée ; aucun ne veut dire « toujours en cours ».
+  **Borne chaque attente, et rejoue-la** : l'outil `Bash` coupe à 600 s, et une commande tuée par ce plafond ne dit pas si les checks avaient fini — elle ne dit rien du tout. Une attente d'un seul tenant est donc à la fois aveugle et fragile ; en tranches de quelques minutes, chacune laisse une trace, tu restes pilotable, et un message qui t'attend est délivré entre deux. Constaté le 2026-08-27 : dix minutes de silence complet, sans le moindre appel d'outil, puis la commande tuée au plafond — de l'extérieur, un ouvrier mort. Même chose pour un sous-agent de revue dont tu attends le résultat : attends-le, ne conclus pas à côté. Les six verdicts sont des états d'arrivée ; aucun ne veut dire « toujours en cours ».
 - **N'entre pas en mode plan** (`EnterPlanMode`, `ExitPlanMode`) : les deux
   attendent un utilisateur assis dans ta session, que tu n'as pas. Le § 2
   fait approuver le plan par le canal qui, lui, existe — c'est `plan-issue`
