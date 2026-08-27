@@ -208,6 +208,9 @@ fr:
       previous: Page précédente
       next: Page suivante
       page: Page %{number}
+  builders:
+    evidence_request_builder:
+      unknown_subject: "Sujet de justificatif d'un type que la requête ne sait pas écrire : « %{type} »."
   clients:
     common_services_instance:
       dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."

@@ -4,6 +4,14 @@
 # Corners: C1 is the requester, C4 the provider. They swap on the responses,
 # which is why each message states them rather than deriving them.
 class EvidenceRequestBuilder < ApplicationBuilder
+  # R-EDM-REQ-S016: a Query states a `NaturalPerson` or a `LegalPerson`, never
+  # both. The subject's own type names the one slot the template writes, so the
+  # rule holds by construction rather than by a check made after the fact.
+  SUBJECT_SLOTS = {
+    NaturalPerson => ['NaturalPerson', NaturalPersonBuilder].freeze,
+    LegalPerson => ['LegalPerson', LegalPersonBuilder].freeze,
+  }.freeze
+
   attr_reader :document_id, :timestamp, :procedure_code, :preview_possible, :requirement
 
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
@@ -62,7 +70,21 @@ class EvidenceRequestBuilder < ApplicationBuilder
     ).render
   end
 
-  def beneficiary = NaturalPersonBuilder.new(person: @beneficiary_person).render
+  def subject_slot_name = subject_slot.first
+
+  def beneficiary = subject_slot.last.new(person: @beneficiary_person).render
+
+  # `fetch` rather than a default: a subject of an unknown type must fail the
+  # construction, where a silent fallback would send a request stating whom it
+  # is about wrongly, or not at all. `ConfigurationError` and not the bare
+  # `KeyError`, which no interactor rescues — it would leave the caller a 500
+  # with no exception element and no line in the exchange log.
+  def subject_slot
+    @subject_slot ||= SUBJECT_SLOTS.fetch(@beneficiary_person.class) do
+      raise ConfigurationError,
+        I18n.t('builders.evidence_request_builder.unknown_subject', type: @beneficiary_person.class)
+    end
+  end
 
   def data_service_evidence_type = EvidenceTypeBuilder.new(data_service: @data_service).render
 end

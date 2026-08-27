@@ -146,6 +146,45 @@ RSpec.describe EvidenceRequestBuilder do
     end
   end
 
+  # R-EDM-REQ-S016: a Query states one subject or the other, never both. The
+  # reference message above covers the natural person; this covers the swap.
+  describe 'a request about a legal person' do
+    subject(:query) do
+      Nokogiri::XML(described_class.new(**attributes, beneficiary: LegalPerson.new(
+        legal_name: 'Établissements Dupont & Fils', eidas_identifier: 'FR/DE/A2635542Y',
+        identifiers: { 'VAT' => 'FR12345678901' },
+      )).render).at_xpath('//query:Query', namespaces)
+    end
+
+    let(:namespaces) do
+      {
+        'query' => 'urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0',
+        'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0',
+        'sdg' => 'http://data.europa.eu/p4s',
+        'xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+      }
+    end
+
+    # R-EDM-REQ-S034 types the slot value, and R-EDM-REQ-S047 has it carry an
+    # `sdg:LegalPerson` of the p4s namespace.
+    it 'carries the legal person and no natural person' do
+      slot = query.at_xpath('./rim:Slot[@name="LegalPerson"]', namespaces)
+
+      expect(slot.at_xpath('./rim:SlotValue[@xsi:type="rim:AnyValueType"]', namespaces)).to be_present
+      expect(slot.at_xpath('.//sdg:LegalPerson/sdg:LegalName', namespaces).text)
+        .to eq('Établissements Dupont & Fils')
+      expect(query.at_xpath('./rim:Slot[@name="NaturalPerson"]', namespaces)).to be_nil
+    end
+  end
+
+  # A subject of a type the query has no slot for would otherwise go out as a
+  # request stating nothing about whom it is for. `ConfigurationError` and not
+  # the bare `KeyError`: no interactor rescues the latter.
+  it 'refuses to build a request about a subject it has no slot for' do
+    expect { described_class.new(**attributes, beneficiary: 'Dupont').render }
+      .to raise_error(ConfigurationError, /String/)
+  end
+
   it 'omits the eIDAS identifier when the token carried none' do
     anonymous = NaturalPerson.new(family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22')
     rendered = described_class.new(**attributes, beneficiary: anonymous).render
