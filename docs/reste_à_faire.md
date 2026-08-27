@@ -47,7 +47,7 @@ Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un 
 
 | Bouchon | Où | Retiré par |
 | --- | --- | --- |
-| Le niveau de garantie, figé à `High` faute d'authentification eIDAS | `NaturalPerson::LEVEL_OF_ASSURANCE` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
+| Le niveau de garantie, figé à `High` faute d'authentification eIDAS | `NaturalPerson::LEVEL_OF_ASSURANCE`, `LegalPerson::LEVEL_OF_ASSURANCE` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | Le jeton du bénéficiaire, qui atteste l'émetteur mais jamais sa qualité pour agir au nom de la personne déclarée | `BeneficiaryToken` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | L'annuaire des requêteurs français autorisés, tenu en JSON, à la place de l'autorisation que le bénéficiaire devrait donner | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | Le justificatif servi : un PDF d'exemple, seul document que la France détienne | `EvidenceProvision::AnswerRequest`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |

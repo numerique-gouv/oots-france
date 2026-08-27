@@ -10,4 +10,10 @@
 module IdentifierScheme
   FRENCH = 'urn:cef.eu:names:identifier:EAS:0009'.freeze
   FRENCH_FALLBACK = 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'.freeze
+
+  # The `IdentifierSchemes` code list published with the TDD, which R-EDM-REQ-C055
+  # compares to exactly. It designates the *subject* of an evidence, where the
+  # two schemes above designate a corner of the exchange: writing the SIRET into
+  # an `sdg:LegalPerson` produces a message that rule refuses as fatal.
+  LEGAL_PERSON = %w[VAT TAX BusinessCode LEI EORI SEED SIC].freeze
 end

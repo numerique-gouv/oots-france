@@ -1,0 +1,8 @@
+<sdg:LegalPerson>
+  <sdg:LevelOfAssurance><%= LegalPerson::LEVEL_OF_ASSURANCE %></sdg:LevelOfAssurance>
+<%- person.identifiers.each do |scheme, value| -%>
+  <sdg:Identifier schemeID="<%= escape(scheme) %>"><%= escape(value) %></sdg:Identifier>
+<%- end -%>
+  <sdg:LegalPersonIdentifier schemeID="eidas"><%= escape(person.eidas_identifier) %></sdg:LegalPersonIdentifier>
+  <sdg:LegalName><%= escape(person.legal_name) %></sdg:LegalName>
+</sdg:LegalPerson>
