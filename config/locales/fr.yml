@@ -37,6 +37,9 @@ fr:
         family_name: Le nom
         given_name: Le prénom
         date_of_birth: La date de naissance
+      legal_person:
+        legal_name: La raison sociale
+        eidas_identifier: L'identifiant eIDAS
       evidence_type:
         id: L'identifiant
         distribution_format: Le format de distribution
@@ -87,6 +90,12 @@ fr:
           attributes:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
+        legal_person:
+          attributes:
+            eidas_identifier:
+              format: doit être de la forme PAYS/PAYS/IDENTIFIANT
+          unpublished_identifier_scheme: "un identifiant relève d'un schéma que les TDD ne publient pas : %{schemes}"
+          valueless_identifier: "un identifiant est déclaré sans valeur : %{schemes}"
         requirement:
           attributes:
             id:

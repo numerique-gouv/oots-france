@@ -36,6 +36,13 @@ FactoryBot.define do
     initialize_with { new(**attributes) }
   end
 
+  factory :legal_person do
+    legal_name { 'Établissements Dupont & Fils' }
+    eidas_identifier { 'FR/DE/A2635542Y' }
+
+    initialize_with { new(**attributes) }
+  end
+
   factory :evidence_type do
     id { 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000' }
     distribution_format { EvidenceType::PDF }
