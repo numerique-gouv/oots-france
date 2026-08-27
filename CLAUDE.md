@@ -220,6 +220,7 @@ Rules:
 | [`plan-issue`](.claude/skills/plan-issue/SKILL.md) | Plans one issue against the text of the specifications, writes the plan and gets it approved before a line of code is written |
 | [`review-loop`](.claude/skills/review-loop/SKILL.md) | Review → fixes on an open PR, until a pass finds no blocking finding, then reshapes the history |
 | [`ship-plan`](.claude/skills/ship-plan/SKILL.md) | Pushes an implemented plan, opens the PR, hands it to `review-loop`, records the decisions on the ticket |
+| [`orchestrateur`](.claude/skills/orchestrateur/SKILL.md) | Picks the actionable issues out of the Linear backlog, runs several `ouvrier` agents on them in parallel, and sees each through to its PR |
 
 Everything else under `.claude/` is workshop material and stays local: `plans/`, `audits/`, `reviews/`, `reprises/`, and `settings.local.json`. It is dated prose written for one moment of one task, and versioning it would age badly.
 
