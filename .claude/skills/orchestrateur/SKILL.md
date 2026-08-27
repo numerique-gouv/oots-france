@@ -147,7 +147,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
 | `ÉCRAN` | **Va regarder l'écran toi-même** avant d'en référer |
-| `LIVRÉ` | Vérifie ce qui compte, ouvre l'écran s'il y en a un, rends la PR |
+| `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
 **Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. Ne remonte que ce qu'aucun texte ne fixe **et** dont l'erreur ne se déferait pas : un nom qui sort du dépôt, une valeur qu'un correspondant recevra, un périmètre coupé — avec ta recommandation et ce que l'erreur coûterait, jamais nue. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
@@ -155,6 +155,13 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 **Quand un ouvrier conteste son ticket, il a souvent raison** : le ticket n'est pas la spécification, et il a lu le chapitre. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures signées — il avait raison, il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sinon le suivant refait le détour. Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche.
 
 **Sur un `ÉCRAN`, va voir.** Faire suivre le verdict laisse l'utilisateur devant une question nue ; un écran se regarde en deux minutes. Ouvre les URL avec `mcp__chrome-devtools__*` — `navigate_page`, `take_snapshot` pour l'arbre d'accessibilité, `take_screenshot` pour voir. Deux défauts ont été trouvés ainsi qu'aucun ouvrier n'avait vus : trois énoncés d'état vide autour d'une carte pleine, et un texte anglais sans attribut `lang` dans une page française, que le [RGAA](https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/) sanctionne (critère 8.7 ; la compétence `accessibility:rgaa-dev` couvre ce contrôle). L'ouvrier étant arrêté, son arbre ne bouge plus : tu peux y monter `web`, **mais n'y écris rien**.
+
+**Un compte rendu de livraison porte les écrans, toujours.** Un verdict `LIVRÉ` ou `ÉCRAN` relayé sans adresses oblige l'utilisateur à les redemander — c'est arrivé deux fois de suite le 2026-08-27, sur deux ports différents. Quand l'ouvrier en donne, **recopie-les dans ton compte rendu** ; ne renvoie jamais à « les URL sont dans son rapport », que l'utilisateur ne voit pas.
+
+Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une route ne disent pas pourquoi on les ouvre. Vérifie-les joignables avant de les donner (`curl -so /dev/null -w '%{http_code}' <url>` ; un `303` est normal, la console est protégée), rappelle les identifiants de connexion, et **dis ce qui ne s'y voit pas et pourquoi** — une page qui ne montre pas le cas traité, faute de données réelles qui le produisent, est une déception à annoncer plutôt qu'à laisser découvrir.
+
+> [!WARNING]
+> **Les écrans meurent avec le worktree.** Le port appartient à la stack de l'ouvrier : `git worktree remove` et le `docker compose down` qui l'accompagne l'éteignent. Donne donc les écrans **avant** de ranger, et quand tu ranges après un merge, dis que ces adresses ne répondent plus.
 
 **Vérifie ce qui compte** au lieu de croire le rapport. Sur ce qui porte un risque — entrée non fiable, secret, donnée personnelle, valeur partant chez un correspondant — va lire le code. Un ouvrier affirmait qu'une URL choisie par un correspondant était rendue sans danger ; deux `grep` l'ont confirmé, et la confirmation valait d'être écrite dans la PR.
 
