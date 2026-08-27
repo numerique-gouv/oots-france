@@ -62,7 +62,7 @@ module Oots
 
     def write_all
       write_requests
-      write('reponse', *system_check_response)
+      write_responses
       write('reponseDifferee', *deferred_response)
 
       ERROR_SPECIMENS.each { |name, exception| write(name, *error_response(exception)) }
@@ -85,6 +85,15 @@ module Oots
     def write_requests
       write('requete', *request)
       write('requetePersonneMorale', *request(subject: legal_person))
+    end
+
+    # One specimen per kind of subject, for the reason the requests have one:
+    # `sdg:IsAbout` is an `xs:choice`, and R-EDM-RESP-S042 bounds the legal
+    # branch to two elements, so a document carrying the natural branch says
+    # nothing of the rules the other answers to.
+    def write_responses
+      write('reponse', *system_check_response)
+      write('reponsePersonneMorale', *system_check_response(subject: legal_person))
     end
 
     def write(name, body, header)
@@ -113,18 +122,14 @@ module Oots
       ]
     end
 
-    def system_check_response
+    def system_check_response(subject: beneficiary)
       attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
-      body = system_check_body(attachment)
-
-      [body.render, system_check_header(body, attachment)]
-    end
-
-    def system_check_body(attachment)
-      SystemCheckResponseBuilder.new(
-        requester:, beneficiary:, evidence_type:, attachment:,
+      body = SystemCheckResponseBuilder.new(
+        requester:, beneficiary: subject, evidence_type:, attachment:,
         request_id: REQUEST_ID, clock:, uuid:,
       )
+
+      [body.render, system_check_header(body, attachment)]
     end
 
     def system_check_header(body, attachment)
