@@ -21,6 +21,41 @@ NOM="$1"
 RACINE="$(dirname "$(cd "$(git rev-parse --git-common-dir)" && pwd)")"
 CHEMIN="$RACINE/.worktrees/$NOM"
 
+# Reading the reservations, choosing the shift and writing this worktree's .env
+# are distinct steps, and two runs launched together observe the same world, so
+# retain the same shift. Nothing releases this lock before the script ends, so it
+# covers the three of them.
+#
+# The kernel releases it once every descriptor referencing it is closed — the one
+# a child such as `git worktree add` inherited included, which is why a killed run
+# can still hold it for as long as that child lives. No death holds it for ever,
+# whatever the signal: nothing has to detect a stale lock, and the .verrou file
+# left behind carries no state.
+mkdir -p "$RACINE/.worktrees"
+VERROU="$RACINE/.worktrees/.verrou"
+ATTENTE_VERROU_MAX=60
+
+if command -v flock >/dev/null 2>&1; then
+  exec 9>"$VERROU"
+  # `-w` returns the same status whether the wait ran out or flock refused
+  # outright, which it does on a file system whose flock(2) is partial — NFS and
+  # CIFS, says flock(1). The message therefore names both rather than picking.
+  if ! flock -w "$ATTENTE_VERROU_MAX" 9; then
+    echo "❌ Verrou $VERROU non obtenu (attente de $ATTENTE_VERROU_MAX s)." >&2
+    echo "   Rien n'a été créé. Si une autre création de worktree était en cours," >&2
+    echo "   attendre qu'elle finisse puis relancer cette commande suffit." >&2
+    echo "   Si l'échec est immédiat et se répète, .worktrees/ est sur un système" >&2
+    echo "   de fichiers dont flock(2) est incomplet (NFS, CIFS) : déplacer le" >&2
+    echo "   dépôt sur un disque local." >&2
+    exit 1
+  fi
+else
+  echo "⚠️  flock introuvable : les créations de worktree ne sont pas sérialisées." >&2
+  echo "   Deux lancées en même temps peuvent recevoir le même décalage de ports," >&2
+  echo "   et leurs deux piles se disputer les mêmes ports de l'hôte." >&2
+  echo "   Les créer l'une après l'autre." >&2
+fi
+
 # The ports a .env publishes on the host, read instead of being listed here:
 # `web`, `domibus` and `postgres` hard-code none of them, so adding a `PORT_`
 # variable to .env is enough for it to be shifted with the others.
