@@ -10,7 +10,7 @@ namespace :oots do
     # wins.
     ENV['SUFFIXE_IDENTIFIANTS_DOMIBUS'] ||= 'oots.eu'
     ENV['IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'AP_FR_01'
-    ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'
+    ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'
     ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
     ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 

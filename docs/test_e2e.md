@@ -99,7 +99,7 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 | Deux sujets déclarés | une personne morale ajoutée à la personne physique | `EDM:ERR:0003`, `detail="R-EDM-REQ-S016"` |
 | Identifiant rejoué | la même requête soumise deux fois | la première servie, la seconde refusée par `EDM:ERR:0003` |
 
-L'échange boucle sur la seule passerelle `blue_gw` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
+L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
 
 1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
@@ -165,6 +165,6 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
 | Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnose_domibus.sh` les affiche |
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
-| `500` avec `Point d'accès inexistant : blue_gw` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
+| `500` avec `Point d'accès inexistant : AP_FR_01` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 
 Les refus de Domibus se lisent dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`. Comment suivre ces journaux et y faire apparaître les enveloppes SOAP échangées est décrit dans [domibus_context.md](domibus_context.md#lire-les-journaux).

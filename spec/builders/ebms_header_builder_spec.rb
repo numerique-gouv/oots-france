@@ -12,7 +12,7 @@ RSpec.describe EbmsHeaderBuilder do
       payload_id: 'cid:1a2b3c4d-0000-4000-8000-000000000000@oots.eu',
       conversation_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24',
       exchange_id: '7c9e6679-7425-40de-944b-e07fc1f90ae7',
-      sender: AccessPoint.new(id: 'AP_FR_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'),
+      sender: AccessPoint.new(id: 'AP_FR_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'),
       clock: frozen_clock,
       uuid: sequential_uuids,
     }

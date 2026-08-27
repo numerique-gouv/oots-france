@@ -56,7 +56,7 @@ Un identifiant d'organisation ne veut rien dire seul : il faut dire de quel rép
 **Les organisations françaises sont identifiées par leur SIRET**, soit le code EAS **`0009`** (`IdentifierScheme`). Rien n'était à demander à la Commission pour cela : la liste EAS contient déjà les répertoires français — `0002` pour SIRENE, `0009` pour SIRET. Les identifiants eux-mêmes sont de la configuration : le SIRET du fournisseur est porté par `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, et l'annuaire `DONNEES_REQUETEURS` est indexé par celui de chaque requêteur.
 
 > [!NOTE]
-> Deux identités échappent encore à cette règle, faute de SIRET renseigné : la plateforme intermédiaire `OOTSFRANCE`, déclarée en second agent de chaque requête, et les points d'accès eDelivery — mais ces derniers ne sont pas des organisations : une passerelle porte un identifiant de passerelle (`unregistered:oots` dans le PMode), non un SIRET.
+> Deux identités échappent encore à cette règle, faute de SIRET renseigné : la plateforme intermédiaire `OOTSFRANCE`, déclarée en second agent de chaque requête, et les points d'accès eDelivery — mais ces derniers ne sont pas des organisations : une passerelle porte un identifiant de passerelle (`AP_FR_01`, de type `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` dans le PMode), non un SIRET.
 
 ### Les messages échangés
 

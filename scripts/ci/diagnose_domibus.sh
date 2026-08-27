@@ -48,10 +48,10 @@ montre "Journal des erreurs" "rest/internal/user/errorlogs?page=0&pageSize=20&or
 # keystore route.
 #
 # The aliases are what to look at first: the security profiles impose them
-# (blue_gw_rsa_sign, blue_gw_rsa_decrypt on the keystore side; blue_gw_rsa_sign,
-# blue_gw_rsa_encrypt on the truststore side), and an alias that departs from
-# them makes signing or encryption fail with no symptom other than a message
-# never acknowledged.
+# (AP_FR_01_rsa_sign, AP_FR_01_rsa_decrypt on the keystore side;
+# AP_FR_01_rsa_sign, AP_FR_01_rsa_encrypt on the truststore side), and an alias
+# that departs from them makes signing or encryption fail with no symptom other
+# than a message never acknowledged.
 montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
 montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
 montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"

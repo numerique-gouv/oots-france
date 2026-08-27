@@ -19,7 +19,7 @@ Dans la colonne de gauche, cliquer sur « Plugin Users », puis sur le bouton «
 
 ## Configurer les certificats
 
-Les certificats livrés avec l'image Docker Domibus sont publics et partagés par toutes les installations. Le script suivant les remplace par des certificats auto-signés fraîchement générés (identité `blue_gw`, valides dix ans) :
+Les certificats livrés avec l'image Docker Domibus sont publics et partagés par toutes les installations. Le script suivant les remplace par des certificats auto-signés fraîchement générés (identité `AP_FR_01`, valides dix ans) :
 
 ```sh
 $ MOT_DE_PASSE_MAGASINS=… scripts/generate_certificates.sh
@@ -47,7 +47,7 @@ Depuis l'interface d'administration : dans la colonne de gauche, cliquer sur « 
 
 Dans la colonne de gauche, cliquer sur « PMode », puis sur « Current ». Cliquer sur le bouton « Upload ». Séléctionner un fichier de configuration (par exemple, `exemples/configuration_PMode_Domibus.xml`). Ajouter une description (par exemple, « Initialise configuration PMode »).
 
-Dans la colonne de gauche, cliquer sur « Connection Monitoring ». Une ligne devrait être affichée avec `blue_gw` comme « Sender Party » et « Responder Party ». Cliquer sur l'icône « avion en papier » à droite. Le « Connection Status » devrait passer au vert.
+Dans la colonne de gauche, cliquer sur « Connection Monitoring ». Une ligne devrait être affichée avec `AP_FR_01` comme « Sender Party » et « Responder Party ». Cliquer sur l'icône « avion en papier » à droite. Le « Connection Status » devrait passer au vert.
 
 ## Sécuriser les comptes d'administration
 

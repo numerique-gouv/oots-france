@@ -8,8 +8,8 @@ RSpec.describe EvidenceRequest::ResolveProvider do
 
   let(:data_service) do
     build(:data_service, providers: [
-      build(:evidence_provider, access_point: build(:access_point, id: 'AP_DE_01')),
-      build(:evidence_provider, access_point: build(:access_point, id: 'AP_DE_02')),
+      build(:evidence_provider, access_point: build(:access_point, :foreign)),
+      build(:evidence_provider, access_point: build(:access_point, :foreign, id: 'AP_DE_02')),
     ])
   end
 

@@ -127,9 +127,9 @@ services:
         -Ddomibus.security.profile.rsa.enabled=true
         -Ddomibus.security.profile.rsa.signature.enabled=true
         -Ddomibus.security.profile.rsa.encryption.enabled=true
-        -Ddomibus.security.profile.rsa.key.private.sign.alias=blue_gw_rsa_sign
+        -Ddomibus.security.profile.rsa.key.private.sign.alias=AP_FR_01_rsa_sign
         -Ddomibus.security.profile.rsa.key.private.sign.password=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
-        -Ddomibus.security.profile.rsa.key.private.decrypt.alias=blue_gw_rsa_decrypt
+        -Ddomibus.security.profile.rsa.key.private.decrypt.alias=AP_FR_01_rsa_decrypt
         -Ddomibus.security.profile.rsa.key.private.decrypt.password=${MOT_DE_PASSE_MAGASINS:?à renseigner dans .env, cf. .env.template}
     logging:
       driver:
