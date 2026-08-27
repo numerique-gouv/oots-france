@@ -173,7 +173,18 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
-**Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. Ne remonte que ce qu'aucun texte ne fixe **et** dont l'erreur ne se déferait pas : un nom qui sort du dépôt, une valeur qu'un correspondant recevra, un périmètre coupé — avec ta recommandation et ce que l'erreur coûterait, jamais nue. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
+**Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
+
+> [!IMPORTANT]
+> **Trois motifs de remontée, et rien d'autre.** Arbitré le 2026-08-27 : « ce que tu DOIS me soumettre, c'est l'UI, les décisions hors TDD, les décisions produit (non techniques). »
+>
+> 1. **L'UI** — tout écran qu'un humain lira : une page de la console, un libellé qu'elle porte, un formulaire. Va le regarder d'abord (voir plus bas), puis soumets ce que tu as vu.
+> 2. **Ce qu'aucun chapitre ne fixe** — la question dont la lecture des TDD ne rend rien. Lis le chapitre avant de conclure qu'il est muet : la plupart des questions qui *semblent* ouvertes sont écrites quelque part, et le dépôt tranche le reste.
+> 3. **Les décisions produit, non techniques** — ce qui engage au-delà du code : un nom publié à des démarches, une valeur qu'un correspondant recevra, un périmètre qu'on retire du ticket, une politique nationale.
+>
+> **Tout le reste se tranche, y compris ce qui fait peur** : le choix d'une classe d'erreur, la forme d'un test, l'ordre de deux commits, une dette qu'on ouvre en ticket, un défaut préexistant qu'on ne corrige pas ici. Une décision technique dont l'erreur se défait par un correctif n'est pas un arbitrage — c'est du travail.
+>
+> Et quand tu remontes, remonte **avec ta recommandation et ce que l'erreur coûterait**, jamais la question nue.
 
 **Quand un ouvrier conteste son ticket, il a souvent raison** : le ticket n'est pas la spécification, et il a lu le chapitre. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures signées — il avait raison, il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sinon le suivant refait le détour. Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche.
 
