@@ -16,7 +16,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   # configuration instead of against the reference, and the suite would then
   # pass or fail depending on which `.env.oots` `make test` mounts.
   let(:french_access_point) do
-    AccessPoint.new(id: 'AP_FR_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots')
+    AccessPoint.new(id: 'AP_FR_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR')
   end
   # One generator shared by the body and the header: they draw from the same
   # counter, and the payload the header declares is the very document the body

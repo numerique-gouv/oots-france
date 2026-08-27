@@ -18,7 +18,10 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 > **Un huitième spécimen n'a pas de jumeau ici** : `erreurSansIdentifiantDeRequete`, la réponse d'erreur dépourvue de `requestId` que `R-EDM-ERR-C025` n'autorise que sous `rs:InvalidRequestExceptionType`. Node ne l'a jamais produite, et un attendu que le code du dépôt aurait lui-même écrit ne prouverait rien de plus que ce gabarit dit déjà. Ses juges sont `scripts/validate_schematron.sh` et `spec/builders/error_response_builder_spec.rb`.
 
 > [!IMPORTANT]
-> **La requête, elle, a été refaite depuis.** `messages/requete.xml` et `soap/requete.soumission.xml` ne sont plus ce que Node émettait : le bouchon 7 y écrivait une exigence et un identifiant de service en dur, là où le dépôt écrit désormais ce que les annuaires publient. Ces deux fichiers disent donc ce que les TDD exigent, et non ce qu'un code antérieur produisait ; les règles Schematron du chapitre 4.5.1 en sont le juge. Le reste du corpus garde sa provenance.
+> **La requête, elle, a été refaite depuis.** `messages/requete.xml` et `soap/requete.soumission.xml` ne sont plus ce que Node émettait : le bouchon 7 y écrivait une exigence et un identifiant de service en dur, là où le dépôt écrit désormais ce que les annuaires publient. Ces deux fichiers disent donc ce que les TDD exigent, et non ce qu'un code antérieur produisait ; les règles Schematron du chapitre 4.5.1 en sont le juge. Le reste du corpus garde sa provenance, sous la réserve ci-dessous.
+
+> [!IMPORTANT]
+> **L'identité du point d'accès français, elle, suit la configuration et non l'histoire.** Les entêtes ebMS et les enveloppes de soumission disent `AP_FR_01` de type `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR`, là où Node émettait `…unregistered:oots` — et, sur `erreurExpiration`, `blue_gw`. C'est celle que déclare [le PMode](../../docs/domibus_context.md#le-pmode-dexemple) : un corpus qui garderait l'ancienne apprendrait un identifiant qui n'existe nulle part. `AP_DE_01`, correspondant fictif, garde la sienne — le type d'une partie est choisi par l'État membre qui la déclare.
 
 > [!IMPORTANT]
 > Ces fichiers portent deux bizarreries du code d'origine, que la version Rails ne reproduit **pas** : le contenu base64 d'une pièce jointe y est entouré de parenthèses littérales (`<value>(…)</value>`), ce qui n'est pas du base64 et ne passait que parce qu'un décodeur MIME ignore les caractères hors alphabet ; et les titres d'un type de justificatif au-delà du premier y sont joints par une virgule. Le test de bout en bout, qui traverse une vraie passerelle, juge cet écart et le valide.
@@ -26,6 +29,8 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 ## `incoming/reel/` — ce que la passerelle envoie vraiment
 
 **C'est le modèle sur lequel écrire les XPath.** Ces sept enveloppes ont été capturées sur un vrai Domibus 5.2.1, pendant le dernier passage du test de bout en bout Node, en interceptant les réponses du plugin WS. Elles sont bien formées, et elles seules disent la vérité sur les espaces de noms.
+
+Elles précèdent le renommage de la partie et disent donc encore `blue_gw` : c'est ce que la passerelle a émis à l'instant de la capture, et le réécrire ferait mentir une observation. Aucun test n'y lit l'identité de la passerelle — ces enveloppes servent aux XPath et aux préfixes d'espaces de noms.
 
 | Fichier | Contenu |
 | --- | --- |
