@@ -46,8 +46,8 @@ etape() {
   # 0. « merged » : PR fusionnée, affaires rangées.
   [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
 
-  # 1. Un des cinq verdicts en queue de transcript : l'ouvrier a rendu la
-  #    main. Trois des cinq attendent une réponse.
+  # 1. Un des six verdicts en queue de transcript : l'ouvrier a rendu la
+  #    main. Quatre des six attendent une relance.
   #
   #    Une étape déclarée *après* que le verdict a été prononcé prime sur
   #    lui : c'est la parole la plus fraîche, et c'est ce qui permet
@@ -61,7 +61,7 @@ etape() {
   if [ -f "$FICHIER" ]; then
     LIGNE=$(tail -6 "$FICHIER" 2>/dev/null \
       | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
-      | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+      | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
     VERDICT=${LIGNE#*$(printf '\t')}
     PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
     DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
@@ -73,6 +73,7 @@ etape() {
     case "$VERDICT" in
       LIVRÉ)     printf 'delivered';          return ;;
       ÉCRAN)     printf 'screen to review';   return ;;
+      PLANIFIÉ)  printf 'plan to implement';  return ;;
       PLAN)      printf 'plan to approve';    return ;;
       ARBITRAGE) printf 'waiting for answer'; return ;;
       BLOQUÉ)    printf 'blocked';            return ;;

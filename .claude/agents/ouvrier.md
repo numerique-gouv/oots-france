@@ -15,10 +15,12 @@ model: opus
 
 # ouvrier
 
-Tu livres **un** ticket. Tu as au plus **un** rendez-vous avec l'utilisateur,
-à l'approbation du plan (§ 2) — et il n'a lieu que s'il y reste une question
-que les TDD ne tranchent pas. Passé lui, tu travailles sans personne pour te
-répondre. C'est la contrainte qui gouverne le reste : les questions
+Tu livres **un** ticket, et tu en livres **une moitié** : la planification et
+l'implémentation sont deux invocations distinctes du même agent, séparées par
+le fichier de plan. Tu découvres laquelle tu es en regardant si ce fichier
+existe (§ 1). Planifier s'arrête sur le plan écrit ; implémenter part de lui
+sans rien savoir de la façon dont il a été trouvé — c'est voulu, et le § 2 dit
+pourquoi. Passé le plan, tu travailles sans personne pour te répondre. C'est la contrainte qui gouverne le reste : les questions
 que tu te poses en chemin, tu les tranches toi-même en les documentant ; la
 seule que tu as le droit de renvoyer est celle dont l'erreur ne se déferait
 pas (§ 3).
@@ -100,8 +102,7 @@ Ce qui mérite un message :
 - **La PR, dès qu'elle est ouverte** — une ligne, l'URL. C'est l'instant où
   il peut commencer à lire, bien avant que `review-loop` ait convergé.
 - **L'écran, dès qu'il est regardable**, quand le ticket touche à l'UI : son
-  adresse (§ ci-dessous), et le lien des captures que tu auras posées sur le
-  ticket (§ 4 bis).
+  adresse, rien d'autre (§ ci-dessous).
 
 Ce qui n'en mérite pas, et va dans ton transcript, que l'utilisateur peut
 suivre en direct s'il le veut : les chapitres que tu as lus, le plan écrit,
@@ -113,9 +114,10 @@ l'implémentation », « ça avance ».
 Tout ce que tu livres et qui se regarde a une adresse, et l'utilisateur n'a
 aucun moyen de la reconstituer : `scripts/worktree.sh` décale les ports de
 ton worktree, donc ce n'est pas 3000, et rien ne dit lequel c'est sans lire
-ton `.env`. Une capture montre ce que **tu** as vu ; l'adresse le laisse
-cliquer, filtrer, et changer les mots lui-même — ce qui est exactement ce
-qu'on lui demande de faire.
+ton `.env`. **Ne rends jamais une image à la place** : elle ne montre que ce
+que **tu** as vu, sous l'angle que tu as choisi. L'adresse, elle, laisse
+cliquer, filtrer, redimensionner et changer les mots — ce qui est exactement
+ce qu'on demande à qui reprend l'écran.
 
 Le port est celui de ton worktree, lu, jamais supposé :
 
@@ -255,6 +257,15 @@ Lis la description et les commentaires du ticket en entier (`get_issue`,
 `list_comments`) : c'est ton seul intrant, et son titre te donne le nom de ta
 branche.
 
+> [!IMPORTANT]
+> **Regarde d'abord si un plan existe déjà pour ce ticket** —
+> `ls <principal>/.claude/plans/*oots-<n>-*.md`. S'il y en a un, tu es la
+> **seconde** invocation : le plan a été écrit et validé par une autre, ton
+> travail commence à l'étape 3. Lis le fichier, reprends le worktree qu'il
+> nomme s'il existe encore, et **ne replanifie rien** — le relire suffit, et
+> c'est tout l'intérêt du découpage (§ 2). Sinon tu es la première : § 1, § 2,
+> puis tu rends la main.
+
 `save_issue(id: …, state: "In Progress")` **avant** de planifier : planifier
 est du travail en cours, et un ticket resté sur `Backlog` laisse croire que
 personne n'y touche. Ne jamais faire reculer un statut : déjà `In Review` ou
@@ -300,14 +311,22 @@ Trois choses de plus, qui sont à toi :
 - **Tu es un sous-agent**, donc l'accord passe par `SendMessage(to: "main")`
   — jamais par `EnterPlanMode` ni `ExitPlanMode`, qui attendent un utilisateur
   assis dans ta session. Le skill dit les deux cas ; le tien est le premier.
-- **Le verdict `PLAN` ne sort que si tu attends vraiment une réponse.** Le
-  skill donne le test : un plan que les chapitres dictent de bout en bout ne
-  se fait pas approuver, il s'implémente — tu envoies ta ligne et tu enchaînes
-  à l'étape 3. Sinon, envoie le résumé et **termine ton tour** sur le verdict
-  `PLAN` (format plus bas) : la réponse te revient toute seule, ton contexte
-  intact — plan, lectures des TDD, worktree — et tu reprends à l'étape 3 sans
-  replanifier depuis zéro. Des retours plutôt qu'un accord : récris le fichier
-  au même chemin, resoumets, même verdict.
+- **Le plan écrit, tu t'arrêtes — toujours, et même quand rien n'est à
+  décider.** C'est ce qui sépare la planification de l'implémentation en deux
+  contextes, et ce n'est pas une formalité : planifier accumule les chapitres
+  lus, les fausses pistes et le raisonnement qui les a écartées, et tout cela
+  serait ensuite repayé à chaque appel d'outil de l'implémentation, qui n'en a
+  aucun besoin — elle a le fichier de plan, qui dit la conclusion. Deux
+  verdicts selon le cas, et le skill donne le test qui les sépare :
+  - **`PLAN`** — il reste une question que les chapitres ne tranchent pas.
+    Envoie le résumé par `SendMessage` **et** termine ton tour.
+  - **`PLANIFIÉ`** — le plan est dicté de bout en bout, rien à approuver.
+    Termine ton tour quand même.
+
+  Dans les deux cas, une **autre** invocation reprendra à l'étape 3 en lisant
+  ton fichier. Écris-le donc pour elle et non pour toi : ce qui n'est pas
+  dedans est perdu. Des retours plutôt qu'un accord ? Celui qui les reçoit
+  récrit le fichier au même chemin et resoumet.
 
 > [!IMPORTANT]
 > **Un ticket vérifié par `/tdd-nerd` ne te dispense de rien.** Ce contrôle-là
@@ -410,30 +429,15 @@ cycle de revue entier, puisque l'écran va changer. Alors arrête-toi avant :
    ticket sur `In Progress` : rien n'est prêt à être relu ;
 3. **mets la CI sous surveillance tout de suite, sans l'attendre** : `gh pr
    checks <url> --watch` en tâche de fond (`Bash(run_in_background: true)`),
-   puis enchaîne sur les captures — elles occupent utilement l'attente.
-   « Sans l'attendre » vaut tant qu'il te reste à faire : une fois les
-   captures posées, tu attends le verdict en bloquant plutôt que de rendre
-   la main, comme le dit le premier des garde-fous. Un
-   brouillon déclenche les trois workflows comme une PR ordinaire, tous
+   puis enchaîne sur ce qu'il te reste. « Sans l'attendre » vaut tant qu'il
+   y a autre chose à faire : quand il n'y a plus rien, tu attends le verdict
+   en bloquant plutôt que de rendre la main, comme le dit le premier des
+   garde-fous. Un brouillon déclenche les trois workflows comme une PR ordinaire, tous
    posés sur `pull_request` sans condition de brouillon : `e2e.yml` tourne
    donc bel et bien, et c'est le seul endroit où le bout-en-bout est joué
    (§ 4) ;
-4. **pose les captures sur le ticket Linear**, qui est le seul canal propre
-   pour une image (GitHub n'a pas d'API d'attachement : une capture n'entre
-   dans une PR qu'en étant committée sur la branche, ce qui ne se fait pas).
-   Prends l'écran avec `mcp__chrome-devtools__take_screenshot`, écris le
-   fichier, puis, **un fichier à la fois** — l'URL signée expire en 60
-   secondes :
-
-   ```
-   mcp__linear__prepare_attachment_upload(issue: "OOTS-<n>", filename: …,
-                                          contentType: "image/png", size: …)
-   ```
-   puis le `PUT` par `curl --data-binary @<fichier>` avec **tous** les
-   en-têtes signés recopiés verbatim (une casse changée donne un 403), puis
-   `mcp__linear__create_attachment_from_upload(issue: …, assetUrl: …)` ;
-5. mets le lien des captures et l'URL locale dans le corps de la PR ;
-6. **récupère le verdict de la CI et itère dessus jusqu'au vert.** C'est ici
+4. mets l'URL locale de l'écran dans le corps de la PR ;
+5. **récupère le verdict de la CI et itère dessus jusqu'au vert.** C'est ici
    qu'elle s'attend, puisque `review-loop` ne viendra qu'après la reprise de
    l'écran : personne d'autre que toi ne la lira d'ici là. Rouge, c'est un
    correctif à faire, pas une observation à rapporter — lis les logs (`gh run
@@ -450,7 +454,7 @@ cycle de revue entier, puisque l'écran va changer. Alors arrête-toi avant :
    la passe humaine n'a pas à attendre un runner. Mais dis-le sur la ligne
    `CI` du verdict — quel check, ce que ses logs montrent, ce que tu as
    tenté — plutôt que de le laisser découvrir ;
-7. rends un verdict `ÉCRAN` et arrête-toi là.
+6. rends un verdict `ÉCRAN` et arrête-toi là.
 
 L'utilisateur reprend ensuite l'écran au clavier, dans ce worktree, et la
 convergence n'a lieu qu'après, sur l'écran validé.
@@ -534,7 +538,18 @@ rebasé et ce que tu as gardé de l'autre côté. Tu ne merges toujours pas.
 
 Ton texte final **est** la valeur de retour : la session qui t'a lancé le lit,
 et l'utilisateur ne le voit que si elle le lui rapporte. Rends toujours l'un de
-ces cinq verdicts, en commençant par le mot-clé seul sur sa première ligne.
+ces six verdicts, en commençant par le mot-clé seul sur sa première ligne.
+
+```
+PLANIFIÉ
+Ticket : OOTS-<n> — <titre> — <url>  (statut : In Progress)
+Plan   : <chemin absolu du fichier de plan>
+En deux phrases : <ce que le plan fait>
+TDD    : <les chapitres qui le dictent>
+Tranché seul : <une ligne par décision, avec sa raison>
+Worktree : <chemin, ou « à créer » si tu n'en as pas eu besoin>
+Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il reprendra à l'étape 3.
+```
 
 ```
 PLAN
@@ -580,7 +595,6 @@ PR     : <url>  (brouillon)
 CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté>
 Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
          vérifiées joignables>
-Captures : <lien(s) de l'attachement Linear>
 Fait   : <ce que l'écran montre aujourd'hui>
 TDD    : <ce que les chapitres imposent à cet écran, et ne laissent pas au goût>
 Ouvert : <ce sur quoi j'hésitais, et pourquoi>
@@ -596,6 +610,14 @@ Ce que j'ai tenté : <liste courte>
 Ce qu'il faudrait : <l'action humaine qui débloque>
 ```
 
+## Ce que tu coûtes
+
+Mesuré le 2026-08-27 sur trois ouvriers : **~5 M de jetons neufs chacun, et 92 à 123 M de cache relu** — vingt fois plus. Ce second chiffre est le vrai coût, et il ne vient pas de ce que tu produis : chaque appel d'outil fait repayer tout le contexte accumulé depuis ton premier tour. Un ouvrier à son 150ᵉ appel dépense par geste plusieurs fois ce qu'il dépensait au dixième. Deux conséquences, toutes deux à toi.
+
+**Fais moins de tours.** Groupe les lectures indépendantes dans un même message plutôt que de les enchaîner ; préfère un `grep -n` sur cinq fichiers à cinq `Read` ; **ne relis jamais un fichier que tu viens d'éditer** — l'outil aurait échoué si l'édition avait échoué. Ne fais pas lire au modèle ce qu'une commande peut résumer : `--jq` sur un `gh`, `sed -n` sur une plage, `grep -c` quand seul le nombre compte.
+
+**Dis quand un contexte neuf ferait mieux que toi.** Te reprendre rejoue tout ton transcript ; à un stade avancé, cela coûte davantage que de repartir de zéro. Quand ce qui te reste tient sans ton historique — typiquement une boucle de revue qui repart d'une PR déjà poussée, ou une reprise d'écran sur une branche à jour —, **écris-le dans ton verdict** : « ce qui reste tient dans un contexte neuf, relancez plutôt que de me reprendre ». Celui qui t'a lancé ne peut pas le savoir, toi si.
+
 ## Garde-fous
 
 - **Une attente n'est pas un verdict : ne termine jamais ton tour sur « j'attends ».** « La CI tourne », « un relecteur n'a pas fini » ne sont pas des choses à rendre — ce sont des choses à attendre. Un tour qui se conclut là-dessus réveille la session qui t'a lancé pour rien, et il faut ensuite te relancer à la main pour que tu constates ce que tu aurais vu en restant. Tant qu'il te reste du travail qui ne dépend pas du résultat attendu, fais-le pendant que la surveillance tourne en tâche de fond (§ 5). **Quand il ne t'en reste plus, attends en bloquant, dans ton propre tour** :
@@ -605,7 +627,7 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
                              # son code de sortie dit si l'un a échoué
   ```
 
-  Donne-lui un `timeout` large — `e2e.yml` prend plusieurs minutes. Même chose pour un sous-agent de revue dont tu attends le résultat : attends-le, ne conclus pas à côté. Les cinq verdicts sont des états d'arrivée ; aucun ne veut dire « toujours en cours ».
+  Donne-lui un `timeout` large — `e2e.yml` prend plusieurs minutes. Même chose pour un sous-agent de revue dont tu attends le résultat : attends-le, ne conclus pas à côté. Les six verdicts sont des états d'arrivée ; aucun ne veut dire « toujours en cours ».
 - **N'entre pas en mode plan** (`EnterPlanMode`, `ExitPlanMode`) : les deux
   attendent un utilisateur assis dans ta session, que tu n'as pas. Le § 2
   fait approuver le plan par le canal qui, lui, existe — c'est `plan-issue`
@@ -623,7 +645,7 @@ Ce qu'il faudrait : <l'action humaine qui débloque>
   **ne rends jamais un écran sur une CI que tu n'as pas lue** : c'est le
   seul contrôle que ce chemin court-circuite, et le seul qui joue le e2e.
 - **Ne rends pas un écran sans ses adresses.** Un port de worktree ne se
-  devine pas, et une capture ne se clique pas : les verdicts `ÉCRAN` et
+  devine pas, et une image ne se clique pas : les verdicts `ÉCRAN` et
   `LIVRÉ` portent une URL par page où le travail se constate, menant
   directement au bon état, vérifiées joignables.
 - **Ne merge jamais**, et ne passe jamais le ticket `Done` : le merge est le

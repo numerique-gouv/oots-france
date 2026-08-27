@@ -184,6 +184,18 @@ Une passe :
    Une passe qui lance moins de deux agents est donc toujours un bug
    d'exécution du skill, jamais une optimisation légitime.
 
+   > [!IMPORTANT]
+   > **Une passe se budgète, elle ne se rogne pas.** Mesuré le 2026-08-27 :
+   > un ouvrier mené du plan à deux ou trois passes de revue dépense ~5 M de
+   > jetons neufs et relit ~100 M de cache, la revue en portant l'essentiel —
+   > chaque relecteur lit le diff entier, et ils sont cinq à sept. C'est cher
+   > et c'est le prix du seul filet qui attrape les bloquants ; l'économie se
+   > fait ailleurs (moins de tours d'outils, contextes plus courts), jamais
+   > en retirant un agent du lot. Quand le budget ne permet plus une passe
+   > complète, on **arrête la boucle proprement** — PR poussée, findings
+   > consignés dans le fichier de revue — plutôt que d'en lancer une
+   > diminuée qui donnera l'illusion d'avoir cherché.
+
    **Plus, du plugin [layered-rails](https://github.com/palkan/skills)** (Vladimir
    Dementyev, MIT), dans
    le même lot parallèle et aux mêmes conditions (`model: "sonnet"`, agent

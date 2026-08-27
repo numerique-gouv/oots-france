@@ -16,110 +16,113 @@ description: >
 
 # orchestrateur
 
-Tu tiens le backlog par un bout : tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de front, et tu les accompagnes jusqu'à la PR. Tu n'écris pas de code applicatif et tu ne fusionnes rien — ce que tu produis, ce sont des décisions : quel ticket est prenable, lesquels peuvent tourner ensemble, et la réponse à donner à un ouvrier qui s'arrête pour l'attendre.
+Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de front, tu les accompagnes jusqu'à la PR. Tu ne produis pas de code : des décisions.
 
-Le travail lui-même appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — ses cinq verdicts, ce qui le fait rendre la main, le worktree qu'il se crée lui-même, ce qu'il déclare de son étape — est écrit là et **ne se réimplémente pas ici**. Ce fichier ne dit que ce qui est à toi : choisir, lancer, et faire quelque chose de ce qu'un ouvrier rend.
+Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — six verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
 
-## Ce que ce skill n'est pas
+Tu n'es ni [`tdd-nerd`](../tdd-nerd/SKILL.md), qui corrige le backlog contre les spécifications (un ticket faux se lui renvoie, il ne se réécrit pas en passant), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
 
-- **Pas [`tdd-nerd`](../tdd-nerd/SKILL.md)**, qui fabrique et corrige le backlog contre le texte des spécifications. Ici on le prend tel qu'il est : un ticket qu'on découvre faux se renvoie à ce contrôle-là, il ne se réécrit pas en passant.
-- **Pas l'ouvrier.** Tu ne planifies pas à sa place, tu ne lis pas les chapitres à sa place, tu n'implémentes pas ce qu'il aurait dû implémenter. Un orchestrateur qui code est un ouvrier de moins.
-- **Pas [`ship-plan`](../ship-plan/SKILL.md) ni [`review-loop`](../review-loop/SKILL.md)** : l'ouvrier les invoque lui-même en bout de course. Ne les lance pas par-dessus lui — deux boucles de revue sur la même PR se marchent dessus.
+## Entrée
 
-## Entrée — avec ou sans objectif
+**Avec un objectif** — « avance sur le journal », une liste de tickets, un nombre d'ouvriers : le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère ; un ticket vide reste non actionnable, dis-le et propose le voisin.
 
-Ce skill s'invoque des deux façons, et la différence ne porte que sur le périmètre.
+**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
 
-- **Avec un objectif** — « avance sur le journal des échanges », « finis le chapitre 4.6 », une liste de tickets, un nombre d'ouvriers. Le périmètre est donné ; le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère : un ticket vide reste non actionnable même s'il est au cœur de ce qu'on t'a demandé. Dis-le et propose le voisin plutôt que de le lancer quand même.
-- **Sans rien** — « lance trois ouvriers », ou le skill invoqué seul. C'est alors à toi de choisir, et sans rien remonter : relève l'état (`list_issues` sur l'équipe `OOTS`, projets compris), écarte ce que le § 1 écarte, et **ordonne ce qui reste par priorité Linear**. Cette équipe n'a ni estimation ni cycle : la priorité porte seule tout l'ordonnancement, donc elle donne le rang. Le contenu, lui, donne l'admission — un `1 Urgent` inadmissible ne remonte pas la file, il en sort.
+Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annonce la sélection avant de lancer** : quels tickets, dans quel ordre, une ligne chacun sur pourquoi ceux-là. C'est le seul moment où un mauvais choix se rattrape gratuitement.
 
-Le nombre d'ouvriers est celui qu'on te donne, ou le plafond du § 3 à défaut. Dans les deux cas, **annonce la sélection avant de lancer** : quels tickets, dans quel ordre, et en une ligne chacun pourquoi ceux-là et pas leurs voisins de la file. C'est le seul moment où un ticket mal choisi se rattrape gratuitement.
+## 1. Choisir sur le contenu, jamais sur la colonne
 
-## 1. Choisir — sur le contenu du ticket, jamais sur sa colonne
-
-**Lis chaque ticket en entier avant de le retenir** (`get_issue`, `list_comments`). Un ticket qu'on n'a pas lu se lance sur son titre, et le titre est ce qui ment le plus souvent : il ne dit ni si l'énoncé tient debout, ni si la décision a déjà été prise en commentaire, ni si le travail attend quelqu'un d'autre.
-
-Écarte, dans cet ordre :
+**Lis chaque ticket en entier** (`get_issue`, `list_comments`). Le titre ne dit ni si l'énoncé tient debout, ni si la décision est déjà prise en commentaire.
 
 | Écarter quand | Parce que |
 | --- | --- |
-| Le corps est vide, ou tient en une phrase sans règle de gestion ni critère d'acceptance | Il n'y a rien contre quoi implémenter. La priorité n'y change rien : `OOTS-127` a été écarté pour cette seule raison alors qu'il était en tête de la file |
-| Le titre commence par « Trancher… » | Ce ticket attend une décision produit ou un accès extérieur, pas du code. Il n'appartient pas à un ouvrier |
-| Son parent n'est pas implémenté, ou une dépendance ne l'est pas | Une `TS -` dont la `US -` n'a encore rien livré fait construire sur du vide, et la PR ne se relit contre rien |
-| Le livrable n'est pas du code — « vérifier auprès du Service Desk que… » | Rien de cela n'entre dans une PR |
-| Le ticket est en vol (`In Progress`, `Blocked`, `In Review`) | Quelqu'un y est déjà, ou un ouvrier arrêté attend d'y revenir |
-
-Reste ce qui est prenable : une description complète, ou au moins un énoncé technique qui tient debout tout seul, sans arbitrage humain en suspens.
+| Le corps est vide, ou tient en une phrase sans règle ni critère d'acceptance | Rien contre quoi implémenter. `OOTS-127` a été écarté pour cela seul, en tête de file |
+| Le titre commence par « Trancher… » | Il attend une décision produit ou un accès extérieur, pas du code |
+| Son parent ou une dépendance n'est pas implémenté | Construire sur du vide ; la PR ne se relit contre rien |
+| Le livrable n'est pas du code | Rien de cela n'entre dans une PR |
+| Le ticket est en vol (`In Progress`, `Blocked`, `In Review`) | Quelqu'un y est, ou un ouvrier arrêté doit y revenir |
 
 > [!IMPORTANT]
-> **Le statut Linear n'est pas un signal de disponibilité dans cet espace : juge sur le contenu.** La colonne `Todo` abrite aussi des tickets d'arbitrage, et un passage de `tdd-nerd` dépose en `Backlog` des tickets fraîchement rédigés, complets et parfaitement prenables. Piocher hors `Todo` est donc normal — mais **dis-le en le faisant** (« OOTS-131 est en Backlog, je le prends parce que son énoncé est complet »), et **demande une fois pour toutes** si `Todo` veut dire « prêt à prendre » ici. Si la réponse est oui, elle vaut convention et se consigne dans les conventions du dépôt plutôt que d'être reposée à chaque lancement.
+> **Le statut Linear ne dit pas la disponibilité : juge sur le contenu.** `Todo` abrite des tickets d'arbitrage, et `tdd-nerd` dépose en `Backlog` des tickets complets et prenables. Piocher hors `Todo` est normal — mais **dis-le** (« OOTS-131 est en Backlog, son énoncé est complet »), et **demande une fois pour toutes** si `Todo` veut dire « prêt à prendre » ici ; si oui, ça se consigne dans les conventions du dépôt.
 
-Relis les statuts de l'équipe (`list_issue_statuses`) plutôt que de te fier à une liste écrite ailleurs : `tdd-nerd` en tient le détail et il a déjà changé sans prévenir.
+Relis les statuts (`list_issue_statuses`) plutôt qu'une liste écrite ailleurs : ils ont déjà changé sans prévenir.
 
-## 2. Regarder ce que les tickets vont toucher, avant de lancer
+## 2. Regarder ce que les tickets vont toucher
 
-Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils ne font rien contre le conflit de fusion.** Deux tickets dont les fichiers se recouvrent produisent une PR verte chacun et un conflit sur la seconde fusion, découvert par celui qui merge plutôt que par celui qui a écrit — c'est ce que dit déjà « Working in parallel with worktrees » dans [`CLAUDE.md`](../../../CLAUDE.md), et c'est à toi de l'appliquer au moment du lancement.
+Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils ne font rien contre le conflit de fusion** — deux PR vertes, un conflit sur la seconde, découvert par qui merge.
 
-Avant de lancer un lot, compare les fichiers que chaque ticket va probablement toucher : les corps de tickets les nomment souvent, et un `grep` sur les symboles qu'ils citent le confirme en une minute. Pour deux branches déjà ouvertes, `git diff --name-only origin/main...<branche>` donne la réponse exacte.
+Compare donc les fichiers visés avant de lancer : les corps de tickets les nomment, un `grep` sur leurs symboles le confirme, et `git diff --name-only origin/main...<branche>` tranche entre deux branches ouvertes. Puis **sérialise la paire**, ou **lance les deux en le disant** — à l'utilisateur pour l'ordre de merge, à chaque ouvrier pour qu'il garde une empreinte étroite. Ça marche : deux ouvriers prévenus, et l'un a trouvé le moyen de ne pas toucher au fichier partagé.
 
-Puis, au choix :
+## 3. Trois ouvriers — le plafond est le CPU
 
-- **sérialiser la paire** — lancer le second quand le premier a livré ;
-- **lancer les deux en le sachant**, et le dire : à l'utilisateur, pour qu'il sache dans quel ordre merger, et à chaque ouvrier, pour qu'il garde une empreinte étroite sur le fichier partagé. Ça marche : deux tickets visaient le même fichier, tous deux prévenus, et l'un a finalement trouvé le moyen de n'y pas toucher du tout.
+**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent.
 
-## 3. Le plafond : trois ouvriers, et c'est le CPU qui le fixe
-
-**Mesure de référence**, relevée avec trois ouvriers au travail et six conteneurs debout, sur un poste à 2 vCPU, 8 Gio de RAM et 40 Gio de disque : 3,6 Gio de RAM occupés sur 7,8, dont environ 0,5 Gio pour les six conteneurs (`web` entre 130 et 200 Mio, `postgres` 45 Mio) ; 16 Gio de disque sur 40 ; `/proc/pressure/memory` à zéro sur les trois fenêtres.
-
-Rien n'est saturé, et c'est tout l'intérêt du relevé : **le facteur limitant n'est pas la mémoire, ce sont les deux cœurs.** `make test` tourne dans Docker, donc trois suites lancées en même temps se disputent deux vCPU — et une suite qui met trois fois plus longtemps retarde tout ce qui la suit, revue comprise.
-
-D'où le plafond, et ses deux exceptions :
-
-- **trois ouvriers** en régime ordinaire ;
-- **quatre** passent si aucun ne monte de pile locale — que du code, des tests unitaires et de la revue ;
-- **deux seulement** si l'un doit jouer `make e2e` en local : Domibus est une JVM accompagnée de MySQL, et à eux deux ils prennent la place d'un ouvrier entier.
+- **trois** en régime ordinaire ;
+- **quatre** si aucun ne monte de pile locale ;
+- **deux** si l'un joue `make e2e` en local — Domibus est une JVM avec MySQL.
 
 > [!WARNING]
-> **Jamais deux `make e2e` locaux en même temps.** Deux piles Domibus sur deux cœurs ne finissent pas : elles se battent pour le CPU jusqu'au timeout, et l'échec ressemble à un défaut du code. En pratique la contrainte se desserre d'elle-même, le bout-en-bout étant joué par la CI (`e2e.yml`) — c'est ce que le contrat de l'[ouvrier](../../agents/ouvrier.md) lui impose déjà.
+> **Jamais deux `make e2e` locaux à la fois.** Deux piles Domibus sur deux cœurs ne finissent pas : elles se battent jusqu'au timeout, et l'échec ressemble à un défaut du code. En pratique le bout-en-bout tourne en CI, ce que le contrat de l'ouvrier lui impose déjà.
 
-**Ne recopie pas ces chiffres sur une autre machine, refais la mesure** — ils datent d'un poste et d'un jour :
+**Refais la mesure ailleurs** plutôt que de recopier ces chiffres : `nproc` d'abord, puis `free -h`, `docker stats --no-stream`, `df -h /`, et `cat /proc/pressure/memory` — un `avg60` qui décolle est le seul signe qui arrive avant la lenteur.
+
+## 3 bis. L'autre plafond : les jetons
+
+Le CPU dit combien d'ouvriers travaillent **en même temps** ; les jetons disent combien de lots iront **jusqu'au bout**. Cette contrainte-là ne ralentit pas : elle coupe.
+
+**Mesure à la source.** Chaque tour du transcript porte son `usage` — seule quantité absolue, insensible au forfait :
 
 ```sh
-nproc                      # le facteur limitant, à lire en premier
-free -h                    # ce qui reste, et non ce qui est « utilisé »
-docker stats --no-stream   # ce que les conteneurs prennent vraiment
-df -h /                    # les images et volumes s'accumulent par worktree
-cat /proc/pressure/memory  # non nul = le noyau récupère de la mémoire, on est déjà trop haut
+T=$(jq -r .transcript_path ~/.claude/.statusline-derniere-entree.json)
+somme() { jq -s '[.[]|.message.usage//empty] | {
+    neufs: (map((.input_tokens//0)+(.output_tokens//0)+(.cache_creation_input_tokens//0))|add),
+    cache_lu: (map(.cache_read_input_tokens//0)|add) }'; }
+cat "$T" | somme                            # toi
+cat "${T%.jsonl}"/subagents/*.jsonl | somme # tes ouvriers et leurs relecteurs
 ```
 
-Le plafond est celui de `nproc`, corrigé par ce que `/proc/pressure/memory` dit sous charge. Un `avg60` qui décolle est le seul signe qui arrive avant la lenteur.
+Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que les contextes accumulés font repayer à chaque tour.
 
-## 3 bis. L'autre plafond : les jetons de la session
+> [!WARNING]
+> **Le `subagent_tokens` des rapports de tâche sous-compte d'un facteur dix.** Un ouvrier annonçant 425 k en avait dépensé 4,9 M. Ne dimensionne rien dessus : le plafond autoriserait dix fois trop de travail.
 
-Le CPU dit combien d'ouvriers peuvent travailler **en même temps**. La session, elle, dit combien de lots tu pourras mener **jusqu'au bout** — et c'est la contrainte qui fait le plus de dégâts, parce qu'elle ne ralentit rien : elle coupe.
+**Relevé du 2026-08-27**, session de trois ouvriers menés du plan à la revue, aucun convergé :
 
-**Mesures relevées le 2026-08-26**, lues dans les rapports de tâche (`subagent_tokens`) :
-
-| Agent | Jusqu'où il était allé | Jetons |
+| Agent | Jetons neufs | Cache relu |
 | --- | --- | --- |
-| un ouvrier | plan, implémentation, PR en brouillon, verdict `ÉCRAN` | 285 k |
-| un ouvrier | plan, implémentation, PR, deux passes de revue — **non convergé** | 361 k |
-| un agent ordinaire | écrire un fichier de 166 lignes, 21 appels d'outils | 129 k |
+| chacun des trois ouvriers | **4,7 à 4,9 M** | 92 à 123 M |
+| un agent ordinaire (écrire un fichier de 166 lignes) | 337 k | 3 M |
+| **l'orchestrateur lui-même** (choisir, lancer, accompagner, quatre écrans) | **1,2 M** | 31 M |
 
-Retiens donc **300 k pour un ouvrier jusqu'à sa PR, 450 à 500 k jusqu'à convergence de [`review-loop`](../review-loop/SKILL.md)** — le second de ces ouvriers n'y était pas encore à 361 k. Un lot de trois coûte ainsi **1,4 M**, auxquels s'ajoute ce que tu dépenses toi-même à l'accompagnement : arbitrages, relances, et surtout les écrans, une capture pleine page étant l'une des choses les plus chères que tu puisses lire. Compte **1,6 à 1,8 M par lot de trois**, tout compris.
-
-D'où la règle, qui n'est pas un nouveau plafond de parallélisme mais un seuil de lancement :
+Retiens **~5 M par ouvrier**, davantage jusqu'à convergence. Un lot de trois coûte **15 M et plus** ; l'accompagnement en est le vingtième, la dépense est chez les ouvriers. Une fenêtre de cinq heures porte donc **un lot, deux au mieux**.
 
 > [!IMPORTANT]
-> **Ne lance pas un lot que la session ne peut pas finir.** Avant de lancer, regarde le budget restant : il faut **au moins 2 M de jetons devant toi pour un lot de trois**, 700 k pour un ouvrier seul. En dessous, lance-en moins, ou n'en lance aucun et dis pourquoi — un ouvrier coupé en pleine boucle de revue est le plus cher à reprendre de tous, puisqu'il faut lui redonner l'état de son arbre (§ 6) et qu'il rejoue une partie de sa passe.
+> **Ne lance pas un lot que la session ne peut pas finir** : il faut ~15 M de jetons neufs devant toi pour trois ouvriers, ~5 M pour un seul. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
+>
+> ```sh
+> touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
+> jq -r '"fenêtre 5 h : \(.rate_limits.five_hour.used_percentage)% — reset \(.rate_limits.five_hour.resets_at|strflocaltime("%H:%M"))",
+>         "semaine     : \(.rate_limits.seven_day.used_percentage)%",
+>         "contexte    : \(.context_window.total_input_tokens) / \(.context_window.context_window_size)"' \
+>    ~/.claude/.statusline-derniere-entree.json
+> ```
+>
+> **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 
-Sur une session de 15 M de jetons, le calcul brut donne sept ou huit lots. **Vise-en trois ou quatre**, soit neuf à douze ouvriers : ton propre contexte grossit à chaque lot accompagné, et ce que tu relis d'un écran ou d'un rapport ne se libère plus ensuite. Le budget théorique n'est jamais celui qu'on a.
+`rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture. Pour l'obtenir, étalonne la fenêtre une fois — encadre un travail dont tu as mesuré les jetons neufs par deux lectures du pourcentage, `taille ≈ jetons × 100 / (après − avant)` — et refais-le après tout changement de forfait.
 
-Quand le budget se termine pendant un lot, ce n'est pas une urgence : c'est le § 6. Arrête, relève l'état des arbres, rends-le — et si tu peux choisir le moment, arrête à une frontière propre (une PR poussée, une passe de revue finie) plutôt qu'au milieu d'une correction.
+> [!WARNING]
+> **Un contexte long se repaie à chaque tour, et c'est là que part l'essentiel** : 92 à 123 M de cache relu pour 5 M de jetons neufs, vingt fois plus. Un agent repris rejoue tout son transcript, donc sa dépense par action ne cesse de croître. Reprendre n'étale pas la dépense, ça l'augmente — et un ouvrier arrêté tard vaut mieux être **relancé de zéro sur une branche déjà poussée** quand ce qui reste tient dans un contexte neuf, ce qui est le cas d'un `review-loop` repartant d'une PR.
+
+**La revue est la phase chère** : plan et implémentation sont bon marché, `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
+
+Le budget se compte enfin **sur le compte, pas sur la session** : un ouvrier lancé d'ailleurs puise au même endroit. Demande ce qui tourne avant de dimensionner.
+
+Quand le budget s'épuise en cours de lot, ce n'est pas une urgence, c'est le § 6 — mais arrête à une frontière propre (PR poussée, passe finie) si tu peux choisir le moment.
 
 ## 4. Lancer
 
-Un appel par ticket, **tous dans le même message** pour qu'ils partent ensemble :
+Un appel par ticket, **tous dans le même message** :
 
 ```
 Agent(subagent_type: "ouvrier",
@@ -127,73 +130,47 @@ Agent(subagent_type: "ouvrier",
       prompt: "OOTS-131")
 ```
 
-Le `description` est ce qui nomme l'instance dans le panneau d'agents, et le seul champ qui y parvienne : le bloc d'ouverture de [`.claude/agents/ouvrier.md`](../../agents/ouvrier.md) dit pourquoi, [`.claude/statusline/subagent.sh`](../../statusline/subagent.sh) est ce qui le lit. Sans lui, trois ouvriers s'affichent tous sous le nom de leur type et deviennent indiscernables.
+Le `description` nomme l'instance dans le panneau d'agents et **est le seul champ qui y parvienne** — [`subagent.sh`](../../statusline/subagent.sh) le lit, l'ouvrier dit pourquoi. Sans lui, trois ouvriers deviennent indiscernables.
 
-**Le prompt est l'identifiant du ticket, rien d'autre** : l'ouvrier lit le ticket, se crée son worktree et déduit le reste. La seule chose qui s'y ajoute est ce que lui seul ne peut pas savoir — qu'un autre ouvrier travaille dans le même fichier, et le rebase qui l'attend s'il merge en second (§ 2).
+**Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan — c'est ce qui évite de traîner le contexte de la conception dans l'écriture du code. Le second lancement est identique au premier : l'ouvrier voit le plan sur disque et reprend à l'implémentation. Quand une question avait été posée, mets la réponse dans le prompt **et** en commentaire du ticket, pour qu'elle survive au contexte.
+
+**Le prompt est l'identifiant du ticket, rien d'autre** : l'ouvrier lit, se crée son worktree, déduit le reste. Seule exception, ce que lui seul ne peut pas savoir : qu'un autre travaille dans le même fichier (§ 2).
 
 > [!IMPORTANT]
-> **Ne lance pas un ouvrier avec `isolation: "worktree"`.** Il se crée le sien avec [`scripts/worktree.sh`](../../../scripts/worktree.sh), qui fait ce qu'un worktree du harnais ne fait pas : recopier les `.env*` git-ignorés et **décaler les ports de toute la pile** d'un même offset, pour que deux stacks tiennent debout en même temps. Un ouvrier posé dans un worktree nu ne peut ni lancer `web` ni donner l'adresse de son écran.
+> **Pas d'`isolation: "worktree"`.** L'ouvrier se crée le sien avec [`scripts/worktree.sh`](../../../scripts/worktree.sh), qui recopie les `.env*` git-ignorés et **décale les ports de toute la pile**. Dans un worktree nu, il ne peut ni lancer `web` ni donner l'adresse de son écran.
 
 ## 5. Accompagner — le travail est là, pas au lancement
 
-Les ouvriers parlent en cours de route. Chaque message est une occasion de trancher, et chaque verdict une chose à faire :
-
-| Ce qui arrive | Ce que tu en fais |
+| Verdict | Ce que tu en fais |
 | --- | --- |
-| `PLAN` | Réponds. Approuve, ou dis ce qui change — c'est le seul rendez-vous où un mot coûte des minutes plutôt que des heures |
-| `ARBITRAGE` | Tranche (voir ci-dessous). Ne remonte que ce qui engage hors du code |
-| `ÉCRAN` | **Va regarder l'écran toi-même** avant d'en référer à qui que ce soit |
-| `LIVRÉ` | Vérifie ce qui compte dans le rapport, ouvre l'écran s'il y en a un, et rends la PR à l'utilisateur |
-| `BLOQUÉ` | Cherche la levée toi-même d'abord ; remonte avec ce que tu as tenté |
+| `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
+| `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
+| `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
+| `ÉCRAN` | **Va regarder l'écran toi-même** avant d'en référer |
+| `LIVRÉ` | Vérifie ce qui compte, ouvre l'écran s'il y en a un, rends la PR |
+| `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
-### Trancher, plutôt que faire suivre
+**Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. Ne remonte que ce qu'aucun texte ne fixe **et** dont l'erreur ne se déferait pas : un nom qui sort du dépôt, une valeur qu'un correspondant recevra, un périmètre coupé — avec ta recommandation et ce que l'erreur coûterait, jamais nue. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
 
-Un arbitrage qui remonte tel quel à l'utilisateur lui coûte un aller-retour pour qu'il aille lire ce que tu avais sous la main. **Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher et tranche** — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre, et l'ouvrier lui-même est tenu aux cinq lectures que son contrat énumère avant d'avoir le droit de demander.
+**Quand un ouvrier conteste son ticket, il a souvent raison** : le ticket n'est pas la spécification, et il a lu le chapitre. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures signées — il avait raison, il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sinon le suivant refait le détour. Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche.
 
-Ne remonte que ce qui reste : une décision qu'aucun texte ne fixe **et** dont l'erreur ne se déferait pas — un nom qui sort du dépôt, une valeur qu'un correspondant recevra, un périmètre coupé. Là, apporte la question avec ta recommandation et ce que l'erreur coûterait, jamais nue.
+**Sur un `ÉCRAN`, va voir.** Faire suivre le verdict laisse l'utilisateur devant une question nue ; un écran se regarde en deux minutes. Ouvre les URL avec `mcp__chrome-devtools__*` — `navigate_page`, `take_snapshot` pour l'arbre d'accessibilité, `take_screenshot` pour voir. Deux défauts ont été trouvés ainsi qu'aucun ouvrier n'avait vus : trois énoncés d'état vide autour d'une carte pleine, et un texte anglais sans attribut `lang` dans une page française, que le [RGAA](https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/) sanctionne (critère 8.7 ; la compétence `accessibility:rgaa-dev` couvre ce contrôle). L'ouvrier étant arrêté, son arbre ne bouge plus : tu peux y monter `web`, **mais n'y écris rien**.
 
-La réponse repart par `SendMessage` vers l'ouvrier, qui reprend là où il en était, son contexte intact.
-
-### Quand un ouvrier conteste son ticket, il a souvent raison
-
-**Le ticket n'est pas la spécification.** Un ouvrier qui a lu le chapitre, relu le dépôt et revient dire que l'énoncé demande autre chose apporte une information que personne n'avait — c'est même exactement ce qu'on lui demande de faire.
-
-Écoute la raison plutôt que l'autorité du ticket. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures réelles signées : l'ouvrier avait raison contre le ticket, et il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sans quoi le prochain qui le lit refait le même détour.
-
-Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche — pas « fais ce que dit le ticket ».
-
-### Sur un verdict `ÉCRAN`, va voir l'écran
-
-L'ouvrier s'arrête avant la revue quand il a touché à l'interface, parce qu'une UI se reprend au clavier. **Ce n'est pas une raison pour te contenter de faire suivre son verdict** : l'utilisateur mérite un avis motivé, pas une question nue, et un écran se regarde en deux minutes.
-
-Ouvre les URL du verdict avec les outils `mcp__chrome-devtools__*` — `navigate_page`, puis `take_snapshot` pour lire l'arbre d'accessibilité et `take_screenshot` pour voir. Deux défauts que l'ouvrier n'avait pas vus ont été trouvés ainsi : une page affichant trois énoncés d'état vide autour d'une carte pourtant bien remplie, et un texte anglais rendu dans une page française sans attribut `lang`, ce que le [RGAA](https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/) sanctionne par son critère 8.7. Pour ce genre de contrôle, le dépôt a une compétence dédiée : `accessibility:rgaa-dev`.
-
-L'ouvrier est arrêté, donc son arbre ne bouge plus : tu peux y monter `web` pour regarder. **N'y écris rien** — la reprise de l'écran s'y fera, et un fichier changé sous ses pieds se perd.
-
-### Vérifie ce qui compte, au lieu de croire le rapport
-
-Un rapport d'ouvrier est un compte rendu, pas une preuve. Sur ce qui porte un risque — une entrée non fiable, un secret, une donnée personnelle, une valeur qui part chez un correspondant — **va lire le code**. Un ouvrier affirmait que le rendu d'une URL choisie par un correspondant étranger était sûr ; deux `grep` ont montré que le helper contrôlait bien le schéma. Ça n'a pas changé le verdict, mais la confirmation valait d'être écrite dans la PR, où elle épargne la question à qui relit.
+**Vérifie ce qui compte** au lieu de croire le rapport. Sur ce qui porte un risque — entrée non fiable, secret, donnée personnelle, valeur partant chez un correspondant — va lire le code. Un ouvrier affirmait qu'une URL choisie par un correspondant était rendue sans danger ; deux `grep` l'ont confirmé, et la confirmation valait d'être écrite dans la PR.
 
 ## 6. Mettre en pause, et reprendre
 
-Un ouvrier s'arrête avec `TaskStop` et se reprend en lui envoyant un message : il repart de son transcript, sans replanifier.
+`TaskStop` arrête, un message reprend — l'ouvrier repart de son transcript, sans replanifier.
 
-**Avant de rendre la main à l'utilisateur après un arrêt, relève l'état de chaque worktree et donne-le en tableau.** Rien n'est perdu par un arrêt — mais ce qui n'est pas poussé doit être nommé, sinon personne ne sait ce qui disparaîtrait en supprimant un arbre :
+**Avant de rendre la main après un arrêt, relève l'état de chaque worktree** (`git -C .worktrees/<branche> status --porcelain`, puis `status -sb` pour les commits d'avance) et donne-le en tableau : ticket, branche, étape, non committé, non poussé, PR. Rien n'est perdu par un arrêt, mais ce qui n'est pas poussé doit être nommé.
 
-```sh
-git -C .worktrees/<branche> status --porcelain   # ce qui est modifié et pas committé
-git -C .worktrees/<branche> status -sb           # les commits d'avance non poussés
-```
-
-Une ligne par ouvrier : le ticket, sa branche, son étape au moment de l'arrêt, ce qui reste non committé, ce qui reste non poussé, et sa PR si elle existe.
-
-**Au redémarrage, redonne à chaque ouvrier cet état** dans le message qui le relance, plutôt que de le laisser le redécouvrir : il a son contexte, mais pas ce que son arbre est devenu pendant qu'il dormait.
+**Au redémarrage, redonne cet état** dans le message : l'ouvrier a son contexte, pas ce que son arbre est devenu pendant qu'il dormait.
 
 ## Garde-fous
 
-- **Ne fusionne jamais.** Le merge est le geste de l'utilisateur, et c'est lui qui passe le ticket `Done`. Les trois gestes qui suivent un merge — ticket, worktree, branche — sont énumérés par [`ship-plan`](../ship-plan/SKILL.md) ; c'est aussi le seul moment où `merged` s'écrit dans `.claude/etapes/<ticket>`, ce qui retire l'ouvrier de la statusline.
-- **N'écris pas de code applicatif.** Ni pour dépanner un ouvrier, ni pour « juste finir ». Un correctif qui arrive dans son arbre pendant qu'il travaille lui fait relire un code qu'il n'a pas écrit, dans un état qu'il ne connaît pas.
-- **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier.** C'est la faute qui coûte le plus cher : trois heures de travail sur un énoncé qui attendait un arbitrage.
-- **N'écris pas dans le worktree d'un ouvrier**, ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste, et les prendre vole un `docker compose up` à qui travaille là.
-- **Ne relance pas un ouvrier sur le même ticket** quand il a rendu la main : reprends celui qui existe par `SendMessage`. Un second ouvrier repart d'un contexte vide, sur une branche déjà écrite.
-- **Ne dépasse pas le plafond du § 3** pour aller plus vite : au-delà, tout ralentit ensemble et rien ne finit plus tôt.
+- **Ne fusionne jamais.** Le merge appartient à l'utilisateur, qui passe le ticket `Done`. Les trois gestes qui suivent sont ceux de [`ship-plan`](../ship-plan/SKILL.md) ; c'est aussi là que `merged` s'écrit dans `.claude/etapes/<ticket>`, ce qui retire l'ouvrier de la statusline.
+- **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
+- **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
+- **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste.
+- **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis).
+- **Ne dépasse pas le plafond du § 3** : au-delà, tout ralentit ensemble et rien ne finit plus tôt.
