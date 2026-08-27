@@ -12,5 +12,11 @@
 <%- if data_service.distribution_language.present? -%>
     <sdg:Language><%= escape(data_service.distribution_language) %></sdg:Language>
 <%- end -%>
+<%- if conformance.present? -%>
+    <sdg:ConformsTo><%= escape(conformance) %></sdg:ConformsTo>
+<%- end -%>
+<%- associated_documents.each do |requested| -%>
+    <sdg:AssociatedDocumentRequest><%= escape(requested) %></sdg:AssociatedDocumentRequest>
+<%- end -%>
   </sdg:DistributedAs>
 </sdg:DataServiceEvidenceType>

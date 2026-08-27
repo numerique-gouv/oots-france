@@ -311,6 +311,12 @@ fr:
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
   models:
+    # Les trois seules valeurs que `R-EDM-REQ-C119` laisse passer : le message
+    # nomme celles qui ont été demandées et celles qui existent, faute de quoi
+    # la faute de frappe se cherche à la main.
+    associated_document:
+      unrequestable: >-
+        Documents associés inconnus : %{values}. Seuls %{requestable} peuvent être demandés.
     # La raison que `Exchange#expire!` inscrit, et que la console lit sous
     # « Raison de l'échec ».
     exchange:

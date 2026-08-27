@@ -185,6 +185,81 @@ RSpec.describe EvidenceRequestBuilder do
       .to raise_error(ConfigurationError, /String/)
   end
 
+  # Chapter 4.5.1 has the request carry back the data model the DSD published,
+  # so that a correspondent asked for a structured format knows which model to
+  # produce it against — R-EDM-REQ-C070 and C071 make its absence a warning
+  # there, and R-EDM-REQ-C107 makes its presence fatal elsewhere.
+  describe 'the data model asked for' do
+    subject(:distribution) do
+      Nokogiri::XML(described_class.new(**attributes, data_service: published).render)
+        .at_xpath('//sdg:DistributedAs', 'sdg' => 'http://data.europa.eu/p4s')
+    end
+
+    let(:model) { 'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40' }
+    let(:published) { build(:data_service, distribution_conforms_to: model, distribution_format: format) }
+
+    context 'when the requested format is structured' do
+      let(:format) { 'application/xml' }
+
+      it 'is written after the language, where the schema puts it' do
+        expect(distribution.element_children.map(&:name)).to eq(%w[Format Language ConformsTo])
+        expect(distribution.at_xpath('./sdg:ConformsTo', 'sdg' => 'http://data.europa.eu/p4s').text).to eq(model)
+      end
+    end
+
+    # R-EDM-REQ-C107 is FATAL on a data model beside an unstructured format, and
+    # chapter 4.5.1 asks for the element to be left out — not for the exchange to
+    # be abandoned over a value a conformant directory would never have
+    # published there (R-DSD-RESP-C067).
+    context 'when the requested format is unstructured' do
+      let(:format) { 'application/pdf' }
+
+      it 'is left out, and the request is still built' do
+        expect(distribution.element_children.map(&:name)).to eq(%w[Format Language])
+      end
+    end
+  end
+
+  # R-EDM-REQ-C119 closes the list of documents a request may ask for alongside
+  # the evidence itself.
+  describe 'the associated documents asked for' do
+    subject(:requested) do
+      Nokogiri::XML(described_class.new(**attributes, associated_documents: asked).render)
+        .xpath('//sdg:AssociatedDocumentRequest', 'sdg' => 'http://data.europa.eu/p4s')
+    end
+
+    context 'when several are asked for' do
+      let(:asked) { [AssociatedDocument::TRANSLATION, AssociatedDocument::ANNEX] }
+
+      it 'writes one element each, in the order they were asked for' do
+        expect(requested.map(&:text)).to eq(%w[Translation Annex])
+      end
+
+      it 'writes them last in the distribution, where the schema puts them' do
+        expect(requested.first.parent.element_children.map(&:name))
+          .to eq(%w[Format Language AssociatedDocumentRequest AssociatedDocumentRequest])
+      end
+    end
+
+    # The element is `0..n`, and every caller but the specimen messages asks for
+    # none: an empty one would be a value the rule refuses.
+    context 'when none is asked for' do
+      let(:asked) { [] }
+
+      it 'writes nothing, rather than an empty element' do
+        expect(requested).to be_empty
+      end
+    end
+
+    # Raised and not written: the values come from this deployment's own code,
+    # so an unknown one is a mistake here rather than a message to refuse. At
+    # render, where the type builder is constructed — nothing is written by then.
+    it 'refuses to render a request asking for a document the rule does not name' do
+      expect { described_class.new(**attributes, associated_documents: %w[Résumé]).render }
+        .to raise_error(ConfigurationError, /Résumé/)
+    end
+  end
+
   it 'omits the eIDAS identifier when the token carried none' do
     anonymous = NaturalPerson.new(family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22')
     rendered = described_class.new(**attributes, beneficiary: anonymous).render
@@ -226,5 +301,22 @@ RSpec.describe EvidenceRequestBuilder do
 
     expect(rendered).not_to include('<sdg:Injecté')
     expect(Nokogiri::XML(rendered).errors).to be_empty
+  end
+
+  # The two new elements written at once, which nothing else does: each `describe`
+  # above exercises one with the other absent, so their relative order rests on
+  # the template alone. The XSD sequences them `Format`, `Language*`,
+  # `ConformsTo?`, `AssociatedDocumentRequest*`, and a correspondent's parser is
+  # entitled to that order.
+  it 'writes the data model before the associated documents, as the schema sequences them' do
+    structured = build(:data_service,
+      distribution_format: 'application/xml',
+      distribution_conforms_to: 'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40')
+    rendered = described_class.new(**attributes, data_service: structured,
+      associated_documents: [AssociatedDocument::TRANSLATION, AssociatedDocument::ANNEX]).render
+    distribution = Nokogiri::XML(rendered).at_xpath('//sdg:DistributedAs', 'sdg' => 'http://data.europa.eu/p4s')
+
+    expect(distribution.element_children.map(&:name))
+      .to eq(%w[Format Language ConformsTo AssociatedDocumentRequest AssociatedDocumentRequest])
   end
 end
