@@ -81,12 +81,22 @@ class CommonServicesResponseParser
 
   def records(path) = registry_objects.filter_map { |object| at(object, path) }
 
-  # Holding nothing is not something a directory says by succeeding: it answers
-  # `EB:ERR:0001` or `DSD:ERR:0001` — « the result set is empty » — which is a
-  # refusal, rejected above. A success that yields nothing is therefore an
-  # answer we failed to read, whatever the depth at which reading gave out, and
-  # saying so is what keeps « we could not read this » from reaching the caller
-  # as « this country has nothing ».
+  def reject_unless_read_something
+    return unless nothing_readable?
+
+    raise CommonServicesError,
+      I18n.t('parsers.common_services_response.nothing_readable', count: registry_objects.size)
+  end
+
+  # A success that yields nothing is, by default, an answer we failed to read,
+  # whatever the depth at which reading gave out — saying so is what keeps « we
+  # could not read this » from reaching the caller as « this country has
+  # nothing ». A directory with no information to give refuses instead, by
+  # `EB:ERR:0001` or `DSD:ERR:0001`, which is rejected above.
+  #
+  # A directory can nonetheless publish an emptiness on purpose, and a subclass
+  # then says so by narrowing this — chapter 3.2.4 has the Evidence Broker
+  # answer an explicitly empty `sdg:EvidenceTypeList`.
   #
   # The rule bears on the answer as a whole, which is the level the codes above
   # describe. Two limits follow, both deliberate. A record that publishes no
@@ -96,12 +106,7 @@ class CommonServicesResponseParser
   # obliged to honour the rule, and no captured response shows one. And a
   # record that yields nothing while its neighbours yield something is absorbed
   # by the whole, which no rule of the TDD forbids.
-  def reject_unless_read_something
-    return unless @read.is_a?(Enumerable) && @read.none?
-
-    raise CommonServicesError,
-      I18n.t('parsers.common_services_response.nothing_readable', count: registry_objects.size)
-  end
+  def nothing_readable? = @read.is_a?(Enumerable) && @read.none?
 
   # What the directories publish is indented, so every reading of an element's
   # text is followed by the same strip.

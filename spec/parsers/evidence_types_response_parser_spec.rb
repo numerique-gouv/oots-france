@@ -73,12 +73,95 @@ RSpec.describe EvidenceTypesResponseParser do
     expect(described_class.new(body).evidence_type_lists.map(&:country)).to eq(['FR'])
   end
 
+  # Chapter 3.2.4: a member state that knows it issues nothing declares an empty
+  # list carrying `NoMatch`, in an answer that succeeds. Reading that as « we
+  # could not read this » reports a directory that answered as one that refused.
+  describe 'a jurisdiction declaring it holds nothing' do
+    subject(:declared) { described_class.new(evidence_types_declaring_no_match(reason:)) }
+
+    let(:reason) { 'No MS-issued evidence available for SMEs in Dutch Speaking Community' }
+
+    it 'reads the answer rather than rejecting it as unreadable' do
+      expect(declared.evidence_types).to be_empty
+      expect(declared.evidence_type_lists.map(&:no_match?)).to eq([true])
+    end
+
+    it 'keeps the explanation the directory published, in the language it named' do
+      expect(declared.evidence_type_lists.first.match_descriptions).to eq('EN' => reason)
+    end
+
+    # The explanation is optional (`sdg:MatchDescription`, 0..n): a member state
+    # may declare a `NoMatch` and say nothing more.
+    it 'reads a declaration carrying no explanation' do
+      silent = described_class.new(evidence_types_declaring_no_match)
+
+      expect(silent.evidence_type_lists.first).to be_no_match
+      expect(silent.evidence_type_lists.first.match_description).to be_nil
+    end
+  end
+
+  # `R-EB-EVI-S015` excuses a list without evidence types only under `NoMatch`:
+  # anything else empty is an answer we failed to read.
+  it 'refuses an empty list the directory did not declare as a NoMatch' do
+    emptied = body.sub(%r{<sdg:EvidenceType>.*?</sdg:EvidenceType>}m, '')
+
+    expect { described_class.new(emptied) }
+      .to raise_error(CommonServicesError, /rien n'y était lisible/)
+  end
+
+  # TDD 2.0 uses `NoMatch` alone and reserves the other degrees of match for
+  # later releases (`R-EB-EVI-C043`). One of those, arriving early, is read and
+  # kept — but it does not excuse an empty list.
+  it 'refuses an empty list carrying a match type this release does not know' do
+    other = evidence_types_declaring_no_match.sub('>NoMatch<', '>BestMatch<')
+
+    expect { described_class.new(other) }
+      .to raise_error(CommonServicesError, /rien n'y était lisible/)
+  end
+
+  # `country-code` is optional on this query, so one answer carries the lists of
+  # several member states at once — the path the console takes. A declaration
+  # from one of them says nothing about a neighbour's silence: `R-EB-EVI-S015`
+  # bears on one list, so every empty list has to declare itself.
+  it 'refuses an answer where one list declares itself and another stays silent' do
+    mixed = with_first_list(evidence_types_declaring_no_match) do |declared|
+      declared + declared.sub(%r{<sdg:MatchType>.*?</sdg:MatchType>}m, '')
+    end
+
+    expect { described_class.new(mixed) }
+      .to raise_error(CommonServicesError, /rien n'y était lisible/)
+  end
+
+  # The chapter forbids a `NoMatch` overlapping a jurisdiction that provides
+  # another match type, not a requirement carrying both — and the answer is
+  # read, the declaration kept beside the types.
+  it 'reads a declaration standing beside a list that carries types' do
+    beside = evidence_types_declaring_no_match_beside_types
+
+    read = described_class.new(beside)
+
+    expect(read.evidence_type_lists.map(&:no_match?)).to eq([false, true])
+    expect(read.evidence_types.size).to eq(1)
+  end
+
+  # The two cases the chapter separates, side by side: one list says nothing
+  # exists, the other says nothing is known.
+  it 'leaves a refusal by EB:ERR:0001 a refusal' do
+    expect { described_class.new(common_services_answer('eb_requirements_vides').first) }
+      .to raise_error(CommonServicesError) { |raised| expect(raised.code).to eq('EB:ERR:0001') }
+  end
+
   def two_lists
-    body.sub(%r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m) do
-      one = Regexp.last_match(1)
+    with_first_list do |one|
       [one.sub(%r{(<sdg:EvidenceTypeClassification>).*?(</sdg:EvidenceTypeClassification>)}m, '\1https://sr/premier\2'),
        one.sub(%r{(<sdg:EvidenceTypeClassification>).*?(</sdg:EvidenceTypeClassification>)}m, '\1https://sr/second\2')]
         .join
     end
+  end
+
+  # The captured answer carries one combination; every case below is that one,
+  # rewritten or set beside a variant of itself.
+  def with_first_list(source = body, &)
+    source.sub(%r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m) { yield(Regexp.last_match(1)) }
   end
 end
