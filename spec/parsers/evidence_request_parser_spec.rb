@@ -87,6 +87,110 @@ RSpec.describe EvidenceRequestParser do
     expect(request.beneficiary.eidas_identifier).to be_nil
   end
 
+  # `R-EDM-REQ-S016` lets the evidence subject be an organisation, and
+  # `R-EDM-REQ-S047` puts an `sdg:LegalPerson` under the slot. The trap the
+  # symmetry hides: a natural person is an `sdg:Person` in a request and an
+  # `sdg:NaturalPerson` in a response, where an organisation keeps one name.
+  describe 'a request whose subject is a legal person' do
+    subject(:organisation) { envelope_about_an_organisation.body.beneficiary }
+
+    def about_an_organisation(&)
+      envelope_about_an_organisation(legal_person_slot.then(&)).body
+    end
+
+    it 'reads the organisation the evidence is about' do
+      expect(organisation)
+        .to have_attributes(legal_name: 'Établissements Dupont & Fils', eidas_identifier: 'FR/DE/A2635542Y')
+    end
+
+    # Bound by URI and never by prefix: the root of the envelope binds
+    # `http://data.europa.eu/p4s` to `sdg:`, and a reader matching the prefix
+    # would pass every other example here and fail on the first correspondent
+    # that chose another one.
+    it 'reads it whatever prefix the correspondent bound the namespace to' do
+      renamed = about_an_organisation do |slot|
+        slot.gsub('<sdg:', '<p4s:').gsub('</sdg:', '</p4s:')
+          .sub('<p4s:LegalPerson>', '<p4s:LegalPerson xmlns:p4s="http://data.europa.eu/p4s">')
+      end
+
+      expect(renamed.beneficiary.legal_name).to eq('Établissements Dupont & Fils')
+    end
+
+    # Nought or more, each naming the scheme `R-EDM-REQ-C054` requires of it, and
+    # keyed by that scheme — which is how `LegalPerson` holds them.
+    it 'reads the optional identifiers under the scheme each names' do
+      expect(organisation.identifiers).to eq('VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57')
+    end
+
+    it 'reads an organisation carrying no optional identifier at all' do
+      bare = about_an_organisation { |slot| slot.gsub(%r{<sdg:Identifier .*?</sdg:Identifier>\n}, '') }
+
+      expect(bare.beneficiary.identifiers).to be_empty
+    end
+
+    # `R-EDM-REQ-C054` asserts the attribute's presence and nothing else, and the
+    # schema admits `maxOccurs="unbounded"`: this request is conformant, so it is
+    # read rather than refused. The table keys by scheme, so the last wins — the
+    # column loses what `regrep_body` keeps.
+    it 'keeps the last of two identifiers naming the same scheme' do
+      repeated = about_an_organisation do |slot|
+        slot.sub('schemeID="LEI">969500HBOM1RJXTLZ57', 'schemeID="VAT">FR98765432109')
+      end
+
+      expect(repeated.beneficiary.identifiers).to eq('VAT' => 'FR98765432109')
+    end
+
+    it 'refuses an identifier that names no scheme, which would designate nothing' do
+      unscoped = about_an_organisation { |slot| slot.sub(' schemeID="VAT"', '') }
+
+      expect { unscoped.beneficiary }.to raise_error(UnreadableMessageError, /schéma/)
+    end
+
+    # `R-EDM-REQ-C055` is FATAL, and the French SIRET is the case it names: it
+    # identifies a corner of the exchange, never the subject of an evidence.
+    it 'refuses a scheme the code list does not publish, under R-EDM-REQ-C055' do
+      siret = about_an_organisation { |slot| slot.sub('schemeID="VAT"', 'schemeID="SIRET"') }
+
+      expect { siret.beneficiary }.to raise_error(UnreadableMessageError, /SIRET/)
+    end
+
+    it 'refuses an organisation without a legal name' do
+      anonymous = about_an_organisation { |slot| slot.sub(%r{<sdg:LegalName>.*?</sdg:LegalName>}, '') }
+
+      expect { anonymous.beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    # `R-EDM-REQ-C051`: `XX/YY/Z…Z`, the two codes being the country asserting
+    # the identity and the country it is asserted to.
+    it 'refuses an eIDAS identifier that is not of the shape the rule fixes' do
+      malformed = about_an_organisation { |slot| slot.sub('FR/DE/A2635542Y', 'A2635542Y') }
+
+      expect { malformed.beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    # `R-EDM-REQ-S016` refuses a request naming both, but the journal is written
+    # before anything validates: the organisation is looked for first, so a
+    # malformed one raises even though a readable person sat beside it. Frozen
+    # here because it is a choice — no order spares both — and because the line
+    # of journal then carries no subject at all, `AuditTrail#readable` dropping
+    # the field.
+    it 'raises on a malformed organisation even beside a readable person' do
+      both = with_body do |body|
+        body.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) do |slot|
+          "#{slot}\n<rim:Slot name=\"LegalPerson\"><rim:SlotValue/></rim:Slot>"
+        end
+      end
+
+      expect { both.beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    # The rule counts one subject, and this request carries one: what the slot
+    # is named changes nothing to what `validate!` accepts.
+    it 'is a request France may answer, under R-EDM-REQ-S016' do
+      expect(envelope_about_an_organisation.body.validate!).to be_a(described_class)
+    end
+  end
+
   it 'reads the evidence type asked for, with its distribution format' do
     expect(request.evidence_type.id).to be_present
     expect(request.evidence_type.distribution_format).to eq(EvidenceType::PDF)

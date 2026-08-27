@@ -16,7 +16,7 @@ module StrictValidation
                 announced_provider announced_provider_address announced_provider_identity
                 announced_requirement final_recipient french_provider message_sender
                 original_sender provider recipient_access_point request_beneficiary
-                requester token_beneficiary].freeze
+                request_legal_person requester token_beneficiary].freeze
 
   # The error class is the caller's to choose, the same value object being
   # built from two provenances: our own configuration failing means the
