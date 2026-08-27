@@ -33,8 +33,9 @@ ActiveRecord::Encryption.configure(**Settings.audit_trail_encryption)
 # Pinned rather than defaulted, unlike everything above. The suite answers the
 # directory clients from responses captured on the acceptance environment, and
 # verifies their signatures for real: it needs the root that signed them, and
-# needs the NAPTR path the doubled resolver stands in for. A `.env.oots` set up
-# for the end-to-end scenarios names a local double instead, and would make the
-# suite red for a reason no code in it caused.
+# needs the NAPTR path the doubled resolver stands in for. A `.env.oots` naming
+# an instance directly — a caching proxy is the case the two variables exist for
+# — would skip that path and make the suite red for a reason no code in it
+# caused.
 ENV['CERTIFICATS_SERVICES_COMMUNS'] = Rails.root.join('config/certificats/services_communs_acc.pem').to_s
 Settings::COMMON_SERVICES_BASE_URLS.each_value { |name| ENV.delete(name) }
