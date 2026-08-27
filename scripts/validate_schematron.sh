@@ -140,6 +140,10 @@ refuse() {
 
 valide requete EDM-REQ-C
 valide requete EDM-REQ-S
+# La même requête, portant une personne morale : R-EDM-REQ-S016 n'admet qu'un
+# sujet, donc rien d'autre ne confronte les règles du slot `LegalPerson`.
+valide requetePersonneMorale EDM-REQ-C
+valide requetePersonneMorale EDM-REQ-S
 valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
 valide reponseDifferee EDM-RESP-C
@@ -161,6 +165,7 @@ valide erreurSansIdentifiantDeRequete EDM-ERR-S
 # on `//eb:Messaging`: the document `EbmsHeaderBuilder` produces is enough for
 # it, without the SOAP envelope that surrounds it on the wire.
 valide requete.entete EDM-ebMS
+valide requetePersonneMorale.entete EDM-ebMS
 valide reponse.entete EDM-ebMS
 valide reponseDifferee.entete EDM-ebMS
 valide erreur.entete EDM-ebMS

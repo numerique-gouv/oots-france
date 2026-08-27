@@ -61,7 +61,7 @@ module Oots
     end
 
     def write_all
-      write('requete', *request)
+      write_requests
       write('reponse', *system_check_response)
       write('reponseDifferee', *deferred_response)
 
@@ -79,6 +79,14 @@ module Oots
 
     attr_reader :destination
 
+    # One specimen per kind of subject: R-EDM-REQ-S016 admits a `NaturalPerson`
+    # or a `LegalPerson` and never both, so the rules of the second slot are
+    # confronted by a document of its own or not at all.
+    def write_requests
+      write('requete', *request)
+      write('requetePersonneMorale', *request(subject: legal_person))
+    end
+
     def write(name, body, header)
       destination.join("#{name}.xml").write(body)
       write_header(name, header)
@@ -86,9 +94,9 @@ module Oots
 
     def write_header(name, header) = destination.join("#{name}.entete.xml").write(header.strip)
 
-    def request
+    def request(subject: beneficiary)
       body = EvidenceRequestBuilder.new(
-        requester:, provider: german_provider, beneficiary:, requirement:, data_service:,
+        requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         clock:, uuid:,
       )
@@ -213,6 +221,16 @@ module Oots
     def beneficiary
       @beneficiary ||= NaturalPerson.new(
         eidas_identifier: 'FR/DE/123123123', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+      )
+    end
+
+    # The company name carries an ampersand on purpose: it makes the escaping
+    # travel as far as a document Saxon must parse.
+    def legal_person
+      @legal_person ||= LegalPerson.new(
+        eidas_identifier: 'FR/DE/A2635542Y',
+        legal_name: 'Établissements Dupont & Fils',
+        identifiers: { 'VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57' },
       )
     end
 
