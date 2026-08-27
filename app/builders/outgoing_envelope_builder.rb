@@ -26,7 +26,8 @@ class OutgoingEnvelopeBuilder
   # keep whole. Memoised so that `render` embeds and the journal reads the very
   # same object, rather than two renderings that merely agree.
   def first_part
-    @first_part ||= MimePart.new(mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE, content: body.render)
+    @first_part ||= MimePart.new(mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
+      content_id: payload_id, content: body.render)
   end
 
   private

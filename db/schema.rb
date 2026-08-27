@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_25_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -30,6 +30,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_120000) do
     t.string "ebms_action"
     t.string "edm_error_code"
     t.string "event_type", null: false
+    t.string "evidence_content_id"
     t.string "evidence_digest"
     t.string "evidence_identifier"
     t.string "evidence_mime_type"
@@ -40,6 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_25_120000) do
     t.string "exchange_id"
     t.string "message_id"
     t.datetime "occurred_at", null: false
+    t.text "preview_location"
     t.string "procedure_code"
     t.string "providing_authority_id"
     t.string "providing_authority_scheme"

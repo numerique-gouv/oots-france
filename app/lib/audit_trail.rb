@@ -102,7 +102,7 @@ class AuditTrail
   def response_sent(evidence:, **answer)
     record('response_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
       evidence_identifier: evidence&.identifier, **answered(**answer),
-      **evidence_fingerprint(evidence&.content))
+      **evidence_fingerprint(evidence&.part))
   end
 
   # `detail` names the rule the refused request broke, so that the journal says
@@ -244,8 +244,23 @@ class AuditTrail
       **response_correlation(message),
       country_code: provider&.address&.country,
       **authorities(requesting: readable(:requesting_authority) { message.body.requester }, providing: provider),
-      **evidence_fingerprint(readable(:evidence_digest) { message.evidence }),
+      **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
     }
+  end
+
+  # Chapter 4.5.2 lets a conformant response carry no evidence part at all —
+  # one announcing the evidence for later, and equally one whose package is
+  # empty because nothing matched or the user kept nothing at preview. Looking
+  # for a part the envelope never declared would report the ordinary case as
+  # unreadable, and the warning `readable` keeps for a message that really is
+  # malformed is worth nothing once the ordinary case raises it too.
+  #
+  # Asked of the header rather than of the status or of the body: a deferral may
+  # carry the pieces that *are* available, and a body too malformed to parse is
+  # exactly the one whose evidence fingerprint an auditor still needs. Past this
+  # guard, a part was announced and could not be read.
+  def carried_evidence(message)
+    message.evidence if message.carries_evidence?
   end
 
   # The three identifiers chapter 4.8 asks the response flow for: the request
@@ -258,9 +273,16 @@ class AuditTrail
     }
   end
 
+  # Chapter 4.8 lists « Preview Location » among what an evidence requester logs
+  # of an error response, next to the error report itself. Recorded as declared
+  # and not as `preview_location` vets it: the address France refused to follow
+  # is the one an auditor will ask about, and the scheme is vetted where it
+  # decides something — the value the exchange keeps and hands back to the
+  # French service provider, and the one the console turns into an `href`.
   def received_error(error)
     { request_id: readable(:request_id) { error.request_id }, edm_error_code: readable(:edm_error_code) { error.code },
-      country_code: readable(:country_code) { error.provider_country }, detail: readable(:detail) { error.message } }
+      country_code: readable(:country_code) { error.provider_country }, detail: readable(:detail) { error.message },
+      preview_location: readable(:preview_location) { error.declared_preview_location } }
   end
 
   def authorities(requesting:, providing:)
@@ -281,10 +303,28 @@ class AuditTrail
   # the two never coincide. The route to that signature is `message_id`, which
   # chapter 4.8 traces. This digest answers the other question: whether a
   # document produced later is the one that went through.
-  def evidence_fingerprint(evidence)
-    return {} if evidence.blank?
+  # `evidence_content_id` is the other half of the row chapter 4.8 asks the
+  # response flow for: « for evidence content referenced using
+  # `rim:RepositoryItemRef` elements, MIME type and MIME content identifier ».
+  # Its §4 walks the non-repudiation chain through both at once — from the
+  # response identifier one finds the message identifier *and* the MIME content
+  # identifier the evidence was packaged in, and the message identifier is what
+  # then yields the signed metadata.
+  #
+  # Written from the one part, so that an answer carrying no document names
+  # neither type, nor reference, nor digest, rather than a row asserting a third
+  # of what the chapter asks for. That the three are all present the moment the
+  # content is comes from the two places a part is built — `payload_part`
+  # refuses a declaration without an `href`, and the outgoing side mints the
+  # reference before it fills the attachment.
+  def evidence_fingerprint(part)
+    return {} if part.nil? || part.content.blank?
 
-    { evidence_digest: Digest::SHA256.hexdigest(evidence), evidence_mime_type: RetrievedMessageParser::PDF }
+    {
+      evidence_digest: Digest::SHA256.hexdigest(part.content),
+      evidence_mime_type: part.mime_type,
+      evidence_content_id: part.content_id,
+    }
   end
 
   # A message we cannot read must still be journalled, so what its body would

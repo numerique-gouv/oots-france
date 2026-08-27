@@ -253,8 +253,8 @@ module EvidenceProvision
       )
 
       Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
-        identifier: body.document_id, exception: nil,
-        evidence: Evidence.new(content: served, identifier: body.evidence_id), available_at: nil)
+        identifier: body.document_id, exception: nil, available_at: nil,
+        evidence: served_evidence(body, attachment, served))
     end
 
     # After the timeout, for the reason `expired?` gives: a correspondent that
@@ -268,6 +268,17 @@ module EvidenceProvision
 
     def attachment_for(served)
       Attachment.new("cid:#{context.uuid.next}@pdf.oots.fr", Base64.strict_encode64(served))
+    end
+
+    # The document as the answer carries it: the `cid:` the header declares and
+    # the body references through its `rim:RepositoryItemRef`, so the journal
+    # records the reference chapter 4.8 asks the data service for rather than a
+    # second one minted beside it.
+    def served_evidence(body, attachment, served)
+      Evidence.new(
+        identifier: body.evidence_id,
+        part: MimePart.new(mime_type: Attachment::MIME_TYPE, content_id: attachment.identifier, content: served),
+      )
     end
 
     def error_envelope(exception)

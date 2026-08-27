@@ -438,12 +438,22 @@ fr:
         evidence_identifier: Identifiant du justificatif
         evidence_digest: Empreinte du justificatif
         evidence_mime_type: Type MIME du justificatif
+        # Les mots du chapitre, et non « identifiant du justificatif », qui est
+        # la ligne du dessus : celui-ci désigne la pièce jointe qui l'a porté,
+        # et c'est ce qui la relie à son `rim:RepositoryItemRef`. Le suffixe
+        # départage les quatre lignes voisines, qui parlent tour à tour du
+        # justificatif et du corps RegRep.
+        evidence_content_id: Identifiant de contenu MIME du justificatif
         # La première partie MIME, que le chapitre 4.8 fait conserver dans les
         # deux sens : son type tel que l'expéditeur l'a déclaré, ici, puis le
         # corps lui-même, qui ferme la liste — seul champ qui ne tient pas sur
         # une ligne.
         regrep_mime_type: Type MIME du corps RegRep
         edm_error_code: Code d'erreur EDM
+        # L'adresse que le correspondant a déclarée, telle qu'elle est arrivée :
+        # le journal la consigne sans la vérifier, la fiche ne la rend en lien
+        # que si un navigateur sait l'ouvrir.
+        preview_location: Espace de prévisualisation
         detail: Détail
         regrep_body: Corps RegRep
       event_types:

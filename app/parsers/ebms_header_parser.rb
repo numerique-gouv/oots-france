@@ -65,9 +65,6 @@ class EbmsHeaderParser
     end
   end
 
-  # { 'application/x-ebrs+xml' => 'cid:…', 'application/pdf' => 'cid:…' }
-  def payload_identifiers = payload_parts.to_h { |part| part.values_at(:mime_type, :href) }
-
   private
 
   attr_reader :user_message

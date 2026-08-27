@@ -150,7 +150,11 @@ RSpec.describe IncomingMessage::SettleExchange do
         event_type: 'evidence_delivered',
         exchange_id: exchange.exchange_id,
         country_code: exchange.country_code,
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence),
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+        # Pinned to a literal rather than read off `message.evidence`: taken
+        # from the very call under test, it would prove the value travelled and
+        # not that it is right. This is the `href` the fixture declares.
+        evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
       )
     end
   end

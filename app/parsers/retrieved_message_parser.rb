@@ -27,7 +27,28 @@ class RetrievedMessageParser
               end
   end
 
-  def evidence = payload(PDF)
+  # The evidence as it arrived, and the part that carried it: chapter 4.8 asks
+  # the response flow for « MIME type and MIME content identifier » of evidence
+  # content referenced by a `rim:RepositoryItemRef`, and the reference it names
+  # is the `href` of the `eb:PartInfo` — the same `cid:` on both sides.
+  #
+  # Looked up by type, as the payload itself is: the identifier is recorded from
+  # the header rather than read back from the body, which nothing here parses
+  # for it.
+  def evidence
+    declared = payload_part(PDF)
+
+    part_from(declared, payload_at(declared[:href]))
+  end
+
+  # Whether the envelope declares a part for the evidence at all. Chapter 4.5.2
+  # lets a response carry none and stay conformant — one announcing the evidence
+  # for later, and equally one whose package is empty « if no matching Evidence
+  # is available or if the user decides not to use any of them during preview ».
+  # Read from the header, which is also where the evidence itself is looked up:
+  # the status says nothing here, a deferral being allowed to carry the pieces
+  # that are available while flagging that others are not.
+  def carries_evidence? = declared_part(PDF).present?
 
   # The first MIME part as it arrived, bytes and declared type: chapter 4.8 asks
   # both its tables for it, and `retention_downloaded="0"` has Domibus erase the
@@ -45,7 +66,7 @@ class RetrievedMessageParser
     # bytes as the announced part.
     raise UnreadableMessageError, I18n.t('parsers.retrieved_message.part_without_href') if declared[:href].nil?
 
-    MimePart.new(mime_type: declared[:mime_type], content: as_text(payload_at(declared[:href])))
+    part_from(declared, as_text(payload_at(declared[:href])))
   end
 
   private
@@ -61,12 +82,20 @@ class RetrievedMessageParser
     end
   end
 
-  def payload(mime_type)
-    identifier = header.payload_identifiers[mime_type]
-    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_payload', type: mime_type) if identifier.nil?
-
-    payload_at(identifier)
+  def part_from(declared, content)
+    MimePart.new(mime_type: declared[:mime_type], content_id: declared[:href], content:)
   end
+
+  def payload(mime_type) = payload_at(payload_part(mime_type)[:href])
+
+  def payload_part(mime_type)
+    declared = declared_part(mime_type)
+    raise UnreadableMessageError, I18n.t('parsers.retrieved_message.no_payload', type: mime_type) if declared.nil?
+
+    declared
+  end
+
+  def declared_part(mime_type) = header.payload_parts.find { |part| part[:mime_type] == mime_type && part[:href] }
 
   # Base64 decodes to bytes; the journal keeps this part as text, so they are
   # tagged and never transcoded. Bytes that are not valid UTF-8 are kept as they

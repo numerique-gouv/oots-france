@@ -56,7 +56,18 @@ RSpec.describe RetrievedMessageParser do
     end
 
     it 'decodes the evidence, which is a PDF' do
-      expect(message.evidence).to start_with('%PDF')
+      expect(message.evidence.content).to start_with('%PDF')
+    end
+
+    # Chapter 4.8 asks the response flow for « MIME type and MIME content
+    # identifier » of evidence referenced by a `rim:RepositoryItemRef`. The
+    # reference is the `href` of the `eb:PartInfo`, and the body points at the
+    # very same `cid:`.
+    it 'names the part that carried it, as the header declared it' do
+      expect(message.evidence).to have_attributes(
+        mime_type: 'application/pdf',
+        content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
+      )
     end
   end
 
