@@ -243,10 +243,18 @@ class AuditTrail
     {
       **response_correlation(message),
       country_code: provider&.address&.country,
+      detail: readable(:business_rules) { broken_rules(message.body) },
       **authorities(requesting: readable(:requesting_authority) { message.body.requester }, providing: provider),
       **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
     }
   end
+
+  # The rules of chapter 4.6 the arriving response breaks, named as the outgoing
+  # side names the one a refusal applies — and nothing is refused over them, so
+  # this column is the only place the departure is ever read. Empty when the
+  # response conforms; read through `readable` like every other field, a body
+  # too malformed to parse costing the line no field that was read before it.
+  def broken_rules(response) = response.violations.map(&:sentence).join(' ').presence
 
   # Chapter 4.5.2 lets a conformant response carry no evidence part at all —
   # one announcing the evidence for later, and equally one whose package is

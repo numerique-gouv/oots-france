@@ -136,6 +136,38 @@ RSpec.describe AuditTrail do
       )
     end
 
+    it 'leaves the detail empty for a response that breaks no rule' do
+      expect(journalled.detail).to be_nil
+    end
+
+    # Chapter 4.6 assigns the duty of validating to nobody and no error path runs
+    # from a portal back to a provider, so the response is handled exactly as a
+    # conformant one would be: this line is the only place the breach is ever
+    # read.
+    it 'names in the detail the rules of chapter 4.6 the response broke' do
+      broken = envelope_with_body('reponseAvecPieceJointe') { |body| body.sub('oots-edm:v2.0', 'oots-edm:v1.0') }
+
+      audit_trail.message_received(message: broken, message_id: 'une-autre')
+
+      expect(journalled).to have_attributes(
+        event_type: 'response_received',
+        detail: 'R-EDM-RESP-C002 : La réponse reçue annonce oots-edm:v1.0, et non oots-edm:v2.0.',
+      )
+    end
+
+    # Every one, not the first: the journal keeps one row per arrival, so a
+    # composition stopping at one violation would hide the rest for good.
+    it 'names every rule the response broke, and not only the first' do
+      broken = envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub('oots-edm:v2.0', 'oots-edm:v1.0')
+          .sub(%r{<rim:Slot name="IssueDateTime">.*?</rim:Slot>}m, '')
+      end
+
+      audit_trail.message_received(message: broken, message_id: 'une-autre')
+
+      expect(journalled.detail).to include('R-EDM-RESP-C002', 'R-EDM-RESP-S011')
+    end
+
     # The chain chapter 4.8 describes, as far as the journal takes it: from the
     # identifier the provider gave the document, one row yields the eDelivery
     # message identifier and the reference of the part inside it — which is
@@ -249,6 +281,7 @@ RSpec.describe AuditTrail do
         evidence_mime_type: 'application/pdf',
         evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
         request_id: nil,
+        detail: nil,
       )
     end
   end

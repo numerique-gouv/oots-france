@@ -27,7 +27,19 @@ RSpec.describe 'db/seeds.rb' do
     named = AuditEvent.where.not(evidence_identifier: nil)
 
     expect(named.pluck(:event_type).uniq).to match_array(%w[response_sent response_received])
-    expect(named.count).to eq(3)
+    expect(named.count).to eq(4)
+  end
+
+  # `detail` is filled on the way in as well as on the way out: a response that
+  # broke a rule of chapter 4.6 names it there, and the exchange was settled all
+  # the same — nothing is refused over one.
+  it 'names on an arriving response the rule of chapter 4.6 it broke' do
+    replay
+
+    breached = AuditEvent.where(event_type: 'response_received').filter_map(&:detail)
+
+    expect(breached).to contain_exactly(a_string_starting_with('R-EDM-RESP-C002'))
+    expect(Exchange.find_by(country_code: 'CZ')).to have_attributes(status: 'delivered')
   end
 
   # The correlation of chapter 4.8: a request and the answer to it name one
