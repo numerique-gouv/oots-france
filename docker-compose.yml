@@ -57,7 +57,11 @@ services:
     # `exec` is not cosmetic: without it, `sh` stays PID 1 and alone receives the
     # SIGTERM from `docker compose stop`, without relaying it. The server is then
     # killed by SIGKILL when the grace period expires, having closed nothing.
-    command: "sh -c 'rm -f tmp/pids/server.pid && exec bundle exec rails server -b 0.0.0.0'"
+    #
+    # `bin/database_role` is sourced, not run: it substitutes the restricted
+    # application role for the owner in this process's environment, which a child
+    # could not do. `web` and `worker` are the only two services to source it.
+    command: "sh -c 'rm -f tmp/pids/server.pid && . ./bin/database_role && exec bundle exec rails server -b 0.0.0.0'"
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
@@ -68,7 +72,7 @@ services:
   # conversations have to be shared and persistent.
   worker:
     <<: *configuration-base
-    command: "bundle exec good_job start"
+    command: "sh -c '. ./bin/database_role && exec bundle exec good_job start'"
     depends_on:
       - postgres
 

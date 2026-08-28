@@ -115,6 +115,9 @@ jobs:
           docker compose up --detach postgres
           scripts/ci/wait_for_postgres.sh
           docker compose run --rm --no-deps web bundle exec rails db:prepare
+          # The restricted role and its privileges, replayed after `db:prepare` for the
+          # reason `lib/database_privileges.rb` gives.
+          docker compose run --rm --no-deps web bundle exec rails db:privileges
           # `db:prepare` loads the seeds only when it creates the database, and
           # the administrator account comes from them: see scripts/setup.sh, with
           # which this sequence of steps must stay in step.

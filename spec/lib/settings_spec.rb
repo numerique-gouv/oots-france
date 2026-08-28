@@ -210,6 +210,35 @@ RSpec.describe Settings do
     end
   end
 
+  describe '.application_database_role' do
+    def unset = Settings::APPLICATION_DATABASE_ROLE.values.index_with(nil)
+
+    it 'is nothing when neither variable is set, the dispositif being optional' do
+      with_environment(unset) do
+        expect(described_class.application_database_role).to be_nil
+      end
+    end
+
+    it 'reads the name and the password together' do
+      with_environment(unset.transform_values { 'oots_france_app' }) do
+        expect(described_class.application_database_role)
+          .to eq(username: 'oots_france_app', password: 'oots_france_app')
+      end
+    end
+
+    # One of the two alone is a typo or a secret lost in a rotation, never a
+    # choice. Read as « no role », it would leave `web` and `worker` connecting
+    # as the owner and take the engine-level guarantee on the exchange log away
+    # without a word — which is the failure the whole measure exists to prevent.
+    Settings::APPLICATION_DATABASE_ROLE.each_value do |alone|
+      it "refuses #{alone} filled in on its own" do
+        with_environment(unset.merge(alone => 'seule')) do
+          expect { described_class.application_database_role }.to raise_error(ConfigurationError, /BASE_DE_DONNEES/)
+        end
+      end
+    end
+  end
+
   describe '.common_services_base_url' do
     it 'reads the variable belonging to the service asked for' do
       with_environment('URL_BASE_EVIDENCE_BROKER' => 'http://web:4001/eb',

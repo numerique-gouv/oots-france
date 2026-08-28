@@ -145,6 +145,11 @@ esac
 # A test name here would reach the container through `env_file` and turn the unit
 # suite red, though nothing in it had changed.
 #
+# The second database role is the restricted one `web` and `worker` connect
+# with: `rails db:privileges` creates it with this password and refuses it
+# `UPDATE` on the exchange log. It is not declared in .env.postgres, the image
+# creating the owner alone.
+#
 # The two directory URLs are left empty so that chapter 3.4's DNS discovery is
 # what names the instance to query, as it does in production: filled, they would
 # replace it, and they exist only for a deployment no NAPTR record can name — a
@@ -191,6 +196,8 @@ PORT_BASE_DE_DONNEES=5432
 UTILISATEUR_BASE_DE_DONNEES=oots_france
 MOT_DE_PASSE_BASE_DE_DONNEES=oots_france
 NOM_BASE_DE_DONNEES=oots_france
+UTILISATEUR_APPLICATIF_BASE_DE_DONNEES=oots_france_app
+MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES=oots_france_app
 FIN
 
 # The same values, under the names the PostgreSQL image expects. They must stay
