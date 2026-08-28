@@ -1,0 +1,18 @@
+# Sourced by the `web` and `worker` services of docker-compose.yml, and by them
+# alone: those two processes serve the traffic and connect with the restricted
+# role, which the engine refuses `UPDATE` on the exchange log. The schema tasks
+# and the console keep the owner, the only role that can do DDL — `docker
+# compose run` replaces the service's command and `docker compose exec` never
+# runs it, so neither reaches here.
+#
+# Sourced and never executed: it changes the environment of the process that
+# reads it, which a child could not do. Hence no shebang and no execute bit.
+#
+# Both variables empty, nothing changes and the process connects as the owner —
+# what an installation that does not want the dispositif does, and what
+# .github/workflows/tests.yml does.
+if [ -n "$UTILISATEUR_APPLICATIF_BASE_DE_DONNEES" ] && [ -n "$MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES" ]; then
+  UTILISATEUR_BASE_DE_DONNEES="$UTILISATEUR_APPLICATIF_BASE_DE_DONNEES"
+  MOT_DE_PASSE_BASE_DE_DONNEES="$MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES"
+  export UTILISATEUR_BASE_DE_DONNEES MOT_DE_PASSE_BASE_DE_DONNEES
+fi

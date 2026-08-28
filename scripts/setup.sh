@@ -91,6 +91,9 @@ echo "→ PostgreSQL, l'état des échanges et la file des jobs"
 docker compose up --detach postgres
 scripts/ci/wait_for_postgres.sh
 docker compose run --rm --no-deps web bundle exec rails db:prepare
+# The restricted role and its privileges, replayed after `db:prepare` for the
+# reason `lib/database_privileges.rb` gives.
+docker compose run --rm --no-deps web bundle exec rails db:privileges
 # `db:prepare` loads the seeds only when it creates the database: on an install
 # already made, it would migrate without laying down the administrator account.
 # The seed is idempotent, so calling it every time costs nothing.
