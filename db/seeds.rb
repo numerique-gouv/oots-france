@@ -120,7 +120,36 @@ if Rails.env.development?
     { incoming: true, status: 'delivered', country_code: 'AT',
       procedure_code: ProcedureCode::SYSTEM_CHECK, subject: organisation,
       events: %w[request_received response_sent] },
+    # Une réponse qu'un correspondant a émise en annonçant `oots-edm:v1.0` :
+    # `R-EDM-RESP-C002` est enfreinte, et `EvidenceResponseParser#violations` la
+    # relève. Rien n'est refusé pour autant — le chapitre 4.6 n'attribue le
+    # devoir de valider à personne et aucun chemin d'erreur ne remonte vers un
+    # fournisseur —, donc l'échange se règle et le justificatif est remis. Le
+    # `detail` de `response_received` est la seule trace que l'écart a été vu.
+    #
+    # La phrase est composée par le chemin qui l'écrit en production, et non
+    # recopiée : reformuler la clé i18n laisserait sinon la démonstration
+    # mentir sur ce que le code produit, et une console qui ment se lit comme
+    # une documentation.
+    { status: 'delivered', country_code: 'CZ', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      response_detail: BusinessRuleViolation.new(
+        rule: 'R-EDM-RESP-C002',
+        description: I18n.t('parsers.evidence_response.unexpected_specification',
+          announced: 'oots-edm:v1.0', expected: EdmSpecification::IDENTIFIER),
+      ).sentence,
+      events: %w[request_sent response_received evidence_delivered] },
   ]
+
+  # What `detail` holds, type by type, as `AuditTrail` writes it: the rule the
+  # refused request broke where France turns one away, the wording the code list
+  # fixes where the exchange keeps it, and the rules of chapter 4.6 an arriving
+  # response breaks — those refuse nothing, and the answer is handled all the
+  # same.
+  demonstration_detail = lambda do |event_type, scenario, exchange|
+    return scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')
+
+    scenario[:response_detail] if event_type == 'response_received'
+  end
 
   # What each type of event actually carries, as `AuditTrail` writes it: every
   # one names a country — the exchange gives it where France asks, the agent's
@@ -309,8 +338,8 @@ if Rails.env.development?
     )
 
     exchange.update!(
-      scenario.except(:events, :incoming, :conversation, :error_detail, :request_id,
-        :request_id_as_sent, :message_error_code, :subject).merge(
+      scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
+        :request_id, :request_id_as_sent, :message_error_code, :subject).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
           # n'a encore quitté n'en porte pas, et rien n'en écrit côté
@@ -349,9 +378,7 @@ if Rails.env.development?
         request_id: (request_id if event_type.in?(carries_message)),
         response_id: (response_id if event_type.in?(carries_response_id)),
         edm_error_code: (message_error_code if event_type.start_with?('error')),
-        # `AuditTrail#error_sent` inscrit la règle que la requête a enfreinte,
-        # là où l'échange garde le libellé que la liste de codes fixe.
-        detail: (scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')),
+        detail: demonstration_detail.call(event_type, scenario, exchange),
         **(event_type.start_with?('request') ? AuditEvent.subject(scenario.fetch(:subject, person)) : {}),
         preview_location: declared_preview,
         **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
