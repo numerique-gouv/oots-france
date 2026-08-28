@@ -40,7 +40,7 @@ Comptez plusieurs minutes la première fois, dont l'essentiel revient au déploi
 | Étape | Ce qu'elle pose |
 | --- | --- |
 | Environnement | `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, avec des valeurs de développement et une clé de déchiffrement générée à la volée. Une configuration déjà présente est conservée telle quelle |
-| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des échanges, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, et son schéma |
+| Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des échanges, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, son schéma, et le rôle applicatif restreint décrit plus bas |
 | Passerelle | Domibus, avec des certificats à elle, le PMode d'exemple, un compte d'accès à son API, et le redémarrage qui active ses notifications |
 
 Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer reprend ce qui manque. Il transpose ce que [`.github/workflows/e2e.yml`](.github/workflows/e2e.yml) fait sur un runner, et les deux doivent rester en phase.
@@ -49,6 +49,8 @@ Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer r
 > `make setup` écrit une configuration de **développement** : certificats auto-signés, mots de passe qui n'en sont pas, passerelle qui dialogue avec elle-même. Rien de tout cela ne doit servir sur un environnement réel.
 
 Les identifiants de la base vivent dans `.env.postgres` (lu par l'image) et dans `.env.oots` (lu par l'application, sous les noms `*_BASE_DE_DONNEES`) : les deux doivent rester en phase, comme `.env.domibus` l'impose déjà entre `MYSQL_USER` et `DB_USER`.
+
+Deux rôles PostgreSQL cohabitent. Le **propriétaire** des tables est celui que l'image crée : il fait le DDL, et les tâches `db:*` comme la console Rails s'en servent. Le **rôle applicatif** (`*_APPLICATIF_BASE_DE_DONNEES`) est celui avec lequel `web` et `worker` se connectent, et `rails db:privileges` lui refuse l'`UPDATE` sur le [journal des échanges](docs/journal_des_echanges.md), que rien ne doit pouvoir réécrire. Les deux variables laissées vides, tout tourne en propriétaire.
 
 ### Les annuaires centraux
 

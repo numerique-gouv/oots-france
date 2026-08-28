@@ -153,8 +153,10 @@ class AuditEvent < ApplicationRecord
   # This covers what goes through a record — `save`, `update`, `update_column`,
   # `destroy` — and nothing else. `update_all` and `upsert_all` issue SQL
   # without instantiating anything, so they never reach here; the purge relies
-  # on that, `delete_all` being how it erases what is out of term. Closing those
-  # too takes a database role without `UPDATE`, which a migration cannot grant
-  # itself, PostgreSQL letting a table's owner override its own revocations.
+  # on that, `delete_all` being how it erases what is out of term. Those paths
+  # are closed by the engine instead, `DatabasePrivileges` refusing `UPDATE` on
+  # this table to the role the traffic-serving processes connect with. Both
+  # guarantees are wanted: this one fails early, in the application's own
+  # language, where the other fails late, in `PG::InsufficientPrivilege`.
   def readonly? = persisted?
 end
