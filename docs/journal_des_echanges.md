@@ -154,7 +154,7 @@ Les deux autres demandent d'ouvrir la page *Message Log* de la console Domibus, 
 
   Les deux variables laissées vides, l'application se connecte en propriétaire et seul `readonly?` la protège — c'est ce que fait [`tests.yml`](../.github/workflows/tests.yml), qui n'a qu'un rôle, et ce que fait une installation qui ne veut pas du dispositif.
 
-- **Rétention.** `PurgeAuditEventsJob` s'exécute chaque nuit (`config/schedule.yml`) et efface ce qui dépasse `DUREE_RETENTION_JOURNAL_MOIS`. Conserver au-delà du terme est une infraction au même titre que ne pas conserver : l'article 17 fixe douze mois comme un plancher pour l'obligation nationale, et le réglage existe pour un État membre qui en imposerait davantage.
+- **Rétention.** `PurgeAuditEventsJob` s'exécute chaque nuit (`config/schedule.yml`) et efface ce qui dépasse `DUREE_RETENTION_JOURNAL_MOIS`. L'article 17(4) fixe douze mois « *without prejudice to longer retention periods required under national law* » : c'est un **plancher**, et le réglage existe pour un État membre qui en imposerait davantage. Le règlement n'impose nulle part d'effacer au terme — la purge est le choix de ce déploiement, que justifie la seule chose qui distingue cette table du reste de la base : elle porte des données personnelles, et rien ne se garde sans raison de le garder.
 - **Côté passerelle**, le PMode garde les métadonnées douze mois là où il efface le justificatif aussitôt — voir la ligne `<mpcs>` du [tableau du PMode](domibus_context.md#le-pmode-dexemple).
 
 ## Le chiffrement au repos, en détail
