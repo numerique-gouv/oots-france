@@ -288,6 +288,37 @@ fr:
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
+      # Les règles du chapitre 4.6 qu'une réponse reçue enfreint. Aucune ne
+      # refuse quoi que ce soit : elles sont composées dans le `detail` de la
+      # ligne `response_received` du journal, et l'échange se règle comme si de
+      # rien n'était — voir docs/journal_des_echanges.md.
+      slot_required: La réponse reçue doit porter exactement un slot « %{name} ».
+      unexpected_specification: La réponse reçue annonce %{announced}, et non %{expected}.
+      absent_status: La réponse reçue ne déclare aucun statut.
+      unexpected_status: >-
+        Le statut de la réponse reçue (%{announced}) n'est ni Success ni Unavailable.
+      deferral_without_date: >-
+        Une réponse au statut Unavailable doit porter exactement un slot « %{name} ».
+      date_without_deferral: Le slot « %{name} » n'a de place que dans une réponse au statut Unavailable.
+      absent_request_id: La réponse reçue ne déclare l'identifiant d'aucune requête.
+      request_id_not_a_uuid: >-
+        L'identifiant de la requête répondue (%{id}) n'est pas un UUID préfixé
+        « urn:uuid: ».
+      response_id_not_a_uuid: L'identifiant de la réponse (%{id}) n'est pas un UUID.
+      issue_date_not_a_date_time: La date d'émission (%{value}) n'est pas une date-heure.
+      available_date_not_a_date_time: >-
+        La date de mise à disposition (%{value}) n'est pas une date-heure.
+      provider_identifier_without_scheme: >-
+        L'identifiant « %{id} » du fournisseur ne nomme pas son schéma.
+      no_object_list: La réponse reçue ne porte pas de rim:RegistryObjectList.
+      no_single_ep_agent: Le slot « EvidenceProvider » doit porter exactement un agent classé EP.
+      exception_in_a_success: Une réponse en succès ne peut pas porter de rs:Exception.
+      unexpected_child: L'élément « %{name} » n'a pas sa place dans une réponse.
+      # Ce que la phrase met à la place d'une valeur absente, accordé avec ce
+      # qu'elle nomme.
+      absent_specification: une version sans nom
+      absent_value: absent
+      absent_date: absente
     requirements_response:
       requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
     error_response:
@@ -316,6 +347,10 @@ fr:
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
   models:
+    # La règle `R-EDM-*` enfreinte et ce qu'elle dit, composées en une phrase :
+    # c'est sous cette forme que le journal la consigne.
+    business_rule_violation:
+      sentence: "%{rule} : %{description}"
     # Les trois seules valeurs que `R-EDM-REQ-C119` laisse passer : le message
     # nomme celles qui ont été demandées et celles qui existent, faute de quoi
     # la faute de frappe se cherche à la main.
