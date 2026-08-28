@@ -46,6 +46,12 @@ module Settings
   # keep the exchange log longer, never less.
   LAWFUL_RETENTION_MONTHS = 12
 
+  # The restricted role `web` and `worker` connect with. Optional, but paired.
+  APPLICATION_DATABASE_ROLE = {
+    username: 'UTILISATEUR_APPLICATIF_BASE_DE_DONNEES',
+    password: 'MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES',
+  }.freeze
+
   # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.
   COMMON_SERVICES_BASE_URLS = {
     'eb' => 'URL_BASE_EVIDENCE_BROKER',
@@ -106,6 +112,18 @@ module Settings
     def requester_timeout = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES').minutes
 
     def provider_timeout = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES').minutes
+
+    # Both or neither. Left empty, the two say « this deployment does not want
+    # the dispositif », and everything runs as the owner of the tables, under
+    # `AuditEvent#readonly?` alone. One alone says nothing of the kind — it is a
+    # typo or a secret lost in a rotation — so the second read is `required`,
+    # which names the one that is missing: answering `nil` would disarm the
+    # engine-level guarantee on the exchange log without a word.
+    def application_database_role
+      return nil if APPLICATION_DATABASE_ROLE.each_value.none? { |name| optional(name) }
+
+      APPLICATION_DATABASE_ROLE.transform_values { |name| required(name) }
+    end
 
     def domibus_base_url = required('URL_BASE_DOMIBUS')
 
