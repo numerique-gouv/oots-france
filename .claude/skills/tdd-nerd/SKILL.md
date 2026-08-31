@@ -276,6 +276,17 @@ te fier à cette liste : `Blocked` y a été ajouté sans que ce fichier le sach
 > un travail qui attend un accord extérieur se dit par son **statut**, pas en
 > gonflant sa priorité.
 
+### Citer un ticket, c'est le lier
+
+**Chaque fois que tu nommes un ticket à l'utilisateur, écris-le en lien cliquable** — dans le fil de la conversation, dans le rapport d'audit, dans le tableau que tu soumets à l'étape 6. La forme est `[OOTS-100](https://linear.app/pole-api/issue/OOTS-100)` : l'identifiant reste le texte lu, l'URL courte suffit, Linear complétant le *slug* lui-même.
+
+Le motif est le coût d'un aller-retour. Un identifiant nu oblige à ouvrir Linear, chercher le numéro, revenir — vingt fois dans un rapport qui en cite vingt. Un rapport de contrôle ne se lit pas linéairement : on saute d'un verdict au ticket qu'il juge, et c'est précisément le geste qu'un identifiant nu empêche.
+
+Cela vaut pour **tous** les identifiants que tu écris, y compris ceux dont tu ne dis rien de plus que le nom, et y compris dans les tableaux — c'est là qu'ils sont les plus nombreux et qu'on veut le plus cliquer.
+
+> [!NOTE]
+> **Dans une description Linear, c'est l'éditeur qui décide.** Il reconnaît l'identifiant comme l'URL et fabrique dans les deux cas une relation `relatedTo` — voir le garde-fou plus bas. La règle ci-dessus porte sur ce que **tu écris à un lecteur** : la conversation et les fichiers de `.claude/`. À l'intérieur d'un ticket, cite comme le ticket voisin le fait déjà.
+
 ### Choisir la nature — un manque, une case, sans demander
 
 **Le premier niveau est ce que quelqu'un lit en filtrant, et son coût est
