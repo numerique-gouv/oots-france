@@ -15,6 +15,13 @@ RSpec.describe 'Admin::CommonServices::Providers' do
   # A rule the page names is a rule the page lets one read: the Schematron file
   # is where its identifier is written.
   let(:schematron) { 'https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch' }
+  let(:blanked) do
+    published
+      .sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format/>')
+      .sub(%r{<sdg:Identifier>[^<]+</sdg:Identifier>}, '<sdg:Identifier/>')
+      .sub(%r{<sdg:AuthenticationLevelOfAssurance>[^<]+</sdg:AuthenticationLevelOfAssurance>},
+        '<sdg:AuthenticationLevelOfAssurance/>')
+  end
   let(:waived) do
     structured.sub('</sdg:DistributedAs>',
       '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>')
@@ -63,6 +70,19 @@ RSpec.describe 'Admin::CommonServices::Providers' do
 
     expect(response.body).to include('Aucune distribution publiée', 'R-DSD-RESP-S027',
       "#{schematron}/DSD-RESP-S.sch")
+  end
+
+  # An element published empty reads as an empty string and not as nothing, so a
+  # dash conditioned on nil alone renders a blank badge — the very gap this page
+  # exists to name, hidden by the shape of the value rather than by its absence.
+  it 'renders a dash for every value the directory published empty' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', blanked)
+
+    visit_providers
+
+    expect(response.body).to include('entry__tag">—<', 'Identifiant du service <code>—</code>',
+      'Niveau de garantie <strong>—</strong>')
   end
 
   # The data model of the distribution (R-DSD-RESP-C010) and the EDM versions of

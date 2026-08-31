@@ -20,20 +20,20 @@
   <% end %>
 <% else %>
   <% @data_services.each do |service| %>
-    <%= render CardComponent.new(title: service.label || t('admin.common_services.providers.index.data_service'), dense: true) do |carte| %>
+    <%= render CardComponent.new(title: service.label.presence || t('admin.common_services.providers.index.data_service'), dense: true) do |carte| %>
       <%# R-DSD-RESP-S027 makes `sdg:DistributedAs` mandatory: a service
           published without one is an anomaly of the directory, which the dash
           of an empty format would render as an ordinary gap. A badge on the
           card and not an alert in the page head, which would not say which of
           the services it speaks of. %>
       <% if service.distribution_published %>
-        <code class="entry__tag"><%= service.distribution_format || '—' %></code>
+        <code class="entry__tag"><%= service.distribution_format.presence || '—' %></code>
       <% else %>
         <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
               t('admin.common_services.providers.index.no_distribution') %></span>
       <% end %>
       <%= t('admin.common_services.providers.index.level_of_assurance_html',
-            level: service.level_of_assurance || '—') %>
+            level: service.level_of_assurance.presence || '—') %>
 
       <% unless service.distribution_published %>
         <br><span class="fr-text--sm"><%=
@@ -46,7 +46,7 @@
           `DataServiceEvidenceType`, hence its place on the card rather than in
           the technical fold. %>
       <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
-            id: service.id || '—') %></span>
+            id: service.id.presence || '—') %></span>
 
       <%# The data model of the distribution, which R-DSD-RESP-C010 has the
           directory publish as a Semantic Repository URL. Rendered only beside a
@@ -82,7 +82,7 @@
               asks for it, and a real request addresses the second. %>
           <% service.providers.each do |provider| %>
             <li class="entry">
-              <span class="entry__name"><%= provider.label || '—' %></span>
+              <span class="entry__name"><%= provider.label.presence || '—' %></span>
               <%= render CountryTagComponent.new(code: provider.address.country,
                     name: country_names[provider.address.country]) %>
 
@@ -95,7 +95,7 @@
 
               <span class="entry__detail">
                 <%= t('admin.common_services.providers.index.access_point_html',
-                      label: provider.access_point.label || '—', id: provider.access_point.id,
+                      label: provider.access_point.label.presence || '—', id: provider.access_point.id,
                       versions: provider.access_point.conforms_to.join(', ').presence || '—') %>
               </span>
             </li>
