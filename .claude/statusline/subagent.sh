@@ -10,10 +10,17 @@
 # du harnais ne connaît que « running », qui est vrai pendant les trois
 # heures que dure un ticket et ne dit donc rien.
 #
-# Le ticket se lit dans le `description` que le lanceur pose (« Ouvrier
-# OOTS-99 »), le seul champ qu'il maîtrise : le `label` est l'activité en
-# cours, réécrite à chaque outil. Et un ouvrier ne se reconnaît pas au
-# `type`, qui vaut « local_agent » pour tout sous-agent quel qu'il soit.
+# Le rôle et le ticket se lisent tous deux dans le `description` que le
+# lanceur pose (« Ouvrier OOTS-99 »), le seul champ qu'il maîtrise : le
+# `label` est l'activité en cours, réécrite à chaque outil, et le `type` vaut
+# « local_agent » pour tout sous-agent quel qu'il soit.
+#
+# D'où le préfixe, et non la seule présence du ticket : un douanier, un
+# tdd-nerd ou un plan-issue nomment eux aussi celui qu'ils travaillent, et
+# l'étape calculée plus bas ne veut rien dire pour eux — ils n'écrivent ni
+# verdict ni `.claude/etapes/`, dont ils hériteraient donc de l'ouvrier passé
+# sur le même ticket. Ils gardent leur rendu par défaut, qui montre déjà leur
+# description.
 
 ENTREE=$(cat)
 
@@ -98,7 +105,9 @@ etape() {
 
 printf '%s' "$ENTREE" | jq -rc '
   .tasks[]?
-  | ((.description // "") | [scan("OOTS-[0-9]+")] | first) as $ticket
+  | (.description // "") as $description
+  | select($description | test("^\\s*ouvrier\\b"; "i"))
+  | ($description | [scan("OOTS-[0-9]+")] | first) as $ticket
   | select($ticket != null)
   | [.id, $ticket, (.status // "?"), ((.tokenCount // 0) / 1000 | floor)]
   | @tsv
