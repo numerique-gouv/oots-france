@@ -89,19 +89,19 @@ class DataService
 
   attr_reader :descriptions, :details, :providers
 
-  validates :id, format: { with: IDENTIFIER }
-  validates :evidence_type_classification, format: { with: CLASSIFICATION }
+  validates :id, format: { with: IDENTIFIER, message: :format }
+  validates :evidence_type_classification, format: { with: CLASSIFICATION, message: :format }
   # R-EDM-REQ-C032 makes `DistributedAs` mandatory, and a distribution without
   # its format says nothing.
   validates :distribution_format, presence: true
-  validates :distribution_language, format: { with: LANGUAGE }, allow_blank: true
+  validates :distribution_language, format: { with: LANGUAGE, message: :format }, allow_blank: true
   # Optional here whatever the format, and on the request built from it too:
   # R-EDM-REQ-C070 and C071 only say SHOULD. What the directory owes is
   # stricter — R-DSD-RESP-C067 forbids the value on an unstructured
   # distribution, C039 and C041 make it mandatory on an XML — resp. a JSON —
   # one unless an unstructured sibling is published, which
   # `data_model_required?` answers for the console.
-  validates :distribution_conforms_to, format: { with: DATA_MODEL }, allow_blank: true
+  validates :distribution_conforms_to, format: { with: DATA_MODEL, message: :format }, allow_blank: true
   # R-EDM-REQ-C029 and C031, the counterparts of C010 and C094 on this slot:
   # `lang` is mandatory on `sdg:Title` and `sdg:Description` alike.
   validate :wordings_name_their_language

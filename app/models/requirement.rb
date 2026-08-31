@@ -29,7 +29,7 @@ class Requirement
   # { 'EN' => '(TEST) Test Requirement', 'FI' => 'Testivaatimus' }
   attr_reader :descriptions, :details, :reference_frameworks
 
-  validates :id, format: { with: IDENTIFIER }
+  validates :id, format: { with: IDENTIFIER, message: :format }
   # R-EDM-REQ-C010 and C094 make `lang` mandatory on the `sdg:Name` and the
   # `sdg:Description` a request carries; a wording the directory published
   # without one reaches `by_language` under a nil key, and would go out as

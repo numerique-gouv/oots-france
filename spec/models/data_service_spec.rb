@@ -139,6 +139,27 @@ RSpec.describe DataService do
       expect(build(:data_service, distribution_conforms_to: nil).validate!(:announced_data_service))
         .to be_a(described_class)
     end
+
+    # Read out in full for the reason `requirement_spec` gives: the generic
+    # message Rails falls back on also names the attribute, so every assertion
+    # above is satisfied either way.
+    it 'says what each malformed value should have looked like, in French' do
+      {
+        { id: 'service-de-test' } =>
+          "L'identifiant doit être un UUID",
+        { evidence_type_classification: 'FI/x' } =>
+          'Le type de justificatif doit être une URL du dépôt sémantique terminée par un UUID',
+        { distribution_language: 'fi' } =>
+          'La langue de distribution doit être un code langue de deux lettres majuscules',
+        { distribution_conforms_to: 'SDG-CertificateOfBirth' } =>
+          'Le modèle de données de la distribution doit être une URL du dépôt sémantique sous « datamodels/ »',
+      }.each do |published, message|
+        service = build(:data_service, **published)
+        service.valid?
+
+        expect(service.errors.full_messages).to eq([message])
+      end
+    end
   end
 
   # Which side of R-EDM-REQ-C107 the requested format falls on, and so whether

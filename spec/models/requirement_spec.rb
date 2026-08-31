@@ -51,6 +51,20 @@ RSpec.describe Requirement do
       expect { build(:requirement, id: published).validate!(:announced_requirement) }
         .to raise_error(ConfigurationError, /L'identifiant/)
     end
+
+    # `StrictValidation` interpolates `full_messages` into the error it raises,
+    # which `EvidenceRequestsController#report_failure` writes to the exchange
+    # log and returns as the `erreur` of its JSON answer: this sentence is read
+    # by the procedure that called the API, not on a screen. Read out in full
+    # because the generic message Rails falls back on also names the attribute,
+    # and would satisfy every assertion above.
+    it 'says what the identifier should have looked like, in French' do
+      requirement = build(:requirement, id: 'https://sr/requirements/1')
+      requirement.valid?
+
+      expect(requirement.errors.full_messages)
+        .to eq(["L'identifiant doit être une URL du dépôt sémantique terminée par un UUID"])
+    end
   end
 
   it 'answers the procedures and the countries declaring it' do

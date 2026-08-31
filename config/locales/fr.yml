@@ -60,14 +60,6 @@ fr:
         country_code: Le pays
         requirement_id: L'exigence
         evidence_type_id: Le type de justificatif
-      exchange_filter:
-        status: L'état
-        country_code: Le pays
-        evidence_requester_id: Le requêteur
-        procedure_code: La démarche
-        conversation_id: La conversation
-        depuis: La date de début
-        jusqu_a: La date de fin
       audit_event_filter:
         event_type: Le type d'événement
         exchange_id: L'identifiant d'échange
@@ -118,15 +110,6 @@ fr:
           attributes:
             country_code:
               format: doit être un code pays à deux lettres
-          unreadable: est illisible
-        exchange_filter:
-          attributes:
-            status:
-              inclusion: n'est pas un état connu
-            country_code:
-              format: doit être un code pays à deux lettres
-            jusqu_a:
-              before_start: est antérieure à la date de début
           # Invariable, faute de savoir le genre de l'attribut qui le portera.
           unreadable: est illisible
         audit_event_filter:
