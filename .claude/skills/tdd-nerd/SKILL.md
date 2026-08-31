@@ -142,6 +142,8 @@ dernière en lisant le **code** à la lumière du chapitre.
    glossaire est un manque à signaler.
 5. **Périmètre** — le ticket couvre-t-il plusieurs chapitres qui se relisent
    séparément (à découper), ou dit-il la même chose qu'un autre (doublon) ?
+   Et **est-il dans le projet qui revendique son sujet** ? Un ticket bien
+   écrit au mauvais endroit se lit juste et se trouve mal.
 6. **Actualité** — le code l'a-t-il déjà fait ? La version des TDD visée
    l'a-t-elle rendu caduc ? `docs/versions_tdd.md` tranche le second cas.
 7. **Ordre** — le chapitre implique-t-il des prérequis que le ticket ne
@@ -223,6 +225,9 @@ Deux sources de manques à croiser, sans les confondre avec des autorités :
 ### Les trois conditions, toutes nécessaires
 
 1. **Le ticket est dans un projet en cours** — statut `In Progress`, celui-là et pas `Planned`. Un chantier qu'on n'a pas décidé d'ouvrir n'a rien à donner à faire, si bien rédigés que soient ses tickets. Vérifie le statut avec `list_projects`, sans te fier à ce qu'un `startedAt` laisse croire : les deux se contredisent régulièrement, et c'est le statut qui commande.
+
+   > [!WARNING]
+   > **Vérifie d'abord que le ticket est dans le *bon* projet.** Cette condition fait du rangement une porte d'entrée : un ticket mal classé entre en file sur le statut d'un projet qui n'est pas le sien, ou reste dehors alors que son vrai chantier tourne. Le test tient en une question — **quel projet revendique ce sujet dans sa description ?** — et la réponse est dans la section « ce que le projet couvre » de chacun. Le piège usuel est le projet fourre-tout : `Reboot OOTS-France` décrit une équipe et des jalons, pas un périmètre technique, et **rien de ce qu'un chantier revendique n'a à y être**. Vu le 2026-08-31 : deux défauts de console, l'un sur le journal, l'autre sur les annuaires, y dormaient au lieu d'être chez les chantiers qui possèdent ces écrans. Un défaut d'écran appartient au chantier dont il montre le travail, jamais au projet où il a été signalé.
 2. **Le corps est complet** — règles de gestion sourcées, critères d'acceptance, section de vérification. Un ticket au verdict `À RÉDIGER` ne va jamais en `Todo` : on l'écrit d'abord.
 3. **Aucune décision ne reste à rendre.** C'est la condition qui fait le travail, et la suivante l'énumère.
 
