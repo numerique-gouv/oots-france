@@ -62,10 +62,14 @@ class CommonServicesResponseParser
     exception = at(response, './rs:Exception')
     raise CommonServicesError, I18n.t('parsers.common_services_response.refused_without_reason') if exception.nil?
 
-    code = attribute(exception, 'code').presence
-
-    raise CommonServicesError.new(refusal(exception, code), code:)
+    raise refusal_error(exception, attribute(exception, 'code').presence)
   end
+
+  # Which class says the refusal. Chosen by the subclass, so that a code one
+  # directory alone defines stays known to that directory's parser: the Data
+  # Service Directory answers `DSD:ERR:0005` where nothing is refused, and the
+  # Evidence Broker has no reason to carry a trace of it.
+  def refusal_error(exception, code) = CommonServicesError.new(refusal(exception, code), code:)
 
   # Both chapters make `message` mandatory (R-DSD-ERR-C020, R-EB-ERR-013) and
   # only the Evidence Broker makes `code` optional. The fallback is therefore
