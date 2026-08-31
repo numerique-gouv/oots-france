@@ -1,0 +1,42 @@
+/*
+ * The evidence subject of an event, laid out as the pairs it is. Wordings small
+ * and greyed, values on their own line: a subject carries four or five short
+ * fields, and the column beside them is the one that has to stay readable.
+ *
+ * The layout sets `data-fr-scheme="system"`, so a literal colour would keep the
+ * light theme's value in the dark one. Hence the DSFR's own tokens throughout.
+ */
+.evidence-subject {
+  margin: 0;
+}
+
+.evidence-subject dt {
+  color: var(--text-mention-grey);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+.evidence-subject dd {
+  margin: 0 0 0.5rem;
+  /* The values a correspondent chose: an identifier runs long and carries no
+     space to break at, and the cell is narrow. */
+  overflow-wrap: anywhere;
+}
+
+.evidence-subject dd:last-child {
+  margin-bottom: 0;
+}
+
+/*
+ * A nested subject — the identifiers of an organisation, an address — is set in
+ * from its own wording, so that the two levels do not read as one list.
+ */
+.evidence-subject dd > .evidence-subject {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 2px solid var(--border-default-grey);
+}
+
+.evidence-subject__list {
+  margin: 0;
+  padding-inline-start: 1.25rem;
+}

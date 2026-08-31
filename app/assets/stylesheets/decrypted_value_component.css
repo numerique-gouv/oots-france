@@ -39,3 +39,18 @@
   display: flex;
   align-items: baseline;
 }
+
+/*
+ * A flex item never shrinks below its own content unless told to (`min-width` is
+ * `auto` by default), so a value wider than the cell — a subject read back field
+ * by field, an identifier with nothing to break at — pushed the padlock's box
+ * past the edge of the table instead of wrapping inside it. The padlock keeps
+ * its own size, being the one part that must not be squeezed.
+ */
+.decrypted-value__icon {
+  flex: none;
+}
+
+.decrypted-value > :not(.decrypted-value__icon) {
+  min-width: 0;
+}

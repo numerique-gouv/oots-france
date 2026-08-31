@@ -36,6 +36,9 @@ ignore_unused:
   - admin.journal.exchanges.statuses.*
   - admin.sessions.{refused,signed_out,connection_required}
   - components.directory_query.identifiers.*
+  # Looked up by a key composed of the field name read off the subject, falling
+  # back on that name when no wording translates it.
+  - components.evidence_subject.fields.*
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}

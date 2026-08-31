@@ -49,6 +49,13 @@
                       <%= render EdmErrorCodeComponent.new(code: value) %>
                     <% when :regrep_body %>
                       <%= render RegrepBodyComponent.new(body: value) %>
+                    <%# Parsed rather than shown as the JSON string the column
+                        holds: chapter 4.5.1 describes a subject with repeated
+                        and structured attributes, which one line of JSON would
+                        never make readable — and the encoder writes an ampersand
+                        as `\u0026`, which only a parse undoes. %>
+                    <% when :evidence_subject %>
+                      <%= render EvidenceSubjectComponent.new(value: @event.described_subject) %>
                     <% else %>
                       <code><%= value %></code>
                     <% end %>
@@ -58,8 +65,11 @@
                       with a reading of its own keeps it the day it is encrypted.
                       Which columns those are is read from the record, never from
                       a list copied here. %>
+                  <%# `block:` for the two readings that are flow content — a
+                      folded document and a definition list — which the inline
+                      wrapper, a `<span>`, cannot take. %>
                   <% if AuditEvent.encrypted_attributes.include?(name) %>
-                    <%= render(DecryptedValueComponent.new(block: name == :regrep_body)) { cell } %>
+                    <%= render(DecryptedValueComponent.new(block: %i[regrep_body evidence_subject].include?(name))) { cell } %>
                   <% else %>
                     <%= cell %>
                   <% end %>

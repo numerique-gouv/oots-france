@@ -30,5 +30,15 @@ FactoryBot.define do
       evidence_subject { person.to_json }
       evidence_subject_key { AuditEvent.subject_key(**person) }
     end
+
+    # The other subject chapter 4.5.1 allows: identifiers that are a structure
+    # rather than a field, and a name carrying an ampersand the JSON encoder
+    # writes as `\u0026`. Composed by `AuditEvent.subject` and not by hand,
+    # so that the key it leaves empty is the one the code leaves empty.
+    trait :about_an_organisation do
+      transient { organisation { build(:legal_person, identifiers: { 'VAT' => 'FR12345678901' }) } }
+
+      evidence_subject { AuditEvent.subject(organisation)[:evidence_subject] }
+    end
   end
 end
