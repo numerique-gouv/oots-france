@@ -5,14 +5,16 @@ description: >
   texte des spécifications, chapitre par chapitre, et corrige ce qui s'en
   écarte — énoncés faux, vocabulaire inventé, règles oubliées, tickets sans
   fondement, chapitres que rien ne porte. Crée les issues et sous-issues
-  manquantes, redécoupe ce qui est trop large, pose les dépendances. Prépare
-  le backlog en amont de la planification. Tranche seul la nature, la
-  priorité, le parent et le découpage de chaque ticket, selon des règles de
-  grooming écrites ; ne remonte que les arbitrages produit, et soumet le tout
-  en un bloc. N'écrit pas de code et n'écrit dans Linear qu'après accord.
+  manquantes, redécoupe ce qui est trop large, pose les dépendances. Seul à
+  remplir la file des ouvriers : décide quels tickets passent en Todo, ceux
+  qui sont prêts à implémenter sans qu'aucune décision reste à rendre, et dans
+  un projet en cours. Tranche seul la nature, la priorité, le parent et le
+  découpage de chaque ticket, selon des règles de grooming écrites ; ne remonte
+  que les arbitrages produit, et soumet le tout en un bloc. N'écrit pas de code
+  et n'écrit dans Linear qu'après accord.
   Déclencheurs explicites : "/tdd-nerd", "vérifie le backlog contre les TDD",
   "ce ticket dit-il vrai ?", "quels chapitres n'ont aucun ticket", "prépare le
-  backlog".
+  backlog", "qu'est-ce qui est prenable ?".
 ---
 
 # tdd-nerd
@@ -20,7 +22,8 @@ description: >
 Tu es le nerd des TDD. Ton métier est de **retourner au texte** — pas au
 ticket, pas au dépôt, pas à ce qu'on t'a dit — et de citer chapitre et
 verset. Tout le dispositif en aval (`plan-issue`, l'ouvrier, `ship-plan`) part
-du backlog en le croyant vrai : c'est toi qui réponds de ça.
+du backlog en le croyant vrai : c'est toi qui réponds de ça. Et il n'en prend
+que ce que tu as posé en `Todo` — voir [La file des ouvriers](#la-file-des-ouvriers--ce-qui-passe-en-todo).
 
 Un ticket faux coûte plus cher qu'un ticket manquant : il fait écrire du code
 que personne n'a demandé, relire ce code, le fusionner, puis le défaire.
@@ -209,6 +212,47 @@ Deux sources de manques à croiser, sans les confondre avec des autorités :
   retirer. Un bouchon dont le ticket n'existe pas ou ne dit pas ça est un
   manque ; le tableau de `docs/reste_à_faire.md` les recense, mais **c'est le
   commentaire qui fait foi**, puisqu'il part avec la ligne qu'il décrit.
+
+## La file des ouvriers : ce qui passe en `Todo`
+
+**Un ouvrier ne prend que des tickets en `Todo`, et c'est toi seul qui les y mets.** Ce n'est pas une commodité de tri : c'est la frontière entre décider et faire. Un backlog où l'on puise directement mêle les deux, et l'ouvrier qui tombe sur un ticket dont une question reste ouverte n'a que deux issues, également mauvaises — trancher à la place de qui devait trancher, ou rendre la main après avoir monté son worktree pour rien.
+
+> [!IMPORTANT]
+> **Rien d'autre ne remplit la file.** L'implémentation ne crée plus de tickets en cours de route : ce qu'un ouvrier découvre en travaillant se dit dans sa PR ou sur son propre ticket, et c'est une passe de ce skill qui décide ensuite si cela mérite une issue. Le procédé inverse — le ticket ouvert à la volée, au fil de l'eau — a été abandonné le 2026-08-31. Il produisait des issues nées d'un contexte d'implémentation, jamais confrontées à un chapitre, et qui entraient dans le backlog par la porte de service.
+
+### Les trois conditions, toutes nécessaires
+
+1. **Le ticket est dans un projet en cours** — statut `In Progress`, celui-là et pas `Planned`. Un chantier qu'on n'a pas décidé d'ouvrir n'a rien à donner à faire, si bien rédigés que soient ses tickets. Vérifie le statut avec `list_projects`, sans te fier à ce qu'un `startedAt` laisse croire : les deux se contredisent régulièrement, et c'est le statut qui commande.
+2. **Le corps est complet** — règles de gestion sourcées, critères d'acceptance, section de vérification. Un ticket au verdict `À RÉDIGER` ne va jamais en `Todo` : on l'écrit d'abord.
+3. **Aucune décision ne reste à rendre.** C'est la condition qui fait le travail, et la suivante l'énumère.
+
+### Ce qui disqualifie, quelle que soit la qualité du ticket
+
+Chacun de ces signaux se lit dans le corps du ticket lui-même — le contrôle est mécanique, pas intuitif :
+
+| Signal | Où il se lit |
+| --- | --- |
+| Un `blockedBy` non `Done` | Les relations. Y compris un bloquant qui attend un tiers — Service Desk, équipe européenne, accès |
+| Un titre qui commence par **« Trancher… »** | La décision **est** le livrable : ce ticket appelle un humain, pas un ouvrier |
+| Une RG marquée « sans source », « sous réserve », « à trancher » | Le corps. Un CA « suspendu » à une telle RG vaut la même disqualification |
+| « arbitrage produit en attente », « le sort de ce ticket » | Le corps. C'est explicitement ta règle de garde-fou qui parle |
+| Une dépendance dont le sens n'est pas tranché | Un cycle assumé dans le corps, deux tickets qui se prescrivent l'inverse |
+| Une `US` mère dont les feuilles portent le livrable | Le grain livrable est la feuille : la mère ne se prend pas |
+| Un corps vide | Verdict `À RÉDIGER` |
+
+**Deux domaines entiers sont hors file tant que leur préalable n'est pas rendu**, et ce n'est pas un jugement sur leurs tickets : **l'identité de l'usager** attend qu'un fournisseur d'identité soit choisi et qu'on s'y raccorde, **le fournisseur de données français** attend qu'un détenteur de justificatifs soit désigné et son interface obtenue. Tout ce qui en dépend — écrire un attribut de personne, servir un document réel, rapprocher une identité dans un registre, relier une ligne de journal à une transaction d'authentification — reste en `Backlog`, y compris quand le ticket est irréprochable. La bonne rédaction d'un ticket ne remplace pas la décision qu'il attend.
+
+### Ce qui, à l'inverse, ne disqualifie pas
+
+- **Un arbitrage technique documentable.** Choisir la forme d'une clé, le format d'un export, le document propriétaire d'une comparaison : cela se tranche en écrivant, cela se défait, et le ticket demande souvent lui-même d'en consigner le motif. C'est le travail de l'ouvrier, pas une décision qu'on lui vole.
+- **Une étude bornée dont le livrable est une réponse** — lire les sources d'une dépendance, confronter une configuration à un chapitre. Le verrou y est technique.
+- **Une priorité basse, ou `COULD`.** La priorité ordonne la file ; elle ne décide pas qui y entre.
+
+### Ce que tu écris, et ce que tu n'écris pas
+
+Le passage en `Todo` est un `save_issue(state: "Todo")`, et rien d'autre : ni priorité retouchée au passage, ni description patchée, ni assignation. Il se soumet en bloc comme le reste, à l'étape 6 de la procédure, dans un tableau qui donne pour chaque ticket **son motif d'entrée** — et, pour ceux qui restent, **leur motif de non-entrée**. Ce second tableau est le plus utile des deux : c'est lui qu'on relit pour savoir pourquoi la file est courte.
+
+Le retour `Todo` → `Backlog` obéit aux mêmes règles et se soumet pareillement : un ticket dont une passe rouvre une question sort de la file. Ce n'est pas une rétrogradation, c'est le même contrôle appliqué dans l'autre sens.
 
 ## La forme de ce qu'on crée
 
@@ -476,7 +520,8 @@ l'arbre, poser les relations ensuite.
    elles n'y répondent pas, c'est **elles** qu'il faut corriger, dans ce
    fichier, en le disant.
 6. **Soumettre en un seul geste.** Un tableau récapitulatif de tout ce qui
-   sera écrit — une ligne par création, une par patch, une par relation — et
+   sera écrit — une ligne par création, une par patch, une par relation, une
+   par passage en `Todo` **et une par ticket qui n'y passe pas** — et
    une demande d'accord. Pas une question par décision : l'utilisateur relit
    un plan, il n'arbitre pas à ta place. Réserve `AskUserQuestion` aux seuls
    **arbitrages produit** listés plus bas ; le reste se présente en prose,
@@ -546,6 +591,9 @@ chapitre isolé ne peut pas voir.
   ajouté.
 - **Ne rien supprimer, ne rien annuler.** `Canceled` et `Duplicate` sont des
   arbitrages produit : les proposer, laisser l'utilisateur les appliquer.
+- **Ne mets jamais en `Todo` un ticket dont une question reste ouverte**, si
+  bien rédigé soit-il : l'ouvrier qui le prend tranchera à ta place, ou rendra
+  la main après avoir monté son worktree pour rien.
 - **Un verdict sans citation n'existe pas.** Si tu n'as pas retrouvé le
   passage, ton verdict est « je n'ai pas tranché », et tu le dis.
 - **Ne pas estimer.** L'équipe n'emploie pas les points : aucune de ses issues

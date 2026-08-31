@@ -42,7 +42,7 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 | Le livrable n'est pas du code | Rien de cela n'entre dans une PR |
 
 > [!IMPORTANT]
-> **Ne prends que des `Todo`.** Le `Backlog` ne t'appartient pas : un autre processus y fait passer en `Todo` ce qui le mérite, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
+> **Ne prends que des `Todo`.** Le `Backlog` ne t'appartient pas : [`tdd-nerd`](../tdd-nerd/SKILL.md#la-file-des-ouvriers--ce-qui-passe-en-todo) y fait passer en `Todo` ce qu'aucune décision ne retient plus, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
 
 > [!IMPORTANT]
 > **Ne prends que des tickets techniquement fermés.** Un ticket l'est quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire. Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout — les `TS` le sont plus souvent que les `US`.
