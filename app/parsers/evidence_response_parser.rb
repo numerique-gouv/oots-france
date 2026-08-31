@@ -122,22 +122,50 @@ class EvidenceResponseParser
   end
 
   # « Evidence Identifier (for evidence response) » of chapter 4.8, taken from
-  # the `Identifier` of the metadata block, and the one thing the journal needs
-  # from it.
-  #
-  # The five other elements `R-EDM-RESP-S062` puts there — `IssuingDate`,
-  # `IsAbout`, `IssuingAuthority`, `IsConformantTo`, `Distribution` — are not
-  # read: that rule binds whoever *writes* a response, no chapter asks a
-  # receiver to keep them, and chapter 4.8 does not count them among what an
-  # evidence requester logs. Reading them would be inventing.
+  # the `Identifier` of the metadata block.
   #
   # Nil-tolerant, like everything else read here: no error path runs from a
   # portal back to a provider, so refusing an otherwise deliverable response
   # over a journal field would destroy a valid exchange and tell nobody.
   def evidence_identifier
-    metadata = at(response, "#{MAIN_EVIDENCE}/#{EVIDENCE_METADATA}")
+    metadata = evidence_metadata
 
     text_at(metadata, './sdg:Identifier') if metadata
+  end
+
+  # The subject the provider confirms having matched. Chapter 4.5.2 gives
+  # `sdg:IsAbout` that role — « Must contain the Minimum Data Set part of the
+  # Evidence Subject attributes of the Evidence Request to confirm identity
+  # matching » — and the journal keeps it beside the subject the request asked
+  # for, which it is allowed to differ from.
+  #
+  # What binds a receiver to keep it is the sentence opening §3.2 of chapter
+  # 4.8: « the information included in the evidence response, with the exception
+  # of the evidence itself, must be logged ». Its tables settle nothing either
+  # way — each announces itself as a list of identifiers enabling correlation,
+  # and of the six elements `R-EDM-RESP-S062` puts in this block the only one
+  # they name is the identifier above, under a business name rather than an XML
+  # one.
+  #
+  # An `xs:choice`, under `R-EDM-RESP-S041` and `-S042`. Reaching for the two
+  # branches rather than for the choice is what makes an empty `sdg:IsAbout`
+  # read as no subject, instead of a person carrying no field at all.
+  #
+  # Read and never validated, like `#provider` below and for the reason given
+  # there: journalling is all that consumes it, and a `validate!` would cost the
+  # journal — through `AuditTrail#readable` — the partial subject an auditor
+  # most wants to see, a subject the provider cut short being exactly the
+  # departure worth reading.
+  def evidence_subject
+    metadata = evidence_metadata
+    return if metadata.nil?
+
+    person = at(metadata, './sdg:IsAbout/sdg:NaturalPerson')
+    return natural_subject(person) if person
+
+    organisation = at(metadata, './sdg:IsAbout/sdg:LegalPerson')
+
+    legal_subject(organisation) if organisation
   end
 
   # The agent classified `EP`. A collection here, where the error carries a
@@ -173,6 +201,8 @@ class EvidenceResponseParser
   private
 
   attr_reader :response
+
+  def evidence_metadata = at(response, "#{MAIN_EVIDENCE}/#{EVIDENCE_METADATA}")
 
   # Where the rules count slots rather than look one up: `find_slot` stops at the
   # first, which is exactly the cardinality they are checking.
@@ -354,6 +384,40 @@ class EvidenceResponseParser
 
   def violation(rule, key, **)
     BusinessRuleViolation.new(rule:, description: I18n.t("parsers.evidence_response.#{key}", **))
+  end
+
+  # `R-EDM-RESP-S041`, whose closed list is not the request's: there a natural
+  # person travels as an `sdg:Person` under a `NaturalPerson` slot, here as an
+  # `sdg:NaturalPerson` under `sdg:IsAbout`. The organisation below keeps one
+  # name on both sides.
+  #
+  # `sdg:PlaceOfBirth`, which the rule admits too, is left where it is:
+  # `NaturalPerson` does not carry it, and no column of the journal holds it.
+  def natural_subject(person)
+    NaturalPerson.new(
+      eidas_identifier: text_at(person, './sdg:Identifier'),
+      family_name: text_at(person, './sdg:FamilyName'),
+      given_name: text_at(person, './sdg:GivenName'),
+      date_of_birth: text_at(person, './sdg:DateOfBirth'),
+    )
+  end
+
+  # `R-EDM-RESP-S042` (FATAL), far narrower than the `sdg:LegalPerson` of a
+  # request: the eIDAS identifier and the legal name, and nothing besides — the
+  # optional sectoral identifiers of chapter 4.5.1 among what it excludes.
+  # Reading those here would file identifiers a conformant response never
+  # carries.
+  #
+  # A correspondent that sends one anyway breaks the rule, and nothing says so:
+  # `violations` carries no rule about the content of `sdg:IsAbout`, so the
+  # departure leaves the identifier dropped and the `detail` column empty. That
+  # gap is older than this reading — nothing read the element at all — and
+  # closing it belongs where the rules of chapter 4.6 live, not here.
+  def legal_subject(organisation)
+    LegalPerson.new(
+      eidas_identifier: text_at(organisation, './sdg:LegalPersonIdentifier'),
+      legal_name: text_at(organisation, './sdg:LegalName'),
+    )
   end
 
   def build_provider(agent)

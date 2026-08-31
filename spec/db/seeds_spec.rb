@@ -121,6 +121,36 @@ RSpec.describe 'db/seeds.rb' do
     expect(about_an_organisation.first.evidence_subject).to include('legal_name')
   end
 
+  # Chapter 4.5.2 has the provider confirm the identity it matched, so one
+  # exchange carries two subjects: the one the request asked about, and the one
+  # the response came back with. The demonstration makes them differ the way the
+  # chapter describes — the provider completes rather than contradicts — so that
+  # the console is read at least once against the gap an auditor came for.
+  it 'gives one exchange the subject its request asked for and the one its response confirmed' do
+    replay
+
+    delivered = Exchange.find_by(incoming: false, status: 'delivered', country_code: 'FI')
+    asked, confirmed = AuditEvent.where(exchange_id: delivered.exchange_id,
+      event_type: %w[request_sent response_received]).order(:id).map(&:described_subject)
+
+    expect(asked).to eq(confirmed.except('eidas_identifier'))
+    expect(confirmed['eidas_identifier']).to eq('FR/FI/123123123')
+  end
+
+  # And nowhere else on the way back, because `AuditTrail` writes it nowhere
+  # else: a deferral announces no metadata, so it carries no subject, and the
+  # answer France sends carries none either — the subject it read of the request
+  # already has its own line on the same exchange.
+  it 'names no subject on an answer that carried no metadata, nor on one France sent' do
+    replay
+
+    carrying = AuditEvent.where(event_type: %w[response_received response_sent])
+      .reject { |one| one.evidence_subject.nil? }
+
+    expect(carrying.map { |one| [one.event_type, one.exchange.status] })
+      .to contain_exactly(%w[response_received delivered], %w[response_received delivered])
+  end
+
   # The seed narrates what it wrote, which the suite has no use for.
   def replay
     allow(Rails).to receive(:env).and_return(ActiveSupport::StringInquirer.new('development'))
