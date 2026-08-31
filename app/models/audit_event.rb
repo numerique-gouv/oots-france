@@ -139,13 +139,29 @@ class AuditEvent < ApplicationRecord
   validates :occurred_at, presence: true
   validates :event_type, inclusion: { in: EVENT_TYPES }
 
+  # The subject read back as it was written: `self.subject` composes the column
+  # with `to_json`, so a `JSON.parse` is what undoes it, and the two belong
+  # together on whoever owns the column. It restores at the same time what the
+  # encoder escaped — ActiveSupport writes `&`, `<` and `>` as the JSON escapes
+  # `\u0026`, `\u003c` and `\u003e`, leaving the non-ASCII alone, which is why a
+  # page rendering the raw column showed `\u0026` where a company name had an
+  # ampersand, and `Établissements` whole.
+  #
+  # No rescue: the column has a single writer, and a value it could not parse
+  # would be a defect worth failing on rather than a cell quietly left blank.
+  def described_subject
+    return {} if evidence_subject.to_s.empty?
+
+    JSON.parse(evidence_subject)
+  end
+
   # What prefills the search for the same person, taken from the subject rather
   # than from the key: `subject_key` folds the case, so a form filled from the
   # key would show `dupont` where the exchange said `Dupont`.
   def subject_criteria
     return {} if evidence_subject_key.blank?
 
-    JSON.parse(evidence_subject.to_s).symbolize_keys.slice(*SUBJECT_FIELDS)
+    described_subject.symbolize_keys.slice(*SUBJECT_FIELDS)
   end
 
   # Append-only: a trace that can be rewritten proves nothing.

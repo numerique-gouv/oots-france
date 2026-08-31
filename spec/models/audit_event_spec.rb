@@ -112,6 +112,45 @@ RSpec.describe AuditEvent do
     end
   end
 
+  # The counterpart of `.subject`, on the model that owns the column: what a
+  # `to_json` wrote, a `JSON.parse` reads back — and no page has to parse it a
+  # second time on its own.
+  describe '#described_subject' do
+    it 'hands back the fields as the subject carried them' do
+      event = create(:audit_event, :about_an_organisation)
+
+      expect(event.described_subject).to eq(
+        'eidas_identifier' => 'FR/DE/A2635542Y',
+        'legal_name' => 'Établissements Dupont & Fils',
+        'identifiers' => { 'VAT' => 'FR12345678901' },
+      )
+    end
+
+    # The encoder writes `&`, `<` and `>` as JSON escapes and leaves the non-ASCII
+    # alone, which is why the column holds `\u0026` for an ampersand and
+    # `Établissements` whole.
+    # Asserted on the stored string, so that what the reading undoes is named.
+    it 'undoes the entities the encoder escaped, the accents never having been' do
+      event = create(:audit_event, :about_an_organisation)
+
+      expect(event.evidence_subject).to include('\u0026', 'Établissements')
+      expect(event.described_subject['legal_name']).to eq('Établissements Dupont & Fils')
+    end
+
+    it 'is empty for an event that named no subject' do
+      expect(create(:audit_event).described_subject).to eq({})
+    end
+
+    # The reading carries no `rescue` on purpose, the column having a single
+    # writer: a value it could not parse is a defect, and a cell left blank
+    # would bury it on the one page an operator comes to read.
+    it 'fails rather than blank a subject it cannot parse' do
+      event = create(:audit_event, evidence_subject: 'ce que personne n\'écrit')
+
+      expect { event.described_subject }.to raise_error(JSON::ParserError)
+    end
+  end
+
   it 'upcases the country whoever wrote it' do
     expect(create(:audit_event, country_code: 'be').country_code).to eq('BE')
   end

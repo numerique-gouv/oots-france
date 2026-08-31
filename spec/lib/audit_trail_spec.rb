@@ -61,7 +61,7 @@ RSpec.describe AuditTrail do
       end
 
       it 'records the organisation, with the identifiers it declared' do
-        expect(JSON.parse(journalled.evidence_subject)).to eq(
+        expect(journalled.described_subject).to eq(
           'eidas_identifier' => 'FR/DE/A2635542Y',
           'legal_name' => 'Établissements Dupont & Fils',
           'identifiers' => { 'VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57' },
