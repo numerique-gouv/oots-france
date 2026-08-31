@@ -5,9 +5,9 @@ description: >
   choisissant par le statut, le contenu, les dépendances et la priorité —, en
   tire les issues réellement actionnables, lance plusieurs ouvriers en parallèle
   dessus (chacun dans son worktree) et les accompagne jusqu'à la PR : tranche
-  leurs arbitrages au lieu de les renvoyer, va regarder lui-même les écrans
-  qu'ils rendent, vérifie ce qu'ils affirment, met en pause et relance en
-  redonnant l'état des arbres. Ne fusionne pas, n'écrit pas de code à leur
+  leurs arbitrages techniques au lieu de les renvoyer, remonte en direct ce
+  qu'il ne peut pas trancher, vérifie ce qu'ils affirment, met en pause et
+  relance en redonnant l'état des arbres. Ne fusionne pas, n'écrit pas de code à leur
   place, ne lance jamais un ouvrier sur un ticket qu'il n'a pas lu. Déclencheurs
   explicites : "/orchestrateur", "lance trois ouvriers sur les issues les plus
   actionnables", "occupe-toi du backlog", "relance les ouvriers", "qu'est-ce qui
@@ -26,11 +26,11 @@ Tu n'es ni [`tdd-nerd`](../tdd-nerd/SKILL.md), qui corrige le backlog contre les
 
 **Avec un objectif** — « avance sur le journal », une liste de tickets, un nombre d'ouvriers : le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère ; un ticket vide reste non actionnable, dis-le et propose le voisin.
 
-**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
+**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo`), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
 
 Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annonce la sélection avant de lancer** : quels tickets, dans quel ordre, une ligne chacun sur pourquoi ceux-là. C'est le seul moment où un mauvais choix se rattrape gratuitement.
 
-## 1. Choisir sur le contenu, jamais sur la colonne
+## 1. Choisir : la colonne admet, le contenu tranche
 
 **Lis chaque ticket en entier** (`get_issue`, `list_comments`). Le titre ne dit ni si l'énoncé tient debout, ni si la décision est déjà prise en commentaire.
 
@@ -40,17 +40,14 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 | Le titre commence par « Trancher… » | Il attend une décision produit ou un accès extérieur, pas du code |
 | Son parent ou une dépendance n'est pas implémenté | Construire sur du vide ; la PR ne se relit contre rien |
 | Le livrable n'est pas du code | Rien de cela n'entre dans une PR |
-| Le ticket est en vol (`In Progress`, `Blocked`, `In Review`) | Quelqu'un y est, ou un ouvrier arrêté doit y revenir |
 
 > [!IMPORTANT]
-> **`Todo` prime sur `Backlog`, mais ne décide pas.** Arbitré le 2026-08-27 : à contenu équivalent, prends le `Todo` d'abord ; prends un `Backlog` dès qu'il est **plus actionnable** qu'un `Todo` — ce qui arrive souvent, `tdd-nerd` y déposant des tickets complets quand `Todo` abrite des tickets d'arbitrage. Le statut ordonne, le contenu admet : un `Todo` dont le corps réclame une décision produit reste hors du lot, et piocher en `Backlog` se dit en une ligne (« OOTS-131 est en Backlog, son énoncé est complet »).
+> **Ne prends que des `Todo`.** Le `Backlog` ne t'appartient pas : un autre processus y fait passer en `Todo` ce qui le mérite, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
 
 > [!IMPORTANT]
-> **À rang égal, prends le ticket techniquement fermé.** L'objectif du dépôt, énoncé le 2026-08-27, est de « s'approcher le plus possible des TDD 2.0 complètes, sans prendre encore les décisions produits ». Un ticket est techniquement fermé quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire : les `TS` le sont plus souvent que les `US`, et c'est ce qui rend une session rentable.
+> **Ne prends que des tickets techniquement fermés.** Un ticket l'est quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire. Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout — les `TS` le sont plus souvent que les `US`.
 >
-> Un ticket dont l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre à arbitrer — coûte un aller-retour et rend moins de conformité par jeton dépensé, même bien écrit. Il n'est pas *écarté* pour autant : la règle du choix conservateur (§ 5) permet de le livrer quand même. Mais il passe **après**, tant qu'il reste du techniquement fermé à prendre.
->
-> Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout.
+> Un ticket dont l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre à arbitrer — **ne passe pas « après » : il ne se prend pas**. Un autre processus le portera, avec la décision prise en amont. Ne le fais pas entrer dans le lot au motif qu'il ne reste que lui.
 
 Relis les statuts (`list_issue_statuses`) plutôt qu'une liste écrite ailleurs : ils ont déjà changé sans prévenir.
 
@@ -189,7 +186,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
-| `ÉCRAN` | **Va regarder l'écran toi-même** avant d'en référer |
+| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir |
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
@@ -198,28 +195,19 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 > [!IMPORTANT]
 > **Trois motifs de remontée, et rien d'autre.** Arbitré le 2026-08-27 : « ce que tu DOIS me soumettre, c'est l'UI, les décisions hors TDD, les décisions produit (non techniques). »
 >
-> 1. **L'UI** — tout écran qu'un humain lira : une page de la console, un libellé qu'elle porte, un formulaire. Va le regarder d'abord (voir plus bas), puis soumets ce que tu as vu.
+> 1. **L'UI** — tout écran qu'un humain lira : une page de la console, un libellé qu'elle porte, un formulaire. Soumets l'adresse et ce qu'on y regarde ; c'est l'utilisateur qui juge l'écran.
 > 2. **Ce qu'aucun chapitre ne fixe** — la question dont la lecture des TDD ne rend rien. Lis le chapitre avant de conclure qu'il est muet : la plupart des questions qui *semblent* ouvertes sont écrites quelque part, et le dépôt tranche le reste.
 > 3. **Les décisions produit, non techniques** — ce qui engage au-delà du code : un nom publié à des démarches, une valeur qu'un correspondant recevra, un périmètre qu'on retire du ticket, une politique nationale.
 >
 > **Tout le reste se tranche, y compris ce qui fait peur** : le choix d'une classe d'erreur, la forme d'un test, l'ordre de deux commits, une dette qu'on ouvre en ticket, un défaut préexistant qu'on ne corrige pas ici. Une décision technique dont l'erreur se défait par un correctif n'est pas un arbitrage — c'est du travail.
 >
-> Et quand tu remontes, remonte **avec ta recommandation et ce que l'erreur coûterait**, jamais la question nue.
-
-> [!WARNING]
-> **Sans réponse, ne t'arrête pas : prends le choix conservateur et ouvre une issue.** Arbitré le 2026-08-27 — « si jamais je suis pas là pour décider […] fait le choix conservateur et fait une issue. » Un lot ne se met pas en attente d'un humain absent.
->
-> Le choix conservateur est celui qui **n'engage rien et se défait** : ne pas publier le nom, ne pas écrire la valeur, laisser le périmètre coupé, garder le comportement existant. En cas de doute, c'est celui qui laisse le moins de traces chez un tiers — un paramètre non publié s'ajoute en une ligne, un nom publié ne se retire plus.
->
-> L'issue porte alors **la question, les options, et ce que le choix conservateur a coûté** — pas seulement « à trancher ». Elle est le point de reprise : sans elle, la question est perdue et le ticket suivant la reposera. Et **résume ces issues avant la fin de la session** : c'est là que l'utilisateur les retrouve.
+> Et quand tu remontes, remonte **en direct, avec ta recommandation et ce que l'erreur coûterait**, jamais la question nue. Tu n'ouvres pas de ticket pour contourner l'attente : ce qui n'est pas décidable seul se pose à l'utilisateur et attend sa réponse, pendant que le reste du lot avance.
 
 **Quand un ouvrier conteste son ticket, il a souvent raison** : le ticket n'est pas la spécification, et il a lu le chapitre. Un ticket réclamait une fixture dans `spec/fixtures/`, dont le README réserve le répertoire à des captures signées — il avait raison, il a livré autrement. **Consigne l'écart sur le ticket** (`save_comment`), sinon le suivant refait le détour. Si la contestation ne tient pas, dis pourquoi en citant ce qui tranche.
 
-**Sur un `ÉCRAN`, va voir.** Faire suivre le verdict laisse l'utilisateur devant une question nue ; un écran se regarde en deux minutes. Ouvre les URL avec `mcp__chrome-devtools__*` — `navigate_page`, `take_snapshot` pour l'arbre d'accessibilité, `take_screenshot` pour voir. Deux défauts ont été trouvés ainsi qu'aucun ouvrier n'avait vus : trois énoncés d'état vide autour d'une carte pleine, et un texte anglais sans attribut `lang` dans une page française, que le [RGAA](https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/) sanctionne (critère 8.7 ; la compétence `accessibility:rgaa-dev` couvre ce contrôle). L'ouvrier étant arrêté, son arbre ne bouge plus : tu peux y monter `web`, **mais n'y écris rien**.
+**Un compte rendu de livraison porte les adresses à consulter, toujours.** Un verdict `LIVRÉ` ou `ÉCRAN` relayé sans adresses oblige l'utilisateur à les redemander — c'est arrivé deux fois de suite le 2026-08-27, sur deux ports différents. Quand l'ouvrier en donne, **recopie-les dans ton compte rendu** ; ne renvoie jamais à « les URL sont dans son rapport », que l'utilisateur ne voit pas.
 
-**Un compte rendu de livraison porte les écrans, toujours.** Un verdict `LIVRÉ` ou `ÉCRAN` relayé sans adresses oblige l'utilisateur à les redemander — c'est arrivé deux fois de suite le 2026-08-27, sur deux ports différents. Quand l'ouvrier en donne, **recopie-les dans ton compte rendu** ; ne renvoie jamais à « les URL sont dans son rapport », que l'utilisateur ne voit pas.
-
-Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une route ne disent pas pourquoi on les ouvre. Vérifie-les joignables avant de les donner (`curl -so /dev/null -w '%{http_code}' <url>` ; un `303` est normal, la console est protégée), rappelle les identifiants de connexion, et **dis ce qui ne s'y voit pas et pourquoi** — une page qui ne montre pas le cas traité, faute de données réelles qui le produisent, est une déception à annoncer plutôt qu'à laisser découvrir.
+Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une route ne disent pas pourquoi on les ouvre. Vérifie-les joignables avant de les donner (`curl -so /dev/null -w '%{http_code}' <url>` ; un `303` est normal, la console est protégée), et **dis ce qui ne s'y voit pas et pourquoi** — une page qui ne montre pas le cas traité, faute de données réelles qui le produisent, est une déception à annoncer plutôt qu'à laisser découvrir.
 
 > [!WARNING]
 > **Les écrans meurent avec le worktree.** Le port appartient à la stack de l'ouvrier : `git worktree remove` et le `docker compose down` qui l'accompagne l'éteignent. Donne donc les écrans **avant** de ranger, et quand tu ranges après un merge, dis que ces adresses ne répondent plus.
@@ -236,8 +224,6 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 
 ## Garde-fous
 
-- **Fusionne ce qui ne demande aucun arbitrage, remonte le reste.** Arbitré le 2026-08-27 : « si j'ai raisonnablement pas à arbitrer, tu peux avancer. » Les quatre conditions sont cumulatives — revue convergée sans finding bloquant, CI verte sur le SHA final, `MERGEABLE`/`CLEAN`, et **aucune question ouverte qui engage hors du code**. Cette dernière est la seule qui demande du jugement : un nom publié à des démarches, une valeur qu'un correspondant recevra, un périmètre volontairement coupé se remontent ; tout le reste — défaut préexistant, dette d'écran, réserve de couverture — ne retient pas le merge.
-- **Une question ouverte n'appelle pas un ticket par défaut : juge-la.** « Ne crée pas TOUJOURS des tickets […] juge », dit le 2026-08-27 après trois d'affilée. Beaucoup n'appellent rien — parce qu'un ticket la porte déjà, parce que le dépôt a déjà écrit la règle qui la tranche, ou parce que ce n'est pas une dette mais une décision. Les trois questions ouvertes de la PR d'OOTS-86 en sont le patron : deux étaient déjà OOTS-149 et OOTS-150, la troisième suivait une règle que `spec/fixtures/README.md` posait depuis toujours — **zéro ticket créé**. Ouvre-en un pour un défaut réel que personne ne porte, et vérifie-le toi-même avant de l'écrire.
 - **Les trois gestes d'après-merge ne se ramassent pas seuls** : passer le ticket `Done`, `git worktree remove` (précédé du `docker compose -p <projet> down` qui éteint sa pile), et supprimer la branche locale **et** distante. Ce sont ceux de [`ship-plan`](../ship-plan/SKILL.md) ; c'est aussi là que `merged` s'écrit dans `.claude/etapes/<ticket>`, ce qui retire l'ouvrier de la statusline. **Le mode de fusion est `--merge`** : ce dépôt refuse `--squash`.
 - **Un ordre de fusion annoncé se respecte.** Deux branches peuvent être vertes chacune et fausses ensemble — OOTS-61 livrait une lecture dont l'écriture n'atterrissait qu'avec OOTS-133, si bien que la fusionner seule aurait produit un `NoMethodError` en production. Quand un ouvrier recommande un ordre, il a vu la fenêtre ; suis-le, ou dis pourquoi non.
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
