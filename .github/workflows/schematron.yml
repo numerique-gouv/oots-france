@@ -37,7 +37,7 @@ jobs:
 
       # The runner carries a JDK, but which one depends on the image: fixing it
       # stops an image update changing the XSLT engine under our feet.
-      - uses: actions/setup-java@v5
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
