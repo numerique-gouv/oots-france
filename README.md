@@ -176,6 +176,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md) — configurer la passerelle geste par geste dans sa console, quand le script ne convient pas.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
+- [docs/securite_transport.md](docs/securite_transport.md) — le profil TLS employé pour interroger les annuaires centraux, confronté exigence par exigence au chapitre 3.7 des TDD : versions, suites, groupes d'échange de clés, TLS mutuel, charge posée aux annuaires, DNSSEC.
 - [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
 - [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le compte qui y donne accès.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).

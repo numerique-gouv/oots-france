@@ -45,6 +45,7 @@ Each piece of information has a single owning document; everything else links to
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
 | The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the account that opens it | `docs/espace_administration.md` |
 | The exchange log of article 17: what is recorded and where, the encryption and retention of personal data, how to read it back | `docs/journal_des_echanges.md` |
+| The TLS profile the outgoing clients actually use towards the Common Services, confronted requirement by requirement with chapter 3.7: versions, cipher suites, key exchange groups, mutual TLS, the load the client puts on the directories, DNSSEC | `docs/securite_transport.md` |
 | Agent conventions and workflow | this file |
 | What each versioned skill does, and what stays local under `.claude/` | this file, section [What lives in `.claude/`](#what-lives-in-claude) |
 
