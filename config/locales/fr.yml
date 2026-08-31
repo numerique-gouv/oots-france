@@ -55,6 +55,11 @@ fr:
         id: L'identifiant
       evidence_provider:
         access_point: Le point d'accès
+      evidence_provider_classification:
+        id: L'identifiant
+        scheme_id: Le schéma de la liste de codes
+        type: La forme attendue de la réponse
+        value_expression: L'expression des valeurs
       resolution_filter:
         procedure_code: La démarche
         country_code: Le pays
@@ -114,6 +119,18 @@ fr:
             distribution_conforms_to:
               format: doit être une URL du dépôt sémantique sous « datamodels/ »
           unlabelled_wording: une formulation ne nomme pas sa langue
+        evidence_provider_classification:
+          attributes:
+            id:
+              format: doit être un UUID
+            scheme_id:
+              format: doit être une URL du dépôt sémantique sous « codelists/PAYS/ »
+            type:
+              inclusion: doit valoir « string », « boolean » ou « codelist »
+            value_expression:
+              format: doit être une URI en « https:// »
+          # Invariable, faute de savoir laquelle des questions est en cause.
+          unlabelled_question: une question ne nomme pas sa langue
         resolution_filter:
           attributes:
             country_code:
@@ -368,6 +385,7 @@ fr:
       # ou un point d'accès.
       subjects:
         announced_access_point: Le point d'accès annoncé par l'annuaire
+        announced_classification_concept: La question posée par l'annuaire
         announced_data_service: Le service de données annoncé par l'annuaire
         announced_evidence_type: Le type de justificatif annoncé par l'annuaire
         announced_provider: Le fournisseur annoncé par l'annuaire
