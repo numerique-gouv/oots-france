@@ -3,6 +3,14 @@ require 'rails_helper'
 RSpec.describe 'Admin::CommonServices::Providers' do
   let(:test_requirement) { '00000000-0000-0000-0000-000000000000' }
   let(:finnish_type) { '19f0783e-7cdc-4146-9ff9-e331514ffb74' }
+  let(:data_model) { 'https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth' }
+  let(:published) { common_services_answer('dsd_data_services_fi').first }
+  let(:undistributed) { published.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '') }
+  let(:structured) do
+    published
+      .sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
+      .sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{data_model}</sdg:ConformsTo></sdg:DistributedAs>")
+  end
 
   before do
     sign_in
@@ -32,6 +40,42 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     visit_providers
 
     expect(response.body).to include('41170824-15d9-4c16-984e-63b75b937b8c', 'Substantial')
+  end
+
+  # R-DSD-RESP-S027 (FATAL) makes `sdg:DistributedAs` mandatory, so a service
+  # published without one is an anomaly of the directory. The acceptance
+  # environment holds none — its thirteen answers all carry a distribution — so
+  # the answer is built here, and its signature doubled: the captures are signed
+  # over their bytes and none of them can be edited.
+  it 'names a distribution the directory published nothing of' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', undistributed)
+
+    visit_providers
+
+    expect(response.body).to include('Aucune distribution publiée', 'R-DSD-RESP-S027')
+  end
+
+  # The data model of the distribution (R-DSD-RESP-C010) and the EDM versions of
+  # the access point (R-DSD-RESP-C015) are two elements under two parents, and
+  # the page must not let them be read as one: the two labels share no word.
+  it 'names the data model of the distribution apart from the access point versions' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', structured)
+
+    visit_providers
+
+    expect(response.body).to include('Modèle de données', data_model, 'versions déclarées')
+  end
+
+  # R-DSD-RESP-C067 forbids the value beside an unstructured distribution, and
+  # the captured Finnish answer publishes a PDF: an empty line there would
+  # announce a gap the rule itself creates.
+  it 'leaves the data model off a distribution the rules forbid one on' do
+    visit_providers
+
+    expect(response.body).to include('application/pdf')
+    expect(response.body).not_to include('Modèle de données')
   end
 
   # The console asks the directory exactly as the application does, version

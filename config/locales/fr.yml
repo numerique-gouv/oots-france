@@ -879,6 +879,17 @@ fr:
           data_service: Service de données
           level_of_assurance_html: Niveau de garantie <strong>%{level}</strong>
           service_id_html: Identifiant du service <code>%{id}</code>
+          # L'anomalie que la page existe pour rendre lisible : sans ces deux
+          # clés, un `sdg:DistributedAs` absent s'affiche comme un format vide.
+          no_distribution: Aucune distribution publiée
+          no_distribution_detail_html: >-
+            Le Data Service Directory n'a publié aucun <code>sdg:DistributedAs</code> —
+            <code>R-DSD-RESP-S027</code> le rend obligatoire.
+          # Le modèle de données de la distribution, à ne pas confondre avec les
+          # « versions déclarées » du point d'accès juste dessous : deux éléments
+          # distincts sous deux parents distincts, d'où deux libellés sans aucun
+          # mot commun.
+          data_model_html: Modèle de données <code>%{model}</code>
           access_point_html: >-
             Point d'accès <strong>%{label}</strong>
             — <code>%{id}</code>,

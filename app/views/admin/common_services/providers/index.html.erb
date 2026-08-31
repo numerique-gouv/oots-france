@@ -21,9 +21,24 @@
 <% else %>
   <% @data_services.each do |service| %>
     <%= render CardComponent.new(title: service.label || t('admin.common_services.providers.index.data_service'), dense: true) do |carte| %>
-      <code class="entry__tag"><%= service.distribution_format || '—' %></code>
+      <%# R-DSD-RESP-S027 makes `sdg:DistributedAs` mandatory: a service
+          published without one is an anomaly of the directory, which the dash
+          of an empty format would render as an ordinary gap. A badge on the
+          card and not an alert in the page head, which would not say which of
+          the services it speaks of. %>
+      <% if service.distribution_published %>
+        <code class="entry__tag"><%= service.distribution_format || '—' %></code>
+      <% else %>
+        <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
+              t('admin.common_services.providers.index.no_distribution') %></span>
+      <% end %>
       <%= t('admin.common_services.providers.index.level_of_assurance_html',
             level: service.level_of_assurance || '—') %>
+
+      <% unless service.distribution_published %>
+        <br><span class="fr-text--sm"><%=
+              t('admin.common_services.providers.index.no_distribution_detail_html') %></span>
+      <% end %>
 
       <%# The identifier the Data Service Directory assigns to the evidence
           type and country pair: it is what an outgoing request writes into its
@@ -31,6 +46,17 @@
           the technical fold. %>
       <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
             id: service.id || '—') %></span>
+
+      <%# The data model of the distribution, which R-DSD-RESP-C010 has the
+          directory publish as a Semantic Repository URL. Rendered only beside a
+          structured format, R-DSD-RESP-C067 forbidding the value on the others:
+          an empty line there would announce a gap the rule itself creates. It
+          is not what the access point declares below — those are the EDM
+          versions of R-DSD-RESP-C015, another element under another parent. %>
+      <% if service.structured_distribution? %>
+        <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_html',
+              model: service.distribution_conforms_to || '—') %></span>
+      <% end %>
 
       <% carte.with_list do %>
         <ul class="entry-list">
