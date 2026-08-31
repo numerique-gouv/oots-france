@@ -12,6 +12,9 @@ RSpec.describe 'Admin::CommonServices::Providers' do
   let(:modelled) do
     structured.sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{data_model}</sdg:ConformsTo></sdg:DistributedAs>")
   end
+  # A rule the page names is a rule the page lets one read: the Schematron file
+  # is where its identifier is written.
+  let(:schematron) { 'https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch' }
   let(:waived) do
     structured.sub('</sdg:DistributedAs>',
       '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>')
@@ -58,7 +61,8 @@ RSpec.describe 'Admin::CommonServices::Providers' do
 
     visit_providers
 
-    expect(response.body).to include('Aucune distribution publiée', 'R-DSD-RESP-S027')
+    expect(response.body).to include('Aucune distribution publiée', 'R-DSD-RESP-S027',
+      "#{schematron}/DSD-RESP-S.sch")
   end
 
   # The data model of the distribution (R-DSD-RESP-C010) and the EDM versions of
@@ -70,7 +74,8 @@ RSpec.describe 'Admin::CommonServices::Providers' do
 
     visit_providers
 
-    expect(response.body).to include('Modèle de données', data_model, 'versions déclarées')
+    expect(response.body).to include("Modèle de données <code>#{data_model}</code>",
+      'versions déclarées <code>oots-edm:v2.0</code>')
   end
 
   # The same empty value, and two opposite verdicts. C039 makes the data model
@@ -84,7 +89,8 @@ RSpec.describe 'Admin::CommonServices::Providers' do
 
     visit_providers
 
-    expect(response.body).to include('Modèle de données manquant', 'R-DSD-RESP-C039')
+    expect(response.body).to include('Modèle de données manquant', 'R-DSD-RESP-C039',
+      "#{schematron}/DSD-RESP-C.sch")
   end
 
   # C039 and C041 excuse the distribution when the record publishes an
@@ -96,7 +102,8 @@ RSpec.describe 'Admin::CommonServices::Providers' do
 
     visit_providers
 
-    expect(response.body).to include('Modèle de données non exigé', 'R-DSD-RESP-C039')
+    expect(response.body).to include('Modèle de données non exigé', 'R-DSD-RESP-C039',
+      "#{schematron}/DSD-RESP-C.sch")
     expect(response.body).not_to include('Modèle de données manquant')
   end
 

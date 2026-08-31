@@ -63,6 +63,8 @@ Les adresses du Semantic Repository que ces réponses portent — l'identifiant 
 > [!IMPORTANT]
 > **Une absence de fournisseur ne prouve pas qu'il n'en existe pas.** La console interroge le Data Service Directory exactement comme l'application, `specification=oots-edm:v2.0` compris, donc un point d'accès conforme à `v1.0` ou `v1.2` seulement n'apparaît pas dans la réponse. C'est le cas d'`AP_FI_01` en acceptation. La colonne des versions déclarées est ce qui permet de faire la différence lorsqu'un service, lui, revient.
 
+**Sur la page des fournisseurs, ce que l'annuaire doit publier et n'a pas publié porte un badge d'avertissement, avec la règle qui le fonde, cliquable vers le Schematron qui l'écrit** : « Aucune distribution publiée » quand le service n'a pas de `sdg:DistributedAs`, que [`R-DSD-RESP-S027`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/DSD-RESP-S.sch) rend obligatoire, et « Modèle de données manquant » quand une distribution structurée n'a pas de `sdg:ConformsTo` sans qu'une distribution non structurée l'en dispense. Le second se distingue de la mention « Modèle de données non exigé », qui dit l'absence légitime : un tiret rendrait les deux à l'identique, et c'est cette confusion que ces libellés existent pour lever. Ni l'un ni l'autre ne se voit sur l'environnement d'acceptation, dont les réponses abouties portent toutes une distribution — une console de diagnostic s'écrit pour le cas qu'on espère ne pas rencontrer.
+
 Le tableau de bord de GoodJob porte son propre gabarit : il n'est pas au DSFR, et il expose ses propres boutons de relance et d'abandon. Ceux-ci agissent sur un job, jamais sur un échange — la règle « lecture seule » porte sur les échanges.
 
 ## Ce qu'il ne montre pas

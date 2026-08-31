@@ -49,10 +49,15 @@ class DataService
 
   # Those four others, listed here because publishing one of them beside a
   # structured distribution is what lifts C039 and C041 below. Taken from the
-  # code list, and not from the prose of those two rules, which also names
-  # `image/jpg`: the list holds no such code, and the assertion tests
+  # code list, and not from the diagnostic text of those two assertions, which
+  # also names `image/jpg`: the list holds no such code, and the assertion tests
   # membership of the list, so that spelling exempts nothing.
   UNSTRUCTURED_FORMATS = %w[application/pdf image/jpeg image/png image/svg+xml].freeze
+
+  # The rule a service published without any `sdg:DistributedAs` departs from,
+  # named here beside the two below rather than in the template that shows it:
+  # a rule identifier is a value the TDD fixes word for word.
+  DISTRIBUTION_RULE = 'R-DSD-RESP-S027'.freeze
 
   # Which rule requires the data model beside the format read: R-DSD-RESP-C039
   # governs an XML distribution, C041 a JSON one — the same sentence under two

@@ -105,6 +105,7 @@ RSpec.describe DataServicesResponseParser do
     expect(described_class.new(stripped).data_services.first).to have_attributes(
       distribution_published: false, distribution_format: nil,
       distribution_language: nil, distribution_conforms_to: nil,
+      unstructured_sibling_published: false,
     )
   end
 
@@ -132,7 +133,7 @@ RSpec.describe DataServicesResponseParser do
       .to have_attributes(distribution_format: 'application/xml', unstructured_sibling_published: false)
   end
 
-  # The prose of C039 and C041 also names `image/jpg`, which the code list has
+  # The diagnostic text of C039 and C041 also names `image/jpg`, which the code list has
   # no code for; both assertions test membership of the list, so a distribution
   # published under that spelling excuses nothing.
   it 'excuses nothing for a format the code list does not carry' do

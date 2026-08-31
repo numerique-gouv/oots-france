@@ -192,6 +192,13 @@ RSpec.describe DataService do
     expect(build(:data_service, distribution_format: EvidenceType::PDF).data_model_rule).to be_nil
   end
 
+  # The two lists are written apart, and the console reads them together: a
+  # structured format the rules table forgot would send `nil` to the component
+  # that names the rule, on the one branch that cannot guard against it.
+  it 'names a rule for every format it counts as structured' do
+    expect(described_class::DATA_MODEL_RULES.keys).to match_array(described_class::STRUCTURED_FORMATS)
+  end
+
   # Only a directory answer can say what the record published; every other way
   # of building a service starts from a distribution it already holds and knows
   # of no second one, so both defaults claim nothing.

@@ -37,7 +37,8 @@
 
       <% unless service.distribution_published %>
         <br><span class="fr-text--sm"><%=
-              t('admin.common_services.providers.index.no_distribution_detail_html') %></span>
+              t('admin.common_services.providers.index.no_distribution_detail_html',
+                rule: render(TddRuleComponent.new(rule: DataService::DISTRIBUTION_RULE))) %></span>
       <% end %>
 
       <%# The identifier the Data Service Directory assigns to the evidence
@@ -67,10 +68,10 @@
           <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
                 t('admin.common_services.providers.index.data_model_missing') %></span>
           <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_missing_detail_html',
-                rule: service.data_model_rule) %></span>
+                rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
         <% else %>
           <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_waived_html',
-                rule: service.data_model_rule) %></span>
+                rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
         <% end %>
       <% end %>
 

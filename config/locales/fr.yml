@@ -207,6 +207,11 @@ fr:
         "EDM:ERR:0006": Objet référencé impossible à résoudre
         "EDM:ERR:0007": Fonction ou capacité facultative non prise en charge
         "EDM:ERR:0008": Requête dont la syntaxe ou la sémantique doit être corrigée
+    # Le Schematron plutôt que le chapitre, qui porte la règle lui aussi : le
+    # premier est épinglé sur une étiquette de version, le second est une page
+    # vivante.
+    tdd_rule:
+      schematron: Cette règle des TDD, telle que le Schematron l'écrit (nouvelle fenêtre)
     pagination:
       previous: Page précédente
       next: Page suivante
@@ -884,7 +889,7 @@ fr:
           no_distribution: Aucune distribution publiée
           no_distribution_detail_html: >-
             Le Data Service Directory n'a publié aucun <code>sdg:DistributedAs</code> —
-            <code>R-DSD-RESP-S027</code> le rend obligatoire.
+            <code>%{rule}</code> le rend obligatoire.
           # Le modèle de données de la distribution, à ne pas confondre avec les
           # « versions déclarées » du point d'accès juste dessous : deux éléments
           # distincts sous deux parents distincts, d'où deux libellés sans aucun
