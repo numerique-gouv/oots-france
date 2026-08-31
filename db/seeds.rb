@@ -140,6 +140,38 @@ if Rails.env.development?
       events: %w[request_sent response_received evidence_delivered] },
   ]
 
+  # Le sujet tel qu'une réponse le confirme. Le chapitre 4.5.2 fait porter à
+  # `sdg:IsAbout` le *Minimum Data Set* du sujet demandé « to confirm identity
+  # matching » : le fournisseur confirme, et peut compléter. L'écart démontré
+  # est donc un identifiant eIDAS que la requête ne portait pas, et non un nom
+  # divergent — le triplet ne bouge pas, donc la clé canonique non plus, et les
+  # deux lignes se retrouvent ensemble à la recherche par sujet, là où un nom
+  # différent aurait fait croire la recherche cassée.
+  #
+  # `R-EDM-REQ-C040` donne à l'identifiant d'une personne physique la forme
+  # `XX/YY/Z…Z` : le pays qui affirme l'identité, puis celui à qui elle est
+  # affirmée. Le second est donc celui du correspondant, et non une constante.
+  # C'est bien la règle de la requête — la réponse ne fait qu'en renvoyer le
+  # *Minimum Data Set* —, et celle de la personne physique : `R-EDM-REQ-C051`,
+  # que cite `LegalPerson`, porte le même format pour la personne morale.
+  matched_person = lambda do |exchange|
+    NaturalPerson.new(
+      person.attributes.merge('eidas_identifier' => format('FR/%s/123123123', exchange.country_code)),
+    )
+  end
+
+  # Les deux sujets que le journal garde d'un même échange : celui que la
+  # requête demande, et celui que la réponse confirme. Une réponse différée
+  # n'annonce aucune métadonnée, donc aucun sujet — comme le code, qui n'en lit
+  # pas. Et la réponse française n'en porte pas non plus : `AuditTrail#response_sent`
+  # n'en écrit aucun, le sujet lu de la requête reçue ayant déjà sa ligne.
+  demonstration_subject = lambda do |event_type, scenario, exchange|
+    return AuditEvent.subject(scenario.fetch(:subject, person)) if event_type.start_with?('request')
+    return {} unless event_type == 'response_received' && exchange.status != 'deferred'
+
+    AuditEvent.subject(matched_person.call(exchange))
+  end
+
   # What `detail` holds, type by type, as `AuditTrail` writes it: the rule the
   # refused request broke where France turns one away, the wording the code list
   # fixes where the exchange keeps it, and the rules of chapter 4.6 an arriving
@@ -379,7 +411,7 @@ if Rails.env.development?
         response_id: (response_id if event_type.in?(carries_response_id)),
         edm_error_code: (message_error_code if event_type.start_with?('error')),
         detail: demonstration_detail.call(event_type, scenario, exchange),
-        **(event_type.start_with?('request') ? AuditEvent.subject(scenario.fetch(:subject, person)) : {}),
+        **demonstration_subject.call(event_type, scenario, exchange),
         preview_location: declared_preview,
         **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
           code: message_error_code, preview: declared_preview),

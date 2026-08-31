@@ -19,6 +19,70 @@ RSpec.describe EvidenceResponseParser do
     expect(response.evidence_identifier).to eq('f114a58d-3f5e-46f1-b067-d53f88c6619b')
   end
 
+  # Chapter 4.5.2, which gives `sdg:IsAbout` its role: « Must contain the Minimum
+  # Data Set part of the Evidence Subject attributes of the Evidence Request to
+  # confirm identity matching. » It is the provider's own word on whom the
+  # document is about, where the request holds whom it was asked about.
+  describe 'the subject the provider confirms having matched' do
+    it 'reads the natural person of R-EDM-RESP-S041' do
+      expect(response.evidence_subject).to be_a(NaturalPerson)
+        .and have_attributes(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
+    end
+
+    # The one field a response may add to the Minimum Data Set it echoes. The
+    # captured envelope carries none, so it is put there rather than assumed.
+    it 'reads the eIDAS identifier where the response carries one' do
+      identified = without do |body|
+        body.sub('<sdg:FamilyName>', '<sdg:Identifier schemeID="eidas">FR/FI/123123123</sdg:Identifier><sdg:FamilyName>')
+      end
+
+      expect(identified.evidence_subject.eidas_identifier).to eq('FR/FI/123123123')
+    end
+
+    it 'reads the organisation R-EDM-RESP-S042 admits in its place' do
+      expect(about_an_organisation.evidence_subject).to be_a(LegalPerson)
+        .and have_attributes(eidas_identifier: 'FR/DE/A2635542Y', legal_name: 'Établissements Dupont & Fils')
+    end
+
+    # `R-EDM-RESP-S042` (FATAL) admits the eIDAS identifier and the legal name
+    # and nothing else, where a request may name as many sectoral identifiers as
+    # chapter 4.5.1 publishes schemes. A correspondent sending one anyway is
+    # breaking the rule, and filing it would record an identifier no conformant
+    # response carries — the breach itself is reported nowhere, `violations`
+    # carrying no rule about the content of `sdg:IsAbout`.
+    it 'keeps none of the sectoral identifiers that rule excludes' do
+      carrying = about_an_organisation(
+        is_about_legal_person.sub('<sdg:LegalName>', '<sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>' \
+                                                     '<sdg:LegalName>'),
+      )
+
+      expect(carrying.evidence_subject.identifiers).to be_empty
+    end
+
+    # `NaturalPerson` requires the three fields the canonical key is made of, and
+    # this one is never asked to validate: what a provider cut short is read as
+    # it came, and `AuditEvent.canonical_key` composes no key for it — the
+    # departure the journal keeps rather than the exchange it would have cost.
+    it 'reads a person short of a field of the canonical key rather than refusing' do
+      stripped = without { |body| body.sub(%r{<sdg:GivenName>.*?</sdg:GivenName>}, '') }
+
+      expect(stripped.evidence_subject)
+        .to have_attributes(family_name: 'Dupont', given_name: nil, date_of_birth: '1965-11-25')
+    end
+
+    # `LegalPerson` refuses an organisation without its eIDAS identifier, and
+    # this one is never asked to validate either: an exchange that can be settled
+    # must not die over a column only the journal reads.
+    it 'reads an organisation short of its identifier rather than refusing' do
+      stripped = about_an_organisation(
+        is_about_legal_person.sub(%r{<sdg:LegalPersonIdentifier.*</sdg:LegalPersonIdentifier>}, ''),
+      )
+
+      expect(stripped.evidence_subject)
+        .to have_attributes(eidas_identifier: nil, legal_name: 'Établissements Dupont & Fils')
+    end
+  end
+
   describe 'the provider that answered' do
     it 'is the agent classified EP' do
       expect(response.provider.ebms_identity.id).to be_present
@@ -113,6 +177,28 @@ RSpec.describe EvidenceResponseParser do
 
     it 'answers nil for the provider when no agent is classified EP' do
       expect(without { |body| body.gsub('>EP<', '>IP<') }.provider).to be_nil
+    end
+
+    # `R-EDM-RESP-S062` requires the element of whoever writes a response, and
+    # nothing here refuses one that omits it: the journal records the absence
+    # instead.
+    it 'answers nil for the subject when the metadata carries no IsAbout' do
+      stripped = without { |body| body.sub(%r{<sdg:IsAbout>.*?</sdg:IsAbout>}m, '') }
+
+      expect(stripped.evidence_subject).to be_nil
+    end
+
+    # The two branches of the `xs:choice` are what is looked for, and not the
+    # choice itself: an empty one would otherwise read as a person carrying no
+    # field at all, which the journal would file as a subject.
+    it 'answers nil for a subject naming neither a person nor an organisation' do
+      emptied = without { |body| body.sub(%r{<sdg:IsAbout>.*?</sdg:IsAbout>}m, '<sdg:IsAbout/>') }
+
+      expect(emptied.evidence_subject).to be_nil
+    end
+
+    it 'answers nil for the subject when no object is classified MainEvidence' do
+      expect(without { |body| body.gsub('MainEvidence', 'Annexe') }.evidence_subject).to be_nil
     end
   end
 
@@ -336,6 +422,8 @@ RSpec.describe EvidenceResponseParser do
   end
 
   def without(&) = envelope_with_body('reponseAvecPieceJointe', &).body
+
+  def about_an_organisation(subject = is_about_legal_person) = response_about_an_organisation(subject).body
 
   # The deferred answer is a built envelope, where `envelope_with_body` reads
   # from `incoming/reel/`: altering it needs its own hand.

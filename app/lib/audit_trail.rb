@@ -235,17 +235,38 @@ class AuditTrail
   end
 
   # Chapter 4.8 asks the response flow for both parties, the response identifier
-  # and the evidence identifier; the country comes from the providing agent,
-  # which is also the party that answered.
+  # and the evidence identifier.
+  #
+  # The subject is what its tables do not ask for and the sentence opening its
+  # §3.2 does: « the information included in the evidence response, with the
+  # exception of the evidence itself, must be logged ». Chapter 4.5.2 makes
+  # `sdg:IsAbout` the subject the provider confirms having matched, where
+  # `received_request` records the one that was asked for — the two are allowed
+  # to differ, and that gap is what an auditor came for.
   def received_response(message)
+    {
+      **response_correlation(message),
+      **answering_parties(message),
+      detail: readable(:business_rules) { broken_rules(message.body) },
+      **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
+      **(readable(:evidence_subject) { AuditEvent.subject(message.body.evidence_subject) } || {}),
+    }
+  end
+
+  # The counterpart of `requesting_party` on the way in: both parties again, and
+  # the country, which comes from the providing agent — the party that answered.
+  #
+  # The message and not its body, though the body is all this reads: `body`
+  # itself raises on an envelope Nokogiri refuses, so taking one as an argument
+  # would evaluate it outside the guards below and cost the line every field
+  # already read — the evidence fingerprint among them, which is read from the
+  # envelope and owes nothing to the RegRep document.
+  def answering_parties(message)
     provider = readable(:providing_authority) { message.body.provider }
 
     {
-      **response_correlation(message),
       country_code: provider&.address&.country,
-      detail: readable(:business_rules) { broken_rules(message.body) },
       **authorities(requesting: readable(:requesting_authority) { message.body.requester }, providing: provider),
-      **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
     }
   end
 

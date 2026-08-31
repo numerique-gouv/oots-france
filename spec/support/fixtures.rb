@@ -110,6 +110,28 @@ module Fixtures
     XML
   end
 
+  # The captured response, its subject turned into the organisation `sdg:IsAbout`
+  # equally admits — the `xs:choice` forbidding the two to sit side by side.
+  #
+  # Through a block, and relabelled UTF-8, for the two reasons the request's
+  # counterpart above gives.
+  def response_about_an_organisation(subject = is_about_legal_person)
+    envelope_with_body('reponseAvecPieceJointe') do |body|
+      body.dup.force_encoding(Encoding::UTF_8).sub(%r{<sdg:NaturalPerson>.*?</sdg:NaturalPerson>}m) { subject }
+    end
+  end
+
+  # What `R-EDM-RESP-S042` admits under `sdg:IsAbout`, and all of it — narrower
+  # than the `legal_person_slot` a request carries, which is the point.
+  def is_about_legal_person
+    <<~XML
+      <sdg:LegalPerson>
+        <sdg:LegalPersonIdentifier schemeID="eidas">FR/DE/A2635542Y</sdg:LegalPersonIdentifier>
+        <sdg:LegalName>Établissements Dupont &amp; Fils</sdg:LegalName>
+      </sdg:LegalPerson>
+    XML
+  end
+
   # A real envelope with one of its elements taken out — how a spec fabricates a
   # message the gateway would have accepted and this application cannot read.
   # Through Nokogiri and not a regexp: the fixtures bind the ebMS namespace to

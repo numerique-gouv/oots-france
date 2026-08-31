@@ -83,10 +83,13 @@ class AuditEvent < ApplicationRecord
   # object serves the templates and the builders too, where a column of this
   # table means nothing.
   #
-  # It rests on every subject reaching here having been validated first, which
-  # both the builders of `NaturalPerson` do — `BeneficiaryToken` and
-  # `EvidenceRequestParser` — since a person short of one field would otherwise
-  # lose the key silently rather than fail.
+  # A subject France composed itself always carries the three: `BeneficiaryToken`
+  # and `EvidenceRequestParser` both validate before handing one over. One read
+  # off a foreign response does not — `EvidenceResponseParser#evidence_subject`
+  # reads without validating, so a provider answering short of a field loses the
+  # key silently. That is the price of the trace: refusing the response would
+  # have cost the exchange, and `evidence_subject` still holds everything that
+  # was read.
   def self.canonical_key(described)
     fields = described.symbolize_keys.slice(*SUBJECT_FIELDS)
 

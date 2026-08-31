@@ -190,10 +190,13 @@ RSpec.describe AuditTrail do
       )
     end
 
-    # No personal data on this side: chapter 4.8 lists the evidence subject in
-    # the request flow, where the journal already holds it, and not here.
-    it 'records no subject' do
-      expect(journalled).to have_attributes(evidence_subject: nil, evidence_subject_key: nil)
+    # The subject the provider says it matched — chapter 4.5.2 has `sdg:IsAbout`
+    # confirm the identity matching — which the sentence opening §3.2 of chapter
+    # 4.8 has a requester log: « the information included in the evidence
+    # response, with the exception of the evidence itself, must be logged ».
+    it 'records the subject the provider confirms having matched' do
+      expect(journalled.evidence_subject).to include('Dupont', 'Sophie', '1965-11-25')
+      expect(journalled.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
     end
 
     # The chapter asks for the *first* part. The evidence travels in a second
@@ -203,6 +206,96 @@ RSpec.describe AuditTrail do
       expect(journalled.regrep_body).to eq(message.first_part.content)
       expect(journalled.regrep_body).to include('QueryResponse')
       expect(journalled.regrep_body).not_to include('%PDF')
+    end
+  end
+
+  # The two subjects of one exchange, which chapter 4.5.2 allows to differ: the
+  # request holds whom the evidence was asked about, the response whom the
+  # provider says it matched. The journal keeps both rather than reconciling
+  # them — the gap is the thing an auditor came for.
+  describe 'an answer naming a subject the request did not' do
+    let(:asked) { RetrievedMessageParser.new(real_envelope('requete')) }
+
+    # The captured request and the captured response belong to one exchange, and
+    # name the same person: the divergence has to be put there.
+    let(:matched) do
+      envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub('<sdg:GivenName>Sophie</sdg:GivenName>', '<sdg:GivenName>Sofia</sdg:GivenName>')
+      end
+    end
+
+    before do
+      audit_trail.message_received(message: asked, message_id: 'la-requete')
+      audit_trail.message_received(message: matched, message_id: 'la-reponse')
+    end
+
+    it 'leaves the two readable side by side, under the one exchange' do
+      asked_for, confirmed = AuditEvent.where(exchange_id: asked.exchange_id).order(:id).map(&:evidence_subject)
+
+      expect(asked_for).to include('Sophie')
+      expect(confirmed).to include('Sofia')
+    end
+
+    # Both keys are composed the same way, so the search of the console answers
+    # for each subject on its own — which is what makes the gap findable rather
+    # than merely stored.
+    it 'gives each of them the key it is looked up by' do
+      expect(AuditEvent.about_subject('dupont|sofia|1965-11-25').pick(:event_type)).to eq('response_received')
+      expect(AuditEvent.about_subject('dupont|sophie|1965-11-25').pick(:event_type)).to eq('request_received')
+    end
+  end
+
+  # Chapter 4.5.1 lets the evidence subject be an organisation, and
+  # `R-EDM-RESP-S042` carries that over to the response. `AuditEvent` composes no
+  # canonical key for one: the triplet it is made of is a birth an organisation
+  # does not have.
+  describe 'an answer about an organisation' do
+    let(:message) { response_about_an_organisation }
+
+    before { audit_trail.message_received(message:, message_id: 'message-passerelle') }
+
+    it 'records it whole, and no key to search it by' do
+      expect(journalled.described_subject)
+        .to eq('eidas_identifier' => 'FR/DE/A2635542Y', 'legal_name' => 'Établissements Dupont & Fils')
+      expect(journalled.evidence_subject_key).to be_nil
+    end
+  end
+
+  # The consequence of reading without validating, and the one worth knowing:
+  # `AuditEvent.canonical_key` composes the key from three fields, so a subject
+  # a provider cut short is recorded whole and loses its key silently — the
+  # search by subject no longer finds it. Accepted rather than refused: the
+  # exchange would otherwise die over a column only the journal reads.
+  describe 'an answer naming a subject short of a field' do
+    let(:message) do
+      envelope_with_body('reponseAvecPieceJointe') { |body| body.sub(%r{<sdg:GivenName>.*?</sdg:GivenName>}, '') }
+    end
+
+    before { audit_trail.message_received(message:, message_id: 'message-passerelle') }
+
+    it 'records what was read, and no key to search it by' do
+      expect(journalled.described_subject).to eq('family_name' => 'Dupont', 'date_of_birth' => '1965-11-25')
+      expect(journalled.evidence_subject_key).to be_nil
+    end
+  end
+
+  # `R-EDM-RESP-S062` requires the element of whoever writes a response, and
+  # nothing refuses one that omits it: no error path runs from a portal back to
+  # a provider, so the absence is recorded and the exchange goes on.
+  describe 'an answer that names no subject' do
+    let(:message) do
+      envelope_with_body('reponseAvecPieceJointe') { |body| body.sub(%r{<sdg:IsAbout>.*?</sdg:IsAbout>}m, '') }
+    end
+
+    it 'writes the line with both columns empty, and warns of no unreadable field' do
+      allow(Rails.logger).to receive(:warn)
+
+      audit_trail.message_received(message:, message_id: 'message-passerelle')
+
+      expect(Rails.logger).not_to have_received(:warn)
+      expect(journalled).to have_attributes(
+        event_type: 'response_received', evidence_subject: nil, evidence_subject_key: nil,
+      )
     end
   end
 
@@ -221,6 +314,13 @@ RSpec.describe AuditTrail do
         evidence_mime_type: nil,
         evidence_content_id: nil,
       )
+    end
+
+    # And no subject either: the subject travels in the evidence metadata, which
+    # an announcement carries none of. What was asked for stays on the request's
+    # own line, where it was written.
+    it 'records no subject, the announcement describing no evidence' do
+      expect(journalled).to have_attributes(evidence_subject: nil, evidence_subject_key: nil)
     end
 
     it 'still records what correlates the answer to its request' do
