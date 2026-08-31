@@ -27,10 +27,38 @@ search:
   relative_roots: []
 
 ignore_unused:
-  # Rails looks these keys up itself, from the model and the attribute: no
-  # `t()` names them.
-  - activerecord.*
-  - activemodel.*
+  # Rails composes these keys itself, from the model and the attribute: no
+  # `t()` names them, and no scanner can see them, so they are exempted here
+  # rather than found. Named leaf by leaf and not globbed on `activemodel.*`,
+  # for the reason the rest of this list gives: a glob exempts whatever its
+  # subtree comes to hold, where a named leaf costs the same line to maintain
+  # and makes a departure visible — the model goes, its line goes, and
+  # `unused` reports what `fr.yml` still carries under its name.
+  - activerecord.attributes.exchange.{exchange_id,conversation_id,preview_location}
+  - activerecord.errors.models.exchange.attributes.{exchange_id,conversation_id,preview_location}.format
+  - activemodel.attributes.address.country
+  - activemodel.attributes.ebms_identity.{id,type_id}
+  - activemodel.attributes.access_point.{id,type_id}
+  - activemodel.attributes.natural_person.{family_name,given_name,date_of_birth}
+  - activemodel.attributes.legal_person.{legal_name,eidas_identifier}
+  - activemodel.attributes.evidence_type.{id,distribution_format}
+  - activemodel.attributes.requirement.id
+  - activemodel.attributes.data_service.{id,evidence_type_classification,distribution_format,distribution_language,distribution_conforms_to}
+  - activemodel.attributes.evidence_requester.id
+  - activemodel.attributes.evidence_provider.access_point
+  - activemodel.attributes.resolution_filter.{procedure_code,country_code,requirement_id,evidence_type_id}
+  - activemodel.attributes.audit_event_filter.{event_type,exchange_id,conversation_id,country_code,evidence_requester_id,procedure_code,depuis,jusqu_a}
+  - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth}
+  - activemodel.errors.models.address.attributes.country.format
+  - activemodel.errors.models.natural_person.attributes.date_of_birth.format
+  - activemodel.errors.models.legal_person.{attributes.eidas_identifier.format,unpublished_identifier_scheme,valueless_identifier}
+  - activemodel.errors.models.requirement.{attributes.id.format,unlabelled_wording}
+  - activemodel.errors.models.data_service.attributes.{id,evidence_type_classification,distribution_language,distribution_conforms_to}.format
+  - activemodel.errors.models.data_service.unlabelled_wording
+  - activemodel.errors.models.resolution_filter.{attributes.country_code.format,unreadable}
+  - activemodel.errors.models.audit_event_filter.attributes.{event_type.inclusion,country_code.format,jusqu_a.before_start}
+  - activemodel.errors.models.audit_event_filter.unreadable
+  - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable}
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
   - admin.journal.exchanges.statuses.*
