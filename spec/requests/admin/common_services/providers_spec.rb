@@ -7,9 +7,14 @@ RSpec.describe 'Admin::CommonServices::Providers' do
   let(:published) { common_services_answer('dsd_data_services_fi').first }
   let(:undistributed) { published.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '') }
   let(:structured) do
-    published
-      .sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
-      .sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{data_model}</sdg:ConformsTo></sdg:DistributedAs>")
+    published.sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
+  end
+  let(:modelled) do
+    structured.sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{data_model}</sdg:ConformsTo></sdg:DistributedAs>")
+  end
+  let(:waived) do
+    structured.sub('</sdg:DistributedAs>',
+      '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>')
   end
 
   before do
@@ -61,11 +66,38 @@ RSpec.describe 'Admin::CommonServices::Providers' do
   # the page must not let them be read as one: the two labels share no word.
   it 'names the data model of the distribution apart from the access point versions' do
     stub_directory_signature
-    stub_directory_body('dsd', 'dataservices-by-evidencetype', structured)
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', modelled)
 
     visit_providers
 
     expect(response.body).to include('Modèle de données', data_model, 'versions déclarées')
+  end
+
+  # The same empty value, and two opposite verdicts. C039 makes the data model
+  # mandatory beside an XML distribution published without an unstructured one,
+  # and the acceptance environment holds no such entry: like the badge above,
+  # this state is only ever seen in a spec — a console is written for the case
+  # one hopes not to meet.
+  it 'accuses the directory where the rules require a data model it did not publish' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', structured)
+
+    visit_providers
+
+    expect(response.body).to include('Modèle de données manquant', 'R-DSD-RESP-C039')
+  end
+
+  # C039 and C041 excuse the distribution when the record publishes an
+  # unstructured one too, which is what the Irish entries of the acceptance
+  # environment do: nothing is missing there, and a dash would say otherwise.
+  it 'names the data model unowed where an unstructured distribution is published too' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', waived)
+
+    visit_providers
+
+    expect(response.body).to include('Modèle de données non exigé', 'R-DSD-RESP-C039')
+    expect(response.body).not_to include('Modèle de données manquant')
   end
 
   # R-DSD-RESP-C067 forbids the value beside an unstructured distribution, and

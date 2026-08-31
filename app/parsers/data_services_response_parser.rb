@@ -31,7 +31,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
     DataService.new(
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
-      **distributed_as(at(declared, './sdg:DistributedAs')),
+      **distributed_as(declared),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
@@ -50,7 +50,8 @@ class DataServicesResponseParser < CommonServicesResponseParser
   # makes it mandatory, so its absence is the directory departing from the
   # specification and not a value left empty — a difference `text` cannot carry,
   # answering nil for either.
-  def distributed_as(published)
+  def distributed_as(declared)
+    published = at(declared, './sdg:DistributedAs')
     return { distribution_published: false } if published.nil?
 
     {
@@ -58,7 +59,20 @@ class DataServicesResponseParser < CommonServicesResponseParser
       distribution_format: text(published, './sdg:Format'),
       distribution_language: text(published, './sdg:Language'),
       distribution_conforms_to: text(published, './sdg:ConformsTo'),
+      unstructured_sibling_published: unstructured_sibling?(declared),
     }
+  end
+
+  # The one question C039 and C041 ask of the record rather than of a single
+  # distribution: they excuse a structured distribution from carrying a data
+  # model when the same `DataServiceEvidenceType` is distributed in an
+  # unstructured format as well. Without it the console cannot tell a value
+  # legitimately absent from one missing at fault.
+  #
+  # The others, the one read above being the first `xpath` returns.
+  def unstructured_sibling?(declared)
+    all(declared, './sdg:DistributedAs[position() > 1]/sdg:Format')
+      .any? { |format| DataService::UNSTRUCTURED_FORMATS.include?(format.text.strip) }
   end
 
   def build(service)
