@@ -211,6 +211,22 @@ fr:
       previous: Page précédente
       next: Page suivante
       page: Page %{number}
+    # Le sujet du justificatif relu champ par champ sur la fiche d'événement.
+    # Les intitulés sont cherchés par une clé composée du nom du champ, avec
+    # repli sur ce nom : un attribut que le chapitre 4.5.1 autorise et que
+    # `NaturalPerson` ou `LegalPerson` gagnera reste lisible avant d'être
+    # nommé ici. Le repli sert aussi ce qui ne se traduit pas — les schémas
+    # d'identifiant `VAT`, `LEI`, `EORI` sont les valeurs que
+    # `R-EDM-REQ-C055` compare mot pour mot, et le journal montre ce qui a
+    # circulé.
+    evidence_subject:
+      fields:
+        eidas_identifier: Identifiant eIDAS
+        family_name: Nom
+        given_name: Prénom
+        date_of_birth: Date de naissance
+        legal_name: Raison sociale
+        identifiers: Identifiants
   builders:
     evidence_request_builder:
       unknown_subject: "Sujet de justificatif d'un type que la requête ne sait pas écrire : « %{type} »."

@@ -1,0 +1,20 @@
+<%# A definition list and not a table: these pairs have no headings of their own,
+    and a table nested in the table of the event would announce to a screen
+    reader a structure that means nothing. %>
+<% case value %>
+<% when Hash %>
+  <dl class="evidence-subject">
+    <% value.each do |name, nested| %>
+      <dt><%= wording(name) %></dt>
+      <dd><%= render EvidenceSubjectComponent.new(value: nested) %></dd>
+    <% end %>
+  </dl>
+<% when Array %>
+  <ul class="evidence-subject__list">
+    <% value.each do |item| %>
+      <li><%= render EvidenceSubjectComponent.new(value: item) %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <%= value %>
+<% end %>

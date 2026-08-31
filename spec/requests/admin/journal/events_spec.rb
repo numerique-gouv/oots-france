@@ -234,6 +234,48 @@ RSpec.describe 'Admin::Journal::Events' do
       )
     end
 
+    # The column holds one line of JSON with nothing to break at, so the cell cut
+    # it off at its edge and the VAT number was shown nowhere at all — data the
+    # journal keeps and no screen said, which is what the console exists against.
+    it 'shows every field of an organisation subject, its identifiers included' do
+      event = create(:audit_event, :about_an_organisation)
+
+      get admin_journal_event_path(event)
+
+      subject = response.parsed_body.at_css('.evidence-subject')
+
+      expect(subject.text).to include('FR12345678901')
+      expect(subject.text).to include(I18n.t('components.evidence_subject.fields.identifiers'))
+    end
+
+    # The JSON encoder of ActiveSupport writes `&`, `<` and `>` as JSON escapes
+    # and leaves the non-ASCII alone: the column carries `\u0026` where the
+    # request said `&`, and only a parse undoes it. Showing the raw column showed
+    # the escape.
+    it 'reads a company name as it arrived, ampersand and accent alike' do
+      event = create(:audit_event, :about_an_organisation)
+
+      expect(event.evidence_subject).to include('\u0026')
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.at_css('.evidence-subject').text).to include('Établissements Dupont & Fils')
+    end
+
+    it 'reads a natural person subject field by field, each under its wording' do
+      event = create(:audit_event, :about_a_person)
+
+      get admin_journal_event_path(event)
+
+      pairs = response.parsed_body.css('.evidence-subject > dt, .evidence-subject > dd')
+
+      expect(pairs.map { |node| node.text.strip }).to eq([
+        I18n.t('components.evidence_subject.fields.family_name'), 'Königreich',
+        I18n.t('components.evidence_subject.fields.given_name'), 'Ada',
+        I18n.t('components.evidence_subject.fields.date_of_birth'), '1990-01-01',
+      ])
+    end
+
     # The Semantic Repository names an evidence type by a URL; an operator who
     # wants to know what a classification covers should not have to copy it.
     it 'opens the evidence type classification the Semantic Repository names' do
@@ -370,6 +412,18 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.body).to include(CGI.escapeHTML(
         admin_journal_subjects_path(family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01'),
       ))
+    end
+
+    # An organisation composes no canonical key, the triplet `SUBJECT_FIELDS`
+    # names being a birth it has none of. The page reads its subject all the
+    # same, and offers no search a query would answer with nothing.
+    it 'offers no search by subject for an organisation, which composes no key' do
+      event = create(:audit_event, :about_an_organisation)
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.css('a').map(&:text))
+        .not_to include(I18n.t('admin.journal.events.show.same_subject'))
     end
 
     # It carries the only written reason for the refusal, and its exchange does
