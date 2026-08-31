@@ -90,6 +90,25 @@ RSpec.describe DataServicesResponseParser do
     expect(described_class.new(body).data_services.first.distribution_conforms_to).to be_nil
   end
 
+  # R-DSD-RESP-S027 (FATAL) makes `sdg:DistributedAs` mandatory, so a record
+  # published without one is the directory departing from the specification.
+  # Read here and nowhere else: nil answers for an absent element as for an
+  # empty one, and only the answer says which.
+  it 'says when the directory published no distribution at all' do
+    stripped = body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '')
+
+    expect(described_class.new(stripped).data_services.first).to have_attributes(
+      distribution_published: false, distribution_format: nil,
+      distribution_language: nil, distribution_conforms_to: nil,
+    )
+  end
+
+  # Asserted on the capture and not left to the model's default, which would
+  # answer the same whether the parser looked or not.
+  it 'says the capture does publish one' do
+    expect(described_class.new(body).data_services.first.distribution_published).to be(true)
+  end
+
   # A directory publishes one distribution per format — C039 and C041 are
   # written around that — and the three elements must be read from one and the
   # same: paths anchored on the record would take the format of the first and

@@ -160,6 +160,13 @@ RSpec.describe DataService do
     end
   end
 
+  # Only a directory answer can say the element was missing; every other way of
+  # building a service starts from a distribution it already holds, so the
+  # default must be the one that claims nothing.
+  it 'counts a service built without a word on it as distributed' do
+    expect(build(:data_service).distribution_published).to be(true)
+  end
+
   it 'prefers the French name to the English one' do
     published = { 'EN' => 'Dummy PDF', 'FR' => 'PDF de test' }
 

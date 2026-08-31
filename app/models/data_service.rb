@@ -52,6 +52,12 @@ class DataService
   attribute :distribution_format, :string
   attribute :distribution_language, :string
   attribute :distribution_conforms_to, :string
+  # R-DSD-RESP-S027 (FATAL) makes `sdg:DistributedAs` mandatory, so a directory
+  # publishing none departs from the specification — which the three attributes
+  # above cannot say, being nil alike for an element absent and one published
+  # empty. Only a directory answer can turn it false; everything else builds a
+  # service around a distribution it already holds.
+  attribute :distribution_published, :boolean, default: true
   attribute :level_of_assurance, :string
 
   attr_reader :descriptions, :details, :providers

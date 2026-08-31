@@ -45,10 +45,16 @@ class DataServicesResponseParser < CommonServicesResponseParser
   # first and the data model of another — a request asking for a PDF against an
   # XML schema, which nothing downstream would question. Asking for more than
   # one distribution is OOTS-129's.
+  #
+  # Both branches state what was read, the absent element included: R-DSD-RESP-S027
+  # makes it mandatory, so its absence is the directory departing from the
+  # specification and not a value left empty — a difference `text` cannot carry,
+  # answering nil for either.
   def distributed_as(published)
-    return {} if published.nil?
+    return { distribution_published: false } if published.nil?
 
     {
+      distribution_published: true,
       distribution_format: text(published, './sdg:Format'),
       distribution_language: text(published, './sdg:Language'),
       distribution_conforms_to: text(published, './sdg:ConformsTo'),
