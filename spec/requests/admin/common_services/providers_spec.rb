@@ -3,6 +3,29 @@ require 'rails_helper'
 RSpec.describe 'Admin::CommonServices::Providers' do
   let(:test_requirement) { '00000000-0000-0000-0000-000000000000' }
   let(:finnish_type) { '19f0783e-7cdc-4146-9ff9-e331514ffb74' }
+  let(:data_model) { 'https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth' }
+  let(:published) { common_services_answer('dsd_data_services_fi').first }
+  let(:undistributed) { published.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '') }
+  let(:structured) do
+    published.sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
+  end
+  let(:modelled) do
+    structured.sub('</sdg:DistributedAs>', "<sdg:ConformsTo>#{data_model}</sdg:ConformsTo></sdg:DistributedAs>")
+  end
+  # A rule the page names is a rule the page lets one read: the Schematron file
+  # is where its identifier is written.
+  let(:schematron) { 'https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch' }
+  let(:blanked) do
+    published
+      .sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format/>')
+      .sub(%r{<sdg:Identifier>[^<]+</sdg:Identifier>}, '<sdg:Identifier/>')
+      .sub(%r{<sdg:AuthenticationLevelOfAssurance>[^<]+</sdg:AuthenticationLevelOfAssurance>},
+        '<sdg:AuthenticationLevelOfAssurance/>')
+  end
+  let(:waived) do
+    structured.sub('</sdg:DistributedAs>',
+      '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>')
+  end
 
   before do
     sign_in
@@ -32,6 +55,86 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     visit_providers
 
     expect(response.body).to include('41170824-15d9-4c16-984e-63b75b937b8c', 'Substantial')
+  end
+
+  # R-DSD-RESP-S027 (FATAL) makes `sdg:DistributedAs` mandatory, so a service
+  # published without one is an anomaly of the directory. The acceptance
+  # environment holds none — its thirteen answers all carry a distribution — so
+  # the answer is built here, and its signature doubled: the captures are signed
+  # over their bytes and none of them can be edited.
+  it 'names a distribution the directory published nothing of' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', undistributed)
+
+    visit_providers
+
+    expect(response.body).to include('Aucune distribution publiée', 'R-DSD-RESP-S027',
+      "#{schematron}/DSD-RESP-S.sch")
+  end
+
+  # An element published empty reads as an empty string and not as nothing, so a
+  # dash conditioned on nil alone renders a blank badge — the very gap this page
+  # exists to name, hidden by the shape of the value rather than by its absence.
+  it 'renders a dash for every value the directory published empty' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', blanked)
+
+    visit_providers
+
+    expect(response.body).to include('entry__tag">—<', 'Identifiant du service <code>—</code>',
+      'Niveau de garantie <strong>—</strong>')
+  end
+
+  # The data model of the distribution (R-DSD-RESP-C010) and the EDM versions of
+  # the access point (R-DSD-RESP-C015) are two elements under two parents, and
+  # the page must not let them be read as one: the two labels share no word.
+  it 'names the data model of the distribution apart from the access point versions' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', modelled)
+
+    visit_providers
+
+    expect(response.body).to include("Modèle de données <code>#{data_model}</code>",
+      'versions déclarées <code>oots-edm:v2.0</code>')
+  end
+
+  # The same empty value, and two opposite verdicts. C039 makes the data model
+  # mandatory beside an XML distribution published without an unstructured one,
+  # and the acceptance environment holds no such entry: like the badge above,
+  # this state is only ever seen in a spec — a console is written for the case
+  # one hopes not to meet.
+  it 'accuses the directory where the rules require a data model it did not publish' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', structured)
+
+    visit_providers
+
+    expect(response.body).to include('Modèle de données manquant', 'R-DSD-RESP-C039',
+      "#{schematron}/DSD-RESP-C.sch")
+  end
+
+  # C039 and C041 excuse the distribution when the record publishes an
+  # unstructured one too, which is what the Irish entries of the acceptance
+  # environment do: nothing is missing there, and a dash would say otherwise.
+  it 'names the data model unowed where an unstructured distribution is published too' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', waived)
+
+    visit_providers
+
+    expect(response.body).to include('Modèle de données non exigé', 'R-DSD-RESP-C039',
+      "#{schematron}/DSD-RESP-C.sch")
+    expect(response.body).not_to include('Modèle de données manquant')
+  end
+
+  # R-DSD-RESP-C067 forbids the value beside an unstructured distribution, and
+  # the captured Finnish answer publishes a PDF: an empty line there would
+  # announce a gap the rule itself creates.
+  it 'leaves the data model off a distribution the rules forbid one on' do
+    visit_providers
+
+    expect(response.body).to include('application/pdf')
+    expect(response.body).not_to include('Modèle de données')
   end
 
   # The console asks the directory exactly as the application does, version

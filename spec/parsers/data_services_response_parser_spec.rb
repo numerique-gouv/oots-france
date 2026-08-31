@@ -6,6 +6,11 @@ RSpec.describe DataServicesResponseParser do
   subject(:providers) { described_class.new(body).providers }
 
   let(:body) { common_services_answer('dsd_data_services_fi').first }
+  # The capture distributes a PDF, which C039 and C041 do not judge: only a
+  # structured format puts a record under them.
+  let(:structured) do
+    body.sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
+  end
 
   it 'reads the provider the directory holds for that evidence type' do
     expect(providers.size).to eq(1)
@@ -88,6 +93,56 @@ RSpec.describe DataServicesResponseParser do
 
   it 'leaves the data model nil where the directory published none' do
     expect(described_class.new(body).data_services.first.distribution_conforms_to).to be_nil
+  end
+
+  # R-DSD-RESP-S027 (FATAL) makes `sdg:DistributedAs` mandatory, so a record
+  # published without one is the directory departing from the specification.
+  # Read here and nowhere else: nil answers for an absent element as for an
+  # empty one, and only the answer says which.
+  it 'says when the directory published no distribution at all' do
+    stripped = body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '')
+
+    expect(described_class.new(stripped).data_services.first).to have_attributes(
+      distribution_published: false, distribution_format: nil,
+      distribution_language: nil, distribution_conforms_to: nil,
+      unstructured_sibling_published: false,
+    )
+  end
+
+  # Asserted on the capture and not left to the model's default, which would
+  # answer the same whether the parser looked or not.
+  it 'says the capture does publish one' do
+    expect(described_class.new(body).data_services.first.distribution_published).to be(true)
+  end
+
+  # C039 and C041 excuse a structured distribution from carrying a data model
+  # when an unstructured one is published beside it, so the absence of the value
+  # is two different things and only the record says which.
+  it 'says when an unstructured distribution is published beside a structured one' do
+    published = structured.sub('</sdg:DistributedAs>', <<~XML.strip)
+      </sdg:DistributedAs>
+      <sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>
+    XML
+
+    expect(described_class.new(published).data_services.first)
+      .to have_attributes(distribution_format: 'application/xml', unstructured_sibling_published: true)
+  end
+
+  it 'says when a structured distribution is published on its own' do
+    expect(described_class.new(structured).data_services.first)
+      .to have_attributes(distribution_format: 'application/xml', unstructured_sibling_published: false)
+  end
+
+  # The diagnostic text of C039 and C041 also names `image/jpg`, which the code list has
+  # no code for; both assertions test membership of the list, so a distribution
+  # published under that spelling excuses nothing.
+  it 'excuses nothing for a format the code list does not carry' do
+    published = structured.sub('</sdg:DistributedAs>', <<~XML.strip)
+      </sdg:DistributedAs>
+      <sdg:DistributedAs><sdg:Format>image/jpg</sdg:Format></sdg:DistributedAs>
+    XML
+
+    expect(described_class.new(published).data_services.first.unstructured_sibling_published).to be(false)
   end
 
   # A directory publishes one distribution per format — C039 and C041 are

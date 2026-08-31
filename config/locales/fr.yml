@@ -207,6 +207,11 @@ fr:
         "EDM:ERR:0006": Objet référencé impossible à résoudre
         "EDM:ERR:0007": Fonction ou capacité facultative non prise en charge
         "EDM:ERR:0008": Requête dont la syntaxe ou la sémantique doit être corrigée
+    # Le Schematron plutôt que le chapitre, qui porte la règle lui aussi : le
+    # premier est épinglé sur une étiquette de version, le second est une page
+    # vivante.
+    tdd_rule:
+      schematron: Cette règle des TDD, telle que le Schematron l'écrit (nouvelle fenêtre)
     pagination:
       previous: Page précédente
       next: Page suivante
@@ -895,6 +900,28 @@ fr:
           data_service: Service de données
           level_of_assurance_html: Niveau de garantie <strong>%{level}</strong>
           service_id_html: Identifiant du service <code>%{id}</code>
+          # L'anomalie que la page existe pour rendre lisible : sans ces deux
+          # clés, un `sdg:DistributedAs` absent s'affiche comme un format vide.
+          no_distribution: Aucune distribution publiée
+          no_distribution_detail_html: >-
+            Le Data Service Directory n'a publié aucun <code>sdg:DistributedAs</code> —
+            <code>%{rule}</code> le rend obligatoire.
+          # Le modèle de données de la distribution, à ne pas confondre avec les
+          # « versions déclarées » du point d'accès juste dessous : deux éléments
+          # distincts sous deux parents distincts, d'où deux libellés sans aucun
+          # mot commun.
+          data_model_html: Modèle de données <code>%{model}</code>
+          # L'absence de ce modèle est deux états et non un : C039 et C041 excusent
+          # une distribution structurée que le même enregistrement publie aussi dans
+          # un format non structuré, et accusent l'annuaire quand il ne le fait pas.
+          # La règle est interpolée, C039 jugeant l'XML et C041 le JSON.
+          data_model_missing: Modèle de données manquant
+          data_model_missing_detail_html: >-
+            Ce justificatif n'est distribué dans aucun format non structuré :
+            <code>%{rule}</code> impose alors un <code>sdg:ConformsTo</code>.
+          data_model_waived_html: >-
+            Modèle de données non exigé : ce justificatif est aussi distribué dans un format
+            non structuré, ce qui lève <code>%{rule}</code>.
           access_point_html: >-
             Point d'accès <strong>%{label}</strong>
             — <code>%{id}</code>,
