@@ -71,4 +71,21 @@ RSpec.describe EvidenceRequest::ResolveProvider do
       expect(resolve.error).to include(key: :common_services_refused)
     end
   end
+
+  # `DSD:ERR:0005` refuses nothing — the country holds several providers and
+  # asks the user to choose. The questions are read (OOTS-51) and go no
+  # further: `UserAttributesRequired` being a `CommonServicesError`, it lands
+  # in the same refusal as an unreachable directory. This pins that state so
+  # that OOTS-52, which gives the questions a way out, has to come here and
+  # say so rather than change it in passing.
+  describe 'a directory asking the user to narrow the choice down' do
+    it 'fails as an ordinary refusal, the questions going no further for now' do
+      asking = UserAttributesRequired.new('DSD:ERR:0005 : à préciser',
+        classifications: [EvidenceProviderClassification.new])
+      allow(common_services).to receive(:data_service).and_raise(asking)
+
+      expect(resolve).to be_failure
+      expect(resolve.error).to include(key: :common_services_refused)
+    end
+  end
 end

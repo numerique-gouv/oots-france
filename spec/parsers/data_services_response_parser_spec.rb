@@ -141,4 +141,157 @@ RSpec.describe DataServicesResponseParser do
     expect { described_class.new(stripped) }
       .to raise_error(CommonServicesError, /adresse du fournisseur/)
   end
+
+  # `DSD:ERR:0005` is the one code of chapter 3.1.4 that refuses nothing: the
+  # country holds several providers for this evidence type and asks the user to
+  # narrow it down. Fabricated, acceptance publishing no such country.
+  describe 'when the directory asks the user to narrow the choice down' do
+    subject(:questions) { asked(data_services_asking_the_user).classifications }
+
+    # The answer is read by building the parser, and it is by raising that the
+    # parser hands the questions back — so the error is caught here once, and
+    # each example reads what it carries.
+    def asked(body)
+      described_class.new(body)
+      raise 'the directory refused instead of asking'
+    rescue UserAttributesRequired => e
+      e
+    end
+
+    it 'raises an error of its own rather than the refusal the other codes give' do
+      expect { described_class.new(data_services_asking_the_user) }
+        .to raise_error(UserAttributesRequired, /DSD:ERR:0005/)
+    end
+
+    it 'keeps the code, which is what tells this apart from a refusal' do
+      expect(asked(data_services_asking_the_user).code).to eq('DSD:ERR:0005')
+    end
+
+    it 'reads the question the directory published, in full' do
+      expect(questions.sole).to have_attributes(
+        id: '5b8b7dbc-64e6-4b4b-9b40-fc0eb0e6a67b',
+        scheme_id: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/FI/TownOfBirth',
+        type: 'codelist',
+        value_expression: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/FI/TownOfBirth',
+      )
+      expect(questions.sole.descriptions).to eq('EN' => 'In which town were you born?')
+    end
+
+    # `R-DSD-ERR-C033` matches the scheme on `normalize-space`: one the
+    # directory padded satisfies the rule, and would be refused here if it
+    # were stored as written.
+    it 'strips a scheme the directory published with padding' do
+      padded = data_services_asking_the_user(
+        concepts: [classification_concept(scheme_id: '  https://sr.acc.oots.tech.ec.europa.eu/codelists/FI/TownOfBirth ')],
+      )
+      read = asked(padded).classifications.sole
+
+      expect(read.scheme_id).to eq('https://sr.acc.oots.tech.ec.europa.eu/codelists/FI/TownOfBirth')
+      expect(read).to be_valid
+    end
+
+    # `R-DSD-ERR-S027` makes the slot a Set, whose order is nonetheless the one
+    # the directory wrote: a caller putting two questions to its user puts them
+    # in the order they were asked.
+    it 'reads every concept the slot carries, in the order published' do
+      insured = classification_concept(
+        id: '2c4a2a6f-9f2e-4f4b-8bb4-1f6b0c2f3a11', type: 'boolean', scheme_id: nil,
+        value_expression: nil, descriptions: { 'EN' => 'Are you privately insured?' },
+      )
+      read = asked(data_services_asking_the_user(concepts: [classification_concept, insured])).classifications
+
+      expect(read.map(&:label)).to eq(['In which town were you born?', 'Are you privately insured?'])
+      expect(read.last).to have_attributes(type: 'boolean', scheme_id: nil, value_expression: nil)
+    end
+
+    # The three `DSD-ERR005` examples of the 2.0.1 corpus
+    # (`schematron-validator/…/DSD-ERR/valid/`) write `Codelist`, which
+    # `R-DSD-ERR-C031` refuses: read strictly, the documents the specification
+    # files under `valid/` would be unreadable.
+    it 'reads a type the published examples capitalise' do
+      capitalised = data_services_asking_the_user(concepts: [classification_concept(type: 'Codelist')])
+
+      expect(asked(capitalised).classifications.sole).to have_attributes(type: 'codelist', codelist?: true)
+    end
+
+    # Kept as published rather than dropped: the concept is then invalid, and
+    # says which type it was given, where a nil would say only that nothing was
+    # read.
+    it 'keeps a type the rules do not publish, and holds the concept invalid' do
+      unknown = data_services_asking_the_user(concepts: [classification_concept(type: 'date')])
+      read = asked(unknown).classifications.sole
+
+      expect(read.type).to eq('date')
+      expect(read).not_to be_valid
+    end
+
+    # `R-DSD-ERR-S010` admits two slots and no others, but two of the three
+    # `DSD-ERR005` examples of the 2.0.1 corpus carry a third — and they sit
+    # under `valid/`, beside the rules they break. Refusing it would refuse
+    # what the specification publishes as its own model.
+    it 'ignores a slot the rules do not admit' do
+      extra = data_services_asking_the_user(extra_slots: <<~XML)
+        <rim:Slot name="JurisdictionDetermination">
+          <rim:SlotValue xsi:type="rim:StringValueType"><rim:Value>FI</rim:Value></rim:SlotValue>
+        </rim:Slot>
+      XML
+
+      expect(asked(extra).classifications.size).to eq(1)
+    end
+
+    # Kept as published rather than dropped, for the same reason as above: the
+    # concept says which type it was given, and is invalid for it.
+    it 'keeps a concept the directory published without a type' do
+      untyped = data_services_asking_the_user(concepts: [classification_concept(type: nil)])
+      read = asked(untyped).classifications.sole
+
+      expect(read.type).to be_nil
+      expect(read).not_to be_valid
+    end
+
+    # `R-DSD-ERR-S022` makes the slot mandatory, so its absence is a directory
+    # breaking its own rule. Nothing is left to ask the user, and the code is
+    # then said as the ordinary refusal it has become — not as an unreadable
+    # message, which is what the shared slot reader would have raised.
+    it 'falls back to the ordinary refusal where the question is missing' do
+      silent = data_services_asking_the_user.sub(%r{<rim:Slot name="UserRequested.*?</rim:Slot>}m, '')
+
+      expect { described_class.new(silent) }.to raise_error(CommonServicesError, /DSD:ERR:0005/) do |raised|
+        expect(raised).not_to be_a(UserAttributesRequired)
+      end
+    end
+
+    # The slot is there and empty — `R-DSD-ERR-S024` wants at least one
+    # element — which reaches the same fallback by the other route.
+    it 'falls back to the ordinary refusal where the slot carries no question' do
+      empty = data_services_asking_the_user(concepts: [])
+
+      expect { described_class.new(empty) }.to raise_error(CommonServicesError, /DSD:ERR:0005/) do |raised|
+        expect(raised).not_to be_a(UserAttributesRequired)
+      end
+    end
+
+    # `R-DSD-ERR-S019` puts a concept in every element. One element without
+    # its concept would otherwise yield the other questions and nothing to say
+    # one was lost — a questionnaire with a hole the caller cannot see, whose
+    # answers would be reissued only to be refused again. So the whole set
+    # gives way, and the answer is the ordinary refusal.
+    it 'gives up the whole set rather than asking part of it' do
+      amputated = data_services_asking_the_user(
+        concepts: [classification_concept, '<rim:Element xsi:type="rim:AnyValueType"/>'],
+      )
+
+      expect { described_class.new(amputated) }.to raise_error(CommonServicesError, /DSD:ERR:0005/) do |raised|
+        expect(raised).not_to be_a(UserAttributesRequired)
+      end
+    end
+  end
+
+  # CA4 of OOTS-50: the five other codes keep exactly the behaviour they had.
+  it 'leaves the other codes of the chapter as the refusals they are' do
+    expect { described_class.new(common_services_answer('dsd_aucun_service_fr').first) }
+      .to raise_error(CommonServicesError, /DSD:ERR:0001/) do |raised|
+        expect(raised).not_to be_a(UserAttributesRequired)
+      end
+  end
 end

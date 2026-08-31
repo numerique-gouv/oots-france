@@ -25,6 +25,7 @@ RSpec.configure do |config|
   config.include Fixtures
   config.include GatewayStubs
   config.include DirectoryStubs
+  config.include DirectoryQuestions
 end
 
 Shoulda::Matchers.configure do |config|

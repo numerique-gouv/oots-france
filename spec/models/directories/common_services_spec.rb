@@ -135,6 +135,18 @@ RSpec.describe Directories::CommonServices do
 
       expect { directory.data_service(type.id, 'DE') }.to raise_error(CommonServicesError, /injoignable/)
     end
+
+    # `DSD:ERR:0005` is not a refusal: the country holds several providers and
+    # asks the user to narrow it down. Translating it into an unknown country
+    # would lose the question, so it travels intact — the lists above name what
+    # is refused, and this is not among them.
+    it 'passes the request for a user answer through, questions and all' do
+      asked = UserAttributesRequired.new('à préciser', classifications: [EvidenceProviderClassification.new])
+      allow(dsd).to receive(:data_services).and_raise(asked)
+
+      expect { directory.data_service(type.id, 'FI') }
+        .to raise_error(UserAttributesRequired) { |raised| expect(raised.classifications.size).to eq(1) }
+    end
   end
 
   # `translating` names a refusal with a key rather than a sentence, and only
