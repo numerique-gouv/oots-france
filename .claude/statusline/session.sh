@@ -57,15 +57,19 @@ if [ -n "$SESSION" ]; then
   [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
 
   # `resets_at` est l'instant, en secondes Unix, où la fenêtre repart à zéro —
-  # ce qu'on veut lire, c'est le délai qui reste. Sous l'heure il se compte en
-  # minutes : « dans 0 h » à quarante minutes de la coupure serait faux au
-  # moment précis où le nombre commence à servir.
+  # ce qu'on veut lire, c'est le délai qui reste, heures *et* minutes. Une heure
+  # arrondie seule ment là où le nombre commence à servir : « dans 3h » couvre
+  # aussi bien 2 h 31 que 3 h 29, et c'est cette heure-là qu'on cherche pour
+  # décider si un ticket tient encore dans la fenêtre.
   RESTE=''
   if [ -n "$REMISE_A" ]; then
     SECONDES=$(( REMISE_A - $(date +%s) ))
+    # Arrondi à la minute supérieure : afficher « 0 min » pendant les cinquante
+    # dernières secondes annoncerait une coupure déjà faite.
+    MINUTES=$(( (SECONDES + 59) / 60 ))
     if [ "$SECONDES" -le 0 ]; then RESTE=''
-    elif [ "$SECONDES" -lt 3600 ]; then RESTE=", resets in $(( (SECONDES + 59) / 60 )) min"
-    else RESTE=", resets in $(( (SECONDES + 1800) / 3600 ))h"
+    elif [ "$MINUTES" -lt 60 ]; then RESTE=", resets in ${MINUTES} min"
+    else RESTE=", resets in $(( MINUTES / 60 ))h $(( MINUTES % 60 ))min"
     fi
   fi
 
