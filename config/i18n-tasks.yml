@@ -48,7 +48,7 @@ ignore_unused:
   - activemodel.attributes.evidence_provider.access_point
   - activemodel.attributes.resolution_filter.{procedure_code,country_code,requirement_id,evidence_type_id}
   - activemodel.attributes.audit_event_filter.{event_type,exchange_id,conversation_id,country_code,evidence_requester_id,procedure_code,depuis,jusqu_a}
-  - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth}
+  - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth,legal_person_identifier}
   - activemodel.errors.models.address.attributes.country.format
   - activemodel.errors.models.natural_person.attributes.date_of_birth.format
   - activemodel.errors.models.legal_person.{attributes.eidas_identifier.format,unpublished_identifier_scheme,valueless_identifier}
@@ -58,7 +58,7 @@ ignore_unused:
   - activemodel.errors.models.resolution_filter.{attributes.country_code.format,unreadable}
   - activemodel.errors.models.audit_event_filter.attributes.{event_type.inclusion,country_code.format,jusqu_a.before_start}
   - activemodel.errors.models.audit_event_filter.unreadable
-  - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable}
+  - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable,both_identities}
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
   - admin.journal.exchanges.statuses.*
@@ -91,3 +91,8 @@ ignore_unused:
   # sees a leaf key and loses sight of its children, including the ones the table
   # headings name one by one.
   - admin.journal.attributes.*
+  # Composées de l'identité que le formulaire soumis a cherchée : la légende du
+  # tableau des résultats et le message qui la remplace quand il n'y a rien à
+  # montrer la nomment tous les deux, là où le titre de la page dit « personne »
+  # pour les deux formulaires. Feuille par feuille, comme le reste de cette liste.
+  - admin.journal.subjects.show.{caption,empty}.{person,organisation}

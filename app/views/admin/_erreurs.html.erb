@@ -1,7 +1,10 @@
 <% if errors.any? %>
   <%# The component wraps its content in a `<p>`, where a list would be
       invalid HTML. %>
-  <%= dsfr_alert(type: :error, title: t('admin.unreadable'), html_attributes: { class: 'fr-mb-4w' }) do %>
+  <%# The title says what happened, which is not always that a criterion was
+      unreadable: a page whose criteria can be refused as well passes its own. %>
+  <%= dsfr_alert(type: :error, title: local_assigns.fetch(:title, t('admin.unreadable')),
+        html_attributes: { class: 'fr-mb-4w' }) do %>
     <%= safe_join(errors.full_messages.map { |message| "#{message}." }, tag.br) %>
   <% end %>
 <% end %>
