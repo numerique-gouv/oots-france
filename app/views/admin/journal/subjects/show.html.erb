@@ -32,7 +32,8 @@
     <div class="fr-fieldset__element fr-fieldset__element--inline">
       <div class="fr-input-group">
         <%= form.label :date_of_birth, t('admin.journal.subjects.attributes.date_of_birth'), class: 'fr-label' %>
-        <%= form.date_field :date_of_birth, value: @search.date_of_birth, class: 'fr-input' %>
+        <%= form.text_field :date_of_birth, value: @search.date_of_birth,
+              class: 'fr-input', inputmode: 'numeric', maxlength: 10, placeholder: 'AAAA-MM-JJ' %>
       </div>
     </div>
 
