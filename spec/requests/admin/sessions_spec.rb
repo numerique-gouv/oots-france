@@ -93,6 +93,107 @@ RSpec.describe 'Admin::Sessions' do
     end
   end
 
+  # These cases post the form themselves rather than calling `sign_in`, whose
+  # assertion on the root is precisely what they contradict.
+  describe 'the page the guard turned away' do
+    let(:administrator) { create(:administrator) }
+
+    def sign_in_through_the_form(**smuggled)
+      post admin_session_path,
+        params: { email: administrator.email, password: administrator.password, **smuggled }
+    end
+
+    it 'is where a successful login lands' do
+      exchange = create(:exchange, :failed)
+
+      get admin_journal_exchange_path(exchange.exchange_id)
+      expect(response).to redirect_to(new_admin_session_path)
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_journal_exchange_path(exchange.exchange_id))
+      follow_redirect!
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'keeps the query string of the page it retains' do
+      get admin_journal_root_path(parametre: 'https://exemple.invalid')
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_journal_root_path(parametre: 'https://exemple.invalid'))
+    end
+
+    # The destination is derived from the request, so a parameter of the login
+    # form must not steer it — that is what would make this form an open
+    # redirect. `request.fullpath` carries neither scheme nor host, and
+    # `action_on_open_redirect` is `:raise` under `load_defaults 8.1`, so a
+    # destination naming a host would raise rather than travel; both belts only
+    # hold as long as nothing reads a parameter here.
+    it 'ignores a destination smuggled in as a request parameter' do
+      sign_in_through_the_form(destination: 'https://exemple.invalid')
+
+      expect(response).to redirect_to(admin_root_path)
+    end
+
+    it 'is the last one turned away when several were' do
+      get admin_journal_root_path
+      get admin_common_services_root_path
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_common_services_root_path)
+    end
+
+    # Replaying the address of an action as a GET would reach a route that does
+    # not exist. `DELETE /admin/session` is the one this application answers;
+    # GoodJob's retry and discard buttons are the PUT that motivate the rule.
+    it 'is not retained when the request the guard refused was not a GET' do
+      delete admin_session_path
+      expect(response).to redirect_to(new_admin_session_path)
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_root_path)
+    end
+
+    it 'is the root when the form was opened directly' do
+      get new_admin_session_path
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_root_path)
+    end
+
+    # A refused login renders rather than redirecting, and the guard does not
+    # run on `create`: the destination outlives a mistyped password, which is
+    # the scenario the whole thing exists for.
+    it 'survives a wrong password and serves the attempt that succeeds' do
+      get admin_journal_root_path
+
+      post admin_session_path, params: { email: administrator.email, password: 'un-autre-mot-de-passe' }
+      expect(response).to have_http_status(:unprocessable_content)
+
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_journal_root_path)
+    end
+
+    # The `reset_session` of the login is what forgets it, and it is enough:
+    # reaching `destroy` needs a session, which the guard never refuses, so no
+    # state holds an authenticated session and a destination at once.
+    it 'serves once, and a second login lands on the root again' do
+      get admin_journal_root_path
+      sign_in_through_the_form
+      expect(response).to redirect_to(admin_journal_root_path)
+
+      delete admin_session_path
+      sign_in_through_the_form
+
+      expect(response).to redirect_to(admin_root_path)
+    end
+  end
+
   # The key travels as a symbol through the flash and is resolved two steps
   # later, by `layouts/_messages`: neither end is a lookup `i18n-tasks` can see.
   it 'says every flash key the space can redirect with' do

@@ -18,12 +18,16 @@ module Admin
         return render(:new, status: :unprocessable_content)
       end
 
+      # Read here and not after: `reset_session` takes the destination with the
+      # rest of the session, which is what makes it serve only once.
+      destination = requested_path
+
       # A new session identifier, so that one an attacker managed to plant
       # before the login does not become an authenticated one.
       reset_session
       session[:administrator_id] = administrator.id
 
-      redirect_to admin_root_path
+      redirect_to destination || admin_root_path
     end
 
     def destroy
