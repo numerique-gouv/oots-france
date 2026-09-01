@@ -24,6 +24,7 @@ ENV['SEL_DERIVATION_CLES_JOURNAL'] ||= 'journal_sel_de_derivation_pour_la_suite_
 ENV['DUREE_RETENTION_JOURNAL_MOIS'] ||= '12'
 ENV['DELAI_EXPIRATION_REQUETEUR_MINUTES'] ||= '6'
 ENV['DELAI_EXPIRATION_FOURNISSEUR_MINUTES'] ||= '5'
+ENV['DELAI_RESERVATION_REMISE_MINUTES'] ||= '6'
 
 # The four above are read while the framework boots, which happened before this
 # file was loaded: the values just posted would otherwise never reach the

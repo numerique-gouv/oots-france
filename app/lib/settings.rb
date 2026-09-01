@@ -31,6 +31,7 @@ module Settings
     DUREE_RETENTION_JOURNAL_MOIS
     DELAI_EXPIRATION_REQUETEUR_MINUTES
     DELAI_EXPIRATION_FOURNISSEUR_MINUTES
+    DELAI_RESERVATION_REMISE_MINUTES
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
@@ -39,7 +40,7 @@ module Settings
   # checking here rather than at the point of use.
   NUMERIC = %w[
     DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS
-    DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES
+    DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES DELAI_RESERVATION_REMISE_MINUTES
   ].freeze
 
   # Article 17(4) of the implementing regulation, as a floor: a member state may
@@ -112,6 +113,11 @@ module Settings
     def requester_timeout = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES').minutes
 
     def provider_timeout = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES').minutes
+
+    # How long `Exchange#claim_delivery!` holds a handover under way. Not a
+    # timeout of chapter 4.4.3 but a guard against two workers handing the same
+    # evidence over — the method it serves says what the value arbitrates.
+    def delivery_lease = whole('DELAI_RESERVATION_REMISE_MINUTES').minutes
 
     # Both or neither. Left empty, the two say « this deployment does not want
     # the dispositif », and everything runs as the owner of the tables, under

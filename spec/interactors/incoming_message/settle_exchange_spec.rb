@@ -354,8 +354,8 @@ RSpec.describe IncomingMessage::SettleExchange do
   end
 
   # `processable?` lets a presumed exchange through, so two late responses both
-  # reach the handover — the one composition where the exchange's own age can no
-  # longer tell the reservation anything.
+  # reach the handover, and the reservation is the whole of what keeps the
+  # evidence from going over twice.
   context 'when the sweep had already given the exchange up' do
     before do
       exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day)

@@ -123,6 +123,16 @@ RSpec.describe Settings do
     end
   end
 
+  # Not a timeout of chapter 4.4.3 but a guard against two workers handing the
+  # same evidence over, which is why it is configured on its own.
+  describe 'the lease on a delivery under way' do
+    it 'reads in minutes' do
+      with_environment(filled.merge('DELAI_RESERVATION_REMISE_MINUTES' => '6')) do
+        expect(described_class.delivery_lease).to eq(6.minutes)
+      end
+    end
+  end
+
   describe '.audit_trail_encryption' do
     # Read while the framework boots, so it cannot raise: `rails db:test:prepare`
     # and the task that renders the specimen messages both load the application

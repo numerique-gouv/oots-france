@@ -264,25 +264,24 @@ RSpec.describe Exchange do
     end
 
     # `EvidenceForwarder` sets no deadline and retries twice, so a handover may
-    # run long. What keeps it from being overtaken is that the reservation is
-    # younger than the exchange, which the sweep gives up on first.
-    it 'holds a reservation while the exchange is still one nobody gave up on' do
-      exchange.update_columns(created_at: Settings.requester_timeout.ago + 1.minute)
-      exchange.claim_delivery!
+    # run long. What keeps it from being overtaken is the lease, and nothing
+    # about the exchange it is taken on.
+    it 'holds a reservation younger than its lease' do
+      exchange.update_columns(delivering_at: Settings.delivery_lease.ago + 1.minute)
 
       expect(described_class.find(exchange.id).claim_delivery!).to be(false)
     end
 
-    it 'lets a reservation go once it is itself past the timeout' do
-      exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
-        delivering_at: Settings.requester_timeout.ago - 1.minute)
+    it 'lets a reservation go once it is past its lease' do
+      exchange.update_columns(delivering_at: Settings.delivery_lease.ago - 1.minute)
 
       expect(described_class.find(exchange.id).claim_delivery!).to be(true)
     end
 
-    # An exchange the sweep gave up on is past the timeout by definition, so
-    # its age alone would let every late answer through — and two arriving at
-    # once would both hand the evidence over.
+    # `IncomingMessage::SettleExchange` lets a late answer through on an
+    # exchange the sweep gave up on, so two arriving at once both reach the
+    # handover: the reservation is the whole of what keeps the evidence from
+    # going over twice, and giving up on the exchange must not release it.
     it 'holds a fresh reservation on an exchange the sweep gave up on' do
       exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
       exchange.expire!
@@ -295,8 +294,7 @@ RSpec.describe Exchange do
     # sitting exactly on it has not passed it.
     it 'holds one sitting exactly on the cutoff' do
       freeze_time do
-        exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
-          delivering_at: Settings.requester_timeout.ago)
+        exchange.update_columns(delivering_at: Settings.delivery_lease.ago)
 
         expect(described_class.find(exchange.id).claim_delivery!).to be(false)
       end
