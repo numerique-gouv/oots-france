@@ -19,18 +19,11 @@ class SubjectSearch
   # let one address fill both forms of the page.
   attribute :legal_person_identifier, :string
 
-  # A string, so that the key composes exactly as `NaturalPerson` wrote it — and
-  # validated for it, because this is the one field whose wrong format yields a
-  # wrong answer rather than an error: `25/11/1965` composes a key that matches
-  # nobody, and the page would say so as if the person had never been asked about.
-  #
-  # The organisation's identifier needs no such rule: it has one writing, the
-  # one that arrived, and the case is folded away — so « aucun événement » is
-  # the true answer to an identifier nothing carries.
-  validates :date_of_birth,
-    format: { with: /\A\d{4}-\d{2}-\d{2}\z/, message: :format },
-    allow_blank: true
+  # The writing chapter 4.5.1 gives the slot, which is what the journal composed
+  # its key from.
+  ISO_DATE = /\A(\d{4})-(\d{2})-(\d{2})\z/
 
+  validate :reject_unreadable_date_of_birth
   validate :reject_both_identities
 
   def person = attributes.symbolize_keys.slice(*AuditEvent::SUBJECT_FIELDS)
@@ -69,6 +62,27 @@ class SubjectSearch
   end
 
   private
+
+  # The one field whose wrong writing yields a wrong answer rather than an
+  # error: `25/11/1965` composes a key that matches nobody, and the page would
+  # say so as if the person had never been asked about.
+  #
+  # The organisation's identifier needs no such rule: it has one writing, the
+  # one that arrived, and the case is folded away — so « aucun événement » is
+  # the true answer to an identifier nothing carries.
+  def reject_unreadable_date_of_birth
+    return if date_of_birth.blank? || iso_date?
+
+    errors.add(:date_of_birth, :format)
+  end
+
+  # The shape and the calendar both, neither being enough alone: `1990-13-32`
+  # has the shape and is no date, and each composes a key matching nobody.
+  def iso_date?
+    year, month, day = ISO_DATE.match(date_of_birth)&.captures
+
+    year.present? && Date.valid_date?(year.to_i, month.to_i, day.to_i)
+  end
 
   # Two forms on one page are one query string, so a forged address can carry
   # both identities. Refused rather than arbitrated, in the spirit of

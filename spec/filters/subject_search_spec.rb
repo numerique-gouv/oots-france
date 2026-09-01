@@ -117,17 +117,22 @@ RSpec.describe SubjectSearch do
       )
     end
 
-    # `01/01/1990` composes a key nobody has: without the format, the page would
-    # answer as though the person had never been asked about.
-    it 'refuses a date of birth that is not ISO 8601' do
-      search = described_class.new(**person, date_of_birth: '01/01/1990')
+    # Each of these composes a key nobody has: without the validation, the page
+    # would answer as though the person had never been asked about.
+    [
+      ['is not ISO 8601', '01/01/1990'],
+      ['the calendar has not', '1990-13-32'],
+    ].each do |what, typed|
+      it "refuses a date of birth that #{what}" do
+        search = described_class.new(**person, date_of_birth: typed)
 
-      expect(search.events).to be_empty
-      expect(search).not_to be_searched
-      expect(search.errors.full_messages).to contain_exactly(
-        "#{I18n.t('activemodel.attributes.subject_search.date_of_birth')} " \
-        "#{I18n.t('activemodel.errors.models.subject_search.attributes.date_of_birth.format')}",
-      )
+        expect(search.events).to be_empty
+        expect(search).not_to be_searched
+        expect(search.errors.full_messages).to contain_exactly(
+          "#{I18n.t('activemodel.attributes.subject_search.date_of_birth')} " \
+          "#{I18n.t('activemodel.errors.models.subject_search.attributes.date_of_birth.format')}",
+        )
+      end
     end
   end
 end
