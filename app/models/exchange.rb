@@ -155,7 +155,7 @@ class Exchange < ApplicationRecord
   def direction = incoming? ? :incoming : :outgoing
 
   # Whose procedure this is. A procedure belongs to the country that requests —
-  # `Directories::CommonServices#first_requirement` asks the Evidence Broker
+  # `Directories::CommonServices#requirements` asks the Evidence Broker
   # about it under France's own code — so France declares it when France asks,
   # and the correspondent does when the correspondent asks.
   def requester_country_code = incoming? ? country_code : Settings.common_services_country_code

@@ -56,7 +56,7 @@ Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un 
 | La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
 | Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
 
-Un dernier commentaire nomme un ticket sans figer de valeur — ce n'est pas un bouchon mais un manque assumé : toutes les exigences d'une démarche sont résolues, mais un seul échange part, sur la première qui a publié des types ([OOTS-139](https://linear.app/pole-api/issue/OOTS-139)). `git grep -n 'OOTS-' -- app/` fait foi si cette phrase prend du retard.
+Quelques commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : toutes les exigences d'une démarche sont résolues, mais un seul échange part, sur la première qui a publié des types ([OOTS-139](https://linear.app/pole-api/issue/OOTS-139)) ; et une exigence sans type ne dit pas si le pays a déclaré n'en avoir aucun ou si l'annuaire n'en savait rien ([OOTS-54](https://linear.app/pole-api/issue/OOTS-54)). `git grep -n 'OOTS-' -- app/` en fait la liste, et fait foi dès que cette phrase prend du retard.
 
 ## Ce qui est déjà conforme
 
