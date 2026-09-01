@@ -235,15 +235,34 @@ Un fil ouvert par `douanier` est un finding : un contrôle nommé, un constat, u
 2. **Corrige dans le ticket**, avec `save_issue(patch: …)` — des opérations ciblées, pas une description réécrite en entier, qui emporterait ce que quelqu'un d'autre a ajouté.
 3. **Réponds dans le fil** (`save_comment(parentId: …)`) ce que tu as fait, en une ligne. Pas « corrigé » : *ce* qui a été corrigé, pour qu'une relecture sache où regarder.
 4. **Un fil que tu contestes se répond aussi**, en citant ce qui tranche — un chapitre, une règle de grooming de ce fichier, un commentaire du ticket. Un finding faux existe ; le laisser sans réponse le rend éternel.
+5. **Ouvre chaque réponse par le mot qui dit son sort** — `RÉPARÉ`, `CONTESTÉ` ou `RENVOYÉ`, puis un tiret et ce qui a changé. C'est ce mot qui marque le fil comme résolu, et rien d'autre : voir ci-dessous.
 
-**Ta réponse ne lève rien.** C'est `douanier` qui lève un fil, à sa passe suivante, en ne retrouvant plus le défaut. N'écris donc jamais qu'un fil est résolu, et ne compte pas un ticket comme prêt parce que tu as répondu partout.
+#### Le marqueur est le premier mot de ta réponse
+
+**Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue.** Vérifié le 2026-09-01 : `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff* — appelé sur l'identifiant d'un fil d'issue, il répond `400 Could not find referenced PullRequestComment`. Il n'y a donc **aucun geste d'API à faire**, et attendre qu'il en existe un laisserait vingt fils indiscernables.
+
+Le marqueur est donc textuel, comme les verdicts et les empreintes de `douanier` le sont déjà : la première ligne de ta réponse, que `list_comments` rend telle quelle. Trois mots, et un seul par fil :
+
+| Premier mot | Ce qu'il dit | Quand |
+| --- | --- | --- |
+| `RÉPARÉ` | le défaut n'est plus là, j'ai patché | tu as changé le ticket, et le contrôle devrait passer |
+| `CONTESTÉ` | le finding est faux, je n'ai rien changé | tu as plaidé, en citant ce qui tranche |
+| `RENVOYÉ` | le défaut est réel, sa levée appartient à quelqu'un d'autre | un chantier fermé, un `blockedBy` non rendu, une décision de l'utilisateur |
+
+Écris-le en tête, suivi d'un tiret et d'une phrase qui dise **ce qui a changé**, jamais « corrigé » seul. `RENVOYÉ` prend toujours son complément — *renvoyé à qui* : « au chantier, que seul l'utilisateur ouvre », « à `OOTS-49`, dont le préalable n'est pas rendu ». Un renvoi qui ne nomme pas celui qui tient la levée ne vaut pas mieux que le silence. Sans ce mot, la passe suivante doit rejuger vingt fils pour retrouver les trois qui bougent encore ; avec lui, elle lit la liste et commence par les `RÉPARÉ`.
+
+**Ce n'est pas un verdict, et ça ne statue rien.** `RÉPARÉ` déclare ce que tu as fait ; ce qui *lève* un contrôle reste de ne plus retrouver le défaut en relisant, et c'est `douanier` qui le constate et qui monte le ticket. Un `RÉPARÉ` posé sur un défaut toujours là se retourne contre toi : il devient un finding de plus. N'en pose donc aucun que tu n'aies vérifié dans le ticket enregistré.
+
+> [!TIP]
+> Un humain peut, lui, résoudre le fil dans l'interface Linear, et c'est bienvenu — mais ce clic n'est le marqueur de personne : il ne dit pas *qui* a réglé quoi. Le jour où le serveur MCP saura résoudre un commentaire d'issue, le geste **doublera** ce mot sans le remplacer, pour la même raison.
 
 ### Ce que tu ne fais plus, et ce qui te reste
 
 | Geste | Qui |
 | --- | --- |
 | Créer un ticket, écrire son corps, le patcher, le découper, poser ses relations, sa priorité, son parent, son projet | **toi** |
-| Le monter en `Todo`, le redescendre en `Backlog`, ouvrir un fil de finding | [`douanier`](../douanier/SKILL.md) |
+| Marquer un fil `RÉPARÉ`, `CONTESTÉ` ou `RENVOYÉ` selon ce que tu en as fait | **toi** |
+| Le monter en `Todo`, le redescendre en `Backlog`, ouvrir un fil de finding, le déclarer `LEVÉ` | [`douanier`](../douanier/SKILL.md) |
 
 Un ticket que tu juges prêt, tu le **signales** dans ton rapport — tu ne le montes pas. La liste de ce qui est prêt à relire est utile ; le geste ne l'est pas.
 

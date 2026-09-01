@@ -246,11 +246,21 @@ RECEVABLE — empreinte a3f19c40b2e1
 Contrôles A, B, C passés le 2026-08-31. Monté en Todo.
 ```
 
-### La levée d'un fil n'est pas sa réponse
+### Un fil résolu est une déclaration, pas une preuve
 
-`tdd-nerd` corrige et **répond dans le fil** (`save_comment(parentId: …)`) ce qu'il a fait. Cette réponse ne lève rien : elle signale qu'il y a de nouveau quelque chose à lire.
+`tdd-nerd` corrige, **répond dans le fil** (`save_comment(parentId: …)`) ce qu'il a fait, et ouvre sa réponse par le mot qui en dit le sort — le serveur MCP ne sachant pas résoudre un commentaire d'issue, ce mot *est* le marqueur :
 
-Ce qui lève un fil, c'est **de ne plus retrouver le défaut en relisant**. À ta passe suivante l'empreinte a changé, donc tu rejuges, et chaque fil ouvert reçoit alors une réponse :
+| Son premier mot | Ce qu'il déclare | Par où commencer |
+| --- | --- | --- |
+| `RÉPARÉ` | il a patché, le contrôle devrait passer | relis le ticket : c'est là que ton verdict peut changer |
+| `CONTESTÉ` | il tient le finding pour faux et n'a rien changé | relis **ton** contrôle, pas le ticket — c'est toi qui es mis en cause |
+| `RENVOYÉ` | le défaut est réel, sa levée appartient à quelqu'un d'autre — qu'il nomme | vérifie si celui-là a agi depuis |
+
+**C'est ce qu'il déclare avoir fait, jamais ce que tu constates.** Tu le lis comme une table des matières et tu rejuges quand même : un `RÉPARÉ` posé sur un défaut toujours là se retourne en finding, à dire dans ta réponse. La règle ne bouge pas d'un pouce : **ce qui lève un contrôle, c'est de ne plus retrouver le défaut en relisant**, et rien d'autre.
+
+Un fil sans aucun de ces trois mots est un fil auquel personne n'a répondu : traite-le comme tel.
+
+À ta passe suivante l'empreinte a changé, donc tu rejuges, et chaque fil que `tdd-nerd` a touché reçoit alors une réponse :
 
 - **`LEVÉ`** — le contrôle passe désormais. Une ligne, pas plus.
 - **`TOUJOURS OUVERT`** — le contrôle échoue encore, avec ce qui manque toujours. Ce n'est pas un reproche : c'est le même finding, plus précis.
@@ -258,7 +268,7 @@ Ce qui lève un fil, c'est **de ne plus retrouver le défaut en relisant**. À t
 Quand tous les fils d'un ticket sont levés, tu rends `RECEVABLE` et tu montes le statut. Tant qu'un seul reste ouvert, le ticket reste où il est.
 
 > [!IMPORTANT]
-> **Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue** : `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les diffs. La fermeture d'un fil est donc ta réponse `LEVÉ`, et le marqueur qui fait foi est le statut du ticket. Un humain peut résoudre le fil dans l'interface, et c'est bienvenu — mais ne t'en sers jamais pour savoir ce qui est traité : un fil résolu à la main sur un ticket toujours défaillant t'induirait en erreur.
+> **Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue.** Vérifié le 2026-09-01 : `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff* — appelé sur l'identifiant d'un fil d'issue, il répond `400 Could not find referenced PullRequestComment`. Tout ce système est donc **textuel** : tes verdicts, tes empreintes, tes `LEVÉ`, et les trois mots de `tdd-nerd` ci-dessus. La fermeture d'un fil est ta réponse `LEVÉ`, et le marqueur qui fait foi pour le ticket entier est son **statut**. Un humain peut résoudre dans l'interface, et c'est bienvenu — mais ni ce clic ni la déclaration de `tdd-nerd` ne te dispensent de relire : un fil résolu sur un ticket toujours défaillant t'induirait en erreur, et c'est précisément ce que ta passe existe pour attraper.
 
 ## Procédure
 
