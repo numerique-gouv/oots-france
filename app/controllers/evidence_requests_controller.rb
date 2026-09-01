@@ -24,6 +24,7 @@ class EvidenceRequestsController < ApplicationController
     gateway_refused: :bad_gateway,
     invalid_configuration: :internal_server_error,
     invalid_directory_entry: :bad_gateway,
+    unsupported_specification: :bad_gateway,
   }.freeze
 
   rescue_from EbmsError, with: :report_bad_request

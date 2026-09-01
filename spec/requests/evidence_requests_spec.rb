@@ -116,6 +116,20 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response).to have_http_status(:bad_gateway)
     end
 
+    # A directory that returned an access point contradicting the `specification`
+    # filter the query carried is the same kind of upstream fault, and the keys
+    # have to stay in step with `FAILURE_STATUSES`.
+    it 'reports an access point that does not speak our version as 502 too' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unsupported_specification,
+          "Le point d'accès AP_DE_01 annonce oots-edm:v1.2, et non oots-edm:v2.0 : la requête n'est pas émise."))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body['erreur']).to include('oots-edm:v1.2', 'oots-edm:v2.0')
+    end
+
     # Neither 422 nor 502: a message this deployment cannot build is upstream of
     # nobody, and a 422 would send the caller correcting a request that was
     # never in question. Structured all the same, so the failure reaches them as
