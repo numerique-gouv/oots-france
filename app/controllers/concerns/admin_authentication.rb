@@ -14,6 +14,12 @@ module AdminAuthentication
   def require_administrator
     return if session[:administrator_id] && Administrator.exists?(id: session[:administrator_id])
 
+    # Derived from the request and never from a parameter, so that the login
+    # form cannot be turned into an open redirect. Only a GET: replaying the
+    # address of an action as a GET reaches a route that does not exist, and
+    # GoodJob's retry and discard buttons are PUT.
+    session[:requested_path] = request.fullpath if request.get?
+
     # A key and not a message: GoodJob's dashboard renders under `:en`, which it
     # forces for the length of its actions, and this application publishes no
     # English translation — a key of ours resolved there would render as missing.
@@ -27,4 +33,6 @@ module AdminAuthentication
     redirect_to Rails.application.routes.url_helpers.new_admin_session_path,
       alert: :'admin.sessions.connection_required', status: :see_other
   end
+
+  def requested_path = session[:requested_path]
 end
