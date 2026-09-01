@@ -59,6 +59,15 @@ RSpec.describe 'Admin::Journal::Subjects' do
     expect(response.body).not_to include(I18n.t('admin.journal.subjects.show.empty.person'))
   end
 
+  it 'refuses a date of birth the calendar has not' do
+    get admin_journal_subjects_path(family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-13-32')
+
+    expect(response.body).to include(CGI.escapeHTML(
+      I18n.t('activemodel.errors.models.subject_search.attributes.date_of_birth.format'),
+    ))
+    expect(response.body).not_to include(I18n.t('admin.journal.subjects.show.empty.person'))
+  end
+
   # Equality and nothing else: no prefix, no fragment.
   it 'matches nothing on a name that is merely close' do
     create(:audit_event, :about_a_person, exchange_id: 'la-sienne')
