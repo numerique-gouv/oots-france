@@ -26,7 +26,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   end
 
   it 'enchaîne les deux requêtes de l\'Evidence Broker jusqu\'au type de justificatif' do
-    types = directory.evidence_types_for_procedure('00', 'FR').evidence_types
+    types = directory.required_evidence_for_procedure('00', 'FR').flat_map(&:evidence_types)
 
     expect(types.map(&:id))
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'])
@@ -35,7 +35,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   # The procedure is ours, the evidence types are the asked country's: swapping
   # the two is the wiring mistake the doubles cannot see.
   it 'lit les exigences chez nous et les types dans le pays interrogé' do
-    directory.evidence_types_for_procedure('00', 'FI')
+    directory.required_evidence_for_procedure('00', 'FI')
 
     expect(a_request(:get, "#{base}/eb/rest/search")
       .with(query: hash_including('procedure-id' => '00', 'country-code' => 'FR'))).to have_been_made
@@ -70,6 +70,66 @@ RSpec.describe 'Le câblage des annuaires centraux' do
 
     expect(resolved).to be_success
     expect(resolved.requirement.id).to eq(requirement)
+  end
+
+  # The case the doubles above cannot reach, on the answers the acceptance
+  # Evidence Broker really gives: procedure `00` rests on two requirements for
+  # France, and only one of them still publishes a French evidence type — the
+  # other refuses with `EB:ERR:0001`. Nothing else in the suite runs two
+  # requirements through the real client, the real parser and the real
+  # signature, so nothing else would catch the second query being asked twice
+  # under the same `requirement-id`, or the refusal of one sinking the other.
+  # `docs/test_e2e.md` describes this same pair against the live directory.
+  describe 'une démarche qui repose sur deux exigences' do
+    let(:publiante) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff' }
+    let(:muette) { requirement }
+
+    before do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_deux_fr')
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_deux_fr', requirement: publiante)
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', requirement: muette)
+    end
+
+    it 'interroge chaque exigence sous son propre identifiant' do
+      directory.required_evidence_for_procedure('00', 'FR')
+
+      [publiante, muette].each do |asked|
+        expect(a_request(:get, "#{base}/eb/rest/search")
+          .with(query: hash_including('requirement-id' => asked, 'country-code' => 'FR'))).to have_been_made
+      end
+    end
+
+    it 'garde les deux exigences, celle qui ne publie rien comprise' do
+      resolved = directory.required_evidence_for_procedure('00', 'FR')
+
+      expect(resolved.map { |required| required.requirement.id }).to eq([publiante, muette])
+      expect(resolved.map(&:published?)).to eq([true, false])
+    end
+
+    # C'est ce que le bout-en-bout éprouve contre l'annuaire vivant, et que rien
+    # ne prouvait ici : le refus de l'exigence muette est écarté. Que l'ordre
+    # des deux cesse de décider de l'issue se prouve ailleurs, l'annuaire
+    # rendant aujourd'hui la publiante en tête — c'est
+    # `resolve_evidence_type_spec.rb` qui met la muette en première position.
+    it 'écarte le refus de l\'exigence muette et résout sur celle qui publie' do
+      resolved = EvidenceRequest::ResolveEvidenceType.call(
+        procedure_code: '00', country_code: 'FR', common_services: directory,
+      )
+
+      expect(resolved).to be_success
+      expect(resolved.requirement.id).to eq(publiante)
+      expect(resolved.evidence_type.id)
+        .to eq('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4')
+    end
+
+    # L'inverse du précédent : sans personne pour le compenser, le refus est la
+    # réponse, et il reste un refus d'annuaire plutôt qu'un pays sans type.
+    it 'relève le refus quand aucune des deux exigences ne publie' do
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', requirement: publiante)
+
+      expect { directory.required_evidence_for_procedure('00', 'FR') }
+        .to raise_error(EvidenceTypeNotFound, /FR/)
+    end
   end
 
   # The last hop, and the one nothing else covers. Every spec downstream is

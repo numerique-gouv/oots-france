@@ -23,8 +23,11 @@ module DirectoryLookup
       )
     end
 
-    # The first, as `Directories::CommonServices` keeps it, unless the operator
-    # picked another: the default has to be what a request would have done.
+    # The first the directory lists, unless the operator picked another. A
+    # request takes the first that published types instead, which this step
+    # cannot know: it has not asked for any yet. So the two part company on a
+    # procedure whose leading requirement publishes nothing — pick that
+    # requirement by hand to see what a request would have seen.
     def chosen
       context.requirements.find { |found| found.uuid == context.requirement_id } || context.requirements.first
     end
