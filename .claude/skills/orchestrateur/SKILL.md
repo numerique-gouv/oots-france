@@ -143,6 +143,8 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 
 > [!WARNING]
 > **Un contexte long se repaie à chaque tour, et c'est là que part l'essentiel** : vingt à vingt-cinq fois les jetons neufs, en cache relu — un rapport que les optimisations n'ont pas bougé, elles n'ont réduit que l'absolu. Un agent repris rejoue tout son transcript, donc sa dépense par action ne cesse de croître. Reprendre n'étale pas la dépense, ça l'augmente — et un ouvrier arrêté tard vaut mieux être **relancé de zéro sur une branche déjà poussée** quand ce qui reste tient dans un contexte neuf. Les quatre invocations du relevé ci-dessus sont exactement cela, et la moins chère a coûté 0,21 M là où reprendre l'ouvrier d'origine en aurait coûté plusieurs.
+>
+> **« Quand ce qui reste tient dans un contexte neuf » est la condition, pas une formalité.** Une revue d'écran ne la remplit jamais : ce qui revient est une correction à des gabarits et des clés que l'ouvrier a posés, et qu'un neuf devra redécouvrir avant de pouvoir l'appliquer — le briefing qui remplace ce contexte coûte plus cher que le contexte lui-même. Le calcul de jetons ci-dessus ne dit rien du verdict à traiter ; ne l'invoque pas pour contourner le § 5.
 
 **La revue est la phase chère** : planifier et implémenter réunis pèsent ~1 M, une seule passe de revue le double. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 
@@ -193,11 +195,18 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
-| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir |
+| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous) |
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
 **Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
+
+> [!IMPORTANT]
+> **Une revue d'écran se rend à l'ouvrier qui a fait l'écran.** `PLANIFIÉ` et `PLAN` sont les deux seuls verdicts qui appellent une invocation neuve, parce qu'un plan sur disque transmet tout ce qu'il y avait à transmettre. **`ÉCRAN` n'est pas de ceux-là** : ce qui revient est une correction à un travail déjà écrit, et le contexte qui la reçoit est celui qui a posé les gabarits, les clés et les vues.
+>
+> Commis le 2026-09-01 sur [OOTS-151](https://linear.app/pole-api/issue/OOTS-151), et la facture est lisible : le remplaçant a dû redécouvrir qu'un message d'absence occupait le même emplacement que la légende à décliner — ce que le premier savait —, et l'orchestrateur a dû lui réécrire un briefing qui reconstituait à la main le plan, les trois réponses déjà données et l'état de l'arbre. Un `SendMessage` de trois lignes faisait le même travail.
+>
+> **Et la recommandation de l'ouvrier ne tranche pas cette question-là.** Un ouvrier finit volontiers par « relancez-en un neuf plutôt que de me reprendre » : il juge du coût de son propre contexte, pas de ce que la réponse qui va venir exigera d'en connaître. Sur `ÉCRAN`, cette recommandation s'écarte.
 
 > [!IMPORTANT]
 > **Trois motifs de remontée, et rien d'autre.** Arbitré le 2026-08-27 : « ce que tu DOIS me soumettre, c'est l'UI, les décisions hors TDD, les décisions produit (non techniques). »
@@ -236,5 +245,5 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
 - **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste.
-- **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis).
+- **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis). **`ÉCRAN` n'en fait pas partie** — une revue d'écran revient à l'ouvrier qui a fait l'écran, et rien ne la porte sur disque comme un plan porte une conception (§ 5).
 - **Ne dépasse pas le plafond du § 3** : au-delà, tout ralentit ensemble et rien ne finit plus tôt.
