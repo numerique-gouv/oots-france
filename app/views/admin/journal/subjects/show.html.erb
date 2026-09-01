@@ -6,13 +6,14 @@
 
 <h1><%= t('admin.journal.subjects.show.title') %></h1>
 
+<%# Above both forms: what "deterministic" buys applies to either identity. %>
 <%= dsfr_callout do %>
   <%= t('admin.journal.subjects.show.exact_only') %>
 <% end %>
 
 <%= form_with url: admin_journal_subjects_path, method: :get, class: 'fr-mb-4w fr-mt-4w' do |form| %>
   <fieldset class="fr-fieldset">
-    <legend class="fr-fieldset__legend"><%= t('admin.journal.subjects.show.legend') %></legend>
+    <legend class="fr-fieldset__legend"><%= t('admin.journal.subjects.show.person_legend') %></legend>
 
     <div class="fr-fieldset__element fr-fieldset__element--inline">
       <div class="fr-input-group">
@@ -36,16 +37,40 @@
     </div>
 
     <div class="fr-fieldset__element fr-fieldset__element--inline">
-      <button type="submit" class="fr-btn"><%= t('admin.journal.subjects.show.submit') %></button>
+      <button type="submit" class="fr-btn"><%= t('admin.journal.subjects.show.person_submit') %></button>
     </div>
   </fieldset>
 <% end %>
 
-<%= render 'admin/erreurs', errors: @search.errors %>
+<%# A form of its own rather than a type selector: the two identities are two
+    questions, and each submits only its own criteria — so answering one cannot
+    carry the other along. %>
+<%= form_with url: admin_journal_subjects_path, method: :get, class: 'fr-mb-4w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend"><%= t('admin.journal.subjects.show.organisation_legend') %></legend>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <div class="fr-input-group">
+        <%= form.label :legal_person_identifier,
+              t('admin.journal.subjects.attributes.legal_person_identifier'), class: 'fr-label' %>
+        <%= form.text_field :legal_person_identifier, value: @search.legal_person_identifier, class: 'fr-input' %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn"><%= t('admin.journal.subjects.show.organisation_submit') %></button>
+    </div>
+  </fieldset>
+<% end %>
+
+<%# Its own title: a search naming both identities was read perfectly well and
+    refused all the same, so « critères illisibles » would say the wrong thing. %>
+<%= render 'admin/erreurs', errors: @search.errors, title: t('admin.journal.subjects.show.refused') %>
 
 <% if @search.searched? %>
   <p class="fr-text--sm fr-mb-2w"><%= t('admin.journal.events.count', count: @events.size) %></p>
 
   <%= render 'admin/journal/events', events: @events,
-        caption: t('admin.journal.subjects.show.caption'), empty: t('admin.journal.subjects.show.empty') %>
+        caption: t("admin.journal.subjects.show.caption.#{@search.subject_kind}"),
+        empty: t("admin.journal.subjects.show.empty.#{@search.subject_kind}") %>
 <% end %>

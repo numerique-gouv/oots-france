@@ -44,9 +44,31 @@ class AuditEvent < ApplicationRecord
   # determinism is a cost `evidence_subject_key` alone has a reason to pay.
   encrypts :regrep_body
 
-  # What the canonical key is built from, named here because `NaturalPerson`
-  # carries more than it.
+  # What the canonical key of a natural person is built from, named here
+  # because `NaturalPerson` carries more than it.
   SUBJECT_FIELDS = %i[family_name given_name date_of_birth].freeze
+
+  # Its counterpart for the other subject chapter 4.5.1 allows. Both fields are
+  # wanted to recognise an organisation, only the first composes the key:
+  # `LegalPersonIdentifier` is 1..1 and the identifier eIDAS asserts, which the
+  # slot's own cardinality and description carry — the rules only bound it,
+  # `R-EDM-REQ-C049` demanding its presence and `R-EDM-REQ-C051` its form. So it
+  # identifies on its own, while `LegalName` is what tells an organisation from
+  # a natural person — one read off a response carries an eIDAS identifier too.
+  #
+  # The name stays out of the key because a correspondent rewrites it: the
+  # provider answers with what its own base holds, « ETS DUPONT ET FILS » where
+  # the request said « Établissements Dupont & Fils ». Keyed on the pair, one
+  # subject would hold two keys, and the key exists precisely to gather the
+  # lines of one subject.
+  LEGAL_SUBJECT_FIELDS = %i[eidas_identifier legal_name].freeze
+
+  # The mark that opens the organisation's form in the single column that holds
+  # both, and that reserves the place of a third: chapter 4.8 names
+  # `Representative` as a subject the journal may come to record. The natural
+  # key carries no mark — what tells the forms apart is how many components were
+  # joined, not what opens them.
+  LEGAL_KEY_PREFIX = 'legal|'.freeze
 
   # The value the deterministic column is queried by, so that an auditor can
   # answer the question article 17 exists for: which data of this person
@@ -57,7 +79,50 @@ class AuditEvent < ApplicationRecord
   # only be searched by a value built exactly as it was stored, so whoever
   # searches has to build it the same way.
   def self.subject_key(family_name:, given_name:, date_of_birth:)
-    [family_name, given_name, date_of_birth].join('|').downcase
+    join(family_name, given_name, date_of_birth)
+  end
+
+  # What makes the join injective, and with it the whole column: a `|` inside a
+  # component takes a backslash, and a backslash doubles, so a bare `|` in a key
+  # is always a separator and never a character someone was named with.
+  #
+  # It is what tells the two forms apart, the count of those separators being
+  # the count of components — two for a natural person, one for an organisation.
+  # R-EDM-REQ-C051 shapes an eIDAS identifier as `XX/YY/Z…Z` and constrains the
+  # last segment to be non-blank and nothing more, so `FR/FR/AB|123456` is a
+  # conformant identifier carrying a bare separator; and a subject read off a
+  # response is not validated at all. Unescaped, such an identifier composed the
+  # very key of a person — « Legal » being an ordinary French family name — and
+  # one search then answered about her and about an organisation at once.
+  def self.join(*components) = components.map { |component| escape(component) }.join('|').downcase
+
+  def self.escape(component) = component.to_s.gsub(/[\\|]/) { |character| "\\#{character}" }
+
+  private_class_method :join, :escape
+
+  # The same, for an organisation. Case-folded for the same reason: two member
+  # states write an identifier in two cases and mean one organisation.
+  def self.legal_subject_key(eidas_identifier:)
+    "#{LEGAL_KEY_PREFIX}#{join(eidas_identifier)}"
+  end
+
+  # Whether a described subject carries a whole identity of that form. Asked
+  # both by the key and by the criteria that prefill a search, which have to
+  # agree: criteria naming the other identity would search a key the journal
+  # never wrote.
+  #
+  # A field present but empty counts as absent, and the distinction is not
+  # academic: `EvidenceResponseParser` reads the wire without validating, and
+  # `text_at` renders `<sdg:LegalPersonIdentifier/>` — present, empty — as `""`,
+  # which `attributes.compact` keeps. Counted as carried, it composed the key
+  # `legal|` for every organisation a correspondent answered that way, gathering
+  # unrelated subjects under one value in the column that exists to tell them
+  # apart. The natural form has the same hole, narrower only because three
+  # fields have to be empty at once rather than one.
+  def self.carries?(described, fields)
+    held = described.symbolize_keys.slice(*fields)
+
+    held.size == fields.size && held.each_value.all?(&:present?)
   end
 
   # The two columns a subject is written as, built in one place because they
@@ -71,29 +136,33 @@ class AuditEvent < ApplicationRecord
     { evidence_subject: described.to_json, evidence_subject_key: canonical_key(described) }
   end
 
-  # A subject that does not carry the three fields gets no key. Chapter 4.5.1
-  # lets the evidence subject be an organisation, which has neither a given name
-  # nor a date of birth, and a key composed of anything else would be searchable
-  # by nothing: `SubjectSearch` only ever builds the triplet. The key is a local
-  # convenience and not a chapter's demand, so its absence costs the trace
-  # nothing — `evidence_subject` still holds everything that was read.
+  # One of the two forms, or none. `legal_name` is what tells them apart, and no
+  # natural person carries one: a subject read off a response carries an eIDAS
+  # identifier as well as the triplet, so the identifier alone would have filed
+  # a person as an organisation. Wanting the pair closes that; the order the two
+  # are tried in only settles a hash carrying both whole, which neither
+  # `NaturalPerson` nor `LegalPerson` can produce.
   #
   # Decided on the fields and not on the class of what is passed, because how
   # the key is composed belongs to the journal and not to the subject: a value
   # object serves the templates and the builders too, where a column of this
   # table means nothing.
   #
-  # A subject France composed itself always carries the three: `BeneficiaryToken`
-  # and `EvidenceRequestParser` both validate before handing one over. One read
-  # off a foreign response does not — `EvidenceResponseParser#evidence_subject`
-  # reads without validating, so a provider answering short of a field loses the
-  # key silently. That is the price of the trace: refusing the response would
-  # have cost the exchange, and `evidence_subject` still holds everything that
-  # was read.
+  # A subject France composed itself always carries one of the two whole, every
+  # route that builds one validating it first — `BeneficiaryToken` and
+  # `EvidenceRequestParser` each hand over an identity their own class has
+  # already refused to leave incomplete. One read off a foreign response does
+  # not —
+  # `EvidenceResponseParser#evidence_subject` reads without validating, so a
+  # provider answering short of a field loses the key silently. That is the
+  # price of the trace: refusing the response would have cost the exchange, and
+  # `evidence_subject` still holds everything that was read.
   def self.canonical_key(described)
-    fields = described.symbolize_keys.slice(*SUBJECT_FIELDS)
+    fields = described.symbolize_keys
 
-    subject_key(**fields) if fields.size == SUBJECT_FIELDS.size
+    return subject_key(**fields.slice(*SUBJECT_FIELDS)) if carries?(fields, SUBJECT_FIELDS)
+
+    legal_subject_key(eidas_identifier: fields[:eidas_identifier]) if carries?(fields, LEGAL_SUBJECT_FIELDS)
   end
 
   # The three ebMS messages the TDD define, in each direction: which end of the
@@ -158,13 +227,20 @@ class AuditEvent < ApplicationRecord
     JSON.parse(evidence_subject)
   end
 
-  # What prefills the search for the same person, taken from the subject rather
-  # than from the key: `subject_key` folds the case, so a form filled from the
-  # key would show `dupont` where the exchange said `Dupont`.
+  # What prefills the search for the same subject, taken from the subject rather
+  # than from the key: the key folds the case, so a form filled from it would
+  # show `dupont` where the exchange said `Dupont`.
+  #
+  # The organisation is named by the criterion the form submits and not by the
+  # field the subject holds it under: `SubjectSearch` asks for a
+  # `legal_person_identifier`, chapter 4.5.1's own name for it, so that the two
+  # forms of the page cannot be filled from one address.
   def subject_criteria
-    return {} if evidence_subject_key.blank?
+    described = described_subject.symbolize_keys
+    return described.slice(*SUBJECT_FIELDS) if self.class.carries?(described, SUBJECT_FIELDS)
+    return {} unless self.class.carries?(described, LEGAL_SUBJECT_FIELDS)
 
-    described_subject.symbolize_keys.slice(*SUBJECT_FIELDS)
+    { legal_person_identifier: described[:eidas_identifier] }
   end
 
   # Append-only: a trace that can be rewritten proves nothing.

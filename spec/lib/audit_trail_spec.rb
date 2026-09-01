@@ -68,8 +68,8 @@ RSpec.describe AuditTrail do
         )
       end
 
-      it 'records no canonical key, an organisation having nothing to compose one from' do
-        expect(journalled.evidence_subject_key).to be_nil
+      it 'records the key of its eIDAS identifier, which is what searches find it by' do
+        expect(journalled.evidence_subject_key).to eq('legal|fr/de/a2635542y')
       end
 
       it 'records the rest of the request all the same' do
@@ -246,25 +246,25 @@ RSpec.describe AuditTrail do
   end
 
   # Chapter 4.5.1 lets the evidence subject be an organisation, and
-  # `R-EDM-RESP-S042` carries that over to the response. `AuditEvent` composes no
-  # canonical key for one: the triplet it is made of is a birth an organisation
-  # does not have.
+  # `R-EDM-RESP-S042` carries that over to the response — the identifier and the
+  # name alone, the sectoral identifiers excluded. Both ends of an exchange
+  # therefore key on what the response also carries.
   describe 'an answer about an organisation' do
     let(:message) { response_about_an_organisation }
 
     before { audit_trail.message_received(message:, message_id: 'message-passerelle') }
 
-    it 'records it whole, and no key to search it by' do
+    it 'records it whole, under the key an auditor searches it by' do
       expect(journalled.described_subject)
         .to eq('eidas_identifier' => 'FR/DE/A2635542Y', 'legal_name' => 'Établissements Dupont & Fils')
-      expect(journalled.evidence_subject_key).to be_nil
+      expect(journalled.evidence_subject_key).to eq('legal|fr/de/a2635542y')
     end
   end
 
-  # The consequence of reading without validating, and the one worth knowing:
-  # `AuditEvent.canonical_key` composes the key from three fields, so a subject
-  # a provider cut short is recorded whole and loses its key silently — the
-  # search by subject no longer finds it. Accepted rather than refused: the
+  # The consequence of reading without validating, and the one worth knowing: a
+  # subject a provider cut short carries neither form of key whole, so it is
+  # recorded entire and loses its key silently — the search by subject no longer
+  # finds it. Accepted rather than refused: the
   # exchange would otherwise die over a column only the journal reads.
   describe 'an answer naming a subject short of a field' do
     let(:message) do

@@ -73,6 +73,7 @@ fr:
         family_name: Le nom d'usage
         given_name: Le prénom
         date_of_birth: La date de naissance
+        legal_person_identifier: L'identifiant eIDAS de la personne morale
     errors:
       models:
         address:
@@ -126,6 +127,13 @@ fr:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
           unreadable: est illisible
+          # Les deux formulaires de la page rendent le cas impossible à la
+          # souris ; une adresse forgée, elle, peut porter les deux identités,
+          # et en honorer une seule répondrait à une question que personne n'a
+          # posée.
+          both_identities: >-
+            Une recherche porte sur une personne physique ou sur une personne morale,
+            jamais sur les deux à la fois
   accueil:
     index:
       lead: >-
@@ -581,22 +589,39 @@ fr:
         show:
           title: "Événement #%{id}"
           caption: Tout ce que le journal retient de cet événement
-          same_subject: Tous les événements concernant cette personne
+          same_subject: Tous les événements concernant ce sujet
       subjects:
         attributes:
           family_name: Nom d'usage
           given_name: Prénom
           date_of_birth: Date de naissance
+          legal_person_identifier: Identifiant eIDAS
         show:
+          # « Une personne » chapeaute les deux formulaires, la personne morale
+          # en étant une : c'est le titre de la page, son fil d'Ariane et le
+          # bouton qui y mène depuis le journal, qui lisent tous cette clé.
           title: Rechercher une personne
-          legend: La personne recherchée
+          person_legend: La personne physique recherchée
+          organisation_legend: La personne morale recherchée
           exact_only: >-
-            Les trois champs sont obligatoires et se comparent à l'exact. La clé du sujet
+            Chaque formulaire se remplit en entier et se compare à l'exact. La clé du sujet
             est chiffrée en mode déterministe : cela rend l'égalité interrogeable, et rien
             d'autre — ni fragment de nom, ni recherche approchante.
-          submit: Rechercher
-          caption: Les événements concernant cette personne
-          empty: Aucun événement ne concerne cette personne.
+          person_submit: Rechercher une personne physique
+          organisation_submit: Rechercher une personne morale
+          refused: La recherche n'a pas été faite
+          # Nommées par l'identité cherchée, là où le titre et le bandeau au-dessus
+          # disent « personne » : ceux-là chapeautent les deux formulaires, ces
+          # deux-ci ne surmontent que le résultat de l'un des deux. Déclinées
+          # ensemble parce qu'elles occupent la même place — l'une répond à la
+          # recherche qui a trouvé, l'autre à celle qui n'a rien trouvé — et qu'un
+          # écran vide qui dit « ce sujet » démentirait celui d'à côté.
+          caption:
+            person: Les événements concernant cette personne physique
+            organisation: Les événements concernant cette personne morale
+          empty:
+            person: Aucun événement ne concerne cette personne physique.
+            organisation: Aucun événement ne concerne cette personne morale.
       exchanges:
         # Le segment de route, tel que le fil d'Ariane le nomme : ni l'un ni
         # l'autre n'a de liste, le journal étant la seule.

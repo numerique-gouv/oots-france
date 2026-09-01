@@ -110,15 +110,31 @@ RSpec.describe 'db/seeds.rb' do
 
   # Chapter 4.5.1 lets the evidence subject be an organisation, which has
   # neither a given name nor a date of birth: the demonstration carries one, so
-  # that the journal page is read at least once against a line whose subject
-  # search is legitimately unavailable.
-  it 'records an organisation as an evidence subject, and gives it no canonical key' do
+  # that the second form of the subject search is read at least once against a
+  # line it answers.
+  it 'records an organisation as an evidence subject, under its own form of key' do
     replay
 
-    about_an_organisation = AuditEvent.where(event_type: 'request_received', evidence_subject_key: nil)
+    about_an_organisation = AuditEvent.about_subject(
+      AuditEvent.legal_subject_key(eidas_identifier: 'FR/DE/A2635542Y'),
+    )
 
     expect(about_an_organisation.count).to eq(1)
     expect(about_an_organisation.first.evidence_subject).to include('legal_name')
+  end
+
+  # Chapter 4.6 leaves nobody the duty to refuse a subject a correspondent
+  # answered short of a field, so the journal records one that composes neither
+  # form of key: the demonstration carries it, so that the detail page is read
+  # at least once against a line whose subject search is legitimately absent.
+  it 'records a confirmed subject short of a field, and gives it no key at all' do
+    replay
+
+    keyless = AuditEvent.where(evidence_subject_key: nil).where.not(evidence_subject: nil)
+
+    expect(keyless.count).to eq(1)
+    expect(keyless.first).to have_attributes(event_type: 'response_received')
+    expect(keyless.first.described_subject.keys).not_to include('date_of_birth')
   end
 
   # Chapter 4.5.2 has the provider confirm the identity it matched, so one

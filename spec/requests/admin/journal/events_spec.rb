@@ -414,11 +414,23 @@ RSpec.describe 'Admin::Journal::Events' do
       ))
     end
 
-    # An organisation composes no canonical key, the triplet `SUBJECT_FIELDS`
-    # names being a birth it has none of. The page reads its subject all the
-    # same, and offers no search a query would answer with nothing.
-    it 'offers no search by subject for an organisation, which composes no key' do
+    # The organisation's own form of the search, prefilled with the identifier
+    # alone — the triplet is a birth it has none of.
+    it 'links to what else concerns the same organisation' do
       event = create(:audit_event, :about_an_organisation)
+
+      get admin_journal_event_path(event)
+
+      expect(response.body).to include(CGI.escapeHTML(
+        admin_journal_subjects_path(legal_person_identifier: 'FR/DE/A2635542Y'),
+      ))
+    end
+
+    # A subject a correspondent answered short of a field composes neither form
+    # of key. The page reads it all the same, and offers no search a query would
+    # answer with nothing.
+    it 'offers no search by subject where no key could be composed' do
+      event = create(:audit_event, :about_an_incomplete_person)
 
       get admin_journal_event_path(event)
 

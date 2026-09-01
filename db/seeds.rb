@@ -40,10 +40,10 @@ if Rails.env.development?
   person = NaturalPerson.new(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
 
   # Le second sujet que le chapitre 4.5.1 autorise. Il donne à la console sa
-  # ligne sans clé canonique : `evidence_subject` renseigné, `evidence_subject_key`
-  # vide, et le bouton qui liste les autres événements du même sujet absent de la
-  # fiche — ce que le code écrit d'une personne morale, et qu'une démonstration
-  # n'affichant que des personnes physiques laisserait croire impossible.
+  # ligne dont la clé canonique est de la forme morale — `legal|` suivi de
+  # l'identifiant eIDAS —, donc la seule que le second formulaire de la
+  # recherche par sujet retrouve, et qu'une démonstration n'affichant que des
+  # personnes physiques laisserait croire introuvable.
   organisation = LegalPerson.new(
     eidas_identifier: 'FR/DE/A2635542Y',
     legal_name: 'Établissements Dupont & Fils',
@@ -132,6 +132,7 @@ if Rails.env.development?
     # mentir sur ce que le code produit, et une console qui ment se lit comme
     # une documentation.
     { status: 'delivered', country_code: 'CZ', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      confirmed_without: %w[date_of_birth],
       response_detail: BusinessRuleViolation.new(
         rule: 'R-EDM-RESP-C002',
         description: I18n.t('parsers.evidence_response.unexpected_specification',
@@ -172,9 +173,19 @@ if Rails.env.development?
   # C'est bien la règle de la requête — la réponse ne fait qu'en renvoyer le
   # *Minimum Data Set* —, et celle de la personne physique : `R-EDM-REQ-C051`,
   # que cite `LegalPerson`, porte le même format pour la personne morale.
-  matched_person = lambda do |exchange|
+  #
+  # `confirmed_without` retire un champ à ce que la réponse confirme : le
+  # chapitre 4.6 n'attribue à personne le devoir de valider un sujet reçu, et
+  # `EvidenceResponseParser#evidence_subject` consigne sans valider, si bien
+  # qu'un correspondant qui répond court d'un champ écrit une ligne **sans clé
+  # canonique**. C'est le seul cas qui en reste, et donc la seule fiche où le
+  # bouton listant les autres événements du même sujet est absent — ce que
+  # docs/journal_des_echanges.md décrit et qu'aucune autre ligne ne montrerait.
+  matched_person = lambda do |exchange, scenario|
     NaturalPerson.new(
-      person.attributes.merge('eidas_identifier' => format('FR/%s/123123123', exchange.country_code)),
+      person.attributes
+        .merge('eidas_identifier' => format('FR/%s/123123123', exchange.country_code))
+        .except(*scenario.fetch(:confirmed_without, [])),
     )
   end
 
@@ -187,7 +198,7 @@ if Rails.env.development?
     return AuditEvent.subject(scenario.fetch(:subject, person)) if event_type.start_with?('request')
     return {} unless event_type == 'response_received' && exchange.status != 'deferred'
 
-    AuditEvent.subject(matched_person.call(exchange))
+    AuditEvent.subject(matched_person.call(exchange, scenario))
   end
 
   # What `detail` holds, type by type, as `AuditTrail` writes it: the rule the
@@ -389,7 +400,8 @@ if Rails.env.development?
 
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
-        :request_id, :request_id_as_sent, :message_error_code, :subject).merge(
+        :request_id, :request_id_as_sent, :message_error_code, :subject,
+        :confirmed_without).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
           # n'a encore quitté n'en porte pas, et rien n'en écrit côté

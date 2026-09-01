@@ -2,9 +2,9 @@
 # natural person (chapter 4.5.1, "Legal Person slot").
 #
 # Personal data, and it travels in the request. The exchange log records it,
-# encrypted, like the natural person it stands in for — without the canonical
-# key, which `AuditEvent::SUBJECT_FIELDS` compose out of a birth an
-# organisation does not have.
+# encrypted, like the natural person it stands in for, and gives it a canonical
+# key of its own form — `AuditEvent::LEGAL_SUBJECT_FIELDS`, the eIDAS
+# identifier being unique where a birth an organisation does not have would be.
 class LegalPerson
   include ActiveModel::Model
   include ActiveModel::Attributes

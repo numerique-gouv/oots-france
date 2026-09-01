@@ -81,6 +81,22 @@ RSpec.describe EvidenceResponseParser do
       expect(stripped.evidence_subject)
         .to have_attributes(eidas_identifier: nil, legal_name: 'Établissements Dupont & Fils')
     end
+
+    # Emptied and not removed, which is another value entirely: `text_at` reads
+    # a missing element as `nil` and a present but empty one as `""`, and only
+    # the second survives the `attributes.compact` of `AuditEvent.subject`. It
+    # is the form that composed the key `legal|` for every organisation answered
+    # that way, so the chain is asserted here where it starts rather than only
+    # on a hand-built hash.
+    it 'reads an organisation whose identifier came back empty as empty, not absent' do
+      emptied = about_an_organisation(
+        is_about_legal_person.sub(%r{<sdg:LegalPersonIdentifier[^>]*>.*?</sdg:LegalPersonIdentifier>},
+          '<sdg:LegalPersonIdentifier></sdg:LegalPersonIdentifier>'),
+      )
+
+      expect(emptied.evidence_subject.eidas_identifier).to eq('')
+      expect(AuditEvent.subject(emptied.evidence_subject)[:evidence_subject_key]).to be_nil
+    end
   end
 
   describe 'the provider that answered' do
