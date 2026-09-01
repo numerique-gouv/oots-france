@@ -11,7 +11,7 @@ RSpec.describe EvidenceRequest::Fetch do
 
   let(:common_services) do
     instance_double(Directories::CommonServices,
-      evidence_types_for_procedure: Directories::CommonServices::RequiredEvidence.new(
+      required_evidence_for_procedure: Directories::CommonServices::RequiredEvidence.new(
         requirement: build(:requirement), evidence_types: [build(:evidence_type)],
       ),
       data_service: build(:data_service, providers: [build(:evidence_provider, access_point:)]))

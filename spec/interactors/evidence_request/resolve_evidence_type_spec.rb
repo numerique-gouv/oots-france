@@ -6,7 +6,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   end
 
   let(:common_services) do
-    instance_double(Directories::CommonServices, evidence_types_for_procedure: required)
+    instance_double(Directories::CommonServices, required_evidence_for_procedure: required)
   end
   let(:required) { Directories::CommonServices::RequiredEvidence.new(requirement:, evidence_types: types) }
   let(:requirement) { build(:requirement) }
@@ -29,7 +29,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   # carries: a directory that publishes an entry the rules refuse will publish
   # it again at the next attempt, where a timeout will not.
   it 'reports an entry the directory published against the rules under its own key' do
-    allow(common_services).to receive(:evidence_types_for_procedure)
+    allow(common_services).to receive(:required_evidence_for_procedure)
       .and_raise(InvalidDirectoryEntry, "L'exigence annoncée par l'annuaire : …")
 
     expect(resolve).to be_failure
@@ -39,7 +39,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   it 'asks for the types of the country being queried' do
     resolve
 
-    expect(common_services).to have_received(:evidence_types_for_procedure)
+    expect(common_services).to have_received(:required_evidence_for_procedure)
       .with(ProcedureCode::DIPLOMA_RECOGNITION, 'FI')
   end
 
@@ -56,7 +56,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
 
   describe 'a procedure the broker does not declare' do
     it 'fails, rather than raising at the caller' do
-      allow(common_services).to receive(:evidence_types_for_procedure)
+      allow(common_services).to receive(:required_evidence_for_procedure)
         .and_raise(ProcedureCodeNotFound, "Code de démarche « #{ProcedureCode::DIPLOMA_RECOGNITION} » introuvable.")
 
       expect(resolve).to be_failure
@@ -103,7 +103,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   # 502 on this key, where every other failure of this step is a 422.
   describe 'a directory that cannot be reached' do
     it 'fails as an upstream refusal' do
-      allow(common_services).to receive(:evidence_types_for_procedure)
+      allow(common_services).to receive(:required_evidence_for_procedure)
         .and_raise(CommonServicesError, 'Annuaire injoignable.')
 
       expect(resolve).to be_failure

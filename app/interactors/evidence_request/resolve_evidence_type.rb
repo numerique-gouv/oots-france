@@ -28,7 +28,7 @@ module EvidenceRequest
     end
 
     def satisfying_evidence
-      context.common_services.evidence_types_for_procedure(context.procedure_code, context.country_code)
+      context.common_services.required_evidence_for_procedure(context.procedure_code, context.country_code)
     end
   end
 end

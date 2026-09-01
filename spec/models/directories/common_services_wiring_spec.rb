@@ -26,7 +26,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   end
 
   it 'enchaîne les deux requêtes de l\'Evidence Broker jusqu\'au type de justificatif' do
-    types = directory.evidence_types_for_procedure('00', 'FR').evidence_types
+    types = directory.required_evidence_for_procedure('00', 'FR').evidence_types
 
     expect(types.map(&:id))
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'])
@@ -35,7 +35,7 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   # The procedure is ours, the evidence types are the asked country's: swapping
   # the two is the wiring mistake the doubles cannot see.
   it 'lit les exigences chez nous et les types dans le pays interrogé' do
-    directory.evidence_types_for_procedure('00', 'FI')
+    directory.required_evidence_for_procedure('00', 'FI')
 
     expect(a_request(:get, "#{base}/eb/rest/search")
       .with(query: hash_including('procedure-id' => '00', 'country-code' => 'FR'))).to have_been_made

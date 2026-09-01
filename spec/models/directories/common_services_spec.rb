@@ -11,9 +11,9 @@ RSpec.describe Directories::CommonServices do
   let(:type) { build(:evidence_type) }
   let(:service) { build(:data_service) }
 
-  describe '#evidence_types_for_procedure' do
+  describe '#required_evidence_for_procedure' do
     it 'chains the two broker queries, the requirement leading to the types' do
-      expect(directory.evidence_types_for_procedure('00', 'FI'))
+      expect(directory.required_evidence_for_procedure('00', 'FI'))
         .to eq(described_class::RequiredEvidence.new(requirement:, evidence_types: [type]))
 
       expect(broker).to have_received(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
@@ -22,7 +22,7 @@ RSpec.describe Directories::CommonServices do
     # The procedure is ours, so its requirements are read in our jurisdiction;
     # only the types that satisfy them are read in the country being asked.
     it 'reads the requirements in our own jurisdiction, not in the one asked' do
-      directory.evidence_types_for_procedure('00', 'FI')
+      directory.required_evidence_for_procedure('00', 'FI')
 
       expect(broker).to have_received(:requirements).with(procedure_code: '00', country_code: 'FR')
     end
@@ -30,21 +30,21 @@ RSpec.describe Directories::CommonServices do
     it 'raises on a procedure the broker holds no requirement for' do
       allow(broker).to receive(:requirements).and_return([])
 
-      expect { directory.evidence_types_for_procedure('T9', 'FI') }
+      expect { directory.required_evidence_for_procedure('T9', 'FI') }
         .to raise_error(ProcedureCodeNotFound, /T9/)
     end
 
     it 'turns the broker refusal on an unknown procedure into the same error' do
       allow(broker).to receive(:requirements).and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
 
-      expect { directory.evidence_types_for_procedure('T9', 'FI') }
+      expect { directory.required_evidence_for_procedure('T9', 'FI') }
         .to raise_error(ProcedureCodeNotFound, /T9/)
     end
 
     it 'turns a refusal on the second query into an unknown evidence type' do
       allow(broker).to receive(:evidence_types).and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0002'))
 
-      expect { directory.evidence_types_for_procedure('00', 'FI') }
+      expect { directory.required_evidence_for_procedure('00', 'FI') }
         .to raise_error(EvidenceTypeNotFound, /FI/)
     end
 
@@ -53,7 +53,7 @@ RSpec.describe Directories::CommonServices do
     it 'lets a failure carrying no code through, rather than blaming the caller' do
       allow(broker).to receive(:requirements).and_raise(CommonServicesError, 'annuaire injoignable')
 
-      expect { directory.evidence_types_for_procedure('00', 'FI') }
+      expect { directory.required_evidence_for_procedure('00', 'FI') }
         .to raise_error(CommonServicesError, /injoignable/)
     end
 
@@ -63,7 +63,7 @@ RSpec.describe Directories::CommonServices do
     it 'refuses a requirement whose identifier no message could carry' do
       allow(broker).to receive(:requirements).and_return([build(:requirement, id: 'https://sr/exigence/1')])
 
-      expect { directory.evidence_types_for_procedure('00', 'FI') }
+      expect { directory.required_evidence_for_procedure('00', 'FI') }
         .to raise_error(InvalidDirectoryEntry, /L'exigence annoncée/)
     end
   end

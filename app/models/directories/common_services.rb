@@ -30,7 +30,7 @@ module Directories
     # The requirement comes back alongside the types because a request writes it
     # into its `Requirements` slot (R-EDM-REQ-S011): asking the Evidence Broker
     # again for it would be a second round trip for a value already in hand.
-    def evidence_types_for_procedure(procedure_code, country_code)
+    def required_evidence_for_procedure(procedure_code, country_code)
       requirement = first_requirement(procedure_code)
 
       types = translating(UNKNOWN_EVIDENCE_TYPE, EvidenceTypeNotFound,
