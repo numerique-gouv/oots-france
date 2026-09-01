@@ -12,6 +12,7 @@ module EvidenceRequest
       ResolveEvidenceType,
       ResolveProvider,
       OpenExchange,
+      CheckSpecification,
       SendToGateway
   end
 end

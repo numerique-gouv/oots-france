@@ -27,6 +27,13 @@ class AccessPoint
     super
   end
 
+  # Whether the gateway declares the version a message would carry.
+  #
+  # A silent access point passes: chapter 3.1.4 gives `sdg:ConformsTo` a
+  # cardinality of 1..n, so an empty list is a directory that says nothing, not
+  # one that says no — and the DSD query already filtered on `specification`.
+  def speaks?(version) = conforms_to.empty? || conforms_to.include?(version)
+
   # Ours, as the gateway knows it.
   def self.sender = new(**Settings.domibus_sender)
 end

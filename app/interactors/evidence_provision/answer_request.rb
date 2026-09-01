@@ -219,7 +219,7 @@ module EvidenceProvision
     # The version travels twice, in the ebMS property and in the body slot, and
     # the two must agree. `request.validate!` pins the body to the same
     # constant, so checking the header against it settles the pair — the
-    # coherence OOTS-55 asks for.
+    # inconsistency chapter 4.7 requires the receiver to reject.
     def reject_unless_expected_version
       announced = context.message.specification_id
       return if EdmSpecification.matches?(announced)

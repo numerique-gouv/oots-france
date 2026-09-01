@@ -138,6 +138,24 @@ if Rails.env.development?
           announced: 'oots-edm:v1.0', expected: EdmSpecification::IDENTIFIER),
       ).sentence,
       events: %w[request_sent response_received evidence_delivered] },
+    # Un point d'accès que l'annuaire a rendu sous le filtre `specification`
+    # alors qu'il n'annonce que des versions 1.x : `EvidenceRequest::CheckSpecification`
+    # refuse avant toute soumission. Rien n'a donc circulé — aucun événement
+    # d'échange, et la seule ligne du journal est le refus, ajouté plus bas.
+    #
+    # Aucun code EDM, comme le refus lui-même n'en pose aucun : les huit
+    # exceptions du chapitre 4.5.3 décrivent un serveur traitant une requête, et
+    # aucune un émetteur qui renonce à émettre.
+    #
+    # La phrase est composée par la clé que l'interactor interpole, et non
+    # recopiée — même raison qu'au-dessus : une console qui ment sur ce que le
+    # code produit se lit ensuite comme une documentation.
+    { status: 'failed', country_code: 'SK', procedure_code: ProcedureCode::SYSTEM_CHECK,
+      error_description: I18n.t('interactors.evidence_request.check_specification.unsupported',
+        access_point: 'AP_SK_01',
+        announced: ['oots-edm:v1.0', 'oots-edm:v1.2'].join(', '),
+        expected: EdmSpecification::IDENTIFIER),
+      events: [] },
   ]
 
   # Le sujet tel qu'une réponse le confirme. Le chapitre 4.5.2 fait porter à
@@ -423,9 +441,10 @@ if Rails.env.development?
     exchange
   end
 
-  # The eighth type, and the only event no exchange carries: a caller turned away
+  # The eighth type, here in the form no exchange carries: a caller turned away
   # before anything was opened. It is what the journal holds and the exchange
-  # list, by construction, cannot.
+  # list, by construction, cannot. The other form — a refusal pronounced once the
+  # exchange exists — has its own line further down.
   unless AuditEvent.exists?(event_type: 'request_refused')
     AuditEvent.create!(
       event_type: 'request_refused', occurred_at: 1.hour.ago,
@@ -495,6 +514,29 @@ if Rails.env.development?
       detail: '503 Service Unavailable',
       regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
       regrep_body: demonstration_body.call('response_sent', echoed: answered_request&.request_id),
+    )
+  end
+
+  # Le refus de version, qui est l'autre forme du huitième type : l'échange
+  # existe, donc la ligne le nomme. Écrit ici et non par la boucle des
+  # scénarios, qui suppose un message circulé — il n'y en a pas eu.
+  #
+  # Désigné par son pays, comme le précédent : les scénarios s'ajoutent en fin.
+  refused_version = demonstrations.find { |one| !one.incoming? && one.country_code == 'SK' }
+
+  unless AuditEvent.exists?(exchange_id: refused_version.exchange_id, event_type: 'request_refused')
+    # Exactement ce qu'`AuditTrail#request_refused` écrit, et rien de plus : ni
+    # action ebMS, ni identifiant de message, ni corps RegRep — rien n'a
+    # circulé. `detail` reprend la description portée par l'échange, comme le
+    # contrôleur passe au journal la raison qu'il vient de rendre au requêteur.
+    AuditEvent.create!(
+      event_type: 'request_refused', occurred_at: refused_version.created_at,
+      conversation_id: refused_version.conversation_id,
+      exchange_id: refused_version.exchange_id,
+      evidence_requester_id: '00000000000002',
+      procedure_code: refused_version.procedure_code,
+      country_code: refused_version.country_code,
+      detail: refused_version.error_description,
     )
   end
 

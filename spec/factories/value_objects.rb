@@ -16,12 +16,21 @@ FactoryBot.define do
     id { 'AP_FR_01' }
     type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR' }
 
+    # Announced by default, since chapter 3.1.4 gives `sdg:ConformsTo` a
+    # cardinality of 1..n and the published Finnish response carries it: a mute
+    # access point is the degraded case, and belongs to the specs that name it.
+    conforms_to { [EdmSpecification::IDENTIFIER] }
+
     # A correspondent's gateway, whose scheme is its own Member State's to
     # choose: the country-coded French one would make `AP_DE_01` announce
     # itself under a scheme Germany never registered.
     trait :foreign do
       id { 'AP_DE_01' }
       type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots' }
+    end
+
+    trait :outdated do
+      conforms_to { ['oots-edm:v1.2'] }
     end
 
     initialize_with { new(**attributes) }
