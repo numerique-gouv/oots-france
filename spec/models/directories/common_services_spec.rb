@@ -8,13 +8,15 @@ RSpec.describe Directories::CommonServices do
     instance_double(EvidenceBrokerClient, requirements: [requirement], evidence_types: [type])
   end
   let(:dsd) { instance_double(DataServiceDirectoryClient, data_services: [service]) }
+  let(:second) { build(:requirement, id: 'https://sr.oots.tech.ec.europa.eu/requirements/11111111-1111-1111-1111-111111111111') }
   let(:type) { build(:evidence_type) }
+  let(:other_type) { build(:evidence_type, id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/11111111-1111-1111-1111-111111111111') }
   let(:service) { build(:data_service) }
 
   describe '#required_evidence_for_procedure' do
     it 'chains the two broker queries, the requirement leading to the types' do
       expect(directory.required_evidence_for_procedure('00', 'FI'))
-        .to eq(described_class::RequiredEvidence.new(requirement:, evidence_types: [type]))
+        .to eq([described_class::RequiredEvidence.new(requirement:, evidence_types: [type])])
 
       expect(broker).to have_received(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
     end
@@ -65,6 +67,105 @@ RSpec.describe Directories::CommonServices do
 
       expect { directory.required_evidence_for_procedure('00', 'FI') }
         .to raise_error(InvalidDirectoryEntry, /L'exigence annoncée/)
+    end
+
+    # Chapter 3.2.3: « Each procedure has one or more specific requirements that
+    # need to be fulfilled by the User that executes the procedure. » They are
+    # conjunctive, so keeping one of them is losing a piece of evidence.
+    describe 'a procedure resting on several requirements' do
+      before { allow(broker).to receive(:requirements).and_return([requirement, second]) }
+
+      # `requirement-id` is MANDATORY on the second query (chapter 3.2.4), which
+      # is what makes n requirements cost n calls.
+      it 'resolves each of them, in the order the directory published them' do
+        allow(broker).to receive(:evidence_types)
+          .with(requirement_id: second.id, country_code: 'FI').and_return([other_type])
+
+        expect(directory.required_evidence_for_procedure('00', 'FI')).to eq([
+          described_class::RequiredEvidence.new(requirement:, evidence_types: [type]),
+          described_class::RequiredEvidence.new(requirement: second, evidence_types: [other_type]),
+        ])
+
+        expect(broker).to have_received(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
+      end
+
+      # A member state declaring it issues nothing under this jurisdiction: the
+      # entry stays, so a caller counting the requirements of the procedure
+      # still sees them all.
+      it 'keeps the entry of a requirement the country declares nothing for' do
+        allow(broker).to receive(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
+          .and_return([])
+
+        expect(directory.required_evidence_for_procedure('00', 'FI')).to eq([
+          described_class::RequiredEvidence.new(requirement:, evidence_types: []),
+          described_class::RequiredEvidence.new(requirement: second, evidence_types: [type]),
+        ])
+      end
+
+      # `EB:ERR:0001` answers one query, about one requirement in one country —
+      # it is not a verdict on the procedure, and the requirements the broker
+      # does answer are due whatever it says about this one.
+      it 'holds back a refusal on one requirement while another publishes types' do
+        allow(broker).to receive(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
+          .and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
+
+        expect(directory.required_evidence_for_procedure('00', 'FI'))
+          .to eq([described_class::RequiredEvidence.new(requirement:, evidence_types: []),
+                  described_class::RequiredEvidence.new(requirement: second, evidence_types: [type])])
+      end
+
+      # Held back, not swallowed: with nothing to set against it, the refusal is
+      # the whole answer, and a caller must be able to tell it from the country
+      # declaring it issues nothing.
+      #
+      # It wins over the `NoMatch` beside it on purpose. Answering « this
+      # country has no evidence type for this procedure » would claim to know
+      # about the refused requirement, which is the one thing the directory just
+      # said it knows nothing about; the refusal claims only that we could not
+      # find out, which is true of both.
+      it 'raises that refusal when no requirement published anything' do
+        allow(broker).to receive(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
+          .and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
+        allow(broker).to receive(:evidence_types).with(requirement_id: second.id, country_code: 'FI')
+          .and_return([])
+
+        expect { directory.required_evidence_for_procedure('00', 'FI') }
+          .to raise_error(EvidenceTypeNotFound, /FI/)
+      end
+
+      it 'refuses an identifier no message could carry wherever it sits' do
+        refused = build(:requirement, id: 'https://sr/exigence/1')
+
+        [[requirement, refused], [refused, requirement]].each do |published|
+          allow(broker).to receive(:requirements).and_return(published)
+
+          expect { directory.required_evidence_for_procedure('00', 'FI') }
+            .to raise_error(InvalidDirectoryEntry, /L'exigence annoncée/)
+        end
+      end
+
+      # `EB:ERR:0002` answers a query that named no requirement — a fault of
+      # ours, and never a fact about the country — so the holding back that
+      # `EB:ERR:0001` earns must not extend to it, whatever the neighbours say.
+      # `Directories::Catalogue#published_in` draws the same line.
+      it 'never holds back a refusal that blames our own query' do
+        allow(broker).to receive(:evidence_types).with(requirement_id: requirement.id, country_code: 'FI')
+          .and_raise(CommonServicesError.new('sans exigence', code: 'EB:ERR:0002'))
+
+        expect { directory.required_evidence_for_procedure('00', 'FI') }
+          .to raise_error(EvidenceTypeNotFound, /FI/)
+      end
+
+      # A directory that cannot be reached says nothing about the country, so it
+      # is not held back either: swallowing it would let an outage read as a
+      # country that publishes nothing.
+      it 'lets an outage on one requirement stop the whole answer' do
+        allow(broker).to receive(:evidence_types).with(requirement_id: second.id, country_code: 'FI')
+          .and_raise(CommonServicesError, 'annuaire injoignable')
+
+        expect { directory.required_evidence_for_procedure('00', 'FI') }
+          .to raise_error(CommonServicesError, /injoignable/)
+      end
     end
   end
 

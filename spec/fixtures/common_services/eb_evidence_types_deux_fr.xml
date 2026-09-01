@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:3ef90cb5-6d71-4a05-b1b6-5e9883063aa3">
+            <rim:Slot name="Requirement">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:Requirement>
+                        <sdg:Identifier>https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff</sdg:Identifier>
+                        <sdg:Name lang="EN">(TEST) Test Requirement 2</sdg:Name>
+                        <sdg:Description lang="EN">Member States may assign their own Evidence Types to this Requirement to perform Smoke Tests in the production system. This requirement MUST only be linked with an MS Test Procedure</sdg:Description>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>42f464a1-b9c6-4ba2-a185-3ab7f5e50a4b</sdg:Identifier>
+                            <sdg:Title lang="EN">Test National Procedure AT</sdg:Title>
+                            <sdg:Title lang="DE">Test Österreichisches nationales Testverfahren (AT)</sdg:Title>
+                            <sdg:Description lang="EN">Test National Procedure AT Description</sdg:Description>
+                            <sdg:Description lang="DE">Test Österreichisches nationales Testverfahren (AT) Beschreibung</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>8a0c3b89-4556-4b88-84a8-1ee142311bbe</sdg:Identifier>
+                            <sdg:Title lang="EN">Second TEST procedure</sdg:Title>
+                            <sdg:Description lang="EN">Second member state TEST procedure to verify having multiple member state procedures tied to one SDG procedure</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>085872bd-3218-46ff-98aa-e9339c856695</sdg:Identifier>
+                            <sdg:Title lang="EN">test</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>U4</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>c336ae48-c11b-4cdb-9287-8916e1b34faa</sdg:Identifier>
+                            <sdg:Title lang="EN">Income tax 2</sdg:Title>
+                            <sdg:Description lang="EN">dfds</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>0e796eae-6c6a-4f0a-ab59-fc59ae6b942e</sdg:Identifier>
+                            <sdg:Title lang="EN">Estonian Test Procedure</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>EE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>7cde8cb8-42d0-4252-917b-7806beda60ad</sdg:Identifier>
+                            <sdg:Title lang="EN">Test procedure LV</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure SGG00 LV</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LV</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>8f596d47-082a-4a2a-9c1f-213ad6aca780</sdg:Identifier>
+                            <sdg:Title lang="EN">Notification of a data intermediation services provider</sdg:Title>
+                            <sdg:Description lang="EN">The notification of a data intermediation services provider is regulated in Article 11 of the Data Governance Act.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>X10</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>SK</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>fc120dfe-4e34-4024-b33c-24bb991159a4</sdg:Identifier>
+                            <sdg:Title lang="EN">Dummy Procedure</sdg:Title>
+                            <sdg:Description lang="EN">This procedure is a dummy to test with other member states supporting this feature.</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>MT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>1c10e67f-bdea-41d6-bdf5-5f665736aa85</sdg:Identifier>
+                            <sdg:Title lang="EN">FULL all evidences test</sdg:Title>
+                            <sdg:Description lang="EN">FULL all evidences test</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>LT</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>97dcb1d5-a2bc-4260-aa67-85d274e0517e</sdg:Identifier>
+                            <sdg:Title lang="EN">DE Test Procedure - Tax declaration</sdg:Title>
+                            <sdg:Title lang="DE">DE Test-Verfahren - Steuererklärung</sdg:Title>
+                            <sdg:Description lang="EN">For German test cases</sdg:Description>
+                            <sdg:Description lang="DE">Für deutsche Testfälle</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>U4</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>72b6bdcf-187c-4070-9dec-22c6efd8ca3c</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST procedure FR - 00</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>a0561e8d-f8ce-4d61-9857-5c35cfa19363</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST procedure FR - R1</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>R1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>e608cf64-53ca-4a5e-9a73-21f5d9256782</sdg:Identifier>
+                            <sdg:Title lang="EN">TEST procedure FR - T3</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T3</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>50a3de80-12aa-4d9f-8bbf-457ceccda4c5</sdg:Identifier>
+                            <sdg:Title lang="EN">Test Procedure - FI</sdg:Title>
+                            <sdg:Title lang="SV">Test - FI</sdg:Title>
+                            <sdg:Title lang="FI">Testimenettely - FI</sdg:Title>
+                            <sdg:Description lang="EN">Test procedure as requested in https://ec.europa.eu/digital-building-blocks/wikis/display/SDGOO/26.+Test+Procedure+and+Test+Requirement+and+Test+Evidence+Classification</sdg:Description>
+                            <sdg:Description lang="SV">Testförfarande</sdg:Description>
+                            <sdg:Description lang="FI">Testimenettely https://ec.europa.eu/digital-building-blocks/wikis/display/SDGOO/26.+Test+Procedure+and+Test+Requirement+and+Test+Evidence+Classification mukaan</sdg:Description>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>00</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FI</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                        <sdg:EvidenceTypeList>
+                            <sdg:Identifier>829a5d21-e6cf-4ed0-8c0f-9deedd031d00</sdg:Identifier>
+                            <sdg:Name lang="EN">TEST evidence type list - local dev</sdg:Name>
+                            <sdg:EvidenceType>
+                                <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4</sdg:EvidenceTypeClassification>
+                                <sdg:Title lang="EN">FR - Test Evidence Type</sdg:Title>
+                                <sdg:Description lang="EN">Test Evidence Type - added by Emmanuel.</sdg:Description>
+                            </sdg:EvidenceType>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:EvidenceTypeList>
+                    </sdg:Requirement>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

@@ -8,7 +8,7 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   let(:common_services) do
     instance_double(Directories::CommonServices, required_evidence_for_procedure: required)
   end
-  let(:required) { Directories::CommonServices::RequiredEvidence.new(requirement:, evidence_types: types) }
+  let(:required) { [Directories::CommonServices::RequiredEvidence.new(requirement:, evidence_types: types)] }
   let(:requirement) { build(:requirement) }
   let(:types) { [build(:evidence_type, id: 'https://sr/premier'), build(:evidence_type, id: 'https://sr/second')] }
 
@@ -34,6 +34,28 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
 
     expect(resolve).to be_failure
     expect(resolve.error).to include(key: :invalid_directory_entry)
+  end
+
+  # A country declaring it issues nothing for one requirement says nothing about
+  # its neighbours, and must not stand in their way.
+  describe 'a requirement the country answers with nothing' do
+    let(:required) do
+      [Directories::CommonServices::RequiredEvidence.new(requirement: build(:requirement), evidence_types: []),
+       Directories::CommonServices::RequiredEvidence.new(requirement:, evidence_types: types)]
+    end
+
+    it 'carries the exchange on the first requirement that published types' do
+      expect(resolve.evidence_type.id).to eq('https://sr/premier')
+      expect(resolve.requirement).to eq(requirement)
+    end
+
+    # Every requirement of the procedure is due (chapter 3.2.3), so the whole
+    # answer stays available to what comes after — the one that published
+    # nothing included, since chapter 4.4 multiplies the conversation timeout by
+    # how many there are. How many requests it turns into is OOTS-139.
+    it 'keeps every requirement the procedure rests on, not merely the one it sends' do
+      expect(resolve.required_evidence).to eq(required)
+    end
   end
 
   it 'asks for the types of the country being queried' do

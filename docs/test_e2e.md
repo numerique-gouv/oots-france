@@ -134,8 +134,8 @@ curl -sG 'https://query.cs.acc.oots.tech.ec.europa.eu/eb/rest/search' \
 
 La CI gagne une **dépendance sortante** : `e2e.yml` ne demandait jusqu'ici rien à l'extérieur hors ses images. Chaque exécution dépend désormais de la disponibilité de l'acceptation, de la validité de la chaîne ci-dessus, et de ce que personne n'a édité l'entrée française entre-temps. C'est un coût assumé — sans lui, la découverte DNS et la conformité des vraies réponses ne seraient éprouvées nulle part —, mais un rouge d'origine extérieure doit se diagnostiquer et non s'ignorer : le tableau « En cas d'échec » ci-dessous dit lequel est lequel.
 
-> [!WARNING]
-> L'Evidence Broker rend **deux** exigences pour `00` / FR, et `Directories::CommonServices#first_requirement` ne garde que la première — la limite connue d'[OOTS-49](https://linear.app/pole-api/issue/OOTS-49). `ffffffff-…` arrive en tête aujourd'hui, donc la chaîne tient ; rien ne garantit cet ordre, et l'autre exigence (`00000000-…`) ne rend plus aucun type français.
+> [!NOTE]
+> L'Evidence Broker rend **deux** exigences pour `00` / FR, et la chaîne les résout toutes les deux — elles sont conjonctives ([3.2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932958)). `00000000-…` ne publie plus aucun type français : son `EB:ERR:0001` est retenu puis écarté, parce que `ffffffff-…` en publie. L'ordre des deux n'a donc plus d'incidence, et c'est ce scénario qui l'éprouve sur les données réelles.
 
 ## Configuration attendue
 
@@ -163,7 +163,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | `502` avec « Annuaire injoignable » | l'acceptation ne répond pas, ou le HTTPS sortant et la résolution NAPTR sont filtrés sur le réseau qui joue le test |
 | `500` avec « Magasin de confiance des annuaires illisible » | `CERTIFICATS_SERVICES_COMMUNS` ne désigne pas `config/certificats/services_communs_acc.pem` |
 | `500`, signature refusée | la chaîne `EC-OOTS-CS-ACC` → `CommisSign - 2 test` → racine a été renouvelée : reprendre `config/certificats/services_communs_acc.pem` |
-| `422` avec `EB:ERR:0001` à l'étape des types | l'ordre des deux exigences de `00` / FR a bougé et `first_requirement` retient `00000000-…` — [OOTS-49](https://linear.app/pole-api/issue/OOTS-49) |
+| `422` avec `EB:ERR:0001` à l'étape des types | **aucune** des deux exigences de `00` / FR ne publie plus de type français : le refus n'est relevé que là. Vérifier l'entrée française de l'Evidence Broker |
 | `422` avec `DSD:ERR:0001` | l'entrée française du Data Service Directory a été éditée ou retirée |
 | L'application sert une réponse d'annuaire périmée | le cache dure `DUREE_CACHE_SERVICES_COMMUNS` dans le processus du serveur : `docker compose restart web` |
 | `422 Le bénéficiaire doit être renseigné` | le paramètre `beneficiaire` n'est pas passé — le contrôle a lieu avant tout appel à Domibus |
