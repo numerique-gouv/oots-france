@@ -2,9 +2,10 @@ require 'rails_helper'
 
 RSpec.describe Settings do
   # Those read as numbers need one, the others take anything non-blank. The two
-  # timeouts take the values of the table of chapter 4.4.3 instead of the common
-  # 1000: the contract refuses them equal, which indexing every number on one
-  # value would make them.
+  # timeouts are added rather than indexed — they leave REQUIRED to a deployment
+  # that provides the dispositif — and take the values of the table of chapter
+  # 4.4.3: the contract refuses them equal, which one value for every number
+  # would make them.
   def filled
     Settings::REQUIRED
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
@@ -99,8 +100,12 @@ RSpec.describe Settings do
   # Service ». Set the other way round, this side gives up while the
   # correspondent may still answer.
   describe 'the two expiry intervals' do
+    # The switch is posed rather than left absent: the two answer the same, and a
+    # rule that only ever meets the absent one proves half of what it says.
     it 'refuses a requester interval shorter than the provider one' do
-      inverted = { 'DELAI_EXPIRATION_REQUETEUR_MINUTES' => '2', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '10' }
+      inverted = { Settings::TIMEOUT_SWITCH => 'true',
+                   'DELAI_EXPIRATION_REQUETEUR_MINUTES' => '2',
+                   'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '10' }
 
       with_environment(filled.merge(inverted)) do
         expect { described_class.verify! }.to raise_error(ConfigurationError, /chapitre 4\.4/)
@@ -121,14 +126,135 @@ RSpec.describe Settings do
         expect(described_class.provider_timeout).to eq(5.minutes)
       end
     end
+
+    it 'asks for both while the dispositif applies' do
+      with_environment(filled.merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => nil)) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /DELAI_EXPIRATION_REQUETEUR_MINUTES/)
+      end
+    end
+
+    # The other half of what the dispositif composes: presence is asked above,
+    # format here, and a different rule carries each.
+    it 'refuses one that is not a number while the dispositif applies' do
+      with_environment(filled.merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => 'bientôt')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /DELAI_EXPIRATION_REQUETEUR_MINUTES \(« bientôt »\)/)
+      end
+    end
+  end
+
+  # Chapter 4.4.3 asks the configuration two questions, and this is the first:
+  # « The configuration shall control whether timeout handling is provided and,
+  # if yes, the maximum duration ».
+  describe 'whether timeout handling is provided at all' do
+    # A deployment that says nothing is one that wants the behaviour the chapter
+    # describes; the switch exists for the deployment that says otherwise.
+    it 'is provided when the switch is not set' do
+      with_environment(Settings::TIMEOUT_SWITCH => nil) do
+        expect(described_class).to be_timeout_enabled
+      end
+    end
+
+    it 'is provided when the switch says so' do
+      with_environment(Settings::TIMEOUT_SWITCH => 'true') do
+        expect(described_class).to be_timeout_enabled
+      end
+    end
+
+    # The shape a deployment actually produces: `.env.oots.template` and the CI
+    # script both write the name with nothing after the `=`, where a spec is
+    # tempted to test the absent key instead.
+    it 'is provided when the switch is posed and left empty' do
+      with_environment(Settings::TIMEOUT_SWITCH => '') do
+        expect(described_class).to be_timeout_enabled
+      end
+    end
+
+    it 'is taken away by an explicit false' do
+      with_environment(Settings::TIMEOUT_SWITCH => 'false') do
+        expect(described_class).not_to be_timeout_enabled
+      end
+    end
+
+    # Refused where it is written rather than read as a silent yes: France would
+    # answer `EDM:ERR:0005` to a correspondent while the deployment believed the
+    # dispositif off, which is the opposite of what a control commands.
+    it 'refuses a switch that is neither true nor false, naming it' do
+      with_environment(filled.merge(Settings::TIMEOUT_SWITCH => '0')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /AVEC_DELAI_EXPIRATION vaut « 0 »/)
+      end
+    end
+
+    # The value is compared unstripped, and the padding is what makes the
+    # difference: `timeout_enabled?` reads « ` false` » as anything but `false`,
+    # so tolerating it here would apply the opposite of what was written.
+    it 'refuses a switch padded with a space, which reads as the wrong answer' do
+      with_environment(filled.merge(Settings::TIMEOUT_SWITCH => ' false')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /AVEC_DELAI_EXPIRATION/)
+      end
+    end
+
+    # The refusal belongs to the reader and not to the contract alone: only the
+    # web process runs `verify!` (`config.ru`), where the sweep and the answer
+    # both read the switch from the worker.
+    it 'refuses it at the point of use too, without any contract having run' do
+      with_environment(Settings::TIMEOUT_SWITCH => '0') do
+        expect { described_class.timeout_enabled? }
+          .to raise_error(ConfigurationError, /AVEC_DELAI_EXPIRATION vaut « 0 »/)
+      end
+    end
+
+    # « and, if yes, the maximum duration »: no dispositif, no duration to ask
+    # for, which is what keeps the two intervals out of REQUIRED.
+    it 'starts with neither interval configured once the dispositif is off' do
+      off = Settings::TIMEOUTS.index_with { nil }.merge(Settings::TIMEOUT_SWITCH => 'false')
+
+      with_environment(filled.merge(off)) do
+        expect { described_class.verify! }.not_to raise_error
+      end
+    end
+
+    # Values a deployment stopped using rather than deleted: refusing to start
+    # on two intervals nothing reads would make taking the dispositif away a
+    # two-step edit, and the second step easy to forget. Both checks are named
+    # — the order and the format — since a different rule carries each.
+    it 'ignores residual intervals left in the wrong order' do
+      residual = { Settings::TIMEOUT_SWITCH => 'false',
+                   'DELAI_EXPIRATION_REQUETEUR_MINUTES' => '2',
+                   'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '10' }
+
+      with_environment(filled.merge(residual)) do
+        expect { described_class.verify! }.not_to raise_error
+      end
+    end
+
+    it 'ignores a residual interval that is not even a number' do
+      residual = { Settings::TIMEOUT_SWITCH => 'false',
+                   'DELAI_EXPIRATION_REQUETEUR_MINUTES' => 'bientôt' }
+
+      with_environment(filled.merge(residual)) do
+        expect { described_class.verify! }.not_to raise_error
+      end
+    end
   end
 
   # Not a timeout of chapter 4.4.3 but a guard against two workers handing the
-  # same evidence over, which is why it is configured on its own.
+  # same evidence over, so a deployment configures it either way.
   describe 'the lease on a delivery under way' do
     it 'reads in minutes' do
       with_environment(filled.merge('DELAI_RESERVATION_REMISE_MINUTES' => '6')) do
         expect(described_class.delivery_lease).to eq(6.minutes)
+      end
+    end
+
+    it 'is asked for even with the dispositif off' do
+      off = { Settings::TIMEOUT_SWITCH => 'false', 'DELAI_RESERVATION_REMISE_MINUTES' => nil }
+
+      with_environment(filled.merge(off)) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /DELAI_RESERVATION_REMISE_MINUTES/)
       end
     end
   end

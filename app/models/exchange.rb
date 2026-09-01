@@ -81,7 +81,18 @@ class Exchange < ApplicationRecord
   # Outgoing only. Where France answers, the timeout is an act of emission and
   # `EvidenceProvision::AnswerRequest` carries it out while the correspondent is
   # still addressable; a row written here would name an error nobody was sent.
-  scope :expired, -> { where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago) }
+  #
+  # And no exchange at all where the deployment provides no timeout handling,
+  # which chapter 4.4.3 lets it decide: « If an Online Procedure Portals
+  # implements timeout, then it shall generate a timeout error » is the
+  # conditional `Settings.timeout_enabled?` answers. `none` and not an
+  # impossible condition, so that `Settings.requester_timeout` is not evaluated
+  # either: no duration is configured on that side.
+  scope :expired, lambda {
+    next none unless Settings.timeout_enabled?
+
+    where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago)
+  }
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
   # deferral aside; where it answers, pending → delivered, deferred or failed.
@@ -144,8 +155,8 @@ class Exchange < ApplicationRecord
   # answer wait behind a reservation nothing is holding.
   #
   # Its own duration, and not the interval `expired` applies: that one is the
-  # timeout of chapter 4.4, a rule about how long a correspondent is given to
-  # answer, where this is a guard on two workers of this side.
+  # timeout of chapter 4.4.3, which a deployment may provide or not, where this
+  # is a guard on two workers that stands either way.
   def claim_delivery!
     row = self.class.where(id:)
 

@@ -29,8 +29,6 @@ module Settings
     CLE_CHIFFREMENT_DETERMINISTE_JOURNAL
     SEL_DERIVATION_CLES_JOURNAL
     DUREE_RETENTION_JOURNAL_MOIS
-    DELAI_EXPIRATION_REQUETEUR_MINUTES
-    DELAI_EXPIRATION_FOURNISSEUR_MINUTES
     DELAI_RESERVATION_REMISE_MINUTES
   ].freeze
 
@@ -40,8 +38,21 @@ module Settings
   # checking here rather than at the point of use.
   NUMERIC = %w[
     DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS
-    DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES DELAI_RESERVATION_REMISE_MINUTES
+    DELAI_RESERVATION_REMISE_MINUTES
   ].freeze
+
+  # The two columns of the timeout table of chapter 4.4.3, asked of a deployment
+  # that provides the dispositif and of no other: « The configuration shall
+  # control whether timeout handling is provided and, if yes, the maximum
+  # duration ». `Settings::Contract` composes them with REQUIRED and NUMERIC
+  # only when the switch below leaves the dispositif on.
+  TIMEOUTS = %w[DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES].freeze
+
+  # The other half of that sentence: whether timeout handling is provided at
+  # all. Left empty the dispositif applies — a deployment saying nothing is one
+  # that wants the behaviour the chapter describes — and only `false` takes it
+  # away.
+  TIMEOUT_SWITCH = 'AVEC_DELAI_EXPIRATION'.freeze
 
   # Article 17(4) of the implementing regulation, as a floor: a member state may
   # keep the exchange log longer, never less.
@@ -63,6 +74,13 @@ module Settings
     def verify! = Contract.new.verify!
 
     def evidence_request_enabled? = ENV['AVEC_REQUETE_PIECE_JUSTIFICATIVE'] == 'true'
+
+    # Chapter 4.4.3 lets a deployment provide no timeout handling at all, and
+    # the two conditionals it writes — one per role — then have a false
+    # antecedent: the sweep gives no exchange up and France answers the evidence
+    # rather than `EDM:ERR:0005`. Which is the behaviour of an absent timeout,
+    # not of an infinite one.
+    def timeout_enabled? = timeout_switch != 'false'
 
     def french_provider_identity
       { id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), name: required('NOM_FOURNISSEUR_FRANCAIS') }
@@ -116,7 +134,8 @@ module Settings
 
     # How long `Exchange#claim_delivery!` holds a handover under way. Not a
     # timeout of chapter 4.4.3 but a guard against two workers handing the same
-    # evidence over — the method it serves says what the value arbitrates.
+    # evidence over, so it is configured and read whether or not the dispositif
+    # applies — and the method it serves says what the value arbitrates.
     def delivery_lease = whole('DELAI_RESERVATION_REMISE_MINUTES').minutes
 
     # Both or neither. Left empty, the two say « this deployment does not want
@@ -163,6 +182,24 @@ module Settings
 
       raise ConfigurationError,
         I18n.t('lib.settings.not_whole', names: I18n.t('lib.settings.not_whole_entry', name:, value:))
+    end
+
+    # Like `whole`, and for its reason: a value this cannot read is refused
+    # where it is read rather than coalesced into one of the two answers. It
+    # matters more here than anywhere else — `Settings::Contract` refuses the
+    # same value at startup, but `config.ru` runs that check and the worker
+    # never loads it, so the sweep and the answer would both read a malformed
+    # switch that nothing had ever looked at.
+    #
+    # The value is compared unstripped on purpose: `timeout_enabled?` reads
+    # « ` false` » as anything but `false`, so accepting it here would apply the
+    # opposite of what the deployment wrote.
+    def timeout_switch
+      value = optional(TIMEOUT_SWITCH)
+      return value if value.nil? || value.in?(%w[true false])
+
+      raise ConfigurationError,
+        I18n.t('lib.settings.not_boolean', name: TIMEOUT_SWITCH, value:)
     end
 
     def optional(name) = ENV.fetch(name, nil).presence

@@ -26,9 +26,10 @@ ENV['DELAI_EXPIRATION_REQUETEUR_MINUTES'] ||= '6'
 ENV['DELAI_EXPIRATION_FOURNISSEUR_MINUTES'] ||= '5'
 ENV['DELAI_RESERVATION_REMISE_MINUTES'] ||= '6'
 
-# The four above are read while the framework boots, which happened before this
-# file was loaded: the values just posted would otherwise never reach the
-# encryption Active Record has already configured — from nothing.
+# The three keys of the exchange log are read while the framework boots, which
+# happened before this file was loaded: the values just posted would otherwise
+# never reach the encryption Active Record has already configured — from
+# nothing.
 ActiveRecord::Encryption.configure(**Settings.audit_trail_encryption)
 
 # Pinned rather than defaulted, unlike everything above. The suite answers the

@@ -16,6 +16,29 @@ RSpec.describe ExpireExchangesJob do
     expect(overdue.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0005')
   end
 
+  # Chapter 4.4.3 lets a deployment provide no timeout handling, and the sweep
+  # reads that through the scope: nothing is given up, and no interval is read
+  # to decide it. The scope's own spec walks the matrix; what this shows is that
+  # the sweep goes through it rather than round it.
+  it 'closes nothing where the deployment provides no timeout handling' do
+    allow(Settings).to receive(:timeout_enabled?).and_return(false)
+    waiting = create(:exchange, :sent, created_at: 1.year.ago)
+
+    described_class.perform_now
+
+    expect(waiting.reload.status).to eq('sent')
+  end
+
+  # The scope is evaluated before `find_each`, so a switch the deployment
+  # malformed fails the sweep whole rather than being caught by the per-row net
+  # below and filed away as one more bad row. Which is what a configuration
+  # error deserves — the cron replays every minute, so it is seen at once.
+  it 'fails the sweep whole on a switch it cannot read' do
+    allow(Settings).to receive(:timeout_enabled?).and_raise(ConfigurationError, 'AVEC_DELAI_EXPIRATION')
+
+    expect { described_class.perform_now }.to raise_error(ConfigurationError, /AVEC_DELAI_EXPIRATION/)
+  end
+
   # `find_each` walks in primary-key order, so an exception left to propagate
   # would strand every exchange behind the offending one — for ever, where the
   # row fails every time and the cron replays the same walk each minute.
