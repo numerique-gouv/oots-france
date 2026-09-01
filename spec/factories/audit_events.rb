@@ -33,12 +33,29 @@ FactoryBot.define do
 
     # The other subject chapter 4.5.1 allows: identifiers that are a structure
     # rather than a field, and a name carrying an ampersand the JSON encoder
-    # writes as `\u0026`. Composed by `AuditEvent.subject` and not by hand,
-    # so that the key it leaves empty is the one the code leaves empty.
+    # writes as `\u0026`. Composed by `AuditEvent.subject` and not by hand, key
+    # included, so that a spec cannot prove a search no exchange answers.
     trait :about_an_organisation do
-      transient { organisation { build(:legal_person, identifiers: { 'VAT' => 'FR12345678901' }) } }
+      transient do
+        organisation { build(:legal_person, identifiers: { 'VAT' => 'FR12345678901' }) }
+        written { AuditEvent.subject(organisation) }
+      end
 
-      evidence_subject { AuditEvent.subject(organisation)[:evidence_subject] }
+      evidence_subject { written[:evidence_subject] }
+      evidence_subject_key { written[:evidence_subject_key] }
+    end
+
+    # A subject a correspondent answered short of a field, which chapter 4.6
+    # leaves nobody the duty to refuse: `EvidenceResponseParser#evidence_subject`
+    # records it as it came, and it composes neither form of key. The one line
+    # of the journal that carries no key at all.
+    trait :about_an_incomplete_person do
+      transient do
+        person { { eidas_identifier: 'FR/DE/123123123', family_name: 'Königreich', given_name: 'Ada' } }
+      end
+
+      evidence_subject { person.to_json }
+      evidence_subject_key { AuditEvent.canonical_key(person) }
     end
   end
 end
