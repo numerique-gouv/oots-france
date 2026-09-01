@@ -81,7 +81,18 @@ class Exchange < ApplicationRecord
   # Outgoing only. Where France answers, the timeout is an act of emission and
   # `EvidenceProvision::AnswerRequest` carries it out while the correspondent is
   # still addressable; a row written here would name an error nobody was sent.
-  scope :expired, -> { where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago) }
+  #
+  # And no exchange at all where the deployment provides no timeout handling,
+  # which chapter 4.4.3 lets it decide: « If an Online Procedure Portals
+  # implements timeout, then it shall generate a timeout error » is the
+  # conditional `Settings.timeout_enabled?` answers. `none` and not an
+  # impossible condition, so that `Settings.requester_timeout` is not evaluated
+  # either: no duration is configured on that side.
+  scope :expired, lambda {
+    next none unless Settings.timeout_enabled?
+
+    where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago)
+  }
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
   # deferral aside; where it answers, pending → delivered, deferred or failed.
@@ -135,19 +146,22 @@ class Exchange < ApplicationRecord
   # count says who moved it. Under `read committed` the loser re-evaluates the
   # condition against the row the winner committed, and matches nothing.
   #
-  # It lapses once it is itself past the interval `expired` applies — which is
-  # always after the exchange has passed it too, a reservation being taken on a
-  # row that already exists and therefore never standing older than it. So
-  # nothing overtakes a handover under way while the exchange is still one
-  # nobody has given up on, however slow — `EvidenceForwarder` sets no deadline
-  # of its own. Past that, the sweep has given the exchange up, and a
-  # reservation nobody could release — a worker killed mid-handover writes
-  # nothing back — must stop holding a row no answer could otherwise reach.
+  # It lapses after `DELAI_RESERVATION_REMISE_MINUTES`, because a worker killed
+  # mid-handover writes nothing back and a reservation nobody can release would
+  # hold a row no answer could ever reach again. That setting is where the two
+  # ways of being wrong are weighed: set too short it takes back a handover
+  # still running — `EvidenceForwarder` sets no deadline of its own and retries
+  # twice — and the same evidence goes over twice; set too long it makes a late
+  # answer wait behind a reservation nothing is holding.
+  #
+  # Its own duration, and not the interval `expired` applies: that one is the
+  # timeout of chapter 4.4.3, which a deployment may provide or not, where this
+  # is a guard on two workers that stands either way.
   def claim_delivery!
     row = self.class.where(id:)
 
     row.where(delivering_at: nil)
-      .or(row.where(delivering_at: ...Settings.requester_timeout.ago))
+      .or(row.where(delivering_at: ...Settings.delivery_lease.ago))
       .update_all(delivering_at: Time.current) == 1
   end
 

@@ -95,6 +95,16 @@ Metrics/ClassLength:
     - "array"
     - "method_call"
 
+# The same budget, for the modules that are types rather than namespaces:
+# `Settings` is a module for the reason a singleton is one, and what makes it
+# long is a list of environment variable names and a one-line reader each — the
+# very shape `CountAsOne: array` exists to stop counting twice.
+Metrics/ModuleLength:
+  Max: 150
+  CountAsOne:
+    - "array"
+    - "method_call"
+
 Metrics/MethodLength:
   Max: 15
   CountAsOne:

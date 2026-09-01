@@ -259,6 +259,7 @@ fr:
       unknown_key_type: "Type de clé inconnu : « %{type} »."
     settings:
       missing: "Variables d'environnement obligatoires absentes ou vides : %{names}."
+      not_boolean: "%{name} vaut « %{value} » : cette variable commande un dispositif, elle ne peut valoir que true, false, ou rien du tout."
       not_whole: "Variables d'environnement devant être des nombres entiers positifs : %{names}."
       not_whole_entry: "%{name} (« %{value} »)"
       required: La variable d'environnement %{name} est obligatoire et ne peut pas être vide.

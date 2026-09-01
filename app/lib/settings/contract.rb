@@ -17,14 +17,14 @@ module Settings
     private
 
     def reject_unless_present
-      missing = REQUIRED.reject { |name| ENV.fetch(name, nil).to_s.strip.present? }
+      missing = with_timeouts(REQUIRED).reject { |name| ENV.fetch(name, nil).to_s.strip.present? }
       return if missing.empty?
 
       refuse(I18n.t('lib.settings.missing', names: missing.join(', ')))
     end
 
     def reject_unless_whole
-      wrong = NUMERIC.reject { |name| whole(name)&.positive? }
+      wrong = with_timeouts(NUMERIC).reject { |name| whole(name)&.positive? }
       return if wrong.empty?
 
       refuse(I18n.t('lib.settings.not_whole', names: wrong.map { |name| offender(name) }.join(', ')))
@@ -33,9 +33,9 @@ module Settings
     # Keeping the log less than twelve months breaks the obligation as surely as
     # not keeping it, and the nightly purge would carry that out without a word.
     #
-    # Runs last of the three: `reject_unless_whole` has already refused anything
-    # that does not parse, so `nil` here can only mean a variable dropped from
-    # NUMERIC — which is why the guard tolerates it rather than comparing to it.
+    # Runs after `reject_unless_whole`, which has already refused anything that
+    # does not parse: `nil` here can only mean a variable dropped from NUMERIC —
+    # which is why the guard tolerates it rather than comparing to it.
     def reject_unless_lawful_retention
       months = whole('DUREE_RETENTION_JOURNAL_MOIS')
       return if months.nil? || months >= LAWFUL_RETENTION_MONTHS
@@ -51,14 +51,26 @@ module Settings
     # receives the answer to an exchange it has closed.
     #
     # After `reject_unless_whole` and for its reason: a `nil` here can only mean
-    # a variable dropped from NUMERIC.
+    # a variable dropped from NUMERIC. Skipped altogether where the dispositif
+    # is off — the order of two intervals nothing reads settles nothing, and
+    # residual values a deployment stopped using would refuse to start on it.
     def reject_unless_timeouts_ordered
+      return unless Settings.timeout_enabled?
+
       requester = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES')
       provider = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES')
       return if requester.nil? || provider.nil? || requester > provider
 
       refuse(I18n.t('lib.settings.timeouts_out_of_order', requester:, provider:))
     end
+
+    # Which set is mandatory is a question of the dispositif, as `TIMEOUTS` says.
+    # Asking it is also what refuses an unreadable switch here: `timeout_enabled?`
+    # raises on a value that is neither `true` nor `false`, so the first rule to
+    # compose a set carries that refusal and `verify!` needs no rule of its own
+    # — the reader defends itself in every process, which `config.ru` cannot,
+    # running `verify!` in the web one alone.
+    def with_timeouts(names) = Settings.timeout_enabled? ? names + TIMEOUTS : names
 
     def offender(name) = I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil))
 

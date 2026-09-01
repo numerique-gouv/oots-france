@@ -381,6 +381,41 @@ RSpec.describe EvidenceProvision::AnswerRequest do
         expect(code_of(submitted)).to eq('EDM:ERR:0007')
       end
     end
+
+    # « If a Data Service implements timeout, then … »: one that provides no
+    # timeout handling, which chapter 4.4.3 lets a deployment decide, implements
+    # none. The antecedent is false, so the evidence goes back however old the
+    # request — the behaviour of an absent timeout, not of an infinite one.
+    context 'when the deployment provides no timeout handling' do
+      before { allow(Settings).to receive(:timeout_enabled?).and_return(false) }
+
+      it 'serves the evidence rather than the timeout exception' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      # Said of the exchange and of the journal too, as the context above says
+      # it of the refusal: the answer that went out is the observable one, but
+      # a failure written beside it would contradict it in the console.
+      it 'settles the exchange as delivered, and journals a response' do
+        exchange = create(:exchange, incoming: true, exchange_id: message.exchange_id,
+          country_code: nil, procedure_code: nil, evidence_requester_id: nil)
+
+        answer
+
+        expect(exchange.reload).to have_attributes(status: 'delivered', edm_error_code: nil)
+        expect(AuditEvent.last.event_type).to eq('response_sent')
+      end
+
+      # The interval is not configured on that side, so reading it would raise
+      # rather than let the request through.
+      it 'reads no interval to decide it' do
+        allow(Settings).to receive(:provider_timeout).and_raise(ConfigurationError, 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES')
+
+        expect { answer }.not_to raise_error
+      end
+    end
   end
 
   # The one departure that would otherwise vanish whole. `Exchange` does record

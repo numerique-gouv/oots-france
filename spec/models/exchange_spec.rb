@@ -126,6 +126,29 @@ RSpec.describe Exchange do
       end
     end
 
+    # Chapter 4.4.3 lets a deployment provide no timeout handling at all, and
+    # « If an Online Procedure Portals implements timeout, then it shall
+    # generate a timeout error » is then a conditional with a false antecedent:
+    # exchanges wait, as they would with no timeout configured, rather than
+    # failing at a term set infinitely far away.
+    context 'when the deployment provides no timeout handling' do
+      before { allow(Settings).to receive(:timeout_enabled?).and_return(false) }
+
+      it 'takes no exchange, however long nobody has answered' do
+        overdue = create(:exchange, :sent, created_at: 1.year.ago)
+
+        expect(described_class.expired).not_to include(overdue)
+      end
+
+      # `none` and not an impossible condition, which would still read an
+      # interval such a deployment has no reason to configure.
+      it 'reads no interval to say so' do
+        allow(Settings).to receive(:requester_timeout).and_raise(ConfigurationError, 'DELAI_EXPIRATION_REQUETEUR_MINUTES')
+
+        expect { described_class.expired.load }.not_to raise_error
+      end
+    end
+
     # The same code a correspondent that times out on us would have answered:
     # who noticed the timeout must not change how the exchange reads.
     it 'reads as a failure under EDM:ERR:0005' do
@@ -264,25 +287,24 @@ RSpec.describe Exchange do
     end
 
     # `EvidenceForwarder` sets no deadline and retries twice, so a handover may
-    # run long. What keeps it from being overtaken is that the reservation is
-    # younger than the exchange, which the sweep gives up on first.
-    it 'holds a reservation while the exchange is still one nobody gave up on' do
-      exchange.update_columns(created_at: Settings.requester_timeout.ago + 1.minute)
-      exchange.claim_delivery!
+    # run long. What keeps it from being overtaken is the lease, and nothing
+    # about the exchange it is taken on.
+    it 'holds a reservation younger than its lease' do
+      exchange.update_columns(delivering_at: Settings.delivery_lease.ago + 1.minute)
 
       expect(described_class.find(exchange.id).claim_delivery!).to be(false)
     end
 
-    it 'lets a reservation go once it is itself past the timeout' do
-      exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
-        delivering_at: Settings.requester_timeout.ago - 1.minute)
+    it 'lets a reservation go once it is past its lease' do
+      exchange.update_columns(delivering_at: Settings.delivery_lease.ago - 1.minute)
 
       expect(described_class.find(exchange.id).claim_delivery!).to be(true)
     end
 
-    # An exchange the sweep gave up on is past the timeout by definition, so
-    # its age alone would let every late answer through — and two arriving at
-    # once would both hand the evidence over.
+    # `IncomingMessage::SettleExchange` lets a late answer through on an
+    # exchange the sweep gave up on, so two arriving at once both reach the
+    # handover: the reservation is the whole of what keeps the evidence from
+    # going over twice, and giving up on the exchange must not release it.
     it 'holds a fresh reservation on an exchange the sweep gave up on' do
       exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day)
       exchange.expire!
@@ -295,11 +317,20 @@ RSpec.describe Exchange do
     # sitting exactly on it has not passed it.
     it 'holds one sitting exactly on the cutoff' do
       freeze_time do
-        exchange.update_columns(created_at: Settings.requester_timeout.ago - 1.day,
-          delivering_at: Settings.requester_timeout.ago)
+        exchange.update_columns(delivering_at: Settings.delivery_lease.ago)
 
         expect(described_class.find(exchange.id).claim_delivery!).to be(false)
       end
+    end
+
+    # The lease is a guard on two workers and not a timeout of chapter 4.4.3, so
+    # it holds whether or not the deployment provides the dispositif — and this
+    # is what says so: reading the requester interval at all would break a
+    # deployment that configures none.
+    it 'reserves without reading the interval it used to borrow' do
+      allow(Settings).to receive(:requester_timeout).and_raise(ConfigurationError, 'DELAI_EXPIRATION_REQUETEUR_MINUTES')
+
+      expect(exchange.claim_delivery!).to be(true)
     end
   end
 

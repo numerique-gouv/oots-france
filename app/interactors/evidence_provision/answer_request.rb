@@ -179,7 +179,12 @@ module EvidenceProvision
     # exception response … instead of a successful response ». Hence its place
     # last, where the successful answer is chosen: a procedure nobody serves is
     # worth `EDM:ERR:0004` however late the request.
-    def expired? = context.message.sent_at < Settings.provider_timeout.ago
+    #
+    # « If a Data Service implements timeout » is the conditional
+    # `Settings.timeout_enabled?` answers, chapter 4.4.3 letting a deployment
+    # provide none. Read first so that `Settings.provider_timeout` is not
+    # evaluated: no duration is configured on that side.
+    def expired? = Settings.timeout_enabled? && context.message.sent_at < Settings.provider_timeout.ago
 
     # `wrap` reuses both identifiers of the request in the envelope France signs,
     # so a malformed one goes back out under our own signature and breaks
