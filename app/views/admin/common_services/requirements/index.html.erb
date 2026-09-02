@@ -19,17 +19,21 @@
 <div id="liste-exigences">
   <% @requirements.each do |requirement| %>
     <div>
-      <%= render CardComponent.new(title: requirement.display_name, dense: true, clickable: true,
+      <% publishing = @publishing[requirement] %>
+      <%= render CardComponent.new(title: requirement.display_name, dense: publishing.any?, clickable: true,
             href: admin_common_services_requirement_path(requirement.uuid)) do |carte| %>
-        <%= t('admin.common_services.requirements.index.card') %>
+        <%# Nobody publishing is an answer, and one this page pays fifty-three
+            queries to get: left to the absent row, it would read as a section
+            that failed to render. %>
+        <%= t('admin.common_services.requirements.index.nobody') if publishing.empty? %>
 
         <% carte.with_list do %>
-          <%# These countries are the ones that impose it, not the ones that
-              satisfy it: they lead to the procedures they declared it under,
-              and not to the evidence they deliver. %>
+          <%# These countries satisfy it, they do not impose it: they lead to
+              the evidence they publish for it, and not to the procedures they
+              declared it under. %>
           <%= render CountryTagListComponent.new(
-                caption: t('admin.common_services.requirements.index.required_by'),
-                codes: requirement.countries, names: country_names,
+                caption: t('admin.common_services.requirements.index.published_by'),
+                codes: publishing, names: country_names,
                 link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
               ) %>
         <% end %>
@@ -41,3 +45,12 @@
 <p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>><%= t('admin.common_services.requirements.empty') %></p>
 
 <%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
+
+<%# One query per requirement on top of the catalogue's own: the Evidence
+    Broker answers this one for a requirement at a time, and has none that
+    names the countries of every requirement at once. %>
+<%= render DirectoryQueryComponent.new(
+      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      parameters: { 'requirement-id' =>
+        t('admin.common_services.swept', count: @requirements.size) },
+    ) %>

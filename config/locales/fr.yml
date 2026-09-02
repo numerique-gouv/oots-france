@@ -405,6 +405,11 @@ fr:
         requester: Le requêteur
         token_beneficiary: Le bénéficiaire du jeton
     directories:
+      # Le refus relayé par le balayage du catalogue, qui pose la même question
+      # cinquante-trois fois : sans l'exigence, la page rendrait le refus
+      # d'aucune d'entre elles en particulier.
+      catalogue:
+        swept: "%{error} (exigence %{requirement})"
       common_services:
         no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
         no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
@@ -826,32 +831,30 @@ fr:
           title: Exigences
           lead_html: >-
             Ce qu'une démarche impose de prouver. Une même exigence sert des démarches de
-            plusieurs pays <strong>requêteurs</strong>, et ce sont les types de
-            justificatif que chaque pays <strong>fournisseur</strong> publie pour elle qui
-            diffèrent.
-          search: Rechercher une exigence, un pays requêteur, son code
-          card: Voir les justificatifs qui satisfont cette exigence, par pays fournisseur.
-          required_by: Exigé par des démarches de
+            plusieurs pays <strong>requêteurs</strong>, et chaque carte mène aux pays
+            <strong>fournisseurs</strong> qui la satisfont — ceux qui publient un type de
+            justificatif pour elle, et dont la liste diffère de l'un à l'autre.
+          search: Rechercher une exigence, un pays fournisseur, son code
+          published_by: Justificatifs publiés par
+          nobody: Aucun pays ne publie de justificatif pour cette exigence.
+        # La page de l'exigence et celle d'un de ses pays fournisseurs portent le
+        # même bouton, vers la même page, et la même phrase sur leurs cartes.
+        see_procedures: Voir les démarches qui l’exigent
+        # Le titre de la page est loin au-dessus quand on est descendu de vingt
+        # cartes : chacune redit de quelle exigence elle parle.
+        card_html: Ce qui satisfait l'exigence « <em>%{requirement}</em> » %{country}.
         show:
           # Le repli quand l'annuaire ne publie pas d'intitulé pour l'exigence.
           title: Exigence
-          see_procedures: Voir les démarches qui l’exigent
           by_country: Justificatifs satisfaisant cette exigence, par pays
           lead_html: >-
             Liste des justificatifs que chaque pays <strong>fournisseur</strong> publie
             pour cette exigence. Le pays qui l'exige n'est pas celui qui la satisfait : le
             justificatif est demandé à celui qui le détient.
           search: Rechercher un pays fournisseur, son code, un type de justificatif
-          # Le titre de la page est loin au-dessus quand on est descendu de vingt
-          # cartes : chacune redit de quelle exigence elle parle.
-          card_html: Ce qui satisfait l'exigence « <em>%{requirement}</em> » %{country}.
           empty: Aucun type de justificatif ne correspond à cette recherche.
         country:
           title: "%{country} — %{requirement}"
-          heading: Démarches de %{country} qui exigent « %{requirement} »
-          lead_html: >-
-            Ce pays en <strong>requêteur</strong> : les démarches sous lesquelles il a déclaré cette exigence, et l'intitulé
-            qu'il donne à chacune.
         procedures:
           title: Démarches — %{requirement}
           crumb: Démarches qui l’exigent
@@ -869,6 +872,13 @@ fr:
       # telle quelle sous cette phrase.
       no_match:
         declared: Ce pays déclare ne délivrer aucun justificatif pour cette exigence.
+      # Une phrase déguisée en donnée : elle s'affiche comme le paramètre d'une
+      # requête que l'Evidence Broker n'accepte pas telle quelle. Les deux pages
+      # qui balayent le catalogue la disent, d'où sa place au-dessus d'elles.
+      swept:
+        zero: aucune exigence du catalogue
+        one: l'unique exigence du catalogue
+        other: chacune des %{count} exigences du catalogue
       countries:
         count:
           zero: Aucun pays
@@ -915,12 +925,6 @@ fr:
             soit le pays qui les impose. C'est ce qu'un correspondant obtient en lui adressant une requête.
           search: Rechercher une exigence, un type de justificatif
           card: Ce qui satisfait cette exigence %{country}.
-          # Une phrase déguisée en donnée : elle s'affiche comme le paramètre
-          # d'une requête que l'Evidence Broker n'accepte pas telle quelle.
-          swept:
-            zero: aucune exigence du catalogue
-            one: l'unique exigence du catalogue
-            other: chacune des %{count} exigences du catalogue
       declarations:
         role_html: "%{country}, en <strong>requêteur</strong>"
         lead_html: >-

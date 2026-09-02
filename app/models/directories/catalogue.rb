@@ -37,37 +37,66 @@ module Directories
 
     def declarations_in(country_code) = declarations.select { |declared| declared.country == country_code }
 
-    # What a country publishes as a provider, which the Evidence Broker has no
-    # query for: its own takes one requirement at a time (`EB:ERR:0002` without
-    # it), so the whole catalogue is swept. The queries name no country, so the
-    # page of every country reads the same cached answers.
-    #
-    # A requirement nobody satisfies is a result of the sweep — the directory
-    # answers with an empty set — and not a refusal of the page: the next one
-    # may be satisfied. Any other refusal is raised, since swallowing it would
-    # drop a requirement for a reason that is not "this country publishes
-    # nothing".
-    #
-    # Only a list carrying evidence types counts as published. A member state
-    # declaring `NoMatch` (chapter 3.2.4) states the very opposite of what this
-    # page announces, and counting it would put a requirement among those the
-    # country satisfies — in the tally as much as in the listing. The
-    # declaration is worth reading, on the page built around the requirement
-    # rather than around the provider.
+    # What a country publishes as a provider.
     def published_in(country_code)
       requirements.filter_map do |requirement|
-        lists = lists_of(requirement).select { |list| list.country == country_code && list.published? }
+        published = lists_of(requirement).select { |list| list.country == country_code }
 
-        [requirement, lists] if lists.any?
-      rescue CommonServicesError => e
-        raise unless e.code == EMPTY_RESULT_SET
-
-        nil
+        [requirement, published] if published.any?
       end
+    end
+
+    # The other way round: the countries publishing for one requirement. Sorted
+    # here rather than in the page, a listing of jurisdictions having no order
+    # of its own to read.
+    def publishing_countries(requirement)
+      lists_of(requirement).filter_map { |list| list.country.presence }.uniq.sort
     end
 
     private
 
-    def lists_of(requirement) = @evidence_broker.evidence_type_lists(requirement_id: requirement.id)
+    # What the Evidence Broker holds on each requirement, swept once and held
+    # for the request being served: the console asks it two opposite questions
+    # — what a country publishes, and who publishes for a requirement — and
+    # neither can be put to the directory for the catalogue at once. Its query
+    # answers one requirement at a time, `requirement-id` being the only
+    # mandatory parameter of chapter 3.2.4, and no query of the Evidence Broker
+    # starts from a country at all. The queries name no country, so every page
+    # reads the same cached answers.
+    #
+    # Keyed by identifier and not by the requirement: `Requirement` carries no
+    # value equality, so an object key would answer nothing for an instance
+    # built anywhere else, exactly as `requirement(uuid)` and `procedure(code)`
+    # address theirs by what names them.
+    #
+    # Only lists carrying evidence types are kept. A member state declaring
+    # `NoMatch` (chapter 3.2.4) states the very opposite of what both questions
+    # ask, and counting it would put a requirement among those a country
+    # satisfies — in a tally as much as in a listing. The declaration is worth
+    # reading, on the page built around the requirement rather than around the
+    # provider.
+    def published_lists
+      @published_lists ||= requirements.to_h { |requirement| [requirement.id, swept(requirement)] }
+    end
+
+    def lists_of(requirement) = published_lists.fetch(requirement.id, [])
+
+    # A requirement nobody satisfies is a result of the sweep — `EB:ERR:0001`
+    # is « the result set is empty » — and not a refusal of the page: the next
+    # one may be satisfied. Any other refusal is raised, since swallowing it
+    # would drop a requirement for a reason that is not "nobody publishes for
+    # it", and raised naming the requirement it fell on: fifty-three questions
+    # were asked, and the page would otherwise report the refusal of none in
+    # particular.
+    def swept(requirement)
+      @evidence_broker.evidence_type_lists(requirement_id: requirement.id).select(&:published?)
+    rescue CommonServicesError => e
+      return [] if e.code == EMPTY_RESULT_SET
+
+      raise CommonServicesError.new(
+        I18n.t('models.directories.catalogue.swept', requirement: requirement.uuid, error: e.message),
+        code: e.code,
+      )
+    end
   end
 end

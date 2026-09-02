@@ -3,8 +3,13 @@ module Admin
     class RequirementsController < BaseController
       # Rendered whole: the published requirements fit on one page, and the
       # search field filters them in the browser.
+      #
+      # The countries each card lists are the ones that satisfy it, which the
+      # catalogue can only know by sweeping itself — one directory query per
+      # requirement, shared with every other page reading that sweep.
       def index
         @requirements = catalogue.requirements
+        @publishing = @requirements.index_with { |requirement| catalogue.publishing_countries(requirement) }
       end
 
       # This page is not nested under a requirement: it names one by `id`,
@@ -26,28 +31,22 @@ module Admin
         @requirement = requirement
       end
 
-      # The procedures of a single requesting country. Nothing is asked of the
-      # directory again: the catalogue already carries the declarations, and it
-      # is their jurisdiction that sorts them.
+      # One provider country of the page above, at an address of its own.
+      # Nothing more is asked of the directory: the query names no country, so
+      # the twenty-seven pages and the requirement's own share one answer.
+      #
+      # A country that declared `NoMatch` is not listed among those satisfying
+      # the requirement, and no page therefore leads here for it — but its
+      # declaration is what this page exists to show, so the address answers.
       def country
         @requirement = requirement
         @country = params[:country_code]
-        @declared = @requirement.declared_in(@country)
-
-        found!(@declared.presence)
-
-        # What each procedure requires of this country, this requirement
-        # included: the catalogue already carries it, a card showing only one.
-        @required = @declared.filter_map(&:procedure_code).uniq.index_with do |code|
-          catalogue.procedure(code).declared_requirements(@country).size
-        end
+        @lists = found!(evidence_type_lists.select { |list| list.country == @country }.presence)
       end
 
       private
 
-      def lists = @lists ||= evidence_broker.evidence_type_lists(requirement_id: @requirement.id)
-
-      def by_country = lists.group_by(&:country).sort_by { |country, _| country.to_s }
+      def by_country = evidence_type_lists.group_by(&:country).sort_by { |country, _| country.to_s }
 
       # Each country carries the weight its card announces, worked out once: the
       # heading is nothing but the sum of those weights, and `filter.js` recomputes

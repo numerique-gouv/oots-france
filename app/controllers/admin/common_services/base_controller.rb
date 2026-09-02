@@ -13,7 +13,7 @@ module Admin
     class BaseController < Admin::BaseController
       rescue_from CommonServicesError, with: :render_refusal
 
-      helper_method :requirement, :country_names, :named_country, :in_country, :procedure_names,
+      helper_method :requirement, :country_names, :named_country, :flagged, :in_country, :procedure_names,
         :named_procedure, :procedure_hint, :full_named_procedure, :declaration_summary
 
       private
@@ -25,6 +25,11 @@ module Admin
       # For a heading, which cannot carry a label: a `<p>` has no business
       # inside an `<h2>`. The rule itself belongs to the component.
       def named_country(code) = CountryTagComponent.label(code, country_names[code])
+
+      # The flag alone before what a heading is about: the country is named in
+      # the breadcrumb just above, and spelling it out again would say it twice
+      # on one screen.
+      def flagged(code, subject) = [CountryTagComponent.flag(code), subject].compact.join(' ')
 
       def wording
         @wording ||= CountryWording.new(names: country_names, articles: code_lists.country_articles)

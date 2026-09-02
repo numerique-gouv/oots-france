@@ -56,8 +56,6 @@ class Requirement
 
   def countries = reference_frameworks.filter_map { |declared| declared.country.presence }.uniq
 
-  def declared_in(country) = reference_frameworks.select { |declared| declared.country == country }
-
   private
 
   def wordings_name_their_language

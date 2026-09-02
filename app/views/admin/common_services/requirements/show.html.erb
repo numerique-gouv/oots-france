@@ -10,7 +10,7 @@
     <h1><%= @requirement.display_name %></h1>
   </div>
   <div class="fr-mt-md-1w fr-ml-md-1w">
-    <%= link_to t('admin.common_services.requirements.show.see_procedures'),
+    <%= link_to t('admin.common_services.requirements.see_procedures'),
           admin_common_services_requirement_procedures_path(@requirement.uuid),
           class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
   </div>
@@ -47,7 +47,7 @@
   <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
     <%# The page title is far above once one has scrolled past twenty cards:
         each says again which requirement it speaks of. %>
-    <%= t('admin.common_services.requirements.show.card_html',
+    <%= t('admin.common_services.requirements.card_html',
           requirement: @requirement.display_name, country: in_country(country)) %>
 
     <% carte.with_list do %>
