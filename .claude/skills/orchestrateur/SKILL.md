@@ -52,7 +52,7 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 > **Ne prends que des `Todo`.** Le `Backlog` et `À compléter` ne t'appartiennent pas : [`spec-nerd`](../spec-nerd/SKILL.md) fait passer en `Todo` ce qu'aucune décision ne retient plus, après l'avoir relu contrôle par contrôle, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
 
 > [!IMPORTANT]
-> **Ne prends que des tickets techniquement fermés.** Un ticket l'est quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire. Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout — les `TS` le sont plus souvent que les `US`.
+> **Ne prends que des tickets techniquement fermés.** Un ticket l'est quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire. Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout.
 >
 > Un ticket dont l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre à arbitrer — **ne passe pas « après » : il ne se prend pas**. Un autre processus le portera, avec la décision prise en amont. Ne le fais pas entrer dans le lot au motif qu'il ne reste que lui.
 
