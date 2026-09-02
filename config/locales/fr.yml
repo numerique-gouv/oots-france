@@ -855,7 +855,6 @@ fr:
           empty: Aucun type de justificatif ne correspond à cette recherche.
         country:
           title: "%{country} — %{requirement}"
-          heading: Ce qui satisfait « %{requirement} » %{country}
         procedures:
           title: Démarches — %{requirement}
           crumb: Démarches qui l’exigent
