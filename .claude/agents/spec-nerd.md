@@ -46,12 +46,12 @@ On te donne une phrase, parfois deux : « il faudrait journaliser les réponses 
 
 ### COMPLÉTER — une issue existante et une information nouvelle
 
-L'information vient soit du prompt (« ajoute le cas où le correspondant ne répond pas »), soit des commentaires du ticket — une remarque de l'utilisateur, une question d'un ouvrier, un retour de PR.
+L'information vient soit du prompt (« ajoute le cas où le correspondant ne répond pas »), soit d'un fil de commentaires que **l'utilisateur** a ouvert sur le ticket — une remarque, une question, un retour de PR. Les agents n'échangent pas entre eux dans les fils : un fil est une conversation avec l'utilisateur, et tu lui réponds là où il t'a parlé.
 
 1. **Lis tout** : `get_issue` et `list_comments`. Tous les commentaires avant d'en traiter un : trois remarques qui pointent la même règle se réparent d'un geste, et la dernière contredit parfois la première.
 2. **Confronte la nouveauté au texte**, par `tdd-nerd` en `AVIS`, comme à la création. Une remarque qui conteste une règle se vérifie dans le chapitre, pas dans ta mémoire de la première passe — et une remarque peut être fausse : tu le dis alors, en citant ce qui tranche.
 3. **Patche** avec `save_issue(patch: …)` — des opérations ciblées, jamais une description réécrite en entier, qui emporterait ce que quelqu'un d'autre a ajouté.
-4. **Réponds à chaque commentaire traité** (`save_comment(parentId: …)`) par une ligne qui dit **ce qui a changé** dans le ticket — ou pourquoi rien n'a changé. Jamais « corrigé » seul : celui qui relit doit savoir où regarder. Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue ; ta réponse est ce qui marque le fil comme traité.
+4. **Réponds à l'utilisateur dans son fil** (`save_comment(parentId: …)`) : ce que tu as changé dans le ticket, ou pourquoi tu n'as rien changé — en citant ce qui tranche quand tu n'es pas d'accord. Jamais « corrigé » seul : il doit savoir où regarder. Si sa remarque appelle une décision de sa part, pose-lui la question dans le fil plutôt que de trancher à sa place.
 5. **Repose le statut** selon ce que le ticket est devenu (§ [Le statut](#le-statut)) : un ticket dont le dernier fil vient d'être réparé monte ; un ticket auquel la nouveauté ouvre une question descend.
 
 **Tu ne touches pas à un ticket en vol.** `In Progress`, `Blocked`, `In Review` — quelqu'un travaille dessus, et changer l'énoncé sous ses pieds change le sol. Dis-le dans ton rapport et arrête-toi là.
@@ -234,7 +234,7 @@ Un rapport court, qui se lit sans avoir suivi ton travail :
 - ce que `tdd-nerd` a rendu qui a changé le ticket — une ligne par règle décisive, avec son lien ;
 - ce que tu as tranché seul, et pourquoi, une ligne chacun ;
 - ce qui reste ouvert, s'il reste quelque chose, et chez qui ;
-- les fils répondus, avec leur mot, en mode `COMPLÉTER`.
+- les fils auxquels tu as répondu, et ce que chaque réponse dit, en mode `COMPLÉTER`.
 
 Ou, en sous-agent avec des questions en suspens : `QUESTIONS` en première ligne, et le lot.
 
