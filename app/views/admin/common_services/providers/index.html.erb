@@ -15,7 +15,7 @@
 <%# The country is not chosen: this evidence type is published by it, and
     asking another can only come back empty. %>
 <% if @refusal %>
-  <%= dsfr_alert(type: :warning, title: @refusal.code) do %>
+  <%= dsfr_alert(type: :warning, title: t('admin.common_services.refused')) do %>
     <%= @refusal.message %>
   <% end %>
 <% else %>

@@ -49,6 +49,17 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
     expect(response.body).to include('DSD:ERR:0001', '(TEST) Test Requirement', 'Dummy PDF - FI')
   end
 
+  # The one page an operator opens to read a refusal closely, so the one where
+  # saying the code twice costs most.
+  it 'says the code once, and what happened above it' do
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+
+    get admin_common_services_resolution_path(procedure_code: '00', country_code: 'FR')
+
+    expect(response.body.scan('DSD:ERR:0001').size).to eq(1)
+    expect(response.parsed_body.css('.fr-alert__title').text).to eq("L'annuaire a refusé")
+  end
+
   # An alert floating above the three steps leaves the reader to work out which
   # of them stopped: it belongs where the answer would have been.
   it 'shows the refusal at the step that met it, under its own heading' do

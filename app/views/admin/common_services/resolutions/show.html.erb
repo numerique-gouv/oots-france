@@ -41,7 +41,7 @@
   <% arret = capture do %>
     <% if @lookup.failure? %>
       <%= dsfr_alert(type: :warning,
-            title: @lookup.refusal&.code.presence || t("interactors.failures.#{@lookup.error[:key]}"),
+            title: t("interactors.failures.#{@lookup.error[:key]}"),
             html_attributes: { class: 'fr-mb-0' }) do %>
         <%= @lookup.error[:errors].join(' ') %>
       <% end %>
