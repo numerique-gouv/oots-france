@@ -47,7 +47,7 @@
   <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
     <%# The page title is far above once one has scrolled past twenty cards:
         each says again which requirement it speaks of. %>
-    <%= t('admin.common_services.requirements.show.card_html',
+    <%= t('admin.common_services.requirements.card_html',
           requirement: @requirement.display_name, country: in_country(country)) %>
 
     <% carte.with_list do %>

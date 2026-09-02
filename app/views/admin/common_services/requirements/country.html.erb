@@ -23,6 +23,9 @@
 <% end %>
 
 <%= render CardComponent.new(title: named_country(@country), dense: true) do |carte| %>
+  <%= t('admin.common_services.requirements.card_html',
+        requirement: @requirement.display_name, country: in_country(@country)) %>
+
   <% carte.with_list do %>
     <%= render 'admin/common_services/evidence_type_lists', lists: @lists, requirement: @requirement %>
   <% end %>

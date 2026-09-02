@@ -838,8 +838,11 @@ fr:
           published_by: Justificatifs publiés par
           nobody: Aucun pays ne publie de justificatif pour cette exigence.
         # La page de l'exigence et celle d'un de ses pays fournisseurs portent le
-        # même bouton, vers la même page.
+        # même bouton, vers la même page, et la même phrase sur leurs cartes.
         see_procedures: Voir les démarches qui l’exigent
+        # Le titre de la page est loin au-dessus quand on est descendu de vingt
+        # cartes : chacune redit de quelle exigence elle parle.
+        card_html: Ce qui satisfait l'exigence « <em>%{requirement}</em> » %{country}.
         show:
           # Le repli quand l'annuaire ne publie pas d'intitulé pour l'exigence.
           title: Exigence
@@ -849,9 +852,6 @@ fr:
             pour cette exigence. Le pays qui l'exige n'est pas celui qui la satisfait : le
             justificatif est demandé à celui qui le détient.
           search: Rechercher un pays fournisseur, son code, un type de justificatif
-          # Le titre de la page est loin au-dessus quand on est descendu de vingt
-          # cartes : chacune redit de quelle exigence elle parle.
-          card_html: Ce qui satisfait l'exigence « <em>%{requirement}</em> » %{country}.
           empty: Aucun type de justificatif ne correspond à cette recherche.
         country:
           title: "%{country} — %{requirement}"
