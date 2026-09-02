@@ -47,9 +47,9 @@ RSpec.describe 'Admin::CommonServices::Procedures' do
     it 'hands the whole catalogue to a search box rather than filtering server-side' do
       get admin_common_services_procedures_path
 
-      search = response.parsed_body.css('input[data-filter]').first
+      search = response.parsed_body.css('input[data-controller="filter"]').first
 
-      expect(search['data-filter']).to eq('#liste-demarches > *')
+      expect(search['data-filter-entries-value']).to eq('#liste-demarches > *')
       expect(response.parsed_body.css('#liste-demarches > *').size).to eq(22)
     end
 

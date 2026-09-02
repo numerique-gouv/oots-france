@@ -11,9 +11,11 @@ RSpec.describe SearchFieldComponent, type: :component do
 
     input = page.find('input')
 
-    expect(input['data-filter']).to eq('#liste > *')
-    expect(input['data-filter-tally']).to eq('#decompte')
-    expect(input['data-filter-empty']).to eq('#aucun')
+    expect(input['data-controller']).to eq('filter')
+    expect(input['data-action']).to eq('input->filter#apply')
+    expect(input['data-filter-entries-value']).to eq('#liste > *')
+    expect(input['data-filter-tally-value']).to eq('#decompte')
+    expect(input['data-filter-empty-value']).to eq('#aucun')
   end
 
   # A field whose only label is its placeholder has none left the moment
@@ -43,7 +45,7 @@ RSpec.describe SearchFieldComponent, type: :component do
   it 'leaves out what the caller did not name' do
     render_inline(described_class.new(label: 'Rechercher', id: 'recherche', entries: '#liste > *'))
 
-    expect(page).to have_no_css('input[data-filter-tally]')
-    expect(page).to have_no_css('input[data-filter-empty]')
+    expect(page).to have_no_css('input[data-filter-tally-value]')
+    expect(page).to have_no_css('input[data-filter-empty-value]')
   end
 end

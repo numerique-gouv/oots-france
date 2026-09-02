@@ -30,6 +30,13 @@ gem 'faraday-retry'
 gem 'good_job'
 gem 'strong_migrations'
 
+# Behaviour attached to the DOM, as Stimulus controllers: two pages of the
+# console fetch their listing after loading, which a script hooked on
+# `DOMContentLoaded` would never see arrive. `importmap-rails` is what resolves
+# `@hotwired/stimulus` without Node and without a bundler.
+gem 'importmap-rails'
+gem 'stimulus-rails'
+
 gem 'dsfr-view-components'
 gem 'pundit'
 gem 'view_component'

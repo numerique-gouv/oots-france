@@ -1,0 +1,35 @@
+<%= render SearchFieldComponent.new(
+      label: t('admin.common_services.countries.requirements.search'),
+      id: 'recherche-exigence-fournie',
+      entries: '#exigences-satisfaites > *',
+      tally: '#decompte-exigences-satisfaites',
+      empty: '#aucune-exigence-satisfaite',
+    ) %>
+
+<%= render 'admin/common_services/results_count', id: 'decompte-exigences-satisfaites', count: @published.size %>
+
+<div id="exigences-satisfaites">
+  <% @published.each do |requirement, lists| %>
+    <div>
+      <%= render CardComponent.new(title: requirement.display_name, heading_level: 2) do |carte| %>
+        <%= t('admin.common_services.countries.requirements.card', country: in_country(@country)) %>
+
+        <% carte.with_list do %>
+          <%= render 'admin/common_services/evidence_type_lists', lists:, requirement: %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
+
+<p id="aucune-exigence-satisfaite" <%= 'hidden' if @published.any? %>>
+  <%= t('admin.common_services.requirements.empty') %>
+</p>
+
+<%# One query per requirement: the Evidence Broker has none that starts from
+    the country. %>
+<%= render DirectoryQueryComponent.new(
+      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      parameters: { 'requirement-id' =>
+        t('admin.common_services.swept', count: @swept.size) },
+    ) %>

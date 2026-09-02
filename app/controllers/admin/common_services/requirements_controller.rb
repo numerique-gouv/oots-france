@@ -6,10 +6,16 @@ module Admin
       #
       # The countries each card lists are the ones that satisfy it, which the
       # catalogue can only know by sweeping itself — one directory query per
-      # requirement, shared with every other page reading that sweep.
+      # requirement, shared with every other page reading that sweep. That sweep
+      # is why the page is served in two parts, `listing_asked?` saying which.
       def index
+        return unless listing_asked?
+
         @requirements = catalogue.requirements
         @publishing = @requirements.index_with { |requirement| catalogue.publishing_countries(requirement) }
+        render_fragment 'listing'
+      rescue CommonServicesError => e
+        render_refusal(e, listing: true)
       end
 
       # This page is not nested under a requirement: it names one by `id`,

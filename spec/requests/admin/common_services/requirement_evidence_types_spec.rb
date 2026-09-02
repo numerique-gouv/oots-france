@@ -47,7 +47,7 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
   it 'hands every jurisdiction to a search box rather than filtering server-side' do
     get admin_common_services_requirement_path(test_requirement)
 
-    expect(response.parsed_body.css('input[data-filter]').first['data-filter'])
+    expect(response.parsed_body.css('input[data-controller="filter"]').first['data-filter-entries-value'])
       .to eq('#par-pays-fournisseur > *')
     expect(response.parsed_body.css('#par-pays-fournisseur > *')).not_to be_empty
   end

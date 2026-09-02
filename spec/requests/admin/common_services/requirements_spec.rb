@@ -14,14 +14,63 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
   end
 
   describe 'GET /admin/common_services/requirements' do
+    # The sweep costs one directory query per requirement, so the page arrives
+    # without it and comes back for the listing at the address it carries.
+    it 'holds a place for the listing rather than sweeping the catalogue to render it' do
+      get admin_common_services_requirements_path
+
+      expect(response.parsed_body.css('h1').text).to eq('Exigences')
+      expect(response.parsed_body.css('[data-controller="deferred"]').attr('data-deferred-url-value').value)
+        .to eq(admin_common_services_requirements_path(listing: 1))
+      expect(response.body).to include('Chargement de toutes les exigences publiées')
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('requirement-id'))).not_to have_been_made
+    end
+
+    # What is left to read where nothing goes and fetches the listing.
+    it 'says in the page itself that its content needs JavaScript' do
+      get admin_common_services_requirements_path
+
+      expect(response.parsed_body.css('noscript').text).to include('charge son contenu en JavaScript')
+    end
+
+    # The header is what the browser reads to know the body is ours to splice
+    # in, a status being unable to say it — nginx answers `502` out of its own
+    # pocket when nothing runs behind it. The page itself never carries it.
+    it 'stamps the listing, and only the listing, as ours to splice in' do
+      get admin_common_services_requirements_path
+      expect(response.headers['Deferred-Fragment']).to be_nil
+
+      get admin_common_services_requirements_path(listing: 1)
+      expect(response.headers['Deferred-Fragment']).to eq('1')
+    end
+
+    # `render_refusal` is inherited by every controller of this section, so the
+    # parameter must not be enough to reach the fragment: appended to a page
+    # never written for it, it would answer a refusal with a bare partial —
+    # no layout, no stylesheet, no breadcrumb.
+    it 'leaves the other pages of the section whole, parameter or not' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({}))
+        .to_timeout
+
+      get admin_common_services_procedures_path(listing: 1)
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body.css('h1')).to be_present
+      expect(response.parsed_body.css('.fr-breadcrumb')).to be_present
+    end
+  end
+
+  describe 'GET /admin/common_services/requirements?listing=1' do
     # Fifty-three requirements fit on one page, so the narrowing happens in the
     # browser rather than by a round trip per keystroke.
     it 'hands every requirement to a search box rather than filtering server-side' do
-      get admin_common_services_requirements_path
+      get admin_common_services_requirements_path(listing: 1)
 
       expect(response.body).to include('53 résultats')
       expect(response.parsed_body.css('#liste-exigences > *').size).to eq(53)
-      expect(response.parsed_body.css('input[data-filter]').first['data-filter']).to eq('#liste-exigences > *')
+      expect(response.parsed_body.css('input[data-controller="filter"]').first['data-filter-entries-value'])
+        .to eq('#liste-exigences > *')
       expect(response.parsed_body.css('.fr-pagination')).to be_empty
     end
 
@@ -29,7 +78,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     # listing cannot know without one directory query per requirement, the
     # Evidence Broker answering this question for one requirement at a time.
     it 'leads from each country satisfying a requirement to what it publishes for it' do
-      get admin_common_services_requirements_path
+      get admin_common_services_requirements_path(listing: 1)
       card = response.parsed_body.css('.fr-card').first
       uuid = card.css('.fr-card__title a').attr('href').value.split('/').last
 
@@ -48,7 +97,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       end
 
       it 'says so on the card rather than leaving it bare' do
-        get admin_common_services_requirements_path
+        get admin_common_services_requirements_path(listing: 1)
         card = response.parsed_body.css('.fr-card').first
 
         expect(card.text).to include('Aucun pays ne publie de justificatif')
@@ -59,7 +108,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     # The sweep is the page's, not the catalogue's: an operator reading a
     # listing that surprises them must find the query that filled it.
     it 'declares the sweep beside the catalogue query it rests on' do
-      get admin_common_services_requirements_path
+      get admin_common_services_requirements_path(listing: 1)
       declared = response.parsed_body.css('.fr-accordion code').map(&:text)
 
       expect(declared).to include(EvidenceBrokerClient::REQUIREMENTS_QUERY,
@@ -78,10 +127,40 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       end
 
       it 'shows the refusal rather than a listing short of one requirement' do
-        get admin_common_services_requirements_path
+        get admin_common_services_requirements_path(listing: 1)
 
         expect(response.body).to include('EB:ERR:0002')
         expect(response.parsed_body.css('#liste-exigences > *')).to be_empty
+      end
+
+      # The alert takes the place the listing was to fill: the breadcrumb and
+      # the heading are already on the reader's screen, and a page would put a
+      # second set of them underneath.
+      it 'renders the alert alone, where the page has already said where it is' do
+        get admin_common_services_requirements_path(listing: 1)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.headers['Deferred-Fragment']).to eq('1')
+        expect(response.parsed_body.css('h1')).to be_empty
+        expect(response.parsed_body.css('.fr-breadcrumb')).to be_empty
+        expect(response.parsed_body.css('.fr-alert').text).to include('EB:ERR:0002')
+      end
+    end
+
+    # An unreachable directory is not a refusal, and the page has already
+    # answered `200` without asking anyone: it is this request that carries the
+    # `502`, which `deferred_controller.js` is written to inject rather than
+    # replace with its own wording.
+    context 'when the directory cannot be reached at all' do
+      it 'answers 502 with the alert the deferred fetch will show' do
+        stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({}))
+          .to_timeout
+
+        get admin_common_services_requirements_path(listing: 1)
+
+        expect(response).to have_http_status(:bad_gateway)
+        expect(response.headers['Deferred-Fragment']).to eq('1')
+        expect(response.body).to include('Annuaire injoignable')
       end
     end
 
@@ -89,7 +168,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     # forms travel from `fr.yml` in an attribute, and say nothing of what is
     # counted — a search narrows it to something else at every keystroke.
     it 'carries the plural forms of its tally' do
-      get admin_common_services_requirements_path
+      get admin_common_services_requirements_path(listing: 1)
 
       forms = JSON.parse(response.parsed_body.css('#decompte-exigences').attr('data-tally').value)
 
@@ -234,7 +313,7 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     it 'offers neither search nor tally, having one country to show' do
       get admin_common_services_requirement_country_path(test_requirement, 'FR')
 
-      expect(response.parsed_body.css('input[data-filter]')).to be_empty
+      expect(response.parsed_body.css('input[data-controller="filter"]')).to be_empty
       expect(response.parsed_body.css('[data-tally]')).to be_empty
     end
 

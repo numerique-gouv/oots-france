@@ -1,0 +1,13 @@
+<div class="deferred-content" data-controller="deferred" data-deferred-url-value="<%= url %>"
+  data-deferred-failed-value="<%= t('components.deferred_content.failed') %>">
+  <%# The message is announced, not just shown: whoever cannot see the spinner
+      is otherwise told nothing at all. It survives a failure, which is written
+      into it rather than over the region that announces it. %>
+  <p class="deferred-content__message fr-mb-0" role="status">
+    <span class="deferred-content__spinner" data-deferred-target="spinner" aria-hidden="true" hidden></span>
+    <span data-deferred-target="message"><%= message %></span>
+  </p>
+  <noscript>
+    <p class="fr-mb-0"><%= t('components.deferred_content.no_script') %></p>
+  </noscript>
+</div>

@@ -1,6 +1,6 @@
 # A search box that narrows a listing already on the page, in the browser.
 #
-# It submits nothing: `filter.js` reads the `data-filter*` attributes and hides
+# It submits nothing: `filter_controller.js` reads the values below and hides
 # what does not match. Hence no `fr-search-bar`, which the DSFR builds around a
 # submit button — one here would be a control that does nothing.
 #
@@ -24,6 +24,7 @@ class SearchFieldComponent < ViewComponent::Base
   # placeholder has none left the moment someone types into it.
   def field
     tag.input(class: 'fr-input', type: 'search', id:, autocomplete: 'off', placeholder: label,
-      data: { filter: @entries, filter_tally: @tally, filter_empty: @empty })
+      data: { controller: 'filter', action: 'input->filter#apply', filter_entries_value: @entries,
+              filter_tally_value: @tally, filter_empty_value: @empty })
   end
 end

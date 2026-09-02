@@ -1,0 +1,8 @@
+<%# The refusals that reach here are answers: the directory understood the
+    question and says it holds nothing. An outage is not one, and the two are
+    not read the same way. %>
+<% refused = @error.code.present? %>
+<%= dsfr_alert(type: refused ? :warning : :error,
+      title: refused ? t('admin.common_services.refused') : t('admin.common_services.refus.unreachable')) do %>
+  <%= @error.message %>
+<% end %>

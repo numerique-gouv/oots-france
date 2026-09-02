@@ -163,7 +163,7 @@ $ docker compose up nginx
 ```
 
 > [!IMPORTANT]
-> **`make assets` n'est pas facultatif.** Propshaft sert les fichiers depuis les sources en développement et en test, et pas du tout en production : sans cette compilation, les pages arrivent sans style et sans icône. Les fichiers atterrissent dans `public/assets`, à l'intérieur du dépôt — que la composition monte par-dessus l'image, ce qui est la raison pour laquelle les compiler à la construction de l'image ne servirait à rien. À rejouer après toute modification d'une feuille de style.
+> **`make assets` n'est pas facultatif.** Propshaft sert les fichiers depuis les sources en développement et en test, et pas du tout en production : sans cette compilation, les pages arrivent sans style et sans icône. Les fichiers atterrissent dans `public/assets`, à l'intérieur du dépôt — que la composition monte par-dessus l'image, ce qui est la raison pour laquelle les compiler à la construction de l'image ne servirait à rien. À rejouer après toute modification d'une feuille de style ou d'un contrôleur Stimulus.
 
 Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.du.domaine>`.
 

@@ -174,6 +174,13 @@ fr:
       summary: Afficher le corps (%{size})
     decrypted_value:
       label: Donnée personnelle déchiffrée
+    # Ce que le lecteur voit là où le contenu n'arrivera pas : sans JavaScript,
+    # rien ne va le chercher, et l'échec réseau ne laisse rien à afficher. Ce
+    # que la page attend, en revanche, est dit par la page — elle seule sait ce
+    # qu'elle charge.
+    deferred_content:
+      no_script: Cette page charge son contenu en JavaScript, et celui-ci est désactivé.
+      failed: Le contenu de cette page n'a pas pu être chargé. Rechargez la page pour réessayer.
     directory_breadcrumbs:
       directories: Annuaires centraux
     directory_query:
@@ -837,6 +844,10 @@ fr:
           search: Rechercher une exigence, un pays fournisseur, son code
           published_by: Justificatifs publiés par
           nobody: Aucun pays ne publie de justificatif pour cette exigence.
+          # Dite pendant que la page va chercher sa liste : une requête par
+          # exigence part d'ici, et le lecteur n'aurait sinon rien à lire. La
+          # phrase est entière, l'accord ne survivant pas à un nom interpolé.
+          loading: Chargement de toutes les exigences publiées, veuillez patienter.
         # La page de l'exigence et celle d'un de ses pays fournisseurs portent le
         # même bouton, vers la même page, et la même phrase sur leurs cartes.
         see_procedures: Voir les démarches qui l’exigent
@@ -925,6 +936,9 @@ fr:
             soit le pays qui les impose. C'est ce qu'un correspondant obtient en lui adressant une requête.
           search: Rechercher une exigence, un type de justificatif
           card: Ce qui satisfait cette exigence %{country}.
+          # Comme celle de la liste des exigences, et pour la même raison : la
+          # page balaye le catalogue avant de pouvoir écrire une seule ligne.
+          loading: Chargement de tous les justificatifs publiés par ce pays, veuillez patienter.
       declarations:
         role_html: "%{country}, en <strong>requêteur</strong>"
         lead_html: >-
