@@ -41,7 +41,7 @@ On te donne une phrase, parfois deux : « il faudrait journaliser les réponses 
 2. **Lance `tdd-nerd` en `PANORAMA`** sur le sujet, avant de penser plus loin. Demande large : les chapitres, les règles avec leur rôle, les acteurs, les cas d'erreur, ce que le texte laisse ouvert, le vocabulaire. C'est de là que viennent les règles de gestion.
 3. **Rédige un premier jet**, à la forme du § [La forme d'une issue](#la-forme-dune-issue). En écrivant, note chaque endroit où tu hésites : c'est une question.
 4. **Confronte chaque question au texte** — de nouveaux `tdd-nerd`, en `AVIS` sur ton jet ou en question ciblée, plusieurs en parallèle quand elles sont indépendantes. Une question qui trouve sa réponse dans un chapitre devient une règle de gestion sourcée. Une question à laquelle le texte répond par un silence devient une décision à rendre.
-5. **Ce que le texte ne tranche pas, tranche-le toi-même si cela se défait** — un ordre de lecture, un libellé interne, le découpage en feuilles — et écris pourquoi dans le ticket. **Ce qui ne se défait pas ou ne t'appartient pas, demande-le**, en un seul lot : voir [Ce que tu demandes, et comment](#ce-que-tu-demandes-et-comment).
+5. **Ce que le texte ne tranche pas, tranche-le toi-même si cela se défait** — un ordre de lecture, un libellé interne, le découpage en sous-issues — et écris pourquoi dans le ticket. **Ce qui ne se défait pas ou ne t'appartient pas, demande-le**, en un seul lot : voir [Ce que tu demandes, et comment](#ce-que-tu-demandes-et-comment).
 6. **Écris dans Linear** : `save_issue` sur l'équipe `OOTS`, en `Backlog`, dans le projet qui revendique le sujet. Pose les relations après la création, **puis le statut** que le ticket mérite (§ [Le statut](#le-statut)). Rapporte le lien, le statut posé et pourquoi, ce que tu as décidé seul, ce qui reste ouvert s'il reste quelque chose.
 
 ### COMPLÉTER — une issue existante et une information nouvelle
@@ -65,7 +65,7 @@ Le statut dit **ce qu'il manque au ticket pour être pris**, et c'est toi qui le
 | Créer en `Backlog` | toujours — toute carte commence sa vie là, le temps que les relations et le corps soient posés |
 | Monter en `Todo` | tu juges le ticket **suffisamment complet** : chaque RG a sa source, chaque CA se lit comme un test, le hors-périmètre est écrit, aucune question n'attend personne, le grain tient dans une PR |
 | Passer en `À compléter` | tu juges le ticket **insuffisamment complet**, ou tu **attends une décision de l'utilisateur** — le lot de questions est posé, la réponse n'est pas là |
-| Redescendre de `Todo` vers `Backlog` ou `À compléter` | en `COMPLÉTER`, la nouveauté rouvre une question, ou un commentaire montre un manque réel : `À compléter` si le manque est de rédaction ou de décision, `Backlog` si le ticket n'est plus prenable pour une autre raison — préalable non rendu, dépendance non livrée, sujet à refendre |
+| Redescendre de `Todo` vers `Backlog` ou `À compléter` | en `COMPLÉTER`, la nouveauté rouvre une question, ou un commentaire montre un manque réel : `À compléter` si le manque est de rédaction ou de décision, `Backlog` si le ticket n'est plus prenable pour une autre raison — préalable non rendu, dépendance non livrée, sujet à redécouper |
 
 « Suffisamment complet » se décide par la grille du § suivant, contrôle par contrôle — jamais à l'impression que le ticket « a l'air bon » : la fluidité d'un énoncé ne dit rien de ce qu'il laisse ouvert. Un ticket laissé en `À compléter` dit en une ligne, dans son corps ou dans ton rapport, **ce qu'il attend et de qui**.
 
@@ -82,7 +82,7 @@ La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il 
 | aucune règle de gestion, ou aucun critère d'acceptance — la longueur ne dit rien, cherche les deux artefacts | `À compléter` |
 | le titre commence par « Trancher… », une RG est « sans source », « sous réserve », « à trancher », ou une section `Questions ouvertes` existe | `À compléter` |
 | un `blockedBy` n'est pas `Done` | `Backlog` |
-| une `US` mère dont les feuilles portent le livrable | `Backlog` — le grain livrable est la feuille |
+| une `US` qui a des sous-issues `TS` | `Backlog` — ce sont ses sous-issues qu'on implémente, jamais elle |
 | le livrable n'est pas du code qui entre dans une PR | pas un ticket de ce backlog : dis-le à l'utilisateur |
 
 ### Le contenu — ce que le ticket doit dire
@@ -100,7 +100,7 @@ Un manque → `À compléter`, et tu le répares avant de poser le statut si tu 
 
 1. **Le verrou restant est technique.** Il se lève en lisant — un chapitre, une source de dépendance, le code. Un verrou de décision attend une personne : `À compléter`, et la question est dans ton lot. **Ne disqualifie pas** un arbitrage technique documentable, une étude bornée, une priorité basse.
 2. **Rien d'extérieur n'est attendu** — un accès, une réponse du Service Desk, un jeu de données. Sinon `Backlog`, avec ce qu'on attend et de qui.
-3. **Le grain tient dans une PR relisible** — saurais-tu décrire le diff attendu en trois phrases ? Sinon fends, et c'est chaque feuille qui se juge.
+3. **Le grain tient dans une PR relisible** — saurais-tu décrire le diff attendu en trois phrases ? Sinon découpe en sous-issues, et c'est chacune qui se juge.
 4. **Le sujet n'est pas sous préalable** — les deux domaines du § précédent, plus ce qu'un humain doit relire en interactif parce qu'une erreur y est silencieuse : les magasins de clés de [`domibus/`](../../domibus/), le chiffrement et la rétention du [journal des échanges](../../docs/journal_des_echanges.md), [`.claude/settings.json`](../settings.json). Sinon `Backlog`, en nommant le préalable.
 5. **Le ticket est chez le bon chantier** — celui dont la description revendique le sujet. Sinon déplace-le, c'est une écriture qui t'appartient.
 
@@ -220,11 +220,11 @@ Il n'y a ni estimation ni cycle : la priorité porte seule l'ordonnancement, et 
 
 Produire un message invalide est plus grave que ne pas produire de message du tout. Et **un ticket bloqué n'est pas urgent, il est bloqué** : pose son `blockedBy`, descends-le d'un cran tant que le bloqueur tient. Un ticket sans chapitre dit en une phrase pourquoi il a la priorité qu'il a.
 
-### Le grain : une feuille = une PR
+### Le grain : un ticket = une PR
 
-Le grain livrable est la feuille de l'arbre — la `TS` s'il y en a, la `US` sinon — et une feuille est ce qui tient dans **une PR relisible d'un seul tenant**. Quatre signaux disent qu'elle n'y tient pas, un seul suffit à fendre : plus de six critères d'acceptance ; plus de deux couches touchées ; une moitié prête et l'autre qui attend ; un titre qui a besoin d'un « et ». Le signal inverse compte autant : trois `TS` sous une `US` qui tient en une PR coûtent plus à suivre qu'à faire. En cas de doute, une seule feuille.
+Ce qu'un ouvrier prend est **un ticket sans sous-issue** — la `TS` quand une `US` en a, la `US` sinon — et ce ticket doit tenir dans **une PR relisible d'un seul tenant**. Quatre signaux disent qu'il n'y tient pas, un seul suffit à le découper : plus de six critères d'acceptance ; plus de deux couches touchées ; une moitié prête et l'autre qui attend ; un titre qui a besoin d'un « et ». Le signal inverse compte autant : trois `TS` sous une `US` qui tient en une PR coûtent plus à suivre qu'à faire. En cas de doute, un seul ticket.
 
-**Fendre à la couture des dépendances est ce qui rapporte le plus** : une `US` dont la moitié attend un accord extérieur bloque entière ; fendue, sa moitié libre part.
+**Découper le long des dépendances est ce qui rapporte le plus** : une `US` dont la moitié attend un accord extérieur bloque entière ; découpée, sa moitié libre part.
 
 ### Les dépendances, le projet, le reste
 
