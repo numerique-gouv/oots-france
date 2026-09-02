@@ -157,6 +157,22 @@ if Rails.env.development?
         announced: ['oots-edm:v1.0', 'oots-edm:v1.2'].join(', '),
         expected: EdmSpecification::IDENTIFIER),
       events: [] },
+    # Une requête reçue à laquelle le worker est mort avant de répondre :
+    # `ExpireExchangesJob` la clôt passé le délai, sur l'horodatage que la
+    # passerelle émettrice avait apposé. Rien n'a été émis, donc rien de plus
+    # que l'arrivée au journal — le chapitre 4.8 journalise des messages, et
+    # une clôture muette n'en est pas un.
+    #
+    # `EDM:ERR:0005` et la présomption sont ce qu'`Exchange#expire!` écrit, et
+    # la phrase est composée par la clé qu'il interpole plutôt que recopiée :
+    # une console qui ment sur ce que le code produit se lit ensuite comme une
+    # documentation.
+    { incoming: true, status: 'failed', country_code: 'LU',
+      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      edm_error_code: EdmException::TIMEOUT.code,
+      error_description: I18n.t('models.exchange.expired.incoming'),
+      presumed: true,
+      events: %w[request_received] },
   ]
 
   # Le sujet tel qu'une réponse le confirme. Le chapitre 4.5.2 fait porter à
@@ -401,7 +417,7 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without).merge(
+        :confirmed_without, :presumed).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
           # n'a encore quitté n'en porte pas, et rien n'en écrit côté
@@ -409,7 +425,17 @@ if Rails.env.development?
           request_id: (request_id unless incoming || scenario[:status] == 'pending'),
           evidence_requester_id: incoming ? '00000000000009' : '00000000000002',
           created_at: opened,
+          # L'horodatage que la passerelle émettrice appose, et que
+          # `IncomingMessage::OpenExchange` seul inscrit : là où la France
+          # demande, c'est elle qui émet et il n'y a rien à recopier d'un
+          # en-tête.
+          ebms_sent_at: (opened if incoming),
           settled_at: (opened unless scenario[:status].in?(Exchange::IN_PROGRESS)),
+          # Ce que `Exchange#expire!` écrit et qu'aucune réponse n'a réfuté :
+          # l'échange est réglé par un renoncement de notre côté et non par ce
+          # qu'un correspondant a dit. Au même instant que le règlement, comme
+          # le fait la transition.
+          presumed_at: (opened if scenario[:presumed]),
         ),
     )
 
