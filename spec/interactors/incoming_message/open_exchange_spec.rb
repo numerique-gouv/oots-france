@@ -11,10 +11,15 @@ RSpec.describe IncomingMessage::OpenExchange do
   let(:body) { instance_double(EvidenceRequestParser, procedure_code: '00', requester:) }
   let(:requester) { EvidenceRequester.new(id: '00000000000009', type_id: '0002', address: Address.new(country: 'FI')) }
 
+  # The stamp the sending gateway put on the message — see `Exchange` for why a
+  # received exchange's timeout is counted from it rather than from reception.
+  STAMPED_AT = Time.zone.parse('2026-09-01T09:15:00Z').freeze
+
   context 'when a member state asks France' do
     let(:message) do
       instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: FOREIGN_EXCHANGE, conversation_id: FOREIGN_CONVERSATION, body:)
+        exchange_id: FOREIGN_EXCHANGE, conversation_id: FOREIGN_CONVERSATION,
+        sent_at: STAMPED_AT, body:)
     end
 
     # Answering leaves a row where asking does, so the listing carries both
@@ -25,6 +30,10 @@ RSpec.describe IncomingMessage::OpenExchange do
       expect(Exchange.sole).to have_attributes(
         exchange_id: FOREIGN_EXCHANGE, conversation_id: FOREIGN_CONVERSATION, incoming: true,
         procedure_code: '00', evidence_requester_id: '00000000000009', status: 'pending',
+        # The exchange keeps it because nothing can read it back:
+        # `retention_downloaded="0"` has the gateway erase the message the
+        # instant `retrieveMessage` returns.
+        ebms_sent_at: STAMPED_AT,
         # `R-EDM-REQ-C073` puts it on the agent classified `ER`: the country
         # that asks, and never France's own.
         country_code: 'FI',
@@ -45,7 +54,7 @@ RSpec.describe IncomingMessage::OpenExchange do
       create(:exchange, exchange_id: FOREIGN_EXCHANGE, incoming: false, country_code: 'FI')
 
       expect { open_exchange }.not_to change(Exchange, :count)
-      expect(Exchange.sole).to have_attributes(incoming: false, country_code: 'FI')
+      expect(Exchange.sole).to have_attributes(incoming: false, country_code: 'FI', ebms_sent_at: nil)
     end
 
     # The exchange an auditor most needs to find is the one nobody could honour.
@@ -57,6 +66,24 @@ RSpec.describe IncomingMessage::OpenExchange do
 
         expect(Exchange.sole).to have_attributes(exchange_id: FOREIGN_EXCHANGE, incoming: true,
           procedure_code: nil)
+      end
+    end
+
+    # A header whose timestamp is malformed opens the exchange without a clock
+    # rather than keeping the row from being written at all: `Exchange.expired`
+    # then leaves it alone, which is what an exchange with nothing to count from
+    # deserves.
+    context 'when the header carries no readable timestamp' do
+      before { allow(message).to receive(:sent_at).and_raise(UnreadableMessageError, 'illisible') }
+
+      # Field by field, as the five others are: only the stamp is lost, the body
+      # having been perfectly readable.
+      it 'opens it all the same, with no stamp to count a timeout from' do
+        open_exchange
+
+        expect(Exchange.sole).to have_attributes(exchange_id: FOREIGN_EXCHANGE, incoming: true,
+          ebms_sent_at: nil, procedure_code: '00', country_code: 'FI',
+          evidence_requester_id: '00000000000009')
       end
     end
   end

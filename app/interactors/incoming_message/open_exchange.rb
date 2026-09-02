@@ -63,10 +63,22 @@ module IncomingMessage
 
     def request = context.message.body
 
+    # `ebms_sent_at` is the stamp the sending gateway put on the message, which
+    # `Exchange.expired` counts a received exchange's timeout from — see there
+    # for why our own reception will not do. Written at the opening because the
+    # message is gone by the time anything else could read it:
+    # `retention_downloaded="0"` erases it on retrieval.
     def opened
       {
         incoming: true,
         conversation_id: context.message.conversation_id,
+        ebms_sent_at: readable { context.message.sent_at },
+        **requested,
+      }
+    end
+
+    def requested
+      {
         procedure_code: readable { request.procedure_code },
         country_code: readable { request.requester.address.country },
         evidence_requester_id: readable { request.requester.id },
