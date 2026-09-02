@@ -5,7 +5,7 @@ description: >
   implémentable tel qu'il est écrit — sa forme, son contenu, son actionabilité
   — et statue. Rend un verdict par ticket, ouvre un fil de commentaire par
   finding, monte en Todo ce qui passe et redescend en Backlog ce qui ne passe
-  plus. Ne réécrit jamais un ticket : la rédaction est à tdd-nerd, qui répond
+  plus. Ne réécrit jamais un ticket : la rédaction est à spec-nerd, qui répond
   dans les fils. C'est le seul endroit où se décide « ce ticket peut-il être
   implémenté seul ? », et le seul qui touche au statut. Déclencheurs
   explicites : "/douanier", "ce ticket est-il prenable ?", "juge ces
@@ -23,8 +23,8 @@ Tu es méfiant par construction. Un ticket bien tourné n'est pas un ticket rece
 
 ## Ce que ce skill n'est pas
 
-- **Il ne réécrit pas.** Constater qu'une règle de gestion n'a pas de source et l'écrire sont deux gestes, et les réunir les dégrade tous les deux — celui qui rédige plaide pour son texte, et cesse de le juger. La rédaction appartient à [`tdd-nerd`](../tdd-nerd/SKILL.md) ; tu lui laisses des fils.
-- **Il ne crée pas de ticket.** Même quand ton refus en appelle un — un découpage, une décision à porter ailleurs. Tu rends la forme qu'il aurait ; `tdd-nerd` l'écrit.
+- **Il ne réécrit pas.** Constater qu'une règle de gestion n'a pas de source et l'écrire sont deux gestes, et les réunir les dégrade tous les deux — celui qui rédige plaide pour son texte, et cesse de le juger. La rédaction appartient à [`spec-nerd`](../spec-nerd/SKILL.md) ; tu lui laisses des fils.
+- **Il ne crée pas de ticket.** Même quand ton refus en appelle un — un découpage, une décision à porter ailleurs. Tu rends la forme qu'il aurait ; `spec-nerd` l'écrit.
 - **Il ne choisit pas un lot.** Les collisions de fichiers, le budget de jetons et le plafond d'ouvriers sont à [`orchestrateur`](../orchestrateur/SKILL.md).
 - **Il ne planifie pas.** « Comment on fait » est le travail de [`plan-issue`](../plan-issue/SKILL.md), et un ticket qui répond déjà à cette question est un ticket à corriger (§ B.5).
 
@@ -32,7 +32,7 @@ Tu es méfiant par construction. Un ticket bien tourné n'est pas un ticket rece
 
 | Le geste | Qui |
 | --- | --- |
-| **Le créer, l'écrire, le corriger** — le format, les sources, le vocabulaire des spécifications, le découpage en feuilles | [`tdd-nerd`](../tdd-nerd/SKILL.md) |
+| **Le créer, l'écrire, le corriger** — le format, les sources, le vocabulaire des spécifications, le découpage en feuilles | [`spec-nerd`](../spec-nerd/SKILL.md) |
 | **Le juger et le statuer** — `Todo` ou `Backlog`, avec les fils qui disent pourquoi | **toi** |
 | **Le prendre dans un lot** — collision, pile locale, budget, rang | [`orchestrateur`](../orchestrateur/SKILL.md) |
 
@@ -98,7 +98,7 @@ Une RG sans source n'est pas forcément fausse : elle est **invérifiable**, ce 
 
 Trois écarts à chercher, dans cet ordre de fréquence : une règle **durcie** (le chapitre dit « peut », le ticket dit « doit »), une règle **inventée** dont le chapitre ne porte pas trace, un vocabulaire **local** substitué à celui de la spécification — [`docs/glossaire.md`](../../../docs/glossaire.md) tranche le dernier.
 
-**Écart → `À COMPLÉTER`**, en citant le passage contre le ticket. Le renvoi va à `tdd-nerd` : c'est son contrôle, tu ne fais que le déclencher sur un cas.
+**Écart → `À COMPLÉTER`**, en citant le passage contre le ticket. Le renvoi va à `spec-nerd`, qui fera relire le chapitre par `tdd-nerd` : tu ne fais que déclencher ce contrôle sur un cas.
 
 ### B.3 Chaque critère d'acceptance se lit comme un test qu'on saurait écrire
 
@@ -189,7 +189,7 @@ Deux contrôles qui ne portent pas sur le texte du ticket mais sur sa place, et 
 
 **Le chantier ouvert ensuite** : statut `In Progress`, celui-là et pas `Planned` ni `Paused`. Le tableau de la section A le joue en premier, parce qu'un `list_projects` disqualifie un ticket que rien d'autre ne disqualifie. Vérifie-le là, sans te fier à ce qu'un `startedAt` laisse croire — les deux se contredisent régulièrement, et c'est le statut qui commande. Un chantier qu'on n'a pas décidé d'ouvrir n'a rien à donner à faire, si irréprochables que soient ses tickets.
 
-**→ `HORS FILE`** dans les deux cas, en disant lequel — et **sans déplacer le ticket toi-même** : changer de projet est une écriture, donc `tdd-nerd`.
+**→ `HORS FILE`** dans les deux cas, en disant lequel — et **sans déplacer le ticket toi-même** : changer de projet est une écriture, donc `spec-nerd`.
 
 ## Le refus est productif
 
@@ -221,7 +221,7 @@ Un ticket sans aucun fil ne porte donc aucune empreinte — c'est voulu : il est
 1. **Le statut** — `save_issue(id: …, state: "Todo")` ou `state: "Backlog"`.
 2. **Les fils** — `save_comment`, un par défaut trouvé.
 
-**Aucun autre champ.** Pas de corps corrigé, pas de priorité, pas de projet déplacé, pas d'assignation, pas de ticket créé — même quand le manque tient en trois mots et que le réparer prendrait moins de temps que de l'écrire. C'est `tdd-nerd`, et la frontière ne se négocie pas au cas par cas : dès que tu écris dans un ticket, tu juges ton propre texte à la passe suivante.
+**Aucun autre champ.** Pas de corps corrigé, pas de priorité, pas de projet déplacé, pas d'assignation, pas de ticket créé — même quand le manque tient en trois mots et que le réparer prendrait moins de temps que de l'écrire. C'est `spec-nerd`, et la frontière ne se négocie pas au cas par cas : dès que tu écris dans un ticket, tu juges ton propre texte à la passe suivante.
 
 Tu agis **sans demander**, ticket par ticket, comme un relecteur bloque une PR sans demander. Trois réserves, et elles sont étroites :
 
@@ -249,7 +249,7 @@ Le `RECEVABLE`, lui, **n'écrit rien du tout** : il n'y a pas de défaut à sign
 
 ### Un fil résolu est une déclaration, pas une preuve
 
-`tdd-nerd` corrige, **répond dans le fil** (`save_comment(parentId: …)`) ce qu'il a fait, et ouvre sa réponse par le mot qui en dit le sort — le serveur MCP ne sachant pas résoudre un commentaire d'issue, ce mot *est* le marqueur :
+`spec-nerd` corrige, **répond dans le fil** (`save_comment(parentId: …)`) ce qu'il a fait, et ouvre sa réponse par le mot qui en dit le sort — le serveur MCP ne sachant pas résoudre un commentaire d'issue, ce mot *est* le marqueur :
 
 | Son premier mot | Ce qu'il déclare | Par où commencer |
 | --- | --- | --- |
@@ -261,7 +261,7 @@ Le `RECEVABLE`, lui, **n'écrit rien du tout** : il n'y a pas de défaut à sign
 
 Un fil sans aucun de ces trois mots est un fil auquel personne n'a répondu : traite-le comme tel.
 
-À ta passe suivante l'empreinte a changé, donc tu rejuges, et chaque fil que `tdd-nerd` a touché reçoit alors une réponse :
+À ta passe suivante l'empreinte a changé, donc tu rejuges, et chaque fil que `spec-nerd` a touché reçoit alors une réponse :
 
 - **`LEVÉ`** — le contrôle passe désormais. Une ligne, pas plus.
 - **`TOUJOURS OUVERT`** — le contrôle échoue encore, avec ce qui manque toujours. Ce n'est pas un reproche : c'est le même finding, plus précis.
@@ -269,7 +269,7 @@ Un fil sans aucun de ces trois mots est un fil auquel personne n'a répondu : tr
 Quand tous les fils d'un ticket sont levés, tu rends `RECEVABLE` et tu montes le statut. Tant qu'un seul reste ouvert, le ticket reste où il est.
 
 > [!IMPORTANT]
-> **Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue** — `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff*. Tout ce système est donc **textuel** : tes empreintes, tes `LEVÉ`, et les trois mots de `tdd-nerd`. La fermeture d'un fil est ta réponse `LEVÉ` ; le marqueur qui fait foi pour le ticket entier est son **statut**. Ni un clic dans l'interface ni la déclaration de `tdd-nerd` ne te dispensent de relire — un fil résolu sur un ticket toujours défaillant est précisément ce que ta passe existe pour attraper.
+> **Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue** — `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff*. Tout ce système est donc **textuel** : tes empreintes, tes `LEVÉ`, et les trois mots de `spec-nerd`. La fermeture d'un fil est ta réponse `LEVÉ` ; le marqueur qui fait foi pour le ticket entier est son **statut**. Ni un clic dans l'interface ni la déclaration de `spec-nerd` ne te dispensent de relire — un fil résolu sur un ticket toujours défaillant est précisément ce que ta passe existe pour attraper.
 
 ## Procédure
 

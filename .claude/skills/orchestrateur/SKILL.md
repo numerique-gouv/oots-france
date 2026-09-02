@@ -20,7 +20,7 @@ Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de
 
 Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — six verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
 
-Tu n'es ni [`tdd-nerd`](../tdd-nerd/SKILL.md), qui rédige et corrige les tickets contre les spécifications (un ticket faux se lui renvoie, il ne se réécrit pas en passant), ni [`douanier`](../douanier/SKILL.md), qui les juge et les statue (un ticket qui n'aurait pas dû être en `Todo` se lui signale), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
+Tu n'es ni [`spec-nerd`](../spec-nerd/SKILL.md), qui rédige et corrige les tickets contre les spécifications (un ticket faux se lui renvoie, il ne se réécrit pas en passant), ni [`douanier`](../douanier/SKILL.md), qui les juge et les statue (un ticket qui n'aurait pas dû être en `Todo` se lui signale), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
 
 ## Entrée
 
@@ -44,7 +44,7 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 > [!IMPORTANT]
 > **Ces contrôles sont une relecture de porte, pas un tri.** [`douanier`](../douanier/SKILL.md) les a déjà joués, plus sévèrement, avant de monter le ticket en `Todo` — les quatre lignes ci-dessus sont ses contrôles A, et « techniquement fermé » est son C.1. Tu les rejoues parce qu'ils coûtent une seconde et qu'un ticket peut avoir bougé depuis, pas parce que le tri t'incombe.
 >
-> **Un ticket que tu écartes ici est donc une fuite, pas un tri normal.** Ne la répare pas — tu ne touches ni au statut (c'est `douanier`) ni au corps (c'est [`tdd-nerd`](../tdd-nerd/SKILL.md)). Trois gestes, dans cet ordre : passe au voisin, nomme le ticket et le contrôle qui a mordu dans l'annonce de sélection, et **signale-le comme fuite dans ton compte rendu** — c'est le seul endroit d'où quelqu'un peut apprendre que la file laisse passer quelque chose, et un écart qui se répète est un contrôle du douanier à renforcer.
+> **Un ticket que tu écartes ici est donc une fuite, pas un tri normal.** Ne la répare pas — tu ne touches ni au statut (c'est `douanier`) ni au corps (c'est [`spec-nerd`](../spec-nerd/SKILL.md)). Trois gestes, dans cet ordre : passe au voisin, nomme le ticket et le contrôle qui a mordu dans l'annonce de sélection, et **signale-le comme fuite dans ton compte rendu** — c'est le seul endroit d'où quelqu'un peut apprendre que la file laisse passer quelque chose, et un écart qui se répète est un contrôle du douanier à renforcer.
 >
 > **Et n'étends pas la grille pour compenser.** Si tu te surprends à rejouer les contrôles de contenu — les sources des règles de gestion, les critères vérifiables, le hors-périmètre —, tu es en train de refaire une revue de spécifications au lancement d'un lot, avec le contexte le plus cher et le moment le plus mauvais. Renvoie au douanier, et lance ce qui reste.
 

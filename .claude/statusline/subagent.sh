@@ -16,8 +16,9 @@
 # « local_agent » pour tout sous-agent quel qu'il soit.
 #
 # D'où le préfixe, et non la seule présence du ticket : un douanier, un
-# tdd-nerd ou un plan-issue nomment eux aussi celui qu'ils travaillent, et
-# l'étape calculée plus bas ne veut rien dire pour eux — ils n'écrivent ni
+# spec-nerd, un tdd-nerd ou un plan-issue nomment eux aussi celui qu'ils
+# travaillent, et l'étape calculée plus bas ne veut rien dire pour eux — ils
+# n'écrivent ni
 # verdict ni `.claude/etapes/`, dont ils hériteraient donc de l'ouvrier passé
 # sur le même ticket. Ils gardent leur rendu par défaut, qui montre déjà leur
 # description.

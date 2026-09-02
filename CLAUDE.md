@@ -218,7 +218,8 @@ Rules:
 
 | Skill | What it does |
 | --- | --- |
-| [`tdd-nerd`](.claude/skills/tdd-nerd/SKILL.md) | Writes tickets against the text of the specifications, chapter by chapter, and corrects what departs from it. The author: it creates and fills, and never touches a status |
+| [`tdd-nerd`](.claude/skills/tdd-nerd/SKILL.md) | Asks the TDD what they say of a subject or a ticket, and relays nothing else: verbatim quotes, links, the role of each rule, the silences of the text. Read-only. The skill forks the [`tdd-nerd` agent](.claude/agents/tdd-nerd.md), on Opus; `spec-nerd` spawns the same agent for every question it has |
+| [`spec-nerd`](.claude/skills/spec-nerd/SKILL.md) | Writes one issue from a light prompt, or completes an existing one from new information. Confronts every question to the TDD through `tdd-nerd` before asking the user, then asks only the product, interface and genuinely undecidable questions, in one batch. Functional, never technical. Writes in `Backlog`, never touches a status. The skill runs the [`spec-nerd` agent](.claude/agents/spec-nerd.md) in session, on Fable, so its questions reach the user directly |
 | [`douanier`](.claude/skills/douanier/SKILL.md) | Code review, for specifications: judges whether a ticket is implementable as written — form, content, actionability — opens one comment thread per finding, and owns the ticket's status |
 | [`plan-issue`](.claude/skills/plan-issue/SKILL.md) | Plans one issue against the text of the specifications, writes the plan and gets it approved before a line of code is written |
 | [`review-loop`](.claude/skills/review-loop/SKILL.md) | Review → fixes on an open PR, until a pass finds no blocking finding, then reshapes the history |
