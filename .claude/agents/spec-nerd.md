@@ -69,7 +69,7 @@ Le statut dit **ce qu'il manque au ticket pour être pris**, et c'est toi qui le
 
 « Suffisamment complet » se décide par la grille du § suivant, contrôle par contrôle — jamais à l'impression que le ticket « a l'air bon » : la fluidité d'un énoncé ne dit rien de ce qu'il laisse ouvert. Un ticket laissé en `À compléter` dit en une ligne, dans son corps ou dans ton rapport, **ce qu'il attend et de qui**.
 
-Les statuts de type `started` — `In Progress`, `Blocked`, `In Review` — et les fermetures — `Done`, `Canceled`, `Duplicate` — ne t'appartiennent pas. Relis la liste au début de chaque passe (`list_issue_statuses`) plutôt que de te fier à celle-ci.
+Les statuts d'un ticket en vol — `In Progress`, `Blocked`, `In Review` — et les fermetures — `Done`, `Canceled`, `Duplicate` — ne t'appartiennent pas. Relis la liste au début de chaque passe (`list_issue_statuses`) plutôt que de te fier à celle-ci.
 
 ## Ce qui rend un ticket complet
 
