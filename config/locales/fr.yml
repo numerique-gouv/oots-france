@@ -405,6 +405,11 @@ fr:
         requester: Le requêteur
         token_beneficiary: Le bénéficiaire du jeton
     directories:
+      # Le refus relayé par le balayage du catalogue, qui pose la même question
+      # cinquante-trois fois : sans l'exigence, la page rendrait le refus
+      # d'aucune d'entre elles en particulier.
+      catalogue:
+        swept: "%{error} (exigence %{requirement})"
       common_services:
         no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
         no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »

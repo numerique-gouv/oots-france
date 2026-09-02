@@ -114,6 +114,68 @@ RSpec.describe Directories::Catalogue do
     end
   end
 
+  describe '#publishing_countries' do
+    # The listing this feeds announces the countries that satisfy the
+    # requirement. A `NoMatch` says the country issues nothing (chapter 3.2.4),
+    # so naming it there would state the opposite of what it declared — the
+    # same rule `published_in` applies, and for the same reason.
+    it 'names the countries publishing a type, and not the one declaring it issues none' do
+      allow(evidence_broker).to receive(:evidence_type_lists).and_return([
+        build(:evidence_type_list, country: 'IT'),
+        build(:evidence_type_list, :no_match, country: 'BE'),
+        build(:evidence_type_list, country: 'AT'),
+      ])
+
+      expect(catalogue.publishing_countries(published.first)).to eq(%w[AT IT])
+    end
+
+    it 'names a country once, however many combinations it publishes' do
+      allow(evidence_broker).to receive(:evidence_type_lists).and_return([
+        build(:evidence_type_list, country: 'AT'),
+        build(:evidence_type_list, country: 'AT'),
+      ])
+
+      expect(catalogue.publishing_countries(published.first)).to eq(%w[AT])
+    end
+  end
+
+  # The branch the whole sweep rests on, and the only one no page can show:
+  # a requirement the directory holds nothing about is skipped, and its
+  # neighbours are answered all the same.
+  it 'folds an empty result set into no publisher, leaving the other requirements answered' do
+    allow(evidence_broker).to receive(:evidence_type_lists) do |requirement_id:|
+      raise CommonServicesError.new('vide', code: 'EB:ERR:0001') if requirement_id.end_with?('aaa')
+
+      [build(:evidence_type_list, country: 'FR')]
+    end
+
+    expect(catalogue.publishing_countries(published.first)).to be_empty
+    expect(catalogue.publishing_countries(published.second)).to eq(%w[FR])
+    expect(catalogue.published_in('FR').map { |requirement, _| requirement.id }).to eq(%w[https://sr/exigences/bbb])
+  end
+
+  # Fifty-three questions are asked, and the page renders the refusal of one of
+  # them: without the requirement, it would name none in particular.
+  it 'names the requirement the sweep fell on when it relays a refusal' do
+    allow(evidence_broker).to receive(:evidence_type_lists)
+      .and_raise(CommonServicesError.new("L'annuaire a refusé", code: 'EB:ERR:0002'))
+
+    expect { catalogue.publishing_countries(published.first) }
+      .to raise_error(CommonServicesError, /aaa/) { |error| expect(error.code).to eq('EB:ERR:0002') }
+  end
+
+  # The two questions are opposite ends of one sweep, and the console asks both
+  # of the same catalogue: asking the directory twice would double fifty-three
+  # queries for nothing.
+  it 'sweeps once for what a country publishes and for who publishes a requirement' do
+    allow(evidence_broker).to receive(:evidence_type_lists).and_return([build(:evidence_type_list, country: 'FR')])
+
+    catalogue.published_in('FR')
+    catalogue.publishing_countries(published.first)
+
+    expect(evidence_broker).to have_received(:evidence_type_lists).twice
+  end
+
   # `CommonServicesQuery` caches the body rather than what was read from it, so
   # a second ask costs a second parse of some six hundred kilobytes.
   it 'asks the directory once, however many angles the page reads it from' do
