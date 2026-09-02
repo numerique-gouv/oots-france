@@ -36,6 +36,10 @@ done
 
 if [ -z "$MANQUANTS" ]; then
   echo "  Déjà présents : conservés tels quels."
+  # This is the branch where a template that gained a variable goes unnoticed:
+  # nothing rewrites a file that is already there. The other one has just had
+  # prepare_environment.sh make the same check.
+  scripts/check_environment.sh
 else
   echo "  Manquants :$MANQUANTS"
   # On a partial installation, prepare_environment.sh stops of its own accord
