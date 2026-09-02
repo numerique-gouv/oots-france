@@ -42,7 +42,6 @@ module Admin
         @requirement = requirement
         @country = params[:country_code]
         @lists = found!(evidence_type_lists.select { |list| list.country == @country }.presence)
-        @types_count = EvidenceTypeList.distinct_evidence_types(@lists).size
       end
 
       private

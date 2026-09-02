@@ -7,14 +7,21 @@
       [named_country(@country), nil],
     ]) %>
 
-<h1 class="fr-h3"><%= t('admin.common_services.requirements.country.heading',
-      country: in_country(@country), requirement: @requirement.display_name) %></h1>
+<div class="fr-grid-row fr-grid-row--top fr-mb-2w">
+  <div class="fr-col-12 fr-col-md">
+    <h1 class="fr-h3"><%= t('admin.common_services.requirements.country.heading',
+          country: in_country(@country), requirement: @requirement.display_name) %></h1>
+  </div>
+  <div class="fr-mt-md-1w fr-ml-md-1w">
+    <%= link_to t('admin.common_services.requirements.see_procedures'),
+          admin_common_services_requirement_procedures_path(@requirement.uuid),
+          class: 'fr-btn fr-btn--secondary fr-btn--icon-right fr-icon-arrow-right-line' %>
+  </div>
+</div>
 
-<p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.country.lead_html') %></p>
-
-<%# Not the tally of the page above: nothing narrows this one, so the count is
-    written once and never rewritten. %>
-<p class="fr-text--sm fr-mb-2w"><%= t('admin.common_services.results.count', count: @types_count) %></p>
+<% if @requirement.detail.present? %>
+  <p class="fr-col-12 fr-col-md-8"><em><%= @requirement.detail %></em></p>
+<% end %>
 
 <%= render CardComponent.new(title: named_country(@country), dense: true) do |carte| %>
   <% carte.with_list do %>

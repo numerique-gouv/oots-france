@@ -837,10 +837,12 @@ fr:
           search: Rechercher une exigence, un pays fournisseur, son code
           published_by: Justificatifs publiés par
           nobody: Aucun pays ne publie de justificatif pour cette exigence.
+        # La page de l'exigence et celle d'un de ses pays fournisseurs portent le
+        # même bouton, vers la même page.
+        see_procedures: Voir les démarches qui l’exigent
         show:
           # Le repli quand l'annuaire ne publie pas d'intitulé pour l'exigence.
           title: Exigence
-          see_procedures: Voir les démarches qui l’exigent
           by_country: Justificatifs satisfaisant cette exigence, par pays
           lead_html: >-
             Liste des justificatifs que chaque pays <strong>fournisseur</strong> publie
@@ -854,9 +856,6 @@ fr:
         country:
           title: "%{country} — %{requirement}"
           heading: Ce qui satisfait « %{requirement} » %{country}
-          lead_html: >-
-            Ce pays en <strong>fournisseur</strong> : les types de justificatif qu'il publie pour cette exigence, tels que la
-            page de l'exigence les montre pour les vingt-sept. Le pays qui l'exige n'est pas celui qui la satisfait.
         procedures:
           title: Démarches — %{requirement}
           crumb: Démarches qui l’exigent

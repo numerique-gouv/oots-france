@@ -230,12 +230,21 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
     end
 
     # One country left to read: a field that narrowed it to itself would be a
-    # control with nothing to do.
-    it 'counts what it shows without offering to search it' do
+    # control with nothing to do, and a tally would count what is already whole.
+    it 'offers neither search nor tally, having one country to show' do
       get admin_common_services_requirement_country_path(test_requirement, 'FR')
 
       expect(response.parsed_body.css('input[data-filter]')).to be_empty
-      expect(response.body).to include('Un résultat')
+      expect(response.parsed_body.css('[data-tally]')).to be_empty
+    end
+
+    # The same button as the requirement's own page, and to the same place: the
+    # other role is one page away wherever one stands.
+    it 'leads to what imposes the requirement, as the page above does' do
+      get admin_common_services_requirement_country_path(test_requirement, 'FR')
+
+      expect(response.parsed_body.css("a[href='#{admin_common_services_requirement_procedures_path(test_requirement)}']"))
+        .to be_present
     end
 
     it 'leads from each evidence type to the providers that deliver it' do
