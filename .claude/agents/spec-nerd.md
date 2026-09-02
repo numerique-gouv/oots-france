@@ -75,7 +75,7 @@ Les statuts d'un ticket en vol — `In Progress`, `Blocked`, `In Review` — et 
 
 La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il est écrit, sans qu'une décision soit volée à personne ?** Elle se répond par des contrôles, dans cet ordre ; le premier qui échoue dit le statut. Tu es méfiant par construction envers ton propre texte : tu viens de l'écrire, tu plaides pour lui.
 
-### La forme — une seconde chacun
+### La forme — ce qui se lit sans juger
 
 | Si… | Alors |
 | --- | --- |
