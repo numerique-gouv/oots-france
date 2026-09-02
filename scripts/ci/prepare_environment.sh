@@ -215,38 +215,32 @@ FIN
 # written here. Without this check, forgetting a newly mandatory variable shows
 # only when the stack starts, two steps further on, as a wait that expires with
 # nothing to say.
-ERREURS=""
-signale() {
-  ERREURS="${ERREURS:+$ERREURS
-}$1"
-}
-
-for fichier in $FICHIERS; do
-  # A missing template would make the `sed` below fail inside a command
-  # substitution, whose status the shell does not look at: the loop would run
-  # empty and the check would pass, restoring the very silent wait it exists to
-  # prevent.
-  if [ ! -r "$fichier.template" ]; then
-    signale "❌ $fichier.template introuvable : le contrat ne peut pas être vérifié."
-    continue
-  fi
-
-  MANQUANTES=""
-  for variable in $(sed -n 's/^\([A-Z_][A-Z_0-9]*\)=.*/\1/p' "$fichier.template"); do
-    grep -q "^$variable=" "$fichier" || MANQUANTES="$MANQUANTES $variable"
-  done
-
-  if [ -n "$MANQUANTES" ]; then
-    signale "❌ Variables déclarées par $fichier.template et absentes de $fichier :$MANQUANTES"
-  fi
+#
+# The comparison itself is scripts/check_environment.sh, which serves the same
+# need on an installation already made. It only judges the files that exist, so
+# a missing one is caught here instead: the files have just been written, and
+# one absent betrays a `cat >` lost above.
+#
+# Driven by the templates rather than by FICHIERS above, for the same reason
+# that script is: a template added later without teaching this one to write its
+# file would otherwise pass both checks — this guard not knowing that file, and
+# the shared check leaving an absent one alone.
+MANQUANTS=""
+for gabarit in .env*.template; do
+  # An unexpanded glob leaves the missing templates to the shared check below,
+  # which has the message for it.
+  [ -e "$gabarit" ] || break
+  fichier="${gabarit%.template}"
+  [ -e "$fichier" ] || MANQUANTS="$MANQUANTS $fichier"
 done
 
-# All four files are reported at once: exiting on the first offender would mask
-# the ones after it, and cost as many round trips as there are files.
-if [ -n "$ERREURS" ]; then
-  echo "$ERREURS" >&2
-  echo "   Compléter scripts/ci/prepare_environment.sh." >&2
+if [ -n "$MANQUANTS" ]; then
+  echo "❌ Fichiers que ce script devait écrire et qui manquent :$MANQUANTS" >&2
+  echo "   Corriger scripts/ci/prepare_environment.sh." >&2
   exit 1
 fi
+
+# What is to be completed here is this script, not the file it just wrote.
+CONSEIL="Compléter scripts/ci/prepare_environment.sh." scripts/check_environment.sh
 
 echo "Fichiers .env, .env.domibus, .env.oots et .env.postgres écrits."
