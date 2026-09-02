@@ -74,13 +74,35 @@ class Exchange < ApplicationRecord
     allow_nil: true
 
   # Chapter 4.4, table « Evidence Exchange Timeouts »: past the interval the
-  # deployment configures, an exchange this side opened and nobody settled is a
-  # failure. Counted from the opening, the one instant that does not move —
-  # `updated_at` follows every write and `settled_at` is what expiring writes.
+  # deployment configures, an exchange nobody settled is a failure, either way
+  # round. Each direction is counted from the instant that does not move for it
+  # — `updated_at` follows every write and `settled_at` is what expiring writes.
+  # Where France asks, that is the opening, which is also its emission. Where
+  # France answers, it is the stamp the sending gateway put on the message:
+  # `created_at` is only when we took it in hand, and `retention_undownloaded`
+  # lets Domibus hold one for two and a half days that the fallback sweep then
+  # brings back as though it had just arrived.
   #
-  # Outgoing only. Where France answers, the timeout is an act of emission and
-  # `EvidenceProvision::AnswerRequest` carries it out while the correspondent is
-  # still addressable; a row written here would name an error nobody was sent.
+  # The requester interval both ways, and deliberately the later of the two
+  # France configures: `Settings::Contract` refuses to start unless it exceeds
+  # the provider one, so a received exchange reaches this sweep only once
+  # `EvidenceProvision::AnswerRequest` has had its own chance to return the
+  # timeout exception while the correspondent was still addressable. Nothing is
+  # emitted here — this only stops a row whose worker died from waiting for
+  # ever. What interval a correspondent gives itself is its own affair and
+  # unknown to us; chapter 4.4.3 leaves each portal to assume a value — « the
+  # value must be assumed by the Online Procedure Portal » — so nothing is
+  # timed against it.
+  #
+  # An exchange carrying no stamp is left out by SQL alone — a comparison
+  # against `NULL` is never true — which is what leaves alone the ones opened
+  # before the column. Said because it is invisible: a condition added for it
+  # would be redundant, and this one reads as removable without it.
+  #
+  # A header whose timestamp could not be read leaves the column empty too, and
+  # does not linger for it: `expired?` reads that same header, so
+  # `IncomingMessage::Process` gives the message up and settles the exchange as
+  # a failure in the same run.
   #
   # And no exchange at all where the deployment provides no timeout handling,
   # which chapter 4.4.3 lets it decide: « If an Online Procedure Portals
@@ -91,7 +113,11 @@ class Exchange < ApplicationRecord
   scope :expired, lambda {
     next none unless Settings.timeout_enabled?
 
-    where(status: IN_PROGRESS, incoming: false, created_at: ...Settings.requester_timeout.ago)
+    deadline = Settings.requester_timeout.ago
+    in_progress = where(status: IN_PROGRESS)
+
+    in_progress.where(incoming: false, created_at: ...deadline)
+      .or(in_progress.where(incoming: true, ebms_sent_at: ...deadline))
   }
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
@@ -119,9 +145,16 @@ class Exchange < ApplicationRecord
   #
   # Straight to `settle` and not through `failed!`: this writes a presumption,
   # which overrules nothing.
+  #
+  # The phrase is the direction's, the same code covering two different things:
+  # where France asks, the correspondent did not answer; where France answers,
+  # nothing was emitted at all and the exchange died on the way. Not so that an
+  # operator can tell which way round — the console prints the direction of its
+  # own — but so as not to impute to a correspondent a silence that was ours.
   def expire!
     settle({ status: 'failed', edm_error_code: EdmException::TIMEOUT.code,
-             error_description: I18n.t('models.exchange.expired'), presumed_at: Time.current })
+             error_description: I18n.t("models.exchange.expired.#{direction}"),
+             presumed_at: Time.current })
   end
 
   def settled? = !status.in?(IN_PROGRESS)

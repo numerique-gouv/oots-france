@@ -14,6 +14,16 @@ FactoryBot.define do
       status { 'sent' }
     end
 
+    # A request a correspondent addressed to France. `country_code` is the one
+    # asking, where the default is the one asked; and the exchange carries the
+    # stamp the sending gateway put on the message, which is the only clock this
+    # direction has — `IncomingMessage::OpenExchange` writes it at the opening.
+    trait :received do
+      incoming { true }
+      country_code { 'BE' }
+      ebms_sent_at { Time.current }
+    end
+
     trait :preview_required do
       status { 'preview_required' }
       preview_location { 'https://previsualisation.example.fi/consentement' }

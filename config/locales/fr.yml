@@ -371,9 +371,16 @@ fr:
       unrequestable: >-
         Documents associés inconnus : %{values}. Seuls %{requestable} peuvent être demandés.
     # La raison que `Exchange#expire!` inscrit, et que la console lit sous
-    # « Raison de l'échec ».
+    # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
+    # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.
+    #
+    # L'entrante nomme la cause et non l'acteur : la France n'a pas décidé de se
+    # taire, l'échange est mort en chemin faute de worker, et « n'a pas répondu »
+    # prêterait une décision à une panne devant l'exploitant qui la diagnostique.
     exchange:
-      expired: Le correspondant n'a pas répondu dans le délai imparti.
+      expired:
+        incoming: L'échange n'a pas été traité dans le délai imparti.
+        outgoing: Le correspondant n'a pas répondu dans le délai imparti.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une
