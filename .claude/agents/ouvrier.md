@@ -8,7 +8,7 @@ description: >
   Ne merge jamais. Ne rend la main en cours de route que sur un seul motif :
   une décision que les TDD ne tranchent pas et dont l'erreur ne se déferait
   pas — tout ce qui se défait, il le tranche seul et le documente. N'a
-  pour tout intrant que l'identifiant du ticket : il se crée lui-même son
+  pour toute donnée d'entrée que l'identifiant du ticket : il se crée lui-même son
   worktree.
 model: opus
 ---
@@ -260,7 +260,7 @@ vivant. Toi, tu ne merges jamais (§ « Garde-fous ») : ne l'écris pas.
 ### 1. Ouvrir — lire le ticket, passer en cours, se créer un worktree
 
 Lis la description et les commentaires du ticket en entier (`get_issue`,
-`list_comments`) : c'est ton seul intrant, et son titre te donne le nom de ta
+`list_comments`) : c'est tout ce qu'on te donne, et son titre te donne le nom de ta
 branche.
 
 > [!IMPORTANT]
@@ -335,8 +335,9 @@ Trois choses de plus, qui sont à toi :
   récrit le fichier au même chemin et resoumet.
 
 > [!IMPORTANT]
-> **Un ticket vérifié par `/tdd-nerd` ne te dispense de rien.** Ce contrôle-là
-> répond à « ce ticket dit-il vrai ? » — au grain du ticket. Toi tu réponds à
+> **Un ticket écrit et jugé complet par `spec-nerd` ne te dispense de
+> rien.** Son travail répond à « ce ticket dit-il vrai, et est-il prenable ? »
+> — au grain du ticket. Toi tu réponds à
 > « qu'est-ce que le chapitre impose au code ? », qui est un autre grain et
 > demande une autre lecture. Le chapitre porte cent choses qu'un ticket ne
 > portera jamais : le nom exact des éléments, leur cardinalité, l'ordre des
