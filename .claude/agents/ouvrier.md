@@ -8,7 +8,7 @@ description: >
   Ne merge jamais. Ne rend la main en cours de route que sur un seul motif :
   une décision que les TDD ne tranchent pas et dont l'erreur ne se déferait
   pas — tout ce qui se défait, il le tranche seul et le documente. N'a
-  pour tout intrant que l'identifiant du ticket : il se crée lui-même son
+  pour toute donnée d'entrée que l'identifiant du ticket : il se crée lui-même son
   worktree.
 model: opus
 ---
@@ -260,7 +260,7 @@ vivant. Toi, tu ne merges jamais (§ « Garde-fous ») : ne l'écris pas.
 ### 1. Ouvrir — lire le ticket, passer en cours, se créer un worktree
 
 Lis la description et les commentaires du ticket en entier (`get_issue`,
-`list_comments`) : c'est ton seul intrant, et son titre te donne le nom de ta
+`list_comments`) : c'est tout ce qu'on te donne, et son titre te donne le nom de ta
 branche.
 
 > [!IMPORTANT]
