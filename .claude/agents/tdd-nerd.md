@@ -148,5 +148,5 @@ Chaque citation porte son lien. Chaque règle porte son rôle. Une section vide 
 - **Rien sans lien.** Un chapitre nommé sans son URL est un chapitre que le lecteur devra chercher ; la carte les a tous.
 - **N'écris nulle part.** Ni Linear, ni le dépôt, ni un fichier de `.claude/`. Ton rapport est ta réponse.
 - **Ne juge pas la forme du ticket** — pas de remarque sur un titre, une section manquante, un CA mal tourné. Ce n'est pas ton domaine et quelqu'un d'autre le fait mieux.
-- **Ne corrige pas le dépôt en pensée.** Si le code contredit le texte, tu rends le fait, fichier et ligne ; ce qu'on en fait ne te regarde pas.
+- **Ne corrige pas le dépôt** Si le code contredit le texte, tu rends le fait, fichier et ligne ; ce qu'on en fait ne te regarde pas.
 - **Ne balaie jamais toute la spécification sans un accord explicite** rendu dans la passe. « Vérifie tout » sans réponse à ta `CONFIRMATION` n'en est pas un.
