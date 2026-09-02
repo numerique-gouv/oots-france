@@ -59,11 +59,9 @@ skill bouche.
   en crée un tout seul dans **Reboot OOTS-France**. Ce skill sert quand il y
   a un périmètre à contrôler ou une arborescence à poser.
 
-Il **remplace `plan-backlog`**, qui n'existait que pour verser
-`docs/reste_à_faire.md` dans Linear. Ce transfert n'est plus le sujet : ce
-qui reste dans ce document est du reliquat non transféré, et **Linear est
-désormais l'état du travail**. Ne retourne pas au document pour savoir où en
-est un chantier ; interroge Linear.
+**Linear est l'état du travail**, pas `docs/reste_à_faire.md`, dont ce qui
+reste est du reliquat non transféré. Pour savoir où en est un chantier,
+interroge Linear.
 
 ## La doctrine : tout part des TDD
 
@@ -117,6 +115,28 @@ parce que l'application remplacée le faisait).
 > [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md), qui donne l'appel
 > qui énumère les sous-pages. C'est ainsi qu'a été retrouvé le 2.3 —
 > *Representation* —, que rien ne signalait et qui porte deux `MUST`.
+
+### Lire les TDD n'est pas une étape, c'est le métier
+
+**Aucune réponse qui ne vienne d'une lecture faite dans la passe en cours** — ni de ta mémoire, ni du ticket, ni du dépôt, ni d'une lecture d'il y a trois messages. C'est la seule chose que ce skill sache faire et que personne d'autre ne fait : transformer le texte des spécifications en issues dont il connaît la forme.
+
+Trois moments, dont les deux derniers sont ceux qu'on saute : **avant de juger** un ticket ; **avant d'écrire une RG**, car c'est à la rédaction qu'on durcit un *may* en « doit » ou qu'on prête à une règle un rôle qu'elle n'a pas ; **avant de répondre à une question**, y compris une de l'utilisateur, y compris quand tu crois savoir.
+
+#### Ce que rend l'outil de lecture n'est pas le chapitre
+
+**Il résume, et son résumé omet en silence.** Le 2026-09-02, une première lecture du tableau du §4.4.3 n'a rendu que les libellés des intervalles (« T1 Preview Link Timeout ») ; une RG entière en a conclu que la section ne budgétait que la prévisualisation. Une seconde lecture, demandée *verbatim*, a rendu les gloses qui la démentent — le *Scope* de T1, la note « *per requirement (e.g., discovery, exchange, or preview)* » de la ligne *Overall*, la clôture sur les *Basic Flows*.
+
+D'où trois habitudes, qui coûtent une requête de plus :
+
+- **Demande le texte, pas le sens** — « quote verbatim », en **nommant** ce que tu veux voir : gloses, colonne *Scope*, notes sous le tableau, phrase qui clôt la section. Ce que tu ne nommes pas ne revient pas.
+- **Un libellé n'est pas une définition**, ni un titre de section une portée : le §4.4.2 item 3 siège sous « Timeout Specification » sans être une règle de délais.
+- **Relis au moment de t'appuyer dessus** : une lecture faite pour répondre à une question ne cherchait pas ce qu'une RG demande.
+
+#### Le silence du texte est une réponse
+
+Souvent la meilleure. « Comment reconstruire une requête portant le bénéficiaire ? » n'a aucune réponse dans le 4.9 : ce silence dit que le modèle suppose un *Online Procedure Portal* qui a l'usager devant lui, donc que le problème venait de notre propre découpage — et c'est lui qui a tranché la décision.
+
+**Attribue à qui de droit.** Le §4.4.2 item 3 dit « *the **system*** », pas « le portail ». Prêter un acteur à un texte qui n'en nomme aucun est la même faute qu'inventer une règle.
 
 ## Le contrôle, ticket par ticket
 
@@ -239,9 +259,7 @@ Un fil ouvert par `douanier` est un finding : un contrôle nommé, un constat, u
 
 #### Le marqueur est le premier mot de ta réponse
 
-**Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue.** Vérifié le 2026-09-01 : `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff* — appelé sur l'identifiant d'un fil d'issue, il répond `400 Could not find referenced PullRequestComment`. Il n'y a donc **aucun geste d'API à faire**, et attendre qu'il en existe un laisserait vingt fils indiscernables.
-
-Le marqueur est donc textuel, comme les verdicts et les empreintes de `douanier` le sont déjà : la première ligne de ta réponse, que `list_comments` rend telle quelle. Trois mots, et un seul par fil :
+**Le serveur MCP de Linear ne sait pas résoudre un commentaire d'issue** — vérifié le 2026-09-01 : `save_comment` n'a pas de champ `resolved`, et `resolve_diff_thread` ne vaut que pour les commentaires de *diff*. Il n'y a donc aucun geste d'API à faire, et le marqueur est textuel : la première ligne de ta réponse, que `list_comments` rend telle quelle. Trois mots, un seul par fil :
 
 | Premier mot | Ce qu'il dit | Quand |
 | --- | --- | --- |
@@ -253,8 +271,6 @@ Le marqueur est donc textuel, comme les verdicts et les empreintes de `douanier`
 
 **Ce n'est pas un verdict, et ça ne statue rien.** `RÉPARÉ` déclare ce que tu as fait ; ce qui *lève* un contrôle reste de ne plus retrouver le défaut en relisant, et c'est `douanier` qui le constate et qui monte le ticket. Un `RÉPARÉ` posé sur un défaut toujours là se retourne contre toi : il devient un finding de plus. N'en pose donc aucun que tu n'aies vérifié dans le ticket enregistré.
 
-> [!TIP]
-> Un humain peut, lui, résoudre le fil dans l'interface Linear, et c'est bienvenu — mais ce clic n'est le marqueur de personne : il ne dit pas *qui* a réglé quoi. Le jour où le serveur MCP saura résoudre un commentaire d'issue, le geste **doublera** ce mot sans le remplacer, pour la même raison.
 
 ### Ce que tu ne fais plus, et ce qui te reste
 
@@ -294,11 +310,7 @@ te fier à cette liste : `Blocked` y a été ajouté sans que ce fichier le sach
 
 ### Citer un ticket, c'est le lier
 
-**Chaque fois que tu nommes un ticket à l'utilisateur, écris-le en lien cliquable** — dans le fil de la conversation, dans le rapport d'audit, dans le tableau que tu soumets à l'étape 6. La forme est `[OOTS-100](https://linear.app/pole-api/issue/OOTS-100)` : l'identifiant reste le texte lu, l'URL courte suffit, Linear complétant le *slug* lui-même.
-
-Le motif est le coût d'un aller-retour. Un identifiant nu oblige à ouvrir Linear, chercher le numéro, revenir — vingt fois dans un rapport qui en cite vingt. Un rapport de contrôle ne se lit pas linéairement : on saute d'un verdict au ticket qu'il juge, et c'est précisément le geste qu'un identifiant nu empêche.
-
-Cela vaut pour **tous** les identifiants que tu écris, y compris ceux dont tu ne dis rien de plus que le nom, et y compris dans les tableaux — c'est là qu'ils sont les plus nombreux et qu'on veut le plus cliquer.
+**Chaque fois que tu nommes un ticket à l'utilisateur, écris-le en lien cliquable** : `[OOTS-100](https://linear.app/pole-api/issue/OOTS-100)`, l'URL courte suffisant, Linear complétant le *slug*. Cela vaut pour **tous** les identifiants — conversation, rapport d'audit, tableau de l'étape 6 —, y compris ceux dont tu ne dis rien d'autre, et surtout dans les tableaux, où ils sont les plus nombreux. Un rapport de contrôle ne se lit pas linéairement : on saute d'un verdict au ticket qu'il juge, et c'est ce geste qu'un identifiant nu empêche.
 
 > [!NOTE]
 > **Dans une description Linear, c'est l'éditeur qui décide.** Il reconnaît l'identifiant comme l'URL et fabrique dans les deux cas une relation `relatedTo` — voir le garde-fou plus bas. La règle ci-dessus porte sur ce que **tu écris à un lecteur** : la conversation et les fichiers de `.claude/`. À l'intérieur d'un ticket, cite comme le ticket voisin le fait déjà.
@@ -476,13 +488,10 @@ sinon. Le découpage se fait pour ça — un ouvrier par feuille.
 Il n'y a pas d'estimation ici, mais « trop gros » se mesure quand même, et il
 faut le mesurer **avant** de créer, pas quand le ticket résiste.
 
-La référence est empirique, et vérifiable : l'équipe **Passe Marché**, dans le
-même espace Linear, tient un backlog depuis juillet 2025. Sur ses cinq cents
-issues et ses vingt-cinq sprints, **aucune n'a jamais dépassé 8 points**, et
-le délai médian entre création et clôture est de **quinze jours** — constant
-sur les deux moitiés de la période. Ce n'est pas l'échelle qui se transpose,
-c'est le plafond : rien n'entre dans le backlog qui ne se livre en une
-quinzaine.
+La référence est empirique : l'équipe **Passe Marché**, dans le même espace
+Linear, n'a jamais dépassé 8 points sur cinq cents issues, pour un délai
+médian de quinze jours. Ce n'est pas l'échelle qui se transpose, c'est le
+plafond — rien n'entre dans le backlog qui ne se livre en une quinzaine.
 
 Transposé ici, où l'unité est le passage d'un ouvrier : **une feuille est ce
 qui tient dans une PR relisible d'un seul tenant.** Quatre signaux disent
@@ -623,19 +632,15 @@ chapitre isolé ne peut pas voir.
   ajouté.
 - **Ne rien supprimer, ne rien annuler.** `Canceled` et `Duplicate` sont des
   arbitrages produit : les proposer, laisser l'utilisateur les appliquer.
-- **Ne touche à aucun statut**, dans un sens ni dans l'autre, pas même sur un
-  ticket dont tu viens de réparer le dernier fil. Signale-le prêt à relire ;
-  `douanier` statue.
-- **Ne masque jamais une question ouverte pour rendre un ticket présentable.**
-  Un énoncé affirmatif posé sur une décision que personne n'a prise coûte à
-  l'ouvrier qui le prend : il tranchera à ta place, ou rendra la main après
-  avoir monté son worktree pour rien.
+- **Ne touche à aucun statut**, pas même sur un ticket dont tu viens de
+  réparer le dernier fil : signale-le prêt à relire, `douanier` statue.
+- **Ne masque jamais une question ouverte pour rendre un ticket présentable** :
+  l'ouvrier qui le prend tranchera à ta place, ou rendra la main après avoir
+  monté son worktree pour rien.
 - **Un verdict sans citation n'existe pas.** Si tu n'as pas retrouvé le
   passage, ton verdict est « je n'ai pas tranché », et tu le dis.
-- **Ne pas estimer.** L'équipe n'emploie pas les points : aucune de ses issues
-  n'en porte, et elle n'a aucun cycle. Le plafond de découpage tient sans eux
-  — voir [Le plafond : une feuille = une PR](#le-plafond--une-feuille--une-pr).
-  Si cela change un jour, c'est l'équipe qui le décidera, pas un contrôle.
+- **Ne pas estimer.** L'équipe n'emploie ni points ni cycles, et le plafond de
+  découpage tient sans eux. Si cela change, c'est l'équipe qui le décidera.
 - **Ne pas créer de statut ni de champ**, ne pas écrire dans une autre équipe
   que `OOTS`.
 - **Ne jamais faire dépendre un ticket d'une maquette.** Il n'y en a pas, y
