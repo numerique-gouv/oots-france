@@ -34,8 +34,8 @@ plan ne peut pas savoir :
 - **Pas `spec-nerd`**, qui écrit le ticket au grain du backlog, ni
   `tdd-nerd`, qui lui rend le texte des chapitres à ce grain-là. Ici on répond
   à « qu'est-ce que le chapitre impose au code ? », qui est un autre grain et
-  demande une autre lecture. Un ticket écrit par `spec-nerd` et relu par
-  `douanier` ne dispense d'aucun chapitre.
+  demande une autre lecture. Un ticket écrit et jugé complet par `spec-nerd`
+  ne dispense d'aucun chapitre.
 - **Pas `ship-plan` ni `review-loop`**, qui viennent après l'implémentation.
 - **Pas de l'implémentation.** Aucun fichier de l'application n'est touché :
   ce skill n'écrit qu'une chose, le fichier de plan. Tout le reste est en

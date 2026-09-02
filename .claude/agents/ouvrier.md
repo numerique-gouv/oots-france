@@ -335,8 +335,8 @@ Trois choses de plus, qui sont à toi :
   récrit le fichier au même chemin et resoumet.
 
 > [!IMPORTANT]
-> **Un ticket écrit par `spec-nerd` et relu par `douanier` ne te dispense de
-> rien.** Leur travail répond à « ce ticket dit-il vrai, et est-il prenable ? »
+> **Un ticket écrit et jugé complet par `spec-nerd` ne te dispense de
+> rien.** Son travail répond à « ce ticket dit-il vrai, et est-il prenable ? »
 > — au grain du ticket. Toi tu réponds à
 > « qu'est-ce que le chapitre impose au code ? », qui est un autre grain et
 > demande une autre lecture. Le chapitre porte cent choses qu'un ticket ne

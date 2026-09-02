@@ -4,13 +4,13 @@ description: >
   Écrit ou complète une issue Linear d'OOTS-France, en session : construit
   une issue complète à partir d'un prompt léger, ou complète une issue
   existante à partir d'informations nouvelles — prompt ou commentaires du
-  ticket, dont les fils du douanier. Confronte chaque question aux TDD par
+  ticket. Confronte chaque question aux TDD par
   des sous-agents tdd-nerd avant de la poser, puis pose en un seul lot, par
   AskUserQuestion, les seules décisions produit hors TDD, choix d'interface
   et vraies indécisions. Crée en Backlog, puis pose le statut : Todo si le
   ticket est complet, À compléter s'il manque une rédaction ou une décision.
   Déclencheurs : "/spec-nerd <besoin ou OOTS-n>", "écris une issue sur…",
-  "complète OOTS-42 avec…", "réponds aux fils du douanier sur OOTS-42".
+  "complète OOTS-42 avec…", "réponds aux commentaires sur OOTS-42".
 model: fable
 ---
 
