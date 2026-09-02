@@ -176,11 +176,33 @@ RSpec.describe 'Le câblage des annuaires centraux' do
   end
 
   # The chain reports a refusal as the named exception the interactors handle,
-  # rather than letting a `CommonServicesError` reach the caller unchanged.
+  # rather than letting a `CommonServicesError` reach the caller unchanged. The
+  # code the directory named has to survive that translation inside the message
+  # itself; the spec below says where it ends up, and why nothing else carries
+  # it.
   it 'traduit le refus de l\'annuaire en l\'exception que les interacteurs attendent' do
     stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
     expect { directory.data_service('https://sr.acc.oots.tech.ec.europa.eu/x', 'FR') }
-      .to raise_error(CountryCodeNotFound, /FR/)
+      .to raise_error(CountryCodeNotFound, /FR.*DSD:ERR:0001/m)
+  end
+
+  # One hop further, on the same real refusal: the code the directory named has
+  # to survive into the reason an interactor hands on, that reason being the
+  # only carrier there is. `EvidenceRequestsController#report_failure` joins it
+  # into the `erreur` of the JSON answer and into the `detail:` of the
+  # `request_refused` journal line, neither of which has a field of its own for
+  # a code. Every spec downstream of here types that reason by hand, so this is
+  # the last point where a real answer still proves it.
+  it 'garde le code du refus dans le motif que l\'interacteur transmet' do
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+
+    resolved = EvidenceRequest::ResolveProvider.call(
+      common_services: directory, evidence_type: build(:evidence_type), country_code: 'FR',
+    )
+
+    expect(resolved).to be_failure
+    expect(resolved.error[:key]).to eq(:unknown_country)
+    expect(resolved.error[:errors].join).to include('DSD:ERR:0001')
   end
 end

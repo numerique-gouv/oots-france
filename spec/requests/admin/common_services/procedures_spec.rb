@@ -163,6 +163,17 @@ RSpec.describe 'Admin::CommonServices::Procedures' do
       expect(response).to have_http_status(:ok)
       expect(response.body).to include('EB:ERR:0001')
     end
+
+    # The body of the alert already opens on the code — the parser composes
+    # « code : message » — so a title repeating it says the same thing twice.
+    # Counted and not merely looked for: a title putting it back would leave
+    # « the page shows the code » true.
+    it 'says the code once, and what happened above it' do
+      get admin_common_services_procedures_path
+
+      expect(response.body.scan('EB:ERR:0001').size).to eq(1)
+      expect(response.parsed_body.css('.fr-alert__title').text).to eq("L'annuaire a refusé")
+    end
   end
 
   # An outage is not an answer, and must not read as one.

@@ -423,10 +423,15 @@ fr:
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
   interactors:
-    # Les dix échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # Les onze échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
     failures:
+      # Même phrase qu'`admin.common_services.refused`, et deux clés à dessein :
+      # celle-ci nomme l'échec d'un interacteur, que la console rend par clé sur
+      # `@lookup.error[:key]` ; l'autre est le titre que deux gabarits disent
+      # littéralement, sur des pages où aucun interacteur ne tourne — sa note
+      # dit ce que les récrire séparément coûterait.
       common_services_refused: L'annuaire a refusé
       gateway_refused: La passerelle a refusé le message
       invalid_configuration: Cette installation ne peut pas construire le message
@@ -710,6 +715,16 @@ fr:
           zero: Aucun résultat
           one: Un résultat
           other: "%{count} résultats"
+      # Le titre des deux alertes de refus qu'un contrôleur rattrape lui-même,
+      # `refus.html.erb` et `providers/index.html.erb` — d'où sa place un cran
+      # au-dessus des deux gabarits qui la partagent. La page des résolutions,
+      # elle, nomme l'échec de l'interacteur qui l'a prononcé, et porte donc la
+      # même phrase sous `interactors.failures.common_services_refused` :
+      # récrire l'une sans l'autre fait diverger le libellé de trois pages
+      # voisines. Ce que le corps porte déjà — le code que l'annuaire a nommé,
+      # puis son message — n'a pas à être reposé au-dessus : le titre dit ce qui
+      # s'est passé.
+      refused: L'annuaire a refusé
       refus:
         unreachable: Annuaire injoignable
       catalogue:

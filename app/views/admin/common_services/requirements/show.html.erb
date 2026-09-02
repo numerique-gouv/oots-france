@@ -39,10 +39,11 @@
 <%= render 'admin/common_services/results_count', id: 'decompte-types', count: @types_count %>
 
 <div id="par-pays-fournisseur">
-<% @by_country.each do |country, lists| %>
+<% @by_country.each do |country, lists, weight| %>
   <%# The weight of a card is what the tally adds up: a country counts for the
-      evidence types it publishes, not for one. %>
-  <div data-tally-weight="<%= lists.sum { |list| list.evidence_types.size } %>">
+      evidence types it publishes, not for one. The controller works it out
+      once and passes it in, rather than this card counting again. %>
+  <div data-tally-weight="<%= weight %>">
   <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
     <%# The page title is far above once one has scrolled past twenty cards:
         each says again which requirement it speaks of. %>

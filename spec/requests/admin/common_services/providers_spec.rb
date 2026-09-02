@@ -172,6 +172,15 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     expect(response.body).to include('DSD:ERR:0001', 'Qui délivre')
   end
 
+  it 'says the code once, and what happened above it' do
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+
+    visit_providers
+
+    expect(response.body.scan('DSD:ERR:0001').size).to eq(1)
+    expect(response.parsed_body.css('.fr-alert__title').text).to eq("L'annuaire a refusé")
+  end
+
   # This page keeps its own rescue, to show a refusal in place; an outage has
   # nothing to be shown beside and goes up to the 502 the console renders.
   it 'answers 502 when the Data Service Directory cannot be reached' do

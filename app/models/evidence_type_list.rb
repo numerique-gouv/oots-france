@@ -35,6 +35,16 @@ class EvidenceTypeList
     super
   end
 
+  # What several lists publish between them, each type counted once. Chapter
+  # 3.2.4 combines the lists satisfying one requirement by `OR`, and nothing in
+  # it forbids two alternatives from calling on the same evidence type: adding
+  # up their sizes counts memberships, which is not what a page announcing
+  # evidence types says it counts.
+  #
+  # By `id` and not by the object: `EvidenceType` carries no value equality, so
+  # `uniq` alone would deduplicate by object identity — that is, never.
+  def self.distinct_evidence_types(lists) = lists.flat_map(&:evidence_types).uniq(&:id)
+
   # The chapter states the equivalence in both directions: `R-EB-EVI-S015`
   # excuses an empty list only under `NoMatch`, and `NoMatch` in turn requires
   # emptiness — « In this case, EvidenceTypeList must be empty ». A declaration

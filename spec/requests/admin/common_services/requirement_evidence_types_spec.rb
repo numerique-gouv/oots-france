@@ -91,12 +91,80 @@ RSpec.describe 'Admin::CommonServices::Requirements, les types de justificatif' 
     expect(response.body).to include('Combinaison', "exigée d'un bloc")
   end
 
+  # Two alternatives calling on the same evidence type — the `OR` of chapter
+  # 3.2.4, whose consequence for counting `EvidenceTypeList` documents. Counting
+  # memberships would announce two where the country publishes one, on a page
+  # whose whole job is to say what a jurisdiction holds.
+  it 'counts an evidence type once where two combinations publish it' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement', same_type_twice)
+
+    get admin_common_services_requirement_path(test_requirement)
+    weights = response.parsed_body.css('#par-pays-fournisseur > *').map { |one| one['data-tally-weight'].to_i }
+
+    expect(response.parsed_body.css('#decompte-types').text).to include('Un résultat')
+    expect(weights).to eq([1])
+  end
+
+  # Only the tally changes: which combinations a country publishes is what this
+  # page exists to show, and the `OR` between them is visible nowhere else.
+  it 'keeps both combinations, and the type each of them calls on' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement', same_type_twice)
+
+    get admin_common_services_requirement_path(test_requirement)
+
+    expect(response.body.scan('Combinaison').size).to eq(2)
+    expect(response.parsed_body.css('.entry .entry__name').map(&:text)).to eq(['FR - Test Evidence Type'] * 2)
+  end
+
+  # What the page counts is (country, type) pairs, so a type two jurisdictions
+  # publish weighs one on each of their cards. Chapter 3.2.4 says nothing of
+  # that case either way — it is silent, not permissive — which is precisely why
+  # the page must not be built on its not happening: `filter.js` sums the weights
+  # on load, so the reader sees the weights whenever heading and cards disagree.
+  it 'counts a type published by two countries once per country, as its cards do' do
+    stub_directory_signature
+    stub_directory_body('eb', 'evidence-types-by-requirement', same_type_in_two_countries)
+
+    get admin_common_services_requirement_path(test_requirement)
+    weights = response.parsed_body.css('#par-pays-fournisseur > *').map { |one| one['data-tally-weight'].to_i }
+
+    expect(weights).to eq([1, 1])
+    expect(response.parsed_body.css('#decompte-types').text).to include('2 résultats')
+  end
+
   # A second combination, for the same country, built from the captured
   # response: the fixture carries only one.
   def two_combinations
     common_services_answer('eb_evidence_types_fr').first.sub(
       %r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m,
     ) { "#{Regexp.last_match(1)}#{Regexp.last_match(1).sub('869a6748', 'ffffffff')}" }
+  end
+
+  # The same, this time leaving the evidence type classification alone: two
+  # combinations of one country calling on the very same type, which is what
+  # the Evidence Broker publishes when its alternatives overlap. Only the list
+  # identifier differs, since it is what tells two combinations apart.
+  def same_type_twice
+    common_services_answer('eb_evidence_types_fr').first.sub(
+      %r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m,
+    ) { "#{Regexp.last_match(1)}#{Regexp.last_match(1).sub('91ecb80f', 'ffffffff')}" }
+  end
+
+  # The same evidence type published by two jurisdictions: the copy keeps the
+  # classification and changes the country it is filed under, so the page draws
+  # two cards weighing one each.
+  def same_type_in_two_countries
+    common_services_answer('eb_evidence_types_fr').first.sub(
+      %r{(<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>)}m,
+    ) do
+      published = Regexp.last_match(1)
+
+      published + published.sub('91ecb80f', 'ffffffff')
+        .sub('<sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>',
+          '<sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>')
+    end
   end
 
   # A list the directory publishes empty on purpose (chapter 3.2.4) would show

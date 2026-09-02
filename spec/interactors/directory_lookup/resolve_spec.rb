@@ -46,19 +46,25 @@ RSpec.describe DirectoryLookup::Resolve do
       .with(procedure_code: '00', country_code: Settings.common_services_country_code)
   end
 
+  # The message says the code first, as `CommonServicesResponseParser` composes
+  # it: a double dropping it could not show where the code reaches the page.
   describe 'when a directory refuses' do
     let(:data_service_directory) do
       instance_double(DataServiceDirectoryClient).tap do |double|
         allow(double).to receive(:data_services)
-          .and_raise(CommonServicesError.new('rien à donner', code: 'DSD:ERR:0001'))
+          .and_raise(CommonServicesError.new('DSD:ERR:0001 : rien à donner', code: 'DSD:ERR:0001'))
       end
     end
 
     # A refusal at the last step must not take the answers already obtained
     # with it: showing them beside the refusal is the whole point of the page.
+    #
+    # The code travels inside the reason, which is where the page reads it: the
+    # alert says the refusal in its title and the directory's own words below.
     it 'keeps what the earlier steps found, and the code the directory named' do
       expect(lookup).to be_failure
-      expect(lookup.refusal.code).to eq('DSD:ERR:0001')
+      expect(lookup.error[:key]).to eq(:common_services_refused)
+      expect(lookup.error[:errors].join).to include('DSD:ERR:0001')
       expect(lookup.requirement.id).to eq('https://sr/requirements/aaa')
       expect(lookup.evidence_type_lists).to eq([lists])
     end
@@ -93,17 +99,13 @@ RSpec.describe DirectoryLookup::Resolve do
   describe 'when the country declares it issues nothing' do
     let(:lists) { build(:evidence_type_list, :no_match) }
 
+    # A declaration is not a refusal either, and the console tells them apart by
+    # the key: nothing here carries a code the directory named.
     it 'keeps the declaration on screen and never reaches the last step' do
       expect(lookup).to be_failure
       expect(lookup.error).to include(key: :no_evidence_type, errors: ['FI'])
       expect(lookup.evidence_type_lists.map(&:no_match?)).to eq([true])
       expect(data_service_directory).not_to have_received(:data_services)
-    end
-
-    # A declaration is not a refusal, and the console tells them apart by that:
-    # nothing here carries a code the directory named.
-    it 'reports no refusal, the directory having refused nothing' do
-      expect(lookup.refusal).to be_nil
     end
   end
 
@@ -113,13 +115,13 @@ RSpec.describe DirectoryLookup::Resolve do
     let(:evidence_broker) do
       instance_double(EvidenceBrokerClient, requirements:).tap do |double|
         allow(double).to receive(:evidence_type_lists)
-          .and_raise(CommonServicesError.new('rien à donner', code: 'EB:ERR:0001'))
+          .and_raise(CommonServicesError.new('EB:ERR:0001 : rien à donner', code: 'EB:ERR:0001'))
       end
     end
 
     it 'keeps the requirements and never reaches the last step' do
       expect(lookup).to be_failure
-      expect(lookup.refusal.code).to eq('EB:ERR:0001')
+      expect(lookup.error[:errors].join).to include('EB:ERR:0001')
       expect(lookup.requirements.map(&:id)).to eq(%w[https://sr/requirements/aaa https://sr/requirements/bbb])
       expect(data_service_directory).not_to have_received(:data_services)
     end
