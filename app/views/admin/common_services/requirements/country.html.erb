@@ -8,32 +8,22 @@
     ]) %>
 
 <h1 class="fr-h3"><%= t('admin.common_services.requirements.country.heading',
-      country: named_country(@country), requirement: @requirement.display_name) %></h1>
+      country: in_country(@country), requirement: @requirement.display_name) %></h1>
 
 <p class="fr-col-12 fr-col-md-8"><%= t('admin.common_services.requirements.country.lead_html') %></p>
 
-<p class="fr-text--sm fr-mb-2w">
-  <%= t('admin.common_services.procedures.count', count: @declared.map(&:procedure_code).uniq.size) %>
-</p>
+<%# Not the tally of the page above: nothing narrows this one, so the count is
+    written once and never rewritten. %>
+<p class="fr-text--sm fr-mb-2w"><%= t('admin.common_services.results.count', count: @types_count) %></p>
 
-<%# One card per procedure and not per declaration: a country readily files
-    several under one code, under different wordings. %>
-<% @declared.group_by(&:procedure_code).each do |code, declared| %>
-  <%= render CardComponent.new(
-        title: named_procedure(code),
-        hint: procedure_hint(code),
-        href: (admin_common_services_procedure_country_path(code, @country) if code.present?),
-        clickable: true,
-      ) do %>
-    <%= declaration_summary(
-          labels: declared.filter_map(&:label),
-          country: @country,
-          requirements: @required[code],
-        ) %>
+<%= render CardComponent.new(title: named_country(@country), dense: true) do |carte| %>
+  <% carte.with_list do %>
+    <%= render 'admin/common_services/evidence_type_lists', lists: @lists, requirement: @requirement %>
   <% end %>
 <% end %>
 
 <%= render DirectoryQueryComponent.new(
-      query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
+      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
       identifiers: { requirement: @requirement.id },
+      parameters: { 'requirement-id' => @requirement.id },
     ) %>

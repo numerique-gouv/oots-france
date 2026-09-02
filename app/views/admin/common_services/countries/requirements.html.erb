@@ -45,5 +45,5 @@
 <%= render DirectoryQueryComponent.new(
       query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
       parameters: { 'requirement-id' =>
-        t('admin.common_services.countries.requirements.swept', count: @swept.size) },
+        t('admin.common_services.swept', count: @swept.size) },
     ) %>
