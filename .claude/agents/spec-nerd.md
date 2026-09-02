@@ -95,7 +95,7 @@ La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il 
 
 Un manque → `À compléter`, et tu le répares avant de poser le statut si tu le peux ; sinon le ticket y reste et dit pourquoi.
 
-### L'actionabilité — ce qu'il ne doit pas laisser ouvert
+### L'actionabilité — un ouvrier peut le prendre demain matin
 
 1. **Ce qui reste difficile se résout en lisant, pas en demandant.** Un ticket complet peut encore être dur à implémenter ; ce qui compte est la nature de la difficulté. Si l'ouvrier peut la lever seul en lisant un chapitre, la doc d'une dépendance ou le code, le ticket est prenable. Si elle attend qu'une personne décide — un nom à publier, un périmètre, une politique nationale —, il ne l'est pas : `À compléter`, et cette question rejoint celles que tu poses à l'utilisateur. Ne prends pas pour une décision manquante un choix technique que l'ouvrier peut faire lui-même et documenter, une étude dont on sait à quelle question elle répond, ou une priorité basse.
 2. **Rien d'extérieur n'est attendu** — un accès, une réponse du Service Desk, un jeu de données. Sinon `Backlog`, avec ce qu'on attend et de qui.
