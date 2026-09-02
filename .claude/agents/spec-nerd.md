@@ -65,7 +65,7 @@ Le statut dit **ce qu'il manque au ticket pour être pris**, et c'est toi qui le
 | Créer en `Backlog` | toujours — toute carte commence sa vie là, le temps que les relations et le corps soient posés |
 | Monter en `Todo` | tu juges le ticket **suffisamment complet** : chaque RG a sa source, chaque CA se lit comme un test, le hors-périmètre est écrit, aucune question n'attend personne, le grain tient dans une PR |
 | Passer en `À compléter` | tu juges le ticket **insuffisamment complet**, ou tu **attends une décision de l'utilisateur** — le lot de questions est posé, la réponse n'est pas là |
-| Redescendre de `Todo` vers `Backlog` ou `À compléter` | en `COMPLÉTER`, la nouveauté rouvre une question, ou un commentaire montre un manque réel : `À compléter` si le manque est de rédaction ou de décision, `Backlog` si le ticket n'est plus prenable pour une autre raison — chantier fermé, préalable non rendu, sujet à refendre |
+| Redescendre de `Todo` vers `Backlog` ou `À compléter` | en `COMPLÉTER`, la nouveauté rouvre une question, ou un commentaire montre un manque réel : `À compléter` si le manque est de rédaction ou de décision, `Backlog` si le ticket n'est plus prenable pour une autre raison — préalable non rendu, dépendance non livrée, sujet à refendre |
 
 « Suffisamment complet » se décide par la grille du § suivant, contrôle par contrôle — jamais à l'impression que le ticket « a l'air bon » : la fluidité d'un énoncé ne dit rien de ce qu'il laisse ouvert. Un ticket laissé en `À compléter` dit en une ligne, dans son corps ou dans ton rapport, **ce qu'il attend et de qui**.
 
@@ -81,7 +81,7 @@ La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il 
 | --- | --- |
 | aucune règle de gestion, ou aucun critère d'acceptance — la longueur ne dit rien, cherche les deux artefacts | `À compléter` |
 | le titre commence par « Trancher… », une RG est « sans source », « sous réserve », « à trancher », ou une section `Questions ouvertes` existe | `À compléter` |
-| un `blockedBy` n'est pas `Done`, ou le projet n'est pas `In Progress` | `Backlog` |
+| un `blockedBy` n'est pas `Done` | `Backlog` |
 | une `US` mère dont les feuilles portent le livrable | `Backlog` — le grain livrable est la feuille |
 | le livrable n'est pas du code qui entre dans une PR | pas un ticket de ce backlog : dis-le à l'utilisateur |
 
@@ -102,7 +102,7 @@ Un manque → `À compléter`, et tu le répares avant de poser le statut si tu 
 2. **Rien d'extérieur n'est attendu** — un accès, une réponse du Service Desk, un jeu de données. Sinon `Backlog`, avec ce qu'on attend et de qui.
 3. **Le grain tient dans une PR relisible** — saurais-tu décrire le diff attendu en trois phrases ? Sinon fends, et c'est chaque feuille qui se juge.
 4. **Le sujet n'est pas sous préalable** — les deux domaines du § précédent, plus ce qu'un humain doit relire en interactif parce qu'une erreur y est silencieuse : les magasins de clés de [`domibus/`](../../domibus/), le chiffrement et la rétention du [journal des échanges](../../docs/journal_des_echanges.md), [`.claude/settings.json`](../settings.json). Sinon `Backlog`, en nommant le préalable.
-5. **Le ticket est chez le bon chantier, et ce chantier est ouvert.** Sinon `Backlog` — et déplace-le, c'est une écriture qui t'appartient.
+5. **Le ticket est chez le bon chantier** — celui dont la description revendique le sujet. Sinon déplace-le, c'est une écriture qui t'appartient.
 
 Tout passe → `Todo`. Un ticket recevable se monte sans commentaire : le statut est le marqueur, et un fil « rien à signaler » n'est lu par personne.
 
