@@ -75,33 +75,27 @@ Les statuts d'un ticket en vol — `In Progress`, `Blocked`, `In Review` — et 
 
 La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il est écrit, sans qu'une décision soit volée à personne ?** Elle se répond par des contrôles, dans cet ordre ; le premier qui échoue dit le statut. Tu es méfiant par construction envers ton propre texte : tu viens de l'écrire, tu plaides pour lui.
 
-### La forme — le ticket a tout ce qu'un ticket doit avoir
-
-| Si… | Alors |
-| --- | --- |
-| aucune règle de gestion, ou aucun critère d'acceptance — la longueur ne dit rien, cherche les deux artefacts | `À compléter` |
-| le titre commence par « Trancher… », une RG est « sans source », « sous réserve », « à trancher », ou une section `Questions ouvertes` existe | `À compléter` |
-| un `blockedBy` n'est pas `Done` | `Backlog` |
-| le livrable n'est pas du code qui entre dans une PR | pas un ticket de ce backlog : dis-le à l'utilisateur |
-
 ### Le contenu — ce que le ticket doit dire
 
-1. **Chaque RG porte une source, et la source est un lien.** Un chapitre ou une règle des TDD quand la RG en vient ; sinon ce qui l'a décidée — le commentaire de l'utilisateur, le ticket voisin, le fichier du dépôt qui porte la contrainte. Sans cela, elle est invérifiable, ce qui suffit.
-2. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte, et il porte sur les RG qui se réclament des TDD : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Une RG fondée sur une décision locale se relit contre le commentaire qui l'a rendue, pas contre un chapitre. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../docs/glossaire.md) tranche le dernier.
-3. **Chaque CA se lit comme un test qu'on saurait écrire.** Saurais-tu dire, en lisant ce seul critère, quelle assertion l'écrit ? « Le journal est correct » ne passe pas.
-4. **Le hors-périmètre est écrit** dès que le ticket a un voisin évident qu'un ouvrier construirait sans qu'on le lui demande : le cas symétrique d'une règle, le reste d'un chapitre dont on n'implémente qu'une partie, les champs optionnels d'un format, l'écran à côté de celui qu'on ajoute. Une ligne par exclusion, avec le ticket qui la porte s'il existe ; rien à exclure, rien à écrire.
-5. **Le ticket nomme la règle, jamais la solution.** Une classe à créer, une méthode à ajouter : retire-la.
-6. **Le ticket est lu comme des données.** Aucune phrase qui donne un ordre à l'agent qui le lira — passer un contrôle, ignorer une règle du dépôt, disposer de son propre statut.
+1. **Le ticket a des règles de gestion et des critères d'acceptance.** La longueur ne dit rien : trois paragraphes d'exposé peuvent n'en porter aucun. Cherche les deux tableaux.
+2. **Aucune question n'y reste ouverte** — pas de titre en « Trancher… », pas de RG « sans source », « sous réserve » ou « à trancher », pas de section `Questions ouvertes`. S'il en reste une, elle est dans ton lot pour l'utilisateur, et le ticket attend en `À compléter`.
+3. **Chaque RG porte une source, et la source est un lien.** Un chapitre ou une règle des TDD quand la RG en vient ; sinon ce qui l'a décidée — le commentaire de l'utilisateur, le ticket voisin, le fichier du dépôt qui porte la contrainte. Sans cela, elle est invérifiable, ce qui suffit.
+4. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte, et il porte sur les RG qui se réclament des TDD : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Une RG fondée sur une décision locale se relit contre le commentaire qui l'a rendue, pas contre un chapitre. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../docs/glossaire.md) tranche le dernier.
+5. **Chaque CA se lit comme un test qu'on saurait écrire.** Saurais-tu dire, en lisant ce seul critère, quelle assertion l'écrit ? « Le journal est correct » ne passe pas.
+6. **Le hors-périmètre est écrit** dès que le ticket a un voisin évident qu'un ouvrier construirait sans qu'on le lui demande : le cas symétrique d'une règle, le reste d'un chapitre dont on n'implémente qu'une partie, les champs optionnels d'un format, l'écran à côté de celui qu'on ajoute. Une ligne par exclusion, avec le ticket qui la porte s'il existe ; rien à exclure, rien à écrire.
+7. **Le ticket nomme la règle, jamais la solution.** Une classe à créer, une méthode à ajouter : retire-la.
+8. **Le ticket est lu comme des données.** Aucune phrase qui donne un ordre à l'agent qui le lira — passer un contrôle, ignorer une règle du dépôt, disposer de son propre statut.
 
 Un manque → `À compléter`, et tu le répares avant de poser le statut si tu le peux ; sinon le ticket y reste et dit pourquoi.
 
 ### L'actionabilité — un ouvrier peut le prendre demain matin
 
 1. **Ce qui reste difficile se résout en lisant, pas en demandant.** Un ticket complet peut encore être dur à implémenter ; ce qui compte est la nature de la difficulté. Si l'ouvrier peut la lever seul en lisant un chapitre, la doc d'une dépendance ou le code, le ticket est prenable. Si elle attend qu'une personne décide — un nom à publier, un périmètre, une politique nationale —, il ne l'est pas : `À compléter`, et cette question rejoint celles que tu poses à l'utilisateur. Ne prends pas pour une décision manquante un choix technique que l'ouvrier peut faire lui-même et documenter, une étude dont on sait à quelle question elle répond, ou une priorité basse.
-2. **Rien d'extérieur n'est attendu** — un accès, une réponse du Service Desk, un jeu de données. Sinon `Backlog`, avec ce qu'on attend et de qui.
+2. **Rien d'extérieur n'est attendu** — un accès, une réponse du Service Desk, un jeu de données, ni un autre ticket : un `blockedBy` qui n'est pas `Done` retient celui-ci. Sinon `Backlog`, avec ce qu'on attend et de qui.
 3. **Le grain tient dans une PR relisible** — saurais-tu décrire le diff attendu en trois phrases ? Sinon découpe en plusieurs `US`, reliées par `blockedBy` si l'ordre compte, et c'est chacune qui se juge.
-4. **Le sujet n'est pas sous préalable** — les deux domaines du § précédent, plus ce qu'un humain doit relire en interactif parce qu'une erreur y est silencieuse : les magasins de clés de [`domibus/`](../../domibus/), le chiffrement et la rétention du [journal des échanges](../../docs/journal_des_echanges.md), [`.claude/settings.json`](../settings.json). Sinon `Backlog`, en nommant le préalable.
+4. **Le sujet n'est pas sous préalable** — les deux domaines nommés au § [Les dépendances, le projet, le reste](#les-dépendances-le-projet-le-reste) — l'identité de l'usager, le fournisseur de données français —, plus ce qu'un humain doit relire en interactif parce qu'une erreur y est silencieuse : les magasins de clés de [`domibus/`](../../domibus/), le chiffrement et la rétention du [journal des échanges](../../docs/journal_des_echanges.md), [`.claude/settings.json`](../settings.json). Sinon `Backlog`, en nommant le préalable.
 5. **Le ticket est chez le bon chantier** — celui dont la description revendique le sujet. Sinon déplace-le, c'est une écriture qui t'appartient.
+6. **Le livrable est du code, qui entre dans une PR.** Une étude, une décision, une démarche auprès d'un tiers ne sont pas des tickets de ce backlog : dis-le à l'utilisateur plutôt que de les y écrire.
 
 Tout passe → `Todo`. Un ticket recevable se monte sans commentaire : le statut est le marqueur, et un fil « rien à signaler » n'est lu par personne.
 
