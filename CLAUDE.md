@@ -123,6 +123,7 @@ make test         # rubocop + rspec in Docker
 make e2e          # Cucumber against a real Domibus (needs the stack up)
 make schematron   # messages against the TDD rules
 make setup        # install from a fresh clone: env files, databases, gateway
+make check-env    # what the .env* templates declare, against what the .env* carry
 make up           # run the app — web and worker, both of them
 
 bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single file

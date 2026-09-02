@@ -45,6 +45,8 @@ Comptez plusieurs minutes la première fois, dont l'essentiel revient au déploi
 
 Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer reprend ce qui manque. Il transpose ce que [`.github/workflows/e2e.yml`](.github/workflows/e2e.yml) fait sur un runner, et les deux doivent rester en phase.
 
+Ce que le relancer ne fait **pas**, c'est compléter un `.env*` déjà là : ces fichiers ne sont pas versionnés, et une valeur locale ne se devine pas. Une variable qu'un template a gagnée depuis l'installation leur manque donc en silence. `make check-env` ([`scripts/check_environment.sh`](scripts/check_environment.sh)) confronte chaque fichier présent aux clés que son template déclare et nomme celles qui manquent, sans rien modifier. `make setup` s'appuie dessus dans les deux cas : directement sur une installation déjà faite, et par `prepare_environment.sh` sur une installation neuve.
+
 > [!WARNING]
 > `make setup` écrit une configuration de **développement** : certificats auto-signés, mots de passe qui n'en sont pas, passerelle qui dialogue avec elle-même. Rien de tout cela ne doit servir sur un environnement réel.
 
