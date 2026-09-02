@@ -86,8 +86,8 @@ La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il 
 
 ### Le contenu — ce que le ticket doit dire
 
-1. **Chaque RG porte une source, et la source est un lien.** Sans lien, elle est invérifiable, ce qui suffit.
-2. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../docs/glossaire.md) tranche le dernier.
+1. **Chaque RG porte une source, et la source est un lien.** Un chapitre ou une règle des TDD quand la RG en vient ; sinon ce qui l'a décidée — le commentaire de l'utilisateur, le ticket voisin, le fichier du dépôt qui porte la contrainte. Sans cela, elle est invérifiable, ce qui suffit.
+2. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte, et il porte sur les RG qui se réclament des TDD : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Une RG fondée sur une décision locale se relit contre le commentaire qui l'a rendue, pas contre un chapitre. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../docs/glossaire.md) tranche le dernier.
 3. **Chaque CA se lit comme un test qu'on saurait écrire.** Saurais-tu dire, en lisant ce seul critère, quelle assertion l'écrit ? « Le journal est correct » ne passe pas.
 4. **Le hors-périmètre est écrit** dès qu'un lecteur pourrait raisonnablement en faire plus.
 5. **Le ticket nomme la règle, jamais la solution.** Une classe à créer, une méthode à ajouter : retire-la.
