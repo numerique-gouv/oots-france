@@ -210,7 +210,7 @@ Un `[Spike]` est borné ou n'est pas : il dit à quelle question il répond, ce 
 
 ### La priorité Linear
 
-Il n'y a ni estimation ni cycle : la priorité porte seule l'ordonnancement, et « MUST donc Urgent » remplit la colonne `Urgent` sans plus rien ordonner. Trois questions, dans l'ordre : le code **enfreint**-il la règle aujourd'hui, ou ne la fait-il **pas encore** ? quelle est sa **force** ? est-ce **lançable** maintenant ?
+Il n'y a ni estimation ni cycle : la priorité porte seule l'ordonnancement, et « MUST donc Urgent » remplit la colonne `Urgent` sans plus rien ordonner. Trois questions, dans l'ordre : le code **enfreint**-il la règle aujourd'hui, ou ne la fait-il **pas encore** ? quelle est sa **force** ? est-ce **lançable** maintenant ? La première ne se devine pas : `tdd-nerd` en `CONFORMITÉ` sur la fonctionnalité y répond, fichier et ligne à l'appui.
 
 | | Le code **enfreint** | Le code **ne fait pas encore** |
 | --- | --- | --- |
