@@ -108,19 +108,58 @@ RSpec.describe Exchange do
       expect(described_class.expired).not_to include(*settled)
     end
 
-    # Where France answers, the timeout is an act of emission that
-    # `EvidenceProvision::AnswerRequest` carries out: a row written here would
-    # name an error nobody was ever sent.
-    it 'leaves an exchange a correspondent addressed to France' do
-      received = create(:exchange, incoming: true, country_code: 'BE', procedure_code: nil,
-        evidence_requester_id: nil, created_at: Settings.requester_timeout.ago - 1.day)
+    # Counted from the stamp the sending gateway put on the message, and not
+    # from our reception — see `Exchange` for why.
+    it 'takes an exchange a correspondent addressed to France and nobody answered' do
+      received = create(:exchange, :received, created_at: Time.current,
+        ebms_sent_at: Settings.requester_timeout.ago - 1.minute)
 
-      expect(described_class.expired).not_to include(received)
+      expect(described_class.expired).to include(received)
+    end
+
+    it 'leaves a received exchange the correspondent stamped a moment ago' do
+      recent = create(:exchange, :received, ebms_sent_at: 1.minute.ago,
+        created_at: Settings.requester_timeout.ago - 1.day)
+
+      expect(described_class.expired).not_to include(recent)
+    end
+
+    it 'leaves a received exchange an answer has settled' do
+      answered = create(:exchange, :received, :delivered,
+        ebms_sent_at: Settings.requester_timeout.ago - 1.day)
+
+      expect(described_class.expired).not_to include(answered)
+    end
+
+    # A comparison against `NULL` is never true, which is what leaves alone the
+    # exchanges opened before the column and the ones whose header could not be
+    # read — the sweep has nothing to count from on either.
+    it 'leaves a received exchange carrying no stamp, however old' do
+      unstamped = create(:exchange, :received, ebms_sent_at: nil, created_at: 1.year.ago)
+
+      expect(described_class.expired).not_to include(unstamped)
+    end
+
+    # The stamp decides one direction and the opening the other: where France
+    # asks, the opening *is* its emission, and nothing writes a stamp there.
+    it 'counts an outgoing exchange from its opening whatever stamp it bears' do
+      stamped = create(:exchange, :sent, created_at: 1.minute.ago,
+        ebms_sent_at: Settings.requester_timeout.ago - 1.day)
+
+      expect(described_class.expired).not_to include(stamped)
     end
 
     it 'leaves one sitting exactly on the cutoff' do
       freeze_time do
         borderline = create(:exchange, :sent, created_at: Settings.requester_timeout.ago)
+
+        expect(described_class.expired).not_to include(borderline)
+      end
+    end
+
+    it 'leaves a received one stamped exactly on the cutoff' do
+      freeze_time do
+        borderline = create(:exchange, :received, ebms_sent_at: Settings.requester_timeout.ago)
 
         expect(described_class.expired).not_to include(borderline)
       end
@@ -140,6 +179,12 @@ RSpec.describe Exchange do
         expect(described_class.expired).not_to include(overdue)
       end
 
+      it 'takes no received exchange either' do
+        overdue = create(:exchange, :received, ebms_sent_at: 1.year.ago)
+
+        expect(described_class.expired).not_to include(overdue)
+      end
+
       # `none` and not an impossible condition, which would still read an
       # interval such a deployment has no reason to configure.
       it 'reads no interval to say so' do
@@ -147,6 +192,30 @@ RSpec.describe Exchange do
 
         expect { described_class.expired.load }.not_to raise_error
       end
+    end
+
+    # One code covers two different things — a correspondent that stayed silent,
+    # and an exchange nothing here ever got round to answering — so the sentence
+    # is all an operator has to tell them apart.
+    it 'names the correspondent where France was the one waiting' do
+      exchange.expire!
+
+      expect(exchange.error_description).to eq("Le correspondant n'a pas répondu dans le délai imparti.")
+    end
+
+    # The four columns of a closure, asked of this direction too: only the
+    # sentence is chosen on it, and only an example says so.
+    it 'names the exchange itself where France was the one to answer' do
+      received = create(:exchange, :received)
+
+      received.expire!
+
+      expect(received).to have_attributes(
+        status: 'failed',
+        edm_error_code: 'EDM:ERR:0005',
+        error_description: "L'échange n'a pas été traité dans le délai imparti.",
+      )
+      expect(received.presumed_at).to be_present
     end
 
     # The same code a correspondent that times out on us would have answered:
@@ -157,7 +226,6 @@ RSpec.describe Exchange do
       expect(exchange).to have_attributes(
         status: 'failed',
         edm_error_code: 'EDM:ERR:0005',
-        error_description: "Le correspondant n'a pas répondu dans le délai imparti.",
       )
       expect(exchange.settled_at).to be_present
     end

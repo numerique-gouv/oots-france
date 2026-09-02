@@ -70,6 +70,9 @@ ignore_unused:
   - interactors.failures.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
+  # Composed from the direction of the exchange by `Exchange#expire!`: one
+  # sentence per way round, and the scanner sees only the interpolation.
+  - models.exchange.expired.{incoming,outgoing}
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.
