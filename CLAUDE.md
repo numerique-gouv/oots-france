@@ -217,10 +217,13 @@ Rules:
 > [!IMPORTANT]
 > `.claude/settings.json` makes this repository run a shell command on the machine of whoever opens it, under the same workspace-trust gate as a hook. Anything added there is read by every clone, so it stays limited to what a status line needs.
 
+| Agent | What it does |
+| --- | --- |
+| [`tdd-nerd`](.claude/agents/tdd-nerd.md) | Asks the TDD what they say of a subject, of a ticket, or of the current code — a conformity pass over one domain, one feature, or the whole specification after an explicit confirmation — and relays nothing else: verbatim quotes, links, the role of each rule, the silences of the text, file and line for the code. Read-only. Runs on Opus; `spec-nerd` spawns it for every question of the domain, and a session can spawn it directly |
+| [`spec-nerd`](.claude/agents/spec-nerd.md) | Writes one issue from a light prompt, completes an existing one from new information, or opens the Linear project that carries a workstream. Confronts every question to the TDD through `tdd-nerd` before asking the user, then asks only the product, interface and genuinely undecidable questions, in one batch. Functional, never technical. Creates in `Backlog`, then sets the status itself: `Todo` when complete, `À compléter` when a wording or a decision is still missing. Runs on Fable, as a subagent: its questions come back in its report under `QUESTIONS`, for the session to relay |
+
 | Skill | What it does |
 | --- | --- |
-| [`tdd-nerd`](.claude/skills/tdd-nerd/SKILL.md) | Asks the TDD what they say of a subject, of a ticket, or of the current code — a conformity pass over one domain, one feature, or the whole specification after an explicit confirmation — and relays nothing else: verbatim quotes, links, the role of each rule, the silences of the text, file and line for the code. Read-only. The skill forks the [`tdd-nerd` agent](.claude/agents/tdd-nerd.md), on Opus; `spec-nerd` spawns the same agent for every question it has |
-| [`spec-nerd`](.claude/skills/spec-nerd/SKILL.md) | Writes one issue from a light prompt, completes an existing one from new information, or opens the Linear project that carries a workstream. Confronts every question to the TDD through `tdd-nerd` before asking the user, then asks only the product, interface and genuinely undecidable questions, in one batch. Functional, never technical. Creates in `Backlog`, then sets the status itself: `Todo` when complete, `À compléter` when a wording or a decision is still missing. The skill runs the [`spec-nerd` agent](.claude/agents/spec-nerd.md) in session, on Fable, so its questions reach the user directly |
 | [`plan-issue`](.claude/skills/plan-issue/SKILL.md) | Plans one issue against the text of the specifications, writes the plan and gets it approved before a line of code is written |
 | [`review-loop`](.claude/skills/review-loop/SKILL.md) | Review → fixes on an open PR, until a pass finds no blocking finding, then reshapes the history |
 | [`ship-plan`](.claude/skills/ship-plan/SKILL.md) | Pushes an implemented plan, opens the PR, hands it to `review-loop`, records the decisions on the ticket |

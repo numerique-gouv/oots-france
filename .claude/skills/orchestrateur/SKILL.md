@@ -20,7 +20,7 @@ Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de
 
 Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — six verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
 
-Tu n'es ni [`spec-nerd`](../spec-nerd/SKILL.md), qui rédige, corrige et statue les tickets contre les spécifications (un ticket faux ou qui n'aurait pas dû être en `Todo` se lui renvoie, il ne se réécrit pas en passant), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
+Tu n'es ni [`spec-nerd`](../../agents/spec-nerd.md), qui rédige, corrige et statue les tickets contre les spécifications (un ticket faux ou qui n'aurait pas dû être en `Todo` se lui renvoie, il ne se réécrit pas en passant), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
 
 ## Entrée
 
@@ -42,14 +42,14 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 | Le livrable n'est pas du code | Rien de cela n'entre dans une PR |
 
 > [!IMPORTANT]
-> **Ces contrôles sont une relecture de porte, pas un tri.** [`spec-nerd`](../spec-nerd/SKILL.md) les a déjà joués, plus sévèrement, avant de monter le ticket en `Todo` — sa grille « Ce qui rend un ticket complet » les contient tous. Tu les rejoues parce qu'ils coûtent une seconde et qu'un ticket peut avoir bougé depuis, pas parce que le tri t'incombe.
+> **Ces contrôles sont une relecture de porte, pas un tri.** [`spec-nerd`](../../agents/spec-nerd.md) les a déjà joués, plus sévèrement, avant de monter le ticket en `Todo` — sa grille « Ce qui rend un ticket complet » les contient tous. Tu les rejoues parce qu'ils coûtent une seconde et qu'un ticket peut avoir bougé depuis, pas parce que le tri t'incombe.
 >
-> **Un ticket que tu écartes ici est donc une fuite, pas un tri normal.** Ne la répare pas — tu ne touches ni au statut ni au corps, qui sont à [`spec-nerd`](../spec-nerd/SKILL.md). Trois gestes, dans cet ordre : passe au voisin, nomme le ticket et le contrôle qui a mordu dans l'annonce de sélection, et **signale-le comme fuite dans ton compte rendu** — c'est le seul endroit d'où quelqu'un peut apprendre que la file laisse passer quelque chose, et un écart qui se répète est un contrôle de `spec-nerd` à renforcer.
+> **Un ticket que tu écartes ici est donc une fuite, pas un tri normal.** Ne la répare pas — tu ne touches ni au statut ni au corps, qui sont à [`spec-nerd`](../../agents/spec-nerd.md). Trois gestes, dans cet ordre : passe au voisin, nomme le ticket et le contrôle qui a mordu dans l'annonce de sélection, et **signale-le comme fuite dans ton compte rendu** — c'est le seul endroit d'où quelqu'un peut apprendre que la file laisse passer quelque chose, et un écart qui se répète est un contrôle de `spec-nerd` à renforcer.
 >
 > **Et n'étends pas la grille pour compenser.** Si tu te surprends à rejouer les contrôles de contenu — les sources des règles de gestion, les critères vérifiables, le hors-périmètre —, tu es en train de refaire une revue de spécifications au lancement d'un lot, avec le contexte le plus cher et le moment le plus mauvais. Renvoie à `spec-nerd`, et lance ce qui reste.
 
 > [!IMPORTANT]
-> **Ne prends que des `Todo`.** Le `Backlog` et `À compléter` ne t'appartiennent pas : [`spec-nerd`](../spec-nerd/SKILL.md) fait passer en `Todo` ce qu'aucune décision ne retient plus, après l'avoir relu contrôle par contrôle, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
+> **Ne prends que des `Todo`.** Le `Backlog` et `À compléter` ne t'appartiennent pas : [`spec-nerd`](../../agents/spec-nerd.md) fait passer en `Todo` ce qu'aucune décision ne retient plus, après l'avoir relu contrôle par contrôle, et y piocher court-circuite ce tri. Un ticket `Backlog` mieux écrit qu'un `Todo` ne se rattrape donc pas au passage — laisse-le où il est, dis-le en une ligne si c'est ce qui vide la file. Le statut admet ; le contenu et la priorité ordonnent à l'intérieur.
 
 > [!IMPORTANT]
 > **Ne prends que des tickets techniquement fermés.** Un ticket l'est quand **un chapitre donne la règle** et qu'il ne reste qu'à l'écrire. Le repère qui trie vite : le ticket cite-t-il une règle nommée (`R-EDM-…`, `R-DSD-…`, un `.sch`, un XSD) dont il ne reste qu'à vérifier qu'elle est tenue ? Alors il est prenable seul, de bout en bout.
