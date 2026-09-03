@@ -1,0 +1,41 @@
+/*
+ * The place a page holds for content it fetches after loading: a spinner and
+ * the sentence saying what is being waited for.
+ *
+ * Colours come from the DSFR's own tokens and never from a literal — the layout
+ * sets `data-fr-scheme="system"`, so the dark theme is reachable.
+ */
+.deferred-content__message {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-mention-grey);
+}
+
+.deferred-content__spinner {
+  flex: none;
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 2px solid var(--border-default-grey);
+  border-block-start-color: var(--border-active-blue-france);
+  border-radius: 50%;
+  animation: deferred-content-spin 0.8s linear infinite;
+}
+
+@keyframes deferred-content-spin {
+  to { transform: rotate(1turn); }
+}
+
+/*
+ * A pulse where a rotation is unwelcome: the element must keep saying that
+ * something is under way, and only motion sickness is at issue here.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .deferred-content__spinner {
+    animation: deferred-content-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes deferred-content-pulse {
+    50% { opacity: 0.3; }
+  }
+}

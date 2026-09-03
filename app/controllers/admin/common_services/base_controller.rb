@@ -8,15 +8,38 @@ module Admin
     # `DUREE_CACHE_SERVICES_COMMUNS`.
     #
     # A directory refusing is information here, not a failure — showing it is
-    # what these pages are for — so a refusal renders as a page. A directory
+    # what these pages are for — so a refusal is rendered rather than raised:
+    # the section's own page, the fragment alone on the two served in two parts,
+    # or the page being read where it keeps a rescue of its own. A directory
     # unreachable is a failure, and says so in its status.
     class BaseController < Admin::BaseController
+      # This answers for every page of the section. The two served in two parts
+      # rescue for themselves, having made room for an answer with no page
+      # around it — as the providers' page next door already does.
       rescue_from CommonServicesError, with: :render_refusal
 
       helper_method :requirement, :country_names, :named_country, :flagged, :in_country, :procedure_names,
         :named_procedure, :procedure_hint, :full_named_procedure, :declaration_summary
 
       private
+
+      # The two pages that sweep the catalogue are served in two parts: without
+      # this parameter, the page is its heading and the place
+      # `DeferredContentComponent` holds, and nothing goes out to the
+      # directories; with it, the sweep runs and only the listing comes back,
+      # which the page has already made room for. The parameter is never typed
+      # by hand — the server writes the address the controller fetches.
+      def listing_asked? = params[:listing].present?
+
+      # What these two pages answer to their own second request. The header is
+      # what tells `deferred_controller.js` that the body is ours to splice into
+      # the page: a status cannot say that much, nginx writing a `502` out of
+      # its own pocket when nothing answers behind it.
+      def render_fragment(partial, status: :ok)
+        response.set_header('Deferred-Fragment', '1')
+
+        render partial:, status:
+      end
 
       def code_lists = @code_lists ||= CodeListClient.new
 
@@ -84,11 +107,21 @@ module Admin
         entry
       end
 
-      def render_refusal(error)
+      # `listing:` is named by the action that rescued, and never derived from
+      # the parameter: `rescue_from` binds this to every page of the section,
+      # and reading `params` here would answer `?listing=1` appended to any
+      # other address with a fragment nothing has made room for.
+      def render_refusal(error, listing: false)
         @error = error
         status = error.code.present? ? :ok : :bad_gateway
+        refus = 'admin/common_services/refus'
 
-        render 'admin/common_services/refus', status:
+        # The alert alone where the listing was expected: the breadcrumb and the
+        # heading are already on the reader's screen, and a page would put a
+        # second set underneath them.
+        return render_fragment(refus, status:) if listing
+
+        render refus, status:
       end
     end
   end

@@ -16,7 +16,8 @@ RSpec.describe 'Admin::CommonServices::Countries' do
 
       expect(response.parsed_body.css('.fr-card').size).to eq(27)
       expect(response.body).to include('27 résultats')
-      expect(response.parsed_body.css('input[data-filter]').first['data-filter']).to eq('#liste-pays > *')
+      expect(response.parsed_body.css('input[data-controller="filter"]').first['data-filter-entries-value'])
+        .to eq('#liste-pays > *')
     end
 
     # Read by what a reader sees rather than by the code behind it, this page
@@ -42,12 +43,41 @@ RSpec.describe 'Admin::CommonServices::Countries' do
   end
 
   describe 'GET /admin/common_services/countries/:code/requirements' do
+    # The sweep costs one directory query per requirement, so the page arrives
+    # without it and comes back for the listing at the address it carries. The
+    # country itself is named from the start: it is what the heading says.
+    it 'holds a place for the listing rather than sweeping the catalogue to render it' do
+      get admin_common_services_country_requirements_path('FR')
+
+      expect(response.parsed_body.css('h1').text).to include('Justificatifs de', 'France (FR)')
+      expect(response.parsed_body.css('[data-controller="deferred"]').attr('data-deferred-url-value').value)
+        .to eq(admin_common_services_country_requirements_path('FR', listing: 1))
+      expect(response.body).to include('Chargement de tous les justificatifs publiés par ce pays')
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('requirement-id'))).not_to have_been_made
+    end
+
+    # The header is what the browser reads to know the body is ours to splice
+    # in, a status being unable to say it — nginx answers `502` out of its own
+    # pocket when nothing runs behind it. The page itself never carries it.
+    it 'stamps the listing, and only the listing, as ours to splice in' do
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fr')
+
+      get admin_common_services_country_requirements_path('FR')
+      expect(response.headers['Deferred-Fragment']).to be_nil
+
+      get admin_common_services_country_requirements_path('FR', listing: 1)
+      expect(response.headers['Deferred-Fragment']).to eq('1')
+    end
+  end
+
+  describe 'GET /admin/common_services/countries/:code/requirements?listing=1' do
     before { stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fr') }
 
     # The Evidence Broker has no query that starts from a country: its own takes
     # one requirement at a time, so the page sweeps them all.
     it 'sweeps the catalogue to find what that country publishes' do
-      get admin_common_services_country_requirements_path('FR')
+      get admin_common_services_country_requirements_path('FR', listing: 1)
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('#exigences-satisfaites > *')).not_to be_empty
@@ -57,7 +87,7 @@ RSpec.describe 'Admin::CommonServices::Countries' do
     # Naming no country: the twenty-seven country pages then share the same
     # cached responses, where a `country-code` would make twenty-seven sets.
     it 'asks the directory without naming the country it narrows on' do
-      get admin_common_services_country_requirements_path('FR')
+      get admin_common_services_country_requirements_path('FR', listing: 1)
 
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('country-code' => 'FR',
@@ -65,7 +95,7 @@ RSpec.describe 'Admin::CommonServices::Countries' do
     end
 
     it 'shows nothing for a country that publishes nothing' do
-      get admin_common_services_country_requirements_path('LT')
+      get admin_common_services_country_requirements_path('LT', listing: 1)
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('#exigences-satisfaites > *')).to be_empty
@@ -82,7 +112,7 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       end
 
       it 'neither lists the requirement nor counts it among those it satisfies' do
-        get admin_common_services_country_requirements_path('FR')
+        get admin_common_services_country_requirements_path('FR', listing: 1)
 
         expect(response).to have_http_status(:ok)
         expect(response.parsed_body.css('#exigences-satisfaites > *')).to be_empty
@@ -101,14 +131,43 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       end
 
       it 'shows the refusal rather than a listing short of one requirement' do
-        get admin_common_services_country_requirements_path('FR')
+        get admin_common_services_country_requirements_path('FR', listing: 1)
 
         expect(response.body).to include('EB:ERR:0002')
         expect(response.parsed_body.css('#exigences-satisfaites > *')).to be_empty
       end
 
+      # The alert takes the place the listing was to fill, and nothing else: the
+      # breadcrumb and the heading are already on the reader's screen.
+      it 'renders the alert alone, where the page has already said where it is' do
+        get admin_common_services_country_requirements_path('FR', listing: 1)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.headers['Deferred-Fragment']).to eq('1')
+        expect(response.parsed_body.css('h1')).to be_empty
+        expect(response.parsed_body.css('.fr-breadcrumb')).to be_empty
+        expect(response.parsed_body.css('.fr-alert').text).to include('EB:ERR:0002')
+      end
+
       def refusing_with(code)
         common_services_answer('eb_requirements_vides').first.sub('EB:ERR:0001', code)
+      end
+    end
+
+    # An unreachable directory is not a refusal, and the page has already
+    # answered `200` without asking anyone: it is this request that carries the
+    # `502`, which `deferred_controller.js` is written to inject rather than
+    # replace with its own wording.
+    context 'when the directory cannot be reached at all' do
+      it 'answers 502 with the alert the deferred fetch will show' do
+        stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({}))
+          .to_timeout
+
+        get admin_common_services_country_requirements_path('FR', listing: 1)
+
+        expect(response).to have_http_status(:bad_gateway)
+        expect(response.headers['Deferred-Fragment']).to eq('1')
+        expect(response.body).to include('Annuaire injoignable')
       end
     end
   end

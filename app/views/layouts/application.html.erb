@@ -24,7 +24,18 @@
         digested address. %>
     <%= stylesheet_link_tag 'application', 'card_component', 'country_tag_component', 'procedure_component',
           'search_field', 'entry_list', 'decrypted_value_component', 'regrep_body_component',
-          'evidence_subject_component' %>
+          'evidence_subject_component', 'deferred_content_component' %>
+    <%# The import map, and with it the Stimulus controllers of
+        `app/javascript/controllers/`. It goes in the head, and before any
+        module: a bare specifier — `@hotwired/stimulus` — resolves against a map
+        the browser has already read, or not at all.
+
+        It writes inline scripts — the map itself and the entry point that
+        imports it — alongside a `modulepreload` link per pinned package. A
+        content security policy will therefore have to name them, which
+        `javascript_importmap_tags` covers with its `nonce:`, carried by
+        everything it writes. %>
+    <%= javascript_importmap_tags %>
   </head>
 
   <body>
@@ -43,10 +54,12 @@
 
     <%# No theme switcher is offered: `data-fr-scheme="system"` follows the one
         the system sets, with no JavaScript. That is what lets us leave out the
-        inline script the DSFR otherwise uses against the flash of a wrong
-        theme — and which a content security policy would have to allow. %>
+        script the DSFR otherwise places inline in the head against the flash of
+        a wrong theme.
+
+        The DSFR's own scripts stay outside the import map: they are loaded by
+        address, and resolve no bare specifier. %>
     <%= javascript_include_tag 'dsfr.module.min', type: 'module' %>
     <%= javascript_include_tag 'dsfr.nomodule.min', nomodule: true %>
-    <%= javascript_include_tag 'filter', defer: true %>
   </body>
 </html>

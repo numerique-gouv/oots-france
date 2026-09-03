@@ -19,11 +19,18 @@ module Admin
       end
 
       # This country as a provider, the other half of its role. The sweep that
-      # takes belongs to the catalogue, which knows what a refusal is worth.
+      # takes belongs to the catalogue, which knows what a refusal is worth —
+      # and it is why the page is served in two parts, `listing_asked?` saying which.
+      # The country is read either way: the heading names it from the start.
       def requirements
         @country = params[:country_code]
+        return unless listing_asked?
+
         @swept = catalogue.requirements
         @published = catalogue.published_in(@country)
+        render_fragment 'requirements_listing'
+      rescue CommonServicesError => e
+        render_refusal(e, listing: true)
       end
 
       # The same page as `procedures#country`, reached from the other end.

@@ -4,11 +4,4 @@
 
 <h1 class="fr-h3"><%= t('components.directory_breadcrumbs.directories') %></h1>
 
-<%# A named refusal is an answer: the directory understood the question and
-    says it holds nothing. An outage is not one, and the two are not read the
-    same way. %>
-<% refused = @error.code.present? %>
-<%= dsfr_alert(type: refused ? :warning : :error,
-      title: refused ? t('admin.common_services.refused') : t('admin.common_services.refus.unreachable')) do %>
-  <%= @error.message %>
-<% end %>
+<%= render 'admin/common_services/refus' %>
