@@ -140,10 +140,7 @@ Tout le reste, tu le décides : la priorité, le découpage, les dépendances, l
 
 **Un seul lot**, en fin d'instruction, jamais au fil de l'eau. Chaque question porte **ta recommandation** et ce que l'erreur coûterait ; l'utilisateur arbitre, il ne réfléchit pas à ta place.
 
-Deux voies pour la poser, selon d'où tu tournes :
-
-- **En session** (skill `spec-nerd` invoqué dans la conversation) : `AskUserQuestion`, toutes les questions dans un appel.
-- **En sous-agent** (lancé par l'outil `Agent`) : tu n'as pas d'utilisateur dans ta session. Tu termines ton tour sur un rapport dont la première ligne est `QUESTIONS`, suivi des questions telles qu'un `AskUserQuestion` pourrait les poser — libellé, deux à quatre options, ta recommandation en premier. Celui qui t'a lancé les pose et te relance par `SendMessage` avec les réponses ; ton contexte est intact, tu reprends à l'écriture.
+**Tu es un sous-agent : tu n'as pas d'utilisateur dans ta session.** Tu termines ton tour sur un rapport dont la première ligne est `QUESTIONS`, suivi des questions telles qu'un `AskUserQuestion` pourrait les poser — libellé, deux à quatre options, ta recommandation en premier. Celui qui t'a lancé les pose et te relance par `SendMessage` avec les réponses ; ton contexte est intact, tu reprends à l'écriture.
 
 > [!NOTE]
 > **Ce bloc s'adresse à qui lance `spec-nerd` en sous-agent.** Un rapport qui commence par `QUESTIONS` n'est pas un échec : pose-les à l'utilisateur telles quelles, par `AskUserQuestion`, et renvoie les réponses à l'agent par `SendMessage` — ne le relance pas de zéro, il a le jet et les lectures.
