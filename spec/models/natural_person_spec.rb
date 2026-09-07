@@ -30,7 +30,7 @@ RSpec.describe NaturalPerson do
   end
 
   # Stricter than `R-EDM-REQ-C040`, whose `i` flag admits it, and deliberately
-  # so — the choice `LegalPerson` already carried, now shared by the concern.
+  # so: `EidasIdentified` holds both subjects to the upper case alone.
   it 'refuses country codes written in lower case' do
     expect(build(:natural_person, eidas_identifier: 'es/at/02635542Y')).not_to be_valid
   end
@@ -40,6 +40,15 @@ RSpec.describe NaturalPerson do
 
     expect(person).not_to be_valid
     expect(person.errors.full_messages).to include(%r{PAYS/PAYS/IDENTIFIANT})
+  end
+
+  # `allow_nil` where the sex and the place of birth take `allow_blank`, and the
+  # difference decides a real message: `EvidenceRequestParser` reads `''`, never
+  # `nil`, from a `sdg:Identifier` a correspondent sent present and empty, which
+  # breaks `R-EDM-REQ-C040` (FATAL). Refusing it here is the whole of what keeps
+  # such a request from being answered as though it named someone.
+  it 'refuses an eIDAS identifier that arrived present and empty' do
+    expect(build(:natural_person, eidas_identifier: '')).not_to be_valid
   end
 
   # `R-EDM-REQ-C036` (FATAL) makes the element mandatory, and chapter 4.5.1 §3.6
@@ -72,9 +81,10 @@ RSpec.describe NaturalPerson do
     end
   end
 
-  # Chapter 2.1 §2.4 makes both optional, and `Gender-CodeList` closes the
-  # second one in its eIDAS profile. Nothing in the Schematron judges it under a
-  # `NaturalPerson` slot, so this validation is the only thing that does.
+  # Chapter 2.1 §2.4 makes both optional. Nothing in the Schematron judges the
+  # sex under a `NaturalPerson` slot, so what is admitted there is the whole of
+  # `Gender-CodeList` and not the eIDAS profile alone; the place of birth, which
+  # `R-EDM-REQ-C092` reaches wherever it appears, is held to two characters.
   describe 'the optional attributes' do
     it 'is valid carrying neither a sex nor a place of birth' do
       expect(build(:natural_person, gender: nil, place_of_birth: nil)).to be_valid
@@ -88,6 +98,14 @@ RSpec.describe NaturalPerson do
       expect(%w[Male Female Unspecified].map { |gender| build(:natural_person, gender:) }).to all(be_valid)
     end
 
+    # The eIDAS2 profile of the same list. `R-EDM-REQ-C125` and `C126` pair a
+    # profile with a `schemeID`, but only under `AuthorizedRepresentative`:
+    # under this slot no rule pairs anything, so refusing these codes would turn
+    # a request the specification allows into `EDM:ERR:0003`.
+    it 'accepts the numeric codes of the eIDAS2 profile' do
+      expect(%w[0 1 2 3 4 5 6 9].map { |gender| build(:natural_person, gender:) }).to all(be_valid)
+    end
+
     # Tolerated where `Other` is refused, and the difference is the rules': no
     # rule holds `sdg:Gender` to anything under a `NaturalPerson` slot, so an
     # element a correspondent sent empty is not something France may turn a
@@ -96,11 +114,30 @@ RSpec.describe NaturalPerson do
       expect(build(:natural_person, gender: '')).to be_valid
     end
 
-    it 'refuses a sex the eIDAS profile does not publish' do
+    it 'refuses a sex the code list does not publish at all' do
       person = build(:natural_person, gender: 'other')
 
       expect(person).not_to be_valid
-      expect(person.errors.full_messages.join).to include('other', 'Male, Female, Unspecified')
+      expect(person.errors.full_messages.join)
+        .to include('other', 'Male, Female, Unspecified, 0, 1, 2, 3, 4, 5, 6, 9')
+    end
+
+    # `R-EDM-REQ-C092` (FATAL) holds every free-text element it names to two
+    # characters, and names `sdg:PlaceOfBirth` with no ancestor path — so it
+    # reaches this slot, where the rules naming the sex stop at
+    # `AuthorizedRepresentative`.
+    it 'refuses a place of birth of a single character' do
+      person = build(:natural_person, place_of_birth: 'A')
+
+      expect(person).not_to be_valid
+      expect(person.errors.full_messages.join).to include('Le lieu de naissance', 'au moins 2')
+    end
+
+    # Kept apart from the single character above: an element sent present and
+    # empty is what the journal records as « present and empty », where
+    # `R-EDM-REQ-C092` only ever judges an element that carries something.
+    it 'accepts a place of birth that arrived present and empty' do
+      expect(build(:natural_person, place_of_birth: '')).to be_valid
     end
   end
 end

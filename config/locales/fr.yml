@@ -96,6 +96,8 @@ fr:
               inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
             gender:
               inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
+            place_of_birth:
+              too_short: "doit faire au moins %{count} caractères"
         legal_person:
           attributes:
             eidas_identifier:

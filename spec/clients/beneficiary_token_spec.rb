@@ -46,9 +46,9 @@ RSpec.describe BeneficiaryToken do
     end
   end
 
-  # Chapter 2.1 §2.4 leaves both optional, and FranceConnect+ publishes them for
-  # a European user under the eIDAS SAML spelling: lower case where
-  # `Gender-CodeList` codes them capitalised.
+  # Chapter 2.1 §2.4 leaves both optional, and FranceConnect+ publishes the sex
+  # of a European user in the lower case of the eIDAS SAML attribute, where
+  # `Gender-CodeList` codes it capitalised.
   describe 'the optional attributes' do
     it 'leaves both unset when the token carries neither' do
       expect(opener.beneficiary(token)).to have_attributes(gender: nil, place_of_birth: nil)
@@ -73,7 +73,7 @@ RSpec.describe BeneficiaryToken do
     # would send whoever reads it looking for a value nobody wrote.
     it 'refuses a sex the code list does not publish, naming what was sent' do
       expect { opener.beneficiary(encrypt(sign(claims.merge('sexe' => 'other')))) }
-        .to raise_error(InvalidTokenError, /other.*Male, Female, Unspecified/)
+        .to raise_error(InvalidTokenError, /other.*Male, Female, Unspecified, 0, 1, 2, 3, 4, 5, 6, 9/)
     end
   end
 

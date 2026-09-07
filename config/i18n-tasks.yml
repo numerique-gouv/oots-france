@@ -52,6 +52,7 @@ ignore_unused:
   - activemodel.errors.models.address.attributes.country.format
   - activemodel.errors.models.natural_person.attributes.{date_of_birth,eidas_identifier}.format
   - activemodel.errors.models.natural_person.attributes.{level_of_assurance,gender}.inclusion
+  - activemodel.errors.models.natural_person.attributes.place_of_birth.too_short
   - activemodel.errors.models.legal_person.{attributes.eidas_identifier.format,unpublished_identifier_scheme,valueless_identifier}
   - activemodel.errors.models.requirement.{attributes.id.format,unlabelled_wording}
   - activemodel.errors.models.data_service.attributes.{id,evidence_type_classification,distribution_language,distribution_conforms_to}.format

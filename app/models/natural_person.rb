@@ -16,13 +16,20 @@ class NaturalPerson
   # that actually took place, and a fallback would assert one nobody performed.
   LEVELS_OF_ASSURANCE = %w[Low Substantial High].freeze
 
-  # `Gender-CodeList` in its eIDAS profile. The eIDAS2 profile of the same list
-  # codes them as numbers — `0` to `6` and `9`, the list carrying neither `7`
-  # nor `8` — and this application follows the eIDAS one —
-  # the identification chapter 2.1 describes. Refused here rather than by a
-  # rule: no Schematron constrains `sdg:Gender` under a `NaturalPerson` slot,
-  # `R-EDM-REQ-C124` to `C126` all anchoring on `AuthorizedRepresentative`.
+  # `Gender-CodeList` in its eIDAS profile, which the identification chapter 2.1
+  # describes and which is the only one this application writes: a request from
+  # here always carries `schemeID="eidas"`, the scheme `R-EDM-REQ-C126` pairs
+  # with these three values.
   GENDERS = %w[Male Female Unspecified].freeze
+
+  # The same list in full, its eIDAS2 profile included, which codes the values
+  # as numbers — `0` to `6` and `9`, the list carrying neither `7` nor `8`.
+  # What arrives is judged against this rather than against the profile above:
+  # no Schematron constrains `sdg:Gender` under a `NaturalPerson` slot,
+  # `R-EDM-REQ-C124` to `C126` all anchoring on `AuthorizedRepresentative`, so a
+  # correspondent may write either profile there and refusing one would turn a
+  # silence of the specification into a refused exchange.
+  GENDER_CODES = (GENDERS + %w[0 1 2 3 4 5 6 9]).freeze
 
   attribute :level_of_assurance, :string
   attribute :eidas_identifier, :string
@@ -43,7 +50,14 @@ class NaturalPerson
   # `R-EDM-REQ-C040`, which is FATAL. Refusing it would cost a conformant
   # exchange, and the journal keeps « present and empty » apart from « absent »
   # on purpose, `AuditEvent.subject` compacting the second alone.
-  validates :gender, inclusion: { in: GENDERS, admitted: GENDERS.join(', ') }, allow_blank: true
+  validates :gender,
+    inclusion: { in: GENDER_CODES, admitted: GENDER_CODES.join(', ') },
+    allow_blank: true
+  # `R-EDM-REQ-C092` (FATAL) holds the free-text elements of a request to two
+  # characters at least and names `sdg:PlaceOfBirth` among them. Its rule lists
+  # the elements with no ancestor path, so it reaches this slot — where the
+  # rules that judge the sex, anchored on `AuthorizedRepresentative`, do not.
+  validates :place_of_birth, length: { minimum: 2 }, allow_blank: true
   validates :date_of_birth,
     format: { with: /\A\d{4}-\d{2}-\d{2}\z/, message: :format },
     allow_nil: true
