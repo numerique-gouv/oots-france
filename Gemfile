@@ -6,6 +6,12 @@ gem 'rails', '8.1.3.1'
 
 gem 'bcrypt'
 gem 'bootsnap', require: false
+
+# json 3.0 dropped the positional options hash from `JSON.parse`, which
+# `ActiveSupport::JSON.decode` still passes in 8.1.3.1 — every encrypted cookie,
+# and so every session, raises `ArgumentError` on being read. Rails calls it
+# with keywords on `8-1-stable`; lift the pin when that ships.
+gem 'json', '< 3'
 gem 'pg', '~> 1.6'
 gem 'propshaft'
 gem 'puma', '>= 5.0'
@@ -76,4 +82,8 @@ group :test do
   gem 'shoulda-matchers'
   gem 'simplecov', require: false
   gem 'webmock'
+
+  # `features/support/fake_requester.rb` serves the requester's key set from a
+  # `WEBrick::HTTPServer`. Ferrum carried the gem until 0.18, which dropped it.
+  gem 'webrick'
 end
