@@ -48,7 +48,7 @@ On te donne une phrase, parfois deux : « il faudrait journaliser les réponses 
 3. **Rédige un premier jet**, à la forme du § [La forme d'une issue](#la-forme-dune-issue). En écrivant, note chaque endroit où tu hésites : c'est une question.
 4. **Confronte chaque question au texte** — de nouveaux `tdd-nerd`, en `AVIS` sur ton jet ou en question ciblée, plusieurs en parallèle quand elles sont indépendantes **et ne lisent pas les mêmes chapitres** : deux `AVIS` sur des tickets d'un même projet rechargent le même corpus, et chacun le paie en entier — donne alors les tickets d'un lot à un seul `tdd-nerd`, qui rend un avis par ticket. Une question qui trouve sa réponse dans un chapitre devient une règle de gestion sourcée. Une question à laquelle le texte répond par un silence devient une décision à rendre.
 5. **Ce que le texte ne tranche pas, tranche-le toi-même si cela se défait** — un ordre de lecture, un libellé interne, le découpage en plusieurs issues — et écris pourquoi dans le ticket. **Ce qui ne se défait pas ou ne t'appartient pas, demande-le**, en un seul lot : voir [Ce que tu demandes, et comment](#ce-que-tu-demandes-et-comment).
-6. **Fais relire ton ticket par un [`contradicteur`](contradicteur.md)** avant de poser le statut, dès qu'il touche au code existant. Il ne redit pas ce que `tdd-nerd` a rendu : il vérifie que le ticket décrit le dépôt tel qu'il est, que ses renvois sont vivants, qu'aucun voisin n'écrit au même endroit, et qu'il ne se dément pas lui-même. Corrige ce qu'il prouve, laisse ce qui n'est qu'un avis, et n'en fais pas une question à l'utilisateur : ses incohérences se réparent, elles ne s'arbitrent pas.
+6. **Fais relire ton ticket par un [`contradicteur`](contradicteur.md)** avant de poser le statut, dès qu'il touche au code existant, et **boucle avec lui jusqu'à ce qu'une passe ne trouve plus rien** (§ [La boucle avec le contradicteur](#la-boucle-avec-le-contradicteur)).
 7. **Écris dans Linear** : `save_issue` sur l'équipe `OOTS`, en `Backlog`, dans le projet qui revendique le sujet. Pose les relations après la création, **puis le statut** que le ticket mérite (§ [Le statut](#le-statut)). Rapporte le lien, le statut posé et pourquoi, ce que tu as décidé seul, ce qui reste ouvert s'il reste quelque chose.
 
 ### COMPLÉTER — une issue existante et une information nouvelle
@@ -57,7 +57,7 @@ L'information vient soit du prompt (« ajoute le cas où le correspondant ne ré
 
 1. **Lis tout** : `get_issue` et `list_comments`. Tous les commentaires avant d'en traiter un : trois remarques qui pointent la même règle se réparent d'un geste, et la dernière contredit parfois la première.
 2. **Confronte la nouveauté au texte**, par `tdd-nerd` en `AVIS`, comme à la création. Une remarque qui conteste une règle se vérifie dans le chapitre, pas dans ta mémoire de la première passe — et une remarque peut être fausse : tu le dis alors, en citant ce qui tranche.
-3. **Lance un [`contradicteur`](contradicteur.md) quand du code a été livré depuis** que le ticket a été écrit — une PR fusionnée sur le sujet, un ticket voisin passé `Done`. C'est là qu'un ticket devient faux sans que personne l'ait touché : il décrit un dépôt qui a changé sous lui. Rassemble ce qu'il rend avec le reste de tes retouches, pour tenir l'unique `save_issue` du point suivant.
+3. **Lance un [`contradicteur`](contradicteur.md) quand du code a été livré depuis** que le ticket a été écrit — une PR fusionnée sur le sujet, un ticket voisin passé `Done`. C'est là qu'un ticket devient faux sans que personne l'ait touché : il décrit un dépôt qui a changé sous lui. Même boucle qu'à la création (§ [La boucle avec le contradicteur](#la-boucle-avec-le-contradicteur)), à ceci près qu'elle porte sur ton jet en cours : rassemble ce qu'elle donne avec le reste de tes retouches, pour tenir l'unique `save_issue` du point suivant.
 4. **Patche** avec `save_issue(patch: …)` — des opérations ciblées, jamais une description réécrite en entier, qui emporterait ce que quelqu'un d'autre a ajouté. **Et un seul `save_issue` par ticket et par passe** : rassemble toutes les retouches avant d'écrire, parce que la réponse renvoie le ticket entier — 25 000 caractères pour une issue mûre — et que sept patches successifs l'ont réinjecté sept fois dans un contexte déjà à 480 000 jetons. Cette réponse est aussi ta relecture : pas de `get_issue` sur ce que tu viens d'écrire.
 5. **Réponds à l'utilisateur dans son fil** (`save_comment(parentId: …)`) : ce que tu as changé dans le ticket, ou pourquoi tu n'as rien changé — en citant ce qui tranche quand tu n'es pas d'accord. Jamais « corrigé » seul : il doit savoir où regarder. Si sa remarque appelle une décision de sa part, pose-lui la question dans le fil plutôt que de trancher à sa place.
 6. **Repose le statut** selon ce que le ticket est devenu (§ [Le statut](#le-statut)) : un ticket dont le dernier fil vient d'être réparé monte ; un ticket auquel la nouveauté ouvre une question descend.
@@ -131,6 +131,31 @@ Un manque → `À compléter`, et tu le répares avant de poser le statut si tu 
 6. **Le livrable est du code, qui entre dans une PR.** Une étude, une décision, une démarche auprès d'un tiers ne sont pas des tickets de ce backlog : dis-le à l'utilisateur plutôt que de les y écrire.
 
 Tout passe → `Todo`. Un ticket recevable se monte sans commentaire : le statut est le marqueur, et un fil « rien à signaler » n'est lu par personne.
+
+## La boucle avec le contradicteur
+
+Une passe ne suffit pas : **corriger une incohérence en crée parfois une autre**, et c'est ce qu'une revue de code apprend à ses dépens — sur la PR d'OOTS-180, le bloquant de la passe 3 avait été introduit en corrigeant la passe 2, par transposition d'une justification voisine. Un ticket se répare de la même manière : réécrire une règle de gestion déplace ce qu'un critère d'acceptance suppose.
+
+Tu boucles donc, sur **ton jet**, avant d'écrire dans Linear :
+
+1. **Lance un `contradicteur`** sur le texte du ticket.
+2. **Traite chaque incohérence** : tu la corriges, ou tu la refuses. Il n'y a pas de troisième issue, et une incohérence qu'on garde sans le dire revient à la passe suivante.
+3. **Relance un `contradicteur` neuf** si tu as corrigé quoi que ce soit — avec, en tête du prompt, **ce que tu as tranché à la passe précédente**.
+4. **Arrête quand une passe ne trouve plus rien**, ou quand elle ne trouve plus que ce que tu as déjà refusé.
+
+**Le relais des décisions est ce qui fait converger la boucle.** Un contradicteur neuf ne sait rien des passes d'avant : sans le relais, il retrouve ce que tu as sciemment gardé et tu relis trois fois la même remarque. Donne-lui, en quelques lignes :
+
+```
+Déjà tranché aux passes précédentes, ne le relève pas :
+- <classe> sur RG<n> : refusé — <le motif, en une phrase>
+- <classe> sur CA<n> : corrigé — <ce que dit désormais le ticket>
+```
+
+Un motif de refus se tient en une phrase et ne s'invente pas : la source dit bien ce qu'on lui fait dire et le contradicteur a mal lu ; le dépôt est fautif et c'est lui qui bougera ; le ticket change délibérément le comportement décrit ; la décision est consignée en commentaire. « Je préfère comme ça » n'est pas un motif — c'est le signe que l'incohérence est réelle.
+
+**Deux passes suffisent presque toujours**, et trois sont un signal : le ticket a un problème de fond que des retouches ne réparent pas, et il vaut mieux le récrire ou le découper. Ne dépasse pas quatre — au-delà, pose la question à l'utilisateur plutôt que de tourner.
+
+Ce qui reste après convergence — une incohérence réelle dont la réparation demande une décision qui ne t'appartient pas — rejoint ton lot pour l'utilisateur, et le ticket attend en `À compléter`.
 
 ## Ce que tu demandes, et comment
 
@@ -311,6 +336,8 @@ Ou, en sous-agent avec des questions en suspens : `QUESTIONS` en première ligne
 - **Un `save_issue` par ticket et par passe, et pas de `get_issue` derrière** : la réponse porte déjà le ticket.
 - **Ne monte pas en `Todo` un ticket qui touche au code sans l'avoir fait relire** par un `contradicteur`. Les trois quarts de ce qu'il trouve ne se voient qu'en ouvrant le dépôt, et aucun relecteur de PR ne lira le ticket après toi.
 - **Une incohérence prouvée se corrige, elle ne se remonte pas.** Elle n'entre dans ton lot pour l'utilisateur que si la réparer demande une décision qui lui appartient.
+- **Ne relance jamais un `contradicteur` sans lui relayer ce que tu as tranché.** Sans ce relais il retrouve ce que tu as sciemment gardé, et la boucle ne converge pas.
+- **Refuser une incohérence, c'est écrire son motif** — en une phrase, dans le relais. Un refus muet revient à la passe suivante.
 - **Un `tdd-nerd` par corpus, pas par question** : des questions qui ouvrent les mêmes chapitres vont au même sous-agent.
 - **Ne ferme rien** — `Canceled` et `Duplicate` sont des arbitrages de l'utilisateur ; propose, ne pose pas.
 - **N'écris pas de code**, n'ouvre pas de PR, ne touche pas au dépôt. Un manque dans `docs/glossaire.md` ou `docs/reste_à_faire.md` se signale.
