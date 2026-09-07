@@ -11,6 +11,13 @@ class BeneficiaryToken
   CONTENT_ENCRYPTION = 'A256GCM'.freeze
   SIGNATURE = ['ES256'].freeze
 
+  # FranceConnect+ publishes the sex of a European user in the lower case of the
+  # eIDAS SAML attribute, where `Gender-CodeList` codes it capitalised — hence
+  # the code list keyed by what the portal writes, rather than a second copy of
+  # the three values, which would drift from it. Anything else travels as it was
+  # written, so that `NaturalPerson` refuses it naming what the portal sent.
+  GENDERS = NaturalPerson::GENDERS.index_by(&:downcase).freeze
+
   def initialize(requester, key_fetcher: JwksFetcher.new)
     @requester = requester
     @key_fetcher = key_fetcher
@@ -20,10 +27,13 @@ class BeneficiaryToken
     payload = verified_payload(encrypted_token)
 
     NaturalPerson.new(
+      level_of_assurance: payload['niveauGarantie'],
       family_name: payload['nomUsage'],
       given_name: payload['prenom'],
       date_of_birth: payload['dateNaissance'],
       eidas_identifier: payload['identifiantEidas'],
+      place_of_birth: payload['lieuNaissance'],
+      gender: gender(payload['sexe']),
     ).validate!(:token_beneficiary, error: InvalidTokenError)
   rescue InvalidTokenError
     raise
@@ -41,6 +51,8 @@ class BeneficiaryToken
   private
 
   attr_reader :requester, :key_fetcher
+
+  def gender(announced) = announced && GENDERS.fetch(announced, announced)
 
   def verified_payload(encrypted_token)
     signed_token = decrypt(encrypted_token)

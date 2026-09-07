@@ -13,8 +13,8 @@ RSpec.describe BeneficiaryToken do
   let(:fetcher) { instance_double(JwksFetcher, call: JWT::JWK::Set.new([JWT::JWK.new(signing_key).export])) }
 
   let(:claims) do
-    { 'nomUsage' => 'Dupont', 'prenom' => 'Sophie', 'dateNaissance' => '1965-11-25',
-      'exp' => 10.minutes.from_now.to_i }
+    { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Dupont', 'prenom' => 'Sophie',
+      'dateNaissance' => '1965-11-25', 'exp' => 10.minutes.from_now.to_i }
   end
 
   before do
@@ -25,6 +25,72 @@ RSpec.describe BeneficiaryToken do
   it 'names the beneficiary the token carries' do
     expect(opener.beneficiary(token))
       .to have_attributes(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
+  end
+
+  # The level the portal obtained at the eIDAS authentication, carried word for
+  # word: chapter 4.5.1 §3.6 makes the requester answerable for it matching what
+  # actually took place, so nothing here supplies one.
+  describe 'the level of assurance' do
+    it 'carries the level the token declares' do
+      expect(opener.beneficiary(token).level_of_assurance).to eq('Substantial')
+    end
+
+    it 'refuses a token that declares none' do
+      expect { opener.beneficiary(encrypt(sign(claims.except('niveauGarantie')))) }
+        .to raise_error(InvalidTokenError, /Le niveau de garantie/)
+    end
+
+    it 'refuses a level the code list does not publish, naming it and the three admitted' do
+      expect { opener.beneficiary(encrypt(sign(claims.merge('niveauGarantie' => 'Medium')))) }
+        .to raise_error(InvalidTokenError, /Medium.*Low, Substantial, High/)
+    end
+  end
+
+  # Chapter 2.1 §2.4 leaves both optional, and FranceConnect+ publishes them for
+  # a European user under the eIDAS SAML spelling: lower case where
+  # `Gender-CodeList` codes them capitalised.
+  describe 'the optional attributes' do
+    it 'leaves both unset when the token carries neither' do
+      expect(opener.beneficiary(token)).to have_attributes(gender: nil, place_of_birth: nil)
+    end
+
+    it 'carries the place of birth as it was written' do
+      opened = opener.beneficiary(encrypt(sign(claims.merge('lieuNaissance' => 'Aarhus'))))
+
+      expect(opened.place_of_birth).to eq('Aarhus')
+    end
+
+    it 'writes the sex in the vocabulary of the code list' do
+      written = %w[male female unspecified].map do |announced|
+        opener.beneficiary(encrypt(sign(claims.merge('sexe' => announced)))).gender
+      end
+
+      expect(written).to eq(%w[Male Female Unspecified])
+    end
+
+    # Refused rather than capitalised into a value the code list still would not
+    # publish, and refused naming what the portal sent: `Other` in the message
+    # would send whoever reads it looking for a value nobody wrote.
+    it 'refuses a sex the code list does not publish, naming what was sent' do
+      expect { opener.beneficiary(encrypt(sign(claims.merge('sexe' => 'other')))) }
+        .to raise_error(InvalidTokenError, /other.*Male, Female, Unspecified/)
+    end
+  end
+
+  # `R-EDM-REQ-C040`: the requester writes what it received, and a token whose
+  # identifier could never travel is turned away here rather than in a message
+  # the correspondent refuses.
+  describe 'the eIDAS identifier' do
+    it 'carries an identifier of the shape the rule imposes' do
+      opened = opener.beneficiary(encrypt(sign(claims.merge('identifiantEidas' => 'ES/AT/02635542Y'))))
+
+      expect(opened.eidas_identifier).to eq('ES/AT/02635542Y')
+    end
+
+    it 'refuses an identifier the rule would not admit' do
+      expect { opener.beneficiary(encrypt(sign(claims.merge('identifiantEidas' => '02635542Y')))) }
+        .to raise_error(InvalidTokenError, %r{PAYS/PAYS/IDENTIFIANT})
+    end
   end
 
   # Both lists are fixed by the code. A token allowed to name the algorithms
