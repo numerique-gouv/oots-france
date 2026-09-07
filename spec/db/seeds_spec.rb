@@ -142,6 +142,12 @@ RSpec.describe 'db/seeds.rb' do
   # the response came back with. The demonstration makes them differ the way the
   # chapter describes — the provider completes rather than contradicts — so that
   # the console is read at least once against the gap an auditor came for.
+  #
+  # Thinner in one direction all the same: `R-EDM-RESP-S041` closes a response
+  # on five elements, so the level of assurance and the sex that a request may
+  # carry have no place in what comes back, and `EvidenceResponseParser` reads
+  # neither. A demonstration echoing them would show an auditor a confirmation
+  # no correspondent is able to send.
   it 'gives one exchange the subject its request asked for and the one its response confirmed' do
     replay
 
@@ -149,8 +155,24 @@ RSpec.describe 'db/seeds.rb' do
     asked, confirmed = AuditEvent.where(exchange_id: delivered.exchange_id,
       event_type: %w[request_sent response_received]).order(:id).map(&:described_subject)
 
-    expect(asked).to eq(confirmed.except('eidas_identifier'))
-    expect(confirmed['eidas_identifier']).to eq('FR/FI/123123123')
+    expect(asked.keys).to include('level_of_assurance', 'gender')
+    expect(confirmed)
+      .to eq(asked.except('level_of_assurance', 'gender').merge('eidas_identifier' => 'FR/FI/123123123'))
+  end
+
+  # One subject carries the two optional attributes and one carries neither, so
+  # that the console shows both states: chapter 2.1 leaves the sex and the place
+  # of birth optional, and a correspondent sending neither is the ordinary case.
+  # Filled everywhere, the column would read as owed.
+  it 'gives one exchange a subject carrying neither optional attribute' do
+    replay
+
+    minimal = Exchange.find_by(incoming: true, country_code: 'BE')
+    described = AuditEvent.find_by(exchange_id: minimal.exchange_id, event_type: 'request_received')
+      .described_subject
+
+    expect(described.keys).to include('level_of_assurance')
+    expect(described.keys).not_to include('place_of_birth', 'gender')
   end
 
   # And nowhere else on the way back, because `AuditTrail` writes it nowhere
