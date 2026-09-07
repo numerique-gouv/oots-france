@@ -173,6 +173,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/glossaire.md](docs/glossaire.md) — tous les sigles et termes du domaine, une phrase chacun : DSD, EDM, ebMS3, requêteur, bouchon… **Le seul endroit où le vocabulaire est défini.**
 - [docs/reste_à_faire.md](docs/reste_à_faire.md) — ce qui sépare le dépôt d'une conformité complète aux TDD, chapitre par chapitre, avec le projet Linear qui porte chaque manque.
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de l'application Domibus (point d'accès eDelivery) : concepts, usage par OOTS-France, installation locale et pièges connus.
+- [docs/eidas_context.md](docs/eidas_context.md) — d'où vient l'identité de l'usager : ce que les TDD attendent de l'authentification eIDAS, et FranceConnect+, seule voie vers le nœud eIDAS français — habilitation, adresses à déclarer, protocole, bac à sable.
 - [docs/journal_des_echanges.md](docs/journal_des_echanges.md) — le journal que l'article 17 impose de conserver douze mois : ce qu'il consigne, comment ses données personnelles sont protégées, comment le relire.
 - [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un échange OOTS complet en local, à travers Domibus.
 - [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md) — configurer la passerelle geste par geste dans sa console, quand le script ne convient pas.
