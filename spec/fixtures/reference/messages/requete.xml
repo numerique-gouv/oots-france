@@ -85,12 +85,14 @@
 <rim:Slot name="NaturalPerson">
   <rim:SlotValue xsi:type="rim:AnyValueType">
     <sdg:Person>
-      <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+      <sdg:LevelOfAssurance>Substantial</sdg:LevelOfAssurance>
 
 <sdg:Identifier schemeID="eidas">FR/DE/123123123</sdg:Identifier>
 <sdg:FamilyName>Dupont</sdg:FamilyName>
 <sdg:GivenName>Jean</sdg:GivenName>
 <sdg:DateOfBirth>1992-10-22</sdg:DateOfBirth>
+<sdg:PlaceOfBirth>Aarhus</sdg:PlaceOfBirth>
+<sdg:Gender>Male</sdg:Gender>
 
     </sdg:Person>
   </rim:SlotValue>

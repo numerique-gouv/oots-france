@@ -150,7 +150,9 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
 
   def beneficiary
     NaturalPerson.new(
-      eidas_identifier: 'FR/DE/123123123', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+      level_of_assurance: 'Substantial', eidas_identifier: 'FR/DE/123123123',
+      family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+      place_of_birth: 'Aarhus', gender: 'Male',
     )
   end
 

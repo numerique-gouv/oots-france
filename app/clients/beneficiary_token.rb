@@ -11,6 +11,12 @@ class BeneficiaryToken
   CONTENT_ENCRYPTION = 'A256GCM'.freeze
   SIGNATURE = ['ES256'].freeze
 
+  # FranceConnect+ publishes the sex of a European user in the lower case of the
+  # eIDAS SAML attribute, where `Gender-CodeList` codes it capitalised — hence
+  # the code list keyed by what the portal writes, rather than a second copy of
+  # the three values, which would drift from it.
+  GENDERS = NaturalPerson::GENDERS.index_by(&:downcase).freeze
+
   def initialize(requester, key_fetcher: JwksFetcher.new)
     @requester = requester
     @key_fetcher = key_fetcher
@@ -20,10 +26,13 @@ class BeneficiaryToken
     payload = verified_payload(encrypted_token)
 
     NaturalPerson.new(
+      level_of_assurance: payload['niveauGarantie'],
       family_name: payload['nomUsage'],
       given_name: payload['prenom'],
       date_of_birth: payload['dateNaissance'],
       eidas_identifier: payload['identifiantEidas'],
+      place_of_birth: payload['lieuNaissance'],
+      gender: gender(payload['sexe']),
     ).validate!(:token_beneficiary, error: InvalidTokenError)
   rescue InvalidTokenError
     raise
@@ -41,6 +50,24 @@ class BeneficiaryToken
   private
 
   attr_reader :requester, :key_fetcher
+
+  # Refused here, where `NaturalPerson` admits everything `Gender-CodeList`
+  # publishes: the model is read by both directions, and a correspondent may
+  # write the eIDAS2 profile in a request it sends us. What leaves France is
+  # written from this token alone, and chapter 2.1 puts it in the eIDAS
+  # profile. Nothing in the message itself would tell the two profiles apart —
+  # `sdg:Gender` is a bare element, carrying no attribute that names which one
+  # it follows — so a code the portal is not documented to send is stopped at
+  # the door rather than written where nothing could flag it.
+  # Named in the portal's own lower case, which is what the caller must send.
+  def gender(announced)
+    return if announced.nil?
+
+    GENDERS.fetch(announced) do
+      raise(InvalidTokenError,
+        I18n.t('clients.beneficiary_token.gender', value: announced, admitted: GENDERS.keys.join(', ')))
+    end
+  end
 
   def verified_payload(encrypted_token)
     signed_token = decrypt(encrypted_token)

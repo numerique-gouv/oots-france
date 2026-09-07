@@ -182,7 +182,8 @@ end
 
 def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')
 
-BENEFICIAIRE = { 'nomUsage' => 'Dupont', 'prenom' => 'Sophie', 'dateNaissance' => '1965-11-25' }.freeze
+BENEFICIAIRE = { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Dupont', 'prenom' => 'Sophie',
+                 'dateNaissance' => '1965-11-25', 'lieuNaissance' => 'Nantes', 'sexe' => 'female' }.freeze
 
 def patiente_jusqu_a(description)
   limite = Time.current + DELAI_MAX

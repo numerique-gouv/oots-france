@@ -87,6 +87,32 @@ RSpec.describe EvidenceRequestParser do
     expect(request.beneficiary.eidas_identifier).to be_nil
   end
 
+  # `R-EDM-REQ-C036` is FATAL, so a request omitting the level of assurance is
+  # not one a correspondent may send — and the journal of article 17 records
+  # the subject as it circulated, sex and place of birth included.
+  describe 'the identity attributes the slot carries' do
+    it 'reads the level of assurance the correspondent asserted' do
+      expect(request.beneficiary.level_of_assurance).to eq('High')
+    end
+
+    it 'reads the sex and the place of birth when the request carries them' do
+      complete = with_body do |body|
+        body.sub('<sdg:DateOfBirth>1965-11-25</sdg:DateOfBirth>',
+          '<sdg:DateOfBirth>1965-11-25</sdg:DateOfBirth>' \
+          '<sdg:PlaceOfBirth>Aarhus</sdg:PlaceOfBirth><sdg:Gender>Female</sdg:Gender>')
+      end
+
+      expect(complete.beneficiary).to have_attributes(place_of_birth: 'Aarhus', gender: 'Female')
+    end
+
+    it 'refuses a request whose evidence subject declares no level of assurance' do
+      amputated = with_body { |body| body.sub(%r{<sdg:LevelOfAssurance>.*?</sdg:LevelOfAssurance>}m, '') }
+
+      expect { amputated.beneficiary }
+        .to raise_error(UnreadableMessageError, /Le niveau de garantie/)
+    end
+  end
+
   # `R-EDM-REQ-S016` lets the evidence subject be an organisation, and
   # `R-EDM-REQ-S047` puts an `sdg:LegalPerson` under the slot. The trap the
   # symmetry hides: a natural person is an `sdg:Person` in a request and an

@@ -15,7 +15,8 @@ class FakeCorrespondent
   # rendering is no longer a builder, so it answers both on its own.
   AlteredBody = Data.define(:render, :document_id)
 
-  BENEFICIARY = { family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25' }.freeze
+  BENEFICIARY = { level_of_assurance: 'Substantial', family_name: 'Dupont', given_name: 'Sophie',
+                  date_of_birth: '1965-11-25' }.freeze
 
   # What a real correspondent would have read from the central directories for a
   # French procedure: the requirement the Evidence Broker returns for FR, and the

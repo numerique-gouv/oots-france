@@ -37,7 +37,18 @@ end
 # Keyed on their identifier rather than created outright, so replaying the seed
 # does not pile up a second set.
 if Rails.env.development?
-  person = NaturalPerson.new(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
+  person = NaturalPerson.new(
+    level_of_assurance: 'Substantial', family_name: 'Dupont', given_name: 'Sophie',
+    date_of_birth: '1965-11-25', place_of_birth: 'Nantes', gender: 'Female',
+  )
+
+  # Le jeu minimal, et rien de plus : le chapitre 2.1 §2.4 laisse le sexe et le
+  # lieu de naissance facultatifs, et un correspondant qui n'en envoie pas est
+  # le cas ordinaire. Sans lui, la console montrerait deux attributs facultatifs
+  # remplis partout, et elle se lirait comme s'ils étaient dus.
+  minimal_person = NaturalPerson.new(
+    level_of_assurance: 'Low', family_name: 'Janssens', given_name: 'Marie', date_of_birth: '1988-03-04',
+  )
 
   # Le second sujet que le chapitre 4.5.1 autorise. Il donne à la console sa
   # ligne dont la clé canonique est de la forme morale — `legal|` suivi de
@@ -84,7 +95,7 @@ if Rails.env.development?
     { status: 'sent', country_code: 'NL', procedure_code: 'S1', events: %w[request_sent] },
     { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },
     { incoming: true, status: 'delivered', country_code: 'BE',
-      procedure_code: ProcedureCode::SYSTEM_CHECK,
+      procedure_code: ProcedureCode::SYSTEM_CHECK, subject: minimal_person,
       events: %w[request_received response_sent] },
     { incoming: true, status: 'failed', country_code: 'IT',
       procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
@@ -197,11 +208,18 @@ if Rails.env.development?
   # canonique**. C'est le seul cas qui en reste, et donc la seule fiche où le
   # bouton listant les autres événements du même sujet est absent — ce que
   # docs/journal_des_echanges.md décrit et qu'aucune autre ligne ne montrerait.
+  # `R-EDM-RESP-S041` ferme la liste de ce qu'une réponse porte du sujet :
+  # l'identifiant, le nom, le prénom, la date et le lieu de naissance — ni
+  # niveau de garantie, ni sexe. `EvidenceResponseParser#natural_subject` ne les
+  # lit donc pas, et les montrer ici ferait dire à la console qu'un
+  # correspondant confirme des attributs qu'il n'a aucun moyen de renvoyer.
+  absent_from_a_response = %w[level_of_assurance gender].freeze
+
   matched_person = lambda do |exchange, scenario|
     NaturalPerson.new(
       person.attributes
         .merge('eidas_identifier' => format('FR/%s/123123123', exchange.country_code))
-        .except(*scenario.fetch(:confirmed_without, [])),
+        .except(*absent_from_a_response, *scenario.fetch(:confirmed_without, [])),
     )
   end
 

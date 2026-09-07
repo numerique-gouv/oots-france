@@ -128,11 +128,25 @@ RSpec.describe AuditEvent do
   end
 
   describe '.subject' do
+    # The level of assurance is written with the rest and stays out of the key:
+    # chapter 4.8 has the whole `NaturalPerson` slot logged, and one person
+    # authenticated twice at two levels is still one person to search for.
     it 'writes a natural person under the key an auditor searches by' do
       expect(described_class.subject(build(:natural_person))).to eq(
-        evidence_subject: '{"family_name":"Dupont","given_name":"Sophie","date_of_birth":"1965-11-25"}',
+        evidence_subject: '{"level_of_assurance":"Substantial","family_name":"Dupont",' \
+                          '"given_name":"Sophie","date_of_birth":"1965-11-25"}',
         evidence_subject_key: 'dupont|sophie|1965-11-25',
       )
+    end
+
+    # The two attributes chapter 2.1 §2.4 leaves optional: logged where the
+    # exchange carried them, absent where it did not, so the journal shows what
+    # circulated rather than a shape this application chose.
+    it 'writes the sex and the place of birth an exchange carried' do
+      person = build(:natural_person, place_of_birth: 'Aarhus', gender: 'Female')
+
+      expect(described_class.subject(person)[:evidence_subject])
+        .to include('"place_of_birth":"Aarhus"', '"gender":"Female"')
     end
 
     # Chapter 4.5.1 lets the evidence subject be an organisation, which has

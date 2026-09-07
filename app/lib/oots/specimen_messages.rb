@@ -224,9 +224,15 @@ module Oots
       )
     end
 
+    # `Substantial` and not `High`: the level travels from the beneficiary
+    # token, so a specimen wearing the highest value would let a message built
+    # from a constant pass unnoticed. The two optional attributes are carried
+    # too, this being the document `make schematron` asks the rules about.
     def beneficiary
       @beneficiary ||= NaturalPerson.new(
-        eidas_identifier: 'FR/DE/123123123', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+        level_of_assurance: 'Substantial', eidas_identifier: 'FR/DE/123123123',
+        family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+        place_of_birth: 'Aarhus', gender: 'Male',
       )
     end
 

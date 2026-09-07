@@ -143,14 +143,24 @@ class EvidenceRequestParser
   # Validated here rather than trusted: an incomplete person would otherwise
   # reach the templates, where `escape(nil)` renders an empty element — a
   # message that violates the specification instead of a failure that says so.
+  #
+  # The level of assurance is read like the rest and refused when absent, where
+  # a reader could have ignored an element France never echoes: `R-EDM-REQ-C036`
+  # is FATAL, so a request that omits it is not one a correspondent may send.
+  # The two optional attributes are read so that the journal of article 17
+  # records the subject as it circulated, and not as this application would have
+  # written it.
   def natural_person
     person = slot_content('NaturalPerson', query, './sdg:Person')
 
     NaturalPerson.new(
+      level_of_assurance: text_at(person, './sdg:LevelOfAssurance'),
       eidas_identifier: text_at(person, './sdg:Identifier'),
       family_name: text_at(person, './sdg:FamilyName'),
       given_name: text_at(person, './sdg:GivenName'),
       date_of_birth: text_at(person, './sdg:DateOfBirth'),
+      place_of_birth: text_at(person, './sdg:PlaceOfBirth'),
+      gender: text_at(person, './sdg:Gender'),
     ).validate!(:request_beneficiary, error: UnreadableMessageError)
   end
 
