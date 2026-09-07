@@ -80,11 +80,12 @@ Une exécution réussie affiche :
 
 ## Ce que les scénarios jouent
 
-Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire, plus la conversation qui peut en couvrir plusieurs :
+Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire — dont le justificatif, sur chacune des deux démarches servies —, plus la conversation qui peut en couvrir plusieurs :
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
 | Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
+| Nominal, démonstration de l'Université | `T1` | le même justificatif `assets/drapeau.pdf`, la France n'en détenant pas d'autre : ce que ce scénario éprouve est la résolution `T1`/`FR` dans les annuaires centraux, pas le document |
 | Une conversation, deux échanges | `T3` deux fois | deux échanges distincts sous le `ConversationId` que la démarche a fourni |
 | Réponse différée | `R1` | une réponse de statut `Unavailable` : l'échange passe en `deferred` et l'appelant lit la date dans `dateDisponibilite`, sans qu'aucun justificatif circule |
 | Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
@@ -108,9 +109,9 @@ L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'appl
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
 
-Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::AnswerRequest` y répond avec `assets/drapeau.pdf`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
+Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::AnswerRequest` y répond avec le PDF de son `EVIDENCE_PATH`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
-Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, la démarche `00` étant la seule servie par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
+Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, `00` et `T1` étant les seules démarches servies par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
 
 ## Les annuaires centraux sont les vrais
 
@@ -136,6 +137,9 @@ La CI gagne une **dépendance sortante** : `e2e.yml` ne demandait jusqu'ici rien
 
 > [!NOTE]
 > L'Evidence Broker rend **deux** exigences pour `00` / FR, et la chaîne les résout toutes les deux — elles sont conjonctives ([3.2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932958)). `00000000-…` ne publie plus aucun type français : son `EB:ERR:0001` est retenu puis écarté, parce que `ffffffff-…` en publie. L'ordre des deux n'a donc plus d'incidence, et c'est ce scénario qui l'éprouve sur les données réelles.
+
+> [!NOTE]
+> **`T1` / FR se résout par des objets voisins et finit sur le même point d'accès**, la France y étant inscrite depuis le 2026-09-07. L'Evidence Broker y rend deux exigences, conjonctives elles aussi : `2d21a531-d30e-4e30-9e5e-b53d6aedb30b` (« Proof of enrolment in academic tertiary education »), qui **ne publie aucun type français** — son `EB:ERR:0001` est retenu puis écarté, comme celui de `00000000-…` pour `00` —, et `ffffffff-ffff-ffff-ffff-ffffffffffff` (« (TEST) Test Requirement 2 »), rendue par la déclaration de démarche française `b8d73f72-f677-4020-9b18-e339dd0d6ae0` et satisfaite par la liste `829a5d21-e6cf-4ed0-8c0f-9deedd031d00`, au seul type `https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4` (« FR - Test Evidence Type »). Le Data Service Directory y répond par le service `22202777-d8bf-4577-ade6-52aa8686f28c` sous `AP_FR_01`, en `oots-edm:v2.0` et `application/pdf` — la même passerelle que `00`, donc le même bouclage local. Éditer l'une de ces entrées à l'acceptation fait rougir le scénario `T1` sans que le dépôt ait bougé.
 
 ## Configuration attendue
 

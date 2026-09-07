@@ -109,6 +109,8 @@ Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'ap
 **C'est Domibus qui appelle**, sur `POST /domibus/notifications`, dès qu'un message arrive pour nous (*push to backend* du plugin WS, voir [domibus_context.md](domibus_context.md)). La route accuse réception aussitôt et met le traitement en file ; `IncomingMessage::Process` récupère alors le message et l'aiguille sur son action ebMS. La réponse à une `ExecuteQueryRequest` dépend du code de démarche demandé (`EvidenceProvision::AnswerRequest`) :
 
 - démarche `00`, la **vérification système** d'OOTS : une `ExecuteQueryResponse` complète, qui reprend les données de la requête (bénéficiaire, requêteur, type de justificatif) et porte un vrai PDF en pièce jointe — le fichier d'exemple `assets/drapeau.pdf` ;
+- démarche `T1`, le **financement des études**, celle de la démonstration de l'Université : la même réponse, avec le même PDF d'exemple en pièce jointe — la France ne détient pas d'autre document ;
+- démarche `R1`, l'**enregistrement d'une naissance** : une réponse de statut `Unavailable`, qui annonce le justificatif pour plus tard sans rien joindre ([chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951)) ;
 - toute autre démarche : une erreur `ObjectNotFoundException`, faute de fournisseur de données raccordé.
 
 ### Cartographie du code

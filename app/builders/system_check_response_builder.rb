@@ -1,5 +1,7 @@
-# The `ExecuteQueryResponse` France returns for procedure `00`, the OOTS system
-# check — the only procedure it serves with an actual document today.
+# The `ExecuteQueryResponse` France returns for the procedures it serves with an
+# actual document — `00`, the OOTS system check, and `T1`, the financing of
+# studies. One builder answers both: no slot of this response names the
+# procedure it answers.
 #
 # Corners are inverted with respect to the request, as on the error response:
 # the provider answering is C1, the requester that asked is C4. The provider is

@@ -1,13 +1,15 @@
 module EvidenceProvision
   # Answers a request another member state addressed to France.
   #
-  # France holds one document today: the PDF it returns for procedure `00`, the
-  # OOTS system check. Procedure `R1` is answered with a deferral instead, so
-  # that the announcement of chapter 4.5.2 is produced somewhere. Every other
-  # procedure is refused with `EDM:ERR:0004`, the expected behaviour as long as
-  # no real provider is connected — both the dedicated procedure and the sample
-  # evidence are stubs, tracked as OOTS-82.
+  # What goes back depends on the procedure asked for: `00` and `T1` are served
+  # with a document, `R1` is answered with the deferral of chapter 4.5.2, and
+  # every other procedure is refused with `EDM:ERR:0004` — the expected
+  # behaviour as long as no real provider is connected.
   class AnswerRequest < ApplicationInteractor
+    # The procedures a document is served for, and the document itself: France
+    # holds no real evidence, so the same sample answers both. Stub, tracked as
+    # OOTS-82.
+    SERVED_PROCEDURES = [ProcedureCode::SYSTEM_CHECK, ProcedureCode::STUDY_FINANCING].freeze
     EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
 
     # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
@@ -168,11 +170,12 @@ module EvidenceProvision
       return error_envelope(EdmException::TIMEOUT) if expired?
       return deferred_envelope if request.procedure_code == ProcedureCode::BIRTH_REGISTRATION
 
-      system_check_envelope
+      served_envelope
     end
 
     def recognised_procedure?
-      request.procedure_code.in?([ProcedureCode::SYSTEM_CHECK, ProcedureCode::BIRTH_REGISTRATION])
+      request.procedure_code.in?(SERVED_PROCEDURES) ||
+        request.procedure_code == ProcedureCode::BIRTH_REGISTRATION
     end
 
     # Chapter 4.4: a Data Service implementing timeout « shall return a timeout
@@ -249,7 +252,7 @@ module EvidenceProvision
 
     def refuse(detail, message) = raise(UnreadableMessageError.new(message, detail:))
 
-    def system_check_envelope
+    def served_envelope
       served = evidence
       attachment = attachment_for(served)
       body = SystemCheckResponseBuilder.new(

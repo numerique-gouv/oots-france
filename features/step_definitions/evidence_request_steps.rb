@@ -52,9 +52,7 @@ Alors('le justificatif finit par être transmis à la démarche') do
 end
 
 Alors('le document reçu est celui que le fournisseur détient') do
-  attendu = Rails.root.join('assets/drapeau.pdf').binread
-
-  expect(@fake_requester.received_evidence.b).to eq(attendu.b)
+  expect(@fake_requester.received_evidence.b).to eq(justificatif_detenu.b)
 end
 
 Alors('l\'échange finit par porter le code d\'erreur {string}') do |code|
@@ -105,7 +103,7 @@ Alors('le journal porte l\'échange entier, du départ de la requête à la remi
   expect(journal.pluck(:request_id).compact.uniq).to contain_exactly(depart.request_id)
 
   remise = journal.find_by!(event_type: 'evidence_delivered')
-  expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(Rails.root.join('assets/drapeau.pdf').binread))
+  expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(justificatif_detenu))
 end
 
 # Chapter 4.8 asks both its tables for « MIME type and full content of first
@@ -153,6 +151,10 @@ Alors('le journal porte le refus du correspondant') do
 end
 
 def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
+
+# The very constant the provider reads, so a scenario cannot assert a document
+# the code does not serve.
+def justificatif_detenu = Rails.root.join(EvidenceProvision::AnswerRequest::EVIDENCE_PATH).binread
 
 # One user's session, named by the portal rather than left to the application:
 # `R-EDM-ebMS-017` wants a UUID, and the same one twice is what makes the two
