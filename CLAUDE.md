@@ -38,6 +38,7 @@ Each piece of information has a single owning document; everything else links to
 | Where to find what in the TDD: chapter map with links, where the machine-readable artefacts live, the fixed values (query IDs, DNS template, ebMS constants) | `docs/carte_des_tdd.md` |
 | OOTS code published elsewhere: the Commission's own implementations, other Member States' repositories, reusable third-party components, and what each is worth | `docs/implementations_europeennes.md` |
 | Domibus concepts, the example PMode, how the app calls it, local-setup specifics | `docs/domibus_context.md` |
+| Where the user's identity comes from: what the TDD expect of the eIDAS authentication, and FranceConnect+ as the only way to the French eIDAS node — habilitation, the URLs to declare, the OpenID Connect profile, the claims a European user yields, the sandbox | `docs/eidas_context.md` |
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | The Commission's Testing Services: the ITB test platform, the online validator, the mocked directories, the AS4 and LCM test components, and what can (and cannot) be submitted to them | `docs/testing_services.md` |
