@@ -97,7 +97,7 @@ fr:
             gender:
               inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
             place_of_birth:
-              too_short: "doit faire au moins %{count} caractères"
+              too_short: doit porter au moins deux caractères une fois les blancs réduits
         legal_person:
           attributes:
             eidas_identifier:

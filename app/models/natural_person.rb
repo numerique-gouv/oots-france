@@ -17,9 +17,11 @@ class NaturalPerson
   LEVELS_OF_ASSURANCE = %w[Low Substantial High].freeze
 
   # `Gender-CodeList` in its eIDAS profile, which the identification chapter 2.1
-  # describes and which is the only one this application writes: a request from
-  # here always carries `schemeID="eidas"`, the scheme `R-EDM-REQ-C126` pairs
-  # with these three values.
+  # describes and which is the only one a request from here writes — not because
+  # a rule holds it to that under this slot, but because `BeneficiaryToken`
+  # translates what FranceConnect+ publishes, and the portal publishes these
+  # three alone. What defends the profile on the way out is therefore that
+  # contract, not a second validation.
   GENDERS = %w[Male Female Unspecified].freeze
 
   # The same list in full, its eIDAS2 profile included, which codes the values
@@ -57,7 +59,16 @@ class NaturalPerson
   # characters at least and names `sdg:PlaceOfBirth` among them. Its rule lists
   # the elements with no ancestor path, so it reaches this slot — where the
   # rules that judge the sex, anchored on `AuthorizedRepresentative`, do not.
-  validates :place_of_birth, length: { minimum: 2 }, allow_blank: true
+  #
+  # `allow_nil` and not `allow_blank`, where the sex takes the opposite: that
+  # rule's context is the element itself, so it fires on one sent present and
+  # empty exactly as on a one-character one, and only an absent element escapes
+  # it. It measures `normalize-space(.)`, which is why two non-blank characters
+  # are asked of the value rather than two characters of any kind — ` A` is one
+  # character to the rule and would pass a length of two.
+  validates :place_of_birth,
+    format: { with: /\S(?:.*\S)/m, message: :too_short },
+    allow_nil: true
   validates :date_of_birth,
     format: { with: /\A\d{4}-\d{2}-\d{2}\z/, message: :format },
     allow_nil: true

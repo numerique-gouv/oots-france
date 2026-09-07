@@ -122,6 +122,12 @@ RSpec.describe NaturalPerson do
         .to include('other', 'Male, Female, Unspecified, 0, 1, 2, 3, 4, 5, 6, 9')
     end
 
+    # The two the numeric profile skips, and the only thing that keeps the
+    # constant from being read as « 0 to 9 ».
+    it 'refuses the two numbers the list leaves out' do
+      expect(%w[7 8].map { |gender| build(:natural_person, gender:) }).to all(be_invalid)
+    end
+
     # `R-EDM-REQ-C092` (FATAL) holds every free-text element it names to two
     # characters, and names `sdg:PlaceOfBirth` with no ancestor path — so it
     # reaches this slot, where the rules naming the sex stop at
@@ -130,14 +136,34 @@ RSpec.describe NaturalPerson do
       person = build(:natural_person, place_of_birth: 'A')
 
       expect(person).not_to be_valid
-      expect(person.errors.full_messages.join).to include('Le lieu de naissance', 'au moins 2')
+      expect(person.errors.full_messages.join).to include('Le lieu de naissance', 'au moins deux caractères')
     end
 
-    # Kept apart from the single character above: an element sent present and
-    # empty is what the journal records as « present and empty », where
-    # `R-EDM-REQ-C092` only ever judges an element that carries something.
-    it 'accepts a place of birth that arrived present and empty' do
-      expect(build(:natural_person, place_of_birth: '')).to be_valid
+    # Where an empty sex is tolerated, an empty place of birth is not, and the
+    # difference is the rules': `R-EDM-REQ-C092` has the element itself for
+    # context, so it fires on one sent present and empty just as on one carrying
+    # a single character. Only an absent element escapes it, which is what
+    # `allow_nil` says and what `text_at` renders as `nil` rather than `''`.
+    it 'refuses a place of birth that arrived present and empty' do
+      expect(build(:natural_person, place_of_birth: '')).not_to be_valid
+    end
+
+    it 'refuses a place of birth made of blanks alone' do
+      expect(build(:natural_person, place_of_birth: '   ')).not_to be_valid
+    end
+
+    # The rule measures `normalize-space(.)`, so this is one character to it
+    # though it is two to `String#length` — the reason the validation is not a
+    # length.
+    it 'refuses a place of birth padded to two characters by a blank' do
+      expect(build(:natural_person, place_of_birth: ' A')).not_to be_valid
+    end
+
+    # The border itself, which nothing else in the suite stands on: every other
+    # example in the repository carries `Aarhus`, so a rule tightened to three
+    # non-blank characters would pass unnoticed without this one.
+    it 'accepts a place of birth of exactly two characters' do
+      expect(build(:natural_person, place_of_birth: 'Ry')).to be_valid
     end
   end
 end
