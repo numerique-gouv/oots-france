@@ -14,8 +14,7 @@ class BeneficiaryToken
   # FranceConnect+ publishes the sex of a European user in the lower case of the
   # eIDAS SAML attribute, where `Gender-CodeList` codes it capitalised — hence
   # the code list keyed by what the portal writes, rather than a second copy of
-  # the three values, which would drift from it. Anything else travels as it was
-  # written, so that `NaturalPerson` refuses it naming what the portal sent.
+  # the three values, which would drift from it.
   GENDERS = NaturalPerson::GENDERS.index_by(&:downcase).freeze
 
   def initialize(requester, key_fetcher: JwksFetcher.new)
@@ -52,7 +51,23 @@ class BeneficiaryToken
 
   attr_reader :requester, :key_fetcher
 
-  def gender(announced) = announced && GENDERS.fetch(announced, announced)
+  # Refused here, where `NaturalPerson` admits everything `Gender-CodeList`
+  # publishes: the model is read by both directions, and a correspondent may
+  # write the eIDAS2 profile in a request it sends us. What leaves France is
+  # written from this token alone, and chapter 2.1 puts it in the eIDAS
+  # profile. Nothing in the message itself would tell the two profiles apart —
+  # `sdg:Gender` is a bare element, carrying no attribute that names which one
+  # it follows — so a code the portal is not documented to send is stopped at
+  # the door rather than written where nothing could flag it.
+  # Named in the portal's own lower case, which is what the caller must send.
+  def gender(announced)
+    return if announced.nil?
+
+    GENDERS.fetch(announced) do
+      raise(InvalidTokenError,
+        I18n.t('clients.beneficiary_token.gender', value: announced, admitted: GENDERS.keys.join(', ')))
+    end
+  end
 
   def verified_payload(encrypted_token)
     signed_token = decrypt(encrypted_token)

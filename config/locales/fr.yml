@@ -271,6 +271,7 @@ fr:
       header_unreadable_detail: "En-tête de signature illisible sur la réponse de l'annuaire : %{error}."
       certificate_unreadable: "Certificat illisible dans la réponse de l'annuaire : %{error}."
     beneficiary_token:
+      gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
   jobs:

@@ -20,8 +20,9 @@ class NaturalPerson
   # describes and which is the only one a request from here writes — not because
   # a rule holds it to that under this slot, but because `BeneficiaryToken`
   # translates what FranceConnect+ publishes, and the portal publishes these
-  # three alone. What defends the profile on the way out is therefore that
-  # contract, not a second validation.
+  # three alone. That client is where the profile is held on the way out,
+  # refusing what it cannot translate; the validation below answers for what a
+  # correspondent may send us, which is a wider thing.
   GENDERS = %w[Male Female Unspecified].freeze
 
   # The same list in full, its eIDAS2 profile included, which codes the values

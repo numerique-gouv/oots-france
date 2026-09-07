@@ -73,7 +73,20 @@ RSpec.describe BeneficiaryToken do
     # would send whoever reads it looking for a value nobody wrote.
     it 'refuses a sex the code list does not publish, naming what was sent' do
       expect { opener.beneficiary(encrypt(sign(claims.merge('sexe' => 'other')))) }
-        .to raise_error(InvalidTokenError, /other.*Male, Female, Unspecified, 0, 1, 2, 3, 4, 5, 6, 9/)
+        .to raise_error(InvalidTokenError, /other.*male, female, unspecified/)
+    end
+
+    # Refused here though `NaturalPerson` would admit it: the model answers for
+    # what a correspondent may send us, this token for what France writes, and
+    # chapter 2.1 puts what France writes in the eIDAS profile.
+    it 'refuses a sex written in the numeric profile the portal never sends' do
+      expect { opener.beneficiary(encrypt(sign(claims.merge('sexe' => '2')))) }
+        .to raise_error(InvalidTokenError, /2.*male, female, unspecified/)
+    end
+
+    it 'refuses a sex the token carries empty' do
+      expect { opener.beneficiary(encrypt(sign(claims.merge('sexe' => '')))) }
+        .to raise_error(InvalidTokenError)
     end
   end
 
