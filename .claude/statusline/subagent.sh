@@ -69,8 +69,16 @@ etape() {
     LIGNE=$(tail -6 "$FICHIER" 2>/dev/null \
       | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
       | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
-    VERDICT=${LIGNE#*$(printf '\t')}
-    PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+    #    `date -d ""` ne rend pas d'erreur mais minuit du jour même : sans
+    #    la garde sur la ligne, un transcript sans verdict donnerait un
+    #    `PRONONCE` que toute déclaration de la journée dépasse, et l'étape
+    #    déclarée l'emporterait sans condition — le reste de la cascade
+    #    devenant inatteignable.
+    VERDICT= ; PRONONCE=
+    if [ -n "$LIGNE" ]; then
+      VERDICT=${LIGNE#*$(printf '\t')}
+      PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+    fi
     DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
 
     if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
