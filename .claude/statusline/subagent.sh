@@ -42,6 +42,15 @@ SOUS_AGENTS="$(lire '.transcript_path' | sed 's/\.jsonl$//')/subagents"
 PRINCIPAL=$(git -C "$(lire '.cwd')" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 [ -n "$PRINCIPAL" ] && PRINCIPAL=$(dirname "$PRINCIPAL")
 
+# Horodatage, en secondes, du dernier appel à Bash dont la commande porte le
+# motif. On exige la ligne d'un appel, et non la seule présence du motif : les
+# skills que l'ouvrier lit décrivent ces commandes, et les lire n'établit rien.
+quand() {
+  T=$(grep -F "$2" "$1" 2>/dev/null | grep -F '"name":"Bash"' | tail -1 \
+    | jq -r '.timestamp // empty' 2>/dev/null)
+  [ -n "$T" ] && date -d "$T" +%s 2>/dev/null
+}
+
 # L'étape, de la source la plus fraîche à la plus grossière.
 etape() {
   FICHIER="$SOUS_AGENTS/agent-$1.jsonl"
@@ -49,6 +58,7 @@ etape() {
 
   ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
   DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
+  DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
 
   # 0. « merged » : PR fusionnée, affaires rangées.
   [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
@@ -69,9 +79,16 @@ etape() {
     LIGNE=$(tail -6 "$FICHIER" 2>/dev/null \
       | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
       | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
-    VERDICT=${LIGNE#*$(printf '\t')}
-    PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
-    DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
+    #    `date -d ""` ne rend pas d'erreur mais minuit du jour même : sans
+    #    la garde sur la ligne, un transcript sans verdict donnerait un
+    #    `PRONONCE` que toute déclaration de la journée dépasse, et l'étape
+    #    déclarée l'emporterait sans condition — le reste de la cascade
+    #    devenant inatteignable.
+    VERDICT= ; PRONONCE=
+    if [ -n "$LIGNE" ]; then
+      VERDICT=${LIGNE#*$(printf '\t')}
+      PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
+    fi
 
     if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
       printf '%s' "$DECLAREE"; return
@@ -87,19 +104,36 @@ etape() {
     esac
   fi
 
-  # 2. Ce que l'ouvrier déclare lui-même, la seule qui sache le distinguer
-  #    d'un autre temps de la même longueur. Voir `.claude/agents/ouvrier.md`.
-  [ -n "$DECLAREE" ] && { printf '%s' "$DECLAREE"; return; }
-
-  # 3. À défaut — ouvrier lancé avant cette convention, ou muet — les jalons
-  #    que le transcript porte malgré lui. Grossiers, mais monotones.
+  # 2. Les jalons que le transcript porte malgré lui. Grossiers, mais
+  #    établis par un fait, là où une étape est une parole — et on les date
+  #    pour la raison qui fait dater le verdict : une déclaration ne vaut
+  #    que tant qu'un fait plus récent ne la dément pas.
+  JALON= ; JALON_A=
   if [ -f "$FICHIER" ]; then
-    grep -q 'gh pr create'  "$FICHIER" && { printf 'review';         return; }
-    grep -q 'claude/plans/' "$FICHIER" && { printf 'implementation'; return; }
-    printf 'opening'; return
+    JALON=review;         JALON_A=$(quand "$FICHIER" 'gh pr create')
+    [ -z "$JALON_A" ] && { JALON=implementation; JALON_A=$(quand "$FICHIER" 'claude/plans/'); }
+    [ -z "$JALON_A" ] && { JALON=opening;        JALON_A=0; }
   fi
 
-  # 4. Rien de lisible : ce que le harnais en dit.
+  # 3. Ce que l'ouvrier déclare lui-même, la seule source qui sache le
+  #    distinguer d'un autre temps de la même longueur — tant qu'un jalon
+  #    postérieur ne la dément pas. Voir `.claude/agents/ouvrier.md`.
+  #
+  #    Sans cette comparaison, une seule écriture oubliée fige l'affichage
+  #    pour les heures que dure le ticket, et le repli écrit pour ce cas
+  #    précis devient inatteignable justement quand il servirait : c'est ce
+  #    qu'a montré un ouvrier resté à « implementation » treize minutes
+  #    après avoir ouvert sa PR.
+  if [ -n "$DECLAREE" ]; then
+    [ "${JALON_A:-0}" -gt "${DECLARE_A:-0}" ] && { printf '%s' "$JALON"; return; }
+    printf '%s' "$DECLAREE"; return
+  fi
+
+  # 4. À défaut — ouvrier lancé avant cette convention, ou muet — le jalon
+  #    seul.
+  [ -n "$JALON" ] && { printf '%s' "$JALON"; return; }
+
+  # 5. Rien de lisible : ce que le harnais en dit.
   printf '%s' "$3"
 }
 
