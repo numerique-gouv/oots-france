@@ -5,6 +5,9 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   le journal des événements, où l'on cherche, et sous lui la fiche d'un échange
   et celle d'une conversation, où l'on descend. Il observe et n'écrit rien.
 
+  Il porte une exception nommée : la démarche de démonstration, où l'exploitant
+  tient le rôle de l'usager d'un portail de démarche.
+
   Contexte:
     Étant donné un compte d'administration
     Et que je suis connecté à l'espace d'administration
@@ -38,6 +41,11 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
     Étant donné un échange reçu d'un autre État membre
     Quand j'ouvre la fiche de cet échange
     Alors je vois cet échange avec le sens "Reçu"
+
+  Scénario: la démarche de démonstration s'ouvre depuis le menu
+    Quand je suis l'entrée « Démo » du menu
+    Alors je lis l'accueil de la démarche de l'Université de démonstration
+    Et on m'offre de m'identifier avec une identité d'un autre État membre
 
   Scénario: retrouver ce qui a circulé au sujet d'une personne
     Étant donné un échange concernant Sophie Dupont

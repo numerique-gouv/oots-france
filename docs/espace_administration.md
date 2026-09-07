@@ -16,7 +16,7 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | --- | --- |
 | `/` | La page d'accueil du service, et le lien vers l'espace. |
 | `/admin/session/new` | Le formulaire de connexion, la seule page de l'espace qui répond sans session. |
-| `/admin` | Les trois entrées ci-dessous. |
+| `/admin` | Les quatre entrées ci-dessous. |
 | `/admin/journal` | **La seule liste de la console**, intitulée « Journal des événements » parce que c'est ce qu'elle liste : le [journal de l'article 17](journal_des_echanges.md), du plus récent au plus ancien, filtrable par type d'événement, **échange**, **conversation**, démarche, pays, requêteur et période. C'est là qu'on cherche, et de là qu'on descend. Elle porte aussi **le refus prononcé avant qu'aucun échange soit ouvert**, qu'aucune autre page ne peut représenter. |
 | `/admin/journal/events/:id` | Un événement, **toutes ses colonnes renseignées**, sujet du justificatif déchiffré compris et **le corps RegRep tel qu'il a circulé**, replié sous un bouton qui en annonce la taille. |
 | `/admin/journal/subjects` | Ce qui a circulé au sujet d'une personne physique ou d'une personne morale. **Deux formulaires, chacun exact et à remplir en entier** — trois champs pour l'une, l'identifiant eIDAS pour l'autre —, pour la raison qu'expose [journal_des_echanges.md](journal_des_echanges.md#le-chiffrement-au-repos-en-détail). |
@@ -36,6 +36,19 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | `…/evidence_types/:uuid/providers` | Ce que le Data Service Directory répond pour ce type de justificatif : le service, son fournisseur, son point d'accès. **Le pays ne s'y choisit pas** — un type est publié par une juridiction, son identifiant au Semantic Repository la porte, et le demander à une autre ne peut que revenir vide. |
 | `/admin/common_services/resolution` | La chaîne de requêtes que `EvidenceRequest::Fetch` pose avant d'émettre, simulée à la demande pour une démarche et un pays. |
 | `/admin/jobs` | Le tableau de bord de [GoodJob](https://github.com/bensheldon/good_job), monté tel quel. Il montre les exécutions de `ProcessIncomingMessageJob` et de `CollectPendingMessagesJob`, et la trace de leurs erreurs. |
+| `/admin/demo` | L'accueil de la démarche de démonstration : le portail de l'« Université de démonstration », qui explique ce qu'OOTS permet, dit qu'il est une démonstration, et offre le seul bouton d'identification de la cinématique européenne. Son titre est la démarche `T1`, **lue** dans `Procedures-CodeList.gc` comme les pages des annuaires lisent les leurs. Voir plus bas. |
+| `/admin/demo/identification` | Ce que ce bouton ouvre aujourd'hui : la page qui dit que l'identification par FranceConnect+ n'est pas encore branchée. |
+
+### La démarche de démonstration
+
+C'est **la seule partie de la console qui n'observe rien** : l'exploitant n'y lit pas ce qu'un échange a écrit, il tient le rôle de l'usager d'un [Online Procedure Portal](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932933) — la moitié avant dont ce dépôt n'implémente que l'arrière. L'université est fictive, et la page le dit ; la démarche est celle que le chapitre 1 §4.1 donne en exemple, « *apply online for a tertiary education study financing* », que la liste `Procedures` code `T1`.
+
+Elle **ne contredit pas** la règle posée plus haut — « il ne touche à aucun échange » — tant qu'elle n'ouvre rien : cette page-ci n'envoie pas de requête. Les pages qui suivront dans ce parcours en ouvriront une, et ce sera **une exception nommée**, décidée au [projet du portail de démonstration](https://linear.app/pole-api/project/oots-france-le-portail-de-demonstration-484068da336c), pas un précédent pour le reste de la console.
+
+Elle reste par ailleurs derrière la connexion de l'exploitant, comme tout l'espace : ce n'est pas un écran qu'un usager final atteint, ce que la [règle d'audience du dépôt](../CLAUDE.md#this-repository-implements-the-tdd-it-does-not-invent) interdirait.
+
+> [!NOTE]
+> **L'identification n'est pas encore branchée.** Le bouton unique de l'accueil — libellé en anglais, `Sign-in with a digital identity from another European country`, parce qu'il s'adresse à un usager qui ne lit pas le français — mène à une page qui le dit. La cinématique européenne de FranceConnect+, l'appel `/authorize` portant `idp_hint=eidas-bridge` et ce qu'il rapporte viennent avec [OOTS-179](https://linear.app/pole-api/issue/OOTS-179). Le bouton FranceConnect+ « identité française » n'existe pas ici : la démonstration ne joue qu'un usager d'un autre État membre, écart assumé avec les règles d'intégration de FranceConnect+.
 
 ### Les pages des annuaires centraux
 
