@@ -39,6 +39,31 @@ RSpec.describe EvidenceResponseParser do
       expect(identified.evidence_subject.eidas_identifier).to eq('FR/FI/123123123')
     end
 
+    # The other element the rule admits beside the Minimum Data Set, and the one
+    # a response may confirm where it may not confirm the level of assurance.
+    # The captured envelope carries none, so it is put there rather than assumed.
+    it 'reads the place of birth where the response carries one' do
+      born = without do |body|
+        body.sub('</sdg:DateOfBirth>', '</sdg:DateOfBirth><sdg:PlaceOfBirth>Aarhus</sdg:PlaceOfBirth>')
+      end
+
+      expect(born.evidence_subject.place_of_birth).to eq('Aarhus')
+    end
+
+    # `R-EDM-RESP-S041` closes its list on five elements, and neither the level
+    # of assurance nor the sex is among them. A correspondent sending either is
+    # breaking the rule; reading them would file a response as carrying what no
+    # conformant one does, and the journal would show a subject richer than the
+    # one actually confirmed.
+    it 'keeps neither the level of assurance nor the sex the rule excludes' do
+      overreaching = without do |body|
+        body.sub('<sdg:FamilyName>',
+          '<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance><sdg:Gender>Female</sdg:Gender><sdg:FamilyName>')
+      end
+
+      expect(overreaching.evidence_subject).to have_attributes(level_of_assurance: nil, gender: nil)
+    end
+
     it 'reads the organisation R-EDM-RESP-S042 admits in its place' do
       expect(about_an_organisation.evidence_subject).to be_a(LegalPerson)
         .and have_attributes(eidas_identifier: 'FR/DE/A2635542Y', legal_name: 'Établissements Dupont & Fils')

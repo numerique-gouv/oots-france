@@ -391,14 +391,17 @@ class EvidenceResponseParser
   # `sdg:NaturalPerson` under `sdg:IsAbout`. The organisation below keeps one
   # name on both sides.
   #
-  # `sdg:PlaceOfBirth`, which the rule admits too, is left where it is:
-  # `NaturalPerson` does not carry it, and no column of the journal holds it.
+  # The five elements the rule lists and no more: a response carries neither the
+  # level of assurance nor the sex a request may, so a subject read here is
+  # thinner than the one France sent — which is what the journal must show of
+  # what the correspondent actually confirmed.
   def natural_subject(person)
     NaturalPerson.new(
       eidas_identifier: text_at(person, './sdg:Identifier'),
       family_name: text_at(person, './sdg:FamilyName'),
       given_name: text_at(person, './sdg:GivenName'),
       date_of_birth: text_at(person, './sdg:DateOfBirth'),
+      place_of_birth: text_at(person, './sdg:PlaceOfBirth'),
     )
   end
 
