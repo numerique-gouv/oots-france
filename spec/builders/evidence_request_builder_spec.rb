@@ -11,7 +11,9 @@ RSpec.describe EvidenceRequestBuilder do
         descriptions: { 'EN' => 'Civil Registration Office Berlin I' },
       ),
       beneficiary: NaturalPerson.new(
-        eidas_identifier: 'FR/DE/123123123', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+        level_of_assurance: 'Substantial', eidas_identifier: 'FR/DE/123123123',
+        family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+        place_of_birth: 'Aarhus', gender: 'Male',
       ),
       requirement: Requirement.new(
         id: 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42',
@@ -260,11 +262,72 @@ RSpec.describe EvidenceRequestBuilder do
     end
   end
 
-  it 'omits the eIDAS identifier when the token carried none' do
-    anonymous = NaturalPerson.new(family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22')
-    rendered = described_class.new(**attributes, beneficiary: anonymous).render
+  # The identifier and the two attributes below are all three omissible, and
+  # `sdg:PersonType` fixes where each of them sits. The order is asserted and not
+  # merely the presence: a schema sequence is what it is, and a correspondent
+  # parsing a permuted document refuses it.
+  describe 'the beneficiary the request is about' do
+    subject(:person) do
+      Nokogiri::XML(request).at_xpath('//sdg:Person', 'sdg' => 'http://data.europa.eu/p4s')
+    end
 
-    expect(rendered).not_to include('schemeID="eidas"')
+    it 'writes the elements in the order the schema sequences them' do
+      expect(person.element_children.map(&:name))
+        .to eq(%w[LevelOfAssurance Identifier FamilyName GivenName DateOfBirth PlaceOfBirth Gender])
+    end
+
+    # R-EDM-REQ-C036 and C037: present, and one of the three the code list
+    # publishes. What the beneficiary carries, never a constant.
+    it 'carries the level of assurance the beneficiary was authenticated at' do
+      expect(person.at_xpath('./sdg:LevelOfAssurance').text).to eq('Substantial')
+    end
+
+    # R-EDM-REQ-C041 requires the attribute, R-EDM-REQ-C042 fixes it to `eidas`
+    # and R-EDM-REQ-C040 shapes the value: none is rewritten here, the identifier
+    # travelling as the requester received it.
+    it 'writes the eIDAS identifier as it was received, under its fixed scheme' do
+      identifier = person.at_xpath('./sdg:Identifier')
+
+      expect(identifier.text).to eq('FR/DE/123123123')
+      expect(identifier['schemeID']).to eq('eidas')
+    end
+
+    it 'writes the place of birth and the sex the token carried' do
+      expect(person.at_xpath('./sdg:PlaceOfBirth').text).to eq('Aarhus')
+      expect(person.at_xpath('./sdg:Gender').text).to eq('Male')
+    end
+
+    # An empty element would assert what was never established. R-EDM-REQ-C038
+    # only urges the identifier, in the `WARNING` role; what refuses one present
+    # and empty is R-EDM-REQ-C040, which is FATAL and hangs on the element
+    # itself, so an empty value matches nothing its regular expression admits.
+    it 'omits what the token carried none of' do
+      expect(person_carrying({}).element_children.map(&:name))
+        .to eq(%w[LevelOfAssurance FamilyName GivenName DateOfBirth])
+    end
+
+    # Asserted one at a time, and not only both or neither: a template guarding
+    # one element with the other's condition would satisfy every case where the
+    # two travel together.
+    it 'omits the sex of a beneficiary that carries only a place of birth' do
+      expect(person_carrying(place_of_birth: 'Aarhus').element_children.map(&:name))
+        .to eq(%w[LevelOfAssurance FamilyName GivenName DateOfBirth PlaceOfBirth])
+    end
+
+    it 'omits the place of birth of a beneficiary that carries only a sex' do
+      expect(person_carrying(gender: 'Male').element_children.map(&:name))
+        .to eq(%w[LevelOfAssurance FamilyName GivenName DateOfBirth Gender])
+    end
+
+    def person_carrying(optional)
+      beneficiary = NaturalPerson.new(
+        level_of_assurance: 'Substantial', family_name: 'Dupont', given_name: 'Jean',
+        date_of_birth: '1992-10-22', **optional,
+      )
+
+      Nokogiri::XML(described_class.new(**attributes, beneficiary:).render)
+        .at_xpath('//sdg:Person', 'sdg' => 'http://data.europa.eu/p4s')
+    end
   end
 
   it 'refuses to build a request for a requester with no usable identity' do
