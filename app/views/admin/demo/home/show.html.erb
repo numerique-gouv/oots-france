@@ -1,0 +1,16 @@
+<% content_for :title, t('admin.demo.home.show.title') %>
+
+<%= render DemoBreadcrumbsComponent.new %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= @procedure_label %></h1>
+
+<%= dsfr_callout(title: t('admin.demo.home.show.notice.title')) do %>
+  <%= t('admin.demo.home.show.notice.body') %>
+<% end %>
+
+<p class="fr-text--lead fr-col-12 fr-col-md-8 fr-mt-4w"><%= t('admin.demo.home.show.explanation') %></p>
+
+<%= link_to t('admin.demo.home.show.sign_in'), admin_demo_identification_path,
+      class: 'fr-btn', lang: 'en' %>

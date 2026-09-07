@@ -154,6 +154,7 @@ fr:
     logo_html: République<br>Française
     entete:
       tagline: Échange transfrontalier de justificatifs
+      demo: Démo
       directories: Annuaires
       jobs: Jobs
       journal: Journal
@@ -726,6 +727,44 @@ fr:
             Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences,
             types de justificatif, fournisseurs.
           jobs: "Les jobs de fond : ce qui reste en file, ce qui a échoué, et la trace de chaque erreur."
+          demo: >-
+            La demande de bourse d'une université fictive, où l'exploitant joue l'usager d'un portail
+            de démarche et déclenche lui-même un échange.
+    # La seule partie de la console qui ne relise rien : `docs/espace_administration.md`
+    # dit quel rôle l'exploitant y tient, et pourquoi elle est là.
+    demo:
+      home:
+        show:
+          title: Démarche de démonstration
+          # Le portail joué, au-dessus du titre : le titre est la démarche, et
+          # une démarche n'est pas un lieu. Le nom est celui que le projet a
+          # arrêté ; l'intitulé de la démarche, lui, est lu dans la liste de
+          # codes et ne s'écrit pas ici.
+          portal: Université de démonstration
+          notice:
+            title: Démonstration
+            body: >-
+              L'Université de démonstration n'existe pas, et cette démarche n'en est pas une :
+              l'écran est joué par l'exploitant depuis l'espace d'administration. Aucun justificatif
+              réel n'est demandé.
+          explanation: >-
+            Cette démarche peut faire venir le justificatif dont elle a besoin directement de
+            l'administration de l'autre État membre qui le détient, sans que vous ayez à l'obtenir
+            ni à le fournir vous-même. Rien n'est demandé sans votre accord explicite, et vous devez
+            d'abord vous identifier.
+          # En anglais, et c'est le libellé que FranceConnect+ montre au bouton
+          # de sa cinématique européenne — ses règles d'intégration, elles, sont
+          # annoncées comme « bientôt publiées ». Il s'adresse à un usager qui ne
+          # lit pas le français, ce qui est tout son objet.
+          sign_in: Sign-in with a digital identity from another European country
+      identifications:
+        show:
+          title: Identification
+          unavailable: >-
+            L'identification par FranceConnect+ n'est pas encore branchée : la cinématique
+            européenne, qui laisse un usager d'un autre État membre s'identifier avec l'identité de
+            son pays, viendra avec la suite du parcours.
+          back: Revenir à la démarche
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.

@@ -1,0 +1,12 @@
+<% content_for :title, t('admin.demo.identifications.show.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.identifications.show.title'), nil]],
+    ) %>
+
+<h1><%= t('admin.demo.identifications.show.title') %></h1>
+
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.identifications.show.unavailable') %></p>
+
+<%= link_to t('admin.demo.identifications.show.back'), admin_demo_root_path,
+      class: 'fr-btn fr-btn--secondary' %>

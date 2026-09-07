@@ -24,6 +24,15 @@ Rails.application.routes.draw do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
 
+    # The demonstration procedure: the front half of an Online Procedure Portal,
+    # played by the operator. It is the one corner of the console that does not
+    # observe an exchange — `docs/espace_administration.md` says why it is
+    # nonetheless here.
+    namespace :demo do
+      root to: 'home#show'
+      resource :identification, only: :show
+    end
+
     # The log is walked through its events, and only through them: the listing
     # is the one at the root, narrowed by whichever identifier one holds. An
     # exchange and a conversation have a page each, reached from an event —
