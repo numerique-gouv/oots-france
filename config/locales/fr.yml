@@ -34,9 +34,12 @@ fr:
         id: L'identifiant
         type_id: Le schéma d'identifiant
       natural_person:
+        level_of_assurance: Le niveau de garantie
         family_name: Le nom
         given_name: Le prénom
         date_of_birth: La date de naissance
+        place_of_birth: Le lieu de naissance
+        gender: Le sexe
       legal_person:
         legal_name: La raison sociale
         eidas_identifier: L'identifiant eIDAS
@@ -84,6 +87,15 @@ fr:
           attributes:
             date_of_birth:
               format: doit être une date ISO 8601 (AAAA-MM-JJ)
+            eidas_identifier:
+              format: doit être de la forme PAYS/PAYS/IDENTIFIANT
+            # `%{admitted}` est la liste de codes elle-même, passée en option de
+            # la validation : la traduction dirait sinon une liste que rien ne
+            # tient en phase avec celle que le modèle compare.
+            level_of_assurance:
+              inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
+            gender:
+              inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
         legal_person:
           attributes:
             eidas_identifier:
@@ -225,10 +237,13 @@ fr:
     # circulé.
     evidence_subject:
       fields:
+        level_of_assurance: Niveau de garantie
         eidas_identifier: Identifiant eIDAS
         family_name: Nom
         given_name: Prénom
         date_of_birth: Date de naissance
+        place_of_birth: Lieu de naissance
+        gender: Sexe
         legal_name: Raison sociale
         identifiers: Identifiants
   builders:

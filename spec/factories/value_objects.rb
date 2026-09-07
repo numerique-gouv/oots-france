@@ -37,6 +37,11 @@ FactoryBot.define do
   end
 
   factory :natural_person do
+    # `Substantial` by default and not `High`: the level comes from the token,
+    # and a person built at the highest would let code writing it as a constant
+    # pass unnoticed. The sex and the place of birth stay absent, an evidence
+    # subject carrying neither being the ordinary case.
+    level_of_assurance { 'Substantial' }
     family_name { 'Dupont' }
     given_name { 'Sophie' }
     date_of_birth { '1965-11-25' }

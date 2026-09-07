@@ -39,7 +39,7 @@ ignore_unused:
   - activemodel.attributes.address.country
   - activemodel.attributes.ebms_identity.{id,type_id}
   - activemodel.attributes.access_point.{id,type_id}
-  - activemodel.attributes.natural_person.{family_name,given_name,date_of_birth}
+  - activemodel.attributes.natural_person.{level_of_assurance,family_name,given_name,date_of_birth,place_of_birth,gender}
   - activemodel.attributes.legal_person.{legal_name,eidas_identifier}
   - activemodel.attributes.evidence_type.{id,distribution_format}
   - activemodel.attributes.requirement.id
@@ -50,7 +50,8 @@ ignore_unused:
   - activemodel.attributes.audit_event_filter.{event_type,exchange_id,conversation_id,country_code,evidence_requester_id,procedure_code,depuis,jusqu_a}
   - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth,legal_person_identifier}
   - activemodel.errors.models.address.attributes.country.format
-  - activemodel.errors.models.natural_person.attributes.date_of_birth.format
+  - activemodel.errors.models.natural_person.attributes.{date_of_birth,eidas_identifier}.format
+  - activemodel.errors.models.natural_person.attributes.{level_of_assurance,gender}.inclusion
   - activemodel.errors.models.legal_person.{attributes.eidas_identifier.format,unpublished_identifier_scheme,valueless_identifier}
   - activemodel.errors.models.requirement.{attributes.id.format,unlabelled_wording}
   - activemodel.errors.models.data_service.attributes.{id,evidence_type_classification,distribution_language,distribution_conforms_to}.format

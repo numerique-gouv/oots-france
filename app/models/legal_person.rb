@@ -8,20 +8,13 @@
 class LegalPerson
   include ActiveModel::Model
   include ActiveModel::Attributes
+  include EidasIdentified
   include StrictValidation
 
   # Hard-coded: the real level should come from the eIDAS authentication of the
   # legal person, which this deployment does not yet perform. Stub, tracked as
   # OOTS-58.
   LEVEL_OF_ASSURANCE = 'High'.freeze
-
-  # R-EDM-REQ-C051: `XX/YY/Z…Z`, the two codes being the country asserting the
-  # identity and the country it is asserted to. Upper case where the rule
-  # carries the `i` flag: this application is the emitter, and ISO 3166-1
-  # alpha-2 codes are written that way — as `Address#country` already has it.
-  # Membership of `OOTS_Country-CodeList` is left to the rule itself, which
-  # `make schematron` plays.
-  EIDAS_IDENTIFIER = %r{\A[A-Z]{2}/[A-Z]{2}/\S{6,256}\z}
 
   attribute :eidas_identifier, :string
   attribute :legal_name, :string
@@ -31,7 +24,6 @@ class LegalPerson
   attr_reader :identifiers
 
   validates :legal_name, :eidas_identifier, presence: true
-  validates :eidas_identifier, format: { with: EIDAS_IDENTIFIER, message: :format }, allow_nil: true
   validate :identifiers_name_a_published_scheme
   validate :identifiers_carry_a_value
 
