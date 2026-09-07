@@ -41,7 +41,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       exchange_id: message.exchange_id,
       request_id: message.body.request_id,
       edm_error_code: nil,
-      evidence_digest: Digest::SHA256.hexdigest(Rails.root.join(described_class::EVIDENCE_PATH).binread),
+      evidence_digest: Digest::SHA256.hexdigest(evidence_served),
       # The identifier of France's own answer: chapter 4.8 walks the
       # non-repudiation chain from it, and it is what `Answer` carries.
       response_id: identifier_of(submitted),
@@ -78,14 +78,44 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   it 'attaches the document France holds' do
     answer
 
-    payloads = Nokogiri::XML(gateway_body).xpath('//payload')
-
-    expect(payloads.size).to eq(2)
-    expect(Base64.decode64(payloads.last.at_xpath('value').text)).to start_with('%PDF')
+    expect(Nokogiri::XML(gateway_body).xpath('//payload').size).to eq(2)
+    expect(attached_document).to start_with('%PDF')
   end
 
-  # Any procedure other than the system check: France has no provider connected,
-  # and says so with the code the TDD prescribe rather than staying silent.
+  # The university demonstration exchanges on `T1`, the financing of studies:
+  # France answers it through the very objects that answer the system check, and
+  # with the same sample document. Stub, tracked as OOTS-82.
+  describe 'the other procedure it serves with a document' do
+    let(:message) { request_for(ProcedureCode::STUDY_FINANCING) }
+
+    it 'answers a successful response reproducing what the request declared' do
+      answer
+
+      expect(submitted.root.name).to eq('QueryResponse')
+      expect(status_of(submitted)).to end_with('Success')
+      expect(subject_family_name_of(submitted)).to eq(message.body.beneficiary.family_name)
+      expect(requester_identifier_of(submitted)).to eq(message.body.requester.id)
+      expect(evidence_type_of(submitted)).to eq(message.body.evidence_type.id)
+    end
+
+    it 'attaches the document France holds' do
+      answer
+
+      expect(attached_document).to eq(evidence_served)
+    end
+
+    it 'journals the fingerprint of the document it actually served' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(
+        event_type: 'response_sent',
+        evidence_digest: Digest::SHA256.hexdigest(evidence_served),
+      )
+    end
+  end
+
+  # Any procedure France holds no document for: no provider is connected, and it
+  # says so with the code the TDD prescribe rather than staying silent.
   describe 'a procedure it does not serve' do
     let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
 
@@ -813,6 +843,26 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def available_at_of(document)
     document.at_xpath("//rim:Slot[@name='ResponseAvailableDateTime']//rim:Value", SlotReading::NAMESPACES)&.text
+  end
+
+  # The bytes the gateway was handed, read back from the second MIME part the
+  # answer carried — never from the file the code was asked to serve.
+  def attached_document
+    Base64.decode64(Nokogiri::XML(gateway_body).xpath('//payload').last.at_xpath('value').text)
+  end
+
+  def evidence_served = Rails.root.join(described_class::EVIDENCE_PATH).binread
+
+  def subject_family_name_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:FamilyName', SlotReading::NAMESPACES).text
+  end
+
+  def requester_identifier_of(document)
+    document.at_xpath("//rim:Slot[@name='EvidenceRequester']//sdg:Identifier", SlotReading::NAMESPACES).text
+  end
+
+  def evidence_type_of(document)
+    document.at_xpath('//sdg:EvidenceTypeClassification', SlotReading::NAMESPACES).text
   end
 
   def request_for(procedure_code)
