@@ -50,11 +50,12 @@ Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un 
 | Le niveau de garantie, figé à `High` faute d'authentification eIDAS | `NaturalPerson::LEVEL_OF_ASSURANCE`, `LegalPerson::LEVEL_OF_ASSURANCE` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | Le jeton du bénéficiaire, qui atteste l'émetteur mais jamais sa qualité pour agir au nom de la personne déclarée | `BeneficiaryToken` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | L'annuaire des requêteurs français autorisés, tenu en JSON, à la place de l'autorisation que le bénéficiaire devrait donner | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
-| Le justificatif servi : un PDF d'exemple, seul document que la France détienne | `EvidenceProvision::AnswerRequest`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| Le justificatif servi : un PDF d'exemple, seul document que la France détienne, et le même pour les deux démarches servies | `EvidenceProvision::AnswerRequest`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
 | La démarche `R1`, dédiée à la réponse différée pour que l'annonce du 4.5.2 soit produite quelque part | `ProcedureCode`, `EvidenceProvision::AnswerRequest` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
 | La date d'émission du justificatif, figée : aucun document réel à dater | `SystemCheckResponseBuilder::ISSUING_DATE` | [OOTS-84](https://linear.app/pole-api/issue/OOTS-84) |
 | La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
 | Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
+| La démarche `T1`, servie pour que la démonstration de l'Université ait un document à faire circuler | `ProcedureCode`, `EvidenceProvision::AnswerRequest`, `SERVED_PROCEDURES` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
 
 Quelques commentaires nomment un ticket sans figer de valeur — ce ne sont pas des bouchons mais des manques assumés : toutes les exigences d'une démarche sont résolues, mais un seul échange part, sur la première qui a publié des types ([OOTS-139](https://linear.app/pole-api/issue/OOTS-139)) ; et une exigence sans type ne dit pas si le pays a déclaré n'en avoir aucun ou si l'annuaire n'en savait rien ([OOTS-54](https://linear.app/pole-api/issue/OOTS-54)). `git grep -n 'OOTS-' -- app/` en fait la liste, et fait foi dès que cette phrase prend du retard.
 
