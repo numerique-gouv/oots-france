@@ -74,6 +74,8 @@ DEPUIS=$(date -d '7 days ago' +%F)
 find "$P" -maxdepth 1 -name '*.jsonl' -newermt "$DEPUIS" -printf '%TY-%Tm-%Td %8s %f\n' | sort
 ```
 
+La fenêtre se lit sur la **dernière écriture** du transcript : une session ouverte avant la fenêtre mais encore active dedans en fait partie, et c'est voulu — ce qu'elle a fait dans la fenêtre compte. Dis dans l'audit lesquelles sont dans ce cas.
+
 ### Les transcripts
 
 Un transcript de session est `$P/<session>.jsonl` ; ses sous-agents sont dans `$P/<session>/subagents/agent-<id>.jsonl`, chacun avec un `.meta.json` qui porte `agentType`, `description` et, pour les relecteurs lancés par un ouvrier, `parentAgentId`. Quatre choses s'y lisent, et chacune est une preuve d'une nature différente :
@@ -93,21 +95,22 @@ jq -r 'select(.type=="user") | .message.content
        | if type=="array" then .[] | select(.type=="tool_result" and .is_error==true)
          | (.content|tostring|.[0:100]) else empty end' "$F"
 
-# Chaque sous-agent, son rôle, son verdict — ou son absence de verdict
+# Chaque sous-agent, son rôle, et la première ligne de son rapport final
 for m in "$P"/<session>/subagents/*.meta.json; do
   t=${m%.meta.json}.jsonl
   printf '%-40s %-28s ' "$(jq -r .agentType "$m")" "$(jq -r .description "$m")"
-  jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' "$t" \
-    | tail -30 | grep -m1 -E '^(PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ|QUESTIONS|CONFIRMATION)\b' \
-    || echo '(pas de verdict)'
+  jq -r '[.[] | select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text]
+         | last // "(aucun texte)" | split("\n") | map(select(length>0)) | first | .[0:80]' -s "$t"
 done
 ```
+
+Chaque rôle a sa propre première ligne — un verdict en majuscules pour l'ouvrier, `## Service : PANORAMA` pour `tdd-nerd`, `## Ticket :` pour le contradicteur, `QUESTIONS` pour un `spec-nerd` qui attend —, et c'est le fichier du rôle qui dit laquelle est attendue. Ne cherche pas une liste fixe : lis la ligne, et compare-la à ce que le rôle promet. Un sous-agent dont le dernier texte n'est pas un rapport s'est arrêté avant la fin, et c'est cela qui compte.
 
 Ce que tu cherches dans un transcript, par ordre de rendement :
 
 1. **Une correction de l'utilisateur** — « non », « jamais », « je t'ai dit », une consigne reformulée deux fois. C'est la preuve la plus forte : quelqu'un a payé pour dire ce que le harnais aurait dû dire. Lis les deux tours d'avant pour savoir ce que l'agent avait sous les yeux.
 2. **Une question posée dont la réponse était écrite** — dans un chapitre, dans `CLAUDE.md`, dans le ticket. Le harnais dit déjà « lis avant de demander » ; si la question part quand même, c'est que la lecture n'est pas au bon endroit de la séquence.
-3. **Un tour rendu sur une attente** — « la CI tourne », « j'attends le relecteur » — ou un verdict qui n'est pas dans la liste du rôle.
+3. **Un tour rendu sur une attente** — « la CI tourne », « j'attends le relecteur » —, un verdict qui n'est pas dans la liste du rôle, ou un dernier texte qui n'est pas un rapport du tout : « *You've hit your session limit* » en dernière ligne d'un ouvrier dit qu'il a été coupé, et ce qui a coûté est ce qu'il n'avait pas encore poussé.
 4. **Un outil en erreur rejoué à l'identique** trois fois : la bizarrerie est connue, et sa parade n'était pas là où l'agent l'aurait lue.
 5. **Une règle citée de mémoire** et fausse — un chiffre, un chemin, un nom de skill.
 
@@ -124,7 +127,13 @@ Le coût par arbre d'agents se mesure avec les commandes du § 3 bis de [`orches
 | `.claude/audits/*-harnais.md` | la passe précédente : ce qu'elle a changé, ce qu'elle a mesuré, ce qu'elle a laissé |
 
 ```sh
-ls .claude/reviews | sed -E 's/-[0-9]+\.md$/.md/' | sort | uniq -c | sort -rn | head   # passes par PR
+# passes par PR : un fichier par passe (suffixe -2, -3…) ou des sections « # Passe n » dans un seul fichier — les deux formes coexistent
+for s in $(ls .claude/reviews | sed -E 's/-[0-9]+\.md$/.md/' | sort -u); do
+  fichiers=$(ls .claude/reviews | grep -E "^${s%.md}(-[0-9]+)?\.md$")
+  f=$(printf '%s\n' "$fichiers" | wc -l)
+  p=$(printf '%s\n' "$fichiers" | sed 's|^|.claude/reviews/|' | xargs grep -h '^# Passe' 2>/dev/null | wc -l)
+  echo "$(( f > p ? f : p )) $s"
+done | sort -rn | head
 git log --since="$DEPUIS" --name-only --format= -- .claude CLAUDE.md | sort | uniq -c | sort -rn   # ce qu'on retouche sans cesse
 ```
 
@@ -149,7 +158,7 @@ C'est le cœur du rapatriement, et la question se pose pour chaque mémoire comm
 | une convention qui vaut pour tout travail sur le dépôt, quelle que soit la tâche | `CLAUDE.md` — et il faut alors y retirer autant qu'on y ajoute | « pas de trailer », « `--merge`, jamais `--squash` », « un ticket se cite en lien » |
 | ce qu'un contrôle pourrait vérifier à la place d'une phrase | un script, la CI, un format de verdict, `settings.json` — **en le proposant**, pas en l'écrivant | « `--force` nu interdit » → une vérification avant push ; « les verdicts de l'ouvrier » → déjà lus par `subagent.sh` |
 | une bizarrerie de ce poste, de la VM, du bac à sable | `CLAUDE.local.md` | les shims `node_modules/.bin`, `git -c core.checkStat=minimal`, les ports reportés par lima |
-| la machine hôte, hors de tout dépôt | `~/.claude/CLAUDE.md` | le budget RAM des VM, la clé de signature |
+| la machine hôte, hors de tout dépôt | `~/.claude/CLAUDE.md` — **à proposer dans le compte rendu**, tu n'y écris pas : il n'appartient à aucun dépôt | le budget RAM des VM, la clé de signature |
 | ce que l'utilisateur attend de la conversation elle-même | reste une mémoire | « agir sans demander confirmation », « ne pas rapporter une attente » |
 | un incident machine et son diagnostic | `~/.claude/post-mortems/` | le son Bluetooth, la saturation des VM |
 | un fait sur le monde extérieur qui périme | une mémoire, datée, ou le document propriétaire de `docs/` s'il est durable | l'état du DSD pour la France, l'accès au registre européen |
@@ -159,13 +168,13 @@ Deux tests qui départagent vite :
 - **Un agent qui n'a jamais eu cette session pourrait-il en avoir besoin ?** Si oui, la mémoire ne suffit pas : un sous-agent ne lit pas les mémoires, et une session neuve ne relit que l'index. C'est le cas de presque tout ce qui commence par « quand on livre », « quand on merge », « quand on lance un ouvrier ».
 - **Le fait est-il vrai sur un autre poste ?** Si non, il ne va dans aucun fichier versionné. Un chemin absolu, un nom de VM, un port du poste n'entrent pas dans un skill — la règle est déjà dans `CLAUDE.md`, § « What lives in `.claude/` ».
 
-**Le rapatriement se fait en deux temps**, parce que la PR n'est pas mergée quand tu finis. Dans la passe, le fait entre dans le fichier versionné, et la mémoire est réduite à sa dernière ligne, celle que certaines portent déjà :
+**Le rapatriement se fait en deux temps**, parce que la PR n'est pas mergée quand tu finis. Dans la passe, le fait entre dans le fichier versionné, et la mémoire **garde son contenu** — une session ouverte demain lirait sinon un renvoi vers un skill que `main` n'a pas encore — mais reçoit en tête la ligne que certaines portent déjà :
 
 ```md
 > **Version canonique** : `.claude/skills/ship-plan/SKILL.md`, versionné dans le dépôt. Si les deux divergent, le skill fait foi.
 ```
 
-Après le merge, la mémoire se supprime et sa ligne sort de `MEMORY.md` — ton rapport en donne la liste, c'est un des gestes d'après-merge. Une mémoire qui garde un contenu propre à la conversation (le « pourquoi » d'une préférence de l'utilisateur) garde ce contenu-là et perd le reste.
+Après le merge, la mémoire se supprime entière et sa ligne sort de `MEMORY.md` — ton rapport en donne la liste, c'est un des gestes d'après-merge. Une mémoire qui garde un contenu propre à la conversation (le « pourquoi » d'une préférence de l'utilisateur) garde ce contenu-là et perd le reste.
 
 ## La passe
 
@@ -180,8 +189,8 @@ Après le merge, la mémoire se supprime et sa ligne sort de `MEMORY.md` — ton
    # chemins cités par le harnais et absents du dépôt
    grep -ohE '(\.claude|scripts|docs)/[A-Za-z0-9_./-]+' CLAUDE.md .claude/skills/*/SKILL.md .claude/agents/*.md \
      | sed 's/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
-   # la même chose dans les mémoires
-   grep -ohE '\.claude/[A-Za-z0-9_./-]+' ~/.claude/projects/$(pwd | tr / -)/memory/*.md | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
+   # la même chose dans les mémoires — sans les chemins de ~/.claude, qui ne sont pas ceux du dépôt
+   grep -ohE '(^|[^~/])\.claude/[A-Za-z0-9_./-]+' ~/.claude/projects/$(pwd | tr / -)/memory/*.md | sed -E 's/^[^.]//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
    # les verdicts que la statusline connaît sont ceux de l'ouvrier
    grep -oE 'PLANIFIÉ|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ' .claude/statusline/subagent.sh | sort -u
    grep -oE '^(PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ)$' .claude/agents/ouvrier.md | sort -u
