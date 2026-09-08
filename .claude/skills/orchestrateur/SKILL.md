@@ -137,6 +137,8 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 >
 > **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 >
+> **Et remesure au moment de te servir du chiffre, jamais depuis ta mémoire.** Un relevé vieux d'une heure de travail décrit un budget qui n'existe plus : la dépense se fait chez les ouvriers, hors de ton transcript, et une passe de revue en avale plus que tout ce que tu as fait pendant qu'elle tournait. Le 2026-09-08, « il reste ~16 M » relevé avant trois `review-loop` a été redit vingt minutes plus tard pour proposer d'enchaîner deux tickets, quand le fichier disait **5,2 M** — l'utilisateur a dû corriger. La commande coûte une seconde ; le chiffre que tu portes en tête ne vaut que l'instant où tu l'as lu. Relis avant chaque lancement, avant chaque proposition de lot, et avant d'annoncer ce qui reste.
+>
 > **Et lis `resets_at`, ne le déduis jamais.** La fenêtre ne repart pas cinq heures après la précédente : elle glisse. Le 2026-08-27, avoir calculé « reset à 19:10, donc prochain à 00:10 » a fait annoncer une recharge dans vingt minutes quand `resets_at` disait **03:40** — trois ouvriers lancés sur un budget qui ne les portait pas. `date -d "@$(jq -r .rate_limits.five_hour.resets_at …)"` coûte une seconde et tranche.
 
 `rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture. Refais l'étalonnage après tout changement de forfait — l'heure de remise à zéro donne l'ouverture de la fenêtre, la somme des `usage` postérieurs à cette heure donne les jetons, et `taille ≈ jetons × 100 / pourcentage`.
