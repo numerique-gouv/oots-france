@@ -29,10 +29,19 @@ RSpec.describe NaturalPerson do
     expect(build(:natural_person, eidas_identifier: 'ES/AT/02635542Y')).to be_valid
   end
 
-  # Stricter than `R-EDM-REQ-C040`, whose `i` flag admits it, and deliberately
-  # so: `EidasIdentified` holds both subjects to the upper case alone.
-  it 'refuses country codes written in lower case' do
-    expect(build(:natural_person, eidas_identifier: 'es/at/02635542Y')).not_to be_valid
+  # `R-EDM-REQ-C040` matches with the `i` flag, so the case of the two country
+  # codes decides nothing: an identifier written in lower case is one a
+  # correspondent may send, and the answer echoes it back as received —
+  # `R-EDM-RESP-C028` carrying the same flag.
+  it 'accepts country codes written in lower case, the rule being case-insensitive' do
+    expect(build(:natural_person, eidas_identifier: 'es/at/02635542Y')).to be_valid
+  end
+
+  # Stricter than the rule, which anchors on `$` alone: nothing precedes
+  # `XX/YY/` in an identifier a member state asserts, and the missing `^` reads
+  # as an omission rather than a licence.
+  it 'refuses an identifier preceded by anything at all' do
+    expect(build(:natural_person, eidas_identifier: 'xxES/AT/02635542Y')).not_to be_valid
   end
 
   it 'refuses an eIDAS identifier carrying no country pair' do

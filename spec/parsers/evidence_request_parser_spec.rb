@@ -113,6 +113,69 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # Two rules that read past the blanks around a value, and not the same blanks:
+  # `R-EDM-REQ-C043` matches on `normalize-space(text())`, which trims both
+  # ends, where `R-EDM-REQ-C040` carries no `^` but does carry a `$` — anything
+  # may precede the identifier, nothing may follow it. So a date is trimmed on
+  # both sides and an identifier on its head alone, and a trailing blank on the
+  # latter is refused rather than absorbed.
+  describe 'the values the rules judge after normalising them' do
+    def identified_by(identifier)
+      with_body do |body|
+        body.sub('<sdg:FamilyName>',
+          %(<sdg:Identifier schemeID="eidas">#{identifier}</sdg:Identifier><sdg:FamilyName>))
+      end
+    end
+
+    def born_on(date)
+      with_body do |body|
+        body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m, "<sdg:DateOfBirth>#{date}</sdg:DateOfBirth>")
+      end
+    end
+
+    it 'accepts a date of birth padded with blanks, and reads the trimmed value' do
+      expect(born_on("\n    1978-09-09\n  ").beneficiary.date_of_birth).to eq('1978-09-09')
+    end
+
+    # The `$` of the rule excludes what the `xs:date` of the schema would admit:
+    # a time zone is refused however well-typed it is.
+    it 'refuses a date of birth carrying a time zone, which the rule excludes' do
+      expect { born_on('1978-09-09Z').beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    it 'accepts an eIDAS identifier written in lower case, and keeps the case received' do
+      expect(identified_by('es/at/02635542Y').beneficiary.eidas_identifier).to eq('es/at/02635542Y')
+    end
+
+    it 'keeps the case of one written in upper case just as it was received' do
+      expect(identified_by('ES/AT/02635542Y').beneficiary.eidas_identifier).to eq('ES/AT/02635542Y')
+    end
+
+    it 'reads an eIDAS identifier preceded by blanks stripped of them' do
+      expect(identified_by(' ES/AT/02635542Y').beneficiary.eidas_identifier).to eq('ES/AT/02635542Y')
+    end
+
+    # The `$` of the rule anchors the end, so this value breaks `C040`, which is
+    # FATAL. Accepting it would be the mirror of the over-strictness this whole
+    # reading exists to undo.
+    it 'refuses one followed by a blank, which the rule refuses' do
+      expect { identified_by('ES/AT/02635542Y ').beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    # The head anchor France keeps where the rule has none: an identifier
+    # preceded by anything but blanks is asserted by no member state.
+    it 'refuses an eIDAS identifier preceded by anything at all' do
+      expect { identified_by('xxES/AT/02635542Y').beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
+    # An element sent present and empty still breaks `R-EDM-REQ-C040`, which is
+    # FATAL: stripping normalises what the rule normalises and licenses nothing
+    # beyond it.
+    it 'still refuses an identifier that arrived present and empty' do
+      expect { identified_by('   ').beneficiary }.to raise_error(UnreadableMessageError)
+    end
+  end
+
   # `R-EDM-REQ-S016` lets the evidence subject be an organisation, and
   # `R-EDM-REQ-S047` puts an `sdg:LegalPerson` under the slot. The trap the
   # symmetry hides: a natural person is an `sdg:Person` in a request and an
@@ -186,6 +249,29 @@ RSpec.describe EvidenceRequestParser do
       expect { anonymous.beneficiary }.to raise_error(UnreadableMessageError)
     end
 
+    # `R-EDM-REQ-C051` carries the same expression and the same `i` flag as
+    # `C040`: the case of the country codes decides nothing on this subject
+    # either, and `R-EDM-RESP-C035` echoes it back untouched.
+    it 'accepts an identifier whose country codes are written in lower case' do
+      lowered = about_an_organisation { |slot| slot.sub('FR/DE/A2635542Y', 'de/fr/123456789') }
+
+      expect(lowered.beneficiary.eidas_identifier).to eq('de/fr/123456789')
+    end
+
+    it 'reads one preceded by blanks stripped of them' do
+      preceded = about_an_organisation { |slot| slot.sub('FR/DE/A2635542Y', ' FR/DE/A2635542Y') }
+
+      expect(preceded.beneficiary.eidas_identifier).to eq('FR/DE/A2635542Y')
+    end
+
+    # `C051` anchors its end exactly as `C040` does: France refuses on this
+    # subject what it refuses on the other.
+    it 'refuses one followed by a blank' do
+      followed = about_an_organisation { |slot| slot.sub('FR/DE/A2635542Y', 'FR/DE/A2635542Y ') }
+
+      expect { followed.beneficiary }.to raise_error(UnreadableMessageError)
+    end
+
     # `R-EDM-REQ-C051`: `XX/YY/Z…Z`, the two codes being the country asserting
     # the identity and the country it is asserted to.
     it 'refuses an eIDAS identifier that is not of the shape the rule fixes' do
@@ -217,9 +303,48 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
-  it 'reads the evidence type asked for, with its distribution format' do
-    expect(request.evidence_type.id).to be_present
-    expect(request.evidence_type.distribution_format).to eq(EvidenceType::PDF)
+  # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one at least, so a
+  # correspondent naming several is conformant and reading only the first would
+  # silently refuse them. Chapter 4.5.1 §3.5 names the case for a second: « an
+  # additional sdg:DistributedAs element may be used to request a human-readable
+  # format … for the same sdg:DataServiceEvidenceType ».
+  describe 'the distributions the request asks for' do
+    def asking_for(*formats)
+      distributions = formats.map do |format|
+        "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format></sdg:DistributedAs>"
+      end
+
+      with_body { |body| body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m) { distributions.join } }
+    end
+
+    it 'reads the evidence type asked for, with its distribution format' do
+      expect(request.evidence_type.id).to be_present
+      expect(request.evidence_type.distribution_formats).to eq([EvidenceType::PDF])
+    end
+
+    it 'reads every distribution named, in the order the request wrote them' do
+      expect(asking_for('application/xml', EvidenceType::PDF).evidence_type.distribution_formats)
+        .to eq(['application/xml', EvidenceType::PDF])
+    end
+
+    # `EDM:ERR:0003` and not `EDM:ERR:0007`: the rule is FATAL, so a request
+    # naming no distribution is invalid rather than demanding, and what the
+    # correspondent gets back names the rule it broke.
+    it 'refuses a request asking for no distribution at all, under R-EDM-REQ-C032' do
+      expect { asking_for.evidence_type }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C032')))
+    end
+
+    # The rule counts the element and not the format inside it: a distribution
+    # naming none keeps `C032`, so it is read as the silence it is rather than
+    # refused under a rule it does not break.
+    it 'keeps a distribution that names no format' do
+      nameless = with_body do |body|
+        body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '<sdg:DistributedAs/>')
+      end
+
+      expect(nameless.evidence_type.distribution_formats).to eq([nil])
+    end
   end
 
   describe 'the requester' do

@@ -45,7 +45,7 @@ fr:
         eidas_identifier: L'identifiant eIDAS
       evidence_type:
         id: L'identifiant
-        distribution_format: Le format de distribution
+        distribution_formats: Les formats de distribution
       requirement:
         id: L'identifiant
       data_service:
@@ -321,6 +321,12 @@ fr:
       agent_without_id: L'agent classé ER est sans identifiant
       agent_without_scheme: L'agent classé ER est sans schéma d'identifiant
       evidence_type_without_id: Le type de justificatif est sans identifiant
+      # R-EDM-REQ-C032 : le type de justificatif demandé porte au moins une
+      # distribution ; une requête qui n'en demande aucune est invalide, et non
+      # pas exigeante — d'où EDM:ERR:0003 et non EDM:ERR:0007.
+      evidence_type_without_distribution: >-
+        La requête reçue doit demander au moins une distribution du type de
+        justificatif.
       # R-EDM-REQ-C054 : un identifiant facultatif de la personne morale nomme
       # son schéma ; sans lui, il ne désigne rien.
       legal_identifier_without_scheme: Un identifiant de la personne morale est sans schéma

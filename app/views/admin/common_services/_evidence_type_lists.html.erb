@@ -16,7 +16,9 @@
     <% list.evidence_types.each do |type| %>
       <li class="entry <%= 'entry--grouped' if lists.size > 1 %>">
         <span class="entry__name"><%= type.display_name %></span>
-        <code class="entry__tag"><%= type.distribution_format %></code>
+        <% type.distribution_formats.each do |format| %>
+          <code class="entry__tag"><%= format %></code>
+        <% end %>
         <%# The arrow in a `span` rather than through `fr-link--icon-right`:
             that class paints the icon into the link's pseudo-elements, which
             the stylesheet needs in order to stretch it across the row. %>

@@ -116,7 +116,9 @@
                           @lookup.requirement.uuid, type.uuid,
                         ) %>
                 </span>
-                <code class="entry__tag"><%= type.distribution_format %></code>
+                <% type.distribution_formats.each do |format| %>
+                  <code class="entry__tag"><%= format %></code>
+                <% end %>
 
                 <% if type == @lookup.evidence_type %>
                   <span class="fr-badge fr-badge--sm fr-badge--info"><%= t('admin.common_services.resolutions.show.evidence_types.chosen') %></span>

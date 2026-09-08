@@ -59,7 +59,7 @@ FactoryBot.define do
 
   factory :evidence_type do
     id { 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/oots/00000000-0000-0000-0000-000000000000' }
-    distribution_format { EvidenceType::PDF }
+    distribution_formats { [EvidenceType::PDF] }
     descriptions { { 'EN' => 'Test evidence' } }
 
     initialize_with { new(**attributes) }

@@ -91,6 +91,13 @@ Le texte des chapitres vit sur le wiki ; **tout ce qui est exécutable vit dans 
 > [!WARNING]
 > **La prose d'un chapitre et sa règle Schematron divergent parfois**, dans les deux sens : une règle `FATAL` peut n'exister que dans le `.sch` sans figurer au wiki, et une règle publiée au wiki peut y être plus étroite qu'elle ne l'est dans le fichier. Lire les deux avant de conclure sur ce qu'une règle exige, et signaler l'écart plutôt que de le trancher en silence.
 
+**Les écarts relevés à ce jour**, entre les tables du [4.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932961) et [`EDM-REQ-C.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-REQ-C.sch) (lecture de l'étiquette `2.0.1`). Dans les deux cas **c'est le `.sch` qui fait foi** — il est la forme exécutable des règles, et celle que jouent les services de test de la Commission :
+
+| Où | Ce que dit la prose | Ce que dit le `.sch` |
+| --- | --- | --- |
+| §3.6.1, ligne `Gender` | Attribue `R-EDM-REQ-C124` et `C126` (profil eIDAS1), `C124` et `C125` (profil eIDAS2), au sexe de la **personne physique**. | Ces règles n'ont pour contexte qu'`AuthorizedRepresentative` : aucune ne contraint `sdg:Gender` sous un slot `NaturalPerson`. |
+| §3.6.2, ligne `LegalPersonIdentifier` | Cite `R-EDM-REQ-C050`. | La règle n'existe pas : les identifiants sautent de `C049` à `C051`. |
+
 > [!TIP]
 > Cloner le dépôt sur l'étiquette de version (`git clone --depth 1 --branch 2.0.1 https://code.europa.eu/oots/tdd/tdd_chapters.git`) évite de naviguer dans l'interface web pour lire un schéma ou une liste de codes. Seul l'accès au registre d'images `code.europa.eu:4567` est parfois bloqué ; le clone HTTPS, lui, passe.
 

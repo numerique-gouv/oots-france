@@ -97,7 +97,7 @@ class EvidenceRequestParser
       id: require_content(text_at(described, './sdg:EvidenceTypeClassification'),
         'parsers.evidence_request.evidence_type_without_id'),
       descriptions: titles,
-      distribution_format: text_at(described, './sdg:DistributedAs/sdg:Format'),
+      distribution_formats: requested_formats(described),
     )
   end
 
@@ -131,6 +131,21 @@ class EvidenceRequestParser
     refuse('R-EDM-REQ-S016', 'parsers.evidence_request.evidence_subject_not_alone', count: declared)
   end
 
+  # Every distribution the request names, and not the first alone:
+  # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one « at least », so
+  # a correspondent asking for a structured format with a human-readable
+  # fallback beside it — the case chapter 4.5.1 §3.5 names — is conformant.
+  #
+  # Counted where the rule counts them, and the formats read from them: a
+  # `sdg:DistributedAs` naming no format keeps `C032`, and refusing the request
+  # under that identifier would name it a rule it did not break.
+  def requested_formats(described)
+    distributions = all(described, './sdg:DistributedAs')
+    refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_without_distribution') if distributions.empty?
+
+    distributions.map { |distribution| text_at(distribution, './sdg:Format') }
+  end
+
   def refuse(rule, key, **)
     raise UnreadableMessageError.new(I18n.t(key, **), detail: rule)
   end
@@ -155,14 +170,37 @@ class EvidenceRequestParser
 
     NaturalPerson.new(
       level_of_assurance: text_at(person, './sdg:LevelOfAssurance'),
-      eidas_identifier: text_at(person, './sdg:Identifier'),
+      eidas_identifier: text_at_without_leading_blanks(person, './sdg:Identifier'),
       family_name: text_at(person, './sdg:FamilyName'),
       given_name: text_at(person, './sdg:GivenName'),
-      date_of_birth: text_at(person, './sdg:DateOfBirth'),
+      date_of_birth: normalised_text_at(person, './sdg:DateOfBirth'),
       place_of_birth: text_at(person, './sdg:PlaceOfBirth'),
       gender: text_at(person, './sdg:Gender'),
     ).validate!(:request_beneficiary, error: UnreadableMessageError)
   end
+
+  # `R-EDM-REQ-C043` matches on `normalize-space(text())`, which trims both
+  # ends, where `text_at` trims neither. `strip` and not a transposition of
+  # `normalize-space`: a date the model accepts carries no inner blank, so
+  # squeezing those would never change an outcome.
+  def normalised_text_at(scope, path) = text_at(scope, path)&.strip
+
+  # The head alone, because that is all `R-EDM-REQ-C040` and `C051` admit:
+  # they carry no `^` but they do carry a `$`, so anything may precede the
+  # identifier and nothing may follow it. Run against Saxon, the engine that
+  # plays the rules, ` ES/AT/02635542Y` satisfies C040 and `ES/AT/02635542Y `
+  # does not. Trimming the tail too would have France accept what a FATAL rule
+  # refuses — the mirror of the over-strictness this reader exists to undo.
+  #
+  # What precedes is trimmed rather than tolerated: the rule admits any prefix
+  # at all, `xxES/AT/02635542Y` included, and `EidasIdentified` deliberately
+  # keeps its `\A` anchor against that. Blanks are the one prefix that carries
+  # no claim, so they are removed rather than made to fail.
+  #
+  # Applied to the identifiers alone and not to every reading — no rule
+  # normalises `sdg:FamilyName` or `sdg:LegalName`, which the journal of
+  # article 17 must record exactly as they circulated.
+  def text_at_without_leading_blanks(scope, path) = text_at(scope, path)&.lstrip
 
   # `R-EDM-REQ-S047`: the slot value carries an `sdg:LegalPerson` of the `p4s`
   # namespace. The symmetry with the person above stops at the slot: a natural
@@ -173,7 +211,7 @@ class EvidenceRequestParser
     organisation = slot_content('LegalPerson', query, './sdg:LegalPerson')
 
     LegalPerson.new(
-      eidas_identifier: text_at(organisation, './sdg:LegalPersonIdentifier'),
+      eidas_identifier: text_at_without_leading_blanks(organisation, './sdg:LegalPersonIdentifier'),
       legal_name: text_at(organisation, './sdg:LegalName'),
       identifiers: legal_identifiers(organisation),
     ).validate!(:request_legal_person, error: UnreadableMessageError)

@@ -194,7 +194,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     # the only example that reads it on a procedure other than the system check.
     it 'refuses a format it does not serve before announcing anything' do
       allow(message.body).to receive(:evidence_type)
-        .and_return(EvidenceType.new(id: 'x', descriptions: {}, distribution_format: 'application/xml'))
+        .and_return(EvidenceType.new(id: 'x', descriptions: {}, distribution_formats: ['application/xml']))
 
       answer
 
@@ -209,6 +209,202 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       answer
 
       expect(code_of(submitted)).to eq('EDM:ERR:0005')
+    end
+  end
+
+  # `R-EDM-REQ-C032` asks for one `sdg:DistributedAs` at least, and chapter
+  # 4.5.1 §3.5 names what a second is for: a human-readable fallback beside a
+  # structured format. France holds one document, so it answers as soon as the
+  # PDF is among the formats asked for, whatever its rank.
+  describe 'a request asking for several distributions' do
+    def asking_for(*formats)
+      distributions = formats.map do |format|
+        "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format></sdg:DistributedAs>"
+      end
+
+      envelope_with_body('requete') do |body|
+        body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m) { distributions.join }
+      end
+    end
+
+    context 'when the PDF is the second one asked for' do
+      let(:message) { asking_for('application/xml', Attachment::MIME_TYPE) }
+
+      it 'serves the document France holds' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+        expect(attached_document).to eq(evidence_served)
+      end
+
+      # The answer describes the distribution served and not one echoed from the
+      # request, which names two: there is no single format to copy back.
+      it 'announces the format it served' do
+        answer
+
+        expect(served_format_of(submitted)).to eq(Attachment::MIME_TYPE)
+      end
+    end
+
+    context 'when the PDF is the first one asked for' do
+      let(:message) { asking_for(Attachment::MIME_TYPE, 'application/xml') }
+
+      it 'answers exactly the same thing, the order deciding nothing' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+        expect(served_format_of(submitted)).to eq(Attachment::MIME_TYPE)
+      end
+    end
+
+    context 'when none of them is the one France serves' do
+      let(:message) { asking_for('application/xml', 'image/png') }
+
+      it 'answers EDM:ERR:0007' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0007')
+      end
+    end
+
+    # A distribution present but naming no format keeps `R-EDM-REQ-C032`, which
+    # counts the element alone — so it is not refused as invalid, it simply
+    # asks for nothing France serves. Replayed here and not at the parser only,
+    # because what the correspondent receives is the whole point of the
+    # distinction with the case below.
+    context 'when its only distribution names no format' do
+      let(:message) do
+        envelope_with_body('requete') do |body|
+          body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '<sdg:DistributedAs/>')
+        end
+      end
+
+      it 'answers EDM:ERR:0007, naming no rule' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0007')
+        expect(detail_of(submitted)).to be_nil
+      end
+    end
+
+    # An invalid request and not a missing capability: `R-EDM-REQ-C032` is
+    # FATAL, so its identifier is what the correspondent gets back.
+    context 'when it asks for no distribution at all' do
+      let(:message) { asking_for }
+
+      it 'answers EDM:ERR:0003 naming R-EDM-REQ-C032' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0003')
+        expect(detail_of(submitted)).to eq('R-EDM-REQ-C032')
+      end
+    end
+  end
+
+  # `R-EDM-REQ-C043` matches on `normalize-space(text())` and `R-EDM-REQ-C040`
+  # with the `i` flag: what those two admit, France serves. The whole chain is
+  # exercised here and not the reader alone, since what is at stake is the value
+  # the journal of article 17 records and the one the answer echoes.
+  describe 'a subject the rules accept once normalised' do
+    def described_with(&) = envelope_with_body('requete', &)
+
+    context 'when the date of birth is padded with blanks' do
+      let(:message) do
+        described_with do |body|
+          body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m,
+            "<sdg:DateOfBirth>\n    1978-09-09\n  </sdg:DateOfBirth>")
+        end
+      end
+
+      it 'serves the evidence rather than refusing a conformant request' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      it 'echoes the normalised date' do
+        answer
+
+        expect(date_of_birth_of(submitted)).to eq('1978-09-09')
+      end
+    end
+
+    # A time zone is what `xs:date` admits and the `$` of the rule excludes.
+    context 'when the date of birth carries a time zone' do
+      let(:message) do
+        described_with do |body|
+          body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m, '<sdg:DateOfBirth>1978-09-09Z</sdg:DateOfBirth>')
+        end
+      end
+
+      it 'answers EDM:ERR:0003' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      end
+    end
+
+    context 'when the eIDAS identifier is written in lower case' do
+      let(:message) do
+        described_with do |body|
+          body.sub('<sdg:FamilyName>',
+            '<sdg:Identifier schemeID="eidas">es/at/02635542Y</sdg:Identifier><sdg:FamilyName>')
+        end
+      end
+
+      it 'serves the evidence, the rule being case-insensitive' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      # Echoed as received and not upper-cased: `R-EDM-RESP-C028` carries the
+      # same `i` flag, so the case that arrived is the case that conforms.
+      it 'echoes the identifier exactly as it arrived' do
+        answer
+
+        expect(eidas_identifier_of(submitted)).to eq('es/at/02635542Y')
+      end
+    end
+
+    # The same rule written twice: `R-EDM-REQ-C051` for the organisation. Its
+    # echo is asserted on its own element and not inferred from the person's —
+    # `EidasIdentified` is shared, but `sdg:IsAbout` branches, and only this
+    # says the legal branch carries the value through.
+    context 'when the subject is an organisation identified in lower case' do
+      let(:message) do
+        envelope_about_an_organisation(legal_person_slot.sub('FR/DE/A2635542Y', 'de/fr/123456789'))
+      end
+
+      it 'serves the evidence, as for the natural person' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      it 'echoes the organisation identifier exactly as it arrived' do
+        answer
+
+        expect(legal_identifier_of(submitted)).to eq('de/fr/123456789')
+      end
+    end
+
+    # `R-EDM-REQ-C040` is indifferent to case, so the upper form must travel as
+    # untouched as the lower one — a reader that upcased « to normalise » would
+    # pass every example above and fail only on this one.
+    context 'when the eIDAS identifier is written in upper case' do
+      let(:message) do
+        described_with do |body|
+          body.sub('<sdg:FamilyName>',
+            '<sdg:Identifier schemeID="eidas">ES/AT/02635542Y</sdg:Identifier><sdg:FamilyName>')
+        end
+      end
+
+      it 'echoes it exactly as it arrived' do
+        answer
+
+        expect(eidas_identifier_of(submitted)).to eq('ES/AT/02635542Y')
+      end
     end
   end
 
@@ -863,6 +1059,26 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def evidence_type_of(document)
     document.at_xpath('//sdg:EvidenceTypeClassification', SlotReading::NAMESPACES).text
+  end
+
+  # The distribution the answer describes — the document France served, which
+  # chapter 4.5.1 §3.5 keeps apart from the ones the request asked for.
+  def served_format_of(document)
+    document.at_xpath('//sdg:Evidence/sdg:Distribution/sdg:Format', SlotReading::NAMESPACES).text
+  end
+
+  def date_of_birth_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:DateOfBirth', SlotReading::NAMESPACES).text
+  end
+
+  def eidas_identifier_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:NaturalPerson/sdg:Identifier', SlotReading::NAMESPACES).text
+  end
+
+  # The other branch of the `xs:choice`: an organisation carries a
+  # `sdg:LegalPersonIdentifier` where a person carries a `sdg:Identifier`.
+  def legal_identifier_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:LegalPerson/sdg:LegalPersonIdentifier', SlotReading::NAMESPACES).text
   end
 
   def request_for(procedure_code)
