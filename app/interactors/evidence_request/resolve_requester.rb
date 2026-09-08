@@ -7,9 +7,13 @@ module EvidenceRequest
   # that knows which is which is the one that should say so.
   class ResolveRequester < ApplicationInteractor
     def call
-      context.requester = context.requesters.find(context.requester_id)
+      context.requester = requesters.find(context.requester_id)
     rescue EvidenceRequesterNotFound => e
       fail_with_error(:unknown_requester, errors: [e.message])
     end
+
+    private
+
+    def requesters = context.requesters ||= Directories::EvidenceRequesters.new
   end
 end

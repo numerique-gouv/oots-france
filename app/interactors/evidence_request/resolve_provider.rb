@@ -21,7 +21,7 @@ module EvidenceRequest
     private
 
     def resolve
-      service = context.common_services.data_service(context.evidence_type.id, context.country_code)
+      service = common_services.data_service(context.evidence_type.id, context.country_code)
       provider = service&.providers&.first
 
       # The directory answers a refusal rather than an empty list, but nothing
@@ -39,5 +39,7 @@ module EvidenceRequest
       context.provider = provider
       context.recipient = provider.access_point
     end
+
+    def common_services = context.common_services ||= Directories::CommonServices.new
   end
 end

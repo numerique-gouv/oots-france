@@ -51,7 +51,7 @@ module IncomingMessage
     end
 
     def journal_refusal(reason)
-      context.audit_trail.request_refused(
+      audit_trail.request_refused(
         requester_id: readable { request.requester.id },
         procedure_code: readable { request.procedure_code },
         country_code: readable { request.requester.address.country },

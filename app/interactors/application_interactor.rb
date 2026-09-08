@@ -8,6 +8,19 @@
 class ApplicationInteractor
   include Interactor
 
+  # The infrastructure a step gives itself when its caller names none, in the
+  # form the builders already use for `Clock` and `UuidGenerator`: a caller
+  # passes only what varies, and a spec still overrides by keyword.
+  #
+  # Here rather than in each step, because these three are wanted by most of
+  # them — the trail by seven — and one line repeated is one line to find again
+  # the day a class is renamed. What only two steps want they name themselves,
+  # where the reader of those steps will look for it.
+  #
+  # `||=` on the context, never a memo of the instance: an organizer shares one
+  # context across its chain, and that sharing is what keeps a single
+  # `UuidGenerator` minting every identifier of one exchange.
+
   # The failures this application knows how to say. A `fail_with_error` on a key
   # absent from here has no wording, and the console would render an empty
   # alert title.
@@ -34,4 +47,12 @@ class ApplicationInteractor
     exchange.failed!(code: nil, description:)
     fail_with_error(key, errors: [description])
   end
+
+  private
+
+  def gateway = context.gateway ||= DomibusClient.new
+
+  def uuid = context.uuid ||= UuidGenerator.new
+
+  def audit_trail = context.audit_trail ||= AuditTrail.new
 end

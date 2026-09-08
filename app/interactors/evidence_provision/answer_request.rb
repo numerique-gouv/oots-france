@@ -58,6 +58,12 @@ module EvidenceProvision
 
     attr_reader :requester, :request_id
 
+    def gateway = context.gateway ||= DomibusClient.new
+
+    def uuid = context.uuid ||= UuidGenerator.new
+
+    def audit_trail = context.audit_trail ||= AuditTrail.new
+
     # The one departure that would otherwise vanish whole: France has built an
     # answer, the gateway has not taken it, and nothing else holds the document
     # — `Exchange` records the failure but carries no message.
@@ -73,9 +79,9 @@ module EvidenceProvision
     # means is that the gateway did not take our answer, and a body that could
     # not be built in the first place is another matter.
     def submit(answer, envelope)
-      context.gateway.submit(envelope).message_id
+      gateway.submit(envelope).message_id
     rescue Faraday::Error, UnreadableMessageError => e
-      context.audit_trail.answer_not_sent(**answered(answer, nil), exception: answer.exception, reason: e.message)
+      audit_trail.answer_not_sent(**answered(answer, nil), exception: answer.exception, reason: e.message)
       raise
     end
 
@@ -83,9 +89,9 @@ module EvidenceProvision
       shared = answered(answer, message_id)
 
       if answer.exception
-        context.audit_trail.error_sent(**shared, exception: answer.exception)
+        audit_trail.error_sent(**shared, exception: answer.exception)
       else
-        context.audit_trail.response_sent(**shared, evidence: answer.evidence)
+        audit_trail.response_sent(**shared, evidence: answer.evidence)
       end
 
       settle(answer)
@@ -216,7 +222,7 @@ module EvidenceProvision
       reason = I18n.t('interactors.evidence_provision.answer_request.malformed_identifier',
         element: rule[:element], value:, rule: rule[:rule])
 
-      context.audit_trail.request_refused(
+      audit_trail.request_refused(
         requester_id: exchange&.evidence_requester_id, procedure_code: exchange&.procedure_code,
         country_code: exchange&.country_code, reason:, exchange:,
       )
@@ -257,7 +263,7 @@ module EvidenceProvision
       attachment = attachment_for(served)
       body = SystemCheckResponseBuilder.new(
         requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
-        attachment:, request_id:, uuid: context.uuid,
+        attachment:, request_id:, uuid:,
       )
 
       Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
@@ -268,14 +274,14 @@ module EvidenceProvision
     # After the timeout, for the reason `expired?` gives: a correspondent that
     # has already given up has no use for an appointment.
     def deferred_envelope
-      body = DeferredResponseBuilder.new(requester:, request_id:, uuid: context.uuid)
+      body = DeferredResponseBuilder.new(requester:, request_id:, uuid:)
 
       Answer.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
         identifier: body.document_id, exception: nil, evidence: nil, available_at: body.available_at)
     end
 
     def attachment_for(served)
-      Attachment.new("cid:#{context.uuid.next}@pdf.oots.fr", Base64.strict_encode64(served))
+      Attachment.new("cid:#{uuid.next}@pdf.oots.fr", Base64.strict_encode64(served))
     end
 
     # The document as the answer carries it: the `cid:` the header declares and
@@ -290,7 +296,7 @@ module EvidenceProvision
     end
 
     def error_envelope(exception)
-      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, uuid: context.uuid)
+      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, uuid:)
 
       Answer.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
         identifier: body.document_id, exception:, evidence: nil, available_at: nil)
@@ -311,7 +317,7 @@ module EvidenceProvision
         final_recipient: requester.ebms_identity,
         conversation_id: context.message.conversation_id,
         exchange_id: context.message.exchange_id,
-        uuid: context.uuid,
+        uuid:,
       )
     end
 

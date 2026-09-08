@@ -23,7 +23,7 @@ module EvidenceRequest
     # back to the `ds:SignedInfo` it signed — the non-repudiation chapter 4.8
     # traces from an evidence identifier. Kept, therefore, and not discarded.
     def submit(exchange)
-      submitted = context.gateway.submit(envelope.render)
+      submitted = gateway.submit(envelope.render)
       exchange.sent!
 
       submitted.message_id
@@ -45,7 +45,7 @@ module EvidenceRequest
     end
 
     def journal(message_id)
-      context.audit_trail.request_sent(
+      audit_trail.request_sent(
         exchange: context.exchange,
         requester: context.requester,
         provider: context.provider,
@@ -69,7 +69,7 @@ module EvidenceRequest
         requester: resolved.requester, provider: resolved.provider, beneficiary: resolved.beneficiary,
         requirement: resolved.requirement, data_service: resolved.data_service,
         procedure_code: resolved.procedure_code, preview_possible: resolved.preview_possible,
-        uuid: resolved.uuid,
+        uuid:,
       }
     end
 
@@ -91,7 +91,7 @@ module EvidenceRequest
         final_recipient: resolved.provider.ebms_identity,
         conversation_id: exchange.conversation_id,
         exchange_id: exchange.exchange_id,
-        uuid: resolved.uuid,
+        uuid:,
       )
     end
   end
