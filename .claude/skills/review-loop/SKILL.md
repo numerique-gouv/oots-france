@@ -336,9 +336,9 @@ Une passe :
    l'échec ne vient visiblement pas du code (flakiness d'infra, runner qui ne
    peut pas monter la stack Domibus), s'arrêter et remonter à l'utilisateur.
 
-5. **Retester** (`scripts/tests.sh` — RuboCop puis RSpec) après les
+5. **Retester** (`make test` — RuboCop puis RSpec) après les
    correctifs. Si l'étape 4 a touché `app/templates/`, `app/builders/` ou
-   `app/clients/`, lancer aussi `scripts/testE2e.sh` (stack Domibus locale
+   `app/clients/`, lancer aussi `make e2e` (stack Domibus locale
    montée si besoin, cf. CLAUDE.local.md) — la suite unitaire mocke le
    transport et ne couvre pas ces chemins ; et `scripts/validate_schematron.sh`
    si `app/templates/` ou `app/builders/` a bougé, seule vérification

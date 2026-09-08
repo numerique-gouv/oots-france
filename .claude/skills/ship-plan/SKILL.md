@@ -35,7 +35,7 @@ implémentation dont les tests passent — ce skill ne remplace ni le plan
   principal — le signaler, mais ne pas bloquer ni déplacer le travail à ce
   stade : le code est déjà écrit et committé sur sa branche, `git push` et
   `gh pr create` fonctionnent pareil.
-- `npm test` (lint + jest) passe. Ne jamais pousser du code dont les tests
+- `make test` (RuboCop puis RSpec) passe. Ne jamais pousser du code dont les tests
   échouent — corriger d'abord, ou remonter l'échec à l'utilisateur.
 - Un fichier de plan correspondant existe déjà dans `.claude/plans/` (il a dû
   être écrit à l'`ExitPlanMode` qui a précédé l'implémentation). S'il manque,
@@ -81,7 +81,7 @@ Les outils sont ceux du serveur MCP `linear` : `get_issue`, `save_issue`
 Toutes les commandes s'exécutent depuis la racine du worktree où
 l'implémentation a eu lieu — jamais en revenant dans le checkout principal,
 qui est peut-être occupé par une autre tâche. `git push`, `gh pr`,
-`npm test` et `scripts/tests.sh` y fonctionnent tels quels (docker compose
+`make test` et `make e2e` y fonctionnent tels quels (docker compose
 dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
 
 1. **Retrouver le ticket, et le passer `In Progress`.** Le plan le cite en
