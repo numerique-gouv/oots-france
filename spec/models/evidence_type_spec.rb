@@ -4,7 +4,7 @@ RSpec.describe EvidenceType do
   it { is_expected.to validate_presence_of(:id) }
 
   # `pdf?` is what decides whether France serves at all —
-  # `EvidenceProvision::AnswerRequest` reads it and nothing else to choose
+  # `EvidenceProvision::ChooseAnswer` reads it and nothing else to choose
   # between the document and `EDM:ERR:0007`.
   describe '#pdf?' do
     it 'is true of a type distributed as the one document France holds' do

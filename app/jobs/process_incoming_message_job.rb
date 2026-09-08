@@ -10,14 +10,10 @@
 class ProcessIncomingMessageJob < ApplicationJob
   queue_as :default
 
+  # The identifier alone: each step of the chain gives itself the
+  # infrastructure it needs, so nothing here has to be kept in step with the
+  # controller that starts the other direction.
   def perform(message_id)
-    IncomingMessage::Process.call(
-      message_id:,
-      gateway: DomibusClient.new,
-      evidence_forwarder: EvidenceForwarder.new,
-      requesters: Directories::EvidenceRequesters.new,
-      uuid: UuidGenerator.new,
-      audit_trail: AuditTrail.new,
-    )
+    IncomingMessage::Process.call(message_id:)
   end
 end

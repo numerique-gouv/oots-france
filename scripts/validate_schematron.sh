@@ -180,7 +180,7 @@ valide erreurCapaciteNonSupportee.entete EDM-ebMS
 valide erreurExpiration.entete EDM-ebMS
 valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 
-# Les deux règles FATAL que `EvidenceProvision::AnswerRequest` invoque pour
+# Les deux règles FATAL que `EvidenceProvision::RejectMalformedIdentifiers` invoque pour
 # refuser de répondre à une requête dont les identifiants ne sont pas des UUID.
 # Sans ce spécimen, l'expression rationnelle du dépôt ne s'atteste qu'elle-même.
 refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017,R-EDM-ebMS-037

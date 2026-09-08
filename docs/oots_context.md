@@ -108,7 +108,7 @@ Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'ap
 
 ### Côté Evidence Provider (un autre pays demande un justificatif à la France)
 
-**C'est Domibus qui appelle**, sur `POST /domibus/notifications`, dès qu'un message arrive pour nous (*push to backend* du plugin WS, voir [domibus_context.md](domibus_context.md)). La route accuse réception aussitôt et met le traitement en file ; `IncomingMessage::Process` récupère alors le message et l'aiguille sur son action ebMS. La réponse à une `ExecuteQueryRequest` dépend du code de démarche demandé (`EvidenceProvision::AnswerRequest`) :
+**C'est Domibus qui appelle**, sur `POST /domibus/notifications`, dès qu'un message arrive pour nous (*push to backend* du plugin WS, voir [domibus_context.md](domibus_context.md)). La route accuse réception aussitôt et met le traitement en file ; `IncomingMessage::Process` récupère alors le message et l'aiguille sur son action ebMS. La réponse à une `ExecuteQueryRequest` dépend du code de démarche demandé (`EvidenceProvision::Answer`, dont `ChooseAnswer` est l'étape qui tranche) :
 
 - démarche `00`, la **vérification système** d'OOTS : une `ExecuteQueryResponse` complète, qui reprend les données de la requête (bénéficiaire, requêteur, type de justificatif) et porte un vrai PDF en pièce jointe — le fichier d'exemple `assets/drapeau.pdf` ;
 - démarche `T1`, le **financement des études**, celle de la démonstration de l'Université : la même réponse, avec le même PDF d'exemple en pièce jointe — la France ne détient pas d'autre document ;
@@ -119,9 +119,12 @@ Application **Ruby on Rails** qui tient les deux rôles nationaux d'OOTS en s'ap
 
 ```
 app/models/          Objets de valeur du domaine (ActiveModel, sans base) et
-                     Exchange, l'état d'un aller-retour ;
-                     directories/ tient l'annuaire des requêteurs et la
-                     façade des annuaires centraux
+                     Exchange, l'état d'un aller-retour, dont la machine
+                     déclare les transitions légales
+app/gateways/        Ce qu'on demande à un annuaire et ce que devient son
+                     refus : directories/ tient l'annuaire des requêteurs et
+                     la façade des annuaires centraux
+app/presenters/      Ce qu'un écran dit d'une chose, sans requête ni params
 app/builders/        Constructeurs des messages sortants, rendant les gabarits
 app/templates/       Gabarits ERB des messages RegRep/ebMS et des enveloppes SOAP
 app/parsers/         Lecture Nokogiri des messages entrants, par URI d'espace de

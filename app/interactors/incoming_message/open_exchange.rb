@@ -19,7 +19,7 @@ module IncomingMessage
       # correspondents and one identifier legitimately names both sides.
       #
       # Adopting an existing row writes nothing to it, the block running only on
-      # creation, and `EvidenceProvision::AnswerRequest` settles an exchange
+      # creation, and `EvidenceProvision::JournalAnswer` settles an exchange
       # France received and no other.
       Exchange.find_or_create_by!(exchange_id: context.message.exchange_id) do |exchange|
         exchange.assign_attributes(opened)
@@ -51,7 +51,7 @@ module IncomingMessage
     end
 
     def journal_refusal(reason)
-      context.audit_trail.request_refused(
+      audit_trail.request_refused(
         requester_id: readable { request.requester.id },
         procedure_code: readable { request.procedure_code },
         country_code: readable { request.requester.address.country },

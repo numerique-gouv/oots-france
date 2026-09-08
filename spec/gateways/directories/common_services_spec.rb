@@ -241,8 +241,8 @@ RSpec.describe Directories::CommonServices do
   # `translating` names a refusal with a key rather than a sentence, and only
   # composes it once a directory has refused: nothing static ties the two.
   it 'says every refusal it translates' do
-    refused = File.read('app/models/directories/common_services.rb')
-      .scan(/'(models\.directories(?:\.[a-z_]+)+)'/).flatten.uniq
+    refused = File.read('app/gateways/directories/common_services.rb')
+      .scan(/'(gateways\.directories(?:\.[a-z_]+)+)'/).flatten.uniq
 
     expect_said(refused)
   end

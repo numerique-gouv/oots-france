@@ -4,11 +4,11 @@
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
       [t('admin.common_services.requirements.index.title'), admin_common_services_requirements_path],
       [requirement.display_name, admin_common_services_requirement_path(requirement.uuid)],
-      [named_country(@country), nil],
+      [wording.named_country(@country), nil],
     ]) %>
 
 <h1 class="fr-h3"><%= t('admin.common_services.providers.index.heading',
-      evidence_type: @evidence_type.display_name, country: in_country(@country)) %></h1>
+      evidence_type: @evidence_type.display_name, country: wording.in_country(@country)) %></h1>
 
 <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.common_services.providers.index.lead') %></p>
 

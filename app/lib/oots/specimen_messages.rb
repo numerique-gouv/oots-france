@@ -43,7 +43,7 @@ module Oots
     # The one specimen this repository must never emit, and the only one the
     # validation expects to be refused: `R-EDM-ebMS-017` and `-037` are FATAL,
     # and every other specimen satisfies them, so nothing else asks whether they
-    # bite. `EvidenceProvision::AnswerRequest` turns away a request carrying such
+    # bite. `EvidenceProvision::RejectMalformedIdentifiers` turns away one carrying such
     # a pair rather than reuse it in the answer France signs; this is what says
     # the rules it invokes refuse what it claims they refuse.
     #

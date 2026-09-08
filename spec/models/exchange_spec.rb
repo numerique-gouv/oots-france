@@ -14,6 +14,106 @@ RSpec.describe Exchange do
     expect(exchange).not_to be_settled
   end
 
+  # The table the machine declares, asked back. Every legal transition was
+  # already reachable by the order in which the interactors call these methods;
+  # what none of them proved is that the illegal ones are refused, which until
+  # now nothing but that order prevented.
+  describe 'the legal transitions' do
+    it 'names exactly the six states the console, the seeds and the badges know' do
+      expect(described_class::STATUSES)
+        .to eq(%w[pending sent preview_required deferred delivered failed])
+    end
+
+    # Both, `sent` included: a submission repeated says the same thing twice,
+    # which is not a contradiction to refuse.
+    it 'lets an exchange be submitted from either state in progress' do
+      expect(exchange).to handle_events(:transmit, when: :pending)
+      expect(exchange).to handle_events(:transmit, when: :sent)
+    end
+
+    it 'lets any of the four answers settle an exchange in progress' do
+      answers = %i[require_preview defer deliver record_failure]
+
+      expect(exchange).to handle_events(*answers, when: :pending)
+      expect(exchange).to handle_events(*answers, when: :sent)
+    end
+
+    # A settled exchange is settled: nothing further arrives on it, and the
+    # `IN_PROGRESS` scope leaves it out. Nothing here is presumed, so the one
+    # condition that would let an answer back in does not apply.
+    it 'refuses everything on an exchange an answer has settled' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+          :presume_timeout, when: :delivered)
+    end
+
+    it 'refuses everything on an exchange a correspondent refused' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+          :presume_timeout, when: :failed)
+    end
+
+    # The two settled states the sweep never presumes, and which no answer may
+    # therefore reopen: a correspondent that sent us to its preview space or
+    # named a date has answered, and the exchange ends there.
+    it 'refuses everything on an exchange sent to a preview space' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+          :presume_timeout, when: :preview_required)
+    end
+
+    it 'refuses everything on an exchange answered for later' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+          :presume_timeout, when: :deferred)
+    end
+
+    # Refused and not raised. The order of calls has always been what kept this
+    # from happening, and turning a non-event into an exception would be a
+    # change of behaviour no caller asked for.
+    it 'leaves a settled exchange untouched rather than raising' do
+      settled = create(:exchange, :sent).tap { |row| row.failed!(code: 'EDM:ERR:0004', description: 'Absent') }
+
+      expect { settled.delivered! }.not_to raise_error
+      expect(settled.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+    end
+
+    # The one exception, and the reason the condition is written on the
+    # transition rather than argued in a method: a guess is refutable where a
+    # fact is not.
+    it 'lets an answer through to a failure this side only presumed' do
+      presumed = create(:exchange, :sent).tap(&:expire!)
+
+      expect(described_class.find(presumed.id).delivered!.status).to eq('delivered')
+    end
+
+    # Giving up overrules nothing — not even an earlier guess, which would
+    # otherwise move `presumed_at` forward for ever.
+    it 'refuses to presume a timeout twice' do
+      presumed = create(:exchange, :sent).tap(&:expire!)
+
+      expect { presumed.expire! }.not_to change { presumed.reload.presumed_at }
+    end
+
+    # The other half of the guarantee, and the one an illegal transition must
+    # not be confused with: a transition the table admits but the validations
+    # refuse has to raise, never to be swallowed. A correspondent chooses this
+    # address and a browser follows it, so nothing may persist one the parser
+    # would have rejected.
+    it 'raises rather than settle for a preview location no browser should follow' do
+      expect { create(:exchange, :sent).preview_required!('ftp://ailleurs.example.si/espace') }
+        .to raise_error(StateMachines::InvalidTransition, /preview_location|adresse/i)
+    end
+
+    it 'leaves the exchange as it was when the validations refuse' do
+      exchange = create(:exchange, :sent)
+
+      suppress(StateMachines::InvalidTransition) { exchange.preview_required!('ftp://ailleurs.example.si') }
+
+      expect(exchange.reload).to have_attributes(status: 'sent', preview_location: nil)
+    end
+  end
+
   # Chapter 4.4 separates the two, so the row must keep them apart: a refactor
   # that aliased one column onto the other would pass every other example here.
   it 'keeps the exchange and the conversation as two distinct identifiers' do

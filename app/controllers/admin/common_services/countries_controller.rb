@@ -7,7 +7,7 @@ module Admin
       def index
         @procedures = catalogue.countries
           .index_with { |code| catalogue.procedures_in(code) }
-          .sort_by { |code, _| named_or_code(code) }
+          .sort_by { |code, _| wording.named_or_code(code) }
       end
 
       # This country as a requester.

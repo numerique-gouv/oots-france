@@ -37,7 +37,7 @@ end
 
 Alors('la France refuse la seconde par {string} en invoquant le chapitre 4.4') do |code|
   expect(refusal).to have_attributes(edm_error_code: code,
-    detail: EvidenceProvision::AnswerRequest::REPLAYED_IDENTIFIER)
+    detail: EvidenceProvision::ChooseAnswer::REPLAYED_IDENTIFIER)
 end
 
 Alors('la France sert la première') do

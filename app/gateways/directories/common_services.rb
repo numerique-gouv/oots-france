@@ -91,7 +91,7 @@ module Directories
     # its identifier would pair it with a provider another record announced.
     def data_service(evidence_type_id, country_code)
       published = translating(NO_PROVIDER, CountryCodeNotFound,
-        'models.directories.common_services.no_provider',
+        'gateways.directories.common_services.no_provider',
         evidence_type: evidence_type_id, country: country_code) do
         @data_service_directory.data_services(
           evidence_type_classification: evidence_type_id,
@@ -116,7 +116,7 @@ module Directories
     # hide that until a correspondent rejected the message.
     def requirements(procedure_code)
       found = translating(UNKNOWN_PROCEDURE, ProcedureCodeNotFound,
-        'models.directories.common_services.unknown_procedure', procedure: procedure_code) do
+        'gateways.directories.common_services.unknown_procedure', procedure: procedure_code) do
         @evidence_broker.requirements(
           procedure_code:, country_code: Settings.common_services_country_code,
         )
@@ -143,12 +143,12 @@ module Directories
     # A refusal of the second query, said as the exception the interactors know.
     def refusing(codes, procedure_code, country_code, &)
       translating(codes, EvidenceTypeNotFound,
-        'models.directories.common_services.no_evidence_type',
+        'gateways.directories.common_services.no_evidence_type',
         procedure: procedure_code, country: country_code, &)
     end
 
     def unknown_procedure(code)
-      I18n.t('models.directories.common_services.unknown_procedure', procedure: code)
+      I18n.t('gateways.directories.common_services.unknown_procedure', procedure: code)
     end
 
     # The wording travels as a key, and is built only once a refusal has to be

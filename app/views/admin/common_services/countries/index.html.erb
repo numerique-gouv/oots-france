@@ -26,7 +26,7 @@
 <div id="liste-pays">
 <% @procedures.each do |code, procedures| %>
   <div>
-  <%= render CardComponent.new(title: named_country(code), dense: true) do |carte| %>
+  <%= render CardComponent.new(title: wording.named_country(code), dense: true) do |carte| %>
     <% carte.with_list do %>
       <ul class="entry-list entry-list--clickable">
         <li class="entry">

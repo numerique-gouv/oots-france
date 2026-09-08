@@ -52,7 +52,7 @@
       the evidence types belong to the country queried. %>
   <%= render CardComponent.new(title: t('admin.common_services.resolutions.show.requirements.title'), heading_level: 2, dense: true) do |etape| %>
     <%= t('admin.common_services.resolutions.show.requirements.lead_html',
-          country: link_to(named_country(Settings.common_services_country_code),
+          country: link_to(wording.named_country(Settings.common_services_country_code),
             admin_common_services_country_procedures_path(Settings.common_services_country_code)),
           procedure: link_to(@question.procedure_code,
             admin_common_services_procedure_path(@question.procedure_code))) %>
@@ -96,7 +96,7 @@
     <%= render CardComponent.new(title: t('admin.common_services.resolutions.show.evidence_types.title'),
           heading_level: 2, dense: true) do |etape| %>
       <%= t('admin.common_services.resolutions.show.evidence_types.lead_html',
-            country: link_to(named_country(@question.country),
+            country: link_to(wording.named_country(@question.country),
               admin_common_services_country_procedures_path(@question.country))) %>
 
       <% etape.with_list do %>
@@ -147,7 +147,7 @@
   <% if @lookup.evidence_type %>
     <%= render CardComponent.new(title: t('admin.common_services.resolutions.show.providers.title'), heading_level: 2, dense: true) do |etape| %>
       <%= t('admin.common_services.resolutions.show.providers.lead_html',
-            country: link_to(named_country(@question.country),
+            country: link_to(wording.named_country(@question.country),
               admin_common_services_country_procedures_path(@question.country))) %>
 
       <% etape.with_list do %>

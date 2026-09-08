@@ -1,9 +1,9 @@
 <% content_for :title, t('admin.common_services.countries.procedure.title',
-      country: named_country(@country), procedure: named_procedure(@procedure.code)) %>
+      country: wording.named_country(@country), procedure: wording.named_procedure(@procedure.code)) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
       [t('admin.common_services.countries.index.title'), admin_common_services_countries_path],
-      [named_country(@country), nil],
+      [wording.named_country(@country), nil],
       [t('admin.common_services.procedures.index.title'), admin_common_services_country_procedures_path(@country)],
       [@procedure.code, nil],
     ]) %>

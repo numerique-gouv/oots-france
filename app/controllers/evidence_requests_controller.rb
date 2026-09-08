@@ -78,18 +78,22 @@ class EvidenceRequestsController < ApplicationController
   # log article 17 requires to be readable back.
   def country_code = query[:codePays]&.upcase
 
+  # What the caller asked, and nothing else: each step of the chain gives
+  # itself the infrastructure it needs, so a client that changes is changed
+  # where it is used rather than here and in `ProcessIncomingMessageJob` at
+  # once.
+  #
+  # `audit_trail` is still passed, and is the one exception: this controller
+  # journals refusals of its own — the ones that never reach an interactor —
+  # and both must write through the same trail.
   def fetch_arguments
     {
       requester_id: query[:idRequeteur],
       conversation_id: query[:idConversation],
-      requesters: Directories::EvidenceRequesters.new,
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
       country_code:,
       preview_possible: preview_possible?,
-      common_services: Directories::CommonServices.new,
-      gateway: DomibusClient.new,
-      uuid: UuidGenerator.new,
       audit_trail:,
     }
   end

@@ -78,7 +78,7 @@ ignore_unused:
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.
-  - models.directories.common_services.{no_evidence_type,no_provider}
+  - gateways.directories.common_services.{no_evidence_type,no_provider}
   # The descriptions `require_content` receives as a key, and composes with
   # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}

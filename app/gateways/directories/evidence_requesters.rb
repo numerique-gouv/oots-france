@@ -13,7 +13,7 @@ module Directories
 
     def find(id)
       entry = data[id]
-      raise EvidenceRequesterNotFound, I18n.t('models.directories.evidence_requesters.unknown', id:) if entry.nil?
+      raise EvidenceRequesterNotFound, I18n.t('gateways.directories.evidence_requesters.unknown', id:) if entry.nil?
 
       EvidenceRequester.french(id:, name: entry['nom'], url: entry['url'])
     end

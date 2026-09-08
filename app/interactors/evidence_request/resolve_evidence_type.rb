@@ -38,7 +38,9 @@ module EvidenceRequest
     def published_evidence = context.required_evidence.find(&:published?)
 
     def satisfying_evidence
-      context.common_services.required_evidence_for_procedure(context.procedure_code, context.country_code)
+      common_services.required_evidence_for_procedure(context.procedure_code, context.country_code)
     end
+
+    def common_services = context.common_services ||= Directories::CommonServices.new
   end
 end

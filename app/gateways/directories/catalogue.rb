@@ -94,7 +94,7 @@ module Directories
       return [] if e.code == EMPTY_RESULT_SET
 
       raise CommonServicesError.new(
-        I18n.t('models.directories.catalogue.swept', requirement: requirement.uuid, error: e.message),
+        I18n.t('gateways.directories.catalogue.swept', requirement: requirement.uuid, error: e.message),
         code: e.code,
       )
     end

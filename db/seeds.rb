@@ -346,14 +346,14 @@ if Rails.env.development?
   # procedure `journal_des_echanges.md` describes for settling a dispute can be
   # walked on demonstration data rather than only read.
   carries_evidence = %w[response_sent response_received evidence_delivered].freeze
-  served_evidence = Rails.root.join(EvidenceProvision::AnswerRequest::EVIDENCE_PATH).binread
+  served_evidence = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
 
   # The `cid:` of the part that carried the document, which chapter 4.8 has the
   # response flow log beside its type: it is what ties the attachment to the
   # `rim:RepositoryItemRef` naming it. Minted where the answer was — France's own
   # suffix where France answered, the correspondent's where it received.
   evidence_content_id = lambda do |exchange|
-    # `AnswerRequest#attachment_for` mints the French one under this suffix; a
+    # `ChooseAnswer#attachment_for` mints the French one under this suffix; a
     # correspondent's is its own, so a demonstration wearing ours both ways would
     # teach the console that France attached what it received.
     suffix = exchange.incoming? ? 'pdf.oots.fr' : "pdf.oots.#{exchange.country_code.downcase}"

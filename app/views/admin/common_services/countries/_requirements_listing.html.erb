@@ -12,7 +12,7 @@
   <% @published.each do |requirement, lists| %>
     <div>
       <%= render CardComponent.new(title: requirement.display_name, heading_level: 2) do |carte| %>
-        <%= t('admin.common_services.countries.requirements.card', country: in_country(@country)) %>
+        <%= t('admin.common_services.countries.requirements.card', country: wording.in_country(@country)) %>
 
         <% carte.with_list do %>
           <%= render 'admin/common_services/evidence_type_lists', lists:, requirement: %>

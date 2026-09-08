@@ -22,8 +22,8 @@ module EvidenceRequest
       asked = context
 
       {
-        exchange_id: asked.uuid.next,
-        conversation_id: asked.conversation_id.presence || asked.uuid.next,
+        exchange_id: uuid.next,
+        conversation_id: asked.conversation_id.presence || uuid.next,
         procedure_code: asked.procedure_code,
         country_code: asked.country_code,
         evidence_requester_id: asked.requester.id,

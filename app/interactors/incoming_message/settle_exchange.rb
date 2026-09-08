@@ -47,10 +47,14 @@ module IncomingMessage
         I18n.t("interactors.incoming_message.settle_exchange.#{reason}",
           id: exchange.exchange_id),
       )
-      context.audit_trail.response_refused(exchange:, reason: reason.to_s)
+      audit_trail.response_refused(exchange:, reason: reason.to_s)
 
       false
     end
+
+    def requesters = context.requesters ||= Directories::EvidenceRequesters.new
+
+    def evidence_forwarder = context.evidence_forwarder ||= EvidenceForwarder.new
 
     def settle(exchange)
       case context.message.action
@@ -73,7 +77,7 @@ module IncomingMessage
 
     # `processable?` decided on the exchange as it stood when the message
     # arrived, and that decision holds: the sweep may expire the row while the
-    # evidence is being handed over, and `Exchange#settle` lets this answer
+    # evidence is being handed over, and `Exchange#fire` lets this answer
     # overrule the presumption it made.
     #
     # What it cannot do is hold across the handover, which is why
@@ -83,12 +87,12 @@ module IncomingMessage
     def deliver(exchange)
       return refuse(exchange, :already_delivering) unless exchange.claim_delivery!
 
-      requester = context.requesters.find(exchange.evidence_requester_id)
+      requester = requesters.find(exchange.evidence_requester_id)
 
-      context.evidence_forwarder.deliver(evidence.content, requester)
+      evidence_forwarder.deliver(evidence.content, requester)
       exchange.delivered!
 
-      context.audit_trail.evidence_delivered(exchange:, evidence:)
+      audit_trail.evidence_delivered(exchange:, evidence:)
     end
 
     # The part and not its bytes: the journal records the reference the response

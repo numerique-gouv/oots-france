@@ -6,7 +6,7 @@ module IncomingMessage
   # Dispatched here rather than organised, because only one handler applies.
   class Process < ApplicationInteractor
     HANDLERS = {
-      EbmsAction::EXECUTE_QUERY_REQUEST => EvidenceProvision::AnswerRequest,
+      EbmsAction::EXECUTE_QUERY_REQUEST => EvidenceProvision::Answer,
       EbmsAction::EXECUTE_QUERY_RESPONSE => SettleExchange,
       EbmsAction::EXCEPTION_RESPONSE => SettleExchange,
     }.freeze
@@ -53,16 +53,16 @@ module IncomingMessage
     # there the second time. An answer that did arrive and could not be read is
     # the loss, that call having succeeded.
     def fetched
-      context.gateway.retrieve(context.message_id)
+      gateway.retrieve(context.message_id)
     rescue UnreadableMessageError => e
-      context.audit_trail.message_unreadable(message_id: context.message_id, reason: e.message)
+      audit_trail.message_unreadable(message_id: context.message_id, reason: e.message)
       raise
     end
 
     # Recorded before it is handled, so that a request too malformed to answer
     # — the one an auditor most needs to find — is journalled all the same.
     def record
-      context.audit_trail.message_received(message: context.message, message_id: context.message_id)
+      audit_trail.message_received(message: context.message, message_id: context.message_id)
       OpenExchange.call!(context)
     end
 
@@ -70,7 +70,7 @@ module IncomingMessage
     # no answer and no trace of what the message asked for.
     def handler
       HANDLERS.fetch(context.message.action) do
-        context.audit_trail.message_unhandled(message: context.message, message_id: context.message_id)
+        audit_trail.message_unhandled(message: context.message, message_id: context.message_id)
 
         raise UnreadableMessageError,
           I18n.t('interactors.incoming_message.process.unknown_action', action: context.message.action)

@@ -17,8 +17,8 @@
 <% @requirement.reference_frameworks.group_by(&:procedure_code).each do |code, declared| %>
   <% published = declared.any? { |one| one.country.present? } %>
   <%= render CardComponent.new(
-        title: named_procedure(code),
-        hint: procedure_hint(code),
+        title: wording.named_procedure(code),
+        hint: wording.procedure_hint(code),
         href: (admin_common_services_procedure_path(code) if code.present?),
         dense: published, clickable: true,
       ) do |carte| %>

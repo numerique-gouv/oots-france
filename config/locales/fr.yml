@@ -292,6 +292,19 @@ fr:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+  gateways:
+    directories:
+      # Le refus relayé par le balayage du catalogue, qui pose la même question
+      # cinquante-trois fois : sans l'exigence, la page rendrait le refus
+      # d'aucune d'entre elles en particulier.
+      catalogue:
+        swept: "%{error} (exigence %{requirement})"
+      common_services:
+        no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
+        no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
+        unknown_procedure: Code de démarche « %{procedure} » introuvable
+      evidence_requesters:
+        unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
   jobs:
     expire_exchanges_job:
       failed: "Expiration impossible pour l'échange %{id} : %{error}"
@@ -460,18 +473,6 @@ fr:
         request_legal_person: La personne morale sujet de la requête reçue
         requester: Le requêteur
         token_beneficiary: Le bénéficiaire du jeton
-    directories:
-      # Le refus relayé par le balayage du catalogue, qui pose la même question
-      # cinquante-trois fois : sans l'exigence, la page rendrait le refus
-      # d'aucune d'entre elles en particulier.
-      catalogue:
-        swept: "%{error} (exigence %{requirement})"
-      common_services:
-        no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
-        no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
-        unknown_procedure: Code de démarche « %{procedure} » introuvable
-      evidence_requesters:
-        unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
     country_wording:
       by: par %{country}
       # Chaque morceau porte son espace ou sa virgule d'attache : la phrase
@@ -512,14 +513,16 @@ fr:
       unknown_requester: Requêteur inconnu
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
     evidence_provision:
-      answer_request:
-        unknown_exchange: "Échange inconnu au moment de répondre : %{id}"
+      choose_answer:
         # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
         # refuser, et la version que l'entête annonce sans que le corps la
         # confirme.
         request_replayed: "Identifiant de requête déjà traité : %{id}"
         unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
         unnamed_version: une version sans nom
+      journal_answer:
+        unknown_exchange: "Échange inconnu au moment de répondre : %{id}"
+      reject_malformed_identifiers:
         # Un refus qui ne part pas au correspondant : la réponse réutiliserait
         # l'identifiant qu'on lui reproche. La règle est nommée pour le journal,
         # qui est alors le seul endroit où la décision se relit.
