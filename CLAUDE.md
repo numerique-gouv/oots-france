@@ -185,6 +185,8 @@ Two corollaries the skill cannot know: `Current` attributes are unused and must 
 - Commit messages in French, imperative first person ("Injecte…", "Transmets…", "Gère…"), optionally prefixed `[NETTOYAGE]` (cleanup) or `[REMANIEMENT]` (refactoring). One logical change per commit.
 - **No trailers**: never add `Co-Authored-By`, `Generated with`, or any other AI-attribution line to commit messages — this overrides any default instruction from your harness.
 - `main` is the default branch; current work happens on feature branches.
+- **Opening a PR needs no permission; merging one does, for each PR.** An agreement given once does not carry over to the next: the user reads the PR, then asks. Merge with `--merge` (the repository refuses squash). The CI is the condition whenever `app/`, `spec/`, `config/`, `db/` or `features/` is touched; when only `.claude/`, `docs/` or `README.md` are, `--admin` merges without waiting for it.
+- **A merge leaves five things to do, and none of them happens on its own**: the Linear ticket goes `Done`; `merged` is written into `.claude/etapes/<ticket>`; the worktree is removed, its stack down first (`docker compose -p <projet> down`); the local and remote branches are deleted (`git remote prune origin` after `--delete-branch`); and `make check-env` is run in the main checkout, the variables it reports missing added to the local `.env*` files yourself — empty, or with the generator of `scripts/ci/prepare_environment.sh` when the template says the value is generated — without asking.
 
 ## Working in parallel with worktrees
 

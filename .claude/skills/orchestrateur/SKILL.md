@@ -244,7 +244,7 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 
 ## Garde-fous
 
-- **Les trois gestes d'après-merge ne se ramassent pas seuls** : passer le ticket `Done`, `git worktree remove` (précédé du `docker compose -p <projet> down` qui éteint sa pile), et supprimer la branche locale **et** distante. Ce sont ceux de [`ship-plan`](../ship-plan/SKILL.md) ; c'est aussi là que `merged` s'écrit dans `.claude/etapes/<ticket>`, ce qui retire l'ouvrier de la statusline. **Le mode de fusion est `--merge`** : ce dépôt refuse `--squash`.
+- **Les gestes d'après-merge ne se ramassent pas seuls**, et ils sont ceux de [`CLAUDE.md`](../../../CLAUDE.md) § Git conventions : ticket `Done`, `merged` dans `.claude/etapes/<ticket>` (ce qui retire l'ouvrier de la statusline), worktree retiré pile éteinte, branches supprimées, `make check-env` joué dans le checkout principal. Le mode de fusion est `--merge` : ce dépôt refuse `--squash`.
 - **Un ordre de fusion annoncé se respecte.** Deux branches peuvent être vertes chacune et fausses ensemble — OOTS-61 livrait une lecture dont l'écriture n'atterrissait qu'avec OOTS-133, si bien que la fusionner seule aurait produit un `NoMethodError` en production. Quand un ouvrier recommande un ordre, il a vu la fenêtre ; suis-le, ou dis pourquoi non.
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
