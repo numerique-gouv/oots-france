@@ -1,13 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Home' do
-  # The title of `T1` is written down nowhere in the repository: the page reads
-  # it from the code list, and the double answers what the Commission
-  # publishes, typographic apostrophe included.
-  let(:label) do
-    'Demander à un organisme public ou une institution publique le financement d’études supérieures, ' \
-      'par exemple par des bourses et des prêts'
-  end
+  let(:label) { CodeListStubs::STUDY_FINANCING_LABEL }
 
   describe 'GET /admin/demo' do
     before do
