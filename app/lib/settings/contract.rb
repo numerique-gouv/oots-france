@@ -12,6 +12,7 @@ module Settings
       reject_unless_whole
       reject_unless_lawful_retention
       reject_unless_timeouts_ordered
+      reject_unless_france_connect_algorithm
     end
 
     private
@@ -62,6 +63,36 @@ module Settings
       return if requester.nil? || provider.nil? || requester > provider
 
       refuse(I18n.t('lib.settings.timeouts_out_of_order', requester:, provider:))
+    end
+
+    # `FRANCE_CONNECT_KEY_ALGORITHMS` says which two are admitted, and why they
+    # are refused here rather than at the exchange.
+    #
+    # After `reject_unless_present`, which has already refused an empty value:
+    # what is left is a value decoding to no JWK at all, and a JWK declaring no
+    # usable `alg`. A JWK carries none of its own accord, so the two refusals
+    # are distinct — one names a value to rewrite, the other a member to add.
+    def reject_unless_france_connect_algorithm
+      key = france_connect_key
+      return refuse(I18n.t('lib.settings.france_connect_key_unreadable')) if key.nil?
+
+      algorithm = key['alg']
+      return if algorithm.in?(FRANCE_CONNECT_KEY_ALGORITHMS)
+
+      expected = FRANCE_CONNECT_KEY_ALGORITHMS.join(', ')
+      return refuse(I18n.t('lib.settings.france_connect_algorithm_absent', expected:)) if algorithm.blank?
+
+      refuse(I18n.t('lib.settings.france_connect_algorithm', algorithm:, expected:))
+    end
+
+    # Read here rather than through `Settings`, which raises what a contract
+    # answers: a malformed value is an offence to name, not an exception to
+    # propagate.
+    def france_connect_key
+      key = JSON.parse(Base64.decode64(ENV.fetch('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64', '')))
+      key if key.is_a?(Hash)
+    rescue JSON::ParserError
+      nil
     end
 
     # Which set is mandatory is a question of the dispositif, as `TIMEOUTS` says.

@@ -1,5 +1,8 @@
-# The key set OOTS-France publishes, so a service provider can encrypt the
-# beneficiary token for us.
+# A key set OOTS-France publishes, so that a correspondent can encrypt for it.
+# Two routes serve one each: `/auth/cles_publiques` the key a French service
+# provider encrypts for, `/demo/franceconnect/cles_publiques` the key
+# FranceConnect+ encrypts for. Which key is a question for the caller; this
+# class is given one.
 #
 # Built **by subtraction** — secret members removed, the rest published as it
 # stands — because enumerating what to publish ties the route to one key type:
@@ -18,7 +21,7 @@ class PublicKeySet
     'oct' => %w[k kty],
   }.freeze
 
-  def initialize(private_jwk = Settings.private_key_jwk)
+  def initialize(private_jwk)
     @private_jwk = private_jwk.transform_keys(&:to_s)
   end
 

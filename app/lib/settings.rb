@@ -12,6 +12,7 @@ module Settings
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
     CLE_PRIVEE_JWK_EN_BASE64
+    CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
     URL_BASE_DOMIBUS
     LOGIN_API_REST
     MOT_DE_PASSE_API_REST
@@ -54,6 +55,14 @@ module Settings
   # away.
   TIMEOUT_SWITCH = 'AVEC_DELAI_EXPIRATION'.freeze
 
+  # The only two key management algorithms FranceConnect+ encrypts an ID Token
+  # and a UserInfo response with, each paired with `A256GCM`. `Settings::Contract`
+  # refuses any other at startup: published outside these two, the key fails
+  # during a live exchange instead — with a user already midway through an
+  # authentication, and far from anything this deployment can read.
+  # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-chiffrement-signature-fcplus/
+  FRANCE_CONNECT_KEY_ALGORITHMS = %w[ECDH-ES RSA-OAEP-256].freeze
+
   # Article 17(4) of the implementing regulation, as a floor: a member state may
   # keep the exchange log longer, never less.
   LAWFUL_RETENTION_MONTHS = 12
@@ -86,7 +95,13 @@ module Settings
       { id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), name: required('NOM_FOURNISSEUR_FRANCAIS') }
     end
 
-    def private_key_jwk = JSON.parse(Base64.decode64(required('CLE_PRIVEE_JWK_EN_BASE64')))
+    def private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_EN_BASE64')
+
+    # Distinct from the one above, and not by accident: that one opens the
+    # beneficiary token a French service provider encrypts for this component,
+    # this one opens what FranceConnect+ encrypts for the demonstration
+    # procedure. Two interfaces, two correspondents, two keys.
+    def france_connect_private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64')
 
     def evidence_requesters_data = JSON.parse(required('DONNEES_REQUETEURS'))
 
@@ -173,6 +188,8 @@ module Settings
     def identifier_suffix = required('SUFFIXE_IDENTIFIANTS_DOMIBUS')
 
     private
+
+    def decode_jwk(name) = JSON.parse(Base64.decode64(required(name)))
 
     def whole?(value) = Integer(value, exception: false)&.positive? || false
 
