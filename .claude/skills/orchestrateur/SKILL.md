@@ -26,7 +26,7 @@ Tu n'es ni [`spec-nerd`](../../agents/spec-nerd.md), qui rédige, corrige et sta
 
 **Avec un objectif** — « avance sur le journal », une liste de tickets, un nombre d'ouvriers : le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère ; un ticket vide reste non actionnable, dis-le et propose le voisin.
 
-**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo`), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
+**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo` — son paramètre `fields` n'accepte pas `identifier`, que `id` porte déjà : l'y mettre fait refuser l'appel), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
 
 Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annonce la sélection avant de lancer** : quels tickets, dans quel ordre, une ligne chacun sur pourquoi ceux-là. C'est le seul moment où un mauvais choix se rattrape gratuitement.
 
@@ -244,7 +244,7 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 
 ## Garde-fous
 
-- **Les trois gestes d'après-merge ne se ramassent pas seuls** : passer le ticket `Done`, `git worktree remove` (précédé du `docker compose -p <projet> down` qui éteint sa pile), et supprimer la branche locale **et** distante. Ce sont ceux de [`ship-plan`](../ship-plan/SKILL.md) ; c'est aussi là que `merged` s'écrit dans `.claude/etapes/<ticket>`, ce qui retire l'ouvrier de la statusline. **Le mode de fusion est `--merge`** : ce dépôt refuse `--squash`.
+- **Les gestes d'après-merge ne se ramassent pas seuls**, et ils sont ceux de [`CLAUDE.md`](../../../CLAUDE.md) § Git conventions : ticket `Done`, `merged` dans `.claude/etapes/<ticket>` (ce qui retire l'ouvrier de la statusline), worktree retiré pile éteinte, branches supprimées, `make check-env` joué dans le checkout principal. Le mode de fusion est `--merge` : ce dépôt refuse `--squash`.
 - **Un ordre de fusion annoncé se respecte.** Deux branches peuvent être vertes chacune et fausses ensemble — OOTS-61 livrait une lecture dont l'écriture n'atterrissait qu'avec OOTS-133, si bien que la fusionner seule aurait produit un `NoMethodError` en production. Quand un ouvrier recommande un ordre, il a vu la fenêtre ; suis-le, ou dis pourquoi non.
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.

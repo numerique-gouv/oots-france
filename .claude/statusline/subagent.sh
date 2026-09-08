@@ -60,8 +60,15 @@ etape() {
   DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
   DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
 
-  # 0. « merged » : PR fusionnée, affaires rangées.
+  # 0. « merged » : PR fusionnée, affaires rangées. Déclaré par le geste
+  #    d'après-merge, ou lu sur `main` quand ce geste a été oublié — ce qui
+  #    est arrivé sur 14 tickets sur 37 au 2026-09-08 : le commit de fusion
+  #    de GitHub nomme la branche `oots-<n>-…`, et lui ne s'oublie pas.
   [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
+  N=${TICKET#OOTS-}
+  if [ -n "$N" ] && git -C "$PRINCIPAL" log main --merges -1 -E -i --grep="/oots-$N(-|$)" --format=%h 2>/dev/null | grep -q .; then
+    printf 'merged'; return
+  fi
 
   # 1. Un des sept verdicts en queue de transcript : l'ouvrier a rendu la
   #    main. Cinq des sept attendent une relance.

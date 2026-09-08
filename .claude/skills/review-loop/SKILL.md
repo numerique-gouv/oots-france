@@ -239,8 +239,8 @@ Une passe :
    `git show HEAD:<fichier>` s'ils veulent s'abstraire du travail en cours.
 
    **À partir de la 2ᵉ passe, joindre au prompt les faux positifs déjà
-   consignés** aux passes précédentes de cette boucle (section « rejeté » des
-   `.claude/reviews/…-2.md`, `…-3.md`, …), avec la raison du rejet, et
+   consignés** aux passes précédentes de cette boucle (sections « Rejeté » des
+   « # Passe n » précédentes du fichier de revue), avec la raison du rejet, et
    demander de ne les resoulever qu'avec un élément neuf. Un agent à contexte
    neuf n'a aucune mémoire des passes antérieures : sans cette liste, relire
    le diff complet fait remonter à chaque tour ce qui a déjà été tranché, et
@@ -255,9 +255,10 @@ Une passe :
    même le fichier, avec une ligne notant que la revue est passée sans
    réserve. **En-tête obligatoire : le périmètre relu et la liste des agents
    lancés, avec le critère de chacun** — c'est ce qui rend un rétrécissement
-   visible d'une passe à l'autre au lieu de se découvrir après coup. À partir de la 2ᵉ passe, ne pas écraser le fichier des passes
-   précédentes — chaque passe est un regard distinct : suffixer (`…-2.md`,
-   `…-3.md`, …).
+   visible d'une passe à l'autre au lieu de se découvrir après coup. À partir de la 2ᵉ passe, ne pas écraser ce qui précède : chaque passe est
+   un regard distinct, et s'ajoute **au même fichier** sous un titre
+   « # Passe n » — un fichier par PR, pas un par passe. Les `…-2.md` des
+   boucles d'avant le 2026-09-08 restent tels quels.
 
 4. **Traiter les findings point par point** — soi-même, dans son propre
    contexte, pas via un sous-agent neuf : contrairement à la revue (étape
@@ -336,9 +337,9 @@ Une passe :
    l'échec ne vient visiblement pas du code (flakiness d'infra, runner qui ne
    peut pas monter la stack Domibus), s'arrêter et remonter à l'utilisateur.
 
-5. **Retester** (`scripts/tests.sh` — RuboCop puis RSpec) après les
+5. **Retester** (`make test` — RuboCop puis RSpec) après les
    correctifs. Si l'étape 4 a touché `app/templates/`, `app/builders/` ou
-   `app/clients/`, lancer aussi `scripts/testE2e.sh` (stack Domibus locale
+   `app/clients/`, lancer aussi `make e2e` (stack Domibus locale
    montée si besoin, cf. CLAUDE.local.md) — la suite unitaire mocke le
    transport et ne couvre pas ces chemins ; et `scripts/validate_schematron.sh`
    si `app/templates/` ou `app/builders/` a bougé, seule vérification
@@ -462,7 +463,7 @@ tout seul, à traiter différemment d'un simple « encore une passe ».
 
 **Avant de traiter un nouveau finding bloquant comme routinier (étape 4),
 le comparer aux fichiers de revue des passes précédentes de cette même
-boucle** (`.claude/reviews/…-2.md`, `…-3.md`, …, pas seulement la mémoire de
+boucle** (les sections « # Passe n » du fichier de revue, pas seulement la mémoire de
 la conversation, qui peut avoir été résumée) : est-ce qu'il touche la même
 zone / la même contrainte qu'un finding déjà « réglé » à une passe
 antérieure ? Trois formes :
