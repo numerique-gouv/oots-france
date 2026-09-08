@@ -89,6 +89,15 @@ ignore_unused:
   # `evidence_type`, which refuse at the read rather than in a pass of their own.
   - parsers.evidence_request.{slot_required,unexpected_specification,evidence_subject_not_alone}
   - parsers.evidence_request.{request_id_not_a_uuid,evidence_type_without_distribution}
+  # The rules on the requesting agent that `build_requester` names, refusing at
+  # the read because no answer could carry them: an exception response would
+  # have to copy back the very scheme, name or language being refused.
+  - parsers.evidence_request.{agent_scheme_unknown,agent_id_too_long}
+  - parsers.evidence_request.{agent_without_name,agent_name_too_short}
+  - parsers.evidence_request.{agent_without_language,agent_language_unknown}
+  # And the ones `validate!` names, which do go back in an `EDM:ERR:0003`.
+  - parsers.evidence_request.{agent_without_country,agent_country_unknown}
+  - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

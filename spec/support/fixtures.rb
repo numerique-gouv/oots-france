@@ -71,6 +71,17 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The agent classified `ER` alone, whose name and identifier the rules of
+  # chapter 4.6 judge and which France copies into what it signs. The
+  # collection carries a second agent, classified `IP`, that a looser pattern
+  # would reach instead — and the tempered `(?!</sdg:Agent>)` is what stops the
+  # match at the first closing tag rather than swallowing both.
+  REQUESTER_AGENT = %r{<sdg:Agent>(?:(?!</sdg:Agent>).)*<sdg:Classification>ER</sdg:Classification>\s*</sdg:Agent>}m
+
+  # A real request whose requesting agent has been altered — the block receives
+  # that agent alone, so nothing a spec writes can reach the platform beside it.
+  def envelope_with_requester_agent(&) = envelope_with_body('requete') { |body| body.sub(REQUESTER_AGENT, &) }
+
   # The request the real envelope carries, about an organisation instead of the
   # person it names. `R-EDM-REQ-S016` admits one evidence subject and never two,
   # so the `NaturalPerson` slot gives way rather than being joined.

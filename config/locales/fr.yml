@@ -367,6 +367,34 @@ fr:
       # R-EDM-REQ-C054 : un identifiant facultatif de la personne morale nomme
       # son schéma ; sans lui, il ne désigne rien.
       legal_identifier_without_scheme: Un identifiant de la personne morale est sans schéma
+      # R-EDM-REQ-C012, C092, C108 et C109 : ce que la réponse d'erreur
+      # recopierait de l'agent requêteur. Ces refus-là ne partent pas au
+      # correspondant — l'exception enfreindrait R-EDM-ERR-C010, C027, C028 ou
+      # C029 —, et le journal est le seul endroit où ils se relisent.
+      agent_scheme_unknown: >-
+        Le schéma d'identifiant de l'agent classé ER (« %{scheme} ») n'est ni un code de la liste
+        EAS, ni un code pays d'OOTS.
+      agent_id_too_long: >-
+        L'identifiant de l'agent classé ER fait %{length} caractères, au-delà des %{maximum} admis.
+      agent_without_name: L'agent classé ER est sans nom
+      agent_name_too_short: Le nom de l'agent classé ER (« %{name} ») fait moins de deux caractères
+      agent_without_language: Le nom de l'agent classé ER ne porte pas d'attribut « lang »
+      agent_language_unknown: >-
+        La langue du nom de l'agent classé ER (« %{language} ») n'est pas un code de la liste
+        LanguageCode.
+      # R-EDM-REQ-C073 et C015 : le pays de l'agent requêteur. Repartent, eux, en
+      # EDM:ERR:0003 — la réponse d'erreur ne porte aucune adresse du requêteur.
+      agent_without_country: >-
+        L'agent classé ER doit déclarer exactement un pays dans sdg:Address/sdg:AdminUnitLevel1.
+      agent_country_unknown: >-
+        Le pays de l'agent classé ER (« %{country} ») n'est pas un code de la liste
+        CountryIdentificationCode.
+      # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
+      # en porte un.
+      beneficiary_identifier_without_scheme: >-
+        L'identifiant du bénéficiaire est sans attribut « schemeID ».
+      beneficiary_scheme_unexpected: >-
+        L'identifiant du bénéficiaire est sous le schéma « %{scheme} », et non « %{expected} ».
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
@@ -529,6 +557,14 @@ fr:
         malformed_identifier: >-
           L'identifiant %{element} « %{value} » n'est pas un UUID, que %{rule} exige : aucune réponse
           ne peut être signée sur cet échange.
+      reject_unanswerable_requester:
+        # Même raison que ci-dessus, sur l'agent requêteur cette fois : une
+        # ExceptionResponse recopierait l'identifiant, le schéma, le nom et la
+        # langue qu'on lui reproche.
+        unanswerable: >-
+          %{reason} (%{rule}) : aucune réponse ne peut nommer ce requêteur sans enfreindre à son tour
+          les règles de la réponse d'erreur.
+        unnamed_rule: sans règle nommée
     evidence_request:
       # L'annuaire s'est contredit : la requête DSD portait le filtre
       # « specification », et le point d'accès qu'elle a rendu annonce d'autres

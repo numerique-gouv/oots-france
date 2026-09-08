@@ -363,6 +363,273 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-C012`, `C092`, `C108` and `C109`, refused where the requester is
+  # read rather than among the checks of `validate!`, because an `EDM:ERR:0003`
+  # names the requester by copying back the very values these rules judge —
+  # `R-EDM-ERR-C010`, `C027`, `C028` and `C029` are FATAL on each of them in
+  # the answer. Nothing conformant can carry these refusals, so nothing goes
+  # back and the journal holds them alone.
+  describe 'the requesting agent an answer would have to name' do
+    describe 'the scheme of its identifier' do
+      it 'accepts the EAS code the real request carries' do
+        expect(request.requester.type_id).to eq('urn:cef.eu:names:identifier:EAS:0009')
+      end
+
+      it 'refuses an EAS code the list does not publish, under R-EDM-REQ-C012' do
+        expect { with_requester_scheme('urn:cef.eu:names:identifier:EAS:9999').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      it 'refuses a scheme carrying neither prefix' do
+        expect { with_requester_scheme('SIRET').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      it 'refuses a prefix followed by no code at all' do
+        expect { with_requester_scheme('urn:cef.eu:names:identifier:EAS:').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      # The second branch compares exactly too, `substring-after` yielding the
+      # code as written: a reader that upcased it would accept what the rule
+      # refuses, on the branch where the codes are countries rather than digits.
+      it 'refuses an unregistered country written in lower case' do
+        expect { with_requester_scheme('urn:oasis:names:tc:ebcore:partyid-type:unregistered:de').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      # The second branch of the rule: a country of `OOTS_Country-CodeList`,
+      # which is not the list `R-EDM-REQ-C015` compares an address to.
+      it 'accepts an unregistered scheme naming an OOTS country' do
+        expect(with_requester_scheme('urn:oasis:names:tc:ebcore:partyid-type:unregistered:DE').requester.type_id)
+          .to eq('urn:oasis:names:tc:ebcore:partyid-type:unregistered:DE')
+      end
+
+      # « For testing purposes the code "oots" can be used », which the rule's
+      # assertion admits as a third alternative and its table of prefixes does
+      # not spell out.
+      it 'accepts the literal `oots` the rule admits beside the country codes' do
+        expect(with_requester_scheme('urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots').requester.type_id)
+          .to end_with(':oots')
+      end
+
+      # A country that is a `CountryIdentificationCode` and not an OOTS one:
+      # the two lists must not be confused, this branch reading the shorter.
+      it 'refuses an unregistered scheme naming a country outside OOTS' do
+        expect { with_requester_scheme('urn:oasis:names:tc:ebcore:partyid-type:unregistered:JP').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+    end
+
+    # The other half of `R-EDM-REQ-C012`: `string-length(.)`, whose context is
+    # `sdg:Identifier`, so the 256 characters are the identifier's and not the
+    # scheme's — the prose says otherwise, and applied to the scheme the clause
+    # would be dead, the comparison to a code being an exact one.
+    describe 'the length of its identifier' do
+      it 'accepts one of 255 characters' do
+        expect(with_requester_id('9' * 255).requester.id.length).to eq(255)
+      end
+
+      it 'refuses one of 256, the rule asking for strictly less' do
+        expect { with_requester_id('9' * 256).requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+    end
+
+    describe 'its name' do
+      it 'refuses an agent carrying no name at all' do
+        nameless = with_requester_agent { |agent| agent.sub(%r{<sdg:Name.*?</sdg:Name>}m, '') }
+
+        expect { nameless.requester }.to raise_error(
+          an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: EvidenceRequestParser::AGENT_NAME_REQUIRED)),
+        )
+      end
+
+      # `R-EDM-REQ-C092` measures `normalize-space(.)` and asks for more than
+      # one character, so a single letter and a letter between blanks fail
+      # alike — and `R-EDM-ERR-C027` would refuse France's own answer for the
+      # same reason.
+      it 'refuses a name of one character, under R-EDM-REQ-C092' do
+        expect { with_requester_name('R').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C092')))
+      end
+
+      it 'refuses one whose only character is padded with blanks' do
+        expect { with_requester_name('  R  ').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C092')))
+      end
+
+      # The rule asks for `> 1`, so two characters pass and one does not. Pinned
+      # at the boundary: the accepted name below is long enough that a reader
+      # asking for three would still let it through.
+      it 'accepts a name of exactly two characters' do
+        expect(with_requester_name('AB').requester.name).to eq('AB')
+      end
+
+      it 'keeps a name exactly as it circulated, blanks included' do
+        expect(with_requester_name('  Requêteur  ').requester.name).to eq('  Requêteur  ')
+      end
+    end
+
+    describe 'the language of its name' do
+      it 'refuses a name carrying no `lang`, under R-EDM-REQ-C109' do
+        expect { with_requester_language(nil).requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C109')))
+      end
+
+      # The rule asserts `not(normalize-space(@lang)='')`, so an attribute
+      # written empty and one written blank break it as surely as none at all.
+      it 'refuses one written empty' do
+        expect { with_requester_language('').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C109')))
+      end
+
+      it 'refuses one made of blanks alone' do
+        expect { with_requester_language('   ').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C109')))
+      end
+
+      it 'refuses a code the list does not publish, under R-EDM-REQ-C108' do
+        expect { with_requester_language('xx').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # `.=$code` carries no `i` flag, where `R-EDM-REQ-C040` does, and the
+      # list publishes upper case. Frozen here because it is the one place the
+      # case of a code decides an exchange, and because France writes `FR` and
+      # `EN` itself.
+      it 'refuses a code written in lower case, the rule comparing exactly' do
+        expect { with_requester_language('fr').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # Padded, the value satisfies `C109`, which normalises, and fails `C108`,
+      # which does not: the rule that names the refusal is the one that broke.
+      it 'refuses a valid code surrounded by blanks, under R-EDM-REQ-C108' do
+        expect { with_requester_language(' FR ').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      it 'accepts a code the list publishes' do
+        expect(with_requester_language('EN').requester.language).to eq('EN')
+      end
+    end
+  end
+
+  # `R-EDM-REQ-C073` and `C015`, refused among the checks of `validate!` and not
+  # where the requester is read: `ErrorResponseBuilder#requester_agent` renders
+  # neither address nor classification, so nothing of what is refused here
+  # travels back inside the `EDM:ERR:0003` that says so.
+  describe 'the country of the requesting agent' do
+    it 'accepts the request a real gateway delivered' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'refuses an agent declaring no address at all, under R-EDM-REQ-C073' do
+      homeless = with_requester_agent { |agent| agent.sub(%r{<sdg:Address>.*?</sdg:Address>}m, '') }
+
+      expect { homeless.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C073')))
+    end
+
+    # The rule counts the elements whose `normalize-space` is not empty, so one
+    # written blank counts for none.
+    it 'refuses one whose country element is blank' do
+      blank = with_requester_country('   ')
+
+      expect { blank.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C073')))
+    end
+
+    # `= 1` and not `>= 1`: two countries leave which one asks undecided, and
+    # `AdminUnitLevel1` is where a received request names it at all.
+    it 'refuses one declaring two countries' do
+      doubled = with_requester_agent do |agent|
+        agent.sub(%r{<sdg:AdminUnitLevel1>.*?</sdg:AdminUnitLevel1>}m) { |element| "#{element}#{element}" }
+      end
+
+      expect { doubled.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C073')))
+    end
+
+    # The rule counts what is left after the blank ones are dropped, so a blank
+    # element beside a valid one still counts one and the request stands. This
+    # is the case the filter exists for, and nothing else exercises it.
+    it 'accepts a blank country element beside a valid one' do
+      doubled = with_requester_agent do |agent|
+        agent.sub('<sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>',
+          '<sdg:AdminUnitLevel1>  </sdg:AdminUnitLevel1><sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>')
+      end
+
+      expect(doubled.validate!).to be_a(described_class)
+    end
+
+    it 'refuses a code the list does not publish, under R-EDM-REQ-C015' do
+      expect { with_requester_country('ZZ').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
+    end
+
+    # The assertion is an `=` with no `i` flag, exactly as `C108`.
+    it 'refuses one written in lower case' do
+      expect { with_requester_country('fr').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
+    end
+
+    # The list codes Greece `EL` and not `GR`, following the Union's usage: a
+    # reader that took ISO 3166-1 alpha-2 unamended would refuse a conformant
+    # Greek requester.
+    it 'accepts EL, which is how the list codes Greece' do
+      expect(with_requester_country('EL').validate!).to be_a(described_class)
+    end
+  end
+
+  # `R-EDM-REQ-C041` and `C042`, whose context is the identifier itself: a
+  # request naming no identifier for its beneficiary breaks neither, chapter 2.1
+  # §2.3.1.2 providing for an identity established in the requester's own
+  # country. Refused by `validate!` — the answer describes no evidence subject.
+  describe 'the scheme of the beneficiary identifier' do
+    it 'accepts a request carrying no identifier at all' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'accepts one under the fixed value the rule names' do
+      expect(with_beneficiary_identifier(' schemeID="eidas"').validate!).to be_a(described_class)
+    end
+
+    it 'refuses one naming no scheme, under R-EDM-REQ-C041' do
+      expect { with_beneficiary_identifier('').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C041')))
+    end
+
+    # `C041` asserts the attribute's presence and nothing more, so an empty one
+    # satisfies it and falls to `C042`, which compares the value: the refusal
+    # names the rule that actually broke.
+    it 'refuses one whose scheme is present and empty, under R-EDM-REQ-C042' do
+      expect { with_beneficiary_identifier(' schemeID=""').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C042')))
+    end
+
+    # The message of `C042` says `eidas2` « can be used for testing purposes
+    # until confirmation of provision of a suitable legal basis », and its
+    # assertion admits nothing but `eidas`. France follows the assertion.
+    it 'refuses eidas2, which the message admits and the assertion does not' do
+      expect { with_beneficiary_identifier(' schemeID="eidas2"').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C042')))
+    end
+
+    # The rule fires per element, and the schema admits several: a reader that
+    # judged only the first would serve a request the rule refuses.
+    it 'refuses a second identifier the first one made look conformant' do
+      several = with_beneficiary_identifier(' schemeID="eidas"') do |identifier|
+        "#{identifier}<sdg:Identifier schemeID=\"eidas2\">FR/DE/A2635542Y</sdg:Identifier>"
+      end
+
+      expect { several.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C042')))
+    end
+  end
+
   describe 'what it refuses' do
     # Each of these must raise UnreadableMessageError and not a bare
     # TypeError, which no `rescue` on the path recognises: the correspondent
@@ -469,5 +736,44 @@ RSpec.describe EvidenceRequestParser do
   # received request names the country that asks.
   it 'reads the country the requester declares' do
     expect(request.requester.address.country).to eq('FR')
+  end
+
+  # The agent classified `ER` alone, `Fixtures::REQUESTER_AGENT` saying why.
+  def with_requester_agent(&) = envelope_with_requester_agent(&).body
+
+  def with_requester_scheme(scheme)
+    with_requester_agent { |agent| agent.sub(/schemeID="[^"]*"/, %(schemeID="#{scheme}")) }
+  end
+
+  def with_requester_id(id)
+    with_requester_agent { |agent| agent.sub(/(<sdg:Identifier[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{id}" } }
+  end
+
+  def with_requester_name(name)
+    with_requester_agent { |agent| agent.sub(/(<sdg:Name[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{name}" } }
+  end
+
+  # `nil` removes the attribute rather than emptying it: the rule normalises,
+  # so the two must be told apart by what is written and not by what is read.
+  def with_requester_language(value)
+    with_requester_agent do |agent|
+      agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
+    end
+  end
+
+  def with_requester_country(code)
+    with_requester_agent do |agent|
+      agent.sub(/(<sdg:AdminUnitLevel1>)[^<]*/) { "#{Regexp.last_match(1)}#{code}" }
+    end
+  end
+
+  # The real request names no identifier for its beneficiary, so one is added
+  # here. Its value is of the shape `R-EDM-REQ-C040` fixes, that rule being a
+  # different one from the two under test.
+  def with_beneficiary_identifier(attributes)
+    identifier = "<sdg:Identifier#{attributes}>FR/DE/A2635542Y</sdg:Identifier>"
+    identifier = yield(identifier) if block_given?
+
+    with_body { |body| body.sub('</sdg:LevelOfAssurance>', "</sdg:LevelOfAssurance>#{identifier}") }
   end
 end
