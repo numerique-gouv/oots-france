@@ -559,8 +559,22 @@ l'utilisateur sera au moment de merger, donc où la question doit le trouver :
   question par puce, chacune avec l'option que tu recommandes et pourquoi ;
 - **et** un commentaire de PR reprenant la même liste, pour que ça notifie.
 
-S'il n'y a aucune question, n'écris pas la section : une rubrique vide
-apprend à la sauter.
+**Une question ouverte est une décision à rendre au merge** : garder ou
+défaire un choix que tu as fait, et qui se défait en un commit. **Ce que la
+PR ne fait pas et qui lui survivra est autre chose : un reliquat**, et il va
+dans sa propre section `## Reliquats` — un travail que tu as vu et laissé,
+parce qu'il est hors du ticket, antérieur à la PR, ou trop gros pour elle.
+Une puce par reliquat : ce qui manque, pourquoi pas ici, et **si un chapitre
+des TDD le nomme** (la règle, en lien) ou si c'est seulement mieux. C'est sur
+cette ligne que l'orchestrateur et l'utilisateur décident d'en faire un ticket
+ou de le laisser mourir avec la PR — **tu n'ouvres pas le ticket toi-même**,
+et tu ne le glisses pas dans les questions ouvertes, où il resterait sans
+réponse après le merge : le 2026-09-08, trois reliquats nommés « ticket de
+suite » dans des rapports `LIVRÉ` (OOTS-144, OOTS-145, OOTS-153) n'avaient
+donné aucun ticket.
+
+S'il n'y a aucune question, ou aucun reliquat, n'écris pas la section : une
+rubrique vide apprend à la sauter.
 
 **Une fois convergé, remonte l'écran avec la PR.** `review-loop` rend une CI
 verte et des findings traités — il n'a rien regardé. Remets donc `web` en
@@ -659,6 +673,8 @@ PR     : <url>  (CI verte, review-loop convergé en <n> passes)
 Fait   : <deux ou trois phrases sur ce qui change>
 TDD    : <les chapitres qui justifient, ou le désaccord relevé avec le ticket>
 Questions ouvertes : <aucune | <n>, dans la PR>
+Reliquats : <aucun | <n>, dans la PR — une ligne chacun : quoi, et le chapitre
+            qui le nomme ou « rien ne le nomme »>
 Worktree : <chemin>  (à supprimer après merge)
 ```
 
@@ -800,9 +816,9 @@ te protège de rien — il rend seulement plus lisible un arrêt déjà décidé
 - **Ne pousse pas `main`**, ne force-push que ta propre branche, et seulement
   en `--force-with-lease`, jamais en `--force` nu.
 - **Le direct ne remplace pas la PR.** Un message est lu une fois puis
-  disparaît dans le fil ; la section `## Questions ouvertes` de la PR, elle,
-  est là au moment de merger. Tout ce qui compte y est écrit **aussi**, même
-  si tu l'as déjà dit.
+  disparaît dans le fil ; les sections `## Questions ouvertes` et
+  `## Reliquats` de la PR, elles, sont là au moment de merger. Tout ce qui
+  compte y est écrit **aussi**, même si tu l'as déjà dit.
 - **Ne demande rien en cours de route** en dehors de l'arbitrage et du
   blocage. Tout autre doute se tranche et se documente — dans le plan, dans
   la PR, ou en question ouverte.
