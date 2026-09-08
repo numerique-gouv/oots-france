@@ -239,7 +239,7 @@ Everything else under `.claude/` is workshop material and stays local: `plans/`,
 Local does not mean arbitrary — the skills read these directories, so their shape is a convention like any other. A plan goes to `.claude/plans/AAAA-MM-JJ-<sujet>.md` and is written **at the moment it is submitted for approval**, not after; a review to `.claude/reviews/`, an audit to `.claude/audits/`, same naming. One file per subject, keeping only the last revision: re-writing a plan overwrites its file, and a changed date renames it rather than leaving two versions side by side. `ship-plan` looks for the plan there, and finds nothing if it went elsewhere.
 
 > [!IMPORTANT]
-> **A skill is read by whoever works here next, human or agent.** Keep them free of anything personal — an absolute path from one machine, a token, the name of a local VM. What a skill needs from the environment, it names as a variable or asks for.
+> **A skill is read by whoever works here next, human or agent.** Keep them free of anything personal — an absolute path from one machine, a token, the name of a local VM. What a skill needs from the environment, it names as a variable or asks for. And it is written in plain words, a title saying what must be true and an abstract rule listing its cases — the rules, with the corrections that fixed them, are in [`harness-engineer` § Comment on écrit dans le harnais](.claude/skills/harness-engineer/SKILL.md#comment-on-écrit-dans-le-harnais).
 
 ## Boundaries
 
