@@ -42,6 +42,7 @@ Ce qui décide où va un fait, c'est **le moment où chaque fichier est lu**. Un
 | [`.claude/skills/*/SKILL.md`](../) | une façon de faire une chose : livrer, relire, orchestrer | à l'invocation seulement |
 | [`.claude/agents/*.md`](../../agents/) | un rôle : ce qu'il reçoit, ce qu'il rend, ce qu'il ne fait pas | au lancement du sous-agent |
 | [`.claude/statusline/`](../../statusline/) | ce qu'un écran montre d'un agent au travail | à chaque tick, par le harnais |
+| [`.claude/hooks/`](../../hooks/) | ce que le harnais retire d'une réponse d'outil avant que le modèle la lise | après chaque appel d'outil que le `matcher` désigne |
 | [`.claude/settings.json`](../../settings.json) | ce que le harnais exécute lui-même : statusline, hooks | par chaque clone, sous la confiance de l'espace de travail |
 | `~/.claude/projects/<slug>/memory/` | ce qu'une session a retenu pour la suivante ; `MEMORY.md` est l'index | l'index à chaque session, un fichier quand il paraît pertinent |
 
@@ -188,7 +189,7 @@ Deux tests qui départagent vite :
 > **Version canonique** : `.claude/skills/ship-plan/SKILL.md`, versionné dans le dépôt. Si les deux divergent, le skill fait foi.
 ```
 
-Après le merge, la mémoire sort du répertoire et sa ligne sort de `MEMORY.md` — ton rapport en donne la liste, c'est un des gestes d'après-merge. **Sortir n'est pas effacer** : la mémoire se déplace dans `memory/.rapatriees/`, d'un `mv` qu'un second `mv` défait, et l'index se retouche ligne par ligne avec l'outil d'édition — jamais un `rm` ni un `sed -i` en boucle sur ce répertoire, qui emportent en une commande ce que trente sessions ont appris. Refusé par l'utilisateur le 2026-09-08 au moment de le faire. Une mémoire qui garde un contenu propre à la conversation (le « pourquoi » d'une préférence de l'utilisateur) garde ce contenu-là et perd le reste.
+Après le merge, la mémoire sort du répertoire et sa ligne sort de `MEMORY.md` — ton rapport en donne la liste, et tu l'écris aussi en tâche dans `.claude/local_tasks/` (format dans [`orchestrateur` § Entrée](../orchestrateur/SKILL.md#entrée)), que l'orchestrateur fera à son premier run d'après merge : un geste qui n'a pour trace qu'un compte rendu ne se fait pas. **Sortir n'est pas effacer** : la mémoire se déplace dans `memory/.rapatriees/`, d'un `mv` qu'un second `mv` défait, et l'index se retouche ligne par ligne avec l'outil d'édition — jamais un `rm` ni un `sed -i` en boucle sur ce répertoire, qui emportent en une commande ce que trente sessions ont appris. Refusé par l'utilisateur le 2026-09-08 au moment de le faire. Une mémoire qui garde un contenu propre à la conversation (le « pourquoi » d'une préférence de l'utilisateur) garde ce contenu-là et perd le reste.
 
 ## La passe
 
@@ -217,6 +218,7 @@ Après le merge, la mémoire sort du répertoire et sa ligne sort de `MEMORY.md`
    Un gabarit (`AAAA-MM-JJ-`, `OOTS-<n>`) sort naturellement du premier contrôle ; ce qui compte est un vrai chemin qui n'existe plus.
 7. **Pousser et ouvrir la PR**, corps par `--body-file`, en y reprenant les constats de l'audit — un lecteur doit pouvoir accepter ou refuser chaque commit avec sa preuve sous les yeux. Le merge attend l'utilisateur ; tu ne le fais pas.
 8. **Mesurer et dater.** L'audit porte les chiffres de la fenêtre — corrections de l'utilisateur, passes par PR, jetons par ticket, questions posées dont la réponse était écrite — pour que la passe suivante compare. **Ne réécris pas un chiffre dans un skill sans l'avoir remesuré** : un coût recopié devient une consigne fausse.
+9. **Dépose ce qui ne peut se faire que plus tard dans `.claude/local_tasks/`**, un fichier par tâche avec sa condition (format dans [`orchestrateur` § Entrée](../orchestrateur/SKILL.md#entrée), qui les lit au début de chaque run et fait celles dont la condition est remplie). Ce qui y va : **une mesure à refaire à une date** — le volume Linear une semaine après le hook, les `save_issue` regroupables un mois après la règle —, pour que le chiffre de base de l'audit ait un chiffre d'après ; **un essai du harnais qui attend une session neuve** — un hook, une statusline, une permission de `settings.json` ne se chargent qu'au démarrage, et cette session-ci ne peut pas les voir prendre ; **un geste d'après-merge** — une mémoire à déplacer, une ligne de `MEMORY.md` à retirer ; **une vérification que ta fenêtre ne permettait pas** — « la règle X est-elle suivie dans les cinq prochains ouvriers ? ». Ce qui n'y va pas : un constat sans preuve (il attend la preuve, pas une date) et tout ce qui demanderait un ouvrier. Une tâche déposée là est une tâche que la passe suivante trouve faite, ou trouve avec la raison pour laquelle elle ne l'est pas ; une phrase de compte rendu ne l'est jamais. Demandé par l'utilisateur le 2026-09-08.
 
 ## Comment on écrit dans le harnais
 
@@ -266,7 +268,7 @@ Précédent : <lien vers l'audit d'avant, ou « premier »>.
 <les sources hors d'atteinte, les transcripts trop gros pour être lus en entier, et pourquoi>
 ```
 
-Le compte rendu dans le fil : le lien de la PR, le nombre de constats appliqués et proposés, les deux ou trois qui changent le plus, la liste des mémoires à supprimer après merge. Pas le détail — il est dans l'audit.
+Le compte rendu dans le fil : le lien de la PR, le nombre de constats appliqués et proposés, les deux ou trois qui changent le plus, la liste des mémoires à supprimer après merge. Pas le détail — il est dans l'audit. Tout ce que la passe laisse à faire après le merge — une mémoire à déplacer, un hook à voir prendre, un chiffre à remesurer à une date — est un fichier de `.claude/local_tasks/`, pas une phrase du compte rendu.
 
 ## Garde-fous
 
