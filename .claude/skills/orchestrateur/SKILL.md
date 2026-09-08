@@ -179,6 +179,17 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 
 **La revue est la phase chère** : planifier et implémenter réunis pèsent ~1 M, une seule passe de revue le double. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 
+**Un ticket écrit coûte autant qu'un ticket livré, et le lot ne s'arrête pas au `LIVRÉ`.** Le `spec-nerd` du § 1 bis et celui des reliquats du § 5 bis se paient sur le même compte que les ouvriers, et ils ne sont pas petits — chacun lance des `tdd-nerd` qui lisent un corpus entier, et la boucle avec le contradicteur en rajoute une par passe. **Relevé du 2026-09-08**, huit invocations, arbre compris (jetons neufs) :
+
+| Ce qu'il faisait | Jetons neufs | Enfants |
+| --- | --- | --- |
+| une issue hors domaine (outillage, tests) | 0,45 à 0,8 M | 0 à 1 `tdd-nerd` |
+| une issue du domaine, un `tdd-nerd` | 1,7 à 1,9 M | 1 `tdd-nerd` |
+| une issue relue par le contradicteur jusqu'à convergence | **5,8 M** | 3 `contradicteur` |
+| compléter ou mettre à jour un projet après une livraison | 4,8 à 8,1 M | 1 à 3 `tdd-nerd` |
+
+D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 2 M s'il touche au domaine, 6 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 2 à 6 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer trois ouvriers sur les ~12 M du plafond ci-dessus et découvrir que les reliquats des trois n'ont plus de budget.
+
 Le budget se compte enfin **sur le compte, pas sur la session** : un ouvrier lancé d'ailleurs puise au même endroit. Demande ce qui tourne avant de dimensionner.
 
 Quand le budget s'épuise en cours de lot, ce n'est pas une urgence, c'est le § 6 — mais arrête à une frontière propre (PR poussée, passe finie) si tu peux choisir le moment.
@@ -270,7 +281,7 @@ Mais un backlog où chaque ticket fermé en ouvre trois ne converge pas, et c'es
 1. **Lis la section `## Reliquats` de chaque PR livrée**, pas seulement la ligne du rapport. Quand un lot livre plusieurs PR, rassemble leurs reliquats en une seule liste.
 2. **Pour chacun, une recommandation, et elle est « à laisser » par défaut.** Un reliquat mérite un ticket dans deux cas seulement : **un chapitre des TDD le nomme** — le code enfreint ou ne fait pas encore une règle citée, ce que la puce de l'ouvrier dit ou que tu vérifies dans le chapitre — ou **l'utilisateur l'a demandé**. Une dette de nommage, un « ce serait mieux si », un défaut préexistant que rien ne cite, une symétrie qu'aucun texte ne réclame restent dans la PR et meurent avec elle : c'est prévu, et c'est ce qui fait converger. Un reliquat qui complète un ticket ouvert se signale comme tel — `spec-nerd` le versera dedans au lieu de créer.
 3. **Rends la liste à l'utilisateur en un lot**, avec le compte rendu de livraison : le reliquat, la PR, ta recommandation et sa raison en une ligne. C'est là qu'il donne son avis — c'est le moment où il relit la PR, et une liste de trois lignes se tranche en une réponse. Ne l'interroge pas reliquat par reliquat.
-4. **Ce qu'il retient part à un seul `spec-nerd`** (§ 1 bis), avec pour chaque reliquat la PR et le ticket d'origine : c'est ce qui le range dans le bon chantier. Un `spec-nerd` par lot livré, jamais un par reliquat — il coûte un corpus entier, et il regroupe ce qui va ensemble. Relaie son rapport comme au § 1 bis ; ce qui en sort en `Todo` n'entre dans un lot que si l'utilisateur le dit.
+4. **Ce qu'il retient part à un seul `spec-nerd`** (§ 1 bis), avec pour chaque reliquat la PR et le ticket d'origine : c'est ce qui le range dans le bon chantier. Un `spec-nerd` par lot livré, jamais un par reliquat — il coûte 2 à 6 M à lui seul (§ 3 bis), et il regroupe ce qui va ensemble. Relaie son rapport comme au § 1 bis ; ce qui en sort en `Todo` n'entre dans un lot que si l'utilisateur le dit.
 
 **Ce qui se mesure** : le nombre de tickets ouverts avant et après un lot. La passe d'[`harness-engineer`](../harness-engineer/SKILL.md) le relève ; s'il monte deux passes de suite, c'est le point 2 qui est à durcir, pas une phrase à ajouter ici.
 
