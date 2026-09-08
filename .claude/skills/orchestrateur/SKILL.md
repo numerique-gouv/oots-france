@@ -91,13 +91,14 @@ Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils n
 
 Compare donc les fichiers visés avant de lancer : les corps de tickets les nomment, un `grep` sur leurs symboles le confirme, et `git diff --name-only origin/main...<branche>` tranche entre deux branches ouvertes. Puis **sérialise la paire**, ou **lance les deux en le disant** — à l'utilisateur pour l'ordre de merge, à chaque ouvrier pour qu'il garde une empreinte étroite. Ça marche : deux ouvriers prévenus, et l'un a trouvé le moyen de ne pas toucher au fichier partagé.
 
-## 3. Trois ouvriers — le plafond est le CPU
+## 3. Deux ouvriers — le CPU en porte trois, le budget deux
 
-**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent.
+**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant côté machine est les deux cœurs**, que trois suites de tests simultanées se disputent. Mais le plafond qui mord en premier est celui des jetons (§ 3 bis) : depuis que le lot se termine par un `spec-nerd` de reliquats et que la médiane d'un ticket est à 4,2 M, **trois ouvriers ne tiennent dans une fenêtre que si tout converge du premier coup**. Arbitré le 2026-09-08.
 
-- **trois** en régime ordinaire ;
-- **quatre** si aucun ne monte de pile locale ;
-- **deux** si l'un joue `make e2e` en local — Domibus est une JVM avec MySQL.
+- **deux** en régime ordinaire — un lot qui tient à chaque coup, avec la marge d'une passe de revue de plus et de ses reliquats ;
+- **trois** sur une fenêtre neuve (~20 M devant toi, relus dans le fichier du § 3 bis) et des tickets fermés par une règle nommée, dont on peut attendre une seule passe ;
+- **quatre** jamais par le budget, même si le CPU le permettrait sans pile locale ;
+- **un seul** si l'autre joue `make e2e` en local — Domibus est une JVM avec MySQL.
 
 > [!WARNING]
 > **Jamais deux `make e2e` locaux à la fois.** Deux piles Domibus sur deux cœurs ne finissent pas : elles se battent jusqu'au timeout, et l'échec ressemble à un défaut du code. En pratique le bout-en-bout tourne en CI, ce que le contrat de l'ouvrier lui impose déjà.
@@ -146,10 +147,10 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 - **une passe de revue : 1,3 à 2,3 M**, dont 1,0 à 1,6 M pour le seul éventail — quatre à sept relecteurs à ~0,25 M chacun, chacun lisant le diff entier ;
 - **la queue de `ship-plan` : 0,8 à 1,8 M** — attente de CI, refonte d'historique, description de PR, écrans. Ce n'est pas un détail : sur OOTS-144 c'est le deuxième poste, derrière la revue.
 
-**Retiens ~3 M pour un ticket qui converge en une passe, 5 à 6 M quand la revue mord** — un bloquant réel, un rebase, une passe de plus. Un lot de trois coûte donc **10 à 15 M** là où il en coûtait 24 ; l'accompagnement en reste le vingtième, la dépense est chez les ouvriers.
+**Retiens ~3 M pour un ticket qui converge en une passe, 5 à 6 M quand la revue mord** — un bloquant réel, un rebase, une passe de plus. **Remesuré le 2026-09-08 sur les 15 tickets des deux semaines précédentes : médiane 4,2 M, quartiles 2,8 à 5,7 M, un ticket à 12,6 M après cinq passes de revue.** L'accompagnement en reste le vingtième, la dépense est chez les ouvriers — et, depuis le § 5 bis, chez le `spec-nerd` qui suit le lot (voir plus bas).
 
 > [!IMPORTANT]
-> **La fenêtre de cinq heures vaut ~20 M de jetons neufs** — étalonnée le 2026-08-27 : 12,4 M dépensés depuis son ouverture pour 62 % consommés. Un lot de trois y tient désormais, avec de la marge ; il n'y tenait pas avant. **Ne lance pas un lot que la session ne peut pas finir** : ~12 M devant toi pour trois ouvriers, ~4 M pour un seul. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
+> **La fenêtre de cinq heures vaut ~20 M de jetons neufs** — étalonnée le 2026-08-27 : 12,4 M dépensés depuis son ouverture pour 62 % consommés. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : un lot de deux coûte 6 à 11 M de livraison plus 2 à 6 M de `spec-nerd`, et tient ; un lot de trois coûte 9 à 17 M avant ses reliquats, et ne tient que sur une fenêtre neuve et sans passe de revue supplémentaire. Compte ~6 M devant toi par ouvrier, plus le `spec-nerd` du lot. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
 >
 > ```sh
 > touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
@@ -303,4 +304,4 @@ Mais un backlog où chaque ticket fermé en ouvre trois ne converge pas, et c'es
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
 - **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste.
 - **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis). **`ÉCRAN` n'en fait pas partie** — une revue d'écran revient à l'ouvrier qui a fait l'écran, et rien ne la porte sur disque comme un plan porte une conception (§ 5).
-- **Ne dépasse pas le plafond du § 3** : au-delà, tout ralentit ensemble et rien ne finit plus tôt.
+- **Ne dépasse pas le plafond du § 3** : au-delà, tout ralentit ensemble et rien ne finit plus tôt — ou le budget s'arrête avant les reliquats, et le lot n'est pas fini.
