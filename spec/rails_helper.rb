@@ -24,6 +24,7 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include Fixtures
   config.include GatewayStubs
+  config.include CodeListStubs
   config.include DirectoryStubs
 end
 

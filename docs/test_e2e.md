@@ -8,14 +8,19 @@ La suite unitaire (`spec/`) remplace partout les frontières par des doublures :
 
 Les scénarios de bout en bout (`features/`) comblent ce trou : ils exercent la chaîne réelle — requête construite, soumise au WS plugin, transportée en AS4, reçue, notifiée par la passerelle, traitée en tâche de fond, réponse renvoyée, justificatif retransmis au requêteur.
 
-## Deux suites, deux configurations
+## Trois configurations, une seule qui sort
 
-| | `spec/` | `features/` |
-| --- | --- | --- |
-| Commande | `bundle exec rspec` (via `make test`) | `make e2e` |
-| Configuration | profil Cucumber par défaut | profil `bout_en_bout` de `config/cucumber.yml` |
-| Prérequis | une base | pile démarrée et Domibus configuré |
-| Workflow GitHub | `tests.yml` | `e2e.yml` |
+`features/` se joue sous deux profils, que `config/cucumber.yml` déclare et que l'étiquette `@bout_en_bout` sépare : le profil par défaut, qui ne franchit aucune frontière, et celui du bout en bout, qui les franchit toutes.
+
+| | `spec/` | `features/`, profil par défaut | `features/`, profil `bout_en_bout` |
+| --- | --- | --- | --- |
+| Commande | `bundle exec rspec` (via `make test`) | `bundle exec cucumber` | `make e2e` |
+| Réseau sortant | **aucun** : WebMock, par `spec/rails_helper.rb` | **aucun** : WebMock, par `features/support/webmock.rb` | **le vrai** : WebMock y est désactivé |
+| Prérequis | une base | une base | pile démarrée et Domibus configuré |
+| Workflow GitHub | `tests.yml` | `tests.yml` | `e2e.yml` |
+
+> [!IMPORTANT]
+> **Hors du bout en bout, un appel qui sort fait échouer le scénario en nommant l'adresse** ; il n'est pas rattrapé en silence. Une page qu'un scénario ouvre et qui interroge un serveur de la Commission — la liste de codes du [chapitre 3.5.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932952), par exemple — se donne donc son double dans la définition d'étape, comme le fait celle de la démarche de démonstration. C'est voulu : la suite ne dépend ni du réseau ni de la disponibilité d'un hôte extérieur, et un appel ajouté par mégarde se voit au premier passage.
 
 > [!IMPORTANT]
 > Les scénarios de bout en bout portent l'étiquette `@bout_en_bout`, que le profil Cucumber par défaut écarte, et cela doit le rester : le workflow `tests.yml` tourne sur un runner nu, sans passerelle. Les y inclure ferait échouer toutes les CI.

@@ -17,6 +17,16 @@ RSpec.describe CodeListClient do
     expect(client.procedure_names).to be_empty
   end
 
+  # The limit of that rescue, and what both suites rest on: a call nothing
+  # doubles is refused by WebMock outside the `StandardError` hierarchy, so it
+  # passes through this client and names the address instead of being read as
+  # an outage. Widening the rescue would hand back a missing name instead of a
+  # named failure.
+  it 'lets a call that leaves the machine fail, naming the address' do
+    expect { client.procedure_names }
+      .to raise_error(WebMock::NetConnectNotAllowedError, /code\.europa\.eu/)
+  end
+
   it 'answers no name at all when what comes back is not a code list' do
     stub_request(:get, described_class::PROCEDURES).to_return(status: 404, body: '<html>Not found</html>')
 

@@ -30,17 +30,18 @@ end
 # Ouverte depuis le menu, et non par son adresse : c'est l'entrée elle-même que
 # [OOTS-178](https://linear.app/pole-api/issue/OOTS-178) demande de vérifier.
 Quand("je suis l'entrée « Démo » du menu") do
+  stub_code_list(procedures: { ProcedureCode::STUDY_FINANCING => CodeListStubs::STUDY_FINANCING_LABEL })
   visit admin_root_path
   click_link I18n.t('layouts.entete.demo')
 end
 
-# Rien de ce que le scénario lit ne vient de la liste de codes, qui vit sur un
-# hôte de la Commission que Cucumber n'intercepte pas : une liste injoignable ne
-# coûte ici que l'intitulé de la démarche, jamais la page.
 Alors("je lis l'accueil de la démarche de l'Université de démonstration") do
   expect(page).to have_current_path(admin_demo_root_path)
   expect(page).to have_text(I18n.t('admin.demo.home.show.portal'))
-  expect(page).to have_css('h1', text: ProcedureCode::STUDY_FINANCING)
+  expect(page).to have_css(
+    'h1',
+    exact_text: "#{ProcedureCode::STUDY_FINANCING} — #{CodeListStubs::STUDY_FINANCING_LABEL}",
+  )
 end
 
 Alors("on m'offre de m'identifier avec une identité d'un autre État membre") do

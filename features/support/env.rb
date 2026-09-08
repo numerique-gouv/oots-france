@@ -3,11 +3,26 @@ require 'webrick'
 
 ActionController::Base.allow_rescue = false
 
-# France's own country code, which `Exchange` reads to say which of its two
-# countries is which: a page of the operator console therefore depends on it,
-# and not only the directory clients. Set here because Cucumber loads nothing
-# from `spec/`, where the unit suite pins the same value.
-ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
+# The floor these scenarios read through `Settings`, which Cucumber finds
+# nowhere else: it loads nothing from `spec/`, where
+# `spec/support/test_environment.rb` gives the unit suite the same. `tests.yml`
+# plays them on a bare runner, with no `.env` at all.
+#
+# Of the three, only the country code announces its own absence — `Exchange`
+# reads it to say which of its two countries is which, and nothing catches
+# that. The two the code list reads are swallowed instead: `CodeListClient`
+# answers any failure with an empty list, a configuration error included, so
+# the page renders under « Aucun label » and the scenario fails on what it
+# displays rather than on what is missing.
+#
+# In a hook, and tagged, rather than at load: posted for every profile, a
+# default would stand in for a `.env.oots` line that is simply absent, and
+# `make e2e` would run against a test value taking it for the real one.
+Before('not @bout_en_bout') do
+  ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
+  ENV['DELAI_MAX_SERVICES_COMMUNS'] ||= '10000'
+  ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'
+end
 
 # No transaction around a scenario, because the `bout_en_bout` ones cannot have
 # one: they drive a server and a background worker that run in their own
