@@ -141,8 +141,8 @@ Un fichier du harnais retouché à chaque session est le signe le plus sûr d'un
 
 ### Les PR et Linear
 
-- `gh pr list --state all --search "merged:>$DEPUIS"`, puis pour chacune : les commentaires de revue de l'utilisateur (`gh api repos/<dépôt>/pulls/<n>/comments`), les commits postérieurs à l'ouverture, un conflit au merge. Un commentaire humain sur une PR que `review-loop` a déclarée convergée est un trou dans le lot de relecteurs ou dans la définition du bloquant.
-- Dans Linear : les tickets redescendus de `Todo` (`list_issues` puis l'historique), les commentaires de l'utilisateur sur un ticket rédigé par `spec-nerd`, et les « fuites » que l'orchestrateur signale dans ses comptes rendus — un ticket `Todo` qu'il a dû écarter est un contrôle de `spec-nerd` à renforcer.
+- `gh pr list --state all --search "merged:>$DEPUIS"`, puis pour chacune : les commits postérieurs à l'ouverture, un conflit au merge, et ce que l'utilisateur a dit de la PR. **Tout commentaire GitHub est signé de son compte, agents compris** — l'auteur ne distingue rien. Ce qu'il a lui-même relu se trouve dans les transcripts : ce qu'il tape après avoir reçu le lien d'une PR que `review-loop` a déclarée convergée est le commentaire humain, et il pointe un trou dans le lot de relecteurs ou dans la définition du bloquant.
+- Dans Linear : les commentaires de l'utilisateur sur un ticket rédigé par `spec-nerd`, et les « fuites » que l'orchestrateur signale dans ses comptes rendus — un ticket `Todo` qu'il a dû écarter est un contrôle de `spec-nerd` à renforcer. `list_issues` ne rend pas l'historique des statuts : un ticket redescendu de `Todo` ne se voit que dans les transcripts, au `save_issue` qui l'a fait redescendre.
 
 ### Les mémoires
 
@@ -186,9 +186,11 @@ Après le merge, la mémoire se supprime entière et sa ligne sort de `MEMORY.md
 6. **Vérifier** — un changement de harnais se vérifie comme un correctif : rejoue la panne. Reprends le transcript où le défaut a eu lieu et demande-toi si, à ce tour-là, le fichier que tu viens de modifier aurait été chargé, et si la règle y est assez haute pour être lue. Puis les contrôles mécaniques, tous dans la passe :
 
    ```sh
-   # chemins cités par le harnais et absents du dépôt
-   grep -ohE '(\.claude|scripts|docs)/[A-Za-z0-9_./-]+' CLAUDE.md .claude/skills/*/SKILL.md .claude/agents/*.md \
-     | sed 's/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
+   # chemins cités par le harnais et absents du dépôt — ce skill exclu, il cite des chemins morts en exemple ;
+   # les répertoires git-ignorés exclus aussi, absents d'un clone sans être morts
+   grep -ohE '(\.claude|scripts|docs)/[A-Za-z0-9À-ÿ_./-]+' CLAUDE.md .claude/agents/*.md \
+     $(ls .claude/skills/*/SKILL.md | grep -v harness-engineer) \
+     | sed 's/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || git check-ignore -q "$p" || echo "$p"; done
    # la même chose dans les mémoires — sans les chemins de ~/.claude, qui ne sont pas ceux du dépôt
    grep -ohE '(^|[^~/])\.claude/[A-Za-z0-9_./-]+' ~/.claude/projects/$(pwd | tr / -)/memory/*.md | sed -E 's/^[^.]//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
    # les verdicts que la statusline connaît sont ceux de l'ouvrier
