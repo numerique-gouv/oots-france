@@ -513,14 +513,16 @@ fr:
       unknown_requester: Requêteur inconnu
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
     evidence_provision:
-      answer_request:
-        unknown_exchange: "Échange inconnu au moment de répondre : %{id}"
+      choose_answer:
         # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
         # refuser, et la version que l'entête annonce sans que le corps la
         # confirme.
         request_replayed: "Identifiant de requête déjà traité : %{id}"
         unexpected_version: L'entête du message reçu annonce %{announced}, et non %{expected}.
         unnamed_version: une version sans nom
+      journal_answer:
+        unknown_exchange: "Échange inconnu au moment de répondre : %{id}"
+      reject_malformed_identifiers:
         # Un refus qui ne part pas au correspondant : la réponse réutiliserait
         # l'identifiant qu'on lui reproche. La règle est nommée pour le journal,
         # qui est alors le seul endroit où la décision se relit.

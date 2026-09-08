@@ -19,7 +19,7 @@ module IncomingMessage
       # correspondents and one identifier legitimately names both sides.
       #
       # Adopting an existing row writes nothing to it, the block running only on
-      # creation, and `EvidenceProvision::AnswerRequest` settles an exchange
+      # creation, and `EvidenceProvision::JournalAnswer` settles an exchange
       # France received and no other.
       Exchange.find_or_create_by!(exchange_id: context.message.exchange_id) do |exchange|
         exchange.assign_attributes(opened)

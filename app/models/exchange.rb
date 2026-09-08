@@ -114,9 +114,11 @@ class Exchange < ApplicationRecord
   # only: an exchange a correspondent malformed must still be recorded, or
   # nothing accounts for it afterwards.
   #
-  # What keeps a malformed one from travelling back out is not this validation
-  # but `EvidenceProvision::AnswerRequest`, which reuses the identifiers it
-  # received and refuses to answer at all when either breaks the two rules.
+  # What keeps a malformed one from travelling back out is not this validation.
+  # An answer reuses the two identifiers of the request it answers, chapter 4.4
+  # having every message of one exchange carry the same `ExchangeId` — so
+  # `EvidenceProvision::RejectMalformedIdentifiers` refuses to answer at all
+  # when either breaks the two rules, before anything is built on them.
   validates :exchange_id, :conversation_id, format: { with: UUID, message: :format }, unless: :incoming?
 
   validates :procedure_code, :country_code, :evidence_requester_id, presence: true, unless: :incoming?
@@ -141,7 +143,7 @@ class Exchange < ApplicationRecord
   # The requester interval both ways, and deliberately the later of the two
   # France configures: `Settings::Contract` refuses to start unless it exceeds
   # the provider one, so a received exchange reaches this sweep only once
-  # `EvidenceProvision::AnswerRequest` has had its own chance to return the
+  # `EvidenceProvision::ChooseAnswer` has had its own chance to return the
   # timeout exception while the correspondent was still addressable. Nothing is
   # emitted here — this only stops a row whose worker died from waiting for
   # ever. What interval a correspondent gives itself is its own affair and

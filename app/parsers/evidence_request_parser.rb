@@ -46,7 +46,7 @@ class EvidenceRequestParser
   end
 
   # Refused here, at the read, and not among the checks of `validate!`: every
-  # caller reads this attribute for its own reasons — `AnswerRequest` before it
+  # caller reads this attribute for its own reasons — `ChooseAnswer` before it
   # validates anything, `AuditTrail` without ever validating — and an identifier
   # that breaks `R-EDM-REQ-S004` must reach none of them.
   #

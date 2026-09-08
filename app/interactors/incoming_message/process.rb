@@ -6,7 +6,7 @@ module IncomingMessage
   # Dispatched here rather than organised, because only one handler applies.
   class Process < ApplicationInteractor
     HANDLERS = {
-      EbmsAction::EXECUTE_QUERY_REQUEST => EvidenceProvision::AnswerRequest,
+      EbmsAction::EXECUTE_QUERY_REQUEST => EvidenceProvision::Answer,
       EbmsAction::EXECUTE_QUERY_RESPONSE => SettleExchange,
       EbmsAction::EXCEPTION_RESPONSE => SettleExchange,
     }.freeze

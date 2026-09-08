@@ -154,7 +154,7 @@ def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
 
 # The very constant the provider reads, so a scenario cannot assert a document
 # the code does not serve.
-def justificatif_detenu = Rails.root.join(EvidenceProvision::AnswerRequest::EVIDENCE_PATH).binread
+def justificatif_detenu = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
 
 # One user's session, named by the portal rather than left to the application:
 # `R-EDM-ebMS-017` wants a UUID, and the same one twice is what makes the two

@@ -3,7 +3,12 @@ require 'rails_helper'
 # The inbound side: another member state asks France for evidence. Nothing here
 # was covered before — the only path ever exercised was the happy one, and only
 # by the end-to-end scenarios, which need a live gateway.
-RSpec.describe EvidenceProvision::AnswerRequest do
+#
+# Put to the chain and not to any of its four steps: what an answer is worth is
+# what leaves through the gateway and what the log holds of it, and no step of
+# the chain produces either on its own. The steps are unit-tested by what they
+# refuse, in their own files next door.
+RSpec.describe EvidenceProvision::Answer do
   include ActiveSupport::Testing::TimeHelpers
 
   subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new) }
@@ -43,7 +48,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       edm_error_code: nil,
       evidence_digest: Digest::SHA256.hexdigest(evidence_served),
       # The identifier of France's own answer: chapter 4.8 walks the
-      # non-repudiation chain from it, and it is what `Answer` carries.
+      # non-repudiation chain from it, and it is what `Answers::Served` carries.
       response_id: identifier_of(submitted),
       # And the identifier of the document that answer carried, which the same
       # chapter asks the data service for as much as the requester. Read back
@@ -538,7 +543,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       answer
 
       expect(code_of(submitted)).to eq('EDM:ERR:0003')
-      expect(detail_of(submitted)).to eq(described_class::REPLAYED_IDENTIFIER)
+      expect(detail_of(submitted)).to eq(EvidenceProvision::ChooseAnswer::REPLAYED_IDENTIFIER)
     end
 
     # `IncomingMessage::Process` journals an arrival before it dispatches, so
@@ -1047,7 +1052,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     Base64.decode64(Nokogiri::XML(gateway_body).xpath('//payload').last.at_xpath('value').text)
   end
 
-  def evidence_served = Rails.root.join(described_class::EVIDENCE_PATH).binread
+  def evidence_served = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
 
   def subject_family_name_of(document)
     document.at_xpath('//sdg:IsAbout//sdg:FamilyName', SlotReading::NAMESPACES).text

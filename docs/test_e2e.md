@@ -114,7 +114,7 @@ L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'appl
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
 
-Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::AnswerRequest` y répond avec le PDF de son `EVIDENCE_PATH`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
+Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::Answer` y répond avec le PDF de l'`EVIDENCE_PATH` de `ChooseAnswer`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, `00` et `T1` étant les seules démarches servies par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
 
@@ -159,7 +159,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : les deux segments du nom NAPTR à résoudre |
 
 > [!NOTE]
-> Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::AnswerRequest`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
+> Le code démarche `00` est celui de la vérification système : c'est le seul auquel l'application répond par un justificatif (`EvidenceProvision::ChooseAnswer`). Tout autre code reçoit une réponse d'erreur `ObjectNotFoundException`, ce qui est le comportement attendu tant qu'aucun fournisseur réel n'est branché.
 >
 > `T3` — la reconnaissance académique de diplômes, selon `Procedures-CodeList.gc` — n'est là que pour exercer ce refus de bout en bout. L'annuaire répond pour elle comme pour `00`, les trois démarches françaises de test remontant la même exigence : c'est le code démarche porté par le message, et lui seul, qui décide de la réponse du fournisseur.
 

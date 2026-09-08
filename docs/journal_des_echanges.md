@@ -30,17 +30,17 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | Type | Quand | Écrit par |
 | --- | --- | --- |
 | `request_sent` | la requête est partie, et la passerelle l'a nommée | `EvidenceRequest::SendToGateway` |
-| `request_refused` | une requête est refusée sans qu'aucun message ebMS n'en résulte : l'appel d'un fournisseur français **avant** tout envoi à la passerelle, ou la requête d'un correspondant **sans qu'aucune réponse ne reparte** — celle-ci a bien transité par la passerelle, qui en garde trace dans son *Message Log*, mais rien ne lui répond | `EvidenceRequestsController`, `IncomingMessage::OpenExchange`, `EvidenceProvision::AnswerRequest` |
+| `request_refused` | une requête est refusée sans qu'aucun message ebMS n'en résulte : l'appel d'un fournisseur français **avant** tout envoi à la passerelle, ou la requête d'un correspondant **sans qu'aucune réponse ne reparte** — celle-ci a bien transité par la passerelle, qui en garde trace dans son *Message Log*, mais rien ne lui répond | `EvidenceRequestsController`, `IncomingMessage::OpenExchange`, `EvidenceProvision::RejectMalformedIdentifiers` |
 | `response_received` | un correspondant a répondu avec un justificatif | `IncomingMessage::Process` |
 | `error_received` | un correspondant a refusé | `IncomingMessage::Process` |
 | `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleExchange` |
 | `response_refused` | une réponse est écartée sans régler l'échange | `IncomingMessage::SettleExchange` |
 | `request_received` | un État membre a interrogé la France | `IncomingMessage::Process` |
-| `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::AnswerRequest` |
-| `error_sent` | la France a refusé | `EvidenceProvision::AnswerRequest` |
+| `response_sent` | la France a répondu avec un justificatif | `EvidenceProvision::JournalAnswer` |
+| `error_sent` | la France a refusé | `EvidenceProvision::JournalAnswer` |
 | `message_unreadable` | l'enveloppe rendue par la passerelle n'a pas pu être lue | `IncomingMessage::Process` |
 | `message_unhandled` | l'action ebMS du message ne désigne aucun traitement | `IncomingMessage::Process` |
-| `answer_not_sent` | la passerelle n'a pas pris la réponse que la France lui tendait | `EvidenceProvision::AnswerRequest` |
+| `answer_not_sent` | la passerelle n'a pas pris la réponse que la France lui tendait | `EvidenceProvision::SubmitAnswer` |
 
 > [!NOTE]
 > **Un refus consigne la règle qu'il applique, quand une règle le nomme.** `error_sent` porte alors dans `detail` l'identifiant `R-EDM-*` que la France a opposé au correspondant, le même que l'attribut `detail` de la `rs:Exception` partie sur le fil. Les refus qui n'appliquent aucune règle nommée — une démarche inconnue, un format non servi, un slot que le lecteur n'a pas trouvé — laissent le champ vide plutôt que d'inventer un identifiant. Un refus dont la raison *est* connue et n'est pas consignée ne peut pas être justifié après coup, et l'article 17 couvre les rapports d'erreur autant que les échanges.

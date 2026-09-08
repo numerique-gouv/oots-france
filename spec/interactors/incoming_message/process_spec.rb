@@ -17,18 +17,18 @@ RSpec.describe IncomingMessage::Process do
   let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
 
   it 'hands an incoming request to the interactor that answers it' do
-    allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+    allow(EvidenceProvision::Answer).to receive(:call!)
 
     process
 
-    expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
+    expect(EvidenceProvision::Answer).to have_received(:call!)
   end
 
   # Opened here from the body that was parsed here, and asserted on the whole
   # path rather than on a double: what `OpenExchange` reads is the message
   # `Process` retrieved, and nothing else says the two are the same object.
   it 'opens the exchange an incoming request names' do
-    allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+    allow(EvidenceProvision::Answer).to receive(:call!)
 
     process
 
@@ -167,7 +167,7 @@ RSpec.describe IncomingMessage::Process do
     before { allow(message).to receive(:first_part).and_raise(UnreadableMessageError, 'partie illisible') }
 
     it 'journals the arrival without the part, and dispatches all the same' do
-      allow(EvidenceProvision::AnswerRequest).to receive(:call!)
+      allow(EvidenceProvision::Answer).to receive(:call!)
 
       process
 
@@ -177,7 +177,7 @@ RSpec.describe IncomingMessage::Process do
         request_id: 'urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700',
       )
       expect(Exchange.find_by(exchange_id: message.exchange_id)).to be_present
-      expect(EvidenceProvision::AnswerRequest).to have_received(:call!)
+      expect(EvidenceProvision::Answer).to have_received(:call!)
     end
   end
 
