@@ -44,11 +44,11 @@
       evidence types it publishes, not for one. The controller works it out
       once and passes it in, rather than this card counting again. %>
   <div data-tally-weight="<%= weight %>">
-  <%= render CardComponent.new(title: named_country(country), heading_level: 3, dense: true) do |carte| %>
+  <%= render CardComponent.new(title: wording.named_country(country), heading_level: 3, dense: true) do |carte| %>
     <%# The page title is far above once one has scrolled past twenty cards:
         each says again which requirement it speaks of. %>
     <%= t('admin.common_services.requirements.card_html',
-          requirement: @requirement.display_name, country: in_country(country)) %>
+          requirement: @requirement.display_name, country: wording.in_country(country)) %>
 
     <% carte.with_list do %>
       <%= render 'admin/common_services/evidence_type_lists', lists:, requirement: @requirement %>

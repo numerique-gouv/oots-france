@@ -170,7 +170,7 @@ The rules above are the local dialect of a general discipline, described in Vlad
 
 | Layer | Skill's assumption | Here |
 | --- | --- | --- |
-| Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, plus `app/filters/` (what a request derives from `params`) and `app/components/` (ViewComponent). Deliberately thin: the operator console and one landing page, the rest is machine-to-machine |
+| Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, plus `app/filters/` (what a request derives from `params`), `app/components/` (ViewComponent) and `app/presenters/` (what a screen says of something, asked by a view and holding no request). Deliberately thin: the operator console and one landing page, the rest is machine-to-machine |
 | Application | `app/services/` | `app/interactors/` and `app/organizers/`. **There is no `app/services/` and none is wanted**: the interactor gem's context and `fail_with_error` are the local contract. Do not propose one |
 | Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **three** records: `Exchange`, `AuditEvent` (the exchange log of article 17), and `Administrator`, which exists only to open the operator console. "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
 | Infrastructure | `app/jobs/`, `app/mailers/` | `app/clients/` (HTTP), `app/builders/` + `app/templates/` (message serialisation), `app/parsers/` (deserialisation), `app/jobs/`, `Settings`, `Clock`, `UuidGenerator` |

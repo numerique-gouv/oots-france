@@ -18,8 +18,7 @@ module Admin
       # around it — as the providers' page next door already does.
       rescue_from CommonServicesError, with: :render_refusal
 
-      helper_method :requirement, :country_names, :named_country, :flagged, :in_country, :procedure_names,
-        :named_procedure, :procedure_hint, :full_named_procedure, :declaration_summary
+      helper_method :requirement, :country_names, :wording, :procedure_names
 
       private
 
@@ -45,24 +44,12 @@ module Admin
 
       def country_names = @country_names ||= code_lists.country_names
 
-      # For a heading, which cannot carry a label: a `<p>` has no business
-      # inside an `<h2>`. The rule itself belongs to the component.
-      def named_country(code) = CountryTagComponent.label(code, country_names[code])
-
-      # The flag alone before what a heading is about: the country is named in
-      # the breadcrumb just above, and spelling it out again would say it twice
-      # on one screen.
-      def flagged(code, subject) = [CountryTagComponent.flag(code), subject].compact.join(' ')
-
+      # Every word this section puts on a screen, in one object the views ask
+      # rather than in as many `helper_method`s.
       def wording
-        @wording ||= CountryWording.new(names: country_names, articles: code_lists.country_articles)
+        @wording ||= DirectoryWording.new(names: country_names, procedures: procedure_names,
+          articles: code_lists.country_articles)
       end
-
-      def in_country(code) = wording.in(code)
-
-      def named_or_code(code) = wording.named(code)
-
-      def declaration_summary(**) = wording.declaration(**)
 
       def catalogue = @catalogue ||= Directories::Catalogue.new
 
@@ -70,15 +57,7 @@ module Admin
 
       def data_service_directory = @data_service_directory ||= DataServiceDirectoryClient.new
 
-      # The wording of a procedure code, which the directory does not publish:
-      # it returns the code alone, and the wording lives in the code list.
       def procedure_names = @procedure_names ||= code_lists.procedure_names
-
-      def named_procedure(code) = ProcedureComponent.label(code, procedure_names[code])
-
-      def procedure_hint(code) = ProcedureComponent.hint(procedure_names[code])
-
-      def full_named_procedure(code) = ProcedureComponent.label(code, procedure_names[code], limit: nil)
 
       # Both ways down to this page — by procedure, by country — put the same
       # question to it; only the breadcrumb tells them apart.

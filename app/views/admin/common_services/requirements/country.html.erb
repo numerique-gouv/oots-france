@@ -1,15 +1,15 @@
 <% content_for :title, t('admin.common_services.requirements.country.title',
-      country: named_country(@country), requirement: @requirement.display_name) %>
+      country: wording.named_country(@country), requirement: @requirement.display_name) %>
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
       [t('admin.common_services.requirements.index.title'), admin_common_services_requirements_path],
       [@requirement.display_name, admin_common_services_requirement_path(@requirement.uuid)],
-      [named_country(@country), nil],
+      [wording.named_country(@country), nil],
     ]) %>
 
 <div class="fr-grid-row fr-grid-row--top fr-mb-2w">
   <div class="fr-col-12 fr-col-md">
-    <h1><%= flagged(@country, @requirement.display_name) %></h1>
+    <h1><%= wording.flagged(@country, @requirement.display_name) %></h1>
   </div>
   <div class="fr-mt-md-1w fr-ml-md-1w">
     <%= link_to t('admin.common_services.requirements.see_procedures'),
@@ -22,9 +22,9 @@
   <p class="fr-col-12 fr-col-md-8"><em><%= @requirement.detail %></em></p>
 <% end %>
 
-<%= render CardComponent.new(title: named_country(@country), dense: true) do |carte| %>
+<%= render CardComponent.new(title: wording.named_country(@country), dense: true) do |carte| %>
   <%= t('admin.common_services.requirements.card_html',
-        requirement: @requirement.display_name, country: in_country(@country)) %>
+        requirement: @requirement.display_name, country: wording.in_country(@country)) %>
 
   <% carte.with_list do %>
     <%= render 'admin/common_services/evidence_type_lists', lists: @lists, requirement: @requirement %>

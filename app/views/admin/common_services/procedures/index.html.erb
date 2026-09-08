@@ -23,8 +23,8 @@
   <% @procedures.each do |procedure| %>
     <div>
       <%= render CardComponent.new(
-            title: named_procedure(procedure.code),
-            hint: procedure_hint(procedure.code),
+            title: wording.named_procedure(procedure.code),
+            hint: wording.procedure_hint(procedure.code),
             href: admin_common_services_procedure_path(procedure.code),
             dense: true, clickable: true,
           ) do |carte| %>
