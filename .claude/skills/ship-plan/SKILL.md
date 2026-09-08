@@ -88,12 +88,13 @@ dérive son nom de projet du répertoire, donc les conteneurs restent isolés).
    toutes lettres : `grep -o 'OOTS-[0-9]\+' .claude/plans/<le-plan>.md` en
    donne l'identifiant, et le nom de la branche le porte souvent aussi
    (`feature/oots-40-…`, le `gitBranchName` que Linear propose). En dernier
-   recours, `list_issues` sur le projet **Reboot OOTS-France** (équipe
-   `OOTS`) et rapprocher par le titre.
+   recours, `list_issues` sur l'équipe `OOTS` et rapprocher par le titre.
 
    Si aucun ticket n'existe, **en créer un** plutôt que de livrer hors
    suivi — `save_issue` avec le titre et le résumé du plan, en français,
-   `team: "OOTS"`, `project: "Reboot OOTS-France"`. C'est la réparation
+   `team: "OOTS"`, et pour projet celui du chantier d'où sort le plan, sinon
+   le chantier vivant — ni `Completed` ni `Canceled` — dont la description
+   revendique le sujet, sinon aucun. C'est la réparation
    d'un manquement en amont (le ticket aurait dû naître avec le plan), pas
    une étape normale : le signaler dans le compte rendu.
 
