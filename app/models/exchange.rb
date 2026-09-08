@@ -23,12 +23,67 @@
 class Exchange < ApplicationRecord
   include NormalisesCountryCode
 
-  # `preview_required` — the correspondent wants the user to visit its own
-  # space before it will answer. `deferred` — it answered that the evidence
-  # will exist later, and named when, where it said so.
-  STATUSES = %w[pending sent preview_required deferred delivered failed].freeze
-
   IN_PROGRESS = %w[pending sent].freeze
+
+  # Where France asks, an exchange goes pending → sent → delivered, preview and
+  # deferral aside; where it answers, pending → delivered, deferred or failed.
+  # `preview_required` — the correspondent wants the user to visit its own space
+  # before it will answer — describes the requesting side alone. `deferred` — it
+  # answered that the evidence will exist later, and named when, where it said
+  # so.
+  #
+  # Every one of the four answers may also reach a `failed` exchange, but only
+  # one the expiry sweep presumed: an answer refutes a guess, where a guess
+  # displaces nothing. That is the whole of `if: :refutable?`, written here as a
+  # condition of the transition rather than argued in a private method — it is
+  # the rule this table exists to state.
+  #
+  # Nothing here takes a lock. The two races an exchange runs into are settled
+  # by the `with_lock` of `fire` below, inside which every event is triggered.
+  state_machine :status, initial: :pending do
+    state :pending, :sent, :preview_required, :deferred, :delivered, :failed
+
+    # From `sent` as well as from `pending`: a submission repeated says the same
+    # thing twice, which is not a contradiction to refuse.
+    event :transmit do
+      transition from: %i[pending sent], to: :sent
+    end
+
+    event :require_preview do
+      transition from: %i[pending sent], to: :preview_required
+      transition from: :failed, to: :preview_required, if: :refutable?
+    end
+
+    event :defer do
+      transition from: %i[pending sent], to: :deferred
+      transition from: :failed, to: :deferred, if: :refutable?
+    end
+
+    event :deliver do
+      transition from: %i[pending sent], to: :delivered
+      transition from: :failed, to: :delivered, if: :refutable?
+    end
+
+    event :record_failure do
+      transition from: %i[pending sent], to: :failed
+      transition from: :failed, to: :failed, if: :refutable?
+    end
+
+    # No `refutable?` line, and that is the rule: giving up on an exchange
+    # overrules nothing, not even an earlier guess. Named for what it does
+    # rather than `expire`, which would generate an `expire!` over the public
+    # method below.
+    event :presume_timeout do
+      transition from: %i[pending sent], to: :failed
+    end
+  end
+
+  # Read off the machine rather than declared beside it, so that the two cannot
+  # drift. It carries no further: `ExchangeStatusComponent::BADGES` and the
+  # `models.exchange.statuses` of `fr.yml` spell the six out again, and a state
+  # added here would fall back to their defaults until someone wrote it there
+  # too.
+  STATUSES = state_machines[:status].states.map { |state| state.name.to_s }.freeze
 
   # `R-EDM-ebMS-017` and `-037`: both identifiers travel in the ebMS header and
   # must be expressed as UUIDs. Public because the requester interface refuses a
@@ -120,31 +175,29 @@ class Exchange < ApplicationRecord
       .or(in_progress.where(incoming: true, ebms_sent_at: ...deadline))
   }
 
-  # Where France asks, an exchange goes pending → sent → delivered, preview and
-  # deferral aside; where it answers, pending → delivered, deferred or failed.
-  # `preview_required` describes the requesting side alone.
-  def sent! = settle({ status: 'sent', settled_at: nil })
+  def sent! = fire(:transmit, settled_at: nil)
 
-  def preview_required!(location) = answered(status: 'preview_required', preview_location: location)
+  def preview_required!(location) = answered(:require_preview, preview_location: location)
 
   # A correspondent announcing a date has answered, and chapter 4.5.2 sends the
   # portal back with a new Evidence Request « at the time of availability ». So
   # a settled state and not a waiting one — nothing further arrives on this
   # exchange, and `IN_PROGRESS` leaves it out.
-  def deferred!(available_at) = answered(status: 'deferred', response_available_at: available_at)
+  def deferred!(available_at) = answered(:defer, response_available_at: available_at)
 
-  def delivered! = answered(status: 'delivered')
+  def delivered! = answered(:deliver)
 
   def failed!(code:, description:)
-    answered(status: 'failed', edm_error_code: code, error_description: description)
+    answered(:record_failure, edm_error_code: code, error_description: description)
   end
 
   # The `failed` status and `EDM:ERR:0005`, not a status of its own: a
   # correspondent that times out on us answers exactly this code, and both must
   # read the same.
   #
-  # Straight to `settle` and not through `failed!`: this writes a presumption,
-  # which overrules nothing.
+  # Straight to `fire` and not through `failed!`: this writes a presumption,
+  # which overrules nothing — hence its own event, which admits no presumed
+  # exchange among the states it comes from.
   #
   # The phrase is the direction's, the same code covering two different things:
   # where France asks, the correspondent did not answer; where France answers,
@@ -152,9 +205,10 @@ class Exchange < ApplicationRecord
   # operator can tell which way round — the console prints the direction of its
   # own — but so as not to impute to a correspondent a silence that was ours.
   def expire!
-    settle({ status: 'failed', edm_error_code: EdmException::TIMEOUT.code,
-             error_description: I18n.t("models.exchange.expired.#{direction}"),
-             presumed_at: Time.current })
+    fire(:presume_timeout,
+      edm_error_code: EdmException::TIMEOUT.code,
+      error_description: I18n.t("models.exchange.expired.#{direction}"),
+      presumed_at: Time.current)
   end
 
   def settled? = !status.in?(IN_PROGRESS)
@@ -164,6 +218,13 @@ class Exchange < ApplicationRecord
   # correspondent reaching its own deadline answers `EDM:ERR:0005` too, and the
   # two must not be told apart by a code they share.
   def presumed? = presumed_at.present?
+
+  # The same question, asked of the row rather than of the object: an answer
+  # clears the presumption in the very assignment whose transition this
+  # condition has to admit, so a guard reading the attribute would take away
+  # what it is looking for. Every other caller wants `presumed?`, which reads
+  # the object it holds.
+  def refutable? = presumed_at_in_database.present?
 
   # Chapter 4.4 correlates a response to its request by this identifier. An
   # exchange recording none is not an exchange recording a different one: those
@@ -212,16 +273,13 @@ class Exchange < ApplicationRecord
 
   private
 
-  # What an answer records, as opposed to what `expire!` presumes. An answer may
-  # overrule the presumption — the one settled state nothing actually produced,
-  # which an answer refutes by arriving — where the presumption overrules
-  # nothing: a guess never displaces what happened.
-  #
-  # The error columns are cleared unless the answer names its own, so that an
-  # exchange which stops failing stops naming a failure.
-  def answered(attributes)
-    settle({ edm_error_code: nil, error_description: nil, presumed_at: nil }.merge(attributes),
-      over_presumption: true)
+  # What an answer records, as opposed to what `expire!` presumes. Which
+  # exchange an answer may still reach is the machine's business — `if:
+  # :refutable?` — and all this adds is what an answer writes: the error columns
+  # are cleared unless the answer names its own, so that an exchange which stops
+  # failing stops naming a failure.
+  def answered(event, **attributes)
+    fire(event, edm_error_code: nil, error_description: nil, presumed_at: nil, **attributes)
   end
 
   # Two races meet here, and this lock decides both. The fallback sweep can pick
@@ -229,12 +287,25 @@ class Exchange < ApplicationRecord
   # outcomes on one exchange; and `ExpireExchangesJob` runs on its own
   # worker, so it can reach a row an answer has settled since its batch was
   # read. `with_lock` and not a bare guard, which both would pass before either
-  # committed; `update!` and not `update_all`, which would skip the validations.
-  def settle(attributes, over_presumption: false)
+  # committed. The event is fired inside it, the state machine taking no lock of
+  # its own.
+  #
+  # Asked before it is fired, and then fired in its bang form: a transition no
+  # `from:` admits must stay the silent non-event it has always been — the order
+  # of calls is what keeps it from happening — where a row the validations
+  # refuse must raise, `preview_location` being a link a correspondent chose and
+  # a browser will follow.
+  #
+  # That refusal now reads as `StateMachines::InvalidTransition`, which carries
+  # the validation message rather than the `errors` an `ActiveRecord::RecordInvalid`
+  # would. Nothing rescues either today; whoever adds a `rescue` here should
+  # know which one arrives.
+  def fire(event, **attributes)
     with_lock do
-      return self if settled? && !(over_presumption && presumed?)
+      next unless send(:"can_#{event}?")
 
-      update!({ settled_at: Time.current }.merge(attributes))
+      assign_attributes({ settled_at: Time.current }.merge(attributes))
+      send(:"#{event}!")
     end
 
     self

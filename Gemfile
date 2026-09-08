@@ -34,6 +34,10 @@ gem 'faraday-net_http'
 gem 'faraday-retry'
 
 gem 'good_job'
+# Les transitions légales d'`Exchange`, déclarées plutôt que tenues par l'ordre
+# des appels. La gem qu'emploie `data_pass`, dont ce dépôt partage déjà la
+# convention interactors / organizers.
+gem 'state_machines-activerecord'
 gem 'strong_migrations'
 
 # Behaviour attached to the DOM, as Stimulus controllers: two pages of the
@@ -80,6 +84,7 @@ group :test do
   gem 'cuprite'
   gem 'database_cleaner-active_record'
   gem 'shoulda-matchers'
+  gem 'state_machines-rspec'
   gem 'simplecov', require: false
   gem 'webmock'
 

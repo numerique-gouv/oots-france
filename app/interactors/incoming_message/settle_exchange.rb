@@ -77,7 +77,7 @@ module IncomingMessage
 
     # `processable?` decided on the exchange as it stood when the message
     # arrived, and that decision holds: the sweep may expire the row while the
-    # evidence is being handed over, and `Exchange#settle` lets this answer
+    # evidence is being handed over, and `Exchange#fire` lets this answer
     # overrule the presumption it made.
     #
     # What it cannot do is hold across the handover, which is why
