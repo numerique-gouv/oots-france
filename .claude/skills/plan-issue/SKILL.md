@@ -44,8 +44,12 @@ plan ne peut pas savoir :
 
 ## Avant de commencer
 
-- **Un ticket Linear** (`OOTS-<n>`). Sans ticket, en créer un dans le projet
-  « Reboot OOTS-France » : un plan sans ticket ne se suit nulle part.
+- **Un ticket Linear** (`OOTS-<n>`). Sans ticket, en créer un : un plan sans
+  ticket ne se suit nulle part. Son projet est celui du chantier en cours,
+  s'il en sort ; sinon le chantier vivant — ni `Completed` ni `Canceled` —
+  dont la description revendique le sujet ; sinon **aucun projet**, et le
+  plan le dit. « Reboot OOTS-France » ne prend que l'infrastructure et
+  l'exploitation, jamais ce qu'on n'a pas su classer.
 - **Un arbre où travailler**, sur une branche partant d'un `main` à jour. En
   session dans le checkout principal : `scripts/worktree.sh oots-<n>-<sujet>`
   (voir « Working in parallel with worktrees » dans `CLAUDE.md`). Planifier
