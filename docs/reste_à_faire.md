@@ -52,7 +52,7 @@ Un **bouchon** est un endroit où le code écrit une valeur en dur, ou tient un 
 | L'annuaire des requêteurs français autorisés, tenu en JSON, à la place de l'autorisation que le bénéficiaire devrait donner | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | Le justificatif servi : un PDF d'exemple, seul document que la France détienne, et le même pour les deux démarches servies | `EvidenceProvision::ChooseAnswer`, `EVIDENCE_PATH` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
 | La démarche `R1`, dédiée à la réponse différée pour que l'annonce du 4.5.2 soit produite quelque part | `ProcedureCode`, `EvidenceProvision::ChooseAnswer` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
-| La date d'émission du justificatif, figée : aucun document réel à dater | `SystemCheckResponseBuilder::ISSUING_DATE` | [OOTS-84](https://linear.app/pole-api/issue/OOTS-84) |
+| La date d'émission du justificatif, figée : aucun document réel à dater | `EvidenceResponseBuilder::ISSUING_DATE` | [OOTS-84](https://linear.app/pole-api/issue/OOTS-84) |
 | La date annoncée d'une réponse différée, simple décalage sur la réponse plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
 | Le filet à erreurs du chemin entrant, qui rattrape une famille trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
 | La démarche `T1`, servie pour que la démonstration de l'Université ait un document à faire circuler | `ProcedureCode`, `EvidenceProvision::ChooseAnswer`, `SERVED_PROCEDURES` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |

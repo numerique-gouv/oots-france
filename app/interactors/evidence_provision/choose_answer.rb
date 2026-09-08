@@ -109,7 +109,7 @@ module EvidenceProvision
     def served
       document = evidence
       attachment = attachment_for(document)
-      body = SystemCheckResponseBuilder.new(
+      body = EvidenceResponseBuilder.new(
         requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
         attachment:, request_id:, uuid:,
       )

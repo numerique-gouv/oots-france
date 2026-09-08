@@ -92,8 +92,8 @@ module Oots
     # branch to two elements, so a document carrying the natural branch says
     # nothing of the rules the other answers to.
     def write_responses
-      write('reponse', *system_check_response)
-      write('reponsePersonneMorale', *system_check_response(subject: legal_person))
+      write('reponse', *evidence_response)
+      write('reponsePersonneMorale', *evidence_response(subject: legal_person))
     end
 
     def write(name, body, header)
@@ -122,17 +122,17 @@ module Oots
       ]
     end
 
-    def system_check_response(subject: beneficiary)
+    def evidence_response(subject: beneficiary)
       attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
-      body = SystemCheckResponseBuilder.new(
+      body = EvidenceResponseBuilder.new(
         requester:, beneficiary: subject, evidence_type:, attachment:,
         request_id: REQUEST_ID, clock:, uuid:,
       )
 
-      [body.render, system_check_header(body, attachment)]
+      [body.render, evidence_response_header(body, attachment)]
     end
 
-    def system_check_header(body, attachment)
+    def evidence_response_header(body, attachment)
       header(
         action: EbmsAction::EXECUTE_QUERY_RESPONSE,
         original_sender: french_provider.ebms_identity,

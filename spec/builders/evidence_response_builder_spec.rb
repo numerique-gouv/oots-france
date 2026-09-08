@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe SystemCheckResponseBuilder do
+RSpec.describe EvidenceResponseBuilder do
   subject(:response) { described_class.new(**attributes).render }
 
   XSI = 'http://www.w3.org/2001/XMLSchema-instance'.freeze

@@ -109,7 +109,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   def evidence = Rails.root.join('assets/drapeau.pdf').binread
 
   def response_body(attachment)
-    SystemCheckResponseBuilder.new(
+    EvidenceResponseBuilder.new(
       requester:, beneficiary:, evidence_type:, attachment:,
       request_id: REQUEST_ID, clock: frozen_clock, uuid:,
     )
