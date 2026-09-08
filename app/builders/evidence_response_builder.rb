@@ -1,13 +1,12 @@
 # The `ExecuteQueryResponse` France returns for the procedures it serves with an
-# actual document — `00`, the OOTS system check, and `T1`, the financing of
-# studies. One builder answers both: no slot of this response names the
-# procedure it answers.
+# actual document. No slot of this response names the procedure it answers, so
+# nothing rendered here varies with it.
 #
 # Corners are inverted with respect to the request, as on the error response:
 # the provider answering is C1, the requester that asked is C4. The provider is
 # classified `EP` here, and its slot is a collection, where the requester's is a
 # single value — an asymmetry the TDD impose, not one chosen here.
-class SystemCheckResponseBuilder < ApplicationBuilder
+class EvidenceResponseBuilder < ApplicationBuilder
   # Hard-coded: France holds no real evidence to date it. Stub, tracked as
   # OOTS-84.
   ISSUING_DATE = '1970-03-03'.freeze
@@ -35,7 +34,7 @@ class SystemCheckResponseBuilder < ApplicationBuilder
 
   protected
 
-  def template_name = 'system_check_response.xml.erb'
+  def template_name = 'evidence_response.xml.erb'
 
   private
 

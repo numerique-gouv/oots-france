@@ -8,7 +8,7 @@ class ApplicationBuilder
   include XmlEscaping
 
   # ERB gets this method's binding, so a template looks constants up lexically
-  # from here and must qualify them — `SystemCheckResponseBuilder::ISSUING_DATE`,
+  # from here and must qualify them — `EvidenceResponseBuilder::ISSUING_DATE`,
   # never a bare `ISSUING_DATE`. Methods resolve on `self` and need no such care.
   def render = renderer.result(binding)
 
