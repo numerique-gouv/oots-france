@@ -227,7 +227,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
 | `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous) |
-| `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) |
+| `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) ; puis fais trier ses **reliquats** (§ 5 bis) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
 **Tranche plutôt que de faire suivre.** Quand la réponse est dans les spécifications, dans [`CLAUDE.md`](../../../CLAUDE.md) ou dans le dépôt, va la chercher — [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md) donne l'entrée par chapitre. La réponse repart par `SendMessage` ; l'ouvrier reprend, contexte intact.
@@ -261,6 +261,19 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 
 **Vérifie ce qui compte** au lieu de croire le rapport. Sur ce qui porte un risque — entrée non fiable, secret, donnée personnelle, valeur partant chez un correspondant — va lire le code. Un ouvrier affirmait qu'une URL choisie par un correspondant était rendue sans danger ; deux `grep` l'ont confirmé, et la confirmation valait d'être écrite dans la PR.
 
+## 5 bis. Les reliquats d'un lot deviennent des tickets, ou meurent avec la PR — et le backlog ne grossit pas
+
+Un ouvrier voit plus qu'il ne livre, et il l'écrit dans la section `## Reliquats` de sa PR : un défaut antérieur qu'il n'a pas corrigé, une règle voisine qu'il n'a pas tenue, une dette qu'il a nommée. Le contrat de l'[ouvrier](../../agents/ouvrier.md) lui interdit d'en ouvrir le ticket, et une PR fusionnée n'est relue par personne : **ce que tu ne fais pas passer par l'utilisateur ici est perdu**. Le 2026-09-08, trois reliquats nommés « ticket de suite » dans des rapports `LIVRÉ` (OOTS-144, OOTS-145, OOTS-153) n'avaient donné aucun ticket.
+
+Mais un backlog où chaque ticket fermé en ouvre trois ne converge pas, et c'est l'utilisateur qui l'a dit. Le tri est donc une règle de **refus**, et elle se joue avant de lui parler :
+
+1. **Lis la section `## Reliquats` de chaque PR livrée**, pas seulement la ligne du rapport. Quand un lot livre plusieurs PR, rassemble leurs reliquats en une seule liste.
+2. **Pour chacun, une recommandation, et elle est « à laisser » par défaut.** Un reliquat mérite un ticket dans deux cas seulement : **un chapitre des TDD le nomme** — le code enfreint ou ne fait pas encore une règle citée, ce que la puce de l'ouvrier dit ou que tu vérifies dans le chapitre — ou **l'utilisateur l'a demandé**. Une dette de nommage, un « ce serait mieux si », un défaut préexistant que rien ne cite, une symétrie qu'aucun texte ne réclame restent dans la PR et meurent avec elle : c'est prévu, et c'est ce qui fait converger. Un reliquat qui complète un ticket ouvert se signale comme tel — `spec-nerd` le versera dedans au lieu de créer.
+3. **Rends la liste à l'utilisateur en un lot**, avec le compte rendu de livraison : le reliquat, la PR, ta recommandation et sa raison en une ligne. C'est là qu'il donne son avis — c'est le moment où il relit la PR, et une liste de trois lignes se tranche en une réponse. Ne l'interroge pas reliquat par reliquat.
+4. **Ce qu'il retient part à un seul `spec-nerd`** (§ 1 bis), avec pour chaque reliquat la PR et le ticket d'origine : c'est ce qui le range dans le bon chantier. Un `spec-nerd` par lot livré, jamais un par reliquat — il coûte un corpus entier, et il regroupe ce qui va ensemble. Relaie son rapport comme au § 1 bis ; ce qui en sort en `Todo` n'entre dans un lot que si l'utilisateur le dit.
+
+**Ce qui se mesure** : le nombre de tickets ouverts avant et après un lot. La passe d'[`harness-engineer`](../harness-engineer/SKILL.md) le relève ; s'il monte deux passes de suite, c'est le point 2 qui est à durcir, pas une phrase à ajouter ici.
+
 ## 6. Mettre en pause, et reprendre
 
 `TaskStop` arrête, un message reprend — l'ouvrier repart de son transcript, sans replanifier.
@@ -274,6 +287,8 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 - **Les gestes d'après-merge ne se ramassent pas seuls**, et ils sont ceux de [`CLAUDE.md`](../../../CLAUDE.md) § Git conventions : ticket `Done`, `merged` dans `.claude/etapes/<ticket>` (ce qui retire l'ouvrier de la statusline), worktree retiré pile éteinte, branches supprimées, `make check-env` joué dans le checkout principal. Le mode de fusion est `--merge` : ce dépôt refuse `--squash`.
 - **Un ordre de fusion annoncé se respecte.** Deux branches peuvent être vertes chacune et fausses ensemble — OOTS-61 livrait une lecture dont l'écriture n'atterrissait qu'avec OOTS-133, si bien que la fusionner seule aurait produit un `NoMethodError` en production. Quand un ouvrier recommande un ordre, il a vu la fenêtre ; suis-le, ou dis pourquoi non.
 - **N'écris pas de code applicatif**, ni pour dépanner, ni pour « juste finir » : un correctif arrivé dans son arbre lui fait relire un code qu'il n'a pas écrit.
+- **N'écris pas de ticket, et n'en fais pas écrire sans l'utilisateur.** Un besoin ou un reliquat passe par `spec-nerd`, et `spec-nerd` ne reçoit que ce que l'utilisateur a dit ou retenu (§ 1 bis, § 5 bis). Un ticket que tu crées « en passant » pour ne pas perdre une idée est exactement ce qui fait enfler le backlog.
+- **Ne lance pas l'implémentation d'un ticket que tu viens de faire écrire** sans que l'utilisateur l'ait dit : la demande était un ticket (§ 1 bis).
 - **Ne lance aucun ouvrier sur un ticket que tu n'as pas lu en entier** — trois heures de travail sur un énoncé qui attendait un arbitrage.
 - **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal, et **n'y monte pas de pile** : ses ports sont ceux du poste.
 - **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. **Deux exceptions, où le contexte vide est justement ce qu'on veut** : après un `PLANIFIÉ` ou un `PLAN` résolu, l'implémentation est une invocation neuve qui part du fichier de plan ; et un ouvrier arrêté tard, dont ce qui reste tient sans son historique, se relance plutôt qu'il ne se reprend (§ 3 bis). **`ÉCRAN` n'en fait pas partie** — une revue d'écran revient à l'ouvrier qui a fait l'écran, et rien ne la porte sur disque comme un plan porte une conception (§ 5).
