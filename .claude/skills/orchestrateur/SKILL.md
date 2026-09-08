@@ -26,7 +26,7 @@ Tu n'es ni [`spec-nerd`](../../agents/spec-nerd.md), qui rédige, corrige et sta
 
 **Avec un objectif** — « avance sur le journal », une liste de tickets, un nombre d'ouvriers : le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère ; un ticket vide reste non actionnable, dis-le et propose le voisin.
 
-**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo`), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
+**Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo` — son paramètre `fields` n'accepte pas `identifier`, que `id` porte déjà : l'y mettre fait refuser l'appel), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
 
 Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annonce la sélection avant de lancer** : quels tickets, dans quel ordre, une ligne chacun sur pourquoi ceux-là. C'est le seul moment où un mauvais choix se rattrape gratuitement.
 
