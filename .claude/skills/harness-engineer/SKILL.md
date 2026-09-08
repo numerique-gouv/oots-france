@@ -42,6 +42,7 @@ Ce qui décide où va un fait, c'est **le moment où chaque fichier est lu**. Un
 | [`.claude/skills/*/SKILL.md`](../) | une façon de faire une chose : livrer, relire, orchestrer | à l'invocation seulement |
 | [`.claude/agents/*.md`](../../agents/) | un rôle : ce qu'il reçoit, ce qu'il rend, ce qu'il ne fait pas | au lancement du sous-agent |
 | [`.claude/statusline/`](../../statusline/) | ce qu'un écran montre d'un agent au travail | à chaque tick, par le harnais |
+| [`.claude/hooks/`](../../hooks/) | ce que le harnais retire d'une réponse d'outil avant que le modèle la lise | après chaque appel d'outil que le `matcher` désigne |
 | [`.claude/settings.json`](../../settings.json) | ce que le harnais exécute lui-même : statusline, hooks | par chaque clone, sous la confiance de l'espace de travail |
 | `~/.claude/projects/<slug>/memory/` | ce qu'une session a retenu pour la suivante ; `MEMORY.md` est l'index | l'index à chaque session, un fichier quand il paraît pertinent |
 
