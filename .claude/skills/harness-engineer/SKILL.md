@@ -62,11 +62,24 @@ Les trois piliers de [harnessengineering.academy](https://harnessengineering.aca
 
 **3. L'entropie — qu'est-ce qui a cessé d'être vrai ?** Le harnais est écrit par des dizaines de sessions qui ne se relisent pas. Ce qu'on trouve à chaque passe : un chemin qui n'existe plus (`scripts/tests.sh`, `scripts/testE2e.sh`, `npm test` cités par des skills d'un dépôt passé à Rails), un fichier nommé de deux façons (`prepare_environment.sh` et `preparEnvironnement.sh` dans le même `CLAUDE.md`), un skill devenu agent que les mémoires citent encore comme skill, une anecdote qui décrivait un défaut corrigé depuis, deux tableaux qui listent les mêmes agents avec des descriptions qui divergent.
 
+## Entrée
+
+**Sans rien** : la passe rétrospective, sur la fenêtre depuis le dernier audit. C'est le mode par défaut, et tout ce qui suit le décrit.
+
+**Avec une demande** — « j'aimerais que l'orchestrateur puisse… », « je veux n'avoir à parler qu'à… », une capacité ou un circuit que le harnais n'a pas : la demande est la preuve de l'attente, et ce n'est pas toi qui la mets en doute. Ce que le relevé cherche change, pas la méthode :
+
+- **comment la chose se fait aujourd'hui sans la règle** — le contournement à la main dans les transcripts (l'utilisateur qui lance lui-même l'agent que l'orchestrateur devait lancer, le prompt qu'une session a rédigé à la main), et ce qu'il coûte. C'est lui qui dit où la règle doit aller et à quel moment elle sera lue ;
+- **ce que la demande contredit dans le harnais existant** — les paragraphes qui disent le contraire, à réécrire plutôt qu'à compléter d'une exception ; les rôles voisins qui portent déjà la moitié du circuit (un rapport `QUESTIONS`, une règle de rangement), à relier plutôt qu'à redire ;
+- **ce qui la ferait mal tourner** — la demande porte souvent sa propre crainte (« il faut converger »), et c'est une règle de refus à écrire avec la capacité, pas après ;
+- **la base à mesurer** pour que la passe suivante dise si ça a servi.
+
+Le reste ne change pas : l'audit avant toute modification, nommé `AAAA-MM-JJ-harnais-<sujet>.md` ; un commit par constat ; la PR sans merge ; et « une règle neuve demande deux occurrences » ne vaut pas contre une demande explicite, mais vaut toujours pour ce que tu serais tenté d'ajouter à côté.
+
 ## D'où viennent les preuves
 
 **Rien sans preuve.** Une recommandation qui ne cite pas la session, la PR, le fichier de revue ou le ticket d'où elle sort est un avis, et tu le gardes. C'est la règle de [Better Harness](https://github.com/QoderAI/better-harness) — « *missing or partial evidence remains explicit* » — et c'est ce qui empêche le harnais de grossir d'une consigne à chaque passe.
 
-Pose d'abord la fenêtre : depuis le dernier audit (`ls .claude/audits/*-harnais.md | tail -1`), sinon sept jours, sinon ce qu'on te donne.
+Pose d'abord la fenêtre : depuis le dernier audit (`ls .claude/audits/*-harnais*.md | tail -1`), sinon sept jours, sinon ce qu'on te donne.
 
 ```sh
 P=~/.claude/projects/$(pwd | tr / -)
@@ -143,6 +156,7 @@ Un fichier du harnais retouché à chaque session est le signe le plus sûr d'un
 
 - `gh pr list --state all --search "merged:>$DEPUIS"`, puis pour chacune : les commits postérieurs à l'ouverture, un conflit au merge, et ce que l'utilisateur a dit de la PR. **Tout commentaire GitHub est signé de son compte, agents compris** — l'auteur ne distingue rien. Ce qu'il a lui-même relu se trouve dans les transcripts : ce qu'il tape après avoir reçu le lien d'une PR que `review-loop` a déclarée convergée est le commentaire humain, et il pointe un trou dans le lot de relecteurs ou dans la définition du bloquant.
 - Dans Linear : les commentaires de l'utilisateur sur un ticket rédigé par `spec-nerd`, et les « fuites » que l'orchestrateur signale dans ses comptes rendus — un ticket `Todo` qu'il a dû écarter est un contrôle de `spec-nerd` à renforcer. `list_issues` ne rend pas l'historique des statuts : un ticket redescendu de `Todo` ne se voit que dans les transcripts, au `save_issue` qui l'a fait redescendre.
+- **La convergence du backlog** se lit sur `list_issues` (équipe `OOTS`, `limit: 250`, `fields: [id, createdAt, completedAt, canceledAt, status]`) : les tickets ouverts en fin de fenêtre, et ce qui a été créé, fermé, annulé dedans. Les reliquats devenus tickets sont ceux que l'orchestrateur a fait écrire après un `LIVRÉ` (§ 5 bis de son skill) — ils se comptent dans les prompts des `spec-nerd` de la fenêtre. Base du 2026-09-08 : 11 tickets ouverts. Le chiffre qui monte deux passes de suite dit que la règle de refus de l'orchestrateur laisse passer, et c'est elle qu'on durcit.
 
 ### Les mémoires
 
@@ -219,7 +233,7 @@ Ces fichiers sont lus par des humains et par des agents qui n'ont pas le context
 
 ## Ce que tu rends
 
-L'audit, dans `.claude/audits/AAAA-MM-JJ-harnais.md`, et un compte rendu court dans le fil qui renvoie vers lui. La forme de l'audit :
+L'audit, dans `.claude/audits/AAAA-MM-JJ-harnais.md` — `AAAA-MM-JJ-harnais-<sujet>.md` pour une passe sur une demande —, et un compte rendu court dans le fil qui renvoie vers lui. La forme de l'audit :
 
 ```md
 # Harnais — passe du AAAA-MM-JJ
@@ -235,6 +249,8 @@ Précédent : <lien vers l'audit d'avant, ou « premier »>.
 | passes de revue par PR (médiane, max) | | |
 | jetons neufs par ticket (médiane) | | |
 | fichiers du harnais retouchés | | |
+| tickets ouverts en fin de fenêtre (Todo + Backlog + À compléter + In Progress) | | |
+| reliquats devenus tickets / tickets fermés | | |
 
 ## Constats
 ### <n>. <une ligne : le défaut>

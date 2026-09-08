@@ -288,6 +288,8 @@ Ce qui **n'y est pas** : ni jalons, ni dates, ni responsable, ni priorité de pr
 
 Un besoin qui **complète** un ticket existant sans ouvrir de sujet ne crée rien : il s'ajoute à ce ticket, en `COMPLÉTER`. Une **question ouverte** que les TDD ne tranchent pas ne crée rien non plus : elle se pose à l'utilisateur, ou se verse dans la `US` qu'elle bloque. Une **décision déjà rendue** se consigne dans le `Contexte` de la `US` qu'elle gouverne, avec le commentaire ou le chapitre qui l'a rendue. Ne crée une `US` que pour un sujet qu'on peut relire comme un tout.
 
+**Les reliquats d'une livraison arrivent en lot, déjà triés par l'utilisateur** — l'orchestrateur te donne ce que la PR a laissé et que l'utilisateur a retenu, avec la PR et le ticket d'origine. Le tri d'opportunité est fait ; le tien reste : un reliquat qui complète un ticket ouvert s'y verse, deux reliquats d'un même sujet font une `US`, et le chantier est celui d'où la PR sort (§ [Les dépendances, le projet, le reste](#les-dépendances-le-projet-le-reste)). Un lot de reliquats ne crée jamais plus de tickets qu'il n'a de sujets.
+
 ### La priorité Linear
 
 Il n'y a ni estimation ni cycle : la priorité porte seule l'ordonnancement, et « MUST donc Urgent » remplit la colonne `Urgent` sans plus rien ordonner. Trois questions, dans l'ordre : le code **enfreint**-il la règle aujourd'hui, ou ne la fait-il **pas encore** ? quelle est sa **force** ? est-ce **lançable** maintenant ? La première ne se devine pas : `tdd-nerd` en `CONFORMITÉ` sur la fonctionnalité y répond, fichier et ligne à l'appui.
