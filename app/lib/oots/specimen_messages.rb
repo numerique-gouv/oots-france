@@ -240,7 +240,10 @@ module Oots
     # travel as far as a document Saxon must parse.
     def legal_person
       @legal_person ||= LegalPerson.new(
-        eidas_identifier: 'FR/DE/A2635542Y',
+        # Lower case on purpose: `R-EDM-REQ-C051` and `R-EDM-RESP-C035` carry
+        # the `i` flag, and this is the only document that asks the rules
+        # themselves to confirm they behave as they read.
+        eidas_identifier: 'fr/de/A2635542Y',
         legal_name: 'Établissements Dupont & Fils',
         identifiers: { 'VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57' },
       )

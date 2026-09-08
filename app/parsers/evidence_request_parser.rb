@@ -170,14 +170,37 @@ class EvidenceRequestParser
 
     NaturalPerson.new(
       level_of_assurance: text_at(person, './sdg:LevelOfAssurance'),
-      eidas_identifier: text_at(person, './sdg:Identifier'),
+      eidas_identifier: text_at_without_leading_blanks(person, './sdg:Identifier'),
       family_name: text_at(person, './sdg:FamilyName'),
       given_name: text_at(person, './sdg:GivenName'),
-      date_of_birth: text_at(person, './sdg:DateOfBirth'),
+      date_of_birth: normalised_text_at(person, './sdg:DateOfBirth'),
       place_of_birth: text_at(person, './sdg:PlaceOfBirth'),
       gender: text_at(person, './sdg:Gender'),
     ).validate!(:request_beneficiary, error: UnreadableMessageError)
   end
+
+  # `R-EDM-REQ-C043` matches on `normalize-space(text())`, which trims both
+  # ends, where `text_at` trims neither. `strip` and not a transposition of
+  # `normalize-space`: a date the model accepts carries no inner blank, so
+  # squeezing those would never change an outcome.
+  def normalised_text_at(scope, path) = text_at(scope, path)&.strip
+
+  # The head alone, because that is all `R-EDM-REQ-C040` and `C051` admit:
+  # they carry no `^` but they do carry a `$`, so anything may precede the
+  # identifier and nothing may follow it. Run against Saxon, the engine that
+  # plays the rules, ` ES/AT/02635542Y` satisfies C040 and `ES/AT/02635542Y `
+  # does not. Trimming the tail too would have France accept what a FATAL rule
+  # refuses — the mirror of the over-strictness this reader exists to undo.
+  #
+  # What precedes is trimmed rather than tolerated: the rule admits any prefix
+  # at all, `xxES/AT/02635542Y` included, and `EidasIdentified` deliberately
+  # keeps its `\A` anchor against that. Blanks are the one prefix that carries
+  # no claim, so they are removed rather than made to fail.
+  #
+  # Applied to the identifiers alone and not to every reading — no rule
+  # normalises `sdg:FamilyName` or `sdg:LegalName`, which the journal of
+  # article 17 must record exactly as they circulated.
+  def text_at_without_leading_blanks(scope, path) = text_at(scope, path)&.lstrip
 
   # `R-EDM-REQ-S047`: the slot value carries an `sdg:LegalPerson` of the `p4s`
   # namespace. The symmetry with the person above stops at the slot: a natural
@@ -188,7 +211,7 @@ class EvidenceRequestParser
     organisation = slot_content('LegalPerson', query, './sdg:LegalPerson')
 
     LegalPerson.new(
-      eidas_identifier: text_at(organisation, './sdg:LegalPersonIdentifier'),
+      eidas_identifier: text_at_without_leading_blanks(organisation, './sdg:LegalPersonIdentifier'),
       legal_name: text_at(organisation, './sdg:LegalName'),
       identifiers: legal_identifiers(organisation),
     ).validate!(:request_legal_person, error: UnreadableMessageError)

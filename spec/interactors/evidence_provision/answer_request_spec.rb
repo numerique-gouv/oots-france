@@ -301,6 +301,113 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     end
   end
 
+  # `R-EDM-REQ-C043` matches on `normalize-space(text())` and `R-EDM-REQ-C040`
+  # with the `i` flag: what those two admit, France serves. The whole chain is
+  # exercised here and not the reader alone, since what is at stake is the value
+  # the journal of article 17 records and the one the answer echoes.
+  describe 'a subject the rules accept once normalised' do
+    def described_with(&) = envelope_with_body('requete', &)
+
+    context 'when the date of birth is padded with blanks' do
+      let(:message) do
+        described_with do |body|
+          body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m,
+            "<sdg:DateOfBirth>\n    1978-09-09\n  </sdg:DateOfBirth>")
+        end
+      end
+
+      it 'serves the evidence rather than refusing a conformant request' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      it 'echoes the normalised date' do
+        answer
+
+        expect(date_of_birth_of(submitted)).to eq('1978-09-09')
+      end
+    end
+
+    # A time zone is what `xs:date` admits and the `$` of the rule excludes.
+    context 'when the date of birth carries a time zone' do
+      let(:message) do
+        described_with do |body|
+          body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m, '<sdg:DateOfBirth>1978-09-09Z</sdg:DateOfBirth>')
+        end
+      end
+
+      it 'answers EDM:ERR:0003' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      end
+    end
+
+    context 'when the eIDAS identifier is written in lower case' do
+      let(:message) do
+        described_with do |body|
+          body.sub('<sdg:FamilyName>',
+            '<sdg:Identifier schemeID="eidas">es/at/02635542Y</sdg:Identifier><sdg:FamilyName>')
+        end
+      end
+
+      it 'serves the evidence, the rule being case-insensitive' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      # Echoed as received and not upper-cased: `R-EDM-RESP-C028` carries the
+      # same `i` flag, so the case that arrived is the case that conforms.
+      it 'echoes the identifier exactly as it arrived' do
+        answer
+
+        expect(eidas_identifier_of(submitted)).to eq('es/at/02635542Y')
+      end
+    end
+
+    # The same rule written twice: `R-EDM-REQ-C051` for the organisation. Its
+    # echo is asserted on its own element and not inferred from the person's —
+    # `EidasIdentified` is shared, but `sdg:IsAbout` branches, and only this
+    # says the legal branch carries the value through.
+    context 'when the subject is an organisation identified in lower case' do
+      let(:message) do
+        envelope_about_an_organisation(legal_person_slot.sub('FR/DE/A2635542Y', 'de/fr/123456789'))
+      end
+
+      it 'serves the evidence, as for the natural person' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+      end
+
+      it 'echoes the organisation identifier exactly as it arrived' do
+        answer
+
+        expect(legal_identifier_of(submitted)).to eq('de/fr/123456789')
+      end
+    end
+
+    # `R-EDM-REQ-C040` is indifferent to case, so the upper form must travel as
+    # untouched as the lower one — a reader that upcased « to normalise » would
+    # pass every example above and fail only on this one.
+    context 'when the eIDAS identifier is written in upper case' do
+      let(:message) do
+        described_with do |body|
+          body.sub('<sdg:FamilyName>',
+            '<sdg:Identifier schemeID="eidas">ES/AT/02635542Y</sdg:Identifier><sdg:FamilyName>')
+        end
+      end
+
+      it 'echoes it exactly as it arrived' do
+        answer
+
+        expect(eidas_identifier_of(submitted)).to eq('ES/AT/02635542Y')
+      end
+    end
+  end
+
   # An unsupported optional capability, not an invalid request: the correspondent
   # asked for a distribution format we do not serve.
   describe 'a distribution format it does not serve' do
@@ -958,6 +1065,20 @@ RSpec.describe EvidenceProvision::AnswerRequest do
   # chapter 4.5.1 §3.5 keeps apart from the ones the request asked for.
   def served_format_of(document)
     document.at_xpath('//sdg:Evidence/sdg:Distribution/sdg:Format', SlotReading::NAMESPACES).text
+  end
+
+  def date_of_birth_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:DateOfBirth', SlotReading::NAMESPACES).text
+  end
+
+  def eidas_identifier_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:NaturalPerson/sdg:Identifier', SlotReading::NAMESPACES).text
+  end
+
+  # The other branch of the `xs:choice`: an organisation carries a
+  # `sdg:LegalPersonIdentifier` where a person carries a `sdg:Identifier`.
+  def legal_identifier_of(document)
+    document.at_xpath('//sdg:IsAbout//sdg:LegalPerson/sdg:LegalPersonIdentifier', SlotReading::NAMESPACES).text
   end
 
   def request_for(procedure_code)

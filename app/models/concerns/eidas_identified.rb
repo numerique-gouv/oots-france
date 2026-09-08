@@ -12,16 +12,19 @@ module EidasIdentified
   extend ActiveSupport::Concern
 
   # `XX/YY/Z…Z`, the two codes being the country asserting the identity and the
-  # country it is asserted to. Upper case where the rules carry the `i` flag,
-  # ISO 3166-1 alpha-2 codes being written that way — as `Address#country`
-  # already has it. Stricter than the rule on what arrives and not on what this
-  # application emits alone, the parsers validating an incoming subject against
-  # this too: a correspondent writing `fr/de/…` is refused where
-  # `R-EDM-REQ-C040`, case-insensitive, admits it. Membership of
+  # country it is asserted to. Case-insensitive, as the two rules are: both
+  # carry the `i` flag, so a correspondent writing `es/at/02635542Y` sends a
+  # conformant identifier and refusing it would cost an exchange the
+  # specification admits. `R-EDM-RESP-C028` and `C035` carry the same flag, so
+  # echoing back what arrived keeps the answer conformant too.
+  #
+  # Anchored at both ends where the rules anchor only at the end: nothing
+  # precedes `XX/YY/` in an identifier any member state asserts, and the missing
+  # `^` reads as an omission rather than a licence. Membership of
   # `OOTS_Country-CodeList` is left to the rules themselves, which
   # `make schematron` plays; the floor of six characters is the Schematron's,
   # the prose saying only « up to 256 ».
-  EIDAS_IDENTIFIER = %r{\A[A-Z]{2}/[A-Z]{2}/\S{6,256}\z}
+  EIDAS_IDENTIFIER = %r{\A[A-Z]{2}/[A-Z]{2}/\S{6,256}\z}i
 
   included do
     validates :eidas_identifier, format: { with: EIDAS_IDENTIFIER, message: :format }, allow_nil: true

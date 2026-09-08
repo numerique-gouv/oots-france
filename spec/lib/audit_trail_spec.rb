@@ -40,6 +40,34 @@ RSpec.describe AuditTrail do
       expect(journalled.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
     end
 
+    # `R-EDM-REQ-C043` judges the date on `normalize-space(text())`, so one
+    # padded with blanks is conformant — and what the journal keeps of it is the
+    # canonical form, out of which the key composes itself.
+    it 'records the normalised date of birth of a subject that arrived padded' do
+      padded = envelope_with_body('requete') do |body|
+        body.sub(%r{<sdg:DateOfBirth>.*?</sdg:DateOfBirth>}m, "<sdg:DateOfBirth>\n  1978-09-09\n</sdg:DateOfBirth>")
+      end
+      audit_trail.message_received(message: padded, message_id: 'un-autre')
+
+      expect(journalled.described_subject['date_of_birth']).to eq('1978-09-09')
+      expect(journalled.evidence_subject_key).to eq('dupont|sophie|1978-09-09')
+    end
+
+    # `R-EDM-REQ-C040` carries the `i` flag: the case that arrived is the case
+    # that conforms, and the journal records the subject as it circulated.
+    # Both forms, because a reader that folded either way would still pass one.
+    %w[es/at/02635542Y ES/AT/02635542Y].each do |identifier|
+      it "records the eIDAS identifier #{identifier} just as it arrived" do
+        identified = envelope_with_body('requete') do |body|
+          body.sub('<sdg:FamilyName>',
+            %(<sdg:Identifier schemeID="eidas">#{identifier}</sdg:Identifier><sdg:FamilyName>))
+        end
+        audit_trail.message_received(message: identified, message_id: 'un-autre')
+
+        expect(journalled.described_subject['eidas_identifier']).to eq(identifier)
+      end
+    end
+
     # Two member states spell a name in two cases and mean one person; the key
     # is what an auditor asks « what circulated about this person » with.
     it 'folds the case, so one person yields one key' do

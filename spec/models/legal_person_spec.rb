@@ -21,10 +21,16 @@ RSpec.describe LegalPerson do
     expect(build(:legal_person, eidas_identifier: 'FR/DE/A263')).not_to be_valid
   end
 
-  # `C051` carries the `i` flag, this application deliberately does not: it is
-  # the emitter, and ISO 3166-1 alpha-2 codes are written in upper case.
-  it 'rejects country codes written in lower case' do
-    expect(build(:legal_person, eidas_identifier: 'fr/de/A2635542Y')).not_to be_valid
+  # `C051` carries the `i` flag, and so does `R-EDM-RESP-C035` on the answer:
+  # the case of the country codes is not discriminating on either side.
+  it 'accepts country codes written in lower case, the rule being case-insensitive' do
+    expect(build(:legal_person, eidas_identifier: 'fr/de/A2635542Y')).to be_valid
+  end
+
+  # Stricter than `C051`, which anchors on `$` alone — the same reading as for
+  # the natural person, the two rules carrying one expression.
+  it 'rejects an identifier preceded by anything at all' do
+    expect(build(:legal_person, eidas_identifier: 'xxFR/DE/A2635542Y')).not_to be_valid
   end
 
   # The four optional elements of `sdg:LegalPersonType` have no attribute source
