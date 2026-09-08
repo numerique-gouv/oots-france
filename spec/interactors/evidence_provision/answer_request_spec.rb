@@ -194,7 +194,7 @@ RSpec.describe EvidenceProvision::AnswerRequest do
     # the only example that reads it on a procedure other than the system check.
     it 'refuses a format it does not serve before announcing anything' do
       allow(message.body).to receive(:evidence_type)
-        .and_return(EvidenceType.new(id: 'x', descriptions: {}, distribution_format: 'application/xml'))
+        .and_return(EvidenceType.new(id: 'x', descriptions: {}, distribution_formats: ['application/xml']))
 
       answer
 
@@ -209,6 +209,95 @@ RSpec.describe EvidenceProvision::AnswerRequest do
       answer
 
       expect(code_of(submitted)).to eq('EDM:ERR:0005')
+    end
+  end
+
+  # `R-EDM-REQ-C032` asks for one `sdg:DistributedAs` at least, and chapter
+  # 4.5.1 §3.5 names what a second is for: a human-readable fallback beside a
+  # structured format. France holds one document, so it answers as soon as the
+  # PDF is among the formats asked for, whatever its rank.
+  describe 'a request asking for several distributions' do
+    def asking_for(*formats)
+      distributions = formats.map do |format|
+        "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format></sdg:DistributedAs>"
+      end
+
+      envelope_with_body('requete') do |body|
+        body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m) { distributions.join }
+      end
+    end
+
+    context 'when the PDF is the second one asked for' do
+      let(:message) { asking_for('application/xml', Attachment::MIME_TYPE) }
+
+      it 'serves the document France holds' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+        expect(attached_document).to eq(evidence_served)
+      end
+
+      # The answer describes the distribution served and not one echoed from the
+      # request, which names two: there is no single format to copy back.
+      it 'announces the format it served' do
+        answer
+
+        expect(served_format_of(submitted)).to eq(Attachment::MIME_TYPE)
+      end
+    end
+
+    context 'when the PDF is the first one asked for' do
+      let(:message) { asking_for(Attachment::MIME_TYPE, 'application/xml') }
+
+      it 'answers exactly the same thing, the order deciding nothing' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Success')
+        expect(served_format_of(submitted)).to eq(Attachment::MIME_TYPE)
+      end
+    end
+
+    context 'when none of them is the one France serves' do
+      let(:message) { asking_for('application/xml', 'image/png') }
+
+      it 'answers EDM:ERR:0007' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0007')
+      end
+    end
+
+    # A distribution present but naming no format keeps `R-EDM-REQ-C032`, which
+    # counts the element alone — so it is not refused as invalid, it simply
+    # asks for nothing France serves. Replayed here and not at the parser only,
+    # because what the correspondent receives is the whole point of the
+    # distinction with the case below.
+    context 'when its only distribution names no format' do
+      let(:message) do
+        envelope_with_body('requete') do |body|
+          body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '<sdg:DistributedAs/>')
+        end
+      end
+
+      it 'answers EDM:ERR:0007, naming no rule' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0007')
+        expect(detail_of(submitted)).to be_nil
+      end
+    end
+
+    # An invalid request and not a missing capability: `R-EDM-REQ-C032` is
+    # FATAL, so its identifier is what the correspondent gets back.
+    context 'when it asks for no distribution at all' do
+      let(:message) { asking_for }
+
+      it 'answers EDM:ERR:0003 naming R-EDM-REQ-C032' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0003')
+        expect(detail_of(submitted)).to eq('R-EDM-REQ-C032')
+      end
     end
   end
 
@@ -863,6 +952,12 @@ RSpec.describe EvidenceProvision::AnswerRequest do
 
   def evidence_type_of(document)
     document.at_xpath('//sdg:EvidenceTypeClassification', SlotReading::NAMESPACES).text
+  end
+
+  # The distribution the answer describes — the document France served, which
+  # chapter 4.5.1 §3.5 keeps apart from the ones the request asked for.
+  def served_format_of(document)
+    document.at_xpath('//sdg:Evidence/sdg:Distribution/sdg:Format', SlotReading::NAMESPACES).text
   end
 
   def request_for(procedure_code)

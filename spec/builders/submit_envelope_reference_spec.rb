@@ -160,7 +160,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
     EvidenceType.new(
       id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
       descriptions: { 'EN' => 'Certificate of Birth' },
-      distribution_format: EvidenceType::PDF,
+      distribution_formats: [EvidenceType::PDF],
     )
   end
 

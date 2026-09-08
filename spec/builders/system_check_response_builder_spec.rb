@@ -23,7 +23,7 @@ RSpec.describe SystemCheckResponseBuilder do
       evidence_type: EvidenceType.new(
         id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
         descriptions: { 'EN' => 'Certificate of Birth' },
-        distribution_format: 'application/pdf',
+        distribution_formats: ['application/pdf'],
       ),
       attachment: Attachment.new('cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr', 'JVBERi0='),
       request_id: 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797',
@@ -38,6 +38,22 @@ RSpec.describe SystemCheckResponseBuilder do
 
   it 'is well-formed XML' do
     expect(Nokogiri::XML(response).errors).to be_empty
+  end
+
+  # The element describes the document carried and not the one wished for: a
+  # request may name several distributions, `R-EDM-REQ-C032` asking for one at
+  # least, so there is no single format to echo back. `R-EDM-RESP-C050` (FATAL)
+  # forbidding a `sdg:ConformsTo` beside a PDF here says the same thing.
+  it 'announces the format it served, whatever the request asked for' do
+    asked = EvidenceType.new(
+      id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
+      descriptions: { 'EN' => 'Certificate of Birth' },
+      distribution_formats: ['application/xml', Attachment::MIME_TYPE],
+    )
+    rendered = described_class.new(**attributes, evidence_type: asked).render
+
+    expect(Nokogiri::XML(rendered).xpath('//sdg:Distribution/sdg:Format', namespaces).map(&:text))
+      .to eq([Attachment::MIME_TYPE])
   end
 
   it 'classifies the answering provider as evidence provider' do

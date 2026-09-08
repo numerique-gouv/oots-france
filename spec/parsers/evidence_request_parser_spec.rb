@@ -217,9 +217,48 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
-  it 'reads the evidence type asked for, with its distribution format' do
-    expect(request.evidence_type.id).to be_present
-    expect(request.evidence_type.distribution_format).to eq(EvidenceType::PDF)
+  # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one at least, so a
+  # correspondent naming several is conformant and reading only the first would
+  # silently refuse them. Chapter 4.5.1 §3.5 names the case for a second: « an
+  # additional sdg:DistributedAs element may be used to request a human-readable
+  # format … for the same sdg:DataServiceEvidenceType ».
+  describe 'the distributions the request asks for' do
+    def asking_for(*formats)
+      distributions = formats.map do |format|
+        "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format></sdg:DistributedAs>"
+      end
+
+      with_body { |body| body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m) { distributions.join } }
+    end
+
+    it 'reads the evidence type asked for, with its distribution format' do
+      expect(request.evidence_type.id).to be_present
+      expect(request.evidence_type.distribution_formats).to eq([EvidenceType::PDF])
+    end
+
+    it 'reads every distribution named, in the order the request wrote them' do
+      expect(asking_for('application/xml', EvidenceType::PDF).evidence_type.distribution_formats)
+        .to eq(['application/xml', EvidenceType::PDF])
+    end
+
+    # `EDM:ERR:0003` and not `EDM:ERR:0007`: the rule is FATAL, so a request
+    # naming no distribution is invalid rather than demanding, and what the
+    # correspondent gets back names the rule it broke.
+    it 'refuses a request asking for no distribution at all, under R-EDM-REQ-C032' do
+      expect { asking_for.evidence_type }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C032')))
+    end
+
+    # The rule counts the element and not the format inside it: a distribution
+    # naming none keeps `C032`, so it is read as the silence it is rather than
+    # refused under a rule it does not break.
+    it 'keeps a distribution that names no format' do
+      nameless = with_body do |body|
+        body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, '<sdg:DistributedAs/>')
+      end
+
+      expect(nameless.evidence_type.distribution_formats).to eq([nil])
+    end
   end
 
   describe 'the requester' do

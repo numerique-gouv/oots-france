@@ -62,4 +62,17 @@ class SystemCheckResponseBuilder < ApplicationBuilder
   # `sdg:IsAbout` is an `xs:choice`, and the branch is the subject's to name:
   # the builder picks it from the type it is given.
   def evidence_subject = EvidenceSubjectBuilder.new(beneficiary:).render
+
+  # The distribution France served, and never one copied back from the
+  # request: `R-EDM-REQ-C032` lets a request name several — the human-readable
+  # fallback of chapter 4.5.1 §3.5 beside a structured format — so there is no
+  # single format to echo.
+  #
+  # What that element means in a response is settled by `R-EDM-RESP-C050`,
+  # which refuses a `sdg:ConformsTo` beside a PDF: a distribution answering for
+  # a document nobody sent could carry any data model, so the rule only makes
+  # sense of one describing the document carried. It constrains an
+  # `EvidenceMetadata` slot one `rim:RegistryObject` shallower than the one
+  # this response writes, so it is read here for what it settles, not applied.
+  def served_format = Attachment::MIME_TYPE
 end

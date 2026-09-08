@@ -41,7 +41,7 @@ ignore_unused:
   - activemodel.attributes.access_point.{id,type_id}
   - activemodel.attributes.natural_person.{level_of_assurance,family_name,given_name,date_of_birth,place_of_birth,gender}
   - activemodel.attributes.legal_person.{legal_name,eidas_identifier}
-  - activemodel.attributes.evidence_type.{id,distribution_format}
+  - activemodel.attributes.evidence_type.{id,distribution_formats}
   - activemodel.attributes.requirement.id
   - activemodel.attributes.data_service.{id,evidence_type_classification,distribution_format,distribution_language,distribution_conforms_to}
   - activemodel.attributes.evidence_requester.id
@@ -85,10 +85,10 @@ ignore_unused:
   - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
   - parsers.evidence_request.legal_identifier_without_scheme
   # The rules the parser names, each composed from the identifier that failed —
-  # the first three from `validate!`, the last from `request_id`, which refuses
-  # at the read rather than in a pass of its own.
+  # the first three from `validate!`, the last two from `request_id` and
+  # `evidence_type`, which refuse at the read rather than in a pass of their own.
   - parsers.evidence_request.{slot_required,unexpected_specification,evidence_subject_not_alone}
-  - parsers.evidence_request.request_id_not_a_uuid
+  - parsers.evidence_request.{request_id_not_a_uuid,evidence_type_without_distribution}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

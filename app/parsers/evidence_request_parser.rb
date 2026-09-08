@@ -97,7 +97,7 @@ class EvidenceRequestParser
       id: require_content(text_at(described, './sdg:EvidenceTypeClassification'),
         'parsers.evidence_request.evidence_type_without_id'),
       descriptions: titles,
-      distribution_format: text_at(described, './sdg:DistributedAs/sdg:Format'),
+      distribution_formats: requested_formats(described),
     )
   end
 
@@ -129,6 +129,21 @@ class EvidenceRequestParser
     return if declared == 1
 
     refuse('R-EDM-REQ-S016', 'parsers.evidence_request.evidence_subject_not_alone', count: declared)
+  end
+
+  # Every distribution the request names, and not the first alone:
+  # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one « at least », so
+  # a correspondent asking for a structured format with a human-readable
+  # fallback beside it — the case chapter 4.5.1 §3.5 names — is conformant.
+  #
+  # Counted where the rule counts them, and the formats read from them: a
+  # `sdg:DistributedAs` naming no format keeps `C032`, and refusing the request
+  # under that identifier would name it a rule it did not break.
+  def requested_formats(described)
+    distributions = all(described, './sdg:DistributedAs')
+    refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_without_distribution') if distributions.empty?
+
+    distributions.map { |distribution| text_at(distribution, './sdg:Format') }
   end
 
   def refuse(rule, key, **)

@@ -20,7 +20,7 @@ RSpec.describe EvidenceTypesResponseParser do
   # An unstructured evidence type declares no format, and the model's default
   # is what the rest of the chain expects.
   it 'leaves the distribution format to its default when none is declared' do
-    expect(evidence_types.first.distribution_format).to eq(EvidenceType::PDF)
+    expect(evidence_types.first.distribution_formats).to eq([EvidenceType::PDF])
   end
 
   # The Finnish answer to the same requirement, and the type the DSD fixture

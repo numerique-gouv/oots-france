@@ -53,7 +53,9 @@ class EvidenceTypesResponseParser < CommonServicesResponseParser
   end
 
   # `StructuredEvidenceTypeDistribution` names the format only for a structured
-  # evidence type; an unstructured one leaves `EvidenceType` to its default.
+  # evidence type; an unstructured one leaves `EvidenceType` to its default. One
+  # entry at most either way — the several distributions an `EvidenceType` can
+  # hold are what a *request* names, not what the Evidence Broker publishes.
   #
   # Validated here and not left to the message builder: an entry without its
   # classification would otherwise travel as far as the `EvidenceTypeClassification`
@@ -65,7 +67,7 @@ class EvidenceTypesResponseParser < CommonServicesResponseParser
       id: text(found, './sdg:EvidenceTypeClassification'),
       descriptions: by_language(all(found, './sdg:Title')),
       details: by_language(all(found, './sdg:Description')),
-      **(format.present? ? { distribution_format: format } : {}),
+      **(format.present? ? { distribution_formats: [format] } : {}),
     ).validate!(:announced_evidence_type, error: CommonServicesError)
   end
 end
