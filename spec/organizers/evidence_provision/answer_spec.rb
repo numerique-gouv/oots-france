@@ -1014,6 +1014,129 @@ RSpec.describe EvidenceProvision::Answer do
     expect(exchange.text).to eq(message.exchange_id)
   end
 
+  # The mirror of the block above, on the body rather than on the header.
+  # `R-EDM-REQ-C012`, `C092`, `C108` and `C109` judge what an `EDM:ERR:0003`
+  # would have to copy back to name the requester at all — its scheme, its name
+  # and the language of that name — and `R-EDM-ERR-C010`, `C027`, `C028` and
+  # `C029` are FATAL on each of them. Refusing a value by signing a message that
+  # carries it is not a refusal, so nothing goes back and the journal holds the
+  # decision alone.
+  describe 'a request whose requesting agent no answer could name' do
+    # The exchange as `IncomingMessage::OpenExchange` really leaves it for these
+    # requests, and not as the block above leaves it for a malformed header:
+    # that step reads the country and the requester through `request.requester`,
+    # inside a `readable` that swallows exactly this failure, so both identity
+    # columns stay empty there.
+    let(:opened) do
+      create(:exchange, incoming: true, exchange_id: message.exchange_id,
+        conversation_id: message.conversation_id, procedure_code: '00',
+        country_code: nil, evidence_requester_id: nil)
+    end
+
+    before { opened }
+
+    {
+      'R-EDM-REQ-C109' => ['<sdg:Name lang="FR">', '<sdg:Name>'],
+      'R-EDM-REQ-C108' => ['<sdg:Name lang="FR">', '<sdg:Name lang="fr">'],
+      'R-EDM-REQ-C012' => ['EAS:0009', 'EAS:9999'],
+    }.each do |rule, (written, instead)|
+      context "when it breaks #{rule}" do
+        let(:message) { request_whose_requester_agent(written, instead) }
+
+        it 'submits nothing at all to the gateway' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+          expect(gateway).not_to have_received(:submit)
+        end
+
+        # And the journal keeps who sent it all the same, read past the failure:
+        # the identifier and the country are declared before the name and its
+        # language, so a request refused on either still says whom to go and
+        # ask. Nothing of this is echoed anywhere — an `AuditEvent` is not a
+        # message — and `docs/journal_des_echanges.md` holds that a refusal
+        # whose reason is known and unrecorded cannot be justified afterwards.
+        it 'journals the refusal, naming the rule it broke and who sent it' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+
+          expect(AuditEvent.last).to have_attributes(
+            event_type: 'request_refused',
+            exchange_id: message.exchange_id,
+            conversation_id: message.conversation_id,
+            procedure_code: '00',
+            country_code: 'FR',
+            evidence_requester_id: '00000000000002',
+            detail: include(rule),
+          )
+        end
+      end
+    end
+
+    # The one refusal of this family that declares nothing at all: with no agent
+    # classified `ER`, there is no identifier and no address to read past the
+    # failure, and the journal says so rather than guessing.
+    context 'when the request carries no agent classified ER at all' do
+      let(:message) { envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') } }
+
+      it 'journals the refusal with no requester and no country' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+
+        expect(AuditEvent.last).to have_attributes(
+          event_type: 'request_refused', evidence_requester_id: nil, country_code: nil,
+        )
+      end
+    end
+  end
+
+  # And its counterpart: what a conformant answer *can* carry does go back, so
+  # the correspondent learns what was wrong with what it sent. The error
+  # response names no address for the requester and describes no evidence
+  # subject, so neither refusal would travel inside it.
+  {
+    'R-EDM-REQ-C073' => ['<sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>', ''],
+    'R-EDM-REQ-C015' => ['<sdg:AdminUnitLevel1>FR<', '<sdg:AdminUnitLevel1>ZZ<'],
+  }.each do |rule, (written, instead)|
+    describe "a request whose requesting agent breaks #{rule}" do
+      let(:message) { request_whose_requester_agent(written, instead) }
+
+      it 'is answered with an EDM:ERR:0003 naming the rule' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Failure')
+        expect(code_of(submitted)).to eq('EDM:ERR:0003')
+        expect(detail_of(submitted)).to eq(rule)
+      end
+
+      it 'serves no evidence' do
+        answer
+
+        expect(submitted.at_xpath('//sdg:Evidence', SlotReading::NAMESPACES)).to be_nil
+      end
+    end
+  end
+
+  # `R-EDM-REQ-C042` on the identifier of the beneficiary, which the real
+  # request does not carry: one is added, under the scheme the message of the
+  # rule admits « for testing purposes » and its assertion does not.
+  describe 'a request whose beneficiary is identified under eidas2' do
+    let(:message) do
+      envelope_with_body('requete') do |body|
+        body.sub('</sdg:LevelOfAssurance>',
+          '</sdg:LevelOfAssurance><sdg:Identifier schemeID="eidas2">FR/DE/A2635542Y</sdg:Identifier>')
+      end
+    end
+
+    it 'is answered with an EDM:ERR:0003 naming the rule' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C042')
+    end
+  end
+
+  # The agent classified `ER` alone, `Fixtures::REQUESTER_AGENT` saying why.
+  def request_whose_requester_agent(written, instead)
+    envelope_with_requester_agent { |agent| agent.sub(written, instead) }
+  end
+
   def gateway_body
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
   end

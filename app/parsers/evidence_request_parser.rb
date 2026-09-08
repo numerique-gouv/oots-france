@@ -23,6 +23,27 @@ class EvidenceRequestParser
   # accepts.
   IDENTIFIER = /\Aurn:uuid:\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/i
 
+  # `R-EDM-REQ-C042` admits this value and no other. Its message adds that
+  # `eidas2` « can be used for testing purposes until confirmation of provision
+  # of a suitable legal basis », which its assertion does not: the assertion is
+  # what plays.
+  BENEFICIARY_SCHEME = 'eidas'.freeze
+
+  # `R-EDM-REQ-C012` measures 256 characters on the identifier itself — its
+  # assertion reads `string-length(.)`, the context being `sdg:Identifier` —
+  # where its prose names the `schemeID`. Held to the assertion: applied to the
+  # scheme the clause would be dead, a long scheme already failing the exact
+  # comparison to a code of the list.
+  MAXIMUM_IDENTIFIER_LENGTH = 256
+
+  # Chapter 4.5.1 §3.2 — the requesting agent's own subsection, §3.3 describing
+  # the provider — makes `sdg:Name` `1..n`, and `AgentType` carries
+  # `minOccurs="1"`. No Schematron rule asserts that absence, so the detail
+  # names the source that does — as `ChooseAnswer::REPLAYED_IDENTIFIER` names
+  # chapter 4.4 for a duty stated in prose alone. It reaches an operator
+  # through the journal, which is this refusal's only trace.
+  AGENT_NAME_REQUIRED = 'TDD 4.5.1 §3.2: EvidenceRequester agent name required'.freeze
+
   def initialize(document)
     @request = at(document, '/query:QueryRequest')
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
@@ -41,6 +62,8 @@ class EvidenceRequestParser
     REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
     require_expected_specification
     require_one_evidence_subject
+    require_requester_country
+    require_beneficiary_identifier_scheme
 
     self
   end
@@ -79,15 +102,24 @@ class EvidenceRequestParser
   # The requester is the agent classified `ER`. OOTS-France, or its foreign
   # equivalent, travels in the same collection classified `IP`, and answering
   # the platform instead of the requester would address the wrong party.
-  def requester
-    agent = slot_elements('EvidenceRequester', request)
-      .filter_map { |element| at(element, './sdg:Agent') }
-      .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceRequester::REQUESTER }
+  def requester = build_requester(requester_agent)
 
-    raise UnreadableMessageError, I18n.t('parsers.evidence_request.no_er_agent') if agent.nil?
+  # What the requesting agent declares of itself, read without judging it.
+  #
+  # `requester` refuses an agent whose scheme, name or language breaks a FATAL
+  # rule, and those refusals leave the correspondent no answer at all: the
+  # journal is their only trace — see `docs/journal_des_echanges.md`, which
+  # holds that a refusal whose reason is known and unrecorded cannot be
+  # justified afterwards. The identifier and the country are read before any of
+  # those checks and are usually perfectly valid, a name missing its `lang`
+  # saying nothing about them, so the line that records the refusal keeps what
+  # was there to read rather than losing it with the agent.
+  #
+  # Safe to keep where the answer is not: an `AuditEvent` is not a message, no
+  # rule of the TDD judges it, and nothing echoes it back to anyone.
+  def declared_requester_id = declared { |agent| at(agent, './sdg:Identifier')&.text.presence }
 
-    build_requester(agent)
-  end
+  def declared_requester_country = declared { |agent| agent_country(agent) }
 
   def evidence_type
     described = slot_content('EvidenceRequest', query, './sdg:DataServiceEvidenceType')
@@ -104,6 +136,24 @@ class EvidenceRequestParser
   private
 
   attr_reader :request
+
+  # An agent that is not there at all leaves nothing to declare — the only
+  # failure `requester_agent` itself can raise.
+  def declared
+    yield(requester_agent)
+  rescue UnreadableMessageError
+    nil
+  end
+
+  def requester_agent
+    @requester_agent ||= slot_elements('EvidenceRequester', request)
+      .filter_map { |element| at(element, './sdg:Agent') }
+      .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceRequester::REQUESTER }
+
+    raise UnreadableMessageError, I18n.t('parsers.evidence_request.no_er_agent') if @requester_agent.nil?
+
+    @requester_agent
+  end
 
   # `= 1` and not `>= 1`: the rules count the slot, and two of the same name
   # leave which one is meant undecided.
@@ -129,6 +179,51 @@ class EvidenceRequestParser
     return if declared == 1
 
     refuse('R-EDM-REQ-S016', 'parsers.evidence_request.evidence_subject_not_alone', count: declared)
+  end
+
+  # Refused among the checks of `validate!`, and not where the requester is
+  # read: an error response carries no address for the agent it answers —
+  # `ErrorResponseBuilder#requester_agent` renders neither address nor
+  # classification — so nothing of what is refused here would travel back in it.
+  # The refusal therefore becomes the `EDM:ERR:0003` a correspondent can learn
+  # from, where the refusals of `build_requester` cannot.
+  #
+  # `R-EDM-REQ-C073` counts the elements whose `normalize-space` is not empty
+  # and asks for exactly one, so a second address or a blank one breaks it as
+  # much as none at all. `R-EDM-REQ-C015` then judges the value that is there,
+  # exactly and case included: its assertion is an `=`, with no `i` flag.
+  def require_requester_country
+    declared = all(requester_agent, './sdg:Address/sdg:AdminUnitLevel1').reject { |code| code.text.squish.empty? }
+    refuse('R-EDM-REQ-C073', 'parsers.evidence_request.agent_without_country') unless declared.one?
+
+    country = declared.first.text
+    return if CountryIdentificationCode.valid?(country)
+
+    refuse('R-EDM-REQ-C015', 'parsers.evidence_request.agent_country_unknown', country:)
+  end
+
+  # `R-EDM-REQ-C041` and `C042`, whose context is the identifier of the person a
+  # `NaturalPerson` slot names: they fire on the element and not on the slot, so
+  # a request carrying no identifier at all breaks neither — chapter 2.1
+  # §2.3.1.2 provides for an identity established in the requester's own
+  # country. The organisation's identifiers are `C054` and `C055`, applied by
+  # `legal_identifiers` and by `LegalPerson`.
+  #
+  # `nil?` and not `blank?` for the first: `C041` asserts the attribute's
+  # presence, so one written empty satisfies it and falls to `C042`, which
+  # compares the value.
+  def require_beneficiary_identifier_scheme
+    slot = find_slot('NaturalPerson', query)
+    return if slot.nil?
+
+    all(slot, './rim:SlotValue/sdg:Person/sdg:Identifier').each do |identifier|
+      scheme = attribute(identifier, 'schemeID')
+      refuse('R-EDM-REQ-C041', 'parsers.evidence_request.beneficiary_identifier_without_scheme') if scheme.nil?
+      next if scheme == BENEFICIARY_SCHEME
+
+      refuse('R-EDM-REQ-C042', 'parsers.evidence_request.beneficiary_scheme_unexpected',
+        scheme:, expected: BENEFICIARY_SCHEME)
+    end
   end
 
   # Every distribution the request names, and not the first alone:
@@ -239,20 +334,71 @@ class EvidenceRequestParser
     end
   end
 
+  # Everything refused here leaves the correspondent no answer at all, and that
+  # is not a shortcoming: an `EDM:ERR:0003` names the requester by copying back
+  # its identifier, its scheme, its name and the language of that name —
+  # `ErrorResponseBuilder#requester_agent` through `_agent.xml.erb` — and
+  # `R-EDM-ERR-C010`, `C009`, `C027`, `C028` and `C029` are FATAL on each of
+  # them. Refusing a value by signing a message that carries it is not a
+  # refusal. `sdg:Name` cannot be dropped either, `AgentType` making it
+  # `minOccurs="1"`, and the scheme is the `type` of the ebMS `finalRecipient`,
+  # which is the return address itself.
+  #
+  # `EvidenceProvision::RejectUnanswerableRequester` is where that silence is
+  # journalled, as `RejectMalformedIdentifiers` journals the ebMS identifiers it
+  # refuses for the same reason. What `validate!` refuses does go back.
   def build_requester(agent)
     identifier = at(agent, './sdg:Identifier')
+    # A SIRET is digits, and a reader that parsed numbers would drop its
+    # leading zero. Read as text, always.
+    id = require_content(identifier&.text, 'parsers.evidence_request.agent_without_id')
+    scheme = require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme')
+    require_known_agent_scheme(scheme, id)
+
     name = at(agent, './sdg:Name')
 
     EvidenceRequester.new(
-      # A SIRET is digits, and a reader that parsed numbers would drop its
-      # leading zero. Read as text, always.
-      id: require_content(identifier&.text, 'parsers.evidence_request.agent_without_id'),
-      type_id: require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme'),
-      name: name&.text,
-      language: attribute(name, 'lang'),
+      id:, type_id: scheme,
+      name: agent_name(name),
+      language: agent_language(name),
       # Read rather than defaulted: `Address` says `FR`, which is exactly the
       # wrong answer about a foreign requester.
       address: Address.new(country: agent_country(agent)),
     )
+  end
+
+  # `R-EDM-REQ-C012`, one assertion holding two things: the scheme is of one of
+  # the forms `IdentifierScheme.agent_scheme?` reads, and the identifier stays
+  # under 256 characters. Both refusals name the rule; the wording says which
+  # half broke, since the correspondent learns nothing else.
+  def require_known_agent_scheme(scheme, id)
+    refuse('R-EDM-REQ-C012', 'parsers.evidence_request.agent_scheme_unknown', scheme:) unless IdentifierScheme.agent_scheme?(scheme)
+    return if id.length < MAXIMUM_IDENTIFIER_LENGTH
+
+    refuse('R-EDM-REQ-C012', 'parsers.evidence_request.agent_id_too_long',
+      length: id.length, maximum: MAXIMUM_IDENTIFIER_LENGTH)
+  end
+
+  # `R-EDM-REQ-C092` measures `normalize-space(.)` and asks for more than one
+  # character, which is why the value is squished rather than merely stripped:
+  # ` A ` is one character to the rule.
+  def agent_name(name)
+    refuse(AGENT_NAME_REQUIRED, 'parsers.evidence_request.agent_without_name') if name.nil?
+    return name.text if name.text.squish.length > 1
+
+    refuse('R-EDM-REQ-C092', 'parsers.evidence_request.agent_name_too_short', name: name.text)
+  end
+
+  # `R-EDM-REQ-C109` asserts `not(normalize-space(@lang)='')`, so an attribute
+  # absent and one written blank break it alike. `R-EDM-REQ-C108` then compares
+  # the raw value to the code list, `.=$code` carrying no `i` flag and the list
+  # publishing upper case: `lang="fr"` breaks it where `lang="FR"` does not, and
+  # so does ` FR `, which the first rule accepts.
+  def agent_language(name)
+    language = attribute(name, 'lang')
+    refuse('R-EDM-REQ-C109', 'parsers.evidence_request.agent_without_language') if language.to_s.squish.empty?
+    return language if LanguageCode.valid?(language)
+
+    refuse('R-EDM-REQ-C108', 'parsers.evidence_request.agent_language_unknown', language:)
   end
 end
