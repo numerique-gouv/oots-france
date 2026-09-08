@@ -63,8 +63,8 @@ etape() {
   # 0. « merged » : PR fusionnée, affaires rangées.
   [ "$DECLAREE" = merged ] && { printf 'merged'; return; }
 
-  # 1. Un des six verdicts en queue de transcript : l'ouvrier a rendu la
-  #    main. Quatre des six attendent une relance.
+  # 1. Un des sept verdicts en queue de transcript : l'ouvrier a rendu la
+  #    main. Cinq des sept attendent une relance.
   #
   #    Une étape déclarée *après* que le verdict a été prononcé prime sur
   #    lui : c'est la parole la plus fraîche, et c'est ce qui permet
@@ -78,7 +78,7 @@ etape() {
   if [ -f "$FICHIER" ]; then
     LIGNE=$(tail -6 "$FICHIER" 2>/dev/null \
       | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
-      | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+      | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|INTERROMPU|BLOQUÉ)$" | tail -1)
     #    `date -d ""` ne rend pas d'erreur mais minuit du jour même : sans
     #    la garde sur la ligne, un transcript sans verdict donnerait un
     #    `PRONONCE` que toute déclaration de la journée dépasse, et l'étape
@@ -100,6 +100,7 @@ etape() {
       PLANIFIÉ)  printf 'plan to implement';  return ;;
       PLAN)      printf 'plan to approve';    return ;;
       ARBITRAGE) printf 'waiting for answer'; return ;;
+      INTERROMPU) printf 'to resume';         return ;;
       BLOQUÉ)    printf 'blocked';            return ;;
     esac
   fi
