@@ -18,7 +18,7 @@ class PublicKeySet
     'oct' => %w[k kty],
   }.freeze
 
-  def initialize(private_jwk = Settings.private_key_jwk)
+  def initialize(private_jwk)
     @private_jwk = private_jwk.transform_keys(&:to_s)
   end
 
