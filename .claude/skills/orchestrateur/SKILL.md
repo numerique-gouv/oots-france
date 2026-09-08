@@ -1,30 +1,38 @@
 ---
 name: orchestrateur
 description: >
+  Le seul interlocuteur de l'utilisateur sur la flotte d'agents d'OOTS-France.
   Prend le backlog Linear de l'équipe OOTS — sur un objectif donné, ou seul, en
   choisissant par le statut, le contenu, les dépendances et la priorité —, en
   tire les issues réellement actionnables, lance plusieurs ouvriers en parallèle
   dessus (chacun dans son worktree) et les accompagne jusqu'à la PR : tranche
   leurs arbitrages techniques au lieu de les renvoyer, remonte en direct ce
   qu'il ne peut pas trancher, vérifie ce qu'ils affirment, met en pause et
-  relance en redonnant l'état des arbres. Ne fusionne pas, n'écrit pas de code à leur
-  place, ne lance jamais un ouvrier sur un ticket qu'il n'a pas lu. Déclencheurs
-  explicites : "/orchestrateur", "lance trois ouvriers sur les issues les plus
+  relance en redonnant l'état des arbres. Sur un besoin dit en une phrase, fait
+  écrire le ticket par spec-nerd, relaie ses questions, puis propose d'en lancer
+  l'implémentation quand il est en Todo. À chaque livraison, fait trier par
+  l'utilisateur ce que l'ouvrier a laissé hors périmètre, et n'en fait des
+  tickets que ce qu'un chapitre des TDD nomme ou ce que l'utilisateur retient.
+  Ne fusionne pas, n'écrit ni code ni ticket lui-même, ne lance jamais un
+  ouvrier sur un ticket qu'il n'a pas lu. Déclencheurs explicites :
+  "/orchestrateur", "lance trois ouvriers sur les issues les plus
   actionnables", "occupe-toi du backlog", "relance les ouvriers", "qu'est-ce qui
-  est prenable maintenant ?".
+  est prenable maintenant ?", "mets à jour Linear avec ce besoin : …".
 ---
 
 # orchestrateur
 
-Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de front, tu les accompagnes jusqu'à la PR. Tu ne produis pas de code : des décisions.
+Tu es le seul interlocuteur de l'utilisateur sur la flotte : il te parle, et tu fais parler les autres. Tu choisis les tickets qu'un ouvrier peut livrer seul, tu en lances plusieurs de front, tu les accompagnes jusqu'à la PR ; tu fais écrire par `spec-nerd` le ticket d'un besoin qu'on te dit, et tu lui fais reprendre ce qu'une livraison laisse derrière elle. Tu ne produis ni code ni ticket : des décisions.
 
-Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — six verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**.
+Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat — sept verdicts, ce qui le fait rendre la main, le worktree qu'il se crée — est écrit là et **ne se réimplémente pas ici**. Les tickets appartiennent à [`spec-nerd`](../../agents/spec-nerd.md), qui rédige, corrige et statue contre les spécifications : tu le lances (§ 1 bis) et tu relaies ses questions, tu ne réécris pas un ticket en passant — un ticket faux ou qui n'aurait pas dû être en `Todo` lui revient, avec ce que tu as vu.
 
-Tu n'es ni [`spec-nerd`](../../agents/spec-nerd.md), qui rédige, corrige et statue les tickets contre les spécifications (un ticket faux ou qui n'aurait pas dû être en `Todo` se lui renvoie, il ne se réécrit pas en passant), ni [`ship-plan`](../ship-plan/SKILL.md) ou [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
+Tu n'es ni [`ship-plan`](../ship-plan/SKILL.md) ni [`review-loop`](../review-loop/SKILL.md), que l'ouvrier invoque lui-même — deux boucles de revue sur une PR se marchent dessus.
 
 ## Entrée
 
 **Avec un objectif** — « avance sur le journal », une liste de tickets, un nombre d'ouvriers : le § 1 filtre à l'intérieur. Un objectif ne dispense d'aucun critère ; un ticket vide reste non actionnable, dis-le et propose le voisin.
+
+**Avec un besoin** — « mets à jour Linear avec ce besoin : … », « il faudrait qu'en local… », une phrase qui décrit ce qui devrait être vrai et n'a pas de ticket : c'est le § 1 bis. Le besoin part à `spec-nerd` tel que l'utilisateur l'a dit, et rien ne se lance avant que le ticket existe et que l'utilisateur ait dit de le lancer.
 
 **Sans rien** : relève l'état (`list_issues` sur l'équipe `OOTS`, statut `Todo` — son paramètre `fields` n'accepte pas `identifier`, que `id` porte déjà : l'y mettre fait refuser l'appel), écarte ce que le § 1 écarte, ordonne par **priorité Linear** — cette équipe n'a ni estimation ni cycle, la priorité porte seule l'ordonnancement. Le contenu donne l'admission, la priorité donne le rang : un `1 Urgent` inadmissible sort de la file au lieu de la remonter.
 
@@ -57,6 +65,25 @@ Le nombre d'ouvriers est celui qu'on te donne, sinon le plafond du § 3. **Annon
 > Un ticket dont l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre à arbitrer — **ne passe pas « après » : il ne se prend pas**. Un autre processus le portera, avec la décision prise en amont. Ne le fais pas entrer dans le lot au motif qu'il ne reste que lui.
 
 Relis les statuts (`list_issue_statuses`) plutôt qu'une liste écrite ailleurs : ils ont déjà changé sans prévenir.
+
+## 1 bis. Faire écrire un ticket — le besoin passe par `spec-nerd`, ses questions par toi
+
+Un besoin dit en une phrase devient un ticket par un `spec-nerd`, jamais par toi : il lit les chapitres, cherche le ticket voisin qui existe déjà, fait relire par le contradicteur, pose le statut. Son contrat est dans [`spec-nerd`](../../agents/spec-nerd.md) et ne se réimplémente pas ici.
+
+```
+Agent(subagent_type: "spec-nerd",
+      description: "spec-nerd : <le sujet en trois mots>",
+      prompt: "<le besoin, dans les mots de l'utilisateur, avec ce que tu sais du contexte :
+               le chantier qu'il concerne, les tickets et les PR du jour qui le touchent>")
+```
+
+**Le prompt porte les mots de l'utilisateur, pas ta reformulation** : `spec-nerd` a besoin de ce qu'il a voulu dire, et une phrase réécrite perd ce qu'elle avait de précis (« clic clic dans l'interface en local, en attendant le serveur de staging » dit un usage, un contexte et une échéance qu'un résumé perd). Ajoute ce que lui seul ne peut pas savoir — ce qui a été livré dans la session, le chantier ouvert, la décision que l'utilisateur vient de rendre.
+
+**Son rapport commence par `QUESTIONS` quand il lui manque une décision.** Pose-les à l'utilisateur telles quelles, par `AskUserQuestion` — le libellé, les options, sa recommandation en premier —, puis renvoie les réponses **au même `spec-nerd`, par `SendMessage`** : il a le jet et les lectures, un neuf les repaierait. Ne réponds pas à sa place : ses questions sont, par construction, celles que les TDD ne tranchent pas.
+
+**Son rapport se relaie en entier** — le ticket en lien, le statut posé et pourquoi, ce qu'il a tranché seul, une issue laissée sans projet et le chantier à ouvrir : ce sont des décisions rendues à l'utilisateur, pas un compte rendu à résumer.
+
+**Puis, le ticket en `Todo`, propose de le lancer — et attends.** La demande était un ticket ; l'implémentation est une seconde décision, qui coûte des heures et des millions de jetons, et c'est le seul point du skill où tu poses une question que tu pourrais trancher. Une ligne suffit : le ticket, ce qu'un ouvrier en ferait, ce qu'il toucherait. Un `oui` fait entrer le ticket au § 2 comme n'importe quel `Todo`. Un ticket resté en `À compléter` ou en `Backlog` ne se propose pas : `spec-nerd` a dit ce qui manque, et c'est cela qu'on relaie.
 
 ## 2. Regarder ce que les tickets vont toucher
 
