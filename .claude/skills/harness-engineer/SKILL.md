@@ -120,14 +120,14 @@ Le coût par arbre d'agents se mesure avec les commandes du § 3 bis de [`orches
 
 | Où | Ce qu'il prouve |
 | --- | --- |
-| `.claude/reviews/` | le nombre de passes par PR (les suffixes `-2`, `-3`…) ; les sections « Rejeté » qui reviennent d'une PR à l'autre — un faux positif récurrent est un relecteur à mieux briefer ; les correctifs que la boucle a elle-même introduits |
+| `.claude/reviews/` | le nombre de passes par PR (les sections « # Passe n » ; les suffixes `-2`, `-3`… sont la forme d'avant le 2026-09-08) ; les sections « Rejeté » qui reviennent d'une PR à l'autre — un faux positif récurrent est un relecteur à mieux briefer ; les correctifs que la boucle a elle-même introduits |
 | `.claude/plans/` | un plan sans chapitre cité, une rubrique toujours vide, une question ouverte que l'ouvrier a tranchée seul et qu'on a dû défaire |
 | `.claude/reprises/` | ce qu'un successeur a dû redécouvrir : chaque « piège d'outillage » consigné là est un candidat pour `CLAUDE.local.md` ou pour le skill qui l'a rencontré |
 | `.claude/etapes/` | une étape restée figée sur un ticket mergé, un mot hors de la liste de l'ouvrier |
 | `.claude/audits/*-harnais.md` | la passe précédente : ce qu'elle a changé, ce qu'elle a mesuré, ce qu'elle a laissé |
 
 ```sh
-# passes par PR : un fichier par passe (suffixe -2, -3…) ou des sections « # Passe n » dans un seul fichier — les deux formes coexistent
+# passes par PR : une section « # Passe n » par passe dans le fichier de la PR ; les suffixes -2, -3… sont la forme d'avant le 2026-09-08, que les fichiers existants gardent
 for s in $(ls .claude/reviews | sed -E 's/-[0-9]+\.md$/.md/' | sort -u); do
   fichiers=$(ls .claude/reviews | grep -E "^${s%.md}(-[0-9]+)?\.md$")
   f=$(printf '%s\n' "$fichiers" | wc -l)
