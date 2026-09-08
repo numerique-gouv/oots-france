@@ -10,6 +10,13 @@ RSpec.describe Settings do
     Settings::REQUIRED
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
+      .merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key)
+  end
+
+  # The contract reads this one rather than merely finding it filled: it must
+  # decode to a JWK, and declare an algorithm FranceConnect+ accepts.
+  def france_connect_key(algorithm = 'RSA-OAEP-256')
+    Base64.strict_encode64({ kty: 'RSA', alg: algorithm, use: 'enc' }.to_json)
   end
 
   # 1000 satisfies the numeric check for every other duration; retention is read
@@ -317,6 +324,83 @@ RSpec.describe Settings do
       with_environment('CLE_PRIVEE_JWK_EN_BASE64' => nil) do
         expect { described_class.private_key_jwk }
           .to raise_error(ConfigurationError, /CLE_PRIVEE_JWK_EN_BASE64/)
+      end
+    end
+  end
+
+  describe 'the key of the demonstration procedure' do
+    it 'decodes the base64-wrapped JWK, distinctly from the key of the beneficiary token' do
+      with_environment(
+        'CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => Base64.strict_encode64({ 'kid' => 'démarche' }.to_json),
+        'CLE_PRIVEE_JWK_EN_BASE64' => Base64.strict_encode64({ 'kid' => 'jeton' }.to_json),
+      ) do
+        expect(described_class.france_connect_private_key_jwk).to eq('kid' => 'démarche')
+        expect(described_class.private_key_jwk).to eq('kid' => 'jeton')
+      end
+    end
+
+    it 'raises a configuration error when unset' do
+      with_environment('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => nil) do
+        expect { described_class.france_connect_private_key_jwk }
+          .to raise_error(ConfigurationError, /CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64/)
+      end
+    end
+
+    # FranceConnect+ pairs `A256GCM` with these two and no other. Any other
+    # value is refused where it can still be corrected: the exchange that would
+    # otherwise fail happens inside FranceConnect+, with a user midway through
+    # an authentication.
+    it 'starts on either algorithm FranceConnect+ accepts' do
+      Settings::FRANCE_CONNECT_KEY_ALGORITHMS.each do |algorithm|
+        with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key(algorithm))) do
+          expect { described_class.verify! }.not_to raise_error
+        end
+      end
+    end
+
+    it 'refuses to start on an algorithm FranceConnect+ does not accept' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key('RSA1_5'))) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /RSA1_5/)
+      end
+    end
+
+    # A JWK carries no `alg` of its own accord: absent, FranceConnect+ has
+    # nothing to pick, and the refusal names a member to add rather than a value
+    # to rewrite — the two mistakes are corrected differently.
+    it 'refuses to start on a key that declares no algorithm at all' do
+      key = Base64.strict_encode64({ kty: 'RSA', use: 'enc' }.to_json)
+
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => key)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /ne déclare aucun algorithme/)
+      end
+    end
+
+    # Filled but meaningless passes the presence check, and would only fail when
+    # FranceConnect+ comes to read the key set.
+    it 'refuses to start on a value that decodes to no key at all' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => 'pas une clé')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64/)
+      end
+    end
+
+    # The other way to decode to no key: valid JSON that is not an object. It
+    # never reaches the `JSON::ParserError` the rescue catches, and is refused
+    # by the guard on the parsed value instead.
+    it 'refuses to start on a value that decodes to JSON but not to an object' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => Base64.strict_encode64('[1,2,3]'))) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64/)
+      end
+    end
+
+    # The rule above runs after `reject_unless_present`, so an absent variable
+    # must come back named by that one rather than as an unreadable key.
+    it 'names the variable when it is absent altogether' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => nil)) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /obligatoires absentes ou vides.*CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64/)
       end
     end
   end

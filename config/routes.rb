@@ -7,6 +7,16 @@ Rails.application.routes.draw do
 
   get '/auth/cles_publiques', to: 'auth#cles_publiques'
 
+  # The three addresses the demonstration procedure declares to FranceConnect+,
+  # outside `/admin` and so outside what `AdminAuthentication` closes.
+  # `docs/eidas_context.md` says why they answer publicly, and why they are
+  # settled before the flow that will use them exists.
+  scope :demo, as: :demo do
+    get 'franceconnect/cles_publiques', to: 'france_connect#cles_publiques'
+    get 'franceconnect/retour_connexion', to: 'france_connect#retour_connexion'
+    get 'franceconnect/retour_deconnexion', to: 'france_connect#retour_deconnexion'
+  end
+
   # The path is the one the procedures already call; it has no reason to change
   # because the implementation behind it does.
   get '/requete/pieceJustificative', to: 'evidence_requests#create'

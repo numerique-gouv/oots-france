@@ -89,17 +89,19 @@ executeRuby() {
   docker run --rm "ruby:$(cat .ruby-version)-slim" ruby "$@"
 }
 
-# The private decryption key is generated on the fly: nothing to version, and
-# every run starts from a fresh secret. Ruby's standard library is enough, with
+# The private decryption keys are generated on the fly: nothing to version, and
+# every run starts from fresh secrets. Ruby's standard library is enough, with
 # no gem.
 #
 # RSA-OAEP-256, and not ECDH-ES: it is the only key management algorithm the Ruby
-# gems actually handle — the one `apistration` already uses. Nothing on the OOTS
-# side requires it: this token is the interface between a French procedure and
-# this component, which no TDD chapter constrains. The route that publishes the
-# key does so by subtracting the secret components, so the key type stays free
-# and the choice reversible.
-CLE_PRIVEE_JWK_EN_BASE64=$(executeRuby -ropenssl -rjson -rbase64 -e '
+# gems actually handle — the one `apistration` already uses. FranceConnect+
+# accepts both and nothing else, so the choice satisfies it too; on the token
+# side nothing requires it, that token being the interface between a French
+# procedure and this component, which no TDD chapter constrains. The routes that
+# publish these keys do so by subtracting the secret components, so the key type
+# stays free and the choice reversible.
+engendreCleJwk() {
+  executeRuby -ropenssl -rjson -rbase64 -e '
 cle = OpenSSL::PKey::RSA.generate(2048)
 b64 = ->(bn) { Base64.urlsafe_encode64(bn.to_s(2), padding: false) }
 
@@ -111,7 +113,8 @@ jwk = {
 }
 
 puts Base64.strict_encode64(JSON.generate(jwk))
-')
+'
+}
 
 # Output that is truncated or polluted would be copied into .env.oots as it is.
 # `Settings.verify!` would not catch it there: it only rejects empty values, and
@@ -123,21 +126,36 @@ puts Base64.strict_encode64(JSON.generate(jwk))
 # The decoding is taken out of the pipe so that its exit code is the one tested:
 # in a pipe only the last one counts, and `base64 -d` writes to stdout everything
 # it managed to decode before failing.
-CLE_JWK_DECODEE=$(echo "$CLE_PRIVEE_JWK_EN_BASE64" | base64 -d 2>/dev/null) || {
-  echo "❌ La clé JWK produite n'est pas du base64 valide." >&2
-  exit 1
+#
+# The variable is named in the message, two keys being generated: « la clé JWK »
+# alone would leave the reader to guess which of the two.
+verifieCleJwk() {
+  CLE_JWK_DECODEE=$(echo "$1" | base64 -d 2>/dev/null) || {
+    echo "❌ La clé JWK produite pour $2 n'est pas du base64 valide." >&2
+    exit 1
+  }
+
+  # `qi` is the last field the generator writes, and `}` closes the object:
+  # looking for `kty`, which comes first, would let through a key truncated right
+  # after it — and so stripped of all the cryptographic material.
+  case "$CLE_JWK_DECODEE" in
+    *'"qi"'*'}') ;;
+    *)
+      echo "❌ La clé JWK produite pour $2 est incomplète." >&2
+      exit 1
+      ;;
+  esac
 }
 
-# `qi` is the last field the generator writes, and `}` closes the object:
-# looking for `kty`, which comes first, would let through a key truncated right
-# after it — and so stripped of all the cryptographic material.
-case "$CLE_JWK_DECODEE" in
-  *'"qi"'*'}') ;;
-  *)
-    echo "❌ La clé JWK produite est incomplète." >&2
-    exit 1
-    ;;
-esac
+# Two keys, and not one shared: the first opens the beneficiary token a French
+# service provider encrypts for this component, the second the ID Token
+# FranceConnect+ encrypts for the demonstration procedure. Two correspondents,
+# two interfaces — lending one key to both would tie together what nothing ties.
+CLE_PRIVEE_JWK_EN_BASE64=$(engendreCleJwk)
+verifieCleJwk "$CLE_PRIVEE_JWK_EN_BASE64" CLE_PRIVEE_JWK_EN_BASE64
+
+CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$(engendreCleJwk)
+verifieCleJwk "$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
 
 # The French provider keeps its real identity rather than a test name: that
 # identity is copied into the `ErrorProvider` of the reference messages in
@@ -159,6 +177,7 @@ esac
 cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
+CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
 DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique

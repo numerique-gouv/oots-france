@@ -156,6 +156,24 @@ fr:
         non à des usagers : une personne qui cherche à faire venir un justificatif passe par le
         portail de la démarche.
       open_admin: Ouvrir l’espace d’administration
+  # Les deux pages où FranceConnect+ renvoie l'usager de la démarche de
+  # démonstration. Elles répondent sans session : `docs/eidas_context.md` dit
+  # pourquoi ces adresses existent avant la cinématique qui y mène.
+  france_connect:
+    retour_connexion:
+      title: Retour de FranceConnect+
+      lead: >-
+        Cette page est celle où FranceConnect+ ramène l'usager une fois qu'il s'est identifié.
+        L'identification n'est pas encore branchée : rien n'y est encore rapporté, et la
+        cinématique européenne viendra avec la suite du parcours.
+      back: Aller à la démarche de démonstration
+    retour_deconnexion:
+      title: Vous êtes déconnecté
+      lead: >-
+        Cette page est celle où FranceConnect+ ramène l'usager une fois qu'il s'est déconnecté.
+        La démarche de démonstration ne déclenche encore aucune déconnexion : l'adresse existe
+        parce que FranceConnect+ demande qu'elle soit déclarée et qu'elle réponde.
+      back: Revenir à la démarche de démonstration
   layouts:
     application:
       # Le nom du service, que le titre de l'onglet, le bloc service de l'entête
@@ -284,6 +302,12 @@ fr:
     public_key_set:
       unknown_key_type: "Type de clé inconnu : « %{type} »."
     settings:
+      # Les deux couples que FranceConnect+ accepte pour chiffrer l'ID Token et
+      # la réponse UserInfo. Le refus nomme ce que la clé déclare : c'est la
+      # seule chose que l'exploitant ait à corriger.
+      france_connect_algorithm: "La clé de la démarche déclare l'algorithme « %{algorithm} » : FranceConnect+ n'accepte que %{expected}."
+      france_connect_algorithm_absent: "La clé de la démarche ne déclare aucun algorithme : FranceConnect+ n'accepte que %{expected}, et une clé JWK n'en porte un que si on l'y écrit."
+      france_connect_key_unreadable: "CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
       missing: "Variables d'environnement obligatoires absentes ou vides : %{names}."
       not_boolean: "%{name} vaut « %{value} » : cette variable commande un dispositif, elle ne peut valoir que true, false, ou rien du tout."
       not_whole: "Variables d'environnement devant être des nombres entiers positifs : %{names}."
