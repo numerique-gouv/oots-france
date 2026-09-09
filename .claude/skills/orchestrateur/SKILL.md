@@ -111,59 +111,59 @@ Compare donc les fichiers visés avant de lancer : les corps de tickets les nomm
 
 Le CPU dit combien d'ouvriers travaillent **en même temps** ; les jetons disent combien de lots iront **jusqu'au bout**. Cette contrainte-là ne ralentit pas : elle coupe.
 
-**Mesure à la source, et roule l'arbre.** Chaque tour du transcript porte son `usage` — seule quantité absolue, insensible au forfait. Mais le transcript d'un ouvrier **ne porte pas ce qu'il coûte** : les relecteurs que `review-loop` lance sont des agents à part entière, déposés à plat dans le même répertoire, et seul leur `.meta.json` les rattache à lui par `parentAgentId`. Sommer le seul fichier de l'ouvrier sous-compte de moitié.
+**Mesure à la source, roule l'arbre, et groupe par `message.id`.** Chaque tour du transcript porte son `usage` — seule quantité absolue, insensible au forfait. Deux pièges avant de sommer. Le transcript d'un ouvrier **ne porte pas ce qu'il coûte** : les relecteurs que `review-loop` lance sont des agents à part entière, déposés à plat dans le même répertoire, et seul leur `.meta.json` les rattache à lui par `parentAgentId`. Et **une réponse d'API occupe une ligne par bloc de contenu**, toutes portant le même `usage` : un tour qui pense, parle et appelle quinze outils s'écrit en dix-sept lignes qui déclarent chacune le coût du tour entier.
 
 ```sh
 T=$(jq -r .transcript_path ~/.claude/.statusline-derniere-entree.json); D="${T%.jsonl}/subagents"
+neufs='[.[] | select(.type=="assistant" and .message.usage) | {id: .message.id, u: .message.usage}]
+  | group_by(.id) | map(.[0].u)
+  | "\(((map((.input_tokens//0)+(.output_tokens//0)+(.cache_creation_input_tokens//0))|add)/1e6*100|floor)/100) M neufs, \((map(.cache_read_input_tokens//0)|add)/1e6|floor) M relus"'
 arbre() {  # un agent et ses enfants
   { echo "$1/agent-$2.jsonl"; grep -l "\"parentAgentId\":\"$2\"" "$1"/*.meta.json | sed 's/\.meta\.json$/.jsonl/'; } |
-    xargs jq -rs '[.[].message.usage//empty] |
-      "\(((map((.input_tokens//0)+(.output_tokens//0)+(.cache_creation_input_tokens//0))|add)/1e6*100|floor)/100) M neufs, \((map(.cache_read_input_tokens//0)|add)/1e6|floor) M relus"'
+    xargs jq -rs "$neufs"
 }
 for m in "$D"/*.meta.json; do                              # chaque ouvrier, arbre compris
   [ "$(jq -r .agentType "$m")" = ouvrier ] || continue
   id=$(basename "$m" .meta.json); printf '%-24s %s\n' "$(jq -r .description "$m")" "$(arbre "$D" "${id#agent-}")"
 done
-jq -s '[.[].message.usage//empty] | map((.input_tokens//0)+(.output_tokens//0)+(.cache_creation_input_tokens//0)) | add' "$T"   # toi
+jq -rs "$neufs" "$T"                                       # toi
 ```
 
 Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que les contextes accumulés font repayer à chaque tour.
 
 > [!WARNING]
-> **Deux façons de sous-compter, toutes deux commises ici.** Le `subagent_tokens` des rapports de tâche minore d'un facteur dix — un ouvrier annonçant 425 k en avait dépensé 4,9 M. Et le transcript de l'ouvrier pris seul minore d'un facteur deux : les « 4,7 à 4,9 M » que ce fichier a portés jusqu'au 2026-08-27 étaient en vérité **7,7 à 8,6 M** une fois les relecteurs rattachés. Ne dimensionne sur ni l'un ni l'autre.
+> **Trois façons de mal compter, toutes trois commises ici.** Le `subagent_tokens` des rapports de tâche minore d'un facteur dix — un ouvrier annonçant 425 k en avait dépensé 4,9 M. Le transcript de l'ouvrier pris seul minore d'un facteur deux, les relecteurs n'y étant pas. Et sommer `usage` ligne à ligne **majore d'un facteur 3 à 9** — mesuré le 2026-09-09 : 125 lignes pour 28 tours sur un `spec-nerd`, dont le coût passe de 9,56 M à 1,11 M une fois groupé. Le facteur croît avec le nombre d'appels d'outils par tour, donc il fausse aussi la comparaison entre deux rôles. **Tous les chiffres de ce fichier antérieurs au 2026-09-09 ont été mesurés de cette façon** ; ne les mélange pas avec une mesure faite par la commande ci-dessus.
 
-**Relevé du 2026-08-27**, après la séparation du plan et de l'implémentation (§ 4) et le retrait des captures d'écran de l'ouvrier. Les quatre invocations mesurées reprenaient chacune un ticket déjà avancé, dans un contexte neuf : elles donnent le coût **par phase**, non quatre bouts en bout.
+**Relevé du 2026-09-09**, à la commande ci-dessus, sur les neuf tickets livrés les 7 et 8 septembre — arbres de relecteurs compris, toutes invocations d'un même ticket additionnées.
 
-| Invocation | Ce qu'elle a couvert | Jetons neufs, arbre compris | Durée |
-| --- | --- | --- | --- |
-| OOTS-141, planification | chapitres lus → plan écrit → `PLANIFIÉ` | 0,58 M | 9 min |
-| OOTS-141, implémentation | plan sur disque → code → PR → 1 passe → refonte → `LIVRÉ` | **2,47 M** | 40 min |
-| OOTS-98 | dernière passe → refonte → sortie de brouillon | 1,52 M | 30 min |
-| OOTS-144 | 2 passes, un bloquant corrigé, un rebase, écrans | **6,28 M** | 52 min |
-| OOTS-115 | vérification seule, rien à reprendre | 0,21 M | 2 min |
+| Ticket | Ce qu'il a demandé | Jetons neufs, arbre compris |
+| --- | --- | --- |
+| OOTS-187 | plan puis livraison, une passe | 0,63 M |
+| OOTS-177 | quatre invocations, reprises courtes | 1,13 M |
+| OOTS-185 | plan puis livraison | 1,24 M |
+| OOTS-190 | plan puis livraison | 1,48 M |
+| OOTS-178 | trois invocations | 1,60 M |
+| OOTS-191 | plan puis livraison | 1,63 M |
+| OOTS-189 | plan puis livraison | 1,81 M |
+| OOTS-180 | cinq invocations, quatre passes de revue | **5,60 M** |
 
-D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement puisqu'un ticket demande deux invocations :
+**Retiens ~1,6 M pour un ticket qui converge en une ou deux passes, et jusqu'à 5,6 M quand la revue mord** — quatre passes, un bloquant réel, un rebase. La planification en est la part la plus légère (0,1 à 0,2 M) ; la dépense est dans les passes de revue et dans la queue de `ship-plan`.
 
-- **planifier : ~0,6 M** ;
-- **implémenter jusqu'à la PR : ~0,4 M** — bon marché, et c'est ce qui surprend ;
-- **une passe de revue : 1,3 à 2,3 M**, dont 1,0 à 1,6 M pour le seul éventail — quatre à sept relecteurs à ~0,25 M chacun, chacun lisant le diff entier ;
-- **la queue de `ship-plan` : 0,8 à 1,8 M** — attente de CI, refonte d'historique, description de PR, écrans. Ce n'est pas un détail : sur OOTS-144 c'est le deuxième poste, derrière la revue.
-
-**Retiens ~3 M pour un ticket qui converge en une passe, 5 à 6 M quand la revue mord** — un bloquant réel, un rebase, une passe de plus. **Remesuré le 2026-09-08 sur les 15 tickets des deux semaines précédentes : médiane 4,2 M, quartiles 2,8 à 5,7 M, un ticket à 12,6 M après cinq passes de revue.** L'accompagnement en reste le vingtième, la dépense est chez les ouvriers — et, depuis le § 5 bis, chez le `spec-nerd` qui suit le lot (voir plus bas).
+**Écrire un ticket coûte à peu près ce que coûte le livrer** : mesuré le 2026-09-09, 1,66 à 1,86 M pour une passe de `spec-nerd`, sous-agents compris — et une passe écrit un ticket, parfois quatre. C'est pourquoi le `spec-nerd` du § 5 bis se compte comme un ouvrier de plus dans le budget d'un lot.
 
 > [!IMPORTANT]
-> **La fenêtre de cinq heures vaut ~20 M de jetons neufs** — étalonnée le 2026-08-27 : 12,4 M dépensés depuis son ouverture pour 62 % consommés. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : un lot de deux coûte 6 à 11 M de livraison plus 2 à 6 M de `spec-nerd`, et tient ; un lot de trois coûte 9 à 17 M avant ses reliquats, et ne tient que sur une fenêtre neuve et sans passe de revue supplémentaire. Compte ~6 M devant toi par ouvrier, plus le `spec-nerd` du lot. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
+> **La fenêtre de cinq heures vaut ~3 M de jetons neufs** — réétalonnée le 2026-09-09, à la commande corrigée : la fenêtre ouverte à 09:40 a été épuisée à 12:35, pour 3,07 M dépensés sur l'ensemble des projets. C'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : un ticket vaut ~1,6 M et son `spec-nerd` de reliquats autant, si bien qu'**un lot de deux déborde d'une fenêtre** et qu'il faut savoir à l'avance sur quelle frontière il s'arrêtera (§ 6). Compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
 >
 > ```sh
 > touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
-> jq -r --argjson m 20 '.rate_limits.five_hour as $f |
+> jq -r --argjson m 3 '.rate_limits.five_hour as $f |
 >   "reste \(100 - $f.used_percentage)% ≈ \((($m * (100 - $f.used_percentage) / 100) * 10 | floor) / 10) M jetons",
 >   "recharge \($f.resets_at | localtime | strftime("%H:%M")), dans \((($f.resets_at - now) / 60 | floor)) min",
 >   "semaine  \(.rate_limits.seven_day.used_percentage)%"' \
 >    ~/.claude/.statusline-derniere-entree.json
 > ```
 >
-> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire. Le `--argjson m 20` est la taille de fenêtre étalonnée ci-dessus : c'est le seul chiffre à reprendre après un changement de forfait.
+> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire. Le `--argjson m 3` est la taille de fenêtre étalonnée ci-dessus : c'est le seul chiffre à reprendre après un changement de forfait.
 >
 > **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 >
@@ -174,24 +174,29 @@ D'où les prix unitaires, qui sont ce qu'il faut avoir en tête au lancement pui
 `rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture. Refais l'étalonnage après tout changement de forfait — l'heure de remise à zéro donne l'ouverture de la fenêtre, la somme des `usage` postérieurs à cette heure donne les jetons, et `taille ≈ jetons × 100 / pourcentage`.
 
 > [!WARNING]
+> **Toute attente de plus de cinq minutes fait repayer au parent son contexte entier.** Le cache d'un prompt expire en cinq minutes ; pendant qu'un sous-agent travaille, le parent ne parle pas, donc son cache meurt, et son tour suivant recrée tout ce qu'il portait. Mesuré le 2026-09-09 sur un `spec-nerd` de 51 minutes : quatre écarts de 7 à 18 minutes, chacun ramenant `cache_read` à zéro pour 244 k, 263 k, 275 k puis 278 k recréés — **1,06 M sur les 1,39 M de l'agent, 76 %**. Sur les onze `spec-nerd` du 1<sup>er</sup> au 9 septembre, ces reprises à froid valent 4,23 M sur 7,67 M.
+>
+> **Deux conséquences, et ce sont des règles de lancement.** Le prix d'une attente est **la taille du contexte du parent**, pas celle du sous-agent : un parent qui a lu en vrac paie quatre fois plus cher chacune de ses attentes qu'un parent sobre. Et **le prix est par attente, pas par sous-agent** : sept relecteurs lancés dans le même message coûtent une reprise, trois passes séquentielles en coûtent trois. C'est pourquoi `review-loop` est en éventail, et pourquoi les ouvriers de la même fenêtre n'ont, à une exception près, que leur reprise initiale à 0,06 M.
+>
 > **Un contexte long se repaie à chaque tour, et c'est là que part l'essentiel** : vingt à vingt-cinq fois les jetons neufs, en cache relu — un rapport que les optimisations n'ont pas bougé, elles n'ont réduit que l'absolu. Un agent repris rejoue tout son transcript, donc sa dépense par action ne cesse de croître. Reprendre n'étale pas la dépense, ça l'augmente — et un ouvrier arrêté tard vaut mieux être **relancé de zéro sur une branche déjà poussée** quand ce qui reste tient dans un contexte neuf. Les quatre invocations du relevé ci-dessus sont exactement cela, et la moins chère a coûté 0,21 M là où reprendre l'ouvrier d'origine en aurait coûté plusieurs.
 >
 > **Une erreur d'API (`429`, `529 Overloaded`) ne change rien à ce calcul, et c'est le piège.** La requête refusée ne coûte rien — `usage` à zéro —, mais le « reprends là où tu t'étais arrêté » qui suit rejoue tout le transcript, et le premier tour d'une reprise a coûté un demi-million de jetons le 2026-09-03, six fois de suite, pour un agent qui n'a rien produit ce jour-là. Un `529` sur un agent ne dit rien de toi — ta session tourne, puisqu'elle a reçu l'échec — mais il dit que la plateforme sature : laisse passer une demi-heure au moins avant de reprendre, et double l'attente à chaque nouvel échec, plutôt que de relancer toutes les dix minutes. Et quand ce qui reste tient dans un brief court, c'est un agent **neuf** qu'on lance, pas l'ancien qu'on réanime — le brief coûte quelques milliers de jetons, la réanimation en coûte des centaines de milliers.
 >
 > **« Quand ce qui reste tient dans un contexte neuf » est la condition, pas une formalité.** Une revue d'écran ne la remplit jamais : ce qui revient est une correction à des gabarits et des clés que l'ouvrier a posés, et qu'un neuf devra redécouvrir avant de pouvoir l'appliquer — le briefing qui remplace ce contexte coûte plus cher que le contexte lui-même. Le calcul de jetons ci-dessus ne dit rien du verdict à traiter ; ne l'invoque pas pour contourner le § 5.
 
-**La revue est la phase chère** : planifier et implémenter réunis pèsent ~1 M, une seule passe de revue le double. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
+**La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue plusieurs fois cela. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 
-**Un ticket écrit coûte autant qu'un ticket livré, et le lot ne s'arrête pas au `LIVRÉ`.** Le `spec-nerd` du § 1 bis et celui des reliquats du § 5 bis se paient sur le même compte que les ouvriers, et ils ne sont pas petits — chacun lance des `tdd-nerd` qui lisent un corpus entier, et la boucle avec le contradicteur en rajoute une par passe. **Relevé du 2026-09-08**, huit invocations, arbre compris (jetons neufs) :
+**Un ticket écrit coûte autant qu'un ticket livré, et le lot ne s'arrête pas au `LIVRÉ`.** Le `spec-nerd` du § 1 bis et celui des reliquats du § 5 bis se paient sur le même compte que les ouvriers, et ils ne sont pas petits — chacun lance des `tdd-nerd` qui lisent un corpus entier, et la boucle avec le contradicteur en rajoute une par passe. **Relevé du 2026-09-09**, onze invocations du 1er au 9 septembre, arbre compris (jetons neufs) :
 
 | Ce qu'il faisait | Jetons neufs | Enfants |
 | --- | --- | --- |
-| une issue hors domaine (outillage, tests) | 0,45 à 0,8 M | 0 à 1 `tdd-nerd` |
-| une issue du domaine, un `tdd-nerd` | 1,7 à 1,9 M | 1 `tdd-nerd` |
-| une issue relue par le contradicteur jusqu'à convergence | **5,8 M** | 3 `contradicteur` |
-| compléter ou mettre à jour un projet après une livraison | 4,8 à 8,1 M | 1 à 3 `tdd-nerd` |
+| une issue hors domaine (outillage, tests) | 0,15 à 0,25 M | 0 à 1 `tdd-nerd` |
+| une issue du domaine, un `tdd-nerd` | 0,3 à 0,6 M | 1 `tdd-nerd` |
+| une issue relue par le contradicteur jusqu'à convergence | **1,9 M** | 3 `contradicteur` |
+| compléter ou mettre à jour un projet après une livraison | 0,9 à 1,9 M | 1 à 3 `tdd-nerd` |
+| écrire les reliquats d'un lot, quatre tickets d'un coup | 1,7 M | 3 `contradicteur` |
 
-D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 2 M s'il touche au domaine, 6 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 2 à 6 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer trois ouvriers sur les ~12 M du plafond ci-dessus et découvrir que les reliquats des trois n'ont plus de budget.
+D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 0,5 M s'il touche au domaine, 2 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 1 à 2 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer trois ouvriers sur les ~3 M d'une fenêtre et découvrir que les reliquats des trois n'ont plus de budget.
 
 Le budget se compte enfin **sur le compte, pas sur la session** : un ouvrier lancé d'ailleurs puise au même endroit. Demande ce qui tourne avant de dimensionner.
 

@@ -202,15 +202,17 @@ Après le merge, la mémoire sort du répertoire et sa ligne sort de `MEMORY.md`
 
    ```sh
    # chemins cités par le harnais et absents du dépôt — ce skill exclu, il cite des chemins morts en exemple ;
-   # les répertoires git-ignorés exclus aussi, absents d'un clone sans être morts
-   grep -ohE '(\.claude|scripts|docs)/[A-Za-z0-9À-ÿ_./-]+' CLAUDE.md .claude/agents/*.md \
+   # les répertoires git-ignorés exclus aussi, absents d'un clone sans être morts ;
+   # et ce qui suit un ~/ est un chemin du poste, pas du dépôt : il ne se cherche pas ici
+   grep -ohE '(^|[^~/])(\.claude|scripts|docs)/[A-Za-z0-9À-ÿ_./-]+' CLAUDE.md .claude/agents/*.md \
      $(ls .claude/skills/*/SKILL.md | grep -v harness-engineer) \
-     | sed 's/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || git check-ignore -q "$p" || echo "$p"; done
+     | sed -E 's/^[^.sd]//; s/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || git check-ignore -q "$p" || echo "$p"; done
    # la même chose dans les mémoires — sans les chemins de ~/.claude, qui ne sont pas ceux du dépôt
    grep -ohE '(^|[^~/])\.claude/[A-Za-z0-9_./-]+' ~/.claude/projects/$(pwd | tr / -)/memory/*.md | sed -E 's/^[^.]//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
    # les verdicts que la statusline connaît sont ceux de l'ouvrier
-   grep -oE 'PLANIFIÉ|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ' .claude/statusline/subagent.sh | sort -u
-   grep -oE '^(PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ)$' .claude/agents/ouvrier.md | sort -u
+   V='PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ'   # la même alternance des deux côtés, sinon le contrôle invente un écart
+   grep -oE "$V" .claude/statusline/subagent.sh | sort -u
+   grep -oE "^($V)$" .claude/agents/ouvrier.md | sort -u
    # les tableaux de CLAUDE.md nomment les fichiers qui existent
    ls .claude/skills .claude/agents
    ```
