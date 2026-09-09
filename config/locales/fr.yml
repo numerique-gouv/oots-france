@@ -325,6 +325,7 @@ fr:
       missing_endpoint: "Le document de découverte de FranceConnect+ ne publie aucun %{name}."
       unreadable_endpoint: "FranceConnect+ publie un %{name} qui n'est pas une adresse : %{error}"
       unreadable_discovery: "Le document de découverte de FranceConnect+ ne se lit pas comme du JSON : %{error}"
+      not_an_object: "le corps est un %{type}, là où la découverte OpenID Connect publie un objet"
       unreadable_grant: "Réponse illisible de /token : %{error}"
       incomplete_grant: "La réponse de /token ne porte pas %{names}."
     # Ce que FranceConnect+ scelle pour la démarche : l'ID Token et la réponse

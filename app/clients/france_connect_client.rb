@@ -219,10 +219,22 @@ class FranceConnectClient
   # keeps an empty answer out of its cache for the same reason.
   def published_discovery
     Rails.cache.fetch('france_connect/openid_configuration', expires_in: CACHE_DURATION) do
-      JSON.parse(get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body)
+      document(get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body)
     end
   rescue JSON::ParserError => e
     raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)
+  end
+
+  # A discovery document is a JSON **object**, and anything else — an array, a
+  # string, `null` — is refused here rather than met three calls later as a
+  # `NoMethodError` on a `fetch` nobody could have known would fail.
+  def document(body)
+    parsed = JSON.parse(body)
+    return parsed if parsed.is_a?(Hash)
+
+    raise FranceConnectError,
+      I18n.t('clients.france_connect_client.unreadable_discovery',
+        error: I18n.t('clients.france_connect_client.not_an_object', type: parsed.class))
   end
 
   def with_query(endpoint, parameters)

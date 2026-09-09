@@ -63,6 +63,15 @@ RSpec.describe FranceConnectClient do
       expect { client.issuer }.to raise_error(FranceConnectError, /JSON/)
     end
 
+    # A discovery document is a JSON object: anything else would be met three
+    # calls later as a `NoMethodError` on a `fetch` nobody could have known
+    # would fail.
+    it 'refuses a body that reads as JSON but is not an object' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(body: '["ceci", "est", "un", "tableau"]')
+
+      expect { client.issuer }.to raise_error(FranceConnectError, /objet/)
+    end
+
     # Parsed inside the cache block, so a body that does not read never gets
     # written: caching it would serve a passing outage for the whole freshness
     # window, and every identification and every sign-out of the next hour would
