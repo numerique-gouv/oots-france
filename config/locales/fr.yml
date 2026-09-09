@@ -457,6 +457,28 @@ fr:
         L'identifiant du bénéficiaire est sans attribut « schemeID ».
       beneficiary_scheme_unexpected: >-
         L'identifiant du bénéficiaire est sous le schéma « %{scheme} », et non « %{expected} ».
+      # R-EDM-REQ-C008, C010, C009, C094 et C093 : les exigences que la requête
+      # invoque. Aucune règle ne les compte, et aucune ne dit rien d'une exigence
+      # sans identifiant : leurs contextes sont l'identifiant, le nom, la
+      # description et l'attribut « lang » de ces deux derniers — absents, ils
+      # ne déclenchent aucune assertion. Ces refus-là repartent en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie aucune exigence.
+      element_without_requirement: >-
+        Un élément du slot « Requirements » de la requête reçue ne porte pas de sdg:Requirement.
+      requirement_id_unexpected: >-
+        L'identifiant d'une exigence de la requête reçue (« %{id} ») n'est pas une URL du dépôt
+        sémantique terminée par un UUID.
+      unnamed_requirement_id: vide
+      requirement_name_without_language: >-
+        Le nom d'une exigence de la requête reçue ne porte pas d'attribut « lang ».
+      requirement_name_language_unknown: >-
+        La langue du nom d'une exigence de la requête reçue (« %{language} ») n'est pas un code de
+        la liste LanguageCode.
+      requirement_description_without_language: >-
+        La description d'une exigence de la requête reçue ne porte pas d'attribut « lang ».
+      requirement_description_language_unknown: >-
+        La langue de la description d'une exigence de la requête reçue (« %{language} ») n'est pas
+        un code de la liste LanguageCode.
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
