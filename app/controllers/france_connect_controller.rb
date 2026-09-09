@@ -2,6 +2,8 @@
 # and the only part of this application it reads or sends a user to.
 # `docs/eidas_context.md` says why they answer to a caller holding no session.
 class FranceConnectController < ApplicationController
+  include RefusesIdentification
+
   # The « Client keys url » of the demonstration procedure. Distinct from the
   # key of `/auth/cles_publiques`, which opens the beneficiary token of a French
   # service provider — `Settings.france_connect_private_key_jwk` says why.
@@ -13,7 +15,7 @@ class FranceConnectController < ApplicationController
   def retour_connexion
     result = completed_identification
 
-    return refuse(result) unless result.success?
+    return refuse_identification(result) unless result.success?
 
     session[:demo_identity] = result.identity.to_session
 
@@ -36,10 +38,5 @@ class FranceConnectController < ApplicationController
       code: params[:code], state: params[:state], expected: session.delete(:france_connect),
       announced_error: params[:error], error_description: params[:error_description],
     )
-  end
-
-  def refuse(result)
-    redirect_to admin_demo_root_path,
-      flash: { alert: :"interactors.failures.#{result.error[:key]}", details: result.error[:errors] }
   end
 end

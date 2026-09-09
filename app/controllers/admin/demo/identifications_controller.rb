@@ -10,21 +10,16 @@ module Admin
     # `::Demo::` and not `Demo::`: this file lives in `Admin::Demo`, which would
     # otherwise answer for the name.
     class IdentificationsController < Admin::BaseController
+      include RefusesIdentification
+
       def create
         result = ::Demo::StartIdentification.call
 
-        return refuse(result) unless result.success?
+        return refuse_identification(result) unless result.success?
 
         session[:france_connect] = { state: result.state, nonce: result.nonce }
 
         redirect_to result.authorization_url, allow_other_host: true
-      end
-
-      private
-
-      def refuse(result)
-        redirect_to admin_demo_root_path,
-          flash: { alert: :"interactors.failures.#{result.error[:key]}", details: result.error[:errors] }
       end
     end
   end
