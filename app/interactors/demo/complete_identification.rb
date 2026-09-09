@@ -98,6 +98,14 @@ module Demo
       refuse(identity.errors.full_messages.join(', '))
     end
 
-    def refuse(reason) = fail_with_error(:identification_refused, errors: [reason])
+    # Journalisé autant que rendu à l'écran : plusieurs de ces refus disent une
+    # anomalie de sécurité — un `state` qui ne répond à aucun départ, deux
+    # documents qui ne parlent pas de la même personne —, et le flash de
+    # l'exploitant ne se relit pas après coup.
+    def refuse(reason)
+      Rails.logger.warn(I18n.t('interactors.demo.complete_identification.refused', reason:))
+
+      fail_with_error(:identification_refused, errors: [reason])
+    end
   end
 end

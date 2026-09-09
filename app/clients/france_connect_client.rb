@@ -1,8 +1,8 @@
 # FranceConnect+, as the demonstration procedure calls it. The TDD never name
 # the portal; chapter 1 §10.1 does not exclude « a national authentication
-# service » between the eIDAS node and the requester, and reading FranceConnect+
-# into that place is this repository's, that section declaring itself
-# illustrative and not normative.
+# service » between the eIDAS node and the Online Procedure Portal, and reading
+# FranceConnect+ into that place is this repository's, that section declaring
+# itself illustrative and not normative.
 #
 # It knows the portal by its **discovery document** and by nothing else — every
 # endpoint below is read from it, none is built here. That is what makes the
@@ -199,12 +199,20 @@ class FranceConnectClient
 
   def url_for(path) = "#{Settings.oots_france_url}#{path}"
 
-  def discovery = @discovery ||= JSON.parse(published_discovery)
+  def discovery = @discovery ||= published_discovery
 
+  # Parsed **inside** the cache block, and not after it: a body that does not
+  # read as JSON — a maintenance page answered with a 200, a truncated
+  # response — is then never written, where caching it would serve a passing
+  # outage for the whole freshness window and turn every identification and
+  # every sign-out of the next hour into the same failure. `CodeListClient`
+  # keeps an empty answer out of its cache for the same reason.
   def published_discovery
-    Rails.cache.fetch('france_connect/discovery', expires_in: CACHE_DURATION) do
-      get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body
+    Rails.cache.fetch('france_connect/openid_configuration', expires_in: CACHE_DURATION) do
+      JSON.parse(get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body)
     end
+  rescue JSON::ParserError => e
+    raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)
   end
 
   def with_query(endpoint, parameters)

@@ -68,5 +68,11 @@ RSpec.describe Demo::UserIdentity do
     it 'gives back nothing when the session holds nothing' do
       expect(described_class.from_session(nil)).to be_nil
     end
+
+    # A cookie outlives the shape this class had when it was written. Raising
+    # here would break the sign-out, which is the one page that must work.
+    it 'gives back nothing when the session was written under another shape' do
+      expect(described_class.from_session(attributes.merge(un_attribut_retire: 'x'))).to be_nil
+    end
   end
 end

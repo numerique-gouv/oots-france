@@ -67,6 +67,17 @@ RSpec.describe 'Admin::Demo::GrantRequests' do
 
       expect(response).to redirect_to(admin_demo_root_path)
     end
+
+    # The same validity on the way out as on the way in: a session written under
+    # an earlier shape would otherwise render as a form with blank rows.
+    it 'sends the operator back when what the session holds is no longer a valid identity' do
+      identify_demo_user
+      allow(Demo::UserIdentity).to receive(:from_session).and_return(Demo::UserIdentity.new)
+
+      get admin_demo_demande_path
+
+      expect(response).to redirect_to(admin_demo_root_path)
+    end
   end
 
   # CA7: the demonstration's session is the operator's, and one ends with the other.

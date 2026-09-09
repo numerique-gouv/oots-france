@@ -10,7 +10,8 @@ RSpec.describe FranceConnectIdentity do
   end
 
   # Chapter 2.1 §2.2: the mandatory attributes of the minimum data set, carried
-  # word for word and in the format the chapter imposes on `sdg:DateOfBirth`.
+  # word for word — and in the `YYYY-MM-DD` that `R-EDM-REQ-C043` (FATAL)
+  # imposes on `sdg:DateOfBirth`.
   it 'carries the minimum data set as FranceConnect+ published it' do
     expect(identity).to have_attributes(given_name: 'Freja Marie', family_name: 'Sørensen',
       birthdate: '2001-04-17')

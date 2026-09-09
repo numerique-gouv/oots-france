@@ -53,6 +53,16 @@ RSpec.describe FranceConnectClient do
       expect { client.userinfo('un-jeton') }.to raise_error(FranceConnectError)
     end
 
+    # A maintenance page answered with a 200, a truncated body: every public
+    # method of the client goes through the discovery document, so a bare
+    # `JSON::ParserError` here would be a 500 on the sign-in, on the return and
+    # on the sign-out alike.
+    it 'refuses a discovery document that does not read as JSON' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(body: '<html>maintenance</html>')
+
+      expect { client.issuer }.to raise_error(FranceConnectError, /JSON/)
+    end
+
     # Named where it is read, rather than left to a bare `KeyError` twenty lines
     # up the stack, which nothing could name.
     it 'refuses a document that publishes no endpoint of that name, and says which' do

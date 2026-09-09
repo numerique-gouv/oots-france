@@ -15,10 +15,11 @@ module FakeFranceConnect
 
     # Enough style for the pages to be read and the buttons to be hit, embedded
     # rather than linked: the fake serves itself, on a machine that may have no
-    # way out to the network, and a stylesheet it had to fetch would be one
-    # more thing to fail. Deliberately **not** the DSFR — these pages play a
-    # foreign portal and a member state's node, which wear no French State
-    # livery, and the one reader they have is the operator driving the
+    # way out to the network, and a stylesheet it had to fetch would be one more
+    # thing to fail. Written here rather than taken from the DSFR, whose
+    # stylesheet Propshaft serves and this server does not — the blue is the
+    # French State's, which costs nothing to borrow and makes a button read as
+    # one. The single reader of these pages is the operator driving the
     # demonstration.
     STYLE = <<~CSS.freeze
       :root { color-scheme: light dark; }
@@ -102,8 +103,8 @@ module FakeFranceConnect
       layout('Error', "<p>#{escape(error)}</p><p class=\"quiet\">#{escape(description)}</p>")
     end
 
-    # The only page of the fake in French: FranceConnect+ shows this one to
-    # every user, European or not, and the sentence is its own.
+    # The only page the fake serves under `lang="fr"`: FranceConnect+ shows this
+    # one to every user, European or not, and the sentence is its own.
     def self.logged_out
       layout('Déconnexion', '<p>Vous êtes bien déconnecté, vous pouvez fermer votre navigateur.</p>',
         lang: 'fr')

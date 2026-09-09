@@ -53,8 +53,16 @@ module Demo
       inclusion: { in: BeneficiaryToken::GENDERS.keys, admitted: BeneficiaryToken::GENDERS.keys.join(', ') },
       allow_blank: true
 
-    # The session cookie holds a plain hash and gives back string keys.
-    def self.from_session(stored) = stored.nil? ? nil : new(stored.symbolize_keys)
+    # The session cookie holds a plain hash and gives back string keys — and it
+    # outlives the shape this class had when it was written. An attribute since
+    # removed or renamed would make `new` raise, on the sign-out path as much as
+    # on the form: a session this class can no longer read is no session, which
+    # is what both callers already do with `nil`.
+    def self.from_session(stored)
+      stored.nil? ? nil : new(stored.symbolize_keys)
+    rescue ActiveModel::UnknownAttributeError
+      nil
+    end
 
     def to_session = attributes.compact
 
