@@ -203,7 +203,15 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 >
 > **« Quand ce qui reste tient dans un contexte neuf » est la condition, pas une formalité.** Une revue d'écran ne la remplit jamais : ce qui revient est une correction à des gabarits et des clés que l'ouvrier a posés, et qu'un neuf devra redécouvrir avant de pouvoir l'appliquer — le briefing qui remplace ce contexte coûte plus cher que le contexte lui-même. Le calcul de jetons ci-dessus ne dit rien du verdict à traiter ; ne l'invoque pas pour contourner le § 5.
 
-**Une heure de cache se donne à un rôle qui attend, et à lui seul.** Le frontmatter d'un agent accepte `experimental: cacheTtl: 1h`, et [`spec-nerd`](../../agents/spec-nerd.md) l'a depuis le 2026-09-09 : une passe du contradicteur le laisse muet plus longtemps que le TTL par défaut, et le réglage a divisé ses reprises à froid par deux. C'est le calcul qui décide, jamais l'analogie — une écriture de cache à une heure coûte 2× l'entrée de base contre 1,25× à cinq minutes, une lecture 0,1×, si bien que le réglage ne gagne qu'au-delà de **~40 % de ce qu'on écrit recréé après une attente**. L'ouvrier ne passe pas ce seuil : relevé le 2026-09-09 sur ses seize invocations des 8 et 9 septembre, 5,11 M de cache créé pour 0,69 M recréé, soit 13 %, et sur une seule invocation. Il parle sans cesse, il n'attend pas. Mesure avant de propager le réglage.
+**L'heure de cache du frontmatter a été essayée et retirée : ne la repose pas.** Le frontmatter d'un agent accepte `experimental: cacheTtl: 1h`, et `spec-nerd` l'a portée le 2026-09-09, de 15:01 à 19:20. Le calcul de sa seule passe sous ce réglage, aux [tarifs publiés](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) — écriture à une heure 2× l'entrée de base, à cinq minutes 1,25×, lecture 0,1× :
+
+| | Base d'entrée équivalente |
+| --- | --- |
+| pénalité, 610 861 jetons écrits × (2 − 1,25) | −458 146 |
+| gain, 473 773 jetons lus au lieu d'être réécrits sur deux attentes de 9,5 et 7,5 min | +544 839 |
+| **net** | **+86 693, soit 5 % de 1,73 M** |
+
+**La pénalité mange 84 % du gain, et une attente sauvée de moins fait basculer à 11 % de surcoût.** Un réglage qui gagne 5 % dans son meilleur cas mesuré ne vaut pas le paragraphe qu'il coûte à lire. Il ne redeviendrait défendable que sur un rôle dont **plus de 40 % du cache écrit** est recréé après une attente, mesuré sur plusieurs passes — l'ouvrier est à 13 % (5,11 M écrits, 0,69 M recréés sur ses seize invocations des 8 et 9 septembre, concentrés sur une seule), et `spec-nerd` n'y était que par accident de découpage. Mesure les deux termes avant de reposer la clé, jamais le seul nombre de reprises à froid.
 
 **La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue 0,7 à 1,0 M — relevé du 2026-09-09 sur les cinq éventails de sept relecteurs des 8 et 9 septembre. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 

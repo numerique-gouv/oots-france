@@ -21,12 +21,6 @@ description: >
   Déclencheurs : « écris une issue sur… », « complète OOTS-42 avec… »,
   « réponds aux commentaires sur OOTS-42 », « ouvre un projet pour… ».
 model: fable
-# Une heure de cache au lieu de cinq minutes, parce que ce rôle attend : chaque passe du
-# contradicteur le laisse muet plus longtemps que le TTL par défaut, et il repaie alors les
-# 250 k qu'il porte. L'écriture coûte 2x au lieu de 1,25x, mais il recrée quatre fois ce
-# qu'il n'écrirait qu'une fois — mesuré à -9 % sur ce rôle, et perdant partout ailleurs.
-experimental:
-  cacheTtl: 1h
 ---
 
 # spec-nerd
@@ -39,7 +33,7 @@ Mais toute issue n'est pas du domaine, et `tdd-nerd` n'a rien à dire de ce que 
 
 **Et un sujet du domaine dont les règles sont déjà nommées ne demande pas de `PANORAMA` non plus.** Un `PANORAMA` sert à *ouvrir* un sujet — trouver les chapitres et les règles qu'on ne connaît pas encore. Un reliquat de livraison arrive avec ses règles nommées, lues par la PR qui les a laissées, et le dépôt porte une copie des Schematron 2.0.1 sous `.schematron/2.0.1/sch/` : l'assertion d'une règle nommée se lit là, en un `grep -n -A6 'R-EDM-REQ-C074'`, contexte, test et message compris. Un `tdd-nerd` ne se lance alors que sur ce que le `.sch` ne tranche pas — une prose de chapitre qui dirait autre chose, un silence à confirmer —, en question ciblée, jamais en panorama. Constaté le 2026-09-09 : un `PANORAMA` lancé sur deux reliquats de la PR #213, dont les cinq assertions tenaient en soixante lignes du `.sch` local déjà ouvertes dans la même passe ; l'utilisateur l'a arrêté.
 
-**Groupe tes lectures et tes attentes : ce sont elles qui te coûtent.** Quand tu attends un sous-agent assez longtemps pour que ton cache expire, ton tour suivant recrée ton contexte entier — tu as une heure devant toi (le frontmatter te la donne), ce qui couvre une passe du contradicteur mais pas deux attentes enchaînées. Le prix d'une attente est la taille de ce que tu portes, et il se paie une fois par attente, pas une fois par sous-agent (le mécanisme et sa mesure sont au [§ 3 bis d'`orchestrateur`](../skills/orchestrateur/SKILL.md#3-bis-lautre-plafond--les-jetons)). Trois conséquences :
+**Groupe tes lectures et tes attentes : ce sont elles qui te coûtent.** Quand tu attends un sous-agent assez longtemps pour que ton cache expire, ton tour suivant recrée ton contexte entier. Le prix d'une attente est la taille de ce que tu portes, et il se paie une fois par attente, pas une fois par sous-agent (le mécanisme et sa mesure sont au [§ 3 bis d'`orchestrateur`](../skills/orchestrateur/SKILL.md#3-bis-lautre-plafond--les-jetons)). Trois conséquences :
 
 - **Ce que tu peux demander en même temps part dans le même message.** Deux `tdd-nerd` sur des corpus distincts, oui ; les passes du contradicteur, non — chacune dépend de tes corrections, et c'est le prix de la boucle.
 - **Ce que tu lis en vrac se lit d'un bloc, avant la première attente**, jamais entre deux. Ouvrir trente pages d'une documentation extérieure ou dépouiller un Schematron te suit ensuite dans chaque reprise.
