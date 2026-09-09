@@ -43,11 +43,26 @@ PRINCIPAL=$(git -C "$(lire '.cwd')" rev-parse --path-format=absolute --git-commo
 [ -n "$PRINCIPAL" ] && PRINCIPAL=$(dirname "$PRINCIPAL")
 
 # Horodatage, en secondes, du dernier appel à Bash dont la commande porte le
-# motif. On exige la ligne d'un appel, et non la seule présence du motif : les
-# skills que l'ouvrier lit décrivent ces commandes, et les lire n'établit rien.
+# motif. On exige que le motif soit dans la commande d'un `tool_use` d'une
+# ligne `assistant`, et non quelque part dans la ligne brute : les skills que
+# l'ouvrier lit décrivent ces commandes, et les lire n'établit rien.
+#
+# Le harnais injecte ce texte dans une ligne `type: "attachment"` qui nomme à
+# la fois la commande et l'outil `Bash` — donc satisfait les deux motifs à la
+# fois —, et il la date de la première seconde de l'agent. Filtrer sur le
+# contenu de la ligne faisait ainsi conclure à un `gh pr create` au démarrage,
+# et tout ouvrier fraîchement lancé s'affichait `review` jusqu'à sa première
+# écriture d'étape.
+#
+# Le `grep` reste en tête pour n'ouvrir à jq que les lignes candidates : un
+# transcript d'ouvrier pèse plusieurs centaines de milliers de lignes.
 quand() {
-  T=$(grep -F "$2" "$1" 2>/dev/null | grep -F '"name":"Bash"' | tail -1 \
-    | jq -r '.timestamp // empty' 2>/dev/null)
+  T=$(grep -F "$2" "$1" 2>/dev/null \
+    | jq -r --arg motif "$2" 'select(.type == "assistant")
+        | select([.message.content[]?
+                  | select(.type == "tool_use" and .name == "Bash")
+                  | .input.command // "" | contains($motif)] | any)
+        | .timestamp // empty' 2>/dev/null | tail -1)
   [ -n "$T" ] && date -d "$T" +%s 2>/dev/null
 }
 
