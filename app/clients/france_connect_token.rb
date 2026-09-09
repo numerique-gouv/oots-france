@@ -29,7 +29,8 @@ class FranceConnectToken
   # concernée ». Kept apart from `claims` so that the ID Token is opened once
   # and the hint costs no second decryption.
   def signed(sealed)
-    header = JSON.parse(JWE::Base64.jwe_decode(sealed.to_s.split('.').first.to_s))
+    header = FranceConnectAnswer.object(JSON.parse(JWE::Base64.jwe_decode(sealed.to_s.split('.').first.to_s)),
+      :sealed_header)
     reject_unless_expected(header)
 
     JWE.decrypt(sealed, private_key)
@@ -44,16 +45,19 @@ class FranceConnectToken
   def claims(signed_token, **verification)
     payload, = JWT.decode(signed_token, nil, true, **verification, algorithms: SIGNATURE, jwks: key_set)
 
-    payload
+    FranceConnectAnswer.object(payload, :claims)
   rescue FranceConnectError
     raise
-  # Exhaustive for the same reason `BeneficiaryToken` is: the key set is read
+  # Exhaustive for the reason `BeneficiaryToken` is: the key set is read
   # **inside** this call, through the callback below, and the JWT gem lets what
-  # a loader raises travel out untranslated. A JWKS answered as a maintenance
-  # page is then a `JSON::ParserError`, and a set the gem cannot make sense of
-  # an `ArgumentError` — neither is a `JWT::DecodeError`, and neither has any
-  # business reaching a caller as anything but a refused token.
-  rescue JWT::DecodeError, JSON::ParserError, ArgumentError => e
+  # a loader raises travel out untranslated — a JWKS answered as a maintenance
+  # page is a `JSON::ParserError`, a set the gem cannot make sense of an
+  # `ArgumentError`, and neither is a `JWT::DecodeError`. `TypeError` and
+  # `NoMethodError` join them for one reason only: the gem verifies `exp`, `iss`
+  # and `aud` by indexing the payload before anything of ours sees it, so a
+  # claims set that is not an object crashes in there rather than at the guard
+  # above. Narrow to this single call, never to a method.
+  rescue JWT::DecodeError, JSON::ParserError, ArgumentError, TypeError, NoMethodError => e
     raise FranceConnectError, I18n.t('clients.france_connect_token.invalid', error: e.message)
   end
 

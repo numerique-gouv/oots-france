@@ -325,9 +325,18 @@ fr:
       missing_endpoint: "Le document de découverte de FranceConnect+ ne publie aucun %{name}."
       unreadable_endpoint: "FranceConnect+ publie un %{name} qui n'est pas une adresse : %{error}"
       unreadable_discovery: "Le document de découverte de FranceConnect+ ne se lit pas comme du JSON : %{error}"
-      not_an_object: "le corps est un %{type}, là où la découverte OpenID Connect publie un objet"
       unreadable_grant: "Réponse illisible de /token : %{error}"
       incomplete_grant: "La réponse de /token ne porte pas %{names}."
+    # La question posée une fois de tout ce que le portail répond : chacun de ses
+    # documents est un objet JSON, et un corps qui n'en est pas se refuse avant
+    # qu'on l'indexe.
+    france_connect_answer:
+      not_an_object: "%{subject} : le corps est un %{type}, là où FranceConnect+ publie un objet."
+      subjects:
+        discovery: Document de découverte de FranceConnect+
+        grant: Réponse de /token
+        claims: Jeton FranceConnect+
+        sealed_header: En-tête du jeton scellé
     # Ce que FranceConnect+ scelle pour la démarche : l'ID Token et la réponse
     # UserInfo, signés puis chiffrés. Les trois refus disent lequel des deux
     # sceaux a cédé.

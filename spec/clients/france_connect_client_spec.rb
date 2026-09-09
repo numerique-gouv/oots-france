@@ -199,6 +199,14 @@ RSpec.describe FranceConnectClient do
       expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /id_token/)
     end
 
+    # `[]` parses without error and then raises a `TypeError` on the first
+    # lookup, three calls away from anything that could name it.
+    it 'refuses an answer that reads as JSON but is not an object' do
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT).to_return(body: '["un", "tableau"]')
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /objet/)
+    end
+
     it 'refuses an answer that is not JSON at all' do
       stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT).to_return(body: 'ceci n\'est pas du JSON')
 

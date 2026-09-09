@@ -108,6 +108,16 @@ RSpec.describe Demo::CompleteIdentification do
       expect(result.error[:errors].join).to include('eidas1', 'eidas2')
     end
 
+    # Refused rather than met as a `TypeError` in the interactor, which no
+    # `rescue` of the chain covers.
+    it 'refuses a UserInfo answer that is not an object' do
+      stub_request(:get, FranceConnectStubs::USERINFO_ENDPOINT)
+        .to_return(body: sealed_for_procedure(%w[ni un ni objet]))
+
+      expect(result).to be_a_failure
+      expect(result.identity).to be_nil
+    end
+
     it 'refuses two documents that do not speak of the same person' do
       stub_france_connect_userinfo(FranceConnectStubs::DANISH_USERINFO.merge('sub' => 'quelqu-un-d-autre'))
 

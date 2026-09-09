@@ -120,7 +120,7 @@ class FranceConnectClient
   private
 
   def granted(body)
-    tokens = JSON.parse(body)
+    tokens = FranceConnectAnswer.object(JSON.parse(body), :grant)
     missing = GRANTED.reject { |name| tokens[name].is_a?(String) && !tokens[name].empty? }
     return tokens if missing.empty?
 
@@ -225,17 +225,7 @@ class FranceConnectClient
     raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)
   end
 
-  # A discovery document is a JSON **object**, and anything else — an array, a
-  # string, `null` — is refused here rather than met three calls later as a
-  # `NoMethodError` on a `fetch` nobody could have known would fail.
-  def document(body)
-    parsed = JSON.parse(body)
-    return parsed if parsed.is_a?(Hash)
-
-    raise FranceConnectError,
-      I18n.t('clients.france_connect_client.unreadable_discovery',
-        error: I18n.t('clients.france_connect_client.not_an_object', type: parsed.class))
-  end
+  def document(body) = FranceConnectAnswer.object(JSON.parse(body), :discovery)
 
   def with_query(endpoint, parameters)
     address = URI.parse(endpoint)

@@ -32,6 +32,12 @@ RSpec.describe FranceConnectToken do
         .to raise_error(FranceConnectError, %r{RSA-OAEP/A256GCM.*RSA-OAEP-256/A256GCM})
     end
 
+    # The first segment of a JWE is its header, and a header is an object: `W10`
+    # is `[]`, which would raise on the first lookup rather than be refused.
+    it 'refuses a sealed token whose header is not an object' do
+      expect { opener.signed("W10.#{'x.' * 3}y") }.to raise_error(FranceConnectError, /objet/)
+    end
+
     it 'refuses anything that is not a sealed token at all' do
       expect { opener.signed('ceci.nest.pas.un.jwe') }.to raise_error(FranceConnectError)
     end
@@ -40,6 +46,18 @@ RSpec.describe FranceConnectToken do
   describe '#claims' do
     it 'gives back what the token carries once its signature checks out' do
       expect(opener.open(sealed_for_procedure(claims))).to include('sub' => 'un-pseudonyme')
+    end
+
+    # « The JWT Claims Set … is a JSON object » (RFC 7519 §4). The gem verifies
+    # `exp`, `iss` and `aud` by indexing the payload before anything of ours sees
+    # it, so this one crashes inside `JWT.decode` unless it is caught there.
+    it 'refuses a claims set that is not an object' do
+      sealed = encrypt_for_procedure(
+        JWT.encode(%w[ni un ni objet], france_connect_signing_key, 'ES256',
+          kid: JWT::JWK.new(france_connect_signing_key).export[:kid]),
+      )
+
+      expect { opener.open(sealed) }.to raise_error(FranceConnectError)
     end
 
     it 'refuses a signature no published key verifies' do

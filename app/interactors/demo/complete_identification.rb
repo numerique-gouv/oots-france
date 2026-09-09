@@ -48,11 +48,16 @@ module Demo
     # this session asked for — a code replayed from history, or one someone else
     # obtained.
     def check_state
-      return if expected[:state].present? && ActiveSupport::SecurityUtils.secure_compare(
-        expected[:state].to_s, context.state.to_s
-      )
+      return if matches?(expected[:state], context.state)
 
       refuse(I18n.t('interactors.demo.complete_identification.unexpected_state'))
+    end
+
+    # Present, and equal in constant time: the two values that tie a return to
+    # its departure are compared the same way, and an absent expectation never
+    # matches.
+    def matches?(expected, received)
+      expected.present? && ActiveSupport::SecurityUtils.secure_compare(expected.to_s, received.to_s)
     end
 
     def verified_id_token(signed_id_token)
@@ -66,9 +71,7 @@ module Demo
     end
 
     def check_nonce(claims)
-      return if expected[:nonce].present? && ActiveSupport::SecurityUtils.secure_compare(
-        expected[:nonce].to_s, claims['nonce'].to_s
-      )
+      return if matches?(expected[:nonce], claims['nonce'])
 
       refuse(I18n.t('interactors.demo.complete_identification.unexpected_nonce'))
     end
@@ -98,10 +101,10 @@ module Demo
       refuse(identity.errors.full_messages.join(', '))
     end
 
-    # Journalisé autant que rendu à l'écran : plusieurs de ces refus disent une
-    # anomalie de sécurité — un `state` qui ne répond à aucun départ, deux
-    # documents qui ne parlent pas de la même personne —, et le flash de
-    # l'exploitant ne se relit pas après coup.
+    # Journalised as much as shown: several of these refusals name a security
+    # anomaly — a `state` answering no departure, two documents that do not
+    # speak of the same person — and the operator's flash cannot be read back
+    # after the fact.
     def refuse(reason)
       Rails.logger.warn(I18n.t('interactors.demo.complete_identification.refused', reason:))
 

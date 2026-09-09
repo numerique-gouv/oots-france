@@ -75,6 +75,9 @@ ignore_unused:
   - interactors.failures.*
   # Composé du code que FranceConnect+ publie pour le sexe d'un usager européen.
   - presenters.demo_identity.genders.*
+  # Composé du document dont on demande la forme, comme les sujets de
+  # `strict_validation` juste au-dessus.
+  - clients.france_connect_answer.subjects.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
   # Composed from the direction of the exchange by `Exchange#expire!`: one
