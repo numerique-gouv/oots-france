@@ -185,12 +185,13 @@ Une passe :
    d'exécution du skill, jamais une optimisation légitime.
 
    > [!IMPORTANT]
-   > **Une passe se budgète, elle ne se rogne pas.** Mesuré le 2026-08-27,
-   > relecteurs compris : **une passe coûte 1,3 à 2,3 M de jetons neufs**,
-   > dont 1,0 à 1,6 M pour le seul éventail — chaque relecteur lit le diff
-   > entier à ~0,25 M, et ils sont quatre à sept. Planifier et implémenter
-   > réunis en pèsent 1 : la revue est, à elle seule, le gros du ticket, qui
-   > revient à ~3 M s'il converge en une passe et 5 à 6 M sinon. C'est cher
+   > **Une passe se budgète, elle ne se rogne pas.** Mesuré le 2026-09-09
+   > sur les cinq éventails de sept relecteurs des 8 et 9 septembre :
+   > **une passe coûte 0,7 à 1,0 M de jetons neufs** — chaque relecteur lit
+   > le diff entier à ~0,12 M, et ils sont quatre à sept. Planifier et
+   > implémenter réunis en pèsent 0,3 : la revue est, à elle seule, le gros
+   > du ticket, qui revient à ~1,6 M s'il converge en une ou deux passes et
+   > jusqu'à 5,6 M sinon. C'est cher
    > et c'est le prix du seul filet qui attrape les bloquants ; l'économie se
    > fait ailleurs (moins de tours d'outils, contextes plus courts), jamais
    > en retirant un agent du lot. Quand le budget ne permet plus une passe
@@ -531,9 +532,9 @@ rétrécissement que ce skill interdit ailleurs : le périmètre reste le diff
 complet, c'est la *question* qui est ciblée, et elle est nommée dans le
 fichier de revue. Toute autre passe garde le lot entier.
 
-**Dire le coût en rendant la main.** Une passe, c'est sept agents et 1,3 à
-2,3 M de jetons neufs ; cinq passes, une quarantaine d'agents et le budget
-d'un lot entier de tickets. Quand la boucle s'arrête sur ce garde-fou,
+**Dire le coût en rendant la main.** Une passe, c'est sept agents et 0,7 à
+1,0 M de jetons neufs ; cinq passes, une quarantaine d'agents et le prix de
+trois tickets livrés. Quand la boucle s'arrête sur ce garde-fou,
 donner à l'utilisateur de quoi arbitrer : combien de passes ont eu lieu, ce
 que chacune a trouvé, et ce qu'une passe de plus coûterait — pas seulement
 « ça ne converge pas ».

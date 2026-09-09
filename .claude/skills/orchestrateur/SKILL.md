@@ -93,13 +93,13 @@ Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils n
 
 Compare donc les fichiers visés avant de lancer : les corps de tickets les nomment, un `grep` sur leurs symboles le confirme, et `git diff --name-only origin/main...<branche>` tranche entre deux branches ouvertes. Puis **sérialise la paire**, ou **lance les deux en le disant** — à l'utilisateur pour l'ordre de merge, à chaque ouvrier pour qu'il garde une empreinte étroite. Ça marche : deux ouvriers prévenus, et l'un a trouvé le moyen de ne pas toucher au fichier partagé.
 
-## 3. Deux ouvriers — le CPU en porte trois, le budget deux
+## 3. Trois ouvriers, et c'est la machine qui le dit
 
-**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant côté machine est les deux cœurs**, que trois suites de tests simultanées se disputent. Mais le plafond qui mord en premier est celui des jetons (§ 3 bis) : depuis que le lot se termine par un `spec-nerd` de reliquats et que la médiane d'un ticket est à 4,2 M, **trois ouvriers ne tiennent dans une fenêtre que si tout converge du premier coup**. Arbitré le 2026-09-08.
+**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent. Le budget, lui, a cessé d'arbitrer le 2026-09-09 : à ~25 M la fenêtre (§ 3 bis), trois ouvriers et leurs reliquats valent ~7 M, et c'est la machine qui plafonne à nouveau. **Vérifie-le quand même avant chaque lot** — la commande d'étalonnage du § 3 bis, divisée par ~2 M par ouvrier plus le `spec-nerd` du lot : un forfait se change dans les deux sens.
 
-- **deux** en régime ordinaire — un lot qui tient à chaque coup, avec la marge d'une passe de revue de plus et de ses reliquats ;
-- **trois** sur une fenêtre neuve (~20 M devant toi, relus dans le fichier du § 3 bis) et des tickets fermés par une règle nommée, dont on peut attendre une seule passe ;
-- **quatre** jamais par le budget, même si le CPU le permettrait sans pile locale ;
+- **trois** en régime ordinaire, quand l'étalonnage rend de quoi les finir, reliquats compris ;
+- **deux** quand la fenêtre est déjà entamée, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code ;
+- **quatre** jamais : les deux cœurs ne les portent pas, quoi qu'en dise le budget ;
 - **un seul** si l'autre joue `make e2e` en local — Domibus est une JVM avec MySQL.
 
 > [!WARNING]
@@ -152,18 +152,37 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 **Écrire un ticket coûte à peu près ce que coûte le livrer** : mesuré le 2026-09-09, 1,66 à 1,86 M pour une passe de `spec-nerd`, sous-agents compris — et une passe écrit un ticket, parfois quatre. C'est pourquoi le `spec-nerd` du § 5 bis se compte comme un ouvrier de plus dans le budget d'un lot.
 
 > [!IMPORTANT]
-> **La fenêtre de cinq heures vaut ~3 M de jetons neufs** — réétalonnée le 2026-09-09, à la commande corrigée : la fenêtre ouverte à 09:40 a été épuisée à 12:35, pour 3,07 M dépensés sur l'ensemble des projets. C'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : un ticket vaut ~1,6 M et son `spec-nerd` de reliquats autant, si bien qu'**un lot de deux déborde d'une fenêtre** et qu'il faut savoir à l'avance sur quelle frontière il s'arrêtera (§ 6). Compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
+> **La fenêtre de cinq heures vaut ~25 M de jetons neufs** — étalonnée le 2026-09-09 à 18:25, le jour d'un changement de forfait qui l'a multipliée par huit : 1,24 M dépensés sur l'ensemble des projets pour 5 % consommés. Le pourcentage n'étant publié qu'en entier, la fourchette est 22 à 28 M ; c'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket (§ 6 pour la frontière où s'arrêter). En dessous, lance-en moins ou attends la remise à zéro.
+>
+> **Étalonne, ne recopie pas.** Ce chiffre périme au prochain changement de forfait, et il s'est déjà démenti d'un facteur dix en une journée. La commande le remesure : l'ouverture de la fenêtre est `resets_at` moins cinq heures, les jetons dépensés depuis sont la somme dédoublonnée des `usage` postérieurs, et la taille est `jetons × 100 / pourcentage`.
 >
 > ```sh
 > touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
-> jq -r --argjson m 3 '.rate_limits.five_hour as $f |
+> E=~/.claude/.statusline-derniere-entree.json
+> OUV=$(jq -r '(.rate_limits.five_hour.resets_at - 18000) | todate' "$E")
+> PCT=$(jq -r '.rate_limits.five_hour.used_percentage' "$E")
+> NEUFS=$(find ~/.claude/projects -name '*.jsonl' -newermt "$(date -d "$OUV" '+%F %T')" -print0 |
+>   xargs -0 jq -r --arg o "$OUV" 'select(.type=="assistant" and .message.usage and .timestamp >= $o)
+>     | [.message.id, ((.message.usage.input_tokens//0)+(.message.usage.output_tokens//0)+(.message.usage.cache_creation_input_tokens//0))] | @tsv' |
+>   sort -u -k1,1 | awk -F'\t' '{n+=$2} END {printf "%.2f", n/1e6}')
+> awk -v p="$PCT" -v n="$NEUFS" 'BEGIN {
+>   if (p < 5) print "trop tôt dans la fenêtre pour étalonner : garde le chiffre écrit";
+>   else printf "fenêtre ≈ %.0f M de jetons neufs, dont %.2f M déjà dépensés\n", n * 100 / p, n }'
+> ```
+>
+> **Sans `-P` sur ce `xargs`** : deux `jq` qui écrivent dans le même tube entrelacent leurs lignes, et la somme meurt sur une erreur de parsing.
+>
+> Ce qui reste se lit ensuite dans le même payload, que [`session.sh`](../../statusline/session.sh) dépose sur disque — `m` étant la taille que l'étalonnage vient de rendre :
+>
+> ```sh
+> jq -r --argjson m 25 '.rate_limits.five_hour as $f |
 >   "reste \(100 - $f.used_percentage)% ≈ \((($m * (100 - $f.used_percentage) / 100) * 10 | floor) / 10) M jetons",
 >   "recharge \($f.resets_at | localtime | strftime("%H:%M")), dans \((($f.resets_at - now) / 60 | floor)) min",
 >   "semaine  \(.rate_limits.seven_day.used_percentage)%"' \
 >    ~/.claude/.statusline-derniere-entree.json
 > ```
 >
-> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire. Le `--argjson m 3` est la taille de fenêtre étalonnée ci-dessus : c'est le seul chiffre à reprendre après un changement de forfait.
+> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire.
 >
 > **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 >
@@ -171,12 +190,12 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 >
 > **Et lis `resets_at`, ne le déduis jamais.** La fenêtre ne repart pas cinq heures après la précédente : elle glisse. Le 2026-08-27, avoir calculé « reset à 19:10, donc prochain à 00:10 » a fait annoncer une recharge dans vingt minutes quand `resets_at` disait **03:40** — trois ouvriers lancés sur un budget qui ne les portait pas. `date -d "@$(jq -r .rate_limits.five_hour.resets_at …)"` coûte une seconde et tranche.
 
-`rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture. Refais l'étalonnage après tout changement de forfait — l'heure de remise à zéro donne l'ouverture de la fenêtre, la somme des `usage` postérieurs à cette heure donne les jetons, et `taille ≈ jetons × 100 / pourcentage`.
+`rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture, et l'étalonnage ci-dessus la refait après tout changement de forfait.
 
 > [!WARNING]
-> **Toute attente de plus de cinq minutes fait repayer au parent son contexte entier.** Le cache d'un prompt expire en cinq minutes ; pendant qu'un sous-agent travaille, le parent ne parle pas, donc son cache meurt, et son tour suivant recrée tout ce qu'il portait. Mesuré le 2026-09-09 sur un `spec-nerd` de 51 minutes : quatre écarts de 7 à 18 minutes, chacun ramenant `cache_read` à zéro pour 244 k, 263 k, 275 k puis 278 k recréés — **1,06 M sur les 1,39 M de l'agent, 76 %**. Sur les onze `spec-nerd` du 1<sup>er</sup> au 9 septembre, ces reprises à froid valent 4,23 M sur 7,67 M.
+> **Une attente ne fait repayer son contexte au parent que si le cache a expiré entre-temps, et ce délai se lit — ne le suppose pas.** Le payload de la statusline porte un bloc `prompt_cache` que `jq .prompt_cache ~/.claude/.statusline-derniere-entree.json` rend : `ttl` (une heure au 2026-09-09, cinq minutes quand la session est en dépassement), `expires_at`, `warm`, et `recache_tokens_if_cold`, qui chiffre à l'instant même ce qu'une reprise à froid coûterait. Relevé les 8 et 9 septembre : sur **42 attentes de cinq minutes ou plus, 30 ont gardé leur cache**, dont des attentes de 22, 31, 33 et 54 minutes. Les douze reprises à froid, de 130 à 300 k chacune, se concentrent sur cinq agents — et sur les onze `spec-nerd` du 1<sup>er</sup> au 9 septembre, avant qu'une heure de cache leur soit donnée, elles valaient 4,23 M sur 7,67 M.
 >
-> **Deux conséquences, et ce sont des règles de lancement.** Le prix d'une attente est **la taille du contexte du parent**, pas celle du sous-agent : un parent qui a lu en vrac paie quatre fois plus cher chacune de ses attentes qu'un parent sobre. Et **le prix est par attente, pas par sous-agent** : sept relecteurs lancés dans le même message coûtent une reprise, trois passes séquentielles en coûtent trois. C'est pourquoi `review-loop` est en éventail, et pourquoi les ouvriers de la même fenêtre n'ont, à une exception près, que leur reprise initiale à 0,06 M.
+> **Deux conséquences tiennent quel que soit le TTL, et ce sont des règles de lancement.** Le prix d'une attente est **la taille du contexte du parent**, pas celle du sous-agent : un parent qui a lu en vrac paie quatre fois plus cher chacune de ses attentes qu'un parent sobre. Et **le prix est par attente, pas par sous-agent** : sept relecteurs lancés dans le même message coûtent une reprise, trois passes séquentielles en coûtent trois. C'est pourquoi `review-loop` est en éventail, et pourquoi les ouvriers de la même fenêtre n'ont, à une exception près, que leur reprise initiale à 0,06 M.
 >
 > **Un contexte long se repaie à chaque tour, et c'est là que part l'essentiel** : vingt à vingt-cinq fois les jetons neufs, en cache relu — un rapport que les optimisations n'ont pas bougé, elles n'ont réduit que l'absolu. Un agent repris rejoue tout son transcript, donc sa dépense par action ne cesse de croître. Reprendre n'étale pas la dépense, ça l'augmente — et un ouvrier arrêté tard vaut mieux être **relancé de zéro sur une branche déjà poussée** quand ce qui reste tient dans un contexte neuf. Les quatre invocations du relevé ci-dessus sont exactement cela, et la moins chère a coûté 0,21 M là où reprendre l'ouvrier d'origine en aurait coûté plusieurs.
 >
@@ -184,7 +203,9 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 >
 > **« Quand ce qui reste tient dans un contexte neuf » est la condition, pas une formalité.** Une revue d'écran ne la remplit jamais : ce qui revient est une correction à des gabarits et des clés que l'ouvrier a posés, et qu'un neuf devra redécouvrir avant de pouvoir l'appliquer — le briefing qui remplace ce contexte coûte plus cher que le contexte lui-même. Le calcul de jetons ci-dessus ne dit rien du verdict à traiter ; ne l'invoque pas pour contourner le § 5.
 
-**La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue plusieurs fois cela. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
+**Une heure de cache se donne à un rôle qui attend, et à lui seul.** Le frontmatter d'un agent accepte `experimental: cacheTtl: 1h`, et [`spec-nerd`](../../agents/spec-nerd.md) l'a depuis le 2026-09-09 : une passe du contradicteur le laisse muet plus longtemps que le TTL par défaut, et le réglage a divisé ses reprises à froid par deux. C'est le calcul qui décide, jamais l'analogie — une écriture de cache à une heure coûte 2× l'entrée de base contre 1,25× à cinq minutes, une lecture 0,1×, si bien que le réglage ne gagne qu'au-delà de **~40 % de ce qu'on écrit recréé après une attente**. L'ouvrier ne passe pas ce seuil : relevé le 2026-09-09 sur ses seize invocations des 8 et 9 septembre, 5,11 M de cache créé pour 0,69 M recréé, soit 13 %, et sur une seule invocation. Il parle sans cesse, il n'attend pas. Mesure avant de propager le réglage.
+
+**La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue 0,7 à 1,0 M — relevé du 2026-09-09 sur les cinq éventails de sept relecteurs des 8 et 9 septembre. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 
 **Un ticket écrit coûte autant qu'un ticket livré, et le lot ne s'arrête pas au `LIVRÉ`.** Le `spec-nerd` du § 1 bis et celui des reliquats du § 5 bis se paient sur le même compte que les ouvriers, et ils ne sont pas petits — chacun lance des `tdd-nerd` qui lisent un corpus entier, et la boucle avec le contradicteur en rajoute une par passe. **Relevé du 2026-09-09**, onze invocations du 1er au 9 septembre, arbre compris (jetons neufs) :
 
@@ -196,7 +217,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 | compléter ou mettre à jour un projet après une livraison | 0,9 à 1,9 M | 1 à 3 `tdd-nerd` |
 | écrire les reliquats d'un lot, quatre tickets d'un coup | 1,7 M | 3 `contradicteur` |
 
-D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 0,5 M s'il touche au domaine, 2 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 1 à 2 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer trois ouvriers sur les ~3 M d'une fenêtre et découvrir que les reliquats des trois n'ont plus de budget.
+D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 0,5 M s'il touche au domaine, 2 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 1 à 2 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer un lot sans avoir étalonné la fenêtre, et découvrir que les reliquats n'ont plus de budget.
 
 Le budget se compte enfin **sur le compte, pas sur la session** : un ouvrier lancé d'ailleurs puise au même endroit. Demande ce qui tourne avant de dimensionner.
 
