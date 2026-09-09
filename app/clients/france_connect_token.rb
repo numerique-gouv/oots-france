@@ -45,7 +45,15 @@ class FranceConnectToken
     payload, = JWT.decode(signed_token, nil, true, **verification, algorithms: SIGNATURE, jwks: key_set)
 
     payload
-  rescue JWT::DecodeError => e
+  rescue FranceConnectError
+    raise
+  # Exhaustive for the same reason `BeneficiaryToken` is: the key set is read
+  # **inside** this call, through the callback below, and the JWT gem lets what
+  # a loader raises travel out untranslated. A JWKS answered as a maintenance
+  # page is then a `JSON::ParserError`, and a set the gem cannot make sense of
+  # an `ArgumentError` — neither is a `JWT::DecodeError`, and neither has any
+  # business reaching a caller as anything but a refused token.
+  rescue JWT::DecodeError, JSON::ParserError, ArgumentError => e
     raise FranceConnectError, I18n.t('clients.france_connect_token.invalid', error: e.message)
   end
 

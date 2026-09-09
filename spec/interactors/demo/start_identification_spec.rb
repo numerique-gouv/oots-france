@@ -42,4 +42,13 @@ RSpec.describe Demo::StartIdentification do
     expect(result.error[:errors].join).to include('découverte')
     expect(result.authorization_url).to be_nil
   end
+
+  it 'leaves a trace of the refusal on the server' do
+    stub_code_list
+    stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_timeout
+    allow(Rails.logger).to receive(:warn)
+
+    expect(result).to be_a_failure
+    expect(Rails.logger).to have_received(:warn).with(/découverte/)
+  end
 end

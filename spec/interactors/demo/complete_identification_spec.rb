@@ -50,6 +50,16 @@ RSpec.describe Demo::CompleteIdentification do
         .to be_a_failure
     end
 
+    # The flash cannot be read back after the fact, and several of these
+    # refusals name a security anomaly: the log line is the only durable trace.
+    it 'leaves a trace of the refusal on the server' do
+      allow(Rails.logger).to receive(:warn)
+
+      described_class.call(code: 'un-code', state: 'un-autre-etat', expected:)
+
+      expect(Rails.logger).to have_received(:warn).with(/refusée/)
+    end
+
     it 'refuses a return this session never asked for' do
       expect(described_class.call(code: 'un-code', state: 'l-etat-de-depart', expected: nil)).to be_a_failure
     end
@@ -126,8 +136,8 @@ RSpec.describe Demo::CompleteIdentification do
       expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
     end
 
-    # Ce que la démarche vérifie sur l'ID Token est l'issuer qu'on lui a
-    # configuré, jamais celui que le document dit de lui-même.
+    # What the procedure checks the ID Token against is the issuer it was
+    # configured with, never the one the document claims of itself.
     it 'refuses a discovery document announcing an issuer other than the configured one' do
       stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
         .to_return(body: discovery_document.merge(issuer: 'https://ailleurs.invalid').to_json)

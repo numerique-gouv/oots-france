@@ -63,10 +63,23 @@ RSpec.describe FranceConnectClient do
       expect { client.issuer }.to raise_error(FranceConnectError, /JSON/)
     end
 
-    # Le troisième et dernier moyen qu'a le document d'être inexploitable, à côté
-    # de l'endpoint absent et du corps illisible : une valeur qui n'est pas une
-    # adresse. Les trois se disent au même endroit, et aucune ne remonte telle
-    # quelle à un appelant qui n'a pas de raison de l'attendre.
+    # Parsed inside the cache block, so a body that does not read never gets
+    # written: caching it would serve a passing outage for the whole freshness
+    # window, and every identification and every sign-out of the next hour would
+    # fail the same way. `CodeListClient` keeps an empty answer out for the same
+    # reason, and its spec asks this same question.
+    it 'never remembers a discovery document it could not read' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(body: '<html>maintenance</html>')
+      allow(Rails.cache).to receive(:write)
+
+      expect { client.issuer }.to raise_error(FranceConnectError)
+      expect(Rails.cache).not_to have_received(:write)
+    end
+
+    # The third and last way the document has of being unusable, beside the
+    # absent endpoint and the unreadable body: a value that is not an address.
+    # The three are said in one place, and none of them travels up as it stands
+    # to a caller that has no reason to expect it.
     it 'refuses an endpoint that is not an address at all' do
       stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
         .to_return(body: discovery_document.merge(jwks_uri: 'http://[').to_json)

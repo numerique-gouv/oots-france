@@ -53,6 +53,16 @@ RSpec.describe FranceConnectToken do
         .to raise_error(FranceConnectError, /Signature/)
     end
 
+    # The key set is read inside `JWT.decode`, through the callback, and the JWT
+    # gem lets what a loader raises travel out untranslated: a JWKS answered as
+    # a maintenance page would otherwise be a `JSON::ParserError` reaching a
+    # caller that has no reason to expect one.
+    it 'refuses a key set that does not read as JSON' do
+      stub_request(:get, FranceConnectStubs::JWKS_URL).to_return(body: '<html>maintenance</html>')
+
+      expect { opener.open(sealed_for_procedure(claims)) }.to raise_error(FranceConnectError)
+    end
+
     # FranceConnect+ renews its signing keys, and a reader holding a stale set
     # has to read it again rather than refuse a key it has simply not seen.
     it 'reads the key set again when the token names a key it does not hold' do

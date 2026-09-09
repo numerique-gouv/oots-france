@@ -1,15 +1,15 @@
-# Le compte que `db/seeds.rb` crée hors production, et que `rails db:seed` a
-# posé dans la base du serveur — celle de développement, distincte de celle du
-# scénario. C'est le seul compte que ces scénarios peuvent ouvrir.
+# The account `db/seeds.rb` creates outside production, and that `rails db:seed`
+# put in the *server's* database — the development one, which is not the
+# scenario's. It is the only account these scenarios can open.
 COMPTE_DEMO = { email: 'admin@example.com', password: 'Administration-2026' }.freeze
 
 Étantdonné('un exploitant connecté à la console') do
   @navigateur = DemoBrowser.new(procedure_url)
   @navigateur.sign_in(COMPTE_DEMO.fetch(:email), COMPTE_DEMO.fetch(:password))
 
-  # Dit ici plutôt que laissé échouer plus loin : sans le `db:seed` du serveur,
-  # chaque étape suivante échouerait sur la page de connexion, ce qui nomme le
-  # symptôme et non la cause.
+  # Said here rather than left to fail further on: without the server's
+  # `db:seed`, every following step would fail on the login page, which names
+  # the symptom and not the cause.
   expect(@navigateur.body).not_to include(I18n.t('admin.sessions.new.submit')),
     "Connexion refusée pour #{COMPTE_DEMO.fetch(:email)} : la base du serveur n'a pas été peuplée " \
     'par `rails db:seed`. Voir docs/test_e2e.md.'
@@ -39,7 +39,7 @@ Quand('il confirme la transmission de ses données') do
   @navigateur.choose('consent', 'yes')
 end
 
-# La cinématique entière, pour les scénarios qui portent sur ce qui vient après.
+# The whole flow, for the scenarios that are about what comes after it.
 Quand('il s\'identifie comme {string}') do |cle|
   @navigateur.visit('/admin/demo')
   @navigateur.start_identification
@@ -57,14 +57,13 @@ Alors('le formulaire porte {string} à {string}') do |intitule, valeur|
   expect(@navigateur.rows).to include(intitule => valeur)
 end
 
-# CA4 : les attributs de l'identité sont affichés, jamais saisis.
+# CA4: the attributes of the identity are shown, never typed.
 Alors('le formulaire n\'offre aucun champ de saisie') do
   expect(Nokogiri::HTML(@navigateur.body).css('main input, main select, main textarea')).to be_empty
 end
 
-# Le `sub` est un pseudonyme propre à FranceConnect+ et au fournisseur de
-# service : le montrer à côté d'un identifiant eIDAS absent inviterait à le
-# prendre pour lui.
+# The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
+# showing it beside a missing eIDAS identifier would invite taking it for one.
 Alors('le formulaire ne montre pas l\'identifiant que FranceConnect+ lui a donné') do
   expect(@navigateur.body).not_to match(/\h{64}v1/)
 end

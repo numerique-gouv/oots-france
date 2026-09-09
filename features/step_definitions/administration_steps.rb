@@ -44,9 +44,9 @@ Alors("je lis l'accueil de la démarche de l'Université de démonstration") do
   )
 end
 
-# Un bouton et non un lien : lancer la cinématique écrit le `state` et le
-# `nonce` que le retour vérifiera, et un GET rejoué écraserait ceux d'une
-# cinématique en cours.
+# A button and not a link: starting the flow writes the `state` and the `nonce`
+# its return will be checked against, and a replayed GET would overwrite those
+# of a flow under way.
 Alors("on m'offre de m'identifier avec une identité d'un autre État membre") do
   expect(page).to have_button(I18n.t('admin.demo.home.show.sign_in'))
   expect(page).to have_css("form[action='#{admin_demo_identification_path}'][method='post']")

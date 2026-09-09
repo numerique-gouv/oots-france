@@ -58,8 +58,7 @@ class FranceConnectClient
   # and the document only chooses which ones, in which order. Same path, same
   # refusals — what changes is where the string comes from, which is what a
   # reader of this code, and a taint analysis, can both check.
-  PATH_CHARACTERS = [*'a'..'z', *'A'..'Z', *'0'..'9', '/', '.', '_', '~', '-']
-    .to_h { |character| [character, character] }.freeze
+  PATH_CHARACTERS = [*'a'..'z', *'A'..'Z', *'0'..'9', '/', '.', '_', '~', '-'].index_by(&:itself).freeze
 
   def initialize(connection: nil)
     @connection = connection
@@ -176,9 +175,9 @@ class FranceConnectClient
   end
 
   # `fetch` without a default on purpose: `SEGMENTS` has already refused
-  # anything the table does not hold, so a miss here would mean the two have
-  # drifted apart — and `KeyError` is among the failures the callers turn into
-  # a refusal.
+  # anything the table does not hold, so a miss here could only mean the two
+  # have drifted apart — a defect of this file, which has no business being
+  # dressed up as a refusal the portal earned.
   def rebuilt(path) = path.each_char.map { |character| PATH_CHARACTERS.fetch(character) }.join
 
   def same_origin?(published, origin)
@@ -190,14 +189,13 @@ class FranceConnectClient
       I18n.t('clients.france_connect_client.foreign_endpoint', name:, url: published, expected: origin.host)
   end
 
-  # **The one place a value is taken out of the discovery document**, and the one
-  # place its three ways of being unusable are named: absent, unreadable as JSON
-  # — `published_discovery` answers for that one — or not an address at all.
-  # Nothing else in this class reads the document, so nothing else can carry a
-  # `KeyError`, a `JSON::ParserError` or a `URI::InvalidURIError` up to a caller
-  # that has no reason to expect one. A correspondent's malformed answer is
-  # translated where it arrives, as `BeneficiaryToken` and
-  # `CommonServicesSignature` both do.
+  # **The one place an endpoint is taken out of the discovery document**, and the
+  # one place its three ways of being unusable are named: absent, unreadable as
+  # JSON — `published_discovery` answers for that one — or not an address at
+  # all. `issuer` is the only other reader of the document, and it reads a value
+  # that is compared to configuration rather than called, with a default rather
+  # than a refusal. A correspondent's malformed answer is translated where it
+  # arrives, as `BeneficiaryToken` and `CommonServicesSignature` both do.
   def published_endpoint(name)
     URI.parse(discovery.fetch(name) { refuse_missing(name) }.to_s)
   rescue URI::InvalidURIError => e
