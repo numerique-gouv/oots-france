@@ -58,3 +58,33 @@ end
 After('@bout_en_bout') do
   @fake_requester&.stop
 end
+
+# The fake FranceConnect+ is a role of the suite, not a step's doing: it is
+# started once for the whole run, beside the scenarios, as the fake requester
+# and the fake correspondent are mounted beside theirs.
+#
+# Two conditions, and neither is decoration. `URL_FAUX_FRANCE_CONNECT` absent,
+# nothing starts: the default profile plays on a bare runner with no `.env` at
+# all. Something already answering there, nothing starts either: the day the
+# local stack runs the fake as a service of its own (OOTS-192), the scenarios
+# drive that one rather than starting a second on a port already taken.
+BeforeAll do
+  # `webmock/cucumber` intercepts from the moment it loads, and this hook runs
+  # before any scenario has settled which regime applies: probing the address
+  # would raise rather than answer. Each scenario re-establishes its own regime
+  # in `features/support/webmock.rb`, so taking it off here settles nothing for
+  # them.
+  WebMock.disable!
+
+  issuer = ENV.fetch('URL_FAUX_FRANCE_CONNECT', nil)
+
+  unless issuer.blank? || FakeFranceConnect::Runner.answering?(issuer)
+    FakeFranceConnect.running = FakeFranceConnect::Runner.new(
+      issuer: issuer, procedure_url: ENV.fetch('URL_OOTS_FRANCE'),
+    ).start
+  end
+end
+
+AfterAll do
+  FakeFranceConnect.running&.stop
+end
