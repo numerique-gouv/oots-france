@@ -21,6 +21,12 @@ description: >
   Déclencheurs : « écris une issue sur… », « complète OOTS-42 avec… »,
   « réponds aux commentaires sur OOTS-42 », « ouvre un projet pour… ».
 model: fable
+# Une heure de cache au lieu de cinq minutes, parce que ce rôle attend : chaque passe du
+# contradicteur le laisse muet plus longtemps que le TTL par défaut, et il repaie alors les
+# 250 k qu'il porte. L'écriture coûte 2x au lieu de 1,25x, mais il recrée quatre fois ce
+# qu'il n'écrirait qu'une fois — mesuré à -9 % sur ce rôle, et perdant partout ailleurs.
+experimental:
+  cacheTtl: 1h
 ---
 
 # spec-nerd
