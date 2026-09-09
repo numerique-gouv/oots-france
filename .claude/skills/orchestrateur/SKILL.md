@@ -93,13 +93,13 @@ Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils n
 
 Compare donc les fichiers visés avant de lancer : les corps de tickets les nomment, un `grep` sur leurs symboles le confirme, et `git diff --name-only origin/main...<branche>` tranche entre deux branches ouvertes. Puis **sérialise la paire**, ou **lance les deux en le disant** — à l'utilisateur pour l'ordre de merge, à chaque ouvrier pour qu'il garde une empreinte étroite. Ça marche : deux ouvriers prévenus, et l'un a trouvé le moyen de ne pas toucher au fichier partagé.
 
-## 3. Deux ouvriers — le CPU en porte trois, le budget deux
+## 3. Trois ouvriers, et c'est la machine qui le dit
 
-**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant côté machine est les deux cœurs**, que trois suites de tests simultanées se disputent. Mais le plafond qui mord en premier est celui des jetons (§ 3 bis) : depuis que le lot se termine par un `spec-nerd` de reliquats et que la médiane d'un ticket est à 4,2 M, **trois ouvriers ne tiennent dans une fenêtre que si tout converge du premier coup**. Arbitré le 2026-09-08.
+**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent. Le budget, lui, a cessé d'arbitrer le 2026-09-09 : à ~30 M la fenêtre (§ 3 bis), trois ouvriers et leurs reliquats valent ~7 M, et c'est la machine qui plafonne à nouveau. **Vérifie-le quand même avant chaque lot** — la commande d'étalonnage du § 3 bis, divisée par ~2 M par ouvrier plus le `spec-nerd` du lot : un forfait se change dans les deux sens.
 
-- **deux** en régime ordinaire — un lot qui tient à chaque coup, avec la marge d'une passe de revue de plus et de ses reliquats ;
-- **trois** sur une fenêtre neuve (~20 M devant toi, relus dans le fichier du § 3 bis) et des tickets fermés par une règle nommée, dont on peut attendre une seule passe ;
-- **quatre** jamais par le budget, même si le CPU le permettrait sans pile locale ;
+- **trois** en régime ordinaire, quand l'étalonnage rend de quoi les finir, reliquats compris ;
+- **deux** quand la fenêtre est déjà entamée, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code ;
+- **quatre** jamais : les deux cœurs ne les portent pas, quoi qu'en dise le budget ;
 - **un seul** si l'autre joue `make e2e` en local — Domibus est une JVM avec MySQL.
 
 > [!WARNING]
