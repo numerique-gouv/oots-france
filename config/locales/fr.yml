@@ -323,6 +323,7 @@ fr:
       foreign_issuer: "Le document de découverte annonce l'issuer « %{announced} », et non %{expected}."
       foreign_endpoint: "FranceConnect+ publierait %{name} sur « %{url} », hors de %{expected} : appel refusé."
       missing_endpoint: "Le document de découverte de FranceConnect+ ne publie aucun %{name}."
+      unreadable_endpoint: "FranceConnect+ publie un %{name} qui n'est pas une adresse : %{error}"
       unreadable_discovery: "Le document de découverte de FranceConnect+ ne se lit pas comme du JSON : %{error}"
       unreadable_grant: "Réponse illisible de /token : %{error}"
       incomplete_grant: "La réponse de /token ne porte pas %{names}."

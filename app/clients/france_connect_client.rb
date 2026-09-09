@@ -142,7 +142,7 @@ class FranceConnectClient
   # access token to whoever wrote it.
   # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-endpoints/
   def endpoint(name)
-    published = URI.parse(discovery.fetch(name) { refuse_missing(name) }.to_s)
+    published = published_endpoint(name)
     origin = URI.parse(Settings.france_connect_issuer)
     path = shape(name, published, origin)
 
@@ -190,9 +190,21 @@ class FranceConnectClient
       I18n.t('clients.france_connect_client.foreign_endpoint', name:, url: published, expected: origin.host)
   end
 
-  # Named here rather than left to a bare `KeyError` twenty lines up the stack:
-  # a discovery document missing an endpoint is a portal that cannot be used,
-  # and the operator must read which one is absent.
+  # **The one place a value is taken out of the discovery document**, and the one
+  # place its three ways of being unusable are named: absent, unreadable as JSON
+  # — `published_discovery` answers for that one — or not an address at all.
+  # Nothing else in this class reads the document, so nothing else can carry a
+  # `KeyError`, a `JSON::ParserError` or a `URI::InvalidURIError` up to a caller
+  # that has no reason to expect one. A correspondent's malformed answer is
+  # translated where it arrives, as `BeneficiaryToken` and
+  # `CommonServicesSignature` both do.
+  def published_endpoint(name)
+    URI.parse(discovery.fetch(name) { refuse_missing(name) }.to_s)
+  rescue URI::InvalidURIError => e
+    raise FranceConnectError,
+      I18n.t('clients.france_connect_client.unreadable_endpoint', name:, error: e.message)
+  end
+
   def refuse_missing(name)
     raise FranceConnectError, I18n.t('clients.france_connect_client.missing_endpoint', name:)
   end

@@ -63,6 +63,17 @@ RSpec.describe FranceConnectClient do
       expect { client.issuer }.to raise_error(FranceConnectError, /JSON/)
     end
 
+    # Le troisième et dernier moyen qu'a le document d'être inexploitable, à côté
+    # de l'endpoint absent et du corps illisible : une valeur qui n'est pas une
+    # adresse. Les trois se disent au même endroit, et aucune ne remonte telle
+    # quelle à un appelant qui n'a pas de raison de l'attendre.
+    it 'refuses an endpoint that is not an address at all' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
+        .to_return(body: discovery_document.merge(jwks_uri: 'http://[').to_json)
+
+      expect { client.jwks_url }.to raise_error(FranceConnectError, /jwks_uri/)
+    end
+
     # Named where it is read, rather than left to a bare `KeyError` twenty lines
     # up the stack, which nothing could name.
     it 'refuses a document that publishes no endpoint of that name, and says which' do
