@@ -662,6 +662,8 @@ RSpec.describe EvidenceRequestParser do
       expect(request.validate!).to be(request)
     end
 
+    # Both halves of every rule of the table: it counts the slot, so a request
+    # omitting one and a request carrying it twice break it alike.
     EvidenceRequestParser::REQUIRED_SLOTS.each do |name, rule|
       it "refuses a request with no #{name} slot, under #{rule}" do
         amputated = with_body { |body| body.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m, '') }
@@ -669,15 +671,13 @@ RSpec.describe EvidenceRequestParser do
         expect { amputated.validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
       end
-    end
 
-    it 'refuses a request declaring the same mandatory slot twice' do
-      doubled = with_body do |body|
-        body.sub(%r{<rim:Slot name="ExplicitRequestGiven">.*?</rim:Slot>}m) { |slot| slot * 2 }
+      it "refuses a request carrying the #{name} slot twice, under #{rule}" do
+        doubled = with_body { |body| body.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m) { |slot| slot * 2 } }
+
+        expect { doubled.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
       end
-
-      expect { doubled.validate! }
-        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S010')))
     end
 
     it 'refuses a request announcing another version of the data model' do
@@ -920,6 +920,111 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # Chapter 4.6 on the agent the `EvidenceProvider` slot carries — the provider
+  # the request designates. Five FATAL rules judge it — `S013` counts the slot
+  # and is exercised with the other slots of `REQUIRED_SLOTS` — and four of them,
+  # `C017`, `C018`, `C111` and `C110`, are word for word the assertions the
+  # requesting collection publishes as `C011`, `C012`, `C109` and `C108`. These
+  # refusals all go back: an error response names France as the provider, never
+  # the one that was received.
+  describe 'the designated provider' do
+    it 'accepts the one the real request carries' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'refuses a slot whose value carries no agent, under R-EDM-REQ-S042' do
+      expect { without_provider_agent.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S042')))
+    end
+
+    describe 'its identifier' do
+      # `C017` asserts the attribute's presence and nothing more — the shape
+      # `C011` takes on the requesting collection.
+      it 'refuses one naming no scheme, under R-EDM-REQ-C017' do
+        expect { with_provider_scheme(nil).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C017')))
+      end
+
+      it 'refuses an empty scheme under R-EDM-REQ-C018, not C017' do
+        expect { with_provider_scheme('').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C018')))
+      end
+
+      it 'refuses a scheme naming no published EAS code, under R-EDM-REQ-C018' do
+        expect { with_provider_scheme("#{IdentifierScheme::EAS_PREFIX}9999").validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C018')))
+      end
+
+      # `C018` counts on the identifier, its context, and not on the scheme its
+      # prose names — the wording `C012` carries too.
+      it 'refuses an identifier of 256 characters, under R-EDM-REQ-C018' do
+        expect { with_provider_id('X' * AgentConformance::MAXIMUM_IDENTIFIER_LENGTH).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C018')))
+      end
+
+      it 'accepts an identifier of 255 characters, the rule reading `< 256`' do
+        expect(with_provider_id('X' * (AgentConformance::MAXIMUM_IDENTIFIER_LENGTH - 1)).validate!).to be_truthy
+      end
+
+      # The other prefix of the rule: the real request is under
+      # `unregistered:oots`, which the opening example already proves accepted,
+      # so the case worth writing is the one the fixture does not carry.
+      it 'accepts a published EAS code' do
+        expect(with_provider_scheme("#{IdentifierScheme::EAS_PREFIX}9930").validate!).to be_truthy
+      end
+
+      # No assertion carries this absence, `C017`'s context being the element
+      # itself; chapter 4.5.1 §3.3 requires it, so the refusal names it.
+      it 'refuses a provider carrying no identifier at all' do
+        expect { without_provider_identifier.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: AgentConformance::PROVIDER_IDENTIFIER_REQUIRED)))
+      end
+    end
+
+    describe 'its name' do
+      it 'refuses a provider carrying no name at all' do
+        expect { without_provider_name.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: AgentConformance::PROVIDER_NAME_REQUIRED)))
+      end
+
+      it 'refuses a name without a lang attribute, under R-EDM-REQ-C111' do
+        expect { with_provider_language(nil).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C111')))
+      end
+
+      # `C111` normalises before asking that the attribute not be empty, so one
+      # written blank breaks it as much as one absent.
+      it 'refuses a lang written blank, the rule normalising it' do
+        expect { with_provider_language(' ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C111')))
+      end
+
+      # `C110` compares to the code list, which publishes upper case, and its
+      # assertion carries no `i` flag.
+      it 'refuses a lang in lower case, under R-EDM-REQ-C110' do
+        expect { with_provider_language('en').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C110')))
+      end
+
+      # The value that separates the two rules: `C111` normalises, so a padded
+      # attribute satisfies it, and `C110` compares raw, so it does not.
+      it 'refuses a padded lang under R-EDM-REQ-C110, C111 normalising it' do
+        expect { with_provider_language(' FR ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C110')))
+      end
+
+      # `AgentType` makes `sdg:Name` `1..n`, and the contexts of `C111` and
+      # `C110` are the name element and its attribute: a reader judging the
+      # first alone would serve a request two FATAL rules refuse.
+      it 'refuses a second name the first one made look conformant' do
+        expect { with_second_provider_name('<sdg:Name lang="en">Fournisseur</sdg:Name>').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C110')))
+      end
+    end
+  end
+
   # The body travels base64-encoded inside the envelope, so a fixture cannot be
   # edited in place: it has to be decoded, altered, and encoded back. Editing
   # the envelope string directly changes nothing at all — silently.
@@ -981,27 +1086,17 @@ RSpec.describe EvidenceRequestParser do
 
   # `nil` removes the attribute, where an empty string writes it blank:
   # `R-EDM-REQ-C011` asserts its presence and `C012` judges its value.
-  def with_platform_scheme(scheme)
-    with_platform_agent { |agent| agent.sub(/ schemeID="[^"]*"/, scheme.nil? ? '' : %( schemeID="#{scheme}")) }
-  end
+  def with_platform_scheme(scheme) = with_platform_agent { |agent| replace_scheme(agent, scheme) }
 
   def with_platform_id(id) = with_platform_agent { |agent| replace_id(agent, id) }
 
-  def without_platform_identifier
-    with_platform_agent { |agent| agent.sub(%r{<sdg:Identifier[^>]*>[^<]*</sdg:Identifier>}, '') }
-  end
+  def without_platform_identifier = with_platform_agent { |agent| remove_identifier(agent) }
 
   def with_platform_name(name) = with_platform_agent { |agent| replace_name(agent, name) }
 
-  def without_platform_name
-    with_platform_agent { |agent| agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}, '') }
-  end
+  def without_platform_name = with_platform_agent { |agent| remove_name(agent) }
 
-  def with_second_platform_name(second)
-    with_platform_agent do |agent|
-      agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}) { |first| "#{first}#{second}" }
-    end
-  end
+  def with_second_platform_name(second) = with_platform_agent { |agent| add_name(agent, second) }
 
   def with_platform_language(value) = with_platform_agent { |agent| replace_language(agent, value) }
 
@@ -1018,6 +1113,24 @@ RSpec.describe EvidenceRequestParser do
     with_platform_address("<sdg:Address><sdg:AdminUnitLevel1>#{code}</sdg:AdminUnitLevel1></sdg:Address>")
   end
 
+  # The agent of the `EvidenceProvider` slot alone, `Fixtures::PROVIDER_AGENT`
+  # saying why it is reached through its slot.
+  def with_provider_agent(&) = envelope_with_provider_agent(&).body
+
+  def without_provider_agent = with_provider_agent { '' }
+
+  def with_provider_scheme(scheme) = with_provider_agent { |agent| replace_scheme(agent, scheme) }
+
+  def with_provider_id(id) = with_provider_agent { |agent| replace_id(agent, id) }
+
+  def without_provider_identifier = with_provider_agent { |agent| remove_identifier(agent) }
+
+  def without_provider_name = with_provider_agent { |agent| remove_name(agent) }
+
+  def with_second_provider_name(second) = with_provider_agent { |agent| add_name(agent, second) }
+
+  def with_provider_language(value) = with_provider_agent { |agent| replace_language(agent, value) }
+
   # A third agent in the collection, beside the two the real request carries:
   # what proves the walk judges each of the agents the requester is not, and
   # not the first of them.
@@ -1029,11 +1142,23 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
-  # The three substitutions both agents take, written once: only the agent they
+  # The substitutions the three agents take, written once: only the agent they
   # are applied to differs.
   def replace_id(agent, id) = agent.sub(/(<sdg:Identifier[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{id}" }
 
+  def remove_identifier(agent) = agent.sub(%r{<sdg:Identifier[^>]*>[^<]*</sdg:Identifier>}, '')
+
   def replace_name(agent, name) = agent.sub(/(<sdg:Name[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{name}" }
+
+  def remove_name(agent) = agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}, '')
+
+  def add_name(agent, second) = agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}) { |first| "#{first}#{second}" }
+
+  # `nil` removes the attribute rather than writing it blank: `R-EDM-REQ-C011`
+  # and `C017` assert its presence, `C012` and `C018` judge its value.
+  def replace_scheme(agent, scheme)
+    agent.sub(/ schemeID="[^"]*"/, scheme.nil? ? '' : %( schemeID="#{scheme}"))
+  end
 
   # `nil` removes the attribute rather than emptying it: `R-EDM-REQ-C109`
   # normalises, so the two must be told apart by what is written and not by

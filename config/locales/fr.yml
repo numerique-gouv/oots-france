@@ -420,6 +420,37 @@ fr:
       platform_country_unknown: >-
         Le pays de la plateforme intermédiaire (« %{country} ») n'est pas un code de la liste
         CountryIdentificationCode.
+      # R-EDM-REQ-S042, C017, C018, C110 et C111 sur l'agent que porte le slot
+      # EvidenceProvider — le fournisseur que la requête désigne. Les quatre
+      # dernières sont, mot pour mot, les assertions C011, C012, C109 et C108 de
+      # la collection EvidenceRequester, publiées sous d'autres identifiants
+      # parce que c'est le slot qui les fixe, et non la classification ; S042,
+      # elle, est propre à ce slot, qui porte l'agent directement là où la
+      # collection l'enveloppe d'un rim:Element. Ceux-là repartent tous en
+      # EDM:ERR:0003 : la réponse d'erreur nomme la France comme fournisseur,
+      # jamais celui qui a été reçu, donc rien de ce qui est refusé ici ne
+      # voyagerait dans le message qui le refuse.
+      provider_without_agent: >-
+        Le slot « EvidenceProvider » de la requête reçue ne porte pas d'agent.
+      # Aucune assertion ne couvre ces deux absences : C017 a pour contexte
+      # sdg:Identifier, C111 sdg:Name, et C110 l'attribut lang de ce nom — aucune
+      # ne se déclenche sur l'élément qui manque. C'est le chapitre 4.5.1 §3.3,
+      # et AgentType avec lui, qui les impose.
+      provider_without_identifier: Le fournisseur désigné est sans identifiant.
+      provider_without_scheme: >-
+        L'identifiant du fournisseur désigné ne porte pas d'attribut « schemeID ».
+      provider_scheme_unknown: >-
+        Le schéma d'identifiant du fournisseur désigné (« %{scheme} ») n'est ni un code de la
+        liste EAS, ni un code pays d'OOTS.
+      provider_id_too_long: >-
+        L'identifiant du fournisseur désigné fait %{length} caractères, au-delà des
+        %{maximum} admis.
+      provider_without_name: Le fournisseur désigné est sans nom.
+      provider_without_language: >-
+        Un nom du fournisseur désigné ne porte pas d'attribut « lang ».
+      provider_language_unknown: >-
+        La langue d'un nom du fournisseur désigné (« %{language} ») n'est pas un code de la
+        liste LanguageCode.
       # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
       # en porte un.
       beneficiary_identifier_without_scheme: >-
