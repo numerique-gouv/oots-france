@@ -95,7 +95,7 @@ Compare donc les fichiers visés avant de lancer : les corps de tickets les nomm
 
 ## 3. Trois ouvriers, et c'est la machine qui le dit
 
-**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent. Le budget, lui, a cessé d'arbitrer le 2026-09-09 : à ~30 M la fenêtre (§ 3 bis), trois ouvriers et leurs reliquats valent ~7 M, et c'est la machine qui plafonne à nouveau. **Vérifie-le quand même avant chaque lot** — la commande d'étalonnage du § 3 bis, divisée par ~2 M par ouvrier plus le `spec-nerd` du lot : un forfait se change dans les deux sens.
+**Relevé** avec trois ouvriers au travail et six conteneurs debout, sur 2 vCPU / 8 Gio / 40 Gio : 3,6 Gio de RAM sur 7,8 (dont 0,5 pour les conteneurs), 16 Gio de disque sur 40, `/proc/pressure/memory` à zéro. Rien n'est saturé — **le facteur limitant est les deux cœurs**, que trois suites de tests simultanées se disputent. Le budget, lui, a cessé d'arbitrer le 2026-09-09 : à ~25 M la fenêtre (§ 3 bis), trois ouvriers et leurs reliquats valent ~7 M, et c'est la machine qui plafonne à nouveau. **Vérifie-le quand même avant chaque lot** — la commande d'étalonnage du § 3 bis, divisée par ~2 M par ouvrier plus le `spec-nerd` du lot : un forfait se change dans les deux sens.
 
 - **trois** en régime ordinaire, quand l'étalonnage rend de quoi les finir, reliquats compris ;
 - **deux** quand la fenêtre est déjà entamée, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code ;
@@ -152,7 +152,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 **Écrire un ticket coûte à peu près ce que coûte le livrer** : mesuré le 2026-09-09, 1,66 à 1,86 M pour une passe de `spec-nerd`, sous-agents compris — et une passe écrit un ticket, parfois quatre. C'est pourquoi le `spec-nerd` du § 5 bis se compte comme un ouvrier de plus dans le budget d'un lot.
 
 > [!IMPORTANT]
-> **La fenêtre de cinq heures vaut ~30 M de jetons neufs** — étalonnée le 2026-09-09 à 18:15, au lendemain d'un changement de forfait : 0,99 M dépensés sur l'ensemble des projets pour 3 % consommés. Le pourcentage n'étant publié qu'en entier, la fourchette est 28 à 40 M ; c'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket (§ 6 pour la frontière où s'arrêter). En dessous, lance-en moins ou attends la remise à zéro.
+> **La fenêtre de cinq heures vaut ~25 M de jetons neufs** — étalonnée le 2026-09-09 à 18:25, le jour d'un changement de forfait qui l'a multipliée par huit : 1,24 M dépensés sur l'ensemble des projets pour 5 % consommés. Le pourcentage n'étant publié qu'en entier, la fourchette est 22 à 28 M ; c'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket (§ 6 pour la frontière où s'arrêter). En dessous, lance-en moins ou attends la remise à zéro.
 >
 > **Étalonne, ne recopie pas.** Ce chiffre périme au prochain changement de forfait, et il s'est déjà démenti d'un facteur dix en une journée. La commande le remesure : l'ouverture de la fenêtre est `resets_at` moins cinq heures, les jetons dépensés depuis sont la somme dédoublonnée des `usage` postérieurs, et la taille est `jetons × 100 / pourcentage`.
 >
@@ -175,7 +175,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 > Ce qui reste se lit ensuite dans le même payload, que [`session.sh`](../../statusline/session.sh) dépose sur disque — `m` étant la taille que l'étalonnage vient de rendre :
 >
 > ```sh
-> jq -r --argjson m 30 '.rate_limits.five_hour as $f |
+> jq -r --argjson m 25 '.rate_limits.five_hour as $f |
 >   "reste \(100 - $f.used_percentage)% ≈ \((($m * (100 - $f.used_percentage) / 100) * 10 | floor) / 10) M jetons",
 >   "recharge \($f.resets_at | localtime | strftime("%H:%M")), dans \((($f.resets_at - now) / 60 | floor)) min",
 >   "semaine  \(.rate_limits.seven_day.used_percentage)%"' \
