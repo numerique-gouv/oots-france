@@ -17,7 +17,7 @@ module Demo
       context.authorization_url = client.authorization_url(state:, nonce:)
       context.state = state
       context.nonce = nonce
-    rescue Faraday::Error, JSON::ParserError, KeyError => e
+    rescue FranceConnectError, Faraday::Error, JSON::ParserError, KeyError => e
       undiscoverable(e)
     end
 

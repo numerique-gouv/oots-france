@@ -126,6 +126,16 @@ RSpec.describe Demo::CompleteIdentification do
       expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
     end
 
+    # Ce que la démarche vérifie sur l'ID Token est l'issuer qu'on lui a
+    # configuré, jamais celui que le document dit de lui-même.
+    it 'refuses a discovery document announcing an issuer other than the configured one' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
+        .to_return(body: discovery_document.merge(issuer: 'https://ailleurs.invalid').to_json)
+
+      expect(result).to be_a_failure
+      expect(result.identity).to be_nil
+    end
+
     it 'refuses when the token endpoint declines the code' do
       stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
         .to_return(status: 400, body: { error: 'invalid_grant' }.to_json)

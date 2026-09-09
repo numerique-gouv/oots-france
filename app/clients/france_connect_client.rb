@@ -34,6 +34,13 @@ class FranceConnectClient
   # enabled. It is what says a European identity came through the bridge.
   ESSENTIAL_CLAIMS = { id_token: { amr: { essential: true } } }.to_json.freeze
 
+  # What is left of a published address once the base is taken off it: plain
+  # segments and nothing else. The whole address is rebuilt from the configured
+  # issuer and this, so that nothing the document says can move a call off the
+  # host this deployment was told to talk to — no credentials, no access token,
+  # and no key set read from somewhere else.
+  SEGMENTS = %r{\A(?:/[A-Za-z0-9._~-]+)*/?\z}
+
   def initialize(connection: nil)
     @connection = connection
   end
@@ -106,9 +113,10 @@ class FranceConnectClient
   def endpoint(name)
     published = URI.parse(discovery.fetch(name).to_s)
     origin = URI.parse(Settings.france_connect_issuer)
-    refuse_foreign(name, published, origin) unless same_origin?(published, origin)
+    path = published.path.to_s.delete_prefix(origin.path.to_s)
+    refuse_foreign(name, published, origin) unless same_origin?(published, origin) && SEGMENTS.match?(path)
 
-    origin.dup.tap { |address| address.path = published.path.to_s }.to_s
+    "#{Settings.france_connect_issuer}#{path}"
   end
 
   def same_origin?(published, origin)

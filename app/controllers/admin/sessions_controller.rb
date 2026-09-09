@@ -63,7 +63,7 @@ module Admin
       session[:france_connect_logout] = state
 
       FranceConnectClient.new.end_session_url(id_token_hint: identity.id_token, state:)
-    rescue Faraday::Error, JSON::ParserError, KeyError => e
+    rescue FranceConnectError, Faraday::Error, JSON::ParserError, KeyError => e
       Rails.logger.warn(I18n.t('admin.sessions.france_connect_unreachable', error: e.message))
       nil
     end
