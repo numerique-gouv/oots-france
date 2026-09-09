@@ -128,9 +128,10 @@ app/presenters/      Ce qu'un écran dit d'une chose, sans requête ni params
 app/builders/        Constructeurs des messages sortants, rendant les gabarits
 app/templates/       Gabarits ERB des messages RegRep/ebMS et des enveloppes SOAP
 app/parsers/         Lecture Nokogiri des messages entrants, par URI d'espace de
-                     noms et jamais par préfixe
+                     noms et jamais par préfixe ; et les claims que FranceConnect+
+                     rend à la démarche de démonstration
 app/clients/         Frontières HTTP : Domibus, jeu de clés du requêteur,
-                     retransmission du justificatif
+                     retransmission du justificatif, FranceConnect+
 app/interactors/     Étapes unitaires ; app/organizers/ les enchaîne
 app/jobs/            Travaux de fond GoodJob : traitement d'un message, ramassage
 app/errors/          Hiérarchie d'exceptions et codes EDM
