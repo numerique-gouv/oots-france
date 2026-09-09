@@ -239,6 +239,17 @@ Une passe :
    correctifs non commités. Leur indiquer plutôt de lire l'état poussé par
    `git show HEAD:<fichier>` s'ils veulent s'abstraire du travail en cours.
 
+   **Dire à chaque agent ce qu'il ne rapporte pas**, dans le même prompt : ce
+   qu'il qualifie lui-même d'optionnel, de faible confiance ou qu'il ne
+   recommande pas ; et ce qui préexiste à la PR — une convention du dépôt, un
+   motif partagé par des fichiers que le diff ne touche pas. Un constat qu'il
+   hésite à faire, il le garde. Relevé le 2026-09-09 sur les douze revues de
+   septembre : ces deux motifs à eux seuls font au moins dix-sept des rejets,
+   et `type-design-analyzer`, `layered-rails-reviewer` et `code-simplifier`
+   avaient plus d'un constat sur deux rejeté (audit
+   `2026-09-09-harnais-strategie`) — chaque rejet se paie dans le contexte de
+   l'auteur, le plus cher de la chaîne.
+
    **À partir de la 2ᵉ passe, joindre au prompt les faux positifs déjà
    consignés** aux passes précédentes de cette boucle (sections « Rejeté » des
    « # Passe n » précédentes du fichier de revue), avec la raison du rejet, et

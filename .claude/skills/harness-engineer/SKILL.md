@@ -149,7 +149,22 @@ for s in $(ls .claude/reviews | sed -E 's/-[0-9]+\.md$/.md/' | sort -u); do
   echo "$(( f > p ? f : p )) $s"
 done | sort -rn | head
 git log --since="$DEPUIS" --name-only --format= -- .claude CLAUDE.md | sort | uniq -c | sort -rn   # ce qu'on retouche sans cesse
+# rendement par relecteur : ses mentions sous une section « Rejeté » contre celles sous « Confirmé / Corrigé » — une heuristique, à ± 10 points, mais l'ordre tient
+python3 - <<'EOF'
+import re,glob,collections
+rev=['code-reviewer','comment-analyzer','code-simplifier','silent-failure-hunter','pr-test-analyzer','type-design-analyzer','layered-rails-reviewer']
+c=collections.defaultdict(collections.Counter); sec=None
+for f in glob.glob('.claude/reviews/*.md'):
+    for line in open(f):
+        m=re.match(r'^##+ (.*)',line)
+        if m: t=m.group(1).lower(); sec='rej' if 'rejet' in t else ('conf' if re.search('corrig|confirm|bloquant',t) else None); continue
+        for r in rev:
+            if r in line and sec: c[r][sec]+=1
+for r in rev: n=sum(c[r].values()); print(f"{r:24} confirmés {c[r]['conf']:3}  rejetés {c[r]['rej']:3}  {100*c[r]['rej']//max(n,1):3} % rejet")
+EOF
 ```
+
+Les **jetons par poste** se lisent avec la commande `neufs` du § 3 bis d'[`orchestrateur`](../orchestrateur/SKILL.md), appliquée à tous les transcripts de sous-agents de la fenêtre groupés par `agentType` de leur `.meta.json` : ouvriers, relecteurs (`pr-review-toolkit:*` et `layered-rails:*`), spécification (`spec-nerd`, `tdd-nerd`, `contradicteur`), et les sessions dont une invite invoque `/harness-engineer`. Base du 2026-09-09, sur sept jours : 58,4 M au total, dont 33 % pour les relecteurs, 21 % pour les ouvriers, 22 % pour la spécification.
 
 Un fichier du harnais retouché à chaque session est le signe le plus sûr d'un problème de structure : on rajoute une phrase là où il faudrait déplacer une section, ou mécaniser.
 
@@ -255,6 +270,8 @@ Précédent : <lien vers l'audit d'avant, ou « premier »>.
 | fichiers du harnais retouchés | | |
 | tickets ouverts en fin de fenêtre (Todo + Backlog + À compléter + In Progress) | | |
 | reliquats devenus tickets / tickets fermés | | |
+| jetons neufs par poste : ouvriers / relecteurs / spécification / harnais | | |
+| constats rejetés par relecteur (les trois pires) | | |
 
 ## Constats
 ### <n>. <une ligne : le défaut>
