@@ -78,6 +78,56 @@ RSpec.describe 'Admin::Sessions' do
 
       expect(response.body).to include('Vous êtes déconnecté.')
     end
+
+    # RG10 and CA11: the demonstration's user session is the operator's, so
+    # ending one ends the FranceConnect+ session that attested the identity.
+    context 'when the demonstration holds an identity' do
+      before do
+        sign_in
+        identify_demo_user
+      end
+
+      it 'ends the FranceConnect+ session, with the hint, a state and the declared address' do
+        delete admin_session_path
+
+        parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+
+        expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+        expect(parameters.fetch('post_logout_redirect_uri'))
+          .to eq("#{FranceConnectStubs::PROCEDURE_URL}/demo/franceconnect/retour_deconnexion")
+        expect(parameters.fetch('state')).to be_present
+        expect(parameters.fetch('id_token_hint').split('.').size).to eq(3)
+      end
+
+      it 'holds neither identity nor operator afterwards' do
+        delete admin_session_path
+
+        expect(session[:demo_identity]).to be_nil
+
+        get admin_root_path
+        expect(response).to redirect_to(new_admin_session_path)
+      end
+
+      # The return is the only thing that says the sign-out was this browser's.
+      it 'recognises the return FranceConnect+ makes with that state' do
+        delete admin_session_path
+        state = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h.fetch('state')
+
+        get '/demo/franceconnect/retour_deconnexion', params: { state: }
+
+        expect(response.parsed_body.css('main').text).to include('session FranceConnect+ est close')
+      end
+
+      # The operator is signed out either way: FranceConnect+ closes its own
+      # session on inactivity, and failing here would leave them stuck signed in.
+      it 'signs the operator out even when the portal cannot be reached' do
+        stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_timeout
+
+        delete admin_session_path
+
+        expect(response).to redirect_to(new_admin_session_path)
+      end
+    end
   end
 
   # `Administrator.exists?` and not merely a present id in the session: this is

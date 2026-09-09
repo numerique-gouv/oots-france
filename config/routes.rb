@@ -40,7 +40,13 @@ Rails.application.routes.draw do
     # nonetheless here.
     namespace :demo do
       root to: 'home#show'
-      resource :identification, only: :show
+      # `create` and not `show`: starting the European flow writes the `state`
+      # and the `nonce` its return is checked against, which a prefetched or
+      # replayed GET would overwrite.
+      resource :identification, only: :create
+      # The form the user comes back to, identified. Named in French like the
+      # other paths of this repository, and carried by an English class.
+      resource :demande, only: :show, controller: 'grant_requests'
     end
 
     # The log is walked through its events, and only through them: the listing

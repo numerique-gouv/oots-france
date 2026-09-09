@@ -44,8 +44,12 @@ Alors("je lis l'accueil de la démarche de l'Université de démonstration") do
   )
 end
 
+# Un bouton et non un lien : lancer la cinématique écrit le `state` et le
+# `nonce` que le retour vérifiera, et un GET rejoué écraserait ceux d'une
+# cinématique en cours.
 Alors("on m'offre de m'identifier avec une identité d'un autre État membre") do
-  expect(page).to have_link(I18n.t('admin.demo.home.show.sign_in'), href: admin_demo_identification_path)
+  expect(page).to have_button(I18n.t('admin.demo.home.show.sign_in'))
+  expect(page).to have_css("form[action='#{admin_demo_identification_path}'][method='post']")
 end
 
 Quand("j'ouvre le tableau de bord des jobs") do
