@@ -152,18 +152,37 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 **Écrire un ticket coûte à peu près ce que coûte le livrer** : mesuré le 2026-09-09, 1,66 à 1,86 M pour une passe de `spec-nerd`, sous-agents compris — et une passe écrit un ticket, parfois quatre. C'est pourquoi le `spec-nerd` du § 5 bis se compte comme un ouvrier de plus dans le budget d'un lot.
 
 > [!IMPORTANT]
-> **La fenêtre de cinq heures vaut ~3 M de jetons neufs** — réétalonnée le 2026-09-09, à la commande corrigée : la fenêtre ouverte à 09:40 a été épuisée à 12:35, pour 3,07 M dépensés sur l'ensemble des projets. C'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : un ticket vaut ~1,6 M et son `spec-nerd` de reliquats autant, si bien qu'**un lot de deux déborde d'une fenêtre** et qu'il faut savoir à l'avance sur quelle frontière il s'arrêtera (§ 6). Compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot. En dessous, lance-en moins ou attends la remise à zéro. Ce qui reste se lit dans le payload de la statusline, que [`session.sh`](../../statusline/session.sh) dépose sur disque :
+> **La fenêtre de cinq heures vaut ~30 M de jetons neufs** — étalonnée le 2026-09-09 à 18:15, au lendemain d'un changement de forfait : 0,99 M dépensés sur l'ensemble des projets pour 3 % consommés. Le pourcentage n'étant publié qu'en entier, la fourchette est 28 à 40 M ; c'est un ordre de grandeur et non une loi — il ne distingue pas les modèles, que le forfait pondère sûrement, et il ignore le cache relu, qui pèse aussi. **Ne lance pas un lot que la session ne peut pas finir**, reliquats compris : compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket (§ 6 pour la frontière où s'arrêter). En dessous, lance-en moins ou attends la remise à zéro.
+>
+> **Étalonne, ne recopie pas.** Ce chiffre périme au prochain changement de forfait, et il s'est déjà démenti d'un facteur dix en une journée. La commande le remesure : l'ouverture de la fenêtre est `resets_at` moins cinq heures, les jetons dépensés depuis sont la somme dédoublonnée des `usage` postérieurs, et la taille est `jetons × 100 / pourcentage`.
 >
 > ```sh
 > touch ~/.claude/.statusline-debug   # une fois ; réécrit toutes les 10 s
-> jq -r --argjson m 3 '.rate_limits.five_hour as $f |
+> E=~/.claude/.statusline-derniere-entree.json
+> OUV=$(jq -r '(.rate_limits.five_hour.resets_at - 18000) | todate' "$E")
+> PCT=$(jq -r '.rate_limits.five_hour.used_percentage' "$E")
+> NEUFS=$(find ~/.claude/projects -name '*.jsonl' -newermt "$(date -d "$OUV" '+%F %T')" -print0 |
+>   xargs -0 jq -r --arg o "$OUV" 'select(.type=="assistant" and .message.usage and .timestamp >= $o)
+>     | [.message.id, ((.message.usage.input_tokens//0)+(.message.usage.output_tokens//0)+(.message.usage.cache_creation_input_tokens//0))] | @tsv' |
+>   sort -u -k1,1 | awk -F'\t' '{n+=$2} END {printf "%.2f", n/1e6}')
+> awk -v p="$PCT" -v n="$NEUFS" 'BEGIN {
+>   if (p < 5) print "trop tôt dans la fenêtre pour étalonner : garde le chiffre écrit";
+>   else printf "fenêtre ≈ %.0f M de jetons neufs, dont %.2f M déjà dépensés\n", n * 100 / p, n }'
+> ```
+>
+> **Sans `-P` sur ce `xargs`** : deux `jq` qui écrivent dans le même tube entrelacent leurs lignes, et la somme meurt sur une erreur de parsing.
+>
+> Ce qui reste se lit ensuite dans le même payload, que [`session.sh`](../../statusline/session.sh) dépose sur disque — `m` étant la taille que l'étalonnage vient de rendre :
+>
+> ```sh
+> jq -r --argjson m 30 '.rate_limits.five_hour as $f |
 >   "reste \(100 - $f.used_percentage)% ≈ \((($m * (100 - $f.used_percentage) / 100) * 10 | floor) / 10) M jetons",
 >   "recharge \($f.resets_at | localtime | strftime("%H:%M")), dans \((($f.resets_at - now) / 60 | floor)) min",
 >   "semaine  \(.rate_limits.seven_day.used_percentage)%"' \
 >    ~/.claude/.statusline-derniere-entree.json
 > ```
 >
-> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire. Le `--argjson m 3` est la taille de fenêtre étalonnée ci-dessus : c'est le seul chiffre à reprendre après un changement de forfait.
+> **Elle rend ce sur quoi on décide** — des jetons et des minutes —, pas un pourcentage à convertir de tête ni une heure à soustraire.
 >
 > **Vérifie son horodatage** : témoin éteint ou statusline arrêtée, il reste figé.
 >
@@ -171,7 +190,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 >
 > **Et lis `resets_at`, ne le déduis jamais.** La fenêtre ne repart pas cinq heures après la précédente : elle glisse. Le 2026-08-27, avoir calculé « reset à 19:10, donc prochain à 00:10 » a fait annoncer une recharge dans vingt minutes quand `resets_at` disait **03:40** — trois ouvriers lancés sur un budget qui ne les portait pas. `date -d "@$(jq -r .rate_limits.five_hour.resets_at …)"` coûte une seconde et tranche.
 
-`rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture. Refais l'étalonnage après tout changement de forfait — l'heure de remise à zéro donne l'ouverture de la fenêtre, la somme des `usage` postérieurs à cette heure donne les jetons, et `taille ≈ jetons × 100 / pourcentage`.
+`rate_limits` ne publie que des pourcentages, et un pourcentage change de sens avec le forfait. **N'écris donc jamais un seuil en pourcentage ici** : le fichier porte des jetons, la conversion se refait à la lecture, et l'étalonnage ci-dessus la refait après tout changement de forfait.
 
 > [!WARNING]
 > **Toute attente de plus de cinq minutes fait repayer au parent son contexte entier.** Le cache d'un prompt expire en cinq minutes ; pendant qu'un sous-agent travaille, le parent ne parle pas, donc son cache meurt, et son tour suivant recrée tout ce qu'il portait. Mesuré le 2026-09-09 sur un `spec-nerd` de 51 minutes : quatre écarts de 7 à 18 minutes, chacun ramenant `cache_read` à zéro pour 244 k, 263 k, 275 k puis 278 k recréés — **1,06 M sur les 1,39 M de l'agent, 76 %**. Sur les onze `spec-nerd` du 1<sup>er</sup> au 9 septembre, ces reprises à froid valent 4,23 M sur 7,67 M.
