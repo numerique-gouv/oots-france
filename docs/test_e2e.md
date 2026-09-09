@@ -85,7 +85,7 @@ Une exécution réussie affiche :
 
 ## Ce que les scénarios jouent
 
-Deux fichiers, selon le rôle que la France y tient. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire — dont le justificatif, sur chacune des deux démarches servies —, plus la conversation qui peut en couvrir plusieurs :
+Trois fichiers. Deux mettent la France face à un autre État membre, selon le rôle qu'elle y tient ; le troisième, [`identification_france_connect.feature`](../features/identification_france_connect.feature), n'a affaire ni à Domibus ni aux annuaires : il éprouve le **faux FranceConnect+** décrit plus bas, par lequel la démarche de démonstration tiendra l'identité d'un usager européen. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire — dont le justificatif, sur chacune des deux démarches servies —, plus la conversation qui peut en couvrir plusieurs :
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
@@ -105,11 +105,12 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 | Deux sujets déclarés | une personne morale ajoutée à la personne physique | `EDM:ERR:0003`, `detail="R-EDM-REQ-S016"` |
 | Identifiant rejoué | la même requête soumise deux fois | la première servie, la seconde refusée par `EDM:ERR:0003` |
 
-L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les trois rôles que l'application n'assure pas :
+L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
 
 1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
 3. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
+4. **Faux FranceConnect+** — `features/support/fake_france_connect/`, décrit à la section suivante ; il ne tourne dans aucun des scénarios ci-dessus, mais à côté d'eux, pour tout le run.
 
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
@@ -117,6 +118,46 @@ L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'appl
 Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::Answer` y répond avec le PDF de l'`EVIDENCE_PATH` de `ChooseAnswer`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, `00` et `T1` étant les seules démarches servies par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
+
+## Le faux FranceConnect+
+
+La démarche de démonstration n'a pas d'autre moyen de tenir l'identité d'un usager européen : l'accès au bac à sable FranceConnect+ attend un déploiement joignable, que l'intégration continue ne lui donne pas, et le nœud eIDAS n'est jamais visible d'un fournisseur de service — [« l'accès au noeud d'interopérabilité se fait au travers de FranceConnect+ »](https://docs.partenaires.franceconnect.gouv.fr/fs/passerelle-eidas/projet-fonctionnement-noeud-eidas/). Ce qu'il faut jouer est donc **FranceConnect+ lui-même**, et non une identité injectée dans le code. [eidas_context.md](eidas_context.md) dit ce que le vrai rend et ce que les TDD en attendent ; cette section-ci ne décrit que le faux.
+
+Ce que le faux rend, refuse, vérifie et enchaîne vient du [code source de FranceConnect+](https://github.com/france-connect/sources) lu au commit [`93cd5d7`](https://github.com/france-connect/sources/tree/93cd5d7c16c1d0937586a09f4c4a06dcacdb6645), et de la [documentation fournisseur de service](https://docs.partenaires.franceconnect.gouv.fr/fs/) là où elle suffit. **Aucune ligne de ces sources n'est copiée ni construite** : elles sont sous [AGPL-3.0](https://github.com/france-connect/sources/blob/main/LICENSE.md) et servent de référence de lecture. Les fichiers du dépôt qui les citent nomment le fichier d'origine en commentaire, pour qu'une relecture puisse y retourner.
+
+### Comment il se lance, et ce qu'il coûte
+
+Un **processus fils**, lancé par le `BeforeAll` de `features/support/env.rb` et arrêté par l'`AfterAll` : il tourne à côté des scénarios, aucune étape ne le monte, et ce que le scénario lui commande — la rotation de ses clés de signature, le vieillissement d'un code d'autorisation — passe par une surface HTTP, hors de son processus. C'est ce qui permettra à la pile locale de le lancer elle-même sans que le scénario en démarre un second.
+
+Le lancement tient à deux conditions. `URL_FAUX_FRANCE_CONNECT` doit être renseignée — le profil par défaut tourne sur un runner nu, sans `.env` : il n'en démarre donc aucun — et **rien ne doit déjà répondre à cette adresse**, auquel cas le scénario pilote celui qui tourne. Le coût est de l'ordre de la seconde : un WEBrick et un bundle à charger, aucune image, aucun réseau sortant.
+
+### Les identités de test
+
+Ce sont les identités du faux, pas des personnes : les noms sont des noms d'usage inventés, et « il est interdit d'utiliser de vraies données personnelles » vaut ici comme au bac à sable.
+
+| Clé | Pays | Niveau (`acr`) | Claims |
+| --- | --- | --- | --- |
+| `dk-substantial` | `DK` | substantiel (`eidas2`) | `given_name` « Freja Marie », `family_name` « Sørensen », `birthdate` `2001-04-17`, `gender` `female`, `birthplace` « Aarhus » |
+| `dk-high` | `DK` | élevé (`eidas3`) | `given_name` « Mikkel Anker », `family_name` « Bruun », `birthdate` `1998-09-03` — ni `gender`, ni `birthplace`, qui sont facultatifs |
+
+Un `preferred_username` égal au `family_name` s'ajoute sous le scope `profile` ou sous le sien, et sous aucun autre. Aucune des deux identités ne porte **ni identifiant eIDAS, ni pays, ni `birthcountry`, ni `email`** : le faux reproduit cette lacune de FranceConnect+ plutôt que de la combler, et c'est elle qui laissera `sdg:Identifier` absent de la requête, ce que le [XSD du profil de métadonnées](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/xsd/sdg/SDG-GenericMetadataProfile-v2.0.1.xsd) permet (`minOccurs="0"`). Ce que les deux identités portent toutes, en revanche : `FamilyName`, `GivenName` et `DateOfBirth`, obligatoires au XSD même, et le niveau de garantie, que le XSD laisse facultatif mais que la règle Schematron `R-EDM-REQ-C036` (FATAL) impose.
+
+L'identifiant `DK/FR/…` que le nœud rendrait ne sort jamais du faux : il n'entre que dans la dérivation du `sub`, pseudonyme de 64 caractères hexadécimaux suivis de `v1`, propre à chaque fournisseur de service — le faux le dérive de son `client_id`, quand le vrai le dérive de l'`entityId` que son annuaire associe au fournisseur.
+
+### Ce dont il s'écarte sciemment
+
+| Ce que fait le vrai | Ce que fait le faux | Pourquoi |
+| --- | --- | --- |
+| Chiffre l'ID Token en `ECDH-ES`, `RSA-OAEP` ou `RSA-OAEP-256` | honore `RSA-OAEP` et `RSA-OAEP-256`, refuse `ECDH-ES` par une erreur qui nomme le gem | le gem [`jwe`](https://rubygems.org/gems/jwe) 1.1.1 ne sait pas faire `ECDH-ES` ; `scripts/ci/prepare_environment.sh` rencontre la même limite et engendre une clé RSA. Le cas ne se présente donc pas |
+| Accepte `client_secret_post` **et** `private_key_jwt` sur `/token` | n'accepte que `client_secret_post`, et le déclare ainsi dans sa découverte | aucun client de ce déploiement ne publie de jeu de clés de **signature** : la démarche n'en publie qu'un de chiffrement. Implémenter la seconde méthode serait construire pour un appelant qui n'existe pas. **`private_key_jwt` n'a donc jamais été exercée contre le faux** : qui branchera la démarche sur le bac à sable en s'en servant essuiera les plâtres |
+| Refuse une identité d'un niveau inférieur à celui demandé par un **HTTP 500** dont le message ne dit rien de la cause (`CoreLowAcrException`, `error_description` « `authentication aborted due to a technical error on the authorization server` ») | répond une page 400 nommant `invalid_acr` | un 500 du faux est déjà ce que produit son filet à exceptions : les confondre rendrait une panne du faux indiscernable d'un refus attendu, et le scénario ne saurait plus ce qu'il éprouve |
+| Présente une mire de fournisseurs d'identité français | n'est atteint qu'avec `idp_hint=eidas-bridge`, et refuse un appel sans `idp_hint` | seule la cinématique européenne est jouée ; le reste appartient au projet « L'identité de l'usager » |
+| Tient une session unique (`allowedSsoAcrs`), exige un TLD dans les `redirect_uri`, vérifie les adresses IP sortantes | réauthentifie à chaque appel et ne reproduit rien de cela | hors du périmètre de la démonstration |
+| Montre une page par étape du cœur, de la passerelle et du nœud | condense la cinématique en trois pages : le choix du pays, le choix d'une identité de test, la confirmation en anglais | le faux joue ce que l'usager voit, pas le protocole entre les trois |
+
+### Passer du faux au bac à sable
+
+La démarche ne connaîtra FranceConnect+ **que par son document de découverte** : passer de l'un à l'autre est un changement d'adresse de découverte, de `client_id` et de `client_secret` dans l'environnement, et rien dans le code. Les deux derniers sont aujourd'hui des constantes du faux (`features/support/fake_france_connect/clients.rb`) ; ils deviendront des variables le jour où `app/` les lira.
 
 ## Les annuaires centraux sont les vrais
 
@@ -154,6 +195,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
+| `URL_FAUX_FRANCE_CONNECT` | l'adresse de découverte du faux FranceConnect+, de la forme `<schéma>://<hôte>/api/v2` ; laissée vide, aucun faux n'est lancé et les scénarios d'identification échouent |
 | `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | **vides**, faute de quoi elles remplacent la découverte DNS |
 | `CERTIFICATS_SERVICES_COMMUNS` | `config/certificats/services_communs_acc.pem`, la racine de la Commission pour l'acceptation |
 | `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : les deux segments du nom NAPTR à résoudre |
@@ -185,5 +227,8 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnose_domibus.sh` les affiche |
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : AP_FR_01` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
+| « Le faux FranceConnect+ n'a pas répondu sur … » au démarrage du run | le port de `URL_FAUX_FRANCE_CONNECT` est déjà pris par autre chose, ou le processus fils est mort au lancement : ses erreurs sortent sur la sortie d'erreur du run |
+| Les scénarios d'identification échouent tous sur le premier `Étant donné` | `URL_FAUX_FRANCE_CONNECT` n'est pas renseignée dans le `.env.oots` du conteneur `web` |
+| Un `500` du faux portant « n'est pas géré par le gem jwe » | la clé publiée par `/demo/franceconnect/cles_publiques` déclare `ECDH-ES` : engendrer une clé `RSA-OAEP-256`, comme le fait `scripts/ci/prepare_environment.sh` |
 
 Les refus de Domibus se lisent dans `logs/domibus-error.log`, dont le seuil est `WARN` : ils y figurent sans le bruit de `catalina.out`. Comment suivre ces journaux et y faire apparaître les enveloppes SOAP échangées est décrit dans [domibus_context.md](domibus_context.md#lire-les-journaux).

@@ -85,7 +85,7 @@ Les chemins sont `authorize`, `token`, `userinfo`, `session/end` et `jwks` sous 
 
 | Claim | Obligatoire | Ce que c'est | Champ de `NaturalPerson` |
 | --- | --- | --- | --- |
-| `sub` | oui | l'identifiant **propre à FranceConnect** : 66 caractères hexadécimaux et la lettre `v`, « même format qu'une identité française » | aucun — voir l'avertissement |
+| `sub` | oui | l'identifiant **propre à FranceConnect** : 64 caractères hexadécimaux suivis de `v1`, soit 66 en tout, « même format qu'une identité française » | aucun — voir l'avertissement |
 | `given_name` | oui | prénoms d'usage, texte libre | `given_name` |
 | `family_name` | oui | nom d'usage, texte libre, qui peut différer du nom de naissance | `family_name` |
 | `birthdate` | oui | `AAAA-MM-JJ` ; les présumés nés ne sont pas gérés | `date_of_birth` |
