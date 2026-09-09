@@ -1,5 +1,8 @@
-# FranceConnect+, as the demonstration procedure calls it: the European flow of
-# chapter 1 §10.1, whose « national authentication service » it plays for France.
+# FranceConnect+, as the demonstration procedure calls it. The TDD never name
+# the portal; chapter 1 §10.1 does not exclude « a national authentication
+# service » between the eIDAS node and the requester, and reading FranceConnect+
+# into that place is this repository's, that section declaring itself
+# illustrative and not normative.
 #
 # It knows the portal by its **discovery document** and by nothing else — every
 # endpoint below is read from it, none is built here. That is what makes the
@@ -29,17 +32,34 @@ class FranceConnectClient
   # `preferred_username` nothing here reads.
   SCOPES = 'openid given_name family_name birthdate gender birthplace'.freeze
 
+  # What `/token` must have answered for the exchange to have happened, checked
+  # where it arrives. A caller reaching for `id_token` in a hash that has none
+  # would raise a `KeyError` far from here, which nothing could name — the
+  # repository translates a correspondent's malformed answer at the client, as
+  # `BeneficiaryToken` and `CommonServicesSignature` both do.
+  GRANTED = %w[access_token id_token].freeze
+
   # `amr` is not covered by any scope: it is asked for as an essential claim,
   # which is the mechanism OpenID Connect provides and the one the portal leaves
   # enabled. It is what says a European identity came through the bridge.
   ESSENTIAL_CLAIMS = { id_token: { amr: { essential: true } } }.to_json.freeze
 
   # What is left of a published address once the base is taken off it: plain
-  # segments and nothing else. The whole address is rebuilt from the configured
-  # issuer and this, so that nothing the document says can move a call off the
-  # host this deployment was told to talk to — no credentials, no access token,
-  # and no key set read from somewhere else.
-  SEGMENTS = %r{\A(?:/[A-Za-z0-9._~-]+)*/?\z}
+  # segments and nothing else. The negative lookahead is the whole point of the
+  # expression — `[A-Za-z0-9._~-]+` matches `..` as happily as `authorize`, and
+  # a document publishing `<issuer>/../../elsewhere` would otherwise pass every
+  # check here and be normalised out of the base by the HTTP client, carrying
+  # the `client_secret` and the access token to a path nobody chose.
+  SEGMENTS = %r{\A(?:/(?!\.{1,2}(?:/|\z))[A-Za-z0-9._~-]+)*/?\z}
+
+  # The characters `SEGMENTS` admits, each standing for itself. The path is
+  # **rebuilt** from this table rather than copied out of the document: the
+  # address handed to an HTTP call is then made of characters this file holds,
+  # and the document only chooses which ones, in which order. Same path, same
+  # refusals — what changes is where the string comes from, which is what a
+  # reader of this code, and a taint analysis, can both check.
+  PATH_CHARACTERS = [*'a'..'z', *'A'..'Z', *'0'..'9', '/', '.', '_', '~', '-']
+    .to_h { |character| [character, character] }.freeze
 
   def initialize(connection: nil)
     @connection = connection
@@ -80,7 +100,7 @@ class FranceConnectClient
   def exchange(code)
     credentials = Settings.france_connect_credentials
 
-    JSON.parse(post(endpoint('token_endpoint'), {
+    granted(post(endpoint('token_endpoint'), {
       grant_type: 'authorization_code', code:, redirect_uri:,
       client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret),
     }).body)
@@ -100,6 +120,17 @@ class FranceConnectClient
 
   private
 
+  def granted(body)
+    tokens = JSON.parse(body)
+    missing = GRANTED.reject { |name| tokens[name].is_a?(String) && !tokens[name].empty? }
+    return tokens if missing.empty?
+
+    raise FranceConnectError,
+      I18n.t('clients.france_connect_client.incomplete_grant', names: missing.join(', '))
+  rescue JSON::ParserError => e
+    raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_grant', error: e.message)
+  end
+
   # An address published by the discovery document, rebuilt on the origin this
   # deployment was configured with: the document says which path to call, never
   # which host to call it on.
@@ -111,13 +142,35 @@ class FranceConnectClient
   # access token to whoever wrote it.
   # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-endpoints/
   def endpoint(name)
-    published = URI.parse(discovery.fetch(name).to_s)
+    published = URI.parse(discovery.fetch(name) { refuse_missing(name) }.to_s)
     origin = URI.parse(Settings.france_connect_issuer)
     path = published.path.to_s.delete_prefix(origin.path.to_s)
-    refuse_foreign(name, published, origin) unless same_origin?(published, origin) && SEGMENTS.match?(path)
+    refuse_foreign(name, published, origin) unless acceptable?(published, origin, path)
 
-    "#{Settings.france_connect_issuer}#{path}"
+    "#{Settings.france_connect_issuer}#{rebuilt(path)}"
   end
+
+  def acceptable?(published, origin, path)
+    same_origin?(published, origin) && SEGMENTS.match?(path) && under_issuer?(origin, path)
+  end
+
+  # The address judged as it will be **called**, and not as it was written:
+  # `merge` applies the dot-segment removal of RFC 3986 §5.2, which is what an
+  # HTTP client does before opening the connection. Redundant with the lookahead
+  # of `SEGMENTS` on purpose — one of the two is an expression that can be got
+  # subtly wrong, the other asks the question the attacker actually asks.
+  # https://datatracker.ietf.org/doc/html/rfc3986#section-5.2
+  def under_issuer?(origin, path)
+    root = origin.dup.tap { |address| address.path = '/' }
+
+    root.merge("#{origin.path}#{path}").to_s.start_with?(Settings.france_connect_issuer)
+  end
+
+  # `fetch` without a default on purpose: `SEGMENTS` has already refused
+  # anything the table does not hold, so a miss here would mean the two have
+  # drifted apart — and `KeyError` is among the failures the callers turn into
+  # a refusal.
+  def rebuilt(path) = path.each_char.map { |character| PATH_CHARACTERS.fetch(character) }.join
 
   def same_origin?(published, origin)
     [published.scheme, published.host, published.port] == [origin.scheme, origin.host, origin.port]
@@ -126,6 +179,13 @@ class FranceConnectClient
   def refuse_foreign(name, published, origin)
     raise FranceConnectError,
       I18n.t('clients.france_connect_client.foreign_endpoint', name:, url: published, expected: origin.host)
+  end
+
+  # Named here rather than left to a bare `KeyError` twenty lines up the stack:
+  # a discovery document missing an endpoint is a portal that cannot be used,
+  # and the operator must read which one is absent.
+  def refuse_missing(name)
+    raise FranceConnectError, I18n.t('clients.france_connect_client.missing_endpoint', name:)
   end
 
   def url_for(path) = "#{Settings.oots_france_url}#{path}"

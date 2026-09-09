@@ -32,6 +32,36 @@ RSpec.describe FranceConnectClient do
         .to raise_error(FranceConnectError, /ailleurs\.invalid/)
     end
 
+    # `[A-Za-z0-9._~-]+` matches `..` as happily as `authorize`: without the
+    # lookahead of `SEGMENTS`, a document publishing this would pass every check
+    # and be normalised out of the base by the HTTP client, carrying the
+    # `client_secret` to a path nobody chose.
+    it 'refuses a path that climbs out of the base it was configured with' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(
+        body: discovery_document.merge(token_endpoint: "#{FranceConnectStubs::ISSUER}/../../ailleurs").to_json,
+      )
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /ailleurs/)
+      expect(a_request(:post, %r{/ailleurs})).not_to have_been_made
+    end
+
+    it 'refuses a path carrying anything but plain segments' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(
+        body: discovery_document.merge(userinfo_endpoint: "#{FranceConnectStubs::ISSUER}/un%20chemin").to_json,
+      )
+
+      expect { client.userinfo('un-jeton') }.to raise_error(FranceConnectError)
+    end
+
+    # Named where it is read, rather than left to a bare `KeyError` twenty lines
+    # up the stack, which nothing could name.
+    it 'refuses a document that publishes no endpoint of that name, and says which' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
+        .to_return(body: discovery_document.except(:token_endpoint).to_json)
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /token_endpoint/)
+    end
+
     it 'calls the path the document publishes, on the host it was configured with' do
       stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(
         body: discovery_document.merge(userinfo_endpoint: "#{FranceConnectStubs::ISSUER}/ailleurs").to_json,
@@ -115,6 +145,21 @@ RSpec.describe FranceConnectClient do
 
     it 'gives back what the endpoint answered' do
       expect(client.exchange('un-code')).to include('access_token' => 'un-jeton-d-acces')
+    end
+
+    # The two the exchange is worth: a caller reaching for `id_token` in a hash
+    # that has none would raise a `KeyError` far from here.
+    it 'refuses an answer that carries no usable token, and names what is missing' do
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
+        .to_return(body: { access_token: 'un-jeton' }.to_json)
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /id_token/)
+    end
+
+    it 'refuses an answer that is not JSON at all' do
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT).to_return(body: 'ceci n\'est pas du JSON')
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, %r{/token})
     end
 
     it 'raises on a refusal rather than reading an error as a token' do
