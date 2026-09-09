@@ -203,7 +203,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 >
 > **« Quand ce qui reste tient dans un contexte neuf » est la condition, pas une formalité.** Une revue d'écran ne la remplit jamais : ce qui revient est une correction à des gabarits et des clés que l'ouvrier a posés, et qu'un neuf devra redécouvrir avant de pouvoir l'appliquer — le briefing qui remplace ce contexte coûte plus cher que le contexte lui-même. Le calcul de jetons ci-dessus ne dit rien du verdict à traiter ; ne l'invoque pas pour contourner le § 5.
 
-**La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue plusieurs fois cela. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
+**La revue est la phase chère** : planifier et implémenter réunis pèsent ~0,3 M, une seule passe de revue 0,7 à 1,0 M — relevé du 2026-09-09 sur les cinq éventails de sept relecteurs des 8 et 9 septembre. `review-loop` est en éventail — plusieurs relecteurs par passe, chacun lisant le diff entier, et leurs jetons sont les tiens. Quand le budget est compté, regarde le nombre d'ouvriers **en phase de revue**, pas le nombre d'ouvriers.
 
 **Un ticket écrit coûte autant qu'un ticket livré, et le lot ne s'arrête pas au `LIVRÉ`.** Le `spec-nerd` du § 1 bis et celui des reliquats du § 5 bis se paient sur le même compte que les ouvriers, et ils ne sont pas petits — chacun lance des `tdd-nerd` qui lisent un corpus entier, et la boucle avec le contradicteur en rajoute une par passe. **Relevé du 2026-09-09**, onze invocations du 1er au 9 septembre, arbre compris (jetons neufs) :
 
@@ -215,7 +215,7 @@ Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que l
 | compléter ou mettre à jour un projet après une livraison | 0,9 à 1,9 M | 1 à 3 `tdd-nerd` |
 | écrire les reliquats d'un lot, quatre tickets d'un coup | 1,7 M | 3 `contradicteur` |
 
-D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 0,5 M s'il touche au domaine, 2 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 1 à 2 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer trois ouvriers sur les ~3 M d'une fenêtre et découvrir que les reliquats des trois n'ont plus de budget.
+D'où deux règles de dimensionnement. **Un besoin dit en une phrase se budgète comme un ticket** : 0,5 M s'il touche au domaine, 2 M s'il touche au code existant et donc au contradicteur — avant de proposer l'ouvrier qui suivra. **Et un lot livré n'est fini qu'après son `spec-nerd` de reliquats** : garde-lui 1 à 2 M selon ce que l'utilisateur retient, ou dis à l'avance qu'il attendra la recharge — la liste retenue est dans ton compte rendu, elle ne se perd pas. Ce qui ne se fait pas : lancer un lot sans avoir étalonné la fenêtre, et découvrir que les reliquats n'ont plus de budget.
 
 Le budget se compte enfin **sur le compte, pas sur la session** : un ouvrier lancé d'ailleurs puise au même endroit. Demande ce qui tourne avant de dimensionner.
 
