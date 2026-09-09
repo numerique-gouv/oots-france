@@ -38,9 +38,18 @@ class FranceConnectClient
     @connection = connection
   end
 
-  def issuer = discovery.fetch('issuer')
+  # The configured issuer, once the document has been seen to claim it: what
+  # the ID Token is checked against must be what this deployment was told to
+  # talk to, never what the answer said of itself.
+  def issuer
+    announced = discovery.fetch('issuer', nil)
+    return Settings.france_connect_issuer if announced.to_s.chomp('/') == Settings.france_connect_issuer
 
-  def jwks_url = discovery.fetch('jwks_uri')
+    raise FranceConnectError,
+      I18n.t('clients.france_connect_client.foreign_issuer', announced:, expected: Settings.france_connect_issuer)
+  end
+
+  def jwks_url = endpoint('jwks_uri')
 
   def client_id = Settings.france_connect_credentials.fetch(:id)
 
@@ -53,7 +62,7 @@ class FranceConnectClient
   end
 
   def authorization_url(state:, nonce:)
-    with_query(discovery.fetch('authorization_endpoint'), {
+    with_query(endpoint('authorization_endpoint'), {
       client_id:, response_type: 'code', redirect_uri:, scope: SCOPES, state:, nonce:,
       acr_values: REQUESTED_ACR, claims: ESSENTIAL_CLAIMS, idp_hint: IDP_HINT,
     })
@@ -64,7 +73,7 @@ class FranceConnectClient
   def exchange(code)
     credentials = Settings.france_connect_credentials
 
-    JSON.parse(post(discovery.fetch('token_endpoint'), {
+    JSON.parse(post(endpoint('token_endpoint'), {
       grant_type: 'authorization_code', code:, redirect_uri:,
       client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret),
     }).body)
@@ -73,16 +82,43 @@ class FranceConnectClient
   # A signed then encrypted JWT, not JSON: what comes back is handed to
   # `FranceConnectToken` as it stands.
   def userinfo(access_token)
-    get(discovery.fetch('userinfo_endpoint'), {}, 'Authorization' => "Bearer #{access_token}").body
+    get(endpoint('userinfo_endpoint'), {}, 'Authorization' => "Bearer #{access_token}").body
   end
 
   def end_session_url(id_token_hint:, state:)
-    with_query(discovery.fetch('end_session_endpoint'), {
+    with_query(endpoint('end_session_endpoint'), {
       id_token_hint:, state:, post_logout_redirect_uri:,
     })
   end
 
   private
+
+  # An address published by the discovery document, rebuilt on the origin this
+  # deployment was configured with: the document says which path to call, never
+  # which host to call it on.
+  #
+  # FranceConnect+ publishes all five under the base of the environment —
+  # « Les chemins sont `authorize`, `token`, `userinfo`, `session/end` et `jwks`
+  # sous cette base » — so an address pointing elsewhere is a document that is
+  # not the portal's, and following it would carry the `client_secret` and the
+  # access token to whoever wrote it.
+  # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-endpoints/
+  def endpoint(name)
+    published = URI.parse(discovery.fetch(name).to_s)
+    origin = URI.parse(Settings.france_connect_issuer)
+    refuse_foreign(name, published, origin) unless same_origin?(published, origin)
+
+    origin.dup.tap { |address| address.path = published.path.to_s }.to_s
+  end
+
+  def same_origin?(published, origin)
+    [published.scheme, published.host, published.port] == [origin.scheme, origin.host, origin.port]
+  end
+
+  def refuse_foreign(name, published, origin)
+    raise FranceConnectError,
+      I18n.t('clients.france_connect_client.foreign_endpoint', name:, url: published, expected: origin.host)
+  end
 
   def url_for(path) = "#{Settings.oots_france_url}#{path}"
 

@@ -20,6 +20,36 @@ RSpec.describe FranceConnectClient do
       expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).to have_been_made.once
     end
 
+    # The document says which path to call, never which host to call it on: a
+    # document naming another host is not the portal's, and following it would
+    # carry the `client_secret` and the access token to whoever wrote it.
+    it 'refuses an endpoint published outside the issuer it was configured with' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(
+        body: discovery_document.merge(token_endpoint: 'https://ailleurs.invalid/token').to_json,
+      )
+
+      expect { client.exchange('un-code') }
+        .to raise_error(FranceConnectError, /ailleurs\.invalid/)
+    end
+
+    it 'calls the path the document publishes, on the host it was configured with' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_return(
+        body: discovery_document.merge(userinfo_endpoint: "#{FranceConnectStubs::ISSUER}/ailleurs").to_json,
+      )
+      stub_request(:get, "#{FranceConnectStubs::ISSUER}/ailleurs").to_return(body: 'peu importe')
+
+      expect(client.userinfo('un-jeton')).to eq('peu importe')
+    end
+
+    # What the ID Token is checked against must be what this deployment was told
+    # to talk to, never what the answer said of itself.
+    it 'refuses a document announcing an issuer other than the configured one' do
+      stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
+        .to_return(body: discovery_document.merge(issuer: 'https://ailleurs.invalid').to_json)
+
+      expect { client.issuer }.to raise_error(FranceConnectError, /ailleurs\.invalid/)
+    end
+
     # Declared to FranceConnect+, which refuses an address it was not given:
     # derived from this deployment's own URL and never from the request.
     it 'names the two declared addresses under the procedure URL' do

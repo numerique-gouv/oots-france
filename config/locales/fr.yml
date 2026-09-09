@@ -317,6 +317,11 @@ fr:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+    # Deux refus posés sur le document de découverte : ce dépôt appelle
+    # l'*issuer* qu'on lui a configuré, et rien d'autre.
+    france_connect_client:
+      foreign_issuer: "Le document de découverte annonce l'issuer « %{announced} », et non %{expected}."
+      foreign_endpoint: "FranceConnect+ publierait %{name} sur « %{url} », hors de %{expected} : appel refusé."
     # Ce que FranceConnect+ scelle pour la démarche : l'ID Token et la réponse
     # UserInfo, signés puis chiffrés. Les trois refus disent lequel des deux
     # sceaux a cédé.
