@@ -33,7 +33,7 @@ module Admin
     # The operator's session is also the demonstration user's, and ending one
     # ends the other: `reset_session` takes the identity with it, and the
     # redirection below ends the FranceConnect+ session that attested it —
-    # « afin que FranceConnect+ puisse retrouver la session », the hint being
+    # « pour que FranceConnect+ puisse retrouver la session concernée », the hint being
     # the ID Token decrypted.
     #
     # `::Demo::` and not `Demo::`: this file lives in `Admin`, where `Demo`
@@ -54,18 +54,18 @@ module Admin
     private
 
     # Nothing to end when no identity was held, and nothing worth failing the
-    # sign-out for when the portal cannot be reached: the operator is signed out
-    # either way, and FranceConnect+ closes its own session on inactivity.
+    # sign-out for when the portal cannot be reached: `Demo::EndIdentification`
+    # says why. The state is written here rather than there, a session being the
+    # controller's to touch.
     def end_of_france_connect_session(identity)
       return nil if identity.nil?
 
-      state = SecureRandom.hex(::Demo::StartIdentification::RANDOM_BYTES)
-      session[:france_connect_logout] = state
+      result = ::Demo::EndIdentification.call(identity:)
+      return nil unless result.success?
 
-      FranceConnectClient.new.end_session_url(id_token_hint: identity.id_token, state:)
-    rescue FranceConnectError, Faraday::Error, JSON::ParserError, KeyError => e
-      Rails.logger.warn(I18n.t('admin.sessions.france_connect_unreachable', error: e.message))
-      nil
+      session[:france_connect_logout] = result.state
+
+      result.end_session_url
     end
 
     # `permit` and not the `expect` used elsewhere: `expect` goes through
