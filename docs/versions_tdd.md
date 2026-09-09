@@ -80,7 +80,7 @@ Le détail qui suit est technique ; l'essentiel ne l'est pas. Vu du guichet, la 
 
 **Trouver le bon fournisseur repose sur les découpages du pays interrogé**, et non plus sur une grille administrative européenne. La 1.2 offrait deux voies concurrentes : des niveaux administratifs normalisés à l'échelle européenne, et les classifications que chaque État membre publie pour lui-même. La 2.0 supprime la première comme faisant double emploi, et ne garde que la seconde. La question posée à l'usager — « dans quelle commune êtes-vous né ? » — devient donc celle que son pays sait poser, dans ses propres termes.
 
-**L'identité pourra venir du portefeuille européen.** La 2.0 pose la correspondance entre les attributs d'identité d'OOTS et ceux du portefeuille (EUDI) d'eIDAS 2. Rien n'est utilisable en production tant qu'une base juridique n'est pas confirmée, et rien ne change pour un usager qui s'authentifie comme aujourd'hui : c'est une porte ouverte, pas un changement de parcours.
+**L'identité pourra venir du *wallet* européen.** La 2.0 pose la correspondance entre les attributs d'identité d'OOTS et ceux du *wallet* (EUDI) d'eIDAS 2. Rien n'est utilisable en production tant qu'une base juridique n'est pas confirmée, et rien ne change pour un usager qui s'authentifie comme aujourd'hui : c'est une porte ouverte, pas un changement de parcours.
 
 Et ce qui, du point de vue d'une démarche, **ne change pas** : le parcours à quatre coins, les cas d'erreur renvoyés à l'usager, et la prévisualisation, qui reste le seul moment où un humain regarde un écran ; ce qui y change tient à la façon dont l'adresse de retour voyage, ce que l'usager ne voit pas.
 
