@@ -5,9 +5,10 @@ module Demo
   # It draws and does not store: the two values belong to the session, and a
   # session is the controller's to touch.
   class StartIdentification < ApplicationInteractor
-    # Sixteen bytes, so thirty-two hexadecimal characters — the floor
-    # FranceConnect+ documents for both parameters.
-    # https://docs.partenaires.franceconnect.gouv.fr/fs/passerelle-eidas/technique-eidas-authorize/
+    # Sixteen bytes, so thirty-two hexadecimal characters. FranceConnect+
+    # documents no minimum length for either parameter: this is what this
+    # repository draws, and it is above what any implementation of the portal
+    # has been seen to require.
     RANDOM_BYTES = 16
 
     def call
@@ -17,7 +18,7 @@ module Demo
       context.authorization_url = client.authorization_url(state:, nonce:)
       context.state = state
       context.nonce = nonce
-    rescue FranceConnectError, Faraday::Error, JSON::ParserError, KeyError => e
+    rescue FranceConnectError, Faraday::Error => e
       undiscoverable(e)
     end
 

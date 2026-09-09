@@ -12,7 +12,7 @@ module Demo
       check_state
 
       context.identity = identity_behind(client.exchange(context.code))
-    rescue FranceConnectError, Faraday::Error, JSON::ParserError, KeyError => e
+    rescue FranceConnectError, Faraday::Error => e
       refuse(e.message)
     end
 

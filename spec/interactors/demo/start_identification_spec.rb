@@ -24,6 +24,14 @@ RSpec.describe Demo::StartIdentification do
     expect(described_class.call.state).not_to eq(result.state)
   end
 
+  it 'refuses a discovery document that publishes no authorization endpoint' do
+    stub_request(:get, FranceConnectStubs::DISCOVERY_URL)
+      .to_return(body: discovery_document.except(:authorization_endpoint).to_json)
+
+    expect(result).to be_a_failure
+    expect(result.authorization_url).to be_nil
+  end
+
   # The operator is told, and holds nothing: a departure that could not be built
   # is not one to be sent on.
   it 'refuses when FranceConnect+ does not answer its own discovery' do
