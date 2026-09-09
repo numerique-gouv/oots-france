@@ -7,6 +7,7 @@
 # nothing about what was wrong with what they sent.
 class EvidenceRequestParser
   include SlotReading
+  include AgentConformance
 
   # The slots chapter 4.6 makes mandatory that nothing else here would notice
   # missing, each under the rule that requires it. `Procedure`, `Requirements`
@@ -29,21 +30,6 @@ class EvidenceRequestParser
   # what plays.
   BENEFICIARY_SCHEME = 'eidas'.freeze
 
-  # `R-EDM-REQ-C012` measures 256 characters on the identifier itself — its
-  # assertion reads `string-length(.)`, the context being `sdg:Identifier` —
-  # where its prose names the `schemeID`. Held to the assertion: applied to the
-  # scheme the clause would be dead, a long scheme already failing the exact
-  # comparison to a code of the list.
-  MAXIMUM_IDENTIFIER_LENGTH = 256
-
-  # Chapter 4.5.1 §3.2 — the requesting agent's own subsection, §3.3 describing
-  # the provider — makes `sdg:Name` `1..n`, and `AgentType` carries
-  # `minOccurs="1"`. No Schematron rule asserts that absence, so the detail
-  # names the source that does — as `ChooseAnswer::REPLAYED_IDENTIFIER` names
-  # chapter 4.4 for a duty stated in prose alone. It reaches an operator
-  # through the journal, which is this refusal's only trace.
-  AGENT_NAME_REQUIRED = 'TDD 4.5.1 §3.2: EvidenceRequester agent name required'.freeze
-
   def initialize(document)
     @request = at(document, '/query:QueryRequest')
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
@@ -63,6 +49,7 @@ class EvidenceRequestParser
     require_expected_specification
     require_one_evidence_subject
     require_requester_country
+    require_conformant_accompanying_agents
     require_beneficiary_identifier_scheme
 
     self
@@ -145,9 +132,12 @@ class EvidenceRequestParser
     nil
   end
 
+  def agents
+    @agents ||= slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+  end
+
   def requester_agent
-    @requester_agent ||= slot_elements('EvidenceRequester', request)
-      .filter_map { |element| at(element, './sdg:Agent') }
+    @requester_agent ||= agents
       .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceRequester::REQUESTER }
 
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.no_er_agent') if @requester_agent.nil?
@@ -353,52 +343,36 @@ class EvidenceRequestParser
     # leading zero. Read as text, always.
     id = require_content(identifier&.text, 'parsers.evidence_request.agent_without_id')
     scheme = require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme')
-    require_known_agent_scheme(scheme, id)
+    require_known_agent_scheme(scheme, id, :agent)
 
     name = at(agent, './sdg:Name')
 
     EvidenceRequester.new(
       id:, type_id: scheme,
-      name: agent_name(name),
-      language: agent_language(name),
+      name: agent_name(name, :agent),
+      language: agent_language(name, :agent),
       # Read rather than defaulted: `Address` says `FR`, which is exactly the
       # wrong answer about a foreign requester.
       address: Address.new(country: agent_country(agent)),
     )
   end
 
-  # `R-EDM-REQ-C012`, one assertion holding two things: the scheme is of one of
-  # the forms `IdentifierScheme.agent_scheme?` reads, and the identifier stays
-  # under 256 characters. Both refusals name the rule; the wording says which
-  # half broke, since the correspondent learns nothing else.
-  def require_known_agent_scheme(scheme, id)
-    refuse('R-EDM-REQ-C012', 'parsers.evidence_request.agent_scheme_unknown', scheme:) unless IdentifierScheme.agent_scheme?(scheme)
-    return if id.length < MAXIMUM_IDENTIFIER_LENGTH
-
-    refuse('R-EDM-REQ-C012', 'parsers.evidence_request.agent_id_too_long',
-      length: id.length, maximum: MAXIMUM_IDENTIFIER_LENGTH)
-  end
-
-  # `R-EDM-REQ-C092` measures `normalize-space(.)` and asks for more than one
-  # character, which is why the value is squished rather than merely stripped:
-  # ` A ` is one character to the rule.
-  def agent_name(name)
-    refuse(AGENT_NAME_REQUIRED, 'parsers.evidence_request.agent_without_name') if name.nil?
-    return name.text if name.text.squish.length > 1
-
-    refuse('R-EDM-REQ-C092', 'parsers.evidence_request.agent_name_too_short', name: name.text)
-  end
-
-  # `R-EDM-REQ-C109` asserts `not(normalize-space(@lang)='')`, so an attribute
-  # absent and one written blank break it alike. `R-EDM-REQ-C108` then compares
-  # the raw value to the code list, `.=$code` carrying no `i` flag and the list
-  # publishing upper case: `lang="fr"` breaks it where `lang="FR"` does not, and
-  # so does ` FR `, which the first rule accepts.
-  def agent_language(name)
-    language = attribute(name, 'lang')
-    refuse('R-EDM-REQ-C109', 'parsers.evidence_request.agent_without_language') if language.to_s.squish.empty?
-    return language if LanguageCode.valid?(language)
-
-    refuse('R-EDM-REQ-C108', 'parsers.evidence_request.agent_language_unknown', language:)
+  # Every agent of the `EvidenceRequester` collection that is not the requester
+  # — the intermediary platform of the country that asks, in practice. Eight
+  # FATAL rules of chapter 4.6 judge each agent of that collection: none of
+  # their contexts carries a condition on the classification, where
+  # `R-EDM-REQ-C073` alone narrows itself to `sdg:Agent[…sdg:Classification='ER']`.
+  #
+  # Refused among the checks of `validate!`, so these refusals do go back: an
+  # error response names the requester alone — `ErrorResponseBuilder#requester_agent`
+  # writes a single `sdg:Agent`, and the `R-EDM-ERR-*` rules judge that one — so
+  # nothing of the agent refused here would travel in the message that refuses it.
+  #
+  # Selected by what they are not, the mirror of what `requester_agent` retains:
+  # a classification written ` ER ` therefore satisfies `C013`, which
+  # normalises, and breaks `C014`, which compares raw — as the Schematron does.
+  def require_conformant_accompanying_agents
+    agents.reject { |agent| text_at(agent, './sdg:Classification') == EvidenceRequester::REQUESTER }
+      .each { |agent| require_conformant_agent(agent) }
   end
 end

@@ -11,6 +11,12 @@ class EvidenceRequester
   REQUESTER = 'ER'.freeze
   INTERMEDIARY_PLATFORM = 'IP'.freeze
 
+  # The `AgentClassification` code list deprived of `EP` and `ERRP`, which
+  # `R-EDM-REQ-C014` excludes from a request word for word — « The codes 'EP'
+  # and 'ERRP' shall not be used by this transaction » — leaving exactly the two
+  # above.
+  CLASSIFICATIONS = [REQUESTER, INTERMEDIARY_PLATFORM].freeze
+
   attribute :id, :string
   attribute :name, :string
   attribute :url, :string

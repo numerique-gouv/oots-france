@@ -389,6 +389,37 @@ fr:
       agent_country_unknown: >-
         Le pays de l'agent classé ER (« %{country} ») n'est pas un code de la liste
         CountryIdentificationCode.
+      # R-EDM-REQ-C013, C014, C011, C012, C092, C109, C108 et C015 sur les agents
+      # de la collection EvidenceRequester que le requêteur n'est pas — la
+      # plateforme intermédiaire du pays qui demande, en pratique. Ceux-là
+      # repartent en EDM:ERR:0003 : une réponse d'erreur ne nomme que le
+      # requêteur, donc rien de l'agent refusé ne voyagerait dans le message qui
+      # le refuse. Le français dit « l'agent qui accompagne le requêteur » tant
+      # que C014 n'a pas tranché, « la plateforme intermédiaire » ensuite.
+      platform_without_classification: >-
+        L'agent qui accompagne le requêteur ne porte pas de classification.
+      platform_classification_unexpected: >-
+        L'agent qui accompagne le requêteur est classé « %{classification} », et non ER ou IP.
+      platform_without_identifier: La plateforme intermédiaire est sans identifiant.
+      platform_without_scheme: >-
+        L'identifiant de la plateforme intermédiaire ne porte pas d'attribut « schemeID ».
+      platform_scheme_unknown: >-
+        Le schéma d'identifiant de la plateforme intermédiaire (« %{scheme} ») n'est ni un code de
+        la liste EAS, ni un code pays d'OOTS.
+      platform_id_too_long: >-
+        L'identifiant de la plateforme intermédiaire fait %{length} caractères, au-delà des
+        %{maximum} admis.
+      platform_without_name: La plateforme intermédiaire est sans nom.
+      platform_name_too_short: >-
+        Le nom de la plateforme intermédiaire (« %{name} ») fait moins de deux caractères.
+      platform_without_language: >-
+        Un nom de la plateforme intermédiaire ne porte pas d'attribut « lang ».
+      platform_language_unknown: >-
+        La langue d'un nom de la plateforme intermédiaire (« %{language} ») n'est pas un code de la
+        liste LanguageCode.
+      platform_country_unknown: >-
+        Le pays de la plateforme intermédiaire (« %{country} ») n'est pas un code de la liste
+        CountryIdentificationCode.
       # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
       # en porte un.
       beneficiary_identifier_without_scheme: >-
