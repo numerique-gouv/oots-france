@@ -114,6 +114,14 @@ ignore_unused:
   - parsers.evidence_request.{provider_id_too_long,provider_without_name}
   - parsers.evidence_request.{provider_without_language,provider_language_unknown}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
+  # The rules the `Requirements` slot puts in play, `validate!` naming them too.
+  # The last four are composed from the wording being judged — a requirement's
+  # name and its description break the same two assertions under four different
+  # identifiers — where `unnamed_requirement_id` is named literally and is
+  # therefore not here.
+  - parsers.evidence_request.{element_without_requirement,requirement_id_unexpected}
+  - parsers.evidence_request.{requirement_name_without_language,requirement_name_language_unknown}
+  - parsers.evidence_request.{requirement_description_without_language,requirement_description_language_unknown}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

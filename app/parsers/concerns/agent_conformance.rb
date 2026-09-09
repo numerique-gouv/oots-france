@@ -4,6 +4,12 @@
 # does, is therefore not here — so the same reading serves the agent classified
 # `ER`, the ones beside it, and the provider the request designates.
 #
+# One reader here judges no agent: `require_language`, which holds any element
+# the chapter obliges to name its language. Four pairs of rules make that one
+# pair of assertions — over the requester's collection, over the provider, and
+# over the name and the description of a requirement — so it is written once
+# and reads its identifiers from `RULES`, like the agent readers beside it.
+#
 # Each reading takes a `wording` naming the agent it judges, which it cannot
 # know itself: one rule refuses the requester, the platform beside it and the
 # provider in three different French sentences, and `RULES` says under which
@@ -73,6 +79,13 @@ module AgentConformance
       identifier_required: PROVIDER_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C017',
       name_required: PROVIDER_NAME_REQUIRED,
     }.freeze,
+    # These two judge no agent at all: `C010`/`C009` and `C094`/`C093` hold the
+    # name and the description of a `Requirements` exigence to naming their
+    # language, which is that same pair of assertions a third and a fourth
+    # time. They are here because the reader is, and splitting the table would
+    # split it by subject rather than by what it does.
+    requirement_name: { language: 'R-EDM-REQ-C010', language_code: 'R-EDM-REQ-C009' }.freeze,
+    requirement_description: { language: 'R-EDM-REQ-C094', language_code: 'R-EDM-REQ-C093' }.freeze,
   }.freeze
 
   private
@@ -108,9 +121,12 @@ module AgentConformance
   # `.=$code` carrying no `i` flag and the list publishing upper case:
   # `lang="fr"` breaks it where `lang="FR"` does not, and so does ` FR `, which
   # the first rule accepts.
-  def agent_language(name, wording)
+  # Named for what it reads and not for who carries it: four pairs of rules make
+  # this one pair of assertions, and two of them judge a requirement's wordings,
+  # which are not agents.
+  def require_language(node, wording)
     rules = RULES.fetch(wording)
-    language = attribute(name, 'lang')
+    language = attribute(node, 'lang')
     refuse(rules.fetch(:language), "parsers.evidence_request.#{wording}_without_language") if language.to_s.squish.empty?
     return language if LanguageCode.valid?(language)
 
@@ -170,7 +186,7 @@ module AgentConformance
   def require_agent_names(agent)
     agent_names(agent, :platform).each do |name|
       agent_name(name, :platform)
-      agent_language(name, :platform)
+      require_language(name, :platform)
     end
   end
 
@@ -200,6 +216,6 @@ module AgentConformance
   # `docs/reste_à_faire.md` records that partiality rather than this reader
   # silently standing for it.
   def require_provider_names(agent)
-    agent_names(agent, :provider).each { |name| agent_language(name, :provider) }
+    agent_names(agent, :provider).each { |name| require_language(name, :provider) }
   end
 end

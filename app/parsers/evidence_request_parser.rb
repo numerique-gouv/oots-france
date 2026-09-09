@@ -8,6 +8,7 @@
 class EvidenceRequestParser
   include SlotReading
   include AgentConformance
+  include RequirementConformance
 
   # The slots chapter 4.6 counts, each under the rule that counts it. `= 1` is
   # what the readers below cannot say: they fetch the slot they need and refuse
@@ -17,6 +18,7 @@ class EvidenceRequestParser
     'PossibilityForPreview' => 'R-EDM-REQ-S009',
     'ExplicitRequestGiven' => 'R-EDM-REQ-S010',
     'EvidenceProvider' => 'R-EDM-REQ-S013',
+    'Requirements' => 'R-EDM-REQ-S011',
   }.freeze
 
   # `R-EDM-REQ-S004`, copied from the Schematron rather than tightened: the rule
@@ -53,6 +55,7 @@ class EvidenceRequestParser
     require_conformant_accompanying_agents
     require_conformant_provider(provider_agent)
     require_beneficiary_identifier_scheme
+    require_conformant_requirements
 
     self
   end
@@ -368,7 +371,7 @@ class EvidenceRequestParser
     EvidenceRequester.new(
       id:, type_id: scheme,
       name: agent_name(name, :agent),
-      language: agent_language(name, :agent),
+      language: require_language(name, :agent),
       # Read rather than defaulted: `Address` says `FR`, which is exactly the
       # wrong answer about a foreign requester.
       address: Address.new(country: agent_country(agent)),

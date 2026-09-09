@@ -21,6 +21,13 @@ class Requirement
   # R-EDM-REQ-C008: a Semantic Repository URL ending in a UUID, the optional
   # midfix naming the environment — `sr.acc` on acceptance, `sr` in production.
   # Lower-case hexadecimal, that rule carrying no `i` flag.
+  #
+  # Every dot escaped, which the rule's own assertion does not do outside its
+  # optional group — so this is stricter than what a received requirement may
+  # be held to, deliberately. `RequirementConformance::REQUIREMENT_IDENTIFIER`
+  # is the reception side and copies the assertion as written; tightening it to
+  # this one would refuse what a FATAL rule admits. Strict on what France
+  # emits, literal on what it accepts.
   IDENTIFIER = %r{\Ahttps://sr(\.[a-zA-Z]+)?\.oots\.tech\.ec\.europa\.eu/requirements/
                   [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z}x
 
