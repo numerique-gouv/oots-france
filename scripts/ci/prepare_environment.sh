@@ -182,6 +182,7 @@ DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://w
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
+URL_FAUX_FRANCE_CONNECT=http://localhost:3100/api/v2
 
 CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
 DELAI_MAX_SERVICES_COMMUNS=10000
