@@ -442,7 +442,7 @@ RSpec.describe EvidenceRequestParser do
 
         expect { nameless.requester }.to raise_error(
           an_instance_of(UnreadableMessageError)
-            .and(having_attributes(detail: EvidenceRequestParser::AGENT_NAME_REQUIRED)),
+            .and(having_attributes(detail: AgentConformance::AGENT_NAME_REQUIRED)),
         )
       end
 
@@ -720,6 +720,206 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # Chapter 4.6 again, on the agents of the `EvidenceRequester` collection the
+  # requester is not — the intermediary platform of the country that asks. Eight
+  # FATAL rules judge them, no context naming a classification, and these
+  # refusals do go back: an error response names the requester alone.
+  describe 'the agents beside the requester' do
+    it 'accepts the platform the real request carries' do
+      expect(request.validate!).to be(request)
+    end
+
+    describe 'its classification' do
+      # `R-EDM-REQ-C013` normalises before asking that it not be empty, so an
+      # absent element and a blank one break it alike.
+      it 'refuses an agent carrying none, under R-EDM-REQ-C013' do
+        expect { with_platform_classification(nil).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C013')))
+      end
+
+      it 'refuses one written blank, the rule normalising it' do
+        expect { with_platform_classification('   ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C013')))
+      end
+
+      # `C014` compares to the `AgentClassification` list deprived of `EP` and
+      # `ERRP`, which its own message forbids this transaction.
+      it 'refuses EP, which the code list publishes and the rule excludes' do
+        expect { with_platform_classification('EP').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C014')))
+      end
+
+      it 'refuses ERRP, excluded by the same clause' do
+        expect { with_platform_classification('ERRP').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C014')))
+      end
+
+      # `C013` normalises and `C014` does not: the two are told apart by a value
+      # the first accepts and the second refuses.
+      it 'refuses a padded IP, C013 normalising where C014 compares raw' do
+        expect { with_platform_classification(' IP ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C014')))
+      end
+    end
+
+    describe 'its identifier' do
+      # `C011` asserts the attribute's presence and nothing more.
+      it 'refuses one naming no scheme, under R-EDM-REQ-C011' do
+        expect { with_platform_scheme(nil).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C011')))
+      end
+
+      # Present and empty satisfies `C011` and falls to `C012`, which compares
+      # the value — the shape `C041` and `C042` take on the beneficiary.
+      it 'refuses an empty scheme under R-EDM-REQ-C012, not C011' do
+        expect { with_platform_scheme('').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      it 'refuses a scheme naming no published EAS code, under R-EDM-REQ-C012' do
+        expect { with_platform_scheme("#{IdentifierScheme::EAS_PREFIX}9999").validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      # The rule counts on the identifier, its context, and not on the scheme
+      # its prose names.
+      it 'refuses an identifier of 256 characters, under R-EDM-REQ-C012' do
+        expect { with_platform_id('X' * AgentConformance::MAXIMUM_IDENTIFIER_LENGTH).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      # The rule reads `string-length(.) < 256`, so 255 passes where 256 does
+      # not: both halves of the boundary, as the requester's own specs carry.
+      it 'accepts an identifier of 255 characters' do
+        expect(with_platform_id('X' * (AgentConformance::MAXIMUM_IDENTIFIER_LENGTH - 1)).validate!).to be_truthy
+      end
+
+      it 'accepts the literal oots scheme the rule admits for testing' do
+        expect(with_platform_scheme("#{IdentifierScheme::UNREGISTERED_PREFIX}oots").validate!).to be_truthy
+      end
+
+      # No assertion carries this absence, both contexts being the element
+      # itself; `AgentType` requires it, so the refusal names the chapter.
+      it 'refuses an agent carrying no identifier at all' do
+        expect { without_platform_identifier.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: AgentConformance::AGENT_IDENTIFIER_REQUIRED)))
+      end
+    end
+
+    describe 'its name' do
+      it 'refuses one of a single character, under R-EDM-REQ-C092' do
+        expect { with_platform_name('A').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C092')))
+      end
+
+      it 'refuses an agent carrying no name at all' do
+        expect { without_platform_name.validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: AgentConformance::AGENT_NAME_REQUIRED)))
+      end
+
+      it 'refuses a name without a lang attribute, under R-EDM-REQ-C109' do
+        expect { with_platform_language(nil).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C109')))
+      end
+
+      # `C108` compares to the code list, which publishes upper case, and its
+      # assertion carries no `i` flag.
+      it 'refuses a lang in lower case, under R-EDM-REQ-C108' do
+        expect { with_platform_language('en').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # The value that separates the two rules: `C109` normalises, so a padded
+      # attribute satisfies it, and `C108` compares raw, so it does not.
+      it 'refuses a padded lang under R-EDM-REQ-C108, C109 normalising it' do
+        expect { with_platform_language(' FR ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # `AgentType` makes `sdg:Name` `1..n`, and the contexts of `C092`, `C109`
+      # and `C108` are the name element and its attribute: a reader judging the
+      # first alone would serve a request three FATAL rules refuse.
+      it 'refuses a second name the first one made look conformant' do
+        expect { with_second_platform_name('<sdg:Name lang="FR">A</sdg:Name>').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C092')))
+      end
+
+      it 'refuses a second name whose lang is unpublished' do
+        expect { with_second_platform_name('<sdg:Name lang="en">Plateforme</sdg:Name>').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+    end
+
+    describe 'its address' do
+      # `C073` is what requires an address, and it narrows itself to the agent
+      # classified `ER`. The platform of the real request carries none, which
+      # the example opening this block already serves; one carrying an address
+      # that names no country breaks nothing either, `C015`'s context being the
+      # `sdg:AdminUnitLevel1` that is not there.
+      it 'accepts an address naming no country' do
+        expect(with_platform_address('<sdg:Address/>').validate!).to be_truthy
+      end
+
+      it 'accepts a country the code list publishes' do
+        expect(with_platform_country('DE').validate!).to be_truthy
+      end
+
+      it 'refuses one it does not, under R-EDM-REQ-C015' do
+        expect { with_platform_country('ZZ').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
+      end
+
+      # The rule compares exactly, its assertion being an `=` with no `i` flag.
+      it 'refuses a country written in lower case' do
+        expect { with_platform_country('de').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
+      end
+    end
+
+    # The walk judges each of the agents the requester is not: the real request
+    # carries a single one, so a third is added to tell `each` from `find`.
+    describe 'a third agent in the collection' do
+      let(:conformant) do
+        <<~XML
+          <sdg:Agent>
+            <sdg:Identifier schemeID="#{IdentifierScheme::UNREGISTERED_PREFIX}oots">AUTRE</sdg:Identifier>
+            <sdg:Name lang="EN">Another platform</sdg:Name>
+            <sdg:Classification>IP</sdg:Classification>
+          </sdg:Agent>
+        XML
+      end
+
+      it 'accepts one the rules admit' do
+        expect(with_third_agent(conformant).validate!).to be_truthy
+      end
+
+      it 'refuses one the two before it made look conformant' do
+        expect { with_third_agent(conformant.sub('lang="EN"', 'lang="en"')).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+    end
+
+    # The traversal selects the agents the requester is not, so what OOTS-190
+    # left silent on the `ER` stays silent: `validate!` says nothing of its
+    # scheme, its name or the language of that name, which an error response
+    # would have to copy back.
+    describe 'what it leaves to the requester' do
+      it 'says nothing of a requesting agent whose name breaks C092' do
+        expect(with_requester_name('A').validate!).to be_truthy
+      end
+
+      it 'says nothing of a requesting agent whose lang breaks C108' do
+        expect(with_requester_language('en').validate!).to be_truthy
+      end
+
+      it 'says nothing of a requesting agent whose scheme breaks C012' do
+        expect(with_requester_scheme("#{IdentifierScheme::EAS_PREFIX}9999").validate!).to be_truthy
+      end
+    end
+  end
+
   # The body travels base64-encoded inside the envelope, so a fixture cannot be
   # edited in place: it has to be decoded, altered, and encoded back. Editing
   # the envelope string directly changes nothing at all — silently.
@@ -745,21 +945,11 @@ RSpec.describe EvidenceRequestParser do
     with_requester_agent { |agent| agent.sub(/schemeID="[^"]*"/, %(schemeID="#{scheme}")) }
   end
 
-  def with_requester_id(id)
-    with_requester_agent { |agent| agent.sub(/(<sdg:Identifier[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{id}" } }
-  end
+  def with_requester_id(id) = with_requester_agent { |agent| replace_id(agent, id) }
 
-  def with_requester_name(name)
-    with_requester_agent { |agent| agent.sub(/(<sdg:Name[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{name}" } }
-  end
+  def with_requester_name(name) = with_requester_agent { |agent| replace_name(agent, name) }
 
-  # `nil` removes the attribute rather than emptying it: the rule normalises,
-  # so the two must be told apart by what is written and not by what is read.
-  def with_requester_language(value)
-    with_requester_agent do |agent|
-      agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
-    end
-  end
+  def with_requester_language(value) = with_requester_agent { |agent| replace_language(agent, value) }
 
   def with_requester_country(code)
     with_requester_agent do |agent|
@@ -775,5 +965,80 @@ RSpec.describe EvidenceRequestParser do
     identifier = yield(identifier) if block_given?
 
     with_body { |body| body.sub('</sdg:LevelOfAssurance>', "</sdg:LevelOfAssurance>#{identifier}") }
+  end
+
+  # The agent beside the requester alone, `Fixtures::PLATFORM_AGENT` saying why.
+  def with_platform_agent(&) = envelope_with_platform_agent(&).body
+
+  # `nil` removes the element rather than emptying it: `R-EDM-REQ-C013`
+  # normalises, so the two must be told apart by what is written.
+  def with_platform_classification(value)
+    with_platform_agent do |agent|
+      agent.sub(%r{<sdg:Classification>[^<]*</sdg:Classification>},
+        value.nil? ? '' : "<sdg:Classification>#{value}</sdg:Classification>")
+    end
+  end
+
+  # `nil` removes the attribute, where an empty string writes it blank:
+  # `R-EDM-REQ-C011` asserts its presence and `C012` judges its value.
+  def with_platform_scheme(scheme)
+    with_platform_agent { |agent| agent.sub(/ schemeID="[^"]*"/, scheme.nil? ? '' : %( schemeID="#{scheme}")) }
+  end
+
+  def with_platform_id(id) = with_platform_agent { |agent| replace_id(agent, id) }
+
+  def without_platform_identifier
+    with_platform_agent { |agent| agent.sub(%r{<sdg:Identifier[^>]*>[^<]*</sdg:Identifier>}, '') }
+  end
+
+  def with_platform_name(name) = with_platform_agent { |agent| replace_name(agent, name) }
+
+  def without_platform_name
+    with_platform_agent { |agent| agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}, '') }
+  end
+
+  def with_second_platform_name(second)
+    with_platform_agent do |agent|
+      agent.sub(%r{<sdg:Name[^>]*>[^<]*</sdg:Name>}) { |first| "#{first}#{second}" }
+    end
+  end
+
+  def with_platform_language(value) = with_platform_agent { |agent| replace_language(agent, value) }
+
+  # The platform of the real request declares no address, `R-EDM-REQ-C073`
+  # requiring one of the agent classified `ER` alone: this one is added where
+  # `AgentType` puts it, between the name and the classification.
+  def with_platform_address(address)
+    with_platform_agent do |agent|
+      agent.sub(%r{(<sdg:Name[^>]*>[^<]*</sdg:Name>)}) { "#{Regexp.last_match(1)}#{address}" }
+    end
+  end
+
+  def with_platform_country(code)
+    with_platform_address("<sdg:Address><sdg:AdminUnitLevel1>#{code}</sdg:AdminUnitLevel1></sdg:Address>")
+  end
+
+  # A third agent in the collection, beside the two the real request carries:
+  # what proves the walk judges each of the agents the requester is not, and
+  # not the first of them.
+  def with_third_agent(agent)
+    with_body do |body|
+      body.sub(%r{(<rim:Slot name="EvidenceRequester">.*?)(</rim:SlotValue>)}m) do
+        "#{Regexp.last_match(1)}<rim:Element xsi:type=\"rim:AnyValueType\">#{agent}</rim:Element>#{Regexp.last_match(2)}"
+      end
+    end
+  end
+
+  # The three substitutions both agents take, written once: only the agent they
+  # are applied to differs.
+  def replace_id(agent, id) = agent.sub(/(<sdg:Identifier[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{id}" }
+
+  def replace_name(agent, name) = agent.sub(/(<sdg:Name[^>]*>)[^<]*/) { "#{Regexp.last_match(1)}#{name}" }
+
+  # `nil` removes the attribute rather than emptying it: `R-EDM-REQ-C109`
+  # normalises, so the two must be told apart by what is written and not by
+  # what is read.
+  def replace_language(agent, value)
+    agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
   end
 end

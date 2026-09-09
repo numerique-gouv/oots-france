@@ -82,6 +82,14 @@ module Fixtures
   # that agent alone, so nothing a spec writes can reach the platform beside it.
   def envelope_with_requester_agent(&) = envelope_with_body('requete') { |body| body.sub(REQUESTER_AGENT, &) }
 
+  # Its counterpart: the agent that accompanies the requester in the same
+  # collection, classified `IP` in the three requests the suite plays. The same
+  # FATAL rules of chapter 4.6 judge it — none of their contexts naming a
+  # classification — and France copies none of it into what it signs.
+  PLATFORM_AGENT = %r{<sdg:Agent>(?:(?!</sdg:Agent>).)*<sdg:Classification>IP</sdg:Classification>\s*</sdg:Agent>}m
+
+  def envelope_with_platform_agent(&) = envelope_with_body('requete') { |body| body.sub(PLATFORM_AGENT, &) }
+
   # The request the real envelope carries, about an organisation instead of the
   # person it names. `R-EDM-REQ-S016` admits one evidence subject and never two,
   # so the `NaturalPerson` slot gives way rather than being joined.

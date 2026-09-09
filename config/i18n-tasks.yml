@@ -97,6 +97,16 @@ ignore_unused:
   - parsers.evidence_request.{agent_without_language,agent_language_unknown}
   # And the ones `validate!` names, which do go back in an `EDM:ERR:0003`.
   - parsers.evidence_request.{agent_without_country,agent_country_unknown}
+  # The same rules borne by the agents of the collection the requester is not,
+  # which `validate!` names too. Invisible to the scanner for the reason the
+  # entries above are — they reach `refuse` and never `t()` — and the six the
+  # two agents share are composed from the agent being judged besides.
+  - parsers.evidence_request.{platform_without_classification,platform_classification_unexpected}
+  - parsers.evidence_request.{platform_without_identifier,platform_without_scheme}
+  - parsers.evidence_request.{platform_scheme_unknown,platform_id_too_long}
+  - parsers.evidence_request.{platform_without_name,platform_name_too_short}
+  - parsers.evidence_request.{platform_without_language,platform_language_unknown}
+  - parsers.evidence_request.platform_country_unknown
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
