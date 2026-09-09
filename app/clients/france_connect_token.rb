@@ -25,9 +25,9 @@ class FranceConnectToken
   end
 
   # The signed JWT the envelope holds, which is also what `/session/end` wants
-  # as `id_token_hint` — « afin que FranceConnect+ puisse retrouver la
-  # session ». Kept apart from `claims` so that the ID Token is opened once and
-  # the hint costs no second decryption.
+  # as `id_token_hint` — « pour que FranceConnect+ puisse retrouver la session
+  # concernée ». Kept apart from `claims` so that the ID Token is opened once
+  # and the hint costs no second decryption.
   def signed(sealed)
     header = JSON.parse(JWE::Base64.jwe_decode(sealed.to_s.split('.').first.to_s))
     reject_unless_expected(header)
@@ -38,8 +38,11 @@ class FranceConnectToken
     raise FranceConnectError, I18n.t('clients.france_connect_token.unreadable', error: e.message)
   end
 
+  # The fixed values come **last**: a `**hash` splatted after explicit keywords
+  # overrides them, so writing them first would let a caller name the algorithm
+  # used to verify a token — the very confusion `SIGNATURE` exists to prevent.
   def claims(signed_token, **verification)
-    payload, = JWT.decode(signed_token, nil, true, algorithms: SIGNATURE, jwks: key_set, **verification)
+    payload, = JWT.decode(signed_token, nil, true, **verification, algorithms: SIGNATURE, jwks: key_set)
 
     payload
   rescue JWT::DecodeError => e

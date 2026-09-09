@@ -322,6 +322,9 @@ fr:
     france_connect_client:
       foreign_issuer: "Le document de découverte annonce l'issuer « %{announced} », et non %{expected}."
       foreign_endpoint: "FranceConnect+ publierait %{name} sur « %{url} », hors de %{expected} : appel refusé."
+      missing_endpoint: "Le document de découverte de FranceConnect+ ne publie aucun %{name}."
+      unreadable_grant: "Réponse illisible de /token : %{error}"
+      incomplete_grant: "La réponse de /token ne porte pas %{names}."
     # Ce que FranceConnect+ scelle pour la démarche : l'ID Token et la réponse
     # UserInfo, signés puis chiffrés. Les trois refus disent lequel des deux
     # sceaux a cédé.
@@ -685,6 +688,10 @@ fr:
     # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
     # a cédé sans qu'il ait à ouvrir les logs.
     demo:
+      # Écrit dans les logs et jamais à l'écran : l'exploitant est déconnecté
+      # quoi qu'il arrive, et FranceConnect+ ferme sa propre session d'elle-même.
+      end_identification:
+        unreachable: "Fin de session FranceConnect+ impossible, l'exploitant est déconnecté malgré tout : %{error}"
       start_identification:
         undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
       complete_identification:
@@ -954,9 +961,6 @@ fr:
       refused: Adresse ou mot de passe incorrect.
       signed_out: Vous êtes déconnecté.
       connection_required: Cette page demande une connexion.
-      # Écrit dans les logs, jamais à l'écran : l'exploitant est déconnecté quoi
-      # qu'il arrive, et FranceConnect+ ferme sa propre session d'elle-même.
-      france_connect_unreachable: "Fin de session FranceConnect+ impossible, l'exploitant est déconnecté malgré tout : %{error}"
       new:
         title: Connexion à l’espace d’administration
         heading: Connexion

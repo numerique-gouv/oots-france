@@ -18,9 +18,9 @@ module Demo
     include EidasIdentified
 
     # `amr` contains `eidas` for an identity of another Member State, `fc` for a
-    # French pivot identity. Only the first has a button, so only the first is
-    # named — chapter 2.1 §2.3.1.2 and the project carry what a French user
-    # would mean here.
+    # French pivot identity — the portal's own vocabulary, which no chapter
+    # names. Only the first has a button, so only the first is named here; what
+    # a French user would mean for the request belongs to the project.
     EUROPEAN = 'eidas'.freeze
 
     attribute :given_name, :string
@@ -42,8 +42,8 @@ module Demo
     validates :level_of_assurance,
       inclusion: { in: NaturalPerson::LEVELS_OF_ASSURANCE, admitted: NaturalPerson::LEVELS_OF_ASSURANCE.join(', ') },
       allow_blank: true
-    # `YYYY-MM-DD`, the format chapter 2.1 §2.2 imposes on `sdg:DateOfBirth` and
-    # the one FranceConnect+ publishes `birthdate` in.
+    # `YYYY-MM-DD`, which `R-EDM-REQ-C043` (FATAL) imposes on `sdg:DateOfBirth`
+    # and which is the form FranceConnect+ publishes `birthdate` in.
     validates :birthdate, format: { with: /\A\d{4}-\d{2}-\d{2}\z/, message: :format }, allow_blank: true
     # Held in the portal's own lower case, which is what `BeneficiaryToken`
     # translates at the other end and refuses outside of: a value the requester

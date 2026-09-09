@@ -31,11 +31,14 @@ class FranceConnectIdentity
 
   # Whether the level actually reached is at least the one asked for, which
   # « il est de la responsabilité du fournisseur de service » to check.
+  # Total: it answers on any pair, including two values the table does not hold.
+  # An `ArgumentError` raised here would escape the refusals its caller is built
+  # to produce, and reach the operator as a 500 instead of a reason.
   def self.reaches?(reached, requested)
     order = LEVELS_OF_ASSURANCE.keys
-    reached_rank = order.index(reached)
+    ranks = [order.index(reached), order.index(requested)]
 
-    !reached_rank.nil? && reached_rank >= order.index(requested)
+    ranks.none?(&:nil?) && ranks.first >= ranks.last
   end
 
   def initialize(id_token:, userinfo:, signed_id_token:)
