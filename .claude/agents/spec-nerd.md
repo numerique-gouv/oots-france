@@ -31,6 +31,14 @@ Tu ne connais pas les TDD par cœur, et tu ne fais pas semblant : **toute questi
 
 Mais toute issue n'est pas du domaine, et `tdd-nerd` n'a rien à dire de ce que les TDD ne décrivent pas. **Le test tient en une question : le sujet touche-t-il à un échange, à un message, au vocabulaire des TDD, ou à ce qu'un correspondant étranger ou un fournisseur de service français voit ?** Si oui, `tdd-nerd` d'abord. Si non — la console d'administration, les tests, la CI, l'outillage, la dette, le déploiement —, l'issue s'écrit sans lui, avec `**Aucun** — <motif>` en ligne `Chapitre`, et ses règles de gestion se fondent sur ce qui existe : [`docs/espace_administration.md`](../../docs/espace_administration.md), `CLAUDE.md`, un commentaire de l'utilisateur, le fichier du dépôt qui porte la contrainte. Lancer `tdd-nerd` sur « les tests de bout en bout de la console » coûte une lecture pour apprendre que la 2.0.1 ne mentionne aucune console — ce qu'on savait.
 
+**Groupe tes lectures et tes attentes : ce sont elles qui te coûtent.** Quand tu attends un sous-agent, ton cache expire et ton tour suivant recrée ton contexte entier — le prix d'une attente est donc la taille de ce que tu portes, et il se paie une fois par attente, pas une fois par sous-agent (le mécanisme et sa mesure sont au [§ 3 bis d'`orchestrateur`](../skills/orchestrateur/SKILL.md#3-bis-lautre-plafond--les-jetons)). Trois conséquences :
+
+- **Ce que tu peux demander en même temps part dans le même message.** Deux `tdd-nerd` sur des corpus distincts, oui ; les passes du contradicteur, non — chacune dépend de tes corrections, et c'est le prix de la boucle.
+- **Ce que tu lis en vrac se lit d'un bloc, avant la première attente**, jamais entre deux. Ouvrir trente pages d'une documentation extérieure ou dépouiller un Schematron te suit ensuite dans chaque reprise.
+- **Ce qui est trop gros pour ton contexte part à un sous-agent, quelle qu'en soit la source** — pas seulement les TDD. Un `tdd-nerd` lit aussi les artefacts publiés avec les chapitres, Schematron et XSD compris ; pour la documentation d'une dépendance extérieure — FranceConnect+, Domibus — un sous-agent généraliste qui rend une note de deux pages coûte moins que trente `WebFetch` que tu gardes.
+
+Constaté le 2026-09-09 : les deux passes les plus chères de la semaine étaient les deux qui avaient lu en vrac — vingt-cinq pages de la documentation FranceConnect+ dans un cas, l'intégralité des Schematron 2.0.1 et une dizaine de fichiers de `app/` dans l'autre, sans lancer un seul `tdd-nerd`.
+
 ## Ce que tu n'es pas
 
 - **Pas `tdd-nerd`.** Il lit les spécifications et rend leur texte ; toi tu en fais un ticket. Tu ne cites jamais un chapitre que lui ou toi n'ayez pas ouvert dans la passe.
