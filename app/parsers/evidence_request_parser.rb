@@ -9,13 +9,14 @@ class EvidenceRequestParser
   include SlotReading
   include AgentConformance
 
-  # The slots chapter 4.6 makes mandatory that nothing else here would notice
-  # missing, each under the rule that requires it. `Procedure`, `Requirements`
-  # and the rest are demanded by the readers below, which raise on their own.
+  # The slots chapter 4.6 counts, each under the rule that counts it. `= 1` is
+  # what the readers below cannot say: they fetch the slot they need and refuse
+  # its absence naming no rule, where a second copy of it would go unseen.
   REQUIRED_SLOTS = {
     'SpecificationIdentifier' => 'R-EDM-REQ-S005',
     'PossibilityForPreview' => 'R-EDM-REQ-S009',
     'ExplicitRequestGiven' => 'R-EDM-REQ-S010',
+    'EvidenceProvider' => 'R-EDM-REQ-S013',
   }.freeze
 
   # `R-EDM-REQ-S004`, copied from the Schematron rather than tightened: the rule
@@ -50,6 +51,7 @@ class EvidenceRequestParser
     require_one_evidence_subject
     require_requester_country
     require_conformant_accompanying_agents
+    require_conformant_provider(provider_agent)
     require_beneficiary_identifier_scheme
 
     self
@@ -134,6 +136,22 @@ class EvidenceRequestParser
 
   def agents
     @agents ||= slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+  end
+
+  # `R-EDM-REQ-S042`: the slot value carries the agent itself, an `AnyValueType`
+  # where the `EvidenceRequester` slot is a collection of `rim:Element`. The
+  # first is taken when a request carries two — `S042` asserts one and `S043`
+  # counts the children of the agent, so no assertion refuses the second, and
+  # the `1..1` of chapter 4.5.1 §3.3 is prose alone.
+  #
+  # Read only once `REQUIRED_SLOTS` has counted the slot: `slot` refuses an
+  # absent one without naming a rule, and an `EDM:ERR:0003` whose `detail` is
+  # empty tells neither the correspondent nor the journal what was broken.
+  def provider_agent
+    agent = at(slot('EvidenceProvider', request), './rim:SlotValue/sdg:Agent')
+    refuse('R-EDM-REQ-S042', 'parsers.evidence_request.provider_without_agent') if agent.nil?
+
+    agent
   end
 
   def requester_agent

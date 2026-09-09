@@ -107,6 +107,12 @@ ignore_unused:
   - parsers.evidence_request.{platform_without_name,platform_name_too_short}
   - parsers.evidence_request.{platform_without_language,platform_language_unknown}
   - parsers.evidence_request.platform_country_unknown
+  # And the same rules on the agent the `EvidenceProvider` slot carries, under
+  # the identifiers that slot gives them.
+  - parsers.evidence_request.{provider_without_agent,provider_without_identifier}
+  - parsers.evidence_request.{provider_without_scheme,provider_scheme_unknown}
+  - parsers.evidence_request.{provider_id_too_long,provider_without_name}
+  - parsers.evidence_request.{provider_without_language,provider_language_unknown}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label

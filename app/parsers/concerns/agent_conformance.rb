@@ -2,11 +2,12 @@
 # the scheme that identifier names, its names and the language of each. None of
 # these rules narrows its context to a classification — `R-EDM-REQ-C073`, which
 # does, is therefore not here — so the same reading serves the agent classified
-# `ER` and the ones beside it.
+# `ER`, the ones beside it, and the provider the request designates.
 #
-# The three the two share take a `wording` naming the agent they judge, which
-# they cannot know themselves: one rule refuses the requester and the platform
-# beside it in two different French sentences. `require_conformant_agent` walks
+# Each reading takes a `wording` naming the agent it judges, which it cannot
+# know itself: one rule refuses the requester, the platform beside it and the
+# provider in three different French sentences, and `RULES` says under which
+# identifier that rule is published for each. `require_conformant_agent` walks
 # the agents the requester is not, which is where `C013`, `C014` and `C011` are
 # applied today — the requester's own reading being `EvidenceRequestParser#build_requester`,
 # which refuses without answering for what an error response would copy back.
@@ -39,21 +40,55 @@ module AgentConformance
   # therefore requires it.
   AGENT_IDENTIFIER_REQUIRED = 'TDD 4.5.1 §3.2: EvidenceRequester agent identifier required'.freeze
 
+  # The same two silences over the provider, and the same source filling them:
+  # §3.3 — « Evidence Provider slot and example » — makes `Agent` `1..1`,
+  # `Identifier` `1..1` and `Name` `1..n`, and `AgentType` carries the last two.
+  # The subsection is named rather than the chapter, an operator reading the
+  # journal having to be able to open it.
+  PROVIDER_NAME_REQUIRED = 'TDD 4.5.1 §3.3: EvidenceProvider agent name required'.freeze
+
+  PROVIDER_IDENTIFIER_REQUIRED = 'TDD 4.5.1 §3.3: EvidenceProvider agent identifier required'.freeze
+
+  # What the readers below refuse, under the identifier each rule is published
+  # by for the agent being judged. The slot fixes that identifier and never the
+  # classification: `C011`, `C012`, `C109` and `C108` judge every agent of the
+  # `EvidenceRequester` collection, and `C017`, `C018`, `C111` and `C110` are
+  # those four assertions again, written word for word the same over the
+  # provider's slot.
+  REQUESTER_COLLECTION_RULES = {
+    identifier: 'R-EDM-REQ-C012', language: 'R-EDM-REQ-C109', language_code: 'R-EDM-REQ-C108',
+  }.freeze
+
+  # The requester carries only those three. `EvidenceRequestParser#build_requester`
+  # reads its identifier and its names itself — refusing without naming a rule,
+  # since no answer could carry them — so the walk below never judges it, and
+  # `fetch` says so loudly should that ever change.
+  RULES = {
+    agent: REQUESTER_COLLECTION_RULES,
+    platform: REQUESTER_COLLECTION_RULES.merge(
+      identifier_required: AGENT_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C011', name_required: AGENT_NAME_REQUIRED,
+    ).freeze,
+    provider: {
+      identifier: 'R-EDM-REQ-C018', language: 'R-EDM-REQ-C111', language_code: 'R-EDM-REQ-C110',
+      identifier_required: PROVIDER_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C017',
+      name_required: PROVIDER_NAME_REQUIRED,
+    }.freeze,
+  }.freeze
+
   private
 
-  # `R-EDM-REQ-C012`, one assertion holding two things: the scheme is of one of
-  # the forms `IdentifierScheme.agent_scheme?` reads, and the identifier stays
-  # under 256 characters. Both refusals name the rule; the wording says which
-  # half broke, since the correspondent learns nothing else.
+  # `R-EDM-REQ-C012`, `C018` on the provider, one assertion holding two things
+  # either way: the scheme is of one of the forms `IdentifierScheme.agent_scheme?`
+  # reads, and the identifier stays under 256 characters. Both refusals name the
+  # rule; the wording says which half broke, since the correspondent learns
+  # nothing else.
   #
-  # `wording` names the agent being judged, which this reader cannot know: the
-  # same rule refuses the requester and the platform beside it in two different
-  # French sentences.
   def require_known_agent_scheme(scheme, id, wording)
-    refuse('R-EDM-REQ-C012', "parsers.evidence_request.#{wording}_scheme_unknown", scheme:) unless IdentifierScheme.agent_scheme?(scheme)
+    rule = RULES.fetch(wording).fetch(:identifier)
+    refuse(rule, "parsers.evidence_request.#{wording}_scheme_unknown", scheme:) unless IdentifierScheme.agent_scheme?(scheme)
     return if id.length < MAXIMUM_IDENTIFIER_LENGTH
 
-    refuse('R-EDM-REQ-C012', "parsers.evidence_request.#{wording}_id_too_long",
+    refuse(rule, "parsers.evidence_request.#{wording}_id_too_long",
       length: id.length, maximum: MAXIMUM_IDENTIFIER_LENGTH)
   end
 
@@ -67,17 +102,19 @@ module AgentConformance
     refuse('R-EDM-REQ-C092', "parsers.evidence_request.#{wording}_name_too_short", name: name.text)
   end
 
-  # `R-EDM-REQ-C109` asserts `not(normalize-space(@lang)='')`, so an attribute
-  # absent and one written blank break it alike. `R-EDM-REQ-C108` then compares
-  # the raw value to the code list, `.=$code` carrying no `i` flag and the list
-  # publishing upper case: `lang="fr"` breaks it where `lang="FR"` does not, and
-  # so does ` FR `, which the first rule accepts.
+  # `R-EDM-REQ-C109`, `C111` on the provider, asserts `not(normalize-space(@lang)='')`,
+  # so an attribute absent and one written blank break it alike. `R-EDM-REQ-C108`,
+  # `C110` on the provider, then compares the raw value to the code list,
+  # `.=$code` carrying no `i` flag and the list publishing upper case:
+  # `lang="fr"` breaks it where `lang="FR"` does not, and so does ` FR `, which
+  # the first rule accepts.
   def agent_language(name, wording)
+    rules = RULES.fetch(wording)
     language = attribute(name, 'lang')
-    refuse('R-EDM-REQ-C109', "parsers.evidence_request.#{wording}_without_language") if language.to_s.squish.empty?
+    refuse(rules.fetch(:language), "parsers.evidence_request.#{wording}_without_language") if language.to_s.squish.empty?
     return language if LanguageCode.valid?(language)
 
-    refuse('R-EDM-REQ-C108', "parsers.evidence_request.#{wording}_language_unknown", language:)
+    refuse(rules.fetch(:language_code), "parsers.evidence_request.#{wording}_language_unknown", language:)
   end
 
   # In this order because refusing on the first breach imposes one, and no rule
@@ -85,7 +122,7 @@ module AgentConformance
   # an intermediary platform, and the sentences that refuse it may say so.
   def require_conformant_agent(agent)
     require_agent_classification(agent)
-    require_agent_identifier(agent)
+    require_agent_identifier(agent, :platform)
     require_agent_names(agent)
     require_agent_country(agent)
   end
@@ -103,27 +140,35 @@ module AgentConformance
     refuse('R-EDM-REQ-C014', 'parsers.evidence_request.platform_classification_unexpected', classification:)
   end
 
-  # `R-EDM-REQ-C011` asserts the attribute's presence and nothing more, so one
-  # written empty satisfies it and falls to `C012`, which compares the value —
-  # the shape `C041` and `C042` take on the beneficiary's identifier.
-  def require_agent_identifier(agent)
+  # `R-EDM-REQ-C011`, `C017` over the provider's slot, asserts the attribute's
+  # presence and nothing more, so one written empty satisfies it and falls to
+  # `C012` — `C018` — which compares the value: the shape `C041` and `C042` take
+  # on the beneficiary's identifier.
+  def require_agent_identifier(agent, wording)
+    rules = RULES.fetch(wording)
     identifier = at(agent, './sdg:Identifier')
-    refuse(AGENT_IDENTIFIER_REQUIRED, 'parsers.evidence_request.platform_without_identifier') if identifier.nil?
+    refuse(rules.fetch(:identifier_required), "parsers.evidence_request.#{wording}_without_identifier") if identifier.nil?
 
     scheme = attribute(identifier, 'schemeID')
-    refuse('R-EDM-REQ-C011', 'parsers.evidence_request.platform_without_scheme') if scheme.nil?
+    refuse(rules.fetch(:scheme), "parsers.evidence_request.#{wording}_without_scheme") if scheme.nil?
 
-    require_known_agent_scheme(scheme, identifier.text, :platform)
+    require_known_agent_scheme(scheme, identifier.text, wording)
   end
 
   # Every `sdg:Name` the agent carries, and not the first alone: `AgentType`
-  # makes them `1..n`, and the contexts of `C092`, `C109` and `C108` are the
-  # name element and its attribute, so each name is judged on its own.
-  def require_agent_names(agent)
+  # makes them `1..n`, and the contexts of `C092`, `C109`/`C111` and
+  # `C108`/`C110` are the name element and its attribute, so each name is judged
+  # on its own. An agent carrying none breaks no assertion, all three contexts
+  # being the element or below, which is why that refusal names the chapter.
+  def agent_names(agent, wording)
     names = all(agent, './sdg:Name')
-    refuse(AGENT_NAME_REQUIRED, 'parsers.evidence_request.platform_without_name') if names.empty?
+    refuse(RULES.fetch(wording).fetch(:name_required), "parsers.evidence_request.#{wording}_without_name") if names.empty?
 
-    names.each do |name|
+    names
+  end
+
+  def require_agent_names(agent)
+    agent_names(agent, :platform).each do |name|
       agent_name(name, :platform)
       agent_language(name, :platform)
     end
@@ -140,5 +185,21 @@ module AgentConformance
 
       refuse('R-EDM-REQ-C015', 'parsers.evidence_request.platform_country_unknown', country:)
     end
+  end
+
+  # What the agent of the `EvidenceProvider` slot owes, and all of it: no
+  # classification, chapter 4.5.1 §3.3 asking for none, and no address, which is
+  # `R-EDM-REQ-C073`'s to require of the agent classified `ER` alone.
+  def require_conformant_provider(agent)
+    require_agent_identifier(agent, :provider)
+    require_provider_names(agent)
+  end
+
+  # `R-EDM-REQ-C092` is not applied to these names, where it is to the requesting
+  # collection's: its context carries no ancestor, so it does reach them, and
+  # `docs/reste_à_faire.md` records that partiality rather than this reader
+  # silently standing for it.
+  def require_provider_names(agent)
+    agent_names(agent, :provider).each { |name| agent_language(name, :provider) }
   end
 end

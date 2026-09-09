@@ -90,6 +90,17 @@ module Fixtures
 
   def envelope_with_platform_agent(&) = envelope_with_body('requete') { |body| body.sub(PLATFORM_AGENT, &) }
 
+  # The agent the `EvidenceProvider` slot carries — directly, that slot being an
+  # `AnyValueType` where the requester travels in a collection of `rim:Element`.
+  # What tells this agent from the two of the collection is where it sits and
+  # not what it holds, hence the slot in the pattern; `\K` then drops everything
+  # matched before the agent, so the block receives the agent alone, as the two
+  # above do.
+  PROVIDER_AGENT = %r{<rim:Slot name="EvidenceProvider">.*?\K<sdg:Agent>.*?</sdg:Agent>}m
+
+  # A real request whose designated provider has been altered.
+  def envelope_with_provider_agent(&) = envelope_with_body('requete') { |body| body.sub(PROVIDER_AGENT, &) }
+
   # The request the real envelope carries, about an organisation instead of the
   # person it names. `R-EDM-REQ-S016` admits one evidence subject and never two,
   # so the `NaturalPerson` slot gives way rather than being joined.
