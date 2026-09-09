@@ -66,6 +66,24 @@ C'est le schéma habituel des réseaux « quatre coins » à découverte central
 
 La comparaison ci-dessous oppose **1.2.5 à 2.0.1**, les deux têtes de ligne. Elle donne donc le delta *résiduel* — ce qu'il reste à écrire aujourd'hui pour passer de l'une à l'autre — et non le delta complet : comparer à 1.2.3 rallongerait la liste de tout ce que les correctifs 1.2.4 et 1.2.5 ont rétroporté. Les sources sont les changelogs [2.0.0](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/952470314) et [2.0.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932904), et un diff des artefacts publiés entre les étiquettes `1.2.5` et `2.0.1` du [dépôt des TDD](https://code.europa.eu/oots/tdd/tdd_chapters) — schémas, Schematron, listes de codes.
 
+### Ce que ça change pour une démarche
+
+Le détail qui suit est technique ; l'essentiel ne l'est pas. Vu du guichet, la 2.0 change six choses, et une seule est vraiment structurante.
+
+**Un justificatif cesse d'être un document seul.** C'est le changement de fond. En 1.2, une réponse porte des justificatifs côte à côte, sans rien dire de ce qui les relie ; un acte de naissance et sa traduction arrivent comme deux documents dont personne ne sait, à la lecture, qu'ils parlent de la même chose. La 2.0 introduit le *paquet* : un justificatif principal, et autour de lui ses **traductions**, ses **annexes** et sa **version lisible par un humain**, chacun explicitement rattaché à lui. Le guichet qui reçoit sait donc quoi montrer à l'agent, quoi archiver, et quoi ne pas prendre pour un second justificatif.
+
+**Le requêtant dit ce qu'il veut recevoir.** Corollaire du précédent : la requête énonce si elle veut les annexes, la traduction, la version lisible. Une administration qui n'a besoin que de l'acte n'a plus à recevoir ce qu'elle jettera.
+
+**On peut demander une langue, et ne pas l'obtenir n'est plus un échec.** La 1.2 posait la langue une fois pour toute la requête. La 2.0 la demande distribution par distribution, et tranche le cas d'échec dans le sens de l'usager : un fournisseur qui n'a pas la langue demandée peut renvoyer le justificatif **dans une autre langue**, et l'absence de cette langue « ne doit pas être traitée comme une condition d'erreur, ni conduire à une liste vide ». Une démarche ne s'arrête donc pas faute de traduction.
+
+**Quatre familles de démarches entrent dans le périmètre** : le permis de conduire, la location de courte durée, la réparation et la vente de biens reconditionnés, et la reconnaissance des qualifications professionnelles. C'est le seul point que la ligne 1.2 a rattrapé : ces démarches y sont déjà, la 2.0 ne les apporte pas.
+
+**Trouver le bon fournisseur repose sur les découpages du pays interrogé**, et non plus sur une grille administrative européenne. La 1.2 offrait deux voies concurrentes : des niveaux administratifs normalisés à l'échelle européenne, et les classifications que chaque État membre publie pour lui-même. La 2.0 supprime la première comme faisant double emploi, et ne garde que la seconde. La question posée à l'usager — « dans quelle commune êtes-vous né ? » — devient donc celle que son pays sait poser, dans ses propres termes.
+
+**L'identité pourra venir du portefeuille européen.** La 2.0 pose la correspondance entre les attributs d'identité d'OOTS et ceux du portefeuille (EUDI) d'eIDAS 2. Rien n'est utilisable en production tant qu'une base juridique n'est pas confirmée, et rien ne change pour un usager qui s'authentifie comme aujourd'hui : c'est une porte ouverte, pas un changement de parcours.
+
+Et ce qui, du point de vue d'une démarche, **ne change pas** : le parcours à quatre coins, les cas d'erreur renvoyés à l'usager, et la prévisualisation, qui reste le seul moment où un humain regarde un écran ; ce qui y change tient à la façon dont l'adresse de retour voyage, ce que l'usager ne voit pas.
+
 ### Les neuf ruptures
 
 1. **L'empaquetage des justificatifs, la plus coûteuse.** En 1.2, une réponse est une liste plate de `rim:RegistryObject`. En 2.0, le premier niveau doit être un `rim:RegistryPackageType` portant sa propre `rim:RegistryObjectList`, chaque objet étant classé (`MainEvidence`, `Annex`, `HumanReadableVersion`, `Translation`) et relié au justificatif principal par une association explicite. Vingt règles neuves dans [`EDM-RESP-S.sch`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-RESP-S.sch) — de 43 à 63 entre 1.2.5 et 2.0.1 — et **aucune supprimée**. Un gabarit de réponse écrit pour la 1.2 échoue dès la première d'entre elles. Le mécanisme n'invente rien : il n'emploie que des constructions ebXML RegRep 4.0 standard, décrites au [4.5.2 §2.6](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951).
