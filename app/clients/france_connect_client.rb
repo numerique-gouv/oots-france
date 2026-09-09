@@ -144,26 +144,35 @@ class FranceConnectClient
   def endpoint(name)
     published = URI.parse(discovery.fetch(name) { refuse_missing(name) }.to_s)
     origin = URI.parse(Settings.france_connect_issuer)
+    path = shape(name, published, origin)
+
+    under_issuer(name, published, origin, "#{Settings.france_connect_issuer}#{rebuilt(path)}")
+  end
+
+  # What the document publishes under the base, once the base is taken off it:
+  # refused here if it is not the origin this deployment was configured with, or
+  # if it is not made of plain segments.
+  def shape(name, published, origin)
     path = published.path.to_s.delete_prefix(origin.path.to_s)
-    refuse_foreign(name, published, origin) unless acceptable?(published, origin, path)
+    return path if same_origin?(published, origin) && SEGMENTS.match?(path)
 
-    "#{Settings.france_connect_issuer}#{rebuilt(path)}"
+    refuse_foreign(name, published, origin)
   end
 
-  def acceptable?(published, origin, path)
-    same_origin?(published, origin) && SEGMENTS.match?(path) && under_issuer?(origin, path)
-  end
-
-  # The address judged as it will be **called**, and not as it was written:
-  # `merge` applies the dot-segment removal of RFC 3986 §5.2, which is what an
-  # HTTP client does before opening the connection. Redundant with the lookahead
-  # of `SEGMENTS` on purpose — one of the two is an expression that can be got
-  # subtly wrong, the other asks the question the attacker actually asks.
+  # The last word, said of the address the call will actually receive and not of
+  # anything it was derived from: it must start with the base this deployment
+  # was configured with, and still start with it once the dot segments are
+  # removed — which is what an HTTP client does before opening the connection.
+  # Redundant with the lookahead of `SEGMENTS` on purpose: one of the two is an
+  # expression that can be got subtly wrong, the other asks the question the
+  # attacker actually asks.
   # https://datatracker.ietf.org/doc/html/rfc3986#section-5.2
-  def under_issuer?(origin, path)
-    root = origin.dup.tap { |address| address.path = '/' }
+  def under_issuer(name, published, origin, address)
+    base = Settings.france_connect_issuer
+    called = origin.dup.tap { |root| root.path = '/' }.merge(URI.parse(address).path).to_s
+    return address if address.start_with?(base) && called.start_with?(base)
 
-    root.merge("#{origin.path}#{path}").to_s.start_with?(Settings.france_connect_issuer)
+    refuse_foreign(name, published, origin)
   end
 
   # `fetch` without a default on purpose: `SEGMENTS` has already refused
