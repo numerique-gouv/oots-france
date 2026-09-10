@@ -1,0 +1,36 @@
+<% content_for :title, t('admin.demo.confirmations.create.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
+              [t('admin.demo.confirmations.create.title'), nil]],
+    ) %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= t('admin.demo.confirmations.create.title') %></h1>
+
+<% if @failure %>
+  <%# Every one of these is refused before an exchange exists: the contract
+      answers a status and a sentence, and neither the gateway nor the
+      correspondent has been told anything. The title says which refusal it was,
+      the body carries what the contract returned — `EB:ERR:0001` is in there,
+      never in the status. %>
+  <%= render 'admin/demo/echec', type: :error, failure: @failure %>
+
+  <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.create.nothing_opened') %></p>
+<% else %>
+  <%= dsfr_alert(type: :success, title: t('admin.demo.confirmations.create.opened')) do %>
+    <%= t('admin.demo.confirmations.create.opened_body') %>
+  <% end %>
+
+  <%# Shown because the demonstration is read by the operator: it is on these two
+      that the exchange is found again in the log. %>
+  <%= render 'admin/demo/attributs',
+        caption: t('admin.demo.confirmations.create.caption'),
+        rows: [
+          [t('admin.demo.confirmations.create.exchange'), @exchange_id],
+          [t('admin.demo.confirmations.create.conversation'), @conversation_id],
+        ] %>
+<% end %>
+
+<%= link_to t('admin.demo.confirmations.create.back'), admin_demo_demande_path, class: 'fr-btn fr-btn--secondary' %>

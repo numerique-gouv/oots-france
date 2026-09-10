@@ -11,8 +11,10 @@ module Settings
     IDENTIFIANT_FOURNISSEUR_FRANCAIS
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
+    IDENTIFIANT_REQUETEUR_DEMARCHE
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
+    CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
     URL_FRANCE_CONNECT
     IDENTIFIANT_CLIENT_FRANCE_CONNECT
     SECRET_CLIENT_FRANCE_CONNECT
@@ -65,6 +67,12 @@ module Settings
   # authentication, and far from anything this deployment can read.
   # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-chiffrement-signature-fcplus/
   FRANCE_CONNECT_KEY_ALGORITHMS = %w[ECDH-ES RSA-OAEP-256].freeze
+
+  # The only key type `BeneficiaryToken::SIGNATURE` can verify: it admits ES256
+  # and nothing else, and ES256 is defined on P-256 alone (RFC 7518 §3.4).
+  # `Settings::Contract` refuses any other at startup, for the reason it refuses
+  # a FranceConnect+ key of the wrong algorithm.
+  DEMO_SIGNING_CURVE = %w[EC P-256].freeze
 
   # Article 17(4) of the implementing regulation, as a floor: a member state may
   # keep the exchange log longer, never less.
@@ -121,6 +129,19 @@ module Settings
     # this one opens what FranceConnect+ encrypts for the demonstration
     # procedure. Two interfaces, two correspondents, two keys.
     def france_connect_private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64')
+
+    # The third key, which signs where the two above decrypt: the beneficiary
+    # token the demonstration procedure emits, and which this component then
+    # opens as it opens any requester's. An EC key, `BeneficiaryToken`
+    # admitting ES256 and nothing else.
+    def demo_signing_key_jwk = decode_jwk('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64')
+
+    # The SIRET the demonstration procedure is registered under in
+    # `DONNEES_REQUETEURS`, and which it sends as `idRequeteur`. Distinct from
+    # `IDENTIFIANT_FOURNISSEUR_FRANCAIS`: the procedure plays C1 where that one
+    # plays C4, and the demonstration looping France to France is a fact of the
+    # setup, not an identity the TDD give the two roles.
+    def demo_requester_id = required('IDENTIFIANT_REQUETEUR_DEMARCHE')
 
     def evidence_requesters_data = JSON.parse(required('DONNEES_REQUETEURS'))
 

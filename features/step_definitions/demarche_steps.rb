@@ -57,9 +57,11 @@ Alors('le formulaire affiche {string} : {string}') do |intitule, valeur|
   expect(@navigateur.rows).to include(intitule => valeur)
 end
 
-# CA4: the attributes of the identity are shown, never typed.
-Alors('le formulaire n\'a aucun champ de saisie') do
-  expect(Nokogiri::HTML(@navigateur.body).css('main input, main select, main textarea')).to be_empty
+# CA4: the attributes of the identity are shown, never typed. The application's
+# own fields sit outside those tables, and the assertion is on the tables alone.
+Alors('le formulaire affiche l\'identité sans aucun champ de saisie') do
+  expect(Nokogiri::HTML(@navigateur.body).css('main table input, main table select, main table textarea'))
+    .to be_empty
 end
 
 # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
@@ -95,4 +97,94 @@ end
 
 Alors('l\'administrateur arrive sur la page d\'accueil de la démarche de démonstration, sans identité') do
   expect(@navigateur.current_url).to end_with('/admin/demo')
+end
+
+# Chapter 1 §3.3: the user says explicitly whether the Once-Only Technical
+# System is to be used, and nothing leaves without that gesture.
+Quand('l\'usager demande que son justificatif soit récupéré') do
+  @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
+  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'oui')
+end
+
+Quand('l\'usager refuse que son justificatif soit récupéré') do
+  @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
+  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'non')
+end
+
+# Requirement 27 of chapter 1 §2. The two values come from the real directories,
+# so the scenario asserts that they are there — not what they say, which Brussels
+# may rewrite without telling us.
+Alors('la page de confirmation affiche le fournisseur et le type de justificatif') do
+  lignes = @navigateur.rows
+
+  expect(@navigateur.title).to eq(I18n.t('admin.demo.confirmations.show.title'))
+  expect(lignes[I18n.t('admin.demo.confirmations.show.provider')]).to be_present
+  expect(lignes[I18n.t('admin.demo.confirmations.show.evidence_type')]).to be_present
+end
+
+Quand('l\'usager confirme sa demande') do
+  @navigateur.submit_to('/admin/demo/confirmation')
+end
+
+Alors('la démarche de démonstration affiche l\'identifiant de l\'échange ouvert') do
+  @exchange_id = @navigateur.rows[I18n.t('admin.demo.confirmations.create.exchange')]
+
+  expect(@navigateur.body).to include(I18n.t('admin.demo.confirmations.create.opened'))
+  expect(@exchange_id).to match(Exchange::UUID)
+end
+
+# The procedure is a registered requester like any other, and the log names it
+# under its own SIRET — C1's, distinct from C4's.
+Alors('le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration') do
+  depart = depart_de_la_requete
+
+  expect(depart.evidence_requester_id).to eq(ENV.fetch('IDENTIFIANT_REQUETEUR_DEMARCHE'))
+  expect(depart.procedure_code).to eq('T1')
+  expect(depart.country_code).to eq('FR')
+end
+
+# The beneficiary token went through the contract, was opened, and its content
+# reached the message: the only place the whole chain is visible end to end.
+Alors('cette requête contient l\'identité que FranceConnect+ a donnée à la démarche') do
+  corps = depart_de_la_requete.regrep_body
+
+  expect(corps).to include('Sørensen', 'Freja Marie', '2001-04-17', 'Substantial')
+
+  # Sur sa forme et non sur sa valeur : le faux FranceConnect+ tire le pseudonyme
+  # d'un digest et d'un secret qu'il tire au démarrage, donc une valeur écrite ici
+  # ne s'y trouverait jamais, et l'assertion serait vraie quoi qu'il arrive.
+  expect(corps).not_to match(/\h{64}v1/)
+end
+
+# `R-EDM-REQ-S010` (FATAL) and chapter 4.5.1 §2.7: the slot is true, and the
+# `IssueDateTime` does not depart from the instant of the confirmation.
+Alors('cette requête déclare que l\'usager a demandé le justificatif') do
+  document = Nokogiri::XML(depart_de_la_requete.regrep_body)
+  rim = { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0' }
+
+  expect(document.at_xpath('//rim:Slot[@name="ExplicitRequestGiven"]//rim:Value', rim).text).to eq('true')
+
+  emise = Time.zone.parse(document.at_xpath('//rim:Slot[@name="IssueDateTime"]//rim:Value', rim).text)
+  expect(emise).to be_within(1.minute).of(Time.current)
+end
+
+Alors('la démarche de démonstration affiche que le justificatif reste à fournir') do
+  expect(@navigateur.title).to eq(I18n.t('admin.demo.grant_requests.create.title'))
+end
+
+Alors('la France n\'a envoyé aucune requête') do
+  expect(ServerAuditEvent.where(event_type: 'request_sent').count).to eq(@requetes_avant)
+end
+
+# The log is written by the server, in a database the scenario does not share,
+# and `SendToGateway` writes it after submitting to the gateway — hence the wait
+# every outcome of these scenarios goes through.
+def depart_de_la_requete
+  @depart_de_la_requete ||= begin
+    patiente_jusqu_a("le journal porte le départ de la requête de l'échange #{@exchange_id}") do
+      ServerAuditEvent.exists?(exchange_id: @exchange_id, event_type: 'request_sent')
+    end
+
+    ServerAuditEvent.find_by!(exchange_id: @exchange_id, event_type: 'request_sent')
+  end
 end

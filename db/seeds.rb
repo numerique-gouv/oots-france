@@ -93,6 +93,17 @@ if Rails.env.development?
       message_error_code: EdmException::AUTHORIZATION.code,
       events: %w[request_sent error_received] },
     { status: 'sent', country_code: 'NL', procedure_code: 'S1', events: %w[request_sent] },
+    # La démarche de démonstration, qui est un requêteur comme un autre : elle
+    # appelle `GET /requete/pieceJustificative` sous son propre SIRET, et
+    # l'échange qu'elle ouvre se relit au journal sous celui-là. Le pays
+    # sollicité est `FR` — la démonstration fait discuter la France avec la
+    # France.
+    #
+    # Arrêté au départ de la requête, qui est tout ce que la démarche produit
+    # aujourd'hui : ce qui revient, et l'adresse où le justificatif lui serait
+    # remis, sont OOTS-182.
+    { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
+      evidence_requester_id: '00000000000003', events: %w[request_sent] },
     { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },
     { incoming: true, status: 'delivered', country_code: 'BE',
       procedure_code: ProcedureCode::SYSTEM_CHECK, subject: minimal_person,
@@ -441,7 +452,11 @@ if Rails.env.development?
           # n'a encore quitté n'en porte pas, et rien n'en écrit côté
           # fournisseur, où l'identifiant ne vit que dans le journal.
           request_id: (request_id unless incoming || scenario[:status] == 'pending'),
-          evidence_requester_id: incoming ? '00000000000009' : '00000000000002',
+          # Le requêteur du scénario quand il en nomme un — la démarche de
+          # démonstration est le seul à en nommer —, et sinon celui que le sens
+          # de l'échange désigne.
+          evidence_requester_id: scenario[:evidence_requester_id] ||
+            (incoming ? '00000000000009' : '00000000000002'),
           created_at: opened,
           # L'horodatage que la passerelle émettrice appose, et que
           # `IncomingMessage::OpenExchange` seul inscrit : là où la France

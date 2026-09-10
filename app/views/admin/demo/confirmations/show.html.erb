@@ -1,0 +1,57 @@
+<% content_for :title, t('admin.demo.confirmations.show.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
+              [t('admin.demo.confirmations.show.title'), nil]],
+    ) %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= t('admin.demo.confirmations.show.title') %></h1>
+
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.show.lead') %></p>
+
+<% if @unreachable.present? %>
+  <%= dsfr_alert(type: :error, title: t('admin.demo.confirmations.show.unreachable')) do %>
+    <%= @unreachable %>
+  <% end %>
+<% elsif @wording&.failure %>
+  <%= render 'admin/demo/echec', type: :warning, failure: @wording.failure %>
+<% end %>
+
+<% if @wording&.nameable? %>
+  <%# Requirement 27 of chapter 1 §2, word for word: « The user is provided with
+      information about name of evidence provider and evidence type for
+      confirmation, before any request is made. » Shown as the directories
+      publish them, and not reworded here. %>
+  <%= render 'admin/demo/attributs',
+        caption: t('admin.demo.confirmations.show.caption'),
+        rows: [
+          [t('admin.demo.confirmations.show.provider'), @wording.provider],
+          [t('admin.demo.confirmations.show.evidence_type'), @wording.evidence_type],
+        ] %>
+<% end %>
+
+<%# The group the DSFR prescribes for a set of actions: a `<ul>` of `<li>`, one
+    primary button and one secondary, `--inline-md` so they sit side by side from
+    the medium breakpoint and stack below it, as the journal's own group does.
+    `button_to` renders a `<form>`, which is a block: without the group they pile
+    up whatever margin the link carries.
+
+    The primary comes first because the group is left-aligned, which is also the
+    reading and the tab order. %>
+<ul class="fr-btns-group fr-btns-group--inline-md">
+  <% if @wording&.nameable? %>
+    <li>
+      <%# The press that opens the exchange. `button_to` and not a link: chapter
+          4.5.1 §2.7 ties the `IssueDateTime` of the request to the instant of
+          this gesture, and a GET the browser prefetched would issue it before
+          the user had decided anything. %>
+      <%= button_to t('admin.demo.confirmations.show.submit'), admin_demo_confirmation_path, class: 'fr-btn' %>
+    </li>
+  <% end %>
+  <li>
+    <%= link_to t('admin.demo.confirmations.show.back'), admin_demo_demande_path,
+          class: 'fr-btn fr-btn--secondary' %>
+  </li>
+</ul>

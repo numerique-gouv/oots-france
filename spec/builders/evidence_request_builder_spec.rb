@@ -65,6 +65,64 @@ RSpec.describe EvidenceRequestBuilder do
     expect(provider.xpath('.//sdg:Address', namespaces)).to be_empty
   end
 
+  # CA5 and CA8 of OOTS-181. The demonstration procedure is a requester like any
+  # other, and its entry in `DONNEES_REQUETEURS` is the whole of what the `ER`
+  # agent is written from: nothing here is written for it in particular.
+  describe 'the demonstration procedure as requester' do
+    subject(:agent) do
+      Nokogiri::XML(described_class.new(**attributes, requester: demonstration).render)
+        .at_xpath('//sdg:Agent', 'sdg' => 'http://data.europa.eu/p4s')
+    end
+
+    let(:demonstration) do
+      Directories::EvidenceRequesters.new(
+        '00000000000003' => { 'nom' => 'Université de démonstration', 'url' => 'http://oots.test/demo' },
+      ).find('00000000000003')
+    end
+
+    # `R-EDM-REQ-C109` (FATAL) rend l'attribut `lang` obligatoire, `C108` le
+    # tient à la liste `LanguageCode` : la valeur est là, et c'en est une.
+    it 'names it in a language it declares' do
+      name = agent.at_xpath('sdg:Name', 'sdg' => 'http://data.europa.eu/p4s')
+
+      expect(name.text).to eq('Université de démonstration')
+      expect(name['lang']).to eq('FR')
+    end
+
+    # `R-EDM-REQ-C012` (FATAL) borne les schémas admis, dont celui-ci ; France
+    # publie ses SIRET sous le code EAS `0009`.
+    it 'identifies it by its SIRET, under the EAS scheme France publishes' do
+      identifier = agent.at_xpath('sdg:Identifier', 'sdg' => 'http://data.europa.eu/p4s')
+
+      expect(identifier.text).to eq('00000000000003')
+      expect(identifier['schemeID']).to eq('urn:cef.eu:names:identifier:EAS:0009')
+    end
+
+    # `R-EDM-REQ-C073` (FATAL) rend l'adresse et son `AdminUnitLevel1`
+    # obligatoires dès que la classification vaut `ER` ; `C015` tient la valeur
+    # au codage ISO 3166-1 alpha-2.
+    it 'gives it the country its classification requires' do
+      namespaces = { 'sdg' => 'http://data.europa.eu/p4s' }
+
+      expect(agent.at_xpath('sdg:Classification', namespaces).text).to eq('ER')
+      expect(agent.at_xpath('sdg:Address/sdg:AdminUnitLevel1', namespaces).text).to eq('FR')
+    end
+  end
+
+  # `R-EDM-REQ-S010` (FATAL) makes the slot mandatory, and this deployment only
+  # ever issues a request the user asked for, so it is written as given. That
+  # the user did ask is held by the two screens, not here; what is held here is
+  # that the slot is there, that it says so, and that `IssueDateTime` is the
+  # instant of the build — which chapter 4.5.1 §2.7 ties to the gesture.
+  it 'declares the explicit request as given, at the moment of building' do
+    namespaces = { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0' }
+    document = Nokogiri::XML(request)
+
+    expect(document.at_xpath('//rim:Slot[@name="ExplicitRequestGiven"]//rim:Value', namespaces).text).to eq('true')
+    expect(document.at_xpath('//rim:Slot[@name="IssueDateTime"]//rim:Value', namespaces).text)
+      .to eq(attributes.fetch(:clock).now)
+  end
+
   describe 'the preview flag' do
     it 'is false by default' do
       expect(request).to include('<rim:Value>false</rim:Value>')

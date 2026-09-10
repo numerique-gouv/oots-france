@@ -1,0 +1,17 @@
+<% content_for :title, t('admin.demo.grant_requests.create.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
+              [t('admin.demo.grant_requests.create.title'), nil]],
+    ) %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= t('admin.demo.grant_requests.create.title') %></h1>
+
+<%# Chapter 1 §3.3 makes the request conditional on the user asking for it, so
+    the absence of that gesture is an outcome and not an error: nothing was
+    resolved, nothing was asked of anyone, no exchange exists. %>
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.grant_requests.create.lead') %></p>
+
+<%= link_to t('admin.demo.grant_requests.create.back'), admin_demo_demande_path, class: 'fr-btn fr-btn--secondary' %>

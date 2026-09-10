@@ -1,0 +1,7 @@
+<%# L'échec structuré d'un interacteur, rendu comme les pages d'annuaire le
+    rendent : le titre nomme lequel, le corps porte ce que l'appelé a répondu.
+    En partiel parce que les deux pages de la confirmation le disent, chacune
+    avec son ton — l'une prévient, l'autre constate. %>
+<%= dsfr_alert(type:, title: t("interactors.failures.#{failure[:key]}")) do %>
+  <%= failure[:errors].join(' ') %>
+<% end %>
