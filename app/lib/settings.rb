@@ -247,15 +247,16 @@ module Settings
         I18n.t('lib.settings.not_whole', names: I18n.t('lib.settings.not_whole_entry', name:, value:))
     end
 
-    # `Settings::Contract` refuses the same value at startup, but `config.ru`
-    # runs that check and the worker never loads it, so the sweep and the answer
+    # `Settings::Contract` refuses the same value at startup, but only the web
+    # process and the worker read that contract, so anywhere else — the Rake
+    # task that renders the messages, a console — the sweep and the answer
     # would both read a malformed switch that nothing had ever looked at.
     def timeout_switch = boolean_switch(TIMEOUT_SWITCH)
 
-    # `EvidenceRequestsController` is the only reader, so `verify!` — which
-    # `config.ru` runs in the web process alone — already covers every process
-    # this switch reaches. The refusal stays on the reader all the same, which
-    # is where the grammar is.
+    # `EvidenceRequestsController` is the only reader, so the `verify!` that
+    # `config.ru` runs in the web process already covers every process this
+    # switch reaches. The refusal stays on the reader all the same, which is
+    # where the grammar is.
     def evidence_request_switch = boolean_switch(EVIDENCE_REQUEST_SWITCH)
 
     # Like `whole`, and for its reason: a value this cannot read is refused

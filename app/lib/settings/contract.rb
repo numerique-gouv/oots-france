@@ -1,6 +1,7 @@
 module Settings
   # What the environment must satisfy for the application to answer at all,
-  # checked once at startup by `config.ru`.
+  # checked once at startup: by `config.ru` for the web process, and by
+  # `config/initializers/verify_settings.rb` for the worker.
   #
   # Separate from `Settings`, which reads: a reader answers a question, a
   # contract refuses. Every rule names all its offenders at once — correcting
@@ -126,8 +127,8 @@ module Settings
     # Asking it is also what refuses an unreadable switch here: `timeout_enabled?`
     # raises on a value that is neither `true` nor `false`, so the first rule to
     # compose a set carries that refusal and `verify!` needs no rule of its own
-    # — the reader defends itself in every process, which `config.ru` cannot,
-    # running `verify!` in the web one alone.
+    # — the reader defends itself in every process, which the contract cannot,
+    # nothing running `verify!` outside the web process and the worker.
     def with_timeouts(names) = Settings.timeout_enabled? ? names + TIMEOUTS : names
 
     def offender(name) = I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil))
