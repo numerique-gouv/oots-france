@@ -7,11 +7,11 @@ COUNTRIES = {
 
 # Created in a step and not once for the whole run: `cucumber-rails` cleans the
 # database around every scenario, so an account posted beforehand would be gone.
-Étantdonné("un compte d'administration") do
+Étantdonné("un compte d'administrateur") do
   @administrator = create(:administrator)
 end
 
-Étantdonné("je suis connecté à l'espace d'administration") do
+Étantdonné("un administrateur connecté à l'espace d'administration") do
   sign_in(@administrator.password)
 end
 
@@ -29,13 +29,13 @@ end
 
 # Ouverte depuis le menu, et non par son adresse : c'est l'entrée elle-même que
 # [OOTS-178](https://linear.app/pole-api/issue/OOTS-178) demande de vérifier.
-Quand("je suis l'entrée « Démo » du menu") do
+Quand("l'administrateur suit l'entrée « Démo » du menu") do
   stub_code_list(procedures: { ProcedureCode::STUDY_FINANCING => CodeListStubs::STUDY_FINANCING_LABEL })
   visit admin_root_path
   click_link I18n.t('layouts.entete.demo')
 end
 
-Alors("je lis l'accueil de la démarche de l'Université de démonstration") do
+Alors("la page d'accueil de la démarche de démonstration s'affiche") do
   expect(page).to have_current_path(admin_demo_root_path)
   expect(page).to have_text(I18n.t('admin.demo.home.show.portal'))
   expect(page).to have_css(
@@ -47,28 +47,28 @@ end
 # A button and not a link: starting the flow writes the `state` and the `nonce`
 # its return will be checked against, and a replayed GET would overwrite those
 # of a flow under way.
-Alors("on m'offre de m'identifier avec une identité d'un autre État membre") do
+Alors("la page propose de s'identifier avec une identité d'un autre État membre") do
   expect(page).to have_button(I18n.t('admin.demo.home.show.sign_in'))
   expect(page).to have_css("form[action='#{admin_demo_identification_path}'][method='post']")
 end
 
-Quand("j'ouvre le tableau de bord des jobs") do
+Quand('un visiteur ouvre le tableau de bord des jobs') do
   visit admin_jobs_path
 end
 
-Quand('je me connecte avec un mot de passe incorrect') do
+Quand('l\'administrateur se connecte avec un mot de passe incorrect') do
   sign_in('un-autre-mot-de-passe')
 end
 
-Quand('je me déconnecte') do
+Quand('l\'administrateur se déconnecte') do
   click_button 'Se déconnecter'
 end
 
-Quand("j'ouvre la fiche de l'échange {word}") do |nationality|
+Quand("l'administrateur ouvre la fiche de l'échange {word}") do |nationality|
   visit admin_journal_exchange_path(exchange_named(nationality).exchange_id)
 end
 
-Quand("je filtre sur l'échange {word}") do |nationality|
+Quand("il filtre sur l'échange {word}") do |nationality|
   fill_in I18n.t('admin.journal.attributes.exchange_id'), with: exchange_named(nationality).exchange_id
   click_button I18n.t('admin.journal.filtre.submit')
 end
@@ -76,32 +76,32 @@ end
 # The listing abbreviates both identifiers — two UUIDs a row would leave no
 # room for anything else — and carries the whole one in the link's title. That
 # is what a scenario has to look at.
-Alors("je vois les événements de l'échange {word}") do |nationality|
+Alors("le journal affiche les événements de l'échange {word}") do |nationality|
   expect(page).to have_css("a[title='#{exchange_named(nationality).exchange_id}']")
 end
 
-Alors("je ne vois plus ceux de l'échange {word}") do |nationality|
+Alors("le journal n'affiche pas les événements de l'échange {word}") do |nationality|
   expect(page).to have_no_css("a[title='#{exchange_named(nationality).exchange_id}']")
 end
 
-Alors("je ne vois plus l'échange {word}") do |nationality|
+Alors("la page n'affiche pas l'échange {word}") do |nationality|
   expect(page).to have_no_text(exchange_named(nationality).exchange_id)
 end
 
-Alors("je lis le code d'erreur {string}") do |code|
+Alors("la fiche affiche le code d'erreur {string}") do |code|
   expect(page).to have_text(code)
 end
 
-Alors("je lis la raison de l'échec de l'échange {word}") do |nationality|
+Alors("la fiche affiche la raison de l'échec de l'échange {word}") do |nationality|
   expect(page).to have_text(exchange_named(nationality).error_description)
 end
 
-Alors('on me demande de me connecter') do
+Alors('la page de connexion s\'affiche') do
   expect(page).to have_current_path(new_admin_session_path)
   expect(page).to have_button('Se connecter')
 end
 
-Alors('on me dit que les identifiants sont refusés') do
+Alors('la page de connexion dit que les identifiants sont refusés') do
   expect(page).to have_text('Adresse ou mot de passe incorrect.')
   expect(page).to have_button('Se connecter')
 end
@@ -137,29 +137,29 @@ end
   create(:audit_event, :about_sophie, exchange_id: @exchange)
 end
 
-Quand("j'ouvre le journal des événements") do
+Quand(/^(?:un visiteur|l'administrateur|il) ouvre le journal des événements$/) do
   visit admin_journal_root_path
 end
 
-Quand('je recherche la personne {string} {string} née le {string}') do |family_name, given_name, date_of_birth|
+Quand('l\'administrateur recherche la personne {string} {string} née le {string}') do |family_name, given_name, date_of_birth|
   visit admin_journal_subjects_path(family_name:, given_name:, date_of_birth:)
 end
 
 # Whole in the title, abbreviated in the text — and not always a link: an event
 # may name an exchange this side never opened, which reads as plain text.
-Alors('je vois cet échange dans le journal') do
+Alors('le journal affiche cet échange') do
   expect(page).to have_css("[title='#{@exchange}']", visible: :all)
 end
 
-Alors('je vois ce refus dans le journal') do
+Alors('le journal affiche ce refus') do
   expect(page).to have_text(@exchange)
 end
 
-Alors('je vois cet échange avec le sens {string}') do |direction|
+Alors('la fiche affiche le sens {string}') do |direction|
   expect(page).to have_text(direction)
 end
 
-Alors('il ne nomme ni échange ni conversation') do
+Alors('le refus ne nomme ni échange ni conversation') do
   ligne = find('tbody tr', text: @exchange)
 
   expect(ligne).to have_text('—')
@@ -178,16 +178,16 @@ end
   end
 end
 
-Quand("j'ouvre la conversation de cet usager") do
+Quand("l'administrateur ouvre la fiche de cette conversation") do
   visit admin_journal_conversation_path(@conversation)
 end
 
-Alors('je vois les deux échanges, chacun avec son journal') do
+Alors('la fiche affiche les deux échanges, chacun avec ses événements') do
   @echanges.each { |echange| expect(page).to have_text(echange.exchange_id) }
 
   expect(page).to have_table(count: @echanges.size)
 end
 
-Quand("j'ouvre la fiche de cet échange") do
+Quand("l'administrateur ouvre la fiche de cet échange") do
   visit admin_journal_exchange_path(@exchange)
 end

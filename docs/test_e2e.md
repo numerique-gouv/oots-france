@@ -10,7 +10,7 @@ Les scénarios de bout en bout (`features/`) comblent ce trou : ils exercent la 
 
 ## Trois configurations, une seule qui sort
 
-`features/` se joue sous deux profils, que `config/cucumber.yml` déclare et que l'étiquette `@bout_en_bout` sépare : le profil par défaut, qui ne franchit aucune frontière, et celui du bout en bout, qui les franchit toutes.
+Les scénarios s'écrivent pour quelqu'un qui ne lira pas le code, avec les mots du [glossaire](glossaire.md) et selon les règles de [CLAUDE.md](../CLAUDE.md#a-scenario-is-read-by-someone-who-will-not-read-the-code). `features/` se joue sous deux profils, que `config/cucumber.yml` déclare et que l'étiquette `@bout_en_bout` sépare : le profil par défaut, qui ne franchit aucune frontière, et celui du bout en bout, qui les franchit toutes.
 
 | | `spec/` | `features/`, profil par défaut | `features/`, profil `bout_en_bout` |
 | --- | --- | --- | --- |
@@ -64,19 +64,19 @@ $ make e2e
 Une exécution réussie affiche :
 
 ```
-  Scénario: le justificatif revient du fournisseur et parvient à la démarche
-  Scénario: deux demandes d'un même usager tiennent dans une seule conversation
-  Scénario: le fournisseur annonce le justificatif pour plus tard
-  Scénario: le fournisseur ne connaît pas la démarche et le dit
-  … et les trois scénarios de réception
+  Scénario: le justificatif revient du fournisseur jusqu'au portail
+  Scénario: le justificatif de la démarche "T1" revient jusqu'au portail
+  Scénario: deux demandes d'un même usager forment une seule conversation
+  Scénario: le fournisseur annonce le justificatif pour une date ultérieure
+  Scénario: le fournisseur ne connaît pas la démarche et répond une erreur
+  … puis les trois scénarios de réception et ceux du faux FranceConnect+
 
-7 scenarios (7 passed)
-45 steps (45 passed)
-0m9.0s
+46 scenarios (46 passed)
+305 steps (305 passed)
 ```
 
 > [!NOTE]
-> Ces quelques secondes tiennent au cron du répartiteur de notifications, que `scripts/configure_domibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
+> Les quelques secondes que dure un scénario de requête tiennent au cron du répartiteur de notifications, que `scripts/configure_domibus.sh` resserre à cinq secondes — il vaut une minute par défaut, ce qui ferait de cette latence-là celle de l'échange entier.
 
 > [!IMPORTANT]
 > Les scénarios s'exécutent **dans le conteneur `web`** (c'est ce que fait `make e2e`). L'annuaire `DONNEES_REQUETEURS` désigne le faux requêteur par `http://web:4000` — un nom de service, et non `localhost` : le justificatif est retransmis par le travailleur de fond, qui tourne dans un autre conteneur que le scénario. Avec `localhost`, il n'y trouverait personne.

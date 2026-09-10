@@ -1,53 +1,54 @@
 # language: fr
 Fonctionnalité: Suivre les échanges depuis l'espace d'administration
 
-  L'espace d'administration donne à voir ce que les échanges ont déjà écrit :
-  le journal des événements, où l'on cherche, et sous lui la fiche d'un échange
-  et celle d'une conversation, où l'on descend. Il observe et n'écrit rien.
+  L'espace d'administration affiche ce que les échanges ont écrit dans le
+  journal des événements. L'administrateur y cherche un événement, puis ouvre
+  la fiche de l'échange ou de la conversation concernés. Il n'y modifie
+  rien.
 
-  Il porte une exception nommée : la démarche de démonstration, où l'exploitant
+  La démarche de démonstration est la seule exception : l'administrateur y
   tient le rôle de l'usager d'un portail de démarche.
 
   Contexte:
-    Étant donné un compte d'administration
-    Et que je suis connecté à l'espace d'administration
+    Étant donné un compte d'administrateur
+    Et un administrateur connecté à l'espace d'administration
 
-  Scénario: le journal se restreint à un seul échange
+  Scénario: filtrer le journal des événements sur un seul échange
     Étant donné un échange délivré avec la Finlande
     Et un échange en échec avec l'Allemagne
-    Quand j'ouvre le journal des événements
-    Et que je filtre sur l'échange allemand
-    Alors je vois les événements de l'échange allemand
-    Et je ne vois plus ceux de l'échange finlandais
+    Quand l'administrateur ouvre le journal des événements
+    Et qu'il filtre sur l'échange allemand
+    Alors le journal affiche les événements de l'échange allemand
+    Et le journal n'affiche pas les événements de l'échange finlandais
 
-  Scénario: la fiche d'un échange dit pourquoi il a échoué
+  Scénario: la fiche d'un échange en échec affiche la raison de l'échec
     Étant donné un échange en échec avec l'Allemagne
-    Quand j'ouvre la fiche de l'échange allemand
-    Alors je lis le code d'erreur "EDM:ERR:0004"
-    Et je lis la raison de l'échec de l'échange allemand
+    Quand l'administrateur ouvre la fiche de l'échange allemand
+    Alors la fiche affiche le code d'erreur "EDM:ERR:0004"
+    Et la fiche affiche la raison de l'échec de l'échange allemand
 
-  Scénario: la conversation rassemble les échanges d'une même session
+  Scénario: la fiche d'une conversation affiche tous les échanges de l'usager
     Étant donné deux échanges d'un même usager
-    Quand j'ouvre la conversation de cet usager
-    Alors je vois les deux échanges, chacun avec son journal
+    Quand l'administrateur ouvre la fiche de cette conversation
+    Alors la fiche affiche les deux échanges, chacun avec ses événements
 
-  Scénario: le journal garde le refus qu'aucun échange ne porte
+  Scénario: le journal des événements garde une requête refusée avant tout échange
     Étant donné une requête refusée avant qu'aucun échange soit ouvert
-    Quand j'ouvre le journal des événements
-    Alors je vois ce refus dans le journal
-    Et il ne nomme ni échange ni conversation
+    Quand l'administrateur ouvre le journal des événements
+    Alors le journal affiche ce refus
+    Et le refus ne nomme ni échange ni conversation
 
-  Scénario: un échange reçu tient sa fiche comme un échange émis
+  Scénario: un échange reçu a une fiche, comme un échange émis
     Étant donné un échange reçu d'un autre État membre
-    Quand j'ouvre la fiche de cet échange
-    Alors je vois cet échange avec le sens "Reçu"
+    Quand l'administrateur ouvre la fiche de cet échange
+    Alors la fiche affiche le sens "Reçu"
 
   Scénario: la démarche de démonstration s'ouvre depuis le menu
-    Quand je suis l'entrée « Démo » du menu
-    Alors je lis l'accueil de la démarche de l'Université de démonstration
-    Et on m'offre de m'identifier avec une identité d'un autre État membre
+    Quand l'administrateur suit l'entrée « Démo » du menu
+    Alors la page d'accueil de la démarche de démonstration s'affiche
+    Et la page propose de s'identifier avec une identité d'un autre État membre
 
-  Scénario: retrouver ce qui a circulé au sujet d'une personne
+  Scénario: retrouver les échanges qui concernent une personne
     Étant donné un échange concernant Sophie Dupont
-    Quand je recherche la personne "Dupont" "Sophie" née le "1965-11-25"
-    Alors je vois cet échange dans le journal
+    Quand l'administrateur recherche la personne "Dupont" "Sophie" née le "1965-11-25"
+    Alors le journal affiche cet échange

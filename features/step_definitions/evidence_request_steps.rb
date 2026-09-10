@@ -4,7 +4,7 @@
 DELAI_MAX = 90
 INTERVALLE = 1
 
-Étantdonné('une démarche française déclarée dans l\'annuaire') do
+Étantdonné('un portail de démarche français déclaré dans l\'annuaire des requêteurs') do
   @requester_id = ENV.fetch('IDENTIFIANT_REQUETEUR_TEST', '00000000000002')
   @requester = Directories::EvidenceRequesters.new.find(@requester_id)
 
@@ -13,11 +13,11 @@ INTERVALLE = 1
   @fake_requester = FakeRequester.new.start(URI.parse(@requester.url).port)
 end
 
-Étantdonné('cette démarche publie ses clés de signature') do
+Étantdonné('ce portail publie ses clés de signature') do
   expect(Faraday.get("#{@requester.url}/auth/cles_publiques").status).to eq(200)
 end
 
-Quand('la démarche demande un justificatif pour la procédure {string}') do |procedure|
+Quand('le portail demande un justificatif pour la démarche {string}') do |procedure|
   @response = demande(procedure)
 end
 
@@ -29,33 +29,33 @@ end
 # is what the two requests are given at once, and a scenario that also set a
 # delivery going would hand its PDF to the next scenario's requester, the two
 # listening on one port.
-Quand('la démarche demande deux justificatifs pour le même usager') do
+Quand('le portail demande deux justificatifs pour le même usager') do
   @premier = etat_de(demande('T3', conversation: SESSION_USAGER))
   @second = etat_de(demande('T3', conversation: SESSION_USAGER))
 end
 
-Alors('les deux requêtes portent la même conversation et deux échanges distincts') do
+Alors('les deux requêtes ont la même conversation et deux échanges distincts') do
   expect(@premier['conversation']).to eq(SESSION_USAGER)
   expect(@second['conversation']).to eq(SESSION_USAGER)
   expect(@second['echange']).not_to eq(@premier['echange'])
 end
 
-Alors('la démarche reçoit tout de suite l\'identifiant de l\'échange') do
+Alors('le portail reçoit tout de suite l\'identifiant de l\'échange') do
   expect(@response.status).to eq(202)
 
   @exchange_id = JSON.parse(@response.body)['echange']
   expect(@exchange_id).to be_present
 end
 
-Alors('le justificatif finit par être transmis à la démarche') do
+Alors('le portail reçoit le justificatif') do
   patiente_jusqu_a('le justificatif soit transmis') { @fake_requester.received_evidence.present? }
 end
 
-Alors('le document reçu est celui que le fournisseur détient') do
+Alors('le justificatif reçu est le document que le fournisseur détient') do
   expect(@fake_requester.received_evidence.b).to eq(justificatif_detenu.b)
 end
 
-Alors('l\'échange finit par porter le code d\'erreur {string}') do |code|
+Alors('l\'échange passe au code d\'erreur {string}') do |code|
   # Read through the application, not from the database: the scenarios run in a
   # different Rails environment from the server, and therefore against a
   # different database.
@@ -64,28 +64,28 @@ Alors('l\'échange finit par porter le code d\'erreur {string}') do |code|
   end
 end
 
-Alors('l\'échange finit par porter l\'état {string}') do |statut|
+Alors('l\'échange passe à l\'état {string}') do |statut|
   patiente_jusqu_a("l'échange porte l'état #{statut}") { etat_de_l_echange['statut'] == statut }
 end
 
 # Chapter 4.5.2: the announcement is what sends the procedure portal back with a
 # new Evidence Request « at the time of availability », so the date has to reach
 # the caller and not merely the console.
-Alors('la démarche apprend la date à laquelle le justificatif sera disponible') do
+Alors('le portail apprend la date à laquelle le justificatif sera disponible') do
   annoncee = etat_de_l_echange['dateDisponibilite']
 
   expect(annoncee).to be_present
   expect(Time.zone.parse(annoncee)).to be > Time.current
 end
 
-Alors('aucun justificatif n\'est transmis à la démarche') do
+Alors('le portail ne reçoit aucun justificatif') do
   expect(@fake_requester.received_evidence).to be_nil
 end
 
 # The log is the only claim of these scenarios that cannot be read through the
 # application: chapter 4.8 asks for a trace, and the trace is exposed by no
 # route on purpose — it carries personal data.
-Alors('le journal porte l\'échange entier, du départ de la requête à la remise') do
+Alors('le journal des échanges contient tout l\'échange, de l\'envoi de la requête à la remise du justificatif') do
   patiente_jusqu_a('le journal porte la remise') { journal.exists?(event_type: 'evidence_delivered') }
 
   # France answers itself over the single gateway of the example PMode, so one
@@ -111,7 +111,7 @@ end
 # bytes be shown to survive it — France answers itself over the single gateway
 # of the example PMode, so what went out is what came back, and the two rows
 # must hold the same document.
-Alors('le journal porte le corps RegRep de chaque message, tel qu\'il a circulé') do
+Alors('le journal des échanges contient le corps RegRep de chaque message, tel qu\'il a circulé') do
   emis = journal.where(event_type: AuditEvent::SENT_BY_FRANCE)
   porteurs = journal.where(event_type: AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE)
 
@@ -134,7 +134,7 @@ Alors('le journal porte le corps RegRep de chaque message, tel qu\'il a circulé
   end
 end
 
-Alors('le journal porte l\'annonce du correspondant') do
+Alors('le journal des échanges contient la réponse différée du fournisseur') do
   patiente_jusqu_a("le journal porte l'annonce") { journal.exists?(event_type: 'response_received') }
 
   # A response did go out and did come back, and it carried no document: both
@@ -144,7 +144,7 @@ Alors('le journal porte l\'annonce du correspondant') do
   expect(journal.pluck(:evidence_digest).compact).to be_empty
 end
 
-Alors('le journal porte le refus du correspondant') do
+Alors('le journal des échanges contient l\'erreur du fournisseur') do
   patiente_jusqu_a('le journal porte le refus') { journal.exists?(event_type: 'error_received') }
 
   expect(journal.find_by!(event_type: 'error_received').edm_error_code).to eq('EDM:ERR:0004')
