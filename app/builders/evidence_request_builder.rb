@@ -12,6 +12,13 @@ class EvidenceRequestBuilder < ApplicationBuilder
     LegalPerson => ['LegalPerson', LegalPersonBuilder].freeze,
   }.freeze
 
+  # `R-EDM-REQ-C004` constrains the language of the 1.2 `Procedure` slot without
+  # naming one, and that slot carries a procedure code — `R1`, `00` — rather
+  # than anything translatable, so the language there is decoration. `EN` is
+  # what the published 1.2.5 example writes and what the TDD give as the default
+  # choice. 2.0 dropped the element and asks for none.
+  PROCEDURE_LANGUAGE = 'EN'.freeze
+
   attr_reader :document_id, :timestamp, :procedure_code, :preview_possible, :requirement
 
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
@@ -26,8 +33,10 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # and what a national parameter would then be worth publishing for.
   def initialize(
     requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:,
-    associated_documents: [], preview_possible: false, clock: Clock.new, uuid: UuidGenerator.new
+    associated_documents: [], preview_possible: false,
+    specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
+    @specification = specification
     @requester = requester
     @provider = provider
     @beneficiary_person = beneficiary
@@ -93,6 +102,8 @@ class EvidenceRequestBuilder < ApplicationBuilder
   end
 
   def data_service_evidence_type
-    EvidenceTypeBuilder.new(data_service: @data_service, associated_documents: @associated_documents).render
+    EvidenceTypeBuilder.new(
+      data_service: @data_service, associated_documents: @associated_documents, specification:,
+    ).render
   end
 end

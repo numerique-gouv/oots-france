@@ -22,7 +22,8 @@ module EvidenceRequest
 
       return abandon(recipient) if chosen.nil?
 
-      context.specification = chosen
+      # On the exchange and nowhere else: it is what the worker handling the
+      # answer reads back, long after this context has gone.
       context.exchange.update!(specification: chosen)
     end
 

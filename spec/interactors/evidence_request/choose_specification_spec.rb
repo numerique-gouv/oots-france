@@ -8,9 +8,8 @@ RSpec.describe EvidenceRequest::ChooseSpecification do
   context 'when the access point announces both lines' do
     let(:recipient) { build(:access_point, :foreign, conforms_to: ['oots-edm:v1.2', 'oots-edm:v2.0']) }
 
-    it 'writes 2.0 on the exchange and hands it to the rest of the chain' do
+    it 'writes 2.0 on the exchange' do
       expect(choice).to be_success
-      expect(choice.specification).to eq(EdmSpecification::V2_0)
       expect(exchange.reload.specification).to eq(EdmSpecification::V2_0)
     end
   end
@@ -20,7 +19,6 @@ RSpec.describe EvidenceRequest::ChooseSpecification do
 
     it 'writes 1.2 on the exchange rather than refusing it' do
       expect(choice).to be_success
-      expect(choice.specification).to eq(EdmSpecification::V1_2)
       expect(exchange.reload.specification).to eq(EdmSpecification::V1_2)
       expect(exchange.status).to eq('pending')
     end

@@ -10,11 +10,26 @@
 # receive today, and dropping it is a change to the payloads, to be made
 # against the TDD examples and the Schematron rules rather than in passing.
 class EvidenceTypeBuilder < ApplicationBuilder
-  attr_reader :data_service, :associated_documents
+  attr_reader :data_service
 
-  def initialize(data_service:, associated_documents: [])
+  def initialize(data_service:, associated_documents: [], specification: EdmSpecification.preferred)
+    @specification = specification
     @data_service = data_service
     @associated_documents = AssociatedDocument.vetted(associated_documents)
+  end
+
+  # The 1.2.0 profile gives `sdg:DistributedAs` a `Format`, a `ConformsTo` and a
+  # `Transformation` and nothing else: the language of the distribution and the
+  # documents asked for beside it came with 2.0, and a request naming either to
+  # a 1.2 provider would not parse there. Silenced rather than refused, for the
+  # reason `conformance` is: chapter 4.5.1 asks for an element the request
+  # cannot carry to be left out, not for the exchange to be abandoned over it.
+  def distribution_language
+    data_service.distribution_language if specification.extended_distribution?
+  end
+
+  def associated_documents
+    specification.extended_distribution? ? @associated_documents : []
   end
 
   # Omitted rather than refused where the requested format is unstructured:

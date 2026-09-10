@@ -131,4 +131,41 @@ RSpec.describe EvidenceResponseBuilder do
       allow(generator).to receive(:next) { format('1a2b3c4d-0000-4000-8000-%012d', compteur += 1) }
     end
   end
+  # CA6 of OOTS-200. `R-EDM-RESP-S015` and `-S033` anchor on the objects of the
+  # list itself in 1.2.5, where 2.0.1 moves them one level down and adds twenty
+  # rules on the `rim:RegistryPackageType` that then holds them: a 2.0 response
+  # read against the 1.2.5 rules fails on `-S015` alone, its top-level object
+  # being a package, and a package carrying no `EvidenceMetadata`.
+  describe 'a response written on the 1.2 line' do
+    subject(:response) { described_class.new(**attributes, specification: EdmSpecification::V1_2).render }
+
+    let(:document) { Nokogiri::XML(response) }
+
+    it 'declares the version of its own line' do
+      value = document.at_xpath("//rim:Slot[@name='SpecificationIdentifier']//rim:Value", namespaces)
+
+      expect(value.text).to eq('oots-edm:v1.2')
+    end
+
+    it 'describes the evidence on the objects of the list, with no package around them' do
+      objects = document.xpath('//rim:RegistryObjectList/rim:RegistryObject', namespaces)
+
+      expect(objects.size).to eq(1)
+      expect(objects.first.attribute_with_ns('type', XSI).value).to eq('rim:ExtrinsicObjectType')
+      expect(objects.first.at_xpath("rim:Slot[@name='EvidenceMetadata']", namespaces)).to be_present
+      expect(objects.first.at_xpath('rim:RepositoryItemRef', namespaces)
+        .attribute_with_ns('href', XLINK).value).to eq('cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr')
+    end
+
+    # 1.2 has no `MainEvidence` to name: a response carries one document, and
+    # the classification is what 2.0 needs to tell it from the annexes beside
+    # it. No 1.2.5 rule forbids the element; it simply says nothing there.
+    it 'classifies nothing' do
+      expect(document.xpath('//rim:Classification', namespaces)).to be_empty
+    end
+
+    it 'echoes the identifier of the request it answers' do
+      expect(document.root['requestId']).to eq('urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797')
+    end
+  end
 end

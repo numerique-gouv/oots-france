@@ -440,4 +440,67 @@ RSpec.describe EvidenceRequestBuilder do
     expect(distribution.element_children.map(&:name))
       .to eq(%w[Format Language ConformsTo AssociatedDocumentRequest AssociatedDocumentRequest])
   end
+
+  # CA2 of OOTS-200: what a request written on the 1.2 line owes the 1.2.5
+  # rules, and what it must leave out because the 1.2.0 profile has no room for
+  # it. The whole message is confronted with those rules by `make schematron`;
+  # what is held here is each difference, one by one.
+  describe 'a request written on the 1.2 line' do
+    subject(:request) do
+      described_class.new(**attributes, specification: EdmSpecification::V1_2,
+        associated_documents: [AssociatedDocument::TRANSLATION]).render
+    end
+
+    let(:document) { Nokogiri::XML(request) }
+    let(:namespaces) do
+      { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0', 'sdg' => 'http://data.europa.eu/p4s' }
+    end
+
+    # `R-EDM-REQ-C001` @ 1.2.5, a literal equality on the older value.
+    it 'declares the version of its own line' do
+      value = document.at_xpath("//rim:Slot[@name='SpecificationIdentifier']//rim:Value", namespaces)
+
+      expect(value.text).to eq('oots-edm:v1.2')
+    end
+
+    # `R-EDM-REQ-S022` @ 1.2.5, and `R-EDM-REQ-C003` on the code the localised
+    # string carries: 2.0.1 made the same slot a plain `rim:StringValueType`.
+    it 'holds the procedure code in a localised string, as the 1.2 rules type it' do
+      value = document.at_xpath("//rim:Slot[@name='Procedure']/rim:SlotValue", namespaces)
+      localised = value.at_xpath('rim:Value/rim:LocalizedString', namespaces)
+
+      expect(value['xsi:type']).to eq('rim:InternationalStringValueType')
+      expect(localised['value']).to eq(ProcedureCode::DIPLOMA_RECOGNITION)
+      expect(localised['xml:lang']).to eq('EN')
+    end
+
+    # The 1.2.0 profile gives `sdg:DistributedAs` a `Format`, a `ConformsTo` and
+    # a `Transformation` and nothing else, so both of these are 2.0 elements a
+    # 1.2 provider could not read.
+    it 'names neither the language of the distribution nor a document beside it' do
+      distribution = document.at_xpath('//sdg:DistributedAs', namespaces)
+
+      expect(distribution.at_xpath('sdg:Language', namespaces)).to be_nil
+      expect(distribution.at_xpath('sdg:AssociatedDocumentRequest', namespaces)).to be_nil
+      expect(distribution.at_xpath('sdg:Format', namespaces).text).to eq('application/pdf')
+    end
+
+    # `R-EDM-REQ-C032` @ 1.2.5 admits one at most, where 2.0.1 requires at least
+    # one.
+    it 'names one distribution at most' do
+      expect(document.xpath('//sdg:DistributedAs', namespaces).size).to eq(1)
+    end
+  end
+
+  # What the same request carries on the preferred line, and which the two specs
+  # above would otherwise only be able to say by absence.
+  it 'names the language of the distribution and the documents asked beside it, in 2.0' do
+    rendered = described_class.new(**attributes, associated_documents: [AssociatedDocument::TRANSLATION]).render
+    namespaces = { 'sdg' => 'http://data.europa.eu/p4s' }
+    distribution = Nokogiri::XML(rendered).at_xpath('//sdg:DistributedAs', namespaces)
+
+    expect(distribution.at_xpath('sdg:Language', namespaces).text).to eq('EN')
+    expect(distribution.at_xpath('sdg:AssociatedDocumentRequest', namespaces).text)
+      .to eq(AssociatedDocument::TRANSLATION)
+  end
 end

@@ -11,7 +11,7 @@
 
   <rim:Slot name="SpecificationIdentifier">
     <rim:SlotValue xsi:type="rim:StringValueType">
-      <rim:Value><%= EdmSpecification.preferred.identifier %></rim:Value>
+      <rim:Value><%= specification.identifier %></rim:Value>
     </rim:SlotValue>
   </rim:Slot>
   <rim:Slot name="IssueDateTime">
@@ -19,11 +19,23 @@
       <rim:Value><%= timestamp %></rim:Value>
     </rim:SlotValue>
   </rim:Slot>
+<%# R-EDM-REQ-S022: the slot holds a `rim:InternationalStringValueType` in
+    1.2.5, where 2.0.1 made it a plain `rim:StringValueType`. -%>
+<%- if specification.translated_procedure? -%>
+  <rim:Slot name="Procedure">
+    <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+      <rim:Value>
+        <rim:LocalizedString xml:lang="<%= EvidenceRequestBuilder::PROCEDURE_LANGUAGE %>" value="<%= escape(procedure_code) %>"/>
+      </rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+<%- else -%>
   <rim:Slot name="Procedure">
     <rim:SlotValue xsi:type="rim:StringValueType">
       <rim:Value><%= escape(procedure_code) %></rim:Value>
     </rim:SlotValue>
   </rim:Slot>
+<%- end -%>
   <rim:Slot name="PossibilityForPreview">
     <rim:SlotValue xsi:type="rim:BooleanValueType">
       <rim:Value><%= preview_possible %></rim:Value>

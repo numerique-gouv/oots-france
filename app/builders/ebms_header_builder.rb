@@ -16,9 +16,10 @@ class EbmsHeaderBuilder < ApplicationBuilder
   def initialize(
     action:, recipient:, original_sender:, final_recipient:, payload_id:,
     conversation_id:, exchange_id:, attachment: EmptyAttachment.new,
-    sender: AccessPoint.sender, clock: Clock.new, uuid: UuidGenerator.new
+    sender: AccessPoint.sender, specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @action = action
+    @specification = specification
     # Validated like C1 and C4, and for the same reason: an access point with
     # no identity travels to the gateway as a property it accepts and routes
     # nowhere, which shows up only as silence on the other side.
@@ -31,10 +32,12 @@ class EbmsHeaderBuilder < ApplicationBuilder
     @attachment = attachment
     @timestamp = clock.now
     @message_id = "#{uuid.next}@#{Settings.identifier_suffix}"
-    # Both required, and neither minted here. Chapter 4.4 has every message of
-    # one exchange reuse its `ExchangeId` — a value drawn at serialisation time
-    # would be a new one per message, which is the correlation the preview
-    # depends on, lost.
+    # Required whatever the version, and never minted here. Chapter 4.4 has
+    # every message of one exchange reuse its `ExchangeId` — a value drawn at
+    # serialisation time would be a new one per message, which is the
+    # correlation the preview depends on, lost. In 1.2 it names the exchange
+    # here and travels nowhere: `R-EDM-ebMS-037` is a rule of 2.0.1 alone, and
+    # `R-EDM-ebMS-018` counts two properties where 2.0.1 counts four.
     @exchange_id = exchange_id
   end
 

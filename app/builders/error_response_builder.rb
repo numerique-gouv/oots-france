@@ -12,8 +12,9 @@ class ErrorResponseBuilder < ApplicationBuilder
 
   def initialize(
     requester:, exception:, request_id:, provider: nil, preview_location: nil,
-    clock: Clock.new, uuid: UuidGenerator.new
+    specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
+    @specification = specification
     @requester = requester
     @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
     @exception = exception

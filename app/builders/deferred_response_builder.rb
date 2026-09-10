@@ -14,7 +14,11 @@ class DeferredResponseBuilder < ApplicationBuilder
 
   attr_reader :request_id, :timestamp, :available_at, :document_id
 
-  def initialize(requester:, request_id:, provider: nil, clock: Clock.new, uuid: UuidGenerator.new)
+  def initialize(
+    requester:, request_id:, provider: nil,
+    specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
+  )
+    @specification = specification
     @requester = requester
     @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
     @request_id = request_id
