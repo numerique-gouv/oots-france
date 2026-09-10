@@ -1,14 +1,14 @@
-Étantdonné('un correspondant étranger capable de forger ses requêtes') do
+Étantdonné('un requêteur étranger qui forge ses requêtes') do
   @correspondent = FakeCorrespondent.new(requester: @requester)
 end
 
-Quand('le correspondant envoie une requête sans son slot {string}') do |name|
+Quand('le requêteur étranger envoie une requête sans le slot {string}') do |name|
   body = @correspondent.request { |xml| xml.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m, '') }
 
   @exchange_id = @correspondent.submit(body)
 end
 
-Quand('le correspondant envoie une requête déclarant aussi une personne morale') do
+Quand('le requêteur étranger envoie une requête qui déclare aussi une personne morale') do
   body = @correspondent.request do |xml|
     xml.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) do |slot|
       "#{slot}\n<rim:Slot name=\"LegalPerson\"><rim:SlotValue/></rim:Slot>"
@@ -20,7 +20,7 @@ end
 
 # Submitted twice as it stands, so the second carries the very request
 # identifier the first did — the reuse chapter 4.4 makes a data service refuse.
-Quand('le correspondant envoie deux fois la même requête') do
+Quand('le requêteur étranger envoie deux fois la même requête') do
   body = @correspondent.request
 
   @first_exchange_id = @correspondent.submit(body)
@@ -31,21 +31,21 @@ Quand('le correspondant envoie deux fois la même requête') do
   @exchange_id = @correspondent.submit(body)
 end
 
-Alors('la France refuse par {string} en invoquant la règle {string}') do |code, rule|
+Alors('la France refuse la requête avec le code {string} et la règle {string}') do |code, rule|
   expect(refusal).to have_attributes(edm_error_code: code, detail: rule)
 end
 
-Alors('la France refuse la seconde par {string} en invoquant le chapitre 4.4') do |code|
+Alors('la France refuse la seconde requête avec le code {string}, au motif du chapitre 4.4') do |code|
   expect(refusal).to have_attributes(edm_error_code: code,
     detail: EvidenceProvision::ChooseAnswer::REPLAYED_IDENTIFIER)
 end
 
-Alors('la France sert la première') do
+Alors('la France sert la première requête') do
   expect(ServerAuditEvent.find_by!(exchange_id: @first_exchange_id, event_type: 'response_sent'))
     .to have_attributes(evidence_digest: be_present)
 end
 
-Alors('aucun justificatif n\'est parti') do
+Alors('la France n\'envoie aucun justificatif') do
   expect(ServerAuditEvent.where(exchange_id: @exchange_id, event_type: 'response_sent')).to be_empty
 end
 

@@ -1,28 +1,28 @@
 # language: fr
 Fonctionnalité: Se connecter à l'espace d'administration
 
-  L'espace est réservé à l'équipe qui exploite le service. Chaque page en
-  demande la connexion, y compris le tableau de bord des jobs, qui est un
-  moteur monté et qu'aucun filtre de l'application n'atteint.
+  L'espace d'administration est réservé à l'équipe qui exploite le service.
+  Chacune de ses pages demande à l'administrateur de se connecter, y compris
+  le tableau de bord des jobs.
 
-  Scénario: sans connexion, le journal n'est pas lisible
+  Scénario: sans connexion, le journal des événements n'est pas lisible
     Étant donné un échange en échec avec l'Allemagne
-    Quand j'ouvre le journal des événements
-    Alors on me demande de me connecter
-    Et je ne vois plus l'échange allemand
+    Quand un visiteur ouvre le journal des événements
+    Alors la page de connexion s'affiche
+    Et la page n'affiche pas l'échange allemand
 
   Scénario: sans connexion, le tableau de bord des jobs n'est pas lisible
-    Quand j'ouvre le tableau de bord des jobs
-    Alors on me demande de me connecter
+    Quand un visiteur ouvre le tableau de bord des jobs
+    Alors la page de connexion s'affiche
 
-  Scénario: un mot de passe incorrect n'ouvre pas l'espace
-    Étant donné un compte d'administration
-    Quand je me connecte avec un mot de passe incorrect
-    Alors on me dit que les identifiants sont refusés
+  Scénario: un mot de passe incorrect n'ouvre pas l'espace d'administration
+    Étant donné un compte d'administrateur
+    Quand l'administrateur se connecte avec un mot de passe incorrect
+    Alors la page de connexion dit que les identifiants sont refusés
 
-  Scénario: se déconnecter referme l'espace
-    Étant donné un compte d'administration
-    Et que je suis connecté à l'espace d'administration
-    Quand je me déconnecte
-    Et que j'ouvre le journal des événements
-    Alors on me demande de me connecter
+  Scénario: se déconnecter ferme l'espace d'administration
+    Étant donné un compte d'administrateur
+    Et un administrateur connecté à l'espace d'administration
+    Quand l'administrateur se déconnecte
+    Et qu'il ouvre le journal des événements
+    Alors la page de connexion s'affiche
