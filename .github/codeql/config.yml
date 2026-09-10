@@ -1,0 +1,9 @@
+name: "CodeQL"
+
+# The suites drive fakes on purpose: `features/support/` walks wherever the fake
+# FranceConnect+ sends it, and `rb/request-forgery` reports every one of those
+# addresses. Scanning them says nothing about what the application does with a
+# correspondent's answer, which is the question this analysis is here to ask.
+paths-ignore:
+  - features
+  - spec

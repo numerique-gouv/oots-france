@@ -127,7 +127,7 @@ Quand('le client s\'identifie comme {string} en demandant {string}, en réclaman
 end
 
 Quand('le client s\'identifie comme {string} en demandant {string}, avec le scope profile') do |key, acr|
-  @returned = identify(@client, key, acr_values: acr, scope: "#{FranceConnectClient::DEFAULT_SCOPE} profile")
+  @returned = identify(@client, key, acr_values: acr, scope: "#{FranceConnectServiceProvider::DEFAULT_SCOPE} profile")
 end
 
 Quand('il échange le code contre les jetons') do
@@ -319,7 +319,7 @@ def declared_logout_url = "#{procedure_url}/demo/franceconnect/retour_deconnexio
 def hint = @client.decrypted(@tokens.fetch('id_token'))
 
 def client_declared_as(client_id)
-  FranceConnectClient.new(
+  FranceConnectServiceProvider.new(
     issuer: ENV.fetch('URL_FAUX_FRANCE_CONNECT'), client_id: client_id,
     client_secret: FakeFranceConnect::Clients::SECRETS.fetch(client_id),
     redirect_uri: "#{procedure_url}/demo/franceconnect/retour_connexion",
