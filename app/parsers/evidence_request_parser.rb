@@ -218,11 +218,11 @@ class EvidenceRequestParser
 
   def require_expected_specification
     declared = text_at(request, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
-    return if EdmSpecification.matches?(declared)
+    return if declared == EdmSpecification.preferred.identifier
 
     refuse('R-EDM-REQ-C001', 'parsers.evidence_request.unexpected_specification',
       announced: declared.presence || I18n.t('parsers.evidence_request.unnamed_specification'),
-      expected: EdmSpecification::IDENTIFIER)
+      expected: EdmSpecification.preferred.identifier)
   end
 
   # R-EDM-REQ-S016: either a natural person or a legal one, and never both.

@@ -216,10 +216,10 @@ class EvidenceResponseParser
 
   def unexpected_specification
     within_slot('SpecificationIdentifier') do |declared|
-      next if EdmSpecification.matches?(declared)
+      next if declared == EdmSpecification.preferred.identifier
 
       violation('R-EDM-RESP-C002', 'unexpected_specification',
-        announced: named(declared, 'absent_specification'), expected: EdmSpecification::IDENTIFIER)
+        announced: named(declared, 'absent_specification'), expected: EdmSpecification.preferred.identifier)
     end
   end
 

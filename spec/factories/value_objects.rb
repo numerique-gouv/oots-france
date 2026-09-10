@@ -19,7 +19,7 @@ FactoryBot.define do
     # Announced by default, since chapter 3.1.4 gives `sdg:ConformsTo` a
     # cardinality of 1..n and the published Finnish response carries it: a mute
     # access point is the degraded case, and belongs to the specs that name it.
-    conforms_to { [EdmSpecification::IDENTIFIER] }
+    conforms_to { [EdmSpecification.preferred.identifier] }
 
     # A correspondent's gateway, whose scheme is its own Member State's to
     # choose: the country-coded French one would make `AP_DE_01` announce
@@ -29,8 +29,15 @@ FactoryBot.define do
       type_id { 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots' }
     end
 
+    # The line France still speaks, and the line it does not: a gateway
+    # announcing 1.2 alone is answered in 1.2, where one announcing 1.0 alone
+    # is not answered at all.
+    trait :legacy_line do
+      conforms_to { [EdmSpecification::V1_2.identifier] }
+    end
+
     trait :outdated do
-      conforms_to { ['oots-edm:v1.2'] }
+      conforms_to { ['oots-edm:v1.0'] }
     end
 
     initialize_with { new(**attributes) }

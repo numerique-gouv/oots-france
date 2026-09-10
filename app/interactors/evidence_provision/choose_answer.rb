@@ -82,12 +82,12 @@ module EvidenceProvision
     # inconsistency chapter 4.7 requires the receiver to reject.
     def reject_unless_expected_version
       announced = context.message.specification_id
-      return if EdmSpecification.matches?(announced)
+      return if announced == EdmSpecification.preferred.identifier
 
       refuse(announced.blank? ? 'R-EDM-ebMS-019' : 'R-EDM-ebMS-038',
         I18n.t('interactors.evidence_provision.choose_answer.unexpected_version',
           announced: announced.presence || I18n.t('interactors.evidence_provision.choose_answer.unnamed_version'),
-          expected: EdmSpecification::IDENTIFIER))
+          expected: EdmSpecification.preferred.identifier))
     end
 
     # Chapter 4.4: « A Data Service MUST reject requests that use identifiers

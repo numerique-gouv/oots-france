@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_10_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_130000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -86,6 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_10_120000) do
     t.string "request_id"
     t.datetime "response_available_at"
     t.datetime "settled_at"
+    t.string "specification", default: "oots-edm:v2.0", null: false
     t.string "status", default: "pending", null: false
     t.datetime "updated_at", null: false
     t.index ["conversation_id"], name: "index_exchanges_on_conversation_id"

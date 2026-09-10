@@ -23,7 +23,7 @@
       <eb:Property name="originalSender" type="<%= escape(original_sender.type_id) %>"><%= escape(original_sender.id) %></eb:Property>
       <eb:Property name="finalRecipient" type="<%= escape(final_recipient.type_id) %>"><%= escape(final_recipient.id) %></eb:Property>
       <eb:Property name="ExchangeId"><%= escape(exchange_id) %></eb:Property>
-      <eb:Property name="SpecificationId"><%= EdmSpecification::IDENTIFIER %></eb:Property>
+      <eb:Property name="SpecificationId"><%= EdmSpecification.preferred.identifier %></eb:Property>
     </eb:MessageProperties>
     <eb:PayloadInfo>
       <eb:PartInfo href="<%= escape(payload_id) %>">

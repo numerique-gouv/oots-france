@@ -782,7 +782,7 @@ RSpec.describe EvidenceProvision::Answer do
   # and a header saying otherwise is a message no reading can reconcile.
   describe 'a request whose header contradicts its body on the version' do
     let(:message) do
-      RetrievedMessageParser.new(real_envelope('requete').sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0'))
+      RetrievedMessageParser.new(real_envelope('requete').sub(EdmSpecification.preferred.identifier, 'oots-edm:v1.0'))
     end
 
     it 'answers EDM:ERR:0003 naming the ebMS rule' do

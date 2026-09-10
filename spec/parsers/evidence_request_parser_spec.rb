@@ -838,7 +838,7 @@ RSpec.describe EvidenceRequestParser do
     end
 
     it 'refuses a request announcing another version of the data model' do
-      dated = with_body { |body| body.sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0') }
+      dated = with_body { |body| body.sub(EdmSpecification.preferred.identifier, 'oots-edm:v1.0') }
 
       expect { dated.validate! }
         .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))

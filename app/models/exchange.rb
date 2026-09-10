@@ -106,6 +106,13 @@ class Exchange < ApplicationRecord
   # it round would make `requester_country_code` name the solicited country.
   attr_readonly :incoming
 
+  # The EDM version this exchange is conducted in, as the object rather than as
+  # the string the column stores. Chapter 4.7 §2.6.2 has every message of one
+  # exchange carry the same version, so this is what an answer is written in and
+  # what a response is judged against — settled by `EvidenceRequest::ChooseSpecification`
+  # where France asks, and read off the request where France answers.
+  attribute :specification, EdmSpecification::Type.new
+
   validates :exchange_id, presence: true, uniqueness: true
   validates :conversation_id, presence: true
 
