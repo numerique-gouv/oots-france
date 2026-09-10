@@ -90,16 +90,20 @@ ignore_unused:
   # The descriptions `require_content` receives as a key, and composes with
   # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}
-  - parsers.evidence_request.{agent_without_id,agent_without_scheme,evidence_type_without_id}
+  - parsers.evidence_request.{agent_without_id,evidence_type_without_id}
   - parsers.evidence_request.legal_identifier_without_scheme
   # The rules the parser names, each composed from the identifier that failed —
   # the first three from `validate!`, the last two from `request_id` and
   # `evidence_type`, which refuse at the read rather than in a pass of their own.
   - parsers.evidence_request.{slot_required,unexpected_specification,evidence_subject_not_alone}
+  # And the one `requester_agent` names, counting the agents classified `ER`
+  # where the requester is read rather than in a pass of its own.
+  - parsers.evidence_request.requester_agent_not_alone
   - parsers.evidence_request.{request_id_not_a_uuid,evidence_type_without_distribution}
   # The rules on the requesting agent that `build_requester` names, refusing at
   # the read because no answer could carry them: an exception response would
   # have to copy back the very scheme, name or language being refused.
+  - parsers.evidence_request.{agent_without_identifier,agent_without_scheme}
   - parsers.evidence_request.{agent_scheme_unknown,agent_id_too_long}
   - parsers.evidence_request.{agent_without_name,agent_name_too_short}
   - parsers.evidence_request.{agent_without_language,agent_language_unknown}

@@ -363,6 +363,65 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-C074` counts the agents classified `ER` and `R-EDM-REQ-S012` the
+  # slot that carries them, both in `= 1`. Refused where the requester is read
+  # and not among the checks of `validate!`: an `EDM:ERR:0003` names the
+  # requester by copying it back, and neither a collection carrying two nor one
+  # carrying none leaves an agent to name or to address. The reading has to fail
+  # for the journal to record no requester either — a check standing beside
+  # would let the first of two agents be logged as though it had been read.
+  describe 'the count of requesting agents' do
+    # Conformant by every rule the two of the real request satisfy, so that what
+    # refuses it is the count and nothing else.
+    let(:second_requester) do
+      <<~XML
+        <sdg:Agent>
+          <sdg:Identifier schemeID="#{IdentifierScheme::UNREGISTERED_PREFIX}oots">AUTRE</sdg:Identifier>
+          <sdg:Name lang="EN">Another requester</sdg:Name>
+          <sdg:Address><sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1></sdg:Address>
+          <sdg:Classification>ER</sdg:Classification>
+        </sdg:Agent>
+      XML
+    end
+
+    it 'refuses a collection carrying two agents classified ER, under R-EDM-REQ-C074' do
+      expect { with_third_agent(second_requester).requester }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C074')))
+    end
+
+    it 'refuses one carrying none at all, under the same rule' do
+      demoted = with_body { |body| body.gsub('>ER<', '>IP<') }
+
+      expect { demoted.requester }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C074')))
+    end
+
+    # `C074` compares raw — `sdg:Classification='ER'` — where `C073` normalises.
+    # A second agent classified ` ER ` is therefore not a second requester: it is
+    # one of the agents the requester is not, and `C014`, raw too, refuses it
+    # with an answer. Both halves are asserted, a reader that normalised here
+    # counting two requesters and refusing without answering.
+    it 'does not count a classification padded with blanks, which C014 refuses' do
+      padded = with_third_agent(second_requester.sub('>ER<', '> ER <'))
+
+      expect(padded.requester.id).to eq('00000000000002')
+      expect { padded.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C014')))
+    end
+
+    it 'refuses a request carrying no EvidenceRequester slot, under R-EDM-REQ-S012' do
+      expect { without_requester_slot.requester }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S012')))
+    end
+
+    # `= 1` and not `>= 1`: two slots leave which one carries the requester
+    # undecided, where `slot_elements` would silently read the first.
+    it 'refuses one carrying the slot twice, under the same rule' do
+      expect { with_doubled_requester_slot.requester }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S012')))
+    end
+  end
+
   # `R-EDM-REQ-C012`, `C092`, `C108` and `C109`, refused where the requester is
   # read rather than among the checks of `validate!`, because an `EDM:ERR:0003`
   # names the requester by copying back the very values these rules judge —
@@ -370,6 +429,52 @@ RSpec.describe EvidenceRequestParser do
   # the answer. Nothing conformant can carry these refusals, so nothing goes
   # back and the journal holds them alone.
   describe 'the requesting agent an answer would have to name' do
+    # `R-EDM-REQ-C011` asserts the attribute's presence and nothing more, so one
+    # written empty satisfies it and falls to `C012`, which compares the value —
+    # the shape `C041` and `C042` take on the beneficiary's identifier, and
+    # `C017` and `C018` on the provider's. The absent element breaks neither,
+    # the context of `C011` being the identifier itself: `AgentType` and chapter
+    # 4.5.1 §3.2 are what require it, and the refusal names the chapter.
+    describe 'the presence of its identifier' do
+      it 'refuses an agent carrying no sdg:Identifier at all, under the chapter' do
+        expect { without_requester_identifier.requester }.to raise_error(
+          an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: AgentConformance::AGENT_IDENTIFIER_REQUIRED)),
+        )
+      end
+
+      it 'refuses one carrying no schemeID, under R-EDM-REQ-C011' do
+        expect { with_requester_scheme(nil).requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C011')))
+      end
+
+      it 'refuses an empty schemeID under R-EDM-REQ-C012, not C011' do
+        expect { with_requester_scheme('').requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C012')))
+      end
+
+      # No assertion refuses this one either: `C012` measures a length no value
+      # is too short for. Naming the chapter here would impute a rule the
+      # request does not break, so the refusal names none — and comes last, once
+      # every rule that could have named one has passed.
+      it 'refuses an identifier present and empty, naming no rule at all' do
+        expect { with_requester_id('').requester }.to raise_error(
+          an_instance_of(UnreadableMessageError).and(having_attributes(detail: nil)),
+        )
+      end
+
+      # And that refusal comes last: an identifier both empty and naming no
+      # scheme breaks `C011`, and a reader that judged the content first would
+      # answer for it under no rule at all — losing the one identifier the
+      # correspondent could have acted on.
+      it 'names C011 on an identifier at once empty and without a scheme' do
+        emptied = with_requester_agent { |agent| replace_scheme(replace_id(agent, ''), nil) }
+
+        expect { emptied.requester }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C011')))
+      end
+    end
+
     describe 'the scheme of its identifier' do
       it 'accepts the EAS code the real request carries' do
         expect(request.requester.type_id).to eq('urn:cef.eu:names:identifier:EAS:0009')
@@ -646,12 +751,6 @@ RSpec.describe EvidenceRequestParser do
 
       expect { emptied.procedure_code }.to raise_error(UnreadableMessageError, /vide/)
     end
-
-    it 'refuses a request with no agent classified ER' do
-      demoted = with_body { |body| body.gsub('>ER<', '>IP<') }
-
-      expect { demoted.requester }.to raise_error(UnreadableMessageError, /ER/)
-    end
   end
 
   # Chapter 4.6, on a request that is well formed and still not one France may
@@ -666,18 +765,28 @@ RSpec.describe EvidenceRequestParser do
     # omitting one and a request carrying it twice break it alike.
     EvidenceRequestParser::REQUIRED_SLOTS.each do |name, rule|
       it "refuses a request with no #{name} slot, under #{rule}" do
-        amputated = with_body { |body| body.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m, '') }
-
-        expect { amputated.validate! }
+        expect { without_slot(name).validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
       end
 
       it "refuses a request carrying the #{name} slot twice, under #{rule}" do
-        doubled = with_body { |body| body.sub(%r{<rim:Slot name="#{name}">.*?</rim:Slot>}m) { |slot| slot * 2 } }
-
-        expect { doubled.validate! }
+        expect { with_doubled_slot(name).validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
       end
+    end
+
+    # The one slot the chapter counts among the children of `query:Query` and
+    # not among those of `query:QueryRequest`, which is why it sits outside the
+    # table above: counted in the wrong scope, the rule would fire on every
+    # request at all.
+    it 'refuses a request whose query carries no EvidenceRequest slot, under R-EDM-REQ-S015' do
+      expect { without_evidence_request.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S015')))
+    end
+
+    it 'refuses one carrying it twice, under the same rule' do
+      expect { with_doubled_evidence_request.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S015')))
     end
 
     it 'refuses a request announcing another version of the data model' do
@@ -1272,11 +1381,32 @@ RSpec.describe EvidenceRequestParser do
   # The agent classified `ER` alone, `Fixtures::REQUESTER_AGENT` saying why.
   def with_requester_agent(&) = envelope_with_requester_agent(&).body
 
-  def with_requester_scheme(scheme)
-    with_requester_agent { |agent| agent.sub(/schemeID="[^"]*"/, %(schemeID="#{scheme}")) }
-  end
+  # `nil` removes the attribute, where an empty string writes it blank:
+  # `R-EDM-REQ-C011` asserts its presence and `C012` judges its value.
+  def with_requester_scheme(scheme) = with_requester_agent { |agent| replace_scheme(agent, scheme) }
 
   def with_requester_id(id) = with_requester_agent { |agent| replace_id(agent, id) }
+
+  def without_requester_identifier = with_requester_agent { |agent| remove_identifier(agent) }
+
+  # The slot itself, and not the agent it carries: `R-EDM-REQ-S012` counts it
+  # among the children of `query:QueryRequest`, `R-EDM-REQ-S015` its counterpart
+  # `EvidenceRequest` among those of `query:Query`.
+  def without_requester_slot = without_slot('EvidenceRequester')
+
+  def with_doubled_requester_slot = with_doubled_slot('EvidenceRequester')
+
+  def without_evidence_request = without_slot('EvidenceRequest')
+
+  def with_doubled_evidence_request = with_doubled_slot('EvidenceRequest')
+
+  # Both halves of a rule that counts, written once: `spec/parsers/evidence_response_parser_spec.rb`
+  # cuts its own slots out the same way.
+  def slot(name) = %r{<rim:Slot name="#{name}">.*?</rim:Slot>}m
+
+  def without_slot(name) = with_body { |body| body.sub(slot(name), '') }
+
+  def with_doubled_slot(name) = with_body { |body| body.sub(slot(name)) { |found| found * 2 } }
 
   def with_requester_name(name) = with_requester_agent { |agent| replace_name(agent, name) }
 
