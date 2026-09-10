@@ -5,6 +5,10 @@
 #
 # Usage: scripts/validate_schematron.sh [tdd_version]
 #
+# The tag names the line: `1.2.5` judges the messages the code writes as
+# `oots-edm:v1.2`, `2.0.1` those it writes as `oots-edm:v2.0`. Each version
+# keeps its own artefacts and its own messages under `.schematron/<tag>/`.
+#
 # Exit: 0 if the messages conform, 2 if a rule is violated, 1 for any other
 # failure (download, compilation).
 set -Eeuo pipefail
@@ -15,6 +19,17 @@ set -Eeuo pipefail
 trap 'exit 1' ERR
 
 VERSION_TDD="${1:-2.0.1}"
+
+# The EDM version the tag judges, derived from the tag's own major.minor: a
+# later patch on either line renders the same messages.
+case "$VERSION_TDD" in
+  1.2.*) SPECIFICATION_EDM='oots-edm:v1.2' ;;
+  2.0.*) SPECIFICATION_EDM='oots-edm:v2.0' ;;
+  *)
+    echo "Version des TDD inconnue : $VERSION_TDD" >&2
+    exit 1
+    ;;
+esac
 PROJET_GITLAB=138  # oots/tdd/tdd_chapters sur code.europa.eu
 VERSION_SCHXSLT=1.10.1
 VERSION_SAXON=10.9
@@ -112,8 +127,8 @@ for regle in "${SCHEMATRONS[@]}"; do
 done
 
 # ----------------------------------------------------- messages to validate
-echo "→ Production des messages par le code du dépôt"
-(cd "$racine" && bundle exec rake "oots:messages[$messages]")
+echo "→ Production des messages $SPECIFICATION_EDM par le code du dépôt"
+(cd "$racine" && bundle exec rake "oots:messages[$messages,$SPECIFICATION_EDM]")
 
 # ------------------------------------------------------------- validation
 enEchec=0
@@ -180,10 +195,24 @@ valide erreurCapaciteNonSupportee.entete EDM-ebMS
 valide erreurExpiration.entete EDM-ebMS
 valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 
-# Les deux règles FATAL que `EvidenceProvision::RejectMalformedIdentifiers` invoque pour
-# refuser de répondre à une requête dont les identifiants ne sont pas des UUID.
-# Sans ce spécimen, l'expression rationnelle du dépôt ne s'atteste qu'elle-même.
-refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017,R-EDM-ebMS-037
+# Les règles FATAL que `EvidenceProvision::RejectMalformedIdentifiers` invoque
+# pour refuser de répondre à une requête dont les identifiants ne sont pas des
+# UUID. Sans ce spécimen, l'expression rationnelle du dépôt ne s'atteste
+# qu'elle-même. `R-EDM-ebMS-037` n'existe pas en 1.2.5, où l'`ExchangeId` n'est
+# pas une propriété d'en-tête : seule `-017` y mord.
+if [ "$SPECIFICATION_EDM" = 'oots-edm:v1.2' ]; then
+  refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017
+else
+  refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017,R-EDM-ebMS-037
+
+  # L'entête de la ligne 1.2 confronté à dessein aux règles de la 2.0.1 : deux
+  # règles et non une, `R-EDM-ebMS-019` changeant de contexte entre les deux
+  # étiquettes — ancrée sur `eb:Property` en 1.2.5, elle l'est sur
+  # `eb:MessageProperties` en 2.0.1, où elle compte chacun des quatre noms une
+  # fois, qu'un entête à deux propriétés enfreint autant que le comptage de
+  # `-018`.
+  refuse versionAnterieure.entete EDM-ebMS R-EDM-ebMS-018,R-EDM-ebMS-019
+fi
 
 # Code 2 for a rule violation, distinct from the 1 any other failure returns
 # (download, compilation): the caller can then retry a network fluke without
