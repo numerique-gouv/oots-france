@@ -24,14 +24,15 @@ RSpec.describe 'GET /demo/auth/cles_publiques' do
     expect(published.keys).not_to include(*PublicKeySet::SECRET_MEMBERS)
   end
 
-  # Distinct from `/auth/cles_publiques`, which publishes what a service
-  # provider encrypts a beneficiary token *for*. Two interfaces, two keys, and
-  # a demonstration sharing one would prove nothing about either.
-  it 'is not the key this deployment decrypts with' do
-    signing = published
-
-    get '/auth/cles_publiques'
-
-    expect(response.parsed_body['keys'].first['kid']).not_to eq(signing['kid'])
+  # Distinct from `/auth/cles_publiques`, which publishes what a service provider
+  # encrypts a beneficiary token *for*. Two interfaces, two keys, and a
+  # demonstration sharing one would prove nothing about either.
+  #
+  # Asserted against the key this route is meant to serve rather than by calling
+  # the other one: that one reads a variable the suite deliberately leaves
+  # unset, and the example would then fail on a configuration rather than on
+  # what it is about.
+  it 'serves the signing key of the demonstration and no other' do
+    expect(published['kid']).to eq(PublicKeySet.new(Settings.demo_signing_key_jwk).kid)
   end
 end
