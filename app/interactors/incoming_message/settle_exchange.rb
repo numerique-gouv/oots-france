@@ -4,17 +4,17 @@ module IncomingMessage
   # is rarely the one that asked.
   class SettleExchange < ApplicationInteractor
     def call
-      exchange = Exchange.find_by(exchange_id: context.message.exchange_id)
+      exchange = context.exchange
 
       # An exchange we never opened: logged and not raised, there being
-      # nobody to report it to.
+      # nobody to report it to. Named by the conversation, which every message
+      # carries on both lines, where the `ExchangeId` belongs to one of them.
       if exchange.nil?
         Rails.logger.warn(I18n.t('interactors.incoming_message.settle_exchange.unknown',
-          id: context.message.exchange_id))
+          id: context.message.conversation_id))
         return
       end
 
-      context.exchange = exchange
       settle(exchange) if processable?(exchange)
     end
 

@@ -184,6 +184,38 @@ class Exchange < ApplicationRecord
       .or(in_progress.where(incoming: true, ebms_sent_at: ...deadline))
   }
 
+  # Which exchange a message that has just arrived belongs to.
+  #
+  # The `ExchangeId` where the message carries one: chapter 4.4 has every
+  # message of an exchange reuse it, and 2.0 puts it in a header property.
+  # Matched on the identifier alone, direction included: the end-to-end scenario
+  # loops through a single gateway, where France is both correspondents and one
+  # identifier legitimately names both sides.
+  #
+  # The 1.2 line carries no such property — `R-EDM-ebMS-037` is a rule of 2.0.1
+  # alone — so what names the exchange there is the request: the `@id` of a
+  # request received, the `@requestId` a response or an error echoes back.
+  #
+  # And where a 1.2 message carries neither — a payload nobody could read, an
+  # error response that `R-EDM-ERR-C025` lets omit its `requestId` — the
+  # conversation, and only where it holds a single exchange still in progress.
+  # Chapter 4.7 v1.2.3 §2.5 ties a conversation to one authenticated user's
+  # session rather than to one exchange, so a conversation covering two says
+  # nothing about which of them a message belongs to. The caller passes it or
+  # withholds it: a request arriving opens an exchange of its own, where an
+  # answer settles one that is waiting.
+  def self.correlate(exchange_id:, request_id:, conversation_id: nil)
+    return find_by(exchange_id:) if exchange_id.present?
+    return find_by(request_id:) if request_id.present?
+    return if conversation_id.blank?
+
+    # Loaded before it is counted: `one?` and `first` on a relation are two
+    # queries for one question, and the answer needs the row anyway.
+    waiting = where(conversation_id:, status: IN_PROGRESS).to_a
+
+    waiting.first if waiting.one?
+  end
+
   def sent! = fire(:transmit, settled_at: nil)
 
   def preview_required!(location) = answered(:require_preview, preview_location: location)

@@ -455,10 +455,11 @@ if Rails.env.development?
         :request_id, :request_id_as_sent, :message_error_code, :subject,
         :confirmed_without, :presumed).merge(
           conversation_id:,
-          # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
-          # n'a encore quitté n'en porte pas, et rien n'en écrit côté
-          # fournisseur, où l'identifiant ne vit que dans le journal.
-          request_id: (request_id unless incoming || scenario[:status] == 'pending'),
+          # `SendToGateway` l'écrit au moment de soumettre, et
+          # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
+          # n'a encore quitté n'en porte pas, un échange reçu le porte toujours
+          # — c'est par lui qu'un message de la ligne 1.2 retrouve le sien.
+          request_id: (request_id if incoming || scenario[:status] != 'pending'),
           # Le requêteur du scénario quand il en nomme un — la démarche de
           # démonstration est le seul à en nommer —, et sinon celui que le sens
           # de l'échange désigne.

@@ -8,7 +8,11 @@ RSpec.describe IncomingMessage::OpenExchange do
 
   subject(:open_exchange) { described_class.call(message:) }
 
-  let(:body) { instance_double(EvidenceRequestParser, procedure_code: '00', requester:) }
+  FOREIGN_REQUEST = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'.freeze
+
+  let(:body) do
+    instance_double(EvidenceRequestParser, procedure_code: '00', requester:, request_id: FOREIGN_REQUEST)
+  end
   let(:requester) { EvidenceRequester.new(id: '00000000000009', type_id: '0002', address: Address.new(country: 'FI')) }
 
   # The stamp the sending gateway put on the message — see `Exchange` for why a
@@ -19,7 +23,7 @@ RSpec.describe IncomingMessage::OpenExchange do
     let(:message) do
       instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
         exchange_id: FOREIGN_EXCHANGE, conversation_id: FOREIGN_CONVERSATION,
-        sent_at: STAMPED_AT, body:)
+        specification: EdmSpecification::V2_0, sent_at: STAMPED_AT, body:)
     end
 
     # Answering leaves a row where asking does, so the listing carries both
@@ -88,9 +92,9 @@ RSpec.describe IncomingMessage::OpenExchange do
     end
   end
 
-  # `R-EDM-ebMS-019` makes the `ExchangeId` property mandatory, and the ebMS3
-  # envelope the `eb:ConversationId` element, so a request carrying neither
-  # names nothing to open a row under. It must be
+  # `R-EDM-ebMS-019` makes the `ExchangeId` property mandatory on the 2.0 line,
+  # and the ebMS3 envelope the `eb:ConversationId` element on both, so a request
+  # carrying neither names nothing to open a row under. It must be
   # refused where `IncomingMessage::Process` can give up on it — the arrival is
   # journalled by then — and never let the row's own validation raise where
   # nothing catches it: `retrieveMessage` has already erased the message, so an
@@ -98,7 +102,8 @@ RSpec.describe IncomingMessage::OpenExchange do
   context 'when the header names no exchange' do
     it 'refuses a request carrying no exchange identifier' do
       message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION, body:)
+        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION,
+        specification: EdmSpecification::V2_0, body:)
 
       expect { described_class.call(message:, audit_trail: AuditTrail.new) }
         .to raise_error(UnreadableMessageError)
@@ -106,7 +111,22 @@ RSpec.describe IncomingMessage::OpenExchange do
 
     it 'refuses a request carrying no conversation identifier' do
       message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: FOREIGN_EXCHANGE, conversation_id: nil, body:)
+        exchange_id: FOREIGN_EXCHANGE, conversation_id: nil,
+        specification: EdmSpecification::V2_0, body:)
+
+      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
+        .to raise_error(UnreadableMessageError)
+    end
+
+    # The 1.2 line is what makes that refusal indispensable rather than
+    # incidental: `identified?` answers `true` there whatever the header names,
+    # the `ExchangeId` being a property of 2.0 alone, so the blank check is all
+    # that stands between a request naming no conversation and a row `Exchange`
+    # would refuse to validate.
+    it 'refuses a request of the 1.2 line carrying no conversation identifier' do
+      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        exchange_id: nil, conversation_id: nil,
+        specification: EdmSpecification::V1_2, body:)
 
       expect { described_class.call(message:, audit_trail: AuditTrail.new) }
         .to raise_error(UnreadableMessageError)
@@ -114,7 +134,8 @@ RSpec.describe IncomingMessage::OpenExchange do
 
     it 'opens nothing' do
       message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: nil, body:)
+        exchange_id: nil, conversation_id: nil,
+        specification: EdmSpecification::V2_0, body:)
 
       suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
 
@@ -127,7 +148,8 @@ RSpec.describe IncomingMessage::OpenExchange do
     # record it.
     it 'journals why nothing followed the arrival' do
       message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION, body:)
+        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION,
+        specification: EdmSpecification::V2_0, body:)
 
       suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
 

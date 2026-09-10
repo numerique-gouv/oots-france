@@ -321,4 +321,66 @@ RSpec.describe IncomingMessage::Process do
 
     expect_said(given_up.map { |reason| "interactors.incoming_message.process.#{reason}" })
   end
+
+  # RG15 of OOTS-200. A 1.2 header carries no `ExchangeId` — `R-EDM-ebMS-037` is
+  # a rule of 2.0.1 alone — and an exchange still needs a name here: the console,
+  # the journal and the expiry sweep all go by it. France mints one for itself
+  # and emits it nowhere.
+  describe 'a request arriving on the 1.2 line' do
+    let(:message) { earlier_line_envelope }
+
+    before { allow(EvidenceProvision::Answer).to receive(:call!) }
+
+    # CA18. The refusal `R-EDM-ebMS-019` earns a 2.0 request that names no
+    # exchange does not reach this one.
+    it 'opens an exchange under an identifier of its own, and refuses nothing' do
+      process
+
+      expect(Exchange.sole).to have_attributes(
+        conversation_id: message.conversation_id, incoming: true, status: 'pending',
+        specification: EdmSpecification::V1_2, request_id: message.body.request_id,
+      )
+      expect(Exchange.sole.exchange_id).to match(Exchange::UUID)
+      expect(AuditEvent.where(event_type: 'request_refused')).to be_empty
+    end
+
+    # CA19. The fallback sweep can bring back a message the push notification has
+    # already delivered, and the minted identifier is a new one each time: what
+    # recognises the repeat is the identifier of the request itself.
+    it 'opens one exchange for a request delivered twice' do
+      process
+
+      expect { described_class.call(message_id: 'un-message', gateway:, **collaborators) }
+        .not_to change(Exchange, :count)
+    end
+  end
+
+  # CA20. `R-EDM-ERR-C025` lets an exception response omit its `requestId` where
+  # its type is `rs:InvalidRequestExceptionType`, and a 1.2 header names no
+  # exchange either: what is left to go on is the conversation, and chapter 4.7
+  # v1.2.3 §2.5 ties it to a user's session rather than to one exchange — so it
+  # correlates only where the conversation holds a single exchange underway.
+  describe 'an error arriving on the 1.2 line with no request identifier' do
+    let(:message) do
+      earlier_line_envelope('erreurObjetIntrouvable') do |body|
+        body.sub(/ requestId="[^"]*"/, '')
+      end
+    end
+
+    it 'settles the one exchange its conversation still has underway' do
+      exchange = create(:exchange, :legacy_line, conversation_id: message.conversation_id).tap(&:sent!)
+
+      process
+
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+    end
+
+    it 'settles none where the conversation holds two' do
+      waiting = Array.new(2) { create(:exchange, conversation_id: message.conversation_id).tap(&:sent!) }
+
+      process
+
+      expect(waiting.map { |exchange| exchange.reload.status }).to all(eq('sent'))
+    end
+  end
 end

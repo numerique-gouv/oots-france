@@ -1,7 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe IncomingMessage::SettleExchange do
-  subject(:settle) { described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) }
+  subject(:settle) do
+    described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+      audit_trail: AuditTrail.new)
+  end
 
   let(:evidence_forwarder) { instance_double(EvidenceForwarder, deliver: nil) }
   let(:requesters) do
@@ -204,7 +207,8 @@ RSpec.describe IncomingMessage::SettleExchange do
       exchange.update!(request_id: message.body.request_id)
       settle
 
-      described_class.call(message: RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')),
+      arriving = RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe'))
+      described_class.call(message: arriving, exchange: correlated(arriving),
         evidence_forwarder:, requesters:, audit_trail: AuditTrail.new)
 
       expect(evidence_forwarder).not_to have_received(:deliver)
@@ -298,7 +302,10 @@ RSpec.describe IncomingMessage::SettleExchange do
 
       allow(evidence_forwarder).to receive(:deliver) do
         arrivals += 1
-        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+        if arrivals == 1
+          described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+            audit_trail: AuditTrail.new)
+        end
       end
     end
 
@@ -365,7 +372,10 @@ RSpec.describe IncomingMessage::SettleExchange do
 
       allow(evidence_forwarder).to receive(:deliver) do
         arrivals += 1
-        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+        if arrivals == 1
+          described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+            audit_trail: AuditTrail.new)
+        end
       end
     end
 

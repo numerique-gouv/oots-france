@@ -22,19 +22,30 @@ module EvidenceProvision
     #
     # Ordered as the header presents them, so a request malforming both is
     # refused on the conversation and a reader of the journal knows which.
+    #
+    # `R-EDM-ebMS-037` belongs to the 2.0.1 tag alone. On the 1.2 line the header
+    # carries no `ExchangeId` at all, France mints one for itself, and there is
+    # nothing a correspondent could have malformed — where `-017` fixes the
+    # conversation on both lines.
     UUID_RULES = {
       conversation_id: { rule: 'R-EDM-ebMS-017', element: 'eb:ConversationId' },
       exchange_id: { rule: 'R-EDM-ebMS-037', element: 'ExchangeId' },
     }.freeze
 
     def call
-      UUID_RULES.each do |name, rule|
+      applicable.each do |name, rule|
         value = context.message.public_send(name)
         refuse(rule, value) unless value.to_s.match?(Exchange::UUID)
       end
     end
 
     private
+
+    def applicable
+      return UUID_RULES if context.message.specification.exchange_named_in_header?
+
+      UUID_RULES.except(:exchange_id)
+    end
 
     # Hung on the exchange `IncomingMessage::OpenExchange` has already opened, so
     # the refusal joins the arrival that `IncomingMessage::Process` journalled
@@ -44,7 +55,7 @@ module EvidenceProvision
       reason = I18n.t('interactors.evidence_provision.reject_malformed_identifiers.malformed_identifier',
         element: rule[:element], value:, rule: rule[:rule])
 
-      exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
+      exchange = context.exchange
 
       audit_trail.request_refused(
         requester_id: exchange&.evidence_requester_id, procedure_code: exchange&.procedure_code,

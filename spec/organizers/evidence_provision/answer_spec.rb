@@ -11,7 +11,10 @@ require 'rails_helper'
 RSpec.describe EvidenceProvision::Answer do
   include ActiveSupport::Testing::TimeHelpers
 
-  subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new) }
+  subject(:answer) do
+    described_class.call(message:, exchange: correlated(message), gateway:,
+      uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new)
+  end
 
   let(:gateway) { gateway_accepting_submissions }
   let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
@@ -881,6 +884,23 @@ RSpec.describe EvidenceProvision::Answer do
       end
     end
 
+    # CA9 of OOTS-200. `R-EDM-ebMS-037` is a rule of the 2.0.1 tag alone: on the
+    # 1.2 line the header carries no `ExchangeId` at all, France mints one for
+    # itself, and there is nothing a correspondent could have malformed.
+    context 'when the request arrives on the 1.2 line, which names no exchange' do
+      let(:message) { earlier_line_envelope }
+      let(:opened) do
+        create(:exchange, :legacy_line, incoming: true, conversation_id: message.conversation_id,
+          request_id: message.body.request_id, procedure_code: '00', country_code: 'FI')
+      end
+
+      it 'answers rather than refusing what that line does not carry' do
+        expect { answer }.not_to raise_error
+        expect(gateway).to have_received(:submit)
+        expect(AuditEvent.where(event_type: 'request_refused')).to be_empty
+      end
+    end
+
     # One refusal and not two: the first identifier the header presents settles
     # it, which is also the lower of the two rule numbers. Pinned rather than
     # left open, so that a reader of the journal knows which of the two a line
@@ -1390,8 +1410,9 @@ RSpec.describe EvidenceProvision::Answer do
 
   # `IncomingMessage::Process` always opens one, but nothing compels it: the
   # answer goes out all the same, and says so rather than letting it slip.
+  # Named by the conversation, which every message carries on both lines.
   it 'answers all the same when no exchange bears the identifier received' do
-    expect(Rails.logger).to receive(:warn).with(/#{message.exchange_id}/)
+    expect(Rails.logger).to receive(:warn).with(/#{message.conversation_id}/)
 
     expect(answer).to be_a_success
   end
