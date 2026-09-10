@@ -48,6 +48,11 @@ class DemoBrowser
   # says to.
   def choose(name, value) = submit(name => value)
 
+  # A page carries several forms — the header always carries the sign-out one —
+  # so the form is named by where it posts, and the scenario's values travel with
+  # whatever it already held. Public like `choose`: the steps press it directly.
+  def submit_to(path, fields = {}) = send_form(form_posting_to(path), fields)
+
   def title = document.at_css('h1')&.text.to_s
 
   def body = page.body.to_s
@@ -65,11 +70,6 @@ class DemoBrowser
   def document = Nokogiri::HTML(body)
 
   def submit(fields) = send_form(only_form, fields)
-
-  # A page carries several forms — the header always carries the sign-out one —
-  # so the form is named by where it posts, and the scenario's values travel with
-  # whatever it already held.
-  def submit_to(path, fields = {}) = send_form(form_posting_to(path), fields)
 
   def only_form
     document.at_css('form') || raise("Aucun formulaire dans la page « #{title} » : #{body}")
