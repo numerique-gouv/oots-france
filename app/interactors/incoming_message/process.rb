@@ -38,6 +38,23 @@ module IncomingMessage
     rescue EbmsError => e
       abandon_exchange(e, :exchange_impossible)
       raise
+    # The worker refuses to start on a configuration it cannot satisfy, so this
+    # is what is left: a variable that fails only when the path that reads it is
+    # taken. Rescued on `call` rather than on one method, as
+    # `EvidenceRequest::SendToGateway` does, because there is no one method to
+    # rescue — any of the handlers can read the environment, and the message is
+    # consumed before the first of them runs.
+    #
+    # What makes that width safe is the startup check itself, not
+    # `abandon_exchange`: `JournalAnswer` records before it settles, so an
+    # answer already submitted sits on an exchange still `pending` while
+    # `Answered` reads `Settings.french_provider_identity`. Every variable read
+    # past a real submission belongs to `REQUIRED`, which the worker now
+    # refuses to start without — one read from outside it would settle in
+    # failure an exchange the correspondent has been answered on.
+    rescue ConfigurationError => e
+      abandon_exchange(e, :invalid_configuration)
+      raise
     end
 
     private

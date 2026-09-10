@@ -2,10 +2,12 @@
 
 require_relative 'config/environment'
 
-# Checked here, and not in an initializer, because the Rake task that renders
-# the messages for the Schematron validation runs without a gateway
-# configured: a blanket boot check would fail a job that legitimately needs
-# none of these. This file is loaded by the web server and by it alone.
+# Checked here for the web process, which loads this file and is alone in doing
+# so; `config/initializers/verify_settings.rb` reads the same contract for the
+# worker, which never loads it. Neither is a blanket boot check: the Rake task
+# that renders the messages for the Schematron validation runs without a gateway
+# configured, and a check every process ran would fail a job that legitimately
+# needs none of these.
 Settings.verify! unless Rails.env.test?
 
 run Rails.application

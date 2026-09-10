@@ -283,6 +283,35 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
+  # The worker now refuses to start on an incomplete configuration, so what is
+  # left here is a variable only the path that reads it discovers missing. The
+  # message is gone by then — `retrieveMessage` erased it from the gateway — so
+  # the exchange this side opened for it has to be settled rather than left in
+  # `IN_PROGRESS`, where the expiry sweep would write it an `EDM:ERR:0005` and
+  # impute to the correspondent a failure that is ours.
+  describe 'a request this installation is not configured to answer' do
+    before do
+      allow(EvidenceProvision::Answer).to receive(:call!)
+        .and_raise(ConfigurationError, 'SUFFIXE_IDENTIFIANTS_DOMIBUS manque')
+    end
+
+    # Asserted together for the reason the two failures above are: the half that
+    # re-raises passes just as well on a clause someone deleted.
+    it 'settles the exchange under no EDM code, and still lets the failure surface' do
+      expect { process }.to raise_error(ConfigurationError)
+
+      # No code: the description is the only place saying whose the failure is,
+      # and `fr.yml` carries why the exchange gets none.
+      expect(Exchange.sole).to have_attributes(
+        status: 'failed',
+        edm_error_code: nil,
+        error_description: a_string_including(
+          I18n.t('interactors.incoming_message.process.invalid_configuration'),
+        ),
+      )
+    end
+  end
+
   # The reason travels as a symbol. The branches that give one are exercised
   # above, but never for the wording their reason resolves to: nothing else
   # would notice a missing one.
