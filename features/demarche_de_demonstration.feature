@@ -34,7 +34,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Et le formulaire affiche "Identifiant eIDAS" : "Non rendu par l'authentification"
     Et le formulaire affiche "Sexe" : "Féminin"
     Et le formulaire affiche "Lieu de naissance" : "Aarhus"
-    Et le formulaire n'a aucun champ de saisie
+    Et le formulaire affiche l'identité sans aucun champ de saisie
     Et le formulaire n'affiche pas le pseudonyme que FranceConnect+ a donné à l'usager
 
   Scénario: le niveau de garantie affiché est celui que l'usager a atteint

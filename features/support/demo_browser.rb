@@ -38,6 +38,11 @@ class DemoBrowser
   # DELETE — read off the page like any other.
   def sign_out = submit_to('/admin/session')
 
+  # A page carrying several forms — the header always carries the sign-out one —
+  # so the form is named by where it posts, and the scenario's values travel with
+  # whatever it already held.
+  def submit_form_to(path, fields) = send_form(form_posting_to(path), fields)
+
   def visit(path) = follow(get("#{procedure_url}#{path}"))
 
   # The one press that starts everything: what follows crosses to the portal and
