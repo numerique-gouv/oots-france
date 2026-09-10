@@ -274,7 +274,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
-| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous) |
+| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous). **Et tant que le verdict n'est pas rendu, l'ouvrier attend avec toi** : ne l'envoie pas sur `review-loop` en attendant — son § 4 bis l'arrête là exprès, une revue faite sur un écran qui va changer est jetée. Seul l'utilisateur peut dire de passer outre. Le 2026-09-09 sur OOTS-179, « n'attends pas mon verdict d'écran pour avancer » envoyé à 21:20 a valu un `TaskStop` à 21:24 (« il est en review, arrête le ») et trois consignes contraires en six minutes |
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) ; puis fais trier ses **reliquats** (§ 5 bis) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
@@ -306,6 +306,15 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 
 > [!WARNING]
 > **Les écrans meurent avec le worktree.** Le port appartient à la stack de l'ouvrier : `git worktree remove` et le `docker compose down` qui l'accompagne l'éteignent. Donne donc les écrans **avant** de ranger, et quand tu ranges après un merge, dis que ces adresses ne répondent plus.
+
+**Un ouvrier silencieux se vérifie, il ne s'attend pas.** Un ouvrier au travail et un ouvrier pendu envoient le même signal : rien. Un contrôle d'objectif qui dit « travail de fond toujours en cours » ne dit pas qu'il avance — il dit qu'un agent n'a pas rendu la main, ce que fait aussi un agent bloqué sur un appel d'outil qui ne revient pas. Ses attentes légitimes sont bornées à quatre minutes par son garde-fou et à dix par l'outil : **au-delà de trente minutes sans message ni commit, date son dernier geste** — deux commandes, pas une hypothèse :
+
+```sh
+git -C .worktrees/<branche> log -1 --format=%cd --date=relative      # son dernier commit
+jq -rs '[.[] | select(.timestamp) | .timestamp] | max' "$D"/agent-<id>.jsonl   # sa dernière ligne ; `$D` est celui du § 3 bis
+```
+
+Deux horodatages vieux de plus d'une demi-heure, c'est un ouvrier pendu : `TaskStop`, puis un ouvrier neuf sur le même worktree (§ 6), qui reprend de ce qui est poussé. Constaté la nuit du 2026-09-09 : l'ouvrier d'OOTS-179 a pendu 6 h 33 sur un `Bash` sans réponse, trois contrôles d'objectif « still running » ont été lus comme une progression, et le mandat de la nuit — mener la chaîne démo jusqu'au bout — n'a pas été tenu, pour une commande qui n'a jamais été passée.
 
 **Vérifie ce qui compte** au lieu de croire le rapport. Sur ce qui porte un risque — entrée non fiable, secret, donnée personnelle, valeur partant chez un correspondant — va lire le code. Un ouvrier affirmait qu'une URL choisie par un correspondant était rendue sans danger ; deux `grep` l'ont confirmé, et la confirmation valait d'être écrite dans la PR.
 
