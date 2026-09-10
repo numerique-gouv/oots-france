@@ -80,8 +80,8 @@ RSpec.describe EvidenceRequestBuilder do
       ).find('00000000000003')
     end
 
-    # « The value of 'lang' attribute MUST be provided » — R-EDM-REQ-C108 and
-    # C109, both FATAL.
+    # `R-EDM-REQ-C109` (FATAL) rend l'attribut `lang` obligatoire, `C108` le
+    # tient à la liste `LanguageCode` : la valeur est là, et c'en est une.
     it 'names it in a language it declares' do
       name = agent.at_xpath('sdg:Name', 'sdg' => 'http://data.europa.eu/p4s')
 
@@ -89,7 +89,8 @@ RSpec.describe EvidenceRequestBuilder do
       expect(name['lang']).to eq('FR')
     end
 
-    # R-EDM-REQ-C012: « MUST use the prefix 'urn:cef.eu:names:identifier:EAS:[Code]' ».
+    # `R-EDM-REQ-C012` (FATAL) borne les schémas admis, dont celui-ci ; France
+    # publie ses SIRET sous le code EAS `0009`.
     it 'identifies it by its SIRET, under the EAS scheme France publishes' do
       identifier = agent.at_xpath('sdg:Identifier', 'sdg' => 'http://data.europa.eu/p4s')
 
@@ -97,8 +98,9 @@ RSpec.describe EvidenceRequestBuilder do
       expect(identifier['schemeID']).to eq('urn:cef.eu:names:identifier:EAS:0009')
     end
 
-    # R-EDM-REQ-C015: « The value must be provided if the Classification of the
-    # Agent is 'ER' », and coded in ISO 3166-1 alpha-2.
+    # `R-EDM-REQ-C073` (FATAL) rend l'adresse et son `AdminUnitLevel1`
+    # obligatoires dès que la classification vaut `ER` ; `C015` tient la valeur
+    # au codage ISO 3166-1 alpha-2.
     it 'gives it the country its classification requires' do
       namespaces = { 'sdg' => 'http://data.europa.eu/p4s' }
 

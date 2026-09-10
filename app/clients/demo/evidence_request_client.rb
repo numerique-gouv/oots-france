@@ -43,7 +43,9 @@ module Demo
       parsed = JSON.parse(response.body.to_s)
 
       parsed.is_a?(Hash) ? parsed : {}
-    rescue JSON::ParserError
+    rescue JSON::ParserError => e
+      Rails.logger.warn("Réponse illisible de #{PATH} (#{response.status}) : #{e.message}")
+
       {}
     end
   end

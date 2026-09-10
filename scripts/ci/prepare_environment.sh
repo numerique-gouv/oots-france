@@ -127,10 +127,11 @@ puts Base64.strict_encode64(JSON.generate(jwk))
 # qu'ES256, donc une courbe P-256 et non du RSA : c'est l'algorithme qui décide
 # du type de clé, pas l'inverse.
 #
-# Les coordonnées sont écrites sur 32 octets fixes, comme la RFC 7518 §6.2
-# l'impose : `to_s(2)` rend la représentation minimale d'un entier, et une
-# valeur commençant par un octet nul produirait sinon un membre trop court, que
-# rien ne rejetterait avant la première signature.
+# La RFC 7518 §6.2 veut chaque membre sur 32 octets fixes. `x` et `y` le sont
+# par construction, découpés dans le point non compressé ; `d`, lui, vient d'un
+# entier, et `to_s(2)` en rend la représentation minimale — une clé privée
+# commençant par un octet nul produirait un membre trop court, que rien ne
+# rejetterait avant la première signature, d'où le `rjust`.
 engendreCleJwkEc() {
   executeRuby -ropenssl -rjson -rbase64 -e '
 cle = OpenSSL::PKey::EC.generate("prime256v1")

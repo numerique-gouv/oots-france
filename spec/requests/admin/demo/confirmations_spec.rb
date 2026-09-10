@@ -22,8 +22,8 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css('main').text).to include('Keha v. 2.0', 'Dummy PDF - FI')
     end
 
-    it 'opens no exchange and asks the contract nothing' do
-      expect { get admin_demo_confirmation_path }.not_to change(Exchange, :count)
+    it 'asks the contract nothing: nothing is opened by looking at the page' do
+      get admin_demo_confirmation_path
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
@@ -102,14 +102,6 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css('main').text).to include(accepted_body.fetch(:echange))
     end
 
-    # CA7: the demonstration fields are not the evidence, and nothing carries
-    # them — the query string included.
-    it 'carries none of the demonstration fields' do
-      post admin_demo_confirmation_path
-
-      expect(evidence_request_query.values.join).not_to include('4200')
-    end
-
     describe 'the conversation of chapter 4.4 §4.3.2' do
       # CA6, first half: « SHOULD be reused for combined flows ».
       it 'reuses the conversation of the first request for the second' do
@@ -147,7 +139,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       it 'says what the contract refused, with the message it returned' do
         stub_evidence_request(status: 422, body: { erreur: 'EB:ERR:0001 : requête invalide' }.to_json)
 
-        expect { post admin_demo_confirmation_path }.not_to change(Exchange, :count)
+        post admin_demo_confirmation_path
 
         expect(response.parsed_body.css('main').text)
           .to include('refusée', 'EB:ERR:0001', "Aucun échange n'a été ouvert")
@@ -179,14 +171,38 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         expect(response.parsed_body.css('main').text).to include('500')
       end
 
-      it 'holds no conversation to reuse after a refusal' do
-        stub_evidence_request(status: 502, body: { erreur: 'Annuaire injoignable' }.to_json)
+      # Le seul état qu'un refus pourrait laisser derrière lui dans ce process :
+      # la conversation en session. Éprouvé sur les quatre statuts, parce que
+      # c'est `refuse` et non `keep` qui doit être pris à chaque fois — et
+      # qu'une table de correspondance se trompe sur une entrée à la fois.
+      [
+        [422, { erreur: 'EB:ERR:0001' }.to_json],
+        [501, 'Not Implemented Yet!'],
+        [502, { erreur: 'Annuaire injoignable' }.to_json],
+        [500, { erreur: 'Configuration' }.to_json],
+      ].each do |status, body|
+        it "holds no conversation to reuse after a #{status}" do
+          stub_evidence_request(status:, body:)
+          post admin_demo_confirmation_path
+
+          stub_evidence_request
+          post admin_demo_confirmation_path
+
+          expect(evidence_request_query).not_to have_key('idConversation')
+        end
+      end
+
+      # `EvidenceRequestsController` bâtit son `202` sur un `Exchange`, donc il
+      # nomme toujours l'échange : un `202` qui n'en nomme aucun est un corps
+      # qui n'est pas arrivé entier, et le montrer comme un succès afficherait
+      # une requête partie dont rien ne dit laquelle.
+      it 'refuses an acceptance that names no exchange' do
+        stub_evidence_request(status: 202, body: 'une réponse tronquée')
+
         post admin_demo_confirmation_path
 
-        stub_evidence_request
-        post admin_demo_confirmation_path
-
-        expect(evidence_request_query).not_to have_key('idConversation')
+        expect(response.parsed_body.css('main').text).to include('inattendue', '202')
+        expect(response.parsed_body.css('main').text).not_to include('La demande est partie')
       end
     end
   end

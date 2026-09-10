@@ -26,22 +26,35 @@ module Demo
     }.freeze
 
     def call
-      answer = client.fetch(
+      answer = ask_the_contract
+
+      return refuse(answer) unless answer.accepted?
+
+      keep(answer)
+    rescue Faraday::Error => e
+      # Journalisé autant que montré, comme les trois autres interacteurs de
+      # `Demo::` : aucun `Exchange` n'existe encore à ce stade, donc rien
+      # d'autre ne gardera trace d'une panne que l'alerte de l'usager ne se
+      # relit pas après coup.
+      Rails.logger.warn("Contrat de requête de justificatif injoignable : #{e.message}")
+
+      fail_with_error(:demo_unreachable, errors: [e.message])
+    end
+
+    private
+
+    # Over HTTP, with the query string a French service provider's server sends:
+    # the beneficiary token is sealed here, at the moment of the press, and not
+    # a step earlier.
+    def ask_the_contract
+      client.fetch(
         requester_id: Settings.demo_requester_id,
         procedure_code: PROCEDURE_CODE,
         country_code: PROVIDER_COUNTRY,
         encrypted_beneficiary: token_writer.call(context.identity),
         conversation_id: context.conversation_id,
       )
-
-      return refuse(answer) unless answer.accepted?
-
-      keep(answer)
-    rescue Faraday::Error => e
-      fail_with_error(:demo_unreachable, errors: [e.message])
     end
-
-    private
 
     def keep(answer)
       context.exchange_id = answer.exchange_id
@@ -49,7 +62,7 @@ module Demo
     end
 
     # The message the contract returned travels with the refusal: it is the only
-    # thing that says which of the refusals of `FAILURE_STATUSES` this was, and
+    # thing that says which of the refusals of `STATUS_FAILURES` this was, and
     # `EB:ERR:0001` is in it rather than in the status.
     #
     # The status is spelled out for the one key whose wording cannot name what

@@ -9,8 +9,6 @@ module Demo
   # operator's session guarded would refuse the very component that has to read
   # it.
   class AuthController < ApplicationController
-    def cles_publiques
-      render(json: PublicKeySet.new(Settings.demo_signing_key_jwk, use: PublicKeySet::SIGNATURE).to_h)
-    end
+    def cles_publiques = render(json: PublicKeySet.new(Settings.demo_signing_key_jwk, use: PublicKeySet::SIGNATURE).to_h)
   end
 end

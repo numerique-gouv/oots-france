@@ -68,6 +68,12 @@ module Settings
   # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-chiffrement-signature-fcplus/
   FRANCE_CONNECT_KEY_ALGORITHMS = %w[ECDH-ES RSA-OAEP-256].freeze
 
+  # The only key type `BeneficiaryToken::SIGNATURE` can verify: it admits ES256
+  # and nothing else, and ES256 is defined on P-256 alone (RFC 7518 §3.4).
+  # `Settings::Contract` refuses any other at startup, for the reason it refuses
+  # a FranceConnect+ key of the wrong algorithm.
+  DEMO_SIGNING_CURVE = %w[EC P-256].freeze
+
   # Article 17(4) of the implementing regulation, as a floor: a member state may
   # keep the exchange log longer, never less.
   LAWFUL_RETENTION_MONTHS = 12

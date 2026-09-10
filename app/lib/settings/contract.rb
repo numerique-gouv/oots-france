@@ -13,6 +13,7 @@ module Settings
       reject_unless_lawful_retention
       reject_unless_timeouts_ordered
       reject_unless_france_connect_algorithm
+      reject_unless_demo_signing_curve
     end
 
     private
@@ -88,8 +89,26 @@ module Settings
     # Read here rather than through `Settings`, which raises what a contract
     # answers: a malformed value is an offence to name, not an exception to
     # propagate.
-    def france_connect_key
-      key = JSON.parse(Base64.decode64(ENV.fetch('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64', '')))
+    # The key the demonstration procedure signs its beneficiary token with, and
+    # the one algorithm `BeneficiaryToken::SIGNATURE` admits to open it.
+    # Refused here for the reason the rule above is: published on any other
+    # curve, the key fails at the first signature instead — with a user midway
+    # through a request, and far from anything this deployment can read.
+    def reject_unless_demo_signing_curve
+      key = decoded_jwk('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64')
+      return refuse(I18n.t('lib.settings.demo_signing_key_unreadable')) if key.nil?
+
+      return if [key['kty'], key['crv']] == DEMO_SIGNING_CURVE
+
+      refuse(I18n.t('lib.settings.demo_signing_curve',
+        kty: key['kty'].presence || I18n.t('lib.settings.unnamed_member'),
+        crv: key['crv'].presence || I18n.t('lib.settings.unnamed_member')))
+    end
+
+    def france_connect_key = decoded_jwk('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64')
+
+    def decoded_jwk(name)
+      key = JSON.parse(Base64.decode64(ENV.fetch(name, '')))
       key if key.is_a?(Hash)
     rescue JSON::ParserError
       nil

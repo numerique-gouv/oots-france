@@ -373,6 +373,12 @@ fr:
       france_connect_algorithm: "La clé de la démarche déclare l'algorithme « %{algorithm} » : FranceConnect+ n'accepte que %{expected}."
       france_connect_algorithm_absent: "La clé de la démarche ne déclare aucun algorithme : FranceConnect+ n'accepte que %{expected}, et une clé JWK n'en porte un que si on l'y écrit."
       france_connect_key_unreadable: "CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
+      demo_signing_key_unreadable: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
+      # Le jeton du bénéficiaire ne se signe qu'en ES256, et ES256 n'existe que
+      # sur P-256 : une clé d'un autre type échouerait à la première signature,
+      # loin d'ici.
+      demo_signing_curve: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 déclare une clé %{kty} sur %{crv} : le jeton du bénéficiaire se signe en ES256, qui exige une clé EC sur P-256."
+      unnamed_member: sans valeur
       missing: "Variables d'environnement obligatoires absentes ou vides : %{names}."
       not_boolean: "%{name} vaut « %{value} » : cette variable commande un dispositif, elle ne peut valoir que true, false, ou rien du tout."
       not_whole: "Variables d'environnement devant être des nombres entiers positifs : %{names}."
@@ -675,7 +681,7 @@ fr:
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
   interactors:
-    # Les douze échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # Les échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
     failures:
@@ -1058,8 +1064,9 @@ fr:
             reason: Motif de la demande
           # Le chapitre 1 §3.3 des TDD : « a step in which the user is asked to
           # express explicitly whether he or she wants to use the Once-Only
-          # Technical System ». Deux réponses et non une case à cocher, parce
-          # que le chapitre pose la question dans les deux sens.
+          # Technical System ». Le chapitre ne décrit aucun dispositif de
+          # saisie ; deux réponses plutôt qu'une case à cocher est notre choix,
+          # pour qu'un refus soit répondu et non seulement laissé vide.
           express:
             legend: Récupération de votre justificatif d'inscription
             hint: >-
@@ -1123,8 +1130,8 @@ fr:
             réponse ne revient pas sur cette page : elle arrive par un autre canal, et la démarche
             en est prévenue.
           caption: Ce qui identifie cette demande
-          # Les deux identifiants par lesquels le chapitre 4.10 corrèle une
-          # réponse tardive à la requête qui l'a causée.
+          # Les deux identifiants sous lesquels l'exploitant retrouve
+          # l'échange au journal.
           exchange: Identifiant de l'échange
           conversation: Identifiant de la conversation
           nothing_opened: >-

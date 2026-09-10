@@ -11,12 +11,19 @@ RSpec.describe Settings do
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
       .merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key)
+      .merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key)
   end
 
   # The contract reads this one rather than merely finding it filled: it must
   # decode to a JWK, and declare an algorithm FranceConnect+ accepts.
   def france_connect_key(algorithm = 'RSA-OAEP-256')
     Base64.strict_encode64({ kty: 'RSA', alg: algorithm, use: 'enc' }.to_json)
+  end
+
+  # Read as well, and on another axis: it is the type and the curve that decide
+  # here, ES256 being defined on P-256 alone.
+  def demo_signing_key(kty: 'EC', crv: 'P-256')
+    Base64.strict_encode64({ kty:, crv:, use: 'sig' }.compact.to_json)
   end
 
   # 1000 satisfies the numeric check for every other duration; retention is read
@@ -362,6 +369,29 @@ RSpec.describe Settings do
       with_environment(lawful.merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key('RSA1_5'))) do
         expect { described_class.verify! }
           .to raise_error(ConfigurationError, /RSA1_5/)
+      end
+    end
+
+    # The beneficiary token the demonstration procedure emits is signed in ES256
+    # and in nothing else, and ES256 is defined on P-256 alone: a key of another
+    # type is refused where it can still be corrected, rather than at the first
+    # signature with a user midway through a request.
+    it 'starts on the curve the beneficiary token is signed on' do
+      with_environment(lawful) do
+        expect { described_class.verify! }.not_to raise_error
+      end
+    end
+
+    it 'refuses to start on a key that is not on that curve' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key(crv: 'P-384'))) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /P-384/)
+      end
+    end
+
+    it 'refuses to start on a signing key that is not a key at all' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => 'pas du base64 de JSON')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64/)
       end
     end
 
