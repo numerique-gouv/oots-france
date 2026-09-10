@@ -100,7 +100,18 @@ class EvidenceRequestParser
       id: identifier.presence || I18n.t('parsers.evidence_request.unnamed_request_id'))
   end
 
-  def procedure_code = slot_text('Procedure', request)
+  # `R-EDM-REQ-S022`: the slot holds a `rim:InternationalStringValueType` on the
+  # 1.2 line, where the code sits in the `@value` of a `rim:LocalizedString` and
+  # the `rim:Value` around it carries no text at all — 2.0.1 made the same slot
+  # a plain `rim:StringValueType`. Read as the version writes it, or a
+  # conformant 1.2 request is refused for a procedure it did name.
+  def procedure_code
+    return slot_text('Procedure', request) unless specification.translated_procedure?
+
+    localised = at(slot('Procedure', request), './rim:SlotValue/rim:Value/rim:LocalizedString')
+
+    require_content(attribute(localised, 'value'), 'parsers.slot_reading.empty', name: 'Procedure')
+  end
 
   # `R-EDM-REQ-S016` lets the subject be a person or an organisation, and the
   # slot the request carries says which. A request carrying both is refused by

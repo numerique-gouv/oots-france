@@ -2217,6 +2217,22 @@ RSpec.describe EvidenceRequestParser do
       expect { earlier_line_envelope.body.validate! }.not_to raise_error
     end
 
+    # `R-EDM-REQ-S022`: the code sits in the `@value` of a `rim:LocalizedString`
+    # on that line, and the `rim:Value` around it carries no text at all — read
+    # as 2.0 writes it, a conformant 1.2 request would be refused for a
+    # procedure it did name, and answered `EDM:ERR:0003` instead of served.
+    it 'reads the procedure a request of the 1.2 line names in its localised string' do
+      expect(earlier_line_envelope.body.procedure_code).to eq(ProcedureCode::SYSTEM_CHECK)
+    end
+
+    # The same slot, present and saying nothing: `R-EDM-REQ-S007` counts it and
+    # is satisfied, so it is the value that fails.
+    it 'refuses a request of that line whose localised string names no procedure' do
+      unnamed = earlier_line_envelope { |body| body.sub('value="00"', 'value=""') }
+
+      expect { unnamed.body.procedure_code }.to raise_error(UnreadableMessageError)
+    end
+
     # CA11: the header announced 2.0 and the body says 1.2. Refused under the
     # rule of the line the header named, which is also the line the exception
     # response goes back in.

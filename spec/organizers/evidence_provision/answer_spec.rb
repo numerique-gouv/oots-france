@@ -1311,7 +1311,7 @@ RSpec.describe EvidenceProvision::Answer do
 
     # CA7.
     describe 'for a procedure France serves in deferral' do
-      let(:message) { earlier_line_envelope { |body| body.sub('<rim:Value>00<', '<rim:Value>R1<') } }
+      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="R1"') } }
 
       it 'announces the evidence for later, on that line' do
         answer
@@ -1323,7 +1323,7 @@ RSpec.describe EvidenceProvision::Answer do
 
     # CA8.
     describe 'for a procedure France does not serve' do
-      let(:message) { earlier_line_envelope { |body| body.sub('<rim:Value>00<', '<rim:Value>T3<') } }
+      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="T3"') } }
 
       it 'refuses on that line' do
         answer
