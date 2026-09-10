@@ -30,10 +30,16 @@ jobs:
     # identical — preparing the environment, which writes them into .env and
     # .env.oots, and configuring Domibus, which creates the matching account and
     # generates the certificate stores.
+    #
+    # PORT_OOTS_FRANCE is here for the same reason: `prepare_environment.sh`
+    # writes it into .env, and `configure_domibus.sh` composes out of it the
+    # address the gateway pushes its notifications at. Declared once, the two
+    # cannot drift.
     env:
       LOGIN_API_REST: oots_ci
       MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
       MOT_DE_PASSE_MAGASINS: test123
+      PORT_OOTS_FRANCE: 3000
 
     steps:
       - uses: actions/checkout@v7
@@ -123,10 +129,14 @@ jobs:
           # which this sequence of steps must stay in step.
           docker compose run --rm --no-deps web bundle exec rails db:seed
 
-      - name: Démarre l'application et son worker
+      - name: Démarre l'application, son worker et le faux FranceConnect+
+        # The same three services `make up` starts: the fake is a service of the
+        # stack, and the scenarios drive that one rather than starting a second
+        # of their own — see docs/test_e2e.md.
         run: |
-          docker compose up --detach --no-build web worker
-          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/up; do sleep 2; done'
+          docker compose up --detach --no-build web worker fake-france-connect
+          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:'"$PORT_OOTS_FRANCE"'/up; do sleep 2; done'
+          timeout 60 sh -c 'until curl -sf -o /dev/null http://localhost:3100/api/v2/.well-known/openid-configuration; do sleep 2; done'
 
       - name: Joue le test e2e
         run: make e2e
@@ -149,7 +159,7 @@ jobs:
 
       - name: Logs de l'application en cas d'échec
         if: failure()
-        run: docker compose logs web || true
+        run: docker compose logs web fake-france-connect || true
 
       - name: Arrête la pile
         if: always()

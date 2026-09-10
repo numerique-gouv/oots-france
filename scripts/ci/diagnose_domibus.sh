@@ -56,4 +56,46 @@ montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
 montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
 montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"
 
+# The one failure this stack has no other way of showing. The gateway pushes at
+# the port `web` listens on, which is PORT_OOTS_FRANCE and shifts with a
+# worktree; configured on another, it pushes where nothing answers. Its own
+# retries then exhaust and raise an alert in its console — but no call ever
+# reaches OOTS-France, which therefore has nothing to log, and the page
+# following the exchange waits for ever. Comparing the two is the only place
+# that drift becomes visible from this side.
+COMMANDE_DOMIBUS="${COMMANDE_DOMIBUS:-docker compose exec -T domibus}"
+CONFIG_DOMIBUS="${CONFIG_DOMIBUS:-/data/tomcat/conf/domibus}"
+
+echo
+echo "───────── Adresse de notification vers le dorsal"
+
+# Le statut et la sortie d'erreur sont gardés, et non jetés dans `/dev/null` :
+# une propriété absente et une passerelle qu'on ne peut pas interroger — conteneur
+# tombé, chemin de configuration différent — donneraient sinon la même chaîne
+# vide, et ce script affirmerait « jamais écrite » d'un fichier qu'il n'a pas lu.
+# Il ne tourne qu'après un échec, c'est-à-dire au moment où un conteneur mort est
+# le plus probable.
+if SORTIE=$($COMMANDE_DOMIBUS sed -n 's/^wsplugin.push.rules.oots.endpoint=//p' \
+  "$CONFIG_DOMIBUS/plugins/config/ws-plugin.properties" 2>&1); then
+  CONFIGUREE=$(printf '%s' "$SORTIE" | tr -d '\r')
+  echo "  configurée sur la passerelle : ${CONFIGUREE:-(absente : la notification n'a jamais été écrite)}"
+else
+  echo "  passerelle non interrogeable : $SORTIE"
+  echo "  Rien à comparer : c'est cette panne-là qu'il faut lever d'abord."
+  exit 0
+fi
+
+if [ -z "$PORT_OOTS_FRANCE" ]; then
+  echo "  PORT_OOTS_FRANCE n'est pas dans l'environnement : comparaison impossible."
+  echo "  La relancer ainsi : set -a; . ./.env; set +a; scripts/ci/diagnose_domibus.sh"
+else
+  ATTENDUE="http://web:$PORT_OOTS_FRANCE/domibus/notifications"
+  echo "  attendue d'après .env         : $ATTENDUE"
+
+  if [ "$CONFIGUREE" != "$ATTENDUE" ]; then
+    echo "  ⚠️  Écart : la passerelle pousse là où l'application n'écoute pas."
+    echo "     Rejouer scripts/configure_domibus.sh, puis docker compose restart domibus."
+  fi
+fi
+
 exit 0

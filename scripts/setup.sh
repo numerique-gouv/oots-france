@@ -51,11 +51,17 @@ fi
 # Exported for scripts/configure_domibus.sh, which requires the credentials
 # rather than deriving them: the account it creates in the gateway must be the
 # one the application will present to it.
+#
+# PORT_OOTS_FRANCE goes with them: it is the port `web` listens on, and so the
+# one the gateway must push its notifications at. A worktree shifts it, and the
+# fixed 3000 the script would otherwise have taken would lose every answer of a
+# correspondent without a word.
 PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
+PORT_OOTS_FRANCE=$(lisVariable PORT_OOTS_FRANCE .env)
 MOT_DE_PASSE_MAGASINS=$(lisVariable MOT_DE_PASSE_MAGASINS .env)
 LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
 MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
-export PORT_DOMIBUS MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
+export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
 
 # Domibus's database is created on the container's first start, and the gateway
 # fails if it connects before that.
