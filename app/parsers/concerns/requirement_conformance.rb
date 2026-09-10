@@ -8,12 +8,14 @@
 # tripped `Metrics/ClassLength` the day the `EvidenceProvider` rules landed
 # beside these.
 #
-# `AgentConformance` is included for one method, `require_language`: four pairs
-# of rules make its two assertions, and two of them judge the wordings below,
-# which are not agents. It is declared here rather than left to the parser, in
-# which both modules happen to meet — that coincidence would resolve the call
-# just as well, and would break silently the day this module is included
-# anywhere else.
+# `AgentConformance` is included for two methods it holds and no agent needs.
+# `require_language`: four pairs of rules make its two assertions, and two of
+# them judge the wordings below, which are not agents. `refuse_unexpected_children`:
+# `R-EDM-REQ-S038` closes the list of a requirement's children exactly as `S043`
+# closes the provider's, so the reading is written once. It is declared here
+# rather than left to the parser, in which both modules happen to meet — that
+# coincidence would resolve the calls just as well, and would break silently the
+# day this module is included anywhere else.
 #
 # Refusals go through `refuse`, which the parser including this defines.
 module RequirementConformance
@@ -42,6 +44,16 @@ module RequirementConformance
   # differ.
   REQUIREMENT_WORDINGS = { 'Name' => :requirement_name, 'Description' => :requirement_description }.freeze
 
+  # What `R-EDM-REQ-S038` admits under an `sdg:Requirement`, and nothing else.
+  #
+  # The assertion, and not its message: the message reads « MUST contain
+  # 'sdg:Identifier', 'sdg:Name' and 'sdg:Description' », where the test —
+  # `count(sdg:Name) + count(sdg:Identifier) + count(sdg:Description) = count(child::*)`
+  # — requires none of the three. A requirement carrying an identifier and a
+  # name and no description satisfies it, which is exactly what the two real
+  # requests of the suite carry. The test is what plays.
+  REQUIREMENT_CHILDREN = %w[Name Identifier Description].freeze
+
   private
 
   # Every requirement the slot carries, and no count of them: `R-EDM-REQ-S011`
@@ -66,6 +78,7 @@ module RequirementConformance
       required.each do |requirement|
         require_requirement_identifier(requirement)
         require_requirement_wordings(requirement)
+        require_requirement_children(requirement)
       end
     end
   end
@@ -94,5 +107,13 @@ module RequirementConformance
     REQUIREMENT_WORDINGS.each do |element_name, wording|
       all(requirement, "./sdg:#{element_name}").each { |element| require_language(element, wording) }
     end
+  end
+
+  # `R-EDM-REQ-S038`, applied last of the three: what the rules above refuse
+  # names an element the requirement was allowed to carry, and that refusal is
+  # the more precise of the two.
+  def require_requirement_children(requirement)
+    refuse_unexpected_children(requirement, REQUIREMENT_CHILDREN, 'R-EDM-REQ-S038',
+      'parsers.evidence_request.requirement_unexpected_children')
   end
 end

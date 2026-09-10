@@ -4,11 +4,15 @@
 # does, is therefore not here — so the same reading serves the agent classified
 # `ER`, the ones beside it, and the provider the request designates.
 #
-# One reader here judges no agent: `require_language`, which holds any element
-# the chapter obliges to name its language. Four pairs of rules make that one
-# pair of assertions — over the requester's collection, over the provider, and
-# over the name and the description of a requirement — so it is written once
-# and reads its identifiers from `RULES`, like the agent readers beside it.
+# Two readers here judge no agent. `require_language` holds any element the
+# chapter obliges to name its language: four pairs of rules make that one pair
+# of assertions — over the requester's collection, over the provider, and over
+# the name and the description of a requirement — so it is written once and
+# reads its identifiers from `RULES`, like the agent readers beside it.
+# `refuse_unexpected_children` holds any element whose children the chapter
+# closes to a list of names, which `R-EDM-REQ-S043` does over the provider and
+# `S038` over a requirement. Both are here because `RequirementConformance`
+# includes this module for exactly that, and says so.
 #
 # Each reading takes a `wording` naming the agent it judges, which it cannot
 # know itself: one rule refuses the requester, the platform beside it and the
@@ -58,6 +62,10 @@ module AgentConformance
 
   PROVIDER_IDENTIFIER_REQUIRED = 'TDD 4.5.1 §3.3: EvidenceProvider agent identifier required'.freeze
 
+  # What `R-EDM-REQ-S043` admits under the agent of the `EvidenceProvider` slot,
+  # and nothing else — no address, no classification.
+  PROVIDER_CHILDREN = %w[Identifier Name].freeze
+
   # What the readers below refuse, under the identifier each rule is published
   # by for the agent being judged. The slot fixes that identifier and never the
   # classification: `C011`, `C012`, `C109` and `C108` judge every agent of the
@@ -67,15 +75,15 @@ module AgentConformance
   REQUESTER_COLLECTION_RULES = {
     identifier: 'R-EDM-REQ-C012', language: 'R-EDM-REQ-C109', language_code: 'R-EDM-REQ-C108',
     identifier_required: AGENT_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C011',
+    name_required: AGENT_NAME_REQUIRED,
   }.freeze
 
-  # The platform is the requester's own five and `name_required` besides: the
-  # walk below reads its names through `agent_names`, where
-  # `EvidenceRequestParser#build_requester` reads the requester's single one and
-  # names the same chapter itself. Nothing else separates the two.
+  # The requester and the platform beside it break the same rules under the same
+  # identifiers, the slot fixing those and never the classification: the two
+  # rows differ by the French sentence their key names, and by nothing else.
   RULES = {
     agent: REQUESTER_COLLECTION_RULES,
-    platform: REQUESTER_COLLECTION_RULES.merge(name_required: AGENT_NAME_REQUIRED).freeze,
+    platform: REQUESTER_COLLECTION_RULES,
     provider: {
       identifier: 'R-EDM-REQ-C018', language: 'R-EDM-REQ-C111', language_code: 'R-EDM-REQ-C110',
       identifier_required: PROVIDER_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C017',
@@ -111,7 +119,6 @@ module AgentConformance
   # character, which is why the value is squished rather than merely stripped:
   # ` A ` is one character to the rule.
   def agent_name(name, wording)
-    refuse(AGENT_NAME_REQUIRED, "parsers.evidence_request.#{wording}_without_name") if name.nil?
     return name.text if name.text.squish.length > 1
 
     refuse('R-EDM-REQ-C092', "parsers.evidence_request.#{wording}_name_too_short", name: name.text)
@@ -141,7 +148,7 @@ module AgentConformance
   def require_conformant_agent(agent)
     require_agent_classification(agent)
     require_agent_identifier(agent, :platform)
-    require_agent_names(agent)
+    require_agent_names(agent, :platform)
     require_agent_country(agent)
     require_agent_territory(agent, :platform)
   end
@@ -192,10 +199,15 @@ module AgentConformance
     names
   end
 
-  def require_agent_names(agent)
-    agent_names(agent, :platform).each do |name|
-      agent_name(name, :platform)
-      require_language(name, :platform)
+  # Every rule the names of an agent are held to, whichever agent it is: one
+  # method rather than one per slot, the sentences being what the `wording`
+  # carries. Hands back the names it vetted, so that
+  # `EvidenceRequestParser#build_requester` reads the first of them without
+  # having to look it up again.
+  def require_agent_names(agent, wording)
+    agent_names(agent, wording).each do |name|
+      agent_name(name, wording)
+      require_language(name, wording)
     end
   end
 
@@ -236,16 +248,39 @@ module AgentConformance
   # What the agent of the `EvidenceProvider` slot owes, and all of it: no
   # classification, chapter 4.5.1 §3.3 asking for none, and no address, which is
   # `R-EDM-REQ-C073`'s to require of the agent classified `ER` alone.
-  def require_conformant_provider(agent)
-    require_agent_identifier(agent, :provider)
-    require_provider_names(agent)
+  #
+  # Takes the whole collection the slot value carries, and judges it in two
+  # ways. `R-EDM-REQ-S043` asserts `count(sdg:Identifier) + count(sdg:Name) = count(child::*)`
+  # of each agent — its context is every one of them, and it counts none — so
+  # the closed list is applied to all. The identifier and the names are read off
+  # the one the request designates, which is the first.
+  #
+  # `C017`, `C018`, `C110` and `C111` are not restricted to that one either:
+  # their contexts are `…/rim:SlotValue/sdg:Agent/sdg:Identifier` and
+  # `…/sdg:Name`, with no positional predicate, so they reach a second agent as
+  # much as the first. This reader applies them to the designated agent alone —
+  # a partiality, recorded here rather than asserted away.
+  def require_conformant_provider(agents)
+    designated = agents.first
+    require_agent_identifier(designated, :provider)
+    require_agent_names(designated, :provider)
+
+    agents.each do |declared|
+      refuse_unexpected_children(declared, PROVIDER_CHILDREN, 'R-EDM-REQ-S043',
+        'parsers.evidence_request.provider_unexpected_children')
+    end
   end
 
-  # `R-EDM-REQ-C092` is not applied to these names, where it is to the requesting
-  # collection's: its context carries no ancestor, so it does reach them, and
-  # `docs/reste_à_faire.md` records that partiality rather than this reader
-  # silently standing for it.
-  def require_provider_names(agent)
-    agent_names(agent, :provider).each { |name| require_language(name, :provider) }
+  # What the rules asserting `count(sdg:A) + count(sdg:B) = count(child::*)`
+  # refuse: an element the closed list does not name. They leave the count of
+  # each admitted element free — two names satisfy such a rule — and they admit
+  # nothing of another namespace, which the URI decides and never the prefix.
+  #
+  # `elements` counts what `child::*` counts, comments and text nodes excluded.
+  def refuse_unexpected_children(node, admitted, rule, key)
+    unexpected = node.elements.reject { |child| child.namespace&.href == NAMESPACES.fetch('sdg') && admitted.include?(child.name) }
+    return if unexpected.empty?
+
+    refuse(rule, key, children: unexpected.map(&:name).uniq.join(', '))
   end
 end

@@ -1041,6 +1041,13 @@ RSpec.describe EvidenceProvision::Answer do
       'R-EDM-REQ-C109' => ['<sdg:Name lang="FR">', '<sdg:Name>'],
       'R-EDM-REQ-C108' => ['<sdg:Name lang="FR">', '<sdg:Name lang="fr">'],
       'R-EDM-REQ-C012' => ['EAS:0009', 'EAS:9999'],
+      # Measured in the answer too, by `R-EDM-ERR-C027`, which is why the walk
+      # over the request's wordings leaves the names of this agent alone: it is
+      # here, where the requester is read, that they are refused. Written as an
+      # empty name set before the one the request carries, so that the
+      # substitution stays free of any accent: the body is decoded as bytes, and
+      # a pattern carrying one would meet a string Ruby holds as `BINARY`.
+      'R-EDM-REQ-C092' => ['<sdg:Name lang="FR">', '<sdg:Name lang="FR"></sdg:Name><sdg:Name lang="FR">'],
       # `C011` asserts the attribute's presence, so it is removed rather than
       # given another value — and the identifier itself stays readable, which is
       # what lets the journal keep it past the refusal.

@@ -540,11 +540,26 @@ fr:
         L'identifiant du fournisseur désigné fait %{length} caractères, au-delà des
         %{maximum} admis.
       provider_without_name: Le fournisseur désigné est sans nom.
+      # R-EDM-REQ-C092 sur ce nom-là : son contexte ne porte aucun ancêtre, donc
+      # la règle l'atteint comme elle atteint les noms de la collection
+      # EvidenceRequester. La phrase lui est propre plutôt que celle de la marche
+      # transverse, pour qu'un opérateur qui lit le journal sache de quel agent
+      # il s'agit.
+      provider_name_too_short: >-
+        Le nom du fournisseur désigné (« %{name} ») fait moins de deux caractères.
       provider_without_language: >-
         Un nom du fournisseur désigné ne porte pas d'attribut « lang ».
       provider_language_unknown: >-
         La langue d'un nom du fournisseur désigné (« %{language} ») n'est pas un code de la
         liste LanguageCode.
+      # R-EDM-REQ-S043 : la liste fermée des enfants de l'agent que porte le slot
+      # EvidenceProvider. L'assertion laisse libre le nombre de chacun — deux
+      # noms la satisfont — et refuse tout autre élément, une adresse ou une
+      # classification comprises. Chaque agent du rim:SlotValue est jugé, la
+      # règle n'en comptant aucun.
+      provider_unexpected_children: >-
+        Le fournisseur désigné ne peut porter que sdg:Identifier et sdg:Name (reçu en plus :
+        %{children}).
       # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
       # en porte un.
       beneficiary_identifier_without_scheme: >-
@@ -573,6 +588,14 @@ fr:
       requirement_description_language_unknown: >-
         La langue de la description d'une exigence de la requête reçue (« %{language} ») n'est pas
         un code de la liste LanguageCode.
+      # R-EDM-REQ-S038 : la liste fermée des enfants d'une exigence. C'est le
+      # test qui fait foi, et non son message : celui-ci dit que l'exigence
+      # « MUST contain » les trois éléments, là où l'assertion n'en exige aucun
+      # — une exigence à identifiant et nom, sans description, la satisfait, et
+      # c'est ce que portent les deux requêtes réelles de la suite.
+      requirement_unexpected_children: >-
+        Une exigence de la requête reçue ne peut porter que sdg:Identifier, sdg:Name et
+        sdg:Description (reçu en plus : %{children}).
       # R-EDM-REQ-S041, C021 et C098 : les classifications de fournisseur que la
       # requête invoque. Le slot, lui, n'est pas exigé — S014 le compte sous
       # CAUTION —, donc son absence n'est refusée nulle part. C022, qui refuse
@@ -589,6 +612,43 @@ fr:
       classification_country_unknown: >-
         Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») ne nomme pas un
         pays participant à OOTS.
+      # R-EDM-REQ-S020 à S036, S055 et S061 : la forme RegRep des slots. Les
+      # dix-neuf assertions comparent la seule partie locale de l'attribut —
+      # substring-after(@xsi:type, ':') —, donc le préfixe n'est pas jugé :
+      # « x:AnyValueType » les satisfait, et « AnyValueType » sans préfixe ne les
+      # satisfait pas. Le contexte de seize d'entre elles est le rim:SlotValue
+      # d'un slot présent — un slot absent ne déclenche rien, sa présence étant
+      # l'affaire de S005 à S016 —, et celui de S027, S029 et S032 le rim:Element
+      # des trois collections, un niveau plus bas. Ces refus repartent en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie aucun xsi:type reçu.
+      slot_type_unexpected: >-
+        Le slot « %{name} » de la requête reçue doit porter un rim:SlotValue de type %{expected}
+        (reçu : %{declared}).
+      element_type_unexpected: >-
+        Un rim:Element du slot « %{name} » de la requête reçue doit être de type %{expected}
+        (reçu : %{declared}).
+      unnamed_slot_type: attribut absent
+      # R-EDM-REQ-S052 et S053 : ce qu'une collection RegRep doit porter. Leur
+      # contexte compare l'attribut xsi:type entier, préfixe compris, là où les
+      # règles ci-dessus n'en lisent que la partie locale — les deux lectures
+      # sont différentes à dessein. Aucun ancêtre ne les restreint : elles
+      # atteignent tout rim:SlotValue de la requête.
+      collection_without_element: Une collection RegRep de la requête reçue ne porte aucun rim:Element.
+      collection_type_unexpected: >-
+        Une collection RegRep de la requête reçue doit porter collectionType="%{expected}"
+        (reçu : %{declared}).
+      # R-EDM-REQ-C092 : tout libellé fait au moins deux caractères, mesurés
+      # après normalize-space — un seul pour sdg:LocatorDesignator et
+      # sdg:StringValue, que le test excepte nommément. Le contexte ne porte
+      # aucun ancêtre : la règle atteint les vingt-et-un éléments qu'elle nomme
+      # où qu'ils soient, d'où le chemin dans la phrase. Les noms de l'agent
+      # classé ER en sont exceptés — R-EDM-ERR-C027 les mesure à son tour dans la
+      # réponse d'erreur, donc ces refus-là ne repartent pas et le journal est
+      # leur seule trace.
+      wording_too_short: >-
+        Le libellé %{path} de la requête reçue (« %{value} ») fait moins de deux caractères.
+      wording_empty: >-
+        Le libellé %{path} de la requête reçue est vide, là où la règle exige un caractère.
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant
