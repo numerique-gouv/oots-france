@@ -128,6 +128,7 @@ ignore_unused:
   - parsers.evidence_request.{provider_without_agent,provider_without_identifier}
   - parsers.evidence_request.{provider_without_scheme,provider_scheme_unknown}
   - parsers.evidence_request.{provider_id_too_long,provider_without_name}
+  - parsers.evidence_request.{provider_name_too_short,provider_unexpected_children}
   - parsers.evidence_request.{provider_without_language,provider_language_unknown}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   # The rules the `Requirements` slot puts in play, `validate!` naming them too.
@@ -138,11 +139,21 @@ ignore_unused:
   - parsers.evidence_request.{element_without_requirement,requirement_id_unexpected}
   - parsers.evidence_request.{requirement_name_without_language,requirement_name_language_unknown}
   - parsers.evidence_request.{requirement_description_without_language,requirement_description_language_unknown}
+  - parsers.evidence_request.requirement_unexpected_children
   # And the rules the `EvidenceProviderClassification` slot puts in play, named
   # literally: `S041` on each element of the collection, `C021` on the language
   # of each description and `C098` on the country its identifier names.
   - parsers.evidence_request.{element_without_classification,classification_language_unknown}
   - parsers.evidence_request.classification_country_unknown
+  # The three walks over the whole document: the RegRep type of every slot value
+  # and of every element of a collection, what a collection must carry, and the
+  # length of every wording. Named literally and still exempted, for the reason
+  # the entries above are — they reach `refuse` and never `t()`, which is what
+  # the scanner reads. `unnamed_slot_type` is not here: `I18n.t` names it, and
+  # the scanner does see that.
+  - parsers.evidence_request.{slot_type_unexpected,element_type_unexpected}
+  - parsers.evidence_request.{collection_without_element,collection_type_unexpected}
+  - parsers.evidence_request.{wording_too_short,wording_empty}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

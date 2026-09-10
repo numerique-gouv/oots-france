@@ -301,6 +301,15 @@ RSpec.describe EvidenceRequestParser do
     it 'is a request France may answer, under R-EDM-REQ-S016' do
       expect(envelope_about_an_organisation.body.validate!).to be_a(described_class)
     end
+
+    # `R-EDM-REQ-S034` type ce slot-là comme `S035` type son jumeau : le
+    # `rim:AnyValueType` de l'exemple ci-dessus est ce que la règle demande, et
+    # rien d'autre ne le satisfait.
+    it 'refuses the slot declared a collection, under R-EDM-REQ-S034' do
+      collected = about_an_organisation { |slot| slot.sub('rim:AnyValueType', 'rim:CollectionValueType') }
+
+      expect { collected.validate! }.to refusing('R-EDM-REQ-S034')
+    end
   end
 
   # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one at least, so a
@@ -1092,6 +1101,51 @@ RSpec.describe EvidenceRequestParser do
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C009')))
       end
     end
+
+    # `R-EDM-REQ-S038` closes the list of what a requirement may carry:
+    # `count(sdg:Name) + count(sdg:Identifier) + count(sdg:Description) = count(child::*)`.
+    # The assertion, and not its message — which reads that the requirement
+    # « MUST contain » the three, where the test requires none of them.
+    describe 'the elements a requirement carries' do
+      def carrying(element)
+        with_requirements { |slot| slot.sub('</sdg:Name>') { "</sdg:Name>#{element}" } }
+      end
+
+      it 'refuses one carrying an sdg:ReferenceFramework, under R-EDM-REQ-S038' do
+        framework = '<sdg:ReferenceFramework>Directive 2005/36/CE</sdg:ReferenceFramework>'
+
+        expect { carrying(framework).validate! }.to refusing('R-EDM-REQ-S038')
+      end
+
+      it 'refuses one carrying an sdg:EvidenceTypeList' do
+        expect { carrying('<sdg:EvidenceTypeList/>').validate! }.to refusing('R-EDM-REQ-S038')
+      end
+
+      # What the message of the rule would refuse and its test admits, which is
+      # the requirement the real request carries: an identifier, a name, and no
+      # description at all.
+      it 'accepts one carrying an identifier and a name and no description' do
+        expect(request.validate!).to be(request)
+      end
+
+      # Only the names are closed, not how many of each: the assertion counts
+      # every `sdg:Name` on its left-hand side.
+      it 'accepts one carrying a second name' do
+        bilingual = carrying('<sdg:Name lang="DA">Bevis for eksamensbevis</sdg:Name>')
+
+        expect(bilingual.validate!).to be(bilingual)
+      end
+    end
+
+    # `R-EDM-REQ-C092` reaches a requirement's wordings too, its context naming
+    # `sdg:Name` and `sdg:Description` among twenty-one others and no ancestor,
+    # where `require_requirement_wordings` judges their language alone.
+    it 'refuses a description of one character, under R-EDM-REQ-C092' do
+      described = worded('<sdg:Name lang="EN">Proof of diploma</sdg:Name>',
+        '<sdg:Description lang="EN">B</sdg:Description>')
+
+      expect { described.validate! }.to refusing('R-EDM-REQ-C092')
+    end
   end
 
   # Chapter 4.6 on the classifications of provider a request invokes.
@@ -1113,13 +1167,18 @@ RSpec.describe EvidenceRequestParser do
       XML
     end
 
-    def with_classifications(*elements)
-      collection = elements.map { |element| %(<rim:Element xsi:type="rim:AnyValueType">#{element}</rim:Element>) }
+    # Les deux types sont paramétrables parce que `R-EDM-REQ-S031` et `S032` les
+    # fixent : le slot est une collection, chacun de ses `rim:Element` une valeur
+    # quelconque. Les valeurs par défaut sont celles que les règles demandent, et
+    # tous les exemples de ce bloc les prennent — les deux qui en changent
+    # prouvent que la règle refuse le reste.
+    def with_classifications(*elements, type: 'rim:CollectionValueType', element_type: 'rim:AnyValueType')
+      collection = elements.map { |element| %(<rim:Element xsi:type="#{element_type}">#{element}</rim:Element>) }
 
       with_body do |body|
         body.sub('<rim:Slot name="EvidenceRequester">', <<~XML)
           <rim:Slot name="EvidenceProviderClassification">
-            <rim:SlotValue xsi:type="rim:CollectionValueType"
+            <rim:SlotValue xsi:type="#{type}"
                            collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
               #{collection.join}
             </rim:SlotValue>
@@ -1127,10 +1186,6 @@ RSpec.describe EvidenceRequestParser do
           <rim:Slot name="EvidenceRequester">
         XML
       end
-    end
-
-    def refusing(rule)
-      raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
     end
 
     # `R-EDM-REQ-S014` is a `CAUTION`: its absence is refused nowhere, which is
@@ -1142,6 +1197,16 @@ RSpec.describe EvidenceRequestParser do
 
     it 'accepts a classification the rules admit' do
       expect(with_classifications(classification).validate!).to be_truthy
+    end
+
+    it 'refuses the slot declared an any value, under R-EDM-REQ-S031' do
+      expect { with_classifications(classification, type: 'rim:AnyValueType').validate! }
+        .to refusing('R-EDM-REQ-S031')
+    end
+
+    it 'refuses a collection element declared a collection, under R-EDM-REQ-S032' do
+      expect { with_classifications(classification, element_type: 'rim:CollectionValueType').validate! }
+        .to refusing('R-EDM-REQ-S032')
     end
 
     # `R-EDM-REQ-S041` fires on the `rim:Element` itself, which is there — it
@@ -1283,6 +1348,15 @@ RSpec.describe EvidenceRequestParser do
 
       it 'accepts a classification describing itself in no language at all' do
         expect(with_classifications(classification(descriptions: '')).validate!).to be_truthy
+      end
+
+      # `R-EDM-REQ-C092` reaches this description as it reaches every other
+      # wording: its context names `sdg:Description` and no ancestor at all,
+      # where `require_classification_languages` judges the language alone.
+      it 'refuses a description of one character, under R-EDM-REQ-C092' do
+        described = classification(descriptions: '<sdg:Description lang="EN">C</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C092')
       end
     end
   end
@@ -1611,6 +1685,336 @@ RSpec.describe EvidenceRequestParser do
         expect { with_second_provider_name('<sdg:Name lang="en">Fournisseur</sdg:Name>').validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C110')))
       end
+
+      # `R-EDM-REQ-C092` reaches this name too, its context naming `sdg:Name`
+      # and no ancestor. The sentence is the provider's own rather than the one
+      # the walk over the document says, so that the journal names which agent
+      # was refused.
+      # Le message, et pas seulement le `detail` : la marche transverse sur les
+      # libellés rend le même identifiant, et seule la phrase dit lequel des deux
+      # lecteurs a joué — c'est tout l'intérêt d'en donner une propre au
+      # fournisseur.
+      it 'refuses one of a single character, under R-EDM-REQ-C092' do
+        expect { with_provider_name('F').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: 'R-EDM-REQ-C092', message: /Le nom du fournisseur désigné/)))
+      end
+    end
+
+    # `R-EDM-REQ-S043` closes the list of what the designated provider may
+    # carry: `count(sdg:Identifier) + count(sdg:Name) = count(child::*)`. Its
+    # context is each `sdg:Agent` of the slot value, and it counts none of them.
+    describe 'the elements the provider carries' do
+      def carrying(element)
+        with_provider_agent { |agent| agent.sub('</sdg:Name>') { "</sdg:Name>#{element}" } }
+      end
+
+      it 'refuses one carrying an sdg:Classification, under R-EDM-REQ-S043' do
+        expect { carrying('<sdg:Classification>EP</sdg:Classification>').validate! }.to refusing('R-EDM-REQ-S043')
+      end
+
+      # An address is what `R-EDM-REQ-C073` requires of the agent classified
+      # `ER`, and what this one may not carry at all.
+      it 'refuses one carrying an sdg:Address' do
+        address = '<sdg:Address><sdg:AdminUnitLevel1>SI</sdg:AdminUnitLevel1></sdg:Address>'
+
+        expect { carrying(address).validate! }.to refusing('R-EDM-REQ-S043')
+      end
+
+      # Only the names are closed, not how many of each: `AgentType` makes
+      # `sdg:Name` `1..n`, and the assertion counts them all on its left side.
+      it 'accepts one carrying an identifier and two names' do
+        bilingual = carrying('<sdg:Name lang="EN">Test provider</sdg:Name>')
+
+        expect(bilingual.validate!).to be(bilingual)
+      end
+
+      # `S042` asserts one agent and nothing refuses a second, which the reader
+      # never designates: this rule is where that second one is judged.
+      it 'judges a second agent of the same slot value' do
+        beside = <<~XML
+          <sdg:Agent>
+            <sdg:Identifier schemeID="#{IdentifierScheme::EAS_PREFIX}0009">AUTRE</sdg:Identifier>
+            <sdg:Name lang="EN">Another provider</sdg:Name>
+            <sdg:Classification>EP</sdg:Classification>
+          </sdg:Agent>
+        XML
+
+        doubled = with_provider_agent { |agent| agent + beside }
+
+        expect { doubled.validate! }.to refusing('R-EDM-REQ-S043')
+      end
+    end
+  end
+
+  # Chapter 4.6 on the RegRep shape of the slots: nineteen FATAL rules, all of
+  # one form — `substring-after(@xsi:type, ':')` compared to a single local
+  # name. The prefix is therefore not judged, and the context is the
+  # `rim:SlotValue` of a slot that is there, its presence being counted by the
+  # rules `REQUIRED_SLOTS` carries.
+  describe 'the RegRep type the slots declare' do
+    # `nil` takes the attribute away, where a value replaces it. `bound` binds
+    # the prefix `x` on the element itself, so that a document naming a type
+    # under an unusual prefix still parses.
+    def slot_typed(name, type, bound: nil)
+      declared = type.nil? ? '' : %( xsi:type="#{type}")
+      declared += %( xmlns:x="#{bound}") if bound
+
+      with_body { |body| body.sub(slot(name)) { |found| found.sub(/ xsi:type="[^"]*"/, declared) } }
+    end
+
+    def element_typed(name, type)
+      with_body do |body|
+        body.sub(slot(name)) { |found| found.sub(/<rim:Element xsi:type="[^"]*"/, %(<rim:Element xsi:type="#{type}")) }
+      end
+    end
+
+    it 'accepts the types the real request declares' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'refuses an EvidenceProvider slot declared a collection, under R-EDM-REQ-S030' do
+      expect { slot_typed('EvidenceProvider', 'rim:CollectionValueType').validate! }.to refusing('R-EDM-REQ-S030')
+    end
+
+    it 'refuses a Requirements slot declared an any value, under R-EDM-REQ-S026' do
+      expect { slot_typed('Requirements', 'rim:AnyValueType').validate! }.to refusing('R-EDM-REQ-S026')
+    end
+
+    it 'refuses a collection element declared a collection, under R-EDM-REQ-S027' do
+      expect { element_typed('Requirements', 'rim:CollectionValueType').validate! }.to refusing('R-EDM-REQ-S027')
+    end
+
+    # The slots of `query:Query` are typed by rules of their own, and the walk
+    # reads them under that element rather than under the request.
+    it 'refuses a NaturalPerson slot declared a collection, under R-EDM-REQ-S035' do
+      expect { slot_typed('NaturalPerson', 'rim:CollectionValueType').validate! }.to refusing('R-EDM-REQ-S035')
+    end
+
+    # `substring-after` yields the empty string when the separator is missing,
+    # and an absent attribute leaves nothing to search at all: neither matches
+    # the name the rule asks for.
+    it 'refuses a slot value declaring no type at all, under R-EDM-REQ-S020' do
+      expect { slot_typed('SpecificationIdentifier', nil).validate! }.to refusing('R-EDM-REQ-S020')
+    end
+
+    it 'refuses a type written without a prefix, which the rule reads as empty' do
+      expect { slot_typed('EvidenceProvider', 'AnyValueType').validate! }.to refusing('R-EDM-REQ-S030')
+    end
+
+    # The rule compares what follows the colon and nothing else, so a prefix
+    # bound to anything at all satisfies it. Refusing this would refuse what a
+    # FATAL rule admits, which is the mistake this whole reading exists to
+    # avoid.
+    it 'accepts a type under a prefix bound to something other than rim' do
+      served = slot_typed('EvidenceProvider', 'x:AnyValueType', bound: OotsNamespaces::NAMESPACES.fetch('sdg'))
+
+      expect(served.validate!).to be(served)
+    end
+
+    # Une ligne de table jamais exercée est une transcription jamais vérifiée,
+    # et transcrire est tout ce que ces trois tables font. Chaque ligne a donc
+    # son exemple, sous l'identifiant que la règle porte dans le Schematron —
+    # écrit ici à la main, jamais lu dans la table, sans quoi une ligne écrite à
+    # l'envers se vérifierait elle-même. Le type accepté, lui, est prouvé par
+    # l'exemple d'ouverture, que la requête réelle satisfait.
+    {
+      'SpecificationIdentifier' => %w[rim:BooleanValueType R-EDM-REQ-S020],
+      'IssueDateTime' => %w[rim:StringValueType R-EDM-REQ-S021],
+      'Procedure' => %w[rim:BooleanValueType R-EDM-REQ-S022],
+      'PossibilityForPreview' => %w[rim:StringValueType R-EDM-REQ-S024],
+      'ExplicitRequestGiven' => %w[rim:StringValueType R-EDM-REQ-S025],
+      'Requirements' => %w[rim:AnyValueType R-EDM-REQ-S026],
+      'EvidenceRequester' => %w[rim:AnyValueType R-EDM-REQ-S028],
+      'EvidenceProvider' => %w[rim:CollectionValueType R-EDM-REQ-S030],
+    }.each do |name, (wrong, rule)|
+      it "refuses a #{name} slot declared #{wrong}, under #{rule}" do
+        expect { slot_typed(name, wrong).validate! }.to refusing(rule)
+      end
+    end
+
+    { 'NaturalPerson' => 'R-EDM-REQ-S035', 'EvidenceRequest' => 'R-EDM-REQ-S033' }.each do |name, rule|
+      it "refuses a #{name} slot of query:Query declared a collection, under #{rule}" do
+        expect { slot_typed(name, 'rim:CollectionValueType').validate! }.to refusing(rule)
+      end
+    end
+
+    { 'Requirements' => 'R-EDM-REQ-S027', 'EvidenceRequester' => 'R-EDM-REQ-S029' }.each do |name, rule|
+      it "refuses a rim:Element of #{name} declared a collection, under #{rule}" do
+        expect { element_typed(name, 'rim:CollectionValueType').validate! }.to refusing(rule)
+      end
+    end
+
+    # Les quatre slots que la requête réelle ne porte pas. Chacun a besoin de ses
+    # deux moitiés : le refus prouve que la règle est appliquée sous le bon
+    # identifiant, l'acceptation que le type attendu est celui que la règle
+    # demande — un refus seul passerait quel que soit le type inscrit dans la
+    # table.
+    describe 'the slots the real request does not carry' do
+      # Écrits avant d'être jugés : le contexte de chaque règle est le
+      # `rim:SlotValue` d'un slot présent, donc un slot absent ne déclenche rien.
+      # L'ancre dit sous quel élément il se pose — `query:QueryRequest` pour les
+      # deux premiers, `query:Query` pour les deux derniers.
+      def slot_written(name, type, content, before: '<rim:Slot name="EvidenceRequester">')
+        written = %(<rim:Slot name="#{name}"><rim:SlotValue xsi:type="#{type}">#{content}</rim:SlotValue></rim:Slot>)
+
+        with_body { |body| body.sub(before) { "#{written}#{before}" } }
+      end
+
+      {
+        'PreviewLocation' => ['R-EDM-REQ-S023', 'rim:StringValueType',
+                              '<rim:Value>https://example.si/apercu</rim:Value>',
+                              '<rim:Slot name="EvidenceRequester">'],
+        'ReturnLocation' => ['R-EDM-REQ-S061', 'rim:StringValueType',
+                             '<rim:Value>https://example.si/retour</rim:Value>',
+                             '<rim:Slot name="EvidenceRequester">'],
+        'AuthorizedRepresentative' => ['R-EDM-REQ-S036', 'rim:AnyValueType',
+                                       '<sdg:Person><sdg:FamilyName>Novak</sdg:FamilyName></sdg:Person>',
+                                       '<rim:Slot name="NaturalPerson">'],
+        'AuthorizedRepresentativeLegalPerson' => ['R-EDM-REQ-S055', 'rim:AnyValueType',
+                                                  '<sdg:LegalPerson><sdg:LegalName>Novak d.o.o.</sdg:LegalName></sdg:LegalPerson>',
+                                                  '<rim:Slot name="NaturalPerson">'],
+      }.each do |name, (rule, expected, content, before)|
+        it "accepts a #{name} slot declared #{expected}" do
+          written = slot_written(name, expected, content, before:)
+
+          expect(written.validate!).to be(written)
+        end
+
+        it "refuses one declared a collection, under #{rule}" do
+          written = slot_written(name, 'rim:CollectionValueType', content, before:)
+
+          expect { written.validate! }.to refusing(rule)
+        end
+      end
+    end
+  end
+
+  # `R-EDM-REQ-S052` and `S053`, whose common context is a `rim:SlotValue`
+  # declaring itself `rim:CollectionValueType` — the attribute compared whole,
+  # prefix included, where the nineteen rules above compare its local name
+  # alone. No ancestor narrows that context: every slot value is reached.
+  describe 'what a RegRep collection must carry' do
+    def collection(name, &) = with_body { |body| body.sub(slot(name), &) }
+
+    it 'refuses one carrying no element at all, under R-EDM-REQ-S052' do
+      emptied = collection('Requirements') { |found| found.sub(%r{<rim:Element.*?</rim:Element>}m, '') }
+
+      expect { emptied.validate! }.to refusing('R-EDM-REQ-S052')
+    end
+
+    it 'refuses one declaring no collectionType, under R-EDM-REQ-S053' do
+      untyped = collection('EvidenceRequester') { |found| found.sub(/\s*collectionType="[^"]*"/, '') }
+
+      expect { untyped.validate! }.to refusing('R-EDM-REQ-S053')
+    end
+
+    # The rule admits the `Set` of the RegRep list and no other collection.
+    it 'refuses one declared a Bag' do
+      bagged = collection('EvidenceRequester') do |found|
+        found.sub(/collectionType="[^"]*"/, 'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Bag"')
+      end
+
+      expect { bagged.validate! }.to refusing('R-EDM-REQ-S053')
+    end
+
+    # The two readings of `@xsi:type` told apart, on a slot value that breaks
+    # both of these rules and satisfies `R-EDM-REQ-S026`: the local name is the
+    # one that rule asks for, and the qualified name is not the one this context
+    # selects. A reader unifying the two comparisons refuses this request.
+    it 'accepts one whose prefix keeps it out of the context of these two rules' do
+      served = collection('Requirements') do |found|
+        found.sub(/ xsi:type="[^"]*"/,
+          %( xsi:type="x:CollectionValueType" xmlns:x="#{OotsNamespaces::NAMESPACES.fetch('rim')}"))
+          .sub(/\s*collectionType="[^"]*"/, '')
+          .sub(%r{<rim:Element.*?</rim:Element>}m, '')
+      end
+
+      expect(served.validate!).to be(served)
+    end
+  end
+
+  # `R-EDM-REQ-C092` (FATAL), one rule and one walk: every wording the request
+  # carries is at least two characters once normalised — one for the two
+  # elements the test excepts by name — and the twenty-one element names its
+  # context lists are reached wherever they sit. The readers that visit some of
+  # them keep their own sentence and run first; this is the net under everywhere
+  # they do not go.
+  describe 'the length of the wordings' do
+    def titled(value) = with_body { |body| body.sub(/(<sdg:Title lang="FR">)[^<]*/) { "#{Regexp.last_match(1)}#{value}" } }
+
+    it 'refuses a title of the requested evidence type, under R-EDM-REQ-C092' do
+      expect { titled('X').validate! }.to refusing('R-EDM-REQ-C092')
+    end
+
+    # Le test demande `> 1`, donc deux caractères passent et un seul non. Épinglé
+    # à la frontière : sans cet exemple, un lecteur qui demanderait trois
+    # caractères refuserait ce qu'un État membre a le droit d'envoyer, et rien ne
+    # le dirait.
+    it 'accepts a title of exactly two characters' do
+      served = titled('XX')
+
+      expect(served.validate!).to be(served)
+    end
+
+    # Nothing reads this element in `validate!` at all: `NaturalPerson` measures
+    # it where the subject is read, and refuses it naming no rule.
+    it 'refuses a place of birth of one character' do
+      born = with_body { |body| body.sub('</sdg:DateOfBirth>', '</sdg:DateOfBirth><sdg:PlaceOfBirth>P</sdg:PlaceOfBirth>') }
+
+      expect { born.validate! }.to refusing('R-EDM-REQ-C092')
+    end
+
+    # The disjunction of the test names `sdg:LocatorDesignator` and
+    # `sdg:StringValue` and asks a single character of those two alone: a street
+    # number one character long is conformant.
+    def designated(value)
+      with_requester_agent do |agent|
+        agent.sub('<sdg:AdminUnitLevel1>', "<sdg:LocatorDesignator>#{value}</sdg:LocatorDesignator><sdg:AdminUnitLevel1>")
+      end
+    end
+
+    it 'accepts a locator designator of one character' do
+      numbered = designated('7')
+
+      expect(numbered.validate!).to be(numbered)
+    end
+
+    # L'autre des deux, sans quoi rien ne dirait qu'il est bien dans la table :
+    # le contexte de la règle ne porte aucun ancêtre, donc l'endroit où
+    # l'élément se trouve ne change rien à ce qu'elle en demande.
+    it 'accepts a string value of one character' do
+      valued = with_body do |body|
+        body.sub('</sdg:DateOfBirth>', '</sdg:DateOfBirth><sdg:StringValue>7</sdg:StringValue>')
+      end
+
+      expect(valued.validate!).to be(valued)
+    end
+
+    # Un caractère au minimum, donc zéro est refusé — et sous une autre phrase
+    # que les dix-neuf autres éléments, « fait moins de deux caractères » n'ayant
+    # aucun sens pour ceux-là. C'est le seul exemple qui atteint cette phrase.
+    it 'refuses a locator designator written empty, saying it is empty' do
+      expect { designated('').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError)
+          .and(having_attributes(detail: 'R-EDM-REQ-C092', message: /est vide/)))
+    end
+
+    # The names of the agent classified `ER` are what this walk must leave
+    # alone: `R-EDM-ERR-C027` measures them in the error response exactly as
+    # `C092` measures them here, so a refusal that travelled back would be
+    # signed into a message breaking a FATAL rule of its own. Every one of them,
+    # and not the first alone.
+    describe 'the names of the requesting agent' do
+      let(:second) { with_second_requester_name('<sdg:Name lang="EN">A</sdg:Name>') }
+
+      it 'says nothing of a second name of one character' do
+        expect(second.validate!).to be_truthy
+      end
+
+      it 'refuses that second name where the requester is read, under R-EDM-REQ-C092' do
+        expect { second.requester }.to refusing('R-EDM-REQ-C092')
+      end
     end
   end
 
@@ -1630,6 +2034,13 @@ RSpec.describe EvidenceRequestParser do
   # received request names the country that asks.
   it 'reads the country the requester declares' do
     expect(request.requester.address.country).to eq('FR')
+  end
+
+  # What a rule of chapter 4.6 refuses, said once: the identifier travels in the
+  # `detail` of the failure, which is what reaches the `EDM:ERR:0003` and the
+  # journal alike.
+  def refusing(rule)
+    raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
   end
 
   # The agent classified `ER` alone, `Fixtures::REQUESTER_AGENT` saying why.
@@ -1663,6 +2074,8 @@ RSpec.describe EvidenceRequestParser do
   def with_doubled_slot(name) = with_body { |body| body.sub(slot(name)) { |found| found * 2 } }
 
   def with_requester_name(name) = with_requester_agent { |agent| replace_name(agent, name) }
+
+  def with_second_requester_name(second) = with_requester_agent { |agent| add_name(agent, second) }
 
   def with_requester_language(value) = with_requester_agent { |agent| replace_language(agent, value) }
 
@@ -1751,6 +2164,8 @@ RSpec.describe EvidenceRequestParser do
   def with_provider_id(id) = with_provider_agent { |agent| replace_id(agent, id) }
 
   def without_provider_identifier = with_provider_agent { |agent| remove_identifier(agent) }
+
+  def with_provider_name(name) = with_provider_agent { |agent| replace_name(agent, name) }
 
   def without_provider_name = with_provider_agent { |agent| remove_name(agent) }
 

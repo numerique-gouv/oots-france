@@ -10,6 +10,8 @@ class EvidenceRequestParser
   include AgentConformance
   include RequirementConformance
   include ClassificationConformance
+  include SlotTypeConformance
+  include WordingConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -65,10 +67,11 @@ class EvidenceRequestParser
     require_requester_country
     require_agent_territory(requester_agent, :agent)
     require_conformant_accompanying_agents
-    require_conformant_provider(provider_agent)
+    require_conformant_provider(provider_agents)
     require_beneficiary_identifier_scheme
     require_conformant_requirements
     require_conformant_classifications
+    require_conformant_document
 
     self
   end
@@ -166,20 +169,22 @@ class EvidenceRequestParser
     end
   end
 
-  # `R-EDM-REQ-S042`: the slot value carries the agent itself, an `AnyValueType`
-  # where the `EvidenceRequester` slot is a collection of `rim:Element`. The
-  # first is taken when a request carries two — `S042` asserts one and `S043`
-  # counts the children of the agent, so no assertion refuses the second, and
-  # the `1..1` of chapter 4.5.1 §3.3 is prose alone.
+  # `R-EDM-REQ-S042`: the slot value carries the agents themselves, an
+  # `AnyValueType` where the `EvidenceRequester` slot is a collection of
+  # `rim:Element`. All of them are handed over — `require_conformant_provider`
+  # says which rules reach each and which this reader applies to the first
+  # alone, the `1..1` of chapter 4.5.1 §3.3 being prose alone.
   #
   # Read only once `REQUIRED_SLOTS` has counted the slot: `slot` refuses an
   # absent one without naming a rule, and an `EDM:ERR:0003` whose `detail` is
   # empty tells neither the correspondent nor the journal what was broken.
-  def provider_agent
-    agent = at(slot('EvidenceProvider', request), './rim:SlotValue/sdg:Agent')
-    refuse('R-EDM-REQ-S042', 'parsers.evidence_request.provider_without_agent') if agent.nil?
+  def provider_agents
+    @provider_agents ||= begin
+      declared = all(slot('EvidenceProvider', request), './rim:SlotValue/sdg:Agent')
+      refuse('R-EDM-REQ-S042', 'parsers.evidence_request.provider_without_agent') if declared.empty?
 
-    agent
+      declared
+    end
   end
 
   def requester_agent = @requester_agent ||= sole_agent_classified_requester
@@ -287,6 +292,22 @@ class EvidenceRequestParser
     refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_without_distribution') if distributions.empty?
 
     distributions.map { |distribution| text_at(distribution, './sdg:Format') }
+  end
+
+  # The three readings that walk the whole document rather than one slot: the
+  # RegRep type every slot value declares, what a collection must carry, and the
+  # length of every wording.
+  #
+  # Run last of all, and no rule of the chapter fixes that order: it keeps to
+  # the refusals of the readers above the identifier and the sentence of the
+  # rule that names their subject, both more precise than what a walk can say. A
+  # request carrying two evidence subjects, one of them a `rim:SlotValue`
+  # declaring no type at all, is therefore refused under `R-EDM-REQ-S016` rather
+  # than under `S034`.
+  def require_conformant_document
+    require_conformant_slot_types
+    require_conformant_collections
+    require_conformant_wordings
   end
 
   def refuse(rule, key, **)
@@ -409,12 +430,18 @@ class EvidenceRequestParser
     # no rule comes last, once every rule that could have named one has passed.
     id = require_content(identifier.text, 'parsers.evidence_request.agent_without_id')
 
-    name = at(agent, './sdg:Name')
+    # Every name the agent carries, and not the first alone: `AgentType` makes
+    # them `1..n`, and the contexts of `C092`, `C109` and `C108` are the name
+    # element and its attribute, so a second one is judged as much as the first
+    # — and refused as silently, `R-EDM-ERR-C027` measuring in the answer what
+    # `C092` measures here. The first is what the answer names, the schema
+    # sequencing them and no rule choosing between them.
+    name = require_agent_names(agent, :agent).first
 
     EvidenceRequester.new(
       id:, type_id: attribute(identifier, 'schemeID'),
-      name: agent_name(name, :agent),
-      language: require_language(name, :agent),
+      name: name.text,
+      language: attribute(name, 'lang'),
       # Read rather than defaulted: `Address` says `FR`, which is exactly the
       # wrong answer about a foreign requester.
       address: Address.new(country: agent_country(agent)),
