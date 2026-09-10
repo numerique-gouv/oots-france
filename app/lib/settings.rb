@@ -60,6 +60,12 @@ module Settings
   # away.
   TIMEOUT_SWITCH = 'AVEC_DELAI_EXPIRATION'.freeze
 
+  # What keeps the requesting side shut until the system is homologated — a
+  # decision of this deployment, which no chapter names. The default is the
+  # reverse of the switch above: left empty it stays shut, and only `true`
+  # opens it.
+  EVIDENCE_REQUEST_SWITCH = 'AVEC_REQUETE_PIECE_JUSTIFICATIVE'.freeze
+
   # The only two key management algorithms FranceConnect+ encrypts an ID Token
   # and a UserInfo response with, each paired with `A256GCM`. `Settings::Contract`
   # refuses any other at startup: published outside these two, the key fails
@@ -93,7 +99,7 @@ module Settings
   class << self
     def verify! = Contract.new.verify!
 
-    def evidence_request_enabled? = ENV['AVEC_REQUETE_PIECE_JUSTIFICATIVE'] == 'true'
+    def evidence_request_enabled? = evidence_request_switch == 'true'
 
     # Chapter 4.4.3 lets a deployment provide no timeout handling at all, and
     # the two conditionals it writes — one per role — then have a false
@@ -241,22 +247,30 @@ module Settings
         I18n.t('lib.settings.not_whole', names: I18n.t('lib.settings.not_whole_entry', name:, value:))
     end
 
+    # `Settings::Contract` refuses the same value at startup, but only the web
+    # process and the worker read that contract, so anywhere else — the Rake
+    # task that renders the messages, a console — the sweep and the answer
+    # would both read a malformed switch that nothing had ever looked at.
+    def timeout_switch = boolean_switch(TIMEOUT_SWITCH)
+
+    # `EvidenceRequestsController` is the only reader, so the `verify!` that
+    # `config.ru` runs in the web process already covers every process this
+    # switch reaches. The refusal stays on the reader all the same, which is
+    # where the grammar is.
+    def evidence_request_switch = boolean_switch(EVIDENCE_REQUEST_SWITCH)
+
     # Like `whole`, and for its reason: a value this cannot read is refused
-    # where it is read rather than coalesced into one of the two answers. It
-    # matters more here than anywhere else — `Settings::Contract` refuses the
-    # same value at startup, but `config.ru` runs that check and the worker
-    # never loads it, so the sweep and the answer would both read a malformed
-    # switch that nothing had ever looked at.
+    # where it is read rather than coalesced into one of the two answers.
     #
-    # The value is compared unstripped on purpose: `timeout_enabled?` reads
-    # « ` false` » as anything but `false`, so accepting it here would apply the
-    # opposite of what the deployment wrote.
-    def timeout_switch
-      value = optional(TIMEOUT_SWITCH)
+    # The value is compared unstripped on purpose: a caller compares it to one
+    # of the two words, so a padded value reads as the other answer, and
+    # accepting it here would apply the opposite of what the deployment wrote.
+    def boolean_switch(name)
+      value = optional(name)
       return value if value.nil? || value.in?(%w[true false])
 
       raise ConfigurationError,
-        I18n.t('lib.settings.not_boolean', name: TIMEOUT_SWITCH, value:)
+        I18n.t('lib.settings.not_boolean', name:, value:)
     end
 
     def optional(name) = ENV.fetch(name, nil).presence

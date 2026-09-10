@@ -1,6 +1,7 @@
 module Settings
   # What the environment must satisfy for the application to answer at all,
-  # checked once at startup by `config.ru`.
+  # checked once at startup: by `config.ru` for the web process, and by
+  # `config/initializers/verify_settings.rb` for the worker.
   #
   # Separate from `Settings`, which reads: a reader answers a question, a
   # contract refuses. Every rule names all its offenders at once — correcting
@@ -8,6 +9,7 @@ module Settings
   # check exists to spare.
   class Contract
     def verify!
+      reject_unless_evidence_request_switch_readable
       reject_unless_present
       reject_unless_whole
       reject_unless_lawful_retention
@@ -17,6 +19,13 @@ module Settings
     end
 
     private
+
+    # A rule with no assertion of its own: `evidence_request_enabled?` raises on
+    # a value that is neither `true` nor `false`, and reading it here lets that
+    # refusal through rather than restating it — the form `with_timeouts` gives
+    # the other switch. First, so a mistyped control over requesting refuses the
+    # start before any of the sets is judged.
+    def reject_unless_evidence_request_switch_readable = Settings.evidence_request_enabled?
 
     def reject_unless_present
       missing = with_timeouts(REQUIRED).reject { |name| ENV.fetch(name, nil).to_s.strip.present? }
@@ -118,8 +127,8 @@ module Settings
     # Asking it is also what refuses an unreadable switch here: `timeout_enabled?`
     # raises on a value that is neither `true` nor `false`, so the first rule to
     # compose a set carries that refusal and `verify!` needs no rule of its own
-    # — the reader defends itself in every process, which `config.ru` cannot,
-    # running `verify!` in the web one alone.
+    # — the reader defends itself in every process, which the contract cannot,
+    # nothing running `verify!` outside the web process and the worker.
     def with_timeouts(names) = Settings.timeout_enabled? ? names + TIMEOUTS : names
 
     def offender(name) = I18n.t('lib.settings.not_whole_entry', name:, value: ENV.fetch(name, nil))
