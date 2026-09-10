@@ -57,9 +57,16 @@ module Demo
       )
     end
 
+    # Registered as well as returned. Chapter 4.10 §4.1, informative, has a later
+    # delivery placed against « any known current user and/or user session », and
+    # this row is what makes this exchange one of the known: a document arriving
+    # for an exchange absent from the register is refused, so the register is
+    # written the instant the identifier exists and nowhere later.
     def keep(answer)
       context.exchange_id = answer.exchange_id
       context.conversation_id = answer.conversation_id
+
+      Request.create!(exchange_id: answer.exchange_id, conversation_id: answer.conversation_id)
     end
 
     # The message the contract returned travels with the refusal: it is the only

@@ -19,6 +19,9 @@ module Demo
       @connection = connection
     end
 
+    # No `raise_error` middleware, here or on the state client: a refusal is an
+    # answer to a service provider, and the page has to show the status and the
+    # message it carried.
     def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:, conversation_id: nil)
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
@@ -29,25 +32,11 @@ module Demo
         idConversation: conversation_id,
       }.compact)
 
-      ContractAnswer.new(status: response.status, payload: payload(response))
+      ContractAnswer.from(response, path: PATH)
     end
 
     private
 
     attr_reader :connection
-
-    # No `raise_error` middleware: a refusal is an answer here, and the page has
-    # to show the status and the message it carried. Only a body that is no JSON
-    # object at all becomes nothing — the feature switch answers in plain text.
-    def payload(response)
-      parsed = JSON.parse(response.body.to_s)
-
-      parsed.is_a?(Hash) ? parsed : {}
-    rescue JSON::ParserError => e
-      Rails.logger.warn(I18n.t('clients.demo.evidence_request_client.unreadable',
-        path: PATH, status: response.status, error: e.message))
-
-      {}
-    end
   end
 end

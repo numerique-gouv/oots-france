@@ -110,10 +110,12 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(evidence_request_query['beneficiaire']).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
     end
 
-    it 'shows the exchange the contract opened' do
+    # A request that left ends the page: the answer appears on the tracking, and
+    # that is the address worth reloading.
+    it 'sends the user to the tracking of the exchange the contract opened' do
       post admin_demo_confirmation_path
 
-      expect(response.parsed_body.css('main').text).to include(accepted_body.fetch(:echange))
+      expect(response).to redirect_to(admin_demo_suivi_path)
     end
 
     describe 'the conversation of chapter 4.4 §4.3.2' do

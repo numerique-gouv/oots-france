@@ -29,7 +29,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager demande que son justificatif soit récupéré
     Alors la page de confirmation affiche le fournisseur et le type de justificatif
     Quand l'usager confirme sa demande
-    Alors la démarche de démonstration affiche l'identifiant de l'échange ouvert
+    Alors la page de suivi affiche l'identifiant de l'échange ouvert
     Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
     Et cette requête contient l'identité que FranceConnect+ a donnée à la démarche
     Et cette requête déclare que l'usager a demandé le justificatif

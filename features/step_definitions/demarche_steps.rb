@@ -126,10 +126,15 @@ Quand('l\'usager confirme sa demande') do
   @navigateur.submit_to('/admin/demo/confirmation')
 end
 
-Alors('la démarche de démonstration affiche l\'identifiant de l\'échange ouvert') do
-  @exchange_id = @navigateur.rows[I18n.t('admin.demo.confirmations.create.exchange')]
+# Confirming ends the confirmation page: the request that left is followed on
+# the tracking, which is where the answer will appear. The identifier is read
+# there, and the state it shows is deliberately not asserted — the exchange is
+# already on its way, and what the correspondent has answered by the time this
+# page renders is not this scenario's business.
+Alors('la page de suivi affiche l\'identifiant de l\'échange ouvert') do
+  @exchange_id = @navigateur.rows[I18n.t('admin.demo.trackings.show.exchange')]
 
-  expect(@navigateur.body).to include(I18n.t('admin.demo.confirmations.create.opened'))
+  expect(@navigateur.title).to eq(I18n.t('admin.demo.trackings.show.title'))
   expect(@exchange_id).to match(Exchange::UUID)
 end
 

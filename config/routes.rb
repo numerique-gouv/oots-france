@@ -19,6 +19,13 @@ Rails.application.routes.draw do
     get 'franceconnect/cles_publiques', to: 'france_connect#cles_publiques'
     get 'franceconnect/retour_connexion', to: 'france_connect#retour_connexion'
     get 'franceconnect/retour_deconnexion', to: 'france_connect#retour_deconnexion'
+
+    # Where the evidence is delivered to the procedure. `EvidenceForwarder`
+    # appends this path to the URL a requester publishes, and carries on it the
+    # two identifiers chapter 4.4 §4.3.2 defines; it is
+    # therefore the address of a service provider's server, and no more part of
+    # the console than the four above.
+    post 'oots/document', to: 'demo/evidence_deliveries#create'
   end
 
   # The path is the one the procedures already call; it has no reason to change
@@ -61,6 +68,13 @@ Rails.application.routes.draw do
       # explicit request, and the request leaves as it is pressed — chapter
       # 4.5.1 §2.7 ties `IssueDateTime` to that instant.
       resource :confirmation, only: %i[show create], controller: 'confirmations'
+      # Where the journey ends, and the only page of it that may be reloaded at
+      # will: chapter 4.4 §4.1 requires a new request for a new answer, so this
+      # one reads and never asks.
+      resource :suivi, only: :show, controller: 'trackings'
+      # The evidence itself, under the page that offers it rather than beside
+      # it: nothing reaches it without the exchange that page is following.
+      get 'suivi/justificatif', to: 'evidences#show', as: :suivi_justificatif
     end
 
     # The log is walked through its events, and only through them: the listing

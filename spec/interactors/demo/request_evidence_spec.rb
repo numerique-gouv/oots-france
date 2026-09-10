@@ -24,6 +24,25 @@ RSpec.describe Demo::RequestEvidence do
     expect(result).to have_attributes(success?: true, exchange_id: 'un-échange', conversation_id: 'une-conversation')
   end
 
+  # Chapter 4.10 §4.1, informative, has a later delivery placed against « any
+  # known current user and/or user session », so the exchange becomes one of them
+  # the instant its identifier exists: a document arriving on a request absent
+  # from the register is refused.
+  it 'registers the request, so that the evidence can later be placed on it' do
+    result
+
+    expect(Demo::Request.sole)
+      .to have_attributes(exchange_id: 'un-échange', conversation_id: 'une-conversation', evidence: nil)
+  end
+
+  it 'registers nothing when the contract refused' do
+    allow(client).to receive(:fetch).and_return(Demo::ContractAnswer.new(status: 422, payload: {}))
+
+    result
+
+    expect(Demo::Request.count).to be_zero
+  end
+
   describe 'the refusals told apart by status' do
     {
       422 => :demo_refused,
