@@ -62,6 +62,7 @@ class EvidenceRequestParser
     require_expected_specification
     require_one_evidence_subject
     require_requester_country
+    require_agent_territory(requester_agent, :agent)
     require_conformant_accompanying_agents
     require_conformant_provider(provider_agent)
     require_beneficiary_identifier_scheme

@@ -143,6 +143,7 @@ module AgentConformance
     require_agent_identifier(agent, :platform)
     require_agent_names(agent)
     require_agent_country(agent)
+    require_agent_territory(agent, :platform)
   end
 
   # `R-EDM-REQ-C013` normalises before asking that the classification not be
@@ -208,6 +209,27 @@ module AgentConformance
       next if CountryIdentificationCode.valid?(country)
 
       refuse('R-EDM-REQ-C015', 'parsers.evidence_request.platform_country_unknown', country:)
+    end
+  end
+
+  # `R-EDM-REQ-C016`, which holds an `sdg:AdminUnitLevel2` to the `NUTS` list as
+  # `C015` holds the `AdminUnitLevel1` above it to the countries. Every element
+  # is judged and none is required: the rule's context is the element itself, so
+  # an agent naming no territory breaks nothing — `C073` requires the address
+  # and nothing requires this.
+  #
+  # Compared raw, the assertion carrying neither `i` flag nor `normalize-space`,
+  # where `C015`'s does the same: `FR101` satisfies it and `fr101` does not.
+  #
+  # Applied to the `EvidenceRequester` collection alone, which is the rule's
+  # context: the provider's slot has no counterpart, so
+  # `require_conformant_provider` does not call this.
+  def require_agent_territory(agent, wording)
+    all(agent, './sdg:Address/sdg:AdminUnitLevel2').each do |declared|
+      territory = declared.text
+      next if NutsCode.valid?(territory)
+
+      refuse('R-EDM-REQ-C016', "parsers.evidence_request.#{wording}_territory_unknown", territory:)
     end
   end
 

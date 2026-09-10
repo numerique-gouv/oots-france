@@ -89,6 +89,17 @@ Metrics/BlockLength:
     - "response"
     - "included"
 
+# The remedy this cop names — read the data from an external source — is the one
+# thing the code lists of the TDD must not do. `LanguageCode` says why: the
+# client that serves those lists answers `{}` on any failure, deliberately, and
+# a list that empties itself makes every value conformant, which is the opposite
+# of what a FATAL rule asks. So all four are copied into the repository, and
+# `NUTS` is only the long one — 3 332 codes, where `CountryIdentificationCode`
+# clears the default by a single code.
+Metrics/CollectionLiteralLength:
+  Exclude:
+    - "app/models/nuts_code.rb"
+
 Metrics/ClassLength:
   Max: 150
   CountAsOne:

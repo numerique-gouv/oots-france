@@ -689,6 +689,45 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-C016`, the territory under the country. Its context is the
+  # `sdg:AdminUnitLevel2` element, which the real request does not carry: what
+  # requires an address is `C073`, and it asks for the country alone.
+  describe 'the territory the requester declares' do
+    it 'accepts a request declaring none, which is the one really received' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'accepts a code the list publishes' do
+      expect(with_requester_territory('FR101').validate!).to be_a(described_class)
+    end
+
+    it 'refuses a code it does not, under R-EDM-REQ-C016' do
+      expect { with_requester_territory('FR999').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    # The assertion carries no `i` flag and no `normalize-space`, where `C073`
+    # normalises the country beside it: a territory the list publishes is
+    # refused as soon as it is written otherwise.
+    it 'refuses a published code written in lower case' do
+      expect { with_requester_territory('fr101').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    it 'refuses a published code written with spaces around it' do
+      expect { with_requester_territory(' FR101 ').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    # Written empty, the element is there and is a context node: the assertion
+    # fires, and the empty string is no code of the list. That separates it from
+    # the element being absent, which the example opening this block serves.
+    it 'refuses a territory element written empty, under R-EDM-REQ-C016' do
+      expect { with_requester_territory('').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+  end
+
   # `R-EDM-REQ-C041` and `C042`, whose context is the identifier itself: a
   # request naming no identifier for its beneficiary breaks neither, chapter 2.1
   # §2.3.1.2 providing for an identity established in the requester's own
@@ -1211,6 +1250,17 @@ RSpec.describe EvidenceRequestParser do
         expect { with_platform_country('de').validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
       end
+
+      # `R-EDM-REQ-C016` names no classification either, so the territory of
+      # every agent of the collection is judged and not the requester's alone.
+      it 'accepts a territory the code list publishes' do
+        expect(with_platform_territory('DE300').validate!).to be_truthy
+      end
+
+      it 'refuses one it does not, under R-EDM-REQ-C016' do
+        expect { with_platform_territory('DE999').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+      end
     end
 
     # The walk judges each of the agents the requester is not: the real request
@@ -1233,6 +1283,17 @@ RSpec.describe EvidenceRequestParser do
       it 'refuses one the two before it made look conformant' do
         expect { with_third_agent(conformant.sub('lang="EN"', 'lang="en"')).validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # The same proof for `C016`: the requester and the platform before it
+      # declare a conformant territory or none at all, so a reader stopping at
+      # the first agent would serve this one unexamined.
+      it 'refuses one whose territory alone breaks C016' do
+        addressed = conformant.sub('<sdg:Classification>',
+          '<sdg:Address><sdg:AdminUnitLevel2>ZZ999</sdg:AdminUnitLevel2></sdg:Address><sdg:Classification>')
+
+        expect { with_third_agent(addressed).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
       end
     end
 
@@ -1418,6 +1479,14 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `AddressType` puts `AdminUnitLevel2` after `AdminUnitLevel1`, and the real
+  # request carries no such element: it is added rather than substituted.
+  def with_requester_territory(code)
+    with_requester_agent do |agent|
+      agent.sub(%r{(</sdg:AdminUnitLevel1>)}) { "#{Regexp.last_match(1)}<sdg:AdminUnitLevel2>#{code}</sdg:AdminUnitLevel2>" }
+    end
+  end
+
   # The real request names no identifier for its beneficiary, so one is added
   # here. Its value is of the shape `R-EDM-REQ-C040` fixes, that rule being a
   # different one from the two under test.
@@ -1467,6 +1536,15 @@ RSpec.describe EvidenceRequestParser do
 
   def with_platform_country(code)
     with_platform_address("<sdg:Address><sdg:AdminUnitLevel1>#{code}</sdg:AdminUnitLevel1></sdg:Address>")
+  end
+
+  # The country beside it, `AddressType` sequencing the two: a territory alone
+  # would be judged all the same — `C016`'s context is its own element — but an
+  # address shaped as the schema shapes it is what a correspondent sends.
+  def with_platform_territory(code)
+    with_platform_address(
+      "<sdg:Address><sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1><sdg:AdminUnitLevel2>#{code}</sdg:AdminUnitLevel2></sdg:Address>"
+    )
   end
 
   # The agent of the `EvidenceProvider` slot alone, `Fixtures::PROVIDER_AGENT`
