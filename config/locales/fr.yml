@@ -313,9 +313,11 @@ fr:
       header_unreadable: En-tête de signature illisible sur la réponse de l'annuaire.
       header_unreadable_detail: "En-tête de signature illisible sur la réponse de l'annuaire : %{error}."
       certificate_unreadable: "Certificat illisible dans la réponse de l'annuaire : %{error}."
-    # Ce que la démarche de démonstration écrit dans les logs, et jamais à
-    # l'écran : l'usager voit l'alerte que l'échec structuré lui vaut, et elle
-    # ne se relit pas après coup.
+    # Ce que la démarche de démonstration dit d'une frontière qui n'a pas
+    # répondu ce qu'il fallait. Les deux premières deviennent le message de
+    # l'erreur levée, que l'échec structuré porte jusque sous l'alerte de
+    # l'usager ; la troisième ne va qu'aux logs, la requête se poursuivant sur
+    # un corps vide.
     demo:
       beneficiary_token_writer:
         no_key: "Le jeu de clés publié en %{url} ne porte aucune clé : le jeton du bénéficiaire ne peut être chiffré pour personne."
