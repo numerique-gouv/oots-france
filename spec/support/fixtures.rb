@@ -93,6 +93,19 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The captured response as the 1.2 line shapes it: the header of that line,
+  # and a flat `rim:RegistryObjectList` — `R-EDM-RESP-S015` and `-S033` anchor on
+  # the objects of the list itself there, where 2.0.1 moved them under a
+  # `rim:RegistryPackageType`. The classification goes with the package: nothing
+  # of that line names `MainEvidence`, one response carrying one document.
+  def earlier_line_response(name = 'reponseAvecPieceJointe')
+    earlier_line_envelope(name) do |body|
+      flattened = flattened_registry_objects(body)
+
+      block_given? ? yield(flattened) : flattened
+    end
+  end
+
   # The agent classified `ER` alone, whose name and identifier the rules of
   # chapter 4.6 judge and which France copies into what it signs. The
   # collection carries a second agent, classified `IP`, that a looser pattern
@@ -214,6 +227,18 @@ module Fixtures
   end
 
   private
+
+  # The package `R-EDM-RESP-S015` puts the objects under in 2.0.1, taken away
+  # with the classification it exists to carry.
+  def flattened_registry_objects(body)
+    document = Nokogiri::XML(body)
+    package = document.at_xpath('//rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES)
+    objects = package.xpath('./rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES)
+    objects.xpath('./rim:Classification', SlotReading::NAMESPACES).each(&:remove)
+    package.replace(objects.map(&:to_xml).join)
+
+    document.to_xml
+  end
 
   def rewrite_body(document)
     value = document.at_xpath('//payload/value')

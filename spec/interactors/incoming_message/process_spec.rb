@@ -383,4 +383,41 @@ RSpec.describe IncomingMessage::Process do
       expect(waiting.map { |exchange| exchange.reload.status }).to all(eq('sent'))
     end
   end
+
+  # CA14 of OOTS-200. Chapter 4.7 §2.6.2 has request and response of one
+  # exchange share a version, and `R-EDM-RESP-C002` fixes a different literal on
+  # each line: a response is therefore held to the line its own request was
+  # written in, and not to the one it announces of itself.
+  describe 'a response judged against the version its request was written in' do
+    let(:message) { earlier_line_response { |body| body.sub('oots-edm:v1.2', 'oots-edm:v1.0') } }
+
+    before { allow(collaborators[:evidence_forwarder]).to receive(:deliver) }
+
+    it 'journals R-EDM-RESP-C002 against the literal of the 1.2 line' do
+      create(:exchange, :legacy_line, conversation_id: message.conversation_id,
+        request_id: message.body.request_id).tap(&:sent!)
+
+      process
+
+      expect(AuditEvent.find_by(event_type: 'response_received').detail)
+        .to include('R-EDM-RESP-C002', 'oots-edm:v1.0', 'oots-edm:v1.2')
+    end
+
+    # What CA14 does not say and RG16 requires: a correspondent answering in the
+    # newer line a request written in the older one has broken the same rule, and
+    # judging the response by what it announces of itself would let that pass.
+    describe 'when the correspondent answers on the other line' do
+      let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
+
+      it 'journals R-EDM-RESP-C002 all the same' do
+        create(:exchange, :legacy_line, exchange_id: message.exchange_id,
+          conversation_id: message.conversation_id, request_id: message.body.request_id).tap(&:sent!)
+
+        process
+
+        expect(AuditEvent.find_by(event_type: 'response_received').detail)
+          .to include('R-EDM-RESP-C002', 'oots-edm:v2.0', 'oots-edm:v1.2')
+      end
+    end
+  end
 end

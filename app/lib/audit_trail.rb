@@ -86,11 +86,15 @@ class AuditTrail
   # Recorded before the message is dispatched, and not inside the handler that
   # deals with it: a request too malformed to answer, or a response naming an
   # exchange we never opened, must be logged all the same.
-  def message_received(message:, message_id:)
+  # `exchange` is the one `IncomingMessage::Process` correlated the message to,
+  # and nil where it could correlate none: an arriving response is judged
+  # against the version its own request was written in, which is the exchange's
+  # and nothing else's.
+  def message_received(message:, message_id:, exchange: nil)
     record(
       RECEIVED_EVENTS.fetch(message.action),
       **arrived(message, message_id),
-      **(readable(:body) { received_body(message) } || {}),
+      **(readable(:body) { received_body(message, exchange) } || {}),
     )
   end
 
@@ -201,10 +205,10 @@ class AuditTrail
     AuditEvent.create!(event_type:, occurred_at: Time.current, **attributes)
   end
 
-  def received_body(message)
+  def received_body(message, exchange)
     case message.action
     when EbmsAction::EXECUTE_QUERY_REQUEST then received_request(message.body)
-    when EbmsAction::EXECUTE_QUERY_RESPONSE then received_response(message)
+    when EbmsAction::EXECUTE_QUERY_RESPONSE then received_response(message, exchange)
     when EbmsAction::EXCEPTION_RESPONSE then received_error(message.body)
     else {}
     end
@@ -243,11 +247,11 @@ class AuditTrail
   # `sdg:IsAbout` the subject the provider confirms having matched, where
   # `received_request` records the one that was asked for — the two are allowed
   # to differ, and that gap is what an auditor came for.
-  def received_response(message)
+  def received_response(message, exchange)
     {
       **response_correlation(message),
       **answering_parties(message),
-      detail: readable(:business_rules) { broken_rules(message.body) },
+      detail: readable(:business_rules) { broken_rules(message.body, exchange) },
       **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
       **(readable(:evidence_subject) { AuditEvent.subject(message.body.evidence_subject) } || {}),
     }
@@ -275,7 +279,9 @@ class AuditTrail
   # this column is the only place the departure is ever read. Empty when the
   # response conforms; read through `readable` like every other field, a body
   # too malformed to parse costing the line no field that was read before it.
-  def broken_rules(response) = response.violations.map(&:sentence).join(' ').presence
+  def broken_rules(response, exchange)
+    response.violations(expected: exchange&.specification).map(&:sentence).join(' ').presence
+  end
 
   # Chapter 4.5.2 lets a conformant response carry no evidence part at all —
   # one announcing the evidence for later, and equally one whose package is

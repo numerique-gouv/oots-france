@@ -71,10 +71,19 @@ class EvidenceResponseParser
   # chapter 4.5.3 opens no error path from a portal back to a provider. Hence
   # `violations` and not `validate!` — nothing here raises, and a name in `!`
   # would invite the next reader to make it refuse.
-  def violations
+  # `expected` is the version the exchange runs on, which chapter 4.7 §2.6.2 has
+  # request and response of one exchange share: `R-EDM-RESP-C002` fixes a
+  # different literal on each line, so a response is held to the line its own
+  # request was written in rather than to the one it announces of itself — which
+  # is what makes a correspondent's drift visible instead of self-justifying.
+  # A response no exchange could be correlated to is judged in its own version,
+  # there being no other to hold it to — which is what `nil` here means.
+  def violations(expected: nil)
+    judged = expected || specification
+
     [
       *missing_slots,
-      unexpected_specification,
+      unexpected_specification(judged),
       *unexpected_status,
       deferral_without_date,
       date_without_deferral,
@@ -165,12 +174,12 @@ class EvidenceResponseParser
     end
   end
 
-  def unexpected_specification
+  def unexpected_specification(expected)
     within_slot('SpecificationIdentifier') do |declared|
-      next if declared == specification.identifier
+      next if declared == expected.identifier
 
       violation('R-EDM-RESP-C002', 'unexpected_specification',
-        announced: named(declared, 'absent_specification'), expected: specification.identifier)
+        announced: named(declared, 'absent_specification'), expected: expected.identifier)
     end
   end
 

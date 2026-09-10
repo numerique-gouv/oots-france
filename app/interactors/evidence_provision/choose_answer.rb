@@ -34,6 +34,20 @@ module EvidenceProvision
 
     def request = context.message.body
 
+    # The version the answer is written in: the one the request was read in.
+    # Chapter 4.7 §2.6.2 — « The same SpecificationId value MUST be used
+    # consistently in both request and response messages belonging to the same
+    # evidence exchange » — and, for the mechanism the slot alone carries, a 2.0
+    # response to a 1.2 request would fail at its destination on
+    # `R-EDM-RESP-S015`, whose 1.2.5 context is the object of the list and not
+    # the package around it.
+    #
+    # Read off the message and not off the exchange: where the header
+    # contradicts the body it is the header that says which line the refusal
+    # goes back on, and a request France could not read at all names no exchange
+    # to ask.
+    def specification = context.message.specification
+
     # Readable enough to answer, not enough to serve: `EDM:ERR:0003` rather
     # than silence. The exception is bound and not dropped — what it names is
     # the whole of what a correspondent will learn about their own mistake.
@@ -120,7 +134,7 @@ module EvidenceProvision
       attachment = attachment_for(document)
       body = EvidenceResponseBuilder.new(
         requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
-        attachment:, request_id:, uuid:,
+        attachment:, request_id:, specification:, uuid:,
       )
 
       Answers::Served.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
@@ -130,7 +144,7 @@ module EvidenceProvision
     # After the timeout, for the reason `expired?` gives: a correspondent that
     # has already given up has no use for an appointment.
     def deferral
-      body = DeferredResponseBuilder.new(requester:, request_id:, uuid:)
+      body = DeferredResponseBuilder.new(requester:, request_id:, specification:, uuid:)
 
       Answers::Deferral.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
         identifier: body.document_id, available_at: body.available_at)
@@ -152,7 +166,7 @@ module EvidenceProvision
     end
 
     def refusal(exception)
-      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, uuid:)
+      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, specification:, uuid:)
 
       Answers::Refusal.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
         identifier: body.document_id, exception:)
@@ -173,6 +187,7 @@ module EvidenceProvision
         final_recipient: requester.ebms_identity,
         conversation_id: context.message.conversation_id,
         exchange_id: context.message.exchange_id,
+        specification:,
         uuid:,
       )
     end

@@ -87,7 +87,8 @@ module IncomingMessage
     # Recorded before it is handled, so that a request too malformed to answer
     # — the one an auditor most needs to find — is journalled all the same.
     def record
-      audit_trail.message_received(message: context.message, message_id: context.message_id)
+      audit_trail.message_received(message: context.message, message_id: context.message_id,
+        exchange: context.exchange)
       OpenExchange.call!(context)
     end
 

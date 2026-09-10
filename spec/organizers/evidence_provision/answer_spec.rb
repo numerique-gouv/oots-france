@@ -1272,6 +1272,72 @@ RSpec.describe EvidenceProvision::Answer do
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
   end
 
+  # RG13 of OOTS-200: what a request of the 1.2 line is answered with. Chapter
+  # 4.7 §2.6.2 — « The same SpecificationId value MUST be used consistently in
+  # both request and response messages belonging to the same evidence exchange »
+  # — and a 2.0 response to a 1.2 request would in any case fail at its
+  # destination on `R-EDM-RESP-S015`, whose 1.2.5 context is the object of the
+  # list and not the package around it.
+  describe 'a request arriving on the 1.2 line' do
+    let(:message) { earlier_line_envelope }
+    let(:header) { Nokogiri::XML(gateway_body) }
+
+    before { create(:exchange, :legacy_line, incoming: true, conversation_id: message.conversation_id) }
+
+    # CA6.
+    it 'answers with a response of that line, flat and unclassified' do
+      answer
+
+      expect(status_of(submitted)).to end_with('Success')
+      expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      expect(submitted.xpath('//rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES).size).to eq(1)
+      expect(submitted.at_xpath("//rim:RegistryObjectList/rim:RegistryObject/rim:Slot[@name='EvidenceMetadata']",
+        SlotReading::NAMESPACES)).to be_present
+      expect(submitted.xpath('//rim:Classification', SlotReading::NAMESPACES)).to be_empty
+    end
+
+    # CA6 again, on the header: `R-EDM-ebMS-018` counts two properties on that
+    # line, and `R-EDM-ebMS-017` has the conversation reused.
+    it 'answers under a header of that line, two properties and the conversation received' do
+      answer
+
+      properties = header.xpath('//eb:MessageProperties/eb:Property/@name', OotsNamespaces::NAMESPACES).map(&:value)
+
+      expect(properties).to contain_exactly('originalSender', 'finalRecipient')
+      expect(header.at_xpath('//eb:CollaborationInfo/eb:ConversationId', OotsNamespaces::NAMESPACES).text)
+        .to eq(message.conversation_id)
+      expect(submitted.root['requestId']).to eq(message.body.request_id)
+    end
+
+    # CA7.
+    describe 'for a procedure France serves in deferral' do
+      let(:message) { earlier_line_envelope { |body| body.sub('<rim:Value>00<', '<rim:Value>R1<') } }
+
+      it 'announces the evidence for later, on that line' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Unavailable')
+        expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      end
+    end
+
+    # CA8.
+    describe 'for a procedure France does not serve' do
+      let(:message) { earlier_line_envelope { |body| body.sub('<rim:Value>00<', '<rim:Value>T3<') } }
+
+      it 'refuses on that line' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0004')
+        expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      end
+    end
+  end
+
+  def specification_of(document)
+    document.at_xpath("//rim:Slot[@name='SpecificationIdentifier']//rim:Value", SlotReading::NAMESPACES).text
+  end
+
   # Each identifier addressed by the very path its rule anchors on:
   # `R-EDM-ebMS-017` on the `eb:ConversationId` of the collaboration,
   # `R-EDM-ebMS-037` on the `ExchangeId` message property. Written whole rather
