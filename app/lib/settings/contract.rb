@@ -8,6 +8,7 @@ module Settings
   # check exists to spare.
   class Contract
     def verify!
+      reject_unless_evidence_request_switch_readable
       reject_unless_present
       reject_unless_whole
       reject_unless_lawful_retention
@@ -17,6 +18,13 @@ module Settings
     end
 
     private
+
+    # A rule with no assertion of its own: `evidence_request_enabled?` raises on
+    # a value that is neither `true` nor `false`, and reading it here lets that
+    # refusal through rather than restating it — the form `with_timeouts` gives
+    # the other switch. First, so a mistyped control over requesting refuses the
+    # start before any of the sets is judged.
+    def reject_unless_evidence_request_switch_readable = Settings.evidence_request_enabled?
 
     def reject_unless_present
       missing = with_timeouts(REQUIRED).reject { |name| ENV.fetch(name, nil).to_s.strip.present? }

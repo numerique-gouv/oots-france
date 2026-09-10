@@ -60,6 +60,12 @@ module Settings
   # away.
   TIMEOUT_SWITCH = 'AVEC_DELAI_EXPIRATION'.freeze
 
+  # What keeps the requesting side shut until the system is homologated — a
+  # decision of this deployment, which no chapter names. The default is the
+  # reverse of the switch above: left empty it stays shut, and only `true`
+  # opens it.
+  EVIDENCE_REQUEST_SWITCH = 'AVEC_REQUETE_PIECE_JUSTIFICATIVE'.freeze
+
   # The only two key management algorithms FranceConnect+ encrypts an ID Token
   # and a UserInfo response with, each paired with `A256GCM`. `Settings::Contract`
   # refuses any other at startup: published outside these two, the key fails
@@ -93,7 +99,7 @@ module Settings
   class << self
     def verify! = Contract.new.verify!
 
-    def evidence_request_enabled? = ENV['AVEC_REQUETE_PIECE_JUSTIFICATIVE'] == 'true'
+    def evidence_request_enabled? = evidence_request_switch == 'true'
 
     # Chapter 4.4.3 lets a deployment provide no timeout handling at all, and
     # the two conditionals it writes — one per role — then have a false
@@ -245,6 +251,12 @@ module Settings
     # runs that check and the worker never loads it, so the sweep and the answer
     # would both read a malformed switch that nothing had ever looked at.
     def timeout_switch = boolean_switch(TIMEOUT_SWITCH)
+
+    # `EvidenceRequestsController` is the only reader, so `verify!` — which
+    # `config.ru` runs in the web process alone — already covers every process
+    # this switch reaches. The refusal stays on the reader all the same, which
+    # is where the grammar is.
+    def evidence_request_switch = boolean_switch(EVIDENCE_REQUEST_SWITCH)
 
     # Like `whole`, and for its reason: a value this cannot read is refused
     # where it is read rather than coalesced into one of the two answers.

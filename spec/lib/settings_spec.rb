@@ -274,22 +274,83 @@ RSpec.describe Settings do
     end
   end
 
-  describe '.evidence_request_enabled?' do
-    it 'is true only for the exact string "true"' do
-      with_environment('AVEC_REQUETE_PIECE_JUSTIFICATIVE' => 'true') do
+  # The reserve of homologation, as a switch: no chapter names it, and the
+  # default is the reverse of the timeout one — nothing said keeps the door
+  # shut.
+  describe 'whether requesting is open at all' do
+    it 'is open when the switch says so' do
+      with_environment(Settings::EVIDENCE_REQUEST_SWITCH => 'true') do
         expect(described_class).to be_evidence_request_enabled
       end
     end
 
-    it 'is false for anything else, including "1"' do
-      with_environment('AVEC_REQUETE_PIECE_JUSTIFICATIVE' => '1') do
+    it 'is locked when the switch is not set' do
+      with_environment(Settings::EVIDENCE_REQUEST_SWITCH => nil) do
         expect(described_class).not_to be_evidence_request_enabled
       end
     end
 
-    it 'is false when unset' do
-      with_environment('AVEC_REQUETE_PIECE_JUSTIFICATIVE' => nil) do
+    # The shape a deployment actually produces: `.env.oots.template` writes the
+    # name with nothing after the `=`, where a spec is tempted to test the
+    # absent key instead.
+    it 'is locked when the switch is posed and left empty' do
+      with_environment(Settings::EVIDENCE_REQUEST_SWITCH => '') do
         expect(described_class).not_to be_evidence_request_enabled
+      end
+    end
+
+    it 'is locked by an explicit false' do
+      with_environment(Settings::EVIDENCE_REQUEST_SWITCH => 'false') do
+        expect(described_class).not_to be_evidence_request_enabled
+      end
+    end
+
+    # Refused where it is written rather than read as a silent no: the caller
+    # would receive a `501` saying nothing of the value that produced it, and
+    # the deployment would believe requesting open.
+    it 'refuses a switch that is neither true nor false, naming it' do
+      with_environment(filled.merge(Settings::EVIDENCE_REQUEST_SWITCH => 'vrai')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /AVEC_REQUETE_PIECE_JUSTIFICATIVE vaut « vrai »/)
+      end
+    end
+
+    # The value is compared unstripped, and the padding is what makes the
+    # difference: « ` true` » reads as anything but `true`, so tolerating it
+    # here would keep locked what the deployment meant to open.
+    it 'refuses a switch padded with a space, which reads as the wrong answer' do
+      with_environment(filled.merge(Settings::EVIDENCE_REQUEST_SWITCH => ' true')) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /AVEC_REQUETE_PIECE_JUSTIFICATIVE/)
+      end
+    end
+
+    # The refusal belongs to the reader and not to the contract alone, which
+    # `config.ru` runs in the web process only.
+    it 'refuses it at the point of use too, without any contract having run' do
+      with_environment(Settings::EVIDENCE_REQUEST_SWITCH => 'vrai') do
+        expect { described_class.evidence_request_enabled? }
+          .to raise_error(ConfigurationError, /AVEC_REQUETE_PIECE_JUSTIFICATIVE vaut « vrai »/)
+      end
+    end
+
+    # What says the rule is the first of `verify!`, rather than leaving it to
+    # the position of a line: with the rest of REQUIRED absent, the refusal
+    # that comes out still names the switch and not the missing variables.
+    it 'names the switch before any of the sets is judged' do
+      alone = Settings::REQUIRED.index_with { nil }.merge(Settings::EVIDENCE_REQUEST_SWITCH => 'vrai')
+
+      with_environment(alone) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /AVEC_REQUETE_PIECE_JUSTIFICATIVE vaut « vrai »/)
+      end
+    end
+
+    %w[true false].each do |value|
+      it "starts with the switch set to #{value}" do
+        with_environment(filled.merge(Settings::EVIDENCE_REQUEST_SWITCH => value)) do
+          expect { described_class.verify! }.not_to raise_error
+        end
       end
     end
   end
