@@ -44,7 +44,8 @@ module Demo
 
       parsed.is_a?(Hash) ? parsed : {}
     rescue JSON::ParserError => e
-      Rails.logger.warn("Réponse illisible de #{PATH} (#{response.status}) : #{e.message}")
+      Rails.logger.warn(I18n.t('clients.demo.evidence_request_client.unreadable',
+        path: PATH, status: response.status, error: e.message))
 
       {}
     end

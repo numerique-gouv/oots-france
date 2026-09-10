@@ -313,6 +313,15 @@ fr:
       header_unreadable: En-tête de signature illisible sur la réponse de l'annuaire.
       header_unreadable_detail: "En-tête de signature illisible sur la réponse de l'annuaire : %{error}."
       certificate_unreadable: "Certificat illisible dans la réponse de l'annuaire : %{error}."
+    # Ce que la démarche de démonstration écrit dans les logs, et jamais à
+    # l'écran : l'usager voit l'alerte que l'échec structuré lui vaut, et elle
+    # ne se relit pas après coup.
+    demo:
+      beneficiary_token_writer:
+        no_key: "Le jeu de clés publié en %{url} ne porte aucune clé : le jeton du bénéficiaire ne peut être chiffré pour personne."
+        unreadable: "Jeu de clés illisible en %{url} : %{error}"
+      evidence_request_client:
+        unreadable: "Réponse illisible de %{path} (%{status}) : %{error}"
     beneficiary_token:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
@@ -725,6 +734,8 @@ fr:
         unreachable: "Fin de session FranceConnect+ impossible, l'exploitant est déconnecté malgré tout : %{error}"
       start_identification:
         undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
+      request_evidence:
+        unreachable: "Contrat de requête de justificatif injoignable, ou jeu de clés inexploitable : %{error}"
       complete_identification:
         refused_by_portal: "FranceConnect+ a refusé l'identification (%{error}) : %{description}"
         no_description: sans autre explication

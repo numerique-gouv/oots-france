@@ -109,9 +109,11 @@ RSpec.describe EvidenceRequestBuilder do
     end
   end
 
-  # RG8 of OOTS-181, and `R-EDM-REQ-S010` (FATAL): the slot is mandatory, and
-  # the request leaves at the instant the user confirmed — chapter 4.5.1 §2.7
-  # ties `IssueDateTime` to it.
+  # `R-EDM-REQ-S010` (FATAL) makes the slot mandatory, and this deployment only
+  # ever issues a request the user asked for, so it is written as given. That
+  # the user did ask is held by the two screens, not here; what is held here is
+  # that the slot is there, that it says so, and that `IssueDateTime` is the
+  # instant of the build — which chapter 4.5.1 §2.7 ties to the gesture.
   it 'declares the explicit request as given, at the moment of building' do
     namespaces = { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0' }
     document = Nokogiri::XML(request)

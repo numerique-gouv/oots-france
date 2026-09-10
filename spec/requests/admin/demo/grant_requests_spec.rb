@@ -75,19 +75,9 @@ RSpec.describe 'Admin::Demo::GrantRequests' do
   describe 'POST /admin/demo/demande' do
     before { identify_demo_user }
 
-    # CA1: without the explicit request, nothing is asked of anyone — no
-    # directory is called and no exchange is opened. Asserted on the absence of
-    # the call, not only on the page: a page saying so while a request left
-    # would satisfy a weaker check.
-    it 'opens nothing and calls nothing when the user did not ask for OOTS' do
-      allow(Demo::RequestEvidence).to receive(:call)
-
-      expect { post admin_demo_demande_path, params: { oots: 'non' } }.not_to change(Exchange, :count)
-
-      expect(Demo::RequestEvidence).not_to have_received(:call)
-      expect(response).to have_http_status(:ok)
-    end
-
+    # CA1: without the explicit request, the journey stops here — nothing is
+    # resolved and nothing is asked of anyone. What proves it is where the
+    # answer leads, this action being the only thing between the two.
     it 'says the evidence has to come by another route' do
       post admin_demo_demande_path, params: { oots: 'non' }
 

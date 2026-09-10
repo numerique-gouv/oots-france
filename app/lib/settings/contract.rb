@@ -86,9 +86,6 @@ module Settings
       refuse(I18n.t('lib.settings.france_connect_algorithm', algorithm:, expected:))
     end
 
-    # Read here rather than through `Settings`, which raises what a contract
-    # answers: a malformed value is an offence to name, not an exception to
-    # propagate.
     # The key the demonstration procedure signs its beneficiary token with, and
     # the one algorithm `BeneficiaryToken::SIGNATURE` admits to open it.
     # Refused here for the reason the rule above is: published on any other
@@ -107,6 +104,9 @@ module Settings
 
     def france_connect_key = decoded_jwk('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64')
 
+    # Read here rather than through `Settings`, which raises what a contract
+    # answers: a malformed value is an offence to name, not an exception to
+    # propagate.
     def decoded_jwk(name)
       key = JSON.parse(Base64.decode64(ENV.fetch(name, '')))
       key if key.is_a?(Hash)

@@ -31,12 +31,13 @@ module Demo
       return refuse(answer) unless answer.accepted?
 
       keep(answer)
-    rescue Faraday::Error => e
-      # Journalisé autant que montré, comme les trois autres interacteurs de
-      # `Demo::` : aucun `Exchange` n'existe encore à ce stade, donc rien
-      # d'autre ne gardera trace d'une panne que l'alerte de l'usager ne se
-      # relit pas après coup.
-      Rails.logger.warn("Contrat de requête de justificatif injoignable : #{e.message}")
+    # The two ways this can fail before anything is asked of anyone: the contract
+    # or the key set unreachable, and the key set answering something no key can
+    # be read from. Logged as much as shown, like the three other interactors of
+    # `Demo::` — no `Exchange` exists at this point, so nothing else would keep
+    # a trace of an outage, and the alert the user is shown does not read back.
+    rescue Faraday::Error, UnusableKeySetError => e
+      Rails.logger.warn(I18n.t('interactors.demo.request_evidence.unreachable', error: e.message))
 
       fail_with_error(:demo_unreachable, errors: [e.message])
     end

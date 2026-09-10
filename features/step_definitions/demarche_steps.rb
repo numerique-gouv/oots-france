@@ -103,12 +103,12 @@ end
 # System is to be used, and nothing leaves without that gesture.
 Quand('l\'usager demande que son justificatif soit récupéré') do
   @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
-  @navigateur.submit_form_to('/admin/demo/demande', 'oots' => 'oui')
+  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'oui')
 end
 
 Quand('l\'usager refuse que son justificatif soit récupéré') do
   @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
-  @navigateur.submit_form_to('/admin/demo/demande', 'oots' => 'non')
+  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'non')
 end
 
 # Requirement 27 of chapter 1 §2. The two values come from the real directories,
@@ -123,7 +123,7 @@ Alors('la page de confirmation affiche le fournisseur et le type de justificatif
 end
 
 Quand('l\'usager confirme sa demande') do
-  @navigateur.submit_form_to('/admin/demo/confirmation', {})
+  @navigateur.submit_to('/admin/demo/confirmation')
 end
 
 Alors('la démarche de démonstration affiche l\'identifiant de l\'échange ouvert') do
@@ -173,17 +173,14 @@ Alors('la France n\'a envoyé aucune requête') do
 end
 
 # The log is written by the server, in a database the scenario does not share,
-# and `SendToGateway` writes it after submitting to the gateway.
+# and `SendToGateway` writes it after submitting to the gateway — hence the wait
+# every outcome of these scenarios goes through.
 def depart_de_la_requete
   @depart_de_la_requete ||= begin
-    limite = Time.current + 60
-
-    until (depart = ServerAuditEvent.find_by(exchange_id: @exchange_id, event_type: 'request_sent'))
-      raise "Aucun départ de requête au journal pour l'échange #{@exchange_id}." if Time.current > limite
-
-      sleep 1
+    patiente_jusqu_a("le journal porte le départ de la requête de l'échange #{@exchange_id}") do
+      ServerAuditEvent.exists?(exchange_id: @exchange_id, event_type: 'request_sent')
     end
 
-    depart
+    ServerAuditEvent.find_by!(exchange_id: @exchange_id, event_type: 'request_sent')
   end
 end

@@ -61,10 +61,26 @@ module Demo
     def expiry = Time.zone.parse(clock.now).to_i + VALIDITY.to_i
 
     # Read from the route rather than derived from `Settings.private_key_jwk`.
-    # Deriving it is exactly what let a broken key-publishing route go
-    # unnoticed once: nothing called it.
+    # Reading it is what makes the demonstration exercise the publishing route;
+    # deriving it would sidestep that route, and leave a broken one invisible.
+    #
+    # A set fetched over HTTP is unusable in more ways than being unreachable,
+    # and `Faraday` only names that one: a maintenance page answered with a
+    # `200` is a `JSON::ParserError`, a set the gem cannot make sense of an
+    # `ArgumentError`, and a set published empty is no exception at all — it is
+    # simply `nil` where a key was expected. The two readers of this deployment
+    # enumerate the same cases at their own boundary; so does this writer,
+    # rather than leaving them to whoever calls it. Narrow to this single call.
     def encryption_key
-      key_fetcher.call("#{Settings.oots_france_url}/auth/cles_publiques").keys.first.verify_key
+      published = key_fetcher.call(key_set_url).keys.first
+      raise UnusableKeySetError, I18n.t('clients.demo.beneficiary_token_writer.no_key', url: key_set_url) if published.nil?
+
+      published.verify_key
+    rescue JSON::ParserError, ArgumentError, TypeError => e
+      raise UnusableKeySetError,
+        I18n.t('clients.demo.beneficiary_token_writer.unreadable', url: key_set_url, error: e.message)
     end
+
+    def key_set_url = "#{Settings.oots_france_url}/auth/cles_publiques"
   end
 end

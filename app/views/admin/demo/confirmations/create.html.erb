@@ -15,9 +15,7 @@
       correspondent has been told anything. The title says which refusal it was,
       the body carries what the contract returned — `EB:ERR:0001` is in there,
       never in the status. %>
-  <%= dsfr_alert(type: :error, title: t("interactors.failures.#{@failure[:key]}")) do %>
-    <%= @failure[:errors].join(' ') %>
-  <% end %>
+  <%= render 'admin/demo/echec', type: :error, failure: @failure %>
 
   <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.create.nothing_opened') %></p>
 <% else %>

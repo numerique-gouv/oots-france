@@ -388,6 +388,15 @@ RSpec.describe Settings do
       end
     end
 
+    # Une clé JWK ne porte `crv` que si on l'y écrit : absent, le refus doit
+    # nommer un membre à ajouter plutôt qu'une valeur à récrire, et les deux se
+    # corrigent différemment.
+    it 'refuses to start on a signing key that declares no curve at all' do
+      with_environment(lawful.merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key(crv: nil))) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /sans valeur/)
+      end
+    end
+
     it 'refuses to start on a signing key that is not a key at all' do
       with_environment(lawful.merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => 'pas du base64 de JSON')) do
         expect { described_class.verify! }

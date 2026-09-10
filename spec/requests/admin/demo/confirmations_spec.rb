@@ -63,6 +63,20 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(groupe.css('li button, li a').map(&:name)).to eq(%w[button a])
     end
 
+    # Une panne d'annuaire n'est pas un refus : elle ne porte aucun code, et
+    # `DirectoryLookup::Refusing` la relève. Le contrôleur la rend comme les
+    # pages d'annuaire voisines, et l'exigence 27 interdit alors d'offrir de
+    # confirmer quoi que ce soit.
+    it 'says so, and offers nothing to confirm, when the directories cannot be reached' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({})).to_timeout
+
+      get admin_demo_confirmation_path
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.parsed_body.css('main').text).to include("n'ont pas pu être joints")
+      expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
+    end
+
     it 'sends an operator holding no identity back to the start' do
       reset_session_identity
 
@@ -196,6 +210,30 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       # nomme toujours l'échange : un `202` qui n'en nomme aucun est un corps
       # qui n'est pas arrivé entier, et le montrer comme un succès afficherait
       # une requête partie dont rien ne dit laquelle.
+      # Éprouvé sur la vraie route et non sur un double du client : ce qui est en
+      # question est que le client laisse bien échapper la panne, pas que
+      # l'interacteur sache la traiter.
+      it 'says the service could not be reached when nothing answers at all' do
+        stub_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
+          .with(query: hash_including({})).to_timeout
+
+        post admin_demo_confirmation_path
+
+        expect(response.parsed_body.css('main').text).to include("n'a pas pu être joint")
+      end
+
+      # Le jeu de clés est lu en HTTP avant que la requête parte : une page de
+      # maintenance rendue en `200` n'est pas une panne réseau, et n'échappait
+      # à aucun rattrapage avant qu'on la nomme.
+      it 'says the same when the key set answers something no key can be read from' do
+        stub_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")
+          .to_return(body: '<html>maintenance</html>', headers: { 'Content-Type' => 'text/html' })
+
+        post admin_demo_confirmation_path
+
+        expect(response.parsed_body.css('main').text).to include("n'a pas pu être joint")
+      end
+
       it 'refuses an acceptance that names no exchange' do
         stub_evidence_request(status: 202, body: 'une réponse tronquée')
 

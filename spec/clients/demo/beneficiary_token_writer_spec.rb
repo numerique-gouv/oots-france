@@ -82,8 +82,8 @@ RSpec.describe Demo::BeneficiaryTokenWriter do
   end
 
   # Reading it is what makes the demonstration exercise the publishing route;
-  # deriving it from `Settings.private_key_jwk` is what once let a broken one go
-  # unnoticed.
+  # deriving it from `Settings.private_key_jwk` would sidestep that route, and
+  # leave a broken one invisible.
   it 'encrypts for the key it reads from the publishing route' do
     token
 

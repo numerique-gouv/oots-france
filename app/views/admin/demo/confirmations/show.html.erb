@@ -16,9 +16,7 @@
     <%= @unreachable %>
   <% end %>
 <% elsif @wording&.failure %>
-  <%= dsfr_alert(type: :warning, title: t("interactors.failures.#{@wording.failure[:key]}")) do %>
-    <%= @wording.failure[:errors].join(' ') %>
-  <% end %>
+  <%= render 'admin/demo/echec', type: :warning, failure: @wording.failure %>
 <% end %>
 
 <% if @wording&.nameable? %>
