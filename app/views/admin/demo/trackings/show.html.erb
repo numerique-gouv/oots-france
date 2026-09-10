@@ -1,0 +1,81 @@
+<% content_for :title, t('admin.demo.trackings.show.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
+              [t('admin.demo.confirmations.create.title'), admin_demo_confirmation_path],
+              [t('admin.demo.trackings.show.title'), nil]],
+    ) %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= t('admin.demo.trackings.show.title') %></h1>
+
+<% if @unreachable %>
+  <%# The contract unreachable says nothing of the exchange: the page reports
+      the outage rather than presenting it as an answer. %>
+  <%= dsfr_alert(type: :error, title: t('admin.demo.trackings.show.unreachable')) do %>
+    <%= @unreachable %>
+  <% end %>
+<% elsif @wording.unreadable? %>
+  <%= dsfr_alert(type: :error, title: t('admin.demo.trackings.show.unreadable')) do %>
+    <%= @wording.refusal %>
+  <% end %>
+<% elsif @wording.outcome == :delivered %>
+  <%# Chapter 1 §4.2: the evidence is « made available to the specific procedure
+      end-user that issued the query », and the user « cannot modify its content
+      in any way » — so it is offered exactly as it arrived. %>
+  <%= dsfr_alert(type: :success, title: t('admin.demo.trackings.show.delivered')) do %>
+    <%= t('admin.demo.trackings.show.delivered_body') %>
+  <% end %>
+
+  <p class="fr-mt-4w">
+    <%= link_to t('admin.demo.trackings.show.open'), admin_demo_suivi_justificatif_path,
+          class: 'fr-btn fr-btn--icon-left fr-icon-file-pdf-line', target: '_blank', rel: 'noopener' %>
+  </p>
+<% elsif @wording.outcome == :refused %>
+  <%# Chapter 2.1 §3.3: « the user MUST receive an automated message explaining
+      that the evidence cannot be provided. » The code below says which refusal
+      it was; showing it at all is a choice of a demonstration whose reader is
+      the operator, and no chapter asks for it. %>
+  <%= dsfr_alert(type: :error, title: t('admin.demo.trackings.show.refused')) do %>
+    <%= t('admin.demo.trackings.show.refused_body') %>
+  <% end %>
+<% elsif @wording.outcome == :preview %>
+  <%# The first of the four points the `shall` of chapter 4.9 §5 enumerates, and
+      the only one this demonstration meets: it recognises a response naming a
+      preview space. The second — « Provide a departure page for the user to
+      navigate to the Preview Space » — is deliberately not met: the address is
+      shown, and the user is not conducted there. %>
+  <%= dsfr_alert(type: :info, title: t('admin.demo.trackings.show.preview')) do %>
+    <%= t('admin.demo.trackings.show.preview_body') %>
+  <% end %>
+<% else %>
+  <%= dsfr_alert(type: :info, title: t('admin.demo.trackings.show.pending')) do %>
+    <%= t('admin.demo.trackings.show.pending_body') %>
+  <% end %>
+<% end %>
+
+<%# The two identifiers, because the demonstration is read by the operator: it
+    is on these that the exchange is found again in the log. And, when there is
+    one, what the outcome added — the digest of the very bytes served, the EDM
+    code, the address a correspondent named. %>
+<%= render 'admin/demo/attributs',
+      caption: t('admin.demo.trackings.show.caption'),
+      rows: [
+        [t('admin.demo.trackings.show.exchange'), @wording.exchange_id],
+        [t('admin.demo.trackings.show.conversation'), @wording.conversation_id],
+        [t('admin.demo.trackings.show.digest'), @wording.evidence_digest],
+        [t('admin.demo.trackings.show.code'),
+         (render(EdmErrorCodeComponent.new(code: @wording.edm_error_code)) if @wording.edm_error_code.present?)],
+        [t('admin.demo.trackings.show.preview_location'),
+         (demo_preview_address(@wording) if @wording.preview_location.present?)],
+      ] %>
+
+<ul class="fr-btns-group fr-btns-group--inline">
+  <%# Reading again is free; asking again is a new journey. Chapter 4.4 §4.1:
+      « … a new unique request MUST be issued. » %>
+  <li><%= link_to t('admin.demo.trackings.show.refresh'), admin_demo_suivi_path,
+            class: 'fr-btn fr-btn--secondary' %></li>
+  <li><%= link_to t('admin.demo.trackings.show.again'), admin_demo_demande_path,
+            class: 'fr-btn fr-btn--tertiary' %></li>
+</ul>

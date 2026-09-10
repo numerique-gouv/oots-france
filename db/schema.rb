@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_10_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_02_120000) do
     t.index ["exchange_id"], name: "index_audit_events_on_exchange_id"
     t.index ["occurred_at"], name: "index_audit_events_on_occurred_at"
     t.index ["request_id"], name: "index_audit_events_on_request_id"
+  end
+
+  create_table "demo_requests", force: :cascade do |t|
+    t.string "conversation_id", null: false
+    t.datetime "created_at", null: false
+    t.binary "evidence"
+    t.string "evidence_digest"
+    t.datetime "evidence_received_at"
+    t.string "exchange_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
   end
 
   create_table "exchanges", force: :cascade do |t|

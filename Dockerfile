@@ -23,5 +23,9 @@ RUN bundle install
 
 COPY . /usr/src/app
 
+# Rails' own default, and what this image serves when nothing overrides it.
+# `docker-compose.yml` does override it: the port `web` listens on is
+# `PORT_OOTS_FRANCE`, so that one address serves the host's browser and the
+# container network alike.
 EXPOSE 3000
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

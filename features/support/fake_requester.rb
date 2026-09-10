@@ -5,11 +5,17 @@
 # rather than a stub: the application really fetches its key set over HTTP, and
 # really posts the evidence to it.
 class FakeRequester
-  attr_reader :received_evidence
+  # What the last delivery carried: the bytes, and the two identifiers chapter
+  # 4.4 §4.3.2 defines. Both are kept, because a fake that
+  # took delivery of anything would prove only that a POST was made — and the
+  # question these scenarios ask is whether a service provider can tell which of
+  # its users this document answers.
+  attr_reader :received_evidence, :received_delivery
 
   def initialize
     @signing_key = OpenSSL::PKey::EC.generate('prime256v1')
     @received_evidence = nil
+    @received_delivery = nil
   end
 
   def start(port)
@@ -53,11 +59,20 @@ class FakeRequester
       response.body = { keys: [JWT::JWK.new(@signing_key).export] }.to_json
     end
 
-    @server.mount_proc('/oots/document') do |request, response|
-      @received_evidence = request.body
-      response.status = 200
-    end
+    @server.mount_proc('/oots/document') { |request, response| take_delivery(request, response) }
 
     @server.mount_proc('/oots/callback') { |_request, response| response.status = 200 }
+  end
+
+  # Refused when it names no exchange, as a service provider with two users in
+  # flight has to refuse it: nothing would tell it whose document this is.
+  def take_delivery(request, response)
+    delivery = Rack::Utils.parse_nested_query(request.query_string.to_s)
+
+    return response.status = 400 if delivery['echange'].to_s.empty?
+
+    @received_evidence = request.body
+    @received_delivery = delivery
+    response.status = 200
   end
 end

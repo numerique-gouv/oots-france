@@ -61,7 +61,12 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 
 C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` sur une URL de l'application, en SOAP.
 
-`scripts/configure_domibus.sh` le configure, et deux choses s'y révèlent à l'usage :
+`scripts/configure_domibus.sh` le configure. L'adresse qu'il écrit est `http://web:<PORT_OOTS_FRANCE>/domibus/notifications` — le nom du service sur le réseau docker, et le port que `web` **écoute**, lequel est celui-là même qu'il publie sur l'hôte. Le script le lit dans son environnement, et `scripts/setup.sh` le lui passe depuis `.env`.
+
+> [!WARNING]
+> **Une passerelle configurée sur un autre port perd les réponses, et l'application n'en sait rien.** Le cas se présente dans un worktree, dont `scripts/worktree.sh` décale les ports : une passerelle configurée avant le décalage pousse ses notifications là où plus personne n'écoute. La requête part, rien ne revient, et la page qui suit l'échange reste indéfiniment « en cours ». La trace existe, mais **d'un seul côté** : les tentatives épuisées lèvent une alerte dans la console d'administration de la passerelle, `wsplugin.push.alert.active` étant activée (voir plus bas) — OOTS-France, lui, ne reçoit aucun appel, n'a donc rien à journaliser, et aucun de ses écrans ne montre cette alerte. Rejouer `scripts/configure_domibus.sh` puis `docker compose restart domibus` remet le câblage d'aplomb ; `scripts/ci/diagnose_domibus.sh` compare l'adresse configurée à celle du `.env` et signale l'écart.
+
+Deux choses s'y révèlent par ailleurs à l'usage :
 
 > [!IMPORTANT]
 > **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`, `markAsDownloaded`), elles, sont modifiables à chaud.

@@ -23,6 +23,7 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Alors le portail reçoit tout de suite l'identifiant de l'échange
     Et le portail reçoit le justificatif
     Et le justificatif reçu est le document que le fournisseur détient
+    Et le justificatif reçu porte l'échange et la conversation que le 202 avait rendus
     Et le journal des échanges contient tout l'échange, de l'envoi de la requête à la remise du justificatif
     Et le journal des échanges contient le corps RegRep de chaque message, tel qu'il a circulé
 
@@ -31,6 +32,7 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Alors le portail reçoit tout de suite l'identifiant de l'échange
     Et le portail reçoit le justificatif
     Et le justificatif reçu est le document que le fournisseur détient
+    Et le justificatif reçu porte l'échange et la conversation que le 202 avait rendus
 
   Scénario: deux demandes d'un même usager forment une seule conversation
     Quand le portail demande deux justificatifs pour le même usager

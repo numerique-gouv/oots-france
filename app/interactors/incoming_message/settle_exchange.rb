@@ -89,7 +89,7 @@ module IncomingMessage
 
       requester = requesters.find(exchange.evidence_requester_id)
 
-      evidence_forwarder.deliver(evidence.content, requester)
+      evidence_forwarder.deliver(evidence.content, requester, exchange)
       exchange.delivered!
 
       audit_trail.evidence_delivered(exchange:, evidence:)

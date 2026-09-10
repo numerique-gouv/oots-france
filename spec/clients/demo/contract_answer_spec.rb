@@ -22,6 +22,18 @@ RSpec.describe Demo::ContractAnswer do
       expect(described_class.new(status: 202)).not_to be_accepted
     end
 
+    # Both, and not the exchange alone: the register the procedure writes on an
+    # acceptance is keyed on the pair, and a row missing either could never have
+    # a delivery placed against it.
+    it 'is not a 202 naming the exchange without its conversation' do
+      expect(described_class.new(status: 202, payload: { 'echange' => 'un-echange' })).not_to be_accepted
+    end
+
+    it 'is not a 202 naming the conversation without its exchange' do
+      expect(described_class.new(status: 202, payload: { 'conversation' => 'une-conversation' }))
+        .not_to be_accepted
+    end
+
     it 'is no other status, whatever the body carries' do
       expect(described_class.new(status: 200, payload:)).not_to be_accepted
     end

@@ -68,9 +68,10 @@ Rails.application.configure do
   # Annotate rendered view with file names.
   config.action_view.annotate_rendered_view_with_filenames = true
 
-  # The gateway calls us by our service name on the Docker network — `web:3000`
-  # — which Rails' host check refuses by default, with a 403 nothing tells apart
-  # from an authentication refusal. In development the stack is local anyway.
+  # The gateway calls us by our service name on the Docker network —
+  # `web:<PORT_OOTS_FRANCE>` — which Rails' host check refuses by default, with a
+  # 403 nothing tells apart from an authentication refusal. In development the
+  # stack is local anyway.
   config.hosts.clear
 
   # Uncomment if you wish to allow Action Cable access from any origin.

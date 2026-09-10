@@ -28,6 +28,11 @@
 #                               directory by scripts/generate_certificates.sh
 #   MOT_DE_PASSE_MAGASINS       their password — mandatory, and having to match
 #                               the one in the .env the gateway runs with
+#   PORT_OOTS_FRANCE            the port `web` listens on, out of which the
+#                               notification address towards us is composed —
+#                               mandatory, and having to match the one in the
+#                               .env the stack runs with, since a worktree shifts
+#                               it; URL_NOTIFICATION overrides the whole address
 
 set -e
 
@@ -45,7 +50,12 @@ REPERTOIRE_DOMIBUS="${REPERTOIRE_DOMIBUS:-domibus}"
 
 # The address the gateway notifies us at, and the credentials it will put on
 # those calls. Seen from the Domibus container, hence the service name.
-URL_NOTIFICATION="${URL_NOTIFICATION:-http://web:3000/domibus/notifications}"
+#
+# The port is the one `web` listens on, which is `PORT_OOTS_FRANCE` and not a
+# fixed 3000: a worktree shifts it, and a gateway configured on 3000 would push
+# the correspondent's answers at a port nothing listens on — silently, the page
+# that follows the exchange staying on « en cours » for ever.
+URL_NOTIFICATION="${URL_NOTIFICATION:-http://web:${PORT_OOTS_FRANCE:?doit être renseigné, et correspondre à celui de .env}/domibus/notifications}"
 LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
 MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
 

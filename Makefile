@@ -15,8 +15,8 @@ setup: ## Install from a fresh clone: env files, databases, configured gateway
 check-env: ## What the templates declare, against what the .env* files carry
 	scripts/check_environment.sh
 
-up: ## Run the application: server, background worker, database, gateway
-	$(COMPOSE) up web worker
+up: ## Run the application: server, background worker, fake FranceConnect+, database, gateway
+	$(COMPOSE) up web worker fake-france-connect
 
 # Same order as scripts/setup.sh, and for the same reasons: `depends_on` only
 # orders container startup, so the gateway would meet a database still creating

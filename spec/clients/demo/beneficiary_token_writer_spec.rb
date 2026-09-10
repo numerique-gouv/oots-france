@@ -3,7 +3,11 @@ require 'rails_helper'
 RSpec.describe Demo::BeneficiaryTokenWriter do
   subject(:token) { described_class.new(clock:).call(identity) }
 
-  let(:clock) { instance_double(Clock, now: '2026-09-10T10:00:00.000Z') }
+  # Now, and not a date written down: the token carries an `exp`, and
+  # `BeneficiaryToken` verifies it against the wall clock. A fixed instant makes
+  # these examples pass until that instant is ten minutes old and fail for ever
+  # after, which is a failure nothing in the tree explains.
+  let(:clock) { instance_double(Clock, now: Time.current.iso8601(3)) }
   let(:identity) do
     Demo::UserIdentity.new(
       level_of_assurance: 'Substantial', family_name: 'Sørensen', given_name: 'Freja Marie',

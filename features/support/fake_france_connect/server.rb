@@ -136,6 +136,17 @@ module FakeFranceConnect
 end
 
 if $PROGRAM_NAME == __FILE__
+  # An empty issuer, and not an absent one, is what an `.env.oots` written for a
+  # deployment gives: `env_file` posts the variable all the same. Without this,
+  # `URI.parse('').port` is nil, WEBrick binds 80, and the stack answers a
+  # discovery document nobody asked for on a port nobody named.
+  %w[URL_FAUX_FRANCE_CONNECT URL_OOTS_FRANCE].each do |variable|
+    next unless ENV.fetch(variable, '').empty?
+
+    abort("#{variable} est vide : le faux FranceConnect+ ne peut pas démarrer. " \
+          'Voir docs/test_e2e.md — un déploiement ne lance pas ce service.')
+  end
+
   FakeFranceConnect::Server.new(
     issuer: ENV.fetch('URL_FAUX_FRANCE_CONNECT'), procedure_url: ENV.fetch('URL_OOTS_FRANCE'),
   ).run

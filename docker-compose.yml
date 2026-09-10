@@ -61,12 +61,46 @@ services:
     # `bin/database_role` is sourced, not run: it substitutes the restricted
     # application role for the owner in this process's environment, which a child
     # could not do. `web` and `worker` are the only two services to source it.
-    command: "sh -c 'rm -f tmp/pids/server.pid && . ./bin/database_role && exec bundle exec rails server -b 0.0.0.0'"
+    #
+    # The server listens on the very port the host publishes, and not on 3000
+    # behind a mapping: `URL_OOTS_FRANCE` has two audiences on a local stack —
+    # the browser, which follows the `redirect_uri` FranceConnect+ hands it, and
+    # this container, which calls its own contract — and a single `localhost:…`
+    # only serves both when the two ports are one. A deployment that leaves the
+    # variable at 3000 sees no difference; any other value is the port `nginx`
+    # must proxy to.
+    command: "sh -c 'rm -f tmp/pids/server.pid && . ./bin/database_role && exec bundle exec rails server -b 0.0.0.0 -p ${PORT_OOTS_FRANCE}'"
     ports:
-      - "${PORT_OOTS_FRANCE}:3000"
+      - "${PORT_OOTS_FRANCE}:${PORT_OOTS_FRANCE}"
+      # The fake FranceConnect+ answers here — it borrows this container's
+      # network namespace, and a service that borrows one may publish no port of
+      # its own. Nothing listens behind it where the fake does not run.
+      - "${PORT_FAUX_FRANCE_CONNECT}:${PORT_FAUX_FRANCE_CONNECT}"
     depends_on:
      - domibus
      - postgres
+
+  # FranceConnect+, the eIDAS bridge and a member state's node, as the
+  # demonstration procedure sees them: the fake the end-to-end suite plays,
+  # started with the local stack so that a human gets the identity provider the
+  # scenarios get. `features/support/fake_france_connect/`, and nothing of it in
+  # `app/`.
+  #
+  # It shares `web`'s network namespace, and that is what makes its issuer a
+  # single address. A browser on the host resolves no name of the docker
+  # network, so the issuer has to read `http://localhost:<port>`; and `web`, who
+  # fetches the discovery document, the token and the JWKS, has to reach that
+  # same address. An OpenID Connect client compares the `iss` of the ID Token to
+  # the issuer it discovered and refuses two names for one provider.
+  #
+  # A deployment starts `nginx`, which pulls `web`; the dependency runs the
+  # other way, and no container of the fake starts there.
+  fake-france-connect:
+    <<: *configuration-base
+    command: "bundle exec ruby features/support/fake_france_connect/server.rb"
+    network_mode: "service:web"
+    depends_on:
+      - web
 
   # The worker runs in a process of its own: that is what makes the state of the
   # conversations have to be shared and persistent.

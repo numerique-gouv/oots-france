@@ -99,9 +99,12 @@ if Rails.env.development?
     # sollicité est `FR` — la démonstration fait discuter la France avec la
     # France.
     #
-    # Arrêté au départ de la requête, qui est tout ce que la démarche produit
-    # aujourd'hui : ce qui revient, et l'adresse où le justificatif lui serait
-    # remis, sont OOTS-182.
+    # Arrêté au départ de la requête, et non parce que la démarche s'y arrête :
+    # elle mène désormais jusqu'au justificatif remis. Mais ce qu'elle en garde
+    # vit dans `demo_requests`, que la page de suivi ne lit qu'avec l'identifiant
+    # d'échange porté par la session de l'usager — aucune graine ne pose de
+    # session, donc aucune ne rendrait cette page visible. Le parcours complet se
+    # joue, il ne se sème pas : docs/espace_administration.md dit comment.
     { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
       evidence_requester_id: '00000000000003', events: %w[request_sent] },
     { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },

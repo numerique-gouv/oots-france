@@ -15,8 +15,9 @@ module Admin
     # different from the date and time at which the explicit request was made by
     # the user. »
     #
-    # It renders rather than redirects, for want of a page to redirect to: where
-    # the user follows the exchange is OOTS-182.
+    # A request that leaves ends the page: the user is sent to the tracking,
+    # which is where the answer will appear and the only address of the journey
+    # worth reloading. A refusal stays here, there being no exchange to follow.
     class ConfirmationsController < Admin::BaseController
       include HoldsDemoIdentity
 
@@ -33,13 +34,11 @@ module Admin
       def create
         result = ::Demo::RequestEvidence.call(identity:, conversation_id: reusable_conversation)
 
-        if result.success?
-          keep(result)
-        else
-          @failure = result.error
-        end
+        return refuse(result) unless result.success?
 
-        render :create
+        keep(result)
+
+        redirect_to admin_demo_suivi_path
       end
 
       private
@@ -51,8 +50,15 @@ module Admin
         # is what tells one identity from another, so it is stored beside the
         # conversation and compared before the conversation is offered again.
         session[:demo_conversation] = { id: result.conversation_id, subject: identity.subject }
-        @exchange_id = result.exchange_id
-        @conversation_id = result.conversation_id
+        # What the tracking page follows. The session and nothing else: it is
+        # what chapter 1 §4.2 makes the evidence available to.
+        session[:demo_exchange] = result.exchange_id
+      end
+
+      def refuse(result)
+        @failure = result.error
+
+        render :create
       end
 
       def reusable_conversation

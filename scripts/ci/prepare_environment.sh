@@ -45,11 +45,32 @@ MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:-Ci-OotsFrance-2026!}"
 # same value, as for the credentials above.
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
 
-# Where this deployment answers. Held in a variable rather than written twice
-# below: the demonstration procedure declares its own address in
-# DONNEES_REQUETEURS as a path under this one, and the two must name the same
-# host — OOTS-France reads the procedure's signing keys there.
-URL_OOTS_FRANCE="${URL_OOTS_FRANCE:-http://localhost:3000}"
+# The ports the stack publishes on the host. Held in variables because three
+# addresses below are composed out of them: `web` listens on the very port it
+# publishes, and the fake FranceConnect+ answers on its own from inside `web`'s
+# network namespace — see .env.template.
+PORT_OOTS_FRANCE="${PORT_OOTS_FRANCE:-3000}"
+PORT_FAUX_FRANCE_CONNECT="${PORT_FAUX_FRANCE_CONNECT:-3100}"
+PORT_DOMIBUS="${PORT_DOMIBUS:-8180}"
+PORT_POSTGRES="${PORT_POSTGRES:-5433}"
+
+# Where this deployment answers, for the browser as for the container: `web`
+# listens on the port it publishes, so one `localhost:…` serves the two
+# audiences — the browser following the redirection FranceConnect+ hands it, and
+# the procedure calling its own contract.
+URL_OOTS_FRANCE="${URL_OOTS_FRANCE:-http://localhost:$PORT_OOTS_FRANCE}"
+
+# The fake FranceConnect+, single issuer of the local stack: the browser follows
+# the European flow there and `web` fetches the discovery document, the token
+# and the JWKS there, under this one name.
+URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT:-http://localhost:$PORT_FAUX_FRANCE_CONNECT/api/v2}"
+
+# Where the demonstration procedure receives what is addressed to it, which is
+# **not** a path under URL_OOTS_FRANCE: the evidence is delivered by the
+# background worker, in a container of its own where `localhost` is the worker.
+# A service name, as the fake requester of the end-to-end suite already uses —
+# see docs/test_e2e.md.
+URL_DEMARCHE="http://web:$PORT_OOTS_FRANCE/demo"
 
 # The credentials Domibus will put on its notifications towards us. They must be
 # the same here and in `wsplugin.push.auth.*` on the gateway side, which
@@ -59,9 +80,10 @@ MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-Oot
 
 # Unquoted heredoc: the values above must be substituted.
 cat > .env <<FIN
-PORT_DOMIBUS=8180
-PORT_OOTS_FRANCE=3000
-PORT_POSTGRES=5433
+PORT_DOMIBUS=$PORT_DOMIBUS
+PORT_OOTS_FRANCE=$PORT_OOTS_FRANCE
+PORT_FAUX_FRANCE_CONNECT=$PORT_FAUX_FRANCE_CONNECT
+PORT_POSTGRES=$PORT_POSTGRES
 MOT_DE_PASSE_MAGASINS=$MOT_DE_PASSE_MAGASINS
 FIN
 
@@ -215,11 +237,12 @@ verifieCleJwk "$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_SIGN
 # `UPDATE` on the exchange log. It is not declared in .env.postgres, the image
 # creating the owner alone.
 #
-# The procedure talks to the fake FranceConnect+ of the end-to-end suite, which
-# is why URL_FRANCE_CONNECT repeats URL_FAUX_FRANCE_CONNECT here: the first says
-# whom the procedure calls, the second whether the suite starts a fake at all —
-# a deployment fills the first and leaves the second empty. The two credentials
-# are the fake's own constants, features/support/fake_france_connect/clients.rb.
+# The procedure talks to the fake FranceConnect+ the stack runs, which is why
+# URL_FRANCE_CONNECT repeats URL_FAUX_FRANCE_CONNECT here: the first says whom
+# the procedure calls, the second where the fake answers — a deployment fills
+# the first with the real FranceConnect+ and leaves the second empty. The two
+# credentials are the fake's own constants,
+# features/support/fake_france_connect/clients.rb.
 #
 # The two directory URLs are left empty so that chapter 3.4's DNS discovery is
 # what names the instance to query, as it does in production: filled, they would
@@ -232,15 +255,15 @@ AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
 CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
 CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
-DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"},"00000000000003":{"nom":"Université de démonstration","url":"$URL_OOTS_FRANCE/demo"}}
+DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"},"00000000000003":{"nom":"Université de démonstration","url":"$URL_DEMARCHE"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 IDENTIFIANT_REQUETEUR_DEMARCHE=00000000000003
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=$URL_OOTS_FRANCE
-URL_FRANCE_CONNECT=http://localhost:3100/api/v2
+URL_FRANCE_CONNECT=$URL_FAUX_FRANCE_CONNECT
 IDENTIFIANT_CLIENT_FRANCE_CONNECT=oots-france-demarche
 SECRET_CLIENT_FRANCE_CONNECT=faux-france-connect-secret-de-la-demarche
-URL_FAUX_FRANCE_CONNECT=http://localhost:3100/api/v2
+URL_FAUX_FRANCE_CONNECT=$URL_FAUX_FRANCE_CONNECT
 
 CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
 DELAI_MAX_SERVICES_COMMUNS=10000

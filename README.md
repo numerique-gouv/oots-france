@@ -18,17 +18,20 @@ $ make up      # à chaque fois
 
 | Commande | Ce qu'elle lance |
 | --- | --- |
-| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie. **Les deux sont nécessaires** — sans le second, une demande reste indéfiniment en attente. Les bases et la passerelle suivent, `docker compose` les tirant par dépendance |
+| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie, `fake-france-connect` joue FranceConnect+ et la passerelle eIDAS pour la [démarche de démonstration](docs/espace_administration.md#la-démarche-de-démonstration). **Les deux premiers sont nécessaires** — sans le worker, une demande reste indéfiniment en attente. Les bases et la passerelle suivent, `docker compose` les tirant par dépendance. Un déploiement, lui, lance `nginx`, qui ne tire pas le faux |
 | `make domibus` | La passerelle seule, puis attend que sa console réponde. De quoi la reconfigurer ou l'observer sans monter l'application |
 
 `make down` arrête tout en conservant les volumes.
 
-Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut) et la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion — le compte que `make setup` pose et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
+Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut), la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`) et le faux FranceConnect+ sur `http://localhost:<PORT_FAUX_FRANCE_CONNECT>/api/v2` (3100 par défaut). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion — le compte que `make setup` pose et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
 
 ```sh
 $ curl "http://localhost:3000/requete/pieceJustificative?codeDemarche=00&codePays=FR"
 {"erreur":"Le bénéficiaire doit être renseigné"}
 ```
+
+> [!NOTE]
+> **`PORT_OOTS_FRANCE` est le port d'écoute autant que le port publié** : `web` écoute celui-là dans son conteneur, et la même adresse `http://localhost:<PORT_OOTS_FRANCE>` vaut donc depuis un navigateur de la machine et depuis le réseau docker. C'est ce qui permet à la démarche de démonstration d'être un client de son propre contrat sans qu'aucune adresse soit écrite deux fois — et pourquoi `nginx`, en production, mandate ce port-là.
 
 > [!NOTE]
 > Ce `422` arrive que Domibus tourne ou non : il prouve seulement que le serveur écoute. Pour exercer réellement la chaîne eDelivery, voir [docs/test_e2e.md](docs/test_e2e.md).

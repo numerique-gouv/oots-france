@@ -214,21 +214,30 @@ decale_ports() {
 }
 
 # The URLs the application announces of itself aim at these same published ports
-# — URL_OOTS_FRANCE first of all. Leaving them on the main checkout's would point
-# the worktree at a neighbour's stack. What aims at a docker service name
-# (`http://domibus:8080`, `http://web:4000`) does not move: those ports are
-# internal to the container network.
+# — URL_OOTS_FRANCE and the fake FranceConnect+'s issuer first of all. Leaving
+# them on the main checkout's would point the worktree at a neighbour's stack.
 #
-# Two expressions per port, for want of a `\b` only GNU sed knows: the port
-# followed by a non-digit, and the port at end of line. The approximation is
-# wider than a word boundary, which does not cut between a digit and a letter —
-# with no effect on the repository's URLs, where a port always ends the line or
-# precedes a `/`.
+# Two hosts are rewritten, and for one reason: `web` listens on the very port it
+# publishes. `localhost:<port>` is that port seen from the machine, `web:<port>`
+# the same one seen from the container network, and a worktree needs both to
+# follow its shift — the procedure's own entry in DONNEES_REQUETEURS names
+# `web`, the evidence being delivered by the worker, in a container where
+# `localhost` is the worker. What aims at a port this file does not declare does
+# not move: `http://domibus:8080` and `http://web:4000` are fixed inside the
+# container network, and no shift can reach them.
+#
+# Two expressions per host and per port, for want of a `\b` only GNU sed knows:
+# the port followed by a non-digit, and the port at end of line. The
+# approximation is wider than a word boundary, which does not cut between a
+# digit and a letter — with no effect on the repository's URLs, where a port
+# always ends the line or precedes a `/`.
 REECRITURE_URLS=""
 for port in $PORTS_PRINCIPAUX; do
-  REECRITURE_URLS="$REECRITURE_URLS
-s|localhost:$port\\([^0-9]\\)|localhost:$((port + DECALAGE))\\1|g
-s|localhost:$port\$|localhost:$((port + DECALAGE))|g"
+  for hote in localhost web; do
+    REECRITURE_URLS="$REECRITURE_URLS
+s|$hote:$port\\([^0-9]\\)|$hote:$((port + DECALAGE))\\1|g
+s|$hote:$port\$|$hote:$((port + DECALAGE))|g"
+  done
 done
 
 # The `.env*` are taken by pattern, which spares keeping a list of them;
@@ -259,16 +268,13 @@ for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
     exit 1
   fi
 
-  # The URLs shift on the same conditions as the ports, and for the same reason:
-  # only `.env` designates the host. Elsewhere a `localhost` is seen from inside
-  # a container — `URL_OOTS_FRANCE` serves the end-to-end scenario, which runs in
-  # `web` and reaches the server there on its internal port. Shifting it would
-  # send it to a port nothing listens on, and `make e2e` would fail in every
-  # worktree.
-  case "$source" in
-    */.env) printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" ;;
-    *) printf '%s\n' "$LIGNES" ;;
-  esac > "$CHEMIN/$(basename "$source")"
+  # The URLs shift wherever they are written, and not in `.env` alone: `web`
+  # listens on the very port it publishes, so a `localhost:<port>` names the same
+  # thing from the host and from inside the container network — that is what
+  # gives the browser and the container one address for the application, and one
+  # issuer for the fake FranceConnect+. Left unshifted, a worktree's `.env.oots`
+  # would send both at the main checkout's stack.
+  printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" > "$CHEMIN/$(basename "$source")"
 done
 
 echo

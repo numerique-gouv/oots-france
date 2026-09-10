@@ -322,8 +322,13 @@ fr:
       beneficiary_token_writer:
         no_key: "Le jeu de clés publié en %{url} ne porte aucune clé : le jeton du bénéficiaire ne peut être chiffré pour personne."
         unreadable: "Jeu de clés illisible en %{url} : %{error}"
-      evidence_request_client:
+      # Posée sur la réponse et non sur l'un des deux clients : les deux appellent
+      # le même contrat, et un corps qui n'est pas un objet JSON est la même
+      # non-réponse pour l'un comme pour l'autre.
+      contract_answer:
         unreadable: "Réponse illisible de %{path} (%{status}) : %{error}"
+      exchange_state_client:
+        unreachable: "Le contrat n'a pas répondu : %{error}"
     beneficiary_token:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
@@ -711,6 +716,13 @@ fr:
       # Le message rendu par le contrat voyage sous le titre, jamais dedans :
       # c'est là que se lit `EB:ERR:0001`. Seul `demo_unexpected` ne peut pas
       # nommer ce qui s'est passé, et porte donc le statut dans son corps.
+      # Les deux refus que la démarche oppose à une remise de justificatif, et
+      # que personne ne lit à l'écran : c'est `EvidenceForwarder` qui les reçoit,
+      # en statut. Écrits ici parce qu'un `fail_with_error` sur une clé absente
+      # de `FAILURES` n'a pas de libellé, et qu'une clé sans libellé est une
+      # alerte vide le jour où une page la rend.
+      demo_evidence_empty: Le justificatif remis ne portait aucun octet
+      demo_unplaceable: Le justificatif remis ne se rattache à aucune demande
       demo_locked: Le requêtage est verrouillé sur ce déploiement
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
@@ -738,6 +750,19 @@ fr:
         undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
       request_evidence:
         unreachable: "Contrat de requête de justificatif injoignable, ou jeu de clés inexploitable : %{error}"
+      # Consignés dans le journal applicatif et jamais à l'écran : le lecteur est
+      # OOTS-France, qui reçoit un statut, et l'usager de la démarche n'a rien
+      # demandé au moment où ces lignes s'écrivent. Le chapitre 4.10 §4.1,
+      # informatif, veut le premier là — « In case this value is not linked to
+      # any known current user and/or user session, the event is logged for
+      # investigation. » Le second, une remise sans octet, ne relève d'aucun
+      # chapitre : c'est une garde de ce dépôt.
+      receive_evidence:
+        unplaceable: >-
+          Justificatif remis pour l'échange %{exchange} et la conversation %{conversation} :
+          la démarche de démonstration n'a ouvert aucune demande sous ces identifiants, remise refusée.
+        empty: "Justificatif remis sans aucun octet pour l'échange %{exchange} : remise refusée."
+        unnamed: non fourni
       complete_identification:
         refused_by_portal: "FranceConnect+ a refusé l'identification (%{error}) : %{description}"
         no_description: sans autre explication
@@ -1135,22 +1160,69 @@ fr:
           submit: Confirmer et demander le justificatif
           back: Revenir au formulaire
           unreachable: Les annuaires européens n'ont pas pu être joints
+        # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:
           title: Demande de justificatif
-          opened: La demande est partie
-          opened_body: >-
-            Votre justificatif d'inscription a été demandé à l'administration qui le détient. La
-            réponse ne revient pas sur cette page : elle arrive par un autre canal, et la démarche
-            en est prévenue.
-          caption: Ce qui identifie cette demande
-          # Les deux identifiants sous lesquels l'exploitant retrouve
-          # l'échange au journal.
-          exchange: Identifiant de l'échange
-          conversation: Identifiant de la conversation
           nothing_opened: >-
             Aucun échange n'a été ouvert : la demande a été refusée avant que quoi que ce soit ne
             parte vers un autre État membre.
           back: Revenir au formulaire
+      # La quatrième page du parcours : ce que la demande a obtenu. Les quatre
+      # états qu'elle rend sont ceux que le contrat rend, plus l'attente, qui est
+      # tout le reste — la démarche ne demandant que T1, que la France sert
+      # toujours par un document.
+      trackings:
+        show:
+          title: Suivi de la demande
+          # Le justificatif est rendu tel qu'il a été reçu : le chapitre 1 §4.2
+          # laisse l'usager décider de ne pas s'en servir, jamais d'en changer le
+          # contenu.
+          delivered: Le justificatif est arrivé
+          delivered_body: >-
+            L'administration qui détient votre justificatif d'inscription l'a transmis. Il vous est
+            remis tel qu'elle l'a établi : vous pouvez l'ouvrir et l'enregistrer, sans le modifier.
+          open: Ouvrir le justificatif
+          # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If
+          # the process of identity and evidence matching does not result in a
+          # match or the identity matching generates two or more results » —, et
+          # le chapitre 4.10 §2.1, informatif, le recommande pour tout refus.
+          # La démarche le dit pour tous, ce qui va au-delà du `MUST`.
+          refused: Le justificatif ne peut pas être fourni
+          refused_body: >-
+            L'administration sollicitée n'a pas transmis de justificatif. Le code ci-dessous dit
+            pourquoi ; il faudra obtenir ce document par un autre moyen.
+          # Le premier des quatre points que le `shall` du chapitre 4.9 §5
+          # énumère, et le seul que la démonstration tienne : reconnaître la
+          # réponse. Le deuxième — « Provide a departure page for the user to
+          # navigate to the Preview Space » — n'est justement pas tenu.
+          preview: Le justificatif attend votre accord à l'étranger
+          preview_body: >-
+            L'administration sollicitée veut vous montrer le document avant de le transmettre, sur
+            son propre espace. La démonstration s'arrête ici : elle reconnaît cette réponse et vous
+            donne l'adresse, sans vous y conduire.
+          pending: La demande est en cours
+          pending_body: >-
+            Votre justificatif d'inscription a été demandé à l'administration qui le détient. La
+            réponse ne revient pas sur cette connexion : elle arrive par un autre canal, parfois
+            après un moment. Redemandez cette page pour savoir où elle en est.
+          unreachable: Le service de requête n'a pas pu être joint
+          unreadable: L'état de la demande n'a pas pu être lu
+          caption: Ce qui identifie cette demande
+          # Les deux identifiants sous lesquels l'exploitant retrouve l'échange
+          # au journal.
+          exchange: Identifiant de l'échange
+          conversation: Identifiant de la conversation
+          # L'empreinte des octets réellement servis : c'est elle qui atteste que
+          # le document n'a pas été retouché entre la remise et l'écran.
+          digest: Empreinte SHA-256 du justificatif
+          code: Code d'erreur reçu
+          preview_location: Adresse de prévisualisation
+          refresh: Actualiser le suivi
+          again: Faire une nouvelle demande
+      evidences:
+        show:
+          # Le nom proposé par le navigateur à l'enregistrement.
+          filename: justificatif.pdf
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.
