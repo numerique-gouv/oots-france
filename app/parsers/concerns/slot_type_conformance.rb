@@ -37,6 +37,18 @@ module SlotTypeConformance
     'ReturnLocation' => { type: 'StringValueType', rule: 'R-EDM-REQ-S061' },
   }.freeze
 
+  # What the 1.2 line makes of that table, the two lines typing their slots
+  # alike but for these: `R-EDM-REQ-S022` asks an
+  # `rim:InternationalStringValueType` of `Procedure` there — the only type any
+  # of the nineteen assertions moved between the two tags — and `ReturnLocation`
+  # is a slot 2.0.1 alone defines, so nothing types it here. Held to the 2.0
+  # rules, a conformant 1.2 request would be refused for the shape its own line
+  # prescribes.
+  EARLIER_LINE_SLOT_TYPES = QUERY_REQUEST_SLOT_TYPES
+    .except('ReturnLocation')
+    .merge('Procedure' => { type: 'InternationalStringValueType', rule: 'R-EDM-REQ-S022' })
+    .freeze
+
   # The slots of `query:Query`, every one of them an `rim:AnyValueType`: the
   # subject of the evidence, the evidence asked for, and the representative
   # chapter 4.5.1 provides for.
@@ -67,10 +79,18 @@ module SlotTypeConformance
 
   private
 
+  # The table of the line the message is read in: the rules that type a slot are
+  # those of its own version, as `R-EDM-REQ-C001` is.
+  def slot_types
+    specification.return_location_slot? ? QUERY_REQUEST_SLOT_TYPES : EARLIER_LINE_SLOT_TYPES
+  end
+
   def require_conformant_slot_types
+    typed = slot_types
+
     all(request, './rim:Slot').each do |slot|
       name = attribute(slot, 'name')
-      require_slot_value_types(slot, name, QUERY_REQUEST_SLOT_TYPES)
+      require_slot_value_types(slot, name, typed)
       require_element_types(slot, name)
     end
 

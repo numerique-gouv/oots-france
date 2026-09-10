@@ -65,6 +65,13 @@ class EdmSpecification
   # carries a procedure code either way, so the language is decoration.
   def translated_procedure? = self == V1_2
 
+  # `ReturnLocation` — where a correspondent sends the user back once a preview
+  # is over — is a slot of 2.0.1 alone: the name appears nowhere in the 1.2.5
+  # Schematron, and `R-EDM-REQ-S061`, which types it, is published in 2.0.1
+  # only. So the rule types nothing on the earlier line, rather than typing a
+  # slot that line never defined.
+  def return_location_slot? = self == V2_0
+
   # `sdg:DistributedAs` gained two elements with 2.0: the language of the
   # distribution and the documents asked for beside it. The 1.2.0 profile gives
   # it a `Format`, a `ConformsTo` and a `Transformation` and nothing else, so a

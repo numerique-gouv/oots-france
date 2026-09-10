@@ -2217,6 +2217,40 @@ RSpec.describe EvidenceRequestParser do
       expect { earlier_line_envelope.body.validate! }.not_to raise_error
     end
 
+    # `ReturnLocation` is a slot 2.0.1 alone defines — the name appears nowhere
+    # in the 1.2.5 Schematron — so `R-EDM-REQ-S061`, which types it there, types
+    # nothing on the earlier line. The pair is what proves it: the very
+    # declaration the 2.0 line refuses passes on the 1.2 one.
+    def returning(envelope_of)
+      envelope_of.call do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="ReturnLocation"><rim:SlotValue xsi:type="rim:AnyValueType">' \
+            '<rim:Value>https://example.si/retour</rim:Value></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+    end
+
+    it 'types no ReturnLocation on the 1.2 line, the slot being of 2.0 alone' do
+      expect { returning(method(:earlier_line_envelope)).body.validate! }.not_to raise_error
+    end
+
+    it 'refuses that same declaration on the 2.0 line, under R-EDM-REQ-S061' do
+      expect { returning(method(:with_body)).validate! }.to refusing('R-EDM-REQ-S061')
+    end
+
+    # The other face of `R-EDM-REQ-S022` on this line, and the one an accepted
+    # request cannot prove: a slot typed as 2.0 types it — the very shape the
+    # 2.0 table imposed on 1.2 correspondents — has to be refused here, or the
+    # row is a transcription nothing exercises.
+    it 'refuses a Procedure declared as the 2.0 line types it, under R-EDM-REQ-S022' do
+      written = earlier_line_envelope do |body|
+        body.sub('xsi:type="rim:InternationalStringValueType"', 'xsi:type="rim:StringValueType"')
+      end
+
+      expect { written.body.validate! }.to refusing('R-EDM-REQ-S022')
+    end
+
     # `R-EDM-REQ-S022`: the code sits in the `@value` of a `rim:LocalizedString`
     # on that line, and the `rim:Value` around it carries no text at all — read
     # as 2.0 writes it, a conformant 1.2 request would be refused for a
