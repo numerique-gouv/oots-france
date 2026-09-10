@@ -685,6 +685,19 @@ fr:
       # littéralement, sur des pages où aucun interacteur ne tourne — sa note
       # dit ce que les récrire séparément coûterait.
       common_services_refused: L'annuaire a refusé
+      # Les quatre refus que la démarche de démonstration reçoit du contrat, et
+      # qu'elle rend tels quels à l'usager : ce sont ceux qu'un fournisseur de
+      # service reçoit, et la démonstration les montre comme elle montre le
+      # reste. Aucun échange n'est ouvert dans les quatre cas — c'est ce que la
+      # page dit sous l'alerte, et non ici.
+      #
+      # Le message rendu par le contrat voyage sous le titre, jamais dedans :
+      # c'est là que se lit `EB:ERR:0001`. Seul `demo_unexpected` ne peut pas
+      # nommer ce qui s'est passé, et porte donc le statut dans son corps.
+      demo_locked: Le requêtage est verrouillé sur ce déploiement
+      demo_refused: La demande de justificatif a été refusée
+      demo_unexpected: Réponse inattendue du service de requête
+      demo_unreachable: Le service de requête n'a pas pu être joint
       gateway_refused: La passerelle a refusé le message
       identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
@@ -1023,8 +1036,8 @@ fr:
           # lit pas le français, ce qui est tout son objet.
           sign_in: Sign-in with a digital identity from another European country
       # La deuxième page du parcours : le formulaire de demande, portant
-      # l'identité que l'authentification a donnée. Ce que la demande réclame en
-      # plus, et son envoi, viennent avec OOTS-181.
+      # l'identité que l'authentification a donnée, ce que la demande réclame en
+      # plus, et la demande explicite d'OOTS.
       grant_requests:
         show:
           title: Demande de bourse d'études
@@ -1034,11 +1047,44 @@ fr:
             demande de justificatif.
           identity: Votre identité
           attested: Ce que l'authentification a attesté
-          next:
-            title: Suite du parcours
+          # Les champs de la démarche elle-même, que rien ne lit : aucune colonne
+          # ne les tient et aucun slot ne les porte. L'encart le dit plus bas —
+          # un formulaire qui réclame sans dire ce qu'il en fait apprend à
+          # supposer.
+          application:
+            legend: Votre demande
+            amount: Montant demandé (en euros)
+            year: Année universitaire
+            reason: Motif de la demande
+          # Le chapitre 1 §3.3 des TDD : « a step in which the user is asked to
+          # express explicitly whether he or she wants to use the Once-Only
+          # Technical System ». Deux réponses et non une case à cocher, parce
+          # que le chapitre pose la question dans les deux sens.
+          express:
+            legend: Récupération de votre justificatif d'inscription
+            hint: >-
+              Sans votre accord, rien n'est demandé à personne et vous fournirez ce justificatif
+              vous-même.
+            requested: >-
+              Je demande que mon justificatif d'inscription soit récupéré directement auprès de
+              l'administration qui le détient.
+            declined: Je fournirai ce justificatif moi-même.
+          submit: Continuer
+          notice:
+            title: Ce que deviennent ces informations
             body: >-
-              La demande elle-même — le pays qui détient le justificatif, la démarche visée et
-              l'envoi de la requête — n'est pas encore branchée sur cet écran.
+              Le montant, l'année et le motif ne servent qu'à figurer une démarche : ils ne sont ni
+              conservés ni transmis, et n'accompagnent pas la demande de justificatif. Seule
+              l'identité attestée ci-dessus voyage.
+        # La page où s'arrête un parcours sans demande explicite : rien n'a été
+        # résolu, rien n'a été demandé à personne, aucun échange n'existe.
+        create:
+          title: Justificatif à fournir vous-même
+          lead: >-
+            Vous n'avez pas demandé que votre justificatif d'inscription soit récupéré
+            automatiquement. Aucune demande n'a été faite : il vous faudra le joindre vous-même à
+            votre dossier.
+          back: Revenir au formulaire
         # L'ordre des clés n'est pas celui de l'écran, que le gabarit fixe : ces
         # intitulés sont ceux des deux tableaux, dits une fois chacun.
         attributes:
@@ -1050,6 +1096,41 @@ fr:
           level_of_assurance: Niveau de garantie
           provenance: Provenance de l'identité
           eidas_identifier: Identifiant eIDAS
+      # La troisième page : ce que l'exigence 27 du chapitre 1 §2 des TDD demande
+      # de montrer « before any request is made » — le nom du fournisseur et le
+      # type de justificatif —, puis le résultat du geste qui fait partir la
+      # requête.
+      confirmations:
+        show:
+          title: Confirmer la demande de justificatif
+          lead: >-
+            Voici l'administration à qui votre justificatif d'inscription sera demandé, et le type
+            de document qu'elle transmettra. Rien n'est demandé tant que vous n'avez pas confirmé.
+          caption: Ce qui sera demandé
+          # Les deux valeurs sont rendues telles que les annuaires les publient,
+          # sans libellé de notre cru : la démonstration montrerait sinon autre
+          # chose que ce sur quoi l'échange repose.
+          provider: Administration qui détient le justificatif
+          evidence_type: Type de justificatif
+          submit: Confirmer et demander le justificatif
+          back: Revenir au formulaire
+          unreachable: Les annuaires européens n'ont pas pu être joints
+        create:
+          title: Demande de justificatif
+          opened: La demande est partie
+          opened_body: >-
+            Votre justificatif d'inscription a été demandé à l'administration qui le détient. La
+            réponse ne revient pas sur cette page : elle arrive par un autre canal, et la démarche
+            en est prévenue.
+          caption: Ce qui identifie cette demande
+          # Les deux identifiants par lesquels le chapitre 4.10 corrèle une
+          # réponse tardive à la requête qui l'a causée.
+          exchange: Identifiant de l'échange
+          conversation: Identifiant de la conversation
+          nothing_opened: >-
+            Aucun échange n'a été ouvert : la demande a été refusée avant que quoi que ce soit ne
+            parte vers un autre État membre.
+          back: Revenir au formulaire
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.

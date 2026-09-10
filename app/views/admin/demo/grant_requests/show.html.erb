@@ -31,6 +31,66 @@
         [t('admin.demo.grant_requests.attributes.eidas_identifier'), @wording.eidas_identifier],
       ] %>
 
-<%= dsfr_callout(title: t('admin.demo.grant_requests.show.next.title')) do %>
-  <%= t('admin.demo.grant_requests.show.next.body') %>
+<%# `dsfr-view-components` ships no form component. %>
+<%= form_with url: admin_demo_demande_path, method: :post, class: 'fr-mb-4w' do |form| %>
+  <%# Demonstration fields, and nothing reads them: no column holds them and no
+      slot carries them. The notice below says so, because a form that asks for
+      something without saying what becomes of it teaches the reader to assume. %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend fr-text--regular">
+      <%= t('admin.demo.grant_requests.show.application.legend') %>
+    </legend>
+
+    <div class="fr-fieldset__element">
+      <div class="fr-input-group">
+        <%= form.label :montant, t('admin.demo.grant_requests.show.application.amount'), class: 'fr-label' %>
+        <%= form.number_field :montant, class: 'fr-input', min: 0 %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element">
+      <div class="fr-input-group">
+        <%= form.label :annee, t('admin.demo.grant_requests.show.application.year'), class: 'fr-label' %>
+        <%= form.text_field :annee, class: 'fr-input', maxlength: 9 %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element">
+      <div class="fr-input-group">
+        <%= form.label :motif, t('admin.demo.grant_requests.show.application.reason'), class: 'fr-label' %>
+        <%= form.text_area :motif, class: 'fr-input', rows: 3 %>
+      </div>
+    </div>
+  </fieldset>
+
+  <%# Chapter 1 §3.3: « a step in which the user is asked to express explicitly
+      whether he or she wants to use the Once-Only Technical System ». Two
+      answers rather than one box to tick, because the chapter asks the question
+      both ways round — and because nothing leaves without the first of them. %>
+  <fieldset class="fr-fieldset" aria-labelledby="oots-legend">
+    <legend class="fr-fieldset__legend fr-text--regular" id="oots-legend">
+      <%= t('admin.demo.grant_requests.show.express.legend') %>
+      <span class="fr-hint-text"><%= t('admin.demo.grant_requests.show.express.hint') %></span>
+    </legend>
+
+    <div class="fr-fieldset__element">
+      <div class="fr-radio-group">
+        <%= form.radio_button :oots, express_request, required: true %>
+        <%= form.label :oots, t('admin.demo.grant_requests.show.express.requested'), value: express_request %>
+      </div>
+    </div>
+
+    <div class="fr-fieldset__element">
+      <div class="fr-radio-group">
+        <%= form.radio_button :oots, 'non', required: true %>
+        <%= form.label :oots, t('admin.demo.grant_requests.show.express.declined'), value: 'non' %>
+      </div>
+    </div>
+  </fieldset>
+
+  <button type="submit" class="fr-btn"><%= t('admin.demo.grant_requests.show.submit') %></button>
+<% end %>
+
+<%= dsfr_callout(title: t('admin.demo.grant_requests.show.notice.title')) do %>
+  <%= t('admin.demo.grant_requests.show.notice.body') %>
 <% end %>

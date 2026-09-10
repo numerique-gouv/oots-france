@@ -45,11 +45,22 @@ RSpec.describe 'Admin::Demo::GrantRequests' do
     end
 
     # CA4: chapter 2.2 §2 makes the portal answerable for the identity in the
-    # request matching the one the eID means yielded.
+    # request matching the one the eID means yielded. The application's own
+    # fields sit outside these tables, and the assertion is on the tables alone.
     it 'offers no field on any attribute of the identity' do
       get admin_demo_demande_path
 
-      expect(response.parsed_body.css('main input, main select, main textarea')).to be_empty
+      expect(response.parsed_body.css('main table input, main table select, main table textarea')).to be_empty
+    end
+
+    # RG1 of OOTS-181, chapter 1 §3.3: the user is asked to express explicitly
+    # whether the system is to be used, so the question is on the form and both
+    # answers are offered.
+    it 'asks the user to say whether the evidence is to be fetched' do
+      get admin_demo_demande_path
+
+      expect(response.parsed_body.css('main input[name="oots"]').pluck('value'))
+        .to contain_exactly('oui', 'non')
     end
 
     # The pseudonym is FranceConnect+'s own, per service provider, and showing it
@@ -58,6 +69,53 @@ RSpec.describe 'Admin::Demo::GrantRequests' do
       get admin_demo_demande_path
 
       expect(response.body).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
+    end
+  end
+
+  describe 'POST /admin/demo/demande' do
+    before { identify_demo_user }
+
+    # CA1: without the explicit request, nothing is asked of anyone — no
+    # directory is called and no exchange is opened. Asserted on the absence of
+    # the call, not only on the page: a page saying so while a request left
+    # would satisfy a weaker check.
+    it 'opens nothing and calls nothing when the user did not ask for OOTS' do
+      allow(Demo::RequestEvidence).to receive(:call)
+
+      expect { post admin_demo_demande_path, params: { oots: 'non' } }.not_to change(Exchange, :count)
+
+      expect(Demo::RequestEvidence).not_to have_received(:call)
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'says the evidence has to come by another route' do
+      post admin_demo_demande_path, params: { oots: 'non' }
+
+      expect(response.parsed_body.css('main').text).to include('Justificatif à fournir vous-même')
+    end
+
+    # An unanswered form is the absence of the gesture, which is the reading the
+    # chapter's « whether » asks for.
+    it 'treats an unanswered question as no request at all' do
+      post admin_demo_demande_path
+
+      expect(response.parsed_body.css('main').text).to include('Justificatif à fournir vous-même')
+    end
+
+    it 'leads to the confirmation when the user did ask for OOTS' do
+      post admin_demo_demande_path, params: { oots: 'oui' }
+
+      expect(response).to redirect_to(admin_demo_confirmation_path)
+    end
+
+    # CA7: the application's own fields are a demonstration and nothing reads
+    # them — no column holds them, and the request carries none.
+    it 'keeps nothing of the demonstration fields' do
+      post admin_demo_demande_path,
+        params: { oots: 'oui', montant: '4200', annee: '2026-2027', motif: 'Bourse sur critères sociaux' }
+
+      expect(AuditEvent.pluck(:detail).join).not_to include('4200')
+      expect(session[:demo_identity].to_s).not_to include('4200')
     end
   end
 
