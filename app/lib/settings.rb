@@ -241,22 +241,23 @@ module Settings
         I18n.t('lib.settings.not_whole', names: I18n.t('lib.settings.not_whole_entry', name:, value:))
     end
 
+    # `Settings::Contract` refuses the same value at startup, but `config.ru`
+    # runs that check and the worker never loads it, so the sweep and the answer
+    # would both read a malformed switch that nothing had ever looked at.
+    def timeout_switch = boolean_switch(TIMEOUT_SWITCH)
+
     # Like `whole`, and for its reason: a value this cannot read is refused
-    # where it is read rather than coalesced into one of the two answers. It
-    # matters more here than anywhere else — `Settings::Contract` refuses the
-    # same value at startup, but `config.ru` runs that check and the worker
-    # never loads it, so the sweep and the answer would both read a malformed
-    # switch that nothing had ever looked at.
+    # where it is read rather than coalesced into one of the two answers.
     #
-    # The value is compared unstripped on purpose: `timeout_enabled?` reads
-    # « ` false` » as anything but `false`, so accepting it here would apply the
-    # opposite of what the deployment wrote.
-    def timeout_switch
-      value = optional(TIMEOUT_SWITCH)
+    # The value is compared unstripped on purpose: a caller compares it to one
+    # of the two words, so a padded value reads as the other answer, and
+    # accepting it here would apply the opposite of what the deployment wrote.
+    def boolean_switch(name)
+      value = optional(name)
       return value if value.nil? || value.in?(%w[true false])
 
       raise ConfigurationError,
-        I18n.t('lib.settings.not_boolean', name: TIMEOUT_SWITCH, value:)
+        I18n.t('lib.settings.not_boolean', name:, value:)
     end
 
     def optional(name) = ENV.fetch(name, nil).presence
