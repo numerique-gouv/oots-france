@@ -274,7 +274,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
 | `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
-| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous) |
+| `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous). **Et tant que le verdict n'est pas rendu, l'ouvrier attend avec toi** : ne l'envoie pas sur `review-loop` en attendant — son § 4 bis l'arrête là exprès, une revue faite sur un écran qui va changer est jetée. Seul l'utilisateur peut dire de passer outre. Le 2026-09-09 sur OOTS-179, « n'attends pas mon verdict d'écran pour avancer » envoyé à 21:20 a valu un `TaskStop` à 21:24 (« il est en review, arrête le ») et trois consignes contraires en six minutes |
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) ; puis fais trier ses **reliquats** (§ 5 bis) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 
