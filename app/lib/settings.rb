@@ -13,6 +13,9 @@ module Settings
     URL_OOTS_FRANCE
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
+    URL_FRANCE_CONNECT
+    IDENTIFIANT_CLIENT_FRANCE_CONNECT
+    SECRET_CLIENT_FRANCE_CONNECT
     URL_BASE_DOMIBUS
     LOGIN_API_REST
     MOT_DE_PASSE_API_REST
@@ -93,6 +96,22 @@ module Settings
 
     def french_provider_identity
       { id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), name: required('NOM_FOURNISSEUR_FRANCAIS') }
+    end
+
+    # Where this deployment answers, and the origin the three addresses declared
+    # to FranceConnect+ are built on. Read here and never from the request: the
+    # portal refuses a `redirect_uri` it was not given, so one derived from a
+    # `Host` header would fail on the header an attacker sets, and only there.
+    def oots_france_url = required('URL_OOTS_FRANCE').delete_suffix('/')
+
+    # The *issuer* of FranceConnect+, from which the discovery document — and
+    # from it every endpoint — is derived. The sandbox, the production and the
+    # fake of the end-to-end suite differ by this value and by the two
+    # credentials below, and by no line of code.
+    def france_connect_issuer = required('URL_FRANCE_CONNECT').delete_suffix('/')
+
+    def france_connect_credentials
+      { id: required('IDENTIFIANT_CLIENT_FRANCE_CONNECT'), secret: required('SECRET_CLIENT_FRANCE_CONNECT') }
     end
 
     def private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_EN_BASE64')

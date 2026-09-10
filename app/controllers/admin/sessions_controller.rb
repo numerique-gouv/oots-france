@@ -30,10 +30,21 @@ module Admin
       redirect_to destination || admin_root_path
     end
 
+    # The operator's session is also the demonstration user's, and ending one
+    # ends the other: `reset_session` takes the identity with it, and the
+    # redirection below ends the FranceConnect+ session that attested it —
+    # « pour que FranceConnect+ puisse retrouver la session concernée », the hint being
+    # the ID Token decrypted.
+    #
+    # `::Demo::` and not `Demo::`: this file lives in `Admin`, where `Demo`
+    # names the controllers of the demonstration.
     def destroy
+      identity = ::Demo::UserIdentity.from_session(session[:demo_identity])
+
       reset_session
 
-      redirect_to new_admin_session_path, notice: :'admin.sessions.signed_out'
+      redirect_to end_of_france_connect_session(identity) || new_admin_session_path,
+        allow_other_host: true, notice: :'admin.sessions.signed_out'
     end
 
     # No navigation on the login page: every link it would offer leads somewhere
@@ -41,6 +52,21 @@ module Admin
     def admin_section? = false
 
     private
+
+    # Nothing to end when no identity was held, and nothing worth failing the
+    # sign-out for when the portal cannot be reached: `Demo::EndIdentification`
+    # says why. The state is written here rather than there, a session being the
+    # controller's to touch.
+    def end_of_france_connect_session(identity)
+      return nil if identity.nil?
+
+      result = ::Demo::EndIdentification.call(identity:)
+      return nil unless result.success?
+
+      session[:france_connect_logout] = result.state
+
+      result.end_session_url
+    end
 
     # `permit` and not the `expect` used elsewhere: `expect` goes through
     # `require`, which raises on a blank value, so an empty form would answer

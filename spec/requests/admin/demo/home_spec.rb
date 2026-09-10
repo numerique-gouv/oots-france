@@ -36,11 +36,11 @@ RSpec.describe 'Admin::Demo::Home' do
     it 'offers one way to sign in, and only one' do
       get admin_demo_root_path
 
-      buttons = response.parsed_body.css('main a.fr-btn')
+      buttons = response.parsed_body.css('main button.fr-btn')
 
       expect(buttons.map { |button| button.text.strip })
         .to eq(['Sign-in with a digital identity from another European country'])
-      expect(buttons.first['href']).to eq(admin_demo_identification_path)
+      expect(response.parsed_body.css('main form').first['action']).to eq(admin_demo_identification_path)
     end
 
     # The demonstration plays a Danish student and nothing else: the French

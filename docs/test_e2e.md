@@ -85,7 +85,7 @@ Une exécution réussie affiche :
 
 ## Ce que les scénarios jouent
 
-Trois fichiers. Deux mettent la France face à un autre État membre, selon le rôle qu'elle y tient ; le troisième, [`identification_france_connect.feature`](../features/identification_france_connect.feature), n'a affaire ni à Domibus ni aux annuaires : il éprouve le **faux FranceConnect+** décrit plus bas, par lequel la démarche de démonstration tiendra l'identité d'un usager européen. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire — dont le justificatif, sur chacune des deux démarches servies —, plus la conversation qui peut en couvrir plusieurs :
+Quatre fichiers. Deux mettent la France face à un autre État membre, selon le rôle qu'elle y tient ; les deux autres n'ont affaire ni à Domibus ni aux annuaires. [`identification_france_connect.feature`](../features/identification_france_connect.feature) éprouve le **faux FranceConnect+** décrit plus bas, endpoint par endpoint et refus par refus, sans qu'une ligne de la démarche soit en jeu. [`demarche_de_demonstration.feature`](../features/demarche_de_demonstration.feature) fait l'inverse : il traverse le faux **par la démarche**, du bouton de l'accueil au formulaire identifié, et éprouve ce que l'application en fait — l'identité affichée et non saisie, le niveau de garantie tel qu'il a été atteint, l'identifiant eIDAS que rien ne rend, la rotation des clés de signature, et la déconnexion qui ferme la session du portail avec celle de l'exploitant. Il se connecte à la console avec le compte que `db/seeds.rb` crée, dans la base du **serveur** : sans `rails db:seed`, sa première étape le dit et s'arrête là. Ce que le faux ne peut pas éprouver — un identifiant mal formé, une signature hors de son JWKS, un niveau inférieur à celui demandé — est éprouvé par `make test`. [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) la met en **requêteur** et couvre les trois seules réponses que le code de production sache produire — dont le justificatif, sur chacune des deux démarches servies —, plus la conversation qui peut en couvrir plusieurs :
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
@@ -157,7 +157,7 @@ L'identifiant `DK/FR/…` que le nœud rendrait ne sort jamais du faux : il n'en
 
 ### Passer du faux au bac à sable
 
-La démarche ne connaîtra FranceConnect+ **que par son document de découverte** : passer de l'un à l'autre est un changement d'adresse de découverte, de `client_id` et de `client_secret` dans l'environnement, et rien dans le code. Les deux derniers sont aujourd'hui des constantes du faux (`features/support/fake_france_connect/clients.rb`) ; ils deviendront des variables le jour où `app/` les lira.
+La démarche ne connaît FranceConnect+ **que par son document de découverte** : passer de l'un à l'autre est un changement de trois variables d'environnement, et rien dans le code. `URL_FRANCE_CONNECT` porte l'*issuer* dont la découverte est déduite, `IDENTIFIANT_CLIENT_FRANCE_CONNECT` et `SECRET_CLIENT_FRANCE_CONNECT` les identifiants du fournisseur de service. En intégration continue, les trois valent l'adresse du faux et les deux constantes qu'il déclare (`features/support/fake_france_connect/clients.rb`) — d'où `URL_FRANCE_CONNECT` recopiant `URL_FAUX_FRANCE_CONNECT` dans `scripts/ci/prepare_environment.sh` : la première dit qui la démarche appelle, la seconde si la suite lance un faux du tout.
 
 ## Les annuaires centraux sont les vrais
 
@@ -196,6 +196,8 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
 | `URL_FAUX_FRANCE_CONNECT` | l'adresse de découverte du faux FranceConnect+, de la forme `<schéma>://<hôte>/api/v2` ; laissée vide, aucun faux n'est lancé et les scénarios d'identification échouent |
+| `URL_FRANCE_CONNECT` | l'*issuer* que la démarche appelle : ici, celui du faux, donc la même valeur que ci-dessus |
+| `IDENTIFIANT_CLIENT_FRANCE_CONNECT`, `SECRET_CLIENT_FRANCE_CONNECT` | les deux constantes que le faux déclare pour la démarche |
 | `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | **vides**, faute de quoi elles remplacent la découverte DNS |
 | `CERTIFICATS_SERVICES_COMMUNS` | `config/certificats/services_communs_acc.pem`, la racine de la Commission pour l'acceptation |
 | `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : les deux segments du nom NAPTR à résoudre |

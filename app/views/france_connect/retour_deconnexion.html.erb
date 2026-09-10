@@ -4,7 +4,13 @@
     which a visitor arriving here has no session to reach. %>
 <h1><%= t('france_connect.retour_deconnexion.title') %></h1>
 
-<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('france_connect.retour_deconnexion.lead') %></p>
+<p class="fr-text--lead fr-col-12 fr-col-md-8">
+  <% if @acknowledged %>
+    <%= t('france_connect.retour_deconnexion.lead') %>
+  <% else %>
+    <%= t('france_connect.retour_deconnexion.unexpected') %>
+  <% end %>
+</p>
 
 <%= link_to t('france_connect.retour_deconnexion.back'), admin_demo_root_path,
       class: 'fr-btn fr-btn--secondary' %>

@@ -77,6 +77,19 @@ fr:
         given_name: Le prénom
         date_of_birth: La date de naissance
         legal_person_identifier: L'identifiant eIDAS de la personne morale
+      # L'identité que la démarche de démonstration tient de FranceConnect+.
+      # Nommée dans le vocabulaire du portail, qui est celui de ses claims :
+      # `birthdate`, et non la `date_of_birth` de la requête.
+      demo/user_identity:
+        given_name: Le prénom
+        family_name: Le nom
+        birthdate: La date de naissance
+        eidas_identifier: L'identifiant eIDAS
+        level_of_assurance: Le niveau de garantie
+        gender: Le sexe
+        place_of_birth: Le lieu de naissance
+        subject: L'identifiant FranceConnect+
+        id_token: L'ID Token
     errors:
       models:
         address:
@@ -148,6 +161,20 @@ fr:
           both_identities: >-
             Une recherche porte sur une personne physique ou sur une personne morale,
             jamais sur les deux à la fois
+        demo/user_identity:
+          attributes:
+            birthdate:
+              format: doit être une date ISO 8601 (AAAA-MM-JJ)
+            # `R-EDM-REQ-C040` (FATAL) : porté tel quel dans la requête, un
+            # identifiant hors de cette forme la ferait refuser. Le message
+            # nomme la forme plutôt que la règle, l'exploitant n'ayant pas le
+            # Schematron sous les yeux.
+            eidas_identifier:
+              format: doit être de la forme PAYS/PAYS/IDENTIFIANT
+            level_of_assurance:
+              inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
+            gender:
+              inclusion: "vaut « %{value} », alors que FranceConnect+ n'en publie que %{admitted}"
   accueil:
     index:
       lead: >-
@@ -160,19 +187,17 @@ fr:
   # démonstration. Elles répondent sans session : `docs/eidas_context.md` dit
   # pourquoi ces adresses existent avant la cinématique qui y mène.
   france_connect:
-    retour_connexion:
-      title: Retour de FranceConnect+
-      lead: >-
-        Cette page est celle où FranceConnect+ ramène l'usager une fois qu'il s'est identifié.
-        L'identification n'est pas encore branchée : rien n'y est encore rapporté, et la
-        cinématique européenne viendra avec la suite du parcours.
-      back: Aller à la démarche de démonstration
     retour_deconnexion:
       title: Vous êtes déconnecté
       lead: >-
-        Cette page est celle où FranceConnect+ ramène l'usager une fois qu'il s'est déconnecté.
-        La démarche de démonstration ne déclenche encore aucune déconnexion : l'adresse existe
-        parce que FranceConnect+ demande qu'elle soit déclarée et qu'elle réponde.
+        Votre session FranceConnect+ est close, et la démarche de démonstration ne tient plus
+        aucune identité. Recommencer demande de s'identifier à nouveau.
+      # Le `state` ne correspond pas : la page répond quand même, FranceConnect+
+      # exigeant qu'une adresse déclarée réponde, mais elle n'atteste rien.
+      unexpected: >-
+        Cette page est celle où FranceConnect+ ramène l'usager après une déconnexion, et cette
+        arrivée-ci ne correspond à aucune déconnexion demandée depuis ce navigateur : elle
+        n'atteste donc rien.
       back: Revenir à la démarche de démonstration
   layouts:
     application:
@@ -292,6 +317,33 @@ fr:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
       unexpected_algorithms: Jeton bénéficiaire chiffré en %{announced}, attendu %{expected}.
+    # Deux refus posés sur le document de découverte : ce dépôt appelle
+    # l'*issuer* qu'on lui a configuré, et rien d'autre.
+    france_connect_client:
+      foreign_issuer: "Le document de découverte annonce l'issuer « %{announced} », et non %{expected}."
+      foreign_endpoint: "FranceConnect+ publierait %{name} sur « %{url} », hors de %{expected} : appel refusé."
+      missing_endpoint: "Le document de découverte de FranceConnect+ ne publie aucun %{name}."
+      unreadable_endpoint: "FranceConnect+ publie un %{name} qui n'est pas une adresse : %{error}"
+      unreadable_discovery: "Le document de découverte de FranceConnect+ ne se lit pas comme du JSON : %{error}"
+      unreadable_grant: "Réponse illisible de /token : %{error}"
+      incomplete_grant: "La réponse de /token ne porte pas %{names}."
+    # La question posée une fois de tout ce que le portail répond : chacun de ses
+    # documents est un objet JSON, et un corps qui n'en est pas se refuse avant
+    # qu'on l'indexe.
+    france_connect_answer:
+      not_an_object: "%{subject} : le corps est un %{type}, là où FranceConnect+ publie un objet."
+      subjects:
+        discovery: Document de découverte de FranceConnect+
+        grant: Réponse de /token
+        claims: Jeton FranceConnect+
+        sealed_header: En-tête du jeton scellé
+    # Ce que FranceConnect+ scelle pour la démarche : l'ID Token et la réponse
+    # UserInfo, signés puis chiffrés. Les trois refus disent lequel des deux
+    # sceaux a cédé.
+    france_connect_token:
+      unreadable: "Jeton FranceConnect+ indéchiffrable : %{error}"
+      invalid: "Signature FranceConnect+ invalide : %{error}"
+      unexpected_algorithms: Jeton FranceConnect+ chiffré en %{announced}, attendu %{expected}.
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -540,6 +592,25 @@ fr:
       nothing_readable: >-
         L'annuaire a répondu avec succès, mais rien n'y était lisible
         (%{count} objet(s) dans la réponse).
+  # Ce qu'un écran dit d'un objet, quand l'objet ne peut pas le dire lui-même.
+  presenters:
+    demo_identity:
+      # Le vocabulaire de FranceConnect+, en toutes lettres : le code lui-même
+      # n'est pas un mot, et le traduire côté requête est l'affaire du jeton du
+      # bénéficiaire.
+      genders:
+        male: Masculin
+        female: Féminin
+        unspecified: Non précisé
+      provenance:
+        # Aucun claim ne nomme le pays ni le fournisseur d'identité étranger :
+        # ce qui est attesté, c'est le passage par la passerelle.
+        european: Identité d'un autre État membre, par la passerelle eIDAS
+        unnamed: Provenance non attestée par l'authentification
+      # Le cas nominal aujourd'hui : FranceConnect+ ne documente aucun claim qui
+      # le porte pour un usager européen, et le chapitre 2.1 §2.3.1.2 prévoit la
+      # requête sans lui.
+      no_identifier: Non rendu par l'authentification
   models:
     # La règle `R-EDM-*` enfreinte et ce qu'elle dit, composées en une phrase :
     # c'est sous cette forme que le journal la consigne.
@@ -604,7 +675,7 @@ fr:
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
   interactors:
-    # Les onze échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
+    # Les douze échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
     failures:
@@ -615,6 +686,7 @@ fr:
       # dit ce que les récrire séparément coûterait.
       common_services_refused: L'annuaire a refusé
       gateway_refused: La passerelle a refusé le message
+      identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
       invalid_directory_entry: L'annuaire a publié une entrée qu'un message ne peut pas porter
       invalid_token: Jeton bénéficiaire invalide
@@ -624,6 +696,28 @@ fr:
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
+    # Les deux moitiés de la cinématique européenne. Chaque phrase est un refus
+    # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
+    # a cédé sans qu'il ait à ouvrir les logs.
+    demo:
+      # Écrit dans les logs et jamais à l'écran : l'exploitant est déconnecté
+      # quoi qu'il arrive, et FranceConnect+ ferme sa propre session d'elle-même.
+      end_identification:
+        unreachable: "Fin de session FranceConnect+ impossible, l'exploitant est déconnecté malgré tout : %{error}"
+      start_identification:
+        undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
+      complete_identification:
+        refused_by_portal: "FranceConnect+ a refusé l'identification (%{error}) : %{description}"
+        no_description: sans autre explication
+        unexpected_state: >-
+          Ce retour ne correspond à aucune identification demandée depuis ce navigateur.
+        unexpected_nonce: >-
+          L'ID Token ne porte pas le nonce de l'appel : il ne répond pas à cette identification.
+        level_too_low: "Le niveau de garantie obtenu (%{reached}) est inférieur à celui demandé (%{requested})."
+        no_level: aucun
+        subjects_differ: >-
+          L'ID Token et la réponse UserInfo ne désignent pas la même personne.
+        refused: "Identification FranceConnect+ refusée : %{reason}"
     evidence_provision:
       choose_answer:
         # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
@@ -928,14 +1022,34 @@ fr:
           # annoncées comme « bientôt publiées ». Il s'adresse à un usager qui ne
           # lit pas le français, ce qui est tout son objet.
           sign_in: Sign-in with a digital identity from another European country
-      identifications:
+      # La deuxième page du parcours : le formulaire de demande, portant
+      # l'identité que l'authentification a donnée. Ce que la demande réclame en
+      # plus, et son envoi, viennent avec OOTS-181.
+      grant_requests:
         show:
-          title: Identification
-          unavailable: >-
-            L'identification par FranceConnect+ n'est pas encore branchée : la cinématique
-            européenne, qui laisse un usager d'un autre État membre s'identifier avec l'identité de
-            son pays, viendra avec la suite du parcours.
-          back: Revenir à la démarche
+          title: Demande de bourse d'études
+          lead: >-
+            Ces informations viennent de l'identité électronique avec laquelle vous venez de vous
+            identifier. Elles ne se modifient pas : c'est l'identité attestée qui accompagnera la
+            demande de justificatif.
+          identity: Votre identité
+          attested: Ce que l'authentification a attesté
+          next:
+            title: Suite du parcours
+            body: >-
+              La demande elle-même — le pays qui détient le justificatif, la démarche visée et
+              l'envoi de la requête — n'est pas encore branchée sur cet écran.
+        # L'ordre des clés n'est pas celui de l'écran, que le gabarit fixe : ces
+        # intitulés sont ceux des deux tableaux, dits une fois chacun.
+        attributes:
+          family_name: Nom de famille
+          given_name: Prénom(s)
+          birthdate: Date de naissance
+          gender: Sexe
+          place_of_birth: Lieu de naissance
+          level_of_assurance: Niveau de garantie
+          provenance: Provenance de l'identité
+          eidas_identifier: Identifiant eIDAS
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.

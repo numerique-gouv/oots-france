@@ -1,0 +1,23 @@
+<%# The house table of the console, used here for an identity: a row per
+    attribute, and no row at all for what was not given — an empty cell would
+    read as a value the portal sent blank. %>
+<div class="fr-table fr-table--bordered fr-mb-4w">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption><%= caption %></caption>
+          <tbody>
+            <% rows.each do |label, value| %>
+              <% next if value.blank? %>
+              <tr>
+                <th scope="row"><%= label %></th>
+                <td><%= value %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

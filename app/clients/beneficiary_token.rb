@@ -79,7 +79,7 @@ class BeneficiaryToken
   # A callback and not a resolved set: the verifier asks again with
   # `invalidate` when the `kid` is absent, which is what lets a requester
   # rotate its keys without waiting for our cache to expire.
-  def key_set = ->(options) { key_fetcher.call(requester, force: options[:invalidate]) }
+  def key_set = ->(options) { key_fetcher.call(requester.jwks_url, force: options[:invalidate]) }
 
   def decrypt(encrypted_token)
     header = JSON.parse(JWE::Base64.jwe_decode(encrypted_token.split('.').first))

@@ -37,7 +37,8 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 | `/admin/common_services/resolution` | La chaîne de requêtes que `EvidenceRequest::Fetch` pose avant d'émettre, simulée à la demande pour une démarche et un pays. |
 | `/admin/jobs` | Le tableau de bord de [GoodJob](https://github.com/bensheldon/good_job), monté tel quel. Il montre les exécutions de `ProcessIncomingMessageJob` et de `CollectPendingMessagesJob`, et la trace de leurs erreurs. |
 | `/admin/demo` | L'accueil de la démarche de démonstration : le portail de l'« Université de démonstration », qui explique ce qu'OOTS permet, dit qu'il est une démonstration, et offre le seul bouton d'identification de la cinématique européenne. Son titre est la démarche `T1`, **lue** dans `Procedures-CodeList.gc` comme les pages des annuaires lisent les leurs. Voir plus bas. |
-| `/admin/demo/identification` | Ce que ce bouton ouvre aujourd'hui : la page qui dit que l'identification par FranceConnect+ n'est pas encore branchée. |
+| `/admin/demo/identification` | En `POST` seulement, et sans page : ce que le bouton soumet. La cinématique européenne de FranceConnect+ démarre là, et le navigateur part aussitôt chez le portail. |
+| `/admin/demo/demande` | Le formulaire de demande de bourse, où l'usager revient identifié : ses attributs d'identité, **affichés et non saisis**, puis ce que l'authentification a attesté — le niveau de garantie, la provenance, l'identifiant eIDAS ou la mention qu'il n'a pas été rendu. Sans identité en session, il renvoie à l'accueil. |
 
 ### La démarche de démonstration
 
@@ -47,8 +48,12 @@ Elle **ne contredit pas** la règle posée plus haut — « il ne touche à aucu
 
 Elle reste par ailleurs derrière la connexion de l'exploitant, comme tout l'espace : ce n'est pas un écran qu'un usager final atteint, ce que la [règle d'audience du dépôt](../CLAUDE.md#this-repository-implements-the-tdd-it-does-not-invent) interdirait.
 
+Le bouton unique de l'accueil — libellé en anglais, `Sign-in with a digital identity from another European country`, parce qu'il s'adresse à un usager qui ne lit pas le français — ouvre la **cinématique européenne** de FranceConnect+ : l'appel `/authorize` porte `idp_hint=eidas-bridge`, qui mène droit au choix du pays de la passerelle eIDAS, sans passer par la mire. L'usager revient sur `/admin/demo/demande`, portant l'identité que l'authentification a donnée. Le bouton FranceConnect+ « identité française » n'existe pas ici : la démonstration ne joue qu'un usager d'un autre État membre, écart assumé avec les règles d'intégration de FranceConnect+.
+
+La session de l'usager de la démarche **est** celle de l'exploitant : l'identité vit dans la session Rails et rien d'autre ne la conserve, si bien que se déconnecter de la console l'emporte — et met fin, du même geste, à la session FranceConnect+, par une redirection vers son `/session/end`. Ce que le portail exige de la configuration — l'*issuer*, le `client_id` et le `client_secret` — est dans [eidas_context.md](eidas_context.md).
+
 > [!NOTE]
-> **L'identification n'est pas encore branchée.** Le bouton unique de l'accueil — libellé en anglais, `Sign-in with a digital identity from another European country`, parce qu'il s'adresse à un usager qui ne lit pas le français — mène à une page qui le dit. La cinématique européenne de FranceConnect+, l'appel `/authorize` portant `idp_hint=eidas-bridge` et ce qu'il rapporte viennent avec [OOTS-179](https://linear.app/pole-api/issue/OOTS-179). Le bouton FranceConnect+ « identité française » n'existe pas ici : la démonstration ne joue qu'un usager d'un autre État membre, écart assumé avec les règles d'intégration de FranceConnect+.
+> **Rien n'est encore vérifié sur le vrai FranceConnect+.** L'intégration continue joue la cinématique contre le faux d'[OOTS-186](https://linear.app/pole-api/issue/OOTS-186) ; le bac à sable attend un déploiement joignable, l'habilitation et l'activation du nœud eIDAS. [eidas_context.md](eidas_context.md#le-bac-à-sable) tient cette chaîne.
 
 La démarche a par ailleurs **trois adresses publiques**, sous `/demo/franceconnect/`, que la console ne montre nulle part : elles sont là pour FranceConnect+, qui vient y lire les clés de chiffrement de la démarche et y ramène l'usager après une connexion ou une déconnexion. Elles sont donc **hors de l'espace d'administration** et de ce que sa connexion ferme. Ce qu'elles valent et pourquoi elles existent avant la cinématique qui y mènera est dans [eidas_context.md](eidas_context.md#les-adresses-que-ce-dépôt-déclarera).
 

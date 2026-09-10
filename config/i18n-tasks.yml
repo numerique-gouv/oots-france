@@ -49,6 +49,7 @@ ignore_unused:
   - activemodel.attributes.resolution_filter.{procedure_code,country_code,requirement_id,evidence_type_id}
   - activemodel.attributes.audit_event_filter.{event_type,exchange_id,conversation_id,country_code,evidence_requester_id,procedure_code,depuis,jusqu_a}
   - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth,legal_person_identifier}
+  - activemodel.attributes.demo/user_identity.{given_name,family_name,birthdate,eidas_identifier,level_of_assurance,gender,place_of_birth,subject,id_token}
   - activemodel.errors.models.address.attributes.country.format
   - activemodel.errors.models.natural_person.attributes.{date_of_birth,eidas_identifier}.format
   - activemodel.errors.models.natural_person.attributes.{level_of_assurance,gender}.inclusion
@@ -61,6 +62,8 @@ ignore_unused:
   - activemodel.errors.models.audit_event_filter.attributes.{event_type.inclusion,country_code.format,jusqu_a.before_start}
   - activemodel.errors.models.audit_event_filter.unreadable
   - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable,both_identities}
+  - activemodel.errors.models.demo/user_identity.attributes.{birthdate,eidas_identifier}.format
+  - activemodel.errors.models.demo/user_identity.attributes.{level_of_assurance,gender}.inclusion
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
   - admin.journal.exchanges.statuses.*
@@ -70,6 +73,11 @@ ignore_unused:
   # back on that name when no wording translates it.
   - components.evidence_subject.fields.*
   - interactors.failures.*
+  # Composé du code que FranceConnect+ publie pour le sexe d'un usager européen.
+  - presenters.demo_identity.genders.*
+  # Composé du document dont on demande la forme, comme les sujets de
+  # `strict_validation` juste au-dessus.
+  - clients.france_connect_answer.subjects.*
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
   # Composed from the direction of the exchange by `Exchange#expire!`: one

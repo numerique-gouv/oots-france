@@ -1,8 +1,19 @@
 <%# The flash carries a key and not a message: the operator console's guard is
     also set on GoodJob's dashboard, which renders under `:en`, a locale this
     application does not publish. %>
+<%# `details` carries what the key cannot: the reason a step refused, which is
+    written by the code and not translatable in advance — an identifier the
+    specification refuses, a signature that did not check out. It is shown in the
+    alert's body, as `admin/_erreurs` shows a filter's. %>
 <% { alert: :error, notice: :info }.each do |clef, type| %>
   <% if flash[clef].present? %>
-    <%= dsfr_alert(type: type, title: t(flash[clef]), size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
+    <% details = clef == :alert ? Array(flash[:details]).select(&:present?) : [] %>
+    <% if details.any? %>
+      <%= dsfr_alert(type: type, title: t(flash[clef]), html_attributes: { class: 'fr-mb-4w' }) do %>
+        <%= safe_join(details.map { |detail| "#{detail}." }, tag.br) %>
+      <% end %>
+    <% else %>
+      <%= dsfr_alert(type: type, title: t(flash[clef]), size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
+    <% end %>
   <% end %>
 <% end %>

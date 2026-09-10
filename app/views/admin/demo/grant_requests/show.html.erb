@@ -1,0 +1,36 @@
+<% content_for :title, t('admin.demo.grant_requests.show.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(
+      trail: [[t('admin.demo.grant_requests.show.title'), nil]],
+    ) %>
+
+<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+
+<h1 class="fr-h3"><%= t('admin.demo.grant_requests.show.title') %></h1>
+
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.grant_requests.show.lead') %></p>
+
+<%# No field on any of these: chapter 2.2 §2 makes the portal answerable for the
+    identity in the request matching the one the eID means yielded, and the
+    demonstration holds that by showing them rather than offering them. %>
+<%= render 'admin/demo/attributs',
+      caption: t('admin.demo.grant_requests.show.identity'),
+      rows: [
+        [t('admin.demo.grant_requests.attributes.family_name'), @identity.family_name],
+        [t('admin.demo.grant_requests.attributes.given_name'), @identity.given_name],
+        [t('admin.demo.grant_requests.attributes.birthdate'), @identity.birthdate],
+        [t('admin.demo.grant_requests.attributes.gender'), @wording.gender],
+        [t('admin.demo.grant_requests.attributes.place_of_birth'), @wording.place_of_birth],
+      ] %>
+
+<%= render 'admin/demo/attributs',
+      caption: t('admin.demo.grant_requests.show.attested'),
+      rows: [
+        [t('admin.demo.grant_requests.attributes.level_of_assurance'), @identity.level_of_assurance],
+        [t('admin.demo.grant_requests.attributes.provenance'), @wording.provenance],
+        [t('admin.demo.grant_requests.attributes.eidas_identifier'), @wording.eidas_identifier],
+      ] %>
+
+<%= dsfr_callout(title: t('admin.demo.grant_requests.show.next.title')) do %>
+  <%= t('admin.demo.grant_requests.show.next.body') %>
+<% end %>

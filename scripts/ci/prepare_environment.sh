@@ -168,6 +168,12 @@ verifieCleJwk "$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_DEMARCHE_EN_BA
 # `UPDATE` on the exchange log. It is not declared in .env.postgres, the image
 # creating the owner alone.
 #
+# The procedure talks to the fake FranceConnect+ of the end-to-end suite, which
+# is why URL_FRANCE_CONNECT repeats URL_FAUX_FRANCE_CONNECT here: the first says
+# whom the procedure calls, the second whether the suite starts a fake at all —
+# a deployment fills the first and leaves the second empty. The two credentials
+# are the fake's own constants, features/support/fake_france_connect/clients.rb.
+#
 # The two directory URLs are left empty so that chapter 3.4's DNS discovery is
 # what names the instance to query, as it does in production: filled, they would
 # replace it, and they exist only for a deployment no NAPTR record can name — a
@@ -182,6 +188,9 @@ DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://w
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
 URL_OOTS_FRANCE=http://localhost:3000
+URL_FRANCE_CONNECT=http://localhost:3100/api/v2
+IDENTIFIANT_CLIENT_FRANCE_CONNECT=oots-france-demarche
+SECRET_CLIENT_FRANCE_CONNECT=faux-france-connect-secret-de-la-demarche
 URL_FAUX_FRANCE_CONNECT=http://localhost:3100/api/v2
 
 CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
