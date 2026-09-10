@@ -1,7 +1,10 @@
-# The identifier schemes of an OOTS exchange, in the three unrelated senses the
+# The identifier schemes of an OOTS exchange, in the four unrelated senses the
 # TDD give that word: the two this deployment declares itself under, the list
-# an evidence *subject* may name (`LEGAL_PERSON`), and the form any agent's
-# identifier must take, whoever emits it (`agent_scheme?`).
+# an evidence *subject* may name (`LEGAL_PERSON`), the form any agent's
+# identifier must take, whoever emits it (`agent_scheme?`), and the codelist URL
+# a provider *classification* names itself by, whose country segment
+# `R-EDM-REQ-C098` judges (`oots_country?`). The four share the XML attribute
+# `schemeID` and nothing else — no rule of one governs another.
 #
 # French organisations are identified by their SIRET, which is EAS code 0009.
 # Nothing need be asked of the Commission for that: the EAS list already
@@ -34,11 +37,24 @@ module IdentifierScheme
   ].freeze
 
   # The `OOTS_Country-CodeList` — the countries taking part in OOTS, a far
-  # shorter list than `CountryIdentificationCode` — plus the literal `oots`,
-  # which the rules admit « for testing purposes » alongside the country codes.
-  UNREGISTERED_CODES = (%w[
+  # shorter list than `CountryIdentificationCode`. Thirty countries and `EU`,
+  # and no `oots`: `R-EDM-REQ-C098` compares the country segment of a
+  # classification's `schemeID` to this list alone.
+  OOTS_COUNTRIES = %w[
     AT BE BG HR CY CZ DK EE FI FR DE EL HU IS IE IT LV LI LT LU MT NL NO PL PT RO SK SI ES SE EU
-  ] + ['oots']).freeze
+  ].freeze
+
+  # The same list plus the literal `oots`, which the rules on an agent's
+  # identifier admit « for testing purposes » alongside the country codes — where
+  # `C098` does not.
+  UNREGISTERED_CODES = (OOTS_COUNTRIES + ['oots']).freeze
+
+  # The head `R-EDM-REQ-C098` cuts a classification's `schemeID` at, before
+  # reading the country that follows it. The rule takes the URL apart by
+  # substrings and never matches its shape: `R-EDM-REQ-C097` is what governs
+  # that, and refusing here what `C097` alone judges would refuse what this
+  # rule admits.
+  CODELIST_PREFIX = 'oots.tech.ec.europa.eu/codelists/'.freeze
 
   # The scheme an `sdg:Agent` may name its identifier under. The TDD assert it
   # word for word in seven places, one per agent each kind of message carries:
@@ -58,4 +74,29 @@ module IdentifierScheme
   # response the same assertion then judges, so accepting it stays conformant.
   def self.substring_after(value, prefix) = value.to_s.partition(prefix).last
   private_class_method :substring_after
+
+  # XPath's `substring-before`, which `C098` applies after `substring-after`:
+  # it yields the **empty string** when the separator is absent, where
+  # `String#partition(…).first` yields the whole string. The difference decides
+  # a case: a `schemeID` ending at `…/codelists/FR`, with no `ShortName` after
+  # it, has no country segment to the rule and is refused — `partition` would
+  # hand back `FR` and serve it.
+  def self.substring_before(value, separator)
+    head, found, = value.to_s.partition(separator)
+
+    found.empty? ? '' : head
+  end
+  private_class_method :substring_before
+
+  # The country segment of a classification's `schemeID`, read exactly as
+  # `R-EDM-REQ-C098` reads it: what lies between the codelist prefix and the
+  # next `/`. The environment midfix of an acceptance URL — `sr.acc.oots…` —
+  # crosses `substring-after` unseen, the prefix being sought wherever it sits.
+  def self.oots_country?(scheme) = OOTS_COUNTRIES.include?(codelist_country(scheme))
+
+  # Named because the rule names it: `C098` binds this very expression to
+  # `$countryCode` in a `sch:let` before comparing it, rather than comparing it
+  # in place.
+  def self.codelist_country(scheme) = substring_before(substring_after(scheme, CODELIST_PREFIX), '/')
+  private_class_method :codelist_country
 end

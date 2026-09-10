@@ -9,6 +9,7 @@ class EvidenceRequestParser
   include SlotReading
   include AgentConformance
   include RequirementConformance
+  include ClassificationConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -67,6 +68,7 @@ class EvidenceRequestParser
     require_conformant_provider(provider_agent)
     require_beneficiary_identifier_scheme
     require_conformant_requirements
+    require_conformant_classifications
 
     self
   end
