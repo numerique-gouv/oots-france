@@ -32,13 +32,28 @@
           [t('admin.demo.confirmations.show.provider'), @wording.provider],
           [t('admin.demo.confirmations.show.evidence_type'), @wording.evidence_type],
         ] %>
-
-  <%# The press that opens the exchange. `button_to` and not a link: chapter
-      4.5.1 §2.7 ties the `IssueDateTime` of the request to the instant of this
-      gesture, and a GET the browser prefetched would issue it before the user
-      had decided anything. %>
-  <%= button_to t('admin.demo.confirmations.show.submit'), admin_demo_confirmation_path, class: 'fr-btn' %>
 <% end %>
 
-<%= link_to t('admin.demo.confirmations.show.back'), admin_demo_demande_path,
-      class: 'fr-btn fr-btn--secondary fr-ml-2w' %>
+<%# The group the DSFR prescribes for a set of actions: a `<ul>` of `<li>`, one
+    primary button and one secondary, `--inline-md` so they sit side by side from
+    the medium breakpoint and stack below it, as the journal's own group does.
+    `button_to` renders a `<form>`, which is a block: without the group they pile
+    up whatever margin the link carries.
+
+    The primary comes first because the group is left-aligned, which is also the
+    reading and the tab order. %>
+<ul class="fr-btns-group fr-btns-group--inline-md">
+  <% if @wording&.nameable? %>
+    <li>
+      <%# The press that opens the exchange. `button_to` and not a link: chapter
+          4.5.1 §2.7 ties the `IssueDateTime` of the request to the instant of
+          this gesture, and a GET the browser prefetched would issue it before
+          the user had decided anything. %>
+      <%= button_to t('admin.demo.confirmations.show.submit'), admin_demo_confirmation_path, class: 'fr-btn' %>
+    </li>
+  <% end %>
+  <li>
+    <%= link_to t('admin.demo.confirmations.show.back'), admin_demo_demande_path,
+          class: 'fr-btn fr-btn--secondary' %>
+  </li>
+</ul>

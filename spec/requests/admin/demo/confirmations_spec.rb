@@ -50,6 +50,19 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
+    # `button_to` renders a `<form>`, which is a block: outside the group the
+    # DSFR prescribes, the two actions pile up whatever margin they carry. The
+    # primary comes first, the group being left-aligned — reading order, and tab
+    # order with it.
+    it 'offers the two actions as one group, the primary first' do
+      get admin_demo_confirmation_path
+
+      groupe = response.parsed_body.at_css('main ul.fr-btns-group')
+
+      expect(groupe['class']).to include('fr-btns-group--inline-md')
+      expect(groupe.css('li button, li a').map(&:name)).to eq(%w[button a])
+    end
+
     it 'sends an operator holding no identity back to the start' do
       reset_session_identity
 
