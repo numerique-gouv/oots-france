@@ -170,8 +170,7 @@
         <%= render DirectoryQueryComponent.new(
               query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
               parameters: { 'evidence-type-classification' => @lookup.evidence_type.id,
-                            'country-code' => @question.country,
-                            'specification' => EdmSpecification::IDENTIFIER },
+                            'country-code' => @question.country },
               embedded: true) %>
       <% end %>
     <% end %>

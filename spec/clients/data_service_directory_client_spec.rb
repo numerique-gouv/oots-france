@@ -23,10 +23,10 @@ RSpec.describe DataServiceDirectoryClient do
     expect(services.first.providers.map { |provider| provider.identifier.id }).to eq(['FIKEHA02'])
   end
 
-  # Version negotiation happens at the directory rather than here: the service
-  # returns only the access services declaring that `ConformsTo`, so an empty
-  # answer means no correspondent speaks what we produce. Chapter 3.1.4.
-  it 'restricts the answer to the exchange version we are able to produce' do
+  # Chapter 3.1.4 § 4.2.2: a query with no `specification` parameter comes back
+  # with every Data Service using an OOTS EDM specification, whatever its
+  # version. Sending one would hide the correspondents France answers in 1.2.
+  it 'asks for the data services of every EDM version' do
     directory.data_services(evidence_type_classification: classification, country_code: 'FI')
 
     expect(query).to have_received(:search).with(
@@ -34,7 +34,6 @@ RSpec.describe DataServiceDirectoryClient do
         queryId: described_class::DATA_SERVICES_QUERY,
         'evidence-type-classification': classification,
         'country-code': 'FI',
-        specification: EdmSpecification::IDENTIFIER,
       },
       parser: DataServicesResponseParser,
     )

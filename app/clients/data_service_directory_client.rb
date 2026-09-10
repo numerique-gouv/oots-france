@@ -1,9 +1,10 @@
 # The Data Service Directory: who, in a country, holds an evidence type, and
 # at which access point (chapter 3.1.4).
 #
-# `specification` is what makes version negotiation happen at the directory
-# rather than here: the service returns only the access services declaring that
-# `ConformsTo`, so an empty result means no correspondent speaks our version.
+# No `specification` parameter, and that is what lets France pick a version per
+# correspondent: chapter 3.1.4 § 4.2.2 has a query omitting it come back with
+# every Data Service using an OOTS EDM specification, whatever its version, and
+# the `sdg:ConformsTo` each answer carries is then what decides.
 class DataServiceDirectoryClient
   DATA_SERVICES_QUERY =
     'urn:fdc:oots:dsd:ebxml-regrep:queries:dataservices-by-evidencetype-and-jurisdiction'.freeze
@@ -27,7 +28,6 @@ class DataServiceDirectoryClient
         queryId: DATA_SERVICES_QUERY,
         'evidence-type-classification': evidence_type_classification,
         'country-code': country_code,
-        specification: EdmSpecification::IDENTIFIER,
       },
       parser: DataServicesResponseParser,
     )

@@ -137,15 +137,15 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     expect(response.body).not_to include('Modèle de données')
   end
 
-  # The console asks the directory exactly as the application does, version
-  # parameter included, so a gateway speaking another version is absent from
-  # the answer. Showing the versions is what keeps that legible.
-  it 'shows the EDM versions the access point declares, and the version asked for' do
+  # The console asks the directory exactly as the application does, and neither
+  # filters on a version: what a gateway declares is shown rather than sorted
+  # on, which is what makes a 1.2 correspondent visible here.
+  it 'shows the EDM versions the access point declares, and asks for no version' do
     visit_providers
 
     expect(response.body).to include('oots-edm:v2.0')
     expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/dsd/rest/search")
-      .with(query: hash_including('specification' => EdmSpecification::IDENTIFIER))).to have_been_made
+      .with(query: hash_excluding('specification'))).to have_been_made
   end
 
   # An evidence type is published by one jurisdiction — its Semantic Repository
