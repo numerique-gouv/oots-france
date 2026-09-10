@@ -64,29 +64,42 @@ module Demo
     # Reading it is what makes the demonstration exercise the publishing route;
     # deriving it would sidestep that route, and leave a broken one invisible.
     #
-    # A set fetched over HTTP is unusable in more ways than being unreachable,
-    # and `Faraday` only names that one. The two families the JWT gem really
-    # raises for such a document are what the rescue lists, rather than what one
-    # would guess: `JSON::ParserError` for a body that is no JSON — a
-    # maintenance page answered with a `200` — and `JWT::JWKError` for JSON that
-    # is no usable key, which `JWT::JWK.create_from` raises eagerly while the
-    # set is being built (`kty` absent or unsupported, an EC key without its
-    # coordinates, a curve the gem does not hold). A set published empty is no
-    # exception at all: it is simply `nil` where a key was expected.
-    #
-    # The two readers of this deployment catch `JWT::JWKError` through its
-    # ancestor `JWT::DecodeError`, which their own call to `JWT.decode` puts on
-    # their list. This writer decodes no token, so it names the family it needs
-    # — and names it, rather than inheriting it by chance. Narrow to this single
-    # call.
+    # The URL is resolved here, outside the rescue below: `Settings` raises on a
+    # deployment that named none, and that is ours to hear.
     def encryption_key
-      published = key_fetcher.call(key_set_url).keys.first
-      raise UnusableKeySetError, I18n.t('clients.demo.beneficiary_token_writer.no_key', url: key_set_url) if published.nil?
+      url = key_set_url
 
-      published.verify_key
-    rescue JSON::ParserError, JWT::JWKError, ArgumentError, TypeError => e
+      read_key(url) || raise(UnusableKeySetError, I18n.t('clients.demo.beneficiary_token_writer.no_key', url:))
+    end
+
+    # Everything this body does is turn a document read from elsewhere into a key
+    # object, so nothing of ours can be swallowed by rescuing broadly — and
+    # broadly is the only way that holds. Enumerating what the gem raises here
+    # was tried four times, each list read from its sources, and a fresh test
+    # broke each one. What the four shapes of an unusable published set really
+    # raise, reproduced against the JSON this deployment's own route serves:
+    #
+    #   a body that is no JSON at all      JSON::ParserError
+    #   `kty` absent or unsupported        JWT::JWKError
+    #   a coordinate in broken base64      JWT::Base64DecodeError
+    #   a point that is not on the curve   OpenSSL::PKey::EC::Point::Error
+    #
+    # The first two are raised while the set is assembled, the last two only when
+    # the key is built from it. And the trap no reading of the hierarchy gives:
+    # `Base64DecodeError` is a **sister** of `JWT::JWKError` under
+    # `JWT::DecodeError`, and `EC::Point::Error` a sister of
+    # `OpenSSL::PKey::PKeyError` rather than its child — so catching either
+    # parent still misses the other branch. A fifth list would be a fifth bet.
+    #
+    # `Faraday::Error` alone travels on: unreachable and unusable are two
+    # different things to tell the user, and the caller already names the first.
+    def read_key(url)
+      key_fetcher.call(url).keys.first&.verify_key
+    rescue Faraday::Error
+      raise
+    rescue StandardError => e
       raise UnusableKeySetError,
-        I18n.t('clients.demo.beneficiary_token_writer.unreadable', url: key_set_url, error: e.message)
+        I18n.t('clients.demo.beneficiary_token_writer.unreadable', url:, error: e.message)
     end
 
     def key_set_url = "#{Settings.oots_france_url}/auth/cles_publiques"

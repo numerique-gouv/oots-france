@@ -90,22 +90,51 @@ RSpec.describe Demo::BeneficiaryTokenWriter do
     expect(a_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")).to have_been_made
   end
 
-  # Les trois façons dont le jeu de clés publié peut être inexploitable sans
-  # que rien soit injoignable. Les deux premières sont ce que le gem lève
-  # réellement — vérifié dans ses sources, `JWT::JWKError` étant construite dès
-  # l'assemblage du jeu —, la troisième n'est pas même une exception.
+  # Les cinq formes qu'un jeu de clés publié peut prendre sans que rien soit
+  # injoignable, avec le JSON exact que la route sert. Elles sont ce qui rend
+  # vérifiable le commentaire de `read_key` : les quatre premières lèvent quatre
+  # classes qu'aucune parenté commune ne rassemble, et resserrer le rattrapage
+  # sur l'une d'elles fait rougir les autres.
   describe 'a key set nothing can be read from' do
+    # Deux coordonnées de la bonne longueur, en base64 valide, qui ne désignent
+    # aucun point de la courbe.
+    def hors_courbe(octet) = Base64.urlsafe_encode64(octet * 32, padding: false)
+
     {
       'a body that is no JSON at all' => '<html>maintenance</html>',
-      'JSON that is no usable key' => { keys: [{ kty: 'EC', use: 'sig' }] }.to_json,
       'a set published empty' => { keys: [] }.to_json,
+      'a key whose kty is absent' => { keys: [{ crv: 'P-256', x: 'ab', y: 'cd' }] }.to_json,
+      'a coordinate in broken base64' =>
+        { keys: [{ kty: 'EC', crv: 'P-256', x: 'pas-du-base64-!!', y: 'def' }] }.to_json,
+      'a coordinate that is not even text' =>
+        { keys: [{ kty: 'EC', crv: 'P-256', x: 1, y: 2 }] }.to_json,
     }.each do |cas, corps|
       it "refuses to seal anything on #{cas}" do
-        stub_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")
-          .to_return(body: corps, headers: { 'Content-Type' => 'application/json' })
+        stub_published_key_set(corps)
 
         expect { token }.to raise_error(UnusableKeySetError, /cles_publiques/)
       end
+    end
+
+    it 'refuses to seal anything on a point that is not on the curve' do
+      stub_published_key_set(
+        { keys: [{ kty: 'EC', crv: 'P-256', x: hors_courbe("\x01"), y: hors_courbe("\x02") }] }.to_json,
+      )
+
+      expect { token }.to raise_error(UnusableKeySetError, /cles_publiques/)
+    end
+
+    # Injoignable et inexploitable sont deux choses distinctes à dire à
+    # l'usager, et c'est l'appelant qui nomme la première.
+    it 'lets an unreachable route travel on as itself' do
+      stub_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques").to_timeout
+
+      expect { token }.to raise_error(Faraday::Error)
+    end
+
+    def stub_published_key_set(corps)
+      stub_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")
+        .to_return(body: corps, headers: { 'Content-Type' => 'application/json' })
     end
   end
 

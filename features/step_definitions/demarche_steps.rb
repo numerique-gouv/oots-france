@@ -149,7 +149,11 @@ Alors('cette requête contient l\'identité que FranceConnect+ a donnée à la d
   corps = depart_de_la_requete.regrep_body
 
   expect(corps).to include('Sørensen', 'Freja Marie', '2001-04-17', 'Substantial')
-  expect(corps).not_to include('a' * 64)
+
+  # Sur sa forme et non sur sa valeur : le faux FranceConnect+ tire le pseudonyme
+  # d'un digest et d'un secret qu'il tire au démarrage, donc une valeur écrite ici
+  # ne s'y trouverait jamais, et l'assertion serait vraie quoi qu'il arrive.
+  expect(corps).not_to match(/\h{64}v1/)
 end
 
 # `R-EDM-REQ-S010` (FATAL) and chapter 4.5.1 §2.7: the slot is true, and the
