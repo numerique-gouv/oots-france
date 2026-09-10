@@ -75,6 +75,31 @@ The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the
 
 Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`: they address the business and belong to the documentation. Their step definitions are code, and are English.
 
+### A scenario is read by someone who will not read the code
+
+`features/` is the one place where the behaviour of the system is written for the business, and its readers will never open a step definition. A scenario is therefore judged as prose first, and the test is simple: **read it to someone who knows the domain and not the code, and every sentence must land on the first pass.** The rules that keep it so:
+
+- **The words are those of [docs/glossaire.md](docs/glossaire.md)**, and nothing else names a thing of the domain — no synonym for variety, no nickname for brevity. A term the glossary lacks is added there before it appears in a scenario. Each actor keeps one name for the whole directory:
+
+  | Actor | Name in the scenarios |
+  | --- | --- |
+  | This application, as a Member State | *la France* |
+  | The French procedure portal that calls it, in every role (requester, OpenID client) | *le portail*, introduced as *un portail de démarche français* or *un portail de test* |
+  | A procedure code | *la démarche "00"* |
+  | The one portal the console plays | *la démarche de démonstration* |
+  | Whoever opens *l'espace d'administration* | *l'administrateur* — *l'administrateur de démonstration* when it is the seeded account; *un visiteur* when nobody is signed in |
+  | The person whose evidence is exchanged, or who identifies themself | *l'usager* |
+  | The Evidence Provider, the Evidence Requester of another Member State | *le fournisseur*, *un requêteur étranger* |
+  | The FranceConnect+ the suite runs itself | *le faux FranceConnect+*, in full, every time |
+  | The console page, and the article 17 trace behind it | *le journal des événements*, *le journal des échanges* |
+
+- **Plain verbs, and the same verb for the same thing**: a page *s'affiche*, a page or a form *affiche* a value, a message, a token or the log *contient* one, an actor *ouvre*, *choisit*, *envoie*, *reçoit*, *refuse*, *répond*. *Porter*, *tenir*, *rendre*, *finir par*, *mener quelque part* are what one reaches for when one has stopped saying what happens.
+- **Third person, and the actor named.** No *je*, no *on*: the subject of a step is an actor of the table, or *il* when the previous step of the same scenario named it. Where two files do the same thing by different means — the demo procedure through a browser, the fake FranceConnect+ through a client — every such step names its actor in full: the text is what binds a step to one implementation, and a shared pronoun would bind it to the wrong one.
+- **A `Quand` does one thing; an `Alors` says what an observer sees**, in the observer's words — what the page shows, what the caller receives, what the log holds. Neither says how: no route, no selector, no polling delay, no environment variable. The step definition carries those.
+- **Technical names are quoted, and only when they are the object of the check**: an error code, a rule identifier, a claim, an endpoint, a status — `"EDM:ERR:0003"`, `"R-EDM-REQ-S009"`, `/token`, `"deferred"`. They are the words of the specification, and paraphrasing them would lose the reference.
+- **The narrative under `Fonctionnalité` says what the feature proves and what it takes to run it** — a real gateway, the fake FranceConnect+, the seeded account — and stops there. No ticket number, no commit, no `make` target, no mechanism: [docs/test_e2e.md](docs/test_e2e.md) owns all of that, and one sentence pointing to it is enough. A scenario title states the expected behaviour as a plain sentence, not a wink.
+- **Renaming a step is renaming its definition, and nothing else.** The text is the whole contract between the two; `bundle exec cucumber --dry-run` on both profiles proves every step is bound and none is ambiguous, and it is the check to run before the suite itself. The scenario titles `docs/test_e2e.md` quotes follow in the same commit.
+
 **Infrastructure vocabulary stays English inside French prose** — a *job*, a *worker*, a *build*, never « un travail » or « un ouvrier ». These are the words the tools print, the words a log line carries and the words one types to search; translating them severs the prose from the thing it describes. This holds in documentation, in commit messages and **in URLs**, where a translated segment outlives the page that introduced it. The test is simple: if the word appears in the output of a command we run, it keeps that spelling.
 
 ### Every word a human reads lives in `config/locales/fr.yml`
