@@ -90,6 +90,25 @@ RSpec.describe Demo::BeneficiaryTokenWriter do
     expect(a_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")).to have_been_made
   end
 
+  # Les trois façons dont le jeu de clés publié peut être inexploitable sans
+  # que rien soit injoignable. Les deux premières sont ce que le gem lève
+  # réellement — vérifié dans ses sources, `JWT::JWKError` étant construite dès
+  # l'assemblage du jeu —, la troisième n'est pas même une exception.
+  describe 'a key set nothing can be read from' do
+    {
+      'a body that is no JSON at all' => '<html>maintenance</html>',
+      'JSON that is no usable key' => { keys: [{ kty: 'EC', use: 'sig' }] }.to_json,
+      'a set published empty' => { keys: [] }.to_json,
+    }.each do |cas, corps|
+      it "refuses to seal anything on #{cas}" do
+        stub_request(:get, "#{Settings.oots_france_url}/auth/cles_publiques")
+          .to_return(body: corps, headers: { 'Content-Type' => 'application/json' })
+
+        expect { token }.to raise_error(UnusableKeySetError, /cles_publiques/)
+      end
+    end
+  end
+
   it 'seals it with the algorithms the reader admits, and no others' do
     header = JSON.parse(JWE::Base64.jwe_decode(token.split('.').first))
 

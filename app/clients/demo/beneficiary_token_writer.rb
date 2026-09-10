@@ -65,18 +65,26 @@ module Demo
     # deriving it would sidestep that route, and leave a broken one invisible.
     #
     # A set fetched over HTTP is unusable in more ways than being unreachable,
-    # and `Faraday` only names that one: a maintenance page answered with a
-    # `200` is a `JSON::ParserError`, a set the gem cannot make sense of an
-    # `ArgumentError`, and a set published empty is no exception at all — it is
-    # simply `nil` where a key was expected. The two readers of this deployment
-    # enumerate the same cases at their own boundary; so does this writer,
-    # rather than leaving them to whoever calls it. Narrow to this single call.
+    # and `Faraday` only names that one. The two families the JWT gem really
+    # raises for such a document are what the rescue lists, rather than what one
+    # would guess: `JSON::ParserError` for a body that is no JSON — a
+    # maintenance page answered with a `200` — and `JWT::JWKError` for JSON that
+    # is no usable key, which `JWT::JWK.create_from` raises eagerly while the
+    # set is being built (`kty` absent or unsupported, an EC key without its
+    # coordinates, a curve the gem does not hold). A set published empty is no
+    # exception at all: it is simply `nil` where a key was expected.
+    #
+    # The two readers of this deployment catch `JWT::JWKError` through its
+    # ancestor `JWT::DecodeError`, which their own call to `JWT.decode` puts on
+    # their list. This writer decodes no token, so it names the family it needs
+    # — and names it, rather than inheriting it by chance. Narrow to this single
+    # call.
     def encryption_key
       published = key_fetcher.call(key_set_url).keys.first
       raise UnusableKeySetError, I18n.t('clients.demo.beneficiary_token_writer.no_key', url: key_set_url) if published.nil?
 
       published.verify_key
-    rescue JSON::ParserError, ArgumentError, TypeError => e
+    rescue JSON::ParserError, JWT::JWKError, ArgumentError, TypeError => e
       raise UnusableKeySetError,
         I18n.t('clients.demo.beneficiary_token_writer.unreadable', url: key_set_url, error: e.message)
     end
