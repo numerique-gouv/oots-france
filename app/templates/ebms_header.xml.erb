@@ -22,8 +22,12 @@
     <eb:MessageProperties>
       <eb:Property name="originalSender" type="<%= escape(original_sender.type_id) %>"><%= escape(original_sender.id) %></eb:Property>
       <eb:Property name="finalRecipient" type="<%= escape(final_recipient.type_id) %>"><%= escape(final_recipient.id) %></eb:Property>
+<%- if specification.exchange_named_in_header? -%>
       <eb:Property name="ExchangeId"><%= escape(exchange_id) %></eb:Property>
-      <eb:Property name="SpecificationId"><%= EdmSpecification::IDENTIFIER %></eb:Property>
+<%- end -%>
+<%- if specification.announced_in_header? -%>
+      <eb:Property name="SpecificationId"><%= specification.identifier %></eb:Property>
+<%- end -%>
     </eb:MessageProperties>
     <eb:PayloadInfo>
       <eb:PartInfo href="<%= escape(payload_id) %>">

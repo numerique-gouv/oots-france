@@ -1,7 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe IncomingMessage::SettleExchange do
-  subject(:settle) { described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) }
+  subject(:settle) do
+    described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+      audit_trail: AuditTrail.new)
+  end
 
   let(:evidence_forwarder) { instance_double(EvidenceForwarder, deliver: nil) }
   let(:requesters) do
@@ -204,7 +207,8 @@ RSpec.describe IncomingMessage::SettleExchange do
       exchange.update!(request_id: message.body.request_id)
       settle
 
-      described_class.call(message: RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')),
+      arriving = RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe'))
+      described_class.call(message: arriving, exchange: correlated(arriving),
         evidence_forwarder:, requesters:, audit_trail: AuditTrail.new)
 
       expect(evidence_forwarder).not_to have_received(:deliver)
@@ -298,7 +302,10 @@ RSpec.describe IncomingMessage::SettleExchange do
 
       allow(evidence_forwarder).to receive(:deliver) do
         arrivals += 1
-        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+        if arrivals == 1
+          described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+            audit_trail: AuditTrail.new)
+        end
       end
     end
 
@@ -365,7 +372,10 @@ RSpec.describe IncomingMessage::SettleExchange do
 
       allow(evidence_forwarder).to receive(:deliver) do
         arrivals += 1
-        described_class.call(message:, evidence_forwarder:, requesters:, audit_trail: AuditTrail.new) if arrivals == 1
+        if arrivals == 1
+          described_class.call(message:, exchange: correlated(message), evidence_forwarder:, requesters:,
+            audit_trail: AuditTrail.new)
+        end
       end
     end
 
@@ -408,5 +418,32 @@ RSpec.describe IncomingMessage::SettleExchange do
     value.content = Base64.strict_encode64(body)
 
     document.to_xml
+  end
+  # CA13 of OOTS-200. A message of the 1.2 line names no exchange in its header,
+  # so what ties this answer to the request France sent is the identifier it
+  # echoes back — and the exchange reads afterwards as any other does.
+  describe 'an answer arriving on the 1.2 line' do
+    let(:message) { earlier_line_response }
+    let!(:exchange) do
+      create(:exchange, :legacy_line, conversation_id: message.conversation_id,
+        request_id: message.body.request_id).tap(&:sent!)
+    end
+
+    it 'finds the exchange it settles by the identifier of the request' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver)
+      expect(exchange.reload).to have_attributes(status: 'delivered', specification: EdmSpecification::V1_2)
+    end
+
+    # The metadata sits on the object of the list itself on that line, so what
+    # the journal keeps of the answer is read from where it actually is.
+    it 'journals the evidence the answer described' do
+      settle
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'evidence_delivered')
+      expect(message.body.evidence_identifier).to be_present
+      expect(message.body.evidence_subject).to be_a(NaturalPerson)
+    end
   end
 end

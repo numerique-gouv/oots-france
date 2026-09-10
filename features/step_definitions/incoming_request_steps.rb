@@ -31,6 +31,36 @@ Quand('le requêteur étranger envoie deux fois la même requête') do
   @exchange_id = @correspondent.submit(body)
 end
 
+# The header names no exchange on that line — `R-EDM-ebMS-037` belongs to the
+# 2.0.1 tag alone — so France mints one for itself and the journal is read by
+# the identifier of the request.
+Quand('le requêteur étranger envoie une requête en {string}') do |version|
+  body = @correspondent.request(specification: EdmSpecification.find(version))
+
+  @request_id = @correspondent.submit_on_the_earlier_line(body)
+end
+
+# The header announces one line and the body the other: chapter 4.7 §2.6.2 has
+# the receiver treat that as invalid, and the refusal goes back in the version
+# the header named.
+Quand("le requêteur étranger envoie une requête dont l'entête dit {string} et le corps {string}") \
+  do |header_version, body_version|
+  body = @correspondent.request(specification: EdmSpecification.find(body_version))
+
+  @exchange_id = @correspondent.submit(body, specification: EdmSpecification.find(header_version))
+end
+
+Alors('la France sert le justificatif dans une réponse en {string}') do |version|
+  patiente_jusqu_a('la France ait répondu') do
+    ServerAuditEvent.exists?(request_id: @request_id, event_type: 'response_sent')
+  end
+
+  answer = ServerAuditEvent.find_by!(request_id: @request_id, event_type: 'response_sent')
+
+  expect(answer.evidence_digest).to be_present
+  expect(answer.regrep_body).to include(version)
+end
+
 Alors('la France refuse la requête avec le code {string} et la règle {string}') do |code, rule|
   expect(refusal).to have_attributes(edm_error_code: code, detail: rule)
 end

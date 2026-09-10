@@ -897,14 +897,13 @@ fr:
           les règles de la réponse d'erreur.
         unnamed_rule: sans règle nommée
     evidence_request:
-      # L'annuaire s'est contredit : la requête DSD portait le filtre
-      # « specification », et le point d'accès qu'elle a rendu annonce d'autres
-      # versions. Rien n'est émis, et la description est le seul endroit qui le
-      # dit — l'échange ne porte aucun code EDM.
-      check_specification:
+      # Le point d'accès retenu n'annonce aucune des deux versions que la France
+      # parle. Rien n'est émis, et la description est le seul endroit qui le dit
+      # — l'échange ne porte aucun code EDM.
+      choose_specification:
         unsupported: >-
-          Le point d'accès %{access_point} annonce %{announced}, et non %{expected} : la requête
-          n'est pas émise.
+          Le point d'accès %{access_point} annonce %{announced} ; la France parle %{spoken} : la
+          requête n'est pas émise.
       send_to_gateway:
         # La panne est nommée comme locale : aucune des huit exceptions du
         # chapitre 4.5.3 ne décrit un émetteur incapable de construire son

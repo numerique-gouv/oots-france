@@ -139,4 +139,12 @@ RSpec.describe ErrorResponseBuilder do
     expect(rendered).not_to include('<sdg:Injecté')
     expect(Nokogiri::XML(rendered).errors).to be_empty
   end
+
+  # CA8 of OOTS-200: `R-EDM-ERR-C001` @ 1.2.5 fixes the older value, and nothing
+  # else of the exception response differs between the two lines.
+  it 'declares the 1.2 version when the exchange runs on that line' do
+    rendered = described_class.new(**attributes, specification: EdmSpecification::V1_2).render
+
+    expect(rendered).to include('<rim:Value>oots-edm:v1.2</rim:Value>')
+  end
 end

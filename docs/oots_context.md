@@ -68,7 +68,7 @@ Trois messages circulent :
 - `ExecuteQueryResponse` : réponse contenant le justificatif en pièce jointe ;
 - `ExceptionResponse` : réponse d'erreur RegRep ; le cas particulier `EDM:ERR:0002` (`rs:AuthorizationExceptionType`, sévérité `PreviewRequired`), accompagné du slot `PreviewLocation`, sert à rediriger l'usager vers le *Preview Space* du pays fournisseur.
 
-L'identifiant de spécification injecté dans les messages est porté par `EdmSpecification` ; il voyage dans le slot `SpecificationIdentifier` de chaque message et dans la propriété ebMS `SpecificationId`. Quelle version viser et comment elle se négocie : [versions_tdd.md](versions_tdd.md).
+L'identifiant de spécification injecté dans les messages est porté par `EdmSpecification`, qui tient les **deux** versions que la France écrit ; il voyage dans le slot `SpecificationIdentifier` de chaque message et, en 2.0 seulement, dans la propriété ebMS `SpecificationId`. Quelle version viser, comment elle se choisit et ce qui sépare les deux lignes : [versions_tdd.md](versions_tdd.md).
 
 Les messages produits se valident contre les règles Schematron officielles avec `scripts/validate_schematron.sh` (voir [README](../README.md#validation-des-messages-contre-les-règles-des-tdd)).
 

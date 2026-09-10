@@ -1,8 +1,12 @@
 namespace :oots do
   desc 'Rend un exemplaire de chaque message OOTS, corps et entête ebMS, dans le répertoire donné'
-  task :messages, [:destination] => :environment do |_tache, arguments|
+  task :messages, %i[destination specification] => :environment do |_tache, arguments|
     destination = arguments[:destination]
-    raise ArgumentError, 'Usage : rake "oots:messages[répertoire]"' if destination.blank?
+    raise ArgumentError, 'Usage : rake "oots:messages[répertoire,oots-edm:vX.Y]"' if destination.blank?
+
+    announced = arguments[:specification]
+    specification = announced.blank? ? EdmSpecification.preferred : EdmSpecification.find(announced)
+    raise ArgumentError, "Version inconnue : #{announced}" if specification.nil?
 
     # Defaults, and not mandatory variables: the Schematron validation runs on a
     # bare runner, with no gateway and no environment file, and needs nothing but
@@ -14,7 +18,7 @@ namespace :oots do
     ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
     ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 
-    Oots::SpecimenMessages.new(destination).write_all
-    puts "Messages écrits dans #{destination}"
+    Oots::SpecimenMessages.new(destination, specification:).write_all
+    puts "Messages #{specification} écrits dans #{destination}"
   end
 end

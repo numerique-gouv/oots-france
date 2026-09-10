@@ -321,4 +321,103 @@ RSpec.describe IncomingMessage::Process do
 
     expect_said(given_up.map { |reason| "interactors.incoming_message.process.#{reason}" })
   end
+
+  # RG15 of OOTS-200. A 1.2 header carries no `ExchangeId` — `R-EDM-ebMS-037` is
+  # a rule of 2.0.1 alone — and an exchange still needs a name here: the console,
+  # the journal and the expiry sweep all go by it. France mints one for itself
+  # and emits it nowhere.
+  describe 'a request arriving on the 1.2 line' do
+    let(:message) { earlier_line_envelope }
+
+    before { allow(EvidenceProvision::Answer).to receive(:call!) }
+
+    # CA18. The refusal `R-EDM-ebMS-019` earns a 2.0 request that names no
+    # exchange does not reach this one.
+    it 'opens an exchange under an identifier of its own, and refuses nothing' do
+      process
+
+      expect(Exchange.sole).to have_attributes(
+        conversation_id: message.conversation_id, incoming: true, status: 'pending',
+        specification: EdmSpecification::V1_2, request_id: message.body.request_id,
+      )
+      expect(Exchange.sole.exchange_id).to match(Exchange::UUID)
+      expect(AuditEvent.where(event_type: 'request_refused')).to be_empty
+    end
+
+    # CA19. The fallback sweep can bring back a message the push notification has
+    # already delivered, and the minted identifier is a new one each time: what
+    # recognises the repeat is the identifier of the request itself.
+    it 'opens one exchange for a request delivered twice' do
+      process
+
+      expect { described_class.call(message_id: 'un-message', gateway:, **collaborators) }
+        .not_to change(Exchange, :count)
+    end
+  end
+
+  # CA20. `R-EDM-ERR-C025` lets an exception response omit its `requestId` where
+  # its type is `rs:InvalidRequestExceptionType`, and a 1.2 header names no
+  # exchange either: what is left to go on is the conversation, and chapter 4.7
+  # v1.2.3 §2.5 ties it to a user's session rather than to one exchange — so it
+  # correlates only where the conversation holds a single exchange underway.
+  describe 'an error arriving on the 1.2 line with no request identifier' do
+    let(:message) do
+      earlier_line_envelope('erreurObjetIntrouvable') do |body|
+        body.sub(/ requestId="[^"]*"/, '')
+      end
+    end
+
+    it 'settles the one exchange its conversation still has underway' do
+      exchange = create(:exchange, :legacy_line, conversation_id: message.conversation_id).tap(&:sent!)
+
+      process
+
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
+    end
+
+    it 'settles none where the conversation holds two' do
+      waiting = Array.new(2) { create(:exchange, conversation_id: message.conversation_id).tap(&:sent!) }
+
+      process
+
+      expect(waiting.map { |exchange| exchange.reload.status }).to all(eq('sent'))
+    end
+  end
+
+  # CA14 of OOTS-200. Chapter 4.7 §2.6.2 has request and response of one
+  # exchange share a version, and `R-EDM-RESP-C002` fixes a different literal on
+  # each line: a response is therefore held to the line its own request was
+  # written in, and not to the one it announces of itself.
+  describe 'a response judged against the version its request was written in' do
+    let(:message) { earlier_line_response { |body| body.sub('oots-edm:v1.2', 'oots-edm:v1.0') } }
+
+    before { allow(collaborators[:evidence_forwarder]).to receive(:deliver) }
+
+    it 'journals R-EDM-RESP-C002 against the literal of the 1.2 line' do
+      create(:exchange, :legacy_line, conversation_id: message.conversation_id,
+        request_id: message.body.request_id).tap(&:sent!)
+
+      process
+
+      expect(AuditEvent.find_by(event_type: 'response_received').detail)
+        .to include('R-EDM-RESP-C002', 'oots-edm:v1.0', 'oots-edm:v1.2')
+    end
+
+    # What CA14 does not say and RG16 requires: a correspondent answering in the
+    # newer line a request written in the older one has broken the same rule, and
+    # judging the response by what it announces of itself would let that pass.
+    describe 'when the correspondent answers on the other line' do
+      let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
+
+      it 'journals R-EDM-RESP-C002 all the same' do
+        create(:exchange, :legacy_line, exchange_id: message.exchange_id,
+          conversation_id: message.conversation_id, request_id: message.body.request_id).tap(&:sent!)
+
+        process
+
+        expect(AuditEvent.find_by(event_type: 'response_received').detail)
+          .to include('R-EDM-RESP-C002', 'oots-edm:v2.0', 'oots-edm:v1.2')
+      end
+    end
+  end
 end

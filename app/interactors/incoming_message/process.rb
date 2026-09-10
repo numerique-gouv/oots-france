@@ -12,15 +12,7 @@ module IncomingMessage
     }.freeze
 
     def call
-      context.message = fetched
-
-      # The handler is resolved before the message is journalled, and not after:
-      # the two are different events, and it is the resolution that tells them
-      # apart.
-      chosen = handler
-      record
-
-      chosen.call!(context)
+      handle
     rescue UnreadableMessageError => e
       give_up(e)
     # Settled first so no user is left waiting, re-raised so the failure stays
@@ -59,6 +51,22 @@ module IncomingMessage
 
     private
 
+    # The handler is resolved before the message is journalled, and not after:
+    # the two are different events, and it is the resolution that tells them
+    # apart. The exchange comes before both, so that the arrival is journalled
+    # on the one it belongs to.
+    #
+    # Apart from `call`, which is nothing but the five failures below: what each
+    # of them settles is what this method got as far as.
+    def handle
+      context.message = fetched
+      chosen = handler
+      context.exchange = correlated
+      record
+
+      chosen.call!(context)
+    end
+
     # Journalled here rather than in `give_up`, which catches the same exception
     # raised from anywhere: by the time a handler is running, the message has a
     # line already, and a second one would say an arrival was lost that was not.
@@ -79,8 +87,39 @@ module IncomingMessage
     # Recorded before it is handled, so that a request too malformed to answer
     # — the one an auditor most needs to find — is journalled all the same.
     def record
-      audit_trail.message_received(message: context.message, message_id: context.message_id)
+      audit_trail.message_received(message: context.message, message_id: context.message_id,
+        exchange: context.exchange)
       OpenExchange.call!(context)
+    end
+
+    # Resolved once, here, and read from the context by everything downstream:
+    # `OpenExchange` asks whether this request has opened a row already,
+    # `SettleExchange` and `EvidenceProvision::RejectMalformedIdentifiers` act on
+    # the one they found, and `EvidenceProvision::JournalAnswer` settles it. Four
+    # readings where there was one lookup written out four times — and, on the
+    # 1.2 line, four chances to disagree about a correlation the `ExchangeId` no
+    # longer settles on its own.
+    #
+    # The conversation is offered only to a message that settles an exchange:
+    # `Exchange.correlate` falls back on it, and a request arriving opens an
+    # exchange of its own rather than adopting one that is merely underway.
+    def correlated
+      Exchange.correlate(
+        exchange_id: context.message.exchange_id,
+        request_id: readable { context.message.body.request_id },
+        conversation_id: (context.message.conversation_id unless request?),
+      )
+    end
+
+    def request? = context.message.action == EbmsAction::EXECUTE_QUERY_REQUEST
+
+    # A body too malformed to read names no request, and the correlation falls
+    # through to what the header carries — which is the whole of RG15's last
+    # case.
+    def readable
+      yield
+    rescue UnreadableMessageError
+      nil
     end
 
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves
@@ -102,14 +141,14 @@ module IncomingMessage
       abandon_exchange(error, :unreadable)
     end
 
-    # Reachable only once the message names its exchange. A retrieval that
+    # Reachable only once the message has been correlated. A retrieval that
     # fails outright leaves nothing to go on — the identifier the gateway gave
     # us is its own — which is why the periodic sweep exists.
     #
     # The reason travels as a symbol, `interactors.incoming_message.process`
     # holding what each one reads as.
     def abandon_exchange(error, reason)
-      exchange = Exchange.find_by(exchange_id: context.message&.exchange_id)
+      exchange = context.exchange
       return if exchange.nil? || exchange.settled?
 
       exchange.failed!(code: nil, description: said(error, reason))

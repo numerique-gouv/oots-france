@@ -838,7 +838,7 @@ RSpec.describe EvidenceRequestParser do
     end
 
     it 'refuses a request announcing another version of the data model' do
-      dated = with_body { |body| body.sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0') }
+      dated = with_body { |body| body.sub(EdmSpecification.preferred.identifier, 'oots-edm:v1.0') }
 
       expect { dated.validate! }
         .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
@@ -2207,5 +2207,89 @@ RSpec.describe EvidenceRequestParser do
   # what is read.
   def replace_language(agent, value)
     agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
+  end
+  # RG10 and RG11 of OOTS-200. `R-EDM-REQ-C001` fixes a different literal on
+  # each line, and the version the message is read in — the ebMS property where
+  # the header carries one, the slot otherwise — is what says which literal
+  # applies.
+  describe 'the version the request declares' do
+    it 'accepts the older literal from a request read on the 1.2 line' do
+      expect { earlier_line_envelope.body.validate! }.not_to raise_error
+    end
+
+    # `ReturnLocation` is a slot 2.0.1 alone defines — the name appears nowhere
+    # in the 1.2.5 Schematron — so `R-EDM-REQ-S061`, which types it there, types
+    # nothing on the earlier line. The pair is what proves it: the very
+    # declaration the 2.0 line refuses passes on the 1.2 one.
+    def returning(envelope_of)
+      envelope_of.call do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="ReturnLocation"><rim:SlotValue xsi:type="rim:AnyValueType">' \
+            '<rim:Value>https://example.si/retour</rim:Value></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+    end
+
+    it 'types no ReturnLocation on the 1.2 line, the slot being of 2.0 alone' do
+      expect { returning(method(:earlier_line_envelope)).body.validate! }.not_to raise_error
+    end
+
+    it 'refuses that same declaration on the 2.0 line, under R-EDM-REQ-S061' do
+      expect { returning(method(:with_body)).validate! }.to refusing('R-EDM-REQ-S061')
+    end
+
+    # The other face of `R-EDM-REQ-S022` on this line, and the one an accepted
+    # request cannot prove: a slot typed as 2.0 types it — the very shape the
+    # 2.0 table imposed on 1.2 correspondents — has to be refused here, or the
+    # row is a transcription nothing exercises.
+    it 'refuses a Procedure declared as the 2.0 line types it, under R-EDM-REQ-S022' do
+      written = earlier_line_envelope do |body|
+        body.sub('xsi:type="rim:InternationalStringValueType"', 'xsi:type="rim:StringValueType"')
+      end
+
+      expect { written.body.validate! }.to refusing('R-EDM-REQ-S022')
+    end
+
+    # `R-EDM-REQ-S022`: the code sits in the `@value` of a `rim:LocalizedString`
+    # on that line, and the `rim:Value` around it carries no text at all — read
+    # as 2.0 writes it, a conformant 1.2 request would be refused for a
+    # procedure it did name, and answered `EDM:ERR:0003` instead of served.
+    it 'reads the procedure a request of the 1.2 line names in its localised string' do
+      expect(earlier_line_envelope.body.procedure_code).to eq(ProcedureCode::SYSTEM_CHECK)
+    end
+
+    # The same slot, present and saying nothing: `R-EDM-REQ-S007` counts it and
+    # is satisfied, so it is the value that fails.
+    it 'refuses a request of that line whose localised string names no procedure' do
+      unnamed = earlier_line_envelope { |body| body.sub('value="00"', 'value=""') }
+
+      expect { unnamed.body.procedure_code }.to raise_error(UnreadableMessageError)
+    end
+
+    # CA11: the header announced 2.0 and the body says 1.2. Refused under the
+    # rule of the line the header named, which is also the line the exception
+    # response goes back in.
+    it 'refuses a request whose header announces 2.0 and whose slot says 1.2' do
+      contradicting = envelope_with_body('requete') do |body|
+        body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
+      end
+
+      expect { contradicting.body.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+    end
+
+    # A message with no property announces itself in its slot alone, so a slot
+    # France cannot read is what makes the two disagree there: the version falls
+    # back on the preferred one, and the refusal is worded in it.
+    it 'refuses a request announcing, in its slot alone, a version France does not speak' do
+      dated = earlier_line_envelope do |body|
+        body.sub(EdmSpecification::V1_2.identifier, 'oots-edm:v1.0')
+      end
+
+      expect { dated.body.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+      expect(dated.specification).to eq(EdmSpecification.preferred)
+    end
   end
 end

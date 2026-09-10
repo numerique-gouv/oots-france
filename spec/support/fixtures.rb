@@ -63,13 +63,67 @@ module Fixtures
   # a message that is well-formed for the gateway and wrong for the EDM. The
   # body travels base64-encoded inside the envelope, so it has to be decoded,
   # altered and encoded back.
-  def envelope_with_body(name)
+  def envelope_with_body(name, &)
     document = Nokogiri::XML(real_envelope(name))
-    value = document.xpath('//payload/value').first
-    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
+    rewrite_body(document, &)
 
     RetrievedMessageParser.new(document.to_xml)
   end
+
+  # The same envelope as a correspondent of the 1.2 line would have sent it: the
+  # header carries neither of the two properties only 2.0 knows —
+  # `R-EDM-ebMS-037` names the exchange there and `-038` announces the version,
+  # and 1.2.5 carries neither rule —, the body slot declares the older line, and
+  # its `Procedure` slot takes the shape `R-EDM-REQ-S022` gives it there.
+  #
+  # Derived and not captured: no member state still on that line has been
+  # reached, and stating the derivation is exactly stating what separates the two
+  # lines. Removed by XPath rather than by a pattern, for the reason
+  # `envelope_without` gives: the prefix a gateway binds to the ebMS namespace is
+  # its own.
+  #
+  # **Every difference belongs here, and none may be left out for brevity.** A
+  # fabrication that changed only some of them would be a document no
+  # correspondent could send — and a test on a message that cannot exist proves
+  # nothing about the ones that can. This is not hypothetical: while this
+  # fabrication announced 1.2 and kept its `Procedure` slot in the 2.0 shape,
+  # every example here passed green while France answered `EDM:ERR:0003` to
+  # conformant 1.2 requests, and only the end-to-end suite saw it. Adding a
+  # difference to `EdmSpecification` means adding it here in the same commit.
+  def earlier_line_envelope(name = 'requete')
+    document = Nokogiri::XML(real_envelope(name))
+    document.xpath("//eb:Property[@name='SpecificationId'] | //eb:Property[@name='ExchangeId']",
+      OotsNamespaces::NAMESPACES).each(&:remove)
+    rewrite_body(document) do |body|
+      downgraded = translated_procedure(body.sub(EdmSpecification::V2_0.identifier,
+        EdmSpecification::V1_2.identifier))
+
+      block_given? ? yield(downgraded) : downgraded
+    end
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
+  # The captured response as the 1.2 line shapes it: the header of that line,
+  # and a flat `rim:RegistryObjectList` — `R-EDM-RESP-S015` and `-S033` anchor on
+  # the objects of the list itself there, where 2.0.1 moved them under a
+  # `rim:RegistryPackageType`. The classification goes with the package: nothing
+  # of that line names `MainEvidence`, one response carrying one document.
+  def earlier_line_response(name = 'reponseAvecPieceJointe')
+    earlier_line_envelope(name) do |body|
+      flattened = flattened_registry_objects(body)
+
+      block_given? ? yield(flattened) : flattened
+    end
+  end
+
+  # `R-EDM-REQ-S022`: the `Procedure` slot of the 1.2 line is a
+  # `rim:InternationalStringValueType`, the code sitting in the `@value` of a
+  # `rim:LocalizedString` where 2.0 puts it in the text of the `rim:Value`.
+  # Every literal space written `\s`: `/x` would otherwise drop the ones inside
+  # the pattern, and the expression would match nothing at all.
+  STRING_PROCEDURE = %r{(<rim:Slot\sname="Procedure">\s*<rim:SlotValue)\sxsi:type="rim:StringValueType">
+                        \s*<rim:Value>([^<]*)</rim:Value>}x
 
   # The agent classified `ER` alone, whose name and identifier the rules of
   # chapter 4.6 judge and which France copies into what it signs. The
@@ -192,6 +246,31 @@ module Fixtures
   end
 
   private
+
+  # Left alone where there is no such slot — a response carries none.
+  def translated_procedure(body)
+    body.sub(STRING_PROCEDURE) do
+      %(#{Regexp.last_match(1)} xsi:type="rim:InternationalStringValueType">) +
+        %(<rim:Value><rim:LocalizedString xml:lang="EN" value="#{Regexp.last_match(2)}"/></rim:Value>)
+    end
+  end
+
+  # The package `R-EDM-RESP-S015` puts the objects under in 2.0.1, taken away
+  # with the classification it exists to carry.
+  def flattened_registry_objects(body)
+    document = Nokogiri::XML(body)
+    package = document.at_xpath('//rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES)
+    objects = package.xpath('./rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES)
+    objects.xpath('./rim:Classification', SlotReading::NAMESPACES).each(&:remove)
+    package.replace(objects.map(&:to_xml).join)
+
+    document.to_xml
+  end
+
+  def rewrite_body(document)
+    value = document.at_xpath('//payload/value')
+    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
+  end
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read
 end

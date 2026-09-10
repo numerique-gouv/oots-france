@@ -15,13 +15,29 @@ class RetrievedMessageParser
 
   delegate :action, :conversation_id, :exchange_id, :sender, :sent_at, :specification_id, to: :header
 
+  # The EDM version this message is read in, which chapter 4.7 §2.6.2 has a
+  # receiver of several settle from « both the previous mechanism based on the
+  # SpecificationIdentifier Slot […] and the SpecificationId ebMS message
+  # property ». The property first, and not merely as a shortcut: it is readable
+  # where the payload is not, which is what lets a severely malformed body be
+  # refused in the version its sender meant.
+  #
+  # A version France does not speak falls back on the preferred one — see
+  # `EdmSpecification.resolve` — and a body that cannot be read at all, with no
+  # property to go on, is taken for a 1.2 message: 1.2 is the line that carries
+  # no property, so a message carrying none and saying nothing else is far more
+  # likely to be one of its.
+  def specification
+    @specification ||= EdmSpecification.resolve(announced_specification)
+  end
+
   # The ebMS action decides, and it alone: a response status says nothing about
   # the body's shape, and the exception type carries a prefix that identifies no
   # namespace, per OotsNamespaces.
   def body
     @body ||= case action
-              when EbmsAction::EXECUTE_QUERY_REQUEST then EvidenceRequestParser.new(body_document)
-              when EbmsAction::EXECUTE_QUERY_RESPONSE then EvidenceResponseParser.new(body_document)
+              when EbmsAction::EXECUTE_QUERY_REQUEST then EvidenceRequestParser.new(body_document, specification:)
+              when EbmsAction::EXECUTE_QUERY_RESPONSE then EvidenceResponseParser.new(body_document, specification:)
               when EbmsAction::EXCEPTION_RESPONSE then ErrorResponseParser.new(body_document)
               else raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unknown_action', action:)
               end
@@ -72,6 +88,14 @@ class RetrievedMessageParser
   private
 
   attr_reader :document, :header
+
+  def announced_specification
+    return specification_id if specification_id.present?
+
+    text_at(body_document, "//rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
+  rescue UnreadableMessageError
+    EdmSpecification::V1_2.identifier
+  end
 
   def body_document
     @body_document ||= begin

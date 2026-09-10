@@ -1,10 +1,9 @@
 # An eDelivery access point — a member state's Domibus instance, C2 or C3
 # depending on which way the message travels.
 #
-# `descriptions` and `conforms_to` are published by the Data Service Directory
-# and read by nothing a message contains: a name for the operator, and the EDM
-# versions the gateway declares, which is what the `specification` parameter of
-# the DSD query filters on.
+# `descriptions` and `conforms_to` are published by the Data Service Directory:
+# a name for the operator, and the EDM versions the gateway declares — which is
+# what decides the version every message of the exchange is written in.
 class AccessPoint
   include ActiveModel::Model
   include ActiveModel::Attributes
@@ -27,12 +26,23 @@ class AccessPoint
     super
   end
 
-  # Whether the gateway declares the version a message would carry.
+  # The EDM version to write for this gateway, of the two France speaks, and
+  # `nil` where it declares versions and none of them is either.
   #
-  # A silent access point passes: chapter 3.1.4 gives `sdg:ConformsTo` a
-  # cardinality of 1..n, so an empty list is a directory that says nothing, not
-  # one that says no — and the DSD query already filtered on `specification`.
-  def speaks?(version) = conforms_to.empty? || conforms_to.include?(version)
+  # Chapter 4.5.1 §2.2 has the `SpecificationIdentifier` agree with the
+  # `ConformsTo` of the Access Service the requester chose, and nothing beyond
+  # that ranks the versions a gateway offers: `EdmSpecification::SPOKEN` carries
+  # the order, and the first match wins.
+  #
+  # A silent access point takes the preferred version. Chapter 3.1.4 gives
+  # `sdg:ConformsTo` a cardinality of 1..n, so an empty list is a directory
+  # saying nothing rather than one saying no, and dropping a correspondent on
+  # the strength of an omission would answer a directory's fault with ours.
+  def specification
+    return EdmSpecification.preferred if conforms_to.empty?
+
+    EdmSpecification::SPOKEN.find { |spoken| conforms_to.include?(spoken.identifier) }
+  end
 
   # Ours, as the gateway knows it.
   def self.sender = new(**Settings.domibus_sender)

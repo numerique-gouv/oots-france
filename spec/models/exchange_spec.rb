@@ -621,4 +621,77 @@ RSpec.describe Exchange do
       end
     end
   end
+
+  # RG15 of OOTS-200: what ties a message that has just arrived to the exchange
+  # it belongs to, now that the `ExchangeId` is a property of one line only.
+  describe '.correlate' do
+    subject(:found) { described_class.correlate(exchange_id:, request_id:, conversation_id:) }
+
+    let(:exchange_id) { nil }
+    let(:request_id) { nil }
+    let(:conversation_id) { nil }
+
+    it 'takes the exchange identifier where the message carries one' do
+      named = create(:exchange)
+      create(:exchange, request_id: 'urn:uuid:11111111-1111-4111-8111-111111111111')
+
+      expect(described_class.correlate(exchange_id: named.exchange_id, request_id: nil)).to eq(named)
+    end
+
+    # Whichever side opened it: the end-to-end scenario loops through a single
+    # gateway, where France is both correspondents and one identifier names both.
+    it 'takes it without regard to the direction' do
+      outgoing = create(:exchange, incoming: false)
+
+      expect(described_class.correlate(exchange_id: outgoing.exchange_id, request_id: nil)).to eq(outgoing)
+    end
+
+    context 'when the message names no exchange, as the 1.2 line does not' do
+      let(:request_id) { 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797' }
+
+      it 'takes the request the exchange was opened on' do
+        asked = create(:exchange, :legacy_line, request_id:)
+        create(:exchange, :legacy_line)
+
+        expect(found).to eq(asked)
+      end
+
+      # An exchange records none until something is sent on it, and a row with
+      # nothing to compare against must not answer for a request it never made.
+      it 'takes none where no exchange records that request' do
+        create(:exchange, :legacy_line)
+
+        expect(found).to be_nil
+      end
+    end
+
+    context 'when the message names neither, and offers its conversation' do
+      let(:conversation_id) { '5fe50e16-d6b8-4005-b5ec-0ab097f34448' }
+
+      it 'takes the one exchange of that conversation still underway' do
+        waiting = create(:exchange, :legacy_line, conversation_id:).tap(&:sent!)
+        create(:exchange, :legacy_line, conversation_id:).tap(&:delivered!)
+
+        expect(found).to eq(waiting)
+      end
+
+      # Chapter 4.7 v1.2.3 §2.5 ties a conversation to one authenticated user's
+      # session and not to one exchange, so two underway leave undecided which
+      # of them a message belongs to.
+      it 'takes none where two of that conversation are underway' do
+        2.times { create(:exchange, :legacy_line, conversation_id:).tap(&:sent!) }
+
+        expect(found).to be_nil
+      end
+
+      # Offered by whoever settles an exchange, and withheld by whoever opens
+      # one: a request arriving opens an exchange of its own rather than adopting
+      # one that merely happens to be underway.
+      it 'takes none where the caller withholds the conversation' do
+        create(:exchange, :legacy_line, conversation_id:).tap(&:sent!)
+
+        expect(described_class.correlate(exchange_id: nil, request_id: nil)).to be_nil
+      end
+    end
+  end
 end

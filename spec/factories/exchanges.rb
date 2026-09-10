@@ -14,6 +14,12 @@ FactoryBot.define do
       status { 'sent' }
     end
 
+    # An exchange conducted on the 1.2 line. The default is the preferred
+    # version, which is what the column defaults to.
+    trait :legacy_line do
+      specification { EdmSpecification::V1_2 }
+    end
+
     # A request a correspondent addressed to France. `country_code` is the one
     # asking, where the default is the one asked; and the exchange carries the
     # stamp the sending gateway put on the message, which is the only clock this

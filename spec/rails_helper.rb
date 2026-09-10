@@ -25,6 +25,7 @@ RSpec.configure do |config|
   config.include FactoryBot::Syntax::Methods
   config.include StateMachinesRspec::Matchers
   config.include Fixtures
+  config.include Correlation
   config.include GatewayStubs
   config.include CodeListStubs
   config.include DirectoryStubs

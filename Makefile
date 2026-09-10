@@ -57,8 +57,12 @@ assets: ## Compile the stylesheets and scripts production needs
 	$(COMPOSE) run --rm --no-deps -e RAILS_ENV=production -e SECRET_KEY_BASE_DUMMY=1 web \
 		bundle exec rails assets:precompile
 
+# Both lines, each judged by the rules of its own tag: France writes 2.0 to the
+# correspondents that declare it and 1.2 to those that stayed there, and a run
+# on one tag says nothing of the other.
 schematron: ## The messages we produce, against the rules published with the TDD
-	scripts/validate_schematron.sh
+	scripts/validate_schematron.sh 2.0.1
+	scripts/validate_schematron.sh 1.2.5
 
 console: ## A Rails console in the running server
 	$(COMPOSE) exec web bundle exec rails console

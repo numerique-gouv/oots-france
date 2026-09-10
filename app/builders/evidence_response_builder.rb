@@ -16,8 +16,9 @@ class EvidenceResponseBuilder < ApplicationBuilder
 
   def initialize(
     requester:, beneficiary:, evidence_type:, attachment:, request_id:,
-    provider: nil, clock: Clock.new, uuid: UuidGenerator.new
+    provider: nil, specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
+    @specification = specification
     @requester = requester
     @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
     @beneficiary = beneficiary
@@ -26,6 +27,10 @@ class EvidenceResponseBuilder < ApplicationBuilder
     @request_id = request_id
     @timestamp = clock.now
     @document_id = uuid.next
+    # Drawn whatever the version, though only the 2.0 response carries the
+    # package and the classification: a sequence that skipped them would give
+    # the same message two different sets of identifiers depending on the
+    # version, and nothing would then be comparable between the two.
     @package_id = uuid.next
     @extrinsic_object_id = uuid.next
     @evidence_id = uuid.next
@@ -34,7 +39,8 @@ class EvidenceResponseBuilder < ApplicationBuilder
 
   protected
 
-  def template_name = 'evidence_response.xml.erb'
+  # The one template doubled by version — see `ApplicationBuilder#versioned`.
+  def template_name = versioned('evidence_response')
 
   private
 

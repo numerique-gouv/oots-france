@@ -97,19 +97,23 @@ Cinq fichiers. Deux mettent la France face à un autre État membre, selon le r�
 
 Le justificatif d'une réponse différée n'est **pas** attendu sur le même échange : le [chapitre 4.5.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932951) veut une nouvelle requête à la date annoncée, et c'est le scénario nominal qui joue cette requête-là.
 
-[`reception_de_requete.feature`](../features/reception_de_requete.feature) la met en **fournisseur** et couvre ce qu'elle refuse :
+[`reception_de_requete.feature`](../features/reception_de_requete.feature) la met en **fournisseur** et couvre ce qu'elle refuse, et la version dans laquelle elle répond :
 
 | Scénario | Ce qui est forgé | Ce que la France répond |
 | --- | --- | --- |
 | Slot obligatoire manquant | une requête sans `PossibilityForPreview` | `EDM:ERR:0003`, `detail="R-EDM-REQ-S009"` |
 | Deux sujets déclarés | une personne morale ajoutée à la personne physique | `EDM:ERR:0003`, `detail="R-EDM-REQ-S016"` |
 | Identifiant rejoué | la même requête soumise deux fois | la première servie, la seconde refusée par `EDM:ERR:0003` |
+| Requête de la ligne 1.2 | un entête à deux propriétés et un corps en `oots-edm:v1.2` | le justificatif, dans une réponse `oots-edm:v1.2` |
+| Entête et corps en désaccord | un entête disant `oots-edm:v2.0` et un corps `oots-edm:v1.2` | `EDM:ERR:0003`, `detail="R-EDM-REQ-C001"`, dans la version de l'entête |
+
+Le scénario nominal de [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) reste en 2.0 : la France ne déclare que cette version dans le DSD d'acceptation, et c'est ce que le service retenu annonce qui décide (voir [versions_tdd.md](versions_tdd.md)). L'émission en 1.2 se prouvera de bout en bout le jour où un correspondant resté sur cette ligne sera joignable ; jusque-là, `make schematron` la juge sur les règles de l'étiquette 1.2.5.
 
 L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
 
 1. **Faux requêteur** — `features/support/fake_requester.rb`, monté par une étape du `Contexte`, arrêté après le scénario ; il expose `/auth/cles_publiques` (le JWKS qui valide la signature du jeton bénéficiaire), encaisse le justificatif sur `/oots/document` et sert d'URL de retour sur `/oots/callback`.
 2. **Jeton bénéficiaire** — un JWT signé en `ES256` par le faux requêteur, puis chiffré en `RSA-OAEP-256` / `A256GCM` pour la clé publique d'OOTS-France. C'est la forme qu'attend `BeneficiaryToken` ; le paramètre `beneficiaire` de l'API n'est pas un nom, mais ce jeton.
-3. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
+3. **Faux correspondant** — `features/support/fake_correspondent.rb`, qui n'intervient que dans les scénarios de réception. La boucle sur une passerelle unique a un effet de bord : la France ne reçoit jamais que des requêtes qu'elle a construites, conformes par construction et sous un identifiant neuf, si bien qu'aucun refus ne serait éprouvé là où le transport est réel. Le faux correspondant forge donc une requête avec les constructeurs du dépôt, dans la version qu'on lui demande, altère le corps RegRep rendu — le geste qu'`envelope_with_body` fait dans la suite unitaire — et la soumet au plugin WS. Sur la ligne 1.2 son entête ne nomme aucun échange, la France en engendre un pour elle-même, et le journal se lit alors par l'identifiant de la requête. Ce que la France en fait se lit dans le **journal**, qu'aucune route n'expose à dessein.
 4. **Faux FranceConnect+** — `features/support/fake_france_connect/`, décrit à la section suivante. Seul des quatre à ne pas être monté par le run : c'est un **service de la pile**, que `make up` lance à côté de l'application et qui tourne tant qu'elle tourne. Les scénarios pilotent celui-là — rotation des clés, péremption d'un `code` — par les commandes qu'il expose hors de son *issuer*, et n'en démarrent pas un second ; ils savent en démarrer un pour eux seuls, mais uniquement si rien ne répond déjà à l'adresse annoncée.
 
 > [!IMPORTANT]

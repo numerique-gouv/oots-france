@@ -9,8 +9,8 @@
 <%- end -%>
   <sdg:DistributedAs>
     <sdg:Format><%= escape(data_service.distribution_format) %></sdg:Format>
-<%- if data_service.distribution_language.present? -%>
-    <sdg:Language><%= escape(data_service.distribution_language) %></sdg:Language>
+<%- if distribution_language.present? -%>
+    <sdg:Language><%= escape(distribution_language) %></sdg:Language>
 <%- end -%>
 <%- if conformance.present? -%>
     <sdg:ConformsTo><%= escape(conformance) %></sdg:ConformsTo>

@@ -3,6 +3,10 @@ module Oots
   # repository's own builders, so `scripts/validate_schematron.sh` can confront
   # them with the rules published with the TDD.
   #
+  # One set per EDM version, each written against the rules of its own tag: the
+  # two lines differ in what they carry, so a single set could only ever satisfy
+  # one of them.
+  #
   # The values are fictional but realistic: only the structure is validated. The
   # clock and the identifier generator are frozen so that two runs produce the
   # same bytes — a validation report that changes on its own teaches nothing.
@@ -56,8 +60,17 @@ module Oots
     MALFORMED_CONVERSATION_ID = 'pas-un-uuid'.freeze
     MALFORMED_EXCHANGE_ID = 'ni-celui-ci'.freeze
 
-    def initialize(destination)
+    # The header of the older line, kept beside the specimens of the newer for
+    # the sole purpose of being refused by them: `R-EDM-ebMS-018` counts four
+    # properties in 2.0.1, and `R-EDM-ebMS-019`, whose context there is
+    # `eb:MessageProperties` where 1.2.5 anchors it on `eb:Property`, counts each
+    # of the four names once — so a two-property header breaks both, and naming
+    # only one of them would fail a specimen that is exactly as intended.
+    EARLIER_LINE_SPECIMEN = 'versionAnterieure'.freeze
+
+    def initialize(destination, specification: EdmSpecification.preferred)
       @destination = Pathname.new(destination)
+      @specification = specification
     end
 
     def write_all
@@ -73,11 +86,12 @@ module Oots
       # identifier from the sequence, and the specimens the rules accept must not
       # shift because of the one they refuse.
       write_header(MALFORMED_IDENTIFIERS_SPECIMEN, malformed_header)
+      write_earlier_line_header unless specification == EdmSpecification::V1_2
     end
 
     private
 
-    attr_reader :destination
+    attr_reader :destination, :specification
 
     # One specimen per kind of subject: R-EDM-REQ-S016 admits a `NaturalPerson`
     # or a `LegalPerson` and never both, so the rules of the second slot are
@@ -108,7 +122,7 @@ module Oots
         requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         associated_documents: [AssociatedDocument::TRANSLATION],
-        clock:, uuid:,
+        specification:, clock:, uuid:,
       )
 
       [
@@ -126,7 +140,7 @@ module Oots
       attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
       body = EvidenceResponseBuilder.new(
         requester:, beneficiary: subject, evidence_type:, attachment:,
-        request_id: REQUEST_ID, clock:, uuid:,
+        request_id: REQUEST_ID, specification:, clock:, uuid:,
       )
 
       [body.render, evidence_response_header(body, attachment)]
@@ -143,7 +157,7 @@ module Oots
     end
 
     def deferred_response
-      body = DeferredResponseBuilder.new(requester:, request_id: REQUEST_ID, clock:, uuid:)
+      body = DeferredResponseBuilder.new(requester:, request_id: REQUEST_ID, specification:, clock:, uuid:)
 
       [
         body.render,
@@ -158,7 +172,7 @@ module Oots
 
     def error_response(exception, request_id: REQUEST_ID)
       body = ErrorResponseBuilder.new(
-        requester:, exception:, request_id:, clock:, uuid:,
+        requester:, exception:, request_id:, specification:, clock:, uuid:,
       )
 
       [
@@ -188,11 +202,25 @@ module Oots
       )
     end
 
+    # A request header in every respect but its version, so that the rules of
+    # the newer line refuse it for the two properties it does not carry and for
+    # nothing else.
+    def write_earlier_line_header
+      write_header(EARLIER_LINE_SPECIMEN, header(
+        action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        original_sender: requester.ebms_identity,
+        final_recipient: german_provider.ebms_identity,
+        payload_id: payload_id(uuid.next),
+        specification: EdmSpecification::V1_2,
+      ))
+    end
+
     def header(**attributes)
       EbmsHeaderBuilder.new(
         recipient: german_access_point,
         conversation_id: CONVERSATION_ID,
         exchange_id: EXCHANGE_ID,
+        specification:,
         clock:, uuid:,
         **attributes,
       ).render

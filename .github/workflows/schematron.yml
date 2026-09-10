@@ -20,10 +20,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # One job per line, and not one job playing both: the artefacts, the cache
+    # and the messages all belong to a tag, and a failure names which line broke
+    # without anyone reading a log.
+    strategy:
+      fail-fast: false
+      matrix:
+        version_tdd: ['2.0.1', '1.2.5']
+
     env:
       # One source for the validated version: the script receives it as an
       # argument and the cache key carries it, so the two cannot diverge.
-      VERSION_TDD: 2.0.1
+      VERSION_TDD: ${{ matrix.version_tdd }}
 
     steps:
       - uses: actions/checkout@v7
@@ -81,6 +89,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: messages-et-rapports-svrl
+          # Nommé par la version : deux jobs qui téléverseraient le même nom
+          # se refuseraient l'un l'autre.
+          name: messages-et-rapports-svrl-${{ env.VERSION_TDD }}
           path: .schematron/${{ env.VERSION_TDD }}/messages/
           if-no-files-found: ignore

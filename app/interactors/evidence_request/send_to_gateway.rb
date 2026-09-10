@@ -69,7 +69,7 @@ module EvidenceRequest
         requester: resolved.requester, provider: resolved.provider, beneficiary: resolved.beneficiary,
         requirement: resolved.requirement, data_service: resolved.data_service,
         procedure_code: resolved.procedure_code, preview_possible: resolved.preview_possible,
-        uuid:,
+        specification: resolved.exchange.specification, uuid:,
       }
     end
 
@@ -91,6 +91,7 @@ module EvidenceRequest
         final_recipient: resolved.provider.ebms_identity,
         conversation_id: exchange.conversation_id,
         exchange_id: exchange.exchange_id,
+        specification: exchange.specification,
         uuid:,
       )
     end

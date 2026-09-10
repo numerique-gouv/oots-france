@@ -11,7 +11,10 @@ require 'rails_helper'
 RSpec.describe EvidenceProvision::Answer do
   include ActiveSupport::Testing::TimeHelpers
 
-  subject(:answer) { described_class.call(message:, gateway:, uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new) }
+  subject(:answer) do
+    described_class.call(message:, exchange: correlated(message), gateway:,
+      uuid: Oots::SequentialUuids.new, audit_trail: AuditTrail.new)
+  end
 
   let(:gateway) { gateway_accepting_submissions }
   let(:message) { RetrievedMessageParser.new(real_envelope('requete')) }
@@ -782,7 +785,7 @@ RSpec.describe EvidenceProvision::Answer do
   # and a header saying otherwise is a message no reading can reconcile.
   describe 'a request whose header contradicts its body on the version' do
     let(:message) do
-      RetrievedMessageParser.new(real_envelope('requete').sub(EdmSpecification::IDENTIFIER, 'oots-edm:v1.0'))
+      RetrievedMessageParser.new(real_envelope('requete').sub(EdmSpecification.preferred.identifier, 'oots-edm:v1.0'))
     end
 
     it 'answers EDM:ERR:0003 naming the ebMS rule' do
@@ -878,6 +881,23 @@ RSpec.describe EvidenceProvision::Answer do
           conversation_id: 'ni-celui-ci',
           detail: include('R-EDM-ebMS-017'),
         )
+      end
+    end
+
+    # CA9 of OOTS-200. `R-EDM-ebMS-037` is a rule of the 2.0.1 tag alone: on the
+    # 1.2 line the header carries no `ExchangeId` at all, France mints one for
+    # itself, and there is nothing a correspondent could have malformed.
+    context 'when the request arrives on the 1.2 line, which names no exchange' do
+      let(:message) { earlier_line_envelope }
+      let(:opened) do
+        create(:exchange, :legacy_line, incoming: true, conversation_id: message.conversation_id,
+          request_id: message.body.request_id, procedure_code: '00', country_code: 'FI')
+      end
+
+      it 'answers rather than refusing what that line does not carry' do
+        expect { answer }.not_to raise_error
+        expect(gateway).to have_received(:submit)
+        expect(AuditEvent.where(event_type: 'request_refused')).to be_empty
       end
     end
 
@@ -1252,6 +1272,72 @@ RSpec.describe EvidenceProvision::Answer do
     expect(gateway).to have_received(:submit) { |envelope| return envelope }
   end
 
+  # RG13 of OOTS-200: what a request of the 1.2 line is answered with. Chapter
+  # 4.7 §2.6.2 — « The same SpecificationId value MUST be used consistently in
+  # both request and response messages belonging to the same evidence exchange »
+  # — and a 2.0 response to a 1.2 request would in any case fail at its
+  # destination on `R-EDM-RESP-S015`, whose 1.2.5 context is the object of the
+  # list and not the package around it.
+  describe 'a request arriving on the 1.2 line' do
+    let(:message) { earlier_line_envelope }
+    let(:header) { Nokogiri::XML(gateway_body) }
+
+    before { create(:exchange, :legacy_line, incoming: true, conversation_id: message.conversation_id) }
+
+    # CA6.
+    it 'answers with a response of that line, flat and unclassified' do
+      answer
+
+      expect(status_of(submitted)).to end_with('Success')
+      expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      expect(submitted.xpath('//rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES).size).to eq(1)
+      expect(submitted.at_xpath("//rim:RegistryObjectList/rim:RegistryObject/rim:Slot[@name='EvidenceMetadata']",
+        SlotReading::NAMESPACES)).to be_present
+      expect(submitted.xpath('//rim:Classification', SlotReading::NAMESPACES)).to be_empty
+    end
+
+    # CA6 again, on the header: `R-EDM-ebMS-018` counts two properties on that
+    # line, and `R-EDM-ebMS-017` has the conversation reused.
+    it 'answers under a header of that line, two properties and the conversation received' do
+      answer
+
+      properties = header.xpath('//eb:MessageProperties/eb:Property/@name', OotsNamespaces::NAMESPACES).map(&:value)
+
+      expect(properties).to contain_exactly('originalSender', 'finalRecipient')
+      expect(header.at_xpath('//eb:CollaborationInfo/eb:ConversationId', OotsNamespaces::NAMESPACES).text)
+        .to eq(message.conversation_id)
+      expect(submitted.root['requestId']).to eq(message.body.request_id)
+    end
+
+    # CA7.
+    describe 'for a procedure France serves in deferral' do
+      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="R1"') } }
+
+      it 'announces the evidence for later, on that line' do
+        answer
+
+        expect(status_of(submitted)).to end_with('Unavailable')
+        expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      end
+    end
+
+    # CA8.
+    describe 'for a procedure France does not serve' do
+      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="T3"') } }
+
+      it 'refuses on that line' do
+        answer
+
+        expect(code_of(submitted)).to eq('EDM:ERR:0004')
+        expect(specification_of(submitted)).to eq('oots-edm:v1.2')
+      end
+    end
+  end
+
+  def specification_of(document)
+    document.at_xpath("//rim:Slot[@name='SpecificationIdentifier']//rim:Value", SlotReading::NAMESPACES).text
+  end
+
   # Each identifier addressed by the very path its rule anchors on:
   # `R-EDM-ebMS-017` on the `eb:ConversationId` of the collaboration,
   # `R-EDM-ebMS-037` on the `ExchangeId` message property. Written whole rather
@@ -1390,8 +1476,9 @@ RSpec.describe EvidenceProvision::Answer do
 
   # `IncomingMessage::Process` always opens one, but nothing compels it: the
   # answer goes out all the same, and says so rather than letting it slip.
+  # Named by the conversation, which every message carries on both lines.
   it 'answers all the same when no exchange bears the identifier received' do
-    expect(Rails.logger).to receive(:warn).with(/#{message.exchange_id}/)
+    expect(Rails.logger).to receive(:warn).with(/#{message.conversation_id}/)
 
     expect(answer).to be_a_success
   end

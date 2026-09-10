@@ -52,11 +52,11 @@ RSpec.describe 'Le câblage des annuaires centraux' do
     expect(provider.access_point.id).to eq('AP_FI_03')
   end
 
-  it 'restreint la recherche de fournisseur à la version que nous produisons' do
+  it 'cherche les fournisseurs de toutes les versions de l\'EDM' do
     directory.data_service('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/x', 'FI')
 
     expect(a_request(:get, "#{base}/dsd/rest/search")
-      .with(query: hash_including('specification' => EdmSpecification::IDENTIFIER))).to have_been_made
+      .with(query: hash_excluding('specification'))).to have_been_made
   end
 
   # The counterpart of the provider test above, on the requirement: nothing else

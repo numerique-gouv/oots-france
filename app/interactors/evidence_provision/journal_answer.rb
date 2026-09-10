@@ -29,20 +29,17 @@ module EvidenceProvision
     def unknown_exchange
       Rails.logger.warn(
         I18n.t('interactors.evidence_provision.journal_answer.unknown_exchange',
-          id: context.message.exchange_id),
+          id: context.message.conversation_id),
       )
     end
 
     # The row `IncomingMessage::OpenExchange` wrote on receiving this request —
-    # or none, where that interactor adopted a row of the other direction, which
-    # it matches on the identifier alone.
-    #
-    # `defined?` and not `||=`: nil is a legitimate answer here, and `||=` would
-    # ask the database again every time it is read.
+    # or none, where the correlation landed on a row of the other direction,
+    # which it matches on the identifier alone.
     def exchange
-      return @exchange if defined?(@exchange)
+      found = context.exchange
 
-      @exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
+      found if found&.incoming?
     end
   end
 end

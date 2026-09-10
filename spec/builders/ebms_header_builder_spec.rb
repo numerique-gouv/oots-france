@@ -110,4 +110,35 @@ RSpec.describe EbmsHeaderBuilder do
       allow(generator).to receive(:next) { format('1a2b3c4d-0000-4000-8000-%012d', compteur += 1) }
     end
   end
+  # RG6 of OOTS-200. `R-EDM-ebMS-018` counts exactly two properties in 1.2.5
+  # where 2.0.1 counts four: `ExchangeId` (`R-EDM-ebMS-037`) and
+  # `SpecificationId` (`R-EDM-ebMS-038`) are rules 1.2.5 does not carry, and a
+  # header writing them there would be refused for having too many.
+  describe 'a header written on the 1.2 line' do
+    subject(:header) { described_class.new(**attributes, specification: EdmSpecification::V1_2).render }
+
+    it 'carries the two properties the 1.2 rules name, and no other' do
+      names = Nokogiri::XML(header)
+        .xpath('//eb:MessageProperties/eb:Property/@name',
+          'eb' => 'http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/')
+        .map(&:value)
+
+      expect(names).to contain_exactly('originalSender', 'finalRecipient')
+    end
+
+    # `R-EDM-ebMS-020` requires the type on every property of a 1.2 header, and
+    # the two that remain are the two that carry one.
+    it 'types both of them' do
+      types = Nokogiri::XML(header)
+        .xpath('//eb:MessageProperties/eb:Property',
+          'eb' => 'http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/')
+        .pluck('type')
+
+      expect(types).to all(be_present)
+    end
+
+    it 'announces no version in the header, the slot of the body saying it' do
+      expect(header).not_to include('oots-edm:')
+    end
+  end
 end

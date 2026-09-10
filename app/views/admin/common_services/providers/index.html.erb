@@ -111,14 +111,13 @@
 <% end %>
 
 <%# The console queries the Data Service Directory exactly as the application
-    does: a data service conforming to another EDM version therefore does not
-    come back in this response, and absence does not mean it does not exist. %>
+    does — with no `specification` parameter, so services of every EDM version
+    come back and the declared-versions column is what tells them apart. %>
 <%= render DirectoryQueryComponent.new(
       query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
       identifiers: { requirement: requirement.id, evidence_type: @evidence_type.id },
       parameters: {
         'evidence-type-classification' => @evidence_type.id,
         'country-code' => @country,
-        'specification' => EdmSpecification::IDENTIFIER,
       },
     ) %>

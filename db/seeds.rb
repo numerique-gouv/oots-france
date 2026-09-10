@@ -108,8 +108,12 @@ if Rails.env.development?
     { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
       evidence_requester_id: '00000000000003', events: %w[request_sent] },
     { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },
+    # Le seul échange de la ligne 1.2 : un correspondant resté en 1.2 a demandé,
+    # la France a répondu dans sa version. Tous les autres portent le défaut de
+    # la colonne, qui est la version visée.
     { incoming: true, status: 'delivered', country_code: 'BE',
       procedure_code: ProcedureCode::SYSTEM_CHECK, subject: minimal_person,
+      specification: EdmSpecification::V1_2,
       events: %w[request_received response_sent] },
     { incoming: true, status: 'failed', country_code: 'IT',
       procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
@@ -161,13 +165,13 @@ if Rails.env.development?
       response_detail: BusinessRuleViolation.new(
         rule: 'R-EDM-RESP-C002',
         description: I18n.t('parsers.evidence_response.unexpected_specification',
-          announced: 'oots-edm:v1.0', expected: EdmSpecification::IDENTIFIER),
+          announced: 'oots-edm:v1.0', expected: EdmSpecification.preferred.identifier),
       ).sentence,
       events: %w[request_sent response_received evidence_delivered] },
-    # Un point d'accès que l'annuaire a rendu sous le filtre `specification`
-    # alors qu'il n'annonce que des versions 1.x : `EvidenceRequest::CheckSpecification`
-    # refuse avant toute soumission. Rien n'a donc circulé — aucun événement
-    # d'échange, et la seule ligne du journal est le refus, ajouté plus bas.
+    # Un point d'accès qui n'annonce que des versions dont la France ne parle
+    # aucune : `EvidenceRequest::ChooseSpecification` refuse avant toute
+    # soumission. Rien n'a donc circulé — aucun événement d'échange, et la seule
+    # ligne du journal est le refus, ajouté plus bas.
     #
     # Aucun code EDM, comme le refus lui-même n'en pose aucun : les huit
     # exceptions du chapitre 4.5.3 décrivent un serveur traitant une requête, et
@@ -177,10 +181,10 @@ if Rails.env.development?
     # recopiée — même raison qu'au-dessus : une console qui ment sur ce que le
     # code produit se lit ensuite comme une documentation.
     { status: 'failed', country_code: 'SK', procedure_code: ProcedureCode::SYSTEM_CHECK,
-      error_description: I18n.t('interactors.evidence_request.check_specification.unsupported',
+      error_description: I18n.t('interactors.evidence_request.choose_specification.unsupported',
         access_point: 'AP_SK_01',
-        announced: ['oots-edm:v1.0', 'oots-edm:v1.2'].join(', '),
-        expected: EdmSpecification::IDENTIFIER),
+        announced: ['oots-edm:v1.0', 'oots-edm:v1.1'].join(', '),
+        spoken: EdmSpecification.identifiers.join(', ')),
       events: [] },
     # Une requête reçue à laquelle le worker est mort avant de répondre :
     # `ExpireExchangesJob` la clôt passé le délai, sur l'horodatage que la
@@ -451,10 +455,11 @@ if Rails.env.development?
         :request_id, :request_id_as_sent, :message_error_code, :subject,
         :confirmed_without, :presumed).merge(
           conversation_id:,
-          # `SendToGateway` l'écrit au moment de soumettre : un échange que rien
-          # n'a encore quitté n'en porte pas, et rien n'en écrit côté
-          # fournisseur, où l'identifiant ne vit que dans le journal.
-          request_id: (request_id unless incoming || scenario[:status] == 'pending'),
+          # `SendToGateway` l'écrit au moment de soumettre, et
+          # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
+          # n'a encore quitté n'en porte pas, un échange reçu le porte toujours
+          # — c'est par lui qu'un message de la ligne 1.2 retrouve le sien.
+          request_id: (request_id if incoming || scenario[:status] != 'pending'),
           # Le requêteur du scénario quand il en nomme un — la démarche de
           # démonstration est le seul à en nommer —, et sinon celui que le sens
           # de l'échange désigne.
