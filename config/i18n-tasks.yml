@@ -78,7 +78,7 @@ ignore_unused:
   # Composé du document dont on demande la forme, comme les sujets de
   # `strict_validation` juste au-dessus.
   - clients.france_connect_answer.subjects.*
-  - interactors.incoming_message.process.{exchange_failed,exchange_impossible,unreadable}
+  - interactors.incoming_message.process.{exchange_failed,exchange_impossible,invalid_configuration,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
   # Composed from the direction of the exchange by `Exchange#expire!`: one
   # sentence per way round, and the scanner sees only the interpolation.
