@@ -54,7 +54,8 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 | --- | --- |
 | `requete.xml` | Une `ExecuteQueryRequest` complète, démarche `00` |
 | `requete.demarcheInconnue.xml` | Démarche `T3`, à laquelle la réponse est `EDM:ERR:0004` |
-| `requete.sansProcedure.xml`, `requete.sansRequeteur.xml` | Les incomplétudes qui valent `EDM:ERR:0003` |
+| `requete.sansProcedure.xml` | Le slot `Procedure` absent, qui vaut un `EDM:ERR:0003` nommant `R-EDM-REQ-S007` |
+| `requete.sansRequeteur.xml` | Le slot `EvidenceRequester` absent, que `R-EDM-REQ-S012` refuse **sans réponse** : sans requêteur, il n'y a ni agent à nommer dans l'exception ni `finalRecipient` à adresser |
 | `reponseAvecPieceJointe.xml` | Une `ExecuteQueryResponse` portant un justificatif |
 | `reponseDifferee.xml` | Une `ExecuteQueryResponse` de statut `Unavailable` : elle annonce une date et **ne porte aucune charge PDF**, ce qu'aucune altération de `reponseAvecPieceJointe` ne sait produire |
 | `erreurAutorisationRequise.xml` | `EDM:ERR:0002` avec son slot `PreviewLocation` et sa sévérité `PreviewRequired` |

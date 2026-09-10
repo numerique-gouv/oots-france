@@ -14,9 +14,12 @@
 # know itself: one rule refuses the requester, the platform beside it and the
 # provider in three different French sentences, and `RULES` says under which
 # identifier that rule is published for each. `require_conformant_agent` walks
-# the agents the requester is not, which is where `C013`, `C014` and `C011` are
-# applied today — the requester's own reading being `EvidenceRequestParser#build_requester`,
-# which refuses without answering for what an error response would copy back.
+# the agents the requester is not, which is where `C013` and `C014` are applied
+# — those two alone, the classification of the agent retained as requester being
+# `ER` by construction. The requester reads its own identifier through
+# `require_agent_identifier` all the same, from
+# `EvidenceRequestParser#build_requester`, which refuses without answering for
+# what an error response would copy back.
 #
 # Refusals go through `refuse`, which the parser including this defines: naming
 # the broken rule and turning it into an `UnreadableMessageError` is one act for
@@ -63,17 +66,16 @@ module AgentConformance
   # provider's slot.
   REQUESTER_COLLECTION_RULES = {
     identifier: 'R-EDM-REQ-C012', language: 'R-EDM-REQ-C109', language_code: 'R-EDM-REQ-C108',
+    identifier_required: AGENT_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C011',
   }.freeze
 
-  # The requester carries only those three. `EvidenceRequestParser#build_requester`
-  # reads its identifier and its names itself — refusing without naming a rule,
-  # since no answer could carry them — so the walk below never judges it, and
-  # `fetch` says so loudly should that ever change.
+  # The platform is the requester's own five and `name_required` besides: the
+  # walk below reads its names through `agent_names`, where
+  # `EvidenceRequestParser#build_requester` reads the requester's single one and
+  # names the same chapter itself. Nothing else separates the two.
   RULES = {
     agent: REQUESTER_COLLECTION_RULES,
-    platform: REQUESTER_COLLECTION_RULES.merge(
-      identifier_required: AGENT_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C011', name_required: AGENT_NAME_REQUIRED,
-    ).freeze,
+    platform: REQUESTER_COLLECTION_RULES.merge(name_required: AGENT_NAME_REQUIRED).freeze,
     provider: {
       identifier: 'R-EDM-REQ-C018', language: 'R-EDM-REQ-C111', language_code: 'R-EDM-REQ-C110',
       identifier_required: PROVIDER_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C017',
@@ -160,6 +162,10 @@ module AgentConformance
   # presence and nothing more, so one written empty satisfies it and falls to
   # `C012` — `C018` — which compares the value: the shape `C041` and `C042` take
   # on the beneficiary's identifier.
+  #
+  # Hands back the element it judged, which `EvidenceRequestParser#build_requester`
+  # then reads the scheme and the identifier off: whoever needs the value needs
+  # it vetted, and looking it up a second time would let the two come apart.
   def require_agent_identifier(agent, wording)
     rules = RULES.fetch(wording)
     identifier = at(agent, './sdg:Identifier')
@@ -169,6 +175,8 @@ module AgentConformance
     refuse(rules.fetch(:scheme), "parsers.evidence_request.#{wording}_without_scheme") if scheme.nil?
 
     require_known_agent_scheme(scheme, identifier.text, wording)
+
+    identifier
   end
 
   # Every `sdg:Name` the agent carries, and not the first alone: `AgentType`

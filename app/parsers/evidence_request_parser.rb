@@ -10,11 +10,20 @@ class EvidenceRequestParser
   include AgentConformance
   include RequirementConformance
 
-  # The slots chapter 4.6 counts, each under the rule that counts it. `= 1` is
-  # what the readers below cannot say: they fetch the slot they need and refuse
-  # its absence naming no rule, where a second copy of it would go unseen.
+  # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
+  # that counts it. `= 1` is what the readers below cannot say: they fetch the
+  # slot they need and refuse its absence naming no rule, where a second copy of
+  # it would go unseen.
+  #
+  # Two of the counted slots are not here, and the endpoint of their refusal is
+  # why: `EvidenceRequest` is counted under `query:Query` by `validate!`, and
+  # `EvidenceRequester` where the requester is read, `R-EDM-REQ-S012` being a
+  # refusal no answer can carry — where everything counted here goes back in an
+  # `EDM:ERR:0003`.
   REQUIRED_SLOTS = {
     'SpecificationIdentifier' => 'R-EDM-REQ-S005',
+    'IssueDateTime' => 'R-EDM-REQ-S006',
+    'Procedure' => 'R-EDM-REQ-S007',
     'PossibilityForPreview' => 'R-EDM-REQ-S009',
     'ExplicitRequestGiven' => 'R-EDM-REQ-S010',
     'EvidenceProvider' => 'R-EDM-REQ-S013',
@@ -49,6 +58,7 @@ class EvidenceRequestParser
   # repository produces.
   def validate!
     REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
+    require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
     require_expected_specification
     require_one_evidence_subject
     require_requester_country
@@ -91,9 +101,10 @@ class EvidenceRequestParser
     find_slot('LegalPerson', query) ? legal_person : natural_person
   end
 
-  # The requester is the agent classified `ER`. OOTS-France, or its foreign
-  # equivalent, travels in the same collection classified `IP`, and answering
-  # the platform instead of the requester would address the wrong party.
+  # The requester is the one agent classified `ER`, `R-EDM-REQ-C074` counting
+  # them. OOTS-France, or its foreign equivalent, travels in the same collection
+  # classified `IP`, and answering the platform instead of the requester would
+  # address the wrong party.
   def requester = build_requester(requester_agent)
 
   # What the requesting agent declares of itself, read without judging it.
@@ -129,16 +140,27 @@ class EvidenceRequestParser
 
   attr_reader :request
 
-  # An agent that is not there at all leaves nothing to declare — the only
-  # failure `requester_agent` itself can raise.
+  # A collection that does not yield exactly one requester leaves nothing to
+  # declare: `R-EDM-REQ-S012` and `C074` are what `requester_agent` itself
+  # raises, and neither leaves an agent whose identifier or country could be
+  # journalled as the requester's.
   def declared
     yield(requester_agent)
   rescue UnreadableMessageError
     nil
   end
 
+  # `R-EDM-REQ-S012` counted here and not in `REQUIRED_SLOTS`: the count fails
+  # where the requester is read, so the refusal carries no answer — as `C074`'s
+  # does, and for the same reason. Read through `require_slot` all the same, so
+  # that a second `EvidenceRequester` slot is refused rather than ignored by
+  # `slot_elements`, which takes the first.
   def agents
-    @agents ||= slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+    @agents ||= begin
+      require_slot('EvidenceRequester', 'R-EDM-REQ-S012')
+
+      slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+    end
   end
 
   # `R-EDM-REQ-S042`: the slot value carries the agent itself, an `AnyValueType`
@@ -157,19 +179,31 @@ class EvidenceRequestParser
     agent
   end
 
-  def requester_agent
-    @requester_agent ||= agents
-      .find { |candidate| text_at(candidate, './sdg:Classification') == EvidenceRequester::REQUESTER }
+  def requester_agent = @requester_agent ||= sole_agent_classified_requester
 
-    raise UnreadableMessageError, I18n.t('parsers.evidence_request.no_er_agent') if @requester_agent.nil?
+  # `R-EDM-REQ-C074` counts the agents classified `ER` and asks for exactly one.
+  # Counted at the read of the requester and not among the checks of
+  # `validate!`, so that a count that fails takes the reading down with it:
+  # everything the journal knows of the requester passes through here, and a
+  # check standing beside would let the first of two agents be recorded as
+  # though it had been read.
+  #
+  # The comparison is raw, as the rule's is — `sdg:Classification='ER'`, where
+  # `C073` normalises. An agent classified ` ER ` therefore counts for none
+  # here, and is refused by `C014`, which compares raw too and does answer.
+  def sole_agent_classified_requester
+    classified = agents.select { |agent| text_at(agent, './sdg:Classification') == EvidenceRequester::REQUESTER }
+    return classified.first if classified.one?
 
-    @requester_agent
+    refuse('R-EDM-REQ-C074', 'parsers.evidence_request.requester_agent_not_alone', count: classified.size)
   end
 
   # `= 1` and not `>= 1`: the rules count the slot, and two of the same name
-  # leave which one is meant undecided.
-  def require_slot(name, rule)
-    return if all(request, "./rim:Slot[@name='#{name}']").one?
+  # leave which one is meant undecided. The scope is where the rule counts:
+  # `R-EDM-REQ-S015` counts `EvidenceRequest` among the children of
+  # `query:Query`, every other one among those of `query:QueryRequest`.
+  def require_slot(name, rule, scope = request)
+    return if all(scope, "./rim:Slot[@name='#{name}']").one?
 
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
@@ -355,21 +389,27 @@ class EvidenceRequestParser
   # `minOccurs="1"`, and the scheme is the `type` of the ebMS `finalRecipient`,
   # which is the return address itself.
   #
+  # `R-EDM-REQ-C011` and the chapter behind `AGENT_IDENTIFIER_REQUIRED` are
+  # refused here for the same reason, one step earlier: an identifier a request
+  # never carried, or one naming no scheme, is a value the answer would have to
+  # copy back and has not got.
+  #
   # `EvidenceProvision::RejectUnanswerableRequester` is where that silence is
   # journalled, as `RejectMalformedIdentifiers` journals the ebMS identifiers it
   # refuses for the same reason. What `validate!` refuses does go back.
   def build_requester(agent)
-    identifier = at(agent, './sdg:Identifier')
+    identifier = require_agent_identifier(agent, :agent)
     # A SIRET is digits, and a reader that parsed numbers would drop its
-    # leading zero. Read as text, always.
-    id = require_content(identifier&.text, 'parsers.evidence_request.agent_without_id')
-    scheme = require_content(attribute(identifier, 'schemeID'), 'parsers.evidence_request.agent_without_scheme')
-    require_known_agent_scheme(scheme, id, :agent)
+    # leading zero. Read as text, always. Read after the rules above and not
+    # before them: an identifier written empty breaks none of them — `C012`
+    # measures a length no value is too short for — so the refusal that names
+    # no rule comes last, once every rule that could have named one has passed.
+    id = require_content(identifier.text, 'parsers.evidence_request.agent_without_id')
 
     name = at(agent, './sdg:Name')
 
     EvidenceRequester.new(
-      id:, type_id: scheme,
+      id:, type_id: attribute(identifier, 'schemeID'),
       name: agent_name(name, :agent),
       language: require_language(name, :agent),
       # Read rather than defaulted: `Address` says `FR`, which is exactly the

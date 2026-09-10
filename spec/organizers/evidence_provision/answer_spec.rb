@@ -431,9 +431,11 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
+  # The slot is there, so `R-EDM-REQ-S007` counts it and it is its value that
+  # fails: a reading no rule numbers, where the missing slot itself now has one.
   describe 'a request it cannot read past the requester' do
     let(:message) do
-      envelope_with_body('requete') { |body| body.sub(%r{<rim:Slot name="Procedure">.*?</rim:Slot>}m, '') }
+      envelope_with_body('requete') { |body| body.sub(/(<rim:Slot name="Procedure">.*?<rim:Value>)[^<]*/m, '\\1') }
     end
 
     # Readable enough to answer, not enough to serve. Silence would teach the
@@ -1039,6 +1041,10 @@ RSpec.describe EvidenceProvision::Answer do
       'R-EDM-REQ-C109' => ['<sdg:Name lang="FR">', '<sdg:Name>'],
       'R-EDM-REQ-C108' => ['<sdg:Name lang="FR">', '<sdg:Name lang="fr">'],
       'R-EDM-REQ-C012' => ['EAS:0009', 'EAS:9999'],
+      # `C011` asserts the attribute's presence, so it is removed rather than
+      # given another value — and the identifier itself stays readable, which is
+      # what lets the journal keep it past the refusal.
+      'R-EDM-REQ-C011' => [' schemeID="urn:cef.eu:names:identifier:EAS:0009"', ''],
     }.each do |rule, (written, instead)|
       context "when it breaks #{rule}" do
         let(:message) { request_whose_requester_agent(written, instead) }
@@ -1070,19 +1076,86 @@ RSpec.describe EvidenceProvision::Answer do
       end
     end
 
-    # The one refusal of this family that declares nothing at all: with no agent
-    # classified `ER`, there is no identifier and no address to read past the
-    # failure, and the journal says so rather than guessing.
-    context 'when the request carries no agent classified ER at all' do
-      let(:message) { envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') } }
+    # The one refusal of the family whose two columns part company: an agent
+    # carrying no `sdg:Identifier` at all is still the requester, and still
+    # declares its country — the journal keeps what it could read and leaves the
+    # rest empty, rather than losing the address with the identifier.
+    context 'when the requesting agent carries no sdg:Identifier at all' do
+      let(:message) { envelope_with_requester_agent { |agent| agent.sub(%r{<sdg:Identifier.*?</sdg:Identifier>}m, '') } }
 
-      it 'journals the refusal with no requester and no country' do
+      it 'submits nothing at all to the gateway' do
+        expect { answer }.to raise_error(UnreadableMessageError)
+        expect(gateway).not_to have_received(:submit)
+      end
+
+      it 'journals the refusal under the chapter, with the country and no requester' do
         expect { answer }.to raise_error(UnreadableMessageError)
 
         expect(AuditEvent.last).to have_attributes(
-          event_type: 'request_refused', evidence_requester_id: nil, country_code: nil,
+          event_type: 'request_refused', evidence_requester_id: nil, country_code: 'FR',
+          detail: include(AgentConformance::AGENT_IDENTIFIER_REQUIRED),
         )
       end
+    end
+
+    # The refusals of this family that declare nothing at all: `R-EDM-REQ-C074`
+    # counts the agents classified `ER` and `S012` the slot that carries them,
+    # and a count that fails leaves no identifier and no address to read past
+    # the failure — with none there is nobody, with two no rule says which. The
+    # journal says so rather than guessing, and still names the exchange, the
+    # procedure and the rule.
+    {
+      'no agent classified ER at all' => ['R-EDM-REQ-C074', :request_without_a_requester],
+      'two agents classified ER' => ['R-EDM-REQ-C074', :request_with_a_second_requester],
+      'no EvidenceRequester slot at all' => ['R-EDM-REQ-S012', :request_without_the_requester_slot],
+    }.each do |carrying, (rule, building)|
+      context "when the request carries #{carrying}" do
+        let(:message) { send(building) }
+
+        it 'submits nothing at all to the gateway' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+          expect(gateway).not_to have_received(:submit)
+        end
+
+        it "journals the refusal under #{rule}, with no requester and no country" do
+          expect { answer }.to raise_error(UnreadableMessageError)
+
+          expect(AuditEvent.last).to have_attributes(
+            event_type: 'request_refused', evidence_requester_id: nil, country_code: nil,
+            exchange_id: message.exchange_id, detail: include(rule),
+          )
+        end
+      end
+    end
+  end
+
+  # `R-EDM-REQ-C074` compares the classification raw, where `C073` normalises: a
+  # second agent classified ` ER ` is not a second requester but one of the
+  # agents the requester is not, and `C014` — raw too — refuses it. That refusal
+  # does go back, an error response naming none of the agents beside the
+  # requester.
+  describe 'a request carrying a second agent classified ER with blanks' do
+    let(:message) { request_with_a_second_requester(' ER ') }
+
+    it 'is answered with an EDM:ERR:0003 naming R-EDM-REQ-C014, not C074' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C014')
+    end
+  end
+
+  # The slots the chapter counts and nobody counted: `R-EDM-REQ-S007` on
+  # `Procedure`, whose absence used to be refused naming no rule at all. An
+  # error response copies none of these slots back, so these refusals travel.
+  describe 'a request carrying no Procedure slot' do
+    let(:message) { request_without_the_procedure_slot }
+
+    it 'is answered with an EDM:ERR:0003 naming the rule that counts the slot' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-S007')
     end
   end
 
@@ -1135,6 +1208,37 @@ RSpec.describe EvidenceProvision::Answer do
   # The agent classified `ER` alone, `Fixtures::REQUESTER_AGENT` saying why.
   def request_whose_requester_agent(written, instead)
     envelope_with_requester_agent { |agent| agent.sub(written, instead) }
+  end
+
+  # The three collections that yield no single requester — none classified `ER`,
+  # two of them, and no slot at all — and the request missing the slot the
+  # chapter counts under `R-EDM-REQ-S007`. The last two are the hand-written
+  # fixtures of `incoming/`, which carry exactly these two incompletenesses.
+  def request_without_a_requester = envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') }
+
+  def request_without_the_requester_slot = RetrievedMessageParser.new(built_envelope('requete.sansRequeteur'))
+
+  def request_without_the_procedure_slot = RetrievedMessageParser.new(built_envelope('requete.sansProcedure'))
+
+  # Added where `with_third_agent` adds one in the parser's own spec: at the end
+  # of the collection, so that a reader taking the first would not notice it.
+  # Conformant by every other rule, so that what refuses the request is the
+  # classification and nothing beside it.
+  def request_with_a_second_requester(classification = 'ER')
+    agent = <<~XML
+      <sdg:Agent>
+        <sdg:Identifier schemeID="#{IdentifierScheme::UNREGISTERED_PREFIX}oots">AUTRE</sdg:Identifier>
+        <sdg:Name lang="EN">Another requester</sdg:Name>
+        <sdg:Address><sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1></sdg:Address>
+        <sdg:Classification>#{classification}</sdg:Classification>
+      </sdg:Agent>
+    XML
+
+    envelope_with_body('requete') do |body|
+      body.sub(%r{(<rim:Slot name="EvidenceRequester">.*?)(</rim:SlotValue>)}m) do
+        "#{Regexp.last_match(1)}<rim:Element xsi:type=\"rim:AnyValueType\">#{agent}</rim:Element>#{Regexp.last_match(2)}"
+      end
+    end
   end
 
   def gateway_body

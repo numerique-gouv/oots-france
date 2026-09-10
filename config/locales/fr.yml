@@ -427,10 +427,20 @@ fr:
         L'identifiant de la requête reçue (%{id}) n'est pas un UUID préfixé
         « urn:uuid: ».
       unnamed_request_id: absent
-      no_er_agent: Pas d'agent classé ER dans le message reçu.
       no_query: Pas de query:Query dans le message reçu.
-      agent_without_id: L'agent classé ER est sans identifiant
-      agent_without_scheme: L'agent classé ER est sans schéma d'identifiant
+      # R-EDM-REQ-C074 : la collection EvidenceRequester compte exactement un
+      # agent classé ER. La phrase compte, elle ne constate pas une absence :
+      # zéro et deux enfreignent la même règle. Comparé brut, comme
+      # l'assertion — un agent classé « ER » entouré de blancs ne compte pas
+      # ici, et c'est C014 qui le refuse, avec réponse.
+      requester_agent_not_alone: >-
+        La requête reçue doit porter exactement un agent classé ER (%{count} déclaré(s)).
+      # Le chapitre 4.5.1 §3.2, qu'aucune assertion ne double : le contexte de
+      # C011 est l'identifiant lui-même, donc l'élément absent n'enfreint rien.
+      agent_without_identifier: L'agent classé ER est sans identifiant.
+      # L'identifiant présent et vide, que rien ne nomme non plus : C012 mesure
+      # une longueur qu'aucune valeur n'a trop courte.
+      agent_without_id: L'identifiant de l'agent classé ER est vide
       evidence_type_without_id: Le type de justificatif est sans identifiant
       # R-EDM-REQ-C032 : le type de justificatif demandé porte au moins une
       # distribution ; une requête qui n'en demande aucune est invalide, et non
@@ -441,10 +451,12 @@ fr:
       # R-EDM-REQ-C054 : un identifiant facultatif de la personne morale nomme
       # son schéma ; sans lui, il ne désigne rien.
       legal_identifier_without_scheme: Un identifiant de la personne morale est sans schéma
-      # R-EDM-REQ-C012, C092, C108 et C109 : ce que la réponse d'erreur
+      # R-EDM-REQ-C011, C012, C092, C108 et C109 : ce que la réponse d'erreur
       # recopierait de l'agent requêteur. Ces refus-là ne partent pas au
-      # correspondant — l'exception enfreindrait R-EDM-ERR-C010, C027, C028 ou
-      # C029 —, et le journal est le seul endroit où ils se relisent.
+      # correspondant — l'exception enfreindrait R-EDM-ERR-C009, C010, C027,
+      # C028 ou C029 —, et le journal est le seul endroit où ils se relisent.
+      agent_without_scheme: >-
+        L'identifiant de l'agent classé ER ne porte pas d'attribut « schemeID ».
       agent_scheme_unknown: >-
         Le schéma d'identifiant de l'agent classé ER (« %{scheme} ») n'est ni un code de la liste
         EAS, ni un code pays d'OOTS.
