@@ -55,6 +55,15 @@ Alors('le justificatif reçu est le document que le fournisseur détient') do
   expect(@fake_requester.received_evidence.b).to eq(justificatif_detenu.b)
 end
 
+# Chapter 4.4 §4.3.2 names the two identifiers an exchange and a user session
+# are correlated by. Asserted against what the `202` handed the portal, which is
+# the only thing it has to correlate on — a delivery naming something else would
+# be as unplaceable as one naming nothing.
+Alors('le justificatif reçu porte l\'échange et la conversation que le 202 avait rendus') do
+  expect(@fake_requester.received_delivery)
+    .to eq('echange' => @exchange_id, 'conversation' => JSON.parse(@response.body)['conversation'])
+end
+
 Alors('l\'échange passe au code d\'erreur {string}') do |code|
   # Read through the application, not from the database: the scenarios run in a
   # different Rails environment from the server, and therefore against a

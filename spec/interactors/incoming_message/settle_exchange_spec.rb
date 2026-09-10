@@ -131,7 +131,7 @@ RSpec.describe IncomingMessage::SettleExchange do
       settle
 
       expect(evidence_forwarder).to have_received(:deliver)
-        .with(start_with('%PDF'), have_attributes(id: '00000000000002', url: 'http://localhost:4000'))
+        .with(start_with('%PDF'), have_attributes(id: '00000000000002', url: 'http://localhost:4000'), exchange)
     end
 
     it 'records the exchange as delivered' do
