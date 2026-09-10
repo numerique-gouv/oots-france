@@ -92,12 +92,12 @@ $ HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433 bundle exec rspec
 ### Validation des messages contre les règles des TDD
 
 ```sh
-$ make schematron                      # règles de la version 2.0.1 des TDD
-$ scripts/validate_schematron.sh 1.2.5    # ou d'une autre version publiée
-$ BAVARD=1 scripts/validate_schematron.sh # détaille aussi les slots facultatifs absents
+$ make schematron                          # les deux lignes : 2.0.1 puis 1.2.5
+$ scripts/validate_schematron.sh 1.2.5     # une seule, ou une autre version publiée
+$ BAVARD=1 scripts/validate_schematron.sh  # détaille aussi les slots facultatifs absents
 ```
 
-Le script fait produire un exemplaire de chaque message par le code du dépôt, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec les TDD. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://codeberg.org/SchXslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
+Le script fait produire un exemplaire de chaque message par le code du dépôt, **dans la version que l'étiquette demandée juge** — `oots-edm:v1.2` pour la 1.2.5, `oots-edm:v2.0` pour la 2.0.1 —, puis le confronte aux [règles Schematron officielles](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/master/OOTS-EDM/sch) publiées avec cette étiquette. La France écrit les deux lignes ([versions_tdd.md](docs/versions_tdd.md)), et une passe sur l'une ne dit rien de l'autre : `make schematron` les joue toutes les deux, et le workflow `schematron.yml` leur donne un job chacune. Il télécharge dans `.schematron/` (git-ignoré) les règles, [SchXslt](https://codeberg.org/SchXslt/schxslt) et [Saxon-HE](https://www.saxonica.com/), et s'appuie sur Java — via Docker si la machine n'en dispose pas.
 
 > [!NOTE]
 > C'est le seul `make` qui demande **Ruby sur la machine** : il fait produire les messages par `bundle exec rake oots:messages`, hors conteneur. `make setup`, `make up`, `make test` et `make e2e` n'ont besoin que de Docker.
@@ -106,7 +106,10 @@ Chaque message est validé sur deux plans : son corps RegRep contre les règles 
 
 Le script sort en `0` si les messages sont conformes, en `2` si une règle est violée, et en `1` pour toute autre défaillance — un téléchargement interrompu, par exemple. La CI rejoue les seconds, jamais les premiers.
 
-**Un spécimen fait exception : `identifiantsMalformes.entete`, qu'on attend *refusé*.** Un lot dont tout est conforme prouve que le dépôt respecte les règles, jamais qu'une règle donnée mord — l'expression rationnelle `Exchange::UUID` ne s'attesterait alors qu'elle-même. Cet entête-là porte donc deux identifiants qui ne sont pas des UUID, et il n'est compté ✓ que si ce sont **exactement** [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `R-EDM-ebMS-037` qui le refusent : une règle attendue qui ne refuse pas, ou une règle de plus qui refuse, font échouer la validation comme n'importe quelle non-conformité. C'est ce qui adosse à l'artefact publié le refus qu'oppose `EvidenceProvision::RejectMalformedIdentifiers` à une requête dont les identifiants sont malformés.
+**Deux spécimens font exception : on les attend *refusés*.** Un lot dont tout est conforme prouve que le dépôt respecte les règles, jamais qu'une règle donnée mord — l'expression rationnelle `Exchange::UUID` ne s'attesterait alors qu'elle-même. Un spécimen refusé n'est compté ✓ que si ce sont **exactement** les règles nommées qui le refusent : une règle attendue qui ne refuse pas, ou une règle de plus qui refuse, font échouer la validation comme n'importe quelle non-conformité.
+
+- `identifiantsMalformes.entete` porte deux identifiants qui ne sont pas des UUID. En 2.0.1, [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `R-EDM-ebMS-037` le refusent ; en 1.2.5, `-017` seule, l'`ExchangeId` n'y étant pas une propriété d'entête. C'est ce qui adosse à l'artefact publié le refus qu'oppose `EvidenceProvision::RejectMalformedIdentifiers` à une requête dont les identifiants sont malformés.
+- `versionAnterieure.entete` est l'entête de la ligne 1.2, confronté à dessein aux règles de la 2.0.1, qui le refusent par `R-EDM-ebMS-018` **et** `R-EDM-ebMS-019` : la seconde change de contexte entre les deux étiquettes — ancrée sur `eb:Property` en 1.2.5, elle l'est sur `eb:MessageProperties` en 2.0.1, où elle compte chacun des quatre noms une fois. Ce spécimen n'est produit que dans le lot 2.0.
 
 > [!NOTE]
 > C'est une validation autonome : elle ne dépend d'aucun autre État membre, à la différence des [Testing Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) de la Commission, qui restent le juge de paix avant toute interopérabilité réelle.

@@ -29,3 +29,12 @@ Fonctionnalité: Recevoir la requête d'un autre État membre
     Quand le requêteur étranger envoie deux fois la même requête
     Alors la France sert la première requête
     Et la France refuse la seconde requête avec le code "EDM:ERR:0003", au motif du chapitre 4.4
+
+  Scénario: une requête en "oots-edm:v1.2" est servie dans sa propre version
+    Quand le requêteur étranger envoie une requête en "oots-edm:v1.2"
+    Alors la France sert le justificatif dans une réponse en "oots-edm:v1.2"
+
+  Scénario: une requête dont l'entête et le corps annoncent deux versions est refusée
+    Quand le requêteur étranger envoie une requête dont l'entête dit "oots-edm:v2.0" et le corps "oots-edm:v1.2"
+    Alors la France refuse la requête avec le code "EDM:ERR:0003" et la règle "R-EDM-REQ-C001"
+    Et la France n'envoie aucun justificatif

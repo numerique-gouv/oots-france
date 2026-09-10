@@ -13,7 +13,12 @@ class FakeCorrespondent
   # `OutgoingEnvelopeBuilder` asks a body to render itself and to name the
   # identifier its payload reference is minted from. A body altered after
   # rendering is no longer a builder, so it answers both on its own.
-  AlteredBody = Data.define(:render, :document_id)
+  AlteredBody = Data.define(:render, :document_id) do
+    # `R-EDM-REQ-S004`: the qualified form the request carries as its `@id`, and
+    # the one a correspondent of the 1.2 line is recognised by, its header naming
+    # no exchange.
+    def request_id = "urn:uuid:#{document_id}"
+  end
 
   BENEFICIARY = { level_of_assurance: 'Substantial', family_name: 'Dupont', given_name: 'Sophie',
                   date_of_birth: '1965-11-25' }.freeze
@@ -37,9 +42,9 @@ class FakeCorrespondent
 
   # Rendered once and returned, so that submitting the same body twice replays
   # the very request identifier chapter 4.4 forbids reusing.
-  def request(procedure_code: ProcedureCode::SYSTEM_CHECK)
+  def request(procedure_code: ProcedureCode::SYSTEM_CHECK, specification: EdmSpecification.preferred)
     body = EvidenceRequestBuilder.new(
-      requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:, uuid:,
+      requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:, specification:, uuid:,
     )
     rendered = body.render
 
@@ -53,18 +58,28 @@ class FakeCorrespondent
   # The conversation is minted alongside and kept apart, as chapter 4.4 keeps
   # them apart: a correspondent that reused one for the other would let a spec
   # pass against an application that confused them.
-  def submit(body)
+  def submit(body, specification: EdmSpecification.preferred)
     exchange_id = uuid.next
-    gateway.submit(envelope(body, exchange_id, uuid.next))
+    gateway.submit(envelope(body, exchange_id, uuid.next, specification))
 
     exchange_id
+  end
+
+  # A correspondent of the 1.2 line: `R-EDM-ebMS-018` counts two properties
+  # there, so the header names no exchange and announces no version, and France
+  # mints an identifier of its own. What a scenario reads the journal by is
+  # therefore the identifier of the request, which this answers.
+  def submit_on_the_earlier_line(body)
+    gateway.submit(envelope(body, nil, uuid.next, EdmSpecification::V1_2))
+
+    body.request_id
   end
 
   private
 
   attr_reader :requester, :provider, :uuid, :gateway
 
-  def envelope(body, exchange_id, conversation_id)
+  def envelope(body, exchange_id, conversation_id, specification)
     OutgoingEnvelopeBuilder.new(
       body:,
       action: EbmsAction::EXECUTE_QUERY_REQUEST,
@@ -73,6 +88,7 @@ class FakeCorrespondent
       final_recipient: provider.ebms_identity,
       conversation_id:,
       exchange_id:,
+      specification:,
       uuid:,
     ).render
   end
