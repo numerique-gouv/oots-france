@@ -307,6 +307,15 @@ Chaque adresse va avec **ce qu'on y regarde**, en une ligne : un port et une rou
 > [!WARNING]
 > **Les écrans meurent avec le worktree.** Le port appartient à la stack de l'ouvrier : `git worktree remove` et le `docker compose down` qui l'accompagne l'éteignent. Donne donc les écrans **avant** de ranger, et quand tu ranges après un merge, dis que ces adresses ne répondent plus.
 
+**Un ouvrier silencieux se vérifie, il ne s'attend pas.** Un ouvrier au travail et un ouvrier pendu envoient le même signal : rien. Un contrôle d'objectif qui dit « travail de fond toujours en cours » ne dit pas qu'il avance — il dit qu'un agent n'a pas rendu la main, ce que fait aussi un agent bloqué sur un appel d'outil qui ne revient pas. Ses attentes légitimes sont bornées à quatre minutes par son garde-fou et à dix par l'outil : **au-delà de trente minutes sans message ni commit, date son dernier geste** — deux commandes, pas une hypothèse :
+
+```sh
+git -C .worktrees/<branche> log -1 --format=%cd --date=relative      # son dernier commit
+jq -rs '[.[] | select(.timestamp) | .timestamp] | max' "$D"/agent-<id>.jsonl   # sa dernière ligne ; `$D` est celui du § 3 bis
+```
+
+Deux horodatages vieux de plus d'une demi-heure, c'est un ouvrier pendu : `TaskStop`, puis un ouvrier neuf sur le même worktree (§ 6), qui reprend de ce qui est poussé. Constaté la nuit du 2026-09-09 : l'ouvrier d'OOTS-179 a pendu 6 h 33 sur un `Bash` sans réponse, trois contrôles d'objectif « still running » ont été lus comme une progression, et le mandat de la nuit — mener la chaîne démo jusqu'au bout — n'a pas été tenu, pour une commande qui n'a jamais été passée.
+
 **Vérifie ce qui compte** au lieu de croire le rapport. Sur ce qui porte un risque — entrée non fiable, secret, donnée personnelle, valeur partant chez un correspondant — va lire le code. Un ouvrier affirmait qu'une URL choisie par un correspondant était rendue sans danger ; deux `grep` l'ont confirmé, et la confirmation valait d'être écrite dans la PR.
 
 ## 5 bis. Les reliquats d'un lot deviennent des tickets, ou meurent avec la PR — et le backlog ne grossit pas
