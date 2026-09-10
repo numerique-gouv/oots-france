@@ -52,6 +52,17 @@ module SlotReading
   # A `rim:CollectionValueType`: its `rim:Element` children, possibly none.
   def slot_elements(name, scope) = all(slot(name, scope), './rim:SlotValue/rim:Element')
 
+  # The collection counterpart of `optional_slot_text`, for a slot whose absence
+  # is an answer: `R-EDM-REQ-S014` counts `EvidenceProviderClassification` under
+  # `CAUTION`, so a request carrying none is one nothing refuses. Read through
+  # `slot_elements`, that request would be reported unreadable instead.
+  def optional_slot_elements(name, scope)
+    found = find_slot(name, scope)
+    return [] if found.nil?
+
+    all(found, './rim:SlotValue/rim:Element')
+  end
+
   # The country an agent declares, under the address that `R-EDM-REQ-C073` and
   # its response and error counterparts impose on it — the only thing they
   # impose there.

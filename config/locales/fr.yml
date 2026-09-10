@@ -475,6 +475,11 @@ fr:
       agent_country_unknown: >-
         Le pays de l'agent classé ER (« %{country} ») n'est pas un code de la liste
         CountryIdentificationCode.
+      # R-EDM-REQ-C016 : le territoire, sous le pays. Aucune règle ne l'exige —
+      # le contexte de l'assertion est l'élément lui-même —, et chaque agent de
+      # la collection EvidenceRequester est jugé, le requêteur compris.
+      agent_territory_unknown: >-
+        Le territoire de l'agent classé ER (« %{territory} ») n'est pas un code de la liste NUTS.
       # R-EDM-REQ-C013, C014, C011, C012, C092, C109, C108 et C015 sur les agents
       # de la collection EvidenceRequester que le requêteur n'est pas — la
       # plateforme intermédiaire du pays qui demande, en pratique. Ceux-là
@@ -506,6 +511,9 @@ fr:
       platform_country_unknown: >-
         Le pays de la plateforme intermédiaire (« %{country} ») n'est pas un code de la liste
         CountryIdentificationCode.
+      platform_territory_unknown: >-
+        Le territoire de la plateforme intermédiaire (« %{territory} ») n'est pas un code de la
+        liste NUTS.
       # R-EDM-REQ-S042, C017, C018, C110 et C111 sur l'agent que porte le slot
       # EvidenceProvider — le fournisseur que la requête désigne. Les quatre
       # dernières sont, mot pour mot, les assertions C011, C012, C109 et C108 de
@@ -565,6 +573,22 @@ fr:
       requirement_description_language_unknown: >-
         La langue de la description d'une exigence de la requête reçue (« %{language} ») n'est pas
         un code de la liste LanguageCode.
+      # R-EDM-REQ-S041, C021 et C098 : les classifications de fournisseur que la
+      # requête invoque. Le slot, lui, n'est pas exigé — S014 le compte sous
+      # CAUTION —, donc son absence n'est refusée nulle part. C022, qui refuse
+      # une description sans attribut « lang », n'est pas appliquée : une
+      # description qui n'en porte pas est servie, là où une qui le porte vide
+      # est refusée par C021. Ces refus-là repartent en EDM:ERR:0003 : une
+      # réponse d'erreur ne recopie aucune classification.
+      element_without_classification: >-
+        Un élément du slot « EvidenceProviderClassification » de la requête reçue ne porte pas de
+        sdg:EvidenceProviderClassification.
+      classification_language_unknown: >-
+        La langue de la description d'une classification de fournisseur (« %{language} ») n'est pas
+        un code de la liste LanguageCode.
+      classification_country_unknown: >-
+        Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») ne nomme pas un
+        pays participant à OOTS.
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant

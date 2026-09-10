@@ -64,6 +64,52 @@ RSpec.describe IdentifierScheme do
     end
   end
 
+  # `R-EDM-REQ-C098`, which reads the country between the codelist prefix and the
+  # next `/` and compares it to the countries taking part in OOTS. Judged here at
+  # the type that carries the reading, and not only through the parser: the
+  # extraction is the fragile part, and a regression in it would otherwise only
+  # surface as a request wrongly served.
+  describe '.oots_country?' do
+    it 'accepts a country taking part in OOTS' do
+      expect(described_class).to be_oots_country('https://sr.oots.tech.ec.europa.eu/codelists/FR/Municipality')
+    end
+
+    it 'refuses a country that does not' do
+      expect(described_class).not_to be_oots_country('https://sr.oots.tech.ec.europa.eu/codelists/US/County')
+    end
+
+    # The comparison carries no `i` flag, and the list publishes upper case.
+    it 'refuses a country written in lower case' do
+      expect(described_class).not_to be_oots_country('https://sr.oots.tech.ec.europa.eu/codelists/fr/Municipality')
+    end
+
+    # `oots` is a code of the agent rules and of no list this one compares to.
+    it 'refuses the literal `oots`, which `.agent_scheme?` accepts' do
+      expect(described_class).not_to be_oots_country('https://sr.oots.tech.ec.europa.eu/codelists/oots/Municipality')
+    end
+
+    # `substring-after` finds the prefix wherever it sits, so the environment
+    # midfix of an acceptance URL crosses it unseen.
+    it 'accepts an acceptance URL, whose midfix the rule never sees' do
+      expect(described_class).to be_oots_country('https://sr.acc.oots.tech.ec.europa.eu/codelists/FR/Municipality')
+    end
+
+    # The case that separates XPath's `substring-before` from `String#partition`:
+    # with no `/` after the country there is no segment at all, where `partition`
+    # would hand back `FR` and make this conformant.
+    it 'refuses a scheme ending at the country, with no segment after it' do
+      expect(described_class).not_to be_oots_country('https://sr.oots.tech.ec.europa.eu/codelists/FR')
+    end
+
+    it 'refuses a scheme carrying no codelist prefix at all' do
+      expect(described_class).not_to be_oots_country('https://example.org/FR/Municipality')
+    end
+
+    it 'refuses an empty scheme, which is what an attribute written blank reads as' do
+      expect(described_class).not_to be_oots_country('')
+    end
+  end
+
   # The lists as the TDD publish them. Pinned by size so that a code lost to a
   # careless edit is caught here rather than by a correspondent being refused.
   it 'carries the EAS list whole' do
@@ -72,6 +118,7 @@ RSpec.describe IdentifierScheme do
 
   # Thirty-one countries, and the `oots` of the rule beside them.
   it 'carries the OOTS country list, plus the testing code' do
+    expect(described_class::OOTS_COUNTRIES.size).to eq(31)
     expect(described_class::UNREGISTERED_CODES.size).to eq(32)
   end
 end

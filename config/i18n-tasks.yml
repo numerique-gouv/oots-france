@@ -119,6 +119,10 @@ ignore_unused:
   - parsers.evidence_request.{platform_without_name,platform_name_too_short}
   - parsers.evidence_request.{platform_without_language,platform_language_unknown}
   - parsers.evidence_request.platform_country_unknown
+  # The territory beside that country, `R-EDM-REQ-C016` judging every agent of
+  # the collection under one identifier — hence one sentence per agent, composed
+  # from the one being judged, as the six pairs above are.
+  - parsers.evidence_request.{agent_territory_unknown,platform_territory_unknown}
   # And the same rules on the agent the `EvidenceProvider` slot carries, under
   # the identifiers that slot gives them.
   - parsers.evidence_request.{provider_without_agent,provider_without_identifier}
@@ -134,6 +138,11 @@ ignore_unused:
   - parsers.evidence_request.{element_without_requirement,requirement_id_unexpected}
   - parsers.evidence_request.{requirement_name_without_language,requirement_name_language_unknown}
   - parsers.evidence_request.{requirement_description_without_language,requirement_description_language_unknown}
+  # And the rules the `EvidenceProviderClassification` slot puts in play, named
+  # literally: `S041` on each element of the collection, `C021` on the language
+  # of each description and `C098` on the country its identifier names.
+  - parsers.evidence_request.{element_without_classification,classification_language_unknown}
+  - parsers.evidence_request.classification_country_unknown
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

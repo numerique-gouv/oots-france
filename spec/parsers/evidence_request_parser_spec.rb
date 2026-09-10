@@ -689,6 +689,45 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-C016`, the territory under the country. Its context is the
+  # `sdg:AdminUnitLevel2` element, which the real request does not carry: what
+  # requires an address is `C073`, and it asks for the country alone.
+  describe 'the territory the requester declares' do
+    it 'accepts a request declaring none, which is the one really received' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'accepts a code the list publishes' do
+      expect(with_requester_territory('FR101').validate!).to be_a(described_class)
+    end
+
+    it 'refuses a code it does not, under R-EDM-REQ-C016' do
+      expect { with_requester_territory('FR999').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    # The assertion carries no `i` flag and no `normalize-space`, where `C073`
+    # normalises the country beside it: a territory the list publishes is
+    # refused as soon as it is written otherwise.
+    it 'refuses a published code written in lower case' do
+      expect { with_requester_territory('fr101').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    it 'refuses a published code written with spaces around it' do
+      expect { with_requester_territory(' FR101 ').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+
+    # Written empty, the element is there and is a context node: the assertion
+    # fires, and the empty string is no code of the list. That separates it from
+    # the element being absent, which the example opening this block serves.
+    it 'refuses a territory element written empty, under R-EDM-REQ-C016' do
+      expect { with_requester_territory('').validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+    end
+  end
+
   # `R-EDM-REQ-C041` and `C042`, whose context is the identifier itself: a
   # request naming no identifier for its beneficiary breaks neither, chapter 2.1
   # §2.3.1.2 providing for an identity established in the requester's own
@@ -1055,6 +1094,199 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # Chapter 4.6 on the classifications of provider a request invokes.
+  # `R-EDM-REQ-S014` counts the slot under `CAUTION`, so a request carrying none
+  # is one nothing refuses — which is the request really received. The three rules applied here fire below the slot: on each element
+  # of the collection, on each `@schemeID` and on each `@lang`.
+  describe 'the provider classifications the request invokes' do
+    # The real request carries no such slot, so the specs write one. Its
+    # identifier is a Semantic Repository URL of the shape `R-EDM-REQ-C097`
+    # fixes, that rule being one this reader does not apply, and the elements
+    # follow the order `InformationConceptType` sequences them in.
+    def classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/FR/Municipality',
+                       descriptions: '<sdg:Description lang="EN">French municipality</sdg:Description>')
+      <<~XML
+        <sdg:EvidenceProviderClassification>
+          <sdg:Identifier schemeID="#{identifier}">FR-MUNICIPALITY</sdg:Identifier>
+          #{descriptions}
+        </sdg:EvidenceProviderClassification>
+      XML
+    end
+
+    def with_classifications(*elements)
+      collection = elements.map { |element| %(<rim:Element xsi:type="rim:AnyValueType">#{element}</rim:Element>) }
+
+      with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">', <<~XML)
+          <rim:Slot name="EvidenceProviderClassification">
+            <rim:SlotValue xsi:type="rim:CollectionValueType"
+                           collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+              #{collection.join}
+            </rim:SlotValue>
+          </rim:Slot>
+          <rim:Slot name="EvidenceRequester">
+        XML
+      end
+    end
+
+    def refusing(rule)
+      raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: rule)))
+    end
+
+    # `R-EDM-REQ-S014` is a `CAUTION`: its absence is refused nowhere, which is
+    # why the slot is read through `optional_slot_elements` and stays out of
+    # `REQUIRED_SLOTS`.
+    it 'accepts a request carrying no such slot, which is the one really received' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'accepts a classification the rules admit' do
+      expect(with_classifications(classification).validate!).to be_truthy
+    end
+
+    # `R-EDM-REQ-S041` fires on the `rim:Element` itself, which is there — it
+    # came out of the collection — exactly as `S037` does over `Requirements`.
+    it 'refuses a collection element carrying no classification, under R-EDM-REQ-S041' do
+      expect { with_classifications('').validate! }.to refusing('R-EDM-REQ-S041')
+    end
+
+    # `InformationConceptType` sets no upper bound, so one `rim:Element` may
+    # carry several classifications and each is judged on its own. Distinct from
+    # the case below, which puts each classification in an element of its own:
+    # this one alone exercises the inner walk.
+    it 'judges a second classification carried by the same element' do
+      doubled = with_classifications(
+        classification + classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')
+      )
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-C098')
+    end
+
+    # Nothing counts the classifications, `S014` counting the slot: each
+    # element is judged on its own, so a reader stopping at the first would
+    # serve the second unexamined.
+    it 'judges a second element as much as the first' do
+      doubled = with_classifications(classification, classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County'))
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-C098')
+    end
+
+    # `R-EDM-REQ-C098` reads the country between the codelist prefix and the
+    # next `/`, and compares it to the countries taking part in OOTS — a far
+    # shorter list than the one `C015` holds an address to.
+    describe 'the country its identifier names' do
+      it 'accepts a country taking part in OOTS' do
+        expect(with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Municipality')).validate!)
+          .to be_truthy
+      end
+
+      it 'refuses one that does not, under R-EDM-REQ-C098' do
+        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')).validate! }
+          .to refusing('R-EDM-REQ-C098')
+      end
+
+      # The comparison carries no `i` flag, as `C016` and `C021` carry none: the
+      # segment is compared as it is written.
+      it 'refuses a country written in lower case' do
+        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/fr/Municipality')).validate! }
+          .to refusing('R-EDM-REQ-C098')
+      end
+
+      # `oots` is admitted on an agent's identifier « for testing purposes » and
+      # by no rule here: the `OOTS_Country-CodeList` this one compares to does
+      # not publish it.
+      it 'refuses the literal oots, which the agent rules admit' do
+        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/oots/Municipality')).validate! }
+          .to refusing('R-EDM-REQ-C098')
+      end
+
+      # `substring-after` seeks the prefix wherever it sits, so the environment
+      # midfix of an acceptance URL crosses it unseen.
+      it 'accepts an acceptance URL, whose midfix the rule never sees' do
+        expect(with_classifications(classification(identifier: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/FR/Municipality')).validate!)
+          .to be_truthy
+      end
+
+      # The case that separates `substring-before` from `String#partition`:
+      # XPath yields the empty string when the separator is absent, where
+      # `partition(…).first` yields the whole of what precedes it. Read with
+      # `partition`, this identifier would hand back `FR` and be served.
+      it 'refuses an identifier ending at the country, with no segment after it' do
+        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/FR')).validate! }
+          .to refusing('R-EDM-REQ-C098')
+      end
+
+      # The context of the rule is the `@schemeID` attribute: absent, no
+      # assertion fires at all. Nothing requires one unconditionally either —
+      # `C099` narrows its own context to `sdg:Identifier[@schemeID]`, and
+      # `C096`, which does assert the attribute, first narrows itself to a
+      # classification whose `sdg:Type` is `codelist`. Neither is applied here.
+      it 'accepts an identifier carrying no schemeID' do
+        classified = classification.sub(/ schemeID="[^"]*"/, '')
+
+        expect(with_classifications(classified).validate!).to be_truthy
+      end
+
+      # Present and empty, the attribute is a context node: the assertion fires,
+      # and the country it reads out is empty too.
+      it 'refuses a schemeID written empty, under R-EDM-REQ-C098' do
+        expect { with_classifications(classification(identifier: '')).validate! }.to refusing('R-EDM-REQ-C098')
+      end
+    end
+
+    # `R-EDM-REQ-C021`, whose context is the `@lang` attribute of each
+    # `sdg:Description`. `C022`, which requires that attribute, is not applied
+    # here — `docs/reste_à_faire.md` records the partiality.
+    describe 'the language its description names' do
+      it 'accepts a code the list publishes' do
+        expect(with_classifications(classification).validate!).to be_truthy
+      end
+
+      it 'refuses a code it does not, under R-EDM-REQ-C021' do
+        described = classification(descriptions: '<sdg:Description lang="ZZ">Commune</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
+      end
+
+      # The comparison carries no `i` flag, and the list publishes upper case.
+      it 'refuses a published code written in lower case' do
+        described = classification(descriptions: '<sdg:Description lang="en">French municipality</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
+      end
+
+      # Written empty, the attribute is there and is a context node: the
+      # assertion fires, and the empty string is no code of the list.
+      it 'refuses a lang written empty, under R-EDM-REQ-C021' do
+        described = classification(descriptions: '<sdg:Description lang="">Commune</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
+      end
+
+      # The case that proves `C022` is not applied: its context is the element
+      # and it would refuse this, where `C021`'s context is the attribute that
+      # is not there. A reader reusing `require_language` would refuse it too.
+      it 'accepts a description carrying no lang at all' do
+        described = classification(descriptions: '<sdg:Description>Commune</sdg:Description>')
+
+        expect(with_classifications(described).validate!).to be_truthy
+      end
+
+      # `InformationConceptType` makes `sdg:Description` `0..n`, and each
+      # attribute is a context of its own: the second is judged as the first is.
+      it 'judges a second description as much as the first' do
+        described = classification(descriptions: '<sdg:Description lang="EN">French municipality</sdg:Description>' \
+                                                 '<sdg:Description lang="fr">Commune</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
+      end
+
+      it 'accepts a classification describing itself in no language at all' do
+        expect(with_classifications(classification(descriptions: '')).validate!).to be_truthy
+      end
+    end
+  end
+
   # Chapter 4.6 again, on the agents of the `EvidenceRequester` collection the
   # requester is not — the intermediary platform of the country that asks. Eight
   # FATAL rules judge them, no context naming a classification, and these
@@ -1211,6 +1443,17 @@ RSpec.describe EvidenceRequestParser do
         expect { with_platform_country('de').validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C015')))
       end
+
+      # `R-EDM-REQ-C016` names no classification either, so the territory of
+      # every agent of the collection is judged and not the requester's alone.
+      it 'accepts a territory the code list publishes' do
+        expect(with_platform_territory('DE300').validate!).to be_truthy
+      end
+
+      it 'refuses one it does not, under R-EDM-REQ-C016' do
+        expect { with_platform_territory('DE999').validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
+      end
     end
 
     # The walk judges each of the agents the requester is not: the real request
@@ -1233,6 +1476,17 @@ RSpec.describe EvidenceRequestParser do
       it 'refuses one the two before it made look conformant' do
         expect { with_third_agent(conformant.sub('lang="EN"', 'lang="en"')).validate! }
           .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C108')))
+      end
+
+      # The same proof for `C016`: the requester and the platform before it
+      # declare a conformant territory or none at all, so a reader stopping at
+      # the first agent would serve this one unexamined.
+      it 'refuses one whose territory alone breaks C016' do
+        addressed = conformant.sub('<sdg:Classification>',
+          '<sdg:Address><sdg:AdminUnitLevel2>ZZ999</sdg:AdminUnitLevel2></sdg:Address><sdg:Classification>')
+
+        expect { with_third_agent(addressed).validate! }
+          .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C016')))
       end
     end
 
@@ -1418,6 +1672,14 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `AddressType` puts `AdminUnitLevel2` after `AdminUnitLevel1`, and the real
+  # request carries no such element: it is added rather than substituted.
+  def with_requester_territory(code)
+    with_requester_agent do |agent|
+      agent.sub(%r{(</sdg:AdminUnitLevel1>)}) { "#{Regexp.last_match(1)}<sdg:AdminUnitLevel2>#{code}</sdg:AdminUnitLevel2>" }
+    end
+  end
+
   # The real request names no identifier for its beneficiary, so one is added
   # here. Its value is of the shape `R-EDM-REQ-C040` fixes, that rule being a
   # different one from the two under test.
@@ -1467,6 +1729,15 @@ RSpec.describe EvidenceRequestParser do
 
   def with_platform_country(code)
     with_platform_address("<sdg:Address><sdg:AdminUnitLevel1>#{code}</sdg:AdminUnitLevel1></sdg:Address>")
+  end
+
+  # The country beside it, `AddressType` sequencing the two: a territory alone
+  # would be judged all the same — `C016`'s context is its own element — but an
+  # address shaped as the schema shapes it is what a correspondent sends.
+  def with_platform_territory(code)
+    with_platform_address(
+      "<sdg:Address><sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1><sdg:AdminUnitLevel2>#{code}</sdg:AdminUnitLevel2></sdg:Address>"
+    )
   end
 
   # The agent of the `EvidenceProvider` slot alone, `Fixtures::PROVIDER_AGENT`
