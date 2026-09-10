@@ -7,11 +7,15 @@ Rails.application.routes.draw do
 
   get '/auth/cles_publiques', to: 'auth#cles_publiques'
 
-  # The three addresses the demonstration procedure declares to FranceConnect+,
-  # outside `/admin` and so outside what `AdminAuthentication` closes.
-  # `docs/eidas_context.md` says why they answer publicly, and why they are
-  # settled before the flow that will use them exists.
+  # The addresses of the demonstration procedure, outside `/admin` and so
+  # outside what `AdminAuthentication` closes. `docs/eidas_context.md` says why
+  # the three FranceConnect+ ones answer publicly.
+  #
+  # The fourth is what makes the procedure a requester like any other: OOTS-France
+  # reads a requester's signing keys under the URL `DONNEES_REQUETEURS` declares
+  # for it, and the procedure declares `<URL_OOTS_FRANCE>/demo`.
   scope :demo, as: :demo do
+    get 'auth/cles_publiques', to: 'demo/auth#cles_publiques'
     get 'franceconnect/cles_publiques', to: 'france_connect#cles_publiques'
     get 'franceconnect/retour_connexion', to: 'france_connect#retour_connexion'
     get 'franceconnect/retour_deconnexion', to: 'france_connect#retour_deconnexion'
@@ -46,7 +50,17 @@ Rails.application.routes.draw do
       resource :identification, only: :create
       # The form the user comes back to, identified. Named in French like the
       # other paths of this repository, and carried by an English class.
-      resource :demande, only: :show, controller: 'grant_requests'
+      #
+      # `create` is where the explicit request of chapter 1 §3.3 is read: given,
+      # it leads to the confirmation; withheld, it leads nowhere and nothing is
+      # asked of anyone.
+      resource :demande, only: %i[show create], controller: 'grant_requests'
+      # The last page before an exchange exists. `show` names the provider and
+      # the evidence type the directories resolve, which requirement 27 of
+      # chapter 1 asks for « before any request is made » ; `create` **is** the
+      # explicit request, and the request leaves as it is pressed — chapter
+      # 4.5.1 §2.7 ties `IssueDateTime` to that instant.
+      resource :confirmation, only: %i[show create], controller: 'confirmations'
     end
 
     # The log is walked through its events, and only through them: the listing

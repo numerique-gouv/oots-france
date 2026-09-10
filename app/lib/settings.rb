@@ -11,8 +11,10 @@ module Settings
     IDENTIFIANT_FOURNISSEUR_FRANCAIS
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
+    IDENTIFIANT_REQUETEUR_DEMARCHE
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
+    CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
     URL_FRANCE_CONNECT
     IDENTIFIANT_CLIENT_FRANCE_CONNECT
     SECRET_CLIENT_FRANCE_CONNECT
@@ -121,6 +123,19 @@ module Settings
     # this one opens what FranceConnect+ encrypts for the demonstration
     # procedure. Two interfaces, two correspondents, two keys.
     def france_connect_private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64')
+
+    # The third key, which signs where the two above decrypt: the beneficiary
+    # token the demonstration procedure emits, and which this component then
+    # opens as it opens any requester's. An EC key, `BeneficiaryToken`
+    # admitting ES256 and nothing else.
+    def demo_signing_key_jwk = decode_jwk('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64')
+
+    # The SIRET the demonstration procedure is registered under in
+    # `DONNEES_REQUETEURS`, and which it sends as `idRequeteur`. Distinct from
+    # `IDENTIFIANT_FOURNISSEUR_FRANCAIS`: the procedure plays C1 where that one
+    # plays C4, and the demonstration looping France to France is a fact of the
+    # setup, not an identity the TDD give the two roles.
+    def demo_requester_id = required('IDENTIFIANT_REQUETEUR_DEMARCHE')
 
     def evidence_requesters_data = JSON.parse(required('DONNEES_REQUETEURS'))
 

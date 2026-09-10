@@ -16,8 +16,16 @@ RSpec.describe PublicKeySet do
     expect(key).to include('kty' => 'RSA', 'n' => private_jwk['n'], 'e' => private_jwk['e'])
   end
 
-  it 'declares the key is for encryption' do
+  # RFC 7517 §4.2: `use` says what the published key is for, and a signing key
+  # served as `enc` would say the opposite of what it is.
+  it 'declares the key is for encryption unless told otherwise' do
     expect(key['use']).to eq('enc')
+  end
+
+  it 'declares a signing key as such when it is one' do
+    published = described_class.new(private_jwk, use: described_class::SIGNATURE).to_h[:keys].first
+
+    expect(published['use']).to eq('sig')
   end
 
   describe 'the key identifier' do
@@ -71,7 +79,7 @@ RSpec.describe PublicKeySet do
   end
 
   it 'refuses a key type it cannot thumbprint, rather than inventing one' do
-    expect { described_class.new('kty' => 'OKP', 'crv' => 'Ed25519', 'x' => 'abc').to_h }
+    expect { described_class.new({ 'kty' => 'OKP', 'crv' => 'Ed25519', 'x' => 'abc' }).to_h }
       .to raise_error(ConfigurationError, /OKP/)
   end
 end

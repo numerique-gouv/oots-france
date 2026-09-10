@@ -45,6 +45,12 @@ MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:-Ci-OotsFrance-2026!}"
 # same value, as for the credentials above.
 MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
 
+# Where this deployment answers. Held in a variable rather than written twice
+# below: the demonstration procedure declares its own address in
+# DONNEES_REQUETEURS as a path under this one, and the two must name the same
+# host — OOTS-France reads the procedure's signing keys there.
+URL_OOTS_FRANCE="${URL_OOTS_FRANCE:-http://localhost:3000}"
+
 # The credentials Domibus will put on its notifications towards us. They must be
 # the same here and in `wsplugin.push.auth.*` on the gateway side, which
 # scripts/configure_domibus.sh fills in.
@@ -116,6 +122,31 @@ puts Base64.strict_encode64(JSON.generate(jwk))
 '
 }
 
+# La clé dont la démarche de démonstration **signe** le jeton du bénéficiaire,
+# là où les deux ci-dessus déchiffrent. `BeneficiaryToken::SIGNATURE` n'admet
+# qu'ES256, donc une courbe P-256 et non du RSA : c'est l'algorithme qui décide
+# du type de clé, pas l'inverse.
+#
+# Les coordonnées sont écrites sur 32 octets fixes, comme la RFC 7518 §6.2
+# l'impose : `to_s(2)` rend la représentation minimale d'un entier, et une
+# valeur commençant par un octet nul produirait sinon un membre trop court, que
+# rien ne rejetterait avant la première signature.
+engendreCleJwkEc() {
+  executeRuby -ropenssl -rjson -rbase64 -e '
+cle = OpenSSL::PKey::EC.generate("prime256v1")
+point = cle.public_key.to_octet_string(:uncompressed)
+b64 = ->(octets) { Base64.urlsafe_encode64(octets, padding: false) }
+
+jwk = {
+  kty: "EC", crv: "P-256", alg: "ES256", use: "sig",
+  x: b64[point[1, 32]], y: b64[point[33, 32]],
+  d: b64[cle.private_key.to_s(2).rjust(32, "\x00")],
+}
+
+puts Base64.strict_encode64(JSON.generate(jwk))
+'
+}
+
 # Output that is truncated or polluted would be copied into .env.oots as it is.
 # `Settings.verify!` would not catch it there: it only rejects empty values, and
 # this one is not empty. The failure would therefore surface only at the first
@@ -127,19 +158,26 @@ puts Base64.strict_encode64(JSON.generate(jwk))
 # in a pipe only the last one counts, and `base64 -d` writes to stdout everything
 # it managed to decode before failing.
 #
-# The variable is named in the message, two keys being generated: « la clé JWK »
-# alone would leave the reader to guess which of the two.
+# The variable is named in the message, three keys being generated: « la clé
+# JWK » alone would leave the reader to guess which of the three.
+#
+# The third argument is the last member the generator writes — `qi` for an RSA
+# key, `d` for an EC one — because the two key types have no member in common
+# that comes last for both. The caller names it rather than this function
+# guessing from the payload: a check that reads the key it is checking would
+# accept whatever that key happens to end with.
 verifieCleJwk() {
   CLE_JWK_DECODEE=$(echo "$1" | base64 -d 2>/dev/null) || {
     echo "❌ La clé JWK produite pour $2 n'est pas du base64 valide." >&2
     exit 1
   }
 
-  # `qi` is the last field the generator writes, and `}` closes the object:
-  # looking for `kty`, which comes first, would let through a key truncated right
-  # after it — and so stripped of all the cryptographic material.
+  # That last member, and `}` closing the object: looking for `kty`, which comes
+  # first, would let through a key truncated right after it — and so stripped of
+  # all the cryptographic material.
+  DERNIER_MEMBRE="\"$3\""
   case "$CLE_JWK_DECODEE" in
-    *'"qi"'*'}') ;;
+    *"$DERNIER_MEMBRE"*'}') ;;
     *)
       echo "❌ La clé JWK produite pour $2 est incomplète." >&2
       exit 1
@@ -147,15 +185,23 @@ verifieCleJwk() {
   esac
 }
 
-# Two keys, and not one shared: the first opens the beneficiary token a French
+# Three keys, and not one shared: the first opens the beneficiary token a French
 # service provider encrypts for this component, the second the ID Token
-# FranceConnect+ encrypts for the demonstration procedure. Two correspondents,
-# two interfaces — lending one key to both would tie together what nothing ties.
+# FranceConnect+ encrypts for the demonstration procedure, the third signs the
+# beneficiary token that same procedure emits. Three interfaces — lending one
+# key to several would tie together what nothing ties.
+#
+# The third one signs where the two others decrypt, hence a curve rather than
+# RSA: chapter 4.5.1 leaves the token unspecified, but `BeneficiaryToken`
+# admits ES256 alone, which no RSA key can produce.
 CLE_PRIVEE_JWK_EN_BASE64=$(engendreCleJwk)
-verifieCleJwk "$CLE_PRIVEE_JWK_EN_BASE64" CLE_PRIVEE_JWK_EN_BASE64
+verifieCleJwk "$CLE_PRIVEE_JWK_EN_BASE64" CLE_PRIVEE_JWK_EN_BASE64 qi
 
 CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$(engendreCleJwk)
-verifieCleJwk "$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
+verifieCleJwk "$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64 qi
+
+CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64=$(engendreCleJwkEc)
+verifieCleJwk "$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 d
 
 # The French provider keeps its real identity rather than a test name: that
 # identity is copied into the `ErrorProvider` of the reference messages in
@@ -184,10 +230,12 @@ cat > .env.oots <<FIN
 AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
 CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
 CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
-DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"}}
+CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
+DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"},"00000000000003":{"nom":"Université de démonstration","url":"$URL_OOTS_FRANCE/demo"}}
 IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
+IDENTIFIANT_REQUETEUR_DEMARCHE=00000000000003
 NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
-URL_OOTS_FRANCE=http://localhost:3000
+URL_OOTS_FRANCE=$URL_OOTS_FRANCE
 URL_FRANCE_CONNECT=http://localhost:3100/api/v2
 IDENTIFIANT_CLIENT_FRANCE_CONNECT=oots-france-demarche
 SECRET_CLIENT_FRANCE_CONNECT=faux-france-connect-secret-de-la-demarche

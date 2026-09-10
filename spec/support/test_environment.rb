@@ -12,6 +12,7 @@ ENV['SUFFIXE_IDENTIFIANTS_DOMIBUS'] ||= 'oots.eu'
 ENV['IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'AP_FR_01'
 ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'
 ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
+ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] ||= '00000000000003'
 ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 ENV['URL_OOTS_FRANCE'] ||= 'http://localhost:3000'
 ENV['URL_FRANCE_CONNECT'] ||= 'http://franceconnect.test/api/v2'
@@ -28,6 +29,13 @@ ENV['DUREE_RETENTION_JOURNAL_MOIS'] ||= '12'
 ENV['DELAI_EXPIRATION_REQUETEUR_MINUTES'] ||= '6'
 ENV['DELAI_EXPIRATION_FOURNISSEUR_MINUTES'] ||= '5'
 ENV['DELAI_RESERVATION_REMISE_MINUTES'] ||= '6'
+
+# The key the demonstration procedure signs its beneficiary token with. Drawn
+# rather than pinned, and an EC one: `BeneficiaryToken` admits ES256 alone, and
+# a curve is cheap enough to generate that no spec has to arrange it.
+ENV['CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64'] ||= Base64.strict_encode64(
+  JWT::JWK.new(OpenSSL::PKey::EC.generate('prime256v1')).export(include_private: true).to_json,
+)
 
 # The three keys of the exchange log are read while the framework boots, which
 # happened before this file was loaded: the values just posted would otherwise
