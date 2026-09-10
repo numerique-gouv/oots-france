@@ -25,7 +25,16 @@
 # Any libraries that use a connection pool or another resource pool should
 # be configured to provide at least as many connections as the number of
 # threads. This includes Active Record's `pool` parameter in `database.yml`.
-threads_count = ENV.fetch("RAILS_MAX_THREADS", 3)
+#
+# Five and not the generated three: this application re-enters itself while
+# serving a request. `GET /requete/pieceJustificative` opens the caller's
+# beneficiary token, and authenticating it means fetching that caller's key set
+# over HTTP — which is this deployment itself whenever the caller is the
+# demonstration procedure, and one more nested call whatever the caller is. A
+# thread count too low deadlocks there in silence, the outer request holding a
+# thread the inner one is waiting for. `config/database.yml` already sizes its
+# pool on five.
+threads_count = ENV.fetch("RAILS_MAX_THREADS", 5)
 threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.

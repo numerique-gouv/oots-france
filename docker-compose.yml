@@ -62,14 +62,6 @@ services:
     # application role for the owner in this process's environment, which a child
     # could not do. `web` and `worker` are the only two services to source it.
     command: "sh -c 'rm -f tmp/pids/server.pid && . ./bin/database_role && exec bundle exec rails server -b 0.0.0.0'"
-    environment:
-      # The demonstration procedure calls this deployment through its own public
-      # contract, and the call nests: the confirmation holds a thread, the
-      # request it makes holds a second, and the beneficiary token that request
-      # opens is authenticated against keys read on a third. Puma's default of
-      # three leaves no slack at all, and any concurrent request — a stylesheet
-      # — turns the nesting into a wait nothing releases.
-      RAILS_MAX_THREADS: 5
     ports:
       - "${PORT_OOTS_FRANCE}:3000"
     depends_on:
