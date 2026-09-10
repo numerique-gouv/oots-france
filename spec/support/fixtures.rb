@@ -63,10 +63,32 @@ module Fixtures
   # a message that is well-formed for the gateway and wrong for the EDM. The
   # body travels base64-encoded inside the envelope, so it has to be decoded,
   # altered and encoded back.
-  def envelope_with_body(name)
+  def envelope_with_body(name, &)
     document = Nokogiri::XML(real_envelope(name))
-    value = document.xpath('//payload/value').first
-    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
+    rewrite_body(document, &)
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
+  # The same envelope as a correspondent of the 1.2 line would have sent it: the
+  # header carries neither of the two properties only 2.0 knows —
+  # `R-EDM-ebMS-037` names the exchange there and `-038` announces the version,
+  # and 1.2.5 carries neither rule — and the body slot declares the older line.
+  #
+  # Derived and not captured: no member state still on that line has been
+  # reached, and stating the derivation is exactly stating what separates the two
+  # headers. Removed by XPath rather than by a pattern, for the reason
+  # `envelope_without` gives: the prefix a gateway binds to the ebMS namespace is
+  # its own.
+  def earlier_line_envelope(name = 'requete')
+    document = Nokogiri::XML(real_envelope(name))
+    document.xpath("//eb:Property[@name='SpecificationId'] | //eb:Property[@name='ExchangeId']",
+      OotsNamespaces::NAMESPACES).each(&:remove)
+    rewrite_body(document) do |body|
+      downgraded = body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
+
+      block_given? ? yield(downgraded) : downgraded
+    end
 
     RetrievedMessageParser.new(document.to_xml)
   end
@@ -192,6 +214,11 @@ module Fixtures
   end
 
   private
+
+  def rewrite_body(document)
+    value = document.at_xpath('//payload/value')
+    value.content = Base64.strict_encode64(yield(Base64.decode64(value.text)))
+  end
 
   def read_fixture(path) = Rails.root.join('spec/fixtures', path).read
 end

@@ -2208,4 +2208,38 @@ RSpec.describe EvidenceRequestParser do
   def replace_language(agent, value)
     agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
   end
+  # RG10 and RG11 of OOTS-200. `R-EDM-REQ-C001` fixes a different literal on
+  # each line, and the version the message is read in — the ebMS property where
+  # the header carries one, the slot otherwise — is what says which literal
+  # applies.
+  describe 'the version the request declares' do
+    it 'accepts the older literal from a request read on the 1.2 line' do
+      expect { earlier_line_envelope.body.validate! }.not_to raise_error
+    end
+
+    # CA11: the header announced 2.0 and the body says 1.2. Refused under the
+    # rule of the line the header named, which is also the line the exception
+    # response goes back in.
+    it 'refuses a request whose header announces 2.0 and whose slot says 1.2' do
+      contradicting = envelope_with_body('requete') do |body|
+        body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
+      end
+
+      expect { contradicting.body.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+    end
+
+    # A message with no property announces itself in its slot alone, so a slot
+    # France cannot read is what makes the two disagree there: the version falls
+    # back on the preferred one, and the refusal is worded in it.
+    it 'refuses a request announcing, in its slot alone, a version France does not speak' do
+      dated = earlier_line_envelope do |body|
+        body.sub(EdmSpecification::V1_2.identifier, 'oots-edm:v1.0')
+      end
+
+      expect { dated.body.validate! }
+        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
+      expect(dated.specification).to eq(EdmSpecification.preferred)
+    end
+  end
 end

@@ -45,7 +45,14 @@ class EvidenceRequestParser
   # what plays.
   BENEFICIARY_SCHEME = 'eidas'.freeze
 
-  def initialize(document)
+  # The version the message is read in, settled by `RetrievedMessageParser`
+  # before the payload is opened: `R-EDM-REQ-C001` fixes a different literal on
+  # each line, so a reader holding every request to one of them would refuse the
+  # correspondents of the other.
+  attr_reader :specification
+
+  def initialize(document, specification: EdmSpecification.preferred)
+    @specification = specification
     @request = at(document, '/query:QueryRequest')
     raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
   end
@@ -216,13 +223,19 @@ class EvidenceRequestParser
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
 
+  # Against the version the message was read in, which is the ebMS property when
+  # the header carries one: a slot contradicting it is the inconsistency chapter
+  # 4.7 §2.6.2 has the receiver refuse, and it is refused under the rule of the
+  # line the header announced. A message with no property is read in the version
+  # of its own slot, so this only fires there on a version France does not
+  # speak, `EdmSpecification.resolve` having fallen back on the preferred one.
   def require_expected_specification
     declared = text_at(request, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
-    return if declared == EdmSpecification.preferred.identifier
+    return if declared == specification.identifier
 
     refuse('R-EDM-REQ-C001', 'parsers.evidence_request.unexpected_specification',
       announced: declared.presence || I18n.t('parsers.evidence_request.unnamed_specification'),
-      expected: EdmSpecification.preferred.identifier)
+      expected: specification.identifier)
   end
 
   # R-EDM-REQ-S016: either a natural person or a legal one, and never both.

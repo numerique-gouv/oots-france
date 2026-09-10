@@ -222,4 +222,46 @@ RSpec.describe RetrievedMessageParser do
       expect { message.body }.to raise_error(UnreadableMessageError)
     end
   end
+
+  # RG10 of OOTS-200. Chapter 4.7 §2.6.2 has a receiver of several versions
+  # « support both the previous mechanism based on the SpecificationIdentifier
+  # Slot […] and the SpecificationId ebMS message property ».
+  describe 'the version a message is read in' do
+    it 'takes the ebMS property when the header carries one' do
+      message = described_class.new(real_envelope('requete'))
+
+      expect(message.specification).to eq(EdmSpecification::V2_0)
+    end
+
+    # What a correspondent of the 1.2 line sends: no property at all, the slot
+    # of the body saying it.
+    it 'falls back on the slot of the body when the header announces nothing' do
+      expect(earlier_line_envelope.specification).to eq(EdmSpecification::V1_2)
+    end
+
+    # The property is read before the payload is opened, which is what lets a
+    # body nobody can parse be refused in the version its sender meant.
+    it 'prefers the property over a slot that contradicts it' do
+      message = envelope_with_body('requete') do |body|
+        body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
+      end
+
+      expect(message.specification).to eq(EdmSpecification::V2_0)
+    end
+
+    it 'reads a version France does not speak as the preferred one' do
+      message = envelope_where('requete', "//eb:Property[@name='SpecificationId']", 'oots-edm:v1.0')
+
+      expect(message.specification).to eq(EdmSpecification.preferred)
+    end
+
+    # A message announcing nothing in its header and carrying a body nobody can
+    # read: 1.2 is the line whose header carries no property, so that is the
+    # likelier of the two, and the refusal goes back worded in it.
+    it 'reads an unreadable body announcing nothing as a message of the 1.2 line' do
+      unreadable = earlier_line_envelope { |_body| '<pas' }
+
+      expect(unreadable.specification).to eq(EdmSpecification::V1_2)
+    end
+  end
 end

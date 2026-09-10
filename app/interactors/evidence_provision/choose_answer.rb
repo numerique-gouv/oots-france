@@ -76,18 +76,27 @@ module EvidenceProvision
     # evaluated: no duration is configured on that side.
     def expired? = Settings.timeout_enabled? && context.message.sent_at < Settings.provider_timeout.ago
 
-    # The version travels twice, in the ebMS property and in the body slot, and
-    # the two must agree. `request.validate!` pins the body to the same
-    # constant, so checking the header against it settles the pair — the
-    # inconsistency chapter 4.7 requires the receiver to reject.
+    # `R-EDM-ebMS-019` requires the `SpecificationId` property and `-038` fixes
+    # its value — both of 2.0.1 alone. A message read on the 1.2 line is
+    # therefore not asked for the property at all: 1.2 announces itself in its
+    # body slot and nowhere else, and demanding one here would refuse every
+    # conformant 1.2 correspondent.
+    #
+    # Where the property is asked for, the version the message is read in is the
+    # one it announced: `require_expected_specification` then pins the body to
+    # that same version, so checking the header against it settles the pair —
+    # the inconsistency chapter 4.7 §2.6.2 has the receiver reject.
     def reject_unless_expected_version
+      expected = context.message.specification
+      return unless expected.announced_in_header?
+
       announced = context.message.specification_id
-      return if announced == EdmSpecification.preferred.identifier
+      return if announced == expected.identifier
 
       refuse(announced.blank? ? 'R-EDM-ebMS-019' : 'R-EDM-ebMS-038',
         I18n.t('interactors.evidence_provision.choose_answer.unexpected_version',
           announced: announced.presence || I18n.t('interactors.evidence_provision.choose_answer.unnamed_version'),
-          expected: EdmSpecification.preferred.identifier))
+          expected: expected.identifier))
     end
 
     # Chapter 4.4: « A Data Service MUST reject requests that use identifiers
