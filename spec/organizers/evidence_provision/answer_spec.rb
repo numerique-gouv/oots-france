@@ -488,6 +488,35 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
+  # `R-EDM-REQ-C017` on an agent of the `EvidenceProvider` slot the request does
+  # not designate. What travels back is the rule: the `message` of an
+  # `rs:Exception` is the literal `EdmException::INVALID_REQUEST` carries,
+  # copied from the published code list, and says nothing of the agent. The
+  # French sentence that names it is the operator's, and
+  # `spec/parsers/evidence_request_parser_spec.rb` is where it is asserted.
+  describe 'a request whose second provider agent names no scheme' do
+    let(:message) do
+      envelope_with_provider_agent do |agent|
+        "#{agent}<sdg:Agent><sdg:Identifier>AUTRE</sdg:Identifier>" \
+          '<sdg:Name lang="EN">Another provider</sdg:Name></sdg:Agent>'
+      end
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule it applied' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C017')
+    end
+
+    it 'journals the rule alongside the code' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-C017')
+    end
+  end
+
   # `R-EDM-REQ-S004` (FATAL) on the request, `R-EDM-ERR-S004` on the answer, and
   # `R-EDM-ERR-C025` (FATAL) between the two: the one response that may omit
   # `requestId` is an `rs:InvalidRequestExceptionType`, which is exactly what

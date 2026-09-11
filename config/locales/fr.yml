@@ -514,16 +514,16 @@ fr:
       platform_territory_unknown: >-
         Le territoire de la plateforme intermédiaire (« %{territory} ») n'est pas un code de la
         liste NUTS.
-      # R-EDM-REQ-S042, C017, C018, C110 et C111 sur l'agent que porte le slot
-      # EvidenceProvider — le fournisseur que la requête désigne. Les quatre
-      # dernières sont, mot pour mot, les assertions C011, C012, C109 et C108 de
-      # la collection EvidenceRequester, publiées sous d'autres identifiants
-      # parce que c'est le slot qui les fixe, et non la classification ; S042,
-      # elle, est propre à ce slot, qui porte l'agent directement là où la
-      # collection l'enveloppe d'un rim:Element. Ceux-là repartent tous en
-      # EDM:ERR:0003 : la réponse d'erreur nomme la France comme fournisseur,
-      # jamais celui qui a été reçu, donc rien de ce qui est refusé ici ne
-      # voyagerait dans le message qui le refuse.
+      # R-EDM-REQ-S042, C017, C018, C110 et C111 sur les agents que porte le slot
+      # EvidenceProvider — le premier étant le fournisseur que la requête
+      # désigne. Les quatre dernières sont, mot pour mot, les assertions C011,
+      # C012, C109 et C108 de la collection EvidenceRequester, publiées sous
+      # d'autres identifiants parce que c'est le slot qui les fixe, et non la
+      # classification ; S042, elle, est propre à ce slot, qui porte l'agent
+      # directement là où la collection l'enveloppe d'un rim:Element. Ceux-là
+      # repartent tous en EDM:ERR:0003 : la réponse d'erreur nomme la France
+      # comme fournisseur, jamais celui qui a été reçu, donc rien de ce qui est
+      # refusé ici ne voyagerait dans le message qui le refuse.
       provider_without_agent: >-
         Le slot « EvidenceProvider » de la requête reçue ne porte pas d'agent.
       # Aucune assertion ne couvre ces deux absences : C017 a pour contexte
@@ -560,6 +560,28 @@ fr:
       provider_unexpected_children: >-
         Le fournisseur désigné ne peut porter que sdg:Identifier et sdg:Name (reçu en plus :
         %{children}).
+      # Les mêmes C017, C018, C111 et C110 sur les agents du slot que la requête
+      # ne désigne pas : aucun de leurs contextes ne porte de prédicat de
+      # position, donc chaque agent du rim:SlotValue les enfreint comme le
+      # premier. Une phrase à eux, parce qu'un second agent n'est pas « le
+      # fournisseur désigné » et qu'un refus qui le dirait nommerait le mauvais.
+      # Rien n'est exigé de leur présence : ni assertion ni chapitre 4.5.1 §3.3,
+      # qui décrit l'agent que le slot désigne, ne parle d'un second agent sans
+      # identifiant ni sans nom.
+      accompanying_provider_without_scheme: >-
+        L'identifiant d'un fournisseur que la requête ne désigne pas ne porte pas d'attribut
+        « schemeID ».
+      accompanying_provider_scheme_unknown: >-
+        Le schéma d'identifiant d'un fournisseur que la requête ne désigne pas (« %{scheme} »)
+        n'est ni un code de la liste EAS, ni un code pays d'OOTS.
+      accompanying_provider_id_too_long: >-
+        L'identifiant d'un fournisseur que la requête ne désigne pas fait %{length} caractères,
+        au-delà des %{maximum} admis.
+      accompanying_provider_without_language: >-
+        Un nom d'un fournisseur que la requête ne désigne pas ne porte pas d'attribut « lang ».
+      accompanying_provider_language_unknown: >-
+        La langue d'un nom d'un fournisseur que la requête ne désigne pas (« %{language} ») n'est
+        pas un code de la liste LanguageCode.
       # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
       # en porte un.
       beneficiary_identifier_without_scheme: >-

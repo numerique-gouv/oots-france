@@ -1732,17 +1732,78 @@ RSpec.describe EvidenceRequestParser do
       # `S042` asserts one agent and nothing refuses a second, which the reader
       # never designates: this rule is where that second one is judged.
       it 'judges a second agent of the same slot value' do
-        beside = <<~XML
-          <sdg:Agent>
-            <sdg:Identifier schemeID="#{IdentifierScheme::EAS_PREFIX}0009">AUTRE</sdg:Identifier>
-            <sdg:Name lang="EN">Another provider</sdg:Name>
-            <sdg:Classification>EP</sdg:Classification>
-          </sdg:Agent>
-        XML
-
-        doubled = with_provider_agent { |agent| agent + beside }
+        doubled = beside_the_provider(classification: '<sdg:Classification>EP</sdg:Classification>')
 
         expect { doubled.validate! }.to refusing('R-EDM-REQ-S043')
+      end
+    end
+
+    # The agents of the slot the request does not designate. `C017`, `C018`,
+    # `C111` and `C110` carry no positional predicate in their contexts —
+    # `…/rim:SlotValue/sdg:Agent/sdg:Identifier`, `…/sdg:Name` and its `@lang` —
+    # so they reach these as much as the first, and a reader judging the first
+    # alone would serve a request four FATAL rules refuse.
+    describe 'the agents the slot carries beside it' do
+      it 'accepts a conformant second agent' do
+        expect(beside_the_provider.validate!).to be_truthy
+      end
+
+      # Which one the reader designates, said by a refusal: chapter 4.5.1 §3.3
+      # requires an identifier of the agent the slot designates, and the second
+      # carrying one changes nothing.
+      it 'designates the first agent, whatever the second carries' do
+        beheaded = beside_the_provider { |agent| remove_identifier(agent) }
+
+        expect { beheaded.validate! }.to raise_error(an_instance_of(UnreadableMessageError)
+          .and(having_attributes(detail: AgentConformance::PROVIDER_IDENTIFIER_REQUIRED)))
+      end
+
+      it 'refuses a second identifier naming no scheme, under R-EDM-REQ-C017' do
+        expect { beside_the_provider(identifier: '<sdg:Identifier>AUTRE</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C017')
+      end
+
+      it 'refuses a second scheme of no published list, under R-EDM-REQ-C018' do
+        expect { beside_the_provider(identifier: '<sdg:Identifier schemeID="SIRET">AUTRE</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C018')
+      end
+
+      it 'refuses a second name without a lang attribute, under R-EDM-REQ-C111' do
+        expect { beside_the_provider(name: '<sdg:Name>Another provider</sdg:Name>').validate! }
+          .to refusing('R-EDM-REQ-C111')
+      end
+
+      it 'refuses a second lang the list does not publish, under R-EDM-REQ-C110' do
+        expect { beside_the_provider(name: '<sdg:Name lang="fr">Un autre fournisseur</sdg:Name>').validate! }
+          .to refusing('R-EDM-REQ-C110')
+      end
+
+      # The sentence, and not only the `detail`: a second agent is not the one
+      # the request designates, and a refusal saying it were would send the
+      # correspondent looking at the wrong agent.
+      it 'names the agent it refuses as one the request does not designate' do
+        expect { beside_the_provider(name: '<sdg:Name>Another provider</sdg:Name>').validate! }
+          .to raise_error(UnreadableMessageError, /ne désigne pas/)
+      end
+
+      # Nothing requires a second agent to carry an identifier or a name: no
+      # assertion says so, and chapter 4.5.1 §3.3 describes the agent the slot
+      # designates.
+      it 'requires neither an identifier nor a name of it' do
+        bare = beside_the_provider(identifier: '', name: '')
+
+        expect(bare.validate!).to be_truthy
+      end
+
+      # RG19 again, on the other half of the ticket: the four assertions are
+      # published word for word at 1.2.5 too, `C018` differing only by the name
+      # of the country list it compares to.
+      it 'judges a second agent of the 1.2 line by the very same rule' do
+        earlier = earlier_line_envelope do |body|
+          body.sub(Fixtures::PROVIDER_AGENT) { |agent| agent + second_provider_agent(identifier: '<sdg:Identifier>AUTRE</sdg:Identifier>') }
+        end
+
+        expect { earlier.body.validate! }.to refusing('R-EDM-REQ-C017')
       end
     end
   end
@@ -2172,6 +2233,20 @@ RSpec.describe EvidenceRequestParser do
   def with_second_provider_name(second) = with_provider_agent { |agent| add_name(agent, second) }
 
   def with_provider_language(value) = with_provider_agent { |agent| replace_language(agent, value) }
+
+  # A second `sdg:Agent` under the same slot value, beside the one the request
+  # designates. The block, where a spec passes one, alters the **first** agent,
+  # so that what the reader designates can be told from what it merely judges.
+  def beside_the_provider(**)
+    with_provider_agent { |agent| (block_given? ? yield(agent) : agent) + second_provider_agent(**) }
+  end
+
+  # Conformant to the four rules that reach it by default, so that each example
+  # breaks the one it names and no other.
+  def second_provider_agent(identifier: %(<sdg:Identifier schemeID="#{IdentifierScheme::EAS_PREFIX}0009">AUTRE</sdg:Identifier>),
+                            name: '<sdg:Name lang="EN">Another provider</sdg:Name>', classification: '')
+    "<sdg:Agent>#{identifier}#{name}#{classification}</sdg:Agent>"
+  end
 
   # A third agent in the collection, beside the two the real request carries:
   # what proves the walk judges each of the agents the requester is not, and

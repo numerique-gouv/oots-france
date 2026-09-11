@@ -130,6 +130,12 @@ ignore_unused:
   - parsers.evidence_request.{provider_id_too_long,provider_without_name}
   - parsers.evidence_request.{provider_name_too_short,provider_unexpected_children}
   - parsers.evidence_request.{provider_without_language,provider_language_unknown}
+  # And the four of them again on the agents of that slot the request does not
+  # designate, under their own sentences: no context of theirs carries a
+  # positional predicate, so each agent breaks them as the first does.
+  - parsers.evidence_request.{accompanying_provider_without_scheme,accompanying_provider_scheme_unknown}
+  - parsers.evidence_request.{accompanying_provider_id_too_long,accompanying_provider_without_language}
+  - parsers.evidence_request.accompanying_provider_language_unknown
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   # The rules the `Requirements` slot puts in play, `validate!` naming them too.
   # The last four are composed from the wording being judged — a requirement's
