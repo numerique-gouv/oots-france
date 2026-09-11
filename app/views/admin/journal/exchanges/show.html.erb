@@ -5,7 +5,7 @@
       [@exchange.exchange_id, nil],
     ]) %>
 
-<h1 class="fr-h3"><%= @exchange.exchange_id %></h1>
+<h1 class="fr-h3"><%= @exchange.exchange_id %><%= render MintedIdentifierComponent.new(exchange: @exchange) %></h1>
 
 <p><%= render ExchangeStatusComponent.new(status: @exchange.status) %></p>
 
@@ -20,6 +20,7 @@
               <th scope="row"><%= t('admin.journal.exchanges.attributes.direction') %></th>
               <td><%= t("admin.journal.exchanges.directions.#{@exchange.direction}") %></td>
             </tr>
+            <%= render 'admin/journal/specification_row', exchange: @exchange %>
             <tr>
               <th scope="row"><%= t('admin.journal.exchanges.attributes.conversation') %></th>
               <%# Chapter 4.4 has one conversation cover the exchanges of a

@@ -54,8 +54,29 @@ RSpec.describe EdmSpecification do
       expect(exchange.reload.specification).to eq(EdmSpecification::V1_2)
     end
 
-    it 'gives an exchange that names none the preferred version' do
-      expect(build(:exchange).specification).to eq(EdmSpecification.preferred)
+    # The fallback of `resolve` is the rule chapter 4.7 §2.6.2 gives a received
+    # message; a column is not a message, and an exchange whose version was
+    # never settled must not read as one conducted in the preferred version.
+    it 'leaves an exchange that names no version without one' do
+      exchange = create(:exchange, :unsettled_line)
+
+      expect(exchange.specification).to be_nil
+      expect(exchange.reload.specification).to be_nil
+      expect(exchange.read_attribute_before_type_cast(:specification)).to be_nil
+    end
+
+    it 'reads an empty column as no version rather than as the preferred one' do
+      expect(described_class.new.cast('')).to be_nil
+    end
+
+    # A version France does not speak has no business in this column, and
+    # nothing writes one: read back as nothing, rather than silently as 2.0.
+    it 'reads a version France does not speak as no version' do
+      expect(described_class.new.cast('oots-edm:v1.0')).to be_nil
+    end
+
+    it 'writes nothing where there is no version to write' do
+      expect(described_class.new.serialize(nil)).to be_nil
     end
   end
 end

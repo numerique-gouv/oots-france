@@ -78,12 +78,23 @@ if Rails.env.development?
   # chapter 4.4 allows: the first two are Sophie Dupont asking for two
   # different pieces of evidence in a row, so the console has a conversation
   # worth following from one exchange to the other.
+  #
+  # `specification` est écrite là où le code de production l'écrit, et tue là où
+  # il la tait : `IncomingMessage::OpenExchange` la lit du message reçu, donc
+  # tout échange reçu la porte ; `EvidenceRequest::ChooseSpecification` l'arrête
+  # avant que rien parte, donc un échange émis la porte dès qu'il a émis quelque
+  # chose. Restent les deux que le choix n'a pas arrêtée — `PT`, ouvert et rien
+  # de plus, et `SK`, abandonné faute d'une version commune —, qui la laissent
+  # vide : c'est ce qu'un échange conduit dans aucune version montre à la
+  # console.
   scenarios = [
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
       conversation: 1, events: %w[request_sent response_received evidence_delivered] },
     { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       edm_error_code: 'EDM:ERR:0004',
       error_description: "Le fournisseur n'a pas trouvé de justificatif correspondant.",
+      specification: EdmSpecification::V2_0,
       conversation: 1, events: %w[request_sent error_received] },
     # `preview_required!` ne pose pas de code sur l'échange — il n'y en a pas à
     # poser, la prévisualisation n'étant pas un échec —, mais l'erreur reçue en
@@ -91,8 +102,10 @@ if Rails.env.development?
     { status: 'preview_required', country_code: 'SI', procedure_code: 'S1',
       preview_location: 'https://previsualisation.example.si/consentement',
       message_error_code: EdmException::AUTHORIZATION.code,
+      specification: EdmSpecification::V2_0,
       events: %w[request_sent error_received] },
-    { status: 'sent', country_code: 'NL', procedure_code: 'S1', events: %w[request_sent] },
+    { status: 'sent', country_code: 'NL', procedure_code: 'S1',
+      specification: EdmSpecification::V2_0, events: %w[request_sent] },
     # La démarche de démonstration, qui est un requêteur comme un autre : elle
     # appelle `GET /requete/pieceJustificative` sous son propre SIRET, et
     # l'échange qu'elle ouvre se relit au journal sous celui-là. Le pays
@@ -106,21 +119,28 @@ if Rails.env.development?
     # session, donc aucune ne rendrait cette page visible. Le parcours complet se
     # joue, il ne se sème pas : docs/espace_administration.md dit comment.
     { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
+      specification: EdmSpecification::V2_0,
       evidence_requester_id: '00000000000003', events: %w[request_sent] },
-    { status: 'pending', country_code: 'PT', procedure_code: 'U2', events: [] },
+    # Ouvert et rien de plus : `EvidenceRequest::ChooseSpecification` n'a pas
+    # encore choisi, donc aucune version n'est arrêtée et la console n'en donne
+    # aucune.
+    { status: 'pending', country_code: 'PT', procedure_code: 'U2',
+      specification: nil, events: [] },
     # Le seul échange de la ligne 1.2 : un correspondant resté en 1.2 a demandé,
-    # la France a répondu dans sa version. Tous les autres portent le défaut de
-    # la colonne, qui est la version visée.
+    # la France a répondu dans sa version. C'est donc le seul dont l'identifiant
+    # n'a circulé dans aucun message — la console l'y marque « Factice ».
     { incoming: true, status: 'delivered', country_code: 'BE',
       procedure_code: ProcedureCode::SYSTEM_CHECK, subject: minimal_person,
       specification: EdmSpecification::V1_2,
       events: %w[request_received response_sent] },
     { incoming: true, status: 'failed', country_code: 'IT',
       procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
+      specification: EdmSpecification::V2_0,
       edm_error_code: 'EDM:ERR:0004',
       error_description: 'La France ne détient pas ce justificatif.',
       events: %w[request_received error_sent] },
     { status: 'deferred', country_code: 'ES', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      specification: EdmSpecification::V2_0,
       response_available_at: 8.days.from_now,
       events: %w[request_sent response_received] },
     # France answered and the gateway did not take the answer: the exchange
@@ -128,6 +148,7 @@ if Rails.env.development?
     # answer that never went out gets its line just below.
     { incoming: true, status: 'failed', country_code: 'PL',
       procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
       error_description: "L'échange a échoué : 503 Service Unavailable",
       events: %w[request_received] },
     # Une requête dont l'identifiant même enfreint `R-EDM-REQ-S004`. La France
@@ -139,6 +160,7 @@ if Rails.env.development?
     # pas ce qui a été refusé.
     { incoming: true, status: 'failed', country_code: 'HU',
       procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
       edm_error_code: EdmException::INVALID_REQUEST.code,
       error_description: EdmException::INVALID_REQUEST.message,
       error_detail: 'R-EDM-REQ-S004',
@@ -148,6 +170,7 @@ if Rails.env.development?
     # `R-EDM-REQ-S016` autorise autant qu'une personne physique.
     { incoming: true, status: 'delivered', country_code: 'AT',
       procedure_code: ProcedureCode::SYSTEM_CHECK, subject: organisation,
+      specification: EdmSpecification::V2_0,
       events: %w[request_received response_sent] },
     # Une réponse qu'un correspondant a émise en annonçant `oots-edm:v1.0` :
     # `R-EDM-RESP-C002` est enfreinte, et `EvidenceResponseParser#violations` la
@@ -161,6 +184,7 @@ if Rails.env.development?
     # mentir sur ce que le code produit, et une console qui ment se lit comme
     # une documentation.
     { status: 'delivered', country_code: 'CZ', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      specification: EdmSpecification::V2_0,
       confirmed_without: %w[date_of_birth],
       response_detail: BusinessRuleViolation.new(
         rule: 'R-EDM-RESP-C002',
@@ -181,6 +205,7 @@ if Rails.env.development?
     # recopiée — même raison qu'au-dessus : une console qui ment sur ce que le
     # code produit se lit ensuite comme une documentation.
     { status: 'failed', country_code: 'SK', procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: nil,
       error_description: I18n.t('interactors.evidence_request.choose_specification.unsupported',
         access_point: 'AP_SK_01',
         announced: ['oots-edm:v1.0', 'oots-edm:v1.1'].join(', '),
@@ -198,6 +223,7 @@ if Rails.env.development?
     # documentation.
     { incoming: true, status: 'failed', country_code: 'LU',
       procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
       edm_error_code: EdmException::TIMEOUT.code,
       error_description: I18n.t('models.exchange.expired.incoming'),
       presumed: true,

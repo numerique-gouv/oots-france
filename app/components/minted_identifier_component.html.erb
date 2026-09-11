@@ -1,0 +1,13 @@
+<%# A `<span>` carrying the DSFR badge class, and not `DsfrComponent::BadgeComponent`
+    which renders a `<div>`: the mark follows the identifier into the `<h1>` of an
+    exchange and the `<h2>` of its block, and a heading takes phrasing content
+    only. No status modifier either — the coloured badges of this console read as
+    states, and this is not one.
+
+    The meaning rides in `title` for whoever hovers and again in an `fr-sr-only`
+    span for whoever listens: « Factice » alone tells neither, and could be read
+    as saying the exchange never happened. %>
+<span class="fr-badge fr-badge--sm fr-ml-1v" title="<%= meaning %>">
+  <%= label %>
+  <span class="fr-sr-only"><%= meaning %></span>
+</span>

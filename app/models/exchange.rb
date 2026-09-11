@@ -303,6 +303,21 @@ class Exchange < ApplicationRecord
   # Which way the exchange runs, as the console words it.
   def direction = incoming? ? :incoming : :outgoing
 
+  # Whether `exchange_id` is one France minted for itself and no message ever
+  # carried. The `ExchangeId` property belongs to a 2.0 header, so on the 1.2
+  # line both openings mint one and emit it nowhere: an operator meeting it in
+  # the console would look for it in the gateway and at the correspondent in
+  # vain. The exchange itself took place — its messages travelled under the
+  # conversation identifier alone.
+  #
+  # The very predicate the header asks, rather than a second criterion written
+  # beside it: the console and `app/templates/ebms_header.xml.erb` must not
+  # answer the same question two different ways the day a third line is added.
+  #
+  # False where no version was settled: nothing then says which line the
+  # exchange would have been conducted on.
+  def minted_identifier? = specification.present? && !specification.exchange_named_in_header?
+
   # Whose procedure this is. A procedure belongs to the country that requests —
   # `Directories::CommonServices#requirements` asks the Evidence Broker
   # about it under France's own code — so France declares it when France asks,

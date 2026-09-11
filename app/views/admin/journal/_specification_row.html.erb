@@ -1,0 +1,13 @@
+<%# The EDM version an exchange was conducted in, as a row of a detail table —
+    an exchange's own, and an event's, which it holds from the exchange it names.
+
+    Nothing where none was ever settled: an empty column does not say which
+    version the exchange would have run under, and an empty « Version » row would
+    read as a version missing rather than as a choice that never happened.
+    Nothing either for an event whose exchange does not exist. %>
+<% if exchange&.specification %>
+  <tr>
+    <th scope="row"><%= t('admin.journal.exchanges.attributes.specification') %></th>
+    <td><code><%= exchange.specification %></code></td>
+  </tr>
+<% end %>

@@ -54,9 +54,15 @@ class EdmSpecification
   # its `SpecificationIdentifier` slot and nowhere else.
   def announced_in_header? = self == V2_0
 
-  # `R-EDM-ebMS-037`, which 1.2.5 does not carry: the `ExchangeId` property
-  # names the exchange in the header of a 2.0 message and of no other. In 1.2
-  # France mints one for itself and emits it nowhere.
+  # `R-EDM-ebMS-019` of 2.0.1 requires one `eb:Property` named `ExchangeId`,
+  # among the four that rewriting names; the 1.2.5 rule of that same identifier
+  # admits no `@name` but `originalSender` and `finalRecipient`, and so forbids
+  # it. `-037` requires nothing — its context is the property itself, so it only
+  # types a value already there. `docs/versions_tdd.md` tells what else the 2.0
+  # header gained.
+  #
+  # So in 1.2 France mints an exchange identifier for itself and emits it
+  # nowhere, which is what `Exchange#minted_identifier?` warns a reader of.
   def exchange_named_in_header? = self == V2_0
 
   # `R-EDM-REQ-S022`: the `Procedure` slot holds a `rim:InternationalStringValueType`
@@ -89,11 +95,16 @@ class EdmSpecification
   # object rather than as the string it stores: every builder and parser serving
   # an exchange asks it its version, and a column answering a bare string would
   # have each of them look the object up again.
+  #
+  # An empty column is an empty version, and never the preferred one: `find` and
+  # not `resolve`, whose fallback answers an announcement a *message* could not
+  # be read from. A column announces nothing, and an exchange whose version was
+  # never settled must not read as one conducted in 2.0.
   class Type < ActiveModel::Type::Value
     def type = :string
 
-    def cast(value) = value.is_a?(EdmSpecification) ? value : EdmSpecification.resolve(value)
+    def cast(value) = value.is_a?(EdmSpecification) ? value : EdmSpecification.find(value)
 
-    def serialize(value) = cast(value).identifier
+    def serialize(value) = cast(value)&.identifier
   end
 end

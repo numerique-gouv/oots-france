@@ -450,10 +450,81 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.body).to include('Le bénéficiaire doit être renseigné')
     end
 
+    # The journal does not record a version — `audit_events` has no such column
+    # — so the page reads it off the exchange the event names, and says so
+    # beside the row that names it.
+    describe 'the version of the exchange the event names' do
+      it 'gives the version its exchange was conducted in' do
+        exchange = create(:exchange, :legacy_line)
+        event = create(:audit_event, event_type: 'request_received', exchange_id: exchange.exchange_id)
+
+        get admin_journal_event_path(event)
+
+        expect(response.body).to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).to include(EdmSpecification::V1_2.identifier)
+        expect(response.body).to include(I18n.t('components.minted_identifier.label'))
+      end
+
+      it 'gives none where the event names no exchange at all' do
+        event = create(:audit_event, event_type: 'request_refused', exchange_id: nil,
+          detail: 'Le bénéficiaire doit être renseigné')
+
+        get admin_journal_event_path(event)
+
+        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+      end
+
+      # A response can name an exchange France never opened: the identifier
+      # stays written, with neither link nor mark.
+      it 'gives none where the exchange it names was never opened' do
+        event = create(:audit_event, exchange_id: 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b99')
+
+        get admin_journal_event_path(event)
+
+        expect(response.body).to include(event.exchange_id)
+        expect(response.body).not_to include(admin_journal_exchange_path(event.exchange_id))
+        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+      end
+
+      # The refusal of a version choice: the exchange exists and the row leads
+      # to it, but it was conducted in no version and wears no mark.
+      it 'gives none where its exchange settled on no version' do
+        exchange = create(:exchange, :unsettled_line, :failed)
+        event = create(:audit_event, event_type: 'request_refused', exchange_id: exchange.exchange_id)
+
+        get admin_journal_event_path(event)
+
+        expect(response.body).to include(admin_journal_exchange_path(exchange.exchange_id))
+        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+      end
+    end
+
     it 'answers 404 for an event the journal never wrote' do
       get admin_journal_event_path(id: 0)
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  # The listing renders the same table as the exchange page and the conversation
+  # page: marking it here marks all four.
+  describe 'the marked rows of the listing' do
+    it 'marks the rows naming an exchange whose identifier no message carried' do
+      minted = create(:exchange, :legacy_line)
+      named = create(:exchange)
+      create(:audit_event, event_type: 'request_received', exchange_id: minted.exchange_id)
+      create(:audit_event, event_type: 'request_sent', exchange_id: named.exchange_id)
+
+      get admin_journal_root_path
+
+      marked = response.parsed_body.css('tbody tr')
+        .select { |row| row.text.include?(I18n.t('components.minted_identifier.label')) }
+
+      expect(marked.size).to eq(1)
+      expect(marked.first.text).to include(minted.exchange_id.last(6))
     end
   end
 

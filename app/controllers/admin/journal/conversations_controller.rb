@@ -12,8 +12,14 @@ module Admin
         # Through the association `Exchange` already declares, eager-loaded:
         # what an exchange's journal is belongs there, and the page of one
         # exchange reads it the same way.
+        #
+        # And each event with its exchange: every row asks whether the
+        # identifier it names was one France minted for itself, and the
+        # association does not hand back the exchange already loaded — it joins
+        # on `exchange_id` rather than on the primary key, which is what defeats
+        # `inverse_of` here.
         @exchanges = Exchange.where(conversation_id: @conversation_id)
-          .order(:created_at).includes(:audit_events)
+          .order(:created_at).includes(audit_events: :exchange)
 
         # A conversation nothing names is a conversation that never happened:
         # answered like an exchange nobody opened, rather than as an empty page

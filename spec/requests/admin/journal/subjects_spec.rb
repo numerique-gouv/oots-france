@@ -159,6 +159,20 @@ RSpec.describe 'Admin::Journal::Subjects' do
     expect(response.body).not_to include('la-sienne')
   end
 
+  # The fourth page to render the shared events table, and the one a spec of the
+  # listing would not cover: its own controller has to eager-load the exchange
+  # for the mark to be asked at all.
+  it 'marks a row naming an exchange whose identifier no message carried' do
+    exchange = create(:exchange, :legacy_line, :delivered)
+    create(:audit_event, :about_a_person, event_type: 'request_received',
+      exchange_id: exchange.exchange_id)
+
+    get admin_journal_subjects_path(family_name: 'Königreich', given_name: 'Ada',
+      date_of_birth: '1990-01-01')
+
+    expect(response.body).to include(I18n.t('components.minted_identifier.label'))
+  end
+
   # Both forms are on the page whatever was searched: the identity is chosen by
   # the button, not by a selector that would have to be set first.
   it 'offers the two forms of the page at once' do

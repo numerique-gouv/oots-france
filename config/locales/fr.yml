@@ -232,6 +232,13 @@ fr:
       summary: Afficher le corps (%{size})
     decrypted_value:
       label: Donnée personnelle déchiffrée
+    # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
+    # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
+    # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a
+    # bien eu lieu.
+    minted_identifier:
+      label: Factice
+      meaning: "Attribué par la France pour un échange en 1.2 : il ne figure dans aucun message."
     # Ce que le lecteur voit là où le contenu n'arrivera pas : sans JavaScript,
     # rien ne va le chercher, et l'échec réseau ne laisse rien à afficher. Ce
     # que la page attend, en revanche, est dit par la page — elle seule sait ce
@@ -1185,6 +1192,10 @@ fr:
         # Ce que la fiche met en tête de ligne.
         attributes:
           direction: Sens
+          # La version elle-même ne se traduit pas : `oots-edm:v1.2` est ce que
+          # le message porte, comme les versions qu'un fournisseur déclare au
+          # DSD.
+          specification: Version
           procedure: Démarche
           requester: Requêteur
           opened_at: Ouvert le

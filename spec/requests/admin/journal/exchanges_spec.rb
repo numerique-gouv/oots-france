@@ -162,6 +162,62 @@ RSpec.describe 'Admin::Exchanges' do
       expect(response.body).not_to include('<script>alert(1)</script>')
     end
 
+    # Which rule set an exchange was conducted under is what an operator needs
+    # in order to read it at all: chapter 4.7 §2.6.2 makes every message of one
+    # exchange share the version, and the console is where it is read back.
+    describe 'the version the exchange was conducted in' do
+      it 'gives the identifier the messages carry, on the 1.2 line' do
+        exchange = create(:exchange, :legacy_line, :delivered)
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).to include(EdmSpecification::V1_2.identifier)
+      end
+
+      it 'marks an identifier no message carried, on that line alone' do
+        exchange = create(:exchange, :legacy_line, :delivered)
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).to include(I18n.t('components.minted_identifier.label'))
+        expect(response.body).to include(CGI.escapeHTML(I18n.t('components.minted_identifier.meaning')))
+      end
+
+      it 'gives 2.0 without a mark, the header naming the exchange there' do
+        exchange = create(:exchange, :delivered)
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).to include(EdmSpecification::V2_0.identifier)
+        expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+      end
+
+      # The row is dropped rather than left empty: an exchange the version
+      # choice gave up on was conducted in no version, and a blank row would
+      # read as one missing rather than as a choice that never happened.
+      it 'gives no row at all where no version was ever settled' do
+        exchange = create(:exchange, :unsettled_line, :failed)
+
+        get admin_journal_exchange_path(exchange.exchange_id)
+
+        expect(response.body).not_to include(I18n.t('admin.journal.exchanges.attributes.specification'))
+        expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+      end
+    end
+
+    # The journal below the exchange carries the same mark as the listing, the
+    # two rendering one and the same table.
+    it 'marks the rows of the journal that name an identifier no message carried' do
+      exchange = create(:exchange, :legacy_line, :delivered)
+      create(:audit_event, event_type: 'request_received', exchange_id: exchange.exchange_id)
+
+      get admin_journal_exchange_path(exchange.exchange_id)
+
+      expect(response.parsed_body.css('tbody .fr-badge')
+        .map(&:text).join).to include(I18n.t('components.minted_identifier.label'))
+    end
+
     it 'answers 404 for an unknown exchange' do
       get admin_journal_exchange_path('inconnue')
 
