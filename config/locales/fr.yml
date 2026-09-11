@@ -428,6 +428,16 @@ fr:
         « urn:uuid: ».
       unnamed_request_id: absent
       no_query: Pas de query:Query dans le message reçu.
+      # R-EDM-REQ-S039 : la collection EvidenceRequester porte au moins un
+      # rim:Element qui porte un sdg:Agent. C'est l'assertion —
+      # « rim:Element/sdg:Agent » sur le rim:SlotValue — et non son message, qui
+      # dit que chaque rim:Element « MUST use » un agent : un élément sans agent
+      # à côté d'un élément qui en porte un satisfait la règle. Ce refus-là ne
+      # repart pas — sans agent, ni valeur à recopier ni finalRecipient à
+      # adresser —, et il précède C074, qui compterait sinon les classifications
+      # d'agents qui n'existent pas.
+      collection_without_agent: >-
+        La collection « EvidenceRequester » de la requête reçue ne porte aucun agent.
       # R-EDM-REQ-C074 : la collection EvidenceRequester compte exactement un
       # agent classé ER. La phrase compte, elle ne constate pas une absence :
       # zéro et deux enfreignent la même règle. Comparé brut, comme
@@ -514,6 +524,18 @@ fr:
       platform_territory_unknown: >-
         Le territoire de la plateforme intermédiaire (« %{territory} ») n'est pas un code de la
         liste NUTS.
+      # R-EDM-REQ-S040 : la liste fermée des enfants de chaque agent de la
+      # collection EvidenceRequester, le requêteur compris — son contexte ne
+      # porte aucune condition de classification. L'assertion laisse libre le
+      # nombre de chacun des quatre et refuse tout autre élément, un
+      # sdg:ReferenceFramework ou un sdg:EvidenceTypeList compris ; l'espace de
+      # noms est décidé par son URI et jamais par le préfixe. Une phrase pour les
+      # deux agents, la règle ne les distinguant pas. Ce refus repart en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie du requêteur que son
+      # identifiant, son schéma et ses noms.
+      collection_agent_unexpected_children: >-
+        Un agent de la collection « EvidenceRequester » ne peut porter que sdg:Identifier,
+        sdg:Name, sdg:Address et sdg:Classification (reçu en plus : %{children}).
       # R-EDM-REQ-S042, C017, C018, C110 et C111 sur les agents que porte le slot
       # EvidenceProvider — le premier étant le fournisseur que la requête
       # désigne. Les quatre dernières sont, mot pour mot, les assertions C011,

@@ -1164,6 +1164,7 @@ RSpec.describe EvidenceProvision::Answer do
       'no agent classified ER at all' => ['R-EDM-REQ-C074', :request_without_a_requester],
       'two agents classified ER' => ['R-EDM-REQ-C074', :request_with_a_second_requester],
       'no EvidenceRequester slot at all' => ['R-EDM-REQ-S012', :request_without_the_requester_slot],
+      'no agent in the collection at all' => ['R-EDM-REQ-S039', :request_without_any_agent],
     }.each do |carrying, (rule, building)|
       context "when the request carries #{carrying}" do
         let(:message) { send(building) }
@@ -1273,6 +1274,20 @@ RSpec.describe EvidenceProvision::Answer do
   def request_without_a_requester = envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') }
 
   def request_without_the_requester_slot = RetrievedMessageParser.new(built_envelope('requete.sansRequeteur'))
+
+  # The slot as the RegRep rules require it — a collection declaring its type
+  # and carrying an element — and carrying no `sdg:Agent`: what `R-EDM-REQ-S039`
+  # refuses, where `C074` would otherwise count the classifications of agents
+  # that are not there.
+  def request_without_any_agent
+    envelope_with_body('requete') do |body|
+      body.sub(%r{<rim:Slot name="EvidenceRequester">.*?</rim:Slot>}m) do
+        '<rim:Slot name="EvidenceRequester"><rim:SlotValue xsi:type="rim:CollectionValueType" ' \
+          'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">' \
+          '<rim:Element xsi:type="rim:AnyValueType"/></rim:SlotValue></rim:Slot>'
+      end
+    end
+  end
 
   def request_without_the_procedure_slot = RetrievedMessageParser.new(built_envelope('requete.sansProcedure'))
 

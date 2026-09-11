@@ -136,6 +136,9 @@ ignore_unused:
   - parsers.evidence_request.{accompanying_provider_without_scheme,accompanying_provider_scheme_unknown}
   - parsers.evidence_request.{accompanying_provider_id_too_long,accompanying_provider_without_language}
   - parsers.evidence_request.accompanying_provider_language_unknown
+  # The two rules the `EvidenceRequester` collection itself carries: `S039` on
+  # the agent it must hold at all, `S040` on what each of those agents may.
+  - parsers.evidence_request.{collection_without_agent,collection_agent_unexpected_children}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   # The rules the `Requirements` slot puts in play, `validate!` naming them too.
   # The last four are composed from the wording being judged — a requirement's

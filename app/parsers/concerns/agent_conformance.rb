@@ -10,9 +10,10 @@
 # the name and the description of a requirement — so it is written once and
 # reads its identifiers from `RULES`, like the agent readers beside it.
 # `refuse_unexpected_children` holds any element whose children the chapter
-# closes to a list of names, which `R-EDM-REQ-S043` does over the provider and
-# `S038` over a requirement. Both are here because `RequirementConformance`
-# includes this module for exactly that, and says so.
+# closes to a list of names, which `R-EDM-REQ-S043` does over the provider,
+# `S040` over each agent of the requester's collection and `S038` over a
+# requirement. Both are here because `RequirementConformance` includes this
+# module for exactly that, and says so.
 #
 # Each reading takes a `wording` naming the agent it judges, which it cannot
 # know itself: one rule refuses the requester, the platform beside it and the
@@ -65,6 +66,12 @@ module AgentConformance
   # What `R-EDM-REQ-S043` admits under the agent of the `EvidenceProvider` slot,
   # and nothing else — no address, no classification.
   PROVIDER_CHILDREN = %w[Identifier Name].freeze
+
+  # What `R-EDM-REQ-S040` admits under each agent of the `EvidenceRequester`
+  # collection: the two the provider may carry, and the address and the
+  # classification that collection alone knows. A `sdg:ReferenceFramework` or a
+  # `sdg:EvidenceTypeList` is therefore refused there as it is here.
+  REQUESTER_CHILDREN = %w[Identifier Name Address Classification].freeze
 
   # What the readers below refuse, under the identifier each rule is published
   # by for the agent being judged. The slot fixes that identifier and never the
@@ -160,6 +167,38 @@ module AgentConformance
     require_agent_names(agent, :platform)
     require_agent_country(agent)
     require_agent_territory(agent, :platform)
+  end
+
+  # Every agent of the `EvidenceRequester` collection, and what each of them
+  # owes. `R-EDM-REQ-S040` closes the list of what any of them may carry — the
+  # requester included, its context naming no classification, where
+  # `R-EDM-REQ-C073` alone narrows itself to
+  # `sdg:Agent[…sdg:Classification='ER']` — and it is the same reading `S043`
+  # receives over the provider, on a list of four names rather than two.
+  #
+  # What follows depends on which agent it is. The requester has already been
+  # held to its identifier and its names by `EvidenceRequestParser#build_requester`,
+  # which refuses without answering for what an error response would copy back,
+  # and all that is left of it here is `R-EDM-REQ-C016` over the territory it
+  # declares — a rule that names no classification either, and whose refusal
+  # does go back. Every other agent — the intermediary platform of the country
+  # that asks, in practice — is judged by the eight rules above.
+  #
+  # Told apart by what they are not, the mirror of what
+  # `EvidenceRequestParser#requester_agent` retains: a classification written
+  # ` ER ` therefore satisfies `C013`, which normalises, and breaks `C014`,
+  # which compares raw — as the Schematron does.
+  def require_conformant_collection(agents)
+    agents.each do |agent|
+      refuse_unexpected_children(agent, REQUESTER_CHILDREN, 'R-EDM-REQ-S040',
+        'parsers.evidence_request.collection_agent_unexpected_children')
+
+      if text_at(agent, './sdg:Classification') == EvidenceRequester::REQUESTER
+        require_agent_territory(agent, :agent)
+      else
+        require_conformant_agent(agent)
+      end
+    end
   end
 
   # `R-EDM-REQ-C013` normalises before asking that the classification not be

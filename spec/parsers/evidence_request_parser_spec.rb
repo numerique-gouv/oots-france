@@ -429,6 +429,21 @@ RSpec.describe EvidenceRequestParser do
       expect { with_doubled_requester_slot.requester }
         .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S012')))
     end
+
+    # `R-EDM-REQ-S039`, refused before `C074` counts anything: a collection
+    # carrying no agent at all would otherwise be refused for having none
+    # classified `ER`, which names a count of agents that are not there. The
+    # refusal carries no answer either, for the reason `C074`'s carries none.
+    it 'refuses a collection whose elements carry no agent, under R-EDM-REQ-S039' do
+      expect { without_any_agent.requester }.to refusing('R-EDM-REQ-S039')
+    end
+
+    # The assertion, and not its message: the test is `rim:Element/sdg:Agent` on
+    # the slot value, so one element carrying an agent satisfies it where the
+    # message reads « each rim:Element … MUST use the 'sdg:Agent' ».
+    it 'accepts an element carrying no agent beside one that does' do
+      expect(with_third_agent('').validate!).to be_truthy
+    end
   end
 
   # `R-EDM-REQ-C012`, `C092`, `C108` and `C109`, refused where the requester is
@@ -1581,6 +1596,44 @@ RSpec.describe EvidenceRequestParser do
         expect(with_requester_scheme("#{IdentifierScheme::EAS_PREFIX}9999").validate!).to be_truthy
       end
     end
+
+    # `R-EDM-REQ-S040` closes the list of what any agent of the collection may
+    # carry — `sdg:Identifier`, `sdg:Name`, `sdg:Address`, `sdg:Classification`
+    # and nothing else. Its context is every `sdg:Agent` of the collection, the
+    # requester included: it names no classification, where `C073` alone does.
+    # The same assertion `S043` makes over the provider, on four names instead
+    # of two.
+    describe 'the elements an agent of the collection carries' do
+      it 'refuses a requester carrying an sdg:ReferenceFramework, under R-EDM-REQ-S040' do
+        framed = with_requester_agent { |agent| agent_carrying(agent, '<sdg:ReferenceFramework>x</sdg:ReferenceFramework>') }
+
+        expect { framed.validate! }.to refusing('R-EDM-REQ-S040')
+      end
+
+      it 'refuses a platform carrying an sdg:EvidenceTypeList, under the same rule' do
+        listed = with_platform_agent { |agent| agent_carrying(agent, '<sdg:EvidenceTypeList/>') }
+
+        expect { listed.validate! }.to refusing('R-EDM-REQ-S040')
+      end
+
+      # The namespace is decided by its URI and never by the local name: an
+      # `Identifier` of another namespace is not one of the four admitted.
+      it 'refuses an admitted name borne by another namespace' do
+        foreign = with_platform_agent do |agent|
+          agent_carrying(agent, '<x:Identifier xmlns:x="http://example.org/sdg">AUTRE</x:Identifier>')
+        end
+
+        expect { foreign.validate! }.to refusing('R-EDM-REQ-S040')
+      end
+
+      # Only the names are closed, not how many of each: the assertion counts
+      # them all on its left side, and `AgentType` makes `sdg:Name` `1..n`.
+      it 'accepts a requester carrying a second name beside its address' do
+        bilingual = with_second_requester_name('<sdg:Name lang="EN">French requester</sdg:Name>')
+
+        expect(bilingual.validate!).to be(bilingual)
+      end
+    end
   end
 
   # Chapter 4.6 on the agent the `EvidenceProvider` slot carries — the provider
@@ -2120,6 +2173,19 @@ RSpec.describe EvidenceRequestParser do
   # `EvidenceRequest` among those of `query:Query`.
   def without_requester_slot = without_slot('EvidenceRequester')
 
+  # The slot as `R-EDM-REQ-S028`, `S029`, `S052` and `S053` require it — a
+  # collection, declaring its type, carrying an element — and carrying no
+  # `sdg:Agent`: what `S039` alone refuses.
+  def without_any_agent
+    with_body do |body|
+      body.sub(slot('EvidenceRequester')) do
+        '<rim:Slot name="EvidenceRequester"><rim:SlotValue xsi:type="rim:CollectionValueType" ' \
+          'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">' \
+          '<rim:Element xsi:type="rim:AnyValueType"/></rim:SlotValue></rim:Slot>'
+      end
+    end
+  end
+
   def with_doubled_requester_slot = with_doubled_slot('EvidenceRequester')
 
   def without_evidence_request = without_slot('EvidenceRequest')
@@ -2163,6 +2229,13 @@ RSpec.describe EvidenceRequestParser do
 
     with_body { |body| body.sub('</sdg:LevelOfAssurance>', "</sdg:LevelOfAssurance>#{identifier}") }
   end
+
+  # An element added under an agent, after its `sdg:Name`: what
+  # `R-EDM-REQ-S040` and `S043` count as one child too many.
+  # Through a block, and `sub` on a literal rather than on a pattern: in a
+  # replacement string `sub` reads `\1` and `\&` as backreferences, and the
+  # element comes from the caller.
+  def agent_carrying(agent, element) = agent.sub('</sdg:Name>') { "</sdg:Name>#{element}" }
 
   # The agent beside the requester alone, `Fixtures::PLATFORM_AGENT` saying why.
   def with_platform_agent(&) = envelope_with_platform_agent(&).body
