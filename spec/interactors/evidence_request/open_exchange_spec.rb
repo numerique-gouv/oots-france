@@ -36,6 +36,18 @@ RSpec.describe EvidenceRequest::OpenExchange do
     expect(open_exchange.exchange).to have_attributes(status: 'pending', settled_at: nil)
   end
 
+  # Opening settles no version — `EvidenceRequest::ChooseSpecification` does,
+  # from what the access point announces — and the column must say so rather
+  # than answer the preferred one. Asserted here because this is the only place
+  # that omits the attribute entirely: a default restored on the column would
+  # read as an exchange conducted in 2.0 before anything had been chosen, and
+  # every other spec of this path passes `nil` explicitly, which no default
+  # would override.
+  it 'settles no EDM version, which is not its business' do
+    expect(open_exchange.exchange.specification).to be_nil
+    expect(open_exchange.exchange.reload.specification).to be_nil
+  end
+
   # Chapter 4.4: a conversation « identifies a single uniquely authenticated
   # user » and « MAY span multiple actions, procedures, and evidence exchanges
   # within one user session », where an exchange is one round trip. So a portal

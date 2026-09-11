@@ -14,10 +14,21 @@ FactoryBot.define do
       status { 'sent' }
     end
 
-    # An exchange conducted on the 1.2 line. The default is the preferred
-    # version, which is what the column defaults to.
+    # The version settled before anything travels — `EvidenceRequest::ChooseSpecification`
+    # where France asks, the arriving message where it answers — so an exchange
+    # that did something carries one.
+    specification { EdmSpecification::V2_0 }
+
+    # An exchange conducted on the 1.2 line, whose identifier France therefore
+    # minted for itself.
     trait :legacy_line do
       specification { EdmSpecification::V1_2 }
+    end
+
+    # An exchange conducted in no version at all: the choice gave up, no access
+    # point announcing one France speaks, or it has not happened yet.
+    trait :unsettled_line do
+      specification { nil }
     end
 
     # A request a correspondent addressed to France. `country_code` is the one

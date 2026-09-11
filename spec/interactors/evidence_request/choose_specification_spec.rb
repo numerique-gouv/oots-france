@@ -3,7 +3,9 @@ require 'rails_helper'
 RSpec.describe EvidenceRequest::ChooseSpecification do
   subject(:choice) { described_class.call(exchange:, recipient:) }
 
-  let(:exchange) { create(:exchange) }
+  # As `EvidenceRequest::OpenExchange` leaves it: it names no version, this
+  # being what settles one.
+  let(:exchange) { create(:exchange, :unsettled_line) }
 
   context 'when the access point announces both lines' do
     let(:recipient) { build(:access_point, :foreign, conforms_to: ['oots-edm:v1.2', 'oots-edm:v2.0']) }
@@ -26,6 +28,14 @@ RSpec.describe EvidenceRequest::ChooseSpecification do
 
   context 'when the access point announces only versions France does not speak' do
     let(:recipient) { build(:access_point, :foreign, conforms_to: ['oots-edm:v1.0', 'oots-edm:v1.1']) }
+
+    # The exchange was conducted in no version, and the column says so: the
+    # console gives it no « Version » row, where a default would have made it
+    # read as an exchange conducted in 2.0.
+    it 'leaves the exchange without a version' do
+      expect(choice).to be_failure
+      expect(exchange.reload.specification).to be_nil
+    end
 
     it 'settles the exchange as failed, naming what it announces and what France speaks' do
       expect(choice).to be_failure
