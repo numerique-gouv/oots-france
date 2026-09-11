@@ -1165,42 +1165,64 @@ RSpec.describe EvidenceRequestParser do
 
   # Chapter 4.6 on the classifications of provider a request invokes.
   # `R-EDM-REQ-S014` counts the slot under `CAUTION`, so a request carrying none
-  # is one nothing refuses — which is the request really received. The three rules applied here fire below the slot: on each element
-  # of the collection, on each `@schemeID` and on each `@lang`.
+  # is one nothing refuses — which is the request really received. Seventeen
+  # FATAL rules fire below that slot: on each element of the collection, then on
+  # each classification's identifier, its type, the value it retains, what the
+  # type `codelist` adds, and the language of each description.
   describe 'the provider classifications the request invokes' do
-    # The real request carries no such slot, so the specs write one. Its
-    # identifier is a Semantic Repository URL of the shape `R-EDM-REQ-C097`
-    # fixes, that rule being one this reader does not apply, and the elements
-    # follow the order `InformationConceptType` sequences them in.
-    def classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/FR/Municipality',
-                       descriptions: '<sdg:Description lang="EN">French municipality</sdg:Description>')
+    # The real request carries no such slot, so the specs write one. Its shape
+    # is that of the example published with chapter 4.5.1 — « 3.4 Evidence
+    # Provider Classification slot and example » — rather than one invented
+    # here: a version 4 UUID under a Semantic Repository scheme, the type
+    # `codelist`, an `https://` value expression, a description naming its
+    # language, and one supported value carrying a `sdg:StringValue`, in the
+    # order `InformationConceptType` sequences them.
+    #
+    # `nil` takes an element or an attribute away where an empty string writes
+    # it blank: several of the rules below tell the two apart.
+    def classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022',
+                       id: '5ce148b9-5578-4049-aecf-af7bb55714b5', type: 'codelist',
+                       expression: value_expression,
+                       descriptions: '<sdg:Description lang="EN">Select the city in which you were born.</sdg:Description>',
+                       values: '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>')
       <<~XML
         <sdg:EvidenceProviderClassification>
-          <sdg:Identifier schemeID="#{identifier}">FR-MUNICIPALITY</sdg:Identifier>
+          <sdg:Identifier#{scheme && %( schemeID="#{scheme}")}>#{id}</sdg:Identifier>
+          #{type && "<sdg:Type>#{type}</sdg:Type>"}
+          #{expression && "<sdg:ValueExpression>#{expression}</sdg:ValueExpression>"}
           #{descriptions}
+          #{values}
         </sdg:EvidenceProviderClassification>
       XML
     end
+
+    # The URL of the published example, its hash cut short: what
+    # `R-EDM-REQ-C101` reads is the scheme it starts with and nothing else.
+    def value_expression = 'https://query.cs.uat.oots.tech.ec.europa.eu/dsd/rest/codelists/DE/Lau2022/a591a6d4'
 
     # Les deux types sont paramétrables parce que `R-EDM-REQ-S031` et `S032` les
     # fixent : le slot est une collection, chacun de ses `rim:Element` une valeur
     # quelconque. Les valeurs par défaut sont celles que les règles demandent, et
     # tous les exemples de ce bloc les prennent — les deux qui en changent
     # prouvent que la règle refuse le reste.
-    def with_classifications(*elements, type: 'rim:CollectionValueType', element_type: 'rim:AnyValueType')
+    def classification_slot(*elements, type: 'rim:CollectionValueType', element_type: 'rim:AnyValueType')
       collection = elements.map { |element| %(<rim:Element xsi:type="#{element_type}">#{element}</rim:Element>) }
 
-      with_body do |body|
-        body.sub('<rim:Slot name="EvidenceRequester">', <<~XML)
-          <rim:Slot name="EvidenceProviderClassification">
-            <rim:SlotValue xsi:type="#{type}"
-                           collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
-              #{collection.join}
-            </rim:SlotValue>
-          </rim:Slot>
-          <rim:Slot name="EvidenceRequester">
-        XML
-      end
+      <<~XML
+        <rim:Slot name="EvidenceProviderClassification">
+          <rim:SlotValue xsi:type="#{type}"
+                         collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+            #{collection.join}
+          </rim:SlotValue>
+        </rim:Slot>
+        <rim:Slot name="EvidenceRequester">
+      XML
+    end
+
+    # Through a block: in a replacement string `sub` reads `\1` and `\&` as
+    # backreferences, and the slot comes from the caller.
+    def with_classifications(*elements, **)
+      with_body { |body| body.sub('<rim:Slot name="EvidenceRequester">') { classification_slot(*elements, **) } }
     end
 
     # `R-EDM-REQ-S014` is a `CAUTION`: its absence is refused nowhere, which is
@@ -1210,7 +1232,7 @@ RSpec.describe EvidenceRequestParser do
       expect(request.validate!).to be(request)
     end
 
-    it 'accepts a classification the rules admit' do
+    it 'accepts the classification chapter 4.5.1 publishes as an example' do
       expect(with_classifications(classification).validate!).to be_truthy
     end
 
@@ -1236,7 +1258,7 @@ RSpec.describe EvidenceRequestParser do
     # this one alone exercises the inner walk.
     it 'judges a second classification carried by the same element' do
       doubled = with_classifications(
-        classification + classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')
+        classification + classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')
       )
 
       expect { doubled.validate! }.to refusing('R-EDM-REQ-C098')
@@ -1246,83 +1268,340 @@ RSpec.describe EvidenceRequestParser do
     # element is judged on its own, so a reader stopping at the first would
     # serve the second unexamined.
     it 'judges a second element as much as the first' do
-      doubled = with_classifications(classification, classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County'))
+      doubled = with_classifications(classification, classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County'))
 
       expect { doubled.validate! }.to refusing('R-EDM-REQ-C098')
     end
 
-    # `R-EDM-REQ-C098` reads the country between the codelist prefix and the
-    # next `/`, and compares it to the countries taking part in OOTS — a far
-    # shorter list than the one `C015` holds an address to.
-    describe 'the country its identifier names' do
-      it 'accepts a country taking part in OOTS' do
-        expect(with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Municipality')).validate!)
-          .to be_truthy
+    # `R-EDM-REQ-C019`: a bare UUID, `urn:uuid:` and all, with neither the
+    # version nibble nor the variant one constrained. Its context is the
+    # identifier itself, so a classification carrying none breaks nothing.
+    describe 'the identifier it names itself by' do
+      it 'refuses a name that is no UUID at all, under R-EDM-REQ-C019' do
+        expect { with_classifications(classification(id: 'FR-MUNICIPALITY')).validate! }
+          .to refusing('R-EDM-REQ-C019')
       end
 
-      it 'refuses one that does not, under R-EDM-REQ-C098' do
-        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')).validate! }
-          .to refusing('R-EDM-REQ-C098')
+      # The assertion carries the `i` flag, where `C008`'s over a requirement's
+      # identifier does not: the same hexadecimal, judged the other way round.
+      it 'accepts a UUID written in upper case' do
+        upper = classification(id: '5CE148B9-5578-4049-AECF-AF7BB55714B5')
+
+        expect(with_classifications(upper).validate!).to be_truthy
       end
 
-      # The comparison carries no `i` flag, as `C016` and `C021` carry none: the
-      # segment is compared as it is written.
-      it 'refuses a country written in lower case' do
-        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/fr/Municipality')).validate! }
-          .to refusing('R-EDM-REQ-C098')
+      # `normalize-space` is applied before matching, so blanks around the
+      # value are none of the rule's business.
+      it 'accepts a UUID padded with blanks' do
+        padded = classification(id: "\n      5ce148b9-5578-4049-aecf-af7bb55714b5\n    ")
+
+        expect(with_classifications(padded).validate!).to be_truthy
       end
 
-      # `oots` is admitted on an agent's identifier « for testing purposes » and
-      # by no rule here: the `OOTS_Country-CodeList` this one compares to does
-      # not publish it.
-      it 'refuses the literal oots, which the agent rules admit' do
-        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/oots/Municipality')).validate! }
-          .to refusing('R-EDM-REQ-C098')
+      # Written empty, the element is there and is a context node: the assertion
+      # fires on a value the sentence then has nothing to name.
+      it 'refuses an identifier written empty, under R-EDM-REQ-C019' do
+        expect { with_classifications(classification(id: '')).validate! }.to refusing('R-EDM-REQ-C019')
       end
 
-      # `substring-after` seeks the prefix wherever it sits, so the environment
-      # midfix of an acceptance URL crosses it unseen.
-      it 'accepts an acceptance URL, whose midfix the rule never sees' do
-        expect(with_classifications(classification(identifier: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/FR/Municipality')).validate!)
-          .to be_truthy
+      # The prefix `R-EDM-REQ-S004` puts on the request's own identifier, which
+      # this rule does not admit: its pattern is anchored on both ends.
+      it 'refuses a UUID prefixed urn:uuid:, which the request identifier carries' do
+        prefixed = classification(id: 'urn:uuid:5ce148b9-5578-4049-aecf-af7bb55714b5')
+
+        expect { with_classifications(prefixed).validate! }.to refusing('R-EDM-REQ-C019')
       end
 
-      # The case that separates `substring-before` from `String#partition`:
-      # XPath yields the empty string when the separator is absent, where
-      # `partition(…).first` yields the whole of what precedes it. Read with
-      # `partition`, this identifier would hand back `FR` and be served.
-      it 'refuses an identifier ending at the country, with no segment after it' do
-        expect { with_classifications(classification(identifier: 'https://sr.oots.tech.ec.europa.eu/codelists/FR')).validate! }
-          .to refusing('R-EDM-REQ-C098')
-      end
+      # The context of `C019` is the identifier: a classification carrying none
+      # fires nothing here. `C096` is what asserts one, and only where the type
+      # is `codelist`.
+      it 'accepts a classification of type string carrying no identifier at all' do
+        unnamed = classification(type: 'string', expression: nil).sub(%r{<sdg:Identifier.*?</sdg:Identifier>}, '')
 
-      # The context of the rule is the `@schemeID` attribute: absent, no
-      # assertion fires at all. Nothing requires one unconditionally either —
-      # `C099` narrows its own context to `sdg:Identifier[@schemeID]`, and
-      # `C096`, which does assert the attribute, first narrows itself to a
-      # classification whose `sdg:Type` is `codelist`. Neither is applied here.
-      it 'accepts an identifier carrying no schemeID' do
-        classified = classification.sub(/ schemeID="[^"]*"/, '')
-
-        expect(with_classifications(classified).validate!).to be_truthy
-      end
-
-      # Present and empty, the attribute is a context node: the assertion fires,
-      # and the country it reads out is empty too.
-      it 'refuses a schemeID written empty, under R-EDM-REQ-C098' do
-        expect { with_classifications(classification(identifier: '')).validate! }.to refusing('R-EDM-REQ-C098')
+        expect(with_classifications(unnamed).validate!).to be_truthy
       end
     end
 
-    # `R-EDM-REQ-C021`, whose context is the `@lang` attribute of each
-    # `sdg:Description`. `C022`, which requires that attribute, is not applied
-    # here — `docs/reste_à_faire.md` records the partiality.
-    describe 'the language its description names' do
-      it 'accepts a code the list publishes' do
-        expect(with_classifications(classification).validate!).to be_truthy
+    # The three rules the `@schemeID` of that identifier carries: `C097` on its
+    # shape, `C098` on the country it names and `C099` on its last segment. The
+    # first two have the attribute for context and say nothing of an identifier
+    # carrying none; the third narrows its own to `sdg:Identifier[@schemeID]`.
+    describe 'the scheme its identifier names' do
+      # `R-EDM-REQ-C097` copied dot for dot: only the point of the optional
+      # environment midfix is escaped in the assertion, so every other one
+      # matches any character at all.
+      it 'accepts a scheme whose first point is any character, as the rule reads it' do
+        loose = classification(scheme: 'https://sr-oots.tech.ec.europa.eu/codelists/DE/Lau2022')
+
+        expect(with_classifications(loose).validate!).to be_truthy
       end
 
-      it 'refuses a code it does not, under R-EDM-REQ-C021' do
+      it 'accepts an acceptance URL, whose midfix the pattern provides for' do
+        midfixed = classification(scheme: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/FR/Municipality')
+
+        expect(with_classifications(midfixed).validate!).to be_truthy
+      end
+
+      it 'refuses a scheme served over http, under R-EDM-REQ-C097' do
+        insecure = classification(scheme: 'http://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022')
+
+        expect { with_classifications(insecure).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      # The pattern carries no `i` flag: the country segment is `[A-Z]{2}` and
+      # `de` is not one — which `C098` would refuse too, the shape being judged
+      # first.
+      it 'refuses a country written in lower case, under R-EDM-REQ-C097' do
+        lowered = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/fr/Municipality')
+
+        expect { with_classifications(lowered).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      # `oots` is admitted on an agent's identifier « for testing purposes » and
+      # by no rule here: it is neither `[A-Z]{2}` nor a code of the
+      # `OOTS_Country-CodeList`.
+      it 'refuses the literal oots, which the agent rules admit' do
+        tested = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/oots/Municipality')
+
+        expect { with_classifications(tested).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      it 'refuses a scheme ending at the country, with no short name after it' do
+        truncated = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/FR')
+
+        expect { with_classifications(truncated).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      # Present and empty, the attribute is a context node of its own: the
+      # assertion fires on a value that matches nothing.
+      it 'refuses a schemeID written empty, under R-EDM-REQ-C097' do
+        expect { with_classifications(classification(scheme: '')).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      # `R-EDM-REQ-C098` reads the country between the codelist prefix and the
+      # next `/`, and compares it to the countries taking part in OOTS — a far
+      # shorter list than the one `C015` holds an address to. The case that
+      # separates it from `C097`: `US` is a well-formed segment of a
+      # well-formed URL, and no country of the list.
+      it 'refuses a well-formed scheme naming no participating country, under R-EDM-REQ-C098' do
+        foreign = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/US/County')
+
+        expect { with_classifications(foreign).validate! }.to refusing('R-EDM-REQ-C098')
+      end
+
+      it 'accepts a country taking part in OOTS' do
+        accepted = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Municipality')
+
+        expect(with_classifications(accepted).validate!).to be_truthy
+      end
+
+      # `R-EDM-REQ-C099` reads the last segment **without** normalising, where
+      # `C097` normalises first: a `schemeID` ending in a blank is the one value
+      # that breaks this rule and no other.
+      it 'refuses a schemeID ending in a blank, under R-EDM-REQ-C099 alone' do
+        padded = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022 ')
+
+        expect { with_classifications(padded).validate! }.to refusing('R-EDM-REQ-C099')
+      end
+
+      it 'refuses a short name carrying a blank, under R-EDM-REQ-C097' do
+        spaced = classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau 2022')
+
+        expect { with_classifications(spaced).validate! }.to refusing('R-EDM-REQ-C097')
+      end
+
+      # `R-EDM-REQ-C096`, the one rule that requires the attribute at all, and
+      # only of a classification typed `codelist`. `C097`, `C098` and `C099` say
+      # nothing here, their contexts being the attribute or the identifier
+      # carrying it.
+      it 'refuses a code list naming no scheme, under R-EDM-REQ-C096' do
+        expect { with_classifications(classification(scheme: nil)).validate! }.to refusing('R-EDM-REQ-C096')
+      end
+
+      it 'accepts a classification of another type naming no scheme' do
+        untyped = classification(scheme: nil, type: 'string', expression: nil)
+
+        expect(with_classifications(untyped).validate!).to be_truthy
+      end
+
+      # `C096` reads `sdg:Identifier/@schemeID`, which is the first such
+      # attribute in document order and not the first identifier's: an
+      # identifier carrying none is passed over rather than counted as an empty
+      # one. A reader taking the first identifier's attribute would refuse this,
+      # which the rule admits.
+      it 'accepts a code list whose second identifier alone carries the scheme' do
+        doubled = classification(scheme: nil).sub('</sdg:Identifier>',
+          '</sdg:Identifier><sdg:Identifier schemeID="https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022">' \
+          '5ce148b9-5578-4049-aecf-af7bb55714b5</sdg:Identifier>')
+
+        expect(with_classifications(doubled).validate!).to be_truthy
+      end
+    end
+
+    # `R-EDM-REQ-C020` requires the type, `C095` holds it to the three published
+    # values — compared raw, with neither `normalize-space` nor an `i` flag.
+    describe 'the type it declares' do
+      it 'refuses a classification carrying no type, under R-EDM-REQ-C020' do
+        expect { with_classifications(classification(type: nil)).validate! }.to refusing('R-EDM-REQ-C020')
+      end
+
+      it 'refuses a type written blank, the rule normalising it' do
+        expect { with_classifications(classification(type: '   ')).validate! }.to refusing('R-EDM-REQ-C020')
+      end
+
+      it 'refuses a published value in the wrong case, under R-EDM-REQ-C095' do
+        expect { with_classifications(classification(type: 'Codelist')).validate! }.to refusing('R-EDM-REQ-C095')
+      end
+
+      # The value that separates the two rules: `C020` normalises, so a padded
+      # type satisfies it, and `C095` compares raw, so it does not.
+      it 'refuses a padded type under R-EDM-REQ-C095, C020 normalising it' do
+        expect { with_classifications(classification(type: ' codelist ')).validate! }.to refusing('R-EDM-REQ-C095')
+      end
+
+      it 'refuses a type the chapter does not publish, under R-EDM-REQ-C095' do
+        expect { with_classifications(classification(type: 'date')).validate! }.to refusing('R-EDM-REQ-C095')
+      end
+
+      it 'accepts the type string' do
+        expect(with_classifications(classification(type: 'string', expression: nil)).validate!).to be_truthy
+      end
+
+      it 'accepts the type boolean' do
+        boolean = classification(type: 'boolean', expression: nil,
+          values: '<sdg:SupportedValue><sdg:BooleanValue>false</sdg:BooleanValue></sdg:SupportedValue>')
+
+        expect(with_classifications(boolean).validate!).to be_truthy
+      end
+    end
+
+    # `R-EDM-REQ-C023` asks for at least one supported value and none of them
+    # empty, `C105` for exactly one — « along the answer chosen by the user » —
+    # and `C103` and `C104` for the element the type obliges each to carry.
+    #
+    # `C102` is never named: its assertion is word for word `C023`'s under a
+    # narrower context, so what it refuses `C023` refuses already.
+    describe 'the value it retains' do
+      it 'refuses a classification carrying no supported value, under R-EDM-REQ-C023' do
+        expect { with_classifications(classification(type: 'string', expression: nil, values: '')).validate! }
+          .to refusing('R-EDM-REQ-C023')
+      end
+
+      # The case where the context of `C102` does not even open: a type outside
+      # the three published ones is `C095`'s to refuse, and the rule that counts
+      # the values is `C023`, which narrows itself to nothing.
+      it 'refuses a type of its own carrying no value under R-EDM-REQ-C095, never C102' do
+        expect { with_classifications(classification(type: 'date', values: '')).validate! }
+          .to refusing('R-EDM-REQ-C095')
+      end
+
+      it 'refuses a supported value that is empty, under R-EDM-REQ-C023' do
+        empty = classification(type: 'boolean', expression: nil, values: '<sdg:SupportedValue></sdg:SupportedValue>')
+
+        expect { with_classifications(empty).validate! }.to refusing('R-EDM-REQ-C023')
+      end
+
+      it 'refuses two supported values, under R-EDM-REQ-C105' do
+        doubled = classification(values: '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>' \
+                                         '<sdg:SupportedValue><sdg:StringValue>02000000</sdg:StringValue></sdg:SupportedValue>')
+
+        expect { with_classifications(doubled).validate! }.to refusing('R-EDM-REQ-C105')
+      end
+
+      # Both rules fire on this one: `C023` refuses the empty value, `C105` the
+      # count. No rule of the chapter says which is named, and it is `C023` —
+      # what the correspondent has to look at is the value, not the count.
+      it 'refuses two supported values one of which is empty, under R-EDM-REQ-C023' do
+        doubled = classification(values: '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>' \
+                                         '<sdg:SupportedValue></sdg:SupportedValue>')
+
+        expect { with_classifications(doubled).validate! }.to refusing('R-EDM-REQ-C023')
+      end
+
+      it 'refuses a string value where the type string asks for one, under R-EDM-REQ-C103' do
+        mistyped = classification(type: 'string', expression: nil,
+          values: '<sdg:SupportedValue><sdg:BooleanValue>true</sdg:BooleanValue></sdg:SupportedValue>')
+
+        expect { with_classifications(mistyped).validate! }.to refusing('R-EDM-REQ-C103')
+      end
+
+      it 'asks a code list for a string value too' do
+        mistyped = classification(values: '<sdg:SupportedValue><sdg:BooleanValue>true</sdg:BooleanValue></sdg:SupportedValue>')
+
+        expect { with_classifications(mistyped).validate! }.to refusing('R-EDM-REQ-C103')
+      end
+
+      it 'refuses a boolean value written as a string, under R-EDM-REQ-C104' do
+        mistyped = classification(type: 'boolean', expression: nil,
+          values: '<sdg:SupportedValue><sdg:StringValue>true</sdg:StringValue></sdg:SupportedValue>')
+
+        expect { with_classifications(mistyped).validate! }.to refusing('R-EDM-REQ-C104')
+      end
+    end
+
+    # `R-EDM-REQ-C100` and `C101`, whose context is a classification typed
+    # `codelist`: the expression is required there, and required to be an
+    # `https://` URL. A classification of another type owes neither.
+    describe 'the expression a code list names' do
+      it 'refuses a code list naming no expression, under R-EDM-REQ-C100' do
+        expect { with_classifications(classification(expression: nil)).validate! }.to refusing('R-EDM-REQ-C100')
+      end
+
+      it 'accepts another type naming none' do
+        expect(with_classifications(classification(type: 'string', expression: nil)).validate!).to be_truthy
+      end
+
+      it 'refuses an expression served over http, under R-EDM-REQ-C101' do
+        insecure = classification(expression: 'http://query.cs.oots.tech.ec.europa.eu/x')
+
+        expect { with_classifications(insecure).validate! }.to refusing('R-EDM-REQ-C101')
+      end
+
+      # The assertion reads `sdg:ValueExpression/text()` raw, where `C100`
+      # normalises: a blank in front satisfies the one and breaks the other.
+      it 'refuses an expression opening on a blank, under R-EDM-REQ-C101' do
+        padded = classification(expression: ' https://query.cs.oots.tech.ec.europa.eu/x')
+
+        expect { with_classifications(padded).validate! }.to refusing('R-EDM-REQ-C101')
+      end
+
+      # `lower-case` is applied before the comparison, so the scheme may be
+      # written in any case at all.
+      it 'accepts an expression whose scheme is in upper case' do
+        shouted = classification(expression: 'HTTPS://query.cs.oots.tech.ec.europa.eu/x')
+
+        expect(with_classifications(shouted).validate!).to be_truthy
+      end
+
+      # What the published example carries: the URL, then a newline and the
+      # indentation of the snippet. Nothing follows the scheme's business.
+      it 'accepts the expression the published example carries, newline and all' do
+        wrapped = classification(expression: "#{value_expression}\n      ")
+
+        expect(with_classifications(wrapped).validate!).to be_truthy
+      end
+    end
+
+    # `R-EDM-REQ-C022` on the `sdg:Description` and `C021` on its `@lang`: the
+    # attribute absent or blank under the first, outside the code list under the
+    # second. The pair `require_language` already reads for an agent's name and
+    # a requirement's wordings.
+    describe 'the language its description names' do
+      it 'refuses a description carrying no lang at all, under R-EDM-REQ-C022' do
+        described = classification(descriptions: '<sdg:Description>Commune</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C022')
+      end
+
+      # Written empty, the attribute is there and the first rule normalises it:
+      # the empty string is no more a language than no attribute at all.
+      it 'refuses a lang written empty, under R-EDM-REQ-C022' do
+        described = classification(descriptions: '<sdg:Description lang="">Commune</sdg:Description>')
+
+        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C022')
+      end
+
+      it 'refuses a code the list does not publish, under R-EDM-REQ-C021' do
         described = classification(descriptions: '<sdg:Description lang="ZZ">Commune</sdg:Description>')
 
         expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
@@ -1335,23 +1614,6 @@ RSpec.describe EvidenceRequestParser do
         expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
       end
 
-      # Written empty, the attribute is there and is a context node: the
-      # assertion fires, and the empty string is no code of the list.
-      it 'refuses a lang written empty, under R-EDM-REQ-C021' do
-        described = classification(descriptions: '<sdg:Description lang="">Commune</sdg:Description>')
-
-        expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
-      end
-
-      # The case that proves `C022` is not applied: its context is the element
-      # and it would refuse this, where `C021`'s context is the attribute that
-      # is not there. A reader reusing `require_language` would refuse it too.
-      it 'accepts a description carrying no lang at all' do
-        described = classification(descriptions: '<sdg:Description>Commune</sdg:Description>')
-
-        expect(with_classifications(described).validate!).to be_truthy
-      end
-
       # `InformationConceptType` makes `sdg:Description` `0..n`, and each
       # attribute is a context of its own: the second is judged as the first is.
       it 'judges a second description as much as the first' do
@@ -1361,18 +1623,34 @@ RSpec.describe EvidenceRequestParser do
         expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C021')
       end
 
+      # Nothing requires a description: the contexts of both rules are the
+      # element and its attribute, and `InformationConceptType` numbers it
+      # `0..n`.
       it 'accepts a classification describing itself in no language at all' do
         expect(with_classifications(classification(descriptions: '')).validate!).to be_truthy
       end
 
       # `R-EDM-REQ-C092` reaches this description as it reaches every other
       # wording: its context names `sdg:Description` and no ancestor at all,
-      # where `require_classification_languages` judges the language alone.
+      # where the pair above judges the language alone.
       it 'refuses a description of one character, under R-EDM-REQ-C092' do
         described = classification(descriptions: '<sdg:Description lang="EN">C</sdg:Description>')
 
         expect { with_classifications(described).validate! }.to refusing('R-EDM-REQ-C092')
       end
+    end
+
+    # The Schematron of 1.2.5 publishes these assertions word for word, so
+    # nothing of the version read modulates them — unlike `S022` and `S061`,
+    # which `EdmSpecification` tells apart. A correspondent still on that line
+    # is refused under the same identifier.
+    it 'judges a classification of the 1.2 line by the very same rule' do
+      earlier = earlier_line_envelope do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') { classification_slot(classification(id: 'FR-MUNICIPALITY')) }
+      end
+
+      expect(earlier.specification).to eq(EdmSpecification::V1_2)
+      expect { earlier.body.validate! }.to refusing('R-EDM-REQ-C019')
     end
   end
 

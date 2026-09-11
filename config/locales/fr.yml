@@ -640,22 +640,64 @@ fr:
       requirement_unexpected_children: >-
         Une exigence de la requête reçue ne peut porter que sdg:Identifier, sdg:Name et
         sdg:Description (reçu en plus : %{children}).
-      # R-EDM-REQ-S041, C021 et C098 : les classifications de fournisseur que la
-      # requête invoque. Le slot, lui, n'est pas exigé — S014 le compte sous
-      # CAUTION —, donc son absence n'est refusée nulle part. C022, qui refuse
-      # une description sans attribut « lang », n'est pas appliquée : une
-      # description qui n'en porte pas est servie, là où une qui le porte vide
-      # est refusée par C021. Ces refus-là repartent en EDM:ERR:0003 : une
-      # réponse d'erreur ne recopie aucune classification.
+      # Les dix-sept règles FATAL du slot EvidenceProviderClassification : S041
+      # sur chaque rim:Element de la collection, et seize sur chaque
+      # classification qu'il porte — son identifiant (C019) et le schéma que
+      # celui-ci nomme (C097, C098, C099), son type (C020, C095), la valeur
+      # retenue (C023, C105, C103, C104), ce que le type « codelist » ajoute
+      # (C096, C100, C101) et la langue de chaque description (C022, C021). Le
+      # slot, lui, n'est pas exigé — S014 le compte sous CAUTION —, donc son
+      # absence n'est refusée nulle part. Ces refus-là repartent en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie aucune classification.
+      #
+      # C102 n'est jamais nommée : son assertion est mot pour mot celle de C023,
+      # sous un contexte plus étroit, donc ce qu'elle refuse C023 le refuse déjà.
       element_without_classification: >-
         Un élément du slot « EvidenceProviderClassification » de la requête reçue ne porte pas de
         sdg:EvidenceProviderClassification.
-      classification_language_unknown: >-
-        La langue de la description d'une classification de fournisseur (« %{language} ») n'est pas
-        un code de la liste LanguageCode.
+      classification_id_not_a_uuid: >-
+        L'identifiant d'une classification de fournisseur (« %{id} ») n'est pas un UUID.
+      unnamed_classification_id: vide
+      classification_scheme_unexpected: >-
+        Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») n'est pas une
+        URL de liste de codes du dépôt sémantique.
       classification_country_unknown: >-
         Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») ne nomme pas un
         pays participant à OOTS.
+      classification_scheme_name_unexpected: >-
+        Le nom court du schéma d'identifiant d'une classification de fournisseur (« %{scheme} »)
+        porte autre chose que des lettres et des chiffres.
+      classification_without_type: Une classification de fournisseur ne déclare pas son type.
+      classification_type_unexpected: >-
+        Le type d'une classification de fournisseur (« %{type} ») n'est ni « string », ni
+        « boolean », ni « codelist ».
+      classification_without_supported_value: >-
+        Une classification de fournisseur ne porte pas de sdg:SupportedValue.
+      classification_supported_value_empty: >-
+        Une valeur retenue d'une classification de fournisseur est vide.
+      classification_values_counted: >-
+        Une classification de fournisseur doit porter exactement une valeur retenue (%{count}
+        déclarée(s)).
+      classification_value_without_string_value: >-
+        La valeur retenue d'une classification de fournisseur de type « string » ou « codelist »
+        doit être une sdg:StringValue.
+      classification_value_without_boolean_value: >-
+        La valeur retenue d'une classification de fournisseur de type « boolean » doit être une
+        sdg:BooleanValue.
+      classification_without_scheme: >-
+        L'identifiant d'une classification de fournisseur de type « codelist » ne porte pas
+        d'attribut « schemeID ».
+      classification_without_value_expression: >-
+        Une classification de fournisseur de type « codelist » ne porte pas de
+        sdg:ValueExpression.
+      classification_expression_not_https: >-
+        L'expression de valeurs d'une classification de fournisseur (« %{expression} ») ne commence
+        pas par « https:// ».
+      classification_description_without_language: >-
+        La description d'une classification de fournisseur ne porte pas d'attribut « lang ».
+      classification_description_language_unknown: >-
+        La langue de la description d'une classification de fournisseur (« %{language} ») n'est pas
+        un code de la liste LanguageCode.
       # R-EDM-REQ-S020 à S036, S055 et S061 : la forme RegRep des slots. Les
       # dix-neuf assertions comparent la seule partie locale de l'attribut —
       # substring-after(@xsi:type, ':') —, donc le préfixe n'est pas jugé :

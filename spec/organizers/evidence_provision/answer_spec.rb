@@ -488,6 +488,42 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
+  # The seventeen rules of the `EvidenceProviderClassification` slot, and the
+  # four that reach the agents of `EvidenceProvider` the request does not
+  # designate: an error response names France as the provider and copies back
+  # the requester alone, so nothing of what is refused here would travel in the
+  # message that refuses it. These all go back.
+  describe 'a request whose provider classification names itself by no UUID' do
+    let(:message) do
+      envelope_with_body('requete') do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="EvidenceProviderClassification"><rim:SlotValue xsi:type="rim:CollectionValueType" ' \
+            'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">' \
+            '<rim:Element xsi:type="rim:AnyValueType"><sdg:EvidenceProviderClassification>' \
+            '<sdg:Identifier schemeID="https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022">FR-MUNICIPALITY' \
+            '</sdg:Identifier><sdg:Type>string</sdg:Type>' \
+            '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>' \
+            '</sdg:EvidenceProviderClassification></rim:Element></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule it applied' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C019')
+    end
+
+    it 'journals the rule alongside the code' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-C019')
+    end
+  end
+
   # `R-EDM-REQ-C017` on an agent of the `EvidenceProvider` slot the request does
   # not designate. What travels back is the rule: the `message` of an
   # `rs:Exception` is the literal `EdmException::INVALID_REQUEST` carries,

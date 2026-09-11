@@ -5,15 +5,16 @@
 # `ER`, the ones beside it, and the provider the request designates.
 #
 # Two readers here judge no agent. `require_language` holds any element the
-# chapter obliges to name its language: four pairs of rules make that one pair
-# of assertions — over the requester's collection, over the provider, and over
-# the name and the description of a requirement — so it is written once and
-# reads its identifiers from `RULES`, like the agent readers beside it.
-# `refuse_unexpected_children` holds any element whose children the chapter
-# closes to a list of names, which `R-EDM-REQ-S043` does over the provider,
-# `S040` over each agent of the requester's collection and `S038` over a
-# requirement. Both are here because `RequirementConformance` includes this
-# module for exactly that, and says so.
+# chapter obliges to name its language: five pairs of rules make that one pair
+# of assertions — over the requester's collection, over the provider, over the
+# name and the description of a requirement, and over the description of a
+# provider classification — so it is written once and reads its identifiers
+# from `RULES`, like the agent readers beside it. `refuse_unexpected_children`
+# holds any element whose children the chapter closes to a list of names, which
+# `R-EDM-REQ-S043` does over the provider, `S040` over each agent of the
+# requester's collection and `S038` over a requirement. Both are here because
+# `RequirementConformance` and `ClassificationConformance` include this module
+# for exactly that, and say so.
 #
 # Each reading takes a `wording` naming the agent it judges, which it cannot
 # know itself: one rule refuses the requester, the platform beside it and the
@@ -105,13 +106,15 @@ module AgentConformance
       identifier: 'R-EDM-REQ-C018', language: 'R-EDM-REQ-C111', language_code: 'R-EDM-REQ-C110',
       scheme: 'R-EDM-REQ-C017',
     }.freeze,
-    # These two judge no agent at all: `C010`/`C009` and `C094`/`C093` hold the
-    # name and the description of a `Requirements` exigence to naming their
-    # language, which is that same pair of assertions a third and a fourth
-    # time. They are here because the reader is, and splitting the table would
-    # split it by subject rather than by what it does.
+    # These three judge no agent at all: `C010`/`C009`, `C094`/`C093` and
+    # `C022`/`C021` hold the name and the description of a `Requirements`
+    # exigence, and the description of an `EvidenceProviderClassification`, to
+    # naming their language — that same pair of assertions a third, a fourth
+    # and a fifth time. They are here because the reader is, and splitting the
+    # table would split it by subject rather than by what it does.
     requirement_name: { language: 'R-EDM-REQ-C010', language_code: 'R-EDM-REQ-C009' }.freeze,
     requirement_description: { language: 'R-EDM-REQ-C094', language_code: 'R-EDM-REQ-C093' }.freeze,
+    classification_description: { language: 'R-EDM-REQ-C022', language_code: 'R-EDM-REQ-C021' }.freeze,
   }.freeze
 
   private
