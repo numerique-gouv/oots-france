@@ -10,3 +10,6 @@
 <% else %>
   <%= event.exchange_id.presence ? tag.span(label, title: event.exchange_id) : '—' %>
 <% end %>
+<%# Outside the `if`: the mark is asked of the exchange, and an event naming one
+    France never opened has none to ask. %>
+<%= render MintedIdentifierComponent.new(exchange: event.exchange) %>

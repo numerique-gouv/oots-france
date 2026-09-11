@@ -37,6 +37,37 @@ RSpec.describe 'Admin::Journal::Conversations' do
       expect(response.body).to include(I18n.t('admin.journal.event_types.error_received'))
     end
 
+    # Chapter 4.7 §2.6.2 makes the version an exchange's, and chapter 4.4 lets
+    # one conversation cover several: two exchanges of the same session may not
+    # hold the same line, which no seed shows and this proves.
+    it 'gives each exchange its own version, and marks only the minted identifier' do
+      legacy = create(:exchange, :legacy_line, :delivered, conversation_id:, created_at: 2.days.ago)
+      current = create(:exchange, :delivered, conversation_id:, created_at: 1.hour.ago)
+
+      get admin_journal_conversation_path(conversation_id)
+
+      expect(response.body).to include(EdmSpecification::V1_2.identifier)
+      expect(response.body).to include(EdmSpecification::V2_0.identifier)
+
+      blocks = response.parsed_body.css('h2')
+      marked = blocks.select { |one| one.text.include?(I18n.t('components.minted_identifier.label')) }
+
+      expect(marked.size).to eq(1)
+      expect(marked.first.text).to include(legacy.exchange_id)
+      expect(blocks.map(&:text).join).to include(current.exchange_id)
+    end
+
+    # The exchange the version choice gave up on: its block says neither a
+    # version nor a mark, nothing having been settled.
+    it 'says no version of an exchange that settled on none' do
+      create(:exchange, :unsettled_line, :failed, conversation_id:)
+
+      get admin_journal_conversation_path(conversation_id)
+
+      expect(response.body).not_to include(EdmSpecification::V2_0.identifier)
+      expect(response.body).not_to include(I18n.t('components.minted_identifier.label'))
+    end
+
     it 'says so where an exchange has left no event yet' do
       create(:exchange, :sent, conversation_id:)
 

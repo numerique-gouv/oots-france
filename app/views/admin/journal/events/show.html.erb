@@ -75,6 +75,14 @@
                   <% end %>
                 </td>
               </tr>
+
+              <%# Against the row that names the exchange: the version belongs to
+                  the exchange and not to the event, and putting it there says
+                  what it refers to. The journal does not record it — `audit_events`
+                  has no such column — so it is read off the exchange. %>
+              <% if name == :exchange_id %>
+                <%= render 'admin/journal/specification_row', exchange: @event.exchange %>
+              <% end %>
             <% end %>
           </tbody>
         </table>

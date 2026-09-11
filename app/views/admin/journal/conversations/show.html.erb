@@ -21,6 +21,9 @@
     <h2 class="fr-h5 fr-mb-1w">
       <%= link_to t('admin.journal.exchanges.show.title', id: exchange.exchange_id),
             admin_journal_exchange_path(exchange.exchange_id), class: 'fr-link' %>
+      <%# Outside the link: the mark bears on the identifier, not on what the
+          link promises, which is the exchange's own page. %>
+      <%= render MintedIdentifierComponent.new(exchange:) %>
     </h2>
 
     <p class="fr-mb-2w">
@@ -29,6 +32,11 @@
         <%= t("admin.journal.exchanges.directions.#{exchange.direction}") %> ·
         <%= exchange.procedure_code.presence || '—' %> ·
         <%= l(exchange.created_at, format: :long) %>
+        <%# The version is an exchange's and never a conversation's: chapter 4.7
+            §2.6.2 has every message of one exchange share it, and a conversation
+            covers several, which may not hold the same line. Silent where none
+            was ever settled. %>
+        <% if exchange.specification %>· <%= exchange.specification %><% end %>
       </span>
     </p>
 

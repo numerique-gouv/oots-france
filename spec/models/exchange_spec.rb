@@ -599,6 +599,35 @@ RSpec.describe Exchange do
 
   # Chapter 4.4 correlates a response to its request by this identifier, and
   # the exchange is the only thing that remembers which one it sent.
+  # `R-EDM-ebMS-019` names `ExchangeId` among the four properties of a 2.0
+  # header alone, so an exchange conducted on the earlier line wears an
+  # identifier no message ever carried.
+  describe '#minted_identifier?' do
+    it 'is true of an exchange conducted on the 1.2 line' do
+      expect(build(:exchange, :legacy_line)).to be_minted_identifier
+    end
+
+    it 'is false of an exchange conducted in 2.0, whose header names it' do
+      expect(build(:exchange)).not_to be_minted_identifier
+    end
+
+    # Nothing says which line it would have run on, so nothing is warned of.
+    it 'is false of an exchange whose version was never settled' do
+      expect(build(:exchange, :unsettled_line)).not_to be_minted_identifier
+    end
+
+    # Derived from the predicate the header asks and not from a second criterion
+    # written beside it: whichever lines France comes to speak, the console and
+    # `app/templates/ebms_header.xml.erb` answer this question the same way.
+    it 'says the opposite of what the header says, on every line France speaks' do
+      EdmSpecification::SPOKEN.each do |spoken|
+        exchange = build(:exchange, specification: spoken)
+
+        expect(exchange.minted_identifier?).to eq(!spoken.exchange_named_in_header?)
+      end
+    end
+  end
+
   describe '#answers?' do
     subject(:exchange) { build(:exchange, request_id: 'urn:uuid:11111111-1111-4111-8111-111111111111') }
 
