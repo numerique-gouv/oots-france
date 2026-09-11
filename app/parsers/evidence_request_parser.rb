@@ -72,8 +72,7 @@ class EvidenceRequestParser
     require_expected_specification
     require_one_evidence_subject
     require_requester_country
-    require_agent_territory(requester_agent, :agent)
-    require_conformant_accompanying_agents
+    require_conformant_collection(agents)
     require_conformant_provider(provider_agents)
     require_beneficiary_identifier_scheme
     require_conformant_requirements
@@ -179,11 +178,25 @@ class EvidenceRequestParser
   # does, and for the same reason. Read through `require_slot` all the same, so
   # that a second `EvidenceRequester` slot is refused rather than ignored by
   # `slot_elements`, which takes the first.
+  #
+  # `R-EDM-REQ-S039` is refused here too, and carries no answer either: a
+  # collection naming no agent leaves neither a value an exception could copy
+  # back nor a `finalRecipient` to address it to.
+  #
+  # The assertion, and not its message: the test is `rim:Element/sdg:Agent` on
+  # the `rim:SlotValue`, so **one** element carrying an agent satisfies it,
+  # where the message reads « each rim:Element … MUST use the 'sdg:Agent' ». An
+  # element carrying none beside one that does is therefore passed over, as it
+  # is today. Refused before `C074` counts the classifications: that count would
+  # otherwise name a rule about agents that are not there.
   def agents
     @agents ||= begin
       require_slot('EvidenceRequester', 'R-EDM-REQ-S012')
 
-      slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+      declared = slot_elements('EvidenceRequester', request).filter_map { |element| at(element, './sdg:Agent') }
+      refuse('R-EDM-REQ-S039', 'parsers.evidence_request.collection_without_agent') if declared.empty?
+
+      declared
     end
   end
 
@@ -470,24 +483,5 @@ class EvidenceRequestParser
       # wrong answer about a foreign requester.
       address: Address.new(country: agent_country(agent)),
     )
-  end
-
-  # Every agent of the `EvidenceRequester` collection that is not the requester
-  # — the intermediary platform of the country that asks, in practice. Eight
-  # FATAL rules of chapter 4.6 judge each agent of that collection: none of
-  # their contexts carries a condition on the classification, where
-  # `R-EDM-REQ-C073` alone narrows itself to `sdg:Agent[…sdg:Classification='ER']`.
-  #
-  # Refused among the checks of `validate!`, so these refusals do go back: an
-  # error response names the requester alone — `ErrorResponseBuilder#requester_agent`
-  # writes a single `sdg:Agent`, and the `R-EDM-ERR-*` rules judge that one — so
-  # nothing of the agent refused here would travel in the message that refuses it.
-  #
-  # Selected by what they are not, the mirror of what `requester_agent` retains:
-  # a classification written ` ER ` therefore satisfies `C013`, which
-  # normalises, and breaks `C014`, which compares raw — as the Schematron does.
-  def require_conformant_accompanying_agents
-    agents.reject { |agent| text_at(agent, './sdg:Classification') == EvidenceRequester::REQUESTER }
-      .each { |agent| require_conformant_agent(agent) }
   end
 end

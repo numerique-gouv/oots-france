@@ -428,6 +428,16 @@ fr:
         « urn:uuid: ».
       unnamed_request_id: absent
       no_query: Pas de query:Query dans le message reçu.
+      # R-EDM-REQ-S039 : la collection EvidenceRequester porte au moins un
+      # rim:Element qui porte un sdg:Agent. C'est l'assertion —
+      # « rim:Element/sdg:Agent » sur le rim:SlotValue — et non son message, qui
+      # dit que chaque rim:Element « MUST use » un agent : un élément sans agent
+      # à côté d'un élément qui en porte un satisfait la règle. Ce refus-là ne
+      # repart pas — sans agent, ni valeur à recopier ni finalRecipient à
+      # adresser —, et il précède C074, qui compterait sinon les classifications
+      # d'agents qui n'existent pas.
+      collection_without_agent: >-
+        La collection « EvidenceRequester » de la requête reçue ne porte aucun agent.
       # R-EDM-REQ-C074 : la collection EvidenceRequester compte exactement un
       # agent classé ER. La phrase compte, elle ne constate pas une absence :
       # zéro et deux enfreignent la même règle. Comparé brut, comme
@@ -514,16 +524,28 @@ fr:
       platform_territory_unknown: >-
         Le territoire de la plateforme intermédiaire (« %{territory} ») n'est pas un code de la
         liste NUTS.
-      # R-EDM-REQ-S042, C017, C018, C110 et C111 sur l'agent que porte le slot
-      # EvidenceProvider — le fournisseur que la requête désigne. Les quatre
-      # dernières sont, mot pour mot, les assertions C011, C012, C109 et C108 de
-      # la collection EvidenceRequester, publiées sous d'autres identifiants
-      # parce que c'est le slot qui les fixe, et non la classification ; S042,
-      # elle, est propre à ce slot, qui porte l'agent directement là où la
-      # collection l'enveloppe d'un rim:Element. Ceux-là repartent tous en
-      # EDM:ERR:0003 : la réponse d'erreur nomme la France comme fournisseur,
-      # jamais celui qui a été reçu, donc rien de ce qui est refusé ici ne
-      # voyagerait dans le message qui le refuse.
+      # R-EDM-REQ-S040 : la liste fermée des enfants de chaque agent de la
+      # collection EvidenceRequester, le requêteur compris — son contexte ne
+      # porte aucune condition de classification. L'assertion laisse libre le
+      # nombre de chacun des quatre et refuse tout autre élément, un
+      # sdg:ReferenceFramework ou un sdg:EvidenceTypeList compris ; l'espace de
+      # noms est décidé par son URI et jamais par le préfixe. Une phrase pour les
+      # deux agents, la règle ne les distinguant pas. Ce refus repart en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie du requêteur que son
+      # identifiant, son schéma et ses noms.
+      collection_agent_unexpected_children: >-
+        Un agent de la collection « EvidenceRequester » ne peut porter que sdg:Identifier,
+        sdg:Name, sdg:Address et sdg:Classification (reçu en plus : %{children}).
+      # R-EDM-REQ-S042, C017, C018, C110 et C111 sur les agents que porte le slot
+      # EvidenceProvider — le premier étant le fournisseur que la requête
+      # désigne. Les quatre dernières sont, mot pour mot, les assertions C011,
+      # C012, C109 et C108 de la collection EvidenceRequester, publiées sous
+      # d'autres identifiants parce que c'est le slot qui les fixe, et non la
+      # classification ; S042, elle, est propre à ce slot, qui porte l'agent
+      # directement là où la collection l'enveloppe d'un rim:Element. Ceux-là
+      # repartent tous en EDM:ERR:0003 : la réponse d'erreur nomme la France
+      # comme fournisseur, jamais celui qui a été reçu, donc rien de ce qui est
+      # refusé ici ne voyagerait dans le message qui le refuse.
       provider_without_agent: >-
         Le slot « EvidenceProvider » de la requête reçue ne porte pas d'agent.
       # Aucune assertion ne couvre ces deux absences : C017 a pour contexte
@@ -560,6 +582,28 @@ fr:
       provider_unexpected_children: >-
         Le fournisseur désigné ne peut porter que sdg:Identifier et sdg:Name (reçu en plus :
         %{children}).
+      # Les mêmes C017, C018, C111 et C110 sur les agents du slot que la requête
+      # ne désigne pas : aucun de leurs contextes ne porte de prédicat de
+      # position, donc chaque agent du rim:SlotValue les enfreint comme le
+      # premier. Une phrase à eux, parce qu'un second agent n'est pas « le
+      # fournisseur désigné » et qu'un refus qui le dirait nommerait le mauvais.
+      # Rien n'est exigé de leur présence : ni assertion ni chapitre 4.5.1 §3.3,
+      # qui décrit l'agent que le slot désigne, ne parle d'un second agent sans
+      # identifiant ni sans nom.
+      accompanying_provider_without_scheme: >-
+        L'identifiant d'un fournisseur que la requête ne désigne pas ne porte pas d'attribut
+        « schemeID ».
+      accompanying_provider_scheme_unknown: >-
+        Le schéma d'identifiant d'un fournisseur que la requête ne désigne pas (« %{scheme} »)
+        n'est ni un code de la liste EAS, ni un code pays d'OOTS.
+      accompanying_provider_id_too_long: >-
+        L'identifiant d'un fournisseur que la requête ne désigne pas fait %{length} caractères,
+        au-delà des %{maximum} admis.
+      accompanying_provider_without_language: >-
+        Un nom d'un fournisseur que la requête ne désigne pas ne porte pas d'attribut « lang ».
+      accompanying_provider_language_unknown: >-
+        La langue d'un nom d'un fournisseur que la requête ne désigne pas (« %{language} ») n'est
+        pas un code de la liste LanguageCode.
       # R-EDM-REQ-C041 et C042 : l'identifiant du bénéficiaire, quand la requête
       # en porte un.
       beneficiary_identifier_without_scheme: >-
@@ -596,22 +640,64 @@ fr:
       requirement_unexpected_children: >-
         Une exigence de la requête reçue ne peut porter que sdg:Identifier, sdg:Name et
         sdg:Description (reçu en plus : %{children}).
-      # R-EDM-REQ-S041, C021 et C098 : les classifications de fournisseur que la
-      # requête invoque. Le slot, lui, n'est pas exigé — S014 le compte sous
-      # CAUTION —, donc son absence n'est refusée nulle part. C022, qui refuse
-      # une description sans attribut « lang », n'est pas appliquée : une
-      # description qui n'en porte pas est servie, là où une qui le porte vide
-      # est refusée par C021. Ces refus-là repartent en EDM:ERR:0003 : une
-      # réponse d'erreur ne recopie aucune classification.
+      # Les dix-sept règles FATAL du slot EvidenceProviderClassification : S041
+      # sur chaque rim:Element de la collection, et seize sur chaque
+      # classification qu'il porte — son identifiant (C019) et le schéma que
+      # celui-ci nomme (C097, C098, C099), son type (C020, C095), la valeur
+      # retenue (C023, C105, C103, C104), ce que le type « codelist » ajoute
+      # (C096, C100, C101) et la langue de chaque description (C022, C021). Le
+      # slot, lui, n'est pas exigé — S014 le compte sous CAUTION —, donc son
+      # absence n'est refusée nulle part. Ces refus-là repartent en
+      # EDM:ERR:0003 : une réponse d'erreur ne recopie aucune classification.
+      #
+      # C102 n'est jamais nommée : son assertion est mot pour mot celle de C023,
+      # sous un contexte plus étroit, donc ce qu'elle refuse C023 le refuse déjà.
       element_without_classification: >-
         Un élément du slot « EvidenceProviderClassification » de la requête reçue ne porte pas de
         sdg:EvidenceProviderClassification.
-      classification_language_unknown: >-
-        La langue de la description d'une classification de fournisseur (« %{language} ») n'est pas
-        un code de la liste LanguageCode.
+      classification_id_not_a_uuid: >-
+        L'identifiant d'une classification de fournisseur (« %{id} ») n'est pas un UUID.
+      unnamed_classification_id: vide
+      classification_scheme_unexpected: >-
+        Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») n'est pas une
+        URL de liste de codes du dépôt sémantique.
       classification_country_unknown: >-
         Le schéma d'identifiant d'une classification de fournisseur (« %{scheme} ») ne nomme pas un
         pays participant à OOTS.
+      classification_scheme_name_unexpected: >-
+        Le nom court du schéma d'identifiant d'une classification de fournisseur (« %{scheme} »)
+        porte autre chose que des lettres et des chiffres.
+      classification_without_type: Une classification de fournisseur ne déclare pas son type.
+      classification_type_unexpected: >-
+        Le type d'une classification de fournisseur (« %{type} ») n'est ni « string », ni
+        « boolean », ni « codelist ».
+      classification_without_supported_value: >-
+        Une classification de fournisseur ne porte pas de sdg:SupportedValue.
+      classification_supported_value_empty: >-
+        Une valeur retenue d'une classification de fournisseur est vide.
+      classification_values_counted: >-
+        Une classification de fournisseur doit porter exactement une valeur retenue (%{count}
+        déclarée(s)).
+      classification_value_without_string_value: >-
+        La valeur retenue d'une classification de fournisseur de type « string » ou « codelist »
+        doit être une sdg:StringValue.
+      classification_value_without_boolean_value: >-
+        La valeur retenue d'une classification de fournisseur de type « boolean » doit être une
+        sdg:BooleanValue.
+      classification_without_scheme: >-
+        L'identifiant d'une classification de fournisseur de type « codelist » ne porte pas
+        d'attribut « schemeID ».
+      classification_without_value_expression: >-
+        Une classification de fournisseur de type « codelist » ne porte pas de
+        sdg:ValueExpression.
+      classification_expression_not_https: >-
+        L'expression de valeurs d'une classification de fournisseur (« %{expression} ») ne commence
+        pas par « https:// ».
+      classification_description_without_language: >-
+        La description d'une classification de fournisseur ne porte pas d'attribut « lang ».
+      classification_description_language_unknown: >-
+        La langue de la description d'une classification de fournisseur (« %{language} ») n'est pas
+        un code de la liste LanguageCode.
       # R-EDM-REQ-S020 à S036, S055 et S061 : la forme RegRep des slots. Les
       # dix-neuf assertions comparent la seule partie locale de l'attribut —
       # substring-after(@xsi:type, ':') —, donc le préfixe n'est pas jugé :

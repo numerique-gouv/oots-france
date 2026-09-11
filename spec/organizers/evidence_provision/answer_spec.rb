@@ -488,6 +488,71 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
+  # The seventeen rules of the `EvidenceProviderClassification` slot, and the
+  # four that reach the agents of `EvidenceProvider` the request does not
+  # designate: an error response names France as the provider and copies back
+  # the requester alone, so nothing of what is refused here would travel in the
+  # message that refuses it. These all go back.
+  describe 'a request whose provider classification names itself by no UUID' do
+    let(:message) do
+      envelope_with_body('requete') do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="EvidenceProviderClassification"><rim:SlotValue xsi:type="rim:CollectionValueType" ' \
+            'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">' \
+            '<rim:Element xsi:type="rim:AnyValueType"><sdg:EvidenceProviderClassification>' \
+            '<sdg:Identifier schemeID="https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022">FR-MUNICIPALITY' \
+            '</sdg:Identifier><sdg:Type>string</sdg:Type>' \
+            '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>' \
+            '</sdg:EvidenceProviderClassification></rim:Element></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule it applied' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C019')
+    end
+
+    it 'journals the rule alongside the code' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-C019')
+    end
+  end
+
+  # `R-EDM-REQ-C017` on an agent of the `EvidenceProvider` slot the request does
+  # not designate. What travels back is the rule: the `message` of an
+  # `rs:Exception` is the literal `EdmException::INVALID_REQUEST` carries,
+  # copied from the published code list, and says nothing of the agent. The
+  # French sentence that names it is the operator's, and
+  # `spec/parsers/evidence_request_parser_spec.rb` is where it is asserted.
+  describe 'a request whose second provider agent names no scheme' do
+    let(:message) do
+      envelope_with_provider_agent do |agent|
+        "#{agent}<sdg:Agent><sdg:Identifier>AUTRE</sdg:Identifier>" \
+          '<sdg:Name lang="EN">Another provider</sdg:Name></sdg:Agent>'
+      end
+    end
+
+    it 'answers EDM:ERR:0003 naming the rule it applied' do
+      answer
+
+      expect(code_of(submitted)).to eq('EDM:ERR:0003')
+      expect(detail_of(submitted)).to eq('R-EDM-REQ-C017')
+    end
+
+    it 'journals the rule alongside the code' do
+      answer
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_sent', edm_error_code: 'EDM:ERR:0003',
+        detail: 'R-EDM-REQ-C017')
+    end
+  end
+
   # `R-EDM-REQ-S004` (FATAL) on the request, `R-EDM-ERR-S004` on the answer, and
   # `R-EDM-ERR-C025` (FATAL) between the two: the one response that may omit
   # `requestId` is an `rs:InvalidRequestExceptionType`, which is exactly what
@@ -1135,6 +1200,7 @@ RSpec.describe EvidenceProvision::Answer do
       'no agent classified ER at all' => ['R-EDM-REQ-C074', :request_without_a_requester],
       'two agents classified ER' => ['R-EDM-REQ-C074', :request_with_a_second_requester],
       'no EvidenceRequester slot at all' => ['R-EDM-REQ-S012', :request_without_the_requester_slot],
+      'no agent in the collection at all' => ['R-EDM-REQ-S039', :request_without_any_agent],
     }.each do |carrying, (rule, building)|
       context "when the request carries #{carrying}" do
         let(:message) { send(building) }
@@ -1244,6 +1310,20 @@ RSpec.describe EvidenceProvision::Answer do
   def request_without_a_requester = envelope_with_body('requete') { |body| body.gsub('>ER<', '>IP<') }
 
   def request_without_the_requester_slot = RetrievedMessageParser.new(built_envelope('requete.sansRequeteur'))
+
+  # The slot as the RegRep rules require it — a collection declaring its type
+  # and carrying an element — and carrying no `sdg:Agent`: what `R-EDM-REQ-S039`
+  # refuses, where `C074` would otherwise count the classifications of agents
+  # that are not there.
+  def request_without_any_agent
+    envelope_with_body('requete') do |body|
+      body.sub(%r{<rim:Slot name="EvidenceRequester">.*?</rim:Slot>}m) do
+        '<rim:Slot name="EvidenceRequester"><rim:SlotValue xsi:type="rim:CollectionValueType" ' \
+          'collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">' \
+          '<rim:Element xsi:type="rim:AnyValueType"/></rim:SlotValue></rim:Slot>'
+      end
+    end
+  end
 
   def request_without_the_procedure_slot = RetrievedMessageParser.new(built_envelope('requete.sansProcedure'))
 

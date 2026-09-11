@@ -5,14 +5,16 @@
 # `ER`, the ones beside it, and the provider the request designates.
 #
 # Two readers here judge no agent. `require_language` holds any element the
-# chapter obliges to name its language: four pairs of rules make that one pair
-# of assertions — over the requester's collection, over the provider, and over
-# the name and the description of a requirement — so it is written once and
-# reads its identifiers from `RULES`, like the agent readers beside it.
-# `refuse_unexpected_children` holds any element whose children the chapter
-# closes to a list of names, which `R-EDM-REQ-S043` does over the provider and
-# `S038` over a requirement. Both are here because `RequirementConformance`
-# includes this module for exactly that, and says so.
+# chapter obliges to name its language: five pairs of rules make that one pair
+# of assertions — over the requester's collection, over the provider, over the
+# name and the description of a requirement, and over the description of a
+# provider classification — so it is written once and reads its identifiers
+# from `RULES`, like the agent readers beside it. `refuse_unexpected_children`
+# holds any element whose children the chapter closes to a list of names, which
+# `R-EDM-REQ-S043` does over the provider, `S040` over each agent of the
+# requester's collection and `S038` over a requirement. Both are here because
+# `RequirementConformance` and `ClassificationConformance` include this module
+# for exactly that, and say so.
 #
 # Each reading takes a `wording` naming the agent it judges, which it cannot
 # know itself: one rule refuses the requester, the platform beside it and the
@@ -66,6 +68,12 @@ module AgentConformance
   # and nothing else — no address, no classification.
   PROVIDER_CHILDREN = %w[Identifier Name].freeze
 
+  # What `R-EDM-REQ-S040` admits under each agent of the `EvidenceRequester`
+  # collection: the two the provider may carry, and the address and the
+  # classification that collection alone knows. A `sdg:ReferenceFramework` or a
+  # `sdg:EvidenceTypeList` is therefore refused there as it is here.
+  REQUESTER_CHILDREN = %w[Identifier Name Address Classification].freeze
+
   # What the readers below refuse, under the identifier each rule is published
   # by for the agent being judged. The slot fixes that identifier and never the
   # classification: `C011`, `C012`, `C109` and `C108` judge every agent of the
@@ -89,13 +97,24 @@ module AgentConformance
       identifier_required: PROVIDER_IDENTIFIER_REQUIRED, scheme: 'R-EDM-REQ-C017',
       name_required: PROVIDER_NAME_REQUIRED,
     }.freeze,
-    # These two judge no agent at all: `C010`/`C009` and `C094`/`C093` hold the
-    # name and the description of a `Requirements` exigence to naming their
-    # language, which is that same pair of assertions a third and a fourth
-    # time. They are here because the reader is, and splitting the table would
-    # split it by subject rather than by what it does.
+    # The agents of the same slot the request does not designate. The four
+    # rules are the provider's own — no context of theirs carries a positional
+    # predicate, so each agent of the slot value breaks them alike — and only
+    # the French sentence differs: a second agent is not « le fournisseur
+    # désigné », and a refusal saying it were would name the wrong one.
+    accompanying_provider: {
+      identifier: 'R-EDM-REQ-C018', language: 'R-EDM-REQ-C111', language_code: 'R-EDM-REQ-C110',
+      scheme: 'R-EDM-REQ-C017',
+    }.freeze,
+    # These three judge no agent at all: `C010`/`C009`, `C094`/`C093` and
+    # `C022`/`C021` hold the name and the description of a `Requirements`
+    # exigence, and the description of an `EvidenceProviderClassification`, to
+    # naming their language — that same pair of assertions a third, a fourth
+    # and a fifth time. They are here because the reader is, and splitting the
+    # table would split it by subject rather than by what it does.
     requirement_name: { language: 'R-EDM-REQ-C010', language_code: 'R-EDM-REQ-C009' }.freeze,
     requirement_description: { language: 'R-EDM-REQ-C094', language_code: 'R-EDM-REQ-C093' }.freeze,
+    classification_description: { language: 'R-EDM-REQ-C022', language_code: 'R-EDM-REQ-C021' }.freeze,
   }.freeze
 
   private
@@ -153,6 +172,38 @@ module AgentConformance
     require_agent_territory(agent, :platform)
   end
 
+  # Every agent of the `EvidenceRequester` collection, and what each of them
+  # owes. `R-EDM-REQ-S040` closes the list of what any of them may carry — the
+  # requester included, its context naming no classification, where
+  # `R-EDM-REQ-C073` alone narrows itself to
+  # `sdg:Agent[…sdg:Classification='ER']` — and it is the same reading `S043`
+  # receives over the provider, on a list of four names rather than two.
+  #
+  # What follows depends on which agent it is. The requester has already been
+  # held to its identifier and its names by `EvidenceRequestParser#build_requester`,
+  # which refuses without answering for what an error response would copy back,
+  # and all that is left of it here is `R-EDM-REQ-C016` over the territory it
+  # declares — a rule that names no classification either, and whose refusal
+  # does go back. Every other agent — the intermediary platform of the country
+  # that asks, in practice — is judged by the eight rules above.
+  #
+  # Told apart by what they are not, the mirror of what
+  # `EvidenceRequestParser#requester_agent` retains: a classification written
+  # ` ER ` therefore satisfies `C013`, which normalises, and breaks `C014`,
+  # which compares raw — as the Schematron does.
+  def require_conformant_collection(agents)
+    agents.each do |agent|
+      refuse_unexpected_children(agent, REQUESTER_CHILDREN, 'R-EDM-REQ-S040',
+        'parsers.evidence_request.collection_agent_unexpected_children')
+
+      if text_at(agent, './sdg:Classification') == EvidenceRequester::REQUESTER
+        require_agent_territory(agent, :agent)
+      else
+        require_conformant_agent(agent)
+      end
+    end
+  end
+
   # `R-EDM-REQ-C013` normalises before asking that the classification not be
   # empty, so an absent element and a blank one break it alike. `C014` then
   # compares the raw value to `EvidenceRequester::CLASSIFICATIONS`, its `satisfies`
@@ -175,16 +226,23 @@ module AgentConformance
   # then reads the scheme and the identifier off: whoever needs the value needs
   # it vetted, and looking it up a second time would let the two come apart.
   def require_agent_identifier(agent, wording)
-    rules = RULES.fetch(wording)
     identifier = at(agent, './sdg:Identifier')
-    refuse(rules.fetch(:identifier_required), "parsers.evidence_request.#{wording}_without_identifier") if identifier.nil?
+    refuse(RULES.fetch(wording).fetch(:identifier_required), "parsers.evidence_request.#{wording}_without_identifier") if identifier.nil?
 
-    scheme = attribute(identifier, 'schemeID')
-    refuse(rules.fetch(:scheme), "parsers.evidence_request.#{wording}_without_scheme") if scheme.nil?
-
-    require_known_agent_scheme(scheme, identifier.text, wording)
+    require_identifier_scheme(identifier, wording)
 
     identifier
+  end
+
+  # The two rules an identifier that is there breaks on its own, apart from the
+  # chapter that requires it to be there at all: an agent the request does not
+  # designate owes nothing of its presence — no assertion says so — and owes
+  # these two the moment it carries one.
+  def require_identifier_scheme(identifier, wording)
+    scheme = attribute(identifier, 'schemeID')
+    refuse(RULES.fetch(wording).fetch(:scheme), "parsers.evidence_request.#{wording}_without_scheme") if scheme.nil?
+
+    require_known_agent_scheme(scheme, identifier.text, wording)
   end
 
   # Every `sdg:Name` the agent carries, and not the first alone: `AgentType`
@@ -249,26 +307,44 @@ module AgentConformance
   # classification, chapter 4.5.1 §3.3 asking for none, and no address, which is
   # `R-EDM-REQ-C073`'s to require of the agent classified `ER` alone.
   #
-  # Takes the whole collection the slot value carries, and judges it in two
-  # ways. `R-EDM-REQ-S043` asserts `count(sdg:Identifier) + count(sdg:Name) = count(child::*)`
-  # of each agent — its context is every one of them, and it counts none — so
-  # the closed list is applied to all. The identifier and the names are read off
-  # the one the request designates, which is the first.
+  # Takes the whole collection the slot value carries, and judges every agent of
+  # it. `R-EDM-REQ-S043` asserts `count(sdg:Identifier) + count(sdg:Name) = count(child::*)`
+  # of each — its context is every one of them, and it counts none — so the
+  # closed list is applied to all. What chapter 4.5.1 §3.3 requires to be there
+  # at all, an identifier and a name, is required of the one the request
+  # designates, which is the first: the subsection describes that agent, and no
+  # assertion says anything of a second one's absences.
   #
   # `C017`, `C018`, `C110` and `C111` are not restricted to that one either:
   # their contexts are `…/rim:SlotValue/sdg:Agent/sdg:Identifier` and
   # `…/sdg:Name`, with no positional predicate, so they reach a second agent as
-  # much as the first. This reader applies them to the designated agent alone —
-  # a partiality, recorded here rather than asserted away.
+  # much as the first — under their own sentences, a second agent not being the
+  # one the request designates.
   def require_conformant_provider(agents)
-    designated = agents.first
+    designated, *accompanying = agents
     require_agent_identifier(designated, :provider)
     require_agent_names(designated, :provider)
+    accompanying.each { |declared| require_accompanying_provider(declared) }
 
     agents.each do |declared|
       refuse_unexpected_children(declared, PROVIDER_CHILDREN, 'R-EDM-REQ-S043',
         'parsers.evidence_request.provider_unexpected_children')
     end
+  end
+
+  # The agents of the slot the request does not designate: what they carry is
+  # judged, and nothing is required of them. Neither an assertion nor chapter
+  # 4.5.1 §3.3 says anything of a second agent's absent identifier or absent
+  # name — the subsection describes the agent the slot designates — so this
+  # reads each identifier and each name that is there, and no more.
+  #
+  # `R-EDM-REQ-C092` is deliberately not applied here: the walk of
+  # `WordingConformance` reaches every `sdg:Name` of the document under that
+  # same identifier, and applying it from here would hand the refusal the
+  # sentence of the designated provider, which would name the wrong agent.
+  def require_accompanying_provider(agent)
+    all(agent, './sdg:Identifier').each { |identifier| require_identifier_scheme(identifier, :accompanying_provider) }
+    all(agent, './sdg:Name').each { |name| require_language(name, :accompanying_provider) }
   end
 
   # What the rules asserting `count(sdg:A) + count(sdg:B) = count(child::*)`

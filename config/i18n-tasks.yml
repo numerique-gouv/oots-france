@@ -130,6 +130,15 @@ ignore_unused:
   - parsers.evidence_request.{provider_id_too_long,provider_without_name}
   - parsers.evidence_request.{provider_name_too_short,provider_unexpected_children}
   - parsers.evidence_request.{provider_without_language,provider_language_unknown}
+  # And the four of them again on the agents of that slot the request does not
+  # designate, under their own sentences: no context of theirs carries a
+  # positional predicate, so each agent breaks them as the first does.
+  - parsers.evidence_request.{accompanying_provider_without_scheme,accompanying_provider_scheme_unknown}
+  - parsers.evidence_request.{accompanying_provider_id_too_long,accompanying_provider_without_language}
+  - parsers.evidence_request.accompanying_provider_language_unknown
+  # The two rules the `EvidenceRequester` collection itself carries: `S039` on
+  # the agent it must hold at all, `S040` on what each of those agents may.
+  - parsers.evidence_request.{collection_without_agent,collection_agent_unexpected_children}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
   # The rules the `Requirements` slot puts in play, `validate!` naming them too.
   # The last four are composed from the wording being judged — a requirement's
@@ -140,11 +149,22 @@ ignore_unused:
   - parsers.evidence_request.{requirement_name_without_language,requirement_name_language_unknown}
   - parsers.evidence_request.{requirement_description_without_language,requirement_description_language_unknown}
   - parsers.evidence_request.requirement_unexpected_children
-  # And the rules the `EvidenceProviderClassification` slot puts in play, named
-  # literally: `S041` on each element of the collection, `C021` on the language
-  # of each description and `C098` on the country its identifier names.
-  - parsers.evidence_request.{element_without_classification,classification_language_unknown}
-  - parsers.evidence_request.classification_country_unknown
+  # And the seventeen rules the `EvidenceProviderClassification` slot puts in
+  # play, named literally: `S041` on each element of the collection, and sixteen
+  # on each classification it carries — its identifier and the scheme that
+  # identifier names, its type, the value retained, what `codelist` adds, and
+  # the language of each description, the last pair composed from the wording as
+  # a requirement's two are. `unnamed_classification_id` is not here: `I18n.t`
+  # names it, and the scanner does see that.
+  - parsers.evidence_request.{element_without_classification,classification_id_not_a_uuid}
+  - parsers.evidence_request.{classification_scheme_unexpected,classification_country_unknown}
+  - parsers.evidence_request.{classification_scheme_name_unexpected,classification_without_type}
+  - parsers.evidence_request.{classification_type_unexpected,classification_without_supported_value}
+  - parsers.evidence_request.{classification_supported_value_empty,classification_values_counted}
+  - parsers.evidence_request.{classification_value_without_string_value,classification_value_without_boolean_value}
+  - parsers.evidence_request.{classification_without_scheme,classification_without_value_expression}
+  - parsers.evidence_request.classification_expression_not_https
+  - parsers.evidence_request.{classification_description_without_language,classification_description_language_unknown}
   # The three walks over the whole document: the RegRep type of every slot value
   # and of every element of a collection, what a collection must carry, and the
   # length of every wording. Named literally and still exempted, for the reason
