@@ -457,6 +457,331 @@ RSpec.describe EvidenceResponseParser do
       expect(stripped.violations.map(&:rule)).to include(*required_slots.values, 'R-EDM-RESP-S007')
     end
 
+    # Chapter 4.5.2 §2.6, « Evidence Packaging », and the twenty rules `-S046` to
+    # `-S066` it publishes with the 2.0 line — `-S064` on neither. Nothing here
+    # is refused either: the package governs what the journal says of a response
+    # and nothing else, France delivering the `application/pdf` part its header
+    # declares and never a document the package points at.
+    describe 'the packaging of the response' do
+      it 'refuses an object of the top-level list that is not a package' do
+        expect(rules_broken_by { |body| body.sub(package_type, 'xsi:type="rim:ExtrinsicObjectType"') })
+          .to contain_exactly('R-EDM-RESP-S066')
+      end
+
+      # `count(rim:RegistryObjectList)=1`, so a package holding none breaks it.
+      # Emptying the package takes its nested list with it, which is why nothing
+      # else is reported: every rule below hangs on an object of that list.
+      it 'refuses a package that holds no nested list' do
+        expect(rules_broken_by { |body| body.sub(%r{(#{package_type}[^>]*>).*(</rim:RegistryObject>)}m, '\1\2') })
+          .to contain_exactly('R-EDM-RESP-S046')
+      end
+
+      # `-S047` executes the floor of §2.6 alone, `count(…)>0`, where the prose
+      # says « At least one » and, four lines below, « Exactly one ». The
+      # assertion decides.
+      it 'refuses a package whose list classifies nothing as the main evidence' do
+        expect(rules_broken_by { |body| body.gsub('MainEvidence', 'Annexe') }).to include('R-EDM-RESP-S047')
+      end
+
+      # No status filter on that context, where `-S033` to `-S036` all carry
+      # one: §2.6 asks a deferral for an empty list, which is not what a package
+      # holding an unclassified object is.
+      it 'refuses it in a deferral too, that rule asking nothing of the status' do
+        deferred = rules_broken_by do |body|
+          body.gsub('MainEvidence', 'Annexe').sub('ResponseStatusType:Success', 'ResponseStatusType:Unavailable')
+        end
+
+        expect(deferred).to include('R-EDM-RESP-S047')
+      end
+
+      # §2.1 lets the nested list « be empty if no matching Evidence is
+      # available », where §2.6 asks it for « one or more (1..n) ». The two
+      # contradict, `-S047` is the only assertion tiring on it, and it refuses
+      # the empty one — which is what gets reported.
+      it 'refuses an empty nested list, the prose of §2.1 notwithstanding' do
+        expect(rules_broken_by { |body| body.sub(evidence_object, '') }).to include('R-EDM-RESP-S047')
+      end
+
+      # The other half of the contradiction, and the reason the assertion is
+      # what this reader follows: a second main document breaks no published
+      # rule, so naming one would accuse a correspondent of nothing.
+      it 'finds nothing to say about a package classifying two objects as the main evidence' do
+        doubled = rules_broken_by do |body|
+          body.sub(evidence_object) { |object| object + object.gsub('ab42bdbd', 'ab42bdbe').gsub('2f3a1a65', '2f3a1a66') }
+        end
+
+        expect(doubled).to be_empty
+      end
+    end
+
+    # What each object of a package is: `-S048`, `-S049` and `-S065`.
+    describe 'the classification of the objects of a package' do
+      it 'refuses an object carrying no classification of the EDM scheme' do
+        expect(rules_broken_by { |body| body.sub(%r{<rim:Classification[^>]*/>}m, '') })
+          .to include('R-EDM-RESP-S048')
+      end
+
+      it 'refuses a classification node that is none of the four' do
+        expect(rules_broken_by { |body| body.sub('classificationNode="MainEvidence"', 'classificationNode="Appendix"') })
+          .to include('R-EDM-RESP-S049')
+      end
+
+      it 'refuses a classification whose id is not a prefixed UUID' do
+        expect(rules_broken_by { |body| body.sub(/<rim:Classification id="[^"]*"/, '<rim:Classification id="c1"') })
+          .to include('R-EDM-RESP-S065')
+      end
+
+      # Several lines of one rule sit side by side in a single `detail`, and the
+      # `id` is what tells them apart — so an object carrying none has to read
+      # as words rather than as a blank.
+      it 'still names the object it accuses when that object carries no id' do
+        unidentified = without do |body|
+          body.sub(%r{<rim:Classification[^>]*/>}m, '').sub(/ id="urn:uuid:ab42bdbd[^"]*"/, '')
+        end
+
+        expect(unidentified.violations.map(&:sentence))
+          .to include(a_string_including('R-EDM-RESP-S048').and(a_string_including('sans identifiant')))
+      end
+
+      # The rule requiring the `id` is the one case where the `id` cannot name
+      # the object, so the sentence falls back on its `@xsi:type` — and says so
+      # when there is not one of those either.
+      it 'names an object requiring an id by its type, or says it carries none' do
+        untyped = without do |body|
+          body.sub(' xsi:type="rim:ExtrinsicObjectType"', '').sub(/ id="urn:uuid:ab42bdbd[^"]*"/, '')
+        end
+
+        expect(untyped.violations.map(&:sentence))
+          .to include(a_string_including('R-EDM-RESP-S036').and(a_string_including('sans type')))
+      end
+
+      # The context of `-S065` is the attribute itself, so a classification
+      # carrying none opens it on nothing — a hole of the Schematron kept rather
+      # than closed, refusing what a FATAL rule admits being the fault this
+      # reader exists to avoid.
+      it 'finds nothing to say about a classification carrying no id at all' do
+        expect(rules_broken_by { |body| body.sub(/<rim:Classification id="[^"]*"/, '<rim:Classification') })
+          .not_to include('R-EDM-RESP-S065')
+      end
+    end
+
+    # `-S033` to `-S037`, the one family both lines publish — on the objects of
+    # the package in 2.0, on those of the flat list in 1.2.
+    describe 'what each object identifies and points at' do
+      it 'refuses an object of a package carrying no repository item' do
+        expect(rules_broken_by { |body| body.sub(%r{<rim:RepositoryItemRef[^>]*/>}, '') })
+          .to include('R-EDM-RESP-S033')
+      end
+
+      it 'refuses the same of an object of the flat list of a 1.2 response' do
+        flat = earlier_line_response { |body| body.sub(%r{<rim:RepositoryItemRef[^>]*/>}, '') }
+
+        expect(flat.body.violations.map(&:rule)).to include('R-EDM-RESP-S033')
+      end
+
+      # `-S033` excepts a package and an association in 2.0.1 and excepts nothing
+      # in 1.2.5, whose flat list holds documents and nothing else. The very
+      # object the later line exempts is therefore the one the earlier refuses.
+      it 'refuses an association of a flat 1.2 list, a line that excepts nothing' do
+        flat = earlier_line_response do |body|
+          body.sub('</rim:RegistryObjectList>', "#{annex_association}</rim:RegistryObjectList>")
+        end
+
+        expect(flat.body.violations.map(&:rule)).to include('R-EDM-RESP-S033')
+      end
+
+      it 'refuses a repository item that names no charge' do
+        expect(rules_broken_by { |body| body.sub(/ xlink:href="[^"]*"/, '') })
+          .to include('R-EDM-RESP-S034')
+      end
+
+      it 'refuses a repository item that carries no title' do
+        expect(rules_broken_by { |body| body.sub(/ xlink:title="[^"]*"/, '') })
+          .to include('R-EDM-RESP-S035')
+      end
+
+      # `-S036` requires the attribute and `-S037` shapes it, and the two never
+      # fire together: `-S037` is asserted against the attribute node, which an
+      # object carrying none never opens. The same split as `-S003` and `-S004`
+      # on the request identifier.
+      it 'names the rule requiring the id, and it alone, when an object carries none' do
+        broken = rules_broken_by { |body| body.sub(/ id="urn:uuid:ab42bdbd[^"]*"/, '') }
+
+        expect(broken).to include('R-EDM-RESP-S036')
+        expect(broken).not_to include('R-EDM-RESP-S037')
+      end
+
+      it 'refuses an id that is not a prefixed UUID' do
+        expect(rules_broken_by { |body| body.sub(/ id="urn:uuid:ab42bdbd[^"]*"/, ' id="obj1"') })
+          .to include('R-EDM-RESP-S037')
+      end
+
+      # `-S037` hangs on the attribute with no status filter, where `-S036`
+      # holds a success alone: a malformed id in a deferral names the shape and
+      # never the presence.
+      it 'names the rule shaping the id, and not the one requiring it, in a deferral' do
+        deferred = rules_broken_by do |body|
+          body.sub(/ id="urn:uuid:ab42bdbd[^"]*"/, ' id="obj1"')
+            .sub('ResponseStatusType:Success', 'ResponseStatusType:Unavailable')
+        end
+
+        expect(deferred).to include('R-EDM-RESP-S037')
+        expect(deferred).not_to include('R-EDM-RESP-S036')
+      end
+    end
+
+    # §2.6 « Associations Between Evidence Objects », read forwards and
+    # backwards: `-S050` to `-S061`.
+    describe 'how the objects of a package are joined' do
+      it 'finds nothing to say about an annex joined to the main evidence as §2.6 asks' do
+        expect(response_with_an_annex.body.violations).to be_empty
+      end
+
+      it 'refuses a supplementary object that is the source of no association' do
+        expect(rules_broken_by_annex { |body| body.sub(annex_association, '') })
+          .to contain_exactly('R-EDM-RESP-S050')
+      end
+
+      it 'refuses an association carrying no source' do
+        expect(rules_broken_by_annex { |body| body.sub(/ sourceObject="[^"]*"/, '') })
+          .to include('R-EDM-RESP-S051')
+      end
+
+      it 'refuses an association carrying no target' do
+        expect(rules_broken_by_annex { |body| body.sub(/ targetObject="[^"]*"/, '') })
+          .to include('R-EDM-RESP-S055')
+      end
+
+      # The three couples, each written out rather than looped over one rule:
+      # `-S052`/`-S056` bind the annex, `-S053`/`-S057` the human-readable
+      # version and `-S054`/`-S058` the translation. Both ends of an association
+      # pointing at an object no list holds break the two at once.
+      {
+        'Annex' => %w[R-EDM-RESP-S052 R-EDM-RESP-S056],
+        'HumanReadableVersion' => %w[R-EDM-RESP-S053 R-EDM-RESP-S057],
+        'Translation' => %w[R-EDM-RESP-S054 R-EDM-RESP-S058],
+      }.each do |node, (source, target)|
+        it "names #{source} and #{target} for a #{node} association joining nothing" do
+          adrift = rules_broken_by_annex do |body|
+            body.sub('AssociationType:Annex"', %(AssociationType:#{node}"))
+              .sub(/ sourceObject="[^"]*"/, %( sourceObject="#{unknown_object_id}"))
+              .sub(/ targetObject="[^"]*"/, %( targetObject="#{unknown_object_id}"))
+          end
+
+          expect(adrift).to include(source, target)
+        end
+      end
+
+      # And the same three read backwards, where the numbering crosses over:
+      # `-S059` is the annex's, but `-S060` is the **translation**'s and `-S061`
+      # the **human-readable version**'s. The association is given a type of the
+      # registry that none of the three couples names, so that only the rule
+      # typing it has anything to say.
+      {
+        'Annex' => 'R-EDM-RESP-S059',
+        'Translation' => 'R-EDM-RESP-S060',
+        'HumanReadableVersion' => 'R-EDM-RESP-S061',
+      }.each do |node, rule|
+        it "names #{rule} for a #{node} joined to the main evidence under another type" do
+          mistyped = rules_broken_by_annex do |body|
+            body.sub('classificationNode="Annex"', %(classificationNode="#{node}"))
+              .sub('AssociationType:Annex"', 'AssociationType:RelatedTo"')
+          end
+
+          expect(mistyped).to contain_exactly(rule)
+        end
+      end
+
+      # The classification of the source is read under any scheme by `-S059` to
+      # `-S061` and under the EDM one alone by `-S052` to `-S058`: an annex
+      # classified `Translation` under the EDM scheme, joined by an association
+      # still typed as an annex, breaks the forward rule.
+      it 'refuses an association typed as an annex whose source is classified otherwise' do
+        expect(rules_broken_by_annex { |body| body.sub('classificationNode="Annex"', 'classificationNode="Translation"') })
+          .to include('R-EDM-RESP-S052')
+      end
+
+      # The target is retargeted through the attribute, which the annexed body
+      # carries once, and never through the value of `MAIN_EVIDENCE_ID`, which it
+      # carries twice — the `id` of the main object comes first, so substituting
+      # the value would rename that object and leave the association pointing at
+      # an `id` no object holds. The rule would still be named, by the path the
+      # spec above already covers, and this case — a target that exists and is
+      # classified wrong — would be tested nowhere.
+      it 'refuses an association typed as an annex pointing back at the annex itself' do
+        expect(rules_broken_by_annex { |body| body.sub(/ targetObject="[^"]*"/, %( targetObject="#{EvidencePackage::ANNEX_ID}")) })
+          .to include('R-EDM-RESP-S056')
+      end
+    end
+
+    # What the `sdg:Evidence` of each object carries: `-S062` on the main
+    # document, `-S063` on everything beside it.
+    describe 'what each object of a package says of itself' do
+      # The assertion requires six elements where the message of the rule names
+      # five, `Distribution` being the one it leaves out. The assertion is the
+      # rule — the same split this reader already makes for `-S038`.
+      it 'refuses a main evidence missing one of the six elements the assertion requires' do
+        expect(rules_broken_by { |body| body.sub(%r{<sdg:IssuingAuthority>.*?</sdg:IssuingAuthority>}m, '') })
+          .to include('R-EDM-RESP-S062')
+      end
+
+      it 'refuses a supplementary object carrying what the main evidence alone may carry' do
+        carrying = rules_broken_by_annex do |body|
+          body.sub(annex_object, annex_object.sub('<sdg:Distribution>', "#{is_about_a_person}<sdg:Distribution>"))
+        end
+
+        expect(carrying).to include('R-EDM-RESP-S063')
+      end
+    end
+
+    # Nothing of the packaging refuses anything either: the evidence is
+    # delivered, the journal names the rule, and the exchange settles.
+    describe 'what a broken package costs the exchange' do
+      subject(:unclassified) { envelope_with_body('reponseAvecPieceJointe') { |body| body.gsub('MainEvidence', 'Annexe') } }
+
+      it 'still delivers the evidence the header declares' do
+        expect(unclassified.evidence).to have_attributes(mime_type: 'application/pdf', content: be_present)
+      end
+
+      it 'reads a package broken in every way it can be broken without ever raising' do
+        stripped = without do |body|
+          body.sub(package_type, 'xsi:type="rim:ExtrinsicObjectType"').gsub('MainEvidence', 'Annexe')
+            .sub(%r{<rim:RepositoryItemRef[^>]*/>}, '').sub(/ id="urn:uuid:ab42bdbd[^"]*"/, ' id="obj1"')
+        end
+
+        expect { stripped.violations }.not_to raise_error
+        expect(stripped.violations.map(&:rule))
+          .to include('R-EDM-RESP-S066', 'R-EDM-RESP-S047', 'R-EDM-RESP-S033', 'R-EDM-RESP-S037')
+      end
+
+      # The line of the rules is the one the response announces, and the line of
+      # the exchange judges `-C002` alone — which is what makes a correspondent's
+      # drift visible instead of self-justifying.
+      it 'judges a 2.0 response by the 2.0 packaging even on an exchange opened in 1.2' do
+        expect(response.violations(expected: EdmSpecification::V1_2).map(&:rule))
+          .to contain_exactly('R-EDM-RESP-C002')
+      end
+    end
+
+    # A supplementary document is the one thing the whole `sdg:IsAbout` of a
+    # response may not carry, `-S063` naming it first.
+    def is_about_a_person
+      '<sdg:IsAbout><sdg:NaturalPerson><sdg:FamilyName>Dupont</sdg:FamilyName></sdg:NaturalPerson></sdg:IsAbout>'
+    end
+
+    def package_type = 'xsi:type="rim:RegistryPackageType"'
+
+    # The object the captured response classifies `MainEvidence`, from its
+    # opening tag to its own closing one — the first `</rim:RegistryObject>` the
+    # body carries, the package closing after it.
+    def evidence_object = %r{<rim:RegistryObject xsi:type="rim:ExtrinsicObjectType".*?</rim:RegistryObject>}m
+
+    # An id no object of any list carries, so that an association naming it
+    # joins nothing at all.
+    def unknown_object_id = 'urn:uuid:00000000-0000-4000-8000-000000000000'
+
+    def rules_broken_by_annex(&) = response_with_an_annex(&).body.violations.map(&:rule)
+
     def slot(name) = %r{<rim:Slot name="#{name}">.*?</rim:Slot>}m
 
     def rules_broken_by(&) = without(&).violations.map(&:rule)

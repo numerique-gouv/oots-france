@@ -901,9 +901,62 @@ fr:
       no_single_ep_agent: Le slot « EvidenceProvider » doit porter exactement un agent classé EP.
       exception_in_a_success: Une réponse en succès ne peut pas porter de rs:Exception.
       unexpected_child: L'élément « %{name} » n'a pas sa place dans une réponse.
+      # Les vingt-cinq règles de l'empaquetage que la 2.0 a introduit, et du
+      # couple identifiant/référence : chacune nomme l'objet en cause par son
+      # identifiant, faute de quoi deux lignes de la même règle ne se
+      # distinguent pas dans un même `detail`.
+      object_not_a_package: >-
+        L'objet de premier niveau (%{id}) n'est pas de type rim:RegistryPackageType.
+      package_without_one_list: >-
+        Le paquet (%{id}) doit porter exactement une rim:RegistryObjectList.
+      list_without_main_evidence: >-
+        La liste du paquet (%{id}) ne porte aucun objet classé MainEvidence.
+      object_without_classification: >-
+        L'objet (%{id}) doit porter exactement une rim:Classification sous le
+        schéma urn:fdc:oots:classification:edm.
+      unknown_classification_node: >-
+        La classification %{node} de l'objet (%{id}) n'est ni MainEvidence, ni
+        Annex, ni HumanReadableVersion, ni Translation.
+      classification_id_not_a_uuid: >-
+        L'identifiant « %{id} » d'une rim:Classification n'est pas un UUID
+        préfixé « urn:uuid: ».
+      object_without_reference: L'objet (%{id}) ne porte pas de rim:RepositoryItemRef.
+      reference_without_href: >-
+        Le rim:RepositoryItemRef de l'objet (%{id}) ne désigne aucune charge
+        (xlink:href).
+      reference_without_title: >-
+        Le rim:RepositoryItemRef de l'objet (%{id}) ne porte pas d'attribut
+        xlink:title.
+      object_without_id: Un rim:RegistryObject (%{type}) ne porte pas d'attribut id.
+      object_id_not_a_uuid: >-
+        L'identifiant « %{id} » d'un rim:RegistryObject n'est pas un UUID
+        préfixé « urn:uuid: ».
+      main_evidence_incomplete: >-
+        L'objet classé MainEvidence (%{id}) ne porte pas les six éléments
+        Identifier, IssuingDate, IsAbout, IssuingAuthority, IsConformantTo et
+        Distribution.
+      supplementary_with_main_elements: >-
+        L'objet complémentaire (%{id}) porte des éléments que les TDD réservent
+        au MainEvidence : %{elements}.
+      supplementary_without_association: >-
+        L'objet classé %{node} (%{id}) n'est la source d'aucune association de
+        sa liste.
+      association_without_source: L'association (%{id}) ne porte pas d'attribut sourceObject.
+      association_without_target: L'association (%{id}) ne porte pas d'attribut targetObject.
+      association_source_misclassified: >-
+        Le sourceObject de l'association (%{id}) ne désigne aucun objet classé
+        %{node} sous le schéma urn:fdc:oots:classification:edm.
+      association_target_misclassified: >-
+        Le targetObject de l'association (%{id}) ne désigne aucun objet classé
+        MainEvidence sous le schéma urn:fdc:oots:classification:edm.
+      association_mistyped: >-
+        L'association (%{id}) relie un objet classé %{node} au MainEvidence :
+        son type doit être %{type}.
       # Ce que la phrase met à la place d'une valeur absente, accordé avec ce
       # qu'elle nomme.
       absent_specification: une version sans nom
+      unidentified_object: sans identifiant
+      untyped_object: sans type
       absent_value: absent
       absent_date: absente
     requirements_response:

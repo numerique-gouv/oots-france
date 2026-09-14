@@ -5,6 +5,8 @@
 class EvidenceResponseParser
   include SlotReading
   include EvidenceMetadataReading
+  include EvidencePackagingConformance
+  include EvidenceAssociationConformance
 
   # The two values `R-EDM-RESP-S006` allows: the evidence travels with the
   # response, or it is announced for later. Only the deferral is asked about by
@@ -79,23 +81,10 @@ class EvidenceResponseParser
   # A response no exchange could be correlated to is judged in its own version,
   # there being no other to hold it to — which is what `nil` here means.
   def violations(expected: nil)
-    judged = expected || specification
-
     [
-      *missing_slots,
-      unexpected_specification(judged),
-      *unexpected_status,
-      deferral_without_date,
-      date_without_deferral,
-      malformed_request_id,
-      malformed_response_id,
-      malformed_issue_date,
-      malformed_available_date,
-      provider_without_ep_agent,
-      *provider_identifiers_without_scheme,
-      missing_object_list,
-      exception_in_a_success,
-      *unexpected_children,
+      *declaration_violations(expected || specification),
+      *packaging_violations,
+      *association_violations,
     ].compact
   end
 
@@ -163,6 +152,28 @@ class EvidenceResponseParser
   private
 
   attr_reader :response
+
+  # What the response declares of itself — its version, its status, its dates,
+  # its parties and the children it is allowed to carry. What it carries *in*
+  # its object list is the other two, which the two packaging concerns hold.
+  def declaration_violations(judged)
+    [
+      *missing_slots,
+      unexpected_specification(judged),
+      *unexpected_status,
+      deferral_without_date,
+      date_without_deferral,
+      malformed_request_id,
+      malformed_response_id,
+      malformed_issue_date,
+      malformed_available_date,
+      provider_without_ep_agent,
+      *provider_identifiers_without_scheme,
+      missing_object_list,
+      exception_in_a_success,
+      *unexpected_children,
+    ]
+  end
 
   # Where the rules count slots rather than look one up: `find_slot` stops at the
   # first, which is exactly the cardinality they are checking.
