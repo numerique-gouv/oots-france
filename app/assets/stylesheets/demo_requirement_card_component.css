@@ -1,7 +1,7 @@
 /*
  * One requirement of the demonstration procedure, offered as a card: the
- * evidence type names it, and the footer holds whom it would be asked of and
- * the press that asks.
+ * evidence type names it, and under the rule stands whom it would be asked of
+ * and the press that asks.
  *
  * The two sit at either end of the line, and wrap under one another where the
  * card is too narrow for both — the sentence keeps its own room rather than
@@ -16,29 +16,48 @@
 }
 
 /*
- * The rule the identity card draws between what it says and what it attests,
- * drawn here between what the card says and the press that answers it.
- *
- * The DSFR pulls the footer edge to edge — `margin: 0 -2rem` — and pushes its
- * content back in with as much padding, so a border on it would run the whole
- * width of the card. Both are taken back, and the footer then lines up with the
- * content above it: the rule stops where the card's padding does, as the
- * identity card's does.
- *
- * The colour is the DSFR's own token, never a literal — the layout sets
- * `data-fr-scheme="system"`, so the dark theme is reachable.
- */
-.requirement-card .requirement-card__actions {
-  margin-inline: 0;
-  padding-inline: 0;
-  border-top: 1px solid var(--border-default-grey);
-}
-
-/*
  * A refusal takes the whole line, where the document and the press shared it:
- * the DSFR alert is a block, and half a line would squeeze its wording into a
- * column.
+ * nothing shares it with a sentence that is the whole of what the card has
+ * left to say.
+ *
+ * The wording is the portal's own and wears the error colour; the country is
+ * not, and keeps its own — the emphasis stops at the box, in the translation as
+ * on the screen.
  */
 .requirement-card__refusal {
   flex: 1 1 100%;
+}
+
+.requirement-card__refusal strong {
+  color: var(--text-default-error);
+}
+
+/*
+ * The box the country sits in, on the page's own ground rather than on the pale
+ * red of the card: a tag borrowing the ground behind it reads as part of the
+ * sentence, where it names what the sentence is about.
+ */
+.requirement-card--unsatisfiable .country-tag {
+  background-color: var(--background-default-grey);
+}
+
+/*
+ * What the directories publish keeps its mark on an error card, in the card's
+ * own register: the blue of the information register on pale red would read as
+ * a second state rather than as the same value. One step darker than the ground
+ * it sits on, so the mark stays a mark.
+ */
+.requirement-card--unsatisfiable .directory-value {
+  background-color: var(--background-contrast-error-hover);
+}
+
+/*
+ * A requirement no provider serves, on the ground the DSFR gives an error. The
+ * ground is never the whole of what says so — the card's own wording and the
+ * sign beside it do too (RGAA 3.1) — and the colour is the token, not a
+ * literal: the layout sets `data-fr-scheme="system"`, so the dark theme is
+ * reachable.
+ */
+.requirement-card--unsatisfiable {
+  background-color: var(--background-contrast-error);
 }

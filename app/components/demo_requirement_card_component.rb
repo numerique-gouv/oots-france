@@ -20,12 +20,23 @@ class DemoRequirementCardComponent < ViewComponent::Base
     super()
   end
 
-  # The jurisdiction the evidence was sought in, which is what the card names
-  # when nothing is published there: a requirement is satisfied somewhere or it
-  # is not, and « somewhere » is a country.
-  attr_reader :country
+  # The jurisdiction the evidence was sought in, which the card names twice: in
+  # what satisfies the requirement, and in what stands there when nothing does.
+  # A box of its own each time — a ViewComponent instance is single-use.
+  def country_tag = CountryTagComponent.new(**country)
+
+  # The name alone, where the line above already shows the country in its box:
+  # a second flag and a second code would say the same thing twice.
+  def country_name = country[:name].presence || country[:code]
 
   delegate :nameable?, to: :wording
+
+  CLASSES = %w[fr-card fr-card--shadow fr-card--no-arrow requirement-card fr-col-12 fr-col-md-8 fr-mb-4w].freeze
+
+  # A requirement nothing satisfies is a dead end of the procedure, and the card
+  # says so by its ground as well as by its wording — never by the ground alone,
+  # which RGAA 3.1 forbids.
+  def css_classes = class_names(*CLASSES, 'requirement-card--unsatisfiable' => !nameable?)
 
   # The requirement names the card whatever the directories answered next:
   # one nobody serves is still one the procedure rests on.
@@ -41,5 +52,5 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   private
 
-  attr_reader :wording
+  attr_reader :wording, :country
 end

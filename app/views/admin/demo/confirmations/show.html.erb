@@ -28,8 +28,3 @@
   <%= render DemoRequirementCardComponent.new(wording: requirement, askable: requirement == @wording,
         country: provider_country) %>
 <% end %>
-
-<%# The other answer to the question chapter 1 §3.3 asks: leaving without
-    pressing asks nobody anything, and no exchange exists. %>
-<%= link_to t('admin.demo.confirmations.show.back'), admin_demo_root_path,
-      class: 'fr-btn fr-btn--secondary', lang: 'en' %>

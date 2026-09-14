@@ -20,8 +20,8 @@ module Admin
     # The press is also where the explicit request of chapter 1 §3.3 is made —
     # « a step in which the user is asked to express explicitly whether he or
     # she wants to use the Once-Only Technical System ». The page asks it as one
-    # gesture rather than as a question with two answers: the way out is the
-    # link beside the button, and nothing leaves unless the button is pressed.
+    # gesture rather than as a question with two answers: nothing leaves unless
+    # the button is pressed, and leaving the page asks nobody anything.
     #
     # A request that leaves ends the page: the user is sent to the tracking,
     # which is where the answer will appear and the only address of the journey
@@ -142,11 +142,13 @@ module Admin
       # The jurisdiction the evidence is sought in, named as the card has to name
       # it when nothing is published there — in the box the console's directory
       # pages already put a country in, and in English, like the page.
+      # The code and the name, and not the box around them: a ViewComponent
+      # instance is single-use, and a card names the country more than once.
       def provider_country
         @provider_country ||= begin
-          country = ::Demo::RequestEvidence::PROVIDER_COUNTRY
+          code = ::Demo::RequestEvidence::PROVIDER_COUNTRY
 
-          CountryTagComponent.new(code: country, name: CodeListClient.new.country_names(lang: :en)[country])
+          { code:, name: CodeListClient.new.country_names(lang: :en)[code] }
         end
       end
 

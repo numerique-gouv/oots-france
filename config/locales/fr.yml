@@ -245,14 +245,25 @@ fr:
       # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
       # de la carte, lui, est l'intitulé de l'exigence et rien d'autre : aucune
       # phrase ne l'entoure, donc aucune clé.
-      satisfied_by: Satisfied by the following documents
+      # Le pays est dans la boîte où les pages d'annuaires en mettent un, d'où le
+      # balisage dans la traduction.
+      satisfied_by_html: Satisfied by the following documents in %{country}
+      # Ce que dit la même ligne quand aucun fournisseur ne sert l'exigence : la
+      # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
+      unsatisfiable_html: Evidence impossible to satisfy by %{country}
       from_html: "%{evidence_type} from %{provider}"
       submit: Request the document
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
       # d'annuaires en mettent un, d'où le balisage dans la traduction.
-      no_provider_html: No provider listed by %{country} for this evidence
+      # L'emoji redit l'avertissement que le fond rouge pâle porte, l'RGAA 3.1
+      # interdisant de ne le porter que par la couleur. Il est dans le gabarit
+      # et non dans la traduction : c'est un pictogramme, pas un mot. La graisse,
+      # elle, est dans la traduction : c'est la phrase qui la porte. Le pays est
+      # ici son seul nom — la ligne au-dessus le montre déjà en boîte, avec son
+      # drapeau et son code.
+      no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
       # Le contrat que la démarche appelle ne nomme aucune exigence, et son
       # serveur répond avec la première qui publie des types : un second bouton
       # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
@@ -1385,9 +1396,6 @@ fr:
           evidences: >-
             Each of them is requested directly from the administration that holds it, so you do not
             have to obtain it yourself.
-          # L'autre réponse à la question du chapitre 1 §3.3 : partir sans
-          # presser ne demande rien à personne.
-          back: Back to the procedure
           unreachable: The European directories could not be reached
         # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:

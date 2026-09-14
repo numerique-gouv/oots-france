@@ -13,7 +13,6 @@
 .directory-value {
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
-  color: var(--text-default-info);
   background-color: var(--background-contrast-info);
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;

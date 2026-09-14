@@ -85,9 +85,11 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       carte = response.parsed_body.at_css('main .requirement-card')
 
       expect(seen(carte.at_css('h3'))).to eq('(TEST) Test Requirement')
-      expect(carte.at_css('.fr-card__footer').text.squish)
-        .to eq('No provider listed by 🇫🇷 France (FR) for this evidence')
-      expect(carte.at_css('.fr-card__footer .country-tag')).to be_present
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇷 France (FR)')
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by France for this evidence')
+      expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
+      expect(carte.classes).to include('requirement-card--unsatisfiable')
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
@@ -103,9 +105,21 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(titres).to eq(['(TEST) Test Requirement 2', 'Proof of enrolment in academic tertiary education'])
     end
 
+    # The jurisdiction the documents would come from, named on the card as the
+    # directory pages name one: a requirement is satisfied somewhere, and
+    # « somewhere » is a country.
+    it 'names the country the documents would be requested in' do
+      get admin_demo_confirmation_path
+
+      contenu = response.parsed_body.at_css('main .requirement-card .fr-card__desc')
+
+      expect(contenu.text.squish).to eq('Satisfied by the following documents in 🇫🇷 France (FR)')
+      expect(contenu.at_css('.country-tag')).to be_present
+    end
+
     # The contract names no requirement and its server answers with the first
     # that publishes evidence types, so a second button would send the same
-    # request under another name. Stub, tracked as OOTS-207.
+    # request under another name. Stub, tracked as OOTS-212.
     it 'carries the press on one card only, and says why on the others' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
 
