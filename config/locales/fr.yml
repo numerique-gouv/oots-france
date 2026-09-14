@@ -564,6 +564,49 @@ fr:
       evidence_type_description_language_unknown: >-
         Une description du type de justificatif demandé nomme une langue (%{language})
         qui n'est pas de la liste LanguageCode.
+      # Les quatre personnes qu'une requête décrit — le sujet et son
+      # représentant, physiques ou moraux — sont jugées par une même batterie de
+      # règles, publiée quatre fois sous quatre jeux d'identifiants. Les phrases
+      # ne nomment donc pas la personne : c'est la règle, dans le detail, qui dit
+      # laquelle, et la France ne lit aucune de ces valeurs pour autre chose.
+      person_identifier_without_scheme: >-
+        Un identifiant que la requête reçue décrit ne nomme pas son schéma.
+      person_scheme_unexpected: >-
+        Un identifiant que la requête reçue décrit nomme le schéma %{scheme}, et non %{expected}.
+      person_identifier_country_unknown: >-
+        Un identifiant eIDAS que la requête reçue décrit (%{identifier}) n'a pas la forme
+        XX/YY/Z…Z sur des codes pays de la liste OOTS_Country.
+      unnamed_person_identifier: vide
+      person_without_level_of_assurance: >-
+        Une personne que la requête reçue décrit ne porte pas de niveau de garantie.
+      person_level_of_assurance_unknown: >-
+        Une personne que la requête reçue décrit porte un niveau de garantie (%{level})
+        qui n'est pas de la liste LoA (%{admitted}).
+      person_country_unknown: >-
+        Une personne que la requête reçue décrit nomme un pays (%{country}) qui n'est pas
+        de la liste CountryIdentificationCode.
+      unnamed_country: vide
+      # Les règles que seul le représentant porte : sa date de naissance, son
+      # sexe, les démarches que son mandat couvre, et les identifiants de
+      # l'organisation qui le représente.
+      representative_date_of_birth_malformed: >-
+        La date de naissance du représentant (%{date}) n'a pas la forme AAAA-MM-JJ.
+      representative_gender_unknown: >-
+        Le sexe du représentant (%{gender}) n'est pas de la liste Gender (%{admitted}).
+      unnamed_gender: vide
+      representative_gender_outside_eidas: >-
+        Le représentant est identifié sous eidas : son sexe doit être présent et valoir
+        l'une des trois valeurs du profil eIDAS (%{admitted}).
+      representative_without_identifier: >-
+        L'organisation qui représente le sujet ne porte pas de sdg:LegalPersonIdentifier.
+      representative_identifier_without_scheme: >-
+        Un identifiant de l'organisation qui représente le sujet ne nomme pas son schéma.
+      representative_scheme_unpublished: >-
+        Un identifiant de l'organisation qui représente le sujet nomme un schéma (%{scheme})
+        qui n'est pas de la liste IdentifierSchemes (%{admitted}).
+      representative_procedure_unpublished: >-
+        Le mandat du représentant nomme des démarches (%{procedures}) qui ne sont pas de la
+        liste Procedures.
       slot_required: La requête reçue doit porter exactement un slot « %{name} ».
       unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
       unnamed_specification: une version sans nom

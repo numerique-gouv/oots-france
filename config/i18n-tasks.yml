@@ -231,6 +231,20 @@ ignore_unused:
   # two sibling wordings of one language. `unnamed_language` is not here —
   # `I18n.t` names it.
   - parsers.evidence_request.wordings_share_a_language
+  # The four people a request describes, judged by one battery of rules
+  # published four times over: the sentences name no person, the rule in the
+  # `detail` being what says which. Named literally and exempted all the same,
+  # for the reason the entries above give — they reach `refuse` and never
+  # `t()`. `unnamed_person_identifier`, `unnamed_country` and `unnamed_gender`
+  # are not here: `I18n.t` names them.
+  - parsers.evidence_request.{person_identifier_without_scheme,person_scheme_unexpected}
+  - parsers.evidence_request.{person_identifier_country_unknown,person_country_unknown}
+  - parsers.evidence_request.{person_without_level_of_assurance,person_level_of_assurance_unknown}
+  # And the rules the representative alone carries.
+  - parsers.evidence_request.{representative_date_of_birth_malformed,representative_gender_unknown}
+  - parsers.evidence_request.{representative_gender_outside_eidas,representative_without_identifier}
+  - parsers.evidence_request.{representative_identifier_without_scheme,representative_scheme_unpublished}
+  - parsers.evidence_request.representative_procedure_unpublished
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

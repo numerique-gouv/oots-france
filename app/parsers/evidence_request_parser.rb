@@ -16,6 +16,7 @@ class EvidenceRequestParser
   include EchoedValueConformance
   include RequestEnvelopeConformance
   include RequestedEvidenceTypeConformance
+  include DescribedPersonConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -76,6 +77,7 @@ class EvidenceRequestParser
     require_earlier_line_rules
     require_conformant_echoed_values
     require_conformant_requested_evidence_types
+    require_conformant_described_persons
     require_conformant_document
 
     self

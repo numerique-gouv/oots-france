@@ -21,6 +21,22 @@
 # reading took it for. It is declared so the end-to-end scenario can exercise
 # the refusal path: any code other than those three gets an `EDM:ERR:0004` back.
 module ProcedureCode
+  # The `Procedures` code list published with the TDD, which `R-EDM-REQ-C081`
+  # and `C091` hold the sectoral attributes of an authorised representative to —
+  # the scope of a power of representation being said in procedures.
+  #
+  # Every code the list publishes, and not the three below, which are what this
+  # deployment happens to answer: a correspondent naming a procedure France does
+  # not serve writes a conformant request and gets an `EDM:ERR:0004`, where one
+  # naming a code the specification does not publish at all breaks a FATAL rule.
+  #
+  # Copied here rather than read through `CodeListClient`, and compared exactly,
+  # for the reasons `LanguageCode` states. `00` is beside the list and not in
+  # it — both assertions add it by an alternation, as `C003` does.
+  PUBLISHED = %w[
+    R1 S1 T1 T2 T3 U1 U2 U3 U4 V1 V2 V3 V4 V5 W1 W2 X1 X2 X3 X4 X5 X6 X7 X9 X10 X11 AK1 AL1 AM1
+  ].freeze
+
   SYSTEM_CHECK = '00'.freeze
   STUDY_FINANCING = 'T1'.freeze
   BIRTH_REGISTRATION = 'R1'.freeze

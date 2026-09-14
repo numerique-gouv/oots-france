@@ -2485,11 +2485,19 @@ RSpec.describe EvidenceRequestParser do
         'ReturnLocation' => ['R-EDM-REQ-S061', 'rim:StringValueType',
                              '<rim:Value>https://example.si/retour</rim:Value>',
                              '<rim:Slot name="EvidenceRequester">'],
+        # Conformant representatives, and not the bare names a slot type needs:
+        # `R-EDM-REQ-C058` asks the one for a level of assurance, and `C082` and
+        # `C084` ask the other for that and for its identifier, so a sketch
+        # would be refused on its content before its type was ever judged.
         'AuthorizedRepresentative' => ['R-EDM-REQ-S036', 'rim:AnyValueType',
-                                       '<sdg:Person><sdg:FamilyName>Novak</sdg:FamilyName></sdg:Person>',
+                                       '<sdg:Person><sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                                       '<sdg:FamilyName>Novak</sdg:FamilyName></sdg:Person>',
                                        '<rim:Slot name="NaturalPerson">'],
         'AuthorizedRepresentativeLegalPerson' => ['R-EDM-REQ-S055', 'rim:AnyValueType',
-                                                  '<sdg:LegalPerson><sdg:LegalName>Novak d.o.o.</sdg:LegalName></sdg:LegalPerson>',
+                                                  '<sdg:LegalPerson><sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                                                  '<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456' \
+                                                  '</sdg:LegalPersonIdentifier>' \
+                                                  '<sdg:LegalName>Novak d.o.o.</sdg:LegalName></sdg:LegalPerson>',
                                                   '<rim:Slot name="NaturalPerson">'],
       }.each do |name, (rule, expected, content, before)|
         it "accepts a #{name} slot declared #{expected}" do
@@ -2503,6 +2511,288 @@ RSpec.describe EvidenceRequestParser do
 
           expect { written.validate! }.to refusing(rule)
         end
+      end
+    end
+  end
+
+  # The four people a request describes — the subject and its representative,
+  # natural or legal — judged by one battery of rules published four times over.
+  # None of these values is read for anything but the refusal: France models
+  # neither the representative nor the address of a subject.
+  describe 'the people the request describes' do
+    # Written into the reference request, which names none: every context here
+    # is an element of a slot that is *there*, so an absent representative
+    # triggers nothing at all.
+    def representing(content, name: 'AuthorizedRepresentative', element: 'sdg:Person')
+      written = "<rim:Slot name=\"#{name}\"><rim:SlotValue xsi:type=\"rim:AnyValueType\">" \
+                "<#{element}>#{content}</#{element}></rim:SlotValue></rim:Slot>"
+
+      with_body { |body| body.sub('<rim:Slot name="NaturalPerson">') { "#{written}<rim:Slot name=\"NaturalPerson\">" } }
+    end
+
+    # The least a representative may be and still break no rule: `C058` asks for
+    # the level of assurance, and nothing else is required of a person carrying
+    # no identifier — `C060`, which would ask for its value, is `WARNING`.
+    def represented_by(extra = '') = representing("<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>#{extra}")
+
+    def organisation_representing(extra = '')
+      representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                   "<sdg:LegalPersonIdentifier schemeID=\"eidas\">SI/SI/123456</sdg:LegalPersonIdentifier>#{extra}",
+        name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+    end
+
+    # Written into the `sdg:Person` the reference request already names.
+    def subject_carrying(extra)
+      with_body { |body| body.sub('</sdg:Person>') { "#{extra}</sdg:Person>" } }
+    end
+
+    # And the organisation subject, which the reference request does not name:
+    # `Fixtures#legal_person_slot` is the conformant one the rest of this file
+    # reads, so what an example changes in it is the only thing under test.
+    def about_an_organisation(&) = envelope_about_an_organisation(legal_person_slot.then(&)).body
+
+    it 'serves a request naming no representative at all, as the reference one does' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'serves one naming a representative that breaks nothing' do
+      written = represented_by
+
+      expect(written.validate!).to be(written)
+    end
+
+    # The ten country codes, one assertion under ten identifiers. Two of the
+    # subject's and two of the representative's, which is enough to prove the
+    # table is keyed by the slot and not by the element.
+    {
+      'R-EDM-REQ-C075' => '<sdg:Nationality>ZZ</sdg:Nationality>',
+      'R-EDM-REQ-C076' => '<sdg:CountryOfBirth>zz</sdg:CountryOfBirth>',
+      'R-EDM-REQ-C045' => '<sdg:CurrentAddress><sdg:AdminUnitLevel1>ZZ</sdg:AdminUnitLevel1></sdg:CurrentAddress>',
+    }.each do |rule, written|
+      it "refuses a subject naming a country the list does not publish, under #{rule}" do
+        expect { subject_carrying(written).validate! }.to refusing(rule)
+      end
+    end
+
+    {
+      'R-EDM-REQ-C078' => '<sdg:Nationality>ZZ</sdg:Nationality>',
+      'R-EDM-REQ-C067' => '<sdg:CurrentAddress><sdg:AdminUnitLevel1>ZZ</sdg:AdminUnitLevel1></sdg:CurrentAddress>',
+    }.each do |rule, written|
+      it "refuses a representative naming one, under #{rule} — the same assertion, another slot" do
+        expect { represented_by(written).validate! }.to refusing(rule)
+      end
+    end
+
+    it 'accepts a published country code, compared exactly as C015 is' do
+      written = subject_carrying('<sdg:Nationality>SI</sdg:Nationality>')
+
+      expect(written.validate!).to be(written)
+    end
+
+    describe 'the level of assurance each of them declares' do
+      it 'refuses a representative carrying none, under R-EDM-REQ-C058' do
+        expect { representing('<sdg:FamilyName>Novak</sdg:FamilyName>').validate! }
+          .to refusing('R-EDM-REQ-C058')
+      end
+
+      it 'refuses one outside the LoA list, under R-EDM-REQ-C059' do
+        expect { representing('<sdg:LevelOfAssurance>Medium</sdg:LevelOfAssurance>').validate! }
+          .to refusing('R-EDM-REQ-C059')
+      end
+
+      it 'refuses an organisation subject carrying none, under R-EDM-REQ-C047' do
+        stripped = about_an_organisation { |slot| slot.sub(%r{<sdg:LevelOfAssurance>.*?</sdg:LevelOfAssurance>}, '') }
+
+        expect { stripped.validate! }.to refusing('R-EDM-REQ-C047')
+      end
+
+      it 'refuses one outside the list, under R-EDM-REQ-C048' do
+        lowered = about_an_organisation { |slot| slot.sub('<sdg:LevelOfAssurance>High', '<sdg:LevelOfAssurance>Medium') }
+
+        expect { lowered.validate! }.to refusing('R-EDM-REQ-C048')
+      end
+    end
+
+    describe 'the scheme each identifier names' do
+      it 'refuses an organisation subject whose identifier names none, under R-EDM-REQ-C052' do
+        stripped = about_an_organisation { |slot| slot.sub(' schemeID="eidas"', '') }
+
+        expect { stripped.validate! }.to refusing('R-EDM-REQ-C052')
+      end
+
+      it 'refuses one naming another scheme, under R-EDM-REQ-C053' do
+        other = about_an_organisation { |slot| slot.sub('schemeID="eidas"', 'schemeID="eidas2"') }
+
+        expect { other.validate! }.to refusing('R-EDM-REQ-C053')
+      end
+
+      # And the same pair on the representative, under its own identifiers.
+      it 'refuses a representative naming another scheme, under R-EDM-REQ-C063' do
+        expect { represented_by('<sdg:Identifier schemeID="eidas2">SI/SI/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C063')
+      end
+
+      # Which is what empties the `eidas2` branch: `C121`, `C122`, `C123`, `C125`
+      # and `C127` narrow their contexts to a representative identified under
+      # that very scheme, so none of them is ever reached. The `detail` carries
+      # one rule, and this is what proves it is always this one — a
+      # representative breaking every rule of that branch at once is refused by
+      # `C063` and named by nothing else.
+      it 'never names a rule of the eidas2 branch, whose context lies past that refusal' do
+        eidas2 = represented_by('<sdg:Identifier schemeID="eidas2">pas-un-identifiant</sdg:Identifier>' \
+                                '<sdg:LevelOfAssurance>Low</sdg:LevelOfAssurance>')
+
+        expect { eidas2.validate! }.to refusing('R-EDM-REQ-C063')
+      end
+    end
+
+    describe 'the shape of an eIDAS identifier' do
+      it 'refuses a representative whose country codes are not published, under R-EDM-REQ-C061' do
+        expect { represented_by('<sdg:Identifier schemeID="eidas">ZZ/FR/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C061')
+      end
+
+      it 'refuses an organisation representative under R-EDM-REQ-C085' do
+        written = representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                               '<sdg:LegalPersonIdentifier schemeID="eidas">ZZ/FR/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C085')
+      end
+
+      it 'refuses an organisation representative carrying no identifier, under R-EDM-REQ-C084' do
+        written = representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C084')
+      end
+    end
+
+    describe 'the optional identifiers of an organisation representative' do
+      it 'refuses one naming no scheme, under R-EDM-REQ-C088' do
+        expect { organisation_representing('<sdg:Identifier>FR12345678901</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C088')
+      end
+
+      # A SIRET identifies an agent of the exchange and never the subject of an
+      # evidence: the `IdentifierSchemes` list does not publish it.
+      it 'refuses one naming a scheme the list does not publish, under R-EDM-REQ-C089' do
+        expect { organisation_representing('<sdg:Identifier schemeID="SIRET">00000000000002</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C089')
+      end
+
+      it 'accepts one the list does publish' do
+        written = organisation_representing('<sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>')
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
+    describe 'the date of birth of a representative' do
+      it 'refuses one that is not a date, under R-EDM-REQ-C064' do
+        expect { represented_by('<sdg:DateOfBirth>hier</sdg:DateOfBirth>').validate! }
+          .to refusing('R-EDM-REQ-C064')
+      end
+
+      # Anchored at both ends, where `C002` is anchored at neither.
+      it 'refuses a timestamp where a date is asked for' do
+        expect { represented_by('<sdg:DateOfBirth>1980-01-01T00:00:00Z</sdg:DateOfBirth>').validate! }
+          .to refusing('R-EDM-REQ-C064')
+      end
+
+      it 'accepts a date written as the rule asks' do
+        written = represented_by('<sdg:DateOfBirth>1980-01-01</sdg:DateOfBirth>')
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
+    describe 'the sex of a representative' do
+      def identified_as(gender)
+        represented_by("<sdg:Identifier schemeID=\"eidas\">SI/SI/123456</sdg:Identifier>#{gender}")
+      end
+
+      it 'refuses a value outside the Gender list, under R-EDM-REQ-C124' do
+        expect { represented_by('<sdg:Gender>7</sdg:Gender>').validate! }.to refusing('R-EDM-REQ-C124')
+      end
+
+      # `C124` admits the numeric profile; `C126` narrows it to the three eIDAS
+      # values once an `eidas` identifier is there — so `1` passes the first and
+      # falls on the second.
+      it 'refuses the numeric profile under an eidas identifier, under R-EDM-REQ-C126' do
+        expect { identified_as('<sdg:Gender>1</sdg:Gender>').validate! }.to refusing('R-EDM-REQ-C126')
+      end
+
+      # The assertion is on the *person* and reads `sdg:Gender=('Male',…)`,
+      # which an absent element fails: its published sentence only constrains a
+      # value, and the assertion is what plays. `docs/carte_des_tdd.md` records
+      # the disagreement.
+      it 'refuses an eidas representative carrying no sex at all, under the same rule' do
+        expect { identified_as('').validate! }.to refusing('R-EDM-REQ-C126')
+      end
+
+      it 'accepts an eidas representative naming one of the three' do
+        written = identified_as('<sdg:Gender>Female</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
+      end
+
+      # Neither rule exists at the 1.2.5 tag, so a request of that line writes
+      # the element as it likes — the pair that proves the predicate guarding
+      # them has the polarity it should.
+      it 'says nothing of the sex of a representative on the 1.2 line' do
+        written = earlier_line_envelope do |body|
+          body.sub('<rim:Slot name="NaturalPerson">') do
+            '<rim:Slot name="AuthorizedRepresentative"><rim:SlotValue xsi:type="rim:AnyValueType"><sdg:Person>' \
+              '<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance><sdg:Gender>7</sdg:Gender>' \
+              '</sdg:Person></rim:SlotValue></rim:Slot><rim:Slot name="NaturalPerson">'
+          end
+        end
+
+        expect(written.body.validate!).to be_a(described_class)
+      end
+    end
+
+    # `C081` compares the value whole — `or` being the loosest operator of
+    # XPath — where `C091` splits on `,\s*`. The pair on one and the same value
+    # is what proves the two assertions are read differently, whatever their
+    # messages both say about comma-separated values.
+    describe 'the procedures a power of representation covers' do
+      def scoped(value, person: method(:represented_by))
+        person.call('<sdg:SectorSpecificAttribute><sdg:AttributeName>' \
+                    'http://data.europa.eu/p4s/attributes/PowerOfRepresentationScope</sdg:AttributeName>' \
+                    "<sdg:AttributeValue>#{value}</sdg:AttributeValue></sdg:SectorSpecificAttribute>")
+      end
+
+      it 'refuses a comma-separated pair on a natural representative, under R-EDM-REQ-C081' do
+        expect { scoped('T1,T3').validate! }.to refusing('R-EDM-REQ-C081')
+      end
+
+      it 'accepts that same pair on an organisation representative, which C091 splits' do
+        written = scoped('T1,T3', person: method(:organisation_representing))
+
+        expect(written.validate!).to be(written)
+      end
+
+      it 'refuses a split value naming a code the list does not publish, under R-EDM-REQ-C091' do
+        expect { scoped('T1, Z9', person: method(:organisation_representing)).validate! }
+          .to refusing('R-EDM-REQ-C091')
+      end
+
+      it 'accepts the system check code, which both admit beside the list' do
+        written = scoped('00')
+
+        expect(written.validate!).to be(written)
+      end
+
+      # Neither context stops at the URI its message names, so every sectoral
+      # attribute is judged — the assertion, and not its message.
+      it 'judges an attribute of another URI just the same' do
+        written = represented_by('<sdg:SectorSpecificAttribute><sdg:AttributeName>urn:example:autre' \
+                                 '</sdg:AttributeName><sdg:AttributeValue>Z9</sdg:AttributeValue>' \
+                                 '</sdg:SectorSpecificAttribute>')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C081')
       end
     end
   end
