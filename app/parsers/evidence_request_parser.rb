@@ -15,6 +15,7 @@ class EvidenceRequestParser
   include EarlierLineConformance
   include EchoedValueConformance
   include RequestEnvelopeConformance
+  include RequestedEvidenceTypeConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -69,12 +70,12 @@ class EvidenceRequestParser
     require_conformant_envelope
     require_one_evidence_subject
     require_requester_country
-    require_conformant_collection(agents)
-    require_conformant_provider(provider_agents)
+    require_conformant_agents
     require_conformant_requirements
     require_conformant_classifications
     require_earlier_line_rules
     require_conformant_echoed_values
+    require_conformant_requested_evidence_types
     require_conformant_document
 
     self
@@ -145,6 +146,10 @@ class EvidenceRequestParser
 
   def declared_requester_country = declared { |agent| agent_country(agent) }
 
+  # Keyed by language, which `R-EDM-REQ-S058` is what makes safe: it refuses two
+  # sibling elements of one local name sharing a `lang`, so no two titles of an
+  # accepted request can collide here — and the reading is called after
+  # `validate!` by everything that answers.
   def evidence_type
     described = slot_content('EvidenceRequest', query, './sdg:DataServiceEvidenceType')
     titles = all(described, './sdg:Title').to_h { |title| [attribute(title, 'lang'), title.text] }
@@ -243,6 +248,15 @@ class EvidenceRequestParser
     return if all(scope, "./rim:Slot[@name='#{name}']").one?
 
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
+  end
+
+  # The two collections of agents a request names, judged together because the
+  # rules that judge them are the same assertions published under two sets of
+  # identifiers — the slot fixing those, never the classification.
+  # `AgentConformance::RULES` is where that correspondence is written out.
+  def require_conformant_agents
+    require_conformant_collection(agents)
+    require_conformant_provider(provider_agents)
   end
 
   # R-EDM-REQ-S016: either a natural person or a legal one, and never both.

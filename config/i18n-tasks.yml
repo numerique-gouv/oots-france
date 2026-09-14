@@ -219,6 +219,18 @@ ignore_unused:
   - parsers.evidence_request.{slot_name_unexpected,evidence_type_child_unexpected}
   - parsers.evidence_request.{slot_value_not_alone,slot_value_empty}
   - parsers.evidence_request.slot_value_without_element
+  # The evidence type asked for, in the parts of it nothing echoes: `C106` on
+  # its identifier and `C033` on each format it names — the language of each of
+  # its descriptions is `C031`/`C030`, composed from the wording being judged as
+  # its titles' pair is, and so covered by the `evidence_type_description_*`
+  # entries the scanner cannot see either. `unnamed_format` is not here:
+  # `I18n.t` names it.
+  - parsers.evidence_request.{evidence_type_without_identifier,evidence_type_format_unpublished}
+  - parsers.evidence_request.{evidence_type_description_without_language,evidence_type_description_language_unknown}
+  # And the second walk over the whole document, beside `C092`: `S058` refusing
+  # two sibling wordings of one language. `unnamed_language` is not here —
+  # `I18n.t` names it.
+  - parsers.evidence_request.wordings_share_a_language
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

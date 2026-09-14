@@ -538,6 +538,32 @@ fr:
       # en nommant sa règle.
       slot_value_without_element: >-
         Le rim:SlotValue du slot « %{name} » de la requête reçue ne porte pas de %{element}.
+      # R-EDM-REQ-C106 : le sdg:Identifier du type de justificatif, que l'XSD
+      # laisse facultatif et que la règle exige non blanc. Ce n'est pas la
+      # sdg:EvidenceTypeClassification, qui est celui que la France lit.
+      evidence_type_without_identifier: >-
+        Le type de justificatif demandé ne porte pas de sdg:Identifier.
+      # R-EDM-REQ-C033 : la liste OOTSMediaTypes, distincte de ce que la France
+      # sert — un format publié qu'elle ne sert pas repart en EDM:ERR:0007.
+      evidence_type_format_unpublished: >-
+        Le type de justificatif demandé nomme un format (%{declared}) qui n'est pas de la
+        liste OOTSMediaTypes (%{admitted}).
+      unnamed_format: vide
+      # R-EDM-REQ-S058 : deux éléments frères de même nom local et de même
+      # langue. Le contexte est *[@lang], donc l'attribut sans espace de noms —
+      # jamais xml:lang — et la comparaison des noms est locale elle aussi.
+      wordings_share_a_language: >-
+        La requête reçue porte %{count} éléments « %{name} » de langue « %{language} »
+        au même endroit, là où un seul est admis.
+      unnamed_language: sans langue
+      # R-EDM-REQ-C031 et C030, sur la sdg:Description du type de justificatif :
+      # la paire d'assertions qu'AgentConformance lit déjà pour le nom d'un
+      # agent, les libellés d'une exigence et les titres de ce même élément.
+      evidence_type_description_without_language: >-
+        Une description du type de justificatif demandé ne nomme pas sa langue.
+      evidence_type_description_language_unknown: >-
+        Une description du type de justificatif demandé nomme une langue (%{language})
+        qui n'est pas de la liste LanguageCode.
       slot_required: La requête reçue doit porter exactement un slot « %{name} ».
       unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
       unnamed_specification: une version sans nom

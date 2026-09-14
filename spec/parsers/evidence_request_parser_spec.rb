@@ -2507,6 +2507,114 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-C106`, `C031`, `C030` and `C033`, on the evidence type asked for.
+  # None of these values reaches the answer — the response announces the format
+  # France served and copies no description — so they are applied for the only
+  # reason left: they are FATAL on a value the request carries.
+  describe 'the evidence type asked for, in what nothing echoes' do
+    def described_as(&) = with_body { |body| body.sub(%r{<sdg:DataServiceEvidenceType.*?</sdg:DataServiceEvidenceType>}m, &) }
+
+    # The context is the evidence type and the test is
+    # `not(normalize-space(sdg:Identifier)='')`, so an element that is not there
+    # breaks it as much as one written blank — which is the case the schema
+    # leaves open, giving `sdg:Identifier` `minOccurs="0"`.
+    it 'refuses one carrying no sdg:Identifier, under R-EDM-REQ-C106' do
+      stripped = described_as { |type| type.sub(%r{<sdg:Identifier>.*?</sdg:Identifier>}m, '') }
+
+      expect { stripped.validate! }.to refusing('R-EDM-REQ-C106')
+    end
+
+    it 'refuses one whose sdg:Identifier is written blank, under the same rule' do
+      blank = described_as { |type| type.sub(%r{(<sdg:Identifier>).*?(</sdg:Identifier>)}m, '\\1   \\2') }
+
+      expect { blank.validate! }.to refusing('R-EDM-REQ-C106')
+    end
+
+    # `C031` and `C030` are the pair `AgentConformance#require_language` already
+    # reads for an agent's name and a requirement's wordings — the same two
+    # assertions a seventh time, on the description beside the titles.
+    def with_description(description)
+      described_as { |type| type.sub('</sdg:DataServiceEvidenceType>') { "#{description}</sdg:DataServiceEvidenceType>" } }
+    end
+
+    it 'refuses a description naming no language, under R-EDM-REQ-C031' do
+      expect { with_description('<sdg:Description>Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C031')
+    end
+
+    it 'refuses one naming a language the list does not publish, under R-EDM-REQ-C030' do
+      expect { with_description('<sdg:Description lang="xx">Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C030')
+    end
+
+    # Compared exactly, the assertion carrying no `i` flag where the list
+    # publishes upper case — the reading `LanguageCode` holds the reason for.
+    it 'refuses a published code written in lower case' do
+      expect { with_description('<sdg:Description lang="fr">Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C030')
+    end
+
+    it 'accepts a description naming a published code as the list publishes it' do
+      written = with_description('<sdg:Description lang="FR">Acte de naissance</sdg:Description>')
+
+      expect(written.validate!).to be(written)
+    end
+
+    # `C033` is the code list the specification publishes; `EDM:ERR:0007` is
+    # what France has no document for. The pair is what keeps them apart: a
+    # format outside the list never reaches the second refusal.
+    it 'refuses a format the code list does not publish, under R-EDM-REQ-C033' do
+      exotic = described_as { |type| type.sub('application/pdf', 'application/foo') }
+
+      expect { exotic.validate! }.to refusing('R-EDM-REQ-C033')
+    end
+
+    it 'accepts a published format France happens not to serve' do
+      served = described_as { |type| type.sub('application/pdf', 'image/png') }
+
+      expect(served.validate!).to be(served)
+    end
+  end
+
+  # `R-EDM-REQ-S058`, the second walk over the document beside `C092`: no two
+  # sibling elements of one local name may share a `lang`.
+  describe 'two wordings of one language side by side' do
+    it 'refuses two titles of the same language, under R-EDM-REQ-S058' do
+      doubled = with_body do |body|
+        body.sub('<sdg:Title lang="EN">Test evidence</sdg:Title>') do
+          '<sdg:Title lang="EN">Test evidence</sdg:Title><sdg:Title lang="EN">Test document</sdg:Title>'
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S058')
+    end
+
+    # The context names no ancestor, so the walk reaches an agent's names as
+    # much as an evidence type's titles.
+    it 'refuses two names of one language on an agent, under the same rule' do
+      doubled = with_body do |body|
+        body.sub('<sdg:Name lang="FR">Fournisseur de test</sdg:Name>') do
+          '<sdg:Name lang="FR">Fournisseur de test</sdg:Name><sdg:Name lang="FR">Autre nom</sdg:Name>'
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S058')
+    end
+
+    # Which is the whole point of the cardinality the schema gives these
+    # elements: two languages are what `1..n` is for.
+    it 'accepts two titles of two languages, which the reference request carries' do
+      expect(request.validate!).to be(request)
+    end
+
+    # `@lang` without a namespace is what the assertion names, so the
+    # `rim:LocalizedString` of a 1.2 `Procedure` slot — which carries `xml:lang`
+    # — is not in its context at all.
+    it 'says nothing of two xml:lang attributes, which it does not reach' do
+      expect(earlier_line_envelope.body.validate!).to be_a(described_class)
+    end
+  end
+
   # `R-EDM-REQ-S019`, `S049` and `S045` close three lists of names: the slots
   # `query:QueryRequest` may carry, those `query:Query` may, and the elements an
   # evidence type may. A slot outside them was served until now, its type table
