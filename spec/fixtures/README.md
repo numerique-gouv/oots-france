@@ -79,6 +79,7 @@ Neuf réponses capturées sur l'**environnement d'acceptation** des Common Servi
 | --- | --- |
 | `eb_requirements_fr` | Evidence Broker, exigences de la démarche `00` pour la France, telles qu'elles étaient à la capture : **une** seule |
 | `eb_requirements_deux_fr` | la même requête, recapturée depuis : la démarche en porte désormais **deux**, `ffffffff-…` puis `00000000-…`. C'est le cas conjonctif du [3.2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932958), et la seule fixture qui le donne |
+| `eb_requirements_t1_fr` | Evidence Broker, exigences de la démarche `T1` pour la France — celle de la démarche de démonstration. Deux exigences, et **deux** déclarations `sdg:ReferenceFramework` de la France sous deux intitulés différents : c'est la seule capture qui porte un titre national, dont l'accueil de la démonstration fait le sien |
 | `eb_requirements_catalogue` | la même requête **sans aucun paramètre**, tous facultatifs : le catalogue entier, 53 exigences et 687 déclarations de démarche sur 27 pays. C'est ce que lit `Directories::Catalogue` |
 | `eb_requirements_vides` | la même requête pour `T3`, à laquelle la France ne répond rien : `EB:ERR:0001` |
 | `eb_evidence_types_fr`, `eb_evidence_types_fi` | Evidence Broker, types de justificatif satisfaisant l'exigence de test, pour la France et pour la Finlande |

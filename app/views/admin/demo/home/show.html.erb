@@ -2,21 +2,28 @@
 
 <%= render DemoBreadcrumbsComponent.new %>
 
-<%# The code and the title the code list publishes for it. The `lang` hangs on
-    that title alone: a code reads the same in every language, and the wording
-    standing in for a title nobody could read is French. %>
-<%= tag.h1 @heading, class: 'fr-h3', lang: ('en' if @procedure_name.present?) %>
+<%# The code, then the title France declared the procedure under. Only the title
+    wears the mark: a code reads the same in every language and is what a request
+    carries, and the wording standing in for a title nobody could read is ours. %>
+<%= tag.h1 class: 'fr-h3' do %>
+  <%= @wording.code %> —
+  <% if @wording.title.present? %>
+    <%= render(DirectoryValueComponent.new(lang: @wording.title_language)) { @wording.title } %>
+  <% else %>
+    <%= @wording.untitled %>
+  <% end %>
+<% end %>
 
 <%# What the Evidence Broker publishes for the procedure, named as it names it.
     The sentence introduces the list and is worth nothing without one, so both
     go or neither does. %>
-<% if @requirements.any? %>
+<% if @wording.requirements_named.any? %>
   <div class="fr-col-12 fr-col-md-8 fr-my-4w" lang="en">
     <p class="fr-text--lead fr-mb-1w"><%= t('admin.demo.home.show.requirements') %></p>
 
     <ul>
-      <% @requirements.each do |label, language| %>
-        <li lang="<%= language %>"><%= label %></li>
+      <% @wording.requirements_named.each do |label, language| %>
+        <li class="fr-mb-1v"><%= render(DirectoryValueComponent.new(lang: language)) { label } %></li>
       <% end %>
     </ul>
   </div>

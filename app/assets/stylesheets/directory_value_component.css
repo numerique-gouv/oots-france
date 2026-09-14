@@ -1,0 +1,20 @@
+/*
+ * What the central directories publish, marked so that it does not read as a
+ * sentence this deployment wrote. The information register is what says it: the
+ * value is neither a warning nor an error, it is one whose source is elsewhere.
+ *
+ * Colours come from the DSFR's own tokens and never from a literal — the layout
+ * sets `data-fr-scheme="system"`, so the dark theme is reachable.
+ *
+ * `box-decoration-break` so that a title wrapping over two lines keeps its
+ * padding and its rounded corners on each of them, instead of a single box cut
+ * in half at the break.
+ */
+.directory-value {
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  color: var(--text-default-info);
+  background-color: var(--background-contrast-info);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

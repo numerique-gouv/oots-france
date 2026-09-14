@@ -232,6 +232,11 @@ fr:
       summary: Afficher le corps (%{size})
     decrypted_value:
       label: Donnée personnelle déchiffrée
+    # Ce que la teinte bleue signifie, écrit hors écran parce qu'une couleur
+    # seule ne le dit qu'à l'œil (RGAA 3.1), et repris en infobulle pour qui la
+    # survole.
+    directory_value:
+      label: Publié par les annuaires centraux
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:cc899915-21fd-41c4-9364-21dfdecdff13">
+            <rim:Slot name="Requirement">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:Requirement>
+                        <sdg:Identifier>https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff</sdg:Identifier>
+                        <sdg:Name lang="EN">(TEST) Test Requirement 2</sdg:Name>
+                        <sdg:Description lang="EN">Member States may assign their own Evidence Types to this Requirement to perform Smoke Tests in the production system. This requirement MUST only be linked with an MS Test Procedure</sdg:Description>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>b8d73f72-f677-4020-9b18-e339dd0d6ae0</sdg:Identifier>
+                            <sdg:Title lang="EN">Apply for funding for higher education</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                    </sdg:Requirement>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+        <rim:RegistryObject id="urn:uuid:68b51693-b46e-4a5c-afa0-d196a89585b5">
+            <rim:Slot name="Requirement">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:Requirement>
+                        <sdg:Identifier>https://sr.acc.oots.tech.ec.europa.eu/requirements/2d21a531-d30e-4e30-9e5e-b53d6aedb30b</sdg:Identifier>
+                        <sdg:Name lang="EN">Proof of enrolment in academic tertiary education</sdg:Name>
+                        <sdg:Description lang="EN">Request for evidence proving that the person (proof subject) is enrolled in a tertiary education study programme that leads to a qualification belonging to levels 6-8 of ISCED (levels 6-8 of EQF), namely a Bachelor's or equivalent, Master's or equivalent, or doctoral or equivalent, respectively. Enrolment refers to the formal registration in the programe and is distinct from admission that only involves acceptance into a study programme. Enrolment in vocational education and training (VET) study programmes belonging to levels 6-8 of ISCED/EQF is out of scope.</sdg:Description>
+                        <sdg:ReferenceFramework>
+                            <sdg:Identifier>4037fb4d-a38f-4b81-9eb1-063411acc446</sdg:Identifier>
+                            <sdg:Title lang="EN">Applying for a tertiary education study financing, such as study grants and loans from a public body or institution</sdg:Title>
+                            <sdg:RelatedTo>
+                                <sdg:Identifier>T1</sdg:Identifier>
+                            </sdg:RelatedTo>
+                            <sdg:Jurisdiction>
+                                <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+                            </sdg:Jurisdiction>
+                        </sdg:ReferenceFramework>
+                    </sdg:Requirement>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

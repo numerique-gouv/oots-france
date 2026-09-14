@@ -22,6 +22,16 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css('main').text).to include('Keha v. 2.0', 'Dummy PDF - FI')
     end
 
+    # A portal's own sentences and the words Brussels publishes read alike on a
+    # screen: these two are the directories', and the page says so.
+    it 'marks those two as published by the directories, and the identity not' do
+      get admin_demo_confirmation_path
+
+      marked = response.parsed_body.css('main .directory-value').map { |value| seen(value) }
+
+      expect(marked).to contain_exactly('Keha v. 2.0', 'Dummy PDF - FI')
+    end
+
     it 'asks the contract nothing: nothing is opened by looking at the page' do
       get admin_demo_confirmation_path
 

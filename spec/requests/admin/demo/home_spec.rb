@@ -13,14 +13,27 @@ RSpec.describe 'Admin::Demo::Home' do
       stub_demonstration_requirements
     end
 
-    # In English, and marked as such: the reader is a user of another Member
-    # State, and the code list publishes that title in its unlanguaged column.
-    it 'stands under the procedure it is about, and nothing else' do
+    # The title France declared the procedure under, and not the SDG one: a
+    # member state names its own procedure, and that name is what its portal
+    # would show. Marked `EN`, the language the directory published it in.
+    it 'stands under the title France declared the procedure under' do
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.css('h1').text).to eq("T1 — #{name}")
-      expect(response.parsed_body.css('h1').first['lang']).to eq('en')
+      expect(seen_in('h1')).to eq('T1 — Apply for funding for higher education')
+      expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('EN')
+    end
+
+    # The SDG title stands in when the directory says nothing: the two live on
+    # hosts of their own, and one being down is not the other being down.
+    it 'falls back on the title the code list publishes when the directory says nothing' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including({})).to_timeout
+
+      get admin_demo_root_path
+
+      expect(seen_in('h1')).to eq("T1 — #{name}")
+      expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('en')
     end
 
     # The first step of the chain a request walks, asked in France's own
@@ -29,9 +42,9 @@ RSpec.describe 'Admin::Demo::Home' do
     it 'lists what the Evidence Broker publishes for the procedure, in English' do
       get admin_demo_root_path
 
-      expect(response.parsed_body.css('main [lang="en"] li').map { |item| item.text.strip })
-        .to eq(['(TEST) Test Requirement'])
-      expect(response.parsed_body.css('main [lang="en"] li').first['lang']).to eq('EN')
+      expect(response.parsed_body.css('main li .directory-value').map { |value| seen(value) })
+        .to eq(['(TEST) Test Requirement 2', 'Proof of enrolment in academic tertiary education'])
+      expect(response.parsed_body.at_css('main li .directory-value')['lang']).to eq('EN')
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
     end
@@ -52,7 +65,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.css('main [lang="en"] li')).to be_empty
+      expect(response.parsed_body.css('main li .directory-value')).to be_empty
       expect(response.parsed_body.css('main').text).not_to include('Documents to be retrieved')
       expect(response.parsed_body.css('main button.fr-btn')).to be_present
     end
@@ -79,16 +92,20 @@ RSpec.describe 'Admin::Demo::Home' do
 
     # A name is an ornament here as everywhere else in the console: the code
     # list lives on a host of its own, and the page says what it says without it.
-    it 'stands without the code list' do
+    it 'stands without either source of a title' do
       stub_request(:get, CodeListClient::PROCEDURES).to_timeout
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including({})).to_timeout
 
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.css('h1').text).to eq('T1 — Aucun label')
-      expect(response.parsed_body.css('h1').first['lang']).to be_nil
+      expect(seen_in('h1')).to eq('T1 — Aucun label')
+      expect(response.parsed_body.css('h1 .directory-value')).to be_empty
     end
   end
+
+  def seen_in(selector) = seen(response.parsed_body.at_css(selector))
 
   describe 'GET /admin/demo without a session' do
     it 'sends the visitor to the login page' do

@@ -45,8 +45,10 @@
   <%= render 'admin/demo/attributs',
         caption: t('admin.demo.confirmations.show.caption'),
         rows: [
-          [t('admin.demo.confirmations.show.provider'), @wording.provider],
-          [t('admin.demo.confirmations.show.evidence_type'), @wording.evidence_type],
+          [t('admin.demo.confirmations.show.provider'),
+           render(DirectoryValueComponent.new) { @wording.provider }],
+          [t('admin.demo.confirmations.show.evidence_type'),
+           render(DirectoryValueComponent.new) { @wording.evidence_type }],
         ] %>
 <% end %>
 
