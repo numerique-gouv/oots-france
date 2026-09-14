@@ -45,7 +45,7 @@ Lancer en parallèle, chacun avec `model: "sonnet"` explicitement (jamais omis n
 
 Il cherche ce qu'aucun agent de `pr-review-toolkit` ne cherche : les dépendances inverses (un modèle qui appelle un service, un mailer, `ENV`), la logique métier échouée dans un contrôleur, les callbacks à extraire, les abstractions à cheval sur deux couches. Sur un dépôt qui vient de passer à Rails, c'est le regard qui manque le plus : les conventions de `CLAUDE.md` (« l'orchestration vit dans les interacteurs », « les effets de bord aux frontières ») sont précisément ce qu'il sait vérifier, et le seul moment où une architecture se corrige à coût nul est avant la fusion.
 
-Ses findings sont **non bloquants par défaut** — voir la définition plus haut. Sans cette règle, la boucle repartirait sur des désaccords de conception.
+Ses findings sont **non bloquants par défaut** — voir `bloquant.md`. Sans cette règle, la boucle repartirait sur des désaccords de conception.
 
 Si un plugin manque (`enabledPlugins` du settings.json utilisateur), le signaler et continuer avec les agents disponibles — sauf `pr-review-toolkit` absent en entier, qui reste un arrêt : il porte la revue de correctness, dont dépend la notion même de finding bloquant.
 

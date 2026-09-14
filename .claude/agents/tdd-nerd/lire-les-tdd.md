@@ -2,7 +2,7 @@
 
 Lu au premier chapitre ouvert d'une passe. Partagé : `contradicteur`, `spec-nerd`, `plan-issue` et l'orchestrateur y renvoient.
 
-**Commence par [`docs/carte_des_tdd.md`](../../docs/carte_des_tdd.md).** Elle dit quel chapitre répond à quelle question, où vivent les artefacts machine, et donne les valeurs fixes qu'on recherche sans cesse. [`docs/versions_tdd.md`](../../docs/versions_tdd.md) dit quelle version fait foi — cite cette version-là.
+**Commence par [`docs/carte_des_tdd.md`](../../../docs/carte_des_tdd.md).** Elle dit quel chapitre répond à quelle question, où vivent les artefacts machine, et donne les valeurs fixes qu'on recherche sans cesse. [`docs/versions_tdd.md`](../../../docs/versions_tdd.md) dit quelle version fait foi — cite cette version-là.
 
 Puis les chapitres, **en ligne, dans la passe**. Quatre pièges, tous déjà tombés dedans :
 

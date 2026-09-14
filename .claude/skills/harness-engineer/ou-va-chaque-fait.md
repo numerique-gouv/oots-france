@@ -4,7 +4,7 @@ Lu à l'étape 4 de la passe, pour chaque mémoire comme pour chaque règle neuv
 
 | Le fait dit… | Il va dans | Exemples |
 | --- | --- | --- |
-| comment on fait une chose, à une étape précise | le skill ou l'agent qui fait cette étape — dans son `SKILL.md` si toute exécution la lit, dans un frère si une étape seule la lit | « le corps d'une PR passe par `--body-file` » → `ship-plan/corps-de-pr.md` ; « une attente n'est pas un verdict » → `ouvrier/attente.md` |
+| comment on fait une chose, à une étape précise | le skill ou l'agent qui fait cette étape — dans son `SKILL.md` si toute exécution la lit, dans un frère si une étape seule la lit | « le corps d'une PR passe par `--body-file` » → `ship-plan/corps-de-pr.md` ; « adopter le worktree d'un prédécesseur » → `ouvrier/reprise.md` |
 | un geste que deux rôles font | un skill que les deux appellent par `Skill(skill: "…")` | surveiller la CI → `ci-en-fond` ; donner l'adresse d'un écran → `adresse-ecran` |
 | un fait que deux rôles lisent | un frère chez le rôle qui le possède, les autres lient son chemin | comment lire les TDD → `tdd-nerd/lire-les-tdd.md` ; les coûts → `orchestrateur/couts.md` |
 | une convention qui vaut pour tout travail sur le dépôt, quelle que soit la tâche | `CLAUDE.md` — et il faut alors y retirer autant qu'on y ajoute | « pas de trailer », « `--merge`, jamais `--squash` », « un ticket se cite en lien » |

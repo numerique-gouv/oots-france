@@ -19,7 +19,7 @@ Titre en français, verbe à l'infinitif : `US - Rejeter une requête dont l'ide
 
 - **Chapitre** : celui qui fonde le ticket, lié. Sans chapitre — exploitation, outillage, dette — écris `**Aucun** — <motif>` : la règle de `CLAUDE.md`, « *a feature is justified by a chapter, or it does not ship* », vaut pour un ticket, et ce qui y échappe le dit.
 - **Acteur** : un coin du modèle à quatre coins — *Evidence Requester*, *Evidence Provider*, *Data Service*, *Preview Space* — ou l'exploitant, pour la console. Cette application parle à des machines : nommer le coin qui agit rend l'énoncé vrai, là où un usager humain inventé le rendrait faux.
-- **Priorité** : la force normative de ce qu'on implémente — `MUST`, `SHOULD`, `COULD` —, pas la priorité Linear, qui se calcule plus bas.
+- **Priorité** : la force normative de ce qu'on implémente — `MUST`, `SHOULD`, `COULD` —, pas la priorité Linear, qui se calcule par `priorite.md`.
 - **Description** : *En tant que / je dois / afin que*, trois segments en gras, une phrase.
 
 ### Le corps

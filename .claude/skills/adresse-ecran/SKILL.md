@@ -1,6 +1,6 @@
 ---
 name: adresse-ecran
-description: Monte la pile web d'un worktree sur l'état final et rend l'adresse de chaque page où le travail se constate — port lu dans .env, route complète, seeds, réponse vérifiée par curl, trois mots sur ce qu'on y voit. À invoquer dès qu'une branche touche à ce qui se regarde dans un navigateur ; ship-plan, l'ouvrier et l'orchestrateur l'appellent.
+description: Monte la pile web d'un worktree sur l'état final et rend l'adresse de chaque page où le travail se constate — port lu dans .env, route complète, seeds, réponse vérifiée par curl, trois mots sur ce qu'on y voit. À invoquer dès qu'une branche touche à ce qui se regarde dans un navigateur ; ship-plan et l'ouvrier l'appellent.
 ---
 
 # adresse-ecran

@@ -161,6 +161,8 @@ grep -oE "$V" .claude/statusline/subagent.sh | sort -u
 grep -oE "^\| \`?($V)\`?" .claude/agents/ouvrier.md | sort -u
 # les tableaux de CLAUDE.md nomment les fichiers qui existent
 ls .claude/skills .claude/agents
+# les liens markdown relatifs résolvent depuis le répertoire de chaque fichier (un frère descendu d'un niveau casse ses ../)
+for f in .claude/agents/*.md .claude/agents/*/*.md .claude/skills/*/*.md CLAUDE.md; do d=$(dirname "$f"); grep -oE '\]\(([^)#h][^)]*)\)' "$f" | sed -E 's/^\]\((.*)\)$/\1/; s/#.*//' | while read l; do [ -z "$l" ] || [ "$l" = lien ] || [ -e "$d/$l" ] || echo "$f -> $l"; done; done
 # les frères sont liés à un niveau : un frère qui lie un autre frère
 grep -lE '\]\([a-z-]+\.md\)' .claude/skills/*/*.md .claude/agents/*/*.md | grep -v SKILL.md
 # la forme
