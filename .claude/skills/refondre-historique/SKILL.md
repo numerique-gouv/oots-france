@@ -12,7 +12,7 @@ En local, sur une branche qui n'a jamais été fusionnée et n'a donc aucune his
 
 ## 1. Décider la forme
 
-Viser **une liste de commits courte et compréhensible, faite pour une relecture humaine**. Deux conséquences pratiques : les correctifs de revue sont absorbés dans le commit qu'ils corrigent — ce qu'ils ont appris remonte dans son message, qui devient le bon endroit pour dire pourquoi le code a cette forme ; et un correctif indépendant du sujet de la branche, un bug voisin trouvé en chemin, garde son propre commit, parce que c'est exactement ce qu'un relecteur veut pouvoir isoler. Le nombre juste se déduit de là, il ne se fixe pas d'avance. Un rebase sur `main` après une autre PR se fait de même — jamais un merge de `main` dans la branche, qui rendrait l'historique illisible.
+Viser **une liste de commits courte et compréhensible, faite pour une relecture humaine**. Deux conséquences pratiques : les correctifs de revue sont absorbés dans le commit qu'ils corrigent — ce qu'ils ont appris remonte dans son message, qui devient le bon endroit pour dire pourquoi le code a cette forme ; et un correctif indépendant du sujet de la branche, un bug voisin trouvé en chemin, garde son propre commit, parce que c'est exactement ce qu'un relecteur veut pouvoir isoler. Le nombre juste se déduit de là, il ne se fixe pas d'avance.
 
 ## 2. Sauvegarder, refondre, vérifier
 
@@ -25,7 +25,7 @@ git diff sauvegarde-<sujet> HEAD        # DOIT être vide
 
 Le `-c tag.gpgsign=false` n'est pas décoratif : `tag.gpgsign` est activé, et un tag signé exige un message, si bien que `git tag -f <nom> HEAD` échoue sur `fatal: no tag message?`. Une sauvegarde est un repère local et jetable, elle n'a rien à signer.
 
-**La vérification qui compte porte sur l'arbre final, pas sur chaque commit** : `git diff` entre la sauvegarde et le nouveau HEAD doit être vide, sans quoi la refonte a perdu ou ajouté quelque chose. Vérifier en plus que ce qui doit s'analyser s'analyse à *chacun* des commits (`sh -n`, `ruby -c`, selon) — un historique relisible est un historique bissectable, et reconstruire à la main des états intermédiaires est précisément ce qui peut produire un commit qui ne tient pas debout tout seul. Si `rebase` refuse des fichiers pourtant propres, c'est le bac à sable : rejouer avec `git -c core.checkStat=minimal`.
+**La vérification qui compte porte sur l'arbre final, pas sur chaque commit** : `git diff` entre la sauvegarde et le nouveau HEAD doit être vide, sans quoi la refonte a perdu ou ajouté quelque chose. Ce skill refond une branche sur sa base ; il ne sert pas à pousser un rebase sur `main`, où ce diff n'est jamais vide — `ouvrier/conflit.md` pousse lui-même. Vérifier en plus que ce qui doit s'analyser s'analyse à *chacun* des commits (`sh -n`, `ruby -c`, selon) — un historique relisible est un historique bissectable, et reconstruire à la main des états intermédiaires est précisément ce qui peut produire un commit qui ne tient pas debout tout seul. Si `rebase` refuse des fichiers pourtant propres, c'est le bac à sable : rejouer avec `git -c core.checkStat=minimal`.
 
 ## 3. Pousser, seulement si tout est vérifié
 

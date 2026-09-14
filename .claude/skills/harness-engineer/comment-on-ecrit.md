@@ -1,6 +1,6 @@
 # Comment on écrit dans le harnais
 
-Lu à l'étape 6, avant d'écrire une ligne dans un skill, un agent ou `CLAUDE.md` ; `CLAUDE.md` § « What lives in `.claude/` » y renvoie. Ces fichiers sont lus par des humains et par des agents qui n'ont pas le contexte de leur rédaction.
+Lu à l'étape 2 pour ses seuils, et à l'étape 6 avant d'écrire une ligne dans un skill, un agent ou `CLAUDE.md` ; `CLAUDE.md` § « What lives in `.claude/` » y renvoie. Ces fichiers sont lus par des humains et par des agents qui n'ont pas le contexte de leur rédaction.
 
 ## Contenu
 
@@ -25,7 +25,7 @@ Ce que [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/ski
 
 ## Les seuils, et ce qu'ils protègent
 
-`scripts/forme.py` les applique ; un `!` est un constat.
+`.claude/skills/harness-engineer/scripts/forme.py` les applique ; un `!` est un constat.
 
 | Seuil | Valeur | Ce qu'il protège |
 | --- | --- | --- |

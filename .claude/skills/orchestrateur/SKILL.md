@@ -89,7 +89,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | `PLAN` | Réponds : approuve, ou dis ce qui change. Puis **relance un ouvrier neuf** ; ta réponse est ce que lui seul ne peut pas savoir, donc elle tient dans le prompt |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
 | `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde. La réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf : ce qui revient est une correction à un travail écrit, et le contexte qui la reçoit est celui qui a posé les gabarits et les clés (commis le 2026-09-01 sur [OOTS-151](https://linear.app/pole-api/issue/OOTS-151) : le remplaçant a dû tout redécouvrir, et sa recommandation « relancez-en un neuf » juge son contexte, pas ce que la réponse exigera). **Et tant que le verdict n'est pas rendu, l'ouvrier attend** : une revue faite sur un écran qui va changer est jetée |
-| `LIVRÉ` | Vérifie ce qui compte, rends la PR **et les écrans**, puis fais trier ses **reliquats** (§ 5 bis) |
+| `LIVRÉ` | Vérifie ce qui compte, rends la PR **et les écrans**, puis fais trier ses **reliquats** (§ 5 bis). Si une autre PR fusionnée la rend conflictuelle avant le merge, renvoie-la **au même ouvrier** par `SendMessage`, avec ce que l'autre PR a changé : c'est lui qui rebase (`ouvrier/conflit.md`) |
 | `INTERROMPU` | Il a fini son volet, poussé, et sa passation est à jour : quand le moment vient, **relance un ouvrier neuf**, qui adoptera le worktree (`ouvrier/reprise.md`) |
 | `BLOQUÉ` | Cherche la levée d'abord ; remonte avec ce que tu as tenté |
 

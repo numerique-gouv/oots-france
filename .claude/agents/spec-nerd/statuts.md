@@ -13,7 +13,7 @@ Statuts de l'équipe `OOTS` : `Backlog`, `Todo`, `À compléter`, `In Progress`,
 | `spec-nerd` | Passer en `À compléter` | le ticket est **insuffisamment complet**, ou attend une décision de l'utilisateur — le lot de questions est posé, la réponse n'est pas là |
 | `spec-nerd` | Redescendre de `Todo` vers `Backlog` ou `À compléter` | en `COMPLÉTER`, la nouveauté rouvre une question, ou un commentaire montre un manque réel : `À compléter` si le manque est de rédaction ou de décision, `Backlog` si le ticket n'est plus prenable pour une autre raison — préalable non rendu, dépendance non livrée, sujet à redécouper |
 | `spec-nerd` | Remonter en `Todo` un ticket qu'il n'est pas en train d'écrire | le motif qui le retenait est levé — un `blockedBy` passé `Done`, une décision rendue, un préalable livré : le balayage |
-| `plan-issue`, l'ouvrier | `In Progress` | **avant** de planifier : planifier est du travail en cours, et un ticket resté sur `Backlog` laisse croire que personne n'y touche |
+| `plan-issue`, l'ouvrier, `ship-plan` | `In Progress` | **avant** de planifier ; `ship-plan` le pose à son étape 1 si le ticket est encore sur `Backlog` ou `Todo` : planifier est du travail en cours, et un ticket resté sur `Backlog` laisse croire que personne n'y touche |
 | `ship-plan` | `In Review`, avec le lien de la PR | à l'ouverture de la PR, en une seule écriture (`state` et `links` ensemble) ; le ticket y reste jusqu'au merge |
 | qui merge | `Done` | au merge, jamais avant — c'est un des gestes d'après-merge de `CLAUDE.md` § Git conventions |
 

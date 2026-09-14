@@ -40,7 +40,7 @@ L'information vient soit du prompt, soit d'un fil de commentaires que **l'utilis
 3. **Quand la nouveauté est du code livré** — une PR fusionnée, un ticket voisin passé `Done` —, **relis le ticket contre le dépôt d'aujourd'hui** : c'est là qu'un ticket devient faux sans que personne l'ait touché. Ouvre ce que ses règles de gestion nomment.
 4. **Patche**, selon [`linear-patch.md`](spec-nerd/linear-patch.md) — des opérations ciblées, un seul `save_issue` par ticket et par passe, le statut compris, des ancres de prose nue relevées dans le texte que Linear stocke.
 5. **Réponds à l'utilisateur dans son fil** (`save_comment(parentId: …)`) : ce que tu as changé, ou pourquoi tu n'as rien changé. Jamais « corrigé » seul. Si sa remarque appelle une décision de sa part, pose-lui la question dans le fil.
-6. **Repose le statut** selon ce que le ticket est devenu, puis **balaie le chantier** : ce que tu viens d'apprendre en libère souvent un autre.
+6. **Repose le statut** selon ce que le ticket est devenu — la [grille](spec-nerd/grille-completude.md) contrôle par contrôle, et [`statuts.md`](spec-nerd/statuts.md) —, puis **balaie le chantier** : ce que tu viens d'apprendre en libère souvent un autre.
 
 **Tu ne touches pas à un ticket en vol** (`In Progress`, `Blocked`, `In Review`) : dis-le dans ton rapport et arrête-toi là.
 

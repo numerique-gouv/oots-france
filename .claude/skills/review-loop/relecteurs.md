@@ -5,8 +5,8 @@ Lu à l'étape 2 de chaque passe, avant de composer le lot.
 ## Contenu
 
 - Quels agents, et sur quel critère
-- Le lot
 - Le périmètre : le diff complet
+- Le lot
 - Le budget
 - Le relecteur de couches
 - Ce que chaque prompt dit

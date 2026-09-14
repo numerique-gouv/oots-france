@@ -7,7 +7,7 @@ Lu à l'étape 3 pour l'ouvrir, à l'étape 6 pour la réécrire ; harness-engin
 > [!WARNING]
 > **Le corps passe par `--body-file`, jamais par `--body` en ligne.** Écrire le markdown dans un fichier, puis `gh pr create --body-file <fichier>`. Un corps de PR contient des backticks ; dans un heredoc ou une chaîne du shell, ils **s'exécutent**, et ce qui part sur GitHub est la sortie d'une commande à la place du texte. La même règle vaut pour `gh pr edit`, `gh issue create` et tout corps de message multiligne.
 
-Si une PR existe déjà pour cette branche (`gh pr view` réussit), reprendre son URL au lieu d'en créer une seconde.
+Si une PR existe déjà pour cette branche (`gh pr view` réussit), reprendre son URL au lieu d'en créer une seconde — et la sortir du brouillon (`gh pr ready`) si l'ouvrier l'y avait laissée pour la passe d'écran.
 
 **Réécrire la description sur l'état final** (`gh pr edit <url> --title … --body-file …`) une fois `review-loop` revenu avec 0 finding bloquant : la relecture ne porte que sur l'état final, pas sur l'historique de la revue — donc pas de commentaire de PR listant ce qui a été corrigé. Réécrire titre et corps à partir de la liste de commits finale (`git log origin/main..HEAD`) et du plan, pour que la description corresponde à ce que la branche contient vraiment après correctifs, pas à l'état d'avant revue. Y citer le ticket (`OOTS-nn` et son URL), pour que le lien se lise dans les deux sens.
 

@@ -10,7 +10,7 @@ En deux phrases : <ce que le plan fait>
 TDD    : <les chapitres qui le dictent>
 Tranché seul : <une ligne par décision, avec sa raison>
 Worktree : <chemin, ou « à créer » si tu n'en as pas eu besoin>
-Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il reprendra à l'étape 3.
+Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il reprendra à l'implémentation (§ 4).
 ```
 
 ```

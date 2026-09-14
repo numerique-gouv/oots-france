@@ -20,7 +20,7 @@ La passation te dit où il en était et ce qu'il a tranché ; le reste te dit si
 
 Puis, selon ce que tu trouves :
 
-- **Un arbre propre, tout poussé** — le cas facile. Reprends au temps que `.claude/etapes/OOTS-<n>` déclare, ou à celui que la passation nomme.
+- **Un arbre propre, tout poussé** — le cas facile. Reprends au temps que `.claude/etapes/OOTS-<n>` déclare, ou à celui que la passation nomme — sauf quand l'étape déclarée est `plan` et qu'un fichier de plan existe : c'est le découpage normal, tu reprends à l'implémentation (§ 4) sans replanifier.
 - **Des commits à lui, non poussés** — pousse-les avant toute chose, pour cesser d'être le seul endroit du monde où ils existent.
 - **Des modifications non commitées** — lis-les (`git -C <worktree> diff`) avant de décider. Cohérentes et testables, finis-les et commite-les à son nom de travail ; à mi-chemin d'une idée que la passation n'explique pas, **jette-les** (`git -C <worktree> restore .`) et refais le point proprement depuis le dernier commit. Un demi-remaniement que personne ne sait terminer coûte plus cher que de le reprendre.
 
