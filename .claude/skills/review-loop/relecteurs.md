@@ -33,7 +33,6 @@ Lancer en parallèle, chacun avec `model: "sonnet"` explicitement (jamais omis n
 - `type-design-analyzer` — si de nouveaux types ont été introduits ;
 - `code-simplifier` — **toujours**, aux mêmes conditions que `code-reviewer`, et en parallèle des autres plutôt qu'en passe séquentielle finale (review-loop trie déjà bloquant/non-bloquant à l'étape 4, pas besoin de séquencer).
 
-Une passe qui lance moins de deux agents est donc toujours un bug d'exécution du skill, jamais une optimisation légitime.
 
 ## Le budget
 
