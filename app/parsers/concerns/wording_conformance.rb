@@ -40,7 +40,15 @@ module WordingConformance
   # a schema-valid document, and it is here because that is the rule as
   # published. Correcting the spelling would be inventing a rule.
   #
-  # Derived by `merge` and not rewritten, as `SlotTypeConformance::EARLIER_LINE_SLOT_TYPES`
+  # Neither of the two is reachable at all, in fact, and for a second reason:
+  # both belong to `JurisdictionDeterminationType`, whose only home in the 1.2.0
+  # profile is under `sdg:DataServiceEvidenceType`, where
+  # `RegRepShapeConformance::ADMITTED_EVIDENCE_TYPE_CHILDREN` refuses it under
+  # `R-EDM-REQ-S045`. The rows stay for the same reason the spelling does — they
+  # are the rule as published, and a table that quietly dropped what another rule
+  # makes unreachable would stop being readable against the `.sch`.
+  #
+  # Derived by `merge` and not rewritten, as `RegRepShapeConformance::EARLIER_LINE_SLOT_TYPES`
   # is: a second list copied out by hand would drift from the first in silence.
   EARLIER_LINE_MINIMUM_LENGTHS = MINIMUM_LENGTHS
     .merge('JurisdictionContext' => 2, 'JurisditionLevel' => 2)
@@ -73,7 +81,7 @@ module WordingConformance
     refuse('R-EDM-REQ-C092', wording_key(minimum), path: wording.path, value:)
   end
 
-  # The list of the line the message is read in, as `SlotTypeConformance#slot_types`
+  # The list of the line the message is read in, as `RegRepShapeConformance#slot_types`
   # reads the table of its own.
   def wording_minimum_lengths
     specification.jurisdiction_determination? ? EARLIER_LINE_MINIMUM_LENGTHS : MINIMUM_LENGTHS

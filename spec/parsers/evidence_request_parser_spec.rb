@@ -2507,6 +2507,112 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-S019`, `S049` and `S045` close three lists of names: the slots
+  # `query:QueryRequest` may carry, those `query:Query` may, and the elements an
+  # evidence type may. A slot outside them was served until now, its type table
+  # simply passing it over.
+  describe 'the names each level admits' do
+    it 'refuses a slot of query:QueryRequest that no rule names, under R-EDM-REQ-S019' do
+      invented = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="Foo"><rim:SlotValue xsi:type="rim:StringValueType">' \
+            '<rim:Value>x</rim:Value></rim:SlotValue></rim:Slot><rim:Slot name="EvidenceRequester">'
+        end
+      end
+
+      expect { invented.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+
+    it 'refuses a slot of query:Query that no rule names, under R-EDM-REQ-S049' do
+      invented = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequest">') do
+          '<rim:Slot name="Foo"><rim:SlotValue xsi:type="rim:AnyValueType">' \
+            '<sdg:Person/></rim:SlotValue></rim:Slot><rim:Slot name="EvidenceRequest">'
+        end
+      end
+
+      expect { invented.validate! }.to refusing('R-EDM-REQ-S049')
+    end
+
+    # The rule counts the children it names against the total, so anything else
+    # breaks it — including what the schema itself admits there, `sdg:Note` and
+    # `sdg:AccessService` among them. The `.sch` is what plays where the two
+    # disagree, and `docs/carte_des_tdd.md` records the disagreement.
+    it 'refuses an evidence type carrying an element it does not name, under R-EDM-REQ-S045' do
+      noted = with_body do |body|
+        body.sub('</sdg:DataServiceEvidenceType>') { '<sdg:Note>Rien</sdg:Note></sdg:DataServiceEvidenceType>' }
+      end
+
+      expect { noted.validate! }.to refusing('R-EDM-REQ-S045')
+    end
+
+    # Counted and not tested name by name, which is what makes this fail: the
+    # child has an admitted local name and the wrong namespace, so it adds to the
+    # total of the children and to none of the five counts.
+    it 'refuses one whose extra child only borrows an admitted local name' do
+      borrowed = with_body do |body|
+        body.sub('</sdg:DataServiceEvidenceType>') do
+          '<x:Title xmlns:x="urn:example:x">Emprunt</x:Title></sdg:DataServiceEvidenceType>'
+        end
+      end
+
+      expect { borrowed.validate! }.to refusing('R-EDM-REQ-S045')
+    end
+  end
+
+  # `R-EDM-REQ-S050` and `S051`, whose contexts are a bare `rim:Slot` and a bare
+  # `rim:SlotValue`: no ancestor narrows either, so both reach the slots of
+  # `query:Query` as much as those of the request. The readers fetched the slot
+  # value they wanted and never counted them.
+  describe 'the slot values every slot carries' do
+    it 'refuses a slot carrying no rim:SlotValue, under R-EDM-REQ-S050' do
+      emptied = with_body { |body| body.sub(%r{(<rim:Slot name="Procedure">).*?(</rim:Slot>)}m, '\\1\\2') }
+
+      expect { emptied.validate! }.to refusing('R-EDM-REQ-S050')
+    end
+
+    # `= 1` and not `>= 1`, as the assertion has it: two values leave which one
+    # is meant undecided.
+    it 'refuses a slot carrying two of them, under the same rule' do
+      doubled = with_body do |body|
+        body.sub(%r{<rim:Slot name="Procedure">(.*?)</rim:Slot>}m) do
+          "<rim:Slot name=\"Procedure\">#{Regexp.last_match(1)}#{Regexp.last_match(1)}</rim:Slot>"
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S050')
+    end
+
+    it 'refuses a rim:SlotValue carrying no element at all, under R-EDM-REQ-S051' do
+      hollow = with_body do |body|
+        body.sub(%r{(<rim:Slot name="Procedure">\s*<rim:SlotValue[^>]*>).*?(</rim:SlotValue>)}m, '\\1\\2')
+      end
+
+      expect { hollow.validate! }.to refusing('R-EDM-REQ-S051')
+    end
+  end
+
+  # `R-EDM-REQ-S044`, `S046`, `S047`, `S048` and `S056`: the `sdg:` element each
+  # slot of `query:Query` puts under its value. The readers refused these
+  # absences already, through `SlotReading#slot_content`, but naming no rule —
+  # so the correspondent got an `EDM:ERR:0003` with an empty `detail`.
+  describe 'the element each slot of the query carries' do
+    {
+      'R-EDM-REQ-S044' => ['EvidenceRequest', 'sdg:DataServiceEvidenceType'],
+      'R-EDM-REQ-S046' => ['NaturalPerson', 'sdg:Person'],
+    }.each do |rule, (name, element)|
+      it "refuses a #{name} slot value carrying no #{element}, under #{rule}" do
+        stripped = with_body do |body|
+          body.sub(%r{(<rim:Slot name="#{name}">\s*<rim:SlotValue[^>]*>).*?(</rim:SlotValue>)}m) do
+            "#{Regexp.last_match(1)}<sdg:Autre/>#{Regexp.last_match(2)}"
+          end
+        end
+
+        expect { stripped.validate! }.to refusing(rule)
+      end
+    end
+  end
+
   # `R-EDM-REQ-S052` and `S053`, whose common context is a `rim:SlotValue`
   # declaring itself `rim:CollectionValueType` — the attribute compared whole,
   # prefix included, where the nineteen rules above compare its local name
@@ -2539,12 +2645,16 @@ RSpec.describe EvidenceRequestParser do
     # both of these rules and satisfies `R-EDM-REQ-S026`: the local name is the
     # one that rule asks for, and the qualified name is not the one this context
     # selects. A reader unifying the two comparisons refuses this request.
+    # Its `collectionType` is dropped, which is what `R-EDM-REQ-S053` would
+    # refuse if this slot value were in its context. The `rim:Element` stays:
+    # `S051` weighs every slot value of the document, whatever it declares
+    # itself to be, so emptying this one would refuse the request for a reason
+    # that has nothing to do with what is being proved here.
     it 'accepts one whose prefix keeps it out of the context of these two rules' do
       served = collection('Requirements') do |found|
         found.sub(/ xsi:type="[^"]*"/,
           %( xsi:type="x:CollectionValueType" xmlns:x="#{OotsNamespaces::NAMESPACES.fetch('rim')}"))
           .sub(/\s*collectionType="[^"]*"/, '')
-          .sub(%r{<rim:Element.*?</rim:Element>}m, '')
       end
 
       expect(served.validate!).to be(served)
@@ -2947,15 +3057,14 @@ RSpec.describe EvidenceRequestParser do
     end
 
     # `R-EDM-REQ-C092` lists twenty-three element names at the 1.2.5 tag and
-    # twenty-one at the 2.0.1 one: `sdg:JurisdictionContext` and
-    # `sdg:JurisditionLevel` — spelled thus in the rule — belong to
-    # `JurisdictionDeterminationType`, which 2.0 deleted. Same test, same
-    # thresholds, two more places to apply them.
-    describe 'the wordings of the jurisdiction determination' do
-      # Wrapped in the element that carries them, as `JurisdictionDeterminationType`
-      # has it: the rule's context names no ancestor, so the walk would reach them
-      # anywhere — but a request nobody could send proves nothing about the ones
-      # that can.
+    # twenty-one at the 2.0.1 one, the two extra being `sdg:JurisdictionContext`
+    # and `sdg:JurisditionLevel` — spelled thus in the rule. Both belong to
+    # `JurisdictionDeterminationType`, whose only home in the 1.2.0 profile is
+    # under `sdg:DataServiceEvidenceType`, and `R-EDM-REQ-S045` does not name it
+    # among the five children it admits there. So the request that would exercise
+    # those two rows is a request `S045` refuses, on the very line that publishes
+    # them, and this is what that comes to.
+    describe 'the jurisdiction determination the 1.2 profile provides for' do
       def determining(wording, envelope_of)
         determination = "<sdg:EvidenceProviderJurisdictionDetermination>#{wording}" \
                         '</sdg:EvidenceProviderJurisdictionDetermination>'
@@ -2965,38 +3074,29 @@ RSpec.describe EvidenceRequestParser do
         end
       end
 
-      it 'refuses a jurisdiction context of one character, under R-EDM-REQ-C092' do
-        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:earlier))
-
-        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
-      end
-
-      # Guards against over-refusal and nothing more: a table that did not carry
-      # the name at all would accept this too, `require_conformant_wordings`
-      # skipping every element it does not measure. The refusal above is what
-      # proves the name is measured; this is what proves it is not measured too
-      # harshly.
-      it 'accepts the same context once it is a word' do
+      it 'refuses a 1.2 request carrying one, under R-EDM-REQ-S045' do
         described = determining('<sdg:JurisdictionContext lang="FR">Paris</sdg:JurisdictionContext>', method(:earlier))
 
-        expect(described.validate!).to be_a(described_class)
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
 
-      # The rule spells the second name without its `c`, where the 1.2.0 schema
-      # spells it `JurisdictionLevel`: transcribed as published, so the row is
-      # the rule and not a correction of it.
-      it 'refuses a jurisdiction level of one character, spelled as the rule spells it' do
-        described = determining('<sdg:JurisditionLevel>X</sdg:JurisditionLevel>', method(:earlier))
+      # The length of the wording changes nothing: `S045` counts the children of
+      # the evidence type and never looks inside them, so the request is refused
+      # before `C092` has anything to measure.
+      it 'refuses it whatever the wording it carries is worth' do
+        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:earlier))
 
-        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
 
-      # The other half of the pair: 2.0.1 dropped both names from the context,
-      # so the same one-character wording breaks nothing there.
-      it 'says nothing of that same context on the 2.0 line' do
-        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:with_body))
+      # `S045` is one of the rules the two tags publish word for word, so the
+      # line the message declares changes nothing here either — where 2.0 has the
+      # further reason that its profile deleted the type outright.
+      it 'refuses it on the 2.0 line under the same rule' do
+        described = determining('<sdg:JurisdictionContext lang="FR">Paris</sdg:JurisdictionContext>',
+          method(:with_body))
 
-        expect(described.validate!).to be_a(described_class)
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
     end
 
@@ -3136,9 +3236,11 @@ RSpec.describe EvidenceRequestParser do
     end
 
     # `ReturnLocation` is a slot 2.0.1 alone defines — the name appears nowhere
-    # in the 1.2.5 Schematron — so `R-EDM-REQ-S061`, which types it there, types
-    # nothing on the earlier line. The pair is what proves it: the very
-    # declaration the 2.0 line refuses passes on the 1.2 one.
+    # in the 1.2.5 Schematron, neither among the rules that type the slots nor
+    # in the list `R-EDM-REQ-S019` closes. So the two lines refuse this same
+    # declaration under two different rules, and refuse it for opposite reasons:
+    # on the 2.0 line the slot exists and is mistyped, on the 1.2 one it does not
+    # exist at all.
     def returning(envelope_of)
       envelope_of.call do |body|
         body.sub('<rim:Slot name="EvidenceRequester">') do
@@ -3149,8 +3251,23 @@ RSpec.describe EvidenceRequestParser do
       end
     end
 
-    it 'types no ReturnLocation on the 1.2 line, the slot being of 2.0 alone' do
-      expect { returning(method(:earlier_line_envelope)).body.validate! }.not_to raise_error
+    it 'refuses a ReturnLocation on the 1.2 line, under R-EDM-REQ-S019' do
+      expect { returning(method(:earlier_line_envelope)).body.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+
+    # And admits it on the line that defines it, which is what keeps the two
+    # lists apart: a reader holding both lines to the 2.0 one would serve the
+    # request above, and one holding both to the 1.2 one would refuse this.
+    it 'admits a well-typed ReturnLocation on the 2.0 line' do
+      written = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="ReturnLocation"><rim:SlotValue xsi:type="rim:StringValueType">' \
+            '<rim:Value>https://example.si/retour</rim:Value></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+
+      expect(written.validate!).to be(written)
     end
 
     it 'refuses that same declaration on the 2.0 line, under R-EDM-REQ-S061' do

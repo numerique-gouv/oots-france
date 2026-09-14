@@ -105,11 +105,8 @@ module EchoedValueConformance
   # what plays.
   BENEFICIARY_SCHEME = 'eidas'.freeze
 
-  # Where the rules find their context nodes, written from `query:Query` down.
-  EVIDENCE_TYPES = "./rim:Slot[@name='EvidenceRequest']/rim:SlotValue/sdg:DataServiceEvidenceType".freeze
-
   # The two subjects an evidence request may name, keyed by their slot as
-  # `SlotTypeConformance::QUERY_REQUEST_SLOT_TYPES` keys its own rows, each
+  # `RegRepShapeConformance::QUERY_REQUEST_SLOT_TYPES` keys its own rows, each
   # carrying where the rule finds its context nodes and which rule that is.
   #
   # `R-EDM-REQ-C040` narrows itself to the eIDAS scheme, where `C051` judges
@@ -168,6 +165,10 @@ module EchoedValueConformance
     end
   end
 
+  # The path comes from `RegRepShapeConformance`, which is the module that says
+  # what sits under which slot of `query:Query`: three readers now walk this same
+  # subtree, and a literal copied into each would be free to drift.
+  #
   # Walked from `query` rather than through `slot_content`, for the reason
   # `EarlierLineConformance#require_conformant_transformations` gives of the
   # same subtree: a request carrying no evidence type is refused by the readers
@@ -176,7 +177,7 @@ module EchoedValueConformance
   #
   # Every type the slot carries is judged, no rule counting them.
   def require_conformant_evidence_types
-    all(query, EVIDENCE_TYPES).each do |described|
+    all(query, RegRepShapeConformance::EVIDENCE_TYPES).each do |described|
       require_expected_classification(described)
       require_conformant_titles(all(described, './sdg:Title'))
     end

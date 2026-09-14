@@ -10,7 +10,7 @@ class EvidenceRequestParser
   include AgentConformance
   include RequirementConformance
   include ClassificationConformance
-  include SlotTypeConformance
+  include RegRepShapeConformance
   include WordingConformance
   include EarlierLineConformance
   include EchoedValueConformance
@@ -312,8 +312,7 @@ class EvidenceRequestParser
   # declaring no type at all, is therefore refused under `R-EDM-REQ-S016` rather
   # than under `S034`.
   def require_conformant_document
-    require_conformant_slot_types
-    require_conformant_collections
+    require_conformant_shape
     require_conformant_wordings
   end
 

@@ -211,6 +211,14 @@ ignore_unused:
   - parsers.evidence_request.{not_a_query_request,request_namespace_unexpected}
   - parsers.evidence_request.{issue_date_time_malformed,return_type_unexpected}
   - parsers.evidence_request.query_definition_unexpected
+  # And the rest of the RegRep shape: `S019`, `S049` and `S045` closing the
+  # three lists of names, `S050` and `S051` counting the slot values and
+  # weighing them, and the five that say which `sdg:` element each slot of
+  # `query:Query` puts under its own. `unnamed_slot` is not here — `I18n.t`
+  # names it, and the scanner does see that.
+  - parsers.evidence_request.{slot_name_unexpected,evidence_type_child_unexpected}
+  - parsers.evidence_request.{slot_value_not_alone,slot_value_empty}
+  - parsers.evidence_request.slot_value_without_element
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

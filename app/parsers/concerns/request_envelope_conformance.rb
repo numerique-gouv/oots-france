@@ -49,7 +49,7 @@ module RequestEnvelopeConformance
   # Keyed by where the rule finds its context nodes, written from
   # `query:QueryRequest` down, each row carrying the attribute the rule reads,
   # the value it fixes and its identifier — the shape
-  # `SlotTypeConformance::QUERY_REQUEST_SLOT_TYPES` uses, and for the same
+  # `RegRepShapeConformance::QUERY_REQUEST_SLOT_TYPES` uses, and for the same
   # reason: a row written the other way round would put a rule identifier where
   # a value is expected, and the `detail` of an `EDM:ERR:0003` would stop naming
   # a rule at all.

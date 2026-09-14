@@ -514,6 +514,30 @@ fr:
       # message qui s'applique.
       request_language_forbidden: >-
         La requête reçue porte un attribut xml:lang, que sa version interdit.
+      # R-EDM-REQ-S019 et S049 ferment la liste des slots que chaque niveau
+      # admet, S045 celle des éléments qu'un type de justificatif peut porter.
+      # La 2.0.1 admet ReturnLocation là où la 1.2.5 ne le publie pas : la phrase
+      # nomme donc la liste de la ligne du message, et non une liste figée.
+      slot_name_unexpected: >-
+        La requête reçue porte un slot « %{name} », qui n'est pas de ceux que sa
+        version admet ici (%{admitted}).
+      unnamed_slot: sans nom
+      evidence_type_child_unexpected: >-
+        Le type de justificatif demandé porte des éléments (%{children}) au-delà de
+        ceux que la requête admet (%{admitted}).
+      # R-EDM-REQ-S050 et S051, dont les contextes sont un rim:Slot et un
+      # rim:SlotValue sans ancêtre : tout slot du document est compté, toute
+      # valeur de slot est pesée, où qu'ils se trouvent.
+      slot_value_not_alone: >-
+        Le slot « %{name} » de la requête reçue doit porter exactement un
+        rim:SlotValue (%{count} déclaré(s)).
+      slot_value_empty: >-
+        Le rim:SlotValue du slot « %{name} » de la requête reçue ne porte aucun élément.
+      # R-EDM-REQ-S044, S046, S047, S048 et S056 : l'élément sdg: que chaque slot
+      # de query:Query met sous sa valeur. C'est ici que l'absence est refusée
+      # en nommant sa règle.
+      slot_value_without_element: >-
+        Le rim:SlotValue du slot « %{name} » de la requête reçue ne porte pas de %{element}.
       slot_required: La requête reçue doit porter exactement un slot « %{name} ».
       unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
       unnamed_specification: une version sans nom
