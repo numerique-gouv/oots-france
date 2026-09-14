@@ -68,6 +68,17 @@ module Oots
     # only one of them would fail a specimen that is exactly as intended.
     EARLIER_LINE_SPECIMEN = 'versionAnterieure'.freeze
 
+    # The one request the 1.2 line must refuse, and the only body the validation
+    # expects to be refused: `R-EDM-REQ-C032` counts `sdg:DistributedAs`
+    # `= 1 or = 0` at the 1.2.5 tag — « must occur not more than once » — where
+    # 2.0.1 counts `> 0`. Every other specimen names one distribution, so
+    # nothing else asks whether that assertion bites; and it has no counterpart
+    # at the 2.0.1 tag, where the same request is conformant.
+    #
+    # A body alone: `EDM-REQ-C` is the only rule set that judges it, and no ebMS
+    # header carries a distribution.
+    SEVERAL_DISTRIBUTIONS_SPECIMEN = 'requeteDeuxDistributions'.freeze
+
     def initialize(destination, specification: EdmSpecification.preferred)
       @destination = Pathname.new(destination)
       @specification = specification
@@ -87,6 +98,7 @@ module Oots
       # shift because of the one they refuse.
       write_header(MALFORMED_IDENTIFIERS_SPECIMEN, malformed_header)
       write_earlier_line_header unless specification == EdmSpecification::V1_2
+      write_several_distributions_request if specification == EdmSpecification::V1_2
     end
 
     private
@@ -213,6 +225,31 @@ module Oots
         payload_id: payload_id(uuid.next),
         specification: EdmSpecification::V1_2,
       ))
+    end
+
+    # Forged from the body already rendered, and neither rendered again nor
+    # asked of the builder: `EvidenceTypeBuilder` writes one `sdg:DistributedAs`
+    # and must never be able to write two — the emission path is what
+    # `R-EDM-REQ-C032` judges on the way out —, and a second rendering would
+    # draw from the identifier sequence and shift the UUIDs of every conformant
+    # specimen.
+    #
+    # Read back from the file rather than kept in a variable, so that what the
+    # rules are asked about is exactly what they were asked about beside it.
+    def write_several_distributions_request
+      destination.join("#{SEVERAL_DISTRIBUTIONS_SPECIMEN}.xml")
+        .write(with_doubled_distribution(destination.join('requete.xml').read))
+    end
+
+    # The distribution of the rendered request, copied beside itself: the rule
+    # counts the element, so a second one identical to the first breaks it and
+    # breaks nothing else.
+    def with_doubled_distribution(body)
+      document = Nokogiri::XML(body)
+      distribution = document.at_xpath('//sdg:DistributedAs', OotsNamespaces::NAMESPACES)
+      distribution.add_next_sibling(distribution.dup)
+
+      document.to_xml
     end
 
     def header(**attributes)

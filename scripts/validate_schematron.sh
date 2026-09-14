@@ -202,6 +202,16 @@ valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 # pas une propriété d'en-tête : seule `-017` y mord.
 if [ "$SPECIFICATION_EDM" = 'oots-edm:v1.2' ]; then
   refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017
+
+  # Deux distributions demandées, que `R-EDM-REQ-C032` compte « = 1 or = 0 » à
+  # l'étiquette 1.2.5 là où la 2.0.1 compte « > 0 » : la requête que la ligne
+  # récente admet — un format structuré et une version lisible par un humain à
+  # côté, le cas que nomme le 4.5.1 §3.5 — est celle que l'ancienne refuse. Sans
+  # ce spécimen, rien ne dit que l'assertion de cette étiquette mord, tous les
+  # autres n'en demandant qu'une. Pas de contrepartie en 2.0.1, où la même
+  # requête est conforme, et pas d'entête : `EDM-REQ-C` est le seul jeu de règles
+  # qui la juge.
+  refuse requeteDeuxDistributions EDM-REQ-C R-EDM-REQ-C032
 else
   refuse identifiantsMalformes.entete EDM-ebMS R-EDM-ebMS-017,R-EDM-ebMS-037
 

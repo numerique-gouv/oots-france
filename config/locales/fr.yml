@@ -459,12 +459,22 @@ fr:
       # une longueur qu'aucune valeur n'a trop courte.
       agent_without_id: L'identifiant de l'agent classé ER est vide
       evidence_type_without_id: Le type de justificatif est sans identifiant
-      # R-EDM-REQ-C032 : le type de justificatif demandé porte au moins une
-      # distribution ; une requête qui n'en demande aucune est invalide, et non
-      # pas exigeante — d'où EDM:ERR:0003 et non EDM:ERR:0007.
+      # Le plancher, vrai des deux lignes et refusé sous deux motifs : en 2.0.1
+      # c'est R-EDM-REQ-C032, qui compte « > 0 » ; en 1.2.5 la même règle compte
+      # « = 1 or = 0 », donc zéro la satisfait, et ce sont l'XSD 1.2.0
+      # (minOccurs="1") et le chapitre 4.5.1 §3.5 qui exigent la distribution.
+      # Une requête qui n'en demande aucune est invalide, et non pas exigeante —
+      # d'où EDM:ERR:0003 et non EDM:ERR:0007.
       evidence_type_without_distribution: >-
         La requête reçue doit demander au moins une distribution du type de
         justificatif.
+      # R-EDM-REQ-C032 dans sa forme 1.2.5, « must occur not more than once » :
+      # la seconde distribution que le §3.5 du chapitre 4.5.1 prévoit — un
+      # format lisible par un humain à côté du format structuré — n'est admise
+      # que sur la ligne 2.0.
+      evidence_type_with_several_distributions: >-
+        Une requête de la ligne 1.2 ne peut demander qu'une distribution du type de
+        justificatif (%{count} demandées).
       # R-EDM-REQ-C054 : un identifiant facultatif de la personne morale nomme
       # son schéma ; sans lui, il ne désigne rien.
       legal_identifier_without_scheme: Un identifiant de la personne morale est sans schéma
@@ -742,6 +752,30 @@ fr:
         Le libellé %{path} de la requête reçue (« %{value} ») fait moins de deux caractères.
       wording_empty: >-
         Le libellé %{path} de la requête reçue est vide, là où la règle exige un caractère.
+      # R-EDM-REQ-C004 et C069, publiées par la seule 1.2.5 : la langue du
+      # rim:LocalizedString que le slot Procedure porte sur cette ligne, et celle
+      # de la query:QueryRequest elle-même. Le contexte de chacune est
+      # l'attribut, donc ni l'une ni l'autre n'exige qu'il soit là. Comparaison
+      # exacte, les assertions ne portant pas de drapeau « i » — « FR » satisfait
+      # la règle, « fr » non, comme pour C108 et C009.
+      procedure_language_unknown: >-
+        La langue du code de démarche de la requête reçue (« %{language} ») n'est pas un code de la
+        liste LanguageCode.
+      request_language_unknown: >-
+        La langue de la requête reçue (« %{language} ») n'est pas un code de la liste LanguageCode.
+      # R-EDM-REQ-C035 et C072, publiées par la seule 1.2.5, où sdg:Transformation
+      # est un élément de EvidenceTypeDistributionType : la valeur est une URL du
+      # dépôt sémantique, et la distribution qui la porte nomme exactement un
+      # modèle de données, faute de quoi la transformation désigne le
+      # sous-ensemble de rien. L'expression est recopiée de l'assertion et non
+      # resserrée : son alternance étant au premier niveau, une valeur qui porte
+      # « distributions/ » n'importe où la satisfait.
+      transformation_unexpected: >-
+        La transformation demandée par la requête reçue (« %{transformation} ») n'est pas une URL du
+        dépôt sémantique.
+      unnamed_transformation: vide
+      transformation_without_conformance: >-
+        Une distribution qui demande une transformation doit nommer exactement un modèle de données.
     evidence_response:
       requester_without_id: L'agent requêteur est sans identifiant
       requester_without_scheme: L'agent requêteur est sans schéma d'identifiant

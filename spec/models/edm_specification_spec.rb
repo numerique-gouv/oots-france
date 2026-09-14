@@ -36,6 +36,35 @@ RSpec.describe EdmSpecification do
       expect(described_class::V2_0).to be_packaged_response
       expect(described_class::V1_2).not_to be_packaged_response
     end
+
+    it 'defines a return location in 2.0 alone' do
+      expect(described_class::V2_0).to be_return_location_slot
+      expect(described_class::V1_2).not_to be_return_location_slot
+    end
+
+    # The four rules of chapter 4.6 whose 1.2.5 form differs from their 2.0.1
+    # one. Each polarity is asserted here, at the definition site, and not left
+    # to be inferred from a message being wrongly refused three layers away: the
+    # whole job of this class is to get these one-line mappings right once.
+    it 'admits a single distribution in 1.2 alone, R-EDM-REQ-C032 counting the other way there' do
+      expect(described_class::V1_2).to be_single_distribution
+      expect(described_class::V2_0).not_to be_single_distribution
+    end
+
+    it 'measures the wordings of the jurisdiction determination in 1.2 alone, R-EDM-REQ-C092 naming them there' do
+      expect(described_class::V1_2).to be_jurisdiction_determination
+      expect(described_class::V2_0).not_to be_jurisdiction_determination
+    end
+
+    it 'judges the language of the request itself in 1.2 alone, R-EDM-REQ-C069 being published there' do
+      expect(described_class::V1_2).to be_request_language
+      expect(described_class::V2_0).not_to be_request_language
+    end
+
+    it 'judges a transformation in 1.2 alone, the element belonging to the 1.2.0 profile' do
+      expect(described_class::V1_2).to be_transformable_distribution
+      expect(described_class::V2_0).not_to be_transformable_distribution
+    end
   end
 
   # The column stores the identifier the messages carry; every builder and

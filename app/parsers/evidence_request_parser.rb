@@ -12,6 +12,7 @@ class EvidenceRequestParser
   include ClassificationConformance
   include SlotTypeConformance
   include WordingConformance
+  include EarlierLineConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -77,6 +78,7 @@ class EvidenceRequestParser
     require_beneficiary_identifier_scheme
     require_conformant_requirements
     require_conformant_classifications
+    require_earlier_line_rules
     require_conformant_document
 
     self
@@ -316,17 +318,28 @@ class EvidenceRequestParser
     end
   end
 
-  # Every distribution the request names, and not the first alone:
-  # `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one « at least », so
-  # a correspondent asking for a structured format with a human-readable
-  # fallback beside it — the case chapter 4.5.1 §3.5 names — is conformant.
+  # Every distribution the request names, and not the first alone: on the 2.0
+  # line `R-EDM-REQ-C032` counts `sdg:DistributedAs` and asks for one « at
+  # least », so a correspondent asking for a structured format with a
+  # human-readable fallback beside it — the case chapter 4.5.1 §3.5 names — is
+  # conformant.
+  #
+  # The 1.2.5 rule of that identifier counts the other way round, so the very
+  # request the later line admits is refused there:
+  # `EarlierLineConformance#require_counted_distributions` holds both counts and
+  # says what asks for the first distribution on each line.
   #
   # Counted where the rule counts them, and the formats read from them: a
   # `sdg:DistributedAs` naming no format keeps `C032`, and refusing the request
   # under that identifier would name it a rule it did not break.
+  #
+  # Refused at the read and not among the checks of `validate!`: this is the
+  # count the reading of the formats depends on, and every caller that reads an
+  # evidence type gets it — `EvidenceProvision::ChooseAnswer` validates, then
+  # reads, and nothing is produced between the two.
   def requested_formats(described)
     distributions = all(described, './sdg:DistributedAs')
-    refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_without_distribution') if distributions.empty?
+    require_counted_distributions(distributions)
 
     distributions.map { |distribution| text_at(distribution, './sdg:Format') }
   end
