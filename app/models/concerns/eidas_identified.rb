@@ -21,9 +21,11 @@ module EidasIdentified
   # Anchored at both ends where the rules anchor only at the end: nothing
   # precedes `XX/YY/` in an identifier any member state asserts, and the missing
   # `^` reads as an omission rather than a licence. Membership of
-  # `OOTS_Country-CodeList` is left to the rules themselves, which
-  # `make schematron` plays; the floor of six characters is the Schematron's,
-  # the prose saying only « up to 256 ».
+  # `OOTS_Country-CodeList` is not judged here: on a message France sends it is
+  # left to the rules themselves, which `make schematron` plays, and on one
+  # France receives it is `EchoedValueConformance` that applies `C040` and
+  # `C051` whole, before this shape is ever built. The floor of six characters
+  # is the Schematron's, the prose saying only « up to 256 ».
   EIDAS_IDENTIFIER = %r{\A[A-Z]{2}/[A-Z]{2}/\S{6,256}\z}i
 
   included do

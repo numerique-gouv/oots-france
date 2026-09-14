@@ -143,6 +143,18 @@ ignore_unused:
   # the agent it must hold at all, `S040` on what each of those agents may.
   - parsers.evidence_request.{collection_without_agent,collection_agent_unexpected_children}
   - parsers.evidence_request.{beneficiary_identifier_without_scheme,beneficiary_scheme_unexpected}
+  # And the rules on the values the answer echoes back out of the request:
+  # `C027` on the classification of the evidence type, `C029` and `C028` on the
+  # language of each of its titles — composed from the wording being judged, as
+  # a requirement's two are — `C040` and `C051` on the country codes of the
+  # subject's eIDAS identifier, and the floor chapter 4.5.1 §3.5 puts under the
+  # titles, which no assertion counts. Named literally and exempted all the
+  # same, for the reason the entries above give: they reach `refuse` and never
+  # `t()`. `unnamed_classification` and `unnamed_subject_identifier` are not
+  # here — `I18n.t` names them, and the scanner does see that.
+  - parsers.evidence_request.{evidence_type_classification_unexpected,evidence_type_without_title}
+  - parsers.evidence_request.{evidence_type_title_without_language,evidence_type_title_language_unknown}
+  - parsers.evidence_request.subject_identifier_country_unknown
   # The rules the `Requirements` slot puts in play, `validate!` naming them too.
   # The last four are composed from the wording being judged — a requirement's
   # name and its description break the same two assertions under four different

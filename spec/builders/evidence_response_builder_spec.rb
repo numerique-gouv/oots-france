@@ -112,6 +112,44 @@ RSpec.describe EvidenceResponseBuilder do
     end
   end
 
+  # What the response copies out of the request it answers, and what
+  # `EchoedValueConformance` therefore judges at the read: `R-EDM-RESP-C017`
+  # over the classification, `C018` over the language of each title, `C028` and
+  # `C035` over the identifier. Nothing is added or filtered here — an accepted
+  # request yields a conformant response by construction.
+  describe 'what it echoes back from the request' do
+    subject(:echoed) do
+      multilingual = EvidenceType.new(
+        id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
+        descriptions: { 'EN' => 'Certificate of Birth', 'FR' => 'Acte de naissance' },
+        distribution_formats: ['application/pdf'],
+      )
+      subject_of = NaturalPerson.new(
+        eidas_identifier: 'DK/FR/123456', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
+      )
+
+      Nokogiri::XML(described_class.new(**attributes, evidence_type: multilingual, beneficiary: subject_of).render)
+    end
+
+    it 'states the classification the request asked for' do
+      expect(echoed.at_xpath('//sdg:IsConformantTo/sdg:EvidenceTypeClassification', namespaces).text)
+        .to eq('https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e')
+    end
+
+    # One title per language received, each naming its own: a response keeping
+    # the first alone would drop what the request said in the other.
+    it 'states one title per language received, each carrying its lang' do
+      titles = echoed.xpath('//sdg:IsConformantTo/sdg:Title', namespaces)
+
+      expect(titles.map { |title| [title['lang'], title.text] })
+        .to eq([['EN', 'Certificate of Birth'], ['FR', 'Acte de naissance']])
+    end
+
+    it 'states the eIDAS identifier the request named its subject by' do
+      expect(echoed.at_xpath('//sdg:IsAbout//sdg:Identifier', namespaces).text).to eq('DK/FR/123456')
+    end
+  end
+
   it 'escapes a requester name read from the request it answers' do
     hostile = EvidenceRequester.french(id: '00000000000002', name: '</sdg:Name><sdg:Injecté/>')
     rendered = described_class.new(**attributes, requester: hostile).render
