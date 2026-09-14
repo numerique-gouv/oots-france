@@ -64,9 +64,11 @@ Alors('la page affiche le niveau de garantie {string}') do |niveau|
   expect(@navigateur.badges).to include(niveau)
 end
 
-# CA4: the attributes of the identity are shown, never typed.
+# CA4: the attributes of the identity are shown, never typed. Scoped to the
+# card that holds them: the page carries a form of its own, the one the press
+# submits.
 Alors('la page affiche l\'identité sans aucun champ de saisie') do
-  expect(Nokogiri::HTML(@navigateur.body).css('main table input, main table select, main table textarea'))
+  expect(Nokogiri::HTML(@navigateur.body).css('.identity-card input, .identity-card select, .identity-card textarea'))
     .to be_empty
 end
 
@@ -78,8 +80,8 @@ end
 
 Alors('la page n\'affiche ni le sexe ni le lieu de naissance') do
   expect(@navigateur.rows.keys).not_to include(
-    I18n.t('admin.demo.confirmations.attributes.gender'),
-    I18n.t('admin.demo.confirmations.attributes.place_of_birth'),
+    I18n.t('components.demo_identity_card.attributes.gender'),
+    I18n.t('components.demo_identity_card.attributes.place_of_birth'),
   )
 end
 
@@ -107,13 +109,16 @@ end
 
 # Requirement 27 of chapter 1 §2. The two values come from the real directories,
 # so the scenario asserts that they are there — not what they say, which Brussels
-# may rewrite without telling us.
+# may rewrite without telling us. They are named on the card that carries the
+# press, in the one sentence that stands between the rule and the button, and
+# each wears the mark of what the directories publish.
 Alors('la page de confirmation affiche le fournisseur et le type de justificatif') do
-  lignes = @navigateur.rows
+  nommes = Nokogiri::HTML(@navigateur.body)
+    .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
 
   expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
-  expect(lignes[I18n.t('admin.demo.confirmations.show.provider')]).to be_present
-  expect(lignes[I18n.t('admin.demo.confirmations.show.evidence_type')]).to be_present
+  expect(nommes.size).to eq(2)
+  expect(nommes).not_to include('')
 end
 
 # Chapter 1 §3.3: this press is where the user says explicitly that the
@@ -127,10 +132,14 @@ end
 # there, and the state it shows is deliberately not asserted — the exchange is
 # already on its way, and what the correspondent has answered by the time this
 # page renders is not this scenario's business.
+#
+# The page is recognised by its address and not by its heading: the heading
+# names the document that was asked for, which the real directories publish and
+# Brussels may rewrite without telling us.
 Alors('la page de suivi affiche l\'identifiant de l\'échange ouvert') do
   @exchange_id = @navigateur.rows[I18n.t('admin.demo.trackings.show.exchange')]
 
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.trackings.show.title'))
+  expect(@navigateur.current_url).to end_with('/admin/demo/suivi')
   expect(@exchange_id).to match(Exchange::UUID)
 end
 

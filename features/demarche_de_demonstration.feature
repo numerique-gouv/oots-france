@@ -26,12 +26,12 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Et que l'administrateur choisit l'identité de test "dk-substantial"
     Et que l'administrateur consent à la transmission de ses données
     Alors l'administrateur arrive sur la page de confirmation
-    Et la page affiche "Nom de famille" : "Sørensen"
-    Et la page affiche "Prénom(s)" : "Freja Marie"
-    Et la page affiche "Date de naissance" : "2001-04-17"
+    Et la page affiche "Family name" : "Sørensen"
+    Et la page affiche "Given name(s)" : "Freja Marie"
+    Et la page affiche "Date of birth" : "2001-04-17"
     Et la page affiche le niveau de garantie "Substantial"
-    Et la page affiche "Sexe" : "Féminin"
-    Et la page affiche "Lieu de naissance" : "Aarhus"
+    Et la page affiche "Sex" : "Female"
+    Et la page affiche "Place of birth" : "Aarhus"
     Et la page affiche l'identité sans aucun champ de saisie
     Et la page n'affiche pas le pseudonyme que FranceConnect+ a donné à l'usager
 
@@ -44,7 +44,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Quand le faux FranceConnect+ change de clé de signature
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Alors l'administrateur arrive sur la page de confirmation
-    Et la page affiche "Nom de famille" : "Sørensen"
+    Et la page affiche "Family name" : "Sørensen"
 
   Scénario: se déconnecter ferme aussi la session FranceConnect+
     Quand l'administrateur s'identifie avec l'identité de test "dk-substantial"
