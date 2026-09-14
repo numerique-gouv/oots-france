@@ -9,23 +9,32 @@
 <div class="fr-card fr-card--shadow fr-card--no-arrow requirement-card fr-col-12 fr-col-md-8 fr-mb-4w">
   <div class="fr-card__body">
     <div class="fr-card__content">
-      <% if titled? %>
-        <%# The requirement alone, and no sentence around it: the title is the
-            directory's word and nothing of ours. %>
-        <h3 class="fr-card__title fr-h5 fr-mb-1v">
-          <%= render(DirectoryValueComponent.new(lang: requirement_language)) { requirement } %>
-        </h3>
-      <% end %>
+      <%# The artwork the DSFR gives a document, at the height of the title and
+          the line under it. Decorative: what it depicts is what the two lines
+          beside it say. %>
+      <div class="pictogram-row">
+        <%= render PictogramComponent.new(name: 'document/document') %>
 
-      <%# What the footer then names, one line per document — so it is said only
-          where there is one. Requirement 27 of chapter 1 §2 has the evidence
-          type named before any request is made, so that line is not a
-          decoration. %>
-      <% if nameable? %>
-        <div class="fr-card__desc">
-          <p class="fr-mb-0" lang="en"><%= t('components.demo_requirement_card.satisfied_by') %></p>
+        <div class="pictogram-row__wording">
+          <% if titled? %>
+            <%# The requirement alone, and no sentence around it: the title is
+                the directory's word and nothing of ours. %>
+            <h3 class="fr-card__title fr-h5 fr-mb-1v">
+              <%= render(DirectoryValueComponent.new(lang: requirement_language)) { requirement } %>
+            </h3>
+          <% end %>
+
+          <%# What the footer then names, one line per document — so it is said
+              only where there is one. Requirement 27 of chapter 1 §2 has the
+              evidence type named before any request is made, so that line is
+              not a decoration. %>
+          <% if nameable? %>
+            <div class="fr-card__desc">
+              <p class="fr-mb-0" lang="en"><%= t('components.demo_requirement_card.satisfied_by') %></p>
+            </div>
+          <% end %>
         </div>
-      <% end %>
+      </div>
     </div>
 
     <div class="fr-card__footer requirement-card__actions">

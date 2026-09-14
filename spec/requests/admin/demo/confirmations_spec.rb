@@ -55,7 +55,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
     it 'shows the identity the authentication attested, and offers no field on it' do
       get admin_demo_confirmation_path
 
-      card = response.parsed_body.at_css('main .identity-card__attributes').parent
+      card = response.parsed_body.at_css('main .identity-card')
       rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
 
       expect(rows).to include('Family name' => 'Sørensen', 'Given name(s)' => 'Freja Marie')

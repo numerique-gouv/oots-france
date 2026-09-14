@@ -4,14 +4,22 @@
 <div class="fr-card fr-card--shadow fr-card--no-arrow identity-card fr-col-12 fr-col-md-8 fr-mb-4w">
   <div class="fr-card__body">
     <div class="fr-card__content">
-      <dl class="identity-card__attributes">
-        <% civil.each do |label, value| %>
-          <div>
-            <dt><%= label %></dt>
-            <dd><%= value %></dd>
-          </div>
-        <% end %>
-      </dl>
+      <%# The artwork the DSFR gives a person, beside the civil identity and not
+          beside the level under it: the level is what the authentication adds,
+          and stands apart from what the user recognises themself by.
+          Decorative — the heading above the card names it. %>
+      <div class="pictogram-row">
+        <%= render PictogramComponent.new(name: 'digital/avatar') %>
+
+        <dl class="identity-card__attributes pictogram-row__wording">
+          <% civil.each do |label, value| %>
+            <div>
+              <dt><%= label %></dt>
+              <dd><%= value %></dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
 
       <% if level.present? %>
         <hr class="fr-mt-3w">
