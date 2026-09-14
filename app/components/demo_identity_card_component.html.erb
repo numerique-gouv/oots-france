@@ -1,0 +1,24 @@
+<%= render CardComponent.new(title:, heading_level: 2, classes: 'identity-card') do %>
+  <dl class="identity-card__attributes">
+    <% civil.each do |label, value| %>
+      <div>
+        <dt><%= label %></dt>
+        <dd><%= value %></dd>
+      </div>
+    <% end %>
+  </dl>
+
+  <% if level.present? %>
+    <hr class="fr-mt-3w">
+
+    <%# One line, the label and the value side by side: the level is the whole of
+        what the authentication adds to the identity above, and a column of its
+        own would announce a list of one. `fr-badge` renders on a `<p>`, which
+        the DSFR fixes — it is the tag its own examples carry, and the styles
+        hang off it — so the line around it is a `<div>` and not a `<p>`. %>
+    <div class="identity-card__level">
+      <span><%= level_label %></span>
+      <p class="fr-badge fr-badge--sm"><%= level %></p>
+    </div>
+  <% end %>
+<% end %>

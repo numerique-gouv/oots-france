@@ -8,26 +8,7 @@
 
 <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.show.lead') %></p>
 
-<%# No field on any of these: chapter 2.2 §2 makes the portal answerable for the
-    identity in the request matching the one the eID means yielded, and the
-    demonstration holds that by showing them rather than offering them. %>
-<%= render 'admin/demo/attributs',
-      caption: t('admin.demo.confirmations.show.identity'),
-      rows: [
-        [t('admin.demo.confirmations.attributes.family_name'), @identity.family_name],
-        [t('admin.demo.confirmations.attributes.given_name'), @identity.given_name],
-        [t('admin.demo.confirmations.attributes.birthdate'), @identity.birthdate],
-        [t('admin.demo.confirmations.attributes.gender'), @identity_wording.gender],
-        [t('admin.demo.confirmations.attributes.place_of_birth'), @identity_wording.place_of_birth],
-      ] %>
-
-<%= render 'admin/demo/attributs',
-      caption: t('admin.demo.confirmations.show.attested'),
-      rows: [
-        [t('admin.demo.confirmations.attributes.level_of_assurance'), @identity.level_of_assurance],
-        [t('admin.demo.confirmations.attributes.provenance'), @identity_wording.provenance],
-        [t('admin.demo.confirmations.attributes.eidas_identifier'), @identity_wording.eidas_identifier],
-      ] %>
+<%= render DemoIdentityCardComponent.new(identity: @identity, wording: @identity_wording) %>
 
 <% if @unreachable.present? %>
   <%= dsfr_alert(type: :error, title: t('admin.demo.confirmations.show.unreachable')) do %>

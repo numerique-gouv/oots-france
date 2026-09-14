@@ -57,15 +57,29 @@ class DemoBrowser
 
   def body = page.body.to_s
 
-  def rows
+  # Both shapes a page of the demonstration states an attribute in: a table row
+  # for what a directory or an exchange yields, a definition list for the
+  # identity card. A scenario reads « intitulé : valeur » and has no business
+  # knowing which markup carries it.
+  def rows = table_rows.merge(definition_rows)
+
+  def badges = document.css('.fr-badge').map { |badge| badge.text.strip }
+
+  private
+
+  attr_reader :procedure_url, :connection
+
+  def table_rows
     document.css('table tr').to_h do |row|
       [row.at_css('th')&.text.to_s.strip, row.at_css('td')&.text.to_s.strip]
     end
   end
 
-  private
-
-  attr_reader :procedure_url, :connection
+  def definition_rows
+    document.css('dl > div').to_h do |pair|
+      [pair.at_css('dt')&.text.to_s.strip, pair.at_css('dd')&.text.to_s.strip]
+    end
+  end
 
   def document = Nokogiri::HTML(body)
 

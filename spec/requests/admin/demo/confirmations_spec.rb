@@ -55,10 +55,12 @@ RSpec.describe 'Admin::Demo::Confirmations' do
     it 'shows the identity the authentication attested, and offers no field on it' do
       get admin_demo_confirmation_path
 
-      rows = response.parsed_body.css('main table tr').to_h { |row| [row.at_css('th').text, row.at_css('td').text] }
+      card = response.parsed_body.at_css('main .identity-card__attributes').parent
+      rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
 
       expect(rows).to include('Nom de famille' => 'Sørensen', 'Prénom(s)' => 'Freja Marie')
-      expect(response.parsed_body.css('main table input, main table select, main table textarea')).to be_empty
+      expect(card.css('.identity-card__level').text.squish).to eq('Niveau de garantie : Substantial')
+      expect(card.css('input, select, textarea')).to be_empty
     end
 
     # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:

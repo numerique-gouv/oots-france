@@ -1,0 +1,77 @@
+/*
+ * The identity card of the demonstration. Two lists under one title: what the
+ * user is, then what the authentication vouched for, which reads as a footnote
+ * to the first.
+ *
+ * Colours come from the DSFR's own tokens and never from a literal — the layout
+ * sets `data-fr-scheme="system"`, so the dark theme is reachable.
+ */
+
+/*
+ * The card takes the room its widest line needs and no more, rather than the
+ * full width a listing's card is given: this one is read once, and a name in a
+ * column of its own, stretched across a desktop, reads as a table with a column
+ * missing. It still gives way below its content on a narrow screen, `max-width`
+ * being what the two together say.
+ */
+.identity-card {
+  width: fit-content;
+  max-width: 100%;
+}
+
+/*
+ * Each attribute takes the room its longest line needs and no more, and wraps
+ * to the next line when what is left cannot hold it. A grid would give a place
+ * of birth the width of a provenance, and leave holes wherever an attribute the
+ * authentication did not yield is absent.
+ *
+ * `min-width: 0` because a flex item never shrinks below its own content unless
+ * told to: a value with nothing to break at would otherwise push the row past
+ * the edge of the card instead of wrapping inside it.
+ */
+.identity-card__attributes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  margin: 0;
+  padding-inline-start: 0;
+}
+
+.identity-card__attributes > div {
+  min-width: 0;
+}
+
+.identity-card__attributes dt {
+  color: var(--text-mention-grey);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+/*
+ * A definition list carries an indent of its own — the browser's on `dd`, the
+ * DSFR's on the list — and either would leave every value hanging off the label
+ * above it. Logical properties, so nothing has to be undone the day a page
+ * renders right to left.
+ */
+.identity-card__attributes dd {
+  margin-inline-start: 0;
+  padding-inline-start: 0;
+  font-weight: 500;
+}
+
+/*
+ * What the authentication adds to the identity above, on one line: the label in
+ * the mention register the other labels carry, and the badge beside it rather
+ * than under it.
+ */
+.identity-card__level {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.identity-card__level > span {
+  color: var(--text-mention-grey);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}

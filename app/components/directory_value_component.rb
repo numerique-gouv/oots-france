@@ -21,5 +21,9 @@ class DirectoryValueComponent < ViewComponent::Base
 
   attr_reader :lang
 
+  # The tooltip names the mark; the sentence read off screen hangs off the
+  # value it follows, and carries the comma that joins the two.
   def label = t('components.directory_value.label')
+
+  def meaning = t('components.directory_value.meaning')
 end

@@ -237,6 +237,23 @@ fr:
     # survole.
     directory_value:
       label: Publié par les annuaires centraux
+      meaning: ", publié par les annuaires centraux"
+    # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
+    # l'état civil et ce dont l'authentification a répondu, que rien ne
+    # sous-titre — la règle et le registre de mention le disent à sa place.
+    #
+    # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.
+    demo_identity_card:
+      title: Votre identité
+      attributes:
+        family_name: Nom de famille
+        given_name: Prénom(s)
+        birthdate: Date de naissance
+        gender: Sexe
+        place_of_birth: Lieu de naissance
+        # Le deux-points est dans la clé : l'intitulé et le badge sont sur une
+        # ligne, et la ponctuation qui les joint appartient à la phrase.
+        level_of_assurance: "Niveau de garantie :"
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a
@@ -860,15 +877,6 @@ fr:
         male: Masculin
         female: Féminin
         unspecified: Non précisé
-      provenance:
-        # Aucun claim ne nomme le pays ni le fournisseur d'identité étranger :
-        # ce qui est attesté, c'est le passage par la passerelle.
-        european: Identité d'un autre État membre, par la passerelle eIDAS
-        unnamed: Provenance non attestée par l'authentification
-      # Le cas nominal aujourd'hui : FranceConnect+ ne documente aucun claim qui
-      # le porte pour un usager européen, et le chapitre 2.1 §2.3.1.2 prévoit la
-      # requête sans lui.
-      no_identifier: Non rendu par l'authentification
   models:
     # La règle `R-EDM-*` enfreinte et ce qu'elle dit, composées en une phrase :
     # c'est sous cette forme que le journal la consigne.
@@ -1327,8 +1335,6 @@ fr:
             Voici l'identité avec laquelle vous venez de vous identifier, l'administration à qui
             votre justificatif d'inscription sera demandé, et le type de document qu'elle
             transmettra. Rien n'est demandé tant que vous n'avez pas confirmé.
-          identity: Votre identité
-          attested: Ce que l'authentification a attesté
           caption: Ce qui sera demandé
           # Les deux valeurs sont rendues telles que les annuaires les publient,
           # sans libellé de notre cru : la démonstration montrerait sinon autre
@@ -1340,17 +1346,6 @@ fr:
           # presser ne demande rien à personne.
           back: Revenir à l'accueil de la démarche
           unreachable: Les annuaires européens n'ont pas pu être joints
-        # L'ordre des clés n'est pas celui de l'écran, que le gabarit fixe : ces
-        # intitulés sont ceux des deux tableaux d'identité, dits une fois chacun.
-        attributes:
-          family_name: Nom de famille
-          given_name: Prénom(s)
-          birthdate: Date de naissance
-          gender: Sexe
-          place_of_birth: Lieu de naissance
-          level_of_assurance: Niveau de garantie
-          provenance: Provenance de l'identité
-          eidas_identifier: Identifiant eIDAS
         # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:
           title: Demande de justificatif

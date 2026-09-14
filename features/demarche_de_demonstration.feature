@@ -29,9 +29,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Et la page affiche "Nom de famille" : "Sørensen"
     Et la page affiche "Prénom(s)" : "Freja Marie"
     Et la page affiche "Date de naissance" : "2001-04-17"
-    Et la page affiche "Niveau de garantie" : "Substantial"
-    Et la page affiche "Provenance de l'identité" : "Identité d'un autre État membre, par la passerelle eIDAS"
-    Et la page affiche "Identifiant eIDAS" : "Non rendu par l'authentification"
+    Et la page affiche le niveau de garantie "Substantial"
     Et la page affiche "Sexe" : "Féminin"
     Et la page affiche "Lieu de naissance" : "Aarhus"
     Et la page affiche l'identité sans aucun champ de saisie
@@ -39,7 +37,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
 
   Scénario: le niveau de garantie affiché est celui que l'usager a atteint
     Quand l'administrateur s'identifie avec l'identité de test "dk-high"
-    Alors la page affiche "Niveau de garantie" : "High"
+    Alors la page affiche le niveau de garantie "High"
     Et la page n'affiche ni le sexe ni le lieu de naissance
 
   Scénario: une rotation des clés de signature de FranceConnect+ n'empêche pas l'identification

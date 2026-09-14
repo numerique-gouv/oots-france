@@ -55,20 +55,19 @@ RSpec.describe FranceConnectIdentity do
   # European flow words as a single value.
   describe 'the provenance' do
     it 'reads a European identity out of the array' do
-      expect(identity).to be_european
+      expect(identity.provenance).to eq(Demo::UserIdentity::EUROPEAN)
     end
 
     it 'reads it out of a lone string too' do
       id_token['amr'] = 'eidas'
 
-      expect(identity).to be_european
+      expect(identity.provenance).to eq(Demo::UserIdentity::EUROPEAN)
     end
 
     it 'names nothing when the claim says nothing of the bridge' do
       id_token['amr'] = %w[fc]
 
       expect(identity.provenance).to be_nil
-      expect(identity).not_to be_european
     end
   end
 

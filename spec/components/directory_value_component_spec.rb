@@ -12,10 +12,17 @@ RSpec.describe DirectoryValueComponent, type: :component do
   it 'writes out what the tint means, off screen and as a tooltip' do
     render_inline(described_class.new) { 'peu importe' }
 
-    wording = I18n.t('components.directory_value.label', raise: true)
+    expect(page).to have_css('.directory-value .fr-sr-only',
+      text: I18n.t('components.directory_value.meaning', raise: true))
+    expect(page).to have_css(".directory-value[title='#{I18n.t('components.directory_value.label', raise: true)}']")
+  end
 
-    expect(page).to have_css('.directory-value .fr-sr-only', text: wording)
-    expect(page).to have_css(".directory-value[title='#{wording}']")
+  # A heading otherwise announces the mark and then what it marks.
+  it 'reads the value first and the mark after it' do
+    render_inline(described_class.new) { 'Apply for funding for higher education' }
+
+    expect(page.text.squish)
+      .to eq("Apply for funding for higher education#{I18n.t('components.directory_value.meaning')}")
   end
 
   # RGAA 8.7: a passage in another language than the page's carries its own

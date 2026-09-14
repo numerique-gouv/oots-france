@@ -57,6 +57,12 @@ Alors('la page affiche {string} : {string}') do |intitule, valeur|
   expect(@navigateur.rows).to include(intitule => valeur)
 end
 
+# The level wears a badge and no row, being the whole of what the authentication
+# adds to the identity above it.
+Alors('la page affiche le niveau de garantie {string}') do |niveau|
+  expect(@navigateur.badges).to include(niveau)
+end
+
 # CA4: the attributes of the identity are shown, never typed.
 Alors('la page affiche l\'identité sans aucun champ de saisie') do
   expect(Nokogiri::HTML(@navigateur.body).css('main table input, main table select, main table textarea'))
