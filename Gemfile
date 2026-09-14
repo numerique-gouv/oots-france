@@ -11,7 +11,7 @@ gem 'bootsnap', require: false
 # `ActiveSupport::JSON.decode` still passes in 8.1.3.1 — every encrypted cookie,
 # and so every session, raises `ArgumentError` on being read. Rails calls it
 # with keywords on `8-1-stable`; lift the pin when that ships.
-gem 'json', '< 3'
+gem 'json', '< 4'
 gem 'pg', '~> 1.6'
 gem 'propshaft'
 gem 'puma', '>= 5.0'
