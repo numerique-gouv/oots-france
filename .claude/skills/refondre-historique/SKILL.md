@@ -1,6 +1,6 @@
 ---
 name: refondre-historique
-description: Refond l'historique d'une branche en une liste de commits courte et relisible — tag de sauvegarde, reconstruction, vérification que l'arbre est identique et que chaque commit s'analyse, push en --force-with-lease, jamais --force nu. review-loop l'appelle une fois convergé, l'ouvrier après un rebase sur conflit.
+description: Refond l'historique d'une branche en une liste de commits courte et relisible — tag de sauvegarde, reconstruction, vérification que l'arbre est identique et que chaque commit s'analyse, push en --force-with-lease, jamais --force nu. review-loop l'appelle une fois convergé ; harness-engineer avant d'ouvrir sa PR.
 ---
 
 # refondre-historique
