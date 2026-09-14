@@ -10,7 +10,7 @@ Commence par lire, dans cet ordre, sans rien écrire :
 
 ```sh
 cat <principal>/.claude/reprises/*oots-<n>*.md      # sa passation, s'il en a laissé une
-cat <principal>/.claude/plans/*oots-<n>-*.md        # le plan, qui n'est pas à refaire
+cat <principal>/.claude/plans/*oots-<n>-*.md        # le plan, qui n'est pas à refaire ; une « Décision du … » en tête prime sur le corps
 git -C <worktree> status --short                    # ce qu'il laisse non commité
 git -C <worktree> log --oneline origin/main..HEAD   # ce qu'il a commité
 git -C <worktree> log --oneline @{u}..HEAD 2>/dev/null  # ce qu'il n'a pas poussé

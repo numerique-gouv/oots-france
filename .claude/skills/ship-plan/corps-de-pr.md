@@ -1,6 +1,6 @@
 # Le corps de la PR
 
-Lu à l'étape 3 pour l'ouvrir, à l'étape 6 pour la réécrire ; harness-engineer le lit pour ouvrir la sienne — l'audit lui tient lieu de plan, et il n'a pas de ticket à citer.
+Lu à l'étape 3 pour l'ouvrir, à l'étape 6 pour la réécrire ; l'ouvrier le lit au § 4 bis pour son brouillon, où il ajoute l'adresse de l'écran ; harness-engineer le lit pour ouvrir la sienne — l'audit lui tient lieu de plan, et il n'a pas de ticket à citer.
 
 `gh pr create` : titre et corps dérivés du plan dans `.claude/plans/` (reprendre son sujet et son résumé) plutôt que de `--fill` sur les messages de commit, qui sont écrits à la maille du commit, pas de la PR.
 
