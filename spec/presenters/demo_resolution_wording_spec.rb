@@ -42,6 +42,52 @@ RSpec.describe DemoResolutionWording do
     end
   end
 
+  # The card stands under the requirement, and it is the requirement the
+  # directories named — in English first, where the console reads French first:
+  # this page is the portal, and its reader is a user of another Member State.
+  describe 'what the card stands under' do
+    subject(:wording) { described_class.new(lookup) }
+
+    let(:descriptions) { { 'FR' => 'Preuve de scolarité', 'EN' => 'Proof of enrolment' } }
+    let(:requirement) { Requirement.new(descriptions:) }
+    let(:lookup) do
+      Interactor::Context.build(
+        evidence_type:, data_services: [DataService.new(providers: [provider])], requirement:,
+      )
+    end
+
+    it 'is the requirement, in English where the directory published both' do
+      expect(wording).to have_attributes(requirement: 'Proof of enrolment', requirement_language: 'EN')
+    end
+
+    context 'when the directory published French alone' do
+      let(:descriptions) { { 'FR' => 'Preuve de scolarité' } }
+
+      it 'stands under that French, and says so' do
+        expect(wording).to have_attributes(requirement: 'Preuve de scolarité', requirement_language: 'FR')
+      end
+    end
+
+    # A requirement the directory named in no language at all leaves the card
+    # headless, so the evidence type that satisfies it stands in — and claims no
+    # language of its own, being nobody's translation of the requirement.
+    context 'when the directory named it in no language' do
+      let(:descriptions) { {} }
+
+      it 'falls back on the evidence type, and declares no language' do
+        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: nil)
+      end
+    end
+
+    context 'when no requirement was reached at all' do
+      let(:requirement) { nil }
+
+      it 'falls back on the evidence type' do
+        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: nil)
+      end
+    end
+  end
+
   it 'hands on the refusal of whichever step stopped the chain' do
     refused = Interactor::Context.build
     refused.fail!(error: { key: :common_services_refused, errors: ['DSD:ERR:0001'] })

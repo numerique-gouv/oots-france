@@ -36,9 +36,10 @@ RSpec.describe 'Admin::Demo::Home' do
       expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('en')
     end
 
-    # The first step of the chain a request walks, asked in France's own
-    # jurisdiction: the procedure is ours, the evidence types satisfying it
-    # belong to whoever is asked for them, and this page asks for none.
+    # The first of the Evidence Broker's two queries (chapter 3.2.4), asked in
+    # France's own jurisdiction: the procedure is ours, the evidence types
+    # satisfying it belong to whoever is asked for them, and this page asks for
+    # none.
     it 'lists what the Evidence Broker publishes for the procedure, in English' do
       get admin_demo_root_path
 
@@ -76,6 +77,21 @@ RSpec.describe 'Admin::Demo::Home' do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('main li .directory-value')).to be_empty
       expect(response.parsed_body.css('main').text).not_to include('Documents to be retrieved')
+      expect(response.parsed_body.css('main button.fr-btn')).to be_present
+    end
+
+    # A refusal is not an outage: chapter 3.2.4 has a directory with nothing to
+    # give refuse rather than answer empty, and that refusal carries a code, so
+    # it never becomes the `CommonServicesError` the rescue above catches. The
+    # page stands all the same, on the title the code list publishes.
+    it 'stands, and still offers the way in, when the Evidence Broker refuses' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
+
+      get admin_demo_root_path
+
+      expect(response).to have_http_status(:ok)
+      expect(seen(response.parsed_body.at_css('main h1'))).to include(CodeListStubs::STUDY_FINANCING_NAME)
+      expect(response.parsed_body.css('main li .directory-value')).to be_empty
       expect(response.parsed_body.css('main button.fr-btn')).to be_present
     end
 

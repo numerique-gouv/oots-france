@@ -117,6 +117,23 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(contenu.at_css('.country-tag')).to be_present
     end
 
+    # The code list names the countries, and it is read like every other: a
+    # reading that yields nothing costs the names and never the page. Read on
+    # the card that has no provider to name, the one place the country is said
+    # in words rather than shown in its box.
+    it 'stands on the code alone when the code list names no country' do
+      stub_code_list(country_names: {})
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+
+      get admin_demo_confirmation_path
+
+      carte = response.parsed_body.at_css('main .requirement-card')
+
+      expect(carte.at_css('.fr-card__desc .country-tag').text.squish).to eq('🇫🇷 FR')
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by FR for this evidence')
+    end
+
     # The contract names no requirement and its server answers with the first
     # that publishes evidence types, so a second button would send the same
     # request under another name. Stub, tracked as OOTS-212.

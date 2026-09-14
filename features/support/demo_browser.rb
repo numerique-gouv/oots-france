@@ -1,4 +1,5 @@
 require 'nokogiri'
+require Rails.root.join('spec/support/rendered_text')
 
 # A browser walking the demonstration procedure, from the operator's login to
 # the identified form, across the two hosts the journey crosses: this
@@ -16,6 +17,11 @@ require 'nokogiri'
 # followed a redirection to another host would be exactly the leak the same-site
 # rules exist to prevent, and the scenario must not do what a browser refuses to.
 class DemoBrowser
+  # What a sighted reader sees of a node, written once for the two suites: the
+  # marks of this console say their meaning off screen, and an assertion on what
+  # a page shows has to drop it.
+  include RenderedText
+
   MAXIMUM_REDIRECTIONS = 10
 
   attr_reader :page, :current_url
@@ -56,10 +62,9 @@ class DemoBrowser
   # What a sighted reader sees of the heading: the marks of the console
   # write their meaning off screen, and that sentence is not part of it.
   def title
-    heading = document.at_css('h1')&.dup
-    heading&.css('.fr-sr-only')&.remove
+    heading = document.at_css('h1')
 
-    heading&.text.to_s.squish
+    heading ? seen(heading) : ''
   end
 
   def body = page.body.to_s
