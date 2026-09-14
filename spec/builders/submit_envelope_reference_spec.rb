@@ -106,6 +106,10 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
     )
   end
 
+  # Any PDF at all: what the reference envelope fixes is how an attachment is
+  # declared and referenced, not what it contains. This sample is the one thing
+  # `assets/drapeau.pdf` is still read for — nothing serves it as evidence any
+  # more, `EvidenceDocumentBuilder` producing the document France answers with.
   def evidence = Rails.root.join('assets/drapeau.pdf').binread
 
   def response_body(attachment)

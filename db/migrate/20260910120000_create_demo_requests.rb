@@ -2,9 +2,10 @@
 # evidence delivered later can be placed on the one that asked for it.
 #
 # **It holds the evidence in clear, and this table alone may.** The document the
-# demonstration ever receives is `assets/drapeau.pdf`, the sample France answers
-# `T1` with; the identities that ask for it are fabricated by a fake
-# FranceConnect+; and the only screen serving it is behind the operator's login.
+# demonstration ever receives is the demonstration evidence France answers `T1`
+# with, produced as it answers and attesting nothing; the identities that ask for
+# it are fabricated by a fake FranceConnect+; and the only screen serving it is
+# behind the operator's login.
 # None of the three holds of a real portal, and none of them may be assumed by
 # whoever reads this table as a model: a portal storing genuine evidence owes it
 # the treatment `AuditEvent` gives the log of article 17, which stays what it is.

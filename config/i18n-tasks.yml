@@ -72,6 +72,9 @@ ignore_unused:
   # Looked up by a key composed of the field name read off the subject, falling
   # back on that name when no wording translates it.
   - components.evidence_subject.fields.*
+  # Composé du champ que le justificatif de démonstration imprime de l'usager,
+  # `EvidenceDocumentBuilder::SUBJECT_FIELDS` le donnant selon le type de sujet.
+  - builders.evidence_document_builder.fields.*
   - interactors.failures.*
   # Composé du code que FranceConnect+ publie pour le sexe d'un usager européen.
   - presenters.demo_identity.genders.*

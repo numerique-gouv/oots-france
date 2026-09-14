@@ -89,8 +89,8 @@ Cinq fichiers. Deux mettent la France face à un autre État membre, selon le r�
 
 | Scénario | Démarche | Ce qui revient |
 | --- | --- | --- |
-| Nominal | `00` | le justificatif `assets/drapeau.pdf`, retransmis au requêteur, et une redirection vers `/oots/callback` |
-| Nominal, démonstration de l'Université | `T1` | le même justificatif `assets/drapeau.pdf`, la France n'en détenant pas d'autre : ce que ce scénario éprouve est la résolution `T1`/`FR` dans les annuaires centraux, pas le document |
+| Nominal | `00` | le justificatif de démonstration engendré par le fournisseur, retransmis au requêteur, et une redirection vers `/oots/callback` |
+| Nominal, démonstration de l'Université | `T1` | un justificatif engendré de la même façon, la France n'en détenant aucun de réel : ce que ce scénario éprouve est la résolution `T1`/`FR` dans les annuaires centraux, pas le document |
 | Une conversation, deux échanges | `T3` deux fois | deux échanges distincts sous le `ConversationId` que la démarche a fourni |
 | Réponse différée | `R1` | une réponse de statut `Unavailable` : l'échange passe en `deferred` et l'appelant lit la date dans `dateDisponibilite`, sans qu'aucun justificatif circule |
 | Erreur | `T3` | une réponse d'erreur `EDM:ERR:0004` (`ObjectNotFoundException`), remontée à l'appelant |
@@ -119,7 +119,7 @@ L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'appl
 > [!IMPORTANT]
 > Le jeton est chiffré pour la clé **lue sur `/auth/cles_publiques`**, jamais pour une clé dérivée à côté. C'est précisément le contournement qui a laissé passer, des mois durant, une route qui échouait : la suite ne l'appelait pas.
 
-Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::Answer` y répond avec le PDF de l'`EVIDENCE_PATH` de `ChooseAnswer`, et la notification de cette réponse règle l'échange. Le scénario compare enfin le PDF reçu octet à octet avec le fichier d'origine.
+Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::Answer` y répond avec le justificatif qu'`EvidenceDocumentBuilder` engendre pour cette réponse-là, et la notification de cette réponse règle l'échange. Le scénario confronte enfin l'empreinte SHA-256 du PDF reçu à celle que le journal a consignée : la France ne garde pas les octets qu'elle a servis, donc il n'y a aucun fichier d'origine à comparer.
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, `00` et `T1` étant les seules démarches servies par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
 
