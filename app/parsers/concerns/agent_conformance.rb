@@ -5,11 +5,12 @@
 # `ER`, the ones beside it, and the provider the request designates.
 #
 # Two readers here judge no agent. `require_language` holds any element the
-# chapter obliges to name its language: five pairs of rules make that one pair
+# chapter obliges to name its language: six pairs of rules make that one pair
 # of assertions — over the requester's collection, over the provider, over the
-# name and the description of a requirement, and over the description of a
-# provider classification — so it is written once and reads its identifiers
-# from `RULES`, like the agent readers beside it. `refuse_unexpected_children`
+# name and the description of a requirement, over the description of a provider
+# classification, and over the title of the evidence type asked for — so it is
+# written once and reads its identifiers from `RULES`, like the agent readers
+# beside it. `refuse_unexpected_children`
 # holds any element whose children the chapter closes to a list of names, which
 # `R-EDM-REQ-S043` does over the provider, `S040` over each agent of the
 # requester's collection and `S038` over a requirement. Both are here because
@@ -115,6 +116,11 @@ module AgentConformance
     requirement_name: { language: 'R-EDM-REQ-C010', language_code: 'R-EDM-REQ-C009' }.freeze,
     requirement_description: { language: 'R-EDM-REQ-C094', language_code: 'R-EDM-REQ-C093' }.freeze,
     classification_description: { language: 'R-EDM-REQ-C022', language_code: 'R-EDM-REQ-C021' }.freeze,
+    # And a sixth: `C029`/`C028` hold each `sdg:Title` of the evidence type a
+    # request asks for, which `EchoedValueConformance` reads — the response
+    # copies those titles out, and `R-EDM-RESP-C018` measures there what `C028`
+    # measures here.
+    evidence_type_title: { language: 'R-EDM-REQ-C029', language_code: 'R-EDM-REQ-C028' }.freeze,
   }.freeze
 
   private

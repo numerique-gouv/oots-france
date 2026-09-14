@@ -10,7 +10,7 @@
 # those elements keep their own, more precise sentence: they run first, and this
 # is the net under everywhere they do not go.
 #
-# Apart from the parser, as the five conformance modules beside it are, and for
+# Apart from the parser, as the six conformance modules beside it are, and for
 # the reason `RequirementConformance` states.
 #
 # Refusals go through `refuse`, which the parser including this defines.

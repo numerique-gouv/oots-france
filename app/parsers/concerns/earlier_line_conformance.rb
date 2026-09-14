@@ -21,7 +21,7 @@
 # `require_counted_distributions` at the read of the formats, which is the count
 # it commands.
 #
-# Apart from the parser, as the five conformance modules beside it are, and for
+# Apart from the parser, as the six conformance modules beside it are, and for
 # the reason `RequirementConformance` states: the class does not fit the rules
 # of a seventh subject.
 #

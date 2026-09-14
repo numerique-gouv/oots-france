@@ -13,6 +13,7 @@ class EvidenceRequestParser
   include SlotTypeConformance
   include WordingConformance
   include EarlierLineConformance
+  include EchoedValueConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -39,12 +40,6 @@ class EvidenceRequestParser
   # asked for RFC 4122 in full would refuse identifiers the specification
   # accepts.
   IDENTIFIER = /\Aurn:uuid:\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/i
-
-  # `R-EDM-REQ-C042` admits this value and no other. Its message adds that
-  # `eidas2` « can be used for testing purposes until confirmation of provision
-  # of a suitable legal basis », which its assertion does not: the assertion is
-  # what plays.
-  BENEFICIARY_SCHEME = 'eidas'.freeze
 
   # The version the message is read in, settled by `RetrievedMessageParser`
   # before the payload is opened: `R-EDM-REQ-C001` fixes a different literal on
@@ -75,10 +70,10 @@ class EvidenceRequestParser
     require_requester_country
     require_conformant_collection(agents)
     require_conformant_provider(provider_agents)
-    require_beneficiary_identifier_scheme
     require_conformant_requirements
     require_conformant_classifications
     require_earlier_line_rules
+    require_conformant_echoed_values
     require_conformant_document
 
     self
@@ -292,30 +287,6 @@ class EvidenceRequestParser
     return if CountryIdentificationCode.valid?(country)
 
     refuse('R-EDM-REQ-C015', 'parsers.evidence_request.agent_country_unknown', country:)
-  end
-
-  # `R-EDM-REQ-C041` and `C042`, whose context is the identifier of the person a
-  # `NaturalPerson` slot names: they fire on the element and not on the slot, so
-  # a request carrying no identifier at all breaks neither — chapter 2.1
-  # §2.3.1.2 provides for an identity established in the requester's own
-  # country. The organisation's identifiers are `C054` and `C055`, applied by
-  # `legal_identifiers` and by `LegalPerson`.
-  #
-  # `nil?` and not `blank?` for the first: `C041` asserts the attribute's
-  # presence, so one written empty satisfies it and falls to `C042`, which
-  # compares the value.
-  def require_beneficiary_identifier_scheme
-    slot = find_slot('NaturalPerson', query)
-    return if slot.nil?
-
-    all(slot, './rim:SlotValue/sdg:Person/sdg:Identifier').each do |identifier|
-      scheme = attribute(identifier, 'schemeID')
-      refuse('R-EDM-REQ-C041', 'parsers.evidence_request.beneficiary_identifier_without_scheme') if scheme.nil?
-      next if scheme == BENEFICIARY_SCHEME
-
-      refuse('R-EDM-REQ-C042', 'parsers.evidence_request.beneficiary_scheme_unexpected',
-        scheme:, expected: BENEFICIARY_SCHEME)
-    end
   end
 
   # Every distribution the request names, and not the first alone: on the 2.0

@@ -691,6 +691,38 @@ fr:
         L'identifiant du bénéficiaire est sans attribut « schemeID ».
       beneficiary_scheme_unexpected: >-
         L'identifiant du bénéficiaire est sous le schéma « %{scheme} », et non « %{expected} ».
+      # R-EDM-REQ-C027, C029, C028, C040 et C051 : les valeurs qu'une requête
+      # reçue passe à la réponse que la France signe — la classification du type
+      # de justificatif, ses titres et leur langue, l'identifiant eIDAS du sujet.
+      # Chacune est jugée à l'entrée par la règle de requête qui la juge, parce
+      # que sa jumelle FATAL la juge de nouveau dans la réponse : R-EDM-RESP-C017,
+      # C018, C028 et C035. R-EDM-RESP-C019, FATAL sur le même titre, n'est pas
+      # de la liste : elle n'exige que la présence de l'attribut lang, que le
+      # gabarit écrit toujours, fût-il vide — c'est C018 qui juge la valeur. Ces refus-là repartent en EDM:ERR:0003 — une réponse
+      # d'erreur ne recopie ni le type de justificatif ni le sujet.
+      evidence_type_classification_unexpected: >-
+        La classification du type de justificatif demandé (« %{classification} ») n'est pas une URL
+        du dépôt sémantique nommant un pays d'OOTS et un UUID.
+      unnamed_classification: vide
+      # Le chapitre 4.5.1 §3.5 et l'XSD, qu'aucune assertion ne double : les
+      # contextes de C029 et C028 sont le titre et son attribut, donc un type
+      # sans aucun titre n'enfreint ni l'une ni l'autre. La prose du 4.5.2 §3.3
+      # dit ce titre « optional » contre sa propre table, qui le donne en 1..n —
+      # écart consigné dans docs/carte_des_tdd.md.
+      evidence_type_without_title: >-
+        Le type de justificatif demandé ne porte aucun titre.
+      evidence_type_title_without_language: >-
+        Un titre du type de justificatif demandé ne porte pas d'attribut « lang ».
+      evidence_type_title_language_unknown: >-
+        La langue d'un titre du type de justificatif demandé (« %{language} ») n'est pas un code de
+        la liste LanguageCode.
+      # C040 et C051 ne jugent que les deux codes pays ici : la forme
+      # XX/YY/Z…Z de l'identifiant, sa casse et ses blancs de bord sont tenus
+      # depuis OOTS-189, par EidasIdentified, sous une phrase à lui.
+      subject_identifier_country_unknown: >-
+        Les codes pays de l'identifiant eIDAS du sujet de la requête reçue
+        (« %{identifier} ») ne sont pas des codes de la liste OOTS_Country.
+      unnamed_subject_identifier: vide
       # R-EDM-REQ-C008, C010, C009, C094 et C093 : les exigences que la requête
       # invoque. Aucune règle ne les compte, et aucune ne dit rien d'une exigence
       # sans identifiant : leurs contextes sont l'identifiant, le nom, la
