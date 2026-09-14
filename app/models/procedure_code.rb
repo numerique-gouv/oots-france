@@ -1,4 +1,10 @@
-# The procedure codes this deployment answers to.
+# The SDG procedure codes: the whole list the TDD publish (`PUBLISHED`), and
+# the three this deployment happens to answer with something.
+#
+# The two are not the same question and must not be confused. A correspondent
+# naming a published code France does not serve writes a **conformant** request
+# and gets an `EDM:ERR:0004`; one naming a code the specification does not
+# publish at all breaks a FATAL rule and gets an `EDM:ERR:0003`.
 #
 # None of their labels is written down here: `CodeListClient` reads them from
 # `Procedures-CodeList.gc` at run time, so nothing has to be kept in step with a

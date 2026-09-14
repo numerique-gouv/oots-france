@@ -1,10 +1,12 @@
-# The identifier schemes of an OOTS exchange, in the four unrelated senses the
+# The identifier schemes of an OOTS exchange, in the five unrelated senses the
 # TDD give that word: the two this deployment declares itself under, the list
 # an evidence *subject* may name (`LEGAL_PERSON`), the form any agent's
-# identifier must take, whoever emits it (`agent_scheme?`), and the codelist URL
+# identifier must take, whoever emits it (`agent_scheme?`), the codelist URL
 # a provider *classification* names itself by, whose country segment
-# `R-EDM-REQ-C098` judges (`oots_country?`). The four share the XML attribute
-# `schemeID` and nothing else — no rule of one governs another.
+# `R-EDM-REQ-C098` judges (`oots_country?`), and the one scheme under which a
+# *person* — subject or representative — is identified across borders
+# (`EIDAS`, `EIDAS_IDENTIFIER`). The five share the XML attribute `schemeID`
+# and nothing else — no rule of one governs another.
 #
 # French organisations are identified by their SIRET, which is EAS code 0009.
 # Nothing need be asked of the Commission for that: the EAS list already
@@ -48,6 +50,37 @@ module IdentifierScheme
   # identifier admit « for testing purposes » alongside the country codes — where
   # `C098` does not.
   UNREGISTERED_CODES = (OOTS_COUNTRIES + ['oots']).freeze
+
+  # The one value the chapter admits as the `schemeID` of a person's identifier,
+  # subject or representative: `R-EDM-REQ-C042`, `C053`, `C063` and `C087` all
+  # assert it and admit nothing else. The message of the first and the third
+  # adds that `eidas2` « can be used for testing purposes until confirmation of
+  # provision of a suitable legal basis », which their assertions do not: the
+  # assertion is what plays, and refusing `eidas2` is what leaves the whole
+  # `C121`–`C127` branch unreachable.
+  EIDAS = 'eidas'.freeze
+
+  # The form such an identifier must take — `R-EDM-REQ-C040`, `C051`, `C061` and
+  # `C085`, one assertion published four times, over the two subjects and the
+  # two representatives.
+  #
+  # Transcribed whole rather than taken apart into two country segments, the
+  # doctrine this repository follows for `C008` and `C097`. It carries no `^`
+  # and does carry a `$`, so anything may precede the identifier and nothing may
+  # follow it — `EidasIdentified` keeps the `\A` its own comment justifies, and
+  # this reading does not, being the rule itself.
+  #
+  # The `i` flag is the assertion's: `es/at/02635542Y` is conformant, and
+  # `R-EDM-RESP-C028` and `C035` carry the flag too, so echoing it back keeps
+  # the answer conformant.
+  #
+  # `.source` and not the `Regexp` itself: interpolating a `Regexp` wraps it in
+  # `(?-mix:…)`, which re-asserts its own flags and so defeats any the outer
+  # expression carries.
+  #
+  # The 1.2 line compares to `EEA_Country` instead, which publishes these very
+  # thirty-one codes under another name — so one transcription serves both.
+  EIDAS_IDENTIFIER = %r{(?:(?:#{Regexp.union(OOTS_COUNTRIES).source})/){2}\S{6,256}\z}i
 
   # The head `R-EDM-REQ-C098` cuts a classification's `schemeID` at, before
   # reading the country that follows it. The rule takes the URL apart by

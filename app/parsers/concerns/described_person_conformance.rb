@@ -109,8 +109,9 @@ module DescribedPersonConformance
   }.freeze
 
   # `C061` and `C085`, the representative's halves of the assertion `C040` and
-  # `C051` make of the subject's identifier — `EchoedValueConformance::EIDAS_IDENTIFIER`
-  # is that assertion, transcribed once and read from here.
+  # `C051` make of the subject's identifier — `IdentifierScheme::EIDAS_IDENTIFIER`
+  # is that assertion, transcribed once beside the code list it is built from,
+  # and read from there by this module and by `EchoedValueConformance` alike.
   #
   # The 1.2 line writes both differently and neither difference can change an
   # outcome, which is why no predicate of `EdmSpecification` guards them:
@@ -123,11 +124,6 @@ module DescribedPersonConformance
     "#{REPRESENTATIVE}/sdg:Identifier[@schemeID='eidas']" => 'R-EDM-REQ-C061',
     "#{LEGAL_REPRESENTATIVE}/sdg:LegalPersonIdentifier" => 'R-EDM-REQ-C085',
   }.freeze
-
-  # `R-EDM-REQ-C064`, the representative's half of `C043` — which `NaturalPerson`
-  # answers for on the subject. Anchored at both ends, where `C002` is anchored
-  # at neither, and applied to `normalize-space(text())`.
-  DATE_OF_BIRTH = /\A[0-9]{4}-[0-9]{2}-[0-9]{2}\z/
 
   # `R-EDM-REQ-C126`: under an `eidas` identifier, the sex is one of the three
   # values the eIDAS profile of the `Gender` list publishes — which is
@@ -164,10 +160,10 @@ module DescribedPersonConformance
       all(query, path).each do |identifier|
         scheme = attribute(identifier, 'schemeID')
         refuse(rules.fetch(:required), 'parsers.evidence_request.person_identifier_without_scheme') if scheme.nil?
-        next if scheme == EchoedValueConformance::BENEFICIARY_SCHEME
+        next if scheme == IdentifierScheme::EIDAS
 
         refuse(rules.fetch(:fixed), 'parsers.evidence_request.person_scheme_unexpected',
-          scheme:, expected: EchoedValueConformance::BENEFICIARY_SCHEME)
+          scheme:, expected: IdentifierScheme::EIDAS)
       end
     end
   end
@@ -178,7 +174,7 @@ module DescribedPersonConformance
   def require_eidas_identifiers
     EIDAS_IDENTIFIERS.each do |path, rule|
       all(query, path).each do |identifier|
-        next if identifier.text.match?(EchoedValueConformance::EIDAS_IDENTIFIER)
+        next if identifier.text.match?(IdentifierScheme::EIDAS_IDENTIFIER)
 
         refuse(rule, 'parsers.evidence_request.person_identifier_country_unknown',
           identifier: identifier.text.presence || I18n.t('parsers.evidence_request.unnamed_person_identifier'))
@@ -220,9 +216,14 @@ module DescribedPersonConformance
     end
   end
 
+  # `R-EDM-REQ-C064`, the representative's half of `C043` — one assertion, two
+  # identifiers, and `NaturalPerson::DATE_OF_BIRTH` is the shape it asks for,
+  # transcribed where the subject's own validation already needed it. Anchored
+  # at both ends, where `C002` is anchored at neither, and applied to
+  # `normalize-space(text())`, which `squish` is.
   def require_dates_of_birth(person)
     all(person, './sdg:DateOfBirth').each do |date|
-      next if date.text.squish.match?(DATE_OF_BIRTH)
+      next if date.text.squish.match?(NaturalPerson::DATE_OF_BIRTH)
 
       refuse('R-EDM-REQ-C064', 'parsers.evidence_request.representative_date_of_birth_malformed',
         date: date.text.squish.presence || I18n.t('parsers.evidence_request.unnamed_date'))
@@ -258,7 +259,7 @@ module DescribedPersonConformance
   end
 
   def require_eidas_gender(person)
-    return unless at(person, "./sdg:Identifier[@schemeID='#{EchoedValueConformance::BENEFICIARY_SCHEME}']")
+    return unless at(person, "./sdg:Identifier[@schemeID='#{IdentifierScheme::EIDAS}']")
     return if all(person, './sdg:Gender').any? { |gender| EIDAS_GENDERS.include?(gender.text) }
 
     refuse('R-EDM-REQ-C126', 'parsers.evidence_request.representative_gender_outside_eidas',

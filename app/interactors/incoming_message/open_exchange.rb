@@ -115,13 +115,5 @@ module IncomingMessage
         evidence_requester_id: readable { request.requester.id },
       }
     end
-
-    # A body too malformed to read opens an exchange all the same: what it would
-    # have named is simply absent, field by field, as it is in the journal.
-    def readable
-      yield
-    rescue UnreadableMessageError
-      nil
-    end
   end
 end

@@ -30,6 +30,24 @@ class ApplicationInteractor
                 invalid_directory_entry invalid_token no_evidence_type no_provider unknown_country
                 unknown_procedure unknown_requester unsupported_specification].freeze
 
+  # A reading of a received message that may itself be unreadable, where that
+  # second failure is an answer and not an incident: what cannot be read is
+  # recorded as absent. `IncomingMessage::Process` correlates past a body that
+  # names no request, `OpenExchange` opens a row past a requester it cannot
+  # read, and `EvidenceProvision::RejectUnanswerableRequester` writes the
+  # journal line of a refusal past the very failure it is refusing —
+  # `RetrievedMessageParser#body` memoises only a success, so a body broken
+  # enough to raise raises again at every call, and taking that second raise
+  # would lose the line that says why nothing was answered.
+  #
+  # Here rather than in each of the three, for the reason the defaults above are
+  # here: one line repeated is one line to find again the day it must change.
+  def readable
+    yield
+  rescue UnreadableMessageError
+    nil
+  end
+
   def fail_with_error(key, errors: [])
     context.fail!(error: { key:, errors: })
   end

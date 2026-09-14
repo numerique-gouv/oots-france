@@ -113,15 +113,6 @@ module IncomingMessage
 
     def request? = context.message.action == EbmsAction::EXECUTE_QUERY_REQUEST
 
-    # A body too malformed to read names no request, and the correlation falls
-    # through to what the header carries — which is the whole of RG15's last
-    # case.
-    def readable
-      yield
-    rescue UnreadableMessageError
-      nil
-    end
-
     # `fetch` and not `[]`: an unknown action must raise. Returning nil leaves
     # no answer and no trace of what the message asked for.
     def handler
