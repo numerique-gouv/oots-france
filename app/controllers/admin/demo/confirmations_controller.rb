@@ -49,7 +49,14 @@ module Admin
         remember_what_is_named
       end
 
+      # Requirement 27 makes the two names a condition of the request, and the
+      # page below is where they are said. A press carrying neither was made
+      # without them — a session that expired between the two requests, a POST
+      # that never went through the page — so nothing leaves and the user is
+      # sent back to be shown what they would be asking for.
       def create
+        return redirect_to admin_demo_confirmation_path unless evidence_named?
+
         result = ::Demo::RequestEvidence.call(identity:, conversation_id: reusable_conversation, **named)
 
         return refuse(result) unless result.success?
@@ -78,6 +85,11 @@ module Admin
         { evidence_type_name: held[:evidence_type], provider_name: held[:provider],
           procedure_name: held[:procedure] }
       end
+
+      # The two requirement 27 names, and not the procedure's own title, which
+      # no directory owes anyone: a procedure nobody has named is still one a
+      # user may ask under.
+      def evidence_named? = named.values_at(:evidence_type_name, :provider_name).all?(&:present?)
 
       def keep(result)
         # Chapter 4.4 §4.3.2: the conversation is « reused for combined flows »

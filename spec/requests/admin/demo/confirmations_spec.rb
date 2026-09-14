@@ -158,6 +158,9 @@ RSpec.describe 'Admin::Demo::Confirmations' do
     before do
       stub_oots_france_public_keys
       stub_evidence_request
+      # The page requirement 27 is satisfied on: a press only exists once it has
+      # been shown what it would ask for.
+      get admin_demo_confirmation_path
     end
 
     # CA3: the request goes out through the contract, with the query string a
@@ -215,6 +218,19 @@ RSpec.describe 'Admin::Demo::Confirmations' do
 
         expect(evidence_request_query).not_to have_key('idConversation')
       end
+    end
+
+    # Requirement 27 of chapter 1 §2 wants the provider and the evidence type
+    # named « before any request is made », so what the page showed is filed
+    # with the request that left. The procedure's own title is filed beside
+    # them and is not one of the two: neither the code list nor the directory
+    # names `T1` here, and the press is offered all the same.
+    it 'files what requirement 27 had the page name' do
+      post admin_demo_confirmation_path
+
+      expect(Demo::Request.last).to have_attributes(
+        evidence_type_name: 'Dummy PDF - FI', provider_name: 'Keha v. 2.0', procedure_name: nil,
+      )
     end
 
     # CA9. Three refusals pronounced before any exchange exists, told apart by
@@ -312,6 +328,29 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         expect(response.parsed_body.css('main').text).to include('inattendue', '202')
         expect(response.parsed_body.css('main').text).not_to include('La demande est partie')
       end
+    end
+  end
+
+  # The same requirement 27, the other way round, and the one case the describe
+  # above cannot hold: nothing here opens the page first, so the press has been
+  # shown neither name.
+  describe 'POST /admin/demo/confirmation, without the page having named anything' do
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+    end
+
+    it 'asks the contract nothing' do
+      post admin_demo_confirmation_path
+
+      expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
+        .with(query: hash_including({}))).not_to have_been_made
+    end
+
+    it 'sends the user back to the page that names what would be asked' do
+      post admin_demo_confirmation_path
+
+      expect(response).to redirect_to(admin_demo_confirmation_path)
     end
   end
 
