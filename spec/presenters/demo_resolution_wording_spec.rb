@@ -69,21 +69,22 @@ RSpec.describe DemoResolutionWording do
     end
 
     # A requirement the directory named in no language at all leaves the card
-    # headless, so the evidence type that satisfies it stands in — and claims no
-    # language of its own, being nobody's translation of the requirement.
+    # headless, so the evidence type that satisfies it stands in — and the
+    # language declared is that value's own: one describing the requirement
+    # while the evidence type is shown would be worse than none.
     context 'when the directory named it in no language' do
       let(:descriptions) { {} }
 
-      it 'falls back on the evidence type, and declares no language' do
-        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: nil)
+      it 'falls back on the evidence type, and on that value\'s language' do
+        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: 'FR')
       end
     end
 
     context 'when no requirement was reached at all' do
       let(:requirement) { nil }
 
-      it 'falls back on the evidence type' do
-        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: nil)
+      it 'falls back on the evidence type, and on that value\'s language' do
+        expect(wording).to have_attributes(requirement: 'Justificatif de test', requirement_language: 'FR')
       end
     end
   end

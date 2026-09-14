@@ -38,10 +38,11 @@ class DemoIdentityCardComponent < ViewComponent::Base
     )
   end
 
-  # A badge rather than a row: it is the one value of the card that a
-  # correspondent weighs rather than reads — chapter 2.1 §2.3 lets a provider
-  # refuse an identity below the level it requires — and a badge is what the
-  # DSFR gives a value read at a glance.
+  # A badge rather than a row: it is the one value of the card a correspondent
+  # weighs rather than reads — chapter 2.1 §2.1 has the level of assurance of
+  # the eID means « included in the evidence request », and §1 has each evidence
+  # type registered in the Data Service Directory carry the level it asks for —
+  # and a badge is what the DSFR gives a value read at a glance.
   def level = identity.level_of_assurance.presence
 
   def level_label = t('components.demo_identity_card.attributes.level_of_assurance')

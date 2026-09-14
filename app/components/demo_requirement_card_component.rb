@@ -43,7 +43,8 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   def askable? = @askable && nameable?
 
-  delegate :nameable?, :evidence_type, :provider, :requirement, :requirement_language, to: :wording
+  delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
+    :provider_language, :requirement, :requirement_language, to: :wording
 
   private
 

@@ -64,9 +64,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_14_114644) do
     t.binary "evidence"
     t.string "evidence_digest"
     t.datetime "evidence_received_at"
+    t.string "evidence_type_language"
     t.string "evidence_type_name"
     t.string "exchange_id", null: false
+    t.string "procedure_language"
     t.string "procedure_name"
+    t.string "provider_language"
     t.string "provider_name"
     t.datetime "updated_at", null: false
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true

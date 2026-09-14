@@ -3,4 +3,4 @@
     heading otherwise announces the mark and then what it marks. It joins the
     value with no space between them, the comma being part of the sentence, and
     rides the tooltip for whoever hovers it. %>
-<span class="directory-value" lang="<%= lang %>" title="<%= label %>"><%= content %><span class="fr-sr-only"><%= meaning %></span></span>
+<%= tag.span(class: 'directory-value', lang:, title: label) do %><%= content %><span class="fr-sr-only"><%= meaning %></span><% end %>

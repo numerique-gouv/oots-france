@@ -13,13 +13,17 @@
 <% if @wording.named? %>
   <h1 class="fr-h3 fr-mb-2w" lang="en">
     <%= t('admin.demo.trackings.show.heading_html',
-          evidence_type: render(DirectoryValueComponent.new) { @wording.evidence_type_name }) %>
+          evidence_type: render(DirectoryValueComponent.new(lang: @wording.evidence_type_language)) do
+                           @wording.evidence_type_name
+                         end) %>
   </h1>
 
   <p class="fr-text--lead" lang="en">
     <%= t('admin.demo.trackings.show.from_html',
-          provider: render(DirectoryValueComponent.new) { @wording.provider_name },
-          procedure: render(DirectoryValueComponent.new) { @wording.procedure_name }) %>
+          provider: render(DirectoryValueComponent.new(lang: @wording.provider_language)) { @wording.provider_name },
+          procedure: render(DirectoryValueComponent.new(lang: @wording.procedure_language)) do
+                       @wording.procedure_name
+                     end) %>
   </p>
 <% else %>
   <h1 class="fr-h3" lang="en"><%= t('admin.demo.trackings.show.title') %></h1>

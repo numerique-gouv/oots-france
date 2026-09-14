@@ -19,9 +19,21 @@ class DemoResolutionWording
     @lookup = lookup
   end
 
-  def provider = provider_entry&.label.presence
+  def provider = provider_entry&.label(languages: LANGUAGES).presence
 
-  def evidence_type = lookup.evidence_type&.label.presence
+  # The language of each value, where the directory published one: a wording in
+  # another language than the sentence around it carries its own `lang`, failing
+  # which a screen reader pronounces French as English (RGAA 8.7). Nothing when
+  # the value itself is nothing.
+  def provider_language
+    provider_entry&.label_language(languages: LANGUAGES) if provider.present?
+  end
+
+  def evidence_type = lookup.evidence_type&.label(languages: LANGUAGES).presence
+
+  def evidence_type_language
+    lookup.evidence_type&.label_language(languages: LANGUAGES) if evidence_type.present?
+  end
 
   # What the procedure has to satisfy, which is what a card stands under. Read
   # whatever the steps below answered: a requirement no country serves is still
@@ -32,8 +44,11 @@ class DemoResolutionWording
   # than leaving the card headless.
   def requirement = requirement_label.presence || evidence_type
 
+  # The language of what the card actually stands under, fallback included: a
+  # `lang` that described the requirement while the evidence type is shown would
+  # be worse than none.
   def requirement_language
-    return nil if requirement_label.blank?
+    return evidence_type_language if requirement_label.blank?
 
     lookup.requirement.label_language(languages: LANGUAGES)
   end
@@ -44,6 +59,24 @@ class DemoResolutionWording
   # other directory pages already render.
   def failure
     lookup.error if lookup.failure?
+  end
+
+  # What « nobody publishes this here » looks like. Chapter 3.2.4 has a directory
+  # with nothing to give refuse rather than answer empty, so the usual shape is
+  # the refusal the two central directories reserve for it — `EB:ERR:0001` and
+  # `DSD:ERR:0001`, which `CommonServicesResponseParser` puts at the head of the
+  # message. The other shape is a list that came back empty, which the steps
+  # name themselves.
+  #
+  # Any other refusal is a directory declining to answer, and saying « no
+  # provider » of it would state as settled something nobody established.
+  NOTHING_PUBLISHED = /\A(?:EB|DSD):ERR:0001\b/
+  PUBLISHES_NOTHING = %i[no_evidence_type no_provider].freeze
+
+  def published_nothing?
+    return true if PUBLISHES_NOTHING.include?(failure&.dig(:key))
+
+    Array(failure&.dig(:errors)).first.to_s.match?(NOTHING_PUBLISHED)
   end
 
   private

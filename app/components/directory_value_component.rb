@@ -25,7 +25,10 @@ class DirectoryValueComponent < ViewComponent::Base
     super()
   end
 
-  attr_reader :lang
+  # Nothing rather than an empty attribute where the caller does not know it:
+  # `lang=""` declares the language unknown and overrides what the paragraph
+  # around it says, where an absent attribute lets the value inherit it.
+  def lang = @lang.presence
 
   # The tooltip names the mark; the sentence read off screen hangs off the
   # value it follows, and carries the comma that joins the two.

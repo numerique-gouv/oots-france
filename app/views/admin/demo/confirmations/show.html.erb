@@ -22,6 +22,15 @@
 
 <p class="fr-col-12 fr-col-md-8 fr-mb-3w" lang="en"><%= t('admin.demo.confirmations.show.evidences') %></p>
 
+<%# A directory that refuses carries a code and raises nothing, so the page
+    stands with no card at all — and a heading followed by nothing reads as a
+    page that failed to render. What is said is what is known: nothing was
+    listed. Why is the directory's business, and its code belongs to the
+    console. %>
+<% if @requirements.empty? && @unreachable.blank? %>
+  <p class="fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.confirmations.show.nothing_listed') %></p>
+<% end %>
+
 <%# One card per requirement the procedure rests on, in the order the Evidence
     Broker lists them. %>
 <% @requirements.each do |requirement| %>

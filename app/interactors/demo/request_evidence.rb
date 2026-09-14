@@ -22,6 +22,12 @@ module Demo
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
     PROVIDER_COUNTRY = 'FR'.freeze
 
+    # What the confirmation page showed, each name with the language the
+    # directory published it in: the tracking page says them again, and it is
+    # written in English whatever the directories answered.
+    NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
+               procedure_name procedure_language].freeze
+
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
     # else is reported with its status rather than folded into one of the three:
@@ -75,11 +81,11 @@ module Demo
       context.conversation_id = answer.conversation_id
 
       Request.create!(
-        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id,
-        evidence_type_name: context.evidence_type_name, provider_name: context.provider_name,
-        procedure_name: context.procedure_name,
+        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id, **what_was_named,
       )
     end
+
+    def what_was_named = NAMED.index_with { |named| context.public_send(named) }
 
     # The message the contract returned travels with the refusal: it is the only
     # thing that says which of the refusals of `STATUS_FAILURES` this was, and

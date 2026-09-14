@@ -264,6 +264,10 @@ fr:
       # ici son seul nom — la ligne au-dessus le montre déjà en boîte, avec son
       # drapeau et son code.
       no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
+      # Et ce qu'elle dit quand l'annuaire a refusé de répondre : personne n'a
+      # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
+      # savoir. Le code du refus reste à la console, pas au portail.
+      no_answer_html: <strong>%{country} could not answer for this evidence</strong>
       # Le contrat que la démarche appelle ne nomme aucune exigence, et son
       # serveur répond avec la première qui publie des types : un second bouton
       # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
@@ -1396,6 +1400,10 @@ fr:
           evidences: >-
             Each of them is requested directly from the administration that holds it, so you do not
             have to obtain it yourself.
+          # Ce que la page dit quand elle n'a aucune carte à montrer : les
+          # annuaires n'ont rien listé. Pourquoi — refus codé, démarche sans
+          # exigence — regarde l'annuaire, et son code reste à la console.
+          nothing_listed: The European directories listed no evidence for this procedure.
           unreachable: The European directories could not be reached
         # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:

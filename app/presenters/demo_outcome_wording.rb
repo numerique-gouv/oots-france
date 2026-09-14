@@ -31,7 +31,8 @@ class DemoOutcomeWording
 
   delegate :edm_error_code, :preview_location, to: :answer
   delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id,
-    :evidence_type_name, :provider_name, :procedure_name, to: :request
+    :evidence_type_name, :evidence_type_language, :provider_name, :provider_language,
+    :procedure_name, :procedure_language, to: :request
 
   def initialize(answer:, request:)
     @answer = answer
@@ -60,9 +61,10 @@ class DemoOutcomeWording
 
   # What the journey named before the request left, filed with it: the heading
   # says what was asked, of whom, and under which procedure, rather than naming
-  # the page. All three or none — a request missing any of them is one opened
-  # before they were recorded, and half a sentence is worse than a title of our
-  # own.
+  # the page. The three of them, because the heading is one sentence and half a
+  # sentence is worse than a title of our own — and the procedure's title is the
+  # one a directory does not owe anyone, so a request may well carry the other
+  # two without it.
   def named? = [evidence_type_name, provider_name, procedure_name].all?(&:present?)
 
   private

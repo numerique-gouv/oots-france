@@ -93,6 +93,36 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
+    # A directory that refuses carries a code and raises nothing: the page keeps
+    # its section and says what is known — nothing was listed — rather than
+    # standing under a heading followed by nothing.
+    it 'says that nothing was listed when the Evidence Broker refuses' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
+
+      get admin_demo_confirmation_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.css('main .requirement-card')).to be_empty
+      expect(response.parsed_body.css('main').text).to include('listed no evidence for this procedure')
+    end
+
+    # « No provider listed » is what `DSD:ERR:0001` — `DS_NOT_FOUND` — says; any
+    # other refusal is a directory declining to answer, and the card must not
+    # turn that into a statement about what France publishes. Built from the
+    # capture rather than captured: the acceptance environment answers no such
+    # refusal to ask for, and a retouched fixture would break the signature its
+    # `.headers` carries.
+    it 'says the country could not answer when the refusal is not a missing entry' do
+      refused, = common_services_answer('dsd_aucun_service_fr')
+      stub_directory_signature
+      stub_directory_body('dsd', 'dataservices-by-evidencetype', refused.sub('DSD:ERR:0001', 'DSD:ERR:0003'))
+
+      get admin_demo_confirmation_path
+
+      expect(response.parsed_body.at_css('main .requirement-card__actions').text.squish)
+        .to eq('⚠️France could not answer for this evidence')
+    end
+
     # One card per requirement the procedure rests on, each naming its own
     # evidence type and provider.
     it 'offers a card per requirement the procedure rests on' do
@@ -345,6 +375,26 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         expect(response.parsed_body.css('main').text).to include('inattendue', '202')
         expect(response.parsed_body.css('main').text).not_to include('La demande est partie')
       end
+    end
+  end
+
+  # The same requirement 27, seen from the page that did open but could name
+  # nothing: the session then holds a record with blank names, which is not the
+  # same shape as no record at all.
+  describe 'POST /admin/demo/confirmation, the page having named nothing' do
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+      get admin_demo_confirmation_path
+    end
+
+    it 'asks the contract nothing, and sends the user back' do
+      post admin_demo_confirmation_path
+
+      expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
+        .with(query: hash_including({}))).not_to have_been_made
+      expect(response).to redirect_to(admin_demo_confirmation_path)
     end
   end
 

@@ -73,16 +73,18 @@ module Admin
       # be reloaded.
       def remember_what_is_named
         session[:demo_named] = {
-          evidence_type: @wording&.evidence_type, provider: @wording&.provider,
-          procedure: @procedure.title,
+          evidence_type: @wording&.evidence_type, evidence_type_language: @wording&.evidence_type_language,
+          provider: @wording&.provider, provider_language: @wording&.provider_language,
+          procedure: @procedure.title, procedure_language: @procedure.title_language,
         }
       end
 
       def named
         held = session[:demo_named].presence&.symbolize_keys || {}
 
-        { evidence_type_name: held[:evidence_type], provider_name: held[:provider],
-          procedure_name: held[:procedure] }
+        { evidence_type_name: held[:evidence_type], evidence_type_language: held[:evidence_type_language],
+          provider_name: held[:provider], provider_language: held[:provider_language],
+          procedure_name: held[:procedure], procedure_language: held[:procedure_language] }
       end
 
       # The two requirement 27 names, and not the procedure's own title, which

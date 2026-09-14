@@ -132,4 +132,12 @@ RSpec.describe CodeListClient do
     expect(Rails.cache).to have_received(:write)
       .with('code_lists/Procedures-CodeList/fr', anything, expires_in: Settings.common_services_cache_duration)
   end
+
+  # The column is settled outside the rescue that swallows an unreadable list:
+  # a language this client does not publish is a mistake of the caller, and
+  # logging it as a directory outage would send whoever reads the log looking
+  # in the wrong place.
+  it 'raises on a language it publishes no column for, rather than logging an outage' do
+    expect { described_class.new.procedure_names(lang: :de) }.to raise_error(KeyError)
+  end
 end

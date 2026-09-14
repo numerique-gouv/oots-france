@@ -52,8 +52,8 @@
         <% if nameable? %>
           <p class="fr-mb-0" lang="en">
             <%= t('components.demo_requirement_card.from_html',
-                  evidence_type: render(DirectoryValueComponent.new) { evidence_type },
-                  provider: render(DirectoryValueComponent.new) { provider }) %>
+                  evidence_type: render(DirectoryValueComponent.new(lang: evidence_type_language)) { evidence_type },
+                  provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
           </p>
 
           <% if askable? %>
@@ -73,14 +73,20 @@
           <%# Nothing to name is nothing to press: requirement 27 makes the two
               names a condition of the request. What the directories answered is
               said in the card's own words — the code and the sentence they
-              returned belong to the operator's console, not to a portal. %>
+              returned belong to the operator's console, not to a portal — and
+              a directory that declined to answer is not a country publishing
+              nothing, so the card says which of the two happened. %>
           <p class="fr-mb-0 requirement-card__refusal" lang="en">
             <%# The warning the pale red carries, said again in a sign: colour
                 alone never carries information (RGAA 3.1). Hidden from the
                 rendering the assistive technologies read, which has the
                 sentence. %>
             <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%=
-              t('components.demo_requirement_card.no_provider_html', country: country_name) %>
+              if published_nothing?
+                t('components.demo_requirement_card.no_provider_html', country: country_name)
+              else
+                t('components.demo_requirement_card.no_answer_html', country: country_name)
+              end %>
           </p>
         <% end %>
       </div>
