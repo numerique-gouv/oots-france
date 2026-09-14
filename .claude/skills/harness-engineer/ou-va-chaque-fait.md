@@ -1,6 +1,6 @@
 # Où va chaque fait
 
-Lu aux étapes 4 et 6 de la passe, pour chaque mémoire comme pour chaque règle neuve. **Un fait a un seul endroit**, celui qui est chargé au moment où il sert, et tout autre endroit ne fait que renvoyer.
+Lu à l'étape 4 de la passe, et à l'étape 6 par `decouper-un-fichier.md`, pour chaque mémoire comme pour chaque règle neuve. **Un fait a un seul endroit**, celui qui est chargé au moment où il sert, et tout autre endroit ne fait que renvoyer.
 
 | Le fait dit… | Il va dans | Exemples |
 | --- | --- | --- |

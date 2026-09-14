@@ -65,7 +65,7 @@ Le « non » se mérite, et trois choses le disqualifient : **une réponse crue 
 
 ## Après l'accord
 
-- **Des retours** — récris le fichier **au même chemin** (une seule révision vit à la fois), et resoumets en disant ce qui a bougé. Autant de tours qu'il en faut : itérer sur un plan coûte des minutes, sur une implémentation des heures.
+- **Des retours** — en session, récris le fichier **au même chemin** (une seule révision vit à la fois), et resoumets en disant ce qui a bougé ; en sous-agent, tu t'es arrêté sur `PLAN`, et c'est qui te répond qui écrit sa décision en tête du fichier avant de relancer une invocation neuve. Autant de tours qu'il en faut : itérer sur un plan coûte des minutes, sur une implémentation des heures.
 - **Un plan repris d'une session précédente** se traite comme une planification neuve : relis-le et vérifie qu'il tient encore — le code a bougé depuis.
 - **Approuvé** — l'implémentation commence, et ce skill s'arrête. Elle se termine par `ship-plan`.
 

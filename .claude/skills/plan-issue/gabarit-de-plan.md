@@ -1,6 +1,6 @@
 # Le gabarit du plan
 
-Lu en phase 4, quand le fichier se complète.
+Lu en phase 4, quand le fichier se complète. Une ligne « Décision du AAAA-MM-JJ : … » en tête, au-dessus du Contexte, est la réponse rendue à un `PLAN` par qui l'a reçu : elle prime sur le corps qu'elle corrige.
 
 Le fichier se complète (il existe depuis la phase 1). C'est un **document de décision**, pas un tutoriel : assez court pour se parcourir, assez précis pour s'exécuter. **Seule l'approche retenue y figure** — ce qu'on a écarté tient en une ligne dans « ce que j'ai tranché seul », pas en section.
 
