@@ -25,6 +25,6 @@ Puis, selon ce que tu trouves :
 - **Des modifications non commitées** — lis-les (`git -C <worktree> diff`) avant de décider. Cohérentes et testables, finis-les et commite-les à son nom de travail ; à mi-chemin d'une idée que la passation n'explique pas, **jette-les** (`git -C <worktree> restore .`) et refais le point proprement depuis le dernier commit. Un demi-remaniement que personne ne sait terminer coûte plus cher que de le reprendre.
 
 > [!IMPORTANT]
-> **Ne fais jamais `reset --hard` sur un worktree que tu adoptes.** Le `reset --hard origin/main` du § 1 ne vaut que pour une branche qui vient de naître et ne porte aucun commit ; ici il détruirait le travail que tu viens reprendre. Si la branche a divergé de `main` depuis, c'est [`conflit.md`](conflit.md) qui s'applique, et lui seul.
+> **Ne fais jamais `reset --hard` sur un worktree que tu adoptes.** Le `reset --hard origin/main` du § 1 ne vaut que pour une branche qui vient de naître et ne porte aucun commit ; ici il détruirait le travail que tu viens reprendre. Si la branche a divergé de `main` depuis, c'est `conflit.md` qui s'applique, et lui seul.
 
 Déclare ton étape en reprenant, comme à toute entrée dans un temps (§ « Déclare ton étape » de `ouvrier.md`) : celle où tu reprends, pas `opening`, que tu n'as pas à rejouer. Et **ne refais pas passer le ticket en `In Progress` s'il y est déjà** — la règle du § 1 vaut ici aussi, un statut ne recule pas.

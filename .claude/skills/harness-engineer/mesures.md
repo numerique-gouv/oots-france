@@ -17,7 +17,7 @@ python3 .claude/skills/harness-engineer/scripts/forme.py --depuis "$DEPUIS"   # 
 python3 .claude/skills/harness-engineer/scripts/forme.py --doublons           # les paragraphes présents dans deux fichiers
 ```
 
-Les seuils qu'il applique sont ceux de [`comment-on-ecrit.md`](comment-on-ecrit.md) : 150 lignes, 400 caractères de description, 5 garde-fous, sommaire au-delà de 100 lignes pour un frère.
+Les seuils qu'il applique sont ceux de `comment-on-ecrit.md` : 150 lignes, 400 caractères de description, 5 garde-fous, sommaire au-delà de 100 lignes pour un frère.
 
 ## Les fichiers de l'atelier
 

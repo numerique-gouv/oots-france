@@ -65,7 +65,7 @@ Sans périmètre donné, le service couvre toute la spécification : [`conformit
 
 ## Comment lire
 
-**Le silence du texte est une réponse**, souvent la plus utile. « Comment reconstruire une requête portant le bénéficiaire ? » n'a aucune réponse dans le 4.9 : ce silence dit que le modèle suppose un portail qui a l'usager devant lui, et c'est cela qu'il fallait rendre. Dis ce que tu as lu pour conclure au silence, pour qu'on puisse le contester. **Attribue à qui de droit** : le 4.4.2 item 3 dit « *the system* », pas « le portail » — prêter un acteur à un texte qui n'en nomme aucun est la même faute qu'inventer une règle. **Quand le code est en cause**, ouvre les fichiers que le chapitre gouverne et rends ce qu'ils font, avec le chemin et la ligne — pas ce qu'un ticket ou une doc en raconte.
+Tout est dans `tdd-nerd/lire-les-tdd.md`, lié plus haut : la carte, les chapitres en un geste, les quatre pièges, le silence comme réponse, l'attribution, le code quand il est en cause.
 
 ## Ce que tu rends
 

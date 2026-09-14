@@ -9,7 +9,7 @@ Ce qui te protège est continu, et tient en deux gestes après **chaque** volet 
 1. **pousse** — un commit qui n'existe que dans ton worktree est un commit qu'un `git worktree remove` malheureux emporte ;
 2. **mets ta passation à jour** — pas à la fin, à chaque frontière.
 
-Fais cela et être coupé ne coûte que le volet en cours. Ne le fais pas et cela coûte le ticket. C'est aussi ce qui rend [`reprise.md`](reprise.md) praticable : ton successeur n'a besoin d'aucune coopération de ta part, il lit l'arbre et la note.
+Fais cela et être coupé ne coûte que le volet en cours. Ne le fais pas et cela coûte le ticket. C'est aussi ce qui rend `reprise.md` praticable : ton successeur n'a besoin d'aucune coopération de ta part, il lit l'arbre et la note.
 
 Ta **passation** va en `<principal>/.claude/reprises/AAAA-MM-JJ-oots-<n>.md` — dans le checkout principal comme le plan et la revue, et pour la même raison : `.claude/` est absent de ton worktree. Une seule par ticket, que tu récris plutôt que d'en empiler. Elle s'adresse à quelqu'un qui n'a aucun contexte, ne lira pas ton transcript, et doit pouvoir reprendre sans te poser de question :
 

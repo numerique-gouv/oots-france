@@ -73,7 +73,7 @@ Le coût par arbre d'agents se mesure par le skill [`mesurer-les-jetons`](../mes
 | `.claude/audits/*-harnais*.md` | la passe précédente : ce qu'elle a changé, ce qu'elle a mesuré, ce qu'elle a laissé |
 | `.claude/local_tasks/` | les tâches d'impact échues, et celles qu'une passe a laissées sans les faire |
 
-Les commandes qui les comptent — passes par PR, fichiers retouchés, rendement par relecteur — sont dans [`mesures.md`](mesures.md). Un fichier du harnais retouché à chaque session est le signe le plus sûr d'un problème de structure : on rajoute une phrase là où il faudrait déplacer une section, ou mécaniser.
+Les commandes qui les comptent — passes par PR, fichiers retouchés, rendement par relecteur — sont dans `mesures.md`. Un fichier du harnais retouché à chaque session est le signe le plus sûr d'un problème de structure : on rajoute une phrase là où il faudrait déplacer une section, ou mécaniser.
 
 ## Les PR et Linear
 
@@ -83,4 +83,4 @@ Les commandes qui les comptent — passes par PR, fichiers retouchés, rendement
 
 ## Les mémoires
 
-Chaque fichier de `~/.claude/projects/<slug>/memory/` est un candidat au rapatriement, et le tri se fait avec [`ou-va-chaque-fait.md`](ou-va-chaque-fait.md). Avant cela, relève ce qui est faux : une mémoire qui cite un chemin disparu, un skill devenu agent, un « vérifié le … » vieux de plus d'un mois sur un fait qui bouge.
+Chaque fichier de `~/.claude/projects/<slug>/memory/` est un candidat au rapatriement, et le tri se fait avec `ou-va-chaque-fait.md`. Avant cela, relève ce qui est faux : une mémoire qui cite un chemin disparu, un skill devenu agent, un « vérifié le … » vieux de plus d'un mois sur un fait qui bouge.
