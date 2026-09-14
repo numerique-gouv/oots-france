@@ -16,41 +16,46 @@ class CodeListClient
   PROCEDURES = "#{BASE}/Procedures-CodeList.gc".freeze
   COUNTRIES = "#{BASE}/OOTS_Country-CodeList.gc".freeze
 
-  # The column holding French names, which the two lists do not name alike:
-  # the procedures carry one column per language of the Union, the countries
-  # carry the two names ISO 3166 gives them.
-  FRENCH_NAMES = { PROCEDURES => 'name-FR', COUNTRIES => 'french' }.freeze
+  # The column each list holds a language's names in, which the two do not name
+  # alike: the procedures carry one column per language of the Union and publish
+  # the English original in the unlanguaged `name-Value`, there being no
+  # `name-EN`; the countries carry the two names ISO 3166 gives them.
+  NAME_COLUMNS = {
+    PROCEDURES => { fr: 'name-FR', en: 'name-Value' },
+    COUNTRIES => { fr: 'french' },
+  }.freeze
 
   def initialize(connection: nil)
     @connection = connection
   end
 
-  def procedure_names = names(PROCEDURES)
+  def procedure_names(lang: :fr) = names(PROCEDURES, lang)
 
   # ISO 3166 names a country with its article in brackets — « Autriche (l') »,
   # « Belgique (la) » — which reads as a footnote in a table cell.
   ARTICLE = /\s*\((?<article>[^)]*)\)\z/
 
-  def country_names = names(COUNTRIES).transform_values { |name| name.sub(ARTICLE, '') }
+  def country_names = names(COUNTRIES, :fr).transform_values { |name| name.sub(ARTICLE, '') }
 
   # That article, which nothing else publishes: without it a French sentence
   # cannot place a country — « en Belgique », but « aux Pays-Bas » and
   # « à Chypre », which carries none.
-  def country_articles = names(COUNTRIES).transform_values { |name| name[ARTICLE, :article] }
+  def country_articles = names(COUNTRIES, :fr).transform_values { |name| name[ARTICLE, :article] }
 
   private
 
-  def names(list)
-    key = "code_lists/#{File.basename(list, '.gc')}"
+  def names(list, lang)
+    key = "code_lists/#{File.basename(list, '.gc')}/#{lang}"
     cached = Rails.cache.read(key)
     return cached if cached
 
-    read(list).tap { |names| remember(key, names) if names.any? }
+    read(list, lang).tap { |names| remember(key, names) if names.any? }
   end
 
-  def read(list)
+  def read(list, lang)
     body = connection.get(list).body
-    names = GenericodeParser.new(body).names(code_column: 'code', name_column: FRENCH_NAMES.fetch(list))
+    column = NAME_COLUMNS.fetch(list).fetch(lang)
+    names = GenericodeParser.new(body).names(code_column: 'code', name_column: column)
 
     # A response that arrives and yields nothing is not an outage, and raises
     # nothing: without this line, a code list the Commission has moved or

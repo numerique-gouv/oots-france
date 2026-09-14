@@ -39,6 +39,27 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
     end
 
+    # Chapter 2.2 §2 makes the portal answerable for the identity in the request
+    # matching the one the eID means yielded, so the page shows it and offers no
+    # field on it.
+    it 'shows the identity the authentication attested, and offers no field on it' do
+      get admin_demo_confirmation_path
+
+      rows = response.parsed_body.css('main table tr').to_h { |row| [row.at_css('th').text, row.at_css('td').text] }
+
+      expect(rows).to include('Nom de famille' => 'Sørensen', 'Prénom(s)' => 'Freja Marie')
+      expect(response.parsed_body.css('main table input, main table select, main table textarea')).to be_empty
+    end
+
+    # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
+    # showing it beside a missing eIDAS identifier would invite taking it for
+    # one.
+    it 'never shows the pseudonym FranceConnect+ handed this service provider' do
+      get admin_demo_confirmation_path
+
+      expect(response.body).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
+    end
+
     # Unable to name the two, it must not offer to confirm: requirement 27 makes
     # them a condition of the request, not a decoration on it.
     it 'offers nothing to confirm when the directories refuse' do

@@ -10,15 +10,21 @@ module Described
 
   PREFERRED_LANGUAGES = %w[FR EN].freeze
 
-  def label = in_preferred_language(descriptions)
-
-  private
+  def label(languages: PREFERRED_LANGUAGES) = in_preferred_language(descriptions, languages)
 
   # The language the wording chosen is written in, so that a page rendering it
   # can declare it: a passage in another language than the page's carries its
   # own `lang`, failing which a screen reader pronounces English as French
   # (RGAA 8.7).
-  def chosen_language_in(published) = (PREFERRED_LANGUAGES & published.keys).first || published.keys.first
+  def label_language(languages: PREFERRED_LANGUAGES) = chosen_language_in(descriptions, languages)
 
-  def in_preferred_language(published) = published[chosen_language_in(published)]
+  private
+
+  def chosen_language_in(published, languages = PREFERRED_LANGUAGES)
+    (languages & published.keys).first || published.keys.first
+  end
+
+  def in_preferred_language(published, languages = PREFERRED_LANGUAGES)
+    published[chosen_language_in(published, languages)]
+  end
 end

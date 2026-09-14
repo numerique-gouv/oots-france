@@ -1,15 +1,33 @@
 <% content_for :title, t('admin.demo.confirmations.show.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
-      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
-              [t('admin.demo.confirmations.show.title'), nil]],
+      trail: [[t('admin.demo.confirmations.show.title'), nil]],
     ) %>
-
-<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
 
 <h1 class="fr-h3"><%= t('admin.demo.confirmations.show.title') %></h1>
 
 <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.show.lead') %></p>
+
+<%# No field on any of these: chapter 2.2 §2 makes the portal answerable for the
+    identity in the request matching the one the eID means yielded, and the
+    demonstration holds that by showing them rather than offering them. %>
+<%= render 'admin/demo/attributs',
+      caption: t('admin.demo.confirmations.show.identity'),
+      rows: [
+        [t('admin.demo.confirmations.attributes.family_name'), @identity.family_name],
+        [t('admin.demo.confirmations.attributes.given_name'), @identity.given_name],
+        [t('admin.demo.confirmations.attributes.birthdate'), @identity.birthdate],
+        [t('admin.demo.confirmations.attributes.gender'), @identity_wording.gender],
+        [t('admin.demo.confirmations.attributes.place_of_birth'), @identity_wording.place_of_birth],
+      ] %>
+
+<%= render 'admin/demo/attributs',
+      caption: t('admin.demo.confirmations.show.attested'),
+      rows: [
+        [t('admin.demo.confirmations.attributes.level_of_assurance'), @identity.level_of_assurance],
+        [t('admin.demo.confirmations.attributes.provenance'), @identity_wording.provenance],
+        [t('admin.demo.confirmations.attributes.eidas_identifier'), @identity_wording.eidas_identifier],
+      ] %>
 
 <% if @unreachable.present? %>
   <%= dsfr_alert(type: :error, title: t('admin.demo.confirmations.show.unreachable')) do %>
@@ -43,15 +61,18 @@
 <ul class="fr-btns-group fr-btns-group--inline-md">
   <% if @wording&.nameable? %>
     <li>
-      <%# The press that opens the exchange. `button_to` and not a link: chapter
-          4.5.1 §2.7 ties the `IssueDateTime` of the request to the instant of
-          this gesture, and a GET the browser prefetched would issue it before
-          the user had decided anything. %>
+      <%# The press that opens the exchange, and the explicit request of chapter
+          1 §3.3 with it. `button_to` and not a link: chapter 4.5.1 §2.7 ties
+          the `IssueDateTime` of the request to the instant of this gesture, and
+          a GET the browser prefetched would issue it before the user had
+          decided anything. %>
       <%= button_to t('admin.demo.confirmations.show.submit'), admin_demo_confirmation_path, class: 'fr-btn' %>
     </li>
   <% end %>
   <li>
-    <%= link_to t('admin.demo.confirmations.show.back'), admin_demo_demande_path,
+    <%# The other answer to the question chapter 1 §3.3 asks: leaving without
+        pressing asks nobody anything, and no exchange exists. %>
+    <%= link_to t('admin.demo.confirmations.show.back'), admin_demo_root_path,
           class: 'fr-btn fr-btn--secondary' %>
   </li>
 </ul>

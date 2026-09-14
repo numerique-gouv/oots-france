@@ -1,34 +1,60 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Home' do
-  let(:label) { CodeListStubs::STUDY_FINANCING_LABEL }
+  let(:name) { CodeListStubs::STUDY_FINANCING_NAME }
 
   describe 'GET /admin/demo' do
     before do
       sign_in
-      stub_code_list(procedures: { ProcedureCode::STUDY_FINANCING => label })
+      stub_code_list(
+        procedures: { ProcedureCode::STUDY_FINANCING => CodeListStubs::STUDY_FINANCING_LABEL },
+        procedure_names: { ProcedureCode::STUDY_FINANCING => name },
+      )
+      stub_demonstration_requirements
     end
 
-    it 'stands in the portal it plays, under the procedure it is about' do
+    # In English, and marked as such: the reader is a user of another Member
+    # State, and the code list publishes that title in its unlanguaged column.
+    it 'stands under the procedure it is about, and nothing else' do
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.css('main').text).to include('Université de démonstration')
-      expect(response.parsed_body.css('h1').text).to eq("T1 — #{label}")
+      expect(response.parsed_body.css('h1').text).to eq("T1 — #{name}")
+      expect(response.parsed_body.css('h1').first['lang']).to eq('en')
     end
 
-    it 'explains what the OOTS lets the procedure do' do
+    # The first step of the chain a request walks, asked in France's own
+    # jurisdiction: the procedure is ours, the evidence types satisfying it
+    # belong to whoever is asked for them, and this page asks for none.
+    it 'lists what the Evidence Broker publishes for the procedure, in English' do
       get admin_demo_root_path
 
-      expect(response.parsed_body.css('main').text)
-        .to include('directement de', 'autre État membre', 'accord explicite')
+      expect(response.parsed_body.css('main [lang="en"] li').map { |item| item.text.strip })
+        .to eq(['(TEST) Test Requirement'])
+      expect(response.parsed_body.css('main [lang="en"] li').first['lang']).to eq('EN')
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
     end
 
-    it 'says it is a demonstration, and that the university is not real' do
+    it 'asks the Evidence Broker for nothing else: no evidence type, no provider' do
       get admin_demo_root_path
 
-      expect(response.parsed_body.css('.fr-callout').text)
-        .to include("L'Université de démonstration n'existe pas")
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('queryId' => a_string_including('evidence-types-by-requirement'))))
+        .not_to have_been_made
+    end
+
+    # The way in is the one thing this page is for, and it needs no directory.
+    it 'stands, and still offers the way in, when the Evidence Broker cannot be reached' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including({})).to_timeout
+
+      get admin_demo_root_path
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.css('main [lang="en"] li')).to be_empty
+      expect(response.parsed_body.css('main').text).not_to include('Documents to be retrieved')
+      expect(response.parsed_body.css('main button.fr-btn')).to be_present
     end
 
     # A single way in, and the label is the one the European flow of
@@ -60,6 +86,7 @@ RSpec.describe 'Admin::Demo::Home' do
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('h1').text).to eq('T1 — Aucun label')
+      expect(response.parsed_body.css('h1').first['lang']).to be_nil
     end
   end
 

@@ -1,12 +1,9 @@
 <% content_for :title, t('admin.demo.trackings.show.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
-      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
-              [t('admin.demo.confirmations.create.title'), admin_demo_confirmation_path],
+      trail: [[t('admin.demo.confirmations.show.title'), admin_demo_confirmation_path],
               [t('admin.demo.trackings.show.title'), nil]],
     ) %>
-
-<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
 
 <h1 class="fr-h3"><%= t('admin.demo.trackings.show.title') %></h1>
 
@@ -76,6 +73,6 @@
       « … a new unique request MUST be issued. » %>
   <li><%= link_to t('admin.demo.trackings.show.refresh'), admin_demo_suivi_path,
             class: 'fr-btn fr-btn--secondary' %></li>
-  <li><%= link_to t('admin.demo.trackings.show.again'), admin_demo_demande_path,
+  <li><%= link_to t('admin.demo.trackings.show.again'), admin_demo_confirmation_path,
             class: 'fr-btn fr-btn--tertiary' %></li>
 </ul>

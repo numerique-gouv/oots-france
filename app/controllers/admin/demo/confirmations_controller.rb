@@ -2,18 +2,26 @@ module Admin
   module Demo
     # The last page before an exchange exists, and the press that opens one.
     #
-    # `show` names the evidence provider and the evidence type, which requirement
-    # 27 of chapter 1 §2 asks for word for word — « The user is provided with
-    # information about name of evidence provider and evidence type for
-    # confirmation, before any request is made. » Unable to name them, it offers
-    # nothing to confirm: the requirement is a condition of the request, not a
-    # decoration on it.
+    # `show` carries the identity the authentication attested — shown and never
+    # typed, chapter 2.2 §2 making the portal answerable for the identity in the
+    # request matching the one the eID means yielded — and names the evidence
+    # provider and the evidence type, which requirement 27 of chapter 1 §2 asks
+    # for word for word — « The user is provided with information about name of
+    # evidence provider and evidence type for confirmation, before any request
+    # is made. » Unable to name them, it offers nothing to confirm: the
+    # requirement is a condition of the request, not a decoration on it.
     #
     # `create` **is** the explicit request, and the request leaves as it is
     # pressed. Chapter 4.5.1 §2.7 ties the two: « If the value of this slot is
     # true, the value of the IssueDateTime slot shall not be materially
     # different from the date and time at which the explicit request was made by
     # the user. »
+    #
+    # The press is also where the explicit request of chapter 1 §3.3 is made —
+    # « a step in which the user is asked to express explicitly whether he or
+    # she wants to use the Once-Only Technical System ». The page asks it as one
+    # gesture rather than as a question with two answers: the way out is the
+    # link beside the button, and nothing leaves unless the button is pressed.
     #
     # A request that leaves ends the page: the user is sent to the tracking,
     # which is where the answer will appear and the only address of the journey
@@ -28,6 +36,7 @@ module Admin
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
       def show
+        @identity_wording = DemoIdentityWording.new(identity)
         @wording = DemoResolutionWording.new(lookup)
       end
 

@@ -31,6 +31,7 @@ RSpec.describe 'Admin::Demo::Identifications' do
     # they can act on.
     it 'sends the operator back to the procedure, saying why, when the portal cannot be reached' do
       stub_code_list
+      stub_demonstration_requirements
       stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_timeout
 
       post admin_demo_identification_path

@@ -367,6 +367,14 @@ fr:
       unreadable: "Jeton FranceConnect+ indéchiffrable : %{error}"
       invalid: "Signature FranceConnect+ invalide : %{error}"
       unexpected_algorithms: Jeton FranceConnect+ chiffré en %{announced}, attendu %{expected}.
+  controllers:
+    admin:
+      demo:
+        # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
+        # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
+        # rien sur l'écran d'un usager n'aurait à dire pourquoi.
+        home:
+          no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -1294,80 +1302,41 @@ fr:
       home:
         show:
           title: Démarche de démonstration
-          # Le portail joué, au-dessus du titre : le titre est la démarche, et
-          # une démarche n'est pas un lieu. Le nom est celui que le projet a
-          # arrêté ; l'intitulé de la démarche, lui, est lu dans la liste de
-          # codes et ne s'écrit pas ici.
-          portal: Université de démonstration
-          notice:
-            title: Démonstration
-            body: >-
-              L'Université de démonstration n'existe pas, et cette démarche n'en est pas une :
-              l'écran est joué par l'exploitant depuis l'espace d'administration. Aucun justificatif
-              réel n'est demandé.
-          explanation: >-
-            Cette démarche peut faire venir le justificatif dont elle a besoin directement de
-            l'administration de l'autre État membre qui le détient, sans que vous ayez à l'obtenir
-            ni à le fournir vous-même. Rien n'est demandé sans votre accord explicite, et vous devez
-            d'abord vous identifier.
+          # En anglais, comme le bouton plus bas et comme l'intitulé de la
+          # démarche : la phrase annonce la liste des exigences que l'Evidence
+          # Broker publie, et s'adresse à un usager qui ne lit pas le français.
+          requirements: "Documents to be retrieved from another EU Member State:"
           # En anglais, et c'est le libellé que FranceConnect+ montre au bouton
           # de sa cinématique européenne — ses règles d'intégration, elles, sont
           # annoncées comme « bientôt publiées ». Il s'adresse à un usager qui ne
           # lit pas le français, ce qui est tout son objet.
           sign_in: Sign-in with a digital identity from another European country
-      # La deuxième page du parcours : le formulaire de demande, portant
-      # l'identité que l'authentification a donnée, ce que la demande réclame en
-      # plus, et la demande explicite d'OOTS.
-      grant_requests:
+      # La deuxième page du parcours : l'identité que l'authentification a
+      # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
+      # « before any request is made » — le nom du fournisseur et le type de
+      # justificatif —, puis le résultat du geste qui fait partir la requête.
+      confirmations:
         show:
-          title: Demande de bourse d'études
+          title: Confirmer la demande de justificatif
           lead: >-
-            Ces informations viennent de l'identité électronique avec laquelle vous venez de vous
-            identifier. Elles ne se modifient pas : c'est l'identité attestée qui accompagnera la
-            demande de justificatif.
+            Voici l'identité avec laquelle vous venez de vous identifier, l'administration à qui
+            votre justificatif d'inscription sera demandé, et le type de document qu'elle
+            transmettra. Rien n'est demandé tant que vous n'avez pas confirmé.
           identity: Votre identité
           attested: Ce que l'authentification a attesté
-          # Les champs de la démarche elle-même, que rien ne lit : aucune colonne
-          # ne les tient et aucun slot ne les porte. L'encart le dit plus bas —
-          # un formulaire qui réclame sans dire ce qu'il en fait apprend à
-          # supposer.
-          application:
-            legend: Votre demande
-            amount: Montant demandé (en euros)
-            year: Année universitaire
-            reason: Motif de la demande
-          # Le chapitre 1 §3.3 des TDD : « a step in which the user is asked to
-          # express explicitly whether he or she wants to use the Once-Only
-          # Technical System ». Le chapitre ne décrit aucun dispositif de
-          # saisie ; deux réponses plutôt qu'une case à cocher est notre choix,
-          # pour qu'un refus soit répondu et non seulement laissé vide.
-          express:
-            legend: Récupération de votre justificatif d'inscription
-            hint: >-
-              Sans votre accord, rien n'est demandé à personne et vous fournirez ce justificatif
-              vous-même.
-            requested: >-
-              Je demande que mon justificatif d'inscription soit récupéré directement auprès de
-              l'administration qui le détient.
-            declined: Je fournirai ce justificatif moi-même.
-          submit: Continuer
-          notice:
-            title: Ce que deviennent ces informations
-            body: >-
-              Le montant, l'année et le motif ne servent qu'à figurer une démarche : ils ne sont ni
-              conservés ni transmis, et n'accompagnent pas la demande de justificatif. Seule
-              l'identité attestée ci-dessus voyage.
-        # La page où s'arrête un parcours sans demande explicite : rien n'a été
-        # résolu, rien n'a été demandé à personne, aucun échange n'existe.
-        create:
-          title: Justificatif à fournir vous-même
-          lead: >-
-            Vous n'avez pas demandé que votre justificatif d'inscription soit récupéré
-            automatiquement. Aucune demande n'a été faite : il vous faudra le joindre vous-même à
-            votre dossier.
-          back: Revenir au formulaire
+          caption: Ce qui sera demandé
+          # Les deux valeurs sont rendues telles que les annuaires les publient,
+          # sans libellé de notre cru : la démonstration montrerait sinon autre
+          # chose que ce sur quoi l'échange repose.
+          provider: Administration qui détient le justificatif
+          evidence_type: Type de justificatif
+          submit: Confirmer et demander le justificatif
+          # L'autre réponse à la question du chapitre 1 §3.3 : partir sans
+          # presser ne demande rien à personne.
+          back: Revenir à l'accueil de la démarche
+          unreachable: Les annuaires européens n'ont pas pu être joints
         # L'ordre des clés n'est pas celui de l'écran, que le gabarit fixe : ces
-        # intitulés sont ceux des deux tableaux, dits une fois chacun.
+        # intitulés sont ceux des deux tableaux d'identité, dits une fois chacun.
         attributes:
           family_name: Nom de famille
           given_name: Prénom(s)
@@ -1377,32 +1346,13 @@ fr:
           level_of_assurance: Niveau de garantie
           provenance: Provenance de l'identité
           eidas_identifier: Identifiant eIDAS
-      # La troisième page : ce que l'exigence 27 du chapitre 1 §2 des TDD demande
-      # de montrer « before any request is made » — le nom du fournisseur et le
-      # type de justificatif —, puis le résultat du geste qui fait partir la
-      # requête.
-      confirmations:
-        show:
-          title: Confirmer la demande de justificatif
-          lead: >-
-            Voici l'administration à qui votre justificatif d'inscription sera demandé, et le type
-            de document qu'elle transmettra. Rien n'est demandé tant que vous n'avez pas confirmé.
-          caption: Ce qui sera demandé
-          # Les deux valeurs sont rendues telles que les annuaires les publient,
-          # sans libellé de notre cru : la démonstration montrerait sinon autre
-          # chose que ce sur quoi l'échange repose.
-          provider: Administration qui détient le justificatif
-          evidence_type: Type de justificatif
-          submit: Confirmer et demander le justificatif
-          back: Revenir au formulaire
-          unreachable: Les annuaires européens n'ont pas pu être joints
         # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:
           title: Demande de justificatif
           nothing_opened: >-
             Aucun échange n'a été ouvert : la demande a été refusée avant que quoi que ce soit ne
             parte vers un autre État membre.
-          back: Revenir au formulaire
+          back: Revenir à la confirmation
       # La quatrième page du parcours : ce que la demande a obtenu. Les quatre
       # états qu'elle rend sont ceux que le contrat rend, plus l'attente, qui est
       # tout le reste — la démarche ne demandant que T1, que la France sert

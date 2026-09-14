@@ -9,6 +9,23 @@ RSpec.describe CodeListClient do
     expect(client.procedure_names).to eq('T3' => 'Demander la reconnaissance académique de diplômes')
   end
 
+  # The list publishes no `name-EN`: the English original sits in the column
+  # named after no language, which every other column translates.
+  it 'reads the English names of the procedure codes in the unlanguaged column' do
+    stub_code_list(procedure_names: { 'T3' => 'Requesting academic recognition of diplomas' })
+
+    expect(client.procedure_names(lang: :en)).to eq('T3' => 'Requesting academic recognition of diplomas')
+  end
+
+  # One reading must not be served for the other: the two share a list and an
+  # outage, and nothing else.
+  it 'remembers each language apart' do
+    stub_code_list(procedures: { 'T3' => 'Diplômes' }, procedure_names: { 'T3' => 'Diplomas' })
+
+    expect(client.procedure_names).to eq('T3' => 'Diplômes')
+    expect(client.procedure_names(lang: :en)).to eq('T3' => 'Diplomas')
+  end
+
   # A name is an ornament: every page reading one says what it says without it,
   # so nothing about this reading may reach a controller.
   it 'answers no name at all rather than failing when the file cannot be read' do
@@ -113,6 +130,6 @@ RSpec.describe CodeListClient do
     client.procedure_names
 
     expect(Rails.cache).to have_received(:write)
-      .with('code_lists/Procedures-CodeList', anything, expires_in: Settings.common_services_cache_duration)
+      .with('code_lists/Procedures-CodeList/fr', anything, expires_in: Settings.common_services_cache_duration)
   end
 end

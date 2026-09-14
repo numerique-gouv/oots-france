@@ -157,7 +157,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
     it 'sends an operator following no exchange back to the form' do
       get admin_demo_suivi_path
 
-      expect(response).to redirect_to(admin_demo_demande_path)
+      expect(response).to redirect_to(admin_demo_confirmation_path)
     end
   end
 end

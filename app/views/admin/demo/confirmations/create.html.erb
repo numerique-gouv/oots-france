@@ -1,11 +1,9 @@
 <% content_for :title, t('admin.demo.confirmations.create.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
-      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
+      trail: [[t('admin.demo.confirmations.show.title'), admin_demo_confirmation_path],
               [t('admin.demo.confirmations.create.title'), nil]],
     ) %>
-
-<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
 
 <h1 class="fr-h3"><%= t('admin.demo.confirmations.create.title') %></h1>
 
@@ -19,4 +17,5 @@
 
 <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.create.nothing_opened') %></p>
 
-<%= link_to t('admin.demo.confirmations.create.back'), admin_demo_demande_path, class: 'fr-btn fr-btn--secondary' %>
+<%= link_to t('admin.demo.confirmations.create.back'), admin_demo_confirmation_path,
+      class: 'fr-btn fr-btn--secondary' %>
