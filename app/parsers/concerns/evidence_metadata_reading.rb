@@ -100,11 +100,11 @@ module EvidenceMetadataReading
   # Reading those here would file identifiers a conformant response never
   # carries.
   #
-  # A correspondent that sends one anyway breaks the rule, and nothing says so:
-  # `violations` carries no rule about the content of `sdg:IsAbout`, so the
-  # departure leaves the identifier dropped and the `detail` column empty. That
-  # gap is older than this reading — nothing read the element at all — and
-  # closing it belongs where the rules of chapter 4.6 live, not here.
+  # A correspondent that sends one anyway breaks the rule, and the journal says
+  # so: `EvidencePackagingConformance` confronts every subject of the list to
+  # `-S041` and `-S042`, where this reads the one the main document names. The
+  # identifier is dropped here all the same — what is read is what a conformant
+  # response carries, and what is named is the departure.
   def legal_subject(organisation)
     LegalPerson.new(
       eidas_identifier: text_at(organisation, './sdg:LegalPersonIdentifier'),

@@ -1,7 +1,9 @@
 # What an evidence package is, and what each object inside one carries: the
 # rules chapter 4.6 publishes on the packaging version 2.0 introduced —
 # `R-EDM-RESP-S046` to `-S066`, `-S064` being published on neither line — and
-# the family `-S033` to `-S037`, which both lines publish in two shapes.
+# the two families both lines publish in two shapes, `-S033` to `-S037` on what
+# each object identifies and points at, `-S041` and `-S042` on the subject each
+# confirms.
 #
 # Read and never refused, like every other rule this parser confronts a response
 # to: `EvidenceResponseParser#violations` says why, and the journal is the whole
@@ -67,10 +69,40 @@ module EvidencePackagingConformance
   # wording of the TDD, not a decision this repository takes once.
   PREFIXED_UUID = /\Aurn:uuid:\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/i
 
+  # The closed lists `-S041` and `-S042` put on the subject a provider confirms
+  # having matched — chapter 4.5.2 §3.3, `sdg:IsAbout`. Each assertion compares
+  # the count of the elements it names against `count(child::*)`, so what it
+  # refuses can only be named by taking the complement, as `-S016` and `-S043`
+  # are read on either side.
+  SUBJECT_ELEMENTS = {
+    'NaturalPerson' => {
+      rule: 'R-EDM-RESP-S041',
+      admitted: %w[Identifier FamilyName GivenName DateOfBirth PlaceOfBirth].freeze,
+    }.freeze,
+    'LegalPerson' => {
+      rule: 'R-EDM-RESP-S042',
+      admitted: %w[LegalPersonIdentifier LegalName].freeze,
+    }.freeze,
+  }.freeze
+
+  # Where the two rules find their subjects, relative to an object of the list
+  # that holds the documents. Neither context filters on a classification, so an
+  # annex naming a subject is judged exactly as the main document is — where
+  # `EvidenceMetadataReading` reads the main one alone.
+  SUBJECTS = SUBJECT_ELEMENTS.keys
+    .map { |person| "#{EvidenceMetadataReading::EVIDENCE_METADATA}/sdg:IsAbout/sdg:#{person}" }
+    .join(' | ').freeze
+
   private
 
   def packaging_violations
-    return identifier_violations unless specification.packaged_response?
+    [*packaged_violations, *identifier_violations, *subject_violations]
+  end
+
+  # The twenty-one rules that exist only where the packaging does: everything
+  # under them names a `rim:RegistryPackageType`, which no 1.2 response carries.
+  def packaged_violations
+    return [] unless specification.packaged_response?
 
     [
       *unpackaged_objects,
@@ -79,10 +111,41 @@ module EvidencePackagingConformance
       *objects_without_classification,
       *unknown_classification_nodes,
       *classifications_without_uuid,
-      *identifier_violations,
       *main_evidence_without_its_elements,
       *supplementary_carrying_main_elements,
     ]
+  end
+
+  # `-S041` and `-S042`, the second family both lines publish: the rules are the
+  # same, and what moves is the list the objects carrying a subject sit in.
+  #
+  # An element of another namespace breaks them too — the assertions count
+  # `sdg:` children against every child, and the URI decides that, never the
+  # prefix.
+  def subject_violations
+    document_objects.flat_map { |object| all(object, SUBJECTS).to_a }
+      .filter_map { |subject| subject_with_unexpected_children(subject) }
+  end
+
+  def subject_with_unexpected_children(subject)
+    closed = SUBJECT_ELEMENTS.fetch(subject.name)
+    unexpected = unexpected_sdg_children(subject, closed.fetch(:admitted))
+    return if unexpected.empty?
+
+    violation(closed.fetch(:rule), 'subject_unexpected_children',
+      person: "sdg:#{subject.name}", elements: unexpected.join(', '))
+  end
+
+  # What an assertion of the form `count(sdg:A) + count(sdg:B) = count(child::*)`
+  # refuses: a child the closed list does not name. The count of each admitted
+  # element is left free — two given names satisfy such a rule — and nothing of
+  # another namespace is admitted, which the URI decides and never the prefix.
+  #
+  # `elements` counts what `child::*` counts, comments and text nodes excluded.
+  def unexpected_sdg_children(node, admitted)
+    node.elements
+      .reject { |child| child.namespace&.href == NAMESPACES.fetch('sdg') && admitted.include?(child.name) }
+      .map(&:name).uniq
   end
 
   # `-S033` to `-S037`, the one family both lines publish. The rules are the
@@ -161,7 +224,7 @@ module EvidencePackagingConformance
   def objects_without_reference
     return [] unless success?
 
-    referenced_objects.reject { |object| references_an_item?(object) }
+    document_objects.reject { |object| references_an_item?(object) }
       .map { |object| violation('R-EDM-RESP-S033', 'object_without_reference', id: object_name(object)) }
   end
 
@@ -170,7 +233,7 @@ module EvidencePackagingConformance
   def references_without_link
     return [] unless success?
 
-    referenced_objects.flat_map { |object| item_references(object) }.flat_map do |reference|
+    document_objects.flat_map { |object| item_references(object) }.flat_map do |reference|
       [
         missing_link(reference, 'href', 'R-EDM-RESP-S034', 'reference_without_href'),
         missing_link(reference, 'title', 'R-EDM-RESP-S035', 'reference_without_title'),
@@ -247,9 +310,11 @@ module EvidencePackagingConformance
 
   def packages = top_level_objects.select { |object| package?(object) }
 
-  # Where `-S033` to `-S035` hang: one level down with 2.0, on the response's
-  # own list before that.
-  def referenced_objects = specification.packaged_response? ? nested_objects : top_level_objects
+  # The objects of the list that holds the documents: one level down with 2.0,
+  # on the response's own list before that. Where `-S033` to `-S035` hang, and
+  # where `-S041` and `-S042` find the subjects — the same split
+  # `EvidenceMetadataReading` makes to find the metadata.
+  def document_objects = specification.packaged_response? ? nested_objects : top_level_objects
 
   # Where `-S036` and `-S037` hang, which is every object of every list: the
   # `//` of the 2.0.1 contexts takes in the package too.

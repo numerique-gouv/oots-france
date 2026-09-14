@@ -1060,6 +1060,13 @@ fr:
       supplementary_with_main_elements: >-
         L'objet complémentaire (%{id}) porte des éléments que les TDD réservent
         au MainEvidence : %{elements}.
+      # R-EDM-RESP-S041 et S042, la liste fermée de ce que le sujet confirmé par
+      # le fournisseur peut porter. Jugée sur tout objet de la liste qui porte un
+      # sujet, MainEvidence ou non : leurs contextes ne filtrent aucune
+      # classification.
+      subject_unexpected_children: >-
+        Le sujet du justificatif (%{person}) porte des éléments que les TDD n'y
+        admettent pas : %{elements}.
       supplementary_without_association: >-
         L'objet classé %{node} (%{id}) n'est la source d'aucune association de
         sa liste.
