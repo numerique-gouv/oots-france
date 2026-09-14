@@ -81,6 +81,12 @@ module FakeFranceConnect
   module Identities
     COUNTRY_NAMES = { 'DK' => 'Denmark' }.freeze
 
+    # `A` is the twenty-sixth character before the regional indicator symbol that
+    # stands for it, and a pair of those is what a flag emoji is made of. Written
+    # out here rather than borrowed from `CountryTagComponent`, which says the
+    # same thing: this server runs in a process of its own and loads no Rails.
+    REGIONAL_INDICATOR = 0x1F1A5
+
     ALL = [
       Identity.new(
         key: 'dk-substantial', country: 'DK', level: 'substantial',
@@ -98,6 +104,11 @@ module FakeFranceConnect
     def self.countries = ALL.map(&:country).uniq
 
     def self.country_name(code) = COUNTRY_NAMES.fetch(code, code)
+
+    # The flag before the name, as the bridge's own country page shows it.
+    def self.flag(code)
+      code.upcase.chars.map { |letter| (letter.ord + REGIONAL_INDICATOR).chr(Encoding::UTF_8) }.join
+    end
 
     def self.of_country(code) = ALL.select { |identity| identity.country == code }
 

@@ -48,9 +48,10 @@ Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |c
   @navigateur.choose('consent', 'yes')
 end
 
+# The heading is the procedure's, as on the home page: the two are one journey.
 Alors('l\'administrateur arrive sur la page de confirmation') do
   expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.confirmations.show.title'))
+  expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
 end
 
 Alors('la page affiche {string} : {string}') do |intitule, valeur|
@@ -110,7 +111,7 @@ end
 Alors('la page de confirmation affiche le fournisseur et le type de justificatif') do
   lignes = @navigateur.rows
 
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.confirmations.show.title'))
+  expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
   expect(lignes[I18n.t('admin.demo.confirmations.show.provider')]).to be_present
   expect(lignes[I18n.t('admin.demo.confirmations.show.evidence_type')]).to be_present
 end

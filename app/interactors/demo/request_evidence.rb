@@ -10,6 +10,11 @@ module Demo
   # `T1` and `FR` are fixed rather than asked: the demonstration makes France
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
+  #
+  # The two names the confirmation page showed travel with the press rather
+  # than being resolved again here: chapter 4.5.1 §2.7 ties the `IssueDateTime`
+  # to the instant of that gesture, and three directory queries before sending
+  # would put themselves between the two. What is filed is what was shown.
   class RequestEvidence < ApplicationInteractor
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
     PROVIDER_COUNTRY = 'FR'.freeze
@@ -66,7 +71,11 @@ module Demo
       context.exchange_id = answer.exchange_id
       context.conversation_id = answer.conversation_id
 
-      Request.create!(exchange_id: answer.exchange_id, conversation_id: answer.conversation_id)
+      Request.create!(
+        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id,
+        evidence_type_name: context.evidence_type_name, provider_name: context.provider_name,
+        procedure_name: context.procedure_name,
+      )
     end
 
     # The message the contract returned travels with the refusal: it is the only

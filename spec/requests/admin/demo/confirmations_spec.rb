@@ -58,8 +58,8 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       card = response.parsed_body.at_css('main .identity-card__attributes').parent
       rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
 
-      expect(rows).to include('Nom de famille' => 'Sørensen', 'Prénom(s)' => 'Freja Marie')
-      expect(card.css('.identity-card__level').text.squish).to eq('Niveau de garantie : Substantial')
+      expect(rows).to include('Family name' => 'Sørensen', 'Given name(s)' => 'Freja Marie')
+      expect(card.css('.identity-card__level').text.squish).to eq('Level of assurance: Substantial')
       expect(card.css('input, select, textarea')).to be_empty
     end
 
@@ -106,7 +106,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       get admin_demo_confirmation_path
 
       expect(response).to have_http_status(:bad_gateway)
-      expect(response.parsed_body.css('main').text).to include("n'ont pas pu être joints")
+      expect(response.parsed_body.css('main').text).to include('could not be reached')
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
@@ -191,7 +191,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         post admin_demo_confirmation_path
 
         expect(response.parsed_body.css('main').text)
-          .to include('refusée', 'EB:ERR:0001', "Aucun échange n'a été ouvert")
+          .to include('refusée', 'EB:ERR:0001', 'No exchange was opened')
       end
 
       it 'says the service could not be reached on a 502' do

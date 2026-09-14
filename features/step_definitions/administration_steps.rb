@@ -38,7 +38,7 @@ end
 
 Alors("la page d'accueil de la démarche de démonstration s'affiche") do
   expect(page).to have_current_path(admin_demo_root_path)
-  expect(page).to have_css('h1', text: ProcedureCode::STUDY_FINANCING)
+  expect(page).to have_css('h1', text: "🇫🇷 #{ProcedureCode::STUDY_FINANCING}")
   expect(page).to have_css('h1 .directory-value', text: 'Apply for funding for higher education')
 end
 

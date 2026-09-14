@@ -20,7 +20,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(seen_in('h1')).to eq('T1 — Apply for funding for higher education')
+      expect(seen_in('h1')).to eq('🇫🇷 T1 Apply for funding for higher education')
       expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('EN')
     end
 
@@ -32,7 +32,7 @@ RSpec.describe 'Admin::Demo::Home' do
 
       get admin_demo_root_path
 
-      expect(seen_in('h1')).to eq("T1 — #{name}")
+      expect(seen_in('h1')).to eq("🇫🇷 T1 #{name}")
       expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('en')
     end
 
@@ -47,6 +47,15 @@ RSpec.describe 'Admin::Demo::Home' do
       expect(response.parsed_body.at_css('main li .directory-value')['lang']).to eq('EN')
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
+    end
+
+    # Chapter 1 §3.3 makes the request conditional on the user asking for it,
+    # and the page says so before anyone has pressed anything.
+    it 'says what the procedure can do, and that nothing leaves without a word from the user' do
+      get admin_demo_root_path
+
+      expect(response.parsed_body.css('main').text)
+        .to include('directly from the administration', 'without your explicit agreement')
     end
 
     it 'asks the Evidence Broker for nothing else: no evidence type, no provider' do
@@ -78,7 +87,7 @@ RSpec.describe 'Admin::Demo::Home' do
       buttons = response.parsed_body.css('main button.fr-btn')
 
       expect(buttons.map { |button| button.text.strip })
-        .to eq(['Sign-in with a digital identity from another European country'])
+        .to eq(['🇪🇺 Sign-in from another European country'])
       expect(response.parsed_body.css('main form').first['action']).to eq(admin_demo_identification_path)
     end
 
@@ -100,7 +109,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_root_path
 
       expect(response).to have_http_status(:ok)
-      expect(seen_in('h1')).to eq('T1 — Aucun label')
+      expect(seen_in('h1')).to eq('🇫🇷 T1 Aucun label')
       expect(response.parsed_body.css('h1 .directory-value')).to be_empty
     end
   end

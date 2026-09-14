@@ -22,6 +22,11 @@ class DemoProcedureWording
 
   attr_reader :code
 
+  # The jurisdiction the procedure belongs to, which is the one its
+  # requirements were asked in: a procedure is a member state's, and the flag
+  # says whose before the code says which.
+  def country_flag = CountryTagComponent.flag(Settings.common_services_country_code)
+
   # Nothing when neither source answered, and the page then stands under the
   # wording below rather than under a directory's.
   def title = declared_title.presence || @published_name

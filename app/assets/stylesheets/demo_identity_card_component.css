@@ -8,18 +8,6 @@
  */
 
 /*
- * The card takes the room its widest line needs and no more, rather than the
- * full width a listing's card is given: this one is read once, and a name in a
- * column of its own, stretched across a desktop, reads as a table with a column
- * missing. It still gives way below its content on a narrow screen, `max-width`
- * being what the two together say.
- */
-.identity-card {
-  width: fit-content;
-  max-width: 100%;
-}
-
-/*
  * Each attribute takes the room its longest line needs and no more, and wraps
  * to the next line when what is left cannot hold it. A grid would give a place
  * of birth the width of a provenance, and leave holes wherever an attribute the

@@ -11,6 +11,12 @@
 # value with a reading of its own keeps it under the mark. Deciding which values
 # deserve it is the caller's alone.
 class DirectoryValueComponent < ViewComponent::Base
+  # The mark is interpolated into a sentence — « From X, for the procedure Y »
+  # — and the newline ending its template would land between the value and the
+  # comma that follows it, which a browser renders as a space before the
+  # punctuation.
+  strip_trailing_whitespace
+
   # The language the directory published the wording in, where the caller knows
   # it: a passage in another language than the page's carries its own `lang`,
   # failing which a screen reader pronounces English as French (RGAA 8.7).

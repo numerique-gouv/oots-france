@@ -292,7 +292,7 @@ end
 
 Alors('le faux FranceConnect+ affiche sa page de déconnexion, sans rediriger') do
   expect(@reponse.status).to eq(200)
-  expect(@reponse.body).to include('Vous êtes bien déconnecté')
+  expect(@reponse.body).to include('You are signed out')
 end
 
 Quand('le portail déconnecte l\'usager vers une adresse non déclarée') do

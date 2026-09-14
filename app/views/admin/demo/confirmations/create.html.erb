@@ -5,7 +5,7 @@
               [t('admin.demo.confirmations.create.title'), nil]],
     ) %>
 
-<h1 class="fr-h3"><%= t('admin.demo.confirmations.create.title') %></h1>
+<h1 class="fr-h3" lang="en"><%= t('admin.demo.confirmations.create.title') %></h1>
 
 <%# Only a refusal renders here: a request that left redirects to the tracking.
     Every one of these is refused before an exchange exists — the contract
@@ -15,7 +15,7 @@
     never in the status. %>
 <%= render 'admin/demo/echec', type: :error, failure: @failure %>
 
-<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.confirmations.create.nothing_opened') %></p>
+<p class="fr-text--lead fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.confirmations.create.nothing_opened') %></p>
 
 <%= link_to t('admin.demo.confirmations.create.back'), admin_demo_confirmation_path,
-      class: 'fr-btn fr-btn--secondary' %>
+      class: 'fr-btn fr-btn--secondary', lang: 'en' %>

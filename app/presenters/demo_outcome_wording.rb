@@ -31,6 +31,7 @@ class DemoOutcomeWording
 
   delegate :edm_error_code, :preview_location, to: :answer
   delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id, to: :request
+  delegate :evidence_type_name, :provider_name, :procedure_name, to: :request
 
   def initialize(answer:, request:)
     @answer = answer
@@ -56,6 +57,13 @@ class DemoOutcomeWording
   def refusal = answer.error
 
   def secure_preview? = preview_location.to_s.match?(SECURE_PREVIEW)
+
+  # What the journey named before the request left, filed with it: the heading
+  # says what was asked, of whom, and under which procedure, rather than naming
+  # the page. All three or none — a request missing any of them is one opened
+  # before they were recorded, and half a sentence is worse than a title of our
+  # own.
+  def named? = [evidence_type_name, provider_name, procedure_name].all?(&:present?)
 
   private
 

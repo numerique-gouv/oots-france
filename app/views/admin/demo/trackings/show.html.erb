@@ -5,7 +5,25 @@
               [t('admin.demo.trackings.show.title'), nil]],
     ) %>
 
-<h1 class="fr-h3"><%= t('admin.demo.trackings.show.title') %></h1>
+<%# What was asked, and of whom: the two values requirement 27 of chapter 1 §2
+    had the confirmation page name, filed with the request rather than resolved
+    again here — chapter 4.4 §4.1 makes this the one page of the journey meant
+    to be reloaded at will. Both are the directories' words, and wear their
+    mark. %>
+<% if @wording.named? %>
+  <h1 class="fr-h3 fr-mb-2w" lang="en">
+    <%= t('admin.demo.trackings.show.heading_html',
+          evidence_type: render(DirectoryValueComponent.new) { @wording.evidence_type_name }) %>
+  </h1>
+
+  <p class="fr-text--lead" lang="en">
+    <%= t('admin.demo.trackings.show.from_html',
+          provider: render(DirectoryValueComponent.new) { @wording.provider_name },
+          procedure: render(DirectoryValueComponent.new) { @wording.procedure_name }) %>
+  </p>
+<% else %>
+  <h1 class="fr-h3" lang="en"><%= t('admin.demo.trackings.show.title') %></h1>
+<% end %>
 
 <% if @unreachable %>
   <%# The contract unreachable says nothing of the exchange: the page reports
@@ -68,7 +86,7 @@
          (demo_preview_address(@wording) if @wording.preview_location.present?)],
       ] %>
 
-<ul class="fr-btns-group fr-btns-group--inline">
+<ul class="fr-btns-group fr-btns-group--inline" lang="en">
   <%# Reading again is free; asking again is a new journey. Chapter 4.4 §4.1:
       « … a new unique request MUST be issued. » %>
   <li><%= link_to t('admin.demo.trackings.show.refresh'), admin_demo_suivi_path,

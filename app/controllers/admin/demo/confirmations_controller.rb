@@ -35,13 +35,19 @@ module Admin
       # pages rescue it: the operator reads what happened rather than a 500.
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
+      # The identity first: it is the one thing on this page no directory has to
+      # answer for, and the rescue below renders the same template.
       def show
         @identity_wording = DemoIdentityWording.new(identity)
-        @wording = DemoResolutionWording.new(lookup)
+        resolution = lookup
+        @procedure = procedure_wording(resolution.requirements)
+        @wording = DemoResolutionWording.new(resolution)
+
+        remember_what_is_named
       end
 
       def create
-        result = ::Demo::RequestEvidence.call(identity:, conversation_id: reusable_conversation)
+        result = ::Demo::RequestEvidence.call(identity:, conversation_id: reusable_conversation, **named)
 
         return refuse(result) unless result.success?
 
@@ -51,6 +57,24 @@ module Admin
       end
 
       private
+
+      # What requirement 27 had this page show, kept for the press that follows:
+      # the tracking page says it again, and reading it back here rather than
+      # resolving it again there keeps three directory queries off a page made to
+      # be reloaded.
+      def remember_what_is_named
+        session[:demo_named] = {
+          evidence_type: @wording.evidence_type, provider: @wording.provider,
+          procedure: @procedure.title,
+        }
+      end
+
+      def named
+        held = session[:demo_named].presence&.symbolize_keys || {}
+
+        { evidence_type_name: held[:evidence_type], provider_name: held[:provider],
+          procedure_name: held[:procedure] }
+      end
 
       def keep(result)
         # Chapter 4.4 §4.3.2: the conversation is « reused for combined flows »
@@ -89,8 +113,21 @@ module Admin
         )
       end
 
+      # The heading the home page stands under, said again here: the two are one
+      # journey, and the procedure is what it is about. Built on the requirements
+      # the resolution has already read — its first step asks the very question
+      # the home page asks — so the page learns it without a query of its own.
+      def procedure_wording(requirements)
+        DemoProcedureWording.new(
+          code:, requirements:, published_name: CodeListClient.new.procedure_names(lang: :en)[code],
+        )
+      end
+
+      def code = ::Demo::RequestEvidence::PROCEDURE_CODE
+
       def report_unreachable_directories(error)
         @unreachable = error.message
+        @procedure = procedure_wording(nil)
 
         render :show, status: :bad_gateway
       end

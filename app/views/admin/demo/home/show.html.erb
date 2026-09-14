@@ -2,24 +2,16 @@
 
 <%= render DemoBreadcrumbsComponent.new %>
 
-<%# The code, then the title France declared the procedure under. Only the title
-    wears the mark: a code reads the same in every language and is what a request
-    carries, and the wording standing in for a title nobody could read is ours. %>
-<%= tag.h1 class: 'fr-h3' do %>
-  <%= @wording.code %> —
-  <% if @wording.title.present? %>
-    <%= render(DirectoryValueComponent.new(lang: @wording.title_language)) { @wording.title } %>
-  <% else %>
-    <%= @wording.untitled %>
-  <% end %>
-<% end %>
+<%= render 'admin/demo/titre', wording: @wording %>
+
+<p class="fr-text--lead fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.home.show.lead') %></p>
 
 <%# What the Evidence Broker publishes for the procedure, named as it names it.
     The sentence introduces the list and is worth nothing without one, so both
     go or neither does. %>
 <% if @wording.requirements_named.any? %>
   <div class="fr-col-12 fr-col-md-8 fr-my-4w" lang="en">
-    <p class="fr-text--lead fr-mb-1w"><%= t('admin.demo.home.show.requirements') %></p>
+    <p class="fr-mb-1w"><%= t('admin.demo.home.show.requirements') %></p>
 
     <ul>
       <% @wording.requirements_named.each do |label, language| %>

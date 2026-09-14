@@ -1,0 +1,13 @@
+<%# The heading every page of the journey stands under: the flag of the
+    jurisdiction, the code, and the title the member state declared the
+    procedure under. Only the title wears the mark of a directory: a code reads
+    the same in every language and is what a request carries, and the wording
+    standing in for a title nobody could read is ours. %>
+<%= tag.h1 class: 'fr-h3' do %>
+  <span class="fr-mr-1w"><%= wording.country_flag %> <%= wording.code %></span>
+  <% if wording.title.present? %>
+    <%= render(DirectoryValueComponent.new(lang: wording.title_language)) { wording.title } %>
+  <% else %>
+    <%= wording.untitled %>
+  <% end %>
+<% end %>

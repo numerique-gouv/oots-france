@@ -53,7 +53,14 @@ class DemoBrowser
   # whatever it already held. Public like `choose`: the steps press it directly.
   def submit_to(path, fields = {}) = send_form(form_posting_to(path), fields)
 
-  def title = document.at_css('h1')&.text.to_s
+  # What a sighted reader sees of the heading: the marks of the console
+  # write their meaning off screen, and that sentence is not part of it.
+  def title
+    heading = document.at_css('h1')&.dup
+    heading&.css('.fr-sr-only')&.remove
+
+    heading&.text.to_s.squish
+  end
 
   def body = page.body.to_s
 

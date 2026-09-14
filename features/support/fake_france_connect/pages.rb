@@ -26,7 +26,11 @@ module FakeFranceConnect
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        /* Les familles d'émoji avant `sans-serif` : une famille générique
+           répond toujours, et rien après elle n'est jamais consulté — sans quoi
+           le drapeau des boutons de pays s'affiche en tofu. */
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+          "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
         line-height: 1.5;
         color: #161616;
         background: #f6f6f6;
@@ -35,6 +39,7 @@ module FakeFranceConnect
         border-bottom: 1px solid #ddd;
         background: #fff;
         padding: 1rem 1.5rem;
+        text-align: center;
       }
       .banner p { margin: 0; font-weight: 700; letter-spacing: .02em; }
       .banner span { display: block; font-weight: 400; font-size: .875rem; color: #666; }
@@ -74,7 +79,9 @@ module FakeFranceConnect
     CSS
 
     def self.countries(action, codes)
-      buttons = codes.map { |code| button('country', code, Identities.country_name(code)) }
+      buttons = codes.map do |code|
+        button('country', code, "#{Identities.flag(code)} #{Identities.country_name(code)}")
+      end
 
       layout('Choose your country', form(action, buttons))
     end
@@ -103,11 +110,12 @@ module FakeFranceConnect
       layout('Error', "<p>#{escape(error)}</p><p class=\"quiet\">#{escape(description)}</p>")
     end
 
-    # The only page the fake serves under `lang="fr"`: FranceConnect+ shows this
-    # one to every user, European or not, and the sentence is its own.
+    # In English like every other page here, where FranceConnect+ serves this one
+    # in French to every user, European or not. A deliberate divergence: these
+    # screens are read by whoever drives the demonstration, and one page in
+    # another language reads as a fault rather than as fidelity.
     def self.logged_out
-      layout('Déconnexion', '<p>Vous êtes bien déconnecté, vous pouvez fermer votre navigateur.</p>',
-        lang: 'fr')
+      layout('Signed out', '<p>You are signed out. You can close your browser.</p>')
     end
 
     def self.button(field, value, label)
@@ -126,7 +134,7 @@ module FakeFranceConnect
         '<meta name="viewport" content="width=device-width, initial-scale=1">' \
         "<title>#{SERVICE} — #{escape(title)}</title><style>#{STYLE}</style></head><body>" \
         "<header class=\"banner\"><p>#{SERVICE}" \
-        '<span>Faux FranceConnect+ et passerelle eIDAS — pour les tests, aucune donnée réelle</span>' \
+        '<span>Fake FranceConnect+ and eIDAS bridge — for testing, no real data</span>' \
         "</p></header><main><h1>#{escape(title)}</h1>#{body}</main></body></html>"
     end
 
