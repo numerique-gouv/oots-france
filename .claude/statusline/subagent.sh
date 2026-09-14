@@ -66,6 +66,21 @@ quand() {
   [ -n "$T" ] && date -d "$T" +%s 2>/dev/null
 }
 
+# La dernière écriture (Write ou Edit) dont le chemin satisfait le test jq
+# donné en $2 : `plan`, sous `.claude/plans/` ; `code`, hors de `.claude/` et
+# hors de `/tmp`, où s'écrit le corps d'une PR.
+quand_ecrit() {
+  T=$(grep -E '"name":"(Write|Edit)"' "$1" 2>/dev/null \
+    | jq -r --arg test "$2" 'select(.type == "assistant")
+        | select([.message.content[]?
+                  | select(.type == "tool_use" and (.name == "Write" or .name == "Edit"))
+                  | (.input.file_path // "") as $p
+                  | if $test == "plan" then ($p | contains(".claude/plans/"))
+                    else (($p | contains("/.claude/") | not) and ($p | startswith("/tmp") | not)) end] | any)
+        | .timestamp // empty' 2>/dev/null | tail -1)
+  [ -n "$T" ] && date -d "$T" +%s 2>/dev/null
+}
+
 # L'étape, de la source la plus fraîche à la plus grossière.
 etape() {
   FICHIER="$SOUS_AGENTS/agent-$1.jsonl"
@@ -130,11 +145,15 @@ etape() {
   # 2. Les jalons que le transcript porte malgré lui. Grossiers, mais
   #    établis par un fait, là où une étape est une parole — et on les date
   #    pour la raison qui fait dater le verdict : une déclaration ne vaut
-  #    que tant qu'un fait plus récent ne la dément pas.
+  #    que tant qu'un fait plus récent ne la dément pas. Chaque jalon est une
+  #    écriture, jamais une lecture : l'ouvrier lit `.claude/plans/` dès son
+  #    § 1 pour savoir s'il reprend, et une mention en `ls` ou `cat` faisait
+  #    afficher « implementation » à un ouvrier qui ouvrait.
   JALON= ; JALON_A=
   if [ -f "$FICHIER" ]; then
     JALON=review;         JALON_A=$(quand "$FICHIER" 'gh pr create')
-    [ -z "$JALON_A" ] && { JALON=implementation; JALON_A=$(quand "$FICHIER" 'claude/plans/'); }
+    [ -z "$JALON_A" ] && { JALON=implementation; JALON_A=$(quand_ecrit "$FICHIER" code); }
+    [ -z "$JALON_A" ] && { JALON=plan;           JALON_A=$(quand_ecrit "$FICHIER" plan); }
     [ -z "$JALON_A" ] && { JALON=opening;        JALON_A=0; }
   fi
 
