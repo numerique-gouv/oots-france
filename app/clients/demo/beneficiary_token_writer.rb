@@ -58,7 +58,7 @@ module Demo
       }.compact_blank.merge('exp' => expiry)
     end
 
-    def expiry = Time.zone.parse(clock.now).to_i + VALIDITY.to_i
+    def expiry = clock.now.to_i + VALIDITY.to_i
 
     # Read from the route rather than derived from `Settings.private_key_jwk`.
     # Reading it is what makes the demonstration exercise the publishing route;

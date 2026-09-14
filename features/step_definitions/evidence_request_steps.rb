@@ -51,8 +51,13 @@ Alors('le portail reçoit le justificatif') do
   patiente_jusqu_a('le justificatif soit transmis') { @fake_requester.received_evidence.present? }
 end
 
-Alors('le justificatif reçu est le document que le fournisseur détient') do
-  expect(@fake_requester.received_evidence.b).to eq(justificatif_detenu.b)
+# The provider produces the document as it answers and keeps no copy of it, so
+# what a scenario can confront the received bytes with is the digest the journal
+# recorded of them — which is exactly what chapter 4.8 has the data service log,
+# and what `journal_des_echanges.md` offers for settling a dispute.
+Alors('le justificatif reçu est celui que le journal des échanges a consigné') do
+  expect(Digest::SHA256.hexdigest(@fake_requester.received_evidence.b))
+    .to eq(journal.find_by!(event_type: 'response_sent').evidence_digest)
 end
 
 # Chapter 4.4 §4.3.2 names the two identifiers an exchange and a user session
@@ -112,7 +117,7 @@ Alors('le journal des échanges contient tout l\'échange, de l\'envoi de la req
   expect(journal.pluck(:request_id).compact.uniq).to contain_exactly(depart.request_id)
 
   remise = journal.find_by!(event_type: 'evidence_delivered')
-  expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(justificatif_detenu))
+  expect(remise.evidence_digest).to eq(Digest::SHA256.hexdigest(@fake_requester.received_evidence.b))
 end
 
 # Chapter 4.8 asks both its tables for « MIME type and full content of first
@@ -160,10 +165,6 @@ Alors('le journal des échanges contient l\'erreur du fournisseur') do
 end
 
 def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
-
-# The very constant the provider reads, so a scenario cannot assert a document
-# the code does not serve.
-def justificatif_detenu = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
 
 # One user's session, named by the portal rather than left to the application:
 # `R-EDM-ebMS-017` wants a UUID, and the same one twice is what makes the two

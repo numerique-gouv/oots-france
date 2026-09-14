@@ -98,7 +98,7 @@ RSpec.describe EbmsHeaderBuilder do
     expect(Nokogiri::XML(rendered).errors).to be_empty
   end
 
-  def frozen_clock = instance_double(Clock, now: '2026-08-06T10:00:00.000Z')
+  def frozen_clock = instance_double(Clock, now: Time.utc(2026, 8, 6, 10))
 
   # Starts at 1: the message mints the payload identifier first — it is the one
   # hard-coded above as `payload_id` — and the header draws the next ones. Made

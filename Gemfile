@@ -24,6 +24,11 @@ gem 'interactor'
 # OOTS messages: ERB templates on the way out, XPath on the way in.
 gem 'nokogiri'
 
+# Le justificatif de démonstration, engendré à chaque réponse. Ruby pur, aucune
+# dépendance native, et une licence (Prawn, GPLv2 ou GPLv3 au choix) qui convient
+# à un dépôt public — là où `hexapdf` est en AGPL.
+gem 'prawn', '~> 2.5'
+
 # Beneficiary token: a JWE encrypted for us, holding a JWT signed by the
 # requester. RSA-OAEP-256 / A256GCM.
 gem 'jwe'
@@ -83,6 +88,9 @@ group :test do
   gem 'cucumber-rails', require: false
   gem 'cuprite'
   gem 'database_cleaner-active_record'
+  # Relit le texte des PDF qu'engendre `EvidenceDocumentBuilder` : les critères
+  # d'acceptance du document se lisent sur ce texte.
+  gem 'pdf-reader'
   gem 'shoulda-matchers'
   gem 'state_machines-rspec'
   gem 'simplecov', require: false

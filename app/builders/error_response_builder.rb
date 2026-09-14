@@ -8,7 +8,7 @@
 # replaces could not emit at all. It is what `EDM:ERR:0002` needs, and chapter
 # 4.9 on the provider side will need it; nothing emits it yet.
 class ErrorResponseBuilder < ApplicationBuilder
-  attr_reader :request_id, :document_id, :timestamp, :exception, :preview_location
+  attr_reader :request_id, :document_id, :exception, :preview_location
 
   def initialize(
     requester:, exception:, request_id:, provider: nil, preview_location: nil,
@@ -20,7 +20,7 @@ class ErrorResponseBuilder < ApplicationBuilder
     @exception = exception
     @request_id = request_id
     @preview_location = preview_location
-    @timestamp = clock.now
+    @instant = clock.now
     @document_id = uuid.next
   end
 

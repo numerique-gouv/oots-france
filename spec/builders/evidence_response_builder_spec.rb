@@ -25,9 +25,9 @@ RSpec.describe EvidenceResponseBuilder do
         descriptions: { 'EN' => 'Certificate of Birth' },
         distribution_formats: ['application/pdf'],
       ),
-      attachment: Attachment.new('cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr', 'JVBERi0='),
+      evidence_reference: 'cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr',
       request_id: 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797',
-      clock: instance_double(Clock, now: '2026-08-06T10:00:00.000Z'),
+      clock: instance_double(Clock, now: Time.utc(2026, 8, 6, 10)),
       uuid: sequential_uuids,
     }
   end
@@ -147,6 +147,33 @@ RSpec.describe EvidenceResponseBuilder do
 
     it 'states the eIDAS identifier the request named its subject by' do
       expect(echoed.at_xpath('//sdg:IsAbout//sdg:Identifier', namespaces).text).to eq('DK/FR/123456')
+    end
+  end
+
+  # Chapter 4.5.2 §3.3, « The date when the evidence has been issued by the
+  # Evidence Provider », which is the day the response produces the document it
+  # carries.
+  describe 'the date it says the evidence was issued on' do
+    subject(:issued_on) do
+      Nokogiri::XML(described_class.new(**attributes, clock:).render)
+        .at_xpath('//sdg:IssuingDate', namespaces).text
+    end
+
+    let(:clock) { instance_double(Clock, now: Time.utc(2026, 8, 6, 10)) }
+
+    it 'is the day of the instant the response was built at' do
+      expect(issued_on).to eq('2026-08-06')
+    end
+
+    # CA9: Paris and not UTC, where the `IssueDateTime` slot beside it writes the
+    # very same instant the other way. Late enough in the evening that the two
+    # fall on different days, which is the only way to tell them apart.
+    context 'when that instant falls on the next day in Paris' do
+      let(:clock) { instance_double(Clock, now: Time.utc(2026, 9, 14, 23, 30)) }
+
+      it 'is the Paris day of it' do
+        expect(issued_on).to eq('2026-09-15')
+      end
     end
   end
 

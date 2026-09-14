@@ -14,9 +14,21 @@ class ApplicationBuilder
   # France answers — and never here.
   attr_reader :specification
 
+  # The instant this message is built at, read once from the clock. Chapter
+  # 4.5.2 §2.4 has the `IssueDateTime` slot express « the creation date and time
+  # of the referred document », so the document and the slot that dates it
+  # cannot each read a clock of their own.
+  attr_reader :instant
+
+  # The form every message writes an instant in: UTC, to the millisecond.
+  # `getutc` and not `utc`, which converts its receiver in place — an instant a
+  # builder is handed and does not own, and which raises `FrozenError` when it is
+  # frozen, as a clock stopped for a test legitimately is.
+  def timestamp = instant.getutc.iso8601(3)
+
   # ERB gets this method's binding, so a template looks constants up lexically
-  # from here and must qualify them — `EvidenceResponseBuilder::ISSUING_DATE`,
-  # never a bare `ISSUING_DATE`. Methods resolve on `self` and need no such care.
+  # from here and must qualify them — `EbmsHeaderBuilder::SERVICE`, never a bare
+  # `SERVICE`. Methods resolve on `self` and need no such care.
   def render = renderer.result(binding)
 
   protected

@@ -7,15 +7,15 @@
 # classified `EP` here, and its slot is a collection, where the requester's is a
 # single value — an asymmetry the TDD impose, not one chosen here.
 class EvidenceResponseBuilder < ApplicationBuilder
-  # Hard-coded: France holds no real evidence to date it. Stub, tracked as
-  # OOTS-84.
-  ISSUING_DATE = '1970-03-03'.freeze
-
-  attr_reader :request_id, :timestamp, :beneficiary, :evidence_type, :attachment,
+  attr_reader :request_id, :beneficiary, :evidence_type, :evidence_reference,
     :document_id, :package_id, :extrinsic_object_id, :evidence_id, :classification_id
 
+  # The `cid:` of the attachment and not the attachment itself: it is all the
+  # templates read of it, and the document that attachment carries is produced
+  # from the identifier and the instant this constructor settles — so the body
+  # has to be built before the document it describes exists.
   def initialize(
-    requester:, beneficiary:, evidence_type:, attachment:, request_id:,
+    requester:, beneficiary:, evidence_type:, evidence_reference:, request_id:,
     provider: nil, specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
@@ -23,9 +23,9 @@ class EvidenceResponseBuilder < ApplicationBuilder
     @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
     @beneficiary = beneficiary
     @evidence_type = evidence_type
-    @attachment = attachment
+    @evidence_reference = evidence_reference
     @request_id = request_id
-    @timestamp = clock.now
+    @instant = clock.now
     @document_id = uuid.next
     # Drawn whatever the version, though only the 2.0 response carries the
     # package and the classification: a sequence that skipped them would give
@@ -36,6 +36,13 @@ class EvidenceResponseBuilder < ApplicationBuilder
     @evidence_id = uuid.next
     @classification_id = uuid.next
   end
+
+  # The day the evidence was issued, which is the day this response produces the
+  # document — chapter 4.5.2 §3.3, « The date when the evidence has been issued
+  # by the Evidence Provider », held to `xsd:date` by `R-EDM-RESP-C016`. Paris
+  # time, where the slot beside it writes the same instant in UTC: the two name
+  # one moment in the two ways their own definitions ask for.
+  def issuing_date = instant.in_time_zone.to_date.iso8601
 
   protected
 

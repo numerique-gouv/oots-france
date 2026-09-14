@@ -8,7 +8,7 @@ require 'rails_helper'
 # dropped `soap:Header`, a wrong namespace URI or a misplaced payload would pass
 # every other builder spec in this directory.
 RSpec.describe 'Les enveloppes soumises au plugin WS' do
-  let(:frozen_clock) { instance_double(Clock, now: '2026-08-06T10:00:00.000Z') }
+  let(:frozen_clock) { instance_double(Clock, now: Time.utc(2026, 8, 6, 10)) }
 
   # Every identity is supplied here rather than read from the environment. The
   # references are frozen under one gateway identity, and a deployment's `.env`
@@ -106,11 +106,15 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
     )
   end
 
+  # Any PDF at all: what the reference envelope fixes is how an attachment is
+  # declared and referenced, not what it contains. This sample is the one thing
+  # `assets/drapeau.pdf` is still read for — nothing serves it as evidence any
+  # more, `EvidenceDocumentBuilder` producing the document France answers with.
   def evidence = Rails.root.join('assets/drapeau.pdf').binread
 
   def response_body(attachment)
     EvidenceResponseBuilder.new(
-      requester:, beneficiary:, evidence_type:, attachment:,
+      requester:, beneficiary:, evidence_type:, evidence_reference: attachment.identifier,
       request_id: REQUEST_ID, clock: frozen_clock, uuid:,
     )
   end

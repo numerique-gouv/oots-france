@@ -355,6 +355,33 @@ fr:
         legal_name: Raison sociale
         identifiers: Identifiants
   builders:
+    # Le justificatif de démonstration que la France sert. Aucun chapitre ne dit
+    # ce qu'un PDF porte : ces libellés sont à nous, et l'ordre dans lequel le
+    # document les pose aussi. Les titres du type demandé, eux, restent dans la
+    # langue où la requête les donne, `type_title` nommant cette langue.
+    evidence_document_builder:
+      title: Justificatif de démonstration
+      issued_at: "Produit le %{date} à %{time}, heure de Paris."
+      # Le format de la date et celui de l'heure, tels que le document les
+      # imprime : `strftime` les lit, et les rendre traduisibles évite d'écrire
+      # une convention française dans le code.
+      date_format: "%d/%m/%Y"
+      time_format: "%H:%M:%S"
+      sections:
+        evidence_type: Type de justificatif demandé
+        subject: Usager concerné
+      # Chaque ligne porte son libellé **et** sa valeur : le deux-points et
+      # l'espace qui les séparent appartiennent à la phrase, et une langue qui
+      # ponctuerait autrement ne pourrait pas le dire si le code les recollait.
+      classification: "Identifiant de classification : %{value}"
+      type_title: "Titre (%{language}) : %{value}"
+      fields:
+        family_name: "Nom : %{value}"
+        given_name: "Prénom : %{value}"
+        date_of_birth: "Date de naissance : %{value}"
+        legal_name: "Raison sociale : %{value}"
+      identifier: "Identifiant du justificatif : %{id}"
+      unknown_subject: "Sujet de justificatif d'un type que le document ne sait pas décrire : « %{type} »."
     evidence_request_builder:
       unknown_subject: "Sujet de justificatif d'un type que la requête ne sait pas écrire : « %{type} »."
     evidence_subject_builder:

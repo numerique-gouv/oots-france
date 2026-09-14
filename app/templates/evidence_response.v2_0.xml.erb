@@ -62,7 +62,7 @@
                   <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
 <%- end -%>
                 </sdg:IsConformantTo>
-                <sdg:IssuingDate><%= EvidenceResponseBuilder::ISSUING_DATE %></sdg:IssuingDate>
+                <sdg:IssuingDate><%= issuing_date %></sdg:IssuingDate>
                 <sdg:Distribution>
                   <sdg:Format><%= escape(served_format) %></sdg:Format>
                 </sdg:Distribution>
@@ -70,7 +70,7 @@
             </rim:SlotValue>
           </rim:Slot>
           <rim:Classification id="urn:uuid:<%= escape(classification_id) %>" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
-          <rim:RepositoryItemRef xlink:href="<%= escape(attachment.identifier) %>" xlink:title="Evidence"/>
+          <rim:RepositoryItemRef xlink:href="<%= escape(evidence_reference) %>" xlink:title="Evidence"/>
         </rim:RegistryObject>
       </rim:RegistryObjectList>
     </rim:RegistryObject>
