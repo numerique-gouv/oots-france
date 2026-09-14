@@ -22,7 +22,7 @@ class CodeListClient
   # `name-EN`; the countries carry the two names ISO 3166 gives them.
   NAME_COLUMNS = {
     PROCEDURES => { fr: 'name-FR', en: 'name-Value' },
-    COUNTRIES => { fr: 'french' },
+    COUNTRIES => { fr: 'french', en: 'name' },
   }.freeze
 
   def initialize(connection: nil)
@@ -35,7 +35,7 @@ class CodeListClient
   # « Belgique (la) » — which reads as a footnote in a table cell.
   ARTICLE = /\s*\((?<article>[^)]*)\)\z/
 
-  def country_names = names(COUNTRIES, :fr).transform_values { |name| name.sub(ARTICLE, '') }
+  def country_names(lang: :fr) = names(COUNTRIES, lang).transform_values { |name| name.sub(ARTICLE, '') }
 
   # That article, which nothing else publishes: without it a French sentence
   # cannot place a country — « en Belgique », but « aux Pays-Bas » and

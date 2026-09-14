@@ -29,7 +29,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
 
       marked = response.parsed_body.css('main .directory-value').map { |value| seen(value) }
 
-      expect(marked).to contain_exactly('Keha v. 2.0', 'Dummy PDF - FI')
+      expect(marked).to contain_exactly('(TEST) Test Requirement', 'Dummy PDF - FI', 'Keha v. 2.0')
     end
 
     it 'asks the contract nothing: nothing is opened by looking at the page' do
@@ -73,27 +73,48 @@ RSpec.describe 'Admin::Demo::Confirmations' do
     end
 
     # Unable to name the two, it must not offer to confirm: requirement 27 makes
-    # them a condition of the request, not a decoration on it.
-    it 'offers nothing to confirm when the directories refuse' do
+    # them a condition of the request, not a decoration on it. The card stays
+    # all the same — a requirement no country serves is still one the procedure
+    # rests on — and it is the footer that says so, in the portal's own words:
+    # the code the directory returned belongs to the console, not here.
+    it 'keeps the card and says in its footer that nothing is published' do
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
       get admin_demo_confirmation_path
 
-      expect(response.parsed_body.css('main').text).to include('DSD:ERR:0001')
+      carte = response.parsed_body.at_css('main .requirement-card')
+
+      expect(seen(carte.at_css('h3'))).to eq('(TEST) Test Requirement')
+      expect(carte.at_css('.fr-card__footer').text.squish)
+        .to eq('No provider listed by 🇫🇷 France (FR) for this evidence')
+      expect(carte.at_css('.fr-card__footer .country-tag')).to be_present
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
-    # `button_to` renders a `<form>`, which is a block: outside the group the
-    # DSFR prescribes, the two actions pile up whatever margin they carry. The
-    # primary comes first, the group being left-aligned — reading order, and tab
-    # order with it.
-    it 'offers the two actions as one group, the primary first' do
+    # One card per requirement the procedure rests on, each naming its own
+    # evidence type and provider.
+    it 'offers a card per requirement the procedure rests on' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+
       get admin_demo_confirmation_path
 
-      groupe = response.parsed_body.at_css('main ul.fr-btns-group')
+      titres = response.parsed_body.css('main .requirement-card h3').map { |titre| seen(titre) }
 
-      expect(groupe['class']).to include('fr-btns-group--inline-md')
-      expect(groupe.css('li button, li a').map(&:name)).to eq(%w[button a])
+      expect(titres).to eq(['(TEST) Test Requirement 2', 'Proof of enrolment in academic tertiary education'])
+    end
+
+    # The contract names no requirement and its server answers with the first
+    # that publishes evidence types, so a second button would send the same
+    # request under another name. Stub, tracked as OOTS-207.
+    it 'carries the press on one card only, and says why on the others' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+
+      get admin_demo_confirmation_path
+
+      cartes = response.parsed_body.css('main .requirement-card')
+
+      expect(cartes.css("form[action='#{admin_demo_confirmation_path}']").size).to eq(1)
+      expect(cartes.last.text).to include('one document at a time')
     end
 
     # Une panne d'annuaire n'est pas un refus : elle ne porte aucun code, et

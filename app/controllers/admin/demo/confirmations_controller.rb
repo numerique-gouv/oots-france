@@ -35,13 +35,16 @@ module Admin
       # pages rescue it: the operator reads what happened rather than a 500.
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
+      helper_method :provider_country
+
       # The identity first: it is the one thing on this page no directory has to
       # answer for, and the rescue below renders the same template.
       def show
         @identity_wording = DemoIdentityWording.new(identity)
-        resolution = lookup
-        @procedure = procedure_wording(resolution.requirements)
-        @wording = DemoResolutionWording.new(resolution)
+        leading = lookup
+        @procedure = procedure_wording(leading.requirements)
+        @requirements = resolutions(leading).map { |resolved| DemoResolutionWording.new(resolved) }
+        @wording = @requirements.find(&:nameable?)
 
         remember_what_is_named
       end
@@ -64,7 +67,7 @@ module Admin
       # be reloaded.
       def remember_what_is_named
         session[:demo_named] = {
-          evidence_type: @wording.evidence_type, provider: @wording.provider,
+          evidence_type: @wording&.evidence_type, provider: @wording&.provider,
           procedure: @procedure.title,
         }
       end
@@ -105,12 +108,23 @@ module Admin
       # and the one a request walks before sending anything. Replayed here for
       # the screen alone: the TDD normalise what the portal shows, never how it
       # learns it, and the request itself goes out through the contract.
-      def lookup
+      def lookup(requirement_id = nil)
         DirectoryLookup::Resolve.call(
           evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
           procedure_code: ::Demo::RequestEvidence::PROCEDURE_CODE,
-          country_code: ::Demo::RequestEvidence::PROVIDER_COUNTRY,
+          country_code: ::Demo::RequestEvidence::PROVIDER_COUNTRY, requirement_id:,
         )
+      end
+
+      # One resolution per requirement the procedure rests on, the page offering
+      # a card for each. The first is the one already walked — its own step read
+      # the whole list — and the others are asked for by identifier, which is
+      # what the console's resolution page does. The Evidence Broker answer they
+      # share is cached, so each costs the two queries below it and no more.
+      def resolutions(leading)
+        Array(leading.requirements).map do |requirement|
+          requirement.uuid == leading.requirement&.uuid ? leading : lookup(requirement.uuid)
+        end
       end
 
       # The heading the home page stands under, said again here: the two are one
@@ -125,9 +139,21 @@ module Admin
 
       def code = ::Demo::RequestEvidence::PROCEDURE_CODE
 
+      # The jurisdiction the evidence is sought in, named as the card has to name
+      # it when nothing is published there — in the box the console's directory
+      # pages already put a country in, and in English, like the page.
+      def provider_country
+        @provider_country ||= begin
+          country = ::Demo::RequestEvidence::PROVIDER_COUNTRY
+
+          CountryTagComponent.new(code: country, name: CodeListClient.new.country_names(lang: :en)[country])
+        end
+      end
+
       def report_unreachable_directories(error)
         @unreachable = error.message
         @procedure = procedure_wording(nil)
+        @requirements = []
 
         render :show, status: :bad_gateway
       end

@@ -1,24 +1,32 @@
-<%= render CardComponent.new(title:, heading_level: 2, classes: 'identity-card fr-col-12 fr-col-md-8') do %>
-  <dl class="identity-card__attributes">
-    <% civil.each do |label, value| %>
-      <div>
-        <dt><%= label %></dt>
-        <dd><%= value %></dd>
-      </div>
-    <% end %>
-  </dl>
+<%# The DSFR card, written out rather than taken from `CardComponent`: that one
+    renders a title, and the section around this card carries it — a card
+    repeating the heading above it says the same thing twice. %>
+<div class="fr-card fr-card--shadow fr-card--no-arrow identity-card fr-col-12 fr-col-md-8 fr-mb-4w">
+  <div class="fr-card__body">
+    <div class="fr-card__content">
+      <dl class="identity-card__attributes">
+        <% civil.each do |label, value| %>
+          <div>
+            <dt><%= label %></dt>
+            <dd><%= value %></dd>
+          </div>
+        <% end %>
+      </dl>
 
-  <% if level.present? %>
-    <hr class="fr-mt-3w">
+      <% if level.present? %>
+        <hr class="fr-mt-3w">
 
-    <%# One line, the label and the value side by side: the level is the whole of
-        what the authentication adds to the identity above, and a column of its
-        own would announce a list of one. `fr-badge` renders on a `<p>`, which
-        the DSFR fixes — it is the tag its own examples carry, and the styles
-        hang off it — so the line around it is a `<div>` and not a `<p>`. %>
-    <div class="identity-card__level">
-      <span><%= level_label %></span>
-      <p class="fr-badge fr-badge--sm"><%= level %></p>
+        <%# One line, the label and the value side by side: the level is the
+            whole of what the authentication adds to the identity above, and a
+            column of its own would announce a list of one. `fr-badge` renders on
+            a `<p>`, which the DSFR fixes — it is the tag its own examples carry,
+            and the styles hang off it — so the line around it is a `<div>` and
+            not a `<p>`. %>
+        <div class="identity-card__level">
+          <span><%= level_label %></span>
+          <p class="fr-badge fr-badge--sm"><%= level %></p>
+        </div>
+      <% end %>
     </div>
-  <% end %>
-<% end %>
+  </div>
+</div>

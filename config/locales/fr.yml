@@ -236,15 +236,34 @@ fr:
     # seule ne le dit qu'à l'œil (RGAA 3.1), et repris en infobulle pour qui la
     # survole.
     directory_value:
-      label: Publié par les annuaires centraux
-      meaning: ", publié par les annuaires centraux"
+      label: Name retrieved from the common services
+      meaning: ", retrieved from the common services"
+    # Une carte par exigence de la démarche, sur la page de confirmation. Tout y
+    # est en anglais comme le reste du parcours.
+    demo_requirement_card:
+      # Le type de justificatif et le fournisseur sont des mots des annuaires,
+      # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
+      # de la carte, lui, est l'intitulé de l'exigence et rien d'autre : aucune
+      # phrase ne l'entoure, donc aucune clé.
+      satisfied_by: Satisfied by the following documents
+      from_html: "%{evidence_type} from %{provider}"
+      submit: Request the document
+      # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
+      # phrase des annuaires, eux, restent à la console : un portail ne les
+      # montre pas à son usager. Le pays est dans la boîte où les pages
+      # d'annuaires en mettent un, d'où le balisage dans la traduction.
+      no_provider_html: No provider listed by %{country} for this evidence
+      # Le contrat que la démarche appelle ne nomme aucune exigence, et son
+      # serveur répond avec la première qui publie des types : un second bouton
+      # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
+      one_at_a_time: >-
+        This procedure can only request one document at a time for now.
     # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
     # l'état civil et ce dont l'authentification a répondu, que rien ne
     # sous-titre — la règle et le registre de mention le disent à sa place.
     #
     # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.
     demo_identity_card:
-      title: Your identity
       attributes:
         family_name: Family name
         given_name: Given name(s)
@@ -1353,17 +1372,19 @@ fr:
         # intitulé sert aussi de miette au fil d'Ariane.
         show:
           title: Confirm your request
-          lead: >-
-            Here is the identity you have just signed in with, the administration your document
-            will be requested from, and the type of document it will send. Nothing is requested
-            until you confirm.
-          caption: What will be requested
-          # Les deux valeurs sont rendues telles que les annuaires les publient,
-          # sans libellé de notre cru : la démonstration montrerait sinon autre
-          # chose que ce sur quoi l'échange repose.
-          provider: Administration holding the document
-          evidence_type: Type of document
-          submit: Confirm and request the document
+          # Ce que la carte d'identité montre : l'identité vient de
+          # l'authentification et non d'une saisie, ce que le chapitre 2.2 §2
+          # rend le portail comptable de tenir. Le titre est dit par la page et
+          # non par la carte, qui répéterait sinon le titre au-dessus d'elle.
+          identity_heading: Your identity
+          identity: The identity received from your connection
+          caption: Evidences needed for this procedure
+          # Ce que les cartes en dessous offrent : chacune nomme un document et
+          # l'administration qui le détient, et c'est le système « une fois pour
+          # toutes » qui va le chercher.
+          evidences: >-
+            Each of them is requested directly from the administration that holds it, so you do not
+            have to obtain it yourself.
           # L'autre réponse à la question du chapitre 1 §3.3 : partir sans
           # presser ne demande rien à personne.
           back: Back to the procedure

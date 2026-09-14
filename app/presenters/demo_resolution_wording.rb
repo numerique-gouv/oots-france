@@ -1,5 +1,6 @@
-# What the confirmation page of the demonstration says of the exchange about to
-# be opened: who will provide the evidence, and of which type.
+# What the confirmation page of the demonstration says of one requirement of the
+# procedure: what it is, who would provide the evidence satisfying it, and of
+# which type.
 #
 # Requirement 27 of chapter 1 §2 asks for exactly those two, and for them
 # « before any request is made » — hence a page of its own, and hence
@@ -10,6 +11,10 @@
 # publish them in: substituting a wording of our own would make the
 # demonstration show something no exchange rests on.
 class DemoResolutionWording
+  # English first, where the console reads French first: these pages are the
+  # portal, and their reader is a user of another Member State.
+  LANGUAGES = %w[EN FR].freeze
+
   def initialize(lookup)
     @lookup = lookup
   end
@@ -17,6 +22,21 @@ class DemoResolutionWording
   def provider = provider_entry&.label.presence
 
   def evidence_type = lookup.evidence_type&.label.presence
+
+  # What the procedure has to satisfy, which is what a card stands under. Read
+  # whatever the steps below answered: a requirement no country serves is still
+  # one the procedure rests on, and the card says so rather than disappearing.
+  #
+  # The evidence type is what satisfies it, and requirement 27 has it named too,
+  # so a requirement the directory named in no language falls back on it rather
+  # than leaving the card headless.
+  def requirement = lookup.requirement&.label(languages: LANGUAGES).presence || evidence_type
+
+  def requirement_language
+    return nil if lookup.requirement&.label(languages: LANGUAGES).blank?
+
+    lookup.requirement.label_language(languages: LANGUAGES)
+  end
 
   def nameable? = provider.present? && evidence_type.present?
 

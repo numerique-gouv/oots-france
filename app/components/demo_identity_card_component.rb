@@ -26,8 +26,6 @@ class DemoIdentityCardComponent < ViewComponent::Base
     super()
   end
 
-  def title = t('components.demo_identity_card.title')
-
   def civil
     filled(
       family_name: identity.family_name,

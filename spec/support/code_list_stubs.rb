@@ -23,11 +23,12 @@ module CodeListStubs
   DEFAULT_PROCEDURES = { 'R1' => 'Demander une attestation d’enregistrement d’une naissance' }.freeze
   DEFAULT_PROCEDURE_NAMES = { 'R1' => 'Requesting a birth registration certificate' }.freeze
   DEFAULT_COUNTRIES = { 'FR' => 'France (la)', 'FI' => 'Finlande (la)', 'DE' => 'Allemagne (l’)' }.freeze
+  DEFAULT_COUNTRY_NAMES = { 'FR' => 'France', 'FI' => 'Finland', 'DE' => 'Germany' }.freeze
 
   def stub_code_list(procedures: DEFAULT_PROCEDURES, procedure_names: DEFAULT_PROCEDURE_NAMES,
-                     countries: DEFAULT_COUNTRIES)
+                     countries: DEFAULT_COUNTRIES, country_names: DEFAULT_COUNTRY_NAMES)
     stub_code_list_at(CodeListClient::PROCEDURES, 'name-FR' => procedures, 'name-Value' => procedure_names)
-    stub_code_list_at(CodeListClient::COUNTRIES, 'french' => countries)
+    stub_code_list_at(CodeListClient::COUNTRIES, 'french' => countries, 'name' => country_names)
   end
 
   # One row per code any of the columns names, carrying only the columns that
