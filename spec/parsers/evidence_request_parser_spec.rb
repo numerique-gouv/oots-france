@@ -2561,32 +2561,52 @@ RSpec.describe EvidenceRequestParser do
       expect(written.validate!).to be(written)
     end
 
-    # The ten country codes, one assertion under ten identifiers. Two of the
-    # subject's and two of the representative's, which is enough to prove the
-    # table is keyed by the slot and not by the element.
-    {
-      'R-EDM-REQ-C075' => '<sdg:Nationality>ZZ</sdg:Nationality>',
-      'R-EDM-REQ-C076' => '<sdg:CountryOfBirth>zz</sdg:CountryOfBirth>',
-      'R-EDM-REQ-C045' => '<sdg:CurrentAddress><sdg:AdminUnitLevel1>ZZ</sdg:AdminUnitLevel1></sdg:CurrentAddress>',
-    }.each do |rule, written|
-      it "refuses a subject naming a country the list does not publish, under #{rule}" do
-        expect { subject_carrying(written).validate! }.to refusing(rule)
+    # The ten country codes, one assertion under ten identifiers — every row of
+    # the table, refused and accepted. A row nothing exercises is a row that
+    # could name the wrong rule, or point at the wrong element, without anything
+    # saying so.
+    describe 'the country codes each of them names' do
+      def carrying(person, written)
+        case person
+        when :subject then subject_carrying(written)
+        when :legal_subject then about_an_organisation { |slot| slot.sub('</sdg:LegalPerson>') { "#{written}</sdg:LegalPerson>" } }
+        when :representative then represented_by(written)
+        else organisation_representing(written)
+        end
       end
-    end
 
-    {
-      'R-EDM-REQ-C078' => '<sdg:Nationality>ZZ</sdg:Nationality>',
-      'R-EDM-REQ-C067' => '<sdg:CurrentAddress><sdg:AdminUnitLevel1>ZZ</sdg:AdminUnitLevel1></sdg:CurrentAddress>',
-    }.each do |rule, written|
-      it "refuses a representative naming one, under #{rule} — the same assertion, another slot" do
-        expect { represented_by(written).validate! }.to refusing(rule)
+      {
+        'R-EDM-REQ-C045' => [:subject, '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+        'R-EDM-REQ-C075' => [:subject, '<sdg:Nationality>%s</sdg:Nationality>'],
+        'R-EDM-REQ-C076' => [:subject, '<sdg:CountryOfBirth>%s</sdg:CountryOfBirth>'],
+        'R-EDM-REQ-C077' => [:subject, '<sdg:CountryOfResidence>%s</sdg:CountryOfResidence>'],
+        'R-EDM-REQ-C056' => [:legal_subject,
+                             '<sdg:RegisteredAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:RegisteredAddress>'],
+        'R-EDM-REQ-C067' => [:representative,
+                             '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+        'R-EDM-REQ-C078' => [:representative, '<sdg:Nationality>%s</sdg:Nationality>'],
+        'R-EDM-REQ-C079' => [:representative, '<sdg:CountryOfBirth>%s</sdg:CountryOfBirth>'],
+        'R-EDM-REQ-C080' => [:representative, '<sdg:CountryOfResidence>%s</sdg:CountryOfResidence>'],
+        # The one row whose element the schema does not admit where the rule
+        # looks for it: `sdg:LegalPerson` gets an `sdg:RegisteredAddress` and no
+        # `sdg:CurrentAddress`. Transcribed to the letter all the same, so the
+        # request that reaches it is one no schema-valid correspondent sends.
+        'R-EDM-REQ-C090' => [:legal_representative,
+                             '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+      }.each do |rule, (person, written)|
+        it "refuses a code the list does not publish, under #{rule}" do
+          expect { carrying(person, format(written, 'ZZ')).validate! }.to refusing(rule)
+        end
+
+        # Compared exactly, the assertion carrying no `i` flag: the refusal
+        # above would pass just as well if the reader accepted nothing at all,
+        # and this is what says otherwise.
+        it "accepts a published code in the same place, for #{rule}" do
+          accepted = carrying(person, format(written, 'SI'))
+
+          expect(accepted.validate!).to be(accepted)
+        end
       end
-    end
-
-    it 'accepts a published country code, compared exactly as C015 is' do
-      written = subject_carrying('<sdg:Nationality>SI</sdg:Nationality>')
-
-      expect(written.validate!).to be(written)
     end
 
     describe 'the level of assurance each of them declares' do
@@ -2627,6 +2647,11 @@ RSpec.describe EvidenceRequestParser do
       end
 
       # And the same pair on the representative, under its own identifiers.
+      it 'refuses a representative identifier naming no scheme at all, under R-EDM-REQ-C062' do
+        expect { represented_by('<sdg:Identifier>SI/SI/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C062')
+      end
+
       it 'refuses a representative naming another scheme, under R-EDM-REQ-C063' do
         expect { represented_by('<sdg:Identifier schemeID="eidas2">SI/SI/123456</sdg:Identifier>').validate! }
           .to refusing('R-EDM-REQ-C063')
@@ -2646,6 +2671,46 @@ RSpec.describe EvidenceRequestParser do
       end
     end
 
+    # The legal representative's chain, jumelle for jumelle of the legal
+    # subject's: level of assurance, then the scheme of its eIDAS identifier.
+    describe 'the organisation representing the subject' do
+      def carrying(written)
+        representing("<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>#{written}",
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+      end
+
+      it 'refuses one carrying no level of assurance, under R-EDM-REQ-C082' do
+        written = representing('<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C082')
+      end
+
+      it 'refuses one outside the LoA list, under R-EDM-REQ-C083' do
+        written = representing('<sdg:LevelOfAssurance>Medium</sdg:LevelOfAssurance>' \
+                               '<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C083')
+      end
+
+      it 'refuses an identifier naming no scheme, under R-EDM-REQ-C086' do
+        expect { carrying('<sdg:LegalPersonIdentifier>SI/SI/123456</sdg:LegalPersonIdentifier>').validate! }
+          .to refusing('R-EDM-REQ-C086')
+      end
+
+      it 'refuses one naming another scheme, under R-EDM-REQ-C087' do
+        expect { carrying('<sdg:LegalPersonIdentifier schemeID="eidas2">SI/SI/123456</sdg:LegalPersonIdentifier>').validate! }
+          .to refusing('R-EDM-REQ-C087')
+      end
+
+      it 'serves one that breaks none of the four' do
+        written = organisation_representing
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
     describe 'the shape of an eIDAS identifier' do
       it 'refuses a representative whose country codes are not published, under R-EDM-REQ-C061' do
         expect { represented_by('<sdg:Identifier schemeID="eidas">ZZ/FR/123456</sdg:Identifier>').validate! }
@@ -2658,6 +2723,16 @@ RSpec.describe EvidenceRequestParser do
           name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
 
         expect { written.validate! }.to refusing('R-EDM-REQ-C085')
+      end
+
+      # The accept half of `C061`, `C062`, `C063` and `C126` at once: a
+      # representative identified under `eidas`, with country codes the list
+      # publishes and a sex the eIDAS profile admits, is served.
+      it 'serves a representative whose eIDAS identifier is well formed' do
+        written = represented_by('<sdg:Identifier schemeID="eidas">SI/SI/123456</sdg:Identifier>' \
+                                 '<sdg:Gender>Female</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
       end
 
       it 'refuses an organisation representative carrying no identifier, under R-EDM-REQ-C084' do
@@ -2729,6 +2804,16 @@ RSpec.describe EvidenceRequestParser do
       # the disagreement.
       it 'refuses an eidas representative carrying no sex at all, under the same rule' do
         expect { identified_as('').validate! }.to refusing('R-EDM-REQ-C126')
+      end
+
+      # `C124` admits the numeric profile and `C126` does not — but `C126` only
+      # has a context once an `eidas` identifier is there. Without one, the
+      # numeric value passes: this is the half that proves the two lists are
+      # genuinely different, where refusing `7` proves only that both refuse it.
+      it 'accepts a numeric sex on a representative naming no identifier' do
+        written = represented_by('<sdg:Gender>1</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
       end
 
       it 'accepts an eidas representative naming one of the three' do
@@ -2995,6 +3080,7 @@ RSpec.describe EvidenceRequestParser do
   # absences already, through `SlotReading#slot_content`, but naming no rule —
   # so the correspondent got an `EDM:ERR:0003` with an empty `detail`.
   describe 'the element each slot of the query carries' do
+    # The two the reference request already carries, emptied of their element.
     {
       'R-EDM-REQ-S044' => ['EvidenceRequest', 'sdg:DataServiceEvidenceType'],
       'R-EDM-REQ-S046' => ['NaturalPerson', 'sdg:Person'],
@@ -3008,6 +3094,38 @@ RSpec.describe EvidenceRequestParser do
 
         expect { stripped.validate! }.to refusing(rule)
       end
+    end
+
+    # And the three it does not, written in carrying the wrong element. The
+    # people rules never fire on these: they look for an `sdg:Person` or an
+    # `sdg:LegalPerson` that is precisely what is missing, so the refusal that
+    # comes back is the slot-content one and not a value rule standing in for it.
+    def hollow_slot(name)
+      "<rim:Slot name=\"#{name}\"><rim:SlotValue xsi:type=\"rim:AnyValueType\"><sdg:Autre/></rim:SlotValue></rim:Slot>"
+    end
+
+    {
+      'R-EDM-REQ-S048' => ['AuthorizedRepresentative', 'sdg:Person'],
+      'R-EDM-REQ-S056' => ['AuthorizedRepresentativeLegalPerson', 'sdg:LegalPerson'],
+    }.each do |rule, (name, element)|
+      it "refuses a #{name} slot value carrying no #{element}, under #{rule}" do
+        stripped = with_body do |body|
+          body.sub('<rim:Slot name="NaturalPerson">') { "#{hollow_slot(name)}<rim:Slot name=\"NaturalPerson\">" }
+        end
+
+        expect { stripped.validate! }.to refusing(rule)
+      end
+    end
+
+    # The subject slot is replaced and not doubled: `R-EDM-REQ-S016` counts the
+    # two subject slots and refuses a request naming both, so adding one beside
+    # the other would be refused under that rule and prove nothing about this one.
+    it 'refuses a LegalPerson slot value carrying no sdg:LegalPerson, under R-EDM-REQ-S047' do
+      stripped = with_body do |body|
+        body.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) { hollow_slot('LegalPerson') }
+      end
+
+      expect { stripped.validate! }.to refusing('R-EDM-REQ-S047')
     end
   end
 
