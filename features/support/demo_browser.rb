@@ -1,4 +1,5 @@
 require 'nokogiri'
+require Rails.root.join('spec/support/rendered_text')
 
 # A browser walking the demonstration procedure, from the operator's login to
 # the identified form, across the two hosts the journey crosses: this
@@ -16,6 +17,11 @@ require 'nokogiri'
 # followed a redirection to another host would be exactly the leak the same-site
 # rules exist to prevent, and the scenario must not do what a browser refuses to.
 class DemoBrowser
+  # What a sighted reader sees of a node, written once for the two suites: the
+  # marks of this console say their meaning off screen, and an assertion on what
+  # a page shows has to drop it.
+  include RenderedText
+
   MAXIMUM_REDIRECTIONS = 10
 
   attr_reader :page, :current_url
@@ -53,19 +59,39 @@ class DemoBrowser
   # whatever it already held. Public like `choose`: the steps press it directly.
   def submit_to(path, fields = {}) = send_form(form_posting_to(path), fields)
 
-  def title = document.at_css('h1')&.text.to_s
+  # What a sighted reader sees of the heading: the marks of the console
+  # write their meaning off screen, and that sentence is not part of it.
+  def title
+    heading = document.at_css('h1')
+
+    heading ? seen(heading) : ''
+  end
 
   def body = page.body.to_s
 
-  def rows
+  # Both shapes a page of the demonstration states an attribute in: a table row
+  # for what a directory or an exchange yields, a definition list for the
+  # identity card. A scenario reads « intitulé : valeur » and has no business
+  # knowing which markup carries it.
+  def rows = table_rows.merge(definition_rows)
+
+  def badges = document.css('.fr-badge').map { |badge| badge.text.strip }
+
+  private
+
+  attr_reader :procedure_url, :connection
+
+  def table_rows
     document.css('table tr').to_h do |row|
       [row.at_css('th')&.text.to_s.strip, row.at_css('td')&.text.to_s.strip]
     end
   end
 
-  private
-
-  attr_reader :procedure_url, :connection
+  def definition_rows
+    document.css('dl > div').to_h do |pair|
+      [pair.at_css('dt')&.text.to_s.strip, pair.at_css('dd')&.text.to_s.strip]
+    end
+  end
 
   def document = Nokogiri::HTML(body)
 

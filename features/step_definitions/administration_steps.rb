@@ -30,18 +30,16 @@ end
 # Ouverte depuis le menu, et non par son adresse : c'est l'entrée elle-même que
 # [OOTS-178](https://linear.app/pole-api/issue/OOTS-178) demande de vérifier.
 Quand("l'administrateur suit l'entrée « Démo » du menu") do
-  stub_code_list(procedures: { ProcedureCode::STUDY_FINANCING => CodeListStubs::STUDY_FINANCING_LABEL })
+  stub_code_list
+  stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
   visit admin_root_path
   click_link I18n.t('layouts.entete.demo')
 end
 
 Alors("la page d'accueil de la démarche de démonstration s'affiche") do
   expect(page).to have_current_path(admin_demo_root_path)
-  expect(page).to have_text(I18n.t('admin.demo.home.show.portal'))
-  expect(page).to have_css(
-    'h1',
-    exact_text: "#{ProcedureCode::STUDY_FINANCING} — #{CodeListStubs::STUDY_FINANCING_LABEL}",
-  )
+  expect(page).to have_css('h1', text: "🇫🇷 #{ProcedureCode::STUDY_FINANCING}")
+  expect(page).to have_css('h1 .directory-value', text: 'Apply for funding for higher education')
 end
 
 # A button and not a link: starting the flow writes the `state` and the `nonce`

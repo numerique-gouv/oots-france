@@ -48,32 +48,40 @@ Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |c
   @navigateur.choose('consent', 'yes')
 end
 
-Alors('l\'administrateur arrive sur le formulaire de demande de bourse') do
-  expect(@navigateur.current_url).to end_with('/admin/demo/demande')
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.grant_requests.show.title'))
+# The heading is the procedure's, as on the home page: the two are one journey.
+Alors('l\'administrateur arrive sur la page de confirmation') do
+  expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
+  expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
 end
 
-Alors('le formulaire affiche {string} : {string}') do |intitule, valeur|
+Alors('la page affiche {string} : {string}') do |intitule, valeur|
   expect(@navigateur.rows).to include(intitule => valeur)
 end
 
-# CA4: the attributes of the identity are shown, never typed. The application's
-# own fields sit outside those tables, and the assertion is on the tables alone.
-Alors('le formulaire affiche l\'identité sans aucun champ de saisie') do
-  expect(Nokogiri::HTML(@navigateur.body).css('main table input, main table select, main table textarea'))
+# The level wears a badge and no row, being the whole of what the authentication
+# adds to the identity above it.
+Alors('la page affiche le niveau de garantie {string}') do |niveau|
+  expect(@navigateur.badges).to include(niveau)
+end
+
+# CA4: the attributes of the identity are shown, never typed. Scoped to the
+# card that holds them: the page carries a form of its own, the one the press
+# submits.
+Alors('la page affiche l\'identité sans aucun champ de saisie') do
+  expect(Nokogiri::HTML(@navigateur.body).css('.identity-card input, .identity-card select, .identity-card textarea'))
     .to be_empty
 end
 
 # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
 # showing it beside a missing eIDAS identifier would invite taking it for one.
-Alors('le formulaire n\'affiche pas le pseudonyme que FranceConnect+ a donné à l\'usager') do
+Alors('la page n\'affiche pas le pseudonyme que FranceConnect+ a donné à l\'usager') do
   expect(@navigateur.body).not_to match(/\h{64}v1/)
 end
 
-Alors('le formulaire n\'affiche ni le sexe ni le lieu de naissance') do
+Alors('la page n\'affiche ni le sexe ni le lieu de naissance') do
   expect(@navigateur.rows.keys).not_to include(
-    I18n.t('admin.demo.grant_requests.attributes.gender'),
-    I18n.t('admin.demo.grant_requests.attributes.place_of_birth'),
+    I18n.t('components.demo_identity_card.attributes.gender'),
+    I18n.t('components.demo_identity_card.attributes.place_of_birth'),
   )
 end
 
@@ -91,37 +99,30 @@ Quand('il se reconnecte à l\'espace d\'administration') do
   @navigateur.sign_in(COMPTE_DEMO.fetch(:email), COMPTE_DEMO.fetch(:password))
 end
 
-Quand('il ouvre le formulaire de demande de bourse') do
-  @navigateur.visit('/admin/demo/demande')
+Quand('il ouvre la page de confirmation de la démarche') do
+  @navigateur.visit('/admin/demo/confirmation')
 end
 
 Alors('l\'administrateur arrive sur la page d\'accueil de la démarche de démonstration, sans identité') do
   expect(@navigateur.current_url).to end_with('/admin/demo')
 end
 
-# Chapter 1 §3.3: the user says explicitly whether the Once-Only Technical
-# System is to be used, and nothing leaves without that gesture.
-Quand('l\'usager demande que son justificatif soit récupéré') do
-  @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
-  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'oui')
-end
-
-Quand('l\'usager refuse que son justificatif soit récupéré') do
-  @requetes_avant = ServerAuditEvent.where(event_type: 'request_sent').count
-  @navigateur.submit_to('/admin/demo/demande', 'oots' => 'non')
-end
-
 # Requirement 27 of chapter 1 §2. The two values come from the real directories,
 # so the scenario asserts that they are there — not what they say, which Brussels
-# may rewrite without telling us.
+# may rewrite without telling us. They are named on the card that carries the
+# press, in the one sentence that stands between the rule and the button, and
+# each wears the mark of what the directories publish.
 Alors('la page de confirmation affiche le fournisseur et le type de justificatif') do
-  lignes = @navigateur.rows
+  nommes = Nokogiri::HTML(@navigateur.body)
+    .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
 
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.confirmations.show.title'))
-  expect(lignes[I18n.t('admin.demo.confirmations.show.provider')]).to be_present
-  expect(lignes[I18n.t('admin.demo.confirmations.show.evidence_type')]).to be_present
+  expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
+  expect(nommes.size).to eq(2)
+  expect(nommes).not_to include('')
 end
 
+# Chapter 1 §3.3: this press is where the user says explicitly that the
+# Once-Only Technical System is to be used, and nothing leaves without it.
 Quand('l\'usager confirme sa demande') do
   @navigateur.submit_to('/admin/demo/confirmation')
 end
@@ -131,10 +132,14 @@ end
 # there, and the state it shows is deliberately not asserted — the exchange is
 # already on its way, and what the correspondent has answered by the time this
 # page renders is not this scenario's business.
+#
+# The page is recognised by its address and not by its heading: the heading
+# names the document that was asked for, which the real directories publish and
+# Brussels may rewrite without telling us.
 Alors('la page de suivi affiche l\'identifiant de l\'échange ouvert') do
   @exchange_id = @navigateur.rows[I18n.t('admin.demo.trackings.show.exchange')]
 
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.trackings.show.title'))
+  expect(@navigateur.current_url).to end_with('/admin/demo/suivi')
   expect(@exchange_id).to match(Exchange::UUID)
 end
 
@@ -171,14 +176,6 @@ Alors('cette requête déclare que l\'usager a demandé le justificatif') do
 
   emise = Time.zone.parse(document.at_xpath('//rim:Slot[@name="IssueDateTime"]//rim:Value', rim).text)
   expect(emise).to be_within(1.minute).of(Time.current)
-end
-
-Alors('la démarche de démonstration affiche que le justificatif reste à fournir') do
-  expect(@navigateur.title).to eq(I18n.t('admin.demo.grant_requests.create.title'))
-end
-
-Alors('la France n\'a envoyé aucune requête') do
-  expect(ServerAuditEvent.where(event_type: 'request_sent').count).to eq(@requetes_avant)
 end
 
 # The log is written by the server, in a database the scenario does not share,

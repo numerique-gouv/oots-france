@@ -19,7 +19,7 @@ class FranceConnectController < ApplicationController
 
     session[:demo_identity] = result.identity.to_session
 
-    redirect_to admin_demo_demande_path
+    redirect_to admin_demo_confirmation_path
   end
 
   # A page, where the other return is a redirection: FranceConnect+ brings back

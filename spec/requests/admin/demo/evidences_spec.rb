@@ -8,6 +8,14 @@ RSpec.describe 'Admin::Demo::Evidences' do
     identify_demo_user
     stub_oots_france_public_keys
     stub_evidence_request
+    stub_directory_resolution
+    stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_fr')
+    stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
+    stub_code_list
+    # Requirement 27 of chapter 1 §2: the press exists only once the page has
+    # named the evidence type and the provider, so the journey is walked whole.
+    get admin_demo_confirmation_path
     post admin_demo_confirmation_path
   end
 

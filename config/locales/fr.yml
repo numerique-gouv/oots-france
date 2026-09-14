@@ -232,6 +232,62 @@ fr:
       summary: Afficher le corps (%{size})
     decrypted_value:
       label: Donnée personnelle déchiffrée
+    # Ce que la teinte bleue signifie, écrit hors écran parce qu'une couleur
+    # seule ne le dit qu'à l'œil (RGAA 3.1), et repris en infobulle pour qui la
+    # survole.
+    directory_value:
+      label: Name retrieved from the common services
+      meaning: ", retrieved from the common services"
+    # Une carte par exigence de la démarche, sur la page de confirmation. Tout y
+    # est en anglais comme le reste du parcours.
+    demo_requirement_card:
+      # Le type de justificatif et le fournisseur sont des mots des annuaires,
+      # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
+      # de la carte, lui, est l'intitulé de l'exigence et rien d'autre : aucune
+      # phrase ne l'entoure, donc aucune clé.
+      # Le pays est dans la boîte où les pages d'annuaires en mettent un, d'où le
+      # balisage dans la traduction.
+      satisfied_by_html: Satisfied by the following documents in %{country}
+      # Ce que dit la même ligne quand aucun fournisseur ne sert l'exigence : la
+      # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
+      unsatisfiable_html: Evidence impossible to satisfy by %{country}
+      from_html: "%{evidence_type} from %{provider}"
+      submit: Request the document
+      # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
+      # phrase des annuaires, eux, restent à la console : un portail ne les
+      # montre pas à son usager. Le pays est dans la boîte où les pages
+      # d'annuaires en mettent un, d'où le balisage dans la traduction.
+      # L'emoji redit l'avertissement que le fond rouge pâle porte, l'RGAA 3.1
+      # interdisant de ne le porter que par la couleur. Il est dans le gabarit
+      # et non dans la traduction : c'est un pictogramme, pas un mot. La graisse,
+      # elle, est dans la traduction : c'est la phrase qui la porte. Le pays est
+      # ici son seul nom — la ligne au-dessus le montre déjà en boîte, avec son
+      # drapeau et son code.
+      no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
+      # Et ce qu'elle dit quand l'annuaire a refusé de répondre : personne n'a
+      # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
+      # savoir. Le code du refus reste à la console, pas au portail.
+      no_answer_html: <strong>%{country} could not answer for this evidence</strong>
+      # Le contrat que la démarche appelle ne nomme aucune exigence, et son
+      # serveur répond avec la première qui publie des types : un second bouton
+      # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
+      one_at_a_time: >-
+        This procedure can only request one document at a time for now.
+    # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
+    # l'état civil et ce dont l'authentification a répondu, que rien ne
+    # sous-titre — la règle et le registre de mention le disent à sa place.
+    #
+    # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.
+    demo_identity_card:
+      attributes:
+        family_name: Family name
+        given_name: Given name(s)
+        birthdate: Date of birth
+        gender: Sex
+        place_of_birth: Place of birth
+        # Le deux-points est dans la clé : l'intitulé et le badge sont sur une
+        # ligne, et la ponctuation qui les joint appartient à la phrase.
+        level_of_assurance: "Level of assurance:"
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a
@@ -367,6 +423,14 @@ fr:
       unreadable: "Jeton FranceConnect+ indéchiffrable : %{error}"
       invalid: "Signature FranceConnect+ invalide : %{error}"
       unexpected_algorithms: Jeton FranceConnect+ chiffré en %{announced}, attendu %{expected}.
+  controllers:
+    admin:
+      demo:
+        # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
+        # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
+        # rien sur l'écran d'un usager n'aurait à dire pourquoi.
+        home:
+          no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -844,18 +908,9 @@ fr:
       # n'est pas un mot, et le traduire côté requête est l'affaire du jeton du
       # bénéficiaire.
       genders:
-        male: Masculin
-        female: Féminin
-        unspecified: Non précisé
-      provenance:
-        # Aucun claim ne nomme le pays ni le fournisseur d'identité étranger :
-        # ce qui est attesté, c'est le passage par la passerelle.
-        european: Identité d'un autre État membre, par la passerelle eIDAS
-        unnamed: Provenance non attestée par l'authentification
-      # Le cas nominal aujourd'hui : FranceConnect+ ne documente aucun claim qui
-      # le porte pour un usager européen, et le chapitre 2.1 §2.3.1.2 prévoit la
-      # requête sans lui.
-      no_identifier: Non rendu par l'authentification
+        male: Male
+        female: Female
+        unspecified: Not specified
   models:
     # La règle `R-EDM-*` enfreinte et ce qu'elle dit, composées en une phrase :
     # c'est sous cette forme que le journal la consigne.
@@ -1285,6 +1340,9 @@ fr:
             Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences,
             types de justificatif, fournisseurs.
           jobs: "Les jobs de fond : ce qui reste en file, ce qui a échoué, et la trace de chaque erreur."
+          # La console nomme elle-même la destination : la démarche, elle, se
+          # nomme en anglais, étant le portail.
+          demo_title: Démarche de démonstration
           demo: >-
             La demande de bourse d'une université fictive, où l'exploitant joue l'usager d'un portail
             de démarche et déclenche lui-même un échange.
@@ -1293,172 +1351,136 @@ fr:
     demo:
       home:
         show:
-          title: Démarche de démonstration
-          # Le portail joué, au-dessus du titre : le titre est la démarche, et
-          # une démarche n'est pas un lieu. Le nom est celui que le projet a
-          # arrêté ; l'intitulé de la démarche, lui, est lu dans la liste de
-          # codes et ne s'écrit pas ici.
-          portal: Université de démonstration
-          notice:
-            title: Démonstration
-            body: >-
-              L'Université de démonstration n'existe pas, et cette démarche n'en est pas une :
-              l'écran est joué par l'exploitant depuis l'espace d'administration. Aucun justificatif
-              réel n'est demandé.
-          explanation: >-
-            Cette démarche peut faire venir le justificatif dont elle a besoin directement de
-            l'administration de l'autre État membre qui le détient, sans que vous ayez à l'obtenir
-            ni à le fournir vous-même. Rien n'est demandé sans votre accord explicite, et vous devez
-            d'abord vous identifier.
-          # En anglais, et c'est le libellé que FranceConnect+ montre au bouton
-          # de sa cinématique européenne — ses règles d'intégration, elles, sont
-          # annoncées comme « bientôt publiées ». Il s'adresse à un usager qui ne
-          # lit pas le français, ce qui est tout son objet.
-          sign_in: Sign-in with a digital identity from another European country
-      # La deuxième page du parcours : le formulaire de demande, portant
-      # l'identité que l'authentification a donnée, ce que la demande réclame en
-      # plus, et la demande explicite d'OOTS.
-      grant_requests:
-        show:
-          title: Demande de bourse d'études
+          title: Demonstration procedure
+          # Toute la page est en anglais, comme le bouton plus bas et comme
+          # l'intitulé de la démarche : elle s'adresse à un usager d'un autre
+          # État membre, qui ne lit pas le français.
+          #
+          # Ce que la phrase promet est exactement ce que le parcours tient :
+          # le chapitre 1 §3.3 veut que l'usager demande explicitement l'usage
+          # du système, et c'est le bouton de la confirmation qui le porte.
           lead: >-
-            Ces informations viennent de l'identité électronique avec laquelle vous venez de vous
-            identifier. Elles ne se modifient pas : c'est l'identité attestée qui accompagnera la
-            demande de justificatif.
-          identity: Votre identité
-          attested: Ce que l'authentification a attesté
-          # Les champs de la démarche elle-même, que rien ne lit : aucune colonne
-          # ne les tient et aucun slot ne les porte. L'encart le dit plus bas —
-          # un formulaire qui réclame sans dire ce qu'il en fait apprend à
-          # supposer.
-          application:
-            legend: Votre demande
-            amount: Montant demandé (en euros)
-            year: Année universitaire
-            reason: Motif de la demande
-          # Le chapitre 1 §3.3 des TDD : « a step in which the user is asked to
-          # express explicitly whether he or she wants to use the Once-Only
-          # Technical System ». Le chapitre ne décrit aucun dispositif de
-          # saisie ; deux réponses plutôt qu'une case à cocher est notre choix,
-          # pour qu'un refus soit répondu et non seulement laissé vide.
-          express:
-            legend: Récupération de votre justificatif d'inscription
-            hint: >-
-              Sans votre accord, rien n'est demandé à personne et vous fournirez ce justificatif
-              vous-même.
-            requested: >-
-              Je demande que mon justificatif d'inscription soit récupéré directement auprès de
-              l'administration qui le détient.
-            declined: Je fournirai ce justificatif moi-même.
-          submit: Continuer
-          notice:
-            title: Ce que deviennent ces informations
-            body: >-
-              Le montant, l'année et le motif ne servent qu'à figurer une démarche : ils ne sont ni
-              conservés ni transmis, et n'accompagnent pas la demande de justificatif. Seule
-              l'identité attestée ci-dessus voyage.
-        # La page où s'arrête un parcours sans demande explicite : rien n'a été
-        # résolu, rien n'a été demandé à personne, aucun échange n'existe.
-        create:
-          title: Justificatif à fournir vous-même
-          lead: >-
-            Vous n'avez pas demandé que votre justificatif d'inscription soit récupéré
-            automatiquement. Aucune demande n'a été faite : il vous faudra le joindre vous-même à
-            votre dossier.
-          back: Revenir au formulaire
-        # L'ordre des clés n'est pas celui de l'écran, que le gabarit fixe : ces
-        # intitulés sont ceux des deux tableaux, dits une fois chacun.
-        attributes:
-          family_name: Nom de famille
-          given_name: Prénom(s)
-          birthdate: Date de naissance
-          gender: Sexe
-          place_of_birth: Lieu de naissance
-          level_of_assurance: Niveau de garantie
-          provenance: Provenance de l'identité
-          eidas_identifier: Identifiant eIDAS
-      # La troisième page : ce que l'exigence 27 du chapitre 1 §2 des TDD demande
-      # de montrer « before any request is made » — le nom du fournisseur et le
-      # type de justificatif —, puis le résultat du geste qui fait partir la
-      # requête.
+            This procedure can obtain the documents it needs directly from the administration of
+            another EU country that holds them, so you do not have to gather them yourself. Nothing
+            is requested without your explicit agreement.
+          # La phrase qui annonce la liste des exigences que l'Evidence Broker
+          # publie pour la démarche.
+          requirements: "Documents to be retrieved from another EU Member State:"
+          # En anglais : il s'adresse à un usager qui ne lit pas le français, ce
+          # qui est tout son objet. Plus court que le libellé que FranceConnect+
+          # montre au bouton de sa cinématique européenne — « Sign-in with a
+          # digital identity from another European country » —, écart assumé,
+          # ses règles d'intégration étant de toute façon annoncées comme
+          # « bientôt publiées ».
+          #
+          # Le drapeau est dans la phrase et non dans le gabarit : le DSFR n'a
+          # pas d'icône pour lui, et un lecteur d'écran le nomme comme il nomme
+          # un mot.
+          sign_in: 🇪🇺 Sign-in from another European country
+      # La deuxième page du parcours : l'identité que l'authentification a
+      # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
+      # « before any request is made » — le nom du fournisseur et le type de
+      # justificatif —, puis le résultat du geste qui fait partir la requête.
       confirmations:
+        # La page est le portail, et son lecteur est un usager d'un autre État
+        # membre : tout ce qu'elle dit est en anglais, comme l'accueil, et son
+        # intitulé sert aussi de miette au fil d'Ariane.
         show:
-          title: Confirmer la demande de justificatif
-          lead: >-
-            Voici l'administration à qui votre justificatif d'inscription sera demandé, et le type
-            de document qu'elle transmettra. Rien n'est demandé tant que vous n'avez pas confirmé.
-          caption: Ce qui sera demandé
-          # Les deux valeurs sont rendues telles que les annuaires les publient,
-          # sans libellé de notre cru : la démonstration montrerait sinon autre
-          # chose que ce sur quoi l'échange repose.
-          provider: Administration qui détient le justificatif
-          evidence_type: Type de justificatif
-          submit: Confirmer et demander le justificatif
-          back: Revenir au formulaire
-          unreachable: Les annuaires européens n'ont pas pu être joints
+          title: Confirm your request
+          # Ce que la carte d'identité montre : l'identité vient de
+          # l'authentification et non d'une saisie, ce que le chapitre 2.2 §2
+          # rend le portail comptable de tenir. Le titre est dit par la page et
+          # non par la carte, qui répéterait sinon le titre au-dessus d'elle.
+          identity_heading: Your identity
+          identity: The identity received from your connection
+          caption: Evidences needed for this procedure
+          # Ce que les cartes en dessous offrent : chacune nomme un document et
+          # l'administration qui le détient, et c'est le système « une fois pour
+          # toutes » qui va le chercher.
+          evidences: >-
+            Each of them is requested directly from the administration that holds it, so you do not
+            have to obtain it yourself.
+          # Ce que la page dit quand elle n'a aucune carte à montrer : les
+          # annuaires n'ont rien listé. Pourquoi — refus codé, démarche sans
+          # exigence — regarde l'annuaire, et son code reste à la console.
+          nothing_listed: The European directories listed no evidence for this procedure.
+          unreachable: The European directories could not be reached
         # Seul un refus s'affiche ici : une demande qui part mène au suivi.
         create:
-          title: Demande de justificatif
+          title: Request refused
           nothing_opened: >-
-            Aucun échange n'a été ouvert : la demande a été refusée avant que quoi que ce soit ne
-            parte vers un autre État membre.
-          back: Revenir au formulaire
+            No exchange was opened: the request was refused before anything left for another
+            Member State.
+          back: Back to your request
       # La quatrième page du parcours : ce que la demande a obtenu. Les quatre
       # états qu'elle rend sont ceux que le contrat rend, plus l'attente, qui est
       # tout le reste — la démarche ne demandant que T1, que la France sert
       # toujours par un document.
+      # Dernière page du parcours, et donc en anglais comme les deux autres :
+      # elle s'adresse au même usager d'un autre État membre.
       trackings:
         show:
-          title: Suivi de la demande
+          # Ce que la demande a demandé, et à qui : les deux valeurs que
+          # l'exigence 27 du chapitre 1 §2 a fait nommer à la confirmation, et
+          # que la demande porte depuis. Les deux sont des mots des annuaires,
+          # d'où le balisage dans la traduction plutôt que dans le gabarit.
+          heading_html: Request %{evidence_type}
+          from_html: From %{provider}, for the procedure %{procedure}
+          # Le titre de repli, et celui de l'onglet : une demande ouverte avant
+          # que ces deux noms soient consignés n'en a aucun.
+          title: Your request
           # Le justificatif est rendu tel qu'il a été reçu : le chapitre 1 §4.2
           # laisse l'usager décider de ne pas s'en servir, jamais d'en changer le
           # contenu.
-          delivered: Le justificatif est arrivé
+          delivered: Your document has arrived
           delivered_body: >-
-            L'administration qui détient votre justificatif d'inscription l'a transmis. Il vous est
-            remis tel qu'elle l'a établi : vous pouvez l'ouvrir et l'enregistrer, sans le modifier.
-          open: Ouvrir le justificatif
+            The administration holding your document has sent it. You receive it exactly as it was
+            issued: you can open it and save it, but not change it.
+          open: Open the document
           # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If
           # the process of identity and evidence matching does not result in a
           # match or the identity matching generates two or more results » —, et
           # le chapitre 4.10 §2.1, informatif, le recommande pour tout refus.
           # La démarche le dit pour tous, ce qui va au-delà du `MUST`.
-          refused: Le justificatif ne peut pas être fourni
+          #
+          # La phrase ne promet aucun code : un échec local en laisse la page
+          # dépourvue, et elle annonçait alors une ligne qui n'existait pas. Le
+          # code, quand il y en a un, est dans le tableau sous son intitulé.
+          refused: The document cannot be provided
           refused_body: >-
-            L'administration sollicitée n'a pas transmis de justificatif. Le code ci-dessous dit
-            pourquoi ; il faudra obtenir ce document par un autre moyen.
+            The administration could not send the document. You will have to obtain it another way.
           # Le premier des quatre points que le `shall` du chapitre 4.9 §5
           # énumère, et le seul que la démonstration tienne : reconnaître la
           # réponse. Le deuxième — « Provide a departure page for the user to
           # navigate to the Preview Space » — n'est justement pas tenu.
-          preview: Le justificatif attend votre accord à l'étranger
+          preview: Your document is waiting for your approval abroad
           preview_body: >-
-            L'administration sollicitée veut vous montrer le document avant de le transmettre, sur
-            son propre espace. La démonstration s'arrête ici : elle reconnaît cette réponse et vous
-            donne l'adresse, sans vous y conduire.
-          pending: La demande est en cours
+            The administration holding it wants to show you the document before sending it, on its
+            own space. The demonstration stops here: it recognises this answer and gives you the
+            address, without taking you there.
+          pending: Your request is under way
           pending_body: >-
-            Votre justificatif d'inscription a été demandé à l'administration qui le détient. La
-            réponse ne revient pas sur cette connexion : elle arrive par un autre canal, parfois
-            après un moment. Redemandez cette page pour savoir où elle en est.
-          unreachable: Le service de requête n'a pas pu être joint
-          unreadable: L'état de la demande n'a pas pu être lu
-          caption: Ce qui identifie cette demande
+            Your document has been requested from the administration holding it. The answer does not
+            come back on this connection: it arrives through another channel, sometimes after a
+            while. Reload this page to see where it stands.
+          unreachable: The request service could not be reached
+          unreadable: The state of the request could not be read
+          caption: What identifies this request
           # Les deux identifiants sous lesquels l'exploitant retrouve l'échange
           # au journal.
-          exchange: Identifiant de l'échange
-          conversation: Identifiant de la conversation
+          exchange: Exchange identifier
+          conversation: Conversation identifier
           # L'empreinte des octets réellement servis : c'est elle qui atteste que
           # le document n'a pas été retouché entre la remise et l'écran.
-          digest: Empreinte SHA-256 du justificatif
-          code: Code d'erreur reçu
-          preview_location: Adresse de prévisualisation
-          refresh: Actualiser le suivi
-          again: Faire une nouvelle demande
+          digest: SHA-256 digest of the document
+          code: Error code received
+          preview_location: Preview address
+          refresh: Refresh
+          again: Make a new request
       evidences:
         show:
           # Le nom proposé par le navigateur à l'enregistrement.
-          filename: justificatif.pdf
+          filename: document.pdf
     common_services:
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.

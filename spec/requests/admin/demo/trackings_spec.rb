@@ -13,13 +13,58 @@ RSpec.describe 'Admin::Demo::Trackings' do
   # query », and issuing the query is what puts the exchange in the session and
   # the request in the register. An example that posed both would be proving
   # them against itself.
-  def confirm_the_request = post admin_demo_confirmation_path
+  #
+  # Both steps, and not the press alone: requirement 27 of chapter 1 §2 has the
+  # confirmation page name the evidence type and the provider before anything
+  # leaves, and a press shown neither opens nothing.
+  def confirm_the_request
+    stub_directory_resolution
+    stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+    stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
+    stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
+    stub_code_list
+
+    get admin_demo_confirmation_path
+    post admin_demo_confirmation_path
+  end
 
   def reset_session_identity
     allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
   end
 
   describe 'GET /admin/demo/suivi' do
+    # What requirement 27 of chapter 1 §2 had the confirmation show, said again
+    # here — and read from the register, so that reloading this page asks the
+    # directories nothing. Chapter 4.4 §4.1 wants a new request for a new
+    # answer, so a reload must not turn into one.
+    it 'stands under what was asked, and of whom, without asking a directory' do
+      confirm_the_request
+      stub_exchange_state(statut: 'sent')
+      WebMock::RequestRegistry.instance.reset!
+
+      get admin_demo_suivi_path
+
+      expect(seen(response.parsed_body.at_css('h1'))).to eq('Request Dummy PDF - FI')
+      expect(seen(response.parsed_body.at_css('h1 + p')))
+        .to eq('From Keha v. 2.0, for the procedure Apply for funding for higher education')
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including({}))).not_to have_been_made
+    end
+
+    # A request opened before those two names were recorded carries neither, and
+    # the page keeps a title of its own rather than half a sentence. The press
+    # cannot produce one any more — requirement 27 makes the names a condition
+    # of it — so the register is emptied where a migration left it empty.
+    it 'keeps its own title for a request that names neither' do
+      confirm_the_request
+      Demo::Request.sole.update!(evidence_type_name: nil, provider_name: nil, procedure_name: nil)
+      stub_exchange_state(statut: 'sent')
+
+      get admin_demo_suivi_path
+
+      expect(seen(response.parsed_body.at_css('h1'))).to eq('Your request')
+    end
+
     # CA4: nothing back yet, and nothing asked of anyone by looking.
     it 'says the request is under way, and opens no exchange by being looked at' do
       confirm_the_request
@@ -28,7 +73,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
 
       get admin_demo_suivi_path
 
-      expect(response.parsed_body.css('main').text).to include('en cours')
+      expect(response.parsed_body.css('main').text).to include('under way')
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
     end
@@ -66,7 +111,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
 
       get admin_demo_suivi_path
 
-      expect(response.parsed_body.css('main').text).to include('en cours')
+      expect(response.parsed_body.css('main').text).to include('under way')
       expect(response.parsed_body.css("main a[href='#{admin_demo_suivi_justificatif_path}']")).to be_empty
     end
 
@@ -80,7 +125,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
       get admin_demo_suivi_path
 
       expect(response.parsed_body.css('main').text)
-        .to include('ne peut pas être fourni', 'EDM:ERR:0004')
+        .to include('cannot be provided', 'EDM:ERR:0004')
     end
 
     # The timeout the sweep declares reads as any other refusal: chapter 4.5.3
@@ -92,7 +137,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
       get admin_demo_suivi_path
 
       expect(response.parsed_body.css('main').text)
-        .to include('ne peut pas être fourni', 'EDM:ERR:0005')
+        .to include('cannot be provided', 'EDM:ERR:0005')
     end
 
     # CA3, and chapter 4.9 §4: « specify secure HTTP ("https://") as transport.
@@ -105,7 +150,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
         get admin_demo_suivi_path
 
         expect(response.parsed_body.css("main a[href='https://ap.example/preview/1']")).to be_present
-        expect(response.parsed_body.css('main').text).to include("s'arrête ici")
+        expect(response.parsed_body.css('main').text).to include('demonstration stops here')
       end
 
       it 'shows an address the chapter forbids as text, and never as a link' do
@@ -129,7 +174,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
       # quand le contrat ne dit rien, et ce par quoi l'exploitant retrouve
       # l'échange au journal.
       expect(response.parsed_body.css('main').text)
-        .to include("n'a pas pu être lu", 'Échange inconnu',
+        .to include('could not be read', 'Échange inconnu',
           DemoContractStubs::ACCEPTED_EXCHANGE, DemoContractStubs::ACCEPTED_CONVERSATION)
     end
 
@@ -141,7 +186,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
 
       expect(response).to have_http_status(:bad_gateway)
       expect(response.parsed_body.css('main').text)
-        .to include("n'a pas pu être joint",
+        .to include('could not be reached',
           DemoContractStubs::ACCEPTED_EXCHANGE, DemoContractStubs::ACCEPTED_CONVERSATION)
     end
 
@@ -157,7 +202,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
     it 'sends an operator following no exchange back to the form' do
       get admin_demo_suivi_path
 
-      expect(response).to redirect_to(admin_demo_demande_path)
+      expect(response).to redirect_to(admin_demo_confirmation_path)
     end
   end
 end

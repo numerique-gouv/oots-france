@@ -25,9 +25,9 @@ module HoldsDemoExchange
     @demo_request = ::Demo::Request.find_by(exchange_id:)
   end
 
-  # Back to the form, which is where a journey with no exchange behind it
-  # resumes: the identity is still good, only the request has yet to be made.
+  # Back to the confirmation, which is where a journey with no exchange behind
+  # it resumes: the identity is still good, only the request has yet to be made.
   def require_exchange
-    redirect_to admin_demo_demande_path if demo_request.nil?
+    redirect_to admin_demo_confirmation_path if demo_request.nil?
   end
 end

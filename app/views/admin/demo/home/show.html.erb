@@ -2,15 +2,24 @@
 
 <%= render DemoBreadcrumbsComponent.new %>
 
-<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+<%= render 'admin/demo/titre', wording: @wording %>
 
-<h1 class="fr-h3"><%= @procedure_label %></h1>
+<p class="fr-text--lead fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.home.show.lead') %></p>
 
-<%= dsfr_callout(title: t('admin.demo.home.show.notice.title')) do %>
-  <%= t('admin.demo.home.show.notice.body') %>
+<%# What the Evidence Broker publishes for the procedure, named as it names it.
+    The sentence introduces the list and is worth nothing without one, so both
+    go or neither does. %>
+<% if @wording.requirements_named.any? %>
+  <div class="fr-col-12 fr-col-md-8 fr-my-4w" lang="en">
+    <p class="fr-mb-1w"><%= t('admin.demo.home.show.requirements') %></p>
+
+    <ul>
+      <% @wording.requirements_named.each do |label, language| %>
+        <li class="fr-mb-1v"><%= render(DirectoryValueComponent.new(lang: language)) { label } %></li>
+      <% end %>
+    </ul>
+  </div>
 <% end %>
-
-<p class="fr-text--lead fr-col-12 fr-col-md-8 fr-mt-4w"><%= t('admin.demo.home.show.explanation') %></p>
 
 <%# `button_to` and not a link: starting the European flow writes the `state`
     and the `nonce` its return is checked against, and a GET the browser

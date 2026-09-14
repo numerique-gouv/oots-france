@@ -1,0 +1,44 @@
+<%# The DSFR card, written out rather than taken from `CardComponent`: that one
+    renders a title, and the section around this card carries it — a card
+    repeating the heading above it says the same thing twice.
+
+    `lang` on the card and not on each label: every word this card writes is
+    English — the labels, and the level the authentication reached — where the
+    page it sits on declares French (RGAA 8.7). %>
+<div class="fr-card fr-card--shadow fr-card--no-arrow identity-card fr-col-12 fr-col-md-8 fr-mb-4w" lang="en">
+  <div class="fr-card__body">
+    <div class="fr-card__content">
+      <%# The artwork the DSFR gives a person, beside the civil identity and not
+          beside the level under it: the level is what the authentication adds,
+          and stands apart from what the user recognises themself by.
+          Decorative — the heading above the card names it. %>
+      <div class="pictogram-row">
+        <%= render PictogramComponent.new(name: 'digital/avatar') %>
+
+        <dl class="identity-card__attributes pictogram-row__wording">
+          <% civil.each do |label, value| %>
+            <div>
+              <dt><%= label %></dt>
+              <dd><%= value %></dd>
+            </div>
+          <% end %>
+        </dl>
+      </div>
+
+      <% if level.present? %>
+        <hr class="fr-mt-3w">
+
+        <%# One line, the label and the value side by side: the level is the
+            whole of what the authentication adds to the identity above, and a
+            column of its own would announce a list of one. `fr-badge` renders on
+            a `<p>`, which the DSFR fixes — it is the tag its own examples carry,
+            and the styles hang off it — so the line around it is a `<div>` and
+            not a `<p>`. %>
+        <div class="identity-card__level">
+          <span><%= level_label %></span>
+          <p class="fr-badge fr-badge--sm"><%= level %></p>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

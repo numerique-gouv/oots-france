@@ -29,6 +29,7 @@ RSpec.configure do |config|
   config.include GatewayStubs
   config.include CodeListStubs
   config.include DirectoryStubs
+  config.include RenderedText
 end
 
 Shoulda::Matchers.configure do |config|

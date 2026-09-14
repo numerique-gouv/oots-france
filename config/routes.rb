@@ -55,18 +55,13 @@ Rails.application.routes.draw do
       # and the `nonce` its return is checked against, which a prefetched or
       # replayed GET would overwrite.
       resource :identification, only: :create
-      # The form the user comes back to, identified. Named in French like the
-      # other paths of this repository, and carried by an English class.
-      #
-      # `create` is where the explicit request of chapter 1 §3.3 is read: given,
-      # it leads to the confirmation; withheld, it leads nowhere and nothing is
-      # asked of anyone.
-      resource :demande, only: %i[show create], controller: 'grant_requests'
-      # The last page before an exchange exists. `show` names the provider and
-      # the evidence type the directories resolve, which requirement 27 of
-      # chapter 1 asks for « before any request is made » ; `create` **is** the
-      # explicit request, and the request leaves as it is pressed — chapter
-      # 4.5.1 §2.7 ties `IssueDateTime` to that instant.
+      # Where the user comes back to, identified, and the last page before an
+      # exchange exists. `show` carries the identity the authentication
+      # attested, and names the provider and the evidence type the directories
+      # resolve, which requirement 27 of chapter 1 asks for « before any request
+      # is made » ; `create` **is** the explicit request of chapter 1 §3.3, and
+      # the request leaves as it is pressed — chapter 4.5.1 §2.3 allows
+      # `IssueDateTime` no material distance from that instant.
       resource :confirmation, only: %i[show create], controller: 'confirmations'
       # Where the journey ends, and the only page of it that may be reloaded at
       # will: chapter 4.4 §4.1 requires a new request for a new answer, so this

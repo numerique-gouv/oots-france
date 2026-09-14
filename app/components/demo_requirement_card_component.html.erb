@@ -1,0 +1,95 @@
+<%# The DSFR card, written out rather than taken from `CardComponent`: that one
+    puts the title in the heading it renders, where this card's heading is a
+    wording the directories publish and wears their mark.
+
+    The requirement names the card, and it is named whatever the directories
+    answered afterwards — a requirement nobody serves is still one the procedure
+    rests on. What stands under the rule is therefore what varies: the document
+    and the press that asks for it, or the refusal that stands in for both.
+
+    Everything is in the content, as the identity card has it, and the rule
+    between the two halves is the `<hr>` that card draws: the DSFR footer pulls
+    its own edge past the card's padding, so a rule on it would run wider than
+    the wording above it. %>
+<div class="<%= css_classes %>">
+  <div class="fr-card__body">
+    <div class="fr-card__content">
+      <%# The artwork the DSFR gives a document, at the height of the title and
+          the line under it. Decorative: what it depicts is what the two lines
+          beside it say. %>
+      <div class="pictogram-row">
+        <%= render PictogramComponent.new(name: 'document/document') %>
+
+        <div class="pictogram-row__wording">
+          <% if titled? %>
+            <%# The requirement alone, and no sentence around it: the title is
+                the directory's word and nothing of ours. %>
+            <h3 class="fr-card__title fr-h5 fr-mb-1v">
+              <%= render(DirectoryValueComponent.new(lang: requirement_language)) { requirement } %>
+            </h3>
+          <% end %>
+
+          <%# What stands under the rule, one line per document. Requirement 27
+              of chapter 1 §2 has the evidence type named before any request is
+              made, so that line is not a decoration — and where no provider
+              serves the requirement, it says that instead, the card standing
+              for a requirement nothing satisfies. %>
+          <div class="fr-card__desc">
+            <p class="fr-mb-0" lang="en">
+              <% if nameable? %>
+                <%= t('components.demo_requirement_card.satisfied_by_html', country: render(country_tag)) %>
+              <% else %>
+                <%= t('components.demo_requirement_card.unsatisfiable_html', country: render(country_tag)) %>
+              <% end %>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <hr class="fr-mt-3w">
+
+      <div class="requirement-card__actions">
+        <% if nameable? %>
+          <p class="fr-mb-0" lang="en">
+            <%= t('components.demo_requirement_card.from_html',
+                  evidence_type: render(DirectoryValueComponent.new(lang: evidence_type_language)) { evidence_type },
+                  provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
+          </p>
+
+          <% if askable? %>
+            <%# The press that opens the exchange, and the explicit request of
+                chapter 1 §3.3 with it. `button_to` and not a link: chapter 4.5.1
+                §2.3 allows the `IssueDateTime` no material distance from this
+                gesture, and a GET the browser prefetched would issue it before
+                the user had decided anything. %>
+            <%= button_to t('components.demo_requirement_card.submit'), admin_demo_confirmation_path,
+                  class: 'fr-btn', lang: 'en' %>
+          <% else %>
+            <p class="fr-text--sm fr-mb-0" lang="en">
+              <%= t('components.demo_requirement_card.one_at_a_time') %>
+            </p>
+          <% end %>
+        <% else %>
+          <%# Nothing to name is nothing to press: requirement 27 makes the two
+              names a condition of the request. What the directories answered is
+              said in the card's own words — the code and the sentence they
+              returned belong to the operator's console, not to a portal — and
+              a directory that declined to answer is not a country publishing
+              nothing, so the card says which of the two happened. %>
+          <p class="fr-mb-0 requirement-card__refusal" lang="en">
+            <%# The warning the pale red carries, said again in a sign: colour
+                alone never carries information (RGAA 3.1). Hidden from the
+                rendering the assistive technologies read, which has the
+                sentence. %>
+            <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%=
+              if published_nothing?
+                t('components.demo_requirement_card.no_provider_html', country: country_name)
+              else
+                t('components.demo_requirement_card.no_answer_html', country: country_name)
+              end %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

@@ -22,6 +22,16 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       expect(response.parsed_body.css('main').text).to include('Keha v. 2.0', 'Dummy PDF - FI')
     end
 
+    # A portal's own sentences and the words Brussels publishes read alike on a
+    # screen: these two are the directories', and the page says so.
+    it 'marks those two as published by the directories, and the identity not' do
+      get admin_demo_confirmation_path
+
+      marked = response.parsed_body.css('main .directory-value').map { |value| seen(value) }
+
+      expect(marked).to contain_exactly('(TEST) Test Requirement', 'Dummy PDF - FI', 'Keha v. 2.0')
+    end
+
     it 'asks the contract nothing: nothing is opened by looking at the page' do
       get admin_demo_confirmation_path
 
@@ -39,28 +49,133 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
     end
 
+    # Chapter 2.2 §2 makes the portal answerable for the identity in the request
+    # matching the one the eID means yielded, so the page shows it and offers no
+    # field on it.
+    it 'shows the identity the authentication attested, and offers no field on it' do
+      get admin_demo_confirmation_path
+
+      card = response.parsed_body.at_css('main .identity-card')
+      rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
+
+      expect(rows).to include('Family name' => 'Sørensen', 'Given name(s)' => 'Freja Marie')
+      expect(card.css('.identity-card__level').text.squish).to eq('Level of assurance: Substantial')
+      expect(card.css('input, select, textarea')).to be_empty
+    end
+
+    # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
+    # showing it beside a missing eIDAS identifier would invite taking it for
+    # one.
+    it 'never shows the pseudonym FranceConnect+ handed this service provider' do
+      get admin_demo_confirmation_path
+
+      expect(response.body).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
+    end
+
     # Unable to name the two, it must not offer to confirm: requirement 27 makes
-    # them a condition of the request, not a decoration on it.
-    it 'offers nothing to confirm when the directories refuse' do
+    # them a condition of the request, not a decoration on it. The card stays
+    # all the same — a requirement no country serves is still one the procedure
+    # rests on — and it is the footer that says so, in the portal's own words:
+    # the code the directory returned belongs to the console, not here.
+    it 'keeps the card and says in its footer that nothing is published' do
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
       get admin_demo_confirmation_path
 
-      expect(response.parsed_body.css('main').text).to include('DSD:ERR:0001')
+      carte = response.parsed_body.at_css('main .requirement-card')
+
+      expect(seen(carte.at_css('h3'))).to eq('(TEST) Test Requirement')
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇷 France (FR)')
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by France for this evidence')
+      expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
+      expect(carte.classes).to include('requirement-card--unsatisfiable')
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
-    # `button_to` renders a `<form>`, which is a block: outside the group the
-    # DSFR prescribes, the two actions pile up whatever margin they carry. The
-    # primary comes first, the group being left-aligned — reading order, and tab
-    # order with it.
-    it 'offers the two actions as one group, the primary first' do
+    # A directory that refuses carries a code and raises nothing: the page keeps
+    # its section and says what is known — nothing was listed — rather than
+    # standing under a heading followed by nothing.
+    it 'says that nothing was listed when the Evidence Broker refuses' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
+
       get admin_demo_confirmation_path
 
-      groupe = response.parsed_body.at_css('main ul.fr-btns-group')
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body.css('main .requirement-card')).to be_empty
+      expect(response.parsed_body.css('main').text).to include('listed no evidence for this procedure')
+    end
 
-      expect(groupe['class']).to include('fr-btns-group--inline-md')
-      expect(groupe.css('li button, li a').map(&:name)).to eq(%w[button a])
+    # « No provider listed » is what `DSD:ERR:0001` — `DS_NOT_FOUND` — says; any
+    # other refusal is a directory declining to answer, and the card must not
+    # turn that into a statement about what France publishes. Built from the
+    # capture rather than captured: the acceptance environment answers no such
+    # refusal to ask for, and a retouched fixture would break the signature its
+    # `.headers` carries.
+    it 'says the country could not answer when the refusal is not a missing entry' do
+      refused, = common_services_answer('dsd_aucun_service_fr')
+      stub_directory_signature
+      stub_directory_body('dsd', 'dataservices-by-evidencetype', refused.sub('DSD:ERR:0001', 'DSD:ERR:0003'))
+
+      get admin_demo_confirmation_path
+
+      expect(response.parsed_body.at_css('main .requirement-card__actions').text.squish)
+        .to eq('⚠️France could not answer for this evidence')
+    end
+
+    # One card per requirement the procedure rests on, each naming its own
+    # evidence type and provider.
+    it 'offers a card per requirement the procedure rests on' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+
+      get admin_demo_confirmation_path
+
+      titres = response.parsed_body.css('main .requirement-card h3').map { |titre| seen(titre) }
+
+      expect(titres).to eq(['(TEST) Test Requirement 2', 'Proof of enrolment in academic tertiary education'])
+    end
+
+    # The jurisdiction the documents would come from, named on the card as the
+    # directory pages name one: a requirement is satisfied somewhere, and
+    # « somewhere » is a country.
+    it 'names the country the documents would be requested in' do
+      get admin_demo_confirmation_path
+
+      contenu = response.parsed_body.at_css('main .requirement-card .fr-card__desc')
+
+      expect(contenu.text.squish).to eq('Satisfied by the following documents in 🇫🇷 France (FR)')
+      expect(contenu.at_css('.country-tag')).to be_present
+    end
+
+    # The code list names the countries, and it is read like every other: a
+    # reading that yields nothing costs the names and never the page. Read on
+    # the card that has no provider to name, the one place the country is said
+    # in words rather than shown in its box.
+    it 'stands on the code alone when the code list names no country' do
+      stub_code_list(country_names: {})
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+
+      get admin_demo_confirmation_path
+
+      carte = response.parsed_body.at_css('main .requirement-card')
+
+      expect(carte.at_css('.fr-card__desc .country-tag').text.squish).to eq('🇫🇷 FR')
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by FR for this evidence')
+    end
+
+    # The contract names no requirement and its server answers with the first
+    # that publishes evidence types, so a second button would send the same
+    # request under another name. Stub, tracked as OOTS-212.
+    it 'carries the press on one card only, and says why on the others' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+
+      get admin_demo_confirmation_path
+
+      cartes = response.parsed_body.css('main .requirement-card')
+
+      expect(cartes.css("form[action='#{admin_demo_confirmation_path}']").size).to eq(1)
+      expect(cartes.last.text).to include('one document at a time')
     end
 
     # Une panne d'annuaire n'est pas un refus : elle ne porte aucun code, et
@@ -73,7 +188,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       get admin_demo_confirmation_path
 
       expect(response).to have_http_status(:bad_gateway)
-      expect(response.parsed_body.css('main').text).to include("n'ont pas pu être joints")
+      expect(response.parsed_body.css('main').text).to include('could not be reached')
       expect(response.parsed_body.css("form[action='#{admin_demo_confirmation_path}']")).to be_empty
     end
 
@@ -90,6 +205,9 @@ RSpec.describe 'Admin::Demo::Confirmations' do
     before do
       stub_oots_france_public_keys
       stub_evidence_request
+      # The page requirement 27 is satisfied on: a press only exists once it has
+      # been shown what it would ask for.
+      get admin_demo_confirmation_path
     end
 
     # CA3: the request goes out through the contract, with the query string a
@@ -149,6 +267,19 @@ RSpec.describe 'Admin::Demo::Confirmations' do
       end
     end
 
+    # Requirement 27 of chapter 1 §2 wants the provider and the evidence type
+    # named « before any request is made », so what the page showed is filed
+    # with the request that left. The procedure's own title is filed beside
+    # them and is not one of the two: neither the code list nor the directory
+    # names `T1` here, and the press is offered all the same.
+    it 'files what requirement 27 had the page name' do
+      post admin_demo_confirmation_path
+
+      expect(Demo::Request.last).to have_attributes(
+        evidence_type_name: 'Dummy PDF - FI', provider_name: 'Keha v. 2.0', procedure_name: nil,
+      )
+    end
+
     # CA9. Three refusals pronounced before any exchange exists, told apart by
     # the status alone, which is all a service provider's server has to go on.
     describe 'a refusal that opens nothing' do
@@ -158,7 +289,7 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         post admin_demo_confirmation_path
 
         expect(response.parsed_body.css('main').text)
-          .to include('refusée', 'EB:ERR:0001', "Aucun échange n'a été ouvert")
+          .to include('refusée', 'EB:ERR:0001', 'No exchange was opened')
       end
 
       it 'says the service could not be reached on a 502' do
@@ -244,6 +375,49 @@ RSpec.describe 'Admin::Demo::Confirmations' do
         expect(response.parsed_body.css('main').text).to include('inattendue', '202')
         expect(response.parsed_body.css('main').text).not_to include('La demande est partie')
       end
+    end
+  end
+
+  # The same requirement 27, seen from the page that did open but could name
+  # nothing: the session then holds a record with blank names, which is not the
+  # same shape as no record at all.
+  describe 'POST /admin/demo/confirmation, the page having named nothing' do
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
+      get admin_demo_confirmation_path
+    end
+
+    it 'asks the contract nothing, and sends the user back' do
+      post admin_demo_confirmation_path
+
+      expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
+        .with(query: hash_including({}))).not_to have_been_made
+      expect(response).to redirect_to(admin_demo_confirmation_path)
+    end
+  end
+
+  # The same requirement 27, the other way round, and the one case the describe
+  # above cannot hold: nothing here opens the page first, so the press has been
+  # shown neither name.
+  describe 'POST /admin/demo/confirmation, without the page having named anything' do
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+    end
+
+    it 'asks the contract nothing' do
+      post admin_demo_confirmation_path
+
+      expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
+        .with(query: hash_including({}))).not_to have_been_made
+    end
+
+    it 'sends the user back to the page that names what would be asked' do
+      post admin_demo_confirmation_path
+
+      expect(response).to redirect_to(admin_demo_confirmation_path)
     end
   end
 

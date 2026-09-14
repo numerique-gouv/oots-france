@@ -2,17 +2,31 @@ module Demo
   # What the demonstration procedure does the instant the user confirms: seal the
   # beneficiary token, call the contract, and keep what came back.
   #
-  # The instant matters. Chapter 4.5.1 §2.7: « If the value of this slot is true,
-  # the value of the IssueDateTime slot shall not be materially different from
-  # the date and time at which the explicit request was made by the user. » The
-  # request is therefore issued here, on the press, and never prepared ahead.
+  # The instant matters. Chapter 4.5.1 §2.3: « If the value of the
+  # ExplicitRequestGiven slot is true, the value of the IssueDateTime slot shall
+  # not be materially different from the date and time at which the explicit
+  # request was made by the user. » `evidence_request.xml.erb` declares that
+  # slot true on every request, so the condition always holds and the request is
+  # issued here, on the press, rather than prepared ahead.
   #
   # `T1` and `FR` are fixed rather than asked: the demonstration makes France
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
+  #
+  # The two names the confirmation page showed travel with the press rather than
+  # being resolved again here: the rule above allows the `IssueDateTime` no
+  # material distance from that gesture, and three directory queries before
+  # sending would put themselves between the two. What is filed is what was
+  # shown.
   class RequestEvidence < ApplicationInteractor
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
     PROVIDER_COUNTRY = 'FR'.freeze
+
+    # What the confirmation page showed, each name with the language the
+    # directory published it in: the tracking page says them again, and it is
+    # written in English whatever the directories answered.
+    NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
+               procedure_name procedure_language].freeze
 
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
@@ -66,8 +80,12 @@ module Demo
       context.exchange_id = answer.exchange_id
       context.conversation_id = answer.conversation_id
 
-      Request.create!(exchange_id: answer.exchange_id, conversation_id: answer.conversation_id)
+      Request.create!(
+        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id, **what_was_named,
+      )
     end
+
+    def what_was_named = NAMED.index_with { |named| context.public_send(named) }
 
     # The message the contract returned travels with the refusal: it is the only
     # thing that says which of the refusals of `STATUS_FAILURES` this was, and

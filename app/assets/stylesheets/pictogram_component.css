@@ -1,0 +1,30 @@
+/*
+ * A DSFR pictogram, and the row it opens.
+ *
+ * The artwork is square and drawn on an 80-pixel canvas; the height given here
+ * is that of the two lines it stands beside — a card's title and the line under
+ * it — so the pictogram reads as their mark rather than as an illustration of
+ * its own. `flex: none` because a pictogram never gives up its size to the
+ * wording beside it.
+ */
+.pictogram {
+  flex: none;
+  height: 3.5rem;
+  width: 3.5rem;
+}
+
+.pictogram-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+/*
+ * `min-width: 0` because a flex item never shrinks below its own content unless
+ * told to: a value with nothing to break at would otherwise push the row past
+ * the edge of the card instead of wrapping inside it.
+ */
+.pictogram-row__wording {
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -34,6 +34,15 @@ module DirectoryStubs
       .to_return(body:, headers:)
   end
 
+  # The one directory answer the home page of the demonstration reads, which
+  # every spec landing there needs whatever it came to prove. `T1` and not `00`:
+  # the page stands under the title France declared its own procedure with, and
+  # only the `T1` capture carries one.
+  def stub_demonstration_requirements
+    stub_directory_resolution
+    stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+  end
+
   # A body altered to make a case the captured answers do not hold no longer
   # matches the signature that came with it, and that check is what would fail
   # first. Doubling it is the only way to serve a hand-made answer through the

@@ -66,8 +66,6 @@ module Demo
 
     def to_session = attributes.compact
 
-    def european? = provenance == EUROPEAN
-
     def identified? = eidas_identifier.present?
   end
 end

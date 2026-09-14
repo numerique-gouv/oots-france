@@ -1,14 +1,33 @@
 <% content_for :title, t('admin.demo.trackings.show.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
-      trail: [[t('admin.demo.grant_requests.show.title'), admin_demo_demande_path],
-              [t('admin.demo.confirmations.create.title'), admin_demo_confirmation_path],
+      trail: [[t('admin.demo.confirmations.show.title'), admin_demo_confirmation_path],
               [t('admin.demo.trackings.show.title'), nil]],
     ) %>
 
-<p class="fr-text--sm fr-mb-1v"><%= t('admin.demo.home.show.portal') %></p>
+<%# What was asked, and of whom: the two values requirement 27 of chapter 1 §2
+    had the confirmation page name, filed with the request rather than resolved
+    again here — chapter 4.4 §4.1 wants a new request for a new answer, so this
+    page reads and asks nothing, and reloading it costs nobody anything. Both
+    are the directories' words, and wear their mark. %>
+<% if @wording.named? %>
+  <h1 class="fr-h3 fr-mb-2w" lang="en">
+    <%= t('admin.demo.trackings.show.heading_html',
+          evidence_type: render(DirectoryValueComponent.new(lang: @wording.evidence_type_language)) do
+                           @wording.evidence_type_name
+                         end) %>
+  </h1>
 
-<h1 class="fr-h3"><%= t('admin.demo.trackings.show.title') %></h1>
+  <p class="fr-text--lead" lang="en">
+    <%= t('admin.demo.trackings.show.from_html',
+          provider: render(DirectoryValueComponent.new(lang: @wording.provider_language)) { @wording.provider_name },
+          procedure: render(DirectoryValueComponent.new(lang: @wording.procedure_language)) do
+                       @wording.procedure_name
+                     end) %>
+  </p>
+<% else %>
+  <h1 class="fr-h3" lang="en"><%= t('admin.demo.trackings.show.title') %></h1>
+<% end %>
 
 <% if @unreachable %>
   <%# The contract unreachable says nothing of the exchange: the page reports
@@ -71,11 +90,11 @@
          (demo_preview_address(@wording) if @wording.preview_location.present?)],
       ] %>
 
-<ul class="fr-btns-group fr-btns-group--inline">
+<ul class="fr-btns-group fr-btns-group--inline" lang="en">
   <%# Reading again is free; asking again is a new journey. Chapter 4.4 §4.1:
       « … a new unique request MUST be issued. » %>
   <li><%= link_to t('admin.demo.trackings.show.refresh'), admin_demo_suivi_path,
             class: 'fr-btn fr-btn--secondary' %></li>
-  <li><%= link_to t('admin.demo.trackings.show.again'), admin_demo_demande_path,
+  <li><%= link_to t('admin.demo.trackings.show.again'), admin_demo_confirmation_path,
             class: 'fr-btn fr-btn--tertiary' %></li>
 </ul>
