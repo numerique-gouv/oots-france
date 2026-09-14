@@ -59,9 +59,9 @@
           <% if askable? %>
             <%# The press that opens the exchange, and the explicit request of
                 chapter 1 §3.3 with it. `button_to` and not a link: chapter 4.5.1
-                §2.7 ties the `IssueDateTime` of the request to the instant of
-                this gesture, and a GET the browser prefetched would issue it
-                before the user had decided anything. %>
+                §2.3 allows the `IssueDateTime` no material distance from this
+                gesture, and a GET the browser prefetched would issue it before
+                the user had decided anything. %>
             <%= button_to t('components.demo_requirement_card.submit'), admin_demo_confirmation_path,
                   class: 'fr-btn', lang: 'en' %>
           <% else %>

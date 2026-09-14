@@ -2,8 +2,8 @@
 # stands under, and the requirements it rests on.
 #
 # Both come from the same Evidence Broker answer — the requirements it publishes
-# for the procedure in France's jurisdiction (chapter 3.2.4), which is the first
-# step of the chain a request walks. The title is the one **France itself
+# for the procedure in France's jurisdiction, which chapter 3.2.4 calls the
+# first query of the Evidence Broker. The title is the one **France itself
 # declared**, nested in that answer as a `ReferenceFramework`, and not the SDG
 # title the code list publishes: a member state names its own procedure, and
 # that name is what its portal would show. The code list is the fallback, for a
@@ -14,10 +14,14 @@
 class DemoProcedureWording
   LANGUAGES = %w[EN FR].freeze
 
-  def initialize(code:, requirements:, published_name: nil)
+  # `published_name_language` because the code list publishes one column per
+  # language and the caller chooses which: a name read in French, declared as
+  # English, is what RGAA 8.7 exists to prevent.
+  def initialize(code:, requirements:, published_name: nil, published_name_language: nil)
     @code = code
     @requirements = Array(requirements)
     @published_name = published_name
+    @published_name_language = published_name_language
   end
 
   attr_reader :code
@@ -36,7 +40,7 @@ class DemoProcedureWording
   def title_language
     return declaration.label_language(languages: LANGUAGES) if declared_title.present?
 
-    'en' if @published_name.present?
+    @published_name_language if @published_name.present?
   end
 
   # Our own words, and the only part of the heading no directory published.
@@ -46,7 +50,11 @@ class DemoProcedureWording
 
   private
 
-  def declared_title = declaration&.label(languages: LANGUAGES)
+  def declared_title
+    return @declared_title if defined?(@declared_title)
+
+    @declared_title = declaration&.label(languages: LANGUAGES)
+  end
 
   # France declares the same code more than once, under titles of its own; the
   # page stands under the first the directory lists, which is the directory's

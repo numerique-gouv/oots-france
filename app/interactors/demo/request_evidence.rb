@@ -2,19 +2,22 @@ module Demo
   # What the demonstration procedure does the instant the user confirms: seal the
   # beneficiary token, call the contract, and keep what came back.
   #
-  # The instant matters. Chapter 4.5.1 §2.7: « If the value of this slot is true,
-  # the value of the IssueDateTime slot shall not be materially different from
-  # the date and time at which the explicit request was made by the user. » The
-  # request is therefore issued here, on the press, and never prepared ahead.
+  # The instant matters. Chapter 4.5.1 §2.3: « If the value of the
+  # ExplicitRequestGiven slot is true, the value of the IssueDateTime slot shall
+  # not be materially different from the date and time at which the explicit
+  # request was made by the user. » `evidence_request.xml.erb` declares that
+  # slot true on every request, so the condition always holds and the request is
+  # issued here, on the press, rather than prepared ahead.
   #
   # `T1` and `FR` are fixed rather than asked: the demonstration makes France
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
   #
-  # The two names the confirmation page showed travel with the press rather
-  # than being resolved again here: chapter 4.5.1 §2.7 ties the `IssueDateTime`
-  # to the instant of that gesture, and three directory queries before sending
-  # would put themselves between the two. What is filed is what was shown.
+  # The two names the confirmation page showed travel with the press rather than
+  # being resolved again here: the rule above allows the `IssueDateTime` no
+  # material distance from that gesture, and three directory queries before
+  # sending would put themselves between the two. What is filed is what was
+  # shown.
   class RequestEvidence < ApplicationInteractor
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
     PROVIDER_COUNTRY = 'FR'.freeze

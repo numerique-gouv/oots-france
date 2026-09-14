@@ -30,10 +30,10 @@ class DemoResolutionWording
   # The evidence type is what satisfies it, and requirement 27 has it named too,
   # so a requirement the directory named in no language falls back on it rather
   # than leaving the card headless.
-  def requirement = lookup.requirement&.label(languages: LANGUAGES).presence || evidence_type
+  def requirement = requirement_label.presence || evidence_type
 
   def requirement_language
-    return nil if lookup.requirement&.label(languages: LANGUAGES).blank?
+    return nil if requirement_label.blank?
 
     lookup.requirement.label_language(languages: LANGUAGES)
   end
@@ -49,6 +49,12 @@ class DemoResolutionWording
   private
 
   attr_reader :lookup
+
+  def requirement_label
+    return @requirement_label if defined?(@requirement_label)
+
+    @requirement_label = lookup.requirement&.label(languages: LANGUAGES)
+  end
 
   # `sdg:Publisher` names the organisation, which is what requirement 27 calls
   # the evidence provider; `sdg:AccessService` names the gateway carrying the

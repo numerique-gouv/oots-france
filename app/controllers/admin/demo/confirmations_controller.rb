@@ -12,10 +12,10 @@ module Admin
     # requirement is a condition of the request, not a decoration on it.
     #
     # `create` **is** the explicit request, and the request leaves as it is
-    # pressed. Chapter 4.5.1 §2.7 ties the two: « If the value of this slot is
-    # true, the value of the IssueDateTime slot shall not be materially
-    # different from the date and time at which the explicit request was made by
-    # the user. »
+    # pressed. Chapter 4.5.1 §2.3 ties the two: « If the value of the
+    # ExplicitRequestGiven slot is true, the value of the IssueDateTime slot
+    # shall not be materially different from the date and time at which the
+    # explicit request was made by the user. »
     #
     # The press is also where the explicit request of chapter 1 §3.3 is made —
     # « a step in which the user is asked to express explicitly whether he or
@@ -145,6 +145,7 @@ module Admin
       def procedure_wording(requirements)
         DemoProcedureWording.new(
           code:, requirements:, published_name: CodeListClient.new.procedure_names(lang: :en)[code],
+          published_name_language: 'en',
         )
       end
 

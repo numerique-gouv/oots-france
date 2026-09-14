@@ -44,17 +44,21 @@ class CodeListClient
 
   private
 
+  # The column is settled before the reading below, and outside its rescue: a
+  # language this client does not publish is a mistake of the caller, and the
+  # `KeyError` that says so has no business being logged as an unreadable
+  # directory.
   def names(list, lang)
+    column = NAME_COLUMNS.fetch(list).fetch(lang)
     key = "code_lists/#{File.basename(list, '.gc')}/#{lang}"
     cached = Rails.cache.read(key)
     return cached if cached
 
-    read(list, lang).tap { |names| remember(key, names) if names.any? }
+    read(list, column).tap { |names| remember(key, names) if names.any? }
   end
 
-  def read(list, lang)
+  def read(list, column)
     body = connection.get(list).body
-    column = NAME_COLUMNS.fetch(list).fetch(lang)
     names = GenericodeParser.new(body).names(code_column: 'code', name_column: column)
 
     # A response that arrives and yields nothing is not an outage, and raises

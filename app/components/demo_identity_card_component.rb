@@ -12,13 +12,12 @@
 #
 # An attribute the authentication did not yield has no row: an empty value would
 # read as one the portal holds blank. Two never appear at all, whatever they
-# hold. The eIDAS identifier, because FranceConnect+ documents no claim carrying
-# it for a European user, so the row said « not yielded » and nothing else, and
-# a portal has no reason to show its user a technical identifier they cannot act
-# on — `NaturalPerson` still carries it into the request wherever one is held.
-# The provenance, because it said « another Member State » and could not say
-# which: no claim names the country, and naming the flow instead tells the user
-# what they already knew from the button they pressed.
+# hold. The eIDAS identifier, because a portal has no reason to show its user a
+# technical identifier they cannot act on — `NaturalPerson` still carries it
+# into the request wherever one is held, and FranceConnect+ documents no claim
+# carrying it for a European user anyway. The country the identity comes from,
+# because no claim names it: all that could be said is that the user came
+# through the European flow, which is what they pressed a button to do.
 class DemoIdentityCardComponent < ViewComponent::Base
   # The identity alone: what a screen says of it is derived from it here rather
   # than beside it, so that no caller can hand the card two objects describing

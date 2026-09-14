@@ -35,8 +35,8 @@ RSpec.describe 'Admin::Demo::Trackings' do
   describe 'GET /admin/demo/suivi' do
     # What requirement 27 of chapter 1 §2 had the confirmation show, said again
     # here — and read from the register, so that reloading this page asks the
-    # directories nothing. Chapter 4.4 §4.1 makes it the one page meant to be
-    # reloaded at will.
+    # directories nothing. Chapter 4.4 §4.1 wants a new request for a new
+    # answer, so a reload must not turn into one.
     it 'stands under what was asked, and of whom, without asking a directory' do
       confirm_the_request
       stub_exchange_state(statut: 'sent')
