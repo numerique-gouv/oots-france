@@ -15,7 +15,7 @@ module Oots
   # and the body does not contain it. On the wire it is the SOAP envelope
   # submitted to Domibus that brings the two together.
   class SpecimenMessages
-    TIMESTAMP = '2026-08-06T10:00:00.000Z'.freeze
+    TIMESTAMP = Time.utc(2026, 8, 6, 10, 0, 0).freeze
 
     REQUEST_ID = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'.freeze
     # One conversation covering every specimen, and one exchange identifier per
@@ -151,7 +151,7 @@ module Oots
     def evidence_response(subject: beneficiary)
       attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
       body = EvidenceResponseBuilder.new(
-        requester:, beneficiary: subject, evidence_type:, attachment:,
+        requester:, beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier,
         request_id: REQUEST_ID, specification:, clock:, uuid:,
       )
 

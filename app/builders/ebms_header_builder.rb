@@ -8,7 +8,7 @@ class EbmsHeaderBuilder < ApplicationBuilder
   REGREP_MIME_TYPE = 'application/x-ebrs+xml'.freeze
 
   attr_reader :action, :recipient, :sender, :original_sender, :final_recipient,
-    :payload_id, :conversation_id, :attachment, :timestamp, :message_id, :exchange_id
+    :payload_id, :conversation_id, :attachment, :message_id, :exchange_id
 
   # `original_sender` and `final_recipient` are C1 and C4 of the four-corner
   # model. Passed in rather than derived: they swap between a request and a
@@ -30,7 +30,7 @@ class EbmsHeaderBuilder < ApplicationBuilder
     @payload_id = payload_id
     @conversation_id = conversation_id
     @attachment = attachment
-    @timestamp = clock.now
+    @instant = clock.now
     @message_id = "#{uuid.next}@#{Settings.identifier_suffix}"
     # Required whatever the version, and never minted here. Chapter 4.4 has
     # every message of one exchange reuse its `ExchangeId` — a value drawn at

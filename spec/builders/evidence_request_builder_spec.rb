@@ -30,7 +30,7 @@ RSpec.describe EvidenceRequestBuilder do
         details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
       ),
       procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
-      clock: instance_double(Clock, now: '2026-08-06T10:00:00.000Z'),
+      clock: instance_double(Clock, now: Time.utc(2026, 8, 6, 10)),
       uuid: instance_double(UuidGenerator, next: '1a2b3c4d-0000-4000-8000-000000000000'),
     }
   end
@@ -120,7 +120,7 @@ RSpec.describe EvidenceRequestBuilder do
 
     expect(document.at_xpath('//rim:Slot[@name="ExplicitRequestGiven"]//rim:Value', namespaces).text).to eq('true')
     expect(document.at_xpath('//rim:Slot[@name="IssueDateTime"]//rim:Value', namespaces).text)
-      .to eq(attributes.fetch(:clock).now)
+      .to eq(attributes.fetch(:clock).now.utc.iso8601(3))
   end
 
   describe 'the preview flag' do

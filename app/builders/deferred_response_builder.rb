@@ -12,7 +12,7 @@ class DeferredResponseBuilder < ApplicationBuilder
   # tracked as OOTS-91.
   DEFERRAL = 1.day
 
-  attr_reader :request_id, :timestamp, :available_at, :document_id
+  attr_reader :request_id, :available_at, :document_id
 
   def initialize(
     requester:, request_id:, provider: nil,
@@ -22,11 +22,10 @@ class DeferredResponseBuilder < ApplicationBuilder
     @requester = requester
     @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
     @request_id = request_id
-    @timestamp = clock.now
-    # Read back from what the clock said, so the two instants the message
-    # carries are counted from one reading: the clock speaks in the format the
-    # messages use, not in the one arithmetic wants.
-    @available_at = Time.zone.iso8601(@timestamp).utc + DEFERRAL
+    @instant = clock.now
+    # Counted from that one reading, so the two instants the message carries
+    # cannot come from two.
+    @available_at = @instant.getutc + DEFERRAL
     @document_id = uuid.next
   end
 

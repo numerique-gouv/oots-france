@@ -7,7 +7,7 @@ RSpec.describe Demo::BeneficiaryTokenWriter do
   # `BeneficiaryToken` verifies it against the wall clock. A fixed instant makes
   # these examples pass until that instant is ten minutes old and fail for ever
   # after, which is a failure nothing in the tree explains.
-  let(:clock) { instance_double(Clock, now: Time.current.iso8601(3)) }
+  let(:clock) { instance_double(Clock, now: Time.current) }
   let(:identity) do
     Demo::UserIdentity.new(
       level_of_assurance: 'Substantial', family_name: 'Sørensen', given_name: 'Freja Marie',
@@ -81,7 +81,7 @@ RSpec.describe Demo::BeneficiaryTokenWriter do
     end
 
     it 'expires, so that a token read off a log is worth nothing later' do
-      expect(claims['exp']).to eq(Time.zone.parse(clock.now).to_i + described_class::VALIDITY.to_i)
+      expect(claims['exp']).to eq(clock.now.to_i + described_class::VALIDITY.to_i)
     end
   end
 

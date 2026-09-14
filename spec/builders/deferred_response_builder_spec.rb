@@ -14,7 +14,7 @@ RSpec.describe DeferredResponseBuilder do
     {
       requester: EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur"),
       request_id: 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797',
-      clock: instance_double(Clock, now: '2026-08-06T10:00:00.000Z'),
+      clock: instance_double(Clock, now: Time.utc(2026, 8, 6, 10)),
       uuid: instance_double(UuidGenerator, next: '1a2b3c4d-0000-4000-8000-000000000004'),
     }
   end

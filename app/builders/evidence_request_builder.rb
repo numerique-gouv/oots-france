@@ -19,7 +19,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # choice. 2.0 dropped the element and asks for none.
   PROCEDURE_LANGUAGE = 'EN'.freeze
 
-  attr_reader :document_id, :timestamp, :procedure_code, :preview_possible, :requirement
+  attr_reader :document_id, :procedure_code, :preview_possible, :requirement
 
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
   # This qualified form, and not the bare UUID, is what a correspondent echoes
@@ -45,7 +45,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
     @procedure_code = procedure_code
     @associated_documents = associated_documents
     @preview_possible = preview_possible
-    @timestamp = clock.now
+    @instant = clock.now
     @document_id = uuid.next
   end
 
