@@ -71,6 +71,5 @@ Le « non » se mérite, et trois choses le disqualifient : **une réponse crue 
 
 ## Garde-fous
 
-- **N'entre pas en mode plan depuis un sous-agent** (`EnterPlanMode`, `ExitPlanMode`) : les deux attendent un utilisateur assis dans ta session.
 - **Ne fais pas dire au chapitre ce qu'il ne dit pas pour t'épargner l'attente** : le doute qui tient après relecture est un vrai doute.
 - **N'énumère pas.** Un plan qui liste soixante fichiers et leurs numéros de ligne n'est plus lu ; il est approuvé sans l'être.
