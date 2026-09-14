@@ -2,8 +2,6 @@
 
 Lu à chaque frontière de volet, avant d'ouvrir le suivant.
 
-**Travaille comme si le prochain geste était ton dernier.** Un ticket à plusieurs volets peut dépasser ta session, et **tu ne le verras pas venir** : rien ne te dit ce qu'il te reste, et un ouvrier qui atteint la limite ne prononce aucun verdict, ne pousse rien et n'écrit aucune passation — il s'arrête au milieu d'une phrase. Ne compte donc pas sur un arrêt gracieux pour te protéger : compte sur le fait de n'avoir jamais rien en réserve.
-
 Ce qui te protège est continu, et tient en deux gestes après **chaque** volet livré, avant d'ouvrir le suivant :
 
 1. **pousse** — un commit qui n'existe que dans ton worktree est un commit qu'un `git worktree remove` malheureux emporte ;
