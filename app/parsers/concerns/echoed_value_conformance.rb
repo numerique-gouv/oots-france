@@ -29,6 +29,12 @@
 # four read as one chain over one element, and splitting them between a class
 # and a module would make a reader hunt for half of it.
 #
+# What those four *compare to* is not here, and deliberately: the scheme's one
+# admitted value and the form of an eIDAS identifier are facts about identifier
+# schemes, not about echoing, and `DescribedPersonConformance` needs the same
+# two for the representative. `IdentifierScheme::EIDAS` and `EIDAS_IDENTIFIER`
+# own them, beside the code lists they are built from.
+#
 # `R-EDM-REQ-C032` is not here, though the response does read the distributions:
 # it is refused where the formats are read and not among the checks of
 # `validate!`, and what the response announces is the format France served, not
@@ -87,29 +93,13 @@ module EchoedValueConformance
                                     (?:#{Regexp.union(IdentifierScheme::UNREGISTERED_CODES).source})/
                                     [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z}x
 
-  # `R-EDM-REQ-C040` and `C051`, one assertion published twice, transcribed
-  # whole rather than taken apart into two country segments: the doctrine this
-  # repository follows for `C008` and `C097`. It carries no `^` and does carry a
-  # `$`, so anything may precede the identifier and nothing may follow it —
-  # `EidasIdentified` keeps the `\A` its own comment justifies, and this reading
-  # does not, being the rule itself.
+  # Where each of the two subjects sits comes from `DescribedPersonConformance`,
+  # which is the module that says where the four people a request describes are
+  # to be found — the same one-owner rule that put `EVIDENCE_TYPES` in
+  # `RegRepShapeConformance` once three readers walked that subtree.
   #
-  # The `i` flag is the assertion's: `es/at/02635542Y` is conformant, and
-  # `R-EDM-RESP-C028` and `C035` carry the flag too, so echoing it back keeps
-  # the answer conformant.
-  EIDAS_IDENTIFIER = %r{(?:(?:#{Regexp.union(IdentifierScheme::OOTS_COUNTRIES).source})/){2}\S{6,256}\z}i
-
-  # `R-EDM-REQ-C042` admits this value and no other. Its message adds that
-  # `eidas2` « can be used for testing purposes until confirmation of provision
-  # of a suitable legal basis », which its assertion does not: the assertion is
-  # what plays.
-  BENEFICIARY_SCHEME = 'eidas'.freeze
-
-  # Where the rules find their context nodes, written from `query:Query` down.
-  EVIDENCE_TYPES = "./rim:Slot[@name='EvidenceRequest']/rim:SlotValue/sdg:DataServiceEvidenceType".freeze
-
   # The two subjects an evidence request may name, keyed by their slot as
-  # `SlotTypeConformance::QUERY_REQUEST_SLOT_TYPES` keys its own rows, each
+  # `RegRepShapeConformance::QUERY_REQUEST_SLOT_TYPES` keys its own rows, each
   # carrying where the rule finds its context nodes and which rule that is.
   #
   # `R-EDM-REQ-C040` narrows itself to the eIDAS scheme, where `C051` judges
@@ -119,11 +109,11 @@ module EchoedValueConformance
   # other scheme, so every identifier reaching here carries this one.
   SUBJECT_IDENTIFIERS = {
     'NaturalPerson' => {
-      path: "./rim:Slot[@name='NaturalPerson']/rim:SlotValue/sdg:Person/sdg:Identifier[@schemeID='eidas']",
+      path: "#{DescribedPersonConformance::SUBJECT}/sdg:Identifier[@schemeID='#{IdentifierScheme::EIDAS}']",
       rule: 'R-EDM-REQ-C040',
     }.freeze,
     'LegalPerson' => {
-      path: "./rim:Slot[@name='LegalPerson']/rim:SlotValue/sdg:LegalPerson/sdg:LegalPersonIdentifier",
+      path: "#{DescribedPersonConformance::LEGAL_SUBJECT}/sdg:LegalPersonIdentifier",
       rule: 'R-EDM-REQ-C051',
     }.freeze,
   }.freeze
@@ -161,13 +151,17 @@ module EchoedValueConformance
     all(slot, './rim:SlotValue/sdg:Person/sdg:Identifier').each do |identifier|
       scheme = attribute(identifier, 'schemeID')
       refuse('R-EDM-REQ-C041', 'parsers.evidence_request.beneficiary_identifier_without_scheme') if scheme.nil?
-      next if scheme == BENEFICIARY_SCHEME
+      next if scheme == IdentifierScheme::EIDAS
 
       refuse('R-EDM-REQ-C042', 'parsers.evidence_request.beneficiary_scheme_unexpected',
-        scheme:, expected: BENEFICIARY_SCHEME)
+        scheme:, expected: IdentifierScheme::EIDAS)
     end
   end
 
+  # The path comes from `RegRepShapeConformance`, which is the module that says
+  # what sits under which slot of `query:Query`: three readers now walk this same
+  # subtree, and a literal copied into each would be free to drift.
+  #
   # Walked from `query` rather than through `slot_content`, for the reason
   # `EarlierLineConformance#require_conformant_transformations` gives of the
   # same subtree: a request carrying no evidence type is refused by the readers
@@ -176,7 +170,7 @@ module EchoedValueConformance
   #
   # Every type the slot carries is judged, no rule counting them.
   def require_conformant_evidence_types
-    all(query, EVIDENCE_TYPES).each do |described|
+    all(query, RegRepShapeConformance::EVIDENCE_TYPES).each do |described|
       require_expected_classification(described)
       require_conformant_titles(all(described, './sdg:Title'))
     end
@@ -233,7 +227,7 @@ module EchoedValueConformance
   def require_conformant_subject_identifiers
     SUBJECT_IDENTIFIERS.each_value do |judged|
       all(query, judged.fetch(:path)).each do |identifier|
-        next if identifier.text.match?(EIDAS_IDENTIFIER)
+        next if identifier.text.match?(IdentifierScheme::EIDAS_IDENTIFIER)
 
         refuse(judged.fetch(:rule), 'parsers.evidence_request.subject_identifier_country_unknown',
           identifier: identifier.text.presence || I18n.t('parsers.evidence_request.unnamed_subject_identifier'))

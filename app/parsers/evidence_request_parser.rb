@@ -10,10 +10,13 @@ class EvidenceRequestParser
   include AgentConformance
   include RequirementConformance
   include ClassificationConformance
-  include SlotTypeConformance
+  include RegRepShapeConformance
   include WordingConformance
   include EarlierLineConformance
   include EchoedValueConformance
+  include RequestEnvelopeConformance
+  include RequestedEvidenceTypeConformance
+  include DescribedPersonConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -50,7 +53,7 @@ class EvidenceRequestParser
   def initialize(document, specification: EdmSpecification.preferred)
     @specification = specification
     @request = at(document, '/query:QueryRequest')
-    raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
+    require_query_request(at(document, '/*')) if @request.nil?
   end
 
   # The business rules of chapter 4.6 France settles before answering at all —
@@ -65,15 +68,16 @@ class EvidenceRequestParser
   def validate!
     REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
     require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
-    require_expected_specification
+    require_conformant_envelope
     require_one_evidence_subject
     require_requester_country
-    require_conformant_collection(agents)
-    require_conformant_provider(provider_agents)
+    require_conformant_agents
     require_conformant_requirements
     require_conformant_classifications
     require_earlier_line_rules
     require_conformant_echoed_values
+    require_conformant_requested_evidence_types
+    require_conformant_described_persons
     require_conformant_document
 
     self
@@ -144,6 +148,10 @@ class EvidenceRequestParser
 
   def declared_requester_country = declared { |agent| agent_country(agent) }
 
+  # Keyed by language, which `R-EDM-REQ-S058` is what makes safe: it refuses two
+  # sibling elements of one local name sharing a `lang`, so no two titles of an
+  # accepted request can collide here — and the reading is called after
+  # `validate!` by everything that answers.
   def evidence_type
     described = slot_content('EvidenceRequest', query, './sdg:DataServiceEvidenceType')
     titles = all(described, './sdg:Title').to_h { |title| [attribute(title, 'lang'), title.text] }
@@ -244,19 +252,13 @@ class EvidenceRequestParser
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
 
-  # Against the version the message was read in, which is the ebMS property when
-  # the header carries one: a slot contradicting it is the inconsistency chapter
-  # 4.7 §2.6.2 has the receiver refuse, and it is refused under the rule of the
-  # line the header announced. A message with no property is read in the version
-  # of its own slot, so this only fires there on a version France does not
-  # speak, `EdmSpecification.resolve` having fallen back on the preferred one.
-  def require_expected_specification
-    declared = text_at(request, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
-    return if declared == specification.identifier
-
-    refuse('R-EDM-REQ-C001', 'parsers.evidence_request.unexpected_specification',
-      announced: declared.presence || I18n.t('parsers.evidence_request.unnamed_specification'),
-      expected: specification.identifier)
+  # The two collections of agents a request names, judged together because the
+  # rules that judge them are the same assertions published under two sets of
+  # identifiers — the slot fixing those, never the classification.
+  # `AgentConformance::RULES` is where that correspondence is written out.
+  def require_conformant_agents
+    require_conformant_collection(agents)
+    require_conformant_provider(provider_agents)
   end
 
   # R-EDM-REQ-S016: either a natural person or a legal one, and never both.
@@ -326,8 +328,7 @@ class EvidenceRequestParser
   # declaring no type at all, is therefore refused under `R-EDM-REQ-S016` rather
   # than under `S034`.
   def require_conformant_document
-    require_conformant_slot_types
-    require_conformant_collections
+    require_conformant_shape
     require_conformant_wordings
   end
 

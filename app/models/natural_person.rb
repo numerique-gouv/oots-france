@@ -34,6 +34,12 @@ class NaturalPerson
   # silence of the specification into a refused exchange.
   GENDER_CODES = (GENDERS + %w[0 1 2 3 4 5 6 9]).freeze
 
+  # `R-EDM-REQ-C043` on the subject, and `C064` on the representative that
+  # `DescribedPersonConformance` judges: one assertion published twice, so one
+  # transcription. Anchored at both ends, as the rule is, and applied to what
+  # `normalize-space` leaves.
+  DATE_OF_BIRTH = /\A\d{4}-\d{2}-\d{2}\z/
+
   attribute :level_of_assurance, :string
   attribute :eidas_identifier, :string
   attribute :family_name, :string
@@ -71,6 +77,6 @@ class NaturalPerson
     format: { with: /\S(?:.*\S)/m, message: :too_short },
     allow_nil: true
   validates :date_of_birth,
-    format: { with: /\A\d{4}-\d{2}-\d{2}\z/, message: :format },
+    format: { with: DATE_OF_BIRTH, message: :format },
     allow_nil: true
 end

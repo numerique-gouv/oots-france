@@ -1,7 +1,13 @@
-# `R-EDM-REQ-C092`, and it alone: every wording a received request carries is at
-# least two characters long, wherever it sits.
+# The two rules chapter 4.6 applies to the wordings of a received request
+# wherever they sit: `R-EDM-REQ-C092`, which holds every one of them to two
+# characters, and `S058`, which forbids two of one language side by side.
 #
-# One rule, one walk. The assertion's context lists twenty-one element names in
+# Two rules, two walks, and that is the family: neither has an ancestor in its
+# context, so neither can be hung off the reader of any one element — where
+# every other module here judges a subtree it can name. They are the net under
+# everywhere those readers do not go.
+#
+# The assertion's context lists twenty-one element names in
 # 2.0.1, twenty-three in 1.2.5, and names no ancestor, so it reaches the name of
 # an agent, the description of a
 # requirement, the title of an evidence type and the place of birth of the
@@ -40,7 +46,15 @@ module WordingConformance
   # a schema-valid document, and it is here because that is the rule as
   # published. Correcting the spelling would be inventing a rule.
   #
-  # Derived by `merge` and not rewritten, as `SlotTypeConformance::EARLIER_LINE_SLOT_TYPES`
+  # Neither of the two is reachable at all, in fact, and for a second reason:
+  # both belong to `JurisdictionDeterminationType`, whose only home in the 1.2.0
+  # profile is under `sdg:DataServiceEvidenceType`, where
+  # `RegRepShapeConformance::ADMITTED_EVIDENCE_TYPE_CHILDREN` refuses it under
+  # `R-EDM-REQ-S045`. The rows stay for the same reason the spelling does — they
+  # are the rule as published, and a table that quietly dropped what another rule
+  # makes unreachable would stop being readable against the `.sch`.
+  #
+  # Derived by `merge` and not rewritten, as `RegRepShapeConformance::EARLIER_LINE_SLOT_TYPES`
   # is: a second list copied out by hand would drift from the first in silence.
   EARLIER_LINE_MINIMUM_LENGTHS = MINIMUM_LENGTHS
     .merge('JurisdictionContext' => 2, 'JurisditionLevel' => 2)
@@ -55,6 +69,11 @@ module WordingConformance
   # `squish` is `normalize-space`, which the assertion applies before measuring:
   # ` A ` is one character to the rule, and so is a name split over two lines.
   def require_conformant_wordings
+    require_long_enough_wordings
+    require_one_wording_per_language
+  end
+
+  def require_long_enough_wordings
     unanswerable = unanswerable_wording_paths
     minimums = wording_minimum_lengths
 
@@ -66,6 +85,36 @@ module WordingConformance
     end
   end
 
+  # `R-EDM-REQ-S058`, whose context is `*[@lang]` — every element of the
+  # document carrying that attribute, of whatever namespace — and whose test
+  # counts the siblings sharing its local name and its language, asking for
+  # exactly one. So it reaches the titles and the descriptions of an evidence
+  # type, the names of an agent, the wordings of a requirement, and anything
+  # else a correspondent writes in two languages.
+  #
+  # `@lang` and never `xml:lang`: the assertion names the attribute without a
+  # namespace, so the `rim:LocalizedString` of a 1.2 `Procedure` slot — which
+  # carries `xml:lang` — is not in its context, and neither is the request
+  # element `C069` and `S059` judge.
+  #
+  # `local-name()` on both sides and no comparison of namespaces, as published:
+  # an `sdg:Title` and an `x:Title` of one language are two elements of the same
+  # local name to this rule, and it refuses them.
+  #
+  # Grouped rather than counted node by node, which is the same reading done
+  # once: the assertion asks that no group of (parent, local name, language)
+  # hold more than one element.
+  def require_one_wording_per_language
+    all(request, './/*[@lang]').group_by { |worded| [worded.parent.path, worded.name, attribute(worded, 'lang')] }
+      .each do |(_parent, name, language), worded|
+        next if worded.one?
+
+        refuse('R-EDM-REQ-S058', 'parsers.evidence_request.wordings_share_a_language',
+          name:, language: language.presence || I18n.t('parsers.evidence_request.unnamed_language'),
+          count: worded.size)
+      end
+  end
+
   def require_long_enough(wording, minimum)
     value = wording.text.squish
     return if value.length >= minimum
@@ -73,7 +122,7 @@ module WordingConformance
     refuse('R-EDM-REQ-C092', wording_key(minimum), path: wording.path, value:)
   end
 
-  # The list of the line the message is read in, as `SlotTypeConformance#slot_types`
+  # The list of the line the message is read in, as `RegRepShapeConformance#slot_types`
   # reads the table of its own.
   def wording_minimum_lengths
     specification.jurisdiction_determination? ? EARLIER_LINE_MINIMUM_LENGTHS : MINIMUM_LENGTHS

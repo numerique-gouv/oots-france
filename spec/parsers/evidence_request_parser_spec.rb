@@ -988,6 +988,59 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-S001` and `S002`, whose common context is the document element.
+  # Refused at the read, and the refusal carries no answer: a document that is
+  # not a query request names no requester to address, no identifier to echo and
+  # no version to answer in. The journal is its only trace, and what this pair
+  # proves is that it names its rule there.
+  describe 'the root element of the document' do
+    it 'refuses a root that is not a QueryRequest, under R-EDM-REQ-S001' do
+      expect { with_body { |body| body.gsub('query:QueryRequest', 'query:QueryResponse') } }
+        .to refusing('R-EDM-REQ-S001')
+    end
+
+    # The local name is the one thing `S001` reads, so the namespace stays the
+    # right one here and `S002` is the rule the next example reaches — swapping
+    # the two predicates would show up in this pair and nowhere else.
+    it 'refuses a QueryRequest of another namespace, under R-EDM-REQ-S002' do
+      expect { with_body { |body| body.sub('urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0', 'urn:example:query') } }
+        .to refusing('R-EDM-REQ-S002')
+    end
+  end
+
+  # `R-EDM-REQ-C002`, `C024` and `C025`: three literals the chapter fixes in the
+  # envelope, read to be judged and for nothing else.
+  describe 'the fixed values the envelope of a request carries' do
+    def with_issue_date_time(value)
+      with_body { |body| body.sub(/(<rim:Slot name="IssueDateTime">.*?<rim:Value>)[^<]*/m, "\\1#{value}") }
+    end
+
+    it 'refuses a date that is not a timestamp at all, under R-EDM-REQ-C002' do
+      expect { with_issue_date_time('hier').validate! }.to refusing('R-EDM-REQ-C002')
+    end
+
+    it 'accepts a timestamp carrying a zone and no fraction of a second' do
+      expect(with_issue_date_time('2026-09-14T10:00:00Z').validate!).to be_a(described_class)
+    end
+
+    # The assertion is anchored at neither end and stops at the seconds, so it
+    # measures the shape of a timestamp and not the whole of `xsd:dateTime`:
+    # a reader asking for that in full would refuse what the rule admits.
+    it 'accepts one carrying neither fraction nor zone' do
+      expect(with_issue_date_time('2026-09-14T10:00:00').validate!).to be_a(described_class)
+    end
+
+    it 'refuses a return type other than the fixed one, under R-EDM-REQ-C024' do
+      expect { with_body { |body| body.sub('LeafClassWithRepositoryItem', 'LeafClass') }.validate! }
+        .to refusing('R-EDM-REQ-C024')
+    end
+
+    it 'refuses a query definition other than the fixed one, under R-EDM-REQ-C025' do
+      expect { with_body { |body| body.sub('queryDefinition="DocumentQuery"', 'queryDefinition="Foo"') }.validate! }
+        .to refusing('R-EDM-REQ-C025')
+    end
+  end
+
   # Chapter 4.6, on a request that is well formed and still not one France may
   # answer. Each refusal names the rule it applied, which is the whole of what
   # the correspondent will learn.
@@ -2432,11 +2485,19 @@ RSpec.describe EvidenceRequestParser do
         'ReturnLocation' => ['R-EDM-REQ-S061', 'rim:StringValueType',
                              '<rim:Value>https://example.si/retour</rim:Value>',
                              '<rim:Slot name="EvidenceRequester">'],
+        # Conformant representatives, and not the bare names a slot type needs:
+        # `R-EDM-REQ-C058` asks the one for a level of assurance, and `C082` and
+        # `C084` ask the other for that and for its identifier, so a sketch
+        # would be refused on its content before its type was ever judged.
         'AuthorizedRepresentative' => ['R-EDM-REQ-S036', 'rim:AnyValueType',
-                                       '<sdg:Person><sdg:FamilyName>Novak</sdg:FamilyName></sdg:Person>',
+                                       '<sdg:Person><sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                                       '<sdg:FamilyName>Novak</sdg:FamilyName></sdg:Person>',
                                        '<rim:Slot name="NaturalPerson">'],
         'AuthorizedRepresentativeLegalPerson' => ['R-EDM-REQ-S055', 'rim:AnyValueType',
-                                                  '<sdg:LegalPerson><sdg:LegalName>Novak d.o.o.</sdg:LegalName></sdg:LegalPerson>',
+                                                  '<sdg:LegalPerson><sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                                                  '<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456' \
+                                                  '</sdg:LegalPersonIdentifier>' \
+                                                  '<sdg:LegalName>Novak d.o.o.</sdg:LegalName></sdg:LegalPerson>',
                                                   '<rim:Slot name="NaturalPerson">'],
       }.each do |name, (rule, expected, content, before)|
         it "accepts a #{name} slot declared #{expected}" do
@@ -2451,6 +2512,620 @@ RSpec.describe EvidenceRequestParser do
           expect { written.validate! }.to refusing(rule)
         end
       end
+    end
+  end
+
+  # The four people a request describes — the subject and its representative,
+  # natural or legal — judged by one battery of rules published four times over.
+  # None of these values is read for anything but the refusal: France models
+  # neither the representative nor the address of a subject.
+  describe 'the people the request describes' do
+    # Written into the reference request, which names none: every context here
+    # is an element of a slot that is *there*, so an absent representative
+    # triggers nothing at all.
+    def representing(content, name: 'AuthorizedRepresentative', element: 'sdg:Person')
+      written = "<rim:Slot name=\"#{name}\"><rim:SlotValue xsi:type=\"rim:AnyValueType\">" \
+                "<#{element}>#{content}</#{element}></rim:SlotValue></rim:Slot>"
+
+      with_body { |body| body.sub('<rim:Slot name="NaturalPerson">') { "#{written}<rim:Slot name=\"NaturalPerson\">" } }
+    end
+
+    # The least a representative may be and still break no rule: `C058` asks for
+    # the level of assurance, and nothing else is required of a person carrying
+    # no identifier — `C060`, which would ask for its value, is `WARNING`.
+    def represented_by(extra = '') = representing("<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>#{extra}")
+
+    def organisation_representing(extra = '')
+      representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                   "<sdg:LegalPersonIdentifier schemeID=\"eidas\">SI/SI/123456</sdg:LegalPersonIdentifier>#{extra}",
+        name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+    end
+
+    # Written into the `sdg:Person` the reference request already names.
+    def subject_carrying(extra)
+      with_body { |body| body.sub('</sdg:Person>') { "#{extra}</sdg:Person>" } }
+    end
+
+    # And the organisation subject, which the reference request does not name:
+    # `Fixtures#legal_person_slot` is the conformant one the rest of this file
+    # reads, so what an example changes in it is the only thing under test.
+    def about_an_organisation(&) = envelope_about_an_organisation(legal_person_slot.then(&)).body
+
+    it 'serves a request naming no representative at all, as the reference one does' do
+      expect(request.validate!).to be(request)
+    end
+
+    it 'serves one naming a representative that breaks nothing' do
+      written = represented_by
+
+      expect(written.validate!).to be(written)
+    end
+
+    # The ten country codes, one assertion under ten identifiers — every row of
+    # the table, refused and accepted. A row nothing exercises is a row that
+    # could name the wrong rule, or point at the wrong element, without anything
+    # saying so.
+    describe 'the country codes each of them names' do
+      def carrying(person, written)
+        case person
+        when :subject then subject_carrying(written)
+        when :legal_subject then about_an_organisation { |slot| slot.sub('</sdg:LegalPerson>') { "#{written}</sdg:LegalPerson>" } }
+        when :representative then represented_by(written)
+        else organisation_representing(written)
+        end
+      end
+
+      {
+        'R-EDM-REQ-C045' => [:subject, '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+        'R-EDM-REQ-C075' => [:subject, '<sdg:Nationality>%s</sdg:Nationality>'],
+        'R-EDM-REQ-C076' => [:subject, '<sdg:CountryOfBirth>%s</sdg:CountryOfBirth>'],
+        'R-EDM-REQ-C077' => [:subject, '<sdg:CountryOfResidence>%s</sdg:CountryOfResidence>'],
+        'R-EDM-REQ-C056' => [:legal_subject,
+                             '<sdg:RegisteredAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:RegisteredAddress>'],
+        'R-EDM-REQ-C067' => [:representative,
+                             '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+        'R-EDM-REQ-C078' => [:representative, '<sdg:Nationality>%s</sdg:Nationality>'],
+        'R-EDM-REQ-C079' => [:representative, '<sdg:CountryOfBirth>%s</sdg:CountryOfBirth>'],
+        'R-EDM-REQ-C080' => [:representative, '<sdg:CountryOfResidence>%s</sdg:CountryOfResidence>'],
+        # The one row whose element the schema does not admit where the rule
+        # looks for it: `sdg:LegalPerson` gets an `sdg:RegisteredAddress` and no
+        # `sdg:CurrentAddress`. Transcribed to the letter all the same, so the
+        # request that reaches it is one no schema-valid correspondent sends.
+        'R-EDM-REQ-C090' => [:legal_representative,
+                             '<sdg:CurrentAddress><sdg:AdminUnitLevel1>%s</sdg:AdminUnitLevel1></sdg:CurrentAddress>'],
+      }.each do |rule, (person, written)|
+        it "refuses a code the list does not publish, under #{rule}" do
+          expect { carrying(person, format(written, 'ZZ')).validate! }.to refusing(rule)
+        end
+
+        # Compared exactly, the assertion carrying no `i` flag: the refusal
+        # above would pass just as well if the reader accepted nothing at all,
+        # and this is what says otherwise.
+        it "accepts a published code in the same place, for #{rule}" do
+          accepted = carrying(person, format(written, 'SI'))
+
+          expect(accepted.validate!).to be(accepted)
+        end
+      end
+    end
+
+    describe 'the level of assurance each of them declares' do
+      it 'refuses a representative carrying none, under R-EDM-REQ-C058' do
+        expect { representing('<sdg:FamilyName>Novak</sdg:FamilyName>').validate! }
+          .to refusing('R-EDM-REQ-C058')
+      end
+
+      it 'refuses one outside the LoA list, under R-EDM-REQ-C059' do
+        expect { representing('<sdg:LevelOfAssurance>Medium</sdg:LevelOfAssurance>').validate! }
+          .to refusing('R-EDM-REQ-C059')
+      end
+
+      it 'refuses an organisation subject carrying none, under R-EDM-REQ-C047' do
+        stripped = about_an_organisation { |slot| slot.sub(%r{<sdg:LevelOfAssurance>.*?</sdg:LevelOfAssurance>}, '') }
+
+        expect { stripped.validate! }.to refusing('R-EDM-REQ-C047')
+      end
+
+      it 'refuses one outside the list, under R-EDM-REQ-C048' do
+        lowered = about_an_organisation { |slot| slot.sub('<sdg:LevelOfAssurance>High', '<sdg:LevelOfAssurance>Medium') }
+
+        expect { lowered.validate! }.to refusing('R-EDM-REQ-C048')
+      end
+    end
+
+    describe 'the scheme each identifier names' do
+      it 'refuses an organisation subject whose identifier names none, under R-EDM-REQ-C052' do
+        stripped = about_an_organisation { |slot| slot.sub(' schemeID="eidas"', '') }
+
+        expect { stripped.validate! }.to refusing('R-EDM-REQ-C052')
+      end
+
+      it 'refuses one naming another scheme, under R-EDM-REQ-C053' do
+        other = about_an_organisation { |slot| slot.sub('schemeID="eidas"', 'schemeID="eidas2"') }
+
+        expect { other.validate! }.to refusing('R-EDM-REQ-C053')
+      end
+
+      # And the same pair on the representative, under its own identifiers.
+      it 'refuses a representative identifier naming no scheme at all, under R-EDM-REQ-C062' do
+        expect { represented_by('<sdg:Identifier>SI/SI/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C062')
+      end
+
+      it 'refuses a representative naming another scheme, under R-EDM-REQ-C063' do
+        expect { represented_by('<sdg:Identifier schemeID="eidas2">SI/SI/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C063')
+      end
+
+      # Which is what empties the `eidas2` branch: `C121`, `C122`, `C123`, `C125`
+      # and `C127` narrow their contexts to a representative identified under
+      # that very scheme, so none of them is ever reached. The `detail` carries
+      # one rule, and this is what proves it is always this one — a
+      # representative breaking every rule of that branch at once is refused by
+      # `C063` and named by nothing else.
+      it 'never names a rule of the eidas2 branch, whose context lies past that refusal' do
+        eidas2 = represented_by('<sdg:Identifier schemeID="eidas2">pas-un-identifiant</sdg:Identifier>' \
+                                '<sdg:LevelOfAssurance>Low</sdg:LevelOfAssurance>')
+
+        expect { eidas2.validate! }.to refusing('R-EDM-REQ-C063')
+      end
+    end
+
+    # The legal representative's chain, jumelle for jumelle of the legal
+    # subject's: level of assurance, then the scheme of its eIDAS identifier.
+    describe 'the organisation representing the subject' do
+      def carrying(written)
+        representing("<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>#{written}",
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+      end
+
+      it 'refuses one carrying no level of assurance, under R-EDM-REQ-C082' do
+        written = representing('<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C082')
+      end
+
+      it 'refuses one outside the LoA list, under R-EDM-REQ-C083' do
+        written = representing('<sdg:LevelOfAssurance>Medium</sdg:LevelOfAssurance>' \
+                               '<sdg:LegalPersonIdentifier schemeID="eidas">SI/SI/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C083')
+      end
+
+      it 'refuses an identifier naming no scheme, under R-EDM-REQ-C086' do
+        expect { carrying('<sdg:LegalPersonIdentifier>SI/SI/123456</sdg:LegalPersonIdentifier>').validate! }
+          .to refusing('R-EDM-REQ-C086')
+      end
+
+      it 'refuses one naming another scheme, under R-EDM-REQ-C087' do
+        expect { carrying('<sdg:LegalPersonIdentifier schemeID="eidas2">SI/SI/123456</sdg:LegalPersonIdentifier>').validate! }
+          .to refusing('R-EDM-REQ-C087')
+      end
+
+      it 'serves one that breaks none of the four' do
+        written = organisation_representing
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
+    describe 'the shape of an eIDAS identifier' do
+      it 'refuses a representative whose country codes are not published, under R-EDM-REQ-C061' do
+        expect { represented_by('<sdg:Identifier schemeID="eidas">ZZ/FR/123456</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C061')
+      end
+
+      it 'refuses an organisation representative under R-EDM-REQ-C085' do
+        written = representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>' \
+                               '<sdg:LegalPersonIdentifier schemeID="eidas">ZZ/FR/123456</sdg:LegalPersonIdentifier>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C085')
+      end
+
+      # The accept half of `C061`, `C062`, `C063` and `C126` at once: a
+      # representative identified under `eidas`, with country codes the list
+      # publishes and a sex the eIDAS profile admits, is served.
+      it 'serves a representative whose eIDAS identifier is well formed' do
+        written = represented_by('<sdg:Identifier schemeID="eidas">SI/SI/123456</sdg:Identifier>' \
+                                 '<sdg:Gender>Female</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
+      end
+
+      it 'refuses an organisation representative carrying no identifier, under R-EDM-REQ-C084' do
+        written = representing('<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>',
+          name: 'AuthorizedRepresentativeLegalPerson', element: 'sdg:LegalPerson')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C084')
+      end
+    end
+
+    describe 'the optional identifiers of an organisation representative' do
+      it 'refuses one naming no scheme, under R-EDM-REQ-C088' do
+        expect { organisation_representing('<sdg:Identifier>FR12345678901</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C088')
+      end
+
+      # A SIRET identifies an agent of the exchange and never the subject of an
+      # evidence: the `IdentifierSchemes` list does not publish it.
+      it 'refuses one naming a scheme the list does not publish, under R-EDM-REQ-C089' do
+        expect { organisation_representing('<sdg:Identifier schemeID="SIRET">00000000000002</sdg:Identifier>').validate! }
+          .to refusing('R-EDM-REQ-C089')
+      end
+
+      it 'accepts one the list does publish' do
+        written = organisation_representing('<sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>')
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
+    describe 'the date of birth of a representative' do
+      it 'refuses one that is not a date, under R-EDM-REQ-C064' do
+        expect { represented_by('<sdg:DateOfBirth>hier</sdg:DateOfBirth>').validate! }
+          .to refusing('R-EDM-REQ-C064')
+      end
+
+      # Anchored at both ends, where `C002` is anchored at neither.
+      it 'refuses a timestamp where a date is asked for' do
+        expect { represented_by('<sdg:DateOfBirth>1980-01-01T00:00:00Z</sdg:DateOfBirth>').validate! }
+          .to refusing('R-EDM-REQ-C064')
+      end
+
+      it 'accepts a date written as the rule asks' do
+        written = represented_by('<sdg:DateOfBirth>1980-01-01</sdg:DateOfBirth>')
+
+        expect(written.validate!).to be(written)
+      end
+    end
+
+    describe 'the sex of a representative' do
+      def identified_as(gender)
+        represented_by("<sdg:Identifier schemeID=\"eidas\">SI/SI/123456</sdg:Identifier>#{gender}")
+      end
+
+      it 'refuses a value outside the Gender list, under R-EDM-REQ-C124' do
+        expect { represented_by('<sdg:Gender>7</sdg:Gender>').validate! }.to refusing('R-EDM-REQ-C124')
+      end
+
+      # `C124` admits the numeric profile; `C126` narrows it to the three eIDAS
+      # values once an `eidas` identifier is there — so `1` passes the first and
+      # falls on the second.
+      it 'refuses the numeric profile under an eidas identifier, under R-EDM-REQ-C126' do
+        expect { identified_as('<sdg:Gender>1</sdg:Gender>').validate! }.to refusing('R-EDM-REQ-C126')
+      end
+
+      # The assertion is on the *person* and reads `sdg:Gender=('Male',…)`,
+      # which an absent element fails: its published sentence only constrains a
+      # value, and the assertion is what plays. `docs/carte_des_tdd.md` records
+      # the disagreement.
+      it 'refuses an eidas representative carrying no sex at all, under the same rule' do
+        expect { identified_as('').validate! }.to refusing('R-EDM-REQ-C126')
+      end
+
+      # `C124` admits the numeric profile and `C126` does not — but `C126` only
+      # has a context once an `eidas` identifier is there. Without one, the
+      # numeric value passes: this is the half that proves the two lists are
+      # genuinely different, where refusing `7` proves only that both refuse it.
+      it 'accepts a numeric sex on a representative naming no identifier' do
+        written = represented_by('<sdg:Gender>1</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
+      end
+
+      it 'accepts an eidas representative naming one of the three' do
+        written = identified_as('<sdg:Gender>Female</sdg:Gender>')
+
+        expect(written.validate!).to be(written)
+      end
+
+      # Neither rule exists at the 1.2.5 tag, so a request of that line writes
+      # the element as it likes — the pair that proves the predicate guarding
+      # them has the polarity it should.
+      it 'says nothing of the sex of a representative on the 1.2 line' do
+        written = earlier_line_envelope do |body|
+          body.sub('<rim:Slot name="NaturalPerson">') do
+            '<rim:Slot name="AuthorizedRepresentative"><rim:SlotValue xsi:type="rim:AnyValueType"><sdg:Person>' \
+              '<sdg:LevelOfAssurance>High</sdg:LevelOfAssurance><sdg:Gender>7</sdg:Gender>' \
+              '</sdg:Person></rim:SlotValue></rim:Slot><rim:Slot name="NaturalPerson">'
+          end
+        end
+
+        expect(written.body.validate!).to be_a(described_class)
+      end
+    end
+
+    # `C081` compares the value whole — `or` being the loosest operator of
+    # XPath — where `C091` splits on `,\s*`. The pair on one and the same value
+    # is what proves the two assertions are read differently, whatever their
+    # messages both say about comma-separated values.
+    describe 'the procedures a power of representation covers' do
+      def scoped(value, person: method(:represented_by))
+        person.call('<sdg:SectorSpecificAttribute><sdg:AttributeName>' \
+                    'http://data.europa.eu/p4s/attributes/PowerOfRepresentationScope</sdg:AttributeName>' \
+                    "<sdg:AttributeValue>#{value}</sdg:AttributeValue></sdg:SectorSpecificAttribute>")
+      end
+
+      it 'refuses a comma-separated pair on a natural representative, under R-EDM-REQ-C081' do
+        expect { scoped('T1,T3').validate! }.to refusing('R-EDM-REQ-C081')
+      end
+
+      it 'accepts that same pair on an organisation representative, which C091 splits' do
+        written = scoped('T1,T3', person: method(:organisation_representing))
+
+        expect(written.validate!).to be(written)
+      end
+
+      it 'refuses a split value naming a code the list does not publish, under R-EDM-REQ-C091' do
+        expect { scoped('T1, Z9', person: method(:organisation_representing)).validate! }
+          .to refusing('R-EDM-REQ-C091')
+      end
+
+      it 'accepts the system check code, which both admit beside the list' do
+        written = scoped('00')
+
+        expect(written.validate!).to be(written)
+      end
+
+      # Neither context stops at the URI its message names, so every sectoral
+      # attribute is judged — the assertion, and not its message.
+      it 'judges an attribute of another URI just the same' do
+        written = represented_by('<sdg:SectorSpecificAttribute><sdg:AttributeName>urn:example:autre' \
+                                 '</sdg:AttributeName><sdg:AttributeValue>Z9</sdg:AttributeValue>' \
+                                 '</sdg:SectorSpecificAttribute>')
+
+        expect { written.validate! }.to refusing('R-EDM-REQ-C081')
+      end
+    end
+  end
+
+  # `R-EDM-REQ-C106`, `C031`, `C030` and `C033`, on the evidence type asked for.
+  # None of these values reaches the answer — the response announces the format
+  # France served and copies no description — so they are applied for the only
+  # reason left: they are FATAL on a value the request carries.
+  describe 'the evidence type asked for, in what nothing echoes' do
+    def described_as(&) = with_body { |body| body.sub(%r{<sdg:DataServiceEvidenceType.*?</sdg:DataServiceEvidenceType>}m, &) }
+
+    # The context is the evidence type and the test is
+    # `not(normalize-space(sdg:Identifier)='')`, so an element that is not there
+    # breaks it as much as one written blank — which is the case the schema
+    # leaves open, giving `sdg:Identifier` `minOccurs="0"`.
+    it 'refuses one carrying no sdg:Identifier, under R-EDM-REQ-C106' do
+      stripped = described_as { |type| type.sub(%r{<sdg:Identifier>.*?</sdg:Identifier>}m, '') }
+
+      expect { stripped.validate! }.to refusing('R-EDM-REQ-C106')
+    end
+
+    it 'refuses one whose sdg:Identifier is written blank, under the same rule' do
+      blank = described_as { |type| type.sub(%r{(<sdg:Identifier>).*?(</sdg:Identifier>)}m, '\\1   \\2') }
+
+      expect { blank.validate! }.to refusing('R-EDM-REQ-C106')
+    end
+
+    # `C031` and `C030` are the pair `AgentConformance#require_language` already
+    # reads for an agent's name and a requirement's wordings — the same two
+    # assertions a seventh time, on the description beside the titles.
+    def with_description(description)
+      described_as { |type| type.sub('</sdg:DataServiceEvidenceType>') { "#{description}</sdg:DataServiceEvidenceType>" } }
+    end
+
+    it 'refuses a description naming no language, under R-EDM-REQ-C031' do
+      expect { with_description('<sdg:Description>Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C031')
+    end
+
+    it 'refuses one naming a language the list does not publish, under R-EDM-REQ-C030' do
+      expect { with_description('<sdg:Description lang="xx">Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C030')
+    end
+
+    # Compared exactly, the assertion carrying no `i` flag where the list
+    # publishes upper case — the reading `LanguageCode` holds the reason for.
+    it 'refuses a published code written in lower case' do
+      expect { with_description('<sdg:Description lang="fr">Acte</sdg:Description>').validate! }
+        .to refusing('R-EDM-REQ-C030')
+    end
+
+    it 'accepts a description naming a published code as the list publishes it' do
+      written = with_description('<sdg:Description lang="FR">Acte de naissance</sdg:Description>')
+
+      expect(written.validate!).to be(written)
+    end
+
+    # `C033` is the code list the specification publishes; `EDM:ERR:0007` is
+    # what France has no document for. The pair is what keeps them apart: a
+    # format outside the list never reaches the second refusal.
+    it 'refuses a format the code list does not publish, under R-EDM-REQ-C033' do
+      exotic = described_as { |type| type.sub('application/pdf', 'application/foo') }
+
+      expect { exotic.validate! }.to refusing('R-EDM-REQ-C033')
+    end
+
+    it 'accepts a published format France happens not to serve' do
+      served = described_as { |type| type.sub('application/pdf', 'image/png') }
+
+      expect(served.validate!).to be(served)
+    end
+  end
+
+  # `R-EDM-REQ-S058`, the second walk over the document beside `C092`: no two
+  # sibling elements of one local name may share a `lang`.
+  describe 'two wordings of one language side by side' do
+    it 'refuses two titles of the same language, under R-EDM-REQ-S058' do
+      doubled = with_body do |body|
+        body.sub('<sdg:Title lang="EN">Test evidence</sdg:Title>') do
+          '<sdg:Title lang="EN">Test evidence</sdg:Title><sdg:Title lang="EN">Test document</sdg:Title>'
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S058')
+    end
+
+    # The context names no ancestor, so the walk reaches an agent's names as
+    # much as an evidence type's titles.
+    it 'refuses two names of one language on an agent, under the same rule' do
+      doubled = with_body do |body|
+        body.sub('<sdg:Name lang="FR">Fournisseur de test</sdg:Name>') do
+          '<sdg:Name lang="FR">Fournisseur de test</sdg:Name><sdg:Name lang="FR">Autre nom</sdg:Name>'
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S058')
+    end
+
+    # Which is the whole point of the cardinality the schema gives these
+    # elements: two languages are what `1..n` is for.
+    it 'accepts two titles of two languages, which the reference request carries' do
+      expect(request.validate!).to be(request)
+    end
+
+    # `@lang` without a namespace is what the assertion names, so the
+    # `rim:LocalizedString` of a 1.2 `Procedure` slot — which carries `xml:lang`
+    # — is not in its context at all.
+    it 'says nothing of two xml:lang attributes, which it does not reach' do
+      expect(earlier_line_envelope.body.validate!).to be_a(described_class)
+    end
+  end
+
+  # `R-EDM-REQ-S019`, `S049` and `S045` close three lists of names: the slots
+  # `query:QueryRequest` may carry, those `query:Query` may, and the elements an
+  # evidence type may. A slot outside them was served until now, its type table
+  # simply passing it over.
+  describe 'the names each level admits' do
+    it 'refuses a slot of query:QueryRequest that no rule names, under R-EDM-REQ-S019' do
+      invented = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="Foo"><rim:SlotValue xsi:type="rim:StringValueType">' \
+            '<rim:Value>x</rim:Value></rim:SlotValue></rim:Slot><rim:Slot name="EvidenceRequester">'
+        end
+      end
+
+      expect { invented.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+
+    it 'refuses a slot of query:Query that no rule names, under R-EDM-REQ-S049' do
+      invented = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequest">') do
+          '<rim:Slot name="Foo"><rim:SlotValue xsi:type="rim:AnyValueType">' \
+            '<sdg:Person/></rim:SlotValue></rim:Slot><rim:Slot name="EvidenceRequest">'
+        end
+      end
+
+      expect { invented.validate! }.to refusing('R-EDM-REQ-S049')
+    end
+
+    # The rule counts the children it names against the total, so anything else
+    # breaks it — including what the schema itself admits there, `sdg:Note` and
+    # `sdg:AccessService` among them. The `.sch` is what plays where the two
+    # disagree, and `docs/carte_des_tdd.md` records the disagreement.
+    it 'refuses an evidence type carrying an element it does not name, under R-EDM-REQ-S045' do
+      noted = with_body do |body|
+        body.sub('</sdg:DataServiceEvidenceType>') { '<sdg:Note>Rien</sdg:Note></sdg:DataServiceEvidenceType>' }
+      end
+
+      expect { noted.validate! }.to refusing('R-EDM-REQ-S045')
+    end
+
+    # Counted and not tested name by name, which is what makes this fail: the
+    # child has an admitted local name and the wrong namespace, so it adds to the
+    # total of the children and to none of the five counts.
+    it 'refuses one whose extra child only borrows an admitted local name' do
+      borrowed = with_body do |body|
+        body.sub('</sdg:DataServiceEvidenceType>') do
+          '<x:Title xmlns:x="urn:example:x">Emprunt</x:Title></sdg:DataServiceEvidenceType>'
+        end
+      end
+
+      expect { borrowed.validate! }.to refusing('R-EDM-REQ-S045')
+    end
+  end
+
+  # `R-EDM-REQ-S050` and `S051`, whose contexts are a bare `rim:Slot` and a bare
+  # `rim:SlotValue`: no ancestor narrows either, so both reach the slots of
+  # `query:Query` as much as those of the request. The readers fetched the slot
+  # value they wanted and never counted them.
+  describe 'the slot values every slot carries' do
+    it 'refuses a slot carrying no rim:SlotValue, under R-EDM-REQ-S050' do
+      emptied = with_body { |body| body.sub(%r{(<rim:Slot name="Procedure">).*?(</rim:Slot>)}m, '\\1\\2') }
+
+      expect { emptied.validate! }.to refusing('R-EDM-REQ-S050')
+    end
+
+    # `= 1` and not `>= 1`, as the assertion has it: two values leave which one
+    # is meant undecided.
+    it 'refuses a slot carrying two of them, under the same rule' do
+      doubled = with_body do |body|
+        body.sub(%r{<rim:Slot name="Procedure">(.*?)</rim:Slot>}m) do
+          "<rim:Slot name=\"Procedure\">#{Regexp.last_match(1)}#{Regexp.last_match(1)}</rim:Slot>"
+        end
+      end
+
+      expect { doubled.validate! }.to refusing('R-EDM-REQ-S050')
+    end
+
+    it 'refuses a rim:SlotValue carrying no element at all, under R-EDM-REQ-S051' do
+      hollow = with_body do |body|
+        body.sub(%r{(<rim:Slot name="Procedure">\s*<rim:SlotValue[^>]*>).*?(</rim:SlotValue>)}m, '\\1\\2')
+      end
+
+      expect { hollow.validate! }.to refusing('R-EDM-REQ-S051')
+    end
+  end
+
+  # `R-EDM-REQ-S044`, `S046`, `S047`, `S048` and `S056`: the `sdg:` element each
+  # slot of `query:Query` puts under its value. The readers refused these
+  # absences already, through `SlotReading#slot_content`, but naming no rule —
+  # so the correspondent got an `EDM:ERR:0003` with an empty `detail`.
+  describe 'the element each slot of the query carries' do
+    # The two the reference request already carries, emptied of their element.
+    {
+      'R-EDM-REQ-S044' => ['EvidenceRequest', 'sdg:DataServiceEvidenceType'],
+      'R-EDM-REQ-S046' => ['NaturalPerson', 'sdg:Person'],
+    }.each do |rule, (name, element)|
+      it "refuses a #{name} slot value carrying no #{element}, under #{rule}" do
+        stripped = with_body do |body|
+          body.sub(%r{(<rim:Slot name="#{name}">\s*<rim:SlotValue[^>]*>).*?(</rim:SlotValue>)}m) do
+            "#{Regexp.last_match(1)}<sdg:Autre/>#{Regexp.last_match(2)}"
+          end
+        end
+
+        expect { stripped.validate! }.to refusing(rule)
+      end
+    end
+
+    # And the three it does not, written in carrying the wrong element. The
+    # people rules never fire on these: they look for an `sdg:Person` or an
+    # `sdg:LegalPerson` that is precisely what is missing, so the refusal that
+    # comes back is the slot-content one and not a value rule standing in for it.
+    def hollow_slot(name)
+      "<rim:Slot name=\"#{name}\"><rim:SlotValue xsi:type=\"rim:AnyValueType\"><sdg:Autre/></rim:SlotValue></rim:Slot>"
+    end
+
+    {
+      'R-EDM-REQ-S048' => ['AuthorizedRepresentative', 'sdg:Person'],
+      'R-EDM-REQ-S056' => ['AuthorizedRepresentativeLegalPerson', 'sdg:LegalPerson'],
+    }.each do |rule, (name, element)|
+      it "refuses a #{name} slot value carrying no #{element}, under #{rule}" do
+        stripped = with_body do |body|
+          body.sub('<rim:Slot name="NaturalPerson">') { "#{hollow_slot(name)}<rim:Slot name=\"NaturalPerson\">" }
+        end
+
+        expect { stripped.validate! }.to refusing(rule)
+      end
+    end
+
+    # The subject slot is replaced and not doubled: `R-EDM-REQ-S016` counts the
+    # two subject slots and refuses a request naming both, so adding one beside
+    # the other would be refused under that rule and prove nothing about this one.
+    it 'refuses a LegalPerson slot value carrying no sdg:LegalPerson, under R-EDM-REQ-S047' do
+      stripped = with_body do |body|
+        body.sub(%r{<rim:Slot name="NaturalPerson">.*?</rim:Slot>}m) { hollow_slot('LegalPerson') }
+      end
+
+      expect { stripped.validate! }.to refusing('R-EDM-REQ-S047')
     end
   end
 
@@ -2486,12 +3161,16 @@ RSpec.describe EvidenceRequestParser do
     # both of these rules and satisfies `R-EDM-REQ-S026`: the local name is the
     # one that rule asks for, and the qualified name is not the one this context
     # selects. A reader unifying the two comparisons refuses this request.
+    # Its `collectionType` is dropped, which is what `R-EDM-REQ-S053` would
+    # refuse if this slot value were in its context. The `rim:Element` stays:
+    # `S051` weighs every slot value of the document, whatever it declares
+    # itself to be, so emptying this one would refuse the request for a reason
+    # that has nothing to do with what is being proved here.
     it 'accepts one whose prefix keeps it out of the context of these two rules' do
       served = collection('Requirements') do |found|
         found.sub(/ xsi:type="[^"]*"/,
           %( xsi:type="x:CollectionValueType" xmlns:x="#{OotsNamespaces::NAMESPACES.fetch('rim')}"))
           .sub(/\s*collectionType="[^"]*"/, '')
-          .sub(%r{<rim:Element.*?</rim:Element>}m, '')
       end
 
       expect(served.validate!).to be(served)
@@ -2894,15 +3573,14 @@ RSpec.describe EvidenceRequestParser do
     end
 
     # `R-EDM-REQ-C092` lists twenty-three element names at the 1.2.5 tag and
-    # twenty-one at the 2.0.1 one: `sdg:JurisdictionContext` and
-    # `sdg:JurisditionLevel` — spelled thus in the rule — belong to
-    # `JurisdictionDeterminationType`, which 2.0 deleted. Same test, same
-    # thresholds, two more places to apply them.
-    describe 'the wordings of the jurisdiction determination' do
-      # Wrapped in the element that carries them, as `JurisdictionDeterminationType`
-      # has it: the rule's context names no ancestor, so the walk would reach them
-      # anywhere — but a request nobody could send proves nothing about the ones
-      # that can.
+    # twenty-one at the 2.0.1 one, the two extra being `sdg:JurisdictionContext`
+    # and `sdg:JurisditionLevel` — spelled thus in the rule. Both belong to
+    # `JurisdictionDeterminationType`, whose only home in the 1.2.0 profile is
+    # under `sdg:DataServiceEvidenceType`, and `R-EDM-REQ-S045` does not name it
+    # among the five children it admits there. So the request that would exercise
+    # those two rows is a request `S045` refuses, on the very line that publishes
+    # them, and this is what that comes to.
+    describe 'the jurisdiction determination the 1.2 profile provides for' do
       def determining(wording, envelope_of)
         determination = "<sdg:EvidenceProviderJurisdictionDetermination>#{wording}" \
                         '</sdg:EvidenceProviderJurisdictionDetermination>'
@@ -2912,38 +3590,29 @@ RSpec.describe EvidenceRequestParser do
         end
       end
 
-      it 'refuses a jurisdiction context of one character, under R-EDM-REQ-C092' do
-        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:earlier))
-
-        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
-      end
-
-      # Guards against over-refusal and nothing more: a table that did not carry
-      # the name at all would accept this too, `require_conformant_wordings`
-      # skipping every element it does not measure. The refusal above is what
-      # proves the name is measured; this is what proves it is not measured too
-      # harshly.
-      it 'accepts the same context once it is a word' do
+      it 'refuses a 1.2 request carrying one, under R-EDM-REQ-S045' do
         described = determining('<sdg:JurisdictionContext lang="FR">Paris</sdg:JurisdictionContext>', method(:earlier))
 
-        expect(described.validate!).to be_a(described_class)
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
 
-      # The rule spells the second name without its `c`, where the 1.2.0 schema
-      # spells it `JurisdictionLevel`: transcribed as published, so the row is
-      # the rule and not a correction of it.
-      it 'refuses a jurisdiction level of one character, spelled as the rule spells it' do
-        described = determining('<sdg:JurisditionLevel>X</sdg:JurisditionLevel>', method(:earlier))
+      # The length of the wording changes nothing: `S045` counts the children of
+      # the evidence type and never looks inside them, so the request is refused
+      # before `C092` has anything to measure.
+      it 'refuses it whatever the wording it carries is worth' do
+        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:earlier))
 
-        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
 
-      # The other half of the pair: 2.0.1 dropped both names from the context,
-      # so the same one-character wording breaks nothing there.
-      it 'says nothing of that same context on the 2.0 line' do
-        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:with_body))
+      # `S045` is one of the rules the two tags publish word for word, so the
+      # line the message declares changes nothing here either — where 2.0 has the
+      # further reason that its profile deleted the type outright.
+      it 'refuses it on the 2.0 line under the same rule' do
+        described = determining('<sdg:JurisdictionContext lang="FR">Paris</sdg:JurisdictionContext>',
+          method(:with_body))
 
-        expect(described.validate!).to be_a(described_class)
+        expect { described.validate! }.to refusing('R-EDM-REQ-S045')
       end
     end
 
@@ -2997,11 +3666,22 @@ RSpec.describe EvidenceRequestParser do
         expect { requested_in('fr', method(:earlier)).validate! }.to refusing('R-EDM-REQ-C069')
       end
 
-      # The 2.0 line publishes no rule of that identifier: the language moved
-      # into each distribution, and the attribute is one the schema forbids
-      # rather than one a business rule judges.
-      it 'says nothing of that attribute on the 2.0 line' do
-        expect(requested_in('xx', method(:with_body)).validate!).to be_a(described_class)
+      # The 2.0 line publishes no rule of *that* identifier, the language having
+      # moved into each distribution — but it does not fall silent on the
+      # attribute: `R-EDM-REQ-S059` forbids it outright, so the two lines say
+      # opposite things about one and the same `xml:lang`. A published code is
+      # refused there exactly as an unpublished one is, the rule reading the
+      # attribute's presence and never its value.
+      it 'refuses that attribute outright on the 2.0 line, under R-EDM-REQ-S059' do
+        expect { requested_in('xx', method(:with_body)).validate! }.to refusing('R-EDM-REQ-S059')
+      end
+
+      it 'refuses it on the 2.0 line even where the code is a published one' do
+        expect { requested_in('FR', method(:with_body)).validate! }.to refusing('R-EDM-REQ-S059')
+      end
+
+      it 'accepts a 2.0 request naming no language of its own at all' do
+        expect(request.validate!).to be_a(described_class)
       end
     end
 
@@ -3072,9 +3752,11 @@ RSpec.describe EvidenceRequestParser do
     end
 
     # `ReturnLocation` is a slot 2.0.1 alone defines — the name appears nowhere
-    # in the 1.2.5 Schematron — so `R-EDM-REQ-S061`, which types it there, types
-    # nothing on the earlier line. The pair is what proves it: the very
-    # declaration the 2.0 line refuses passes on the 1.2 one.
+    # in the 1.2.5 Schematron, neither among the rules that type the slots nor
+    # in the list `R-EDM-REQ-S019` closes. So the two lines refuse this same
+    # declaration under two different rules, and refuse it for opposite reasons:
+    # on the 2.0 line the slot exists and is mistyped, on the 1.2 one it does not
+    # exist at all.
     def returning(envelope_of)
       envelope_of.call do |body|
         body.sub('<rim:Slot name="EvidenceRequester">') do
@@ -3085,8 +3767,23 @@ RSpec.describe EvidenceRequestParser do
       end
     end
 
-    it 'types no ReturnLocation on the 1.2 line, the slot being of 2.0 alone' do
-      expect { returning(method(:earlier_line_envelope)).body.validate! }.not_to raise_error
+    it 'refuses a ReturnLocation on the 1.2 line, under R-EDM-REQ-S019' do
+      expect { returning(method(:earlier_line_envelope)).body.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+
+    # And admits it on the line that defines it, which is what keeps the two
+    # lists apart: a reader holding both lines to the 2.0 one would serve the
+    # request above, and one holding both to the 1.2 one would refuse this.
+    it 'admits a well-typed ReturnLocation on the 2.0 line' do
+      written = with_body do |body|
+        body.sub('<rim:Slot name="EvidenceRequester">') do
+          '<rim:Slot name="ReturnLocation"><rim:SlotValue xsi:type="rim:StringValueType">' \
+            '<rim:Value>https://example.si/retour</rim:Value></rim:SlotValue></rim:Slot>' \
+            '<rim:Slot name="EvidenceRequester">'
+        end
+      end
+
+      expect(written.validate!).to be(written)
     end
 
     it 'refuses that same declaration on the 2.0 line, under R-EDM-REQ-S061' do

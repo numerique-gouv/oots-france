@@ -58,9 +58,9 @@ module EvidenceProvision
       exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
 
       audit_trail.request_refused(
-        requester_id: exchange&.evidence_requester_id || request.declared_requester_id,
+        requester_id: exchange&.evidence_requester_id || readable { request.declared_requester_id },
         procedure_code: exchange&.procedure_code,
-        country_code: exchange&.country_code || request.declared_requester_country,
+        country_code: exchange&.country_code || readable { request.declared_requester_country },
         reason:, exchange:,
       )
     end

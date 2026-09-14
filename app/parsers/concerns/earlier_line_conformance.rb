@@ -1,16 +1,19 @@
-# What chapter 4.6 asks of a received request at the `1.2.5` tag and no longer
-# at the `2.0.1` one. Four rules it publishes there alone — `R-EDM-REQ-C004` on
-# the localised string of the `Procedure` slot, `C069` on the request element
+# What chapter 4.6 asks of a received request on one line and not on the other.
+# Four rules it publishes at the `1.2.5` tag alone — `R-EDM-REQ-C004` on the
+# localised string of the `Procedure` slot, `C069` on the request element
 # itself, `C035` and `C072` on the `sdg:Transformation` a distribution may ask
-# for — and one it publishes on both lines with the count turned round,
-# `C032` on `sdg:DistributedAs`.
+# for — one it publishes on both lines with the count turned round, `C032` on
+# `sdg:DistributedAs`, and one it publishes at the `2.0.1` tag alone, `S059`,
+# which forbids the very attribute `C069` judges on the earlier line.
 #
 # What they have in common is the line and not the subject, and that is what
 # makes them a family: a reader holding every request to the 2.0 rule set
-# applies none of the four, and one holding every request to these refuses on
-# `C032` exactly the messages the other admits. So each reading is guarded by
-# the predicate of `EdmSpecification` that says which line shapes it, and none
-# of them changes what a 2.0 message is judged by.
+# applies none of the four, one holding every request to these refuses on
+# `C032` exactly the messages the other admits, and a reader applying `S059` to
+# both lines refuses a 1.2 request for naming the language `C069` asks it to
+# name. So each reading is guarded by the predicate of `EdmSpecification` that
+# says which line shapes it, and none of them judges a message of the other by
+# rules its own line does not publish.
 #
 # `R-EDM-REQ-C092` is not here, though its context differs between the two tags
 # too: it is one walk over the whole document, which is `WordingConformance`'s,
@@ -91,6 +94,7 @@ module EarlierLineConformance
   # procedure is a plain string there, and the language of a request moved into
   # each distribution.
   def require_conformant_languages
+    require_absent_request_language
     if specification.translated_procedure?
       require_language_code(procedure_language, 'R-EDM-REQ-C004',
         'parsers.evidence_request.procedure_language_unknown')
@@ -99,6 +103,23 @@ module EarlierLineConformance
 
     require_language_code(attribute(request, 'lang', 'xml'), 'R-EDM-REQ-C069',
       'parsers.evidence_request.request_language_unknown')
+  end
+
+  # `R-EDM-REQ-S059`, the 2.0 half of what the two lines say about one and the
+  # same attribute: 2.0.1 forbids `xml:lang` on the request element outright,
+  # where 1.2.5 publishes no such rule and has `C069` judge the value instead.
+  # One attribute, two lines, two opposite duties — the shape
+  # `require_counted_distributions` already holds for `C032`, and the reason
+  # this rule is in a module about the earlier line despite being published on
+  # the later one alone.
+  #
+  # `nil?` and not `blank?`: the assertion is `not(@xml:lang)`, which the mere
+  # presence of the attribute breaks, however it is written.
+  def require_absent_request_language
+    return if specification.request_language?
+    return if attribute(request, 'lang', 'xml').nil?
+
+    refuse('R-EDM-REQ-S059', 'parsers.evidence_request.request_language_forbidden')
   end
 
   # Compared exactly, both assertions carrying no `i` flag where the list

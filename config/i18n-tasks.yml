@@ -197,6 +197,54 @@ ignore_unused:
   # `I18n.t` names it, and the scanner does see that.
   - parsers.evidence_request.{procedure_language_unknown,request_language_unknown}
   - parsers.evidence_request.{transformation_unexpected,transformation_without_conformance}
+  # And the one that tag publishes where the earlier says nothing: `S059`
+  # forbids outright the very attribute `C069` has the 1.2 line name.
+  - parsers.evidence_request.request_language_forbidden
+  # The envelope of the request: `S001` and `S002` on the element the document
+  # opens on, refused before there is anything else to read, and `C002`, `C024`
+  # and `C025` on three of the four literals the chapter fixes — the fourth,
+  # `C001`, being `unexpected_specification` above. Named literally and exempted
+  # all the same, for the reason the entries above give: they reach `refuse` and
+  # never `t()`. `unnamed_root`, `unnamed_namespace`, `unnamed_date` and
+  # `unnamed_value` are not here — `I18n.t` names them, and the scanner does see
+  # that.
+  - parsers.evidence_request.{not_a_query_request,request_namespace_unexpected}
+  - parsers.evidence_request.{issue_date_time_malformed,return_type_unexpected}
+  - parsers.evidence_request.query_definition_unexpected
+  # And the rest of the RegRep shape: `S019`, `S049` and `S045` closing the
+  # three lists of names, `S050` and `S051` counting the slot values and
+  # weighing them, and the five that say which `sdg:` element each slot of
+  # `query:Query` puts under its own. `unnamed_slot` is not here — `I18n.t`
+  # names it, and the scanner does see that.
+  - parsers.evidence_request.{slot_name_unexpected,evidence_type_child_unexpected}
+  - parsers.evidence_request.{slot_value_not_alone,slot_value_empty}
+  - parsers.evidence_request.slot_value_without_element
+  # The evidence type asked for, in the parts of it nothing echoes: `C106` on
+  # its identifier and `C033` on each format it names — the language of each of
+  # its descriptions is `C031`/`C030`, composed from the wording being judged as
+  # its titles' pair is, and so covered by the `evidence_type_description_*`
+  # entries the scanner cannot see either. `unnamed_format` is not here:
+  # `I18n.t` names it.
+  - parsers.evidence_request.{evidence_type_without_identifier,evidence_type_format_unpublished}
+  - parsers.evidence_request.{evidence_type_description_without_language,evidence_type_description_language_unknown}
+  # And the second walk over the whole document, beside `C092`: `S058` refusing
+  # two sibling wordings of one language. `unnamed_language` is not here —
+  # `I18n.t` names it.
+  - parsers.evidence_request.wordings_share_a_language
+  # The four people a request describes, judged by one battery of rules
+  # published four times over: the sentences name no person, the rule in the
+  # `detail` being what says which. Named literally and exempted all the same,
+  # for the reason the entries above give — they reach `refuse` and never
+  # `t()`. `unnamed_person_identifier`, `unnamed_country` and `unnamed_gender`
+  # are not here: `I18n.t` names them.
+  - parsers.evidence_request.{person_identifier_without_scheme,person_scheme_unexpected}
+  - parsers.evidence_request.{person_identifier_country_unknown,person_country_unknown}
+  - parsers.evidence_request.{person_without_level_of_assurance,person_level_of_assurance_unknown}
+  # And the rules the representative alone carries.
+  - parsers.evidence_request.{representative_date_of_birth_malformed,representative_gender_unknown}
+  - parsers.evidence_request.{representative_gender_outside_eidas,representative_without_identifier}
+  - parsers.evidence_request.{representative_identifier_without_scheme,representative_scheme_unpublished}
+  - parsers.evidence_request.representative_procedure_unpublished
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

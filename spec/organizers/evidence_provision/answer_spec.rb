@@ -1190,6 +1190,38 @@ RSpec.describe EvidenceProvision::Answer do
       end
     end
 
+    # The furthest a refusal of this family goes: `R-EDM-REQ-S001` and `S002`
+    # fire before the body is a request at all, so there is no agent to read
+    # past the failure and not even a slot to look in. The journal still has to
+    # name the rule — `docs/journal_des_echanges.md` holds that a refusal whose
+    # reason is known and unrecorded cannot be justified afterwards — and it is
+    # the only place that will ever say why this message got no answer.
+    {
+      'a body whose root is not a QueryRequest' => ['R-EDM-REQ-S001', 'query:QueryResponse'],
+      'a QueryRequest of another namespace' => ['R-EDM-REQ-S002', nil],
+    }.each do |wording, (rule, root)|
+      context "when it carries #{wording}" do
+        let(:message) do
+          envelope_with_body('requete') do |body|
+            root.nil? ? body.sub('urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0', 'urn:example:query') : body.gsub('query:QueryRequest', root)
+          end
+        end
+
+        it 'submits nothing at all to the gateway' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+          expect(gateway).not_to have_received(:submit)
+        end
+
+        it 'journals the refusal, naming the rule, with nothing else to declare' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+
+          expect(AuditEvent.last).to have_attributes(
+            event_type: 'request_refused', evidence_requester_id: nil, detail: include(rule),
+          )
+        end
+      end
+    end
+
     # The refusals of this family that declare nothing at all: `R-EDM-REQ-C074`
     # counts the agents classified `ER` and `S012` the slot that carries them,
     # and a count that fails leaves no identifier and no address to read past

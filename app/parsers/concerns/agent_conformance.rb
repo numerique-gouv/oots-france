@@ -121,6 +121,12 @@ module AgentConformance
     # copies those titles out, and `R-EDM-RESP-C018` measures there what `C028`
     # measures here.
     evidence_type_title: { language: 'R-EDM-REQ-C029', language_code: 'R-EDM-REQ-C028' }.freeze,
+    # And a seventh, on the `sdg:Description` sitting beside those titles:
+    # `C031`/`C030`, that same pair of assertions once more. Nothing copies a
+    # description into the answer — which is why `RequestedEvidenceTypeConformance`
+    # reads it and `EchoedValueConformance` does not — and the rule holds it all
+    # the same, being FATAL on a value the request carries.
+    evidence_type_description: { language: 'R-EDM-REQ-C031', language_code: 'R-EDM-REQ-C030' }.freeze,
   }.freeze
 
   private

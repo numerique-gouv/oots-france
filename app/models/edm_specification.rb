@@ -119,6 +119,18 @@ class EdmSpecification
   # 2.0.1 on a context no schema-valid document reaches any more.
   def transformable_distribution? = self == V1_2
 
+  # `R-EDM-REQ-C124` and `C126` hold the `sdg:Gender` of an authorised
+  # representative — the first to the `Gender` code list whole, the second to
+  # its three eIDAS values once the representative names an `eidas` identifier.
+  # The 1.2.5 Schematron publishes neither, so a 1.2 request writes that element
+  # as it likes, and a reader applying these to both lines would refuse a
+  # conformant correspondent of the earlier one.
+  #
+  # Nothing constrains `sdg:Gender` under a `NaturalPerson` slot on either line
+  # — `NaturalPerson::GENDER_CODES` says so, and `docs/carte_des_tdd.md` records
+  # that chapter 4.5.1 §3.6.1 claims otherwise.
+  def representative_gender? = self == V2_0
+
   # `R-EDM-RESP-S015` and `-S033` anchor on `rim:RegistryObjectList/rim:RegistryObject`
   # in 1.2.5, where 2.0.1 moves them one level down and adds the twenty rules
   # `-S046` to `-S066` on the `rim:RegistryPackageType` that then holds them. A
