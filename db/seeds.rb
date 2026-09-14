@@ -91,9 +91,26 @@ if Rails.env.development?
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
       specification: EdmSpecification::V2_0,
       conversation: 1, events: %w[request_sent response_received evidence_delivered] },
+    # La réponse d'erreur que ce correspondant a émise ne porte pas le slot
+    # `ErrorProvider` que `R-EDM-ERR-S011` exige. La règle est consignée dans le
+    # `detail`, à côté du message que l'exception porte — les deux dans la même
+    # colonne, comme `AuditTrail#received_error` les y compose — et rien n'est
+    # refusé pour autant : l'échange se règle en échec sur le code reçu, comme
+    # il l'aurait fait d'une réponse conforme.
+    #
+    # Le message est celui que la liste de codes fixe, et la phrase est composée
+    # par le chemin qui l'écrit en production : recopier l'un ou l'autre à la
+    # main laisserait la démonstration mentir sur ce que le code produit.
     { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
       edm_error_code: 'EDM:ERR:0004',
       error_description: "Le fournisseur n'a pas trouvé de justificatif correspondant.",
+      error_detail: [
+        EdmException::OBJECT_NOT_FOUND.message,
+        BusinessRuleViolation.new(
+          rule: 'R-EDM-ERR-S011',
+          description: I18n.t('parsers.error_response.slot_required', name: 'ErrorProvider'),
+        ).sentence,
+      ].join(' '),
       specification: EdmSpecification::V2_0,
       conversation: 1, events: %w[request_sent error_received] },
     # `preview_required!` ne pose pas de code sur l'échange — il n'y en a pas à

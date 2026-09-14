@@ -1092,6 +1092,126 @@ fr:
       requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
     error_response:
       no_exception: Pas de rs:Exception dans la réponse d'erreur reçue.
+      # Les règles du chapitre 4.6 et les cardinalités du 4.5.3 qu'une réponse
+      # d'erreur reçue enfreint. Aucune ne refuse quoi que ce soit : elles sont
+      # composées dans le `detail` de la ligne `error_received` du journal, à
+      # côté du message de l'exception, et l'échange se règle comme si de rien
+      # n'était — voir docs/journal_des_echanges.md.
+      #
+      # L'enveloppe : la racine, les slots, les deux identifiants, la version.
+      root_not_a_query_response: >-
+        La réponse d'erreur reçue s'ouvre sur « %{root} », et non sur une query:QueryResponse.
+      root_namespace_unexpected: >-
+        La racine de la réponse d'erreur reçue est dans l'espace de noms %{namespace},
+        et non %{expected}.
+      unnamed_root: un élément sans nom
+      unnamed_namespace: aucun espace de noms
+      slot_required: La réponse d'erreur reçue doit porter exactement un slot « %{name} ».
+      slot_doubled: La réponse d'erreur reçue porte plusieurs slots « %{name} », là où un seul est admis.
+      unexpected_specification: La réponse d'erreur reçue annonce %{announced}, et non %{expected}.
+      absent_specification: une version sans nom
+      unexpected_status: Le statut de la réponse d'erreur reçue (%{announced}) n'est pas Failure.
+      object_list_in_a_failure: Une réponse d'erreur ne peut pas porter de rim:RegistryObjectList.
+      response_without_exception: La réponse d'erreur reçue ne porte aucune rs:Exception.
+      failure_without_exception: >-
+        Une réponse au statut Failure doit porter au moins une rs:Exception.
+      unexpected_slot: Le slot « %{name} » n'a pas sa place dans une réponse d'erreur.
+      request_id_not_a_uuid: >-
+        L'identifiant de la requête répondue (%{id}) n'est pas un UUID préfixé « urn:uuid: ».
+      response_id_not_a_uuid: L'identifiant de la réponse d'erreur (%{id}) n'est pas un UUID.
+      uncorrelated_without_invalid_request: >-
+        Une réponse d'erreur sans requestId doit porter une exception de type %{type}.
+      requester_slot_missing: >-
+        Le slot « EvidenceRequester » manque, là où l'exception n'est pas une
+        rs:InvalidRequestExceptionType.
+      # L'exception elle-même : ses quatre attributs et ses trois slots.
+      exception_attribute_required: L'attribut « %{name} » de la rs:Exception manque.
+      exception_type_unexpected: >-
+        Le type de l'exception (« %{type} ») n'est pas de la liste EDMErrorCodes.
+      exception_code_unexpected: >-
+        Le code de l'exception (« %{code} ») n'est pas de la liste EDMErrorCodes.
+      exception_severity_unexpected: >-
+        La sévérité de l'exception (« %{severity} ») n'est pas une sévérité qu'une
+        réponse d'erreur puisse porter.
+      exception_severity_not_ordinary: >-
+        La sévérité de l'exception (%{severity}) n'est pas %{expected}, là où son
+        code n'est pas EDM:ERR:0002.
+      slot_required_in_exception: La rs:Exception doit porter exactement un slot « %{name} ».
+      timestamp_not_a_date_time: L'horodatage de l'exception (%{value}) n'est pas une date-heure.
+      absent_date: absent
+      unexpected_exception_slot: Le slot « %{name} » n'a pas sa place dans une rs:Exception.
+      preview_location_not_secure: >-
+        L'adresse de prévisualisation (%{location}) ne commence pas par %{expected}.
+      # R-EDM-ERR-C022, dont l'assertion n'exécute que la première moitié de la
+      # phrase publiée : le chantier applique la phrase là où l'assertion la
+      # sous-exécute, et la règle est nommée pour l'une comme pour l'autre.
+      preview_without_authorisation: >-
+        Une exception qui porte un slot « PreviewLocation » doit être de sévérité
+        %{severity} et de type %{type}.
+      preview_language_unknown: >-
+        La langue d'une description de prévisualisation (« %{language} ») n'est pas un
+        code de la liste LanguageCode.
+      preview_method_unexpected: >-
+        La méthode de prévisualisation (%{method}) n'est pas l'un des verbes HTTP que les
+        TDD admettent (%{expected}).
+      preview_location_without_method: >-
+        Une exception qui porte un slot « PreviewLocation » doit porter un slot
+        « PreviewMethod » à ses côtés.
+      # Les deux agents. Une phrase par règle et non par slot : les deux agents
+      # sont « l'agent du slot X », et le slot est tout ce qui les distingue.
+      slot_without_one_agent: Le slot « %{slot} » doit porter exactement un sdg:Agent.
+      agent_without_identifier: L'agent du slot « %{slot} » ne porte pas de sdg:Identifier.
+      agent_identifier_without_scheme: >-
+        L'identifiant de l'agent du slot « %{slot} » ne nomme pas son schéma.
+      agent_scheme_unknown: >-
+        Le schéma d'identifiant de l'agent du slot « %{slot} » (« %{scheme} ») n'est
+        d'aucune des deux formes que les TDD admettent.
+      agent_id_too_long: >-
+        L'identifiant de l'agent du slot « %{slot} » fait %{length} caractères, là où
+        les TDD en admettent moins de %{maximum}.
+      agent_without_name: L'agent du slot « %{slot} » ne porte pas de sdg:Name.
+      agent_name_without_language: >-
+        Un nom de l'agent du slot « %{slot} » ne déclare pas sa langue.
+      agent_language_unknown: >-
+        La langue d'un nom de l'agent du slot « %{slot} » (« %{language} ») n'est pas un
+        code de la liste LanguageCode.
+      provider_without_classification: L'agent du slot « ErrorProvider » ne déclare aucune classification.
+      provider_classification_unexpected: >-
+        La classification de l'agent du slot « ErrorProvider » (%{classification}) n'est
+        pas de celles qu'une réponse d'erreur admet (%{expected}).
+      provider_without_one_address: >-
+        L'agent du slot « ErrorProvider » doit porter exactement une sdg:Address.
+      address_without_one_country: >-
+        L'sdg:Address de l'agent du slot « ErrorProvider » doit porter exactement un
+        sdg:AdminUnitLevel1.
+      provider_country_unknown: >-
+        Le pays de l'agent du slot « ErrorProvider » (« %{country} ») n'est pas un code de
+        la liste CountryIdentificationCode.
+      provider_territory_unknown: >-
+        Le territoire de l'agent du slot « ErrorProvider » (« %{territory} ») n'est pas un
+        code de la liste NUTS.
+      # La forme RegRep des slots, jugée sur la seule partie locale de
+      # l'xsi:type, comme les assertions le font.
+      slot_value_mistyped: >-
+        Le rim:SlotValue du slot « %{name} » est de type %{declared}, et non %{expected}.
+      slot_without_one_value: Le slot « %{name} » doit porter exactement un rim:SlotValue.
+      slot_value_without_content: Le rim:SlotValue du slot « %{name} » ne porte aucun élément.
+      unnamed_slot: sans nom
+      # R-EDM-ERR-C027 et S030, les deux seules règles qui n'ont pas d'ancêtre
+      # dans leur contexte : elles marchent sur le document entier.
+      wording_too_short: >-
+        Le libellé %{path} de la réponse d'erreur reçue (« %{value} ») fait moins de deux
+        caractères.
+      wording_empty: >-
+        Le libellé %{path} de la réponse d'erreur reçue est vide, là où la règle exige un
+        caractère.
+      wordings_share_a_language: >-
+        La réponse d'erreur reçue porte %{count} éléments « %{name} » de langue
+        « %{language} » au même endroit, là où un seul est admis.
+      unnamed_language: sans langue
+      # Ce que la phrase met à la place d'une valeur absente, accordé avec ce
+      # qu'elle nomme.
+      absent_value: absent
     retrieved_message:
       unreadable_envelope: Enveloppe SOAP illisible.
       unknown_action: "Action ebMS inconnue : « %{action} »."

@@ -157,6 +157,58 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
+  # The order this interactor fixes is what lets the two happen at once: `record`
+  # runs before the handler, so the line is written with the rule that says what
+  # is wrong; the reading raises only when `SettleExchange` asks the body for the
+  # request it answers, and the exchange is then abandoned.
+  describe 'an error report whose root element is no query response' do
+    let(:message) do
+      envelope_with_body('erreurObjetIntrouvable') { |body| body.gsub('query:QueryResponse', 'query:QueryRequest') }
+    end
+
+    let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
+
+    before { allow(gateway).to receive(:retrieve).and_return(message) }
+
+    it 'names the rule it breaks on the line of its arrival' do
+      process
+
+      expect(AuditEvent.last).to have_attributes(event_type: 'error_received', edm_error_code: nil)
+      expect(AuditEvent.last.detail).to include('R-EDM-ERR-S001')
+    end
+
+    it 'abandons the exchange on no code at all, as it does any message it cannot read' do
+      process
+
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+    end
+  end
+
+  # The other half of the same seam, and the one that travels further: the root
+  # is the `query:QueryResponse` chapter 4.5.3 describes, so `request_id` reads
+  # and `SettleExchange` gets as far as asking the exception what severity it
+  # carries. The rules are named on the arrival all the same, and the exchange
+  # is abandoned exactly as the misrooted report is.
+  describe 'an error report carrying no exception at all' do
+    let(:message) do
+      envelope_with_body('erreurObjetIntrouvable') { |body| body.sub(%r{<rs:Exception.*?</rs:Exception>}m, '') }
+    end
+
+    let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
+
+    it 'names both rules requiring one on the line of its arrival' do
+      process
+
+      expect(AuditEvent.last.detail).to include('R-EDM-ERR-S008', 'R-EDM-ERR-C011')
+    end
+
+    it 'abandons the exchange on no code at all' do
+      process
+
+      expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+    end
+  end
+
   # The seam between the two: `AuditTrail` swallows an unreadable first part so
   # the line survives, and this interactor rescues the same exception to abandon
   # the exchange. The one must not reach the other, or a message whose bytes we

@@ -449,6 +449,41 @@ RSpec.describe AuditTrail do
 
       expect(Rails.logger).not_to have_received(:warn)
     end
+
+    # The captured refusal is conformant, so the column holds the message alone
+    # — which is what proves the rules are named when there are some.
+    it 'names no rule of a refusal that breaks none' do
+      expect(journalled.detail).to eq('Object not found')
+    end
+
+    # `detail` takes both, the table of chapter 4.8 leaving one column for
+    # either: what the correspondent said, and the rules of chapter 4.6 it broke
+    # saying it.
+    it 'records the rules the refusal breaks beside the message it carries' do
+      audit_trail.message_received(message: doubled_specification, message_id: 'message-passerelle')
+
+      expect(journalled.detail).to start_with('Object not found').and include('R-EDM-ERR-S009')
+    end
+
+    # A report nothing can be made of is journalled all the same, and with the
+    # rule that says why: `IncomingMessage::Process` records the arrival before
+    # it dispatches it, and the reading raises only afterwards.
+    it 'names the rule of a refusal that is no query response at all' do
+      audit_trail.message_received(message: misrooted_refusal, message_id: 'message-passerelle')
+
+      expect(journalled).to have_attributes(event_type: 'error_received', edm_error_code: nil)
+      expect(journalled.detail).to include('R-EDM-ERR-S001')
+    end
+
+    def doubled_specification
+      envelope_with_body('erreurObjetIntrouvable') do |body|
+        body.sub(%r{<rim:Slot name="SpecificationIdentifier">.*?</rim:Slot>}m) { |found| found * 2 }
+      end
+    end
+
+    def misrooted_refusal
+      envelope_with_body('erreurObjetIntrouvable') { |body| body.gsub('query:QueryResponse', 'query:QueryRequest') }
+    end
   end
 
   # Chapter 4.8 lists « Preview Location » among what an evidence requester logs
