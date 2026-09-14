@@ -58,11 +58,28 @@ module EvidenceProvision
       exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
 
       audit_trail.request_refused(
-        requester_id: exchange&.evidence_requester_id || request.declared_requester_id,
+        requester_id: exchange&.evidence_requester_id || declared { request.declared_requester_id },
         procedure_code: exchange&.procedure_code,
-        country_code: exchange&.country_code || request.declared_requester_country,
+        country_code: exchange&.country_code || declared { request.declared_requester_country },
         reason:, exchange:,
       )
+    end
+
+    # The two readings above go past the failure being refused, which is the
+    # whole point of them — but not past one that took the reading of the body
+    # down with it. `R-EDM-REQ-S001` and `S002` fire before the document is a
+    # request at all, and `RetrievedMessageParser#body` raises again at every
+    # call, so asking them anything here would take this journal line down too
+    # and leave the refusal without a trace anywhere — the one outcome
+    # `docs/journal_des_echanges.md` rules out.
+    #
+    # Swallowed as `IncomingMessage::Process#readable` and `OpenExchange`
+    # swallow it, and for the same reason: what cannot be read is recorded as
+    # absent, never as a second failure.
+    def declared
+      yield
+    rescue UnreadableMessageError
+      nil
     end
   end
 end

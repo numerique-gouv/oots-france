@@ -197,6 +197,20 @@ ignore_unused:
   # `I18n.t` names it, and the scanner does see that.
   - parsers.evidence_request.{procedure_language_unknown,request_language_unknown}
   - parsers.evidence_request.{transformation_unexpected,transformation_without_conformance}
+  # And the one that tag publishes where the earlier says nothing: `S059`
+  # forbids outright the very attribute `C069` has the 1.2 line name.
+  - parsers.evidence_request.request_language_forbidden
+  # The envelope of the request: `S001` and `S002` on the element the document
+  # opens on, refused before there is anything else to read, and `C002`, `C024`
+  # and `C025` on three of the four literals the chapter fixes — the fourth,
+  # `C001`, being `unexpected_specification` above. Named literally and exempted
+  # all the same, for the reason the entries above give: they reach `refuse` and
+  # never `t()`. `unnamed_root`, `unnamed_namespace`, `unnamed_date` and
+  # `unnamed_value` are not here — `I18n.t` names them, and the scanner does see
+  # that.
+  - parsers.evidence_request.{not_a_query_request,request_namespace_unexpected}
+  - parsers.evidence_request.{issue_date_time_malformed,return_type_unexpected}
+  - parsers.evidence_request.query_definition_unexpected
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

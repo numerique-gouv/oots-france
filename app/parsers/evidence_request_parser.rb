@@ -14,6 +14,7 @@ class EvidenceRequestParser
   include WordingConformance
   include EarlierLineConformance
   include EchoedValueConformance
+  include RequestEnvelopeConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -50,7 +51,7 @@ class EvidenceRequestParser
   def initialize(document, specification: EdmSpecification.preferred)
     @specification = specification
     @request = at(document, '/query:QueryRequest')
-    raise UnreadableMessageError, I18n.t('parsers.evidence_request.not_a_query_request') if @request.nil?
+    require_query_request(at(document, '/*')) if @request.nil?
   end
 
   # The business rules of chapter 4.6 France settles before answering at all —
@@ -65,7 +66,7 @@ class EvidenceRequestParser
   def validate!
     REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
     require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
-    require_expected_specification
+    require_conformant_envelope
     require_one_evidence_subject
     require_requester_country
     require_conformant_collection(agents)
@@ -242,21 +243,6 @@ class EvidenceRequestParser
     return if all(scope, "./rim:Slot[@name='#{name}']").one?
 
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
-  end
-
-  # Against the version the message was read in, which is the ebMS property when
-  # the header carries one: a slot contradicting it is the inconsistency chapter
-  # 4.7 §2.6.2 has the receiver refuse, and it is refused under the rule of the
-  # line the header announced. A message with no property is read in the version
-  # of its own slot, so this only fires there on a version France does not
-  # speak, `EdmSpecification.resolve` having fallen back on the preferred one.
-  def require_expected_specification
-    declared = text_at(request, "./rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
-    return if declared == specification.identifier
-
-    refuse('R-EDM-REQ-C001', 'parsers.evidence_request.unexpected_specification',
-      announced: declared.presence || I18n.t('parsers.evidence_request.unnamed_specification'),
-      expected: specification.identifier)
   end
 
   # R-EDM-REQ-S016: either a natural person or a legal one, and never both.

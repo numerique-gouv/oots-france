@@ -988,6 +988,59 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # `R-EDM-REQ-S001` and `S002`, whose common context is the document element.
+  # Refused at the read, and the refusal carries no answer: a document that is
+  # not a query request names no requester to address, no identifier to echo and
+  # no version to answer in. The journal is its only trace, and what this pair
+  # proves is that it names its rule there.
+  describe 'the root element of the document' do
+    it 'refuses a root that is not a QueryRequest, under R-EDM-REQ-S001' do
+      expect { with_body { |body| body.gsub('query:QueryRequest', 'query:QueryResponse') } }
+        .to refusing('R-EDM-REQ-S001')
+    end
+
+    # The local name is the one thing `S001` reads, so the namespace stays the
+    # right one here and `S002` is the rule the next example reaches — swapping
+    # the two predicates would show up in this pair and nowhere else.
+    it 'refuses a QueryRequest of another namespace, under R-EDM-REQ-S002' do
+      expect { with_body { |body| body.sub('urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0', 'urn:example:query') } }
+        .to refusing('R-EDM-REQ-S002')
+    end
+  end
+
+  # `R-EDM-REQ-C002`, `C024` and `C025`: three literals the chapter fixes in the
+  # envelope, read to be judged and for nothing else.
+  describe 'the fixed values the envelope of a request carries' do
+    def with_issue_date_time(value)
+      with_body { |body| body.sub(/(<rim:Slot name="IssueDateTime">.*?<rim:Value>)[^<]*/m, "\\1#{value}") }
+    end
+
+    it 'refuses a date that is not a timestamp at all, under R-EDM-REQ-C002' do
+      expect { with_issue_date_time('hier').validate! }.to refusing('R-EDM-REQ-C002')
+    end
+
+    it 'accepts a timestamp carrying a zone and no fraction of a second' do
+      expect(with_issue_date_time('2026-09-14T10:00:00Z').validate!).to be_a(described_class)
+    end
+
+    # The assertion is anchored at neither end and stops at the seconds, so it
+    # measures the shape of a timestamp and not the whole of `xsd:dateTime`:
+    # a reader asking for that in full would refuse what the rule admits.
+    it 'accepts one carrying neither fraction nor zone' do
+      expect(with_issue_date_time('2026-09-14T10:00:00').validate!).to be_a(described_class)
+    end
+
+    it 'refuses a return type other than the fixed one, under R-EDM-REQ-C024' do
+      expect { with_body { |body| body.sub('LeafClassWithRepositoryItem', 'LeafClass') }.validate! }
+        .to refusing('R-EDM-REQ-C024')
+    end
+
+    it 'refuses a query definition other than the fixed one, under R-EDM-REQ-C025' do
+      expect { with_body { |body| body.sub('queryDefinition="DocumentQuery"', 'queryDefinition="Foo"') }.validate! }
+        .to refusing('R-EDM-REQ-C025')
+    end
+  end
+
   # Chapter 4.6, on a request that is well formed and still not one France may
   # answer. Each refusal names the rule it applied, which is the whole of what
   # the correspondent will learn.
@@ -2997,11 +3050,22 @@ RSpec.describe EvidenceRequestParser do
         expect { requested_in('fr', method(:earlier)).validate! }.to refusing('R-EDM-REQ-C069')
       end
 
-      # The 2.0 line publishes no rule of that identifier: the language moved
-      # into each distribution, and the attribute is one the schema forbids
-      # rather than one a business rule judges.
-      it 'says nothing of that attribute on the 2.0 line' do
-        expect(requested_in('xx', method(:with_body)).validate!).to be_a(described_class)
+      # The 2.0 line publishes no rule of *that* identifier, the language having
+      # moved into each distribution — but it does not fall silent on the
+      # attribute: `R-EDM-REQ-S059` forbids it outright, so the two lines say
+      # opposite things about one and the same `xml:lang`. A published code is
+      # refused there exactly as an unpublished one is, the rule reading the
+      # attribute's presence and never its value.
+      it 'refuses that attribute outright on the 2.0 line, under R-EDM-REQ-S059' do
+        expect { requested_in('xx', method(:with_body)).validate! }.to refusing('R-EDM-REQ-S059')
+      end
+
+      it 'refuses it on the 2.0 line even where the code is a published one' do
+        expect { requested_in('FR', method(:with_body)).validate! }.to refusing('R-EDM-REQ-S059')
+      end
+
+      it 'accepts a 2.0 request naming no language of its own at all' do
+        expect(request.validate!).to be_a(described_class)
       end
     end
 

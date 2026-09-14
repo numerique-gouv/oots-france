@@ -483,8 +483,37 @@ fr:
       empty: Le slot « %{name} » est vide
       without: Le slot « %{name} » ne porte pas %{path}
     evidence_request:
-      not_a_query_request: Le message reçu n'est pas une QueryRequest.
+      # R-EDM-REQ-S001 et S002, dont le contexte commun est l'élément racine.
+      # Ce refus ne repart pas : un document qui n'est pas une requête ne nomme
+      # ni requêteur à qui répondre, ni identifiant à recopier. Le journal est sa
+      # seule trace, et il y nomme désormais sa règle.
+      not_a_query_request: "Le message reçu n'est pas une QueryRequest, mais un %{root}."
+      unnamed_root: document sans élément racine
+      request_namespace_unexpected: >-
+        La racine QueryRequest du message reçu est dans l'espace de noms %{namespace},
+        et non %{expected}.
+      unnamed_namespace: aucun espace de noms
       # Les règles du chapitre 4.6 que la France tranche avant de répondre.
+      # R-EDM-REQ-C002 : l'expression est recopiée de l'assertion, qui n'est
+      # ancrée à aucun bout et s'arrête aux secondes — elle mesure la forme d'un
+      # horodatage et non tout xsd:dateTime.
+      issue_date_time_malformed: >-
+        La date que porte la requête reçue (%{date}) n'a pas la forme d'un
+        horodatage xsd:dateTime.
+      unnamed_date: vide
+      # R-EDM-REQ-C024 et C025 : deux littéraux que le chapitre fixe, lus pour
+      # être jugés et pour rien d'autre — la France répond avec le justificatif
+      # qu'elle détient, quoi qu'ait demandé la query:ResponseOption.
+      return_type_unexpected: >-
+        La query:ResponseOption de la requête reçue demande %{declared}, et non %{expected}.
+      query_definition_unexpected: >-
+        La query:Query de la requête reçue nomme %{declared}, et non %{expected}.
+      unnamed_value: une valeur absente
+      # R-EDM-REQ-S059 : la 2.0.1 interdit l'attribut que la 1.2.5 fait nommer
+      # par C069. Une seule ligne le publie, et c'est la forme de la ligne du
+      # message qui s'applique.
+      request_language_forbidden: >-
+        La requête reçue porte un attribut xml:lang, que sa version interdit.
       slot_required: La requête reçue doit porter exactement un slot « %{name} ».
       unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
       unnamed_specification: une version sans nom
