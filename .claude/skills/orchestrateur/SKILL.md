@@ -243,9 +243,14 @@ Agent(subagent_type: "ouvrier",
 
 Le `description` nomme l'instance dans le panneau d'agents et **est le seul champ qui y parvienne** — [`subagent.sh`](../../statusline/subagent.sh) le lit, l'ouvrier dit pourquoi. Sans lui, trois ouvriers deviennent indiscernables.
 
-**Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan — c'est ce qui évite de traîner le contexte de la conception dans l'écriture du code. Le second lancement est identique au premier : l'ouvrier voit le plan sur disque et reprend à l'implémentation. Quand une question avait été posée, mets la réponse dans le prompt **et** en commentaire du ticket, pour qu'elle survive au contexte.
+**Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan — c'est ce qui évite de traîner le contexte de la conception dans l'écriture du code. Le second lancement est identique au premier : l'ouvrier voit le plan sur disque et reprend à l'implémentation.
 
-**Le prompt est l'identifiant du ticket, rien d'autre** : l'ouvrier lit, se crée son worktree, déduit le reste. Seule exception, ce que lui seul ne peut pas savoir : qu'un autre travaille dans le même fichier (§ 2).
+**Le prompt est l'identifiant du ticket, rien d'autre** : l'ouvrier lit, se crée son worktree, déduit le reste. Deux sortes de phrases se disputent la place qui reste, et une seule y a droit.
+
+- **Ce qui est sur disque ne voyage jamais dans le prompt** : ni le plan, ni le ticket, ni ce que le planificateur a écrit de l'un ou de l'autre. Il les lira, et une paraphrase crée une seconde source, moins fiable que la première. Le piège est repérable : tu viens de lire le rapport du planificateur et tu crois transmettre l'essentiel — cet essentiel est déjà dans le plan.
+- **Ce que lui seul ne peut pas savoir y tient en une phrase** : qu'un autre travaille dans les mêmes fichiers et qui se rebase (§ 2), qu'une PR dont il dépend n'est pas fusionnée, ou une décision que l'utilisateur vient de rendre. Une décision de l'utilisateur va **aussi** en commentaire du ticket, qui est ce qui survit au contexte ; une correction d'un plan approuvé va dans le fichier de plan, pas dans le prompt.
+
+Commis le 2026-09-14 en relançant l'implémentation d'[OOTS-214](https://linear.app/pole-api/issue/OOTS-214) : le § Empreinte du plan constatait `agent_conformance.rb` et `docs/carte_des_tdd.md` **libres** de conflit, le prompt l'a recopié en « ne touche ni l'un ni l'autre » — l'inverse, sur deux fichiers que le CA7 du ticket exigeait de modifier. L'ouvrier a contesté et a eu raison, ce sur quoi on ne peut pas compter.
 
 > [!IMPORTANT]
 > **Pas d'`isolation: "worktree"`.** L'ouvrier se crée le sien avec [`scripts/worktree.sh`](../../../scripts/worktree.sh), qui recopie les `.env*` git-ignorés et **décale les ports de toute la pile**. Dans un worktree nu, il ne peut ni lancer `web` ni donner l'adresse de son écran.
@@ -272,7 +277,7 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 | Verdict | Ce que tu en fais |
 | --- | --- |
 | `PLANIFIÉ` | Le plan est écrit et rien n'est à décider : **relance un ouvrier neuf** sur le même ticket, qui l'implémentera |
-| `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** avec ta réponse |
+| `PLAN` | Réponds : approuve, ou dis ce qui change — un mot y coûte des minutes plutôt que des heures. Puis **relance un ouvrier neuf** ; ta réponse est ce que lui seul ne peut pas savoir, donc elle tient dans le prompt, et le reste n'y entre pas (§ 4) |
 | `ARBITRAGE` | Tranche. Ne remonte que ce qui engage hors du code |
 | `ÉCRAN` | Remonte l'adresse et ce qu'on y regarde : l'écran, c'est l'utilisateur qui va le voir. Sa réponse repart **au même ouvrier, par `SendMessage`** — jamais à un neuf (voir ci-dessous). **Et tant que le verdict n'est pas rendu, l'ouvrier attend avec toi** : ne l'envoie pas sur `review-loop` en attendant — son § 4 bis l'arrête là exprès, une revue faite sur un écran qui va changer est jetée. Seul l'utilisateur peut dire de passer outre. Le 2026-09-09 sur OOTS-179, « n'attends pas mon verdict d'écran pour avancer » envoyé à 21:20 a valu un `TaskStop` à 21:24 (« il est en review, arrête le ») et trois consignes contraires en six minutes |
 | `LIVRÉ` | Vérifie ce qui compte, puis rends la PR **et les écrans** (voir ci-dessous) ; puis fais trier ses **reliquats** (§ 5 bis) |
