@@ -1,6 +1,6 @@
 ---
 name: ci-en-fond
-description: Met la CI d'une PR sous surveillance en tâche de fond, puis lit son verdict et itère jusqu'au vert. Un check rouge est un correctif ; CodeQL se lit à part ; le même check rouge deux fois, ou une panne d'infra, arrêtent. À invoquer dès qu'une PR vient d'être poussée — review-loop et l'ouvrier l'appellent.
+description: Met la CI d'une PR sous surveillance en tâche de fond, puis lit son verdict et itère jusqu'au vert. Un check rouge est un correctif ; CodeQL se lit à part ; le même check rouge deux fois, ou une panne d'infra, arrêtent. À invoquer dès qu'une PR vient d'être poussée — review-loop, refondre-historique et l'ouvrier l'appellent.
 ---
 
 # ci-en-fond

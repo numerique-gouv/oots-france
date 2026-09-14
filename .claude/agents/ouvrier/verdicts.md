@@ -9,7 +9,7 @@ Plan   : <chemin absolu du fichier de plan>
 En deux phrases : <ce que le plan fait>
 TDD    : <les chapitres qui le dictent>
 Tranché seul : <une ligne par décision, avec sa raison>
-Worktree : <chemin, ou « à créer » si tu n'en as pas eu besoin>
+Worktree : <chemin>
 Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il reprendra à l'implémentation (§ 4).
 ```
 
@@ -42,7 +42,7 @@ Où j'ai cherché : <les chapitres et artefacts lus, muets sur ce point>
 LIVRÉ
 Ticket : OOTS-<n> — <url>  (statut : In Review)
 PR     : <url>  (CI verte, review-loop convergé en <n> passes)
-Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
+Écran  : <aucun — rien ne se regarde | une URL par ligne, avec en trois mots ce qu'on y voit ;
          vérifiées joignables>
 Fait   : <deux ou trois phrases sur ce qui change>
 TDD    : <les chapitres qui justifient, ou le désaccord relevé avec le ticket>
@@ -56,7 +56,7 @@ Worktree : <chemin>  (à supprimer après merge)
 ÉCRAN
 Ticket : OOTS-<n> — <url>  (statut : In Progress)
 PR     : <url>  (brouillon)
-CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté>
+CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté | arrêt : même check deux fois ou infra, et ce que j'ai tenté>
 Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
          vérifiées joignables>
 Fait   : <ce que l'écran montre aujourd'hui>

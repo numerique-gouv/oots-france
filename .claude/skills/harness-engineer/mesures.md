@@ -1,6 +1,6 @@
 # Mesures
 
-Lu aux étapes 2, 7 et 9 de la passe. Chaque chiffre d'un audit vient d'une de ces commandes, ou d'un script nommé ici ; un chiffre qu'aucune commande ne rend n'entre pas dans un constat. Les bases datées sont dans les audits, jamais ici.
+Lu aux étapes 2, 6, 7 et 9 de la passe. Chaque chiffre d'un audit vient d'une de ces commandes, ou d'un script nommé ici ; un chiffre qu'aucune commande ne rend n'entre pas dans un constat. Les bases datées sont dans les audits, jamais ici.
 
 ## Contenu
 
