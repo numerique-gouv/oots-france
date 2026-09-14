@@ -35,12 +35,11 @@ module Admin
       # pages rescue it: the operator reads what happened rather than a 500.
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
-      helper_method :provider_country
+      helper_method :provider_country_code, :provider_country_name
 
-      # The identity first: it is the one thing on this page no directory has to
-      # answer for, and the rescue below renders the same template.
+      # The identity is the one thing on this page no directory has to answer
+      # for, and the rescue below renders the same template.
       def show
-        @identity_wording = DemoIdentityWording.new(identity)
         leading = lookup
         @procedure = procedure_wording(leading.requirements)
         @requirements = resolutions(leading).map { |resolved| DemoResolutionWording.new(resolved) }
@@ -152,16 +151,15 @@ module Admin
       def code = ::Demo::RequestEvidence::PROCEDURE_CODE
 
       # The jurisdiction the evidence is sought in, named as the card has to name
-      # it when nothing is published there — in the box the console's directory
-      # pages already put a country in, and in English, like the page.
-      # The code and the name, and not the box around them: a ViewComponent
-      # instance is single-use, and a card names the country more than once.
-      def provider_country
-        @provider_country ||= begin
-          code = ::Demo::RequestEvidence::PROVIDER_COUNTRY
+      # it when nothing is published there. The code and the name travel apart,
+      # and not the box around them: a ViewComponent instance is single-use, and
+      # a card names the country more than once.
+      def provider_country_code = ::Demo::RequestEvidence::PROVIDER_COUNTRY
 
-          { code:, name: CodeListClient.new.country_names(lang: :en)[code] }
-        end
+      # In English, like the page. A code list that says nothing leaves the name
+      # blank, and the box then shows the code alone.
+      def provider_country_name
+        @provider_country_name ||= CodeListClient.new.country_names(lang: :en)[provider_country_code]
       end
 
       def report_unreachable_directories(error)

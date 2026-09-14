@@ -13,16 +13,11 @@ RSpec.describe 'Admin::Demo::Trackings' do
   # query », and issuing the query is what puts the exchange in the session and
   # the request in the register. An example that posed both would be proving
   # them against itself.
-  def confirm_the_request = post admin_demo_confirmation_path
-
-  def reset_session_identity
-    allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
-  end
-
-  # The confirmation page names the evidence type and the provider before the
-  # request leaves, and the press files them: walking both steps is the only way
-  # a request carries them.
-  def confirm_after_looking
+  #
+  # Both steps, and not the press alone: requirement 27 of chapter 1 §2 has the
+  # confirmation page name the evidence type and the provider before anything
+  # leaves, and a press shown neither opens nothing.
+  def confirm_the_request
     stub_directory_resolution
     stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
     stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
@@ -30,7 +25,11 @@ RSpec.describe 'Admin::Demo::Trackings' do
     stub_code_list
 
     get admin_demo_confirmation_path
-    confirm_the_request
+    post admin_demo_confirmation_path
+  end
+
+  def reset_session_identity
+    allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
   end
 
   describe 'GET /admin/demo/suivi' do
@@ -39,7 +38,7 @@ RSpec.describe 'Admin::Demo::Trackings' do
     # directories nothing. Chapter 4.4 §4.1 makes it the one page meant to be
     # reloaded at will.
     it 'stands under what was asked, and of whom, without asking a directory' do
-      confirm_after_looking
+      confirm_the_request
       stub_exchange_state(statut: 'sent')
       WebMock::RequestRegistry.instance.reset!
 
@@ -53,9 +52,12 @@ RSpec.describe 'Admin::Demo::Trackings' do
     end
 
     # A request opened before those two names were recorded carries neither, and
-    # the page keeps a title of its own rather than half a sentence.
+    # the page keeps a title of its own rather than half a sentence. The press
+    # cannot produce one any more — requirement 27 makes the names a condition
+    # of it — so the register is emptied where a migration left it empty.
     it 'keeps its own title for a request that names neither' do
       confirm_the_request
+      Demo::Request.sole.update!(evidence_type_name: nil, provider_name: nil, procedure_name: nil)
       stub_exchange_state(statut: 'sent')
 
       get admin_demo_suivi_path

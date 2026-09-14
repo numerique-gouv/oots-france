@@ -12,15 +12,13 @@
 class CardComponent < ViewComponent::Base
   renders_one :list
 
-  def initialize(title:, href: nil, heading_level: 2, hint: nil, dense: false, clickable: false,
-                 classes: nil)
+  def initialize(title:, href: nil, heading_level: 2, hint: nil, dense: false, clickable: false)
     @title = title
     @href = href
     @heading_level = heading_level
     @hint = hint
     @dense = dense
     @clickable = clickable
-    @classes = classes
     super()
   end
 
@@ -31,12 +29,9 @@ class CardComponent < ViewComponent::Base
   # it the DSFR arrow. What the card lists must then live in the footer, the one
   # place left outside that reach: a link in the body would fall under it and
   # stop being reachable.
-  #
-  # `classes` is what a caller adds of its own: a card read once has a width its
-  # content decides, where a listing's has the width of the listing.
   def classes
     ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense),
-     (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow'), @classes]
+     (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow')]
   end
 
   def enlarged? = @clickable && @href.present?

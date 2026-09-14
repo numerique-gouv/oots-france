@@ -30,8 +30,8 @@ class DemoOutcomeWording
   def self.unanswered(request:) = new(answer: Demo::ContractAnswer.unreached, request:)
 
   delegate :edm_error_code, :preview_location, to: :answer
-  delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id, to: :request
-  delegate :evidence_type_name, :provider_name, :procedure_name, to: :request
+  delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id,
+    :evidence_type_name, :provider_name, :procedure_name, to: :request
 
   def initialize(answer:, request:)
     @answer = answer

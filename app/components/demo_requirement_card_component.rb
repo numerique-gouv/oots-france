@@ -13,23 +13,22 @@
 # evidence types, so a second button would send the same request under another
 # name. Stub, tracked as OOTS-212.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, askable:, country:)
+  def initialize(wording:, askable:, country_code:, country_name: nil)
     @wording = wording
     @askable = askable
-    @country = country
+    @country_code = country_code
+    @country_name = country_name
     super()
   end
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.
   # A box of its own each time — a ViewComponent instance is single-use.
-  def country_tag = CountryTagComponent.new(**country)
+  def country_tag = CountryTagComponent.new(code: @country_code, name: @country_name)
 
   # The name alone, where the line above already shows the country in its box:
   # a second flag and a second code would say the same thing twice.
-  def country_name = country[:name].presence || country[:code]
-
-  delegate :nameable?, to: :wording
+  def country_name = @country_name.presence || @country_code
 
   CLASSES = %w[fr-card fr-card--shadow fr-card--no-arrow requirement-card fr-col-12 fr-col-md-8 fr-mb-4w].freeze
 
@@ -44,13 +43,9 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   def askable? = @askable && nameable?
 
-  delegate :evidence_type, :requirement, :requirement_language, to: :wording
-
-  delegate :provider, to: :wording
-
-  delegate :failure, to: :wording
+  delegate :nameable?, :evidence_type, :provider, :requirement, :requirement_language, to: :wording
 
   private
 
-  attr_reader :wording, :country
+  attr_reader :wording
 end

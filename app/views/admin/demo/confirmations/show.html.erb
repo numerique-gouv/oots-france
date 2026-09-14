@@ -10,7 +10,7 @@
 
 <p class="fr-col-12 fr-col-md-8 fr-mb-3w" lang="en"><%= t('admin.demo.confirmations.show.identity') %></p>
 
-<%= render DemoIdentityCardComponent.new(identity: @identity, wording: @identity_wording) %>
+<%= render DemoIdentityCardComponent.new(identity: @identity) %>
 
 <% if @unreachable.present? %>
   <%= dsfr_alert(type: :error, title: t('admin.demo.confirmations.show.unreachable')) do %>
@@ -26,5 +26,5 @@
     Broker lists them. %>
 <% @requirements.each do |requirement| %>
   <%= render DemoRequirementCardComponent.new(wording: requirement, askable: requirement == @wording,
-        country: provider_country) %>
+        country_code: provider_country_code, country_name: provider_country_name) %>
 <% end %>

@@ -20,9 +20,12 @@
 # which: no claim names the country, and naming the flow instead tells the user
 # what they already knew from the button they pressed.
 class DemoIdentityCardComponent < ViewComponent::Base
-  def initialize(identity:, wording:)
+  # The identity alone: what a screen says of it is derived from it here rather
+  # than beside it, so that no caller can hand the card two objects describing
+  # two different people.
+  def initialize(identity:)
     @identity = identity
-    @wording = wording
+    @wording = DemoIdentityWording.new(identity)
     super()
   end
 
