@@ -386,6 +386,16 @@ Une passe :
      seul moment où on l'attend réellement. Rouge → bloquant, retour à
      l'étape 1. Vert → passer à l'étape 7.
 
+   **Et le fichier de revue existe sur disque, une section par passe** : un
+   `ls .claude/reviews/` avant de sortir, pas la mémoire de l'avoir écrit.
+   S'il manque, la passe n'a pas eu lieu pour qui que ce soit d'autre —
+   l'écrire de ce qu'on a, puis continuer. Constaté le 2026-09-14 sur la
+   [PR #240](https://github.com/numerique-gouv/oots-france/pull/240) : deux
+   passes de sept relecteurs, convergence annoncée dans le fil à 17:26, PR
+   fusionnée trois minutes plus tard, et aucun fichier — les faux positifs de
+   sa passe 1 ne seront relayés à personne (étape 2), et la boucle suivante
+   sur la même zone les retrouvera au prix d'une passe.
+
 7. **Refondre l'historique**, en local, puis s'arrêter.
 
    > [!NOTE]
