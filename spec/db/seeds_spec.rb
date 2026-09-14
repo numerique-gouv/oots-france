@@ -30,6 +30,35 @@ RSpec.describe 'db/seeds.rb' do
     expect(named.count).to eq(4)
   end
 
+  # RG10: what the journal keeps of a document France served has to be
+  # recomputable from the exchange that keeps it — its subject, the instant of
+  # the row, the identifier that row gives the evidence. That is the whole of
+  # what `journal_des_echanges.md` offers for settling a dispute, the bytes being
+  # kept nowhere, and it is walkable here rather than only readable.
+  it 'gives a served response the digest of a document the exchange reproduces' do
+    replay
+
+    served = AuditEvent.where(event_type: 'response_sent').where.not(evidence_digest: nil)
+
+    expect(served).to be_any
+    served.each { |event| expect(event.evidence_digest).to eq(reproduced_digest(event)) }
+  end
+
+  # And the counterpart: a document a correspondent issued was produced nowhere
+  # here, so no row of an outgoing exchange may carry a digest this application
+  # could have computed, nor the one of the sample attachment the reference
+  # messages still carry.
+  it 'gives a received document a digest that comes from nowhere in this repository' do
+    replay
+
+    received = AuditEvent.where(event_type: %w[response_received evidence_delivered])
+      .where.not(evidence_digest: nil)
+
+    expect(received).to be_any
+    expect(received.pluck(:evidence_digest))
+      .not_to include(Digest::SHA256.hexdigest(Rails.root.join('assets/drapeau.pdf').binread))
+  end
+
   # `detail` is filled on the way in as well as on the way out: a response that
   # broke a rule of chapter 4.6 names it there, and the exchange was settled all
   # the same — nothing is refused over one.
@@ -187,6 +216,37 @@ RSpec.describe 'db/seeds.rb' do
 
     expect(carrying.map { |one| [one.event_type, one.exchange.status] })
       .to contain_exactly(%w[response_received delivered], %w[response_received delivered])
+  end
+
+  # The evidence type the demonstration gives a served document, no column of the
+  # journal carrying one. Spelt out again here rather than read from the seed,
+  # which composes it inside the block `Rails.env.development?` guards: a change
+  # on one side has to fail on the other.
+  DEMONSTRATION_EVIDENCE_TYPE = EvidenceType.new(
+    id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/6f9619ff-8b86-d011-b42d-00c04fc964ff',
+    descriptions: { 'FR' => "Attestation d'inscription", 'EN' => 'Certificate of enrolment' },
+    distribution_formats: [RetrievedMessageParser::PDF],
+  ).freeze
+
+  # The document that row says France served, produced again from what the
+  # exchange holds: France keeps no bytes, so this is the only way back to them.
+  def reproduced_digest(event)
+    Digest::SHA256.hexdigest(
+      EvidenceDocumentBuilder.new(
+        evidence_id: event.evidence_identifier, instant: event.occurred_at,
+        evidence_type: DEMONSTRATION_EVIDENCE_TYPE, beneficiary: requested_subject(event),
+      ).render,
+    )
+  end
+
+  # The subject of the exchange, which the request names and the French answer
+  # does not: `AuditTrail#response_sent` writes none, the row of the arriving
+  # request carrying it already.
+  def requested_subject(event)
+    described = JSON.parse(AuditEvent.find_by!(exchange_id: event.exchange_id,
+      event_type: 'request_received').evidence_subject).symbolize_keys
+
+    described.key?(:legal_name) ? LegalPerson.new(described) : NaturalPerson.new(described)
   end
 
   # The seed narrates what it wrote, which the suite has no use for.

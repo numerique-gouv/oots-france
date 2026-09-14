@@ -7,11 +7,10 @@ module EvidenceProvision
   # where the successful answer is chosen — a procedure nobody serves is worth
   # `EDM:ERR:0004` however late the request.
   class ChooseAnswer < ApplicationInteractor
-    # The procedures a document is served for, and the document itself: France
-    # holds no real evidence, so the same sample answers both. Stub, tracked as
-    # OOTS-82.
+    # The procedures a document is served for. France holds no real evidence, so
+    # both are answered with the demonstration document `EvidenceDocumentBuilder`
+    # produces. Stub, tracked as OOTS-82.
     SERVED_PROCEDURES = [ProcedureCode::SYSTEM_CHECK, ProcedureCode::STUDY_FINANCING].freeze
-    EVIDENCE_PATH = 'assets/drapeau.pdf'.freeze
 
     # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
     # detail names the chapter where every other one names a rule.
@@ -129,16 +128,29 @@ module EvidenceProvision
     # response that goes back.
     def refuse(detail, message) = raise(UnreadableMessageError.new(message, detail:))
 
+    # The order here is the whole of what makes the document say the truth, and
+    # it is the reverse of what a reading order would suggest: the reference is
+    # minted first, so that the body — which needs nothing else of the
+    # attachment — can be built before the document exists; the body settles the
+    # evidence identifier and the instant; and the document is produced from
+    # those two, so that it carries the identifier the response gives it and the
+    # date the `IssueDateTime` slot gives it. Drawing the reference first also
+    # keeps the sequence of identifiers the reference messages were built with.
     def served
-      document = evidence
-      attachment = attachment_for(document)
-      body = EvidenceResponseBuilder.new(
-        requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
-        attachment:, request_id:, specification:, uuid:,
-      )
+      reference = "cid:#{uuid.next}@pdf.oots.fr"
+      body = response_body(reference)
+      document = evidence(body)
+      attachment = Attachment.new(reference, Base64.strict_encode64(document))
 
       Answers::Served.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
         identifier: body.document_id, evidence: served_evidence(body, attachment, document))
+    end
+
+    def response_body(reference)
+      EvidenceResponseBuilder.new(
+        requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
+        evidence_reference: reference, request_id:, specification:, uuid:,
+      )
     end
 
     # After the timeout, for the reason `expired?` gives: a correspondent that
@@ -148,10 +160,6 @@ module EvidenceProvision
 
       Answers::Deferral.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
         identifier: body.document_id, available_at: body.available_at)
-    end
-
-    def attachment_for(document)
-      Attachment.new("cid:#{uuid.next}@pdf.oots.fr", Base64.strict_encode64(document))
     end
 
     # The document as the answer carries it: the `cid:` the header declares and
@@ -192,6 +200,15 @@ module EvidenceProvision
       )
     end
 
-    def evidence = Rails.root.join(EVIDENCE_PATH).binread
+    # Everything read off `body` and nothing off `request`, though the two agree
+    # today: what the document says of an evidence must be what the response
+    # says of it, and reading half of it elsewhere would let the two drift the
+    # day the response starts deciding anything for itself.
+    def evidence(body)
+      EvidenceDocumentBuilder.new(
+        evidence_id: body.evidence_id, instant: body.instant,
+        evidence_type: body.evidence_type, beneficiary: body.beneficiary,
+      ).render
+    end
   end
 end

@@ -49,7 +49,7 @@ RSpec.describe EvidenceProvision::Answer do
       exchange_id: message.exchange_id,
       request_id: message.body.request_id,
       edm_error_code: nil,
-      evidence_digest: Digest::SHA256.hexdigest(evidence_served),
+      evidence_digest: Digest::SHA256.hexdigest(attached_document),
       # The identifier of France's own answer: chapter 4.8 walks the
       # non-repudiation chain from it, and it is what `Answers::Served` carries.
       response_id: identifier_of(submitted),
@@ -83,16 +83,51 @@ RSpec.describe EvidenceProvision::Answer do
     )
   end
 
-  it 'attaches the document France holds' do
+  it 'attaches a document it produced for this very answer' do
     answer
 
     expect(Nokogiri::XML(gateway_body).xpath('//payload').size).to eq(2)
     expect(attached_document).to start_with('%PDF')
+    expect(attached_document).not_to eq(Rails.root.join('assets/drapeau.pdf').binread)
+  end
+
+  # RG6: « un pdf différent ». The two answers are drawn on one frozen clock, so
+  # nothing but the evidence identifier can tell their documents apart — which is
+  # the whole of what the rule asks, and why the real generator is used here
+  # where the rest of the file takes the sequential one.
+  it 'attaches a different document to each answer it serves' do
+    expect([served_document, served_document].uniq.size).to eq(2)
+  end
+
+  # RG3, and the whole reason the order of `ChooseAnswer#served` is what it is:
+  # the document and the slot that dates it come from a single reading of the
+  # clock, not from two that happen to agree.
+  #
+  # The clock is set ticking for this example alone. The rest of the file freezes
+  # time for an unrelated reason — the captured fixtures would age past the
+  # timeout of chapter 4.4 — and a clock that does not move would make this
+  # proof vacuous: two independent readings would coincide, and a document
+  # reading its own would pass exactly as one sharing the response's.
+  it 'dates the document with the very instant the response says the evidence was issued at' do
+    allow(Clock).to receive(:new).and_return(ticking_clock)
+
+    answer
+
+    said_at = Time.zone.parse(issued_at_of(submitted)).in_time_zone
+    expect(text_of(attached_document)).to include(said_at.strftime('%H:%M:%S'))
+  end
+
+  # CA7: the document names the evidence the response announces, so a reader
+  # holding one can tell it is the other's.
+  it 'prints in that document the identifier the response gives the evidence' do
+    answer
+
+    expect(text_of(attached_document)).to include(evidence_identifier_of(submitted))
   end
 
   # The university demonstration exchanges on `T1`, the financing of studies:
   # France answers it through the very objects that answer the system check, and
-  # with the same sample document. Stub, tracked as OOTS-82.
+  # with a document produced the same way. Stub, tracked as OOTS-82.
   describe 'the other procedure it serves with a document' do
     let(:message) { request_for(ProcedureCode::STUDY_FINANCING) }
 
@@ -106,10 +141,11 @@ RSpec.describe EvidenceProvision::Answer do
       expect(evidence_type_of(submitted)).to eq(message.body.evidence_type.id)
     end
 
-    it 'attaches the document France holds' do
+    it 'attaches a document it produced for this very answer' do
       answer
 
-      expect(attached_document).to eq(evidence_served)
+      expect(attached_document).to start_with('%PDF')
+      expect(attached_document).not_to eq(Rails.root.join('assets/drapeau.pdf').binread)
     end
 
     it 'journals the fingerprint of the document it actually served' do
@@ -117,7 +153,7 @@ RSpec.describe EvidenceProvision::Answer do
 
       expect(AuditEvent.last).to have_attributes(
         event_type: 'response_sent',
-        evidence_digest: Digest::SHA256.hexdigest(evidence_served),
+        evidence_digest: Digest::SHA256.hexdigest(attached_document),
       )
     end
   end
@@ -238,11 +274,11 @@ RSpec.describe EvidenceProvision::Answer do
     context 'when the PDF is the second one asked for' do
       let(:message) { asking_for('application/xml', Attachment::MIME_TYPE) }
 
-      it 'serves the document France holds' do
+      it 'serves the document it produces' do
         answer
 
         expect(status_of(submitted)).to end_with('Success')
-        expect(attached_document).to eq(evidence_served)
+        expect(attached_document).to start_with('%PDF')
       end
 
       # The answer describes the distribution served and not one echoed from the
@@ -1480,11 +1516,49 @@ RSpec.describe EvidenceProvision::Answer do
 
   # The bytes the gateway was handed, read back from the second MIME part the
   # answer carried — never from the file the code was asked to serve.
-  def attached_document
-    Base64.decode64(Nokogiri::XML(gateway_body).xpath('//payload').last.at_xpath('value').text)
+  def attached_document = document_from(gateway_body)
+
+  # The bytes of the second MIME part, which is the one carrying the evidence.
+  def document_from(envelope)
+    Base64.decode64(Nokogiri::XML(envelope).xpath('//payload').last.at_xpath('value').text)
   end
 
-  def evidence_served = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
+  # One answer served through a gateway of its own, so that two of them can be
+  # compared: the shared double above records only the first submission it was
+  # handed. The real identifier generator, where the rest of the file takes the
+  # sequential one, since what tells two documents apart is precisely the
+  # identifier drawn for each.
+  def served_document
+    own_gateway = gateway_accepting_submissions
+    serve_through(own_gateway)
+
+    expect(own_gateway).to have_received(:submit) { |envelope| return document_from(envelope) }
+  end
+
+  def serve_through(own_gateway)
+    described_class.call(message: RetrievedMessageParser.new(real_envelope('requete')),
+      exchange: correlated(message), gateway: own_gateway, uuid: UuidGenerator.new, audit_trail: AuditTrail.new)
+  end
+
+  # An hour later at every reading, so that no two of them can agree by accident.
+  def ticking_clock
+    tick = 0
+
+    instance_double(Clock).tap do |clock|
+      allow(clock).to receive(:now) { Time.zone.parse(CAPTURED_AT) + (tick += 1).hours }
+    end
+  end
+
+  def issued_at_of(document)
+    document.at_xpath("//rim:Slot[@name='IssueDateTime']//rim:Value", SlotReading::NAMESPACES).text
+  end
+
+  # What a reader of the PDF sees, joined into one string: the document is read
+  # back through `pdf-reader` rather than searched for bytes, a subset font
+  # encoding nothing a plain `include?` on the file could find.
+  def text_of(document)
+    PDF::Reader.new(StringIO.new(document)).pages.map(&:text).join("\n")
+  end
 
   def subject_family_name_of(document)
     document.at_xpath('//sdg:IsAbout//sdg:FamilyName', SlotReading::NAMESPACES).text

@@ -65,14 +65,14 @@
               <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
 <%- end -%>
             </sdg:IsConformantTo>
-            <sdg:IssuingDate><%= EvidenceResponseBuilder::ISSUING_DATE %></sdg:IssuingDate>
+            <sdg:IssuingDate><%= issuing_date %></sdg:IssuingDate>
             <sdg:Distribution>
               <sdg:Format><%= escape(served_format) %></sdg:Format>
             </sdg:Distribution>
           </sdg:Evidence>
         </rim:SlotValue>
       </rim:Slot>
-      <rim:RepositoryItemRef xlink:href="<%= escape(attachment.identifier) %>" xlink:title="Evidence"/>
+      <rim:RepositoryItemRef xlink:href="<%= escape(evidence_reference) %>" xlink:title="Evidence"/>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
 </query:QueryResponse>

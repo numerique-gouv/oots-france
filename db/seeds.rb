@@ -385,19 +385,48 @@ if Rails.env.development?
   # writes it: the two answers that carry a document, and the handover to the
   # French requester. A deferred answer announces a date and carries nothing, so
   # it gets neither column — as the code leaves both empty there.
-  #
-  # The digest is the real one of the document France serves, so that the
-  # procedure `journal_des_echanges.md` describes for settling a dispute can be
-  # walked on demonstration data rather than only read.
   carries_evidence = %w[response_sent response_received evidence_delivered].freeze
-  served_evidence = Rails.root.join(EvidenceProvision::ChooseAnswer::EVIDENCE_PATH).binread
+
+  # Le type de justificatif que le document servi nomme. Aucune colonne du
+  # journal ne le porte — le chapitre 4.8 ne le demande pas —, donc les données
+  # de démonstration le donnent, comme une requête l'aurait donné.
+  demonstration_evidence_type = EvidenceType.new(
+    id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/6f9619ff-8b86-d011-b42d-00c04fc964ff',
+    descriptions: { 'FR' => "Attestation d'inscription", 'EN' => 'Certificate of enrolment' },
+    distribution_formats: [RetrievedMessageParser::PDF],
+  )
+
+  # L'empreinte d'une ligne d'un échange **entrant**, celle d'un document que la
+  # France a servi : elle est recalculée par le moyen même qu'emploie le code, à
+  # partir de ce que la ligne porte déjà — son sujet, son instant, l'identifiant
+  # qu'elle donne au justificatif. La procédure que décrit
+  # `journal_des_echanges.md` pour trancher un litige se marche donc sur les
+  # données de démonstration au lieu de seulement se lire.
+  served_digest = lambda do |scenario, evidence_id, occurred_at|
+    Digest::SHA256.hexdigest(
+      EvidenceDocumentBuilder.new(
+        evidence_id:, instant: occurred_at, evidence_type: demonstration_evidence_type,
+        beneficiary: scenario.fetch(:subject, person),
+      ).render,
+    )
+  end
+
+  # Celle d'un échange **sortant**, où le document vient d'un fournisseur
+  # étranger : ni le moyen français, qui dirait que la France l'a fabriqué, ni un
+  # fichier du dépôt, qui donnerait la même à tous. Des octets composés ici, donc,
+  # que rien ne conserve — le journal ne garde jamais que l'empreinte.
+  foreign_digest = lambda do |exchange, evidence_id|
+    Digest::SHA256.hexdigest(
+      format("%%PDF-1.4\n%% Justificatif remis par %s pour l'échange %s\n", exchange.country_code, evidence_id),
+    )
+  end
 
   # The `cid:` of the part that carried the document, which chapter 4.8 has the
   # response flow log beside its type: it is what ties the attachment to the
   # `rim:RepositoryItemRef` naming it. Minted where the answer was — France's own
   # suffix where France answered, the correspondent's where it received.
   evidence_content_id = lambda do |exchange|
-    # `ChooseAnswer#attachment_for` mints the French one under this suffix; a
+    # `ChooseAnswer#served` mints the French one under this suffix; a
     # correspondent's is its own, so a demonstration wearing ours both ways would
     # teach the console that France attached what it received.
     suffix = exchange.incoming? ? 'pdf.oots.fr' : "pdf.oots.#{exchange.country_code.downcase}"
@@ -405,10 +434,16 @@ if Rails.env.development?
     format('cid:%s@%s', SecureRandom.uuid, suffix)
   end
 
-  evidence_fingerprint = lambda do |event_type, exchange, content_id|
+  evidence_fingerprint = lambda do |event_type, exchange, scenario, evidence_id, content_id, occurred_at|
     return {} unless event_type.in?(carries_evidence) && exchange.status != 'deferred'
 
-    { evidence_digest: Digest::SHA256.hexdigest(served_evidence),
+    digest = if exchange.incoming?
+               served_digest.call(scenario, evidence_id, occurred_at)
+             else
+               foreign_digest.call(exchange, evidence_id)
+             end
+
+    { evidence_digest: digest,
       evidence_mime_type: RetrievedMessageParser::PDF,
       evidence_content_id: content_id }
   end
@@ -419,10 +454,10 @@ if Rails.env.development?
   # there only what the exchange and the document itself say.
   names_evidence = %w[response_sent response_received].freeze
 
-  evidence_identifier = lambda do |event_type, exchange|
+  evidence_identifier = lambda do |event_type, exchange, evidence_id|
     return {} unless event_type.in?(names_evidence) && exchange.status != 'deferred'
 
-    { evidence_identifier: SecureRandom.uuid }
+    { evidence_identifier: evidence_id }
   end
 
   # The first MIME part travels with the message, so the events that carry one
@@ -511,8 +546,15 @@ if Rails.env.development?
     # follows from the body's `rim:RepositoryItemRef`.
     content_id = evidence_content_id.call(exchange)
 
+    # De même, et pour la même raison : c'est l'identifiant que le fournisseur a
+    # donné au document, et l'empreinte d'un échange entrant se recalcule depuis
+    # lui.
+    evidence_id = SecureRandom.uuid
+
     events.each_with_index do |event_type, step|
       next if AuditEvent.exists?(exchange_id: exchange.exchange_id, event_type:)
+
+      occurred_at = opened + (step * 7).minutes
 
       # L'adresse que le correspondant a déclarée, et que `received_error` seul
       # inscrit : la France n'émet aucune prévisualisation, faute d'espace où
@@ -522,7 +564,7 @@ if Rails.env.development?
 
       AuditEvent.create!(
         event_type:,
-        occurred_at: opened + (step * 7).minutes,
+        occurred_at:,
         exchange_id: exchange.exchange_id,
         conversation_id: exchange.conversation_id,
         procedure_code: (exchange.procedure_code if event_type.in?(carries_procedure)),
@@ -538,8 +580,8 @@ if Rails.env.development?
         preview_location: declared_preview,
         **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
           code: message_error_code, preview: declared_preview),
-        **evidence_fingerprint.call(event_type, exchange, content_id),
-        **evidence_identifier.call(event_type, exchange),
+        **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
+        **evidence_identifier.call(event_type, exchange, evidence_id),
       )
     end
 
