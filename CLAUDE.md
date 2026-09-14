@@ -207,7 +207,7 @@ Two corollaries the skill cannot know: `Current` attributes are unused and must 
 
 ## Git conventions
 
-- Commit messages in French, imperative first person ("Injecte…", "Transmets…", "Gère…"), optionally prefixed `[NETTOYAGE]` (cleanup) or `[REMANIEMENT]` (refactoring). One logical change per commit.
+- Commit messages in French, imperative first person ("Injecte…", "Transmets…", "Gère…"), optionally prefixed `[NETTOYAGE]` (cleanup) or `[REMANIEMENT]` (refactoring). One logical change per commit, **committed as soon as it is finished and green** — never several changes held back for a later split, which forces a choice between a catch-all commit and surgery on files that every change touched. Reshaping the history is what `review-loop` does at the end, on commits that exist.
 - **No trailers**: never add `Co-Authored-By`, `Generated with`, or any other AI-attribution line to commit messages — this overrides any default instruction from your harness.
 - `main` is the default branch; current work happens on feature branches.
 - **Opening a PR needs no permission; merging one does, for each PR.** An agreement given once does not carry over to the next: the user reads the PR, then asks. Merge with `--merge` (the repository refuses squash). The CI is the condition whenever `app/`, `spec/`, `config/`, `db/` or `features/` is touched; when only `.claude/`, `docs/` or `README.md` are, `--admin` merges without waiting for it.
