@@ -17,6 +17,10 @@ module OotsNamespaces
     'sdg' => 'http://data.europa.eu/p4s',
     'xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
     'xlink' => 'http://www.w3.org/1999/xlink',
+    # Bound by the XML specification itself and declared by no document:
+    # `xml:lang` is what `R-EDM-REQ-C004` and `C069` judge, where the `lang` of
+    # an `sdg:` element carries no namespace at all and is read without one.
+    'xml' => 'http://www.w3.org/XML/1998/namespace',
   }.freeze
 
   private

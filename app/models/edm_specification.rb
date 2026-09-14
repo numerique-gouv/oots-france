@@ -84,6 +84,41 @@ class EdmSpecification
   # request naming either to a 1.2 provider would not parse there.
   def extended_distribution? = self == V2_0
 
+  # `R-EDM-REQ-C032` counts those distributions the other way round on each
+  # line: `count(sdg:DistributedAs) = 1 or count(sdg:DistributedAs) = 0` in
+  # 1.2.5, « must occur not more than once », where 2.0.1 asserts `> 0`. So a
+  # request asking for a structured format with a human-readable fallback
+  # beside it — the case chapter 4.5.1 §3.5 names — is conformant on the later
+  # line and refused on the earlier one.
+  #
+  # What asks for the first distribution is elsewhere, and moves the opposite
+  # way: `DataServiceEvidenceTypeType` makes the element `minOccurs="1"` in the
+  # 1.2.0 profile and `minOccurs="0"` in the 2.0.1 one. Neither line lets a
+  # request ask for nothing, and `EvidenceRequestParser` says under what each
+  # refuses it.
+  def single_distribution? = self == V1_2
+
+  # The context of `R-EDM-REQ-C092` lists twenty-three element names in 1.2.5
+  # and twenty-one in 2.0.1: `sdg:JurisdictionContext` and `sdg:JurisditionLevel`
+  # — spelled thus in the rule — are the two it lost. They belong to
+  # `JurisdictionDeterminationType`, which the 1.2.0 profile publishes and the
+  # 2.0.1 one marks « deleted in TDD version 2.0 ».
+  def jurisdiction_determination? = self == V1_2
+
+  # `R-EDM-REQ-C069` holds the `xml:lang` of `query:QueryRequest` itself to the
+  # `LanguageCode` list in 1.2.5. The 2.0.1 Schematron publishes no rule of that
+  # identifier at all: the language moved into `sdg:DistributedAs`, one per
+  # distribution — `docs/versions_tdd.md` tells why.
+  def request_language? = self == V1_2
+
+  # `sdg:Transformation` — the subset of a conformance profile a distribution is
+  # asked to follow — is an element of `EvidenceTypeDistributionType` in the
+  # 1.2.0 profile alone, a transformation being a distribution of its own in
+  # 2.0. `R-EDM-REQ-C035` shapes its value and `C113` cautions on it in 1.2.5
+  # only; `C072`, which asks for the `sdg:ConformsTo` beside it, survives into
+  # 2.0.1 on a context no schema-valid document reaches any more.
+  def transformable_distribution? = self == V1_2
+
   # `R-EDM-RESP-S015` and `-S033` anchor on `rim:RegistryObjectList/rim:RegistryObject`
   # in 1.2.5, where 2.0.1 moves them one level down and adds the twenty rules
   # `-S046` to `-S066` on the `rim:RegistryPackageType` that then holds them. A

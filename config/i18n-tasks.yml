@@ -100,6 +100,9 @@ ignore_unused:
   # where the requester is read rather than in a pass of its own.
   - parsers.evidence_request.requester_agent_not_alone
   - parsers.evidence_request.{request_id_not_a_uuid,evidence_type_without_distribution}
+  # And the ceiling the 1.2 line alone puts on those same distributions,
+  # `R-EDM-REQ-C032` counting `= 1 or = 0` there where 2.0.1 counts `> 0`.
+  - parsers.evidence_request.evidence_type_with_several_distributions
   # The rules on the requesting agent that `build_requester` names, refusing at
   # the read because no answer could carry them: an exception response would
   # have to copy back the very scheme, name or language being refused.
@@ -174,6 +177,14 @@ ignore_unused:
   - parsers.evidence_request.{slot_type_unexpected,element_type_unexpected}
   - parsers.evidence_request.{collection_without_element,collection_type_unexpected}
   - parsers.evidence_request.{wording_too_short,wording_empty}
+  # The rules chapter 4.6 publishes at the 1.2.5 tag and no longer at the 2.0.1
+  # one: `C004` and `C069` on the two languages a request of that line names,
+  # `C035` and `C072` on the transformation a distribution may ask for. Named
+  # literally and exempted all the same, for the reason the entries above give —
+  # they reach `refuse` and never `t()`. `unnamed_transformation` is not here:
+  # `I18n.t` names it, and the scanner does see that.
+  - parsers.evidence_request.{procedure_language_unknown,request_language_unknown}
+  - parsers.evidence_request.{transformation_unexpected,transformation_without_conformance}
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
   # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`

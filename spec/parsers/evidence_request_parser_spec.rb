@@ -2634,6 +2634,262 @@ RSpec.describe EvidenceRequestParser do
   def replace_language(agent, value)
     agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
   end
+  # OOTS-213: the rules of chapter 4.6 whose 1.2.5 form differs from their 2.0.1
+  # one, and those the earlier line alone publishes. Everything here is built on
+  # `earlier_line_envelope`, which is the real request downgraded in every
+  # respect `EdmSpecification` tells the two lines apart by.
+  describe 'the rules chapter 4.6 shapes otherwise on the 1.2 line' do
+    def earlier(&) = earlier_line_envelope(&).body
+
+    # `R-EDM-REQ-C032` counts `= 1 or = 0` at the 1.2.5 tag — « must occur not
+    # more than once » — where 2.0.1 counts `> 0`. So the very request the later
+    # line admits, a structured format with a human-readable fallback beside it,
+    # is the one the earlier refuses.
+    describe 'the distributions the request asks for' do
+      # Takes the envelope builder, as the three helpers below do: the pair that
+      # proves the rule is read on the line the message declares needs the very
+      # same request on both, and a second hand-written copy of it would be free
+      # to drift from the first.
+      def asking_for(*formats, envelope_of: method(:earlier))
+        distributions = formats.map do |format|
+          "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format></sdg:DistributedAs>"
+        end
+
+        envelope_of.call { |body| body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m) { distributions.join } }
+      end
+
+      it 'reads the single distribution a conformant request of that line names' do
+        expect(asking_for(EvidenceType::PDF).evidence_type.distribution_formats).to eq([EvidenceType::PDF])
+      end
+
+      it 'refuses a second distribution, under R-EDM-REQ-C032' do
+        expect { asking_for(EvidenceType::PDF, 'application/xml').evidence_type }.to refusing('R-EDM-REQ-C032')
+      end
+
+      # The pair that proves the rule is read on the line the message declares:
+      # the 2.0 spec of the block above accepts exactly this request.
+      it 'accepts that same pair on the 2.0 line' do
+        both = asking_for(EvidenceType::PDF, 'application/xml', envelope_of: method(:with_body))
+
+        expect(both.evidence_type.distribution_formats).to eq([EvidenceType::PDF, 'application/xml'])
+      end
+
+      # Asking for none satisfies the 1.2.5 assertion, which counts zero among
+      # what it admits: what refuses it is `DataServiceEvidenceTypeType`, where
+      # the element is `minOccurs="1"` in the 1.2.0 profile, and chapter 4.5.1
+      # §3.5. Hence a `detail` naming the chapter, and not `C032` — a rule this
+      # request does not break.
+      it 'refuses a request asking for no distribution at all, under the chapter' do
+        expect { asking_for.evidence_type }
+          .to raise_error(an_instance_of(UnreadableMessageError)
+            .and(having_attributes(detail: EarlierLineConformance::DISTRIBUTION_REQUIRED)))
+      end
+    end
+
+    # `R-EDM-REQ-C016` is not executed at the 1.2.5 tag — the assertion is
+    # absent from `EDM-REQ-C.sch` there, which carries 106 of the 107 rules the
+    # 4.6 of that tag publishes — and the chapter publishes it all the same, as
+    # FATAL. It is the chapter that is applied, on both lines, so a territory
+    # outside `NUTS` is refused in 1.2 exactly as in 2.0.
+    it 'refuses a territory outside NUTS on the 1.2 line too, under R-EDM-REQ-C016' do
+      declared = earlier do |body|
+        body.sub(%r{(</sdg:AdminUnitLevel1>)}) { "#{Regexp.last_match(1)}<sdg:AdminUnitLevel2>FR999</sdg:AdminUnitLevel2>" }
+      end
+
+      expect { declared.validate! }.to refusing('R-EDM-REQ-C016')
+    end
+
+    # `R-EDM-REQ-C073` hangs off the address in 1.2.5 — `sdg:Agent[…]/sdg:Address`
+    # with `count(sdg:AdminUnitLevel1) = 1` — so an agent carrying no address at
+    # all opens no context there, and a blank country satisfies a count that
+    # does not filter. 2.0.1 anchors the same rule on the agent and counts only
+    # the elements `normalize-space` leaves non-empty. The 2.0 form is what is
+    # applied on both lines: the chapter requires the country either way, and a
+    # reader that let a 1.2 request through without one would have nothing to
+    # address the answer to.
+    describe 'the country the requester declares' do
+      it 'refuses an agent of that line carrying no address, under R-EDM-REQ-C073' do
+        without = earlier { |body| body.sub(%r{<sdg:Address>.*?</sdg:Address>}m, '') }
+
+        expect { without.validate! }.to refusing('R-EDM-REQ-C073')
+      end
+
+      it 'refuses one whose country is written blank, under the same rule' do
+        blank = earlier { |body| body.sub(/(<sdg:AdminUnitLevel1>)[^<]*/) { "#{Regexp.last_match(1)}   " } }
+
+        expect { blank.validate! }.to refusing('R-EDM-REQ-C073')
+      end
+    end
+
+    # `R-EDM-REQ-C092` lists twenty-three element names at the 1.2.5 tag and
+    # twenty-one at the 2.0.1 one: `sdg:JurisdictionContext` and
+    # `sdg:JurisditionLevel` — spelled thus in the rule — belong to
+    # `JurisdictionDeterminationType`, which 2.0 deleted. Same test, same
+    # thresholds, two more places to apply them.
+    describe 'the wordings of the jurisdiction determination' do
+      # Wrapped in the element that carries them, as `JurisdictionDeterminationType`
+      # has it: the rule's context names no ancestor, so the walk would reach them
+      # anywhere — but a request nobody could send proves nothing about the ones
+      # that can.
+      def determining(wording, envelope_of)
+        determination = "<sdg:EvidenceProviderJurisdictionDetermination>#{wording}" \
+                        '</sdg:EvidenceProviderJurisdictionDetermination>'
+
+        envelope_of.call do |body|
+          body.sub('</sdg:DataServiceEvidenceType>') { "#{determination}</sdg:DataServiceEvidenceType>" }
+        end
+      end
+
+      it 'refuses a jurisdiction context of one character, under R-EDM-REQ-C092' do
+        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:earlier))
+
+        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
+      end
+
+      # Guards against over-refusal and nothing more: a table that did not carry
+      # the name at all would accept this too, `require_conformant_wordings`
+      # skipping every element it does not measure. The refusal above is what
+      # proves the name is measured; this is what proves it is not measured too
+      # harshly.
+      it 'accepts the same context once it is a word' do
+        described = determining('<sdg:JurisdictionContext lang="FR">Paris</sdg:JurisdictionContext>', method(:earlier))
+
+        expect(described.validate!).to be_a(described_class)
+      end
+
+      # The rule spells the second name without its `c`, where the 1.2.0 schema
+      # spells it `JurisdictionLevel`: transcribed as published, so the row is
+      # the rule and not a correction of it.
+      it 'refuses a jurisdiction level of one character, spelled as the rule spells it' do
+        described = determining('<sdg:JurisditionLevel>X</sdg:JurisditionLevel>', method(:earlier))
+
+        expect { described.validate! }.to refusing('R-EDM-REQ-C092')
+      end
+
+      # The other half of the pair: 2.0.1 dropped both names from the context,
+      # so the same one-character wording breaks nothing there.
+      it 'says nothing of that same context on the 2.0 line' do
+        described = determining('<sdg:JurisdictionContext lang="FR">X</sdg:JurisdictionContext>', method(:with_body))
+
+        expect(described.validate!).to be_a(described_class)
+      end
+    end
+
+    # `R-EDM-REQ-C004` and `C069`, published at the 1.2.5 tag alone. The context
+    # of each is the attribute itself, so neither ever requires it — and one
+    # written empty is a context node, which falls on the comparison. Compared
+    # exactly, both assertions carrying no `i` flag where the list publishes
+    # upper case.
+    describe 'the languages the request names' do
+      def procedure_in(language) = earlier { |body| body.sub('xml:lang="EN"', %(xml:lang="#{language}")) }
+
+      def requested_in(language, envelope_of)
+        envelope_of.call { |body| body.sub('<query:QueryRequest', %(<query:QueryRequest xml:lang="#{language}")) }
+      end
+
+      it 'refuses a procedure whose localised string names no published code, under R-EDM-REQ-C004' do
+        expect { procedure_in('xx').validate! }.to refusing('R-EDM-REQ-C004')
+      end
+
+      it 'accepts a published code written as the list publishes it' do
+        expect(procedure_in('FR').validate!).to be_a(described_class)
+      end
+
+      it 'refuses that same code in lower case, the assertion carrying no i flag' do
+        expect { procedure_in('fr').validate! }.to refusing('R-EDM-REQ-C004')
+      end
+
+      # The other half of the pair, which `C069` had and `C004` had not: what
+      # confines the rule to its line is a one-line predicate, and a slip in its
+      # polarity — or the two predicates swapped — would show up here and
+      # nowhere else in this file. The slot keeps the `rim:StringValueType` the
+      # 2.0 line types it with, `R-EDM-REQ-S022` being what would otherwise
+      # refuse the request first and mask the answer.
+      it 'says nothing of the language of a localised string on the 2.0 line' do
+        localised = with_body do |body|
+          body.sub('<rim:Value>00</rim:Value>', '<rim:Value><rim:LocalizedString xml:lang="xx" value="00"/></rim:Value>')
+        end
+
+        expect(localised.validate!).to be_a(described_class)
+      end
+
+      it 'refuses a request whose own language names no published code, under R-EDM-REQ-C069' do
+        expect { requested_in('xx', method(:earlier)).validate! }.to refusing('R-EDM-REQ-C069')
+      end
+
+      it 'accepts a published code on the request itself' do
+        expect(requested_in('FR', method(:earlier)).validate!).to be_a(described_class)
+      end
+
+      it 'refuses that one in lower case too' do
+        expect { requested_in('fr', method(:earlier)).validate! }.to refusing('R-EDM-REQ-C069')
+      end
+
+      # The 2.0 line publishes no rule of that identifier: the language moved
+      # into each distribution, and the attribute is one the schema forbids
+      # rather than one a business rule judges.
+      it 'says nothing of that attribute on the 2.0 line' do
+        expect(requested_in('xx', method(:with_body)).validate!).to be_a(described_class)
+      end
+    end
+
+    # `R-EDM-REQ-C035`, `C072` and `C113`, on the `sdg:Transformation` the 1.2.0
+    # profile alone gives `EvidenceTypeDistributionType`. `C113` is `CAUTION` and
+    # refuses nothing, as `S014` does not.
+    describe 'the transformation a distribution asks for' do
+      # The data model the transformation names a subset of, which `C072` counts
+      # beside it. A method and not a constant: a constant declared in a block
+      # leaks into the whole suite.
+      def model = 'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40'
+
+      def transformed(value, conformance: model, envelope_of: method(:earlier))
+        conforms = conformance && "<sdg:ConformsTo>#{conformance}</sdg:ConformsTo>"
+        envelope_of.call do |body|
+          body.sub('</sdg:DistributedAs>') { "#{conforms}<sdg:Transformation>#{value}</sdg:Transformation></sdg:DistributedAs>" }
+        end
+      end
+
+      it 'accepts one the semantic repository publishes, beside its data model' do
+        expect(transformed("#{model}/subset").validate!).to be_a(described_class)
+      end
+
+      # The assertion admits an environment infix — `sr.acc.oots.tech…` — which
+      # the prose of chapter 4.5.1 §3.5 does not cite. The expression is copied
+      # from the assertion, so what it admits is accepted.
+      it 'accepts one carrying an environment infix, as the assertion admits' do
+        expect(transformed('https://sr.acc.oots.tech.ec.europa.eu/datamodels/x/y').validate!)
+          .to be_a(described_class)
+      end
+
+      it 'refuses one naming another host entirely, under R-EDM-REQ-C035' do
+        expect { transformed('https://example.org/subset').validate! }.to refusing('R-EDM-REQ-C035')
+      end
+
+      it 'refuses one written empty, the element being its own context node' do
+        expect { transformed('').validate! }.to refusing('R-EDM-REQ-C035')
+      end
+
+      # The alternation sits at the top level of the assertion, so `^` binds the
+      # left branch alone: anything at all carrying `distributions/` satisfies
+      # the rule. Copied and not tightened, for the reason `C008` is.
+      it 'accepts any value carrying distributions/, the alternation being unanchored' do
+        expect(transformed('https://example.org/distributions/x').validate!).to be_a(described_class)
+      end
+
+      it 'refuses a transformation whose distribution names no data model, under R-EDM-REQ-C072' do
+        expect { transformed("#{model}/subset", conformance: nil).validate! }.to refusing('R-EDM-REQ-C072')
+      end
+
+      # 2.0.1 publishes no `C035` at all, and keeps `C072` on a context the
+      # schema no longer lets a document reach. Neither is applied there.
+      it 'says nothing of a transformation on the 2.0 line' do
+        described = transformed('https://example.org/subset', conformance: nil, envelope_of: method(:with_body))
+
+        expect(described.validate!).to be_a(described_class)
+      end
+    end
+  end
+
   # RG10 and RG11 of OOTS-200. `R-EDM-REQ-C001` fixes a different literal on
   # each line, and the version the message is read in — the ebMS property where
   # the header carries one, the slot otherwise — is what says which literal
