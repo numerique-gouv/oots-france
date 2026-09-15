@@ -6,8 +6,10 @@
     `data-polling` is how the zone tells the controller whether to ask again: a
     settled zone says `false`, and the asking stops because the server said so.
     `data-outcome` says what happened, which is another question — a refusal and
-    a document both stop the asking — and it is the card above that reads it,
-    having no other way to learn what became of a press it does not hold. %>
+    a document both stop the asking. The card above reads it, having no other way
+    to learn what became of a press it does not hold, and so does the controller,
+    which replaces nothing while the answer says what the zone already says: the
+    waiting is one waiting, and one announcement. %>
 <div class="demo-request__body" data-polling="<%= pending? %>" data-outcome="<%= state %>">
   <% if delivered? %>
     <%# Chapter 1 §4.2: the evidence is « made available to the specific
@@ -38,8 +40,9 @@
     <%# Rendered beside the press and hidden, rather than waited for: the press
         is answered a round trip away, and a screen that says nothing until the
         answer comes back leaves the user pressing again. The controller shows
-        this and hides the press; what the server then sends replaces both.
-        The wording is the server's all the same — no English lives in the
+        this and hides the press. The waiting the server then sends is this same
+        one — the controller leaves it standing rather than building it again —
+        and the wording is the server's throughout: no English lives in the
         Stimulus controller. %>
     <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
           hidden: !pending?, data: { demo_request_target: 'loading' } do %>
