@@ -138,6 +138,20 @@ class EdmSpecification
   # top-level object is the package, and a package carries no `EvidenceMetadata`.
   def packaged_response? = self == V2_0
 
+  # `PreviewMethod` — how the preview space an error report names is to be
+  # reached — is a slot of the 1.2 line alone: the `EDM-ERR-S` of 2.0.1 notes
+  # « Removed PreviewMethod », and with it go the four rules `R-EDM-ERR-C021`,
+  # `-S016`, `-S025` and `-S031`. `-S027`, which closes the list of slots an
+  # `rs:Exception` may carry, admits it on that line and not on this one.
+  def preview_method_slot? = self == V1_2
+
+  # `R-EDM-ERR-C024` is anchored on the `sdg:Agent` in 2.0.1 — one `sdg:Address`
+  # and one `sdg:AdminUnitLevel1` in it — and on the `sdg:Address` in 1.2.5,
+  # where it counts the country alone and an agent naming no address breaks
+  # nothing. What the earlier line leaves unsaid, the table of chapter 4.5.3
+  # §3.1 says, making that address `1..1`.
+  def error_address_on_the_agent? = self == V2_0
+
   # Lets the `specification` column of an exchange be read and written as this
   # object rather than as the string it stores: every builder and parser serving
   # an exchange asks it its version, and a column answering a bare string would

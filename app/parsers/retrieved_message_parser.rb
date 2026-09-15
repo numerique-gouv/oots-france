@@ -38,7 +38,7 @@ class RetrievedMessageParser
     @body ||= case action
               when EbmsAction::EXECUTE_QUERY_REQUEST then EvidenceRequestParser.new(body_document, specification:)
               when EbmsAction::EXECUTE_QUERY_RESPONSE then EvidenceResponseParser.new(body_document, specification:)
-              when EbmsAction::EXCEPTION_RESPONSE then ErrorResponseParser.new(body_document)
+              when EbmsAction::EXCEPTION_RESPONSE then ErrorResponseParser.new(body_document, specification:)
               else raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unknown_action', action:)
               end
   end

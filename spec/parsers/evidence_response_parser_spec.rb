@@ -734,6 +734,76 @@ RSpec.describe EvidenceResponseParser do
       end
     end
 
+    # `-S041` and `-S042`, the closed lists chapter 4.5.2 §3.3 puts on the
+    # subject a provider confirms having matched. Named and never refused, like
+    # everything else here — and the reading of the subject does not move: what
+    # a conformant response carries is what is filed, and what it adds is what
+    # the journal names.
+    describe 'the subject each object confirms' do
+      it 'names the rule closing the list when a person carries an element besides' do
+        overreaching = rules_broken_by do |body|
+          body.sub('<sdg:FamilyName>', '<sdg:Gender>Female</sdg:Gender><sdg:FamilyName>')
+        end
+
+        expect(overreaching).to include('R-EDM-RESP-S041')
+      end
+
+      # The two readings part company here, which is the whole point: the sex is
+      # named as a breach and is not filed as a field of the subject.
+      it 'files nothing of the element it names' do
+        overreaching = without do |body|
+          body.sub('<sdg:FamilyName>', '<sdg:Gender>Female</sdg:Gender><sdg:FamilyName>')
+        end
+
+        expect(overreaching.evidence_subject)
+          .to have_attributes(family_name: 'Dupont', gender: nil, place_of_birth: nil)
+      end
+
+      it 'names the rule closing the list of an organisation carrying a sectoral identifier' do
+        carrying = about_an_organisation(
+          is_about_legal_person.sub('<sdg:LegalName>', '<sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>' \
+                                                       '<sdg:LegalName>'),
+        )
+
+        expect(carrying.violations.map(&:rule)).to include('R-EDM-RESP-S042')
+        expect(carrying.evidence_subject)
+          .to have_attributes(eidas_identifier: 'FR/DE/A2635542Y', legal_name: 'Établissements Dupont & Fils')
+      end
+
+      # Neither context filters on a classification, so an annex naming a subject
+      # is judged exactly as the main document is — beside `-S063`, which is what
+      # forbids it a subject at all.
+      it 'judges the subject of an annex as it judges the main evidence' do
+        carrying = rules_broken_by_annex do |body|
+          body.sub(annex_object, annex_object.sub('<sdg:Distribution>', "#{is_about_an_organisation}<sdg:Distribution>"))
+        end
+
+        expect(carrying).to include('R-EDM-RESP-S042', 'R-EDM-RESP-S063')
+      end
+
+      # The 1.2 line anchors the two rules on the objects of the flat list, where
+      # 2.0.1 moves them one level down with the packaging.
+      it 'names the rule on the flat list of a 1.2 response' do
+        flat = earlier_line_response do |body|
+          body.sub('<sdg:FamilyName>', '<sdg:Gender>Female</sdg:Gender><sdg:FamilyName>')
+        end
+
+        expect(flat.body.violations.map(&:rule)).to include('R-EDM-RESP-S041')
+      end
+
+      it 'says nothing of a subject carrying only what the rules admit' do
+        expect(about_an_organisation.violations.map(&:rule)).not_to include('R-EDM-RESP-S042')
+      end
+    end
+
+    # A subject the rule admits nothing of, on an object that may carry none:
+    # `-S063` names the `sdg:IsAbout` and `-S042` what is inside it.
+    def is_about_an_organisation
+      '<sdg:IsAbout><sdg:LegalPerson><sdg:LegalPersonIdentifier>FR/DE/A2635542Y</sdg:LegalPersonIdentifier>' \
+        '<sdg:LegalName>Dupont</sdg:LegalName><sdg:Identifier schemeID="VAT">FR12345678901</sdg:Identifier>' \
+        '</sdg:LegalPerson></sdg:IsAbout>'
+    end
+
     # Nothing of the packaging refuses anything either: the evidence is
     # delivered, the journal names the rule, and the exchange settles.
     describe 'what a broken package costs the exchange' do
