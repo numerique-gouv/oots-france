@@ -14,6 +14,14 @@ import { Controller } from "@hotwired/stimulus"
 
 const INTERVAL = 2000
 
+// What an answer replaces, and what it says of itself.
+const BODY = '.demo-request__body'
+
+// The one word of the server's vocabulary this controller has to know: the
+// press puts the waiting on screen before anything has been asked of anyone, so
+// the zone has to say it is waiting too — see `splice`.
+const PENDING = 'pending'
+
 // How many answers in a row the page may fail to get before it says so. A blip
 // in the middle of a wait is not worth ending a journey on; a service that has
 // stopped answering is, and nothing else will report it.
@@ -38,8 +46,7 @@ export default class extends Controller {
   // The waiting takes the press's place at once, before anything has been asked
   // of anyone: the answer is a round trip away, and a screen that says nothing
   // until it comes back leaves the user pressing again. Both were rendered by
-  // the server, so nothing here writes a word; what comes back replaces the two
-  // of them.
+  // the server, so nothing here writes a word.
   submit(event) {
     event.preventDefault()
 
@@ -49,6 +56,7 @@ export default class extends Controller {
     // What each reports is no longer what is happening.
     this.hide(this.failureTargets)
     this.hide(this.disconnectedTargets)
+    this.declareWaiting()
 
     this.ask(event.target.action, { method: 'POST', body: new FormData(event.target) })
   }
@@ -79,17 +87,48 @@ export default class extends Controller {
     if (response.headers.get('Deferred-Fragment') !== '1') return this.fail()
 
     return response.text().then((html) => {
-      this.element.innerHTML = html
+      this.splice(html)
       this.failures = 0
       this.schedule()
     })
   }
 
-  // No answer, or one this application did not write. A wait under way may try
-  // again on its own, a few times over; a press made from rest has nothing
-  // waiting behind it and must not (`polling` is then false), which is why this
-  // counts rather than trusting the fragment: the fragment on screen is the one
-  // that never got replaced.
+  // An answer that says what the zone is already saying replaces nothing. The
+  // waiting is one waiting: it starts under the press and ends when the document
+  // arrives. Built again it would start its spinner over and announce the same
+  // sentence a second time in the `aria-live` region — which is read as a second
+  // wait beginning, a first one having apparently failed.
+  //
+  // What a fragment says is its outcome, and that is what is compared: two
+  // waitings are the same waiting even when what surrounds them differs, and any
+  // other answer — the document, a refusal — is a change and takes the zone.
+  splice(html) {
+    const arriving = new DOMParser().parseFromString(html, 'text/html').querySelector(BODY)
+
+    if (arriving?.dataset.outcome === this.body?.dataset.outcome) return
+
+    this.element.innerHTML = html
+  }
+
+  // The zone made to say what the press has just put on screen. Without this the
+  // answer to the press — a waiting, since that is what the press opened — would
+  // arrive as a change of state and replace the waiting with an identical one.
+  declareWaiting() {
+    if (!this.body) return
+
+    this.body.dataset.polling = 'true'
+    this.body.dataset.outcome = PENDING
+  }
+
+  // No answer, or one this application did not write. A wait under way tries
+  // again a few times over before saying so: a blip in the middle of a journey
+  // is not worth ending it on. The count is this controller's own rather than
+  // the fragment's, the fragment on screen being the one that never got
+  // replaced.
+  //
+  // A press whose own answer is lost is a wait too, and retrying it asks nobody
+  // for a second document: what a retry sends is the consultation of `schedule`,
+  // which chapter 4.4 §4.1 leaves free to be repeated.
   //
   // What giving up offers is a way back to the page, never the press: pressing
   // would ask for the document a second time, and chapter 4.4 §4.1 makes that a
@@ -115,7 +154,11 @@ export default class extends Controller {
   }
 
   get polling() {
-    return this.element.querySelector('.demo-request__body')?.dataset.polling === 'true'
+    return this.body?.dataset.polling === 'true'
+  }
+
+  get body() {
+    return this.element.querySelector(BODY)
   }
 
   // Plural targets throughout: a settled zone renders neither press nor waiting,
