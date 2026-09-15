@@ -5,8 +5,9 @@ require Rails.root.join('spec/support/rendered_text')
 # the identified form, across the two hosts the journey crosses: this
 # application and FranceConnect+.
 #
-# An HTTP client and not a browser proper: the `Dockerfile` installs no Chrome
-# and nothing wires Cuprite into Cucumber. What it does do is what a browser
+# An HTTP client and not a browser proper: these scenarios carry no
+# `@javascript`, nothing of the journey waiting on a script. What it does do is
+# what a browser
 # does — it keeps the session cookie, follows redirections one at a time,
 # including the ones that leave for the portal and come back, and **submits the
 # forms it is shown**, hidden fields included. Posting to an address without

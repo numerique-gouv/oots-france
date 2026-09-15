@@ -77,11 +77,16 @@ L'application interroge les **Common Services réels** — l'Evidence Broker et 
 
 ```sh
 $ make test        # rubocop puis rspec, en conteneur
+$ make cucumber    # les scénarios Cucumber, navigateur compris
 $ make e2e         # un échange OOTS réel à travers la passerelle
 $ make schematron  # les messages produits, contre les règles des TDD
 ```
 
 `make test` remplace toutes les frontières par des doublures : il ne touche jamais Domibus. C'est `make e2e` qui exerce la chaîne eDelivery réelle, et il demande la pile démarrée — voir [docs/test_e2e.md](docs/test_e2e.md).
+
+`make cucumber` joue le profil Cucumber par défaut, le même que la CI. Les scénarios qui y portent l'étiquette `@javascript` sont pilotés par un **Chromium sans tête**, qui vit dans l'image : rien à installer sur le poste, et `docker compose build web` suffit après un clone neuf ou une mise à jour du `Dockerfile`.
+
+Hors conteneur, la commande est `bundle exec cucumber`, et elle demande alors un navigateur sur le `PATH`, sous l'un des sept noms que Ferrum essaie — `chrome`, `google-chrome`, `google-chrome-stable`, `google-chrome-beta`, `chromium`, `chromium-browser`, `google-chrome-unstable`. Sur Debian et Ubuntu, `sudo apt install chromium` suffit ; ailleurs, n'importe quel Chrome ou Chromium récent accessible sous l'un de ces noms.
 
 Hors conteneur, la suite unitaire demande Ruby et une base joignable ; le service `postgres` en publie une sur le port que `.env` donne à `PORT_POSTGRES`, que `make setup` fixe à 5433 :
 

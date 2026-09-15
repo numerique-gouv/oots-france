@@ -73,4 +73,26 @@ jobs:
 
       - run: bundle exec rspec
 
+      # The browser the scenarios tagged `@javascript` are driven by comes from
+      # the runner's own image, which ships Google Chrome and Chromium — so
+      # nothing is installed here. But `ubuntu-latest` slides from one release
+      # to the next, and a future image may ship neither: this step is what
+      # then fails, by name, instead of a Cucumber timeout three layers down.
+      #
+      # The names come from Ferrum itself rather than being copied here: it is
+      # the one that has to find the binary, so the one this step prints is the
+      # one it resolves. A list written out again is a list that drifts — and a
+      # step whose whole purpose is to be true about the browser.
+      - name: Vérifie le navigateur des scénarios @javascript
+        run: |
+          for nom in $(bundle exec ruby -rferrum -e 'puts Ferrum::Browser::Options::Chrome::LINUX_BIN_PATH'); do
+            if chemin=$(command -v "$nom"); then
+              echo "$nom → $chemin"
+              "$chemin" --version
+              exit 0
+            fi
+          done
+          echo "::error::Aucun navigateur sur le PATH : l'image du runner ubuntu-latest en livrait un (Google Chrome et Chromium). Si elle a cessé de le faire, installer Chrome ou Chromium dans une étape de ce workflow."
+          exit 1
+
       - run: bundle exec cucumber

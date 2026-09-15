@@ -21,6 +21,24 @@ WORKDIR /usr/src/app
 COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
+# The scenarios tagged `@javascript` drive a real browser, and they belong to
+# the Cucumber profile everyone plays: the browser has therefore to be reachable
+# from inside this container, one installed on a workstation settling nothing for
+# a fresh clone. `docs/test_e2e.md` situates them, the README names the command.
+#
+# Its own layer, and after `bundle install`: the gems stay cached, so a rebuild
+# adds this layer instead of fetching the whole bundle again — and what a browser
+# needs is another reason than what a native gem needs to compile.
+#
+# `fonts-liberation` because it is the only font the image would otherwise
+# carry none of: `chromium` depends on `libfontconfig1` and on no font package
+# at all. Capybara reads what a page shows through `innerText`, which is laid
+# out, so the browser is never asked to lay text out with nothing to lay it out
+# with.
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y chromium fonts-liberation && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY . /usr/src/app
 
 # Rails' own default, and what this image serves when nothing overrides it.

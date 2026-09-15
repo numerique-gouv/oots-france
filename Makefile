@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup check-env up domibus down test lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup check-env up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -35,6 +35,13 @@ down: ## Stop everything, keeping the volumes
 
 test: ## RuboCop then RSpec, in Docker
 	$(COMPOSE) up test
+
+# What `make test` does not play, and CI does: the scenarios of the default
+# Cucumber profile, among them the ones a browser drives. That browser lives in
+# the image, so this runs in a container like everything else — see
+# docs/test_e2e.md.
+cucumber: ## The Cucumber scenarios of the default profile, browser included
+	$(COMPOSE) run --rm test bundle exec cucumber
 
 lint: ## RuboCop alone
 	$(IN_WEB) rubocop

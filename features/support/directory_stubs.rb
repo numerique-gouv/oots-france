@@ -5,10 +5,14 @@ require Rails.root.join('spec/support/directory_stubs')
 # home page reads. `spec/rails_helper.rb` does the same for RSpec, which does
 # not load this directory.
 #
-# Only the halves resting on `stub_request` are reachable here: the two that
-# double `CommonServicesInstance` and the signature are built on `allow`, which
-# only rspec-mocks provides. Both are therefore settled by configuration
-# instead, and for the default profile alone — `features/support/env.rb`
+# The halves resting on `stub_request` are reachable as they stand. The two
+# built on `allow` need rspec-mocks, which `features/support/rspec_mocks.rb`
+# opens for the scenarios tagged `@javascript` and for those alone: the
+# signature double is what one of them needs, and no other scenario doubles a
+# Ruby object.
+#
+# The resolution, though, is settled by configuration for every scenario of the
+# default profile — and for that profile alone: `features/support/env.rb`
 # refuses the base URL outright under `@bout_en_bout`, where the discovery is
 # the point, and the deployment's own environment carries the trust store
 # there.
