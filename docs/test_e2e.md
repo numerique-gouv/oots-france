@@ -14,9 +14,9 @@ Les scénarios s'écrivent pour quelqu'un qui ne lira pas le code, avec les mots
 
 | | `spec/` | `features/`, profil par défaut | `features/`, profil `bout_en_bout` |
 | --- | --- | --- | --- |
-| Commande | `bundle exec rspec` (via `make test`) | `bundle exec cucumber` | `make e2e` |
+| Commande | `bundle exec rspec` (via `make test`) | `bundle exec cucumber` (via `make cucumber`) | `make e2e` |
 | Réseau sortant | **aucun** : WebMock, par `spec/rails_helper.rb` | **aucun** : WebMock, par `features/support/webmock.rb` | **le vrai** : WebMock y est désactivé |
-| Prérequis | une base | une base | pile démarrée et Domibus configuré |
+| Prérequis | une base | une base, et un navigateur pour les scénarios étiquetés `@javascript` | pile démarrée et Domibus configuré |
 | Workflow GitHub | `tests.yml` | `tests.yml` | `e2e.yml` |
 
 > [!IMPORTANT]
@@ -24,6 +24,11 @@ Les scénarios s'écrivent pour quelqu'un qui ne lira pas le code, avec les mots
 
 > [!IMPORTANT]
 > Les scénarios de bout en bout portent l'étiquette `@bout_en_bout`, que le profil Cucumber par défaut écarte, et cela doit le rester : le workflow `tests.yml` tourne sur un runner nu, sans passerelle. Les y inclure ferait échouer toutes les CI.
+
+**L'étiquette `@javascript` est l'autre, et elle ne change pas de profil** : les scénarios qui la portent restent dans le profil par défaut, et un navigateur sans tête tourne sur un runner nu. Elle dit seulement par quoi le scénario est joué — Cuprite au lieu de `rack_test`, donc un navigateur qui exécute vraiment les contrôleurs Stimulus de la console ([espace_administration.md](espace_administration.md)) au lieu d'un client qui les ignore. `features/pages_des_annuaires.feature` est aujourd'hui la seule à la porter. Comment installer le navigateur qu'elle demande est au [README](../README.md#tests), qui possède l'installation ; en intégration continue il vient de l'image du runner, et [`tests.yml`](../.github/workflows/tests.yml) échoue en le nommant si elle cesse d'en livrer un.
+
+> [!NOTE]
+> Un scénario `@javascript` privé de son étiquette **échoue**, et c'est la preuve qu'il sert à quelque chose : `rack_test` n'exécute aucun script, si bien qu'un scénario qui passerait sans navigateur n'éprouverait rien du JavaScript.
 
 ## En intégration continue
 
