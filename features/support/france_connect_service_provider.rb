@@ -4,10 +4,11 @@ require 'nokogiri'
 # what OOTS-179 will make the demonstration procedure do, proved here before a
 # line of it exists.
 #
-# An HTTP client and not a browser: the `Dockerfile` installs no Chrome and
-# nothing wires Cuprite into Cucumber, and three forms are worth a Faraday and
-# a Nokogiri rather than a dependency in the image. It reads the forms of the
-# three pages and submits them, which is exactly the path a browser walks.
+# An HTTP client and not a browser: these scenarios carry no `@javascript`,
+# nothing of the journey waiting on a script, and three forms are worth a
+# Faraday and a Nokogiri rather than a browser driven across two hosts. It reads
+# the forms of the three pages and submits them, which is exactly the path a
+# browser walks.
 #
 # **Not `FranceConnectClient`**, which `app/clients/` already carries: Cucumber
 # boots Rails, so that constant has a Zeitwerk autoload on it, and `class
