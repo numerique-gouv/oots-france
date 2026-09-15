@@ -61,7 +61,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
     it 'holds the identity and hands the operator to the form' do
       identify_demo_user
 
-      expect(response).to redirect_to(admin_demo_confirmation_path)
+      expect(response).to redirect_to(admin_demo_documents_path)
       expect(session[:demo_identity].symbolize_keys).to include(family_name: 'Sørensen')
     end
 

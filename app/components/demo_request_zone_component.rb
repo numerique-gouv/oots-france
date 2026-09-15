@@ -1,0 +1,98 @@
+# The zone of the documents page where the document is asked for and where
+# what became of the asking is said: the press, then the document, or why there
+# is none.
+#
+# It holds only what changes. The evidence type and the provider requirement 27
+# of chapter 1 §2 has named stand in the card above and never move, so they are
+# not part of what an answer replaces.
+#
+# One component for the four states because it is one place on the screen. The
+# press is answered where it was made — the user's eye is on the button — and
+# the address it re-asks answers this same zone, so what arrives can replace
+# what is there.
+#
+# Only `pending` re-asks. A settled zone carries no polling at all, which is
+# what stops the asking: nothing has to decide to stop.
+class DemoRequestZoneComponent < ViewComponent::Base
+  # What the wording under the press says, per outcome. `expired` is the screen's
+  # own deadline rather than anything the exchange did — `DemoOutcomeWording`
+  # says why — and `preview` is here for completeness: the demonstration asks
+  # `previsualisationRequise=false`, so no correspondent should ever answer with
+  # one.
+  FAILURES = { refused: 'refused', expired: 'expired', preview: 'preview' }.freeze
+
+  def initialize(outcome:, failure: nil)
+    @outcome = outcome
+    @failure = failure
+    super()
+  end
+
+  # Private: outside the class everything is read through the accessors that
+  # apply the precedence of `refused_the_press?`, and a raw read would skirt it.
+  private attr_reader :outcome, :failure
+
+  # `idle` before any press, `pending` while the answer is out, `delivered` once
+  # the document is in hand, `failed` for everything else — a refusal the
+  # contract returned, an exchange that never opened, a wait this screen gave up
+  # on, a contract that could not be read.
+  def state
+    return :failed if refused_the_press?
+    return :idle if outcome.nil?
+    return :failed if outcome.unreadable?
+
+    outcome.outcome == :delivered ? :delivered : pending_or_failed
+  end
+
+  def pending? = state == :pending
+
+  def delivered? = state == :delivered
+
+  def failed? = state == :failed
+
+  # The label of the one button, which is the same press throughout: asking
+  # again after a refusal is a new request and not a retry of the old one —
+  # chapter 4.4 §4.1, « a new unique request MUST be issued ».
+  def submit_label = t("components.demo_request_zone.#{failed? ? 'retry' : 'submit'}")
+
+  # The title of the alert, named by what happened. A failure that never opened
+  # an exchange is named by its own interactor key, which is what says which of
+  # the contract's refusals it was.
+  def failure_title
+    return t("interactors.failures.#{failure[:key]}") if refused_the_press?
+    return t('components.demo_request_zone.unreadable') if outcome.unreadable?
+
+    t("components.demo_request_zone.#{FAILURES.fetch(outcome.outcome)}_title")
+  end
+
+  def failure_body
+    return Array(failure[:errors]).join(' ').presence if refused_the_press?
+    return outcome.refusal.presence if outcome.unreadable?
+
+    t("components.demo_request_zone.#{FAILURES.fetch(outcome.outcome)}_body")
+  end
+
+  # The `EDM:ERR:*` the correspondent returned, where there is one: it is the
+  # only thing that says which refusal this was, and the component the journal
+  # already uses glosses it.
+  #
+  # Nothing when the press itself was refused: no exchange was opened, so no
+  # correspondent answered, and the outcome still standing beside it belongs to
+  # the journey before — `RequestsController#refuse` leaves the session where it
+  # was. Showing its code under another refusal's title would name the wrong
+  # refusal.
+  def edm_error_code
+    return nil if refused_the_press?
+
+    outcome&.edm_error_code.presence
+  end
+
+  private
+
+  # What the zone is reporting: a press the contract turned away, or what became
+  # of one it accepted. The two can stand together — a refused press leaves the
+  # exchange of the journey before in session — and the press is then the whole
+  # of what this zone has to say.
+  def refused_the_press? = failure.present?
+
+  def pending_or_failed = outcome.outcome == :pending ? :pending : :failed
+end

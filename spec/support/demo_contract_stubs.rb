@@ -30,7 +30,7 @@ module DemoContractStubs
   end
 
   # The other half of the same contract: `GET /requete/:exchange_id`, which the
-  # tracking page reads the state of its exchange from. Stubbed at the HTTP
+  # zone of the documents page reads the state of its exchange from. Stubbed at the HTTP
   # boundary for the reason above — the point is that the procedure asks the
   # contract, not that a method was called.
   def stub_exchange_state(exchange_id = accepted_body.fetch(:echange), status: 200, **state)

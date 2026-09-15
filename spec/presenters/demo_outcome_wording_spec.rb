@@ -8,6 +8,8 @@ RSpec.describe DemoOutcomeWording do
   let(:payload) { { 'statut' => 'sent' } }
 
   describe '#outcome' do
+    # On a request with no `created_at`, which is one this register has not
+    # recorded: nothing has been asked, so nothing can have waited too long.
     it 'is pending while nothing has come back' do
       expect(wording.outcome).to eq(:pending)
     end
@@ -44,6 +46,44 @@ RSpec.describe DemoOutcomeWording do
       payload['statut'] = 'deferred'
 
       expect(wording.outcome).to eq(:pending)
+    end
+
+    # The deadline is the screen's and not the exchange's: nothing bounds how
+    # long an answer takes, so the zone stops asking rather than the exchange
+    # stopping.
+    describe 'the deadline the screen keeps' do
+      subject(:wording) { described_class.new(answer:, request:, clock:) }
+
+      let(:clock) { instance_double(Clock, now:) }
+      let(:now) { request.created_at + described_class::GIVE_UP_AFTER + 1.second }
+
+      before { request.created_at = Time.current }
+
+      it 'gives up on a wait older than it' do
+        expect(wording.outcome).to eq(:expired)
+      end
+
+      it 'is still waiting a moment before it' do
+        allow(clock).to receive(:now).and_return(request.created_at + described_class::GIVE_UP_AFTER - 1.second)
+
+        expect(wording.outcome).to eq(:pending)
+      end
+
+      # The document in hand settles it whatever the clock says: an answer that
+      # arrived is not a wait that ran out.
+      it 'never gives up on a request the document has come back on' do
+        allow(request).to receive(:evidence?).and_return(true)
+
+        expect(wording.outcome).to eq(:delivered)
+      end
+
+      # A refusal is what happened, and saying the screen ran out of patience
+      # instead would send the reader looking for an answer that was given.
+      it 'leaves a refusal a refusal' do
+        payload['statut'] = 'failed'
+
+        expect(wording.outcome).to eq(:refused)
+      end
     end
   end
 

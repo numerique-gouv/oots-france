@@ -1,4 +1,4 @@
-# What the confirmation page of the demonstration says of one requirement of the
+# What the documents page of the demonstration says of one requirement of the
 # procedure: what it is, who would provide the evidence satisfying it, and of
 # which type.
 #

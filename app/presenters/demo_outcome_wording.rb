@@ -1,4 +1,4 @@
-# What the tracking page of the demonstration says of the exchange it follows:
+# What the zone of the documents page says of the exchange it follows:
 # which of the four things happened, and the values that go with it.
 #
 # Built on what the contract answered and on what the procedure was handed,
@@ -16,6 +16,17 @@ class DemoOutcomeWording
     'preview_required' => :preview,
   }.freeze
 
+  # How long the zone of the documents page keeps re-asking before it says so
+  # and offers to ask again. The answer comes back on another connection and
+  # nothing bounds how long that takes, so the deadline is the screen's and not
+  # the exchange's: the exchange carries on, and the register keeps it.
+  #
+  # Counted here rather than in the browser because the state it qualifies is
+  # read here: a tab reopened on a request made an hour ago must be told the
+  # same thing as one that has been waiting two minutes, and a counter started
+  # at `connect()` would call it fresh.
+  GIVE_UP_AFTER = 2.minutes
+
   # Chapter 4.9 §4: « specify secure HTTP ("https://") as transport. The use of
   # "http://" URIs is not allowed. » An address the chapter forbids is shown as
   # the text it already was, and never offered as a step of the journey.
@@ -27,16 +38,19 @@ class DemoOutcomeWording
   # The contract unreachable: nothing is known of the exchange, and the page
   # says only what the register holds — the two identifiers it was given. A
   # wording all the same, so that the page has one shape and not two.
-  def self.unanswered(request:) = new(answer: Demo::ContractAnswer.unreached, request:)
+  def self.unanswered(request:, error: nil, clock: Clock.new)
+    new(answer: Demo::ContractAnswer.unreached(error:), request:, clock:)
+  end
 
   delegate :edm_error_code, :preview_location, to: :answer
   delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id,
     :evidence_type_name, :evidence_type_language, :provider_name, :provider_language,
     :procedure_name, :procedure_language, to: :request
 
-  def initialize(answer:, request:)
+  def initialize(answer:, request:, clock: Clock.new)
     @answer = answer
     @request = request
+    @clock = clock
   end
 
   # The evidence in hand settles it, whatever the state says. The two are
@@ -47,7 +61,15 @@ class DemoOutcomeWording
   def outcome
     return :delivered if evidence?
 
-    OUTCOMES.fetch(answer.exchange_status, :pending)
+    settled = OUTCOMES.fetch(answer.exchange_status, :pending)
+
+    return settled unless settled == :pending
+
+    # An exchange still under way long after the press. Nothing went wrong that
+    # anyone can name — which is why it is said as its own outcome rather than
+    # folded into a refusal — and asking again is the only move chapter 4.4 §4.1
+    # leaves: « a new unique request MUST be issued ».
+    waited_too_long? ? :expired : :pending
   end
 
   # The contract itself refusing to answer — an exchange it does not know, the
@@ -69,5 +91,13 @@ class DemoOutcomeWording
 
   private
 
-  attr_reader :answer, :request
+  # A request with no instant to count from has not been recorded, so nothing
+  # has been asked and nothing can have waited.
+  def waited_too_long?
+    return false if request.created_at.nil?
+
+    request.created_at + GIVE_UP_AFTER < clock.now
+  end
+
+  attr_reader :answer, :request, :clock
 end

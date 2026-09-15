@@ -238,7 +238,7 @@ fr:
     directory_value:
       label: Name retrieved from the common services
       meaning: ", retrieved from the common services"
-    # Une carte par exigence de la démarche, sur la page de confirmation. Tout y
+    # Une carte par exigence de la démarche, sur la page des justificatifs. Tout y
     # est en anglais comme le reste du parcours.
     demo_requirement_card:
       # Le type de justificatif et le fournisseur sont des mots des annuaires,
@@ -252,7 +252,6 @@ fr:
       # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
       unsatisfiable_html: Evidence impossible to satisfy by %{country}
       from_html: "%{evidence_type} from %{provider}"
-      submit: Request the document
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
@@ -273,6 +272,57 @@ fr:
       # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
       one_at_a_time: >-
         This procedure can only request one document at a time for now.
+    # La zone de la carte où le justificatif se demande, et où ce que la demande
+    # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
+    # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
+    # page, puis à chaque réponse.
+    #
+    # En anglais comme le reste du parcours : l'usager joué vient d'un autre
+    # État membre.
+    demo_request_zone:
+      # Le même geste du début à la fin, sous deux libellés : redemander après un
+      # refus est une requête neuve et non une reprise de l'ancienne, ce que le
+      # chapitre 4.4 §4.1 impose — « a new unique request MUST be issued ».
+      submit: Request the document
+      retry: Retry to request
+      # L'attente, annoncée et pas seulement montrée : qui ne voit pas le bouton
+      # changer n'apprendrait rien autrement.
+      loading: Requesting the document…
+      delivered: Document retrieved successfully
+      open: Open the document
+      # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If the
+      # process of identity and evidence matching does not result in a match or
+      # the identity matching generates two or more results » —, et le chapitre
+      # 4.10 §2.1, informatif, le recommande pour tout refus. La démarche le dit
+      # pour tous, ce qui va au-delà du `MUST`.
+      refused_title: The document cannot be provided
+      refused_body: >-
+        The administration could not send the document. You will have to obtain it another way.
+      # L'échéance est celle de l'écran et non celle de l'échange : celui-ci
+      # continue, et le registre le garde. La phrase ne promet donc pas que rien
+      # n'arrivera, seulement que cet écran cesse d'attendre.
+      expired_title: No answer yet
+      expired_body: >-
+        The administration holding your document has not answered yet. The request is still on its
+        way, but this page has stopped waiting for it: ask again to start a new one.
+      # Le premier des quatre points que le `shall` du chapitre 4.9 §5 énumère,
+      # et le seul que la démonstration tienne : reconnaître la réponse. Elle ne
+      # devrait jamais arriver — la démarche demande `previsualisationRequise`
+      # à faux —, et la zone la dit plutôt que d'attendre sans fin.
+      preview_title: Your document is waiting for your approval abroad
+      preview_body: >-
+        The administration holding it wants to show you the document on its own space before
+        sending it. The demonstration stops here.
+      unreadable: The state of the request could not be read
+      # La seule phrase que le navigateur lève de lui-même : le serveur ne peut
+      # pas signaler qu'il est injoignable, et sans elle une panne de réseau
+      # laisserait l'attente tourner sans fin ou se figer sans rien dire.
+      #
+      # Le recours est un lien vers la page et non la presse : presser ouvrirait
+      # un second échange, quand celui qui est en cours continue et que le
+      # registre le garde. Recharger reprend à ce que le serveur en dit.
+      disconnected_html: This page could not reach the service. %{reload} to see where your request stands.
+      reload: Reload the page
     # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
     # l'état civil et ce dont l'authentification a répondu, que rien ne
     # sous-titre — la règle et le registre de mention le disent à sa place.
@@ -458,6 +508,12 @@ fr:
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
         home:
           no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
+    # Écrit dans le log et nulle part ailleurs. La zone dit déjà la panne à
+    # l'usager dans ses propres mots ; ce que le log garde, c'est qu'elle a eu
+    # lieu — le client qui lève l'erreur ne journalise pas, laissant la trace à
+    # son appelant, comme les interacteurs de `Demo::` le font tous.
+    reads_demo_request:
+      unanswered: "État de la demande de la démarche de démonstration illisible : %{error}"
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -1615,12 +1671,12 @@ fr:
       # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
       # « before any request is made » — le nom du fournisseur et le type de
       # justificatif —, puis le résultat du geste qui fait partir la requête.
-      confirmations:
+      documents:
         # La page est le portail, et son lecteur est un usager d'un autre État
         # membre : tout ce qu'elle dit est en anglais, comme l'accueil, et son
         # intitulé sert aussi de miette au fil d'Ariane.
         show:
-          title: Confirm your request
+          title: Your documents
           # Ce que la carte d'identité montre : l'identité vient de
           # l'authentification et non d'une saisie, ce que le chapitre 2.2 §2
           # rend le portail comptable de tenir. Le titre est dit par la page et
@@ -1639,78 +1695,6 @@ fr:
           # exigence — regarde l'annuaire, et son code reste à la console.
           nothing_listed: The European directories listed no evidence for this procedure.
           unreachable: The European directories could not be reached
-        # Seul un refus s'affiche ici : une demande qui part mène au suivi.
-        create:
-          title: Request refused
-          nothing_opened: >-
-            No exchange was opened: the request was refused before anything left for another
-            Member State.
-          back: Back to your request
-      # La quatrième page du parcours : ce que la demande a obtenu. Les quatre
-      # états qu'elle rend sont ceux que le contrat rend, plus l'attente, qui est
-      # tout le reste — la démarche ne demandant que T1, que la France sert
-      # toujours par un document.
-      # Dernière page du parcours, et donc en anglais comme les deux autres :
-      # elle s'adresse au même usager d'un autre État membre.
-      trackings:
-        show:
-          # Ce que la demande a demandé, et à qui : les deux valeurs que
-          # l'exigence 27 du chapitre 1 §2 a fait nommer à la confirmation, et
-          # que la demande porte depuis. Les deux sont des mots des annuaires,
-          # d'où le balisage dans la traduction plutôt que dans le gabarit.
-          heading_html: Request %{evidence_type}
-          from_html: From %{provider}, for the procedure %{procedure}
-          # Le titre de repli, et celui de l'onglet : une demande ouverte avant
-          # que ces deux noms soient consignés n'en a aucun.
-          title: Your request
-          # Le justificatif est rendu tel qu'il a été reçu : le chapitre 1 §4.2
-          # laisse l'usager décider de ne pas s'en servir, jamais d'en changer le
-          # contenu.
-          delivered: Your document has arrived
-          delivered_body: >-
-            The administration holding your document has sent it. You receive it exactly as it was
-            issued: you can open it and save it, but not change it.
-          open: Open the document
-          # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If
-          # the process of identity and evidence matching does not result in a
-          # match or the identity matching generates two or more results » —, et
-          # le chapitre 4.10 §2.1, informatif, le recommande pour tout refus.
-          # La démarche le dit pour tous, ce qui va au-delà du `MUST`.
-          #
-          # La phrase ne promet aucun code : un échec local en laisse la page
-          # dépourvue, et elle annonçait alors une ligne qui n'existait pas. Le
-          # code, quand il y en a un, est dans le tableau sous son intitulé.
-          refused: The document cannot be provided
-          refused_body: >-
-            The administration could not send the document. You will have to obtain it another way.
-          # Le premier des quatre points que le `shall` du chapitre 4.9 §5
-          # énumère, et le seul que la démonstration tienne : reconnaître la
-          # réponse. Le deuxième — « Provide a departure page for the user to
-          # navigate to the Preview Space » — n'est justement pas tenu.
-          preview: Your document is waiting for your approval abroad
-          preview_body: >-
-            The administration holding it wants to show you the document before sending it, on its
-            own space. The demonstration stops here: it recognises this answer and gives you the
-            address, without taking you there.
-          pending: Your request is under way
-          pending_body: >-
-            Your document has been requested from the administration holding it. The answer does not
-            come back on this connection: it arrives through another channel, sometimes after a
-            while. Reload this page to see where it stands.
-          unreachable: The request service could not be reached
-          unreadable: The state of the request could not be read
-          caption: What identifies this request
-          # Les deux identifiants sous lesquels l'exploitant retrouve l'échange
-          # au journal.
-          exchange: Exchange identifier
-          conversation: Conversation identifier
-          # L'empreinte des octets réellement servis : c'est elle qui atteste que
-          # le document n'a pas été retouché entre la remise et l'écran.
-          digest: SHA-256 digest of the document
-          code: Error code received
-          preview_location: Preview address
-          refresh: Refresh
-          again: Make a new request
       evidences:
         show:
           # Le nom proposé par le navigateur à l'enregistrement.

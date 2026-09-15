@@ -8,7 +8,7 @@ module Demo
   # sits next to would prove nothing an integrator could reproduce. What it knows
   # of its exchange is what the contract says of it.
   #
-  # It reads and never writes. Chapter 4.4 §4.1 is why the tracking page may
+  # It reads and never writes. Chapter 4.4 §4.1 is why the zone of the documents page may
   # refresh as often as it likes: « to return more references to the Online
   # Procedure Portal, even if it is for the same user in the same session, for
   # the same evidency type and data service, a new unique request MUST be

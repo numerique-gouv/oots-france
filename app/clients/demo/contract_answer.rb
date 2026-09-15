@@ -22,7 +22,10 @@ module Demo
     READABLE = 200
     UNREACHED = 0
 
-    def self.unreached = new(status: UNREACHED)
+    # The contract not having answered at all, carrying why: the zone says the
+    # outage in the place it would say a refusal, so the outage travels as one
+    # rather than beside the wording as a second thing to thread through.
+    def self.unreached(error: nil) = new(status: UNREACHED, payload: { 'erreur' => error }.compact)
 
     attr_reader :status, :payload
 

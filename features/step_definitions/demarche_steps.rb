@@ -49,8 +49,8 @@ Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |c
 end
 
 # The heading is the procedure's, as on the home page: the two are one journey.
-Alors('l\'administrateur arrive sur la page de confirmation') do
-  expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
+Alors('l\'administrateur arrive sur la page des justificatifs') do
+  expect(@navigateur.current_url).to end_with('/admin/demo/documents')
   expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
 end
 
@@ -99,8 +99,8 @@ Quand('il se reconnecte à l\'espace d\'administration') do
   @navigateur.sign_in(COMPTE_DEMO.fetch(:email), COMPTE_DEMO.fetch(:password))
 end
 
-Quand('il ouvre la page de confirmation de la démarche') do
-  @navigateur.visit('/admin/demo/confirmation')
+Quand('il ouvre la page des justificatifs de la démarche') do
+  @navigateur.visit('/admin/demo/documents')
 end
 
 Alors('l\'administrateur arrive sur la page d\'accueil de la démarche de démonstration, sans identité') do
@@ -112,35 +112,38 @@ end
 # may rewrite without telling us. They are named on the card that carries the
 # press, in the one sentence that stands between the rule and the button, and
 # each wears the mark of what the directories publish.
-Alors('la page de confirmation affiche le fournisseur et le type de justificatif') do
+Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
   nommes = Nokogiri::HTML(@navigateur.body)
     .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
 
-  expect(@navigateur.current_url).to end_with('/admin/demo/confirmation')
+  expect(@navigateur.current_url).to end_with('/admin/demo/documents')
   expect(nommes.size).to eq(2)
   expect(nommes).not_to include('')
 end
 
 # Chapter 1 §3.3: this press is where the user says explicitly that the
 # Once-Only Technical System is to be used, and nothing leaves without it.
+# The mark is taken before the press and not after: the log is the server's and
+# a previous run leaves its own events in it, so what this scenario opened is
+# what was written past this point.
 Quand('l\'usager confirme sa demande') do
-  @navigateur.submit_to('/admin/demo/confirmation')
+  @journal_avant = ServerAuditEvent.maximum(:id).to_i
+  @navigateur.submit_to('/admin/demo/demande')
 end
 
-# Confirming ends the confirmation page: the request that left is followed on
-# the tracking, which is where the answer will appear. The identifier is read
-# there, and the state it shows is deliberately not asserted — the exchange is
-# already on its way, and what the correspondent has answered by the time this
-# page renders is not this scenario's business.
+# The press answers with the zone it was made in, saying the request is out. The
+# state is deliberately not asserted beyond that — the exchange is already on
+# its way, and what the correspondent has answered by the time this renders is
+# not this scenario's business.
 #
-# The page is recognised by its address and not by its heading: the heading
-# names the document that was asked for, which the real directories publish and
-# Brussels may rewrite without telling us.
-Alors('la page de suivi affiche l\'identifiant de l\'échange ouvert') do
-  @exchange_id = @navigateur.rows[I18n.t('admin.demo.trackings.show.exchange')]
+# The zone is recognised by what it declares of itself and not by its wording:
+# the sentences around it name the document that was asked for, which the real
+# directories publish and Brussels may rewrite without telling us.
+Alors('la page des justificatifs affiche que la demande de l\'usager est en cours') do
+  zone = Nokogiri::HTML(@navigateur.body).at_css('.demo-request__body')
 
-  expect(@navigateur.current_url).to end_with('/admin/demo/suivi')
-  expect(@exchange_id).to match(Exchange::UUID)
+  expect(zone).to be_present
+  expect(zone['data-polling']).to eq('true')
 end
 
 # The procedure is a registered requester like any other, and the log names it
@@ -181,12 +184,23 @@ end
 # The log is written by the server, in a database the scenario does not share,
 # and `SendToGateway` writes it after submitting to the gateway — hence the wait
 # every outcome of these scenarios goes through.
+# The departure this scenario opened, found by the requester it was sent under
+# rather than by an identifier read off a screen: the procedure keeps its
+# exchange in its own register, which no route publishes, and the log is where
+# the scenario can see it.
 def depart_de_la_requete
   @depart_de_la_requete ||= begin
-    patiente_jusqu_a("le journal porte le départ de la requête de l'échange #{@exchange_id}") do
-      ServerAuditEvent.exists?(exchange_id: @exchange_id, event_type: 'request_sent')
+    patiente_jusqu_a('le journal porte le départ de la requête de la démarche de démonstration') do
+      departs_de_la_demarche.exists?
     end
 
-    ServerAuditEvent.find_by!(exchange_id: @exchange_id, event_type: 'request_sent')
+    departs_de_la_demarche.last.tap { |depart| @exchange_id = depart.exchange_id }
   end
+end
+
+def departs_de_la_demarche
+  ServerAuditEvent
+    .where(event_type: 'request_sent', evidence_requester_id: ENV.fetch('IDENTIFIANT_REQUETEUR_DEMARCHE'))
+    .where(id: (@journal_avant.to_i + 1)..)
+    .order(:id)
 end

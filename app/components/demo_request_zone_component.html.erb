@@ -1,0 +1,80 @@
+<%# What an answer replaces. The element around it persists and carries both the
+    Stimulus controller and the `aria-live` region, so a change of state is
+    announced rather than silently swapped in — a region replaced along with its
+    contents announces nothing.
+
+    `data-polling` is how the zone tells the controller whether to ask again: a
+    settled zone says `false`, and the asking stops because the server said so.
+    `data-outcome` says what happened, which is another question — a refusal and
+    a document both stop the asking — and it is the card above that reads it,
+    having no other way to learn what became of a press it does not hold. %>
+<div class="demo-request__body" data-polling="<%= pending? %>" data-outcome="<%= state %>">
+  <% if delivered? %>
+    <%# Chapter 1 §4.2: the evidence is « made available to the specific
+        procedure end-user that issued the query », and the user « cannot modify
+        its content in any way » — so it is offered exactly as it arrived. %>
+    <%= link_to t('components.demo_request_zone.open'), helpers.admin_demo_justificatif_path,
+          class: 'fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-attachment-line',
+          target: '_blank', rel: 'noopener', lang: 'en' %>
+
+    <p class="fr-mb-0 demo-request__state" lang="en">
+      <span class="fr-icon-check-line demo-request__check" aria-hidden="true"></span>
+      <%= t('components.demo_request_zone.delivered') %>
+    </p>
+  <% else %>
+    <%# `button_to` and not a link: chapter 4.5.1 §2.3 allows the `IssueDateTime`
+        no material distance from this gesture, and a GET the browser prefetched
+        would issue it before the user had decided anything.
+
+        Rendered while the answer is out too, and merely hidden: the controller
+        brings it back when it gives up on reaching the service, and a press left
+        out of the fragment is one it cannot bring back — the sentence would ask
+        for a second press with nothing to press. %>
+    <%= button_to submit_label, helpers.admin_demo_demande_path,
+          class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line', lang: 'en',
+          form: { class: 'demo-request__press', hidden: pending?,
+                  data: { demo_request_target: 'press' } } %>
+
+    <%# Rendered beside the press and hidden, rather than waited for: the press
+        is answered a round trip away, and a screen that says nothing until the
+        answer comes back leaves the user pressing again. The controller shows
+        this and hides the press; what the server then sends replaces both.
+        The wording is the server's all the same — no English lives in the
+        Stimulus controller. %>
+    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+          hidden: !pending?, data: { demo_request_target: 'loading' } do %>
+      <span class="demo-request__spinner" aria-hidden="true"></span>
+      <%= t('components.demo_request_zone.loading') %>
+    <% end %>
+
+    <%# What the browser raises on its own when it gets no answer it can use — a
+        network that dropped, or something that answered without the header this
+        application sets. The server cannot say that it cannot be reached, so the
+        sentence is rendered here, hidden, and the controller shows it. %>
+    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+          hidden: true, data: { demo_request_target: 'disconnected' } do %>
+      <span class="fr-icon-error-warning-line demo-request__failed" aria-hidden="true"></span>
+      <%= t('components.demo_request_zone.disconnected_html',
+            reload: link_to(t('components.demo_request_zone.reload'), helpers.admin_demo_documents_path)) %>
+    <% end %>
+  <% end %>
+
+  <% if failed? %>
+    <%# Chapter 2.1 §3.3 has the user told that the evidence cannot be provided;
+        the code below says which refusal it was, and the component the journal
+        uses glosses it. Hidden the moment the press is pressed again: what it
+        reports is no longer what is happening. %>
+    <%# `lang="fr"`: the title comes from `interactors.failures.*`, which the
+        operator console shares with this screen and which is written in French —
+        the one piece of this zone that is not in English. Said rather than left
+        to be pronounced as English (RGAA 8.7). %>
+    <div class="demo-request__failure" data-demo-request-target="failure" lang="fr">
+      <%= helpers.dsfr_alert(type: :error, title: failure_title) do %>
+        <%= failure_body %>
+        <% if edm_error_code %>
+          <%= render EdmErrorCodeComponent.new(code: edm_error_code) %>
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+</div>
