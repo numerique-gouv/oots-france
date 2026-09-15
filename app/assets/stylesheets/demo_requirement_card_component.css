@@ -33,31 +33,33 @@
 }
 
 /*
- * The box the country sits in, on the page's own ground rather than on the pale
- * red of the card: a tag borrowing the ground behind it reads as part of the
- * sentence, where it names what the sentence is about.
- */
-.requirement-card--unsatisfiable .country-tag {
-  background-color: var(--background-default-grey);
-}
-
-/*
- * What the directories publish keeps its mark on an error card, in the card's
- * own register: the blue of the information register on pale red would read as
- * a second state rather than as the same value. One step darker than the ground
- * it sits on, so the mark stays a mark.
- */
-.requirement-card--unsatisfiable .directory-value {
-  background-color: var(--background-contrast-error-hover);
-}
-
-/*
- * A requirement no provider serves, on the ground the DSFR gives an error. The
- * ground is never the whole of what says so — the card's own wording and the
- * sign beside it do too (RGAA 3.1) — and the colour is the token, not a
- * literal: the layout sets `data-fr-scheme="system"`, so the dark theme is
- * reachable.
+ * A requirement no provider serves, outlined in the colour the DSFR gives an
+ * error. An outline and not a ground: the card is read for what it says, and a
+ * colour behind every word of it competes with the words. It leaves the marks
+ * inside untouched — what the directories publish keeps the blue it wears on
+ * every other card, being the same kind of value here as there.
+ *
+ * The colour is never the whole of what says so — the card's own wording and
+ * the sign beside it do too (RGAA 3.1) — and it is the token, not a literal:
+ * the layout sets `data-fr-scheme="system"`, so the dark theme is reachable.
  */
 .requirement-card--unsatisfiable {
-  background-color: var(--background-contrast-error);
+  border: 1px solid var(--border-plain-error);
+}
+
+/*
+ * The card of a requirement the document has come back for. The user is looking
+ * for what their procedure still needs, and a card they can stop thinking about
+ * says so at a glance, before the sentence inside it is read.
+ *
+ * Read from the zone rather than set on the card: what became of a press is
+ * known where the press is, and the zone is replaced under a card that is not —
+ * so `:has` is what lets the card follow an answer it never receives itself.
+ *
+ * The colour is never the whole of what says so: the zone states it in words
+ * and marks it with a check (RGAA 3.1). The border reinforces, it does not
+ * inform.
+ */
+.requirement-card:has(.demo-request__body[data-outcome="delivered"]) {
+  border: 1px solid var(--border-plain-success);
 }

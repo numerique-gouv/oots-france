@@ -55,21 +55,26 @@ Rails.application.routes.draw do
       # and the `nonce` its return is checked against, which a prefetched or
       # replayed GET would overwrite.
       resource :identification, only: :create
-      # Where the user comes back to, identified, and the last page before an
-      # exchange exists. `show` carries the identity the authentication
-      # attested, and names the provider and the evidence type the directories
-      # resolve, which requirement 27 of chapter 1 asks for « before any request
-      # is made » ; `create` **is** the explicit request of chapter 1 §3.3, and
-      # the request leaves as it is pressed — chapter 4.5.1 §2.3 allows
-      # `IssueDateTime` no material distance from that instant.
-      resource :confirmation, only: %i[show create], controller: 'confirmations'
-      # Where the journey ends, and the only page of it that may be reloaded at
-      # will: chapter 4.4 §4.1 requires a new request for a new answer, so this
-      # one reads and never asks.
-      resource :suivi, only: :show, controller: 'trackings'
-      # The evidence itself, under the page that offers it rather than beside
-      # it: nothing reaches it without the exchange that page is following.
-      get 'suivi/justificatif', to: 'evidences#show', as: :suivi_justificatif
+      # Where the user comes back to, identified, and the only page an exchange
+      # is asked for from. It carries the identity the authentication attested,
+      # and names the provider and the evidence type the directories resolve,
+      # which requirement 27 of chapter 1 asks for « before any request is
+      # made ».
+      #
+      # `resource` and not `resources`: there is one such page and no identifier
+      # reaches it, the session saying which documents are this user's.
+      resource :documents, only: :show, controller: 'documents'
+      # The request itself, and what became of it. `create` **is** the explicit
+      # request of chapter 1 §3.3, and the request leaves as it is pressed —
+      # chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance from that
+      # instant. `show` renders the zone of the documents page that says where
+      # the request stands, and is the address that zone re-asks while it waits:
+      # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
+      # never asks.
+      resource :demande, only: %i[show create], controller: 'requests'
+      # The evidence itself. Nothing reaches it without the exchange the session
+      # is following.
+      get 'justificatif', to: 'evidences#show', as: :justificatif
     end
 
     # The log is walked through its events, and only through them: the listing

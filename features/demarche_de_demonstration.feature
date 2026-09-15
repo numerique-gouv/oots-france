@@ -6,7 +6,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
   de bourse : il part de la page d'accueil de la démarche de démonstration,
   passe par FranceConnect+ et la passerelle eIDAS, choisit son pays et une
   identité de test, consent à la transmission de ses données, puis revient sur
-  la page de confirmation, identifié.
+  la page des justificatifs, identifié.
 
   La suite ne traverse pas le vrai FranceConnect+ mais le faux FranceConnect+
   qu'elle lance à côté des scénarios, parce que le bac à sable de
@@ -18,14 +18,14 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Étant donné un faux FranceConnect+ lancé à côté du scénario
     Et l'administrateur de démonstration connecté à l'espace d'administration
 
-  Scénario: un étudiant danois s'identifie et retrouve son identité sur la page de confirmation
+  Scénario: un étudiant danois s'identifie et retrouve son identité sur la page des justificatifs
     Quand l'administrateur ouvre la démarche de démonstration
     Et qu'il clique sur le bouton de la cinématique européenne
     Alors l'administrateur arrive sur la page de choix du pays
     Quand l'administrateur choisit le pays "DK"
     Et que l'administrateur choisit l'identité de test "dk-substantial"
     Et que l'administrateur consent à la transmission de ses données
-    Alors l'administrateur arrive sur la page de confirmation
+    Alors l'administrateur arrive sur la page des justificatifs
     Et la page affiche "Family name" : "Sørensen"
     Et la page affiche "Given name(s)" : "Freja Marie"
     Et la page affiche "Date of birth" : "2001-04-17"
@@ -43,7 +43,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
   Scénario: une rotation des clés de signature de FranceConnect+ n'empêche pas l'identification
     Quand le faux FranceConnect+ change de clé de signature
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
-    Alors l'administrateur arrive sur la page de confirmation
+    Alors l'administrateur arrive sur la page des justificatifs
     Et la page affiche "Family name" : "Sørensen"
 
   Scénario: se déconnecter ferme aussi la session FranceConnect+
@@ -51,5 +51,5 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Et qu'il se déconnecte de l'espace d'administration
     Alors FranceConnect+ le ramène sur la page de déconnexion de la démarche
     Quand il se reconnecte à l'espace d'administration
-    Et qu'il ouvre la page de confirmation de la démarche
+    Et qu'il ouvre la page des justificatifs de la démarche
     Alors l'administrateur arrive sur la page d'accueil de la démarche de démonstration, sans identité

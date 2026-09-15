@@ -14,7 +14,7 @@ module Admin
     # forced download makes a step longer than it is.
     class EvidencesController < Admin::BaseController
       include HoldsDemoIdentity
-      include HoldsDemoExchange
+      include ReadsDemoRequest
 
       before_action :require_evidence
 
@@ -26,8 +26,10 @@ module Admin
 
       private
 
+      # Back to the page the document is offered from: an address reached
+      # without one is a journey that has yet to get that far, not an error.
       def require_evidence
-        redirect_to admin_demo_suivi_path unless demo_request.evidence?
+        redirect_to admin_demo_documents_path unless demo_request&.evidence?
       end
     end
   end

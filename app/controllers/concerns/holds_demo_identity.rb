@@ -1,5 +1,5 @@
-# The identity the demonstration's two remaining pages both rest on, and the
-# one condition they both refuse to render without.
+# The identity every address of the demonstration past the sign-in rests on, and
+# the one condition they all refuse to render without.
 #
 # The same validity on the way out as on the way in: what
 # `Demo::CompleteIdentification` refused to hold, these pages refuse to show. A

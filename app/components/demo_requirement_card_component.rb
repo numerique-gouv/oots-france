@@ -1,4 +1,4 @@
-# One requirement of the procedure, as the confirmation page offers it: the
+# One requirement of the procedure, as the documents page offers it: the
 # evidence type that satisfies it, the provider holding that evidence, and the
 # press that asks for it.
 #
@@ -12,14 +12,21 @@
 # names no requirement, and its server answers with the first that publishes
 # evidence types, so a second button would send the same request under another
 # name. Stub, tracked as OOTS-212.
+#
+# `zone` is where that press lives, and it is the one part of the card an answer
+# replaces: the card itself says what the requirement is and who satisfies it,
+# which no answer changes.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, askable:, country_code:, country_name: nil)
+  def initialize(wording:, askable:, country_code:, country_name: nil, zone: nil)
     @wording = wording
     @askable = askable
     @country_code = country_code
     @country_name = country_name
+    @zone = zone
     super()
   end
+
+  attr_reader :zone
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.
@@ -41,7 +48,7 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # one nobody serves is still one the procedure rests on.
   def titled? = requirement.present?
 
-  def askable? = @askable && nameable?
+  def askable? = @askable && nameable? && zone.present?
 
   delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
     :provider_language, :requirement, :requirement_language, to: :wording

@@ -12,14 +12,22 @@ class FranceConnectController < ApplicationController
   # Redirects rather than renders, whichever way it goes: an authorization code
   # is single use, and leaving in the history a page that carries one invites
   # replaying it.
+  #
+  # Identifying starts a journey, and the exchange the session follows belonged
+  # to the one before: dropped here, so that the zone offers the press again
+  # rather than the document the previous journey obtained. The conversation is
+  # not dropped with it — chapter 4.4 §4.3.2 has it « SHOULD be reused for combined flows »
+  # and forbids reuse only « if the user authenticates with a different
+  # identity », which `RequestsController` compares before offering it.
   def retour_connexion
     result = completed_identification
 
     return refuse_identification(result) unless result.success?
 
     session[:demo_identity] = result.identity.to_session
+    session.delete(:demo_exchange)
 
-    redirect_to admin_demo_confirmation_path
+    redirect_to admin_demo_documents_path
   end
 
   # A page, where the other return is a redirection: FranceConnect+ brings back

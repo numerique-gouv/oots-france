@@ -15,18 +15,19 @@ RSpec.describe 'Admin::Demo::Evidences' do
     stub_code_list
     # Requirement 27 of chapter 1 §2: the press exists only once the page has
     # named the evidence type and the provider, so the journey is walked whole.
-    get admin_demo_confirmation_path
-    post admin_demo_confirmation_path
+    stub_exchange_state
+    get admin_demo_documents_path
+    post admin_demo_demande_path
   end
 
-  describe 'GET /admin/demo/suivi/justificatif' do
+  describe 'GET /admin/demo/justificatif' do
     before { Demo::Request.sole.receive_evidence!(content) }
 
     # CA1, second half. Chapter 1 §4.2: the user « cannot modify its content in
     # any way », so the bytes are served as they arrived, and their digest is
     # the digest of what was delivered.
     it 'serves the evidence byte for byte, under its own type' do
-      get admin_demo_suivi_justificatif_path
+      get admin_demo_justificatif_path
 
       expect(response.media_type).to eq(Attachment::MIME_TYPE)
       expect(response.body.b).to eq(content)
@@ -40,7 +41,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     it 'sends an operator holding no identity back to the start' do
       allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
 
-      get admin_demo_suivi_justificatif_path
+      get admin_demo_justificatif_path
 
       expect(response).to redirect_to(admin_demo_root_path)
     end
@@ -52,17 +53,35 @@ RSpec.describe 'Admin::Demo::Evidences' do
       stub_evidence_request(body: { echange: 'un-second-echange',
                                     conversation: DemoContractStubs::ACCEPTED_CONVERSATION,
                                     statut: 'pending' }.to_json)
-      post admin_demo_confirmation_path
+      stub_exchange_state('un-second-echange', statut: 'pending')
+      post admin_demo_demande_path
 
-      get admin_demo_suivi_justificatif_path
+      get admin_demo_justificatif_path
 
-      expect(response).to redirect_to(admin_demo_suivi_path)
+      expect(response).to redirect_to(admin_demo_documents_path)
     end
   end
 
-  it 'sends the operator back to the tracking while nothing has been delivered' do
-    get admin_demo_suivi_justificatif_path
+  # Une session qui nomme un échange dont le registre n'a plus la ligne :
+  # `demo_request` vaut alors `nil`, et c'est le cas pour lequel la navigation
+  # sûre du contrôleur existe. Rien ne l'atteignait.
+  it 'sends the operator back when the register no longer holds the request' do
+    forget_the_request
 
-    expect(response).to redirect_to(admin_demo_suivi_path)
+    get admin_demo_justificatif_path
+
+    expect(response).to redirect_to(admin_demo_documents_path)
+  end
+
+  it 'sends the operator back to the page the document is offered from while nothing has been delivered' do
+    get admin_demo_justificatif_path
+
+    expect(response).to redirect_to(admin_demo_documents_path)
+  end
+
+  # La ligne s'en va, la session garde l'identifiant : c'est cet écart que la
+  # navigation sûre d'`EvidencesController` absorbe.
+  def forget_the_request
+    Demo::Request.delete_all
   end
 end

@@ -13,7 +13,7 @@ module Demo
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
   #
-  # The two names the confirmation page showed travel with the press rather than
+  # The two names the documents page showed travel with the press rather than
   # being resolved again here: the rule above allows the `IssueDateTime` no
   # material distance from that gesture, and three directory queries before
   # sending would put themselves between the two. What is filed is what was
@@ -22,8 +22,8 @@ module Demo
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
     PROVIDER_COUNTRY = 'FR'.freeze
 
-    # What the confirmation page showed, each name with the language the
-    # directory published it in: the tracking page says them again, and it is
+    # What the documents page showed, each name with the language the
+    # directory published it in: the zone says them again, and it is
     # written in English whatever the directories answered.
     NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language].freeze

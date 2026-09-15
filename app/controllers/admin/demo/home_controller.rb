@@ -25,7 +25,7 @@ module Admin
       # alone: what France, as the requester's jurisdiction, must see satisfied
       # for this procedure, carrying with it the titles France declared the
       # procedure under. The two steps that follow — which evidence types
-      # satisfy a requirement, who holds them — belong to the confirmation page,
+      # satisfy a requirement, who holds them — belong to the documents page,
       # which names the provider and the type requirement 27 of chapter 1 §2
       # asks for.
       def requirements
