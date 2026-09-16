@@ -264,4 +264,72 @@ RSpec.describe RetrievedMessageParser do
       expect(unreadable.specification).to eq(EdmSpecification::V1_2)
     end
   end
+
+  # Chapter 4.7 §2.6.2: « In case of inconsistency between the message-level
+  # SpecificationId property and the specification identifier expressed in the
+  # payload, the message MUST be considered invalid and an appropriate error
+  # MUST be returned. » Reported and nothing more — the chapter names no subject
+  # for that error, so the journal is where the report lands.
+  describe 'the two version announcements read against each other' do
+    # The description is matched whole, and not by the two values it contains:
+    # which of the two mechanisms drifted is the one thing this report exists to
+    # say, and `include` would hold just as well with `header` and `body`
+    # interpolated the wrong way round.
+    it 'reports a body announcing another version than the header' do
+      expect(inconsistent.inconsistencies).to contain_exactly(have_attributes(
+        rule: include('TDD 4.7 §2.6.2'),
+        description: "La propriété SpecificationId de l'entête annonce oots-edm:v2.0, et le slot SpecificationIdentifier du corps oots-edm:v1.2.",
+      ))
+    end
+
+    # Named as it arrived, and never through `EdmSpecification.resolve`: its
+    # fallback on the preferred version applies to the line a message is *read*
+    # in, and applying it here would print `oots-edm:v2.0` on both sides of a
+    # disagreement.
+    it 'names a version France does not speak as it arrived' do
+      announcing_v1_0 = envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub(EdmSpecification::V2_0.identifier, 'oots-edm:v1.0')
+      end
+
+      expect(announcing_v1_0.inconsistencies.sole.description)
+        .to include(EdmSpecification::V2_0.identifier, 'oots-edm:v1.0')
+    end
+
+    it 'reports nothing of a response whose header and body agree' do
+      message = described_class.new(real_envelope('reponseAvecPieceJointe'))
+
+      expect(message.inconsistencies).to be_empty
+    end
+
+    # `EdmSpecification#announced_in_header?`: the 1.2 line carries no such
+    # property at all, so its body has nothing to disagree with.
+    it 'reports nothing of a response of the 1.2 line, whose header announces nothing' do
+      expect(earlier_line_response.inconsistencies).to be_empty
+    end
+
+    # `R-EDM-RESP-S009` is what counts an absent slot. A value that is not there
+    # expresses no identifier, where the chapter speaks of the one « expressed
+    # in the payload ».
+    it 'reports nothing of a body carrying no SpecificationIdentifier slot' do
+      expect(envelope_without_specification_slot('reponseAvecPieceJointe').inconsistencies).to be_empty
+    end
+
+    # Nor does it raise where the body does: the reading that would have found
+    # the slot is the very one that fails, and the envelope is journalled all
+    # the same.
+    it 'reports nothing of a body that is not well-formed XML, and does not raise' do
+      unreadable = envelope_with_body('reponseAvecPieceJointe') { |_body| '<pas' }
+
+      expect(unreadable.inconsistencies).to be_empty
+    end
+
+    # A report and not a switch: every other reader still works in the version
+    # the header settled, which is what makes the packaging violations behind
+    # the inconsistency appear at all.
+    it 'leaves the version the message is read in where it was' do
+      expect(inconsistent.specification).to eq(EdmSpecification::V2_0)
+    end
+
+    def inconsistent = envelope_announcing_two_specifications('reponseAvecPieceJointe')
+  end
 end
