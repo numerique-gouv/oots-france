@@ -141,24 +141,17 @@ Ensuite, dans la console Domibus — joignable sur le port `PORT_DOMIBUS` de la 
 
 ### 4. Le frontal HTTPS
 
-FranceConnect+ exige HTTPS, et la production Rails aussi (`config.force_ssl`). `nginx` termine TLS avec un certificat Let's Encrypt, que le service `certbot` renouvelle :
+Voir avec Jo.
 
-```sh
-$ cp -r nginx.template nginx
-```
-
-Puis remplacer `example.com` par le domaine dans `nginx/conf/nginx.conf` et dans `nginx/scripts/init-letsencrypt.sh`, et `user@example.com` par l'adresse qui recevra les avis d'expiration. Le `proxy_pass` vise `web:3000` : laisser `PORT_OOTS_FRANCE` à 3000 dans `.env`, ou y reporter la valeur choisie.
-
-```sh
-$ make assets                          # les feuilles de style, que la production ne compile pas à la volée
-$ nginx/scripts/init-letsencrypt.sh    # demande le certificat ; démarre nginx, donc web et ses dépendances
-$ docker compose up -d worker certbot  # ce que nginx ne tire pas : le worker, et le renouvellement
-```
+Ce que la pile attend du frontal, quel qu'il soit : il termine TLS, mandate `web` sur `PORT_OOTS_FRANCE`, et Rails le suppose (`config.assume_ssl`, `config.force_ssl`) — ce qui vaut aussi pour la passerelle, qui notifie `web` en HTTP sur le réseau docker sans que rien ne redirige cet appel-là. Le `nginx` de `docker-compose.yml` et son [gabarit](../nginx.template/conf/nginx.conf) sont une façon de le faire, pas la seule.
 
 > [!IMPORTANT]
 > **`make assets` n'est pas facultatif, et se rejoue à chaque mise à jour.** Propshaft ne sert rien en production — son réglage `config.assets.server` ne vaut qu'en développement et en test — et sans cette compilation, les pages arrivent sans style ni icône. Les fichiers atterrissent dans `public/assets`, dans le dépôt déployé, que la composition monte par-dessus l'image : les compiler à la construction de l'image ne servirait à rien.
 
-Rails est derrière un mandataire qui termine TLS (`config.assume_ssl`), ce qui vaut aussi pour la passerelle : Domibus notifie `web` en HTTP sur le réseau docker, et rien ne redirige cet appel-là vers HTTPS.
+```sh
+$ make assets
+$ docker compose up -d web worker
+```
 
 ### 5. Le compte de l'espace d'administration
 
@@ -205,7 +198,7 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
 - le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, les magasins téléversés et le compte d'accès ;
 - le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
-- le répertoire `./nginx` — la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
+- ce que le frontal garde sur cette machine — avec le gabarit du dépôt, le répertoire `./nginx` : la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
 
 ## Mettre à jour
 
