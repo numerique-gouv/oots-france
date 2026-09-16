@@ -17,6 +17,11 @@
 #                               with an upper case, a lower case, a digit and a
 #                               special character, failing which Domibus refuses
 #                               it
+#   LOGIN_NOTIFICATION_DOMIBUS  the credentials the gateway puts on the
+#   MOT_DE_PASSE_NOTIFICATION_DOMIBUS
+#                               notifications it pushes at us — mandatory, and
+#                               having to match the ones in .env.oots, which the
+#                               application checks them against
 #
 # Those two credentials must be the ones in the .env.oots the application runs
 # with: this is the account it will present to the gateway. They are required
@@ -56,8 +61,8 @@ REPERTOIRE_DOMIBUS="${REPERTOIRE_DOMIBUS:-domibus}"
 # the correspondent's answers at a port nothing listens on — silently, the page
 # that follows the exchange staying on « en cours » for ever.
 URL_NOTIFICATION="${URL_NOTIFICATION:-http://web:${PORT_OOTS_FRANCE:?doit être renseigné, et correspondre à celui de .env}/domibus/notifications}"
-LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
+LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:?doit être renseigné, et correspondre à celui de .env.oots}"
+MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:?doit être renseigné, et correspondre à celui de .env.oots}"
 
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)

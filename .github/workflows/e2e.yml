@@ -34,12 +34,16 @@ jobs:
     # PORT_OOTS_FRANCE is here for the same reason: `prepare_environment.sh`
     # writes it into .env, and `configure_domibus.sh` composes out of it the
     # address the gateway pushes its notifications at. Declared once, the two
-    # cannot drift.
+    # cannot drift. The notification pair likewise: written into .env.oots by
+    # the first, put on the gateway's pushes by the second, and checked by the
+    # application against the file.
     env:
       LOGIN_API_REST: oots_ci
       MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
       MOT_DE_PASSE_MAGASINS: test123
       PORT_OOTS_FRANCE: 3000
+      LOGIN_NOTIFICATION_DOMIBUS: domibus_push
+      MOT_DE_PASSE_NOTIFICATION_DOMIBUS: 'Push-OotsFrance-2026!'
 
     steps:
       - uses: actions/checkout@v7

@@ -128,16 +128,16 @@ Le workflow `schematron.yml` la rejoue à chaque PR ; c'est le seul garde-fou au
 `make setup` appelle ce script, qui sert aussi seul — sur une passerelle repartie de zéro, ou pour rejouer une seule installation. Il pose ce dont une passerelle fraîche a besoin : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, un PMode, et la configuration de la notification vers l'application.
 
 ```sh
-$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
+$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \
+  LOGIN_NOTIFICATION_DOMIBUS=… MOT_DE_PASSE_NOTIFICATION_DOMIBUS=… \
+  MOT_DE_PASSE_MAGASINS=… PORT_OOTS_FRANCE=… \
     scripts/configure_domibus.sh
 ```
 
 Il est rejouable : le Plugin User n'est créé que s'il manque, et recharger le même truststore ou le même PMode est sans effet.
 
 > [!IMPORTANT]
-> Les deux identifiants de l'API REST sont exigés, et doivent reprendre ceux du `.env.oots` avec lequel tourne l'application : c'est le compte qu'elle présentera à la passerelle. En créer un autre donnerait un Plugin User ne correspondant à rien, et l'application recevrait des `403` sur toutes ses requêtes.
->
-> `MOT_DE_PASSE_MAGASINS` doit de même être celui du `.env` avec lequel tourne la passerelle : elle rouvre ses magasins avec cette valeur à chaque démarrage.
+> Les six variables sont exigées, et reprennent celles des fichiers d'environnement avec lesquels tourne la pile — le script ne les lit pas, leurs valeurs n'étant pas sourçables depuis un shell. Les deux identifiants de l'API REST sont le compte que l'application présentera à la passerelle : en créer un autre donnerait un Plugin User ne correspondant à rien, et des `403` sur toutes ses requêtes. Les deux de la notification sont ceux que la passerelle posera sur ses appels et que l'application vérifie : un écart, et chaque échange reste « en cours » sans un mot. `PORT_OOTS_FRANCE` compose l'adresse de ces appels. `MOT_DE_PASSE_MAGASINS` est celui avec lequel la passerelle rouvre ses magasins à chaque démarrage.
 
 > [!IMPORTANT]
 > **La passerelle doit être redémarrée après ce script.** Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le script écrit, et ne prennent effet qu'au redémarrage.
