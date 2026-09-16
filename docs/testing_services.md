@@ -24,6 +24,13 @@ Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste apr�
 
 L'URL de requête, elle, **ne se code pas en dur : elle se résout** par NAPTR, et [carte_des_tdd.md](carte_des_tdd.md#chapitre-3--les-sous-chapitres-qui-servent) porte le gabarit et ses pièges.
 
+Les objets qu'un État membre y dépose suivent le cycle **`Draft` → `In Review` → `Published` → `Archived`**, et seul le `Draft` est éditable : un objet publié se ramène d'abord en brouillon, ce qu'un *MS Editor* ne peut pas faire — il soumet, un *MS Administrator* publie, archive et redescend.
+
+> [!IMPORTANT]
+> **Un *Access Service* approuvé ne se modifie pas soi-même : il faut demander au [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk) de le repasser en `Draft`.** Il échappe au cycle ci-dessus parce qu'il n'est pas un objet de l'État membre : la console ne le donne qu'en choix sur un fournisseur, et la [RFC 13](https://ec.europa.eu/digital-building-blocks/wikis/spaces/SDGOO/pages/805181298/RFC+13+-+Management+of+Access+Services+in+CS+Administration+tool) le fait approuver par le Service Desk contre deux conditions — un point d'accès déclaré dans S-CIRCABC et en marche, ou un lien exclusif à `(TEST) Test Requirement 2`. La demande se fait sur le ticket qui a valu l'approbation, en rappelant que cette condition est inchangée ; l'objet revient éditable, on corrige, on resoumet. C'est ainsi qu'`AP_FR_01` a reçu son second `ConformsTo` à l'acceptation le 2026-09-16.
+>
+> **Ne pas contourner en déclarant un second service de données.** L'annuaire rendrait deux `sdg:DataServiceEvidenceType` pour le même type de justificatif, et `Directories::CommonServices#data_service` retient le premier qui nomme un fournisseur, dans un ordre que rien ne garantit.
+
 > [!IMPORTANT]
 > **Rien de ce qu'on dépose dans les Testing Services n'atteint un autre État membre.** Les annuaires de la plateforme de test sont des bouchons cloisonnés par code pays : deux équipes qui testent en parallèle ne voient pas les données l'une de l'autre, et une inscription réelle — celle qui manque à la France, voir [reste_à_faire.md](reste_à_faire.md) — passe par l'acceptation puis la production, pas par ici.
 
