@@ -223,7 +223,7 @@ Les scripts du DSFR, eux, restent hors de la carte : ils sont chargés par adres
 **Les listes sont des cartes, pas des tableaux** : une carte par entrée, sur toute la largeur, et ce qu'une entrée énumère rendu dans le pied de sa carte — `fr-card__footer` —, séparé par un filet. Un tableau n'y subsiste que là où chaque ligne a plusieurs colonnes à comparer, ce qui est le cas des fournisseurs d'un service ; les types de justificatif d'un pays, eux, tiennent en une ligne chacun — trois en-têtes de colonne au-dessus d'une ligne unique pèsent plus que ce qu'ils annoncent.
 
 > [!IMPORTANT]
-> **Propshaft ne sert aucun fichier en production** — son réglage `config.assets.server` ne vaut qu'en développement et en test. Les pages y arriveraient donc sans style. `make assets` compile ce qu'il faut, et la composition montant le dépôt par-dessus l'image, cette compilation doit avoir lieu dans le dépôt déployé, non à la construction de l'image. Voir [README](../README.md#en-production).
+> **Propshaft ne sert aucun fichier en production** : `make assets` compile ce qu'il faut, et [deploiement.md](deploiement.md#4-le-frontal-https) dit quand le rejouer.
 
 ## Y accéder en local
 
