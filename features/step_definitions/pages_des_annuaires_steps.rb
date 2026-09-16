@@ -42,6 +42,31 @@ end
     evidence_types_declaring_no_match(reason: NO_MATCH_REASON))
 end
 
+# What each jurisdiction of the fabricated answer publishes. Unequal on purpose,
+# and summing to a number none of them carries: a page reporting the last card's
+# weight instead of the sum cannot be told apart where every card weighs alike.
+TYPES_BY_COUNTRY = { 'AT' => 3, 'FR' => 2, 'FI' => 4 }.freeze
+
+# Austria beside the countries the other scenarios need — the argument replaces
+# the default list rather than adding to it. A card whose country the list does
+# not name writes the bare code, without brackets, and there would be nothing
+# left to tell apart. Named in both columns, as the published list names it: the
+# console reads the French one, the demonstration's own page the English one.
+#
+# « AT » is the code retained because it begins no word the card carries:
+# « Autriche » begins « au », « satisfait » holds « at » without starting on it,
+# and the only word of the card starting « at » is the code in brackets. « FR »
+# would have discriminated nothing, « France » beginning with it — which is the
+# hole this scenario exists to close.
+NAMED_COUNTRIES = CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('AT' => 'Austria').freeze
+FRENCH_COUNTRIES = CodeListStubs::DEFAULT_COUNTRIES.merge('AT' => 'Autriche (l’)').freeze
+
+Étantdonné('une exigence que plusieurs pays satisfont, chacun avec plusieurs justificatifs') do
+  stub_code_list(countries: FRENCH_COUNTRIES, country_names: NAMED_COUNTRIES)
+  stub_directory_signature
+  stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_published_by(TYPES_BY_COUNTRY))
+end
+
 Étantdonné('le contenu de la page des exigences est retenu') do
   listing_request.hold
 end
@@ -144,6 +169,20 @@ end
 Alors('la carte du pays est affichée') do
   expect(page).to have_css('#par-pays-fournisseur > *', count: 1)
   expect(page).to have_css('#par-pays-fournisseur > *', text: 'France (FR)')
+end
+
+Alors('seule la carte du pays {string} reste affichée') do |named|
+  expect(page).to have_css('#par-pays-fournisseur > *', count: 1)
+  expect(page).to have_css('#par-pays-fournisseur > *', text: named)
+end
+
+# What makes the tally above worth reading: the sum of the weights is a number
+# no single card carries, so a page announcing one card's weight would say
+# something else.
+Alors('aucune carte ne pèse ce nombre à elle seule') do
+  weights = all('#par-pays-fournisseur > *', visible: :all).map { |card| card['data-tally-weight'].to_i }
+
+  expect(weights).not_to include(weights.sum)
 end
 
 Alors("la carte du pays n'est plus affichée") do
