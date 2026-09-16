@@ -48,6 +48,66 @@ module Fixtures
     "<sdg:MatchType>#{EvidenceTypeList::NO_MATCH}</sdg:MatchType>#{described}"
   end
 
+  # An Evidence Broker answer where several jurisdictions each publish several
+  # evidence types, `{ 'AT' => 3, 'FR' => 2 }` giving Austria three and France
+  # two. No capture holds one — `eb_evidence_types_fr`, `_deux_fr` and `_fi`
+  # carry a single `sdg:EvidenceTypeList` each, so one country and one type —
+  # and a capture is signed over its bytes, so this is built beside it rather
+  # than by editing it (`spec/fixtures/README.md`, « Recapturer, jamais
+  # retoucher »). Whoever serves it doubles the signature with
+  # `stub_directory_signature`.
+  #
+  # What it is for: a page that adds up the weights of its cards cannot be told
+  # apart from one that reports the last card's weight while every card weighs
+  # the same, and a country code searched for as a word cannot be told from one
+  # searched for anywhere in the text while the code begins its own name.
+  def evidence_types_published_by(types_by_country)
+    common_services_answer('eb_evidence_types_fr').first
+      .sub(%r{<sdg:EvidenceTypeList>.*?</sdg:EvidenceTypeList>}m) do |published|
+        types_by_country.map { |country, types| jurisdiction_publishing(published, country, types) }.join
+      end
+  end
+
+  # The captured list, moved to another jurisdiction and given as many evidence
+  # types as asked for.
+  def jurisdiction_publishing(published, country, types)
+    listed = Array.new(types) { |rank| evidence_type_numbered(published, country, rank) }.join
+
+    published
+      .sub(%r{<sdg:Identifier>[^<]*</sdg:Identifier>}) { "<sdg:Identifier>liste-#{country}</sdg:Identifier>" }
+      .sub(%r{<sdg:EvidenceType>.*?</sdg:EvidenceType>}m) { listed }
+      .sub(%r{<sdg:AdminUnitLevel1>[^<]*</sdg:AdminUnitLevel1>}) do
+        "<sdg:AdminUnitLevel1>#{country}</sdg:AdminUnitLevel1>"
+      end
+  end
+
+  # Each type carries a classification of its own, since
+  # `EvidenceTypeList.distinct_evidence_types` deduplicates on `EvidenceType#id`
+  # and a card announcing three would otherwise weigh one.
+  #
+  # The title names no country and carries no code: a card is searched by its
+  # text, and a title holding « AT » would answer a search for the Austrian code
+  # whether or not the code in brackets is read as a word — which is the very
+  # thing a scenario here has to tell apart.
+  def evidence_type_numbered(published, country, rank)
+    classified = published[%r{<sdg:EvidenceType>.*?</sdg:EvidenceType>}m]
+      .sub(%r{<sdg:EvidenceTypeClassification>[^<]*</sdg:EvidenceTypeClassification>}) do
+        "<sdg:EvidenceTypeClassification>#{evidence_type_classification(country, rank)}" \
+          '</sdg:EvidenceTypeClassification>'
+      end
+
+    classified.sub(%r{<sdg:Title lang="EN">[^<]*</sdg:Title>}) do
+      %(<sdg:Title lang="EN">Dummy PDF #{rank + 1}</sdg:Title>)
+    end
+  end
+
+  # Built on the host the capture names, the console addressing its own pages by
+  # the last segment alone.
+  def evidence_type_classification(country, rank)
+    "https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/#{country}/" \
+      "#{country.downcase}00000-0000-4000-8000-#{format('%012d', rank)}"
+  end
+
   # The same declaration set beside a combination that does carry types: what a
   # member state publishes when it issues nothing under one jurisdiction and
   # something under another.

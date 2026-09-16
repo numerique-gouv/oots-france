@@ -78,6 +78,21 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
     Alors la carte du pays est affichée
     Et la page n'affiche pas "Aucun type de justificatif ne correspond à cette recherche."
 
+  Scénario: chercher le code nu d'un pays ne garde que la carte de ce pays
+    Étant donné une exigence que plusieurs pays satisfont, chacun avec plusieurs justificatifs
+    Quand l'administrateur ouvre la page de cette exigence
+    Et qu'il cherche "AT"
+    Alors seule la carte du pays "Autriche (AT)" reste affichée
+    Et le décompte dit "3 résultats"
+
+  Scénario: le décompte est la somme des poids des cartes affichées
+    Étant donné une exigence que plusieurs pays satisfont, chacun avec plusieurs justificatifs
+    Quand l'administrateur ouvre la page de cette exigence
+    Alors le décompte dit "9 résultats"
+    Et aucune carte ne pèse ce nombre à elle seule
+    Quand il cherche "AT"
+    Alors le décompte dit "3 résultats"
+
   Scénario: une session finie pendant l'attente mène à la connexion, puis à la page entière
     Étant donné que le contenu de la page des exigences est retenu
     Quand l'administrateur ouvre la page des exigences

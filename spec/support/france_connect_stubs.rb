@@ -13,12 +13,21 @@ module FranceConnectStubs
   CLIENT_SECRET = 'secret-de-la-demarche'.freeze
 
   ISSUER = 'http://franceconnect.test/api/v2'.freeze
-  DISCOVERY_URL = "#{ISSUER}/.well-known/openid-configuration".freeze
-  AUTHORIZATION_ENDPOINT = "#{ISSUER}/authorize".freeze
-  TOKEN_ENDPOINT = "#{ISSUER}/token".freeze
-  USERINFO_ENDPOINT = "#{ISSUER}/userinfo".freeze
-  JWKS_URL = "#{ISSUER}/jwks".freeze
-  END_SESSION_ENDPOINT = "#{ISSUER}/session/end".freeze
+
+  # The five paths FranceConnect+ publishes under its base, in one place: the
+  # constants below and the document the doubles serve are both built from this,
+  # so a renamed route cannot move on one side and stay on the other.
+  # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-endpoints/
+  PATHS = { authorization_endpoint: '/authorize', token_endpoint: '/token',
+            userinfo_endpoint: '/userinfo', jwks_uri: '/jwks',
+            end_session_endpoint: '/session/end' }.freeze
+
+  DISCOVERY_URL = "#{ISSUER}#{FranceConnectClient::DISCOVERY_PATH}".freeze
+  AUTHORIZATION_ENDPOINT = "#{ISSUER}#{PATHS[:authorization_endpoint]}".freeze
+  TOKEN_ENDPOINT = "#{ISSUER}#{PATHS[:token_endpoint]}".freeze
+  USERINFO_ENDPOINT = "#{ISSUER}#{PATHS[:userinfo_endpoint]}".freeze
+  JWKS_URL = "#{ISSUER}#{PATHS[:jwks_uri]}".freeze
+  END_SESSION_ENDPOINT = "#{ISSUER}#{PATHS[:end_session_endpoint]}".freeze
 
   KEY_MANAGEMENT = 'RSA-OAEP-256'.freeze
   CONTENT_ENCRYPTION = 'A256GCM'.freeze
@@ -40,20 +49,26 @@ module FranceConnectStubs
       .merge('alg' => KEY_MANAGEMENT)
   end
 
-  def stub_france_connect(userinfo: DANISH_USERINFO)
+  # `issuer:` is what a scenario played in a browser moves: the authorization
+  # endpoint has to be somewhere the browser can reach, and
+  # `FranceConnectClient#endpoint` rebuilds every address on the origin of the
+  # configured issuer. Everything else is the same double — hence the parameter
+  # rather than a second copy of it.
+  def stub_france_connect(userinfo: DANISH_USERINFO, issuer: ISSUER)
     allow(Settings).to receive_messages(
-      france_connect_private_key_jwk: procedure_jwk, france_connect_issuer: ISSUER,
+      france_connect_private_key_jwk: procedure_jwk, france_connect_issuer: issuer,
       france_connect_credentials: { id: CLIENT_ID, secret: CLIENT_SECRET },
       oots_france_url: PROCEDURE_URL,
     )
 
-    stub_request(:get, DISCOVERY_URL).to_return(body: discovery_document.to_json)
-    stub_request(:get, JWKS_URL).to_return(body: france_connect_key_set.to_json)
-    stub_france_connect_userinfo(userinfo)
+    stub_request(:get, "#{issuer}#{FranceConnectClient::DISCOVERY_PATH}")
+      .to_return(body: discovery_document(issuer).to_json)
+    stub_request(:get, "#{issuer}#{PATHS[:jwks_uri]}").to_return(body: france_connect_key_set.to_json)
+    stub_france_connect_userinfo(userinfo, issuer:)
   end
 
-  def stub_france_connect_userinfo(claims)
-    stub_request(:get, USERINFO_ENDPOINT)
+  def stub_france_connect_userinfo(claims, issuer: ISSUER)
+    stub_request(:get, "#{issuer}#{PATHS[:userinfo_endpoint]}")
       .to_return(body: sealed_for_procedure(claims), headers: { 'Content-Type' => 'application/jwt' })
   end
 
@@ -89,10 +104,10 @@ module FranceConnectStubs
     get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
   end
 
-  def discovery_document
-    { issuer: ISSUER, authorization_endpoint: AUTHORIZATION_ENDPOINT, token_endpoint: TOKEN_ENDPOINT,
-      userinfo_endpoint: USERINFO_ENDPOINT, jwks_uri: JWKS_URL,
-      end_session_endpoint: END_SESSION_ENDPOINT }
+  # The document as the portal publishes it, every endpoint built on `PATHS`:
+  # the client reads its addresses from here and nowhere else.
+  def discovery_document(issuer = ISSUER)
+    { issuer: }.merge(PATHS.transform_values { |path| "#{issuer}#{path}" })
   end
 
   def france_connect_key_set(key = france_connect_signing_key) = { keys: [JWT::JWK.new(key).export] }
@@ -109,5 +124,3 @@ module FranceConnectStubs
     JWE.encrypt(payload, JWT::JWK.new(procedure_jwk).verify_key, alg:, enc:)
   end
 end
-
-RSpec.configure { |config| config.include FranceConnectStubs }

@@ -28,10 +28,11 @@
         no material distance from this gesture, and a GET the browser prefetched
         would issue it before the user had decided anything.
 
-        Rendered while the answer is out too, and merely hidden: the controller
-        brings it back when it gives up on reaching the service, and a press left
-        out of the fragment is one it cannot bring back — the sentence would ask
-        for a second press with nothing to press. %>
+        Rendered while the answer is out too, and merely hidden: the press
+        reappears whenever the server renders a settled zone, and a fragment
+        that left it out would have none to show. Nothing in the browser brings
+        it back — giving up offers a way back to the page instead, pressing
+        again being a second exchange (chapter 4.4 §4.1). %>
     <%= button_to submit_label, helpers.admin_demo_demande_path,
           class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line', lang: 'en',
           form: { class: 'demo-request__press', hidden: pending?,

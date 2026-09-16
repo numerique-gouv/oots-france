@@ -44,14 +44,20 @@ module DemoContractStubs
     { echange: ACCEPTED_EXCHANGE, conversation: ACCEPTED_CONVERSATION, statut: 'pending' }
   end
 
+  # The demands the contract has received, in the order they were made. Read off
+  # WebMock's own registry: a scenario played in a browser cannot reach for
+  # `a_request(...)` and `have_been_made`, `hash_including` being both WebMock's
+  # and rspec-mocks' where the two share a World.
+  def contract_demands
+    WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+      .select { |signature| signature.uri.path == PATH }
+  end
+
   # What the last call to the contract carried, read back as the route reads it.
   # The last and not the first: the examples about the conversation of chapter
   # 4.4 make two calls and ask what the second one said.
   def evidence_request_query
-    request = WebMock::RequestRegistry.instance.requested_signatures.hash.keys
-      .rfind { |signature| signature.uri.path == PATH }
-
-    Rack::Utils.parse_nested_query(request&.uri&.query.to_s)
+    Rack::Utils.parse_nested_query(contract_demands.last&.uri&.query.to_s)
   end
 
   # The register the procedure keeps of what it asked for, and which a delivery
@@ -61,5 +67,3 @@ module DemoContractStubs
     Demo::Request.create!(exchange_id:, conversation_id: ACCEPTED_CONVERSATION, **attributes)
   end
 end
-
-RSpec.configure { |config| config.include DemoContractStubs }

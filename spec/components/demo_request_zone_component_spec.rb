@@ -40,10 +40,10 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       expect(page).to have_text('Requesting the document')
     end
 
-    # Rendue tout de même, et seulement cachée : le contrôleur la ramène quand il
-    # renonce à joindre le service, et une presse absente du fragment est une
-    # presse qu'il ne peut pas ramener.
-    it 'keeps the press in the fragment, hidden, for the controller to bring back' do
+    # Rendue tout de même, et seulement cachée : la presse reparaît dès que le
+    # serveur rend une zone au repos, et un fragment qui l'aurait omise n'en
+    # aurait aucune à montrer. Le navigateur, lui, ne la ramène jamais.
+    it 'keeps the press in the fragment, hidden, for a settled zone to show again' do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__press[hidden]', visible: :hidden)

@@ -25,7 +25,7 @@ Les scénarios s'écrivent pour quelqu'un qui ne lira pas le code, avec les mots
 > [!IMPORTANT]
 > Les scénarios de bout en bout portent l'étiquette `@bout_en_bout`, que le profil Cucumber par défaut écarte, et cela doit le rester : le workflow `tests.yml` tourne sur un runner nu, sans passerelle. Les y inclure ferait échouer toutes les CI.
 
-**L'étiquette `@javascript` est l'autre, et elle ne change pas de profil** : les scénarios qui la portent restent dans le profil par défaut, et un navigateur sans tête tourne sur un runner nu. Elle dit seulement par quoi le scénario est joué — Cuprite au lieu de `rack_test`, donc un navigateur qui exécute vraiment les contrôleurs Stimulus de la console ([espace_administration.md](espace_administration.md)) au lieu d'un client qui les ignore. `features/pages_des_annuaires.feature` est aujourd'hui la seule à la porter. Comment installer le navigateur qu'elle demande est au [README](../README.md#tests), qui possède l'installation ; en intégration continue il vient de l'image du runner, et [`tests.yml`](../.github/workflows/tests.yml) échoue en le nommant si elle cesse d'en livrer un.
+**L'étiquette `@javascript` est l'autre, et elle ne change pas de profil** : les scénarios qui la portent restent dans le profil par défaut, et un navigateur sans tête tourne sur un runner nu. Elle dit seulement par quoi le scénario est joué — Cuprite au lieu de `rack_test`, donc un navigateur qui exécute vraiment les contrôleurs Stimulus de la console ([espace_administration.md](espace_administration.md)) au lieu d'un client qui les ignore. `features/pages_des_annuaires.feature` et `features/zone_de_demande_de_la_demarche.feature` la portent. Comment installer le navigateur qu'elle demande est au [README](../README.md#tests), qui possède l'installation ; en intégration continue il vient de l'image du runner, et [`tests.yml`](../.github/workflows/tests.yml) échoue en le nommant si elle cesse d'en livrer un.
 
 > [!NOTE]
 > Un scénario `@javascript` privé de son étiquette **échoue**, et c'est la preuve qu'il sert à quelque chose : `rack_test` n'exécute aucun script, si bien qu'un scénario qui passerait sans navigateur n'éprouverait rien du JavaScript.
@@ -127,6 +127,16 @@ L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'appl
 Le reste du trajet est du code de production : `EvidenceRequest::Fetch` résout le type de justificatif, le fournisseur et le point d'accès, soumet la requête à Domibus et ouvre un `Exchange`. La passerelle notifie ensuite l'application de la requête revenue dans sa propre file ; `EvidenceProvision::Answer` y répond avec le justificatif qu'`EvidenceDocumentBuilder` engendre pour cette réponse-là, et la notification de cette réponse règle l'échange. Le scénario confronte enfin l'empreinte SHA-256 du PDF reçu à celle que le journal a consignée : la France ne garde pas les octets qu'elle a servis, donc il n'y a aucun fichier d'origine à comparer.
 
 Le scénario d'erreur emprunte exactement le même trajet ; seule change la réponse construite, `00` et `T1` étant les seules démarches servies par un justificatif. Le **code EDM** qu'il vérifie est l'invariant : il ne peut venir que d'un message reçu de la passerelle. Il est lu sur l'état de l'échange, à `GET /requete/:exchange_id`.
+
+## Le point d'autorisation que les scénarios navigateur joignent
+
+Le faux ci-dessous est un processus lancé à côté de la suite, et le profil par défaut ne le lance pas. Or la page des justificatifs de la démarche n'a d'identité que par le retour de FranceConnect+, et les scénarios de `features/zone_de_demande_de_la_demarche.feature` en ont besoin sans lui.
+
+Ce qu'ils doublent est **un seul aller**. De toute la cinématique, une seule requête part du navigateur — la redirection vers le point d'autorisation ; le document de découverte, le JWKS, `/token` et `/userinfo` sont demandés par l'application, dans le processus du scénario, donc doublés par WebMock comme les specs de requête les doublent. Et cet aller-là ne peut pas être détourné ailleurs : `FranceConnectClient` reconstruit chaque adresse sur l'origine de `Settings.france_connect_issuer` et refuse tout ce qui n'en relève pas, si bien que le point d'autorisation est nécessairement sur l'émetteur.
+
+L'émetteur devient donc, le temps d'un scénario, une adresse du **serveur de Capybara lui-même**, et `features/support/browser_france_connect.rb` enrobe l'application pour servir le seul chemin que le navigateur touche : il lit `state` et `nonce` sur l'adresse reçue, retient le `nonce`, et redirige sur le chemin de `redirect_uri`. Tout le reste de cette origine tombe dans l'application, ce qui rend le montage invisible aux autres scénarios.
+
+Ce que cette forme préserve, et qui l'a fait retenir : le `state` et le `nonce` **ne sont jamais écrits en session à la main**, ils sont lus sur l'adresse où le navigateur a été envoyé — sans quoi le scénario ne prouverait rien de ce qui lie le retour au départ. Le double de `/token` est pour cela bâti à l'appel, afin de sceller le `nonce` que l'enrobage vient de retenir.
 
 ## Le faux FranceConnect+
 
