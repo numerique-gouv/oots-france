@@ -128,16 +128,16 @@ Le workflow `schematron.yml` la rejoue à chaque PR ; c'est le seul garde-fou au
 `make setup` appelle ce script, qui sert aussi seul — sur une passerelle repartie de zéro, ou pour rejouer une seule installation. Il pose ce dont une passerelle fraîche a besoin : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, un PMode, et la configuration de la notification vers l'application.
 
 ```sh
-$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
+$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \
+  LOGIN_NOTIFICATION_DOMIBUS=… MOT_DE_PASSE_NOTIFICATION_DOMIBUS=… \
+  MOT_DE_PASSE_MAGASINS=… PORT_OOTS_FRANCE=… \
     scripts/configure_domibus.sh
 ```
 
 Il est rejouable : le Plugin User n'est créé que s'il manque, et recharger le même truststore ou le même PMode est sans effet.
 
 > [!IMPORTANT]
-> Les deux identifiants de l'API REST sont exigés, et doivent reprendre ceux du `.env.oots` avec lequel tourne l'application : c'est le compte qu'elle présentera à la passerelle. En créer un autre donnerait un Plugin User ne correspondant à rien, et l'application recevrait des `403` sur toutes ses requêtes.
->
-> `MOT_DE_PASSE_MAGASINS` doit de même être celui du `.env` avec lequel tourne la passerelle : elle rouvre ses magasins avec cette valeur à chaque démarrage.
+> Les six variables sont exigées, et reprennent celles des fichiers d'environnement avec lesquels tourne la pile — le script ne les lit pas, leurs valeurs n'étant pas sourçables depuis un shell. Les deux identifiants de l'API REST sont le compte que l'application présentera à la passerelle : en créer un autre donnerait un Plugin User ne correspondant à rien, et des `403` sur toutes ses requêtes. Les deux de la notification sont ceux que la passerelle posera sur ses appels et que l'application vérifie : un écart, et chaque échange reste « en cours » sans un mot. `PORT_OOTS_FRANCE` compose l'adresse de ces appels. `MOT_DE_PASSE_MAGASINS` est celui avec lequel la passerelle rouvre ses magasins à chaque démarrage.
 
 > [!IMPORTANT]
 > **La passerelle doit être redémarrée après ce script.** Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le script écrit, et ne prennent effet qu'au redémarrage.
@@ -150,33 +150,9 @@ Le script s'authentifie sur la console en `admin`/`123456`, identifiants par dé
 
 Les mêmes gestes se font à la main dans la console, ce qui est la voie à prendre pour reprendre une seule des trois étapes : [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md). Ce que devient le répertoire `./domibus`, comment lire les journaux de la passerelle et quels réglages survivent à une table rase sont décrits dans [docs/domibus_context.md](docs/domibus_context.md#spécificités-de-linstallation-locale).
 
-## En production
+## Sur un serveur
 
-> [!NOTE]
-> Cette section ne concerne que les environnements de production. Côté passerelle, voir [domibus_context.md](docs/domibus_context.md#spécificités-de-linstallation-locale).
-
-OOTS-France s'appuie sur les services tiers de FranceConnect+, qui exigent que les interactions aient lieu sur HTTPS, d'où un NGinx en frontal :
-
-```sh
-$ cp -r nginx.template nginx
-```
-
-Ensuite, changer…
-- dans le fichier `nginx/conf/nginx.conf` : toutes les occurrences de `example.com` en le nom du domaine lié à la machine de développement.
-- dans le fichier `nginx/scripts/init-letsencrypt.sh` : toutes les occurrences de `example.com` en le nom du domaine lié à la machine de développement _et_ l'adresse `user@example.com` en l'adresse mail du développeur qui va demander les certificats.
-
-Lancer ensuite la demande de certificats, qui doit installer les certificats et terminer en succès, puis compiler les feuilles de style et le serveur :
-
-```sh
-$ nginx/scripts/init-letsencrypt.sh
-$ make assets
-$ docker compose up nginx
-```
-
-> [!IMPORTANT]
-> **`make assets` n'est pas facultatif.** Propshaft sert les fichiers depuis les sources en développement et en test, et pas du tout en production : sans cette compilation, les pages arrivent sans style et sans icône. Les fichiers atterrissent dans `public/assets`, à l'intérieur du dépôt — que la composition monte par-dessus l'image, ce qui est la raison pour laquelle les compiler à la construction de l'image ne servirait à rien. À rejouer après toute modification d'une feuille de style ou d'un contrôleur Stimulus.
-
-Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.du.domaine>`.
+Installer la même composition sur un serveur de test ou de démonstration — le gabarit de la machine, l'ordre des opérations et ce qui les rend irréversibles, le frontal HTTPS, ce qu'il faut cacher, comment mettre à jour — est l'objet de [docs/deploiement.md](docs/deploiement.md). Deux choses y changent par rapport à ce poste : les fichiers d'environnement se remplissent **avant** `make setup`, et `make assets` compile ce que la production ne sert pas à la volée.
 
 ## Documentation
 
@@ -186,6 +162,7 @@ Le serveur devrait être accessible depuis un navigateur à l'URL `https://<nom.
 - [docs/domibus_context.md](docs/domibus_context.md) — contexte de l'application Domibus (point d'accès eDelivery) : concepts, usage par OOTS-France, installation locale et pièges connus.
 - [docs/eidas_context.md](docs/eidas_context.md) — d'où vient l'identité de l'usager : ce que les TDD attendent de l'authentification eIDAS, et FranceConnect+, seule voie vers le nœud eIDAS français — habilitation, adresses à déclarer, protocole, bac à sable.
 - [docs/journal_des_echanges.md](docs/journal_des_echanges.md) — le journal que l'article 17 impose de conserver douze mois : ce qu'il consigne, comment ses données personnelles sont protégées, comment le relire.
+- [docs/deploiement.md](docs/deploiement.md) — installer la composition sur un serveur : gabarit de la machine, ordre des opérations, frontal HTTPS, ce qu'il faut cacher et sauvegarder, mise à jour.
 - [docs/test_e2e.md](docs/test_e2e.md) — comment jouer un échange OOTS complet en local, à travers Domibus.
 - [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md) — configurer la passerelle geste par geste dans sa console, quand le script ne convient pas.
 - [docs/versions_domibus.md](docs/versions_domibus.md) — version de Domibus utilisée, ce qu'elle coûte et ce qu'apporterait une mise à jour.

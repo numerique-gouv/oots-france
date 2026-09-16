@@ -43,6 +43,7 @@ Each piece of information has a single owning document; everything else links to
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | The Commission's Testing Services: the ITB test platform, the online validator, the mocked directories, the AS4 and LCM test components, and what can (and cannot) be submitted to them | `docs/testing_services.md` |
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
+| Deploying on a server: machine sizing, the order of operations and what each one freezes, the HTTPS front, what to firewall and back up, how to update | `docs/deploiement.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
 | The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the account that opens it | `docs/espace_administration.md` |
 | The exchange log of article 17: what is recorded and where, the encryption and retention of personal data, how to read it back | `docs/journal_des_echanges.md` |

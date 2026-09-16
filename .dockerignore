@@ -9,6 +9,11 @@ tmp
 vendor/bundle
 .bundle
 .env*
+# `COPY . /usr/src/app` in the Dockerfile would otherwise put the credentials
+# key into a layer of the image, where a secret has no reason to be: nothing
+# the application reads is in its credentials, and production takes
+# SECRET_KEY_BASE from the environment.
+config/master.key
 # Exceptions named one by one, and above all without a wildcard: a re-inclusion
 # pattern containing `*` stops BuildKit pruning the excluded directories. It then
 # walks the whole tree, `domibus/` included, whose contents it cannot read while
