@@ -14,6 +14,11 @@ BAD_GATEWAY_PAGE = '<html><head><title>502 Bad Gateway</title></head>' \
 
 BAD_GATEWAY_MARKER = '502 Bad Gateway'.freeze
 
+# The address the two pages served in two parts fetch. Narrowed to it on
+# purpose: everything else the page loads — its stylesheets, the import map, the
+# controllers themselves — must not be paused along with it.
+LISTING = '*listing=1*'.freeze
+
 Étantdonné('un Evidence Broker qui publie le catalogue des exigences') do
   stub_code_list
   stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_catalogue')
@@ -38,15 +43,15 @@ end
 end
 
 Étantdonné('le contenu de la page des exigences est retenu') do
-  deferred_request.hold
+  listing_request.hold
 end
 
 Étantdonné("une réponse sans l'en-tête \"Deferred-Fragment\" est fabriquée devant le navigateur") do
-  deferred_request.answer(status: 502, body: BAD_GATEWAY_PAGE)
+  listing_request.answer(status: 502, body: BAD_GATEWAY_PAGE)
 end
 
 Étantdonné('la connexion est coupée avant que le contenu soit servi') do
-  deferred_request.cut
+  listing_request.cut
 end
 
 # The listing on screen, which is where every search starts: the page is opened
@@ -65,7 +70,7 @@ Quand("l'administrateur ouvre la page de cette exigence") do
 end
 
 Quand('le contenu est servi') do
-  deferred_request.release
+  listing_request.release
 end
 
 Quand('son compte est supprimé') do
@@ -156,3 +161,7 @@ end
 # The only field of these pages, wherever it sits: what it narrows is named by
 # the page, and a scenario types into the one the page carries.
 def filter_field = find('input[data-controller="filter"]')
+
+# The listing these pages go and fetch, and the one request of theirs any
+# scenario here is about.
+def listing_request = intercepted_requests(pattern: LISTING)
