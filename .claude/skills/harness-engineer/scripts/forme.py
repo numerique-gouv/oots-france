@@ -52,6 +52,11 @@ def description(fm):
     return re.sub(r"\s+", " ", m.group(1)).strip().strip('"')
 
 
+def sur_invocation_seule(fm):
+    """`disable-model-invocation: true` retire le skill de la liste de la session : sa description n'est plus chargée."""
+    return re.search(r"^disable-model-invocation:\s*true\s*$", fm, re.M) is not None
+
+
 def paragraphes(texte):
     """Prose paragraphs of at least 60 characters; code blocks and tables are left out."""
     out, bloc, code = [], [], False
@@ -105,8 +110,11 @@ def tableau(depuis):
             sommaire = nl <= 100 or bool(re.search(r"^## (Contenu|Sommaire)", t, re.M))
             fr.append(f"{os.path.basename(p)} ({nl}{'' if sommaire else ', sans sommaire!'})")
         print(f"{f:48} {marque(n, SEUILS['lignes']):>6} {marque(d, SEUILS['description']):>6} {marque(g, SEUILS['garde_fous']):>7} {dates:>5} {commits(f, depuis):>7}  {', '.join(fr)}")
-    total = sum(len(description(frontmatter_et_corps(lire(f))[0])) for f in fichiers())
-    print(f"\ndescriptions chargées à chaque tour : {total} caractères")
+    chargees = [f for f in fichiers() if not sur_invocation_seule(frontmatter_et_corps(lire(f))[0])]
+    total = sum(len(description(frontmatter_et_corps(lire(f))[0])) for f in chargees)
+    mis_de_cote = len(fichiers()) - len(chargees)
+    print(f"\ndescriptions chargées à chaque tour : {total} caractères "
+          f"({mis_de_cote} sur invocation seule, non comptés)")
 
 
 def doublons():

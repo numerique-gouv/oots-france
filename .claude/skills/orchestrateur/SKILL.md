@@ -121,7 +121,9 @@ Un ouvrier voit plus qu'il ne livre, et l'écrit dans la section `## Reliquats` 
 
 ## 6. Mettre en pause, et reprendre
 
-`TaskStop` arrête, un message reprend — l'ouvrier repart de son transcript, sans replanifier. **Avant de rendre la main après un arrêt, relève l'état de chaque worktree** (`git -C .worktrees/<branche> status --porcelain`, puis `status -sb`) et donne-le en tableau : ticket, branche, étape, non committé, non poussé, PR. **Au redémarrage, redonne cet état** dans le message : l'ouvrier a son contexte, pas ce que son arbre est devenu pendant qu'il dormait.
+**Une pause à session ouverte** : `TaskStop` arrête, un message reprend — l'ouvrier repart de son transcript, sans replanifier, et le message lui redonne ce que son arbre est devenu pendant qu'il dormait (`git -C .worktrees/<branche> status --porcelain`, puis `status -sb`).
+
+**Un arrêt qui ferme la machine** est un autre geste, et il a le sien : `Skill(skill: "stop-et-consigne")`, dès que l'utilisateur dit d'arrêter la flotte ou qu'il s'en va. Il énumère les agents — un `TaskStop` sur un parent n'emporte pas ses enfants —, les arrête, et écrit sur disque de quoi reprendre **à neuf** : la session suivante relance un ouvrier neuf par ticket, dont le prompt reste l'identifiant, l'arbre portant le reste.
 
 ## Garde-fous
 
