@@ -1,0 +1,274 @@
+# The address of the zone: the press posts to it, and the waiting re-asks it.
+# Both are intercepted, which is the whole reason the pattern names no method —
+# one scenario is about a press whose own answer is lost being retried as an
+# interrogation, and telling the two apart is what it has to prove.
+ZONE_ADDRESS = '*/admin/demo/demande*'.freeze
+
+# What an answer replaces, and what says which outcome is on screen.
+BODY = '.demo-request__body'.freeze
+
+# Set on the waiting by the scenario and read back after an answer: `innerHTML`
+# replaced takes it with it, a `splice` that abstains leaves it. A `data-`
+# nothing in the application reads, and not the `data-outcome` the controller
+# compares.
+MARK = 'the-same-waiting'.freeze
+
+# Set on the window when the page is arrived at, and read back to say a zone was
+# spliced into rather than navigated away from: a reload loses it.
+PAGE_MARK = 'not-reloaded'.freeze
+
+# The element an answer never replaces — it carries the controller and the
+# announced region — and the one the zone's contents live inside.
+ZONE = '.demo-request'.freeze
+
+# Set on that element when the page is arrived at, and read back after an answer
+# has changed the zone: `innerHTML` replaced leaves the element, `outerHTML`
+# would take it away along with what announces it.
+ZONE_MARK = 'the-same-zone'.freeze
+
+# What the zone leaves between two interrogations. Waited past, to say that no
+# other one went out — the absence of a request cannot be waited *for*.
+INTERVAL = 2
+
+# How many answers in a row the zone may fail to get before it says so, and so
+# how long giving up takes: three interrogations an interval apart, which is
+# longer than `Capybara.default_max_wait_time` and has to be said here.
+ATTEMPTS = 3
+GIVING_UP = INTERVAL * (ATTEMPTS + 2)
+
+# The document the correspondent's delivery files against the exchange, which is
+# what settles the outcome whatever the contract still says.
+EVIDENCE = "%PDF-1.4\ndrapeau".b
+
+Étantdonné('les annuaires et le contrat de la démarche doublés') do
+  # First of all, and not by taste: it is what pins `Settings.oots_france_url`,
+  # the root every double of the contract below is mounted on.
+  stub_browser_france_connect
+
+  stub_code_list
+  stub_directory_resolution
+  stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_fr')
+  stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
+  stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
+  stub_oots_france_public_keys
+  stub_evidence_request
+  stub_exchange_state
+end
+
+# The whole European flow as the browser walks it: the departure is pressed, the
+# authorization endpoint sends the browser back, and the return is accepted on a
+# `state` and a `nonce` this scenario never wrote.
+Étantdonné("l'usager identifié sur la page des justificatifs") do
+  visit admin_demo_root_path
+  click_button I18n.t('admin.demo.home.show.sign_in')
+
+  expect(page).to have_button(press_label)
+  mark_the_page
+end
+
+Étantdonné('la soumission de la demande retenue devant le navigateur') do
+  zone_requests.hold
+end
+
+Étantdonné('la soumission de la demande et les deux requêtes suivantes coupées devant le navigateur') do
+  zone_requests.cut.cut.cut
+end
+
+# Pressed and answered before anything is planned for what follows: the zone
+# schedules its first interrogation on that answer, so a treatment armed any
+# earlier would meet the submission instead.
+Étantdonné('une demande en cours') do
+  click_button press_label
+
+  expect(page).to have_text(I18n.t('components.demo_request_zone.loading'))
+  wait_until_registered
+  mark_the_waiting
+end
+
+Étantdonné('la première interrogation laissée passer, la deuxième retenue devant le navigateur') do
+  zone_requests.pass.hold
+end
+
+Étantdonné('la première interrogation coupée, la deuxième répondue sans l\'en-tête "Deferred-Fragment" devant le navigateur') do
+  zone_requests.cut.answer(status: 502, body: BAD_GATEWAY_PAGE)
+end
+
+Étantdonné('les trois interrogations suivantes coupées devant le navigateur') do
+  zone_requests.cut.cut.cut
+end
+
+Étantdonné('une interrogation retenue devant le navigateur') do
+  zone_requests.hold
+end
+
+Quand("l'usager presse {string}") do |label|
+  click_button label
+end
+
+Quand('la soumission retenue est libérée') do
+  zone_requests.release
+end
+
+Quand("l'interrogation retenue est libérée") do
+  zone_requests.release
+end
+
+# Blocks until the browser has asked, which is what makes the next assertion
+# about a request that has actually gone out rather than one that may yet.
+Quand('la zone interroge son adresse') do
+  zone_requests.held
+end
+
+Quand('deux interrogations de suite n\'obtiennent aucune réponse exploitable') do
+  wait_until_seen(2)
+end
+
+Quand('le justificatif est remis') do
+  Demo::Request.sole.receive_evidence!(EVIDENCE)
+end
+
+Quand("l'usager recharge la page des justificatifs") do
+  page.refresh
+  mark_the_page
+end
+
+Quand('le compte de l\'administrateur est supprimé') do
+  @administrator.destroy!
+end
+
+# The one thing the server cannot say, so the one the browser says of itself.
+# Waited for rather than asserted: three interrogations two seconds apart is
+# what precedes it.
+Quand('la zone renonce à joindre le service') do
+  # `normalize_ws`: the wording places a link mid-sentence, so the rendering
+  # breaks it over three lines where the translation has one.
+  expect(page).to have_text(disconnected_sentence, wait: GIVING_UP, normalize_ws: true)
+end
+
+Quand("l'usager suit le lien {string}") do |label|
+  click_link label
+end
+
+Alors("la zone annonce qu'elle attend") do
+  expect(page).to have_text(I18n.t('components.demo_request_zone.loading'))
+  expect(page).to have_css("#{BODY}[data-outcome='pending']", visible: :all)
+  mark_the_waiting
+end
+
+Alors('la zone annonce toujours la même attente') do
+  expect(page).to have_text(I18n.t('components.demo_request_zone.loading'))
+  expect(page).to have_css("#{BODY}[data-scenario-mark='#{MARK}']", visible: :all)
+end
+
+# Neither of its two labels: asking again after a refusal is the same press
+# under another word, and giving up offers neither.
+Alors('la page n\'affiche aucune presse') do
+  expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit'))
+  expect(page).to have_no_button(I18n.t('components.demo_request_zone.retry'))
+end
+
+Alors('la page affiche la presse {string}') do |label|
+  expect(page).to have_button(label)
+end
+
+Alors('la page affiche le lien {string}') do |label|
+  expect(page).to have_link(label)
+end
+
+Alors('la page des justificatifs est toujours affichée') do
+  expect(page).to have_current_path(admin_demo_documents_path)
+end
+
+# Chapter-free and structural: the element that holds the announced region is
+# the one an answer must not replace, and a zone rebuilt whole would lose it
+# along with the controller that keeps asking.
+Alors("la zone n'a pas été remplacée, seulement son contenu") do
+  expect(page).to have_css("#{ZONE}[data-scenario-zone='#{ZONE_MARK}']", visible: :all)
+end
+
+Alors("la page des justificatifs n'a pas été rechargée") do
+  expect(page).to have_current_path(admin_demo_documents_path)
+  expect(page.evaluate_script('window.pageMark')).to eq(PAGE_MARK)
+end
+
+Alors("le contrat n'a reçu aucune demande") do
+  expect(contract_demands).to be_empty
+end
+
+# Waited for: releasing the submission hands it on asynchronously, so the
+# demand reaches the contract after this step has begun.
+Alors('le contrat a reçu la demande') do
+  wait_until('Le contrat n\'a reçu aucune demande.') { contract_demands.any? }
+end
+
+# One tick at a time: an absence is waited past rather than waited for, so the
+# interval is let by and what went out is counted again.
+Alors('aucune autre interrogation ne part') do
+  gone = zone_requests.seen.size
+  sleep INTERVAL + 1
+
+  expect(zone_requests.seen.size).to eq(gone)
+end
+
+# What a lost press is retried as. Chapter 4.4 §4.1 makes a press a new request
+# — « a new unique request MUST be issued » — so sending it again would open a
+# second exchange while the first is still under way; consulting its address is
+# free to be repeated.
+Alors('les essais qui suivent la soumission sont des interrogations') do
+  wait_until_seen(3)
+  attempts = zone_requests.seen.pluck(:method)
+
+  # `uniq` and not the `all` matcher: Capybara's own `all` is in this World and
+  # is what the bare name resolves to.
+  expect(attempts.first).to eq('POST')
+  expect(attempts.drop(1).uniq).to eq(%w[GET])
+end
+
+def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
+
+def press_label = I18n.t('components.demo_request_zone.submit')
+
+# The sentence alone, the wording carrying a link the translation places.
+def disconnected_sentence
+  ActionController::Base.helpers.strip_tags(
+    I18n.t('components.demo_request_zone.disconnected_html', reload: I18n.t('components.demo_request_zone.reload')),
+  )
+end
+
+def mark_the_waiting
+  page.execute_script("document.querySelector('#{BODY}').dataset.scenarioMark = '#{MARK}'")
+end
+
+# Both marks are posed together, the page and the element the answers splice
+# into: a reload loses the first, and a replacement of the element the second.
+def mark_the_page
+  page.execute_script("window.pageMark = '#{PAGE_MARK}'")
+  page.execute_script("document.querySelector('#{ZONE}').dataset.scenarioZone = '#{ZONE_MARK}'")
+end
+
+# The press is answered once the register carries the request: from then on,
+# what the zone asks for is its state.
+def wait_until_registered
+  wait_until("La demande n'a pas été enregistrée : la soumission n'a pas abouti.") { Demo::Request.exists? }
+end
+
+# The requests the double has treated, waited for by count: each is an interval
+# after the one before, and Capybara's own waiting governs elements only.
+def wait_until_seen(count)
+  wait_until(-> { "La zone n'a fait que #{zone_requests.seen.size} requête(s) sur #{count} attendue(s)." },
+    seconds: INTERVAL * (count + 2)) { zone_requests.seen.size >= count }
+end
+
+# What Capybara does for an element, for everything else this suite waits on: a
+# browser and a server work in their own threads, and what they have done is
+# true a moment after the step that caused it.
+def wait_until(complaint, seconds: Capybara.default_max_wait_time)
+  limit = Process.clock_gettime(Process::CLOCK_MONOTONIC) + seconds
+
+  until yield
+    raise(complaint.respond_to?(:call) ? complaint.call : complaint) if
+      Process.clock_gettime(Process::CLOCK_MONOTONIC) > limit
+
+    sleep 0.05
+  end
+end

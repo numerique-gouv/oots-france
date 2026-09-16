@@ -24,6 +24,37 @@ Before('not @bout_en_bout') do
   ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'
 end
 
+# What the demonstration procedure reads on the way to the contract, and which
+# nothing else in the suite supplies: the scenarios played in a browser are the
+# first of this profile to press for a document, so they are the first to reach
+# `Demo::RequestEvidence` and `Demo::BeneficiaryTokenWriter` at all.
+#
+# These two and no more. Of everything `Settings::REQUIRED` names, the rest is
+# either forced on `Settings` by the doubles of FranceConnect+ (the issuer, the
+# credentials, the decryption key, and `URL_OOTS_FRANCE`, which every double of
+# the contract is mounted on), posted above, given to the job by `tests.yml`
+# because the framework reads it while booting (the three journal keys and the
+# retention), or on the Domibus path no scenario of this profile walks.
+#
+# `presence` and not `||=`, as `features/support/directory_stubs.rb` already
+# has it: a variable declared empty is what `Settings` refuses, and an empty
+# string is not `nil`. A real value still wins.
+Before('not @bout_en_bout') do
+  # The SIRET the procedure is registered under in `DONNEES_REQUETEURS`, sent as
+  # `idRequeteur`. The same test value `spec/support/test_environment.rb` gives
+  # RSpec and `scripts/ci/prepare_environment.sh` writes for the stack.
+  ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] =
+    ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'].presence || '00000000000003'
+
+  # The key the procedure signs its beneficiary token with. Drawn rather than
+  # pinned, and an EC one: `BeneficiaryToken` admits ES256 alone. Drawn once —
+  # the assignment makes the next scenario find it already there.
+  ENV['CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64'] =
+    ENV['CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64'].presence || Base64.strict_encode64(
+      JWT::JWK.new(OpenSSL::PKey::EC.generate('prime256v1')).export(include_private: true).to_json,
+    )
+end
+
 # No transaction around a scenario, because the `bout_en_bout` ones cannot have
 # one: they drive a server and a background worker that run in their own
 # processes, and a transaction held here would hide from them everything it
