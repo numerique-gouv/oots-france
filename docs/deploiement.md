@@ -47,7 +47,36 @@ Le CPU n'est jamais le goulot : le trafic est machine à machine, et le seul pic
 > [!NOTE]
 > La JVM de Domibus n'a pas de `-Xmx` : elle prend par défaut un quart de la mémoire visible comme tas maximal, soit 1 Gio sur une machine à 4 Gio. Suffisant à vide, sans marge. Pour la borner, ajouter `-Xmx` à `SERVER_INIT_PROPERTIES` dans `docker-compose.yml`, que l'image injecte dans `JAVA_OPTS`.
 
-Prérequis sur la machine : Git, `make` et Docker avec [Compose v2](https://docs.docker.com/compose/releases/migrate/) — 2.24 au moins, pour le `!override` employé plus bas —, rien d'autre. Sur le réseau : un nom de domaine qui pointe sur le serveur, les ports 80 et 443 ouverts en entrée **et tous les autres fermés avant la première commande** — `make setup` publie la console de la passerelle et la base sur toutes les interfaces, avec les identifiants par défaut de l'image, voir [plus bas](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre) —, et en sortie l'accès à `code.europa.eu:4567` (les images Domibus et MySQL), à `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, à Let's Encrypt, et une **résolution DNS qui rend les enregistrements NAPTR** — sans elle, toute demande de justificatif échoue en `502`.
+Prérequis sur la machine : Git, `make` et Docker avec [Compose v2](https://docs.docker.com/compose/releases/migrate/) — 2.24 au moins, pour le `!override` employé plus bas —, rien d'autre ; [la section suivante](#installer-les-outils-sur-une-machine-nue) les installe. Sur le réseau : un nom de domaine qui pointe sur le serveur, les ports 80 et 443 ouverts en entrée **et tous les autres fermés avant la première commande** — `make setup` publie la console de la passerelle et la base sur toutes les interfaces, avec les identifiants par défaut de l'image, voir [plus bas](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre) —, et en sortie l'accès à `code.europa.eu:4567` (les images Domibus et MySQL), à `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, à Let's Encrypt, et une **résolution DNS qui rend les enregistrements NAPTR** — sans elle, toute demande de justificatif échoue en `502`.
+
+### Installer les outils sur une machine nue
+
+Sur Debian — Ubuntu ne diffère que par le segment `debian` de l'adresse du dépôt —, Docker s'installe depuis [son propre dépôt apt](https://docs.docker.com/engine/install/debian/), qui livre Compose v2 en plugin à une version que les paquets de la distribution n'atteignent pas :
+
+```sh
+apt-get update && apt-get install -y ca-certificates curl git make
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] %s %s stable\n' \
+  https://download.docker.com/linux/debian "$(. /etc/os-release && echo "$VERSION_CODENAME")" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+usermod -aG docker <utilisateur>
+```
+
+Puis, une fois reconnecté avec cet utilisateur, `docker compose version` doit répondre 2.24 ou plus, et `docker run --rm hello-world` passer sans `sudo`. Tout ce qui suit se fait avec cet utilisateur et jamais en root : un `make setup` lancé en root laisse `./domibus` et les `.env*` à son nom.
+
+> [!WARNING]
+> C'est `docker-compose-plugin`, la commande `docker compose`, et non le paquet `docker-compose` de la distribution, l'ancien binaire v1 que les scripts du dépôt n'appellent pas. Ne pas installer `docker.io` à côté : les deux se marchent dessus. Et l'entrée du dépôt apt tient sur **une** ligne — un terminal qui replie une ligne collée trop longue la coupe en deux, et `apt-get update` répond `Malformed entry`.
+
+Les journaux de `web` et `worker` vont sur la sortie standard, donc dans `docker logs` : borner leur taille avant de monter la pile, pour qu'ils ne remplissent pas le disque.
+
+```sh
+printf '{ "log-driver": "json-file", "log-opts": { "max-size": "50m", "max-file": "5" } }\n' > /etc/docker/daemon.json
+systemctl restart docker
+```
 
 ## L'ordre des opérations
 
@@ -166,7 +195,7 @@ Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans l
 >
 > `!override` parce qu'une liste de ports s'ajoute à celle du fichier principal au lieu de la remplacer ; il demande Compose 2.24. Écrit avant `make setup`, il vaut dès la création des conteneurs ; après, il faut les recréer.
 
-Les journaux de `web` et `worker` vont sur la sortie standard, donc dans `docker logs` : configurer la rotation du démon Docker (`log-opts` `max-size`, `max-file`) pour qu'ils ne remplissent pas le disque. Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
+Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotation posée [à l'installation](#installer-les-outils-sur-une-machine-nue). Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
 
 ## Ce qu'il faut sauvegarder
 
