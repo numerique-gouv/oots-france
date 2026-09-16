@@ -63,7 +63,17 @@ $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
     scripts/ci/prepare_environment.sh
 ```
 
-Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et engendre lui-même les trois clés JWK. Il honore les variables passées ci-dessus, et pose des valeurs de développement partout ailleurs. Le mot de passe de l'API REST doit faire 16 à 32 caractères avec majuscule, minuscule, chiffre et caractère spécial, faute de quoi Domibus le refuse ; celui des magasins ne doit pas contenir d'espace.
+Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et engendre lui-même les trois clés JWK. Il honore les variables passées ci-dessus, et pose des valeurs de développement partout ailleurs.
+
+Chaque secret a son format, et trois d'entre eux sont refusés s'il n'est pas respecté — par Domibus au moment de `make setup`, ou par l'application au démarrage. Un générateur par cas, sans guillemet, `$`, `#` ni espace, que Compose réinterpréterait dans un `env_file` :
+
+| Secret | Format | Générateur |
+| --- | --- | --- |
+| `MOT_DE_PASSE_API_REST`, et le mot de passe de la console Domibus | 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial | `echo "$(openssl rand -hex 6)Aa1!$(openssl rand -hex 6)"` |
+| `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | 32 caractères au moins | `openssl rand -hex 32` |
+| `SECRET_KEY_BASE` | long, sans autre règle | `openssl rand -hex 64` |
+| `MOT_DE_PASSE_MAGASINS` | sans espace | `openssl rand -hex 16` |
+| les autres mots de passe (bases, notification, rôle applicatif) | libres | `openssl rand -hex 16` |
 
 ### 2. Remplacer ce qu'il a écrit en dur
 
