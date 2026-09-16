@@ -153,6 +153,19 @@ $ make assets
 $ docker compose up -d web worker
 ```
 
+Détaché, et pas `make up` : celui-là reste au premier plan, pour un poste de développement, et lance aussi le faux FranceConnect+. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
+
+Seul `nginx` est déclaré `restart: unless-stopped` dans `docker-compose.yml` : après un redémarrage de la machine, le reste ne revient pas de lui-même. Le poser sur les cinq autres services dans le `docker-compose.override.yml`, que Compose charge de lui-même — avec le démon activé par `systemctl enable`, la pile survit alors à un reboot :
+
+```yaml
+services:
+  web: { restart: unless-stopped }
+  worker: { restart: unless-stopped }
+  postgres: { restart: unless-stopped }
+  domibus: { restart: unless-stopped }
+  mysql: { restart: unless-stopped }
+```
+
 ### 5. Le compte de l'espace d'administration
 
 Rien n'est posé en production. Le compte se crée dans la console Rails, comme [espace_administration.md](espace_administration.md#qui-peut-y-entrer) l'indique :
