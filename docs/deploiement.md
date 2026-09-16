@@ -21,7 +21,7 @@ La composition livrée installe tout sur une seule machine : l'application (`web
 
 Trois choses restent hors de sa portée, chacune documentée ailleurs :
 
-- **FranceConnect+.** La démarche de démonstration s'identifie sur le faux FranceConnect+ de la pile locale, qu'un serveur ne lance pas. Un serveur joignable est précisément ce qui manquait pour demander le bac à sable : [eidas_context.md](eidas_context.md#les-adresses-que-ce-dépôt-déclarera) dit quoi déclarer, et trois variables suffisent ensuite (`URL_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_FRANCE_CONNECT`, `SECRET_CLIENT_FRANCE_CONNECT`).
+- **Le vrai FranceConnect+.** La démarche de démonstration s'identifie sur le faux FranceConnect+ du dépôt, que ce serveur lance avec la pile, en HTTP, sur des identités de test — de quoi montrer la démarche, rien de plus. Un serveur joignable est précisément ce qui manquait pour demander le bac à sable : [eidas_context.md](eidas_context.md#les-adresses-que-ce-dépôt-déclarera) dit quoi déclarer, et trois variables suffisent ensuite (`URL_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_FRANCE_CONNECT`, `SECRET_CLIENT_FRANCE_CONNECT`).
 - **Un autre État membre.** La passerelle dialogue avec elle-même : certificats auto-signés, PMode à une seule partie sur `localhost`. Un échange réel demande un certificat de la PKI eDelivery, un PMode qui nomme les correspondants et l'endpoint MSH public, et un `nginx` qui le mandate — le [gabarit](../nginx.template/conf/nginx.conf) ne mandate que `web`. Voir [domibus_context.md](domibus_context.md#le-pmode-dexemple).
 - **Être trouvé.** La France est inscrite à l'Evidence Broker et au Data Service Directory de l'acceptation sous `AP_FR_01`, mais ce point d'accès est la passerelle de démonstration : [reste_à_faire.md](reste_à_faire.md) tient l'état de ce raccordement.
 
@@ -47,7 +47,36 @@ Le CPU n'est jamais le goulot : le trafic est machine à machine, et le seul pic
 > [!NOTE]
 > La JVM de Domibus n'a pas de `-Xmx` : elle prend par défaut un quart de la mémoire visible comme tas maximal, soit 1 Gio sur une machine à 4 Gio. Suffisant à vide, sans marge. Pour la borner, ajouter `-Xmx` à `SERVER_INIT_PROPERTIES` dans `docker-compose.yml`, que l'image injecte dans `JAVA_OPTS`.
 
-Prérequis sur la machine : Git et Docker avec [Compose v2](https://docs.docker.com/compose/releases/migrate/) — 2.24 au moins, pour le `!override` employé plus bas —, rien d'autre. Sur le réseau : un nom de domaine qui pointe sur le serveur, les ports 80 et 443 ouverts en entrée **et tous les autres fermés avant la première commande** — `make setup` publie la console de la passerelle et la base sur toutes les interfaces, avec les identifiants par défaut de l'image, voir [plus bas](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre) —, et en sortie l'accès à `code.europa.eu:4567` (les images Domibus et MySQL), à `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, à Let's Encrypt, et une **résolution DNS qui rend les enregistrements NAPTR** — sans elle, toute demande de justificatif échoue en `502`.
+Prérequis sur la machine : Git, `make` et Docker avec [Compose v2](https://docs.docker.com/compose/releases/migrate/) — 2.24 au moins, pour le `!override` employé plus bas —, rien d'autre ; [la section suivante](#installer-les-outils-sur-une-machine-nue) les installe. Sur le réseau : un nom de domaine qui pointe sur le serveur, les ports 80 et 443 ouverts en entrée **et tous les autres fermés avant la première commande** — `make setup` publie la console de la passerelle et la base sur toutes les interfaces, avec les identifiants par défaut de l'image, voir [plus bas](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre) —, et en sortie l'accès à `code.europa.eu:4567` (les images Domibus et MySQL), à `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, à Let's Encrypt, et une **résolution DNS qui rend les enregistrements NAPTR** — sans elle, toute demande de justificatif échoue en `502`.
+
+### Installer les outils sur une machine nue
+
+Sur Debian — Ubuntu ne diffère que par le segment `debian` de l'adresse du dépôt —, Docker s'installe depuis [son propre dépôt apt](https://docs.docker.com/engine/install/debian/), qui livre Compose v2 en plugin à une version que les paquets de la distribution n'atteignent pas :
+
+```sh
+apt-get update && apt-get install -y ca-certificates curl git make
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+printf 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] %s %s stable\n' \
+  https://download.docker.com/linux/debian "$(. /etc/os-release && echo "$VERSION_CODENAME")" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update && apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+systemctl enable --now docker
+usermod -aG docker <utilisateur>
+```
+
+Puis, une fois reconnecté avec cet utilisateur, `docker compose version` doit répondre 2.24 ou plus, et `docker run --rm hello-world` passer sans `sudo`. Tout ce qui suit se fait avec cet utilisateur et jamais en root : un `make setup` lancé en root laisse `./domibus` et les `.env*` à son nom.
+
+> [!WARNING]
+> C'est `docker-compose-plugin`, la commande `docker compose`, et non le paquet `docker-compose` de la distribution, l'ancien binaire v1 que les scripts du dépôt n'appellent pas. Ne pas installer `docker.io` à côté : les deux se marchent dessus. Et l'entrée du dépôt apt tient sur **une** ligne — un terminal qui replie une ligne collée trop longue la coupe en deux, et `apt-get update` répond `Malformed entry`.
+
+Les journaux de `web` et `worker` vont sur la sortie standard, donc dans `docker logs` : borner leur taille avant de monter la pile, pour qu'ils ne remplissent pas le disque.
+
+```sh
+printf '{ "log-driver": "json-file", "log-opts": { "max-size": "50m", "max-file": "5" } }\n' > /etc/docker/daemon.json
+systemctl restart docker
+```
 
 ## L'ordre des opérations
 
@@ -63,7 +92,17 @@ $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
     scripts/ci/prepare_environment.sh
 ```
 
-Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et engendre lui-même les trois clés JWK. Il honore les variables passées ci-dessus, et pose des valeurs de développement partout ailleurs. Le mot de passe de l'API REST doit faire 16 à 32 caractères avec majuscule, minuscule, chiffre et caractère spécial, faute de quoi Domibus le refuse ; celui des magasins ne doit pas contenir d'espace.
+Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et engendre lui-même les trois clés JWK. Il honore les variables passées ci-dessus, et pose des valeurs de développement partout ailleurs.
+
+Chaque secret a son format, et trois d'entre eux sont refusés s'il n'est pas respecté — par Domibus au moment de `make setup`, ou par l'application au démarrage. Un générateur par cas, sans guillemet, `$`, `#` ni espace, que Compose réinterpréterait dans un `env_file` :
+
+| Secret | Format | Générateur |
+| --- | --- | --- |
+| `MOT_DE_PASSE_API_REST`, et le mot de passe de la console Domibus | 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial | `echo "$(openssl rand -hex 6)Aa1!$(openssl rand -hex 6)"` |
+| `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | 32 caractères au moins | `openssl rand -hex 32` |
+| `SECRET_KEY_BASE` | long, sans autre règle | `openssl rand -hex 64` |
+| `MOT_DE_PASSE_MAGASINS` | sans espace | `openssl rand -hex 16` |
+| les autres mots de passe (bases, notification, rôle applicatif) | libres | `openssl rand -hex 16` |
 
 ### 2. Remplacer ce qu'il a écrit en dur
 
@@ -71,11 +110,11 @@ Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et enge
 | --- | --- | --- |
 | `.env.domibus` | `MYSQL_ROOT_PASSWORD`, et `MYSQL_PASSWORD` avec `DB_PASS` qui doit lui être égal | lus à la création du volume, et plus jamais |
 | `.env.postgres` | `POSTGRES_PASSWORD`, et les deux autres si on le souhaite | idem |
-| `.env.oots` | `UTILISATEUR_BASE_DE_DONNEES`, `MOT_DE_PASSE_BASE_DE_DONNEES`, `NOM_BASE_DE_DONNEES` alignés sur `.env.postgres` ; `MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES` | le rôle applicatif est créé par `make setup` avec ce mot de passe |
+| `.env.oots` | `MOT_DE_PASSE_BASE_DE_DONNEES` **égal à** `POSTGRES_PASSWORD` de `.env.postgres`, et de même `UTILISATEUR_BASE_DE_DONNEES` à `POSTGRES_USER`, `NOM_BASE_DE_DONNEES` à `POSTGRES_DB` : l'application se présente avec les premiers, l'image crée le rôle avec les seconds, et rien ne vérifie l'égalité avant que `db:prepare` ne tombe sur `password authentication failed` ; `MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES` | le rôle applicatif est créé par `make setup` avec ce mot de passe |
 | `.env.oots` | les trois clés du journal, `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | une ligne chiffrée avec un jeu est illisible avec un autre : à fixer avant la première écriture |
 | `.env.oots` | `RAILS_ENV=production` et `SECRET_KEY_BASE=…`, **à ajouter** : le template ne les déclare pas | voir l'encadré ci-dessous |
 | `.env.oots` | `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, `NOM_FOURNISSEUR_FRANCAIS`, `DONNEES_REQUETEURS`, `IDENTIFIANT_REQUETEUR_DEMARCHE` | l'identité que les messages annoncent |
-| `.env.oots` | `URL_FAUX_FRANCE_CONNECT` vidée ; `URL_FRANCE_CONNECT` et ses deux identifiants, le jour où le bac à sable répond | un serveur ne lance pas le faux |
+| `.env.oots` | `URL_FAUX_FRANCE_CONNECT` **et** `URL_FRANCE_CONNECT` à `http://<domaine>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` ; les deux identifiants restent ceux que le script a écrits, ce sont les constantes du faux | l'émetteur doit être une seule adresse pour le navigateur de l'usager et pour `web` : `localhost` ne vaut que sur un poste. Le jour où le bac à sable répond, `URL_FRANCE_CONNECT` et les identifiants deviennent les siens et `URL_FAUX_FRANCE_CONNECT` se vide |
 
 Les deux jeux de clés s'engendrent avec l'image de l'application, avant même que la pile tourne :
 
@@ -102,24 +141,31 @@ Ensuite, dans la console Domibus — joignable sur le port `PORT_DOMIBUS` de la 
 
 ### 4. Le frontal HTTPS
 
-FranceConnect+ exige HTTPS, et la production Rails aussi (`config.force_ssl`). `nginx` termine TLS avec un certificat Let's Encrypt, que le service `certbot` renouvelle :
+Voir avec Jo.
 
-```sh
-$ cp -r nginx.template nginx
-```
-
-Puis remplacer `example.com` par le domaine dans `nginx/conf/nginx.conf` et dans `nginx/scripts/init-letsencrypt.sh`, et `user@example.com` par l'adresse qui recevra les avis d'expiration. Le `proxy_pass` vise `web:3000` : laisser `PORT_OOTS_FRANCE` à 3000 dans `.env`, ou y reporter la valeur choisie.
-
-```sh
-$ make assets                          # les feuilles de style, que la production ne compile pas à la volée
-$ nginx/scripts/init-letsencrypt.sh    # demande le certificat ; démarre nginx, donc web et ses dépendances
-$ docker compose up -d worker certbot  # ce que nginx ne tire pas : le worker, et le renouvellement
-```
+Ce que la pile attend du frontal, quel qu'il soit : il termine TLS, mandate `web` sur `PORT_OOTS_FRANCE`, et Rails le suppose (`config.assume_ssl`, `config.force_ssl`) — ce qui vaut aussi pour la passerelle, qui notifie `web` en HTTP sur le réseau docker sans que rien ne redirige cet appel-là. Le `nginx` de `docker-compose.yml` et son [gabarit](../nginx.template/conf/nginx.conf) sont une façon de le faire, pas la seule.
 
 > [!IMPORTANT]
 > **`make assets` n'est pas facultatif, et se rejoue à chaque mise à jour.** Propshaft ne sert rien en production — son réglage `config.assets.server` ne vaut qu'en développement et en test — et sans cette compilation, les pages arrivent sans style ni icône. Les fichiers atterrissent dans `public/assets`, dans le dépôt déployé, que la composition monte par-dessus l'image : les compiler à la construction de l'image ne servirait à rien.
 
-Rails est derrière un mandataire qui termine TLS (`config.assume_ssl`), ce qui vaut aussi pour la passerelle : Domibus notifie `web` en HTTP sur le réseau docker, et rien ne redirige cet appel-là vers HTTPS.
+```sh
+$ make assets
+$ docker compose up -d web worker fake-france-connect
+```
+
+Les trois services de `make up`, mais détachés : celui-là reste au premier plan, pour un poste de développement. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
+
+Seul `nginx` est déclaré `restart: unless-stopped` dans `docker-compose.yml` : après un redémarrage de la machine, le reste ne revient pas de lui-même. Le poser sur les cinq autres services dans le `docker-compose.override.yml`, que Compose charge de lui-même — avec le démon activé par `systemctl enable`, la pile survit alors à un reboot :
+
+```yaml
+services:
+  web: { restart: unless-stopped }
+  worker: { restart: unless-stopped }
+  fake-france-connect: { restart: unless-stopped }
+  postgres: { restart: unless-stopped }
+  domibus: { restart: unless-stopped }
+  mysql: { restart: unless-stopped }
+```
 
 ### 5. Le compte de l'espace d'administration
 
@@ -141,7 +187,7 @@ Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans l
 
 ## Ce qui est exposé, et ce qui ne doit pas l'être
 
-`docker-compose.yml` publie sur **toutes les interfaces** de la machine les ports que `.env` nomme : `PORT_DOMIBUS` (la console de la passerelle) et `PORT_POSTGRES` (la base), en plus de `PORT_OOTS_FRANCE` et `PORT_FAUX_FRANCE_CONNECT` sur `web`. Sur un serveur, seuls 80 et 443 doivent être atteignables de l'extérieur.
+`docker-compose.yml` publie sur **toutes les interfaces** de la machine les ports que `.env` nomme : `PORT_DOMIBUS` (la console de la passerelle) et `PORT_POSTGRES` (la base), en plus de `PORT_OOTS_FRANCE` et `PORT_FAUX_FRANCE_CONNECT` sur `web`. Sur un serveur, seuls 80, 443 et `PORT_FAUX_FRANCE_CONNECT` doivent être atteignables de l'extérieur — le dernier parce que le navigateur de l'usager y est renvoyé par la démarche, en HTTP, le faux ne parlant pas TLS ; il ne sert que des identités de test.
 
 > [!WARNING]
 > Un pare-feu devant les autres ports est indispensable, et il ne suffit pas d'y compter sur `iptables` posé à la main : Docker insère ses propres règles avant celles de l'hôte. Utiliser le pare-feu du fournisseur d'hébergement, ou lier ces publications à `127.0.0.1` dans un `docker-compose.override.yml`, que `.gitignore` laisse local et que Compose charge de lui-même, avec les mêmes variables que le fichier principal :
@@ -156,7 +202,7 @@ Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans l
 >
 > `!override` parce qu'une liste de ports s'ajoute à celle du fichier principal au lieu de la remplacer ; il demande Compose 2.24. Écrit avant `make setup`, il vaut dès la création des conteneurs ; après, il faut les recréer.
 
-Les journaux de `web` et `worker` vont sur la sortie standard, donc dans `docker logs` : configurer la rotation du démon Docker (`log-opts` `max-size`, `max-file`) pour qu'ils ne remplissent pas le disque. Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
+Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotation posée [à l'installation](#installer-les-outils-sur-une-machine-nue). Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
 
 ## Ce qu'il faut sauvegarder
 
@@ -166,7 +212,7 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
 - le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, les magasins téléversés et le compte d'accès ;
 - le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
-- le répertoire `./nginx` — la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
+- ce que le frontal garde sur cette machine — avec le gabarit du dépôt, le répertoire `./nginx` : la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
 
 ## Mettre à jour
 
