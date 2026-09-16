@@ -6,6 +6,14 @@ class RetrievedMessageParser
   REGREP = 'application/x-ebrs+xml'.freeze
   PDF = 'application/pdf'.freeze
 
+  # Chapter 4.7 §2.6.2 has the property « always correspond to the specification
+  # identifier of the main ebMS payload message », and a message where the two
+  # disagree « considered invalid ». Named under the chapter and not under a
+  # rule, as `AgentConformance::AGENT_NAME_REQUIRED` is: no published assertion
+  # crosses the header and the body — the Schematron of the bodies binds no
+  # `eb:` prefix, and `EDM-ebMS.sch` neither `rim` nor `query`.
+  CONSISTENT_SPECIFICATION = 'TDD 4.7 §2.6.2: SpecificationId property and SpecificationIdentifier slot agree'.freeze
+
   def initialize(xml)
     @document = Nokogiri::XML(xml)
     raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unreadable_envelope') if @document.errors.any?
@@ -29,6 +37,39 @@ class RetrievedMessageParser
   # likely to be one of its.
   def specification
     @specification ||= EdmSpecification.resolve(announced_specification)
+  end
+
+  # What the message contradicts in itself: the two version announcements read
+  # against each other, here because this is the one place both are readable —
+  # `specification` has already picked the header's, and the readers of the body
+  # see no envelope. A collection, like the `violations` of a body, so that
+  # `AuditTrail` composes the two by joining them.
+  #
+  # Read and recorded, never refused: the chapter names no subject for the
+  # « appropriate error » it asks for, and chapter 4.5.3 opens no error path
+  # from a requester back to a provider — the reasoning `BusinessRuleViolation`
+  # holds for everything a received message breaks.
+  #
+  # Nothing to compare is not a disagreement. A 1.2 header carries no property
+  # at all — `EdmSpecification#announced_in_header?` — an absent slot is what
+  # `R-EDM-RESP-S009` and `R-EDM-ERR-S009` count, and a body nobody can parse
+  # expresses no identifier, where the chapter speaks of the one « expressed in
+  # the payload ».
+  #
+  # Both values are named as they arrived, and never through
+  # `EdmSpecification.resolve`: its fallback on the preferred version would
+  # erase precisely what an auditor opens this column for.
+  def inconsistencies
+    return [] if specification_id.blank?
+
+    announced_in_body = body_specification
+    return [] if announced_in_body.blank? || announced_in_body == specification_id
+
+    [BusinessRuleViolation.new(rule: CONSISTENT_SPECIFICATION,
+      description: I18n.t('parsers.retrieved_message.inconsistent_specification',
+        header: specification_id, body: announced_in_body))]
+  rescue UnreadableMessageError
+    []
   end
 
   # The ebMS action decides, and it alone: a response status says nothing about
@@ -92,9 +133,13 @@ class RetrievedMessageParser
   def announced_specification
     return specification_id if specification_id.present?
 
-    text_at(body_document, "//rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
+    body_specification
   rescue UnreadableMessageError
     EdmSpecification::V1_2.identifier
+  end
+
+  def body_specification
+    text_at(body_document, "//rim:Slot[@name='SpecificationIdentifier']/rim:SlotValue/rim:Value")
   end
 
   def body_document

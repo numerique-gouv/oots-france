@@ -172,28 +172,80 @@ RSpec.describe AuditTrail do
     # from a portal back to a provider, so the response is handled exactly as a
     # conformant one would be: this line is the only place the breach is ever
     # read.
+    # The captured response, consistent with itself, against an exchange opened
+    # on the earlier line: what `R-EDM-RESP-C002` judges is the response against
+    # the request it settles, where chapter 4.7 §2.6.2 judges the response
+    # against itself. Two constats, and here only this one.
     it 'names in the detail the rules of chapter 4.6 the response broke' do
-      broken = envelope_with_body('reponseAvecPieceJointe') { |body| body.sub('oots-edm:v2.0', 'oots-edm:v1.0') }
-
-      audit_trail.message_received(message: broken, message_id: 'une-autre')
+      audit_trail.message_received(message:, message_id: 'une-autre', exchange: create(:exchange, :legacy_line))
 
       expect(journalled).to have_attributes(
         event_type: 'response_received',
-        detail: 'R-EDM-RESP-C002 : La réponse reçue annonce oots-edm:v1.0, et non oots-edm:v2.0.',
+        detail: 'R-EDM-RESP-C002 : La réponse reçue annonce oots-edm:v2.0, et non oots-edm:v1.2.',
       )
     end
 
-    # Every one, not the first: the journal keeps one row per arrival, so a
-    # composition stopping at one violation would hide the rest for good.
-    it 'names every rule the response broke, and not only the first' do
-      broken = envelope_with_body('reponseAvecPieceJointe') do |body|
-        body.sub('oots-edm:v2.0', 'oots-edm:v1.0')
+    # Chapter 4.7 §2.6.2 has such a message « considered invalid », and neither
+    # names a subject for the error it asks for nor says what invalid entails —
+    # so the line is written and nothing is refused. Named under the chapter,
+    # no published assertion crossing the header and the body.
+    #
+    # `R-EDM-RESP-C002` is silent here on purpose, and that silence is the whole
+    # point of the ticket: the slot says what the exchange says, so the only
+    # thing out of step is the header, and before this the drift showed up
+    # nowhere under its own name.
+    it 'names the inconsistency of chapter 4.7 §2.6.2, with both values, and no rule of chapter 4.6' do
+      audit_trail.message_received(message: inconsistent_response, message_id: 'une-autre',
+        exchange: create(:exchange, :legacy_line))
+
+      expect(journalled.detail).to include('TDD 4.7 §2.6.2', 'oots-edm:v2.0', 'oots-edm:v1.2')
+      expect(journalled.detail).not_to include('R-EDM-RESP-C002')
+    end
+
+    # The order `broken_rules` composes in, which nothing else pins: the
+    # inconsistency says the message is invalid whole, so it precedes the rules
+    # of chapter 4.6 it explains. Inverted, no other example would redden.
+    it 'puts the inconsistency before the rule of chapter 4.6 it explains' do
+      both = envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
           .sub(%r{<rim:Slot name="IssueDateTime">.*?</rim:Slot>}m, '')
       end
 
-      audit_trail.message_received(message: broken, message_id: 'une-autre')
+      audit_trail.message_received(message: both, message_id: 'une-autre',
+        exchange: create(:exchange, :legacy_line))
+
+      expect(journalled.detail).to start_with('TDD 4.7 §2.6.2').and include('R-EDM-RESP-S011')
+    end
+
+    # An absent slot expresses no identifier, so it is no inconsistency: its own
+    # rule is what counts it, and naming the chapter beside it would report one
+    # drift twice.
+    it 'names the rule counting an absent slot, and no inconsistency' do
+      without_slot = envelope_without_specification_slot('reponseAvecPieceJointe')
+
+      audit_trail.message_received(message: without_slot, message_id: 'une-autre')
+
+      expect(journalled.detail).to include('R-EDM-RESP-S009')
+      expect(journalled.detail).not_to include('TDD 4.7')
+    end
+
+    def inconsistent_response = envelope_announcing_two_specifications('reponseAvecPieceJointe')
+
+    # Every one, not the first: the journal keeps one row per arrival, so a
+    # composition stopping at one violation would hide the rest for good.
+    # Its version announcements are left agreeing with each other, as the spec
+    # above needs them to: the rule of chapter 4.6 comes from the slot being out
+    # of step with the *exchange*, which is what that rule judges.
+    it 'names every rule the response broke, and not only the first' do
+      broken = envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub(%r{<rim:Slot name="IssueDateTime">.*?</rim:Slot>}m, '')
+      end
+
+      audit_trail.message_received(message: broken, message_id: 'une-autre',
+        exchange: create(:exchange, :legacy_line))
 
       expect(journalled.detail).to include('R-EDM-RESP-C002', 'R-EDM-RESP-S011')
+      expect(journalled.detail).not_to include('TDD 4.7')
     end
 
     # The chain chapter 4.8 describes, as far as the journal takes it: from the
@@ -464,6 +516,22 @@ RSpec.describe AuditTrail do
 
       expect(journalled.detail).to start_with('Object not found').and include('R-EDM-ERR-S009')
     end
+
+    # A refusal announces its version twice like any other message, so the
+    # inconsistency of chapter 4.7 §2.6.2 is reported here too — beside the
+    # message, and beside the code the exchange is then settled in failure on:
+    # the chapter says the message is invalid, and nothing in this repository
+    # turns a refusal away for it.
+    it 'records the inconsistency of the two announcements beside the code and the message' do
+      audit_trail.message_received(message: inconsistent_refusal, message_id: 'message-passerelle',
+        exchange: create(:exchange, :legacy_line))
+
+      expect(journalled).to have_attributes(event_type: 'error_received', edm_error_code: 'EDM:ERR:0004')
+      expect(journalled.detail)
+        .to start_with('Object not found').and include('TDD 4.7 §2.6.2', 'oots-edm:v2.0', 'oots-edm:v1.2')
+    end
+
+    def inconsistent_refusal = envelope_announcing_two_specifications('erreurObjetIntrouvable')
 
     # A report nothing can be made of is journalled all the same, and with the
     # rule that says why: `IncomingMessage::Process` records the arrival before

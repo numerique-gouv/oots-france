@@ -130,6 +130,25 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The slot a body announces its own version in — the half of the pair that
+  # chapter 4.7 §2.6.2 calls « expressed in the payload », the other half being
+  # the ebMS property of the header.
+  SPECIFICATION_SLOT = %r{<rim:Slot name="SpecificationIdentifier">.*?</rim:Slot>}m
+
+  # A real envelope whose two version announcements disagree: the header keeps
+  # the line it was captured on, the body's slot claims the earlier one. The
+  # message chapter 4.7 §2.6.2 holds invalid, and what a correspondent sends
+  # when it announces one line in the envelope and writes the other in the
+  # document.
+  def envelope_announcing_two_specifications(name)
+    envelope_with_body(name) { |body| body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier) }
+  end
+
+  # The same envelope with the body's announcement taken out altogether: a value
+  # that is not there expresses no identifier, so `R-EDM-RESP-S009` and
+  # `R-EDM-ERR-S009` count it and no inconsistency is reported.
+  def envelope_without_specification_slot(name) = envelope_with_body(name) { |body| body.sub(SPECIFICATION_SLOT, '') }
+
   # The same envelope as a correspondent of the 1.2 line would have sent it: the
   # header carries neither of the two properties only 2.0 knows —
   # `R-EDM-ebMS-037` names the exchange there and `-038` announces the version,

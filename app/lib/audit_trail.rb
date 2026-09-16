@@ -209,7 +209,7 @@ class AuditTrail
     case message.action
     when EbmsAction::EXECUTE_QUERY_REQUEST then received_request(message.body)
     when EbmsAction::EXECUTE_QUERY_RESPONSE then received_response(message, exchange)
-    when EbmsAction::EXCEPTION_RESPONSE then received_error(message.body, exchange)
+    when EbmsAction::EXCEPTION_RESPONSE then received_error(message, message.body, exchange)
     else {}
     end
   end
@@ -251,7 +251,7 @@ class AuditTrail
     {
       **response_correlation(message),
       **answering_parties(message),
-      detail: readable(:business_rules) { broken_rules(message.body, exchange) },
+      detail: readable(:business_rules) { broken_rules(message, expected: exchange&.specification) },
       **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
       **(readable(:evidence_subject) { AuditEvent.subject(message.body.evidence_subject) } || {}),
     }
@@ -274,12 +274,19 @@ class AuditTrail
     }
   end
 
-  # The rules of chapter 4.6 the arriving response breaks, named as the outgoing
-  # side names the one a refusal applies — and nothing is refused over them, so
-  # this column is the only place the departure is ever read. Empty when the
-  # response conforms; read through `readable` like every other field, a body
-  # too malformed to parse costing the line no field that was read before it.
-  def broken_rules(body, exchange) = body.violations(expected: exchange&.specification).map(&:sentence).join(' ').presence
+  # What the arriving response breaks, named as the outgoing side names the one
+  # a refusal applies — and nothing is refused over them, so this column is the
+  # only place the departure is ever read. Empty when the response conforms;
+  # read through `readable` like every other field, a body too malformed to
+  # parse costing the line no field that was read before it.
+  #
+  # What the envelope contradicts in itself comes first, and the rules of chapter
+  # 4.6 follow it: chapter 4.7 §2.6.2 says the message is invalid whole, and it
+  # is what explains the packaging violations behind it — a body read in the line
+  # its header announced breaks the rules of the line its own slot claimed. Which
+  # is why the message is taken here and not its body: the two version
+  # announcements are only both readable on the envelope.
+  def broken_rules(message, expected:) = (message.inconsistencies + message.body.violations(expected:)).map(&:sentence).join(' ').presence
 
   # Chapter 4.5.2 lets a conformant response carry no evidence part at all —
   # one announcing the evidence for later, and equally one whose package is
@@ -315,18 +322,22 @@ class AuditTrail
   #
   # `detail` holds two things here, the chapter's table leaving one column for
   # either: what the correspondent said, which is what a human reads to find out
-  # what happened, and the rules of chapter 4.6 the report breaks saying it,
-  # which are what say the correspondent drifted. The message comes first.
+  # what happened, and what the report breaks saying it, which is what says the
+  # correspondent drifted. The message comes first.
   #
   # The two are read apart and joined afterwards, for the reason
   # `received_request` gives field by field: an exception too malformed to say
   # its own message must not cost the line the rules that say so, which is the
   # very case those rules exist for.
-  def received_error(error, exchange)
+  #
+  # The envelope comes in beside the report it carries, for the one reading that
+  # needs it: the two version announcements of chapter 4.7 §2.6.2 are only both
+  # readable there.
+  def received_error(message, error, exchange)
     { request_id: readable(:request_id) { error.request_id }, edm_error_code: readable(:edm_error_code) { error.code },
       country_code: readable(:country_code) { error.provider_country },
       detail: [readable(:detail) { error.message },
-               readable(:business_rules) { broken_rules(error, exchange) }].compact_blank.join(' ').presence,
+               readable(:business_rules) { broken_rules(message, expected: exchange&.specification) }].compact_blank.join(' ').presence,
       preview_location: readable(:preview_location) { error.declared_preview_location } }
   end
 
