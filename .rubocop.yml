@@ -115,6 +115,13 @@ Metrics/ModuleLength:
   CountAsOne:
     - "array"
     - "method_call"
+  # The fixture catalogue is a list and not a type: it holds one reader per shape
+  # of message the corpus carries, and gains one the day a spec needs a shape
+  # nobody had fabricated yet. Splitting it would scatter the corpus over as many
+  # files, which is what `Metrics/BlockLength` already exempts the other support
+  # modules from for the same reason.
+  Exclude:
+    - "spec/support/fixtures.rb"
 
 Metrics/MethodLength:
   Max: 15

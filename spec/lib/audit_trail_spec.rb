@@ -869,13 +869,6 @@ RSpec.describe AuditTrail do
     document.to_xml
   end
 
-  def envelope_with_unreadable_body
-    document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
-    document.xpath('//payload/value').first.content = Base64.strict_encode64('<query:QueryResponse')
-
-    document.to_xml
-  end
-
   def hostile_preview(location)
     document = Nokogiri::XML(built_envelope('erreurAutorisationRequise'))
     value = document.xpath('//payload/value').first
