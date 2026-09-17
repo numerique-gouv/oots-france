@@ -16,6 +16,7 @@ module Admin
 
       def show
         @event = AuditEvent.find(params.expect(:id))
+        @presenter = AuditEventPresenter.new(@event)
       end
     end
   end

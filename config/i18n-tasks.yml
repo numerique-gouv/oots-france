@@ -254,10 +254,9 @@ ignore_unused:
   - parsers.evidence_request.representative_procedure_unpublished
   - parsers.evidence_response.{requester_without_id,requester_without_scheme}
   - admin.common_services.procedures.no_label
-  # An event's detail page translates the whole subtree — `t('admin.journal.attributes')`
-  # — to walk the columns in the order they are declared there. The scanner then
-  # sees a leaf key and loses sight of its children, including the ones the table
-  # headings name one by one.
+  # An event's detail page composes these keys, one per column of
+  # `AuditEventPresenter::COLUMNS`, so the scanner never sees them written out.
+  # The listing translates the same subtree whole, for its own column headings.
   - admin.journal.attributes.*
   # Composées de l'identité que le formulaire soumis a cherchée : la légende du
   # tableau des résultats et le message qui la remplace quand il n'y a rien à

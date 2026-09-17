@@ -1586,8 +1586,9 @@ fr:
       # Hors de `attributes`, que la fiche parcourt en appelant chaque clé sur
       # l'enregistrement : le numéro y ferait une ligne répétant le titre.
       number: Événement
-      # L'ordre des clés est celui des colonnes de la fiche d'un événement, qui
-      # les parcourt toutes : le déplacer ici déplace la page.
+      # Des libellés seuls : l'ordre des colonnes de la fiche d'un événement est
+      # déclaré en Ruby, dans `AuditEventPresenter::COLUMNS`. Réécrire une
+      # traduction ici ne déplace plus rien.
       attributes:
         occurred_at: Survenu le
         event_type: Type
