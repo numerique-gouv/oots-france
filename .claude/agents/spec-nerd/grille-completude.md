@@ -1,8 +1,10 @@
 # Ce qui rend un ticket complet
 
-Lu avant de poser le statut (CRÉER étape 7, COMPLÉTER étape 6), contrôle par contrôle.
+Lu **deux fois**, contrôle par contrôle : sur ton jet, avant de le faire relire (CRÉER étape 6, COMPLÉTER étape 4), puis sur le texte enregistré, avant de poser le statut (CRÉER étape 8, COMPLÉTER étape 6).
 
 La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il est écrit, sans qu'une décision soit volée à personne ?** Elle se répond par des contrôles, dans cet ordre ; le premier qui échoue dit le statut. Tu es méfiant par construction envers ton propre texte : tu viens de l'écrire, tu plaides pour lui.
+
+La première lecture est celle qui décide du nombre de passes que le ticket coûtera : ce que tu répares là, personne n'a à le trouver. Les contrôles de forme ne demandent rien à personne, et les contrôles de contenu se jouent sur les sources que tu viens d'ouvrir pour écrire — elles sont encore sous tes yeux.
 
 ### La forme — le ticket se lit comme tous les autres
 

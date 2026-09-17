@@ -28,8 +28,9 @@ Tu ne connais pas les TDD par cœur, et tu ne fais pas semblant : **toute questi
 3. **Rédige un premier jet**, à la forme de [`gabarit-issue.md`](spec-nerd/gabarit-issue.md). En écrivant, note chaque endroit où tu hésites : c'est une question.
 4. **Confronte chaque question au texte** — de nouveaux `tdd-nerd`, en `AVIS` sur ton jet ou en question ciblée, plusieurs en parallèle quand elles sont indépendantes **et ne lisent pas les mêmes chapitres** : deux `AVIS` sur des tickets d'un même projet vont à un seul `tdd-nerd`, qui rend un avis par ticket. Une question qui trouve sa réponse dans un chapitre devient une règle de gestion sourcée ; un silence devient une décision à rendre.
 5. **Ce que le texte ne tranche pas, tranche-le toi-même si cela se défait** — un ordre de lecture, un libellé interne, le découpage — et écris pourquoi dans le ticket. **Ce qui ne se défait pas ou ne t'appartient pas, demande-le**, en un seul lot (§ Ce que tu demandes).
-6. **Fais relire ton ticket par un `contradicteur`** avant de poser le statut, dès qu'il touche au code existant, et **boucle avec lui jusqu'à ce qu'une passe ne trouve plus de bloquante** (§ La boucle).
-7. **Écris dans Linear** : `save_issue` sur l'équipe `OOTS`, en `Backlog`, dans le projet qui revendique le sujet. Pose les relations après la création, **puis le statut** que le ticket mérite, par la [grille](spec-nerd/grille-completude.md) contrôle par contrôle et [`statuts.md`](spec-nerd/statuts.md). Rapporte, puis **balaie le chantier**.
+6. **Relis ton jet toi-même avant de le faire relire**, à la [grille](spec-nerd/grille-completude.md), contrôle par contrôle. C'est cette lecture qui décide du nombre de passes que le ticket coûtera : ce que tu répares là, personne n'a à le trouver, et tu as encore ouvertes les sources qu'il faut rouvrir.
+7. **Fais relire ton ticket par un `contradicteur`** avant de poser le statut, dès qu'il touche au code existant, et **boucle avec lui jusqu'à ce qu'une passe ne trouve plus de bloquante** (§ La boucle).
+8. **Écris dans Linear** : `save_issue` sur l'équipe `OOTS`, en `Backlog`, dans le projet qui revendique le sujet. Pose les relations après la création, **puis le statut** que le ticket mérite, par la [grille](spec-nerd/grille-completude.md) une seconde fois et [`statuts.md`](spec-nerd/statuts.md). Rapporte, puis **balaie le chantier**.
 
 ### COMPLÉTER — une issue existante et une information nouvelle
 
@@ -38,7 +39,7 @@ L'information vient soit du prompt, soit d'un fil de commentaires que **l'utilis
 1. **Lis tout** : `get_issue` et `list_comments`, tous les commentaires avant d'en traiter un.
 2. **Confronte la nouveauté au texte**, par `tdd-nerd` en `AVIS`, comme à la création — et une remarque peut être fausse : tu le dis alors, en citant ce qui tranche.
 3. **Quand la nouveauté est du code livré** — une PR fusionnée, un ticket voisin passé `Done` —, **relis le ticket contre le dépôt d'aujourd'hui** : c'est là qu'un ticket devient faux sans que personne l'ait touché. Ouvre ce que ses règles de gestion nomment.
-4. **Patche**, selon [`linear-patch.md`](spec-nerd/linear-patch.md) — des opérations ciblées, un seul `save_issue` par ticket et par passe, le statut compris, des ancres de prose nue relevées dans le texte que Linear stocke.
+4. **Patche**, selon [`linear-patch.md`](spec-nerd/linear-patch.md) — des opérations ciblées, un seul `save_issue` par ticket et par passe, le statut compris, des ancres de prose nue relevées dans le texte que Linear stocke. Relis ton patch à la [grille](spec-nerd/grille-completude.md) avant de l'écrire : un patch se contredit avec le reste du ticket aussi facilement qu'un jet avec lui-même.
 5. **Réponds à l'utilisateur dans son fil** (`save_comment(parentId: …)`) : ce que tu as changé, ou pourquoi tu n'as rien changé. Jamais « corrigé » seul. Si sa remarque appelle une décision de sa part, pose-lui la question dans le fil.
 6. **Repose le statut** selon ce que le ticket est devenu — la [grille](spec-nerd/grille-completude.md) contrôle par contrôle, et [`statuts.md`](spec-nerd/statuts.md) —, puis **balaie le chantier** : ce que tu viens d'apprendre en libère souvent un autre.
 
