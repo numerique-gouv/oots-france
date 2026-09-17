@@ -35,8 +35,13 @@ module FakeFranceConnect
       @delivery = Delivery.new(configuration)
     end
 
-    def run
-      server = WEBrick::HTTPServer.new(Port: URI.parse(configuration.issuer).port, BindAddress: '0.0.0.0',
+    # The port is given rather than read from the issuer: behind a front that
+    # terminates TLS, the address this server answers at — scheme, host and
+    # port, which `FranceConnectClient#same_origin?` vets every published
+    # endpoint against — is not the port it binds. Its caller arbitrates, and
+    # this class holds no second source for the same decision.
+    def run(port:)
+      server = WEBrick::HTTPServer.new(Port: port, BindAddress: '0.0.0.0',
         Logger: WEBrick::Log.new(File::NULL), AccessLog: [])
       server.mount_proc('/') { |request, response| dispatch(request, response) }
       %w[TERM INT].each { |signal| trap(signal) { server.shutdown } }
@@ -137,17 +142,31 @@ end
 
 if $PROGRAM_NAME == __FILE__
   # An empty issuer, and not an absent one, is what an `.env.oots` written for a
-  # deployment gives: `env_file` posts the variable all the same. Without this,
-  # `URI.parse('').port` is nil, WEBrick binds 80, and the stack answers a
-  # discovery document nobody asked for on a port nobody named.
+  # deployment that uses the real FranceConnect+ gives: `env_file` posts the
+  # variable all the same. Without this, `URI.parse('')` yields no host to
+  # answer for and no port to fall back on.
   %w[URL_FAUX_FRANCE_CONNECT URL_OOTS_FRANCE].each do |variable|
     next unless ENV.fetch(variable, '').empty?
 
     abort("#{variable} est vide : le faux FranceConnect+ ne peut pas démarrer. " \
-          'Voir docs/test_e2e.md — un déploiement ne lance pas ce service.')
+          'Voir docs/test_e2e.md — un déploiement qui parle au vrai FranceConnect+ ne lance pas ce service.')
   end
 
+  issuer = ENV.fetch('URL_FAUX_FRANCE_CONNECT')
+
+  # The one place where the address and the port are arbitrated. A deployment
+  # behind a front sets the port, its issuer naming the front's; everything that
+  # starts this server without one — the Cucumber runner, the local stack —
+  # keeps the port of the address it already has.
+  #
+  # Empty and absent are the same answer, as everywhere the environment reaches
+  # this file: `environment:` posts the variable whatever `.env` holds. And
+  # `Integer` rather than the string itself, because WEBrick is handed a port
+  # and a typo must fail here, named, rather than bind something nobody meant.
+  declare = ENV.fetch('PORT_FAUX_FRANCE_CONNECT', '')
+  port = declare.empty? ? URI.parse(issuer).port : Integer(declare)
+
   FakeFranceConnect::Server.new(
-    issuer: ENV.fetch('URL_FAUX_FRANCE_CONNECT'), procedure_url: ENV.fetch('URL_OOTS_FRANCE'),
-  ).run
+    issuer: issuer, procedure_url: ENV.fetch('URL_OOTS_FRANCE'),
+  ).run(port: port)
 end

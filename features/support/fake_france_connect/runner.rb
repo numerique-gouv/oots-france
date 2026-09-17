@@ -66,8 +66,16 @@ module FakeFranceConnect
 
     attr_reader :issuer, :procedure_url
 
+    # The port is posted explicitly, and not left to whatever the parent carries:
+    # this runner polls and drives the fake at the issuer's own address, so its
+    # child has to answer there. A `PORT_FAUX_FRANCE_CONNECT` inherited from a
+    # stack whose issuer is not this one would make it listen elsewhere, and the
+    # start would expire on an address nobody serves.
     def child_environment
-      ENV.to_h.merge('URL_FAUX_FRANCE_CONNECT' => issuer, 'URL_OOTS_FRANCE' => procedure_url)
+      ENV.to_h.merge(
+        'URL_FAUX_FRANCE_CONNECT' => issuer, 'URL_OOTS_FRANCE' => procedure_url,
+        'PORT_FAUX_FRANCE_CONNECT' => URI.parse(issuer).port.to_s,
+      )
     end
 
     def root
