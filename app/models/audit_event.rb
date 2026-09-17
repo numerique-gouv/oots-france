@@ -282,22 +282,6 @@ class AuditEvent < ApplicationRecord
     JSON.parse(evidence_subject)
   end
 
-  # What prefills the search for the same subject, taken from the subject rather
-  # than from the key: the key folds the case, so a form filled from it would
-  # show `dupont` where the exchange said `Dupont`.
-  #
-  # The organisation is named by the criterion the form submits and not by the
-  # field the subject holds it under: `SubjectSearch` asks for a
-  # `legal_person_identifier`, chapter 4.5.1's own name for it, so that the two
-  # forms of the page cannot be filled from one address.
-  def subject_criteria
-    described = described_subject.symbolize_keys
-    return described.slice(*SUBJECT_FIELDS) if self.class.carries?(described, SUBJECT_FIELDS)
-    return {} unless self.class.carries?(described, LEGAL_SUBJECT_FIELDS)
-
-    { legal_person_identifier: described[:eidas_identifier] }
-  end
-
   # Append-only: a trace that can be rewritten proves nothing.
   #
   # This covers what goes through a record — `save`, `update`, `update_column`,

@@ -48,4 +48,4 @@
   <%= t('admin.common_services.catalogue.show.providers.body') %>
 <% end %>
 
-<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
+<%= render DirectoryQueryComponent.new(query: :requirements) %>

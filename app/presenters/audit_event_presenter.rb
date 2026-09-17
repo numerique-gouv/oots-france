@@ -44,6 +44,12 @@ class AuditEventPresenter
 
   def rows = COLUMNS.filter_map { |name| row(name) }
 
+  # What prefills the search for the same subject, and nothing where the journal
+  # holds no key to look one up by.
+  def same_subject_criteria
+    SubjectSearch.criteria_for(event.described_subject) if event.evidence_subject_key.present?
+  end
+
   private
 
   attr_reader :event

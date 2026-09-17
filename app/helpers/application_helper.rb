@@ -26,11 +26,5 @@ module ApplicationHelper
 
   private
 
-  def opens_in_a_browser?(address)
-    uri = URI.parse(address.to_s)
-
-    uri.scheme.in?(ErrorResponseParser::ACCEPTED_SCHEMES) && uri.host.present?
-  rescue URI::InvalidURIError
-    false
-  end
+  def opens_in_a_browser?(address) = WebAddress.new(address).openable?
 end

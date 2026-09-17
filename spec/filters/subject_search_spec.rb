@@ -49,23 +49,49 @@ RSpec.describe SubjectSearch do
       .to eq(AuditEvent.legal_subject_key(eidas_identifier: 'FR/DE/A2635542Y'))
   end
 
-  describe '#events' do
+  # What prefills this form from an event's page, taken from the subject and not
+  # from the key, whose case `subject_key` has folded away.
+  describe '.criteria_for' do
+    it 'names the three fields that find the same person' do
+      person = create(:audit_event, :about_a_person)
+
+      expect(described_class.criteria_for(person.described_subject))
+        .to eq(family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01')
+    end
+
+    # The other form of the page, named by the criterion it submits: the
+    # identifier alone, and never the triplet an organisation cannot fill.
+    it 'names the identifier that finds the same organisation' do
+      organisation = create(:audit_event, :about_an_organisation)
+
+      expect(described_class.criteria_for(organisation.described_subject))
+        .to eq(legal_person_identifier: 'FR/DE/A2635542Y')
+    end
+
+    it 'names nothing of a subject no key was composed of' do
+      incomplete = create(:audit_event, :about_an_incomplete_person)
+
+      expect(described_class.criteria_for(incomplete.described_subject)).to eq({})
+    end
+  end
+
+  describe '#apply' do
     it 'finds what concerns the person' do
       event = create(:audit_event, :about_a_person)
 
-      expect(described_class.new(**person).events).to contain_exactly(event)
+      expect(described_class.new(**person).apply(AuditEvent.all)).to contain_exactly(event)
     end
 
     it 'finds nothing until the three fields are given' do
       create(:audit_event, :about_a_person)
 
-      expect(described_class.new(family_name: 'Königreich', given_name: 'Ada').events).to be_empty
+      expect(described_class.new(family_name: 'Königreich', given_name: 'Ada').apply(AuditEvent.all)).to be_empty
     end
 
     it 'finds what concerns the organisation' do
       event = create(:audit_event, :about_an_organisation)
 
-      expect(described_class.new(**organisation).events).to contain_exactly(event)
+      expect(described_class.new(**organisation).apply(AuditEvent.all)).to contain_exactly(event)
     end
 
     # The escape is only worth anything if both ends apply it: a deterministic
@@ -78,7 +104,7 @@ RSpec.describe SubjectSearch do
       named_with_one = { family_name: 'Legal|Sophie', given_name: 'Ada', date_of_birth: '1990-01-01' }
       event = create(:audit_event, :about_a_person, person: named_with_one)
 
-      expect(described_class.new(**named_with_one).events).to contain_exactly(event)
+      expect(described_class.new(**named_with_one).apply(AuditEvent.all)).to contain_exactly(event)
     end
 
     # `FR/FR/AB|123456` is what R-EDM-REQ-C051 admits: `XX/YY/` then a segment
@@ -87,7 +113,7 @@ RSpec.describe SubjectSearch do
       event = create(:audit_event, :about_an_organisation,
         organisation: build(:legal_person, eidas_identifier: 'FR/FR/AB|123456'))
 
-      expect(described_class.new(legal_person_identifier: 'FR/FR/AB|123456').events).to contain_exactly(event)
+      expect(described_class.new(legal_person_identifier: 'FR/FR/AB|123456').apply(AuditEvent.all)).to contain_exactly(event)
     end
 
     # The identifier has one writing, the one that arrived, and the key folds
@@ -95,7 +121,7 @@ RSpec.describe SubjectSearch do
     it 'ignores the case an identifier was typed in' do
       event = create(:audit_event, :about_an_organisation)
 
-      expect(described_class.new(legal_person_identifier: 'fr/de/a2635542y').events)
+      expect(described_class.new(legal_person_identifier: 'fr/de/a2635542y').apply(AuditEvent.all))
         .to contain_exactly(event)
     end
 
@@ -103,14 +129,14 @@ RSpec.describe SubjectSearch do
     it 'matches nothing on an identifier that is merely close' do
       create(:audit_event, :about_an_organisation)
 
-      expect(described_class.new(legal_person_identifier: 'FR/DE/A2635542').events).to be_empty
+      expect(described_class.new(legal_person_identifier: 'FR/DE/A2635542').apply(AuditEvent.all)).to be_empty
     end
 
     # Honouring one and dropping the other would answer a question nobody put.
     it 'refuses the two identities submitted together' do
       search = described_class.new(**person, **organisation)
 
-      expect(search.events).to be_empty
+      expect(search.apply(AuditEvent.all)).to be_empty
       expect(search).not_to be_searched
       expect(search.errors.full_messages).to contain_exactly(
         I18n.t('activemodel.errors.models.subject_search.both_identities'),
@@ -126,7 +152,7 @@ RSpec.describe SubjectSearch do
       it "refuses a date of birth that #{what}" do
         search = described_class.new(**person, date_of_birth: typed)
 
-        expect(search.events).to be_empty
+        expect(search.apply(AuditEvent.all)).to be_empty
         expect(search).not_to be_searched
         expect(search.errors.full_messages).to contain_exactly(
           "#{I18n.t('activemodel.attributes.subject_search.date_of_birth')} " \

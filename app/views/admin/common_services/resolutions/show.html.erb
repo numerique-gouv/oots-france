@@ -85,7 +85,7 @@
       <% end %>
 
       <%= render DirectoryQueryComponent.new(
-            query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
+            query: :requirements,
             parameters: { 'procedure-id' => @question.procedure_code,
                           'country-code' => Settings.common_services_country_code },
             embedded: true) %>
@@ -137,7 +137,7 @@
         <% end %>
 
         <%= render DirectoryQueryComponent.new(
-              query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+              query: :evidence_types,
               parameters: { 'requirement-id' => @lookup.requirement.id, 'country-code' => @question.country },
               embedded: true) %>
       <% end %>
@@ -168,7 +168,7 @@
         <% end %>
 
         <%= render DirectoryQueryComponent.new(
-              query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
+              query: :data_services,
               parameters: { 'evidence-type-classification' => @lookup.evidence_type.id,
                             'country-code' => @question.country },
               embedded: true) %>

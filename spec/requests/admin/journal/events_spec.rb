@@ -402,8 +402,8 @@ RSpec.describe 'Admin::Journal::Events' do
         .to have_attributes(text: 'S1')
     end
 
-    # The link that prefills the search: `subject_criteria` composes it, from the
-    # subject and not from the key, whose case is lost.
+    # The link that prefills the search: `SubjectSearch.criteria_for` composes it,
+    # from the subject and not from the key, whose case is lost.
     it 'links to what else concerns the same person, with the case unspoilt' do
       event = create(:audit_event, :about_a_person)
 

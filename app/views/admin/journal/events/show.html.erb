@@ -76,10 +76,10 @@
   </div>
 </div>
 
-<% if @event.evidence_subject_key.present? %>
+<% if (criteria = @presenter.same_subject_criteria) %>
   <p class="fr-mt-2w">
     <%= link_to t('admin.journal.events.show.same_subject'),
-          admin_journal_subjects_path(@event.subject_criteria),
+          admin_journal_subjects_path(criteria),
           class: 'fr-btn fr-btn--secondary' %>
   </p>
 <% end %>

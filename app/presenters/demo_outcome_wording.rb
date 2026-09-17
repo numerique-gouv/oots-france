@@ -27,14 +27,6 @@ class DemoOutcomeWording
   # at `connect()` would call it fresh.
   GIVE_UP_AFTER = 2.minutes
 
-  # Chapter 4.9 §4: « specify secure HTTP ("https://") as transport. The use of
-  # "http://" URIs is not allowed. » An address the chapter forbids is shown as
-  # the text it already was, and never offered as a step of the journey.
-  # Stricter than `ApplicationHelper#external_link`, which admits `http` because
-  # the console archives what a correspondent wrote rather than sending anyone
-  # there.
-  SECURE_PREVIEW = %r{\Ahttps://}
-
   # The contract unreachable: nothing is known of the exchange, and the page
   # says only what the register holds — the two identifiers it was given. A
   # wording all the same, so that the page has one shape and not two.
@@ -79,7 +71,7 @@ class DemoOutcomeWording
 
   def refusal = answer.error
 
-  def secure_preview? = preview_location.to_s.match?(SECURE_PREVIEW)
+  def secure_preview? = WebAddress.new(preview_location).secure?
 
   # What the journey named before the request left, filed with it: the heading
   # says what was asked, of whom, and under which procedure, rather than naming

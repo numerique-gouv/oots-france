@@ -114,7 +114,7 @@
     does — with no `specification` parameter, so services of every EDM version
     come back and the declared-versions column is what tells them apart. %>
 <%= render DirectoryQueryComponent.new(
-      query_id: DataServiceDirectoryClient::DATA_SERVICES_QUERY,
+      query: :data_services,
       identifiers: { requirement: requirement.id, evidence_type: @evidence_type.id },
       parameters: {
         'evidence-type-classification' => @evidence_type.id,

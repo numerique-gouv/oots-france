@@ -37,6 +37,6 @@
 <% end %>
 
 <%= render DirectoryQueryComponent.new(
-      query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY,
+      query: :requirements,
       identifiers: { requirement: @requirement.id },
     ) %>
