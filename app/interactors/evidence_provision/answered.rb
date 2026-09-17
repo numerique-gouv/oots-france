@@ -13,7 +13,7 @@ module EvidenceProvision
       {
         message: context.message,
         requester: context.requester,
-        provider: EvidenceProvider.french(**Settings.french_provider_identity),
+        provider: EvidenceProvider.french,
         request_id: context.request_id,
         message_id:,
         response_id: context.answer.identifier,

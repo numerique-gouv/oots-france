@@ -202,5 +202,5 @@ class JournalledMessage
     nil
   end
 
-  def french_provider = EvidenceProvider.french(**Settings.french_provider_identity)
+  def french_provider = EvidenceProvider.french
 end

@@ -273,7 +273,7 @@ module Oots
       @requester ||= EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur")
     end
 
-    def french_provider = @french_provider ||= EvidenceProvider.french(**Settings.french_provider_identity)
+    def french_provider = @french_provider ||= EvidenceProvider.french
 
     def german_provider
       @german_provider ||= EvidenceProvider.new(

@@ -243,6 +243,14 @@ class AuditEvent < ApplicationRecord
 
   scope :about_subject, ->(key) { where(evidence_subject_key: key).order(occurred_at: :desc) }
 
+  # Article 17(4) of the implementing regulation gives the log a term as well as
+  # a duty: past whatever `DUREE_RETENTION_JOURNAL_MOIS` sets — twelve months
+  # being the floor the article imposes, not its value — a line is personal data
+  # with no remaining reason to be kept. Here, where the column is, and not in
+  # the sweep that deletes: `ExpireExchangesJob` reads `Exchange.expired` the
+  # same way.
+  scope :past_retention, -> { where(occurred_at: ...Settings.audit_trail_retention.ago) }
+
   # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
   # were used in previously processed requests. »
   #

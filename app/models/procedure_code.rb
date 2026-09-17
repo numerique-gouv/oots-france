@@ -47,4 +47,19 @@ module ProcedureCode
   STUDY_FINANCING = 'T1'.freeze
   BIRTH_REGISTRATION = 'R1'.freeze
   DIPLOMA_RECOGNITION = 'T3'.freeze
+
+  # The procedures a document is served for. France holds no real evidence, so
+  # both are answered with the demonstration document `EvidenceDocumentBuilder`
+  # produces. Stub, tracked as OOTS-82.
+  SERVED = [SYSTEM_CHECK, STUDY_FINANCING].freeze
+
+  # The three this deployment answers with something, as against `PUBLISHED`,
+  # which is every code the specification names: one of these is answered with a
+  # document, `R1` with the deferral of chapter 4.5.2, and anything else — a
+  # published code included — with `EDM:ERR:0004`.
+  def self.answered?(code) = served?(code) || deferred?(code)
+
+  def self.served?(code) = code.in?(SERVED)
+
+  def self.deferred?(code) = code == BIRTH_REGISTRATION
 end

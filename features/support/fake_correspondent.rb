@@ -37,7 +37,7 @@ class FakeCorrespondent
     @requester = requester
     @gateway = gateway
     @uuid = uuid
-    @provider = EvidenceProvider.french(**Settings.french_provider_identity)
+    @provider = EvidenceProvider.french
   end
 
   # Rendered once and returned, so that submitting the same body twice replays
