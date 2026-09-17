@@ -10,20 +10,20 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   let(:answer) { Demo::ContractAnswer.new(status: 200, payload:) }
   let(:payload) { { 'statut' => 'sent' } }
 
-  # Nothing has been pressed yet: the zone is the press and nothing else, and it
-  # asks nobody anything until it is.
-  context 'without a press behind it' do
+  # Nothing has been clicked yet: the zone is the button and nothing else, and
+  # it asks nobody anything until it is.
+  context 'without a click behind it' do
     subject(:zone) { described_class.new(outcome: nil, requirement_uuid:) }
 
-    it 'offers the press, and declares nothing to wait on' do
+    it 'offers the button, and declares nothing to wait on' do
       render_inline(zone)
 
       expect(page).to have_button('Request the document')
       expect(page).to have_css(".demo-request__body[data-polling='false']")
     end
 
-    # Rendered beside the press rather than waited for: the controller shows it
-    # the instant the press is pressed, without a word of its own and without a
+    # Rendered beside the button rather than waited for: the controller shows it
+    # the instant the button is clicked, without a word of its own and without a
     # round trip.
     it 'carries the waiting it will show, hidden until then' do
       render_inline(zone)
@@ -34,7 +34,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   end
 
   context 'when the answer is out' do
-    it 'stands in the press\'s place and declares itself waiting' do
+    it 'stands in the button\'s place and declares itself waiting' do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending"]')
@@ -42,13 +42,13 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       expect(page).to have_text('Requesting the document')
     end
 
-    # Rendue tout de même, et seulement cachée : la presse reparaît dès que le
-    # serveur rend une zone au repos, et un fragment qui l'aurait omise n'en
-    # aurait aucune à montrer. Le navigateur, lui, ne la ramène jamais.
-    it 'keeps the press in the fragment, hidden, for a settled zone to show again' do
+    # Rendu tout de même, et seulement caché : le bouton reparaît dès que le
+    # serveur rend une zone au repos, et un fragment qui l'aurait omis n'en
+    # aurait aucun à montrer. Le navigateur, lui, ne le ramène jamais.
+    it 'keeps the button in the fragment, hidden, for a settled zone to show again' do
       render_inline(zone)
 
-      expect(page).to have_css('.demo-request__press[hidden]', visible: :hidden)
+      expect(page).to have_css('.demo-request__button[hidden]', visible: :hidden)
       expect(page).to have_button('Request the document', visible: :hidden)
     end
 
@@ -58,9 +58,9 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     # de revue. `failure` est la seule absente ici, l'attente n'ayant aucun
     # refus à rapporter.
     # Le recours que le navigateur montrera quand il renoncera : un lien vers la
-    # page, jamais la presse — presser ouvrirait un second échange pendant que
+    # page, jamais le bouton — cliquer ouvrirait un second échange pendant que
     # le premier court (chapitre 4.4 §4.1).
-    it 'holds a way back to the page, not a second press, for when the browser gives up' do
+    it 'holds a way back to the page, not a second click, for when the browser gives up' do
       render_inline(zone)
 
       recours = page.find('[data-demo-request-target="disconnected"]', visible: :all)
@@ -74,12 +74,12 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
       posees = page.all('[data-demo-request-target]', visible: :all).pluck('data-demo-request-target')
 
-      expect(posees).to contain_exactly('press', 'loading', 'disconnected')
+      expect(posees).to contain_exactly('button', 'loading', 'disconnected')
     end
   end
 
   # Chapter 1 §4.2: the evidence is « made available to the specific procedure
-  # end-user that issued the query », and the press has nothing left to ask.
+  # end-user that issued the query », and the button has nothing left to ask.
   context 'when the document is in hand' do
     before { allow(request).to receive(:evidence?).and_return(true) }
 
@@ -92,18 +92,18 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       expect(page).to have_no_button('Request the document')
     end
 
-    # The card above has no other way to learn what became of a press it does
+    # The card above has no other way to learn what became of a click it does
     # not hold: it reads this, and wears the border that says the requirement is
     # satisfied.
-    it 'says what became of the press, for the card to read' do
+    it 'says what became of the click, for the card to read' do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__body[data-outcome="delivered"]')
     end
 
-    # The press first and the state to its right, in the markup as on the screen:
-    # what the press is doing is read once one knows what was pressed.
-    it 'puts the press before what it says of itself' do
+    # The button first and the state to its right, in the markup as on the
+    # screen: what the zone is doing is read once one knows what was clicked.
+    it 'puts the button before what it says of itself' do
       render_inline(zone)
 
       expect(page.find('.demo-request__body > *:first-child')).to have_text('Open the document')
@@ -113,7 +113,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
   # Chapter 2.1 §3.3 has the user told that the evidence cannot be provided, and
   # chapter 4.4 §4.1 makes asking again a new request rather than a retry of the
-  # old one — hence a press, under a label saying as much.
+  # old one — hence a button, under a label saying as much.
   context 'when the correspondent refused' do
     let(:payload) { { 'statut' => 'failed', 'codeErreur' => 'EDM:ERR:0003' } }
 
@@ -159,9 +159,9 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     end
   end
 
-  # A press refused before an exchange existed leaves the session on the exchange
+  # A click refused before an exchange existed leaves the session on the exchange
   # of the journey before, whose code says nothing of what just happened.
-  context 'when the press was refused while an earlier exchange is still followed' do
+  context 'when the click was refused while an earlier exchange is still followed' do
     subject(:zone) do
       described_class.new(outcome:, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
@@ -178,7 +178,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
   # A refusal pronounced before any exchange existed: there is nothing to follow,
   # and the zone names which of the contract's refusals it was.
-  context 'when the press itself was refused' do
+  context 'when the click itself was refused' do
     subject(:zone) do
       described_class.new(outcome: nil, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
@@ -193,16 +193,16 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   end
 
   # A page carries one zone per requirement it can name, and nothing but the
-  # address tells them apart: a press that named no requirement would ask the
+  # address tells them apart: a click that named no requirement would ask the
   # contract for whichever one it publishes first, under another card's name.
   describe 'the requirement each zone is about' do
     subject(:zone) { described_class.new(outcome: nil, requirement_uuid: '2d21a531-d30e-4e30-9e5e-b53d6aedb30b') }
 
-    it 'names it on the address the press posts to' do
+    it 'names it on the address the button posts to' do
       render_inline(zone)
 
       expect(page).to have_css(
-        "form.demo-request__press[action='/admin/demo/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
+        "form.demo-request__button[action='/admin/demo/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
         visible: :all,
       )
     end

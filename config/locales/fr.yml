@@ -313,7 +313,7 @@ fr:
       # pas signaler qu'il est injoignable, et sans elle une panne de réseau
       # laisserait l'attente tourner sans fin ou se figer sans rien dire.
       #
-      # Le recours est un lien vers la page et non la presse : presser ouvrirait
+      # Le recours est un lien vers la page et non le bouton : cliquer ouvrirait
       # un second échange, quand celui qui est en cours continue et que le
       # registre le garde. Recharger reprend à ce que le serveur en dit.
       disconnected_html: This page could not reach the service. %{reload} to see where your request stands.

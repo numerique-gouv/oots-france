@@ -1,4 +1,4 @@
-# The requirement the press named to the contract, beside the evidence type and
+# The requirement the click named to the contract, beside the evidence type and
 # the provider the same card named to the user. A procedure rests on several of
 # them and the demonstration now asks for each separately, so a row saying which
 # document was asked for no longer says which obligation it was asked under.

@@ -17,7 +17,7 @@
 # into the request wherever one is held, and FranceConnect+ documents no claim
 # carrying it for a European user anyway. The country the identity comes from,
 # because no claim names it: all that could be said is that the user came
-# through the European flow, which is what they pressed a button to do.
+# through the European flow, which is what they clicked a button to do.
 class DemoIdentityCardComponent < ViewComponent::Base
   # The identity alone: what a screen says of it is derived from it here rather
   # than beside it, so that no caller can hand the card two objects describing

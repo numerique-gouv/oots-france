@@ -1,11 +1,11 @@
 /*
  * One requirement of the demonstration procedure, offered as a card: the
  * evidence type names it, and under the rule stands whom it would be asked of
- * and the press that asks.
+ * and the button that asks.
  *
  * The two sit at either end of the line, and wrap under one another where the
  * card is too narrow for both — the sentence keeps its own room rather than
- * squeezing the press out of the card.
+ * squeezing the button out of the card.
  */
 .requirement-card__actions {
   display: flex;
@@ -16,7 +16,7 @@
 }
 
 /*
- * A refusal takes the whole line, where the document and the press shared it:
+ * A refusal takes the whole line, where the document and the button shared it:
  * nothing shares it with a sentence that is the whole of what the card has
  * left to say.
  *
@@ -52,8 +52,8 @@
  * for what their procedure still needs, and a card they can stop thinking about
  * says so at a glance, before the sentence inside it is read.
  *
- * Read from the zone rather than set on the card: what became of a press is
- * known where the press is, and the zone is replaced under a card that is not —
+ * Read from the zone rather than set on the card: what became of a click is
+ * known where the button is, and the zone is replaced under a card that is not —
  * so `:has` is what lets the card follow an answer it never receives itself.
  *
  * The colour is never the whole of what says so: the zone states it in words

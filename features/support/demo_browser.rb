@@ -47,7 +47,7 @@ class DemoBrowser
 
   def visit(path) = follow(get("#{procedure_url}#{path}"))
 
-  # The one press that starts everything: what follows crosses to the portal and
+  # The one button that starts everything: what follows crosses to the portal and
   # comes back on its own.
   def start_identification = submit_to('/admin/demo/identification')
 
@@ -57,7 +57,7 @@ class DemoBrowser
 
   # A page carries several forms — the header always carries the sign-out one —
   # so the form is named by where it posts, and the scenario's values travel with
-  # whatever it already held. Public like `choose`: the steps press it directly.
+  # whatever it already held. Public like `choose`: the steps submit it directly.
   def submit_to(path, fields = {}) = send_form(form_posting_to(path), fields)
 
   # What a sighted reader sees of the heading: the marks of the console

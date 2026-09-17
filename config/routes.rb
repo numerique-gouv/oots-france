@@ -65,9 +65,9 @@ Rails.application.routes.draw do
       # reaches it, the session saying which documents are this user's.
       resource :documents, only: :show, controller: 'documents'
       # The request itself, and what became of it. `create` **is** the explicit
-      # request of chapter 1 §3.3, and the request leaves as it is pressed —
-      # chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance from that
-      # instant. `show` renders the zone of the documents page that says where
+      # request of chapter 1 §3.3, and the request leaves as the button is
+      # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
+      # from that instant. `show` renders the zone of the documents page that says where
       # the request stands, and is the address that zone re-asks while it waits:
       # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
       # never asks.

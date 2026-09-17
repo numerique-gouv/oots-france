@@ -26,7 +26,7 @@ end
 
 # What the demonstration procedure reads on the way to the contract, and which
 # nothing else in the suite supplies: the scenarios played in a browser are the
-# first of this profile to press for a document, so they are the first to reach
+# first of this profile to ask for a document, so they are the first to reach
 # `Demo::RequestEvidence` and `Demo::BeneficiaryTokenWriter` at all.
 #
 # These two and no more. Of everything `Settings::REQUIRED` names, the rest is

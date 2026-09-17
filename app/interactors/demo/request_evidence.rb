@@ -7,13 +7,13 @@ module Demo
   # not be materially different from the date and time at which the explicit
   # request was made by the user. » `evidence_request.xml.erb` declares that
   # slot true on every request, so the condition always holds and the request is
-  # issued here, on the press, rather than prepared ahead.
+  # issued here, on the click, rather than prepared ahead.
   #
   # `T1` and `FR` are fixed rather than asked: the demonstration makes France
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
   #
-  # The two names the documents page showed travel with the press rather than
+  # The two names the documents page showed travel with the click rather than
   # being resolved again here: the rule above allows the `IssueDateTime` no
   # material distance from that gesture, and three directory queries before
   # sending would put themselves between the two. What is filed is what was
@@ -25,9 +25,9 @@ module Demo
     # What the documents page showed, each name with the language the
     # directory published it in: the zone says them again, and it is
     # written in English whatever the directories answered. The requirement
-    # joins them because a press names the one requirement its own card is
+    # joins them because a click names the one requirement its own card is
     # about, and a row naming the document without the obligation it was asked
-    # under would not say which press it answers.
+    # under would not say which click it answers.
     NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
                requirement_id requirement_name requirement_language].freeze
@@ -63,7 +63,7 @@ module Demo
     private
 
     # Over HTTP, with the query string a French service provider's server sends:
-    # the beneficiary token is sealed here, at the moment of the press, and not
+    # the beneficiary token is sealed here, at the moment of the click, and not
     # a step earlier.
     def ask_the_contract
       client.fetch(

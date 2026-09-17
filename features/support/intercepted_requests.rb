@@ -63,8 +63,8 @@ class InterceptedRequests
 
   # What went out, in order: the method and the address of every request this
   # double took in hand. The method is the whole of what one scenario asks — a
-  # zone that retries a lost press must consult its address and never send the
-  # press again — and the count is what another asks, a single tick being
+  # zone that retries a lost click must consult its address and never post the
+  # request again — and the count is what another asks, a single tick being
   # allowed to be out at a time.
   #
   # A request is recorded when it arrives, before its treatment runs, so a

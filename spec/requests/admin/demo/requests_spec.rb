@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Requests' do
-  # The one requirement `eb_requirements_fr` holds, which every press below is
+  # The one requirement `eb_requirements_fr` holds, which every click below is
   # about: a page carries one zone per requirement it can name, and the address
   # of each names its own.
   let(:exigence) { '00000000-0000-0000-0000-000000000000' }
@@ -20,12 +20,12 @@ RSpec.describe 'Admin::Demo::Requests' do
     before do
       stub_oots_france_public_keys
       stub_evidence_request
-      # The press answers with the zone, which says where the request stands:
+      # The click answers with the zone, which says where the request stands:
       # the state of the exchange it just opened is read back through the same
       # contract, as a service provider's server would read it.
       stub_exchange_state
-      # The page requirement 27 is satisfied on: a press only exists once it has
-      # been shown what it would ask for.
+      # The page requirement 27 is satisfied on: the button only exists once it
+      # has been shown what it would ask for.
       get admin_demo_documents_path
     end
 
@@ -47,10 +47,10 @@ RSpec.describe 'Admin::Demo::Requests' do
       expect(evidence_request_query['beneficiaire']).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
     end
 
-    # A request that left comes back as the zone it was pressed in, waiting: the
+    # A request that left comes back as the zone it was clicked in, waiting: the
     # answer arrives on another connection, and this is the element that will
     # keep asking for it.
-    it 'answers the zone of the press, waiting on the exchange the contract opened' do
+    it 'answers the zone of the click, waiting on the exchange the contract opened' do
       post demande_path
 
       expect(response.headers['Deferred-Fragment']).to eq('1')
@@ -101,11 +101,11 @@ RSpec.describe 'Admin::Demo::Requests' do
     # named « before any request is made », so what the page showed is filed
     # with the request that left. The procedure's own title is filed beside
     # them and is not one of the two: neither the code list nor the directory
-    # names `T1` here, and the press is offered all the same.
+    # names `T1` here, and the button is offered all the same.
     #
     # The requirement joins them: a procedure rests on several, each asked for
-    # by its own press, and a row naming the document without the obligation it
-    # was asked under would not say which press it answers.
+    # by its own button, and a row naming the document without the obligation it
+    # was asked under would not say which click it answers.
     it 'files what requirement 27 had the page name, and the requirement it named it under' do
       post demande_path
 
@@ -116,9 +116,9 @@ RSpec.describe 'Admin::Demo::Requests' do
       )
     end
 
-    # The whole point of `idExigence`: the press of one card asks for that
+    # The whole point of `idExigence`: the button of one card asks for that
     # card's requirement, and the contract is told which.
-    it 'names the requirement of the card it was pressed in' do
+    it 'names the requirement of the card it was clicked in' do
       post demande_path
 
       expect(evidence_request_query['idExigence'])
@@ -220,9 +220,9 @@ RSpec.describe 'Admin::Demo::Requests' do
       end
 
       # A refusal opened no exchange, so there is nothing to wait on: the zone
-      # offers the press again rather than asking after an answer nobody is
+      # offers the button again rather than asking after an answer nobody is
       # going to send.
-      it 'offers the press again rather than waiting on nothing' do
+      it 'offers the button again rather than waiting on nothing' do
         stub_evidence_request(status: 422, body: { erreur: 'EB:ERR:0001' }.to_json)
 
         post demande_path
@@ -255,7 +255,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
   # The parameter comes from the client, and the card that would carry it is
   # the only thing that keeps it honest on screen. Requirement 27 of chapter 1
-  # §2 makes the two names a condition of the request, so a press naming a
+  # §2 makes the two names a condition of the request, so a click naming a
   # requirement the page never named has been shown nothing to confirm — and
   # `named` reads them under that requirement alone, which is what makes this
   # guard load-bearing rather than decorative.
@@ -289,7 +289,7 @@ RSpec.describe 'Admin::Demo::Requests' do
   end
 
   # The same requirement 27, the other way round, and the one case the describe
-  # above cannot hold: nothing here opens the page first, so the press has been
+  # above cannot hold: nothing here opens the page first, so the button has been
   # shown neither name.
   describe 'POST /admin/demo/demande, without the page having named anything' do
     before do
@@ -313,7 +313,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
   # Identifying starts a journey, and the demonstration is walked over and over:
   # the exchange the session followed belonged to the journey before, and a zone
-  # still offering its document would leave the operator nothing to press.
+  # still offering its document would leave the operator nothing to click.
   describe 'walking the journey a second time' do
     before do
       stub_oots_france_public_keys
@@ -324,7 +324,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
     end
 
-    it 'offers the press again once the user has identified anew' do
+    it 'offers the button again once the user has identified anew' do
       identify_demo_user
       get admin_demo_documents_path
 
@@ -471,10 +471,10 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     # CA7. Requirement 27 has the evidence type and the provider named « before
-    # any request is made », so a press files what its own card named — the
+    # any request is made », so a click files what its own card named — the
     # requirement being the one name that tells the two cards apart here, the
     # doubled directories answering both alike.
-    it 'files the requirement of the card pressed, and not that of its neighbour' do
+    it 'files the requirement of the card clicked, and not that of its neighbour' do
       post demande_path(premiere)
       post demande_path(seconde)
 
@@ -487,7 +487,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         .to eq(requirement_uri(premiere))
     end
 
-    it 'names its own requirement to the contract on each press' do
+    it 'names its own requirement to the contract on each click' do
       post demande_path(premiere)
       post demande_path(seconde)
 
@@ -557,13 +557,13 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     # CA13. A requirement has one request under way at a time — the zone simply
-    # does not offer the press — and asking again after a refusal is « a new
+    # does not offer the button — and asking again after a refusal is « a new
     # unique request » (chapter 4.4 §4.1), with an `ExchangeId` of its own.
-    it 'hides the press while its own request runs, and opens a new exchange on the retry' do
+    it 'hides the button while its own request runs, and opens a new exchange on the retry' do
       post demande_path(premiere)
 
-      expect(response.parsed_body.at_css('.demo-request__press')).to be_present
-      expect(response.parsed_body.at_css('.demo-request__press')['hidden']).to be_truthy
+      expect(response.parsed_body.at_css('.demo-request__button')).to be_present
+      expect(response.parsed_body.at_css('.demo-request__button')['hidden']).to be_truthy
 
       stub_exchange_state(statut: 'failed', codeErreur: 'EDM:ERR:0003')
       stub_evidence_request_for(premiere, 'aaaaaaaa-0000-4000-8000-000000000003')
@@ -625,7 +625,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
     # Registered after the general one, so that WebMock prefers it: the contract
     # answers a different exchange to each requirement, which is what makes two
-    # presses two exchanges rather than one read twice.
+    # clicks two exchanges rather than one read twice.
     def stub_evidence_request_for(uuid, exchange_id)
       stub_request(:get, "#{Settings.oots_france_url}#{DemoContractStubs::PATH}")
         .with(query: hash_including('idExigence' => requirement_uri(uuid)))

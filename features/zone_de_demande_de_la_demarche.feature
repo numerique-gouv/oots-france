@@ -3,8 +3,8 @@
 Fonctionnalité: Demander un justificatif depuis la démarche de démonstration dans un navigateur
 
   La zone de demande de la page des justificatifs est l'endroit de la console
-  où le navigateur décide le plus par lui-même : l'attente prend la place de la
-  presse avant qu'aucune réponse ne soit revenue, l'adresse de la zone est
+  où le navigateur décide le plus par lui-même : l'attente prend la place du
+  bouton avant qu'aucune réponse ne soit revenue, l'adresse de la zone est
   interrogée tant que la demande court, une seule interrogation à la fois, et
   une suite d'échecs fait renoncer la zone en offrant le retour à la page. Le
   serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
@@ -20,11 +20,11 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et un administrateur connecté à l'espace d'administration
     Et l'usager identifié sur la page des justificatifs
 
-  Scénario: l'attente prend la place de la presse avant qu'aucune réponse ne soit revenue
+  Scénario: l'attente prend la place du bouton avant qu'aucune réponse ne soit revenue
     Étant donné la soumission de la demande retenue devant le navigateur
-    Quand l'usager presse "Request the document"
+    Quand l'usager clique sur "Request the document"
     Alors la zone annonce qu'elle attend
-    Et la page n'affiche aucune presse
+    Et la page n'affiche aucun bouton de demande
     Et la page des justificatifs est toujours affichée
     Et le contrat n'a reçu aucune demande
     Quand la soumission retenue est libérée
@@ -50,7 +50,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Étant donné une demande en cours
     Quand l'usager recharge la page des justificatifs
     Alors la zone annonce qu'elle attend
-    Et la page n'affiche aucune presse
+    Et la page n'affiche aucun bouton de demande
     Quand le justificatif est remis
     Alors la page affiche "Document retrieved successfully"
     Et la page des justificatifs n'a pas été rechargée
@@ -72,13 +72,13 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la page affiche "This page could not reach the service."
     Et la page affiche le lien "Reload the page"
     Et la page n'affiche pas "Requesting the document…"
-    Et la page n'affiche aucune presse
+    Et la page n'affiche aucun bouton de demande
     Quand l'usager suit le lien "Reload the page"
     Alors la zone annonce qu'elle attend
 
-  Scénario: une presse dont la réponse se perd est retentée par l'interrogation, jamais renvoyée
+  Scénario: une demande dont la réponse se perd est retentée par l'interrogation, jamais renvoyée
     Étant donné la soumission de la demande et les deux requêtes suivantes coupées devant le navigateur
-    Quand l'usager presse "Request the document"
+    Quand l'usager clique sur "Request the document"
     Alors la zone annonce qu'elle attend
     Et les essais qui suivent la soumission sont des interrogations
     Et le contrat n'a reçu aucune demande
@@ -86,9 +86,9 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la page affiche "This page could not reach the service."
     Et la page affiche le lien "Reload the page"
     Et la page n'affiche pas "Requesting the document…"
-    Et la page n'affiche aucune presse
+    Et la page n'affiche aucun bouton de demande
     Quand l'usager suit le lien "Reload the page"
-    Alors la page affiche la presse "Request the document"
+    Alors la page affiche le bouton "Request the document"
 
   Scénario: une session finie pendant l'attente mène à la page de connexion dans la fenêtre
     Étant donné une demande en cours

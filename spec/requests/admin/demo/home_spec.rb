@@ -51,7 +51,7 @@ RSpec.describe 'Admin::Demo::Home' do
     end
 
     # Chapter 1 §3.3 makes the request conditional on the user asking for it,
-    # and the page says so before anyone has pressed anything.
+    # and the page says so before anyone has clicked anything.
     it 'says what the procedure can do, and that nothing leaves without a word from the user' do
       get admin_demo_root_path
 
