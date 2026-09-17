@@ -149,7 +149,7 @@ module Oots
     end
 
     def evidence_response(subject: beneficiary)
-      attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
+      attachment = Attachment.new(payload_id(uuid.next), 'JVBERi0=')
       body = EvidenceResponseBuilder.new(
         requester:, beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier,
         request_id: REQUEST_ID, specification:, clock:, uuid:,

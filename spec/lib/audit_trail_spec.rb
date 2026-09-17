@@ -788,14 +788,14 @@ RSpec.describe AuditTrail do
     # leaving the column empty rather than by inventing a value.
     it 'names the evidence its own answer carried, and names none when it carried none' do
       carried = Evidence.new(identifier: 'urn:uuid:z',
-        part: MimePart.new(mime_type: 'application/pdf', content_id: 'cid:doc@pdf.oots.fr', content: 'un document'))
+        part: MimePart.new(mime_type: 'application/pdf', content_id: 'cid:doc@oots.eu', content: 'un document'))
 
       audit_trail.response_sent(**answered, evidence: carried)
       expect(journalled).to have_attributes(
         event_type: 'response_sent', evidence_identifier: 'urn:uuid:z',
         evidence_digest: Digest::SHA256.hexdigest('un document'),
         evidence_mime_type: 'application/pdf',
-        evidence_content_id: 'cid:doc@pdf.oots.fr',
+        evidence_content_id: 'cid:doc@oots.eu',
       )
 
       audit_trail.response_sent(**answered, evidence: nil)

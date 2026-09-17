@@ -53,7 +53,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   it 'renders the submission of a response with its evidence as the reference has it' do
     # Drawn before the body: the identifiers share one counter, and their order
     # is what ties the metadata to the bytes.
-    attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", Base64.strict_encode64(evidence))
+    attachment = Attachment.new(OutgoingEnvelopeBuilder.payload_reference(uuid.next), Base64.strict_encode64(evidence))
 
     expect(submission_of(response_body(attachment), EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:))
       .to be_equivalent_xml_to(reference_envelope('reponse.soumission'))

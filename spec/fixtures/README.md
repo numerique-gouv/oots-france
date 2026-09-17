@@ -24,6 +24,9 @@ Produit par le script Node d'origine, et par un script jetable équivalent pour 
 > **L'identité du point d'accès français, elle, suit la configuration et non l'histoire.** Les entêtes ebMS et les enveloppes de soumission disent `AP_FR_01` de type `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR`, là où Node émettait `…unregistered:oots` — et, sur `erreurExpiration`, `blue_gw`. C'est celle que déclare [le PMode](../../docs/domibus_context.md#le-pmode-dexemple) : un corpus qui garderait l'ancienne apprendrait un identifiant qui n'existe nulle part. `AP_DE_01`, correspondant fictif, garde la sienne — le type d'une partie est choisi par l'État membre qui la déclare.
 
 > [!IMPORTANT]
+> **Le suffixe des identifiants suit lui aussi la configuration.** Le `cid:` du justificatif de `reponse` dit `@oots.eu`, comme celui du corps RegRep qui l'accompagne, là où Node composait `@pdf.oots.fr` : le suffixe est celui que `SUFFIXE_IDENTIFIANTS_DOMIBUS` donne au déploiement, et une enveloppe dont les deux charges porteraient deux suffixes apprendrait qu'il y en a deux. Les enveloppes capturées de `incoming/reel/`, elles, gardent le `@pdf.oots.fr` qu'elles portaient.
+
+> [!IMPORTANT]
 > Ces fichiers portent deux bizarreries du code d'origine, que la version Rails ne reproduit **pas** : le contenu base64 d'une pièce jointe y est entouré de parenthèses littérales (`<value>(…)</value>`), ce qui n'est pas du base64 et ne passait que parce qu'un décodeur MIME ignore les caractères hors alphabet ; et les titres d'un type de justificatif au-delà du premier y sont joints par une virgule. Le test de bout en bout, qui traverse une vraie passerelle, juge cet écart et le valide.
 
 ## `incoming/reel/` — ce que la passerelle envoie vraiment

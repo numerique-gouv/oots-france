@@ -137,7 +137,7 @@ module EvidenceProvision
     # date the `IssueDateTime` slot gives it. Drawing the reference first also
     # keeps the sequence of identifiers the reference messages were built with.
     def served
-      reference = "cid:#{uuid.next}@pdf.oots.fr"
+      reference = OutgoingEnvelopeBuilder.payload_reference(uuid.next)
       body = response_body(reference)
       document = evidence(body)
       attachment = Attachment.new(reference, Base64.strict_encode64(document))
