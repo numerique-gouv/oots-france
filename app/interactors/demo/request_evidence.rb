@@ -13,6 +13,13 @@ module Demo
   # talk to France, and offers the user no member state to pick — the choice is
   # step 16 of chapter 1 §10.1, which this procedure does not play.
   #
+  # The conversation is not minted here: the journey already carries one, named
+  # when the authentication opened it. Chapter 4.7 §2.5.1 allows exactly that —
+  # « The initial ConversationId for a conversation MAY be assigned by the Online
+  # Procedure Portal or its Intermediary Platform » — and it is what lets two
+  # clicks made in the same instant go out under one conversation instead of
+  # racing to name one.
+  #
   # The two names the documents page showed travel with the click rather than
   # being resolved again here: the rule above allows the `IssueDateTime` no
   # material distance from that gesture, and three directory queries before
@@ -71,7 +78,7 @@ module Demo
         procedure_code: PROCEDURE_CODE,
         country_code: PROVIDER_COUNTRY,
         encrypted_beneficiary: token_writer.call(context.identity),
-        conversation_id: context.conversation_id,
+        conversation_id: context.journey.conversation_id,
         requirement_id: context.requirement_id,
       )
     end
@@ -82,13 +89,18 @@ module Demo
     # for an exchange absent from the register is refused, so the register is
     # written the instant the identifier exists and nowhere later.
     def keep(answer)
-      context.exchange_id = answer.exchange_id
-      context.conversation_id = answer.conversation_id
-
       Request.create!(
-        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id, **what_was_named,
+        exchange_id: answer.exchange_id, conversation_id: answer.conversation_id,
+        **whose_click, **what_was_named,
       )
     end
+
+    # The journey this click belongs to and the requirement its card is about:
+    # the two are how the zone of that card finds this row again, the session
+    # holding nothing of it. Chapter 1 §4.2 has the evidence « made available to
+    # the specific procedure end-user that issued the query », and the journey is
+    # who that is.
+    def whose_click = { journey_id: context.journey.id, requirement_uuid: context.requirement_uuid }
 
     def what_was_named = NAMED.index_with { |named| context.public_send(named) }
 

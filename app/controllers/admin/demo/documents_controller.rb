@@ -17,7 +17,6 @@ module Admin
     # « different basic flows … executed sequentially and/or in parallel », so
     # no card waits on its neighbour.
     class DocumentsController < Admin::BaseController
-      include HoldsDemoIdentity
       include ReadsDemoRequest
 
       # A directory that refuses says so with a code and stays on the page; one

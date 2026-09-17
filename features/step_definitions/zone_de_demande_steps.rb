@@ -40,6 +40,17 @@ GIVING_UP = INTERVAL * (ATTEMPTS + 2)
 # what settles the outcome whatever the contract still says.
 EVIDENCE = "%PDF-1.4\ndrapeau".b
 
+# The two requirements `eb_requirements_t1_fr` publishes, in the order the page
+# renders their cards — which is how a scenario names the one it clicks, the
+# doubled directories answering both with the same evidence type and the same
+# provider.
+REQUIREMENTS = { 'première' => 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+                 'seconde' => '2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }.freeze
+
+# The exchange the contract opens for the second requirement, so that two clicks
+# are two exchanges rather than one read twice.
+SECOND_EXCHANGE = 'aaaaaaaa-0000-4000-8000-000000000002'.freeze
+
 Étantdonné('les annuaires et le contrat de la démarche doublés') do
   # First of all, and not by taste: it is what pins `Settings.oots_france_url`,
   # the root every double of the contract below is mounted on.
@@ -68,6 +79,26 @@ end
 
 Étantdonné('la soumission de la demande retenue devant le navigateur') do
   zone_requests.hold
+end
+
+# The procedure rests on two requirements here where the `Contexte` doubles one,
+# and the page is asked for again so that both cards stand on it. The journey
+# the sign-in opened is untouched: what a card is clicked under is read from it,
+# never written by a click.
+Étantdonné('les deux exigences de la démarche affichées') do
+  stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+  stub_evidence_request_for(REQUIREMENTS.fetch('seconde'), SECOND_EXCHANGE)
+  stub_exchange_state(SECOND_EXCHANGE, statut: 'pending')
+
+  visit admin_demo_documents_path
+
+  expect(page).to have_css(ZONE, count: REQUIREMENTS.size)
+end
+
+# Both clicks held before either is answered: the second leaves while the first
+# is still out, which is the race itself.
+Étantdonné('les soumissions des deux cartes retenues devant le navigateur') do
+  zone_requests.hold.hold
 end
 
 Étantdonné('la soumission de la demande et les deux requêtes suivantes coupées devant le navigateur') do
@@ -105,8 +136,18 @@ Quand("l'usager clique sur {string}") do |label|
   click_button label
 end
 
+Quand("l'usager clique sur le bouton de la {word} carte") do |rank|
+  within(card_zone(rank)) { click_button press_label }
+end
+
 Quand('la soumission retenue est libérée') do
   zone_requests.release
+end
+
+# In the order they were clicked, which the double holds them in: the second
+# answer is then the one that comes back last.
+Quand("les deux soumissions retenues sont libérées dans l'ordre des clics") do
+  2.times { zone_requests.release }
 end
 
 Quand("l'interrogation retenue est libérée") do
@@ -155,6 +196,28 @@ Alors("la zone annonce qu'elle attend") do
   mark_the_waiting
 end
 
+Alors("la zone de la {word} carte annonce qu'elle attend") do |rank|
+  within(card_zone(rank)) do
+    expect(page).to have_text(I18n.t('components.demo_request_zone.loading'))
+    expect(page).to have_css("#{BODY}[data-outcome='pending']", visible: :all)
+  end
+end
+
+# Each on the request its own click opened, whichever answer came back last:
+# what the page renders a zone on is read from the register, under the journey
+# and the requirement, and a click writes nothing a neighbour could overwrite.
+#
+# The register is waited on first, and not out of caution: the zone announces
+# its waiting the instant the button is clicked, before any answer has come
+# back, so the screen alone would let this step pass over a submission still in
+# flight — and the reload that follows would then render on one request.
+Alors("les deux zones annoncent qu'elles attendent") do
+  wait_until_registered(REQUIREMENTS.size)
+
+  expect(page).to have_css("#{BODY}[data-outcome='pending']", count: REQUIREMENTS.size, visible: :all)
+  expect(page).to have_text(I18n.t('components.demo_request_zone.loading'), count: REQUIREMENTS.size)
+end
+
 Alors('la zone annonce toujours la même attente') do
   expect(page).to have_text(I18n.t('components.demo_request_zone.loading'))
   expect(page).to have_css("#{BODY}[data-scenario-mark='#{MARK}']", visible: :all)
@@ -201,6 +264,16 @@ Alors('le contrat a reçu la demande') do
   wait_until('Le contrat n\'a reçu aucune demande.') { contract_demands.any? }
 end
 
+# Asked before the held submission is released, which is what it proves: the
+# second click does not wait on the first answer.
+Alors('le contrat a reçu la demande de la {word} carte') do |rank|
+  asked = requirement_uri(REQUIREMENTS.fetch(rank))
+
+  wait_until("Le contrat n'a reçu aucune demande pour la #{rank} exigence.") do
+    contract_demands.any? { |demand| Rack::Utils.parse_nested_query(demand.uri.query.to_s)['idExigence'] == asked }
+  end
+end
+
 # One tick at a time: an absence is waited past rather than waited for, so the
 # interval is let by and what went out is counted again.
 Alors('aucune autre interrogation ne part') do
@@ -226,6 +299,9 @@ end
 
 def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
 
+# The card a step names, by its rank among those the page offers a button on.
+def card_zone(rank) = all(ZONE, count: REQUIREMENTS.size)[REQUIREMENTS.keys.index(rank)]
+
 def press_label = I18n.t('components.demo_request_zone.submit')
 
 # The sentence alone, the wording carrying a link the translation places.
@@ -247,9 +323,12 @@ def mark_the_page
 end
 
 # The click is answered once the register carries the request: from then on,
-# what the zone asks for is its state.
-def wait_until_registered
-  wait_until("La demande n'a pas été enregistrée : la soumission n'a pas abouti.") { Demo::Request.exists? }
+# what the zone asks for is its state. Counted, because a scenario clicking two
+# cards has to know both submissions arrived and not just the first.
+def wait_until_registered(count = 1)
+  wait_until(-> { "#{Demo::Request.count} demande(s) enregistrée(s) sur #{count} : une soumission n'a pas abouti." }) do
+    Demo::Request.count >= count
+  end
 end
 
 # The requests the double has treated, waited for by count: each is an interval

@@ -225,6 +225,19 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(response).to redirect_to(admin_demo_root_path)
     end
+
+    # The other half of the same condition, and the one an identity alone would
+    # hide: the journey names the conversation every request of this walk goes
+    # out under, and says which requests the page may report on. A session
+    # holding one without the other was written under a shape this code no
+    # longer reads.
+    it 'sends an operator holding no journey back to the start, identity or no identity' do
+      allow(Demo::Journey).to receive(:from_session).and_return(nil)
+
+      get admin_demo_documents_path
+
+      expect(response).to redirect_to(admin_demo_root_path)
+    end
   end
 
   # Recharger n'est pas redemander : la page rend la zone dans l'état où la

@@ -16,7 +16,10 @@ module Demo
     # `table_name_prefix` governing the whole module for one row.
     self.table_name = 'demo_requests'
 
-    validates :exchange_id, :conversation_id, presence: true
+    # The journey and the requirement join the two identifiers: they are how the
+    # zone of a card finds its own request again, the session holding nothing of
+    # it, and the table has all four `null: false`.
+    validates :exchange_id, :conversation_id, :journey_id, :requirement_uuid, presence: true
     validates :exchange_id, uniqueness: true
 
     # Chapter 4.4 §4.3.2 gives each identifier its own job — the `ExchangeId`

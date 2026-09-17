@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_17_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_17_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -67,6 +67,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_17_100000) do
     t.string "evidence_type_language"
     t.string "evidence_type_name"
     t.string "exchange_id", null: false
+    t.string "journey_id", null: false
     t.string "procedure_language"
     t.string "procedure_name"
     t.string "provider_language"
@@ -74,8 +75,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_17_100000) do
     t.string "requirement_id"
     t.string "requirement_language"
     t.string "requirement_name"
+    t.string "requirement_uuid", null: false
     t.datetime "updated_at", null: false
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
+    t.index ["journey_id", "requirement_uuid"], name: "index_demo_requests_on_journey_id_and_requirement_uuid"
   end
 
   create_table "exchanges", force: :cascade do |t|

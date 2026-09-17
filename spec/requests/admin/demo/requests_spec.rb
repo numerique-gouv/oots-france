@@ -72,13 +72,20 @@ RSpec.describe 'Admin::Demo::Requests' do
         post demande_path
         post demande_path
 
-        expect(evidence_request_query['idConversation']).to eq(accepted_body.fetch(:conversation))
+        expect(conversations_asked.uniq.size).to eq(1)
       end
 
-      it 'names no conversation on the first request, having none to name' do
+      # Chapter 4.7 §2.5.1: « The initial ConversationId for a conversation MAY
+      # be assigned by the Online Procedure Portal or its Intermediary
+      # Platform » — the thing named being a conversation and not a message, so
+      # the journey names it the instant the authentication opens it and the
+      # very first click already carries it. That is what makes two clicks made
+      # in the same instant go out under one conversation instead of each
+      # finding none and minting its own.
+      it 'names the conversation its journey opened, from the very first request' do
         post demande_path
 
-        expect(evidence_request_query).not_to have_key('idConversation')
+        expect(evidence_request_query['idConversation']).to be_present
       end
 
       # CA6, second half: « MUST NOT be reused if the user authenticates with a
@@ -93,7 +100,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         identify_demo_user(userinfo: FranceConnectStubs::DANISH_USERINFO.merge('sub' => autre), sub: autre)
         post demande_path
 
-        expect(evidence_request_query).not_to have_key('idConversation')
+        expect(conversations_asked.uniq.size).to eq(2)
       end
     end
 
@@ -162,24 +169,26 @@ RSpec.describe 'Admin::Demo::Requests' do
         expect(response.parsed_body.text).to include('500')
       end
 
-      # Le seul état qu'un refus pourrait laisser derrière lui dans ce process :
-      # la conversation en session. Éprouvé sur les quatre statuts, parce que
-      # c'est `refuse` et non `keep` qui doit être pris à chaque fois — et
-      # qu'une table de correspondance se trompe sur une entrée à la fois.
+      # A refusal opens nothing: no row in the register, and no conversation of
+      # its own beside the one the journey carries, which the next request names
+      # as the first did. Played on all four statuses, because `refuse` and not
+      # the nominal path has to be taken each time — and a lookup table gets one
+      # entry wrong at a time.
       [
         [422, { erreur: 'EB:ERR:0001' }.to_json],
         [501, 'Not Implemented Yet!'],
         [502, { erreur: 'Annuaire injoignable' }.to_json],
         [500, { erreur: 'Configuration' }.to_json],
       ].each do |status, body|
-        it "holds no conversation to reuse after a #{status}" do
+        it "opens nothing on a #{status}, and asks again under the same conversation" do
           stub_evidence_request(status:, body:)
           post demande_path
 
           stub_evidence_request
           post demande_path
 
-          expect(evidence_request_query).not_to have_key('idConversation')
+          expect(conversations_asked.uniq.size).to eq(1)
+          expect(Demo::Request.count).to eq(1)
         end
       end
 
@@ -359,7 +368,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       get admin_demo_documents_path
       post demande_path
 
-      expect(evidence_request_query['idConversation']).to eq(accepted_body.fetch(:conversation))
+      expect(conversations_asked.uniq.size).to eq(1)
     end
   end
 
@@ -428,6 +437,18 @@ RSpec.describe 'Admin::Demo::Requests' do
 
     it 'sends an operator holding no identity back to the start' do
       allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
+
+      get demande_path
+
+      expect(response).to redirect_to(admin_demo_root_path)
+    end
+
+    # The other half of the same condition, which an identity alone would hide:
+    # the guard is declared by the concern this page includes, so nothing here
+    # says it applies, and a page that lost it would still pass the example
+    # above.
+    it 'sends an operator holding no journey back to the start' do
+      allow(Demo::Journey).to receive(:from_session).and_return(nil)
 
       get demande_path
 
@@ -572,7 +593,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(premiere)
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
-      expect(evidence_request_query['idConversation']).to eq(DemoContractStubs::ACCEPTED_CONVERSATION)
+      expect(conversations_asked.uniq.size).to eq(1)
       expect(Demo::Request.pluck(:exchange_id))
         .to contain_exactly(DemoContractStubs::ACCEPTED_EXCHANGE, 'aaaaaaaa-0000-4000-8000-000000000003')
     end
@@ -614,25 +635,130 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_exchange_state('aaaaaaaa-0000-4000-8000-000000000004', statut: 'pending')
       post demande_path(premiere)
 
-      expect(evidence_request_query['idConversation']).to eq(DemoContractStubs::ACCEPTED_CONVERSATION)
+      expect(conversations_asked.uniq.size).to eq(1)
+    end
+
+    # CA1, CA3. The race itself: the second click leaves before the first answer
+    # has come back, so it carries the cookie the browser still holds — the one
+    # from before either click. A plain sequence of `POST` never plays it, each
+    # one carrying what the previous response wrote.
+    describe 'two buttons clicked one upon the other' do
+      it 'leaves each zone waiting on the request its own click opened' do
+        clicking_at_once(premiere, seconde)
+
+        expect(Demo::Request.pluck(:exchange_id))
+          .to contain_exactly(DemoContractStubs::ACCEPTED_EXCHANGE, second_echange)
+        expect(Demo::Request.pluck(:requirement_uuid)).to contain_exactly(premiere, seconde)
+        expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
+      end
+
+      # Chapter 4.4 §4.3.2: the `ExchangeId` « Identifies one evidence
+      # exchange », the conversation « MAY span multiple actions, procedures,
+      # and evidence exchanges within one user session ». Neither click found
+      # the conversation absent, the journey having named it.
+      it 'opens two exchanges under one conversation, and asks the contract twice' do
+        clicking_at_once(premiere, seconde)
+
+        expect(Demo::Request.distinct.pluck(:conversation_id)).to eq([DemoContractStubs::ACCEPTED_CONVERSATION])
+        expect(conversations_asked.uniq.size).to eq(1)
+        expect(contract_demands.size).to eq(2)
+      end
+
+      # CA1, second half, and RG6: a reload renders each zone on its own
+      # request. Played on the cookie from before either click as well as on the
+      # one after them — what the session holds of the journey is the same
+      # either way, since a click writes nothing into it.
+      it 'reloads both zones on their own request, whichever cookie the browser kept' do
+        held = cookies[session_cookie]
+        clicking_at_once(premiere, seconde)
+
+        [cookies[session_cookie], held].each do |cookie|
+          cookies[session_cookie] = cookie
+          get admin_demo_documents_path
+
+          expect(response.parsed_body.css('main .demo-request__body').pluck('data-outcome'))
+            .to eq(%w[pending pending])
+        end
+
+        # Chapter 4.4 §4.1 makes a further reference cost « a new unique
+        # request », from which re-reading costs nothing: neither reload asked
+        # the contract for anything beyond the two clicks.
+        expect(contract_demands.size).to eq(2)
+      end
+
+      # CA2. Chapter 1 §4.2: the evidence is « made available to the specific
+      # procedure end-user that issued the query for those evidences », and the
+      # requirement says which of that user's queries is meant — the one its own
+      # click opened, and not the one whose answer came back last.
+      it 'serves each card the document remitted for the exchange its own click opened' do
+        clicking_at_once(premiere, seconde)
+        Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
+        Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
+
+        get admin_demo_justificatif_path(exigence: premiere)
+        expect(response.body.b).to eq(document)
+
+        get admin_demo_justificatif_path(exigence: seconde)
+        expect(response.body.b).to eq(autre_document)
+      end
+
+      # CA6. Identifying opens a journey of its own, and the requests of the one
+      # before are not its. The conversation survives an identity that has not
+      # changed — chapter 4.4 §4.3.2 forbids reuse only « if the user
+      # authenticates with a different identity ».
+      it 'follows neither request once the user identifies anew, keeping the conversation' do
+        clicking_at_once(premiere, seconde)
+
+        identify_demo_user
+        get admin_demo_documents_path
+
+        zones = response.parsed_body.css('main .demo-request__body')
+
+        expect(zones.pluck('data-outcome')).to eq(%w[idle idle])
+        expect(zones.map(&:text).join).to include('Request the document')
+
+        stub_evidence_request_for(premiere, 'aaaaaaaa-0000-4000-8000-000000000005')
+        stub_exchange_state('aaaaaaaa-0000-4000-8000-000000000005', statut: 'pending')
+        post demande_path(premiere)
+
+        expect(conversations_asked.uniq.size).to eq(1)
+      end
+
+      # CA7. Nothing new is shown: the page names the document and the provider,
+      # never the identifier of a requirement. What travels in an address or a
+      # `data-` attribute is outside the constraint, so only the text is read.
+      it 'makes no requirement identifier readable, before the clicks as after them' do
+        expect(rendered_identifiers).to be_empty
+
+        clicking_at_once(premiere, seconde)
+
+        expect(rendered_identifiers).to be_empty
+      end
+
+      def rendered_identifiers
+        get admin_demo_documents_path
+
+        response.parsed_body.at_css('main').text.scan(%r{\h{8}-\h{4}-\h{4}-\h{4}-\h{12}|https://sr\.\S+})
+      end
+
+      # The browser holds one cookie and both clicks leave with it: the second
+      # is sent before the first answer has reached it. Restoring it by hand is
+      # what makes a sequence of `POST` play a race rather than a sequence.
+      def clicking_at_once(*requirements)
+        held = cookies[session_cookie]
+
+        requirements.each do |requirement|
+          cookies[session_cookie] = held
+          post demande_path(requirement)
+        end
+      end
+
+      def session_cookie = Rails.application.config.session_options.fetch(:key)
     end
 
     def document = "%PDF-1.4\npremier".b
 
     def autre_document = "%PDF-1.4\nsecond".b
-
-    def requirement_uri(uuid) = "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{uuid}"
-
-    # Registered after the general one, so that WebMock prefers it: the contract
-    # answers a different exchange to each requirement, which is what makes two
-    # clicks two exchanges rather than one read twice.
-    def stub_evidence_request_for(uuid, exchange_id)
-      stub_request(:get, "#{Settings.oots_france_url}#{DemoContractStubs::PATH}")
-        .with(query: hash_including('idExigence' => requirement_uri(uuid)))
-        .to_return(status: 202, headers: { 'Content-Type' => 'application/json' },
-          body: { echange: exchange_id, conversation: DemoContractStubs::ACCEPTED_CONVERSATION,
-                  statut: 'pending' }.to_json)
-    end
   end
 
   def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)

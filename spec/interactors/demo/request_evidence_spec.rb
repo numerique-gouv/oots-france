@@ -2,10 +2,14 @@ require 'rails_helper'
 
 RSpec.describe Demo::RequestEvidence do
   subject(:result) do
-    described_class.call(identity:, conversation_id: nil, evidence_request_client: client, token_writer:)
+    described_class.call(identity:, journey:, requirement_uuid:, evidence_request_client: client, token_writer:)
   end
 
   let(:identity) { Demo::UserIdentity.new(family_name: 'Sørensen') }
+  let(:journey) do
+    Demo::Journey.new(id: 'un-parcours', conversation_id: 'une-conversation', subject: 'un-pseudonyme')
+  end
+  let(:requirement_uuid) { '00000000-0000-0000-0000-000000000000' }
   let(:token_writer) { instance_double(Demo::BeneficiaryTokenWriter, call: 'un-jeton-chiffré') }
   let(:client) { instance_double(Demo::EvidenceRequestClient, fetch: answer) }
   let(:answer) do
@@ -20,8 +24,15 @@ RSpec.describe Demo::RequestEvidence do
     )
   end
 
-  it 'keeps the two identifiers the acceptance returned' do
-    expect(result).to have_attributes(success?: true, exchange_id: 'un-échange', conversation_id: 'une-conversation')
+  # Chapter 4.7 §2.5.1: « The initial ConversationId for a conversation MAY be
+  # assigned by the Online Procedure Portal or its Intermediary Platform. » The
+  # journey named it when the authentication opened it, so nothing is minted
+  # here and two clicks made in the same instant go out under the one
+  # conversation.
+  it 'asks under the conversation the journey already carries' do
+    result
+
+    expect(client).to have_received(:fetch).with(hash_including(conversation_id: 'une-conversation'))
   end
 
   # Chapter 4.10 §4.1, informative, has a later delivery placed against « any
@@ -33,6 +44,15 @@ RSpec.describe Demo::RequestEvidence do
 
     expect(Demo::Request.sole)
       .to have_attributes(exchange_id: 'un-échange', conversation_id: 'une-conversation', evidence: nil)
+  end
+
+  # What a zone reads its own request back from: the journey that clicked and
+  # the requirement its card is about.
+  it 'files the journey that clicked and the requirement it clicked under' do
+    result
+
+    expect(Demo::Request.sole)
+      .to have_attributes(journey_id: 'un-parcours', requirement_uuid: '00000000-0000-0000-0000-000000000000')
   end
 
   it 'registers nothing when the contract refused' do
