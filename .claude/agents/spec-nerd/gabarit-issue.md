@@ -29,6 +29,8 @@ Titre en français, verbe à l'infinitif : `US - Rejeter une requête dont l'ide
 
 <Deux à cinq lignes : d'où vient le besoin, ce qui existe déjà, ce qui a été décidé et où. Pas d'exposé du chapitre — il est lié.>
 
+Spécifié contre `main` à `9ca67a3f`, le 2026-09-15.
+
 ## Règles de gestion
 
 | RG | Description | Source |
@@ -52,6 +54,7 @@ Titre en français, verbe à l'infinitif : `US - Rejeter une requête dont l'ide
 
 Ce que chaque section doit à son lecteur :
 
+- **Le contexte finit par la base de spécification** — le commit de `main` contre lequel le ticket a été écrit, et la date. Un ticket décrit un dépôt qui bouge sous lui : deux fusions suffisent à rendre faux un nom de méthode, un libellé d'écran ou le mot qu'un scénario employait, et sans cette ligne personne ne sait ce qui a été vérifié ni quand. Elle se remet à jour à chaque passe qui rebase le ticket.
 - **Chaque règle de gestion cite sa source, et la source est un lien** : une règle nommée, un chapitre, un `.sch`, un XSD, un article de règlement, une RFC. Deux exceptions — une décision locale déjà rendue, citée avec le ticket ou le commentaire qui la rend ; une contrainte du dépôt, citée avec le fichier. Une RG sans source n'est pas fausse, elle est invérifiable, et cela suffit à laisser le ticket en `À compléter`. Une RG dit ce que le texte dit : pas un *may* durci en « doit », pas un acteur prêté à un passage qui n'en nomme aucun.
 - **Chaque critère se lit comme un test qu'on saurait écrire** : un sujet, un déclencheur, un résultat observable, en *Étant donné / Lorsque / Alors* — la forme des scénarios Cucumber du dépôt. « Les erreurs sont gérées » est une intention ; « la réponse porte `EDM:ERR:0006` et aucun justificatif n'est produit » est un critère. Chaque CA renvoie à sa RG ; une RG sans CA est une règle qu'on ne prouvera pas.
 - **Le hors-périmètre dit ce que le ticket ne fait pas**, dès qu'un lecteur pourrait raisonnablement en faire plus : un chapitre dont on n'implémente qu'une partie, un format à champs optionnels, une règle qui a un pendant symétrique. C'est ce qui empêche les deux fautes que `CLAUDE.md` nomme — inventer, reconduire — au moment où elles se commettent : chez quelqu'un qui a lu un ticket muet et rempli le silence. Une ligne par exclusion, avec le ticket qui la porte s'il existe.
