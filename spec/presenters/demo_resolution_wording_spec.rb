@@ -99,4 +99,38 @@ RSpec.describe DemoResolutionWording do
   it 'has no refusal to hand on when nothing failed' do
     expect(wording.failure).to be_nil
   end
+
+  # The card says « aucun fournisseur listé » on the refusal chapters 3.2.4 and
+  # 3.1.4 reserve for it, and on nothing else. What it reads is the answer the
+  # directory gave, carried on the failure as data: the French sentence composed
+  # from that answer is a wording, and a wording is rewritten.
+  describe 'whether nobody publishes this here' do
+    def wording_for(failure)
+      refused = Interactor::Context.build
+      refused.fail!(error: failure)
+    rescue Interactor::Failure
+      described_class.new(refused)
+    end
+
+    it 'is said of the refusal the directories reserve for it' do
+      expect(wording_for(key: :common_services_refused, errors: ['DSD:ERR:0001 : rien de publié'],
+        nothing_published: true)).to be_published_nothing
+    end
+
+    it 'is not said of a directory declining to answer' do
+      expect(wording_for(key: :common_services_refused, errors: ['DSD:ERR:0003 : paramètre absent'],
+        nothing_published: false)).not_to be_published_nothing
+    end
+
+    it 'is said of a step that came back with an empty list' do
+      expect(wording_for(key: :no_provider, errors: [])).to be_published_nothing
+    end
+
+    # The point of the whole arrangement: rewrite the sentence, the card is
+    # unmoved.
+    it 'does not change when the French wording of the refusal is rewritten' do
+      expect(wording_for(key: :common_services_refused, nothing_published: true,
+        errors: ['Aucun fournisseur ne publie ce justificatif dans ce pays.'])).to be_published_nothing
+    end
+  end
 end

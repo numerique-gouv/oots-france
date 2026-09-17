@@ -34,7 +34,7 @@ module Admin
         # « This country holds no such evidence » is the answer this page was
         # opened to get, and it belongs beside the question. An unreachable
         # directory has no place to be shown, and goes up.
-        raise if e.code.blank?
+        raise if e.outage?
 
         @refusal = e
       end

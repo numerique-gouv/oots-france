@@ -72,20 +72,17 @@ class DemoResolutionWording
 
   # What « nobody publishes this here » looks like. Chapter 3.2.4 has a directory
   # with nothing to give refuse rather than answer empty, so the usual shape is
-  # the refusal the two central directories reserve for it — `EB:ERR:0001` and
-  # `DSD:ERR:0001`, which `CommonServicesResponseParser` puts at the head of the
-  # message. The other shape is a list that came back empty, which the steps
-  # name themselves.
+  # the refusal the two central directories reserve for it — the one
+  # `CommonServicesError#nothing_published?` recognises, which `DirectoryLookup`
+  # puts on the failure it hands back. The other shape is a list that came back
+  # empty, which the steps name themselves.
   #
   # Any other refusal is a directory declining to answer, and saying « no
   # provider » of it would state as settled something nobody established.
-  NOTHING_PUBLISHED = /\A(?:EB|DSD):ERR:0001\b/
   PUBLISHES_NOTHING = %i[no_evidence_type no_provider].freeze
 
   def published_nothing?
-    return true if PUBLISHES_NOTHING.include?(failure&.dig(:key))
-
-    Array(failure&.dig(:errors)).first.to_s.match?(NOTHING_PUBLISHED)
+    PUBLISHES_NOTHING.include?(failure&.dig(:key)) || failure&.dig(:nothing_published).present?
   end
 
   private
