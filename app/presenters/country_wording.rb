@@ -28,13 +28,13 @@ class CountryWording
 
   def in(code) = "#{PREPOSITIONS.fetch(article(code).delete("'’"), DEFAULT_PREPOSITION)} #{named(code)}"
 
-  def by(code) = I18n.t('models.country_wording.by', country: attributed(code)).squish
+  def by(code) = I18n.t('presenters.country_wording.by', country: attributed(code)).squish
 
   # « Démarche déclarée sous l'intitulé « X » par la Pologne, avec 5 exigences ».
   # These three facts only read together: the title and what is required belong
   # to the country that filed them, and to no other.
   def declaration(labels:, country:, requirements: nil)
-    I18n.t('models.country_wording.declaration',
+    I18n.t('presenters.country_wording.declaration',
       under: under(labels.uniq), by: by(country), requiring: requiring(requirements))
   end
 
@@ -53,15 +53,15 @@ class CountryWording
   def under(labels)
     return '' if labels.empty?
 
-    I18n.t('models.country_wording.under',
+    I18n.t('presenters.country_wording.under',
       count: labels.size, labels: labels.map { |label| "« #{label} »" }.to_sentence)
   end
 
   def requiring(count)
     return '' if count.nil?
-    return I18n.t('models.country_wording.requiring.none') if count.zero?
+    return I18n.t('presenters.country_wording.requiring.none') if count.zero?
 
-    I18n.t('models.country_wording.requiring.some',
+    I18n.t('presenters.country_wording.requiring.some',
       requirements: I18n.t('admin.common_services.requirements.count', count:).downcase)
   end
 end

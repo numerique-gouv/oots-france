@@ -25,7 +25,7 @@ RSpec.describe EvidenceResponseBuilder do
         descriptions: { 'EN' => 'Certificate of Birth' },
         distribution_formats: ['application/pdf'],
       ),
-      evidence_reference: 'cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr',
+      evidence_reference: 'cid:1a2b3c4d-0000-4000-8000-000000000003@oots.eu',
       request_id: 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797',
       clock: instance_double(Clock, now: Time.utc(2026, 8, 6, 10)),
       uuid: sequential_uuids,
@@ -77,7 +77,7 @@ RSpec.describe EvidenceResponseBuilder do
   it 'points the repository item at the attachment carried alongside' do
     reference = Nokogiri::XML(response).at_xpath('//rim:RepositoryItemRef', namespaces)
 
-    expect(namespaced_attribute(reference, 'href', XLINK)).to eq('cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr')
+    expect(namespaced_attribute(reference, 'href', XLINK)).to eq('cid:1a2b3c4d-0000-4000-8000-000000000003@oots.eu')
     expect(namespaced_attribute(reference, 'title', XLINK)).to eq('Evidence')
   end
 
@@ -219,7 +219,7 @@ RSpec.describe EvidenceResponseBuilder do
       expect(objects.first.attribute_with_ns('type', XSI).value).to eq('rim:ExtrinsicObjectType')
       expect(objects.first.at_xpath("rim:Slot[@name='EvidenceMetadata']", namespaces)).to be_present
       expect(objects.first.at_xpath('rim:RepositoryItemRef', namespaces)
-        .attribute_with_ns('href', XLINK).value).to eq('cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr')
+        .attribute_with_ns('href', XLINK).value).to eq('cid:1a2b3c4d-0000-4000-8000-000000000003@oots.eu')
     end
 
     # 1.2 has no `MainEvidence` to name: a response carries one document, and

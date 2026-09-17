@@ -40,7 +40,7 @@ module IncomingMessage
     # What makes that width safe is the startup check itself, not
     # `abandon_exchange`: `JournalAnswer` records before it settles, so an
     # answer already submitted sits on an exchange still `pending` while
-    # `Answered` reads `Settings.french_provider_identity`. Every variable read
+    # `EvidenceProvider.french` reads its own identity. Every variable read
     # past a real submission belongs to `REQUIRED`, which the worker now
     # refuses to start without — one read from outside it would settle in
     # failure an exchange the correspondent has been answered on.

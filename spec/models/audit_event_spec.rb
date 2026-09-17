@@ -39,26 +39,6 @@ RSpec.describe AuditEvent do
       expect(kept.reload.regrep_body).to include('QueryRequest')
     end
 
-    # What prefills the search from an event's page, taken from the subject and
-    # not from the key, whose case `subject_key` has folded away.
-    it 'hands back the criteria that find the same person' do
-      expect(event.subject_criteria).to eq(family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01')
-    end
-
-    # The other form of the page, named by the criterion it submits: the
-    # identifier alone, and never the triplet an organisation cannot fill.
-    it 'hands back the identifier that finds the same organisation' do
-      organisation = create(:audit_event, :about_an_organisation)
-
-      expect(organisation.subject_criteria).to eq(legal_person_identifier: 'FR/DE/A2635542Y')
-    end
-
-    it 'hands back nothing for a subject no key was composed of' do
-      incomplete = create(:audit_event, :about_an_incomplete_person)
-
-      expect(incomplete.subject_criteria).to eq({})
-    end
-
     # Deterministic, and only on this column: it is what article 17 is for —
     # answering which of a person's data travelled — and what chantier 5 will
     # compare a response against.

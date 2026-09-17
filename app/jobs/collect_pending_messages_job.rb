@@ -12,11 +12,5 @@
 class CollectPendingMessagesJob < ApplicationJob
   queue_as :default
 
-  # The scheduler passes nothing, so the default is the only path in production
-  # and stays serialisable. The keyword exists for the spec.
-  def perform(gateway: DomibusClient.new)
-    gateway.pending_messages.message_ids.each do |message_id|
-      ProcessIncomingMessageJob.perform_later(message_id)
-    end
-  end
+  def perform = IncomingMessage::CollectPending.call
 end

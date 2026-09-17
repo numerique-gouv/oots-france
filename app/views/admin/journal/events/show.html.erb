@@ -15,49 +15,37 @@
         <table>
           <caption><%= t('admin.journal.events.show.caption') %></caption>
           <tbody>
-            <%# Every column that carries something, decrypted subject included:
-                this is the page one comes to in order to know, and withholding a
-                field here would send the reader to a console to read it. The
-                type alone is left out, the badge above the table saying it, as
-                an exchange's own page does with its status. %>
-            <% t('admin.journal.attributes').each do |name, label| %>
-              <% value = @event.public_send(name) %>
-              <%# Emptiness tested without `blank?`, which matches a regexp and
-                  so raises on the RegRep body when a correspondent sent bytes
-                  that are not valid UTF-8 — bytes the journal keeps whole. %>
-              <% next if name == :event_type || value.to_s.empty? %>
+            <%# Which columns there are, in which order, and what each carries:
+                `AuditEventPresenter` says all three. %>
+            <% @presenter.rows.each do |row| %>
               <tr>
-                <th scope="row"><%= label %></th>
+                <th scope="row"><%= row.label %></th>
                 <td>
                   <%# Rendered as the table renders them: the detail page must
                       say nothing less, nor say it differently. %>
                   <% cell = capture do %>
-                    <% case name %>
-                    <% when :occurred_at %>
-                      <%= l(value, format: :long) %>
-                    <% when :exchange_id %>
+                    <% case row.reading %>
+                    <% when :timestamp %>
+                      <%= l(row.value, format: :long) %>
+                    <% when :exchange %>
                       <%= render 'admin/journal/exchange_link', event: @event %>
-                    <% when :conversation_id %>
+                    <% when :conversation %>
                       <%= render 'admin/journal/conversation_link', event: @event %>
-                    <% when :procedure_code %>
-                      <%= link_to value, admin_common_services_procedure_path(value), class: 'fr-link fr-link--sm' %>
-                    <% when :country_code %>
-                      <%= render 'admin/country', country_code: value %>
-                    <% when :evidence_type_id, :preview_location %>
-                      <%= external_link(value) %>
+                    <% when :procedure %>
+                      <%= link_to row.value, admin_common_services_procedure_path(row.value),
+                            class: 'fr-link fr-link--sm' %>
+                    <% when :country %>
+                      <%= render 'admin/country', country_code: row.value %>
+                    <% when :address %>
+                      <%= external_link(row.value) %>
                     <% when :edm_error_code %>
-                      <%= render EdmErrorCodeComponent.new(code: value) %>
+                      <%= render EdmErrorCodeComponent.new(code: row.value) %>
                     <% when :regrep_body %>
-                      <%= render RegrepBodyComponent.new(body: value) %>
-                    <%# Parsed rather than shown as the JSON string the column
-                        holds: chapter 4.5.1 describes a subject with repeated
-                        and structured attributes, which one line of JSON would
-                        never make readable — and the encoder writes an ampersand
-                        as `\u0026`, which only a parse undoes. %>
-                    <% when :evidence_subject %>
-                      <%= render EvidenceSubjectComponent.new(value: @event.described_subject) %>
+                      <%= render RegrepBodyComponent.new(body: row.value) %>
+                    <% when :subject %>
+                      <%= render EvidenceSubjectComponent.new(value: row.value) %>
                     <% else %>
-                      <code><%= value %></code>
+                      <code><%= row.value %></code>
                     <% end %>
                   <% end %>
 
@@ -65,11 +53,8 @@
                       with a reading of its own keeps it the day it is encrypted.
                       Which columns those are is read from the record, never from
                       a list copied here. %>
-                  <%# `block:` for the two readings that are flow content — a
-                      folded document and a definition list — which the inline
-                      wrapper, a `<span>`, cannot take. %>
-                  <% if AuditEvent.encrypted_attributes.include?(name) %>
-                    <%= render(DecryptedValueComponent.new(block: %i[regrep_body evidence_subject].include?(name))) { cell } %>
+                  <% if row.encrypted? %>
+                    <%= render(DecryptedValueComponent.new(block: row.flow?)) { cell } %>
                   <% else %>
                     <%= cell %>
                   <% end %>
@@ -80,7 +65,7 @@
                   the exchange and not to the event, and putting it there says
                   what it refers to. The journal does not record it — `audit_events`
                   has no such column — so it is read off the exchange. %>
-              <% if name == :exchange_id %>
+              <% if row.reading == :exchange %>
                 <%= render 'admin/journal/specification_row', exchange: @event.exchange %>
               <% end %>
             <% end %>
@@ -91,10 +76,10 @@
   </div>
 </div>
 
-<% if @event.evidence_subject_key.present? %>
+<% if (criteria = @presenter.same_subject_criteria) %>
   <p class="fr-mt-2w">
     <%= link_to t('admin.journal.events.show.same_subject'),
-          admin_journal_subjects_path(@event.subject_criteria),
+          admin_journal_subjects_path(criteria),
           class: 'fr-btn fr-btn--secondary' %>
   </p>
 <% end %>

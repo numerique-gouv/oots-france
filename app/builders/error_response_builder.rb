@@ -16,7 +16,7 @@ class ErrorResponseBuilder < ApplicationBuilder
   )
     @specification = specification
     @requester = requester
-    @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
+    @provider = provider || EvidenceProvider.french
     @exception = exception
     @request_id = request_id
     @preview_location = preview_location

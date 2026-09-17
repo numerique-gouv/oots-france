@@ -55,4 +55,4 @@
 
 <p id="aucun-pays" <%= 'hidden' if @procedures.any? %>><%= t('admin.common_services.countries.index.empty') %></p>
 
-<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
+<%= render DirectoryQueryComponent.new(query: :requirements) %>

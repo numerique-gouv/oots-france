@@ -36,13 +36,13 @@
 
 <p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>><%= t('admin.common_services.requirements.empty') %></p>
 
-<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
+<%= render DirectoryQueryComponent.new(query: :requirements) %>
 
 <%# One query per requirement on top of the catalogue's own: the Evidence
     Broker answers this one for a requirement at a time, and has none that
     names the countries of every requirement at once. %>
 <%= render DirectoryQueryComponent.new(
-      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      query: :evidence_types,
       parameters: { 'requirement-id' =>
         t('admin.common_services.swept', count: @requirements.size) },
     ) %>

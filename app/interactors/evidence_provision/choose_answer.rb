@@ -7,11 +7,6 @@ module EvidenceProvision
   # where the successful answer is chosen — a procedure nobody serves is worth
   # `EDM:ERR:0004` however late the request.
   class ChooseAnswer < ApplicationInteractor
-    # The procedures a document is served for. France holds no real evidence, so
-    # both are answered with the demonstration document `EvidenceDocumentBuilder`
-    # produces. Stub, tracked as OOTS-82.
-    SERVED_PROCEDURES = [ProcedureCode::SYSTEM_CHECK, ProcedureCode::STUDY_FINANCING].freeze
-
     # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
     # detail names the chapter where every other one names a rule.
     REPLAYED_IDENTIFIER = 'TDD 4.4: request identifier already used'.freeze
@@ -66,28 +61,29 @@ module EvidenceProvision
     end
 
     def chosen_answer
-      reject_unless_expected_version
-      request.validate!
-      reject_if_already_answered
+      refuse_what_cannot_be_answered_at_all
 
-      return refusal(EdmException::OBJECT_NOT_FOUND) unless recognised_procedure?
+      return refusal(EdmException::OBJECT_NOT_FOUND) unless ProcedureCode.answered?(procedure_code)
       return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
       return refusal(EdmException::TIMEOUT) if expired?
-      return deferral if request.procedure_code == ProcedureCode::BIRTH_REGISTRATION
+      return deferral if ProcedureCode.deferred?(procedure_code)
 
       served
     end
 
-    def recognised_procedure?
-      request.procedure_code.in?(SERVED_PROCEDURES) ||
-        request.procedure_code == ProcedureCode::BIRTH_REGISTRATION
+    def procedure_code = request.procedure_code
+
+    # The refusals pronounced by raising, which `chosen_or_invalid` turns into
+    # the exception response. All three precede the choice below and none of
+    # them is a choice: a request refused here is one no answer could have been
+    # chosen for.
+    def refuse_what_cannot_be_answered_at_all
+      reject_unless_expected_version
+      request.validate!
+      reject_if_already_answered
     end
 
-    # « If a Data Service implements timeout » is the conditional
-    # `Settings.timeout_enabled?` answers, chapter 4.4.3 letting a deployment
-    # provide none. Read first so that `Settings.provider_timeout` is not
-    # evaluated: no duration is configured on that side.
-    def expired? = Settings.timeout_enabled? && context.message.sent_at < Settings.provider_timeout.ago
+    def expired? = ResponseDeadline.passed?(context.message.sent_at)
 
     # `R-EDM-ebMS-019` requires the `SpecificationId` property and `-038` fixes
     # its value — both of 2.0.1 alone. A message read on the 1.2 line is
@@ -137,7 +133,7 @@ module EvidenceProvision
     # date the `IssueDateTime` slot gives it. Drawing the reference first also
     # keeps the sequence of identifiers the reference messages were built with.
     def served
-      reference = "cid:#{uuid.next}@pdf.oots.fr"
+      reference = OutgoingEnvelopeBuilder.payload_reference(uuid.next)
       body = response_body(reference)
       document = evidence(body)
       attachment = Attachment.new(reference, Base64.strict_encode64(document))
@@ -191,7 +187,7 @@ module EvidenceProvision
         attachment:,
         action:,
         recipient: context.message.sender,
-        original_sender: EvidenceProvider.french(**Settings.french_provider_identity).ebms_identity,
+        original_sender: EvidenceProvider.french.ebms_identity,
         final_recipient: requester.ebms_identity,
         conversation_id: context.message.conversation_id,
         exchange_id: context.message.exchange_id,

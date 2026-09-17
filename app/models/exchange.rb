@@ -169,15 +169,13 @@ class Exchange < ApplicationRecord
   # a failure in the same run.
   #
   # And no exchange at all where the deployment provides no timeout handling,
-  # which chapter 4.4.3 lets it decide: « If an Online Procedure Portals
-  # implements timeout, then it shall generate a timeout error » is the
-  # conditional `Settings.timeout_enabled?` answers. `none` and not an
-  # impossible condition, so that `Settings.requester_timeout` is not evaluated
-  # either: no duration is configured on that side.
+  # which chapter 4.4.3 lets it decide — `ResponseDeadline` is that reading, and
+  # holds the requester's own duration. `none` and not an impossible condition:
+  # a sweep that gave no exchange up is what an absent timeout means.
   scope :expired, lambda {
-    next none unless Settings.timeout_enabled?
+    deadline = ResponseDeadline.for_requester
+    next none if deadline.nil?
 
-    deadline = Settings.requester_timeout.ago
     in_progress = where(status: IN_PROGRESS)
 
     in_progress.where(incoming: false, created_at: ...deadline)

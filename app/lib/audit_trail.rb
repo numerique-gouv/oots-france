@@ -4,6 +4,10 @@
 # double and assert on what would have been written.
 #
 # Nothing here decides what an exchange does; it only records that it happened.
+# It reads no envelope either — what an arriving message says of itself is
+# `JournalledMessage`'s to work out, and this class writes down what it hands
+# over.
+#
 # A failure to write is therefore never caught: a trace the regulation requires,
 # silently missing, is worse than a request that fails loudly.
 class AuditTrail
@@ -21,9 +25,9 @@ class AuditTrail
       evidence_type_id: evidence_type&.id,
       request_id:,
       message_id:,
-      **authorities(requesting: requester, providing: provider),
+      **AuditEvent.authorities(requesting: requester, providing: provider),
       **AuditEvent.subject(beneficiary),
-      **circulated(first_part),
+      **AuditEvent.circulated(first_part),
     )
   end
 
@@ -63,7 +67,7 @@ class AuditTrail
   def message_unhandled(message:, message_id:)
     record(
       'message_unhandled',
-      **arrived(message, message_id),
+      **JournalledMessage.new(message:, message_id:).arrived,
       detail: I18n.t('lib.audit_trail.unhandled_action', action: message.action),
     )
   end
@@ -91,22 +95,19 @@ class AuditTrail
   # against the version its own request was written in, which is the exchange's
   # and nothing else's.
   def message_received(message:, message_id:, exchange: nil)
-    record(
-      RECEIVED_EVENTS.fetch(message.action),
-      **arrived(message, message_id),
-      **(readable(:body) { received_body(message, exchange) } || {}),
-    )
+    record(RECEIVED_EVENTS.fetch(message.action),
+      **JournalledMessage.new(message:, message_id:, exchange:).attributes)
   end
 
   # Chapter 4.8's response table asks for the evidence identifier from the
-  # requester and from the data service alike: what `response_correlation` reads
-  # off an arriving response, France writes here of the one it sends. Both
+  # requester and from the data service alike: what `JournalledMessage` reads off
+  # an arriving response, France writes here of the one it sends. Both
   # columns come off the one value a deferral leaves nil, so an answer carrying
   # no document names none.
   def response_sent(evidence:, **answer)
     record('response_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
       evidence_identifier: evidence&.identifier, **answered(**answer),
-      **evidence_fingerprint(evidence&.part))
+      **AuditEvent.fingerprint(evidence&.part))
   end
 
   # `detail` names the rule the refused request broke, so that the journal says
@@ -135,29 +136,11 @@ class AuditTrail
     record(
       'evidence_delivered',
       **borne_by(exchange),
-      **evidence_fingerprint(evidence),
+      **AuditEvent.fingerprint(evidence),
     )
   end
 
   private
-
-  # What a message that did arrive says of itself, before anything is made of
-  # its body: the action, the two identifiers of chapter 4.4, and the first MIME
-  # part — the last read by position, so an action no handler claims carries one
-  # just as a request does.
-  #
-  # The part gets its own reading, and not one of `received_body`'s fields: a
-  # body Nokogiri refuses is exactly the one whose bytes an auditor needs, and
-  # the chapter asks for them whether or not anything could be made of them.
-  def arrived(message, message_id)
-    {
-      ebms_action: message.action,
-      conversation_id: message.conversation_id,
-      exchange_id: message.exchange_id,
-      message_id:,
-      **circulated(readable(:regrep_body) { message.first_part }),
-    }
-  end
 
   # Both identifiers of chapter 4.4, and never one alone: the exchange's is what
   # joins these rows to the exchange they belong to, and the conversation's is
@@ -187,217 +170,12 @@ class AuditTrail
       # `ER`. Our own response carries no address for that agent: the TDD ask
       # for one on the party answering, not on the party answered.
       country_code: requester&.address&.country,
-      **authorities(requesting: requester, providing: provider),
-      **circulated(first_part),
+      **AuditEvent.authorities(requesting: requester, providing: provider),
+      **AuditEvent.circulated(first_part),
     }
-  end
-
-  # Chapter 4.8, in both its tables: « MIME type and full content of first MIME
-  # part ». Written from one value so that a part read only halfway writes
-  # neither column rather than a type nothing backs.
-  def circulated(part)
-    return {} if part.nil?
-
-    { regrep_mime_type: part.mime_type, regrep_body: part.content }
   end
 
   def record(event_type, **attributes)
     AuditEvent.create!(event_type:, occurred_at: Time.current, **attributes)
   end
-
-  def received_body(message, exchange)
-    case message.action
-    when EbmsAction::EXECUTE_QUERY_REQUEST then received_request(message.body)
-    when EbmsAction::EXECUTE_QUERY_RESPONSE then received_response(message, exchange)
-    when EbmsAction::EXCEPTION_RESPONSE then received_error(message, message.body, exchange)
-    else {}
-    end
-  end
-
-  # Field by field, and not around the whole hash: a literal evaluates every
-  # value before it builds anything, so one unreadable field would discard the
-  # ones already read — and those are exactly what an auditor has left.
-  def received_request(request)
-    {
-      request_id: readable(:request_id) { request.request_id },
-      procedure_code: readable(:procedure_code) { request.procedure_code },
-      evidence_type_id: readable(:evidence_type_id) { request.evidence_type.id },
-      **requesting_party(request),
-      **providing_authority(french_provider),
-      **(readable(:evidence_subject) { AuditEvent.subject(request.beneficiary) } || {}),
-    }
-  end
-
-  # `R-EDM-REQ-C073` requires an address on the agent classified `ER`, and only
-  # the country within it: that is where a received request names the country
-  # asking, and the only place it does.
-  def requesting_party(request)
-    requester = readable(:requesting_authority) { request.requester }
-    return {} if requester.nil?
-
-    { country_code: requester.address.country, **requesting_authority(requester) }
-  end
-
-  # Chapter 4.8 asks the response flow for both parties, the response identifier
-  # and the evidence identifier.
-  #
-  # The subject is what its tables do not ask for and the sentence opening its
-  # §3.2 does: « the information included in the evidence response, with the
-  # exception of the evidence itself, must be logged ». Chapter 4.5.2 makes
-  # `sdg:IsAbout` the subject the provider confirms having matched, where
-  # `received_request` records the one that was asked for — the two are allowed
-  # to differ, and that gap is what an auditor came for.
-  def received_response(message, exchange)
-    {
-      **response_correlation(message),
-      **answering_parties(message),
-      detail: readable(:business_rules) { broken_rules(message, expected: exchange&.specification) },
-      **evidence_fingerprint(readable(:evidence) { carried_evidence(message) }),
-      **(readable(:evidence_subject) { AuditEvent.subject(message.body.evidence_subject) } || {}),
-    }
-  end
-
-  # The counterpart of `requesting_party` on the way in: both parties again, and
-  # the country, which comes from the providing agent — the party that answered.
-  #
-  # The message and not its body, though the body is all this reads: `body`
-  # itself raises on an envelope Nokogiri refuses, so taking one as an argument
-  # would evaluate it outside the guards below and cost the line every field
-  # already read — the evidence fingerprint among them, which is read from the
-  # envelope and owes nothing to the RegRep document.
-  def answering_parties(message)
-    provider = readable(:providing_authority) { message.body.provider }
-
-    {
-      country_code: provider&.address&.country,
-      **authorities(requesting: readable(:requesting_authority) { message.body.requester }, providing: provider),
-    }
-  end
-
-  # What the arriving response breaks, named as the outgoing side names the one
-  # a refusal applies — and nothing is refused over them, so this column is the
-  # only place the departure is ever read. Empty when the response conforms;
-  # read through `readable` like every other field, a body too malformed to
-  # parse costing the line no field that was read before it.
-  #
-  # What the envelope contradicts in itself comes first, and the rules of chapter
-  # 4.6 follow it: chapter 4.7 §2.6.2 says the message is invalid whole, and it
-  # is what explains the packaging violations behind it — a body read in the line
-  # its header announced breaks the rules of the line its own slot claimed. Which
-  # is why the message is taken here and not its body: the two version
-  # announcements are only both readable on the envelope.
-  def broken_rules(message, expected:) = (message.inconsistencies + message.body.violations(expected:)).map(&:sentence).join(' ').presence
-
-  # Chapter 4.5.2 lets a conformant response carry no evidence part at all —
-  # one announcing the evidence for later, and equally one whose package is
-  # empty because nothing matched or the user kept nothing at preview. Looking
-  # for a part the envelope never declared would report the ordinary case as
-  # unreadable, and the warning `readable` keeps for a message that really is
-  # malformed is worth nothing once the ordinary case raises it too.
-  #
-  # Asked of the header rather than of the status or of the body: a deferral may
-  # carry the pieces that *are* available, and a body too malformed to parse is
-  # exactly the one whose evidence fingerprint an auditor still needs. Past this
-  # guard, a part was announced and could not be read.
-  def carried_evidence(message)
-    message.evidence if message.carries_evidence?
-  end
-
-  # The three identifiers chapter 4.8 asks the response flow for: the request
-  # answered, the response itself, and the evidence it carries.
-  def response_correlation(message)
-    {
-      request_id: readable(:request_id) { message.body.request_id },
-      response_id: readable(:response_id) { message.body.response_id },
-      evidence_identifier: readable(:evidence_identifier) { message.body.evidence_identifier },
-    }
-  end
-
-  # Chapter 4.8 lists « Preview Location » among what an evidence requester logs
-  # of an error response, next to the error report itself. Recorded as declared
-  # and not as `preview_location` vets it: the address France refused to follow
-  # is the one an auditor will ask about, and the scheme is vetted where it
-  # decides something — the value the exchange keeps and hands back to the
-  # French service provider, and the one the console turns into an `href`.
-  #
-  # `detail` holds two things here, the chapter's table leaving one column for
-  # either: what the correspondent said, which is what a human reads to find out
-  # what happened, and what the report breaks saying it, which is what says the
-  # correspondent drifted. The message comes first.
-  #
-  # The two are read apart and joined afterwards, for the reason
-  # `received_request` gives field by field: an exception too malformed to say
-  # its own message must not cost the line the rules that say so, which is the
-  # very case those rules exist for.
-  #
-  # The envelope comes in beside the report it carries, for the one reading that
-  # needs it: the two version announcements of chapter 4.7 §2.6.2 are only both
-  # readable there.
-  def received_error(message, error, exchange)
-    { request_id: readable(:request_id) { error.request_id }, edm_error_code: readable(:edm_error_code) { error.code },
-      country_code: readable(:country_code) { error.provider_country },
-      detail: [readable(:detail) { error.message },
-               readable(:business_rules) { broken_rules(message, expected: exchange&.specification) }].compact_blank.join(' ').presence,
-      preview_location: readable(:preview_location) { error.declared_preview_location } }
-  end
-
-  def authorities(requesting:, providing:)
-    requesting_authority(requesting).merge(providing_authority(providing))
-  end
-
-  def requesting_authority(agent)
-    { requesting_authority_id: agent&.ebms_identity&.id, requesting_authority_scheme: agent&.ebms_identity&.type_id }
-  end
-
-  def providing_authority(agent)
-    { providing_authority_id: agent&.ebms_identity&.id, providing_authority_scheme: agent&.ebms_identity&.type_id }
-  end
-
-  # Of the evidence as this application holds it, and deliberately not of what
-  # the gateway signed: `ds:DigestValue` covers the AS4 payload part as
-  # transmitted — MIME framing, and compression on the legs that enable it — so
-  # the two never coincide. The route to that signature is `message_id`, which
-  # chapter 4.8 traces. This digest answers the other question: whether a
-  # document produced later is the one that went through.
-  # `evidence_content_id` is the other half of the row chapter 4.8 asks the
-  # response flow for: « for evidence content referenced using
-  # `rim:RepositoryItemRef` elements, MIME type and MIME content identifier ».
-  # Its §4 walks the non-repudiation chain through both at once — from the
-  # response identifier one finds the message identifier *and* the MIME content
-  # identifier the evidence was packaged in, and the message identifier is what
-  # then yields the signed metadata.
-  #
-  # Written from the one part, so that an answer carrying no document names
-  # neither type, nor reference, nor digest, rather than a row asserting a third
-  # of what the chapter asks for. That the three are all present the moment the
-  # content is comes from the two places a part is built — `payload_part`
-  # refuses a declaration without an `href`, and the outgoing side mints the
-  # reference before it fills the attachment.
-  def evidence_fingerprint(part)
-    return {} if part.nil? || part.content.blank?
-
-    {
-      evidence_digest: Digest::SHA256.hexdigest(part.content),
-      evidence_mime_type: part.mime_type,
-      evidence_content_id: part.content_id,
-    }
-  end
-
-  # A message we cannot read must still be journalled, so what its body would
-  # have added is dropped rather than raised — the trace is worth more than the
-  # field.
-  #
-  # Said aloud all the same, because on the response side nothing else will:
-  # `SettleExchange` takes the evidence from the envelope and the requester
-  # from the exchange, never from the body, so the two parties chapter 4.8 asks
-  # for can go missing from the one row that records them while the exchange
-  # succeeds. A degraded row is then at least findable in the logs.
-  def readable(field)
-    yield
-  rescue UnreadableMessageError => e
-    Rails.logger.warn(I18n.t('lib.audit_trail.unreadable_field', field:, error: e.message))
-    nil
-  end
-
-  def french_provider = EvidenceProvider.french(**Settings.french_provider_identity)
 end

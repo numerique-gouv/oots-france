@@ -20,10 +20,18 @@ class EvidenceProvider
 
   # Answering, France is its own C4 and the message goes back to whoever sent
   # it: there is no access point to resolve.
-  def self.french(id:, name:)
+  # The identity of this deployment, as chapter 4.8 has it named on every line
+  # and the builders put it on every answer. It reads `Settings` itself rather
+  # than taking the pair from its call sites in three layers: the values come
+  # from the configuration and from nowhere else, and a caller that had to fetch
+  # them could fetch the wrong ones. It takes no argument for the same reason —
+  # one it accepted would be one somebody could get wrong.
+  def self.french
+    declared = Settings.french_provider_identity
+
     new(
-      identifier: EbmsIdentity.new(id:, type_id: IdentifierScheme::FRENCH),
-      descriptions: { 'FR' => name },
+      identifier: EbmsIdentity.new(id: declared[:id], type_id: IdentifierScheme::FRENCH),
+      descriptions: { 'FR' => declared[:name] },
     )
   end
 

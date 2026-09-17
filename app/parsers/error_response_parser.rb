@@ -11,10 +11,10 @@ class ErrorResponseParser
 
   # A foreign correspondent chooses this address and a browser follows it on
   # our own origin: Rails escapes the HTML but does not vet the scheme, and
-  # `javascript:…` would be executable there. An unusable address returns nil
-  # rather than raising — asking for a preview without saying where is a failed
+  # `javascript:…` would be executable there. `WebAddress` says which schemes
+  # there is anything to be done with. An unusable address returns nil rather
+  # than raising — asking for a preview without saying where is a failed
   # exchange, not an unreadable message.
-  ACCEPTED_SCHEMES = %w[http https].freeze
 
   # The version this report is read in, settled by `RetrievedMessageParser` from
   # what the message announces of itself: six rules of chapter 4.6 take a
@@ -131,13 +131,7 @@ class ErrorResponseParser
                    raise(UnreadableMessageError, I18n.t('parsers.error_response.no_exception'))
   end
 
-  def usable?(location)
-    uri = URI.parse(location)
-
-    uri.scheme.in?(ACCEPTED_SCHEMES) && uri.host.present?
-  rescue URI::InvalidURIError
-    false
-  end
+  def usable?(location) = WebAddress.new(location).openable?
 
   def violation(rule, key, **)
     BusinessRuleViolation.new(rule:, description: I18n.t("parsers.error_response.#{key}", **))

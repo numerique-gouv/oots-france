@@ -92,7 +92,7 @@ module Admin
       # other address with a fragment nothing has made room for.
       def render_refusal(error, listing: false)
         @error = error
-        status = error.code.present? ? :ok : :bad_gateway
+        status = error.outage? ? :bad_gateway : :ok
         refus = 'admin/common_services/refus'
 
         # The alert alone where the listing was expected: the breadcrumb and the

@@ -130,6 +130,16 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # A real envelope carrying a RegRep body Nokogiri refuses, beside a payload it
+  # reads perfectly: what proves that a document cost the line no field read off
+  # the envelope itself.
+  def envelope_with_unreadable_body
+    document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
+    document.xpath('//payload/value').first.content = Base64.strict_encode64('<query:QueryResponse')
+
+    document.to_xml
+  end
+
   # The slot a body announces its own version in — the half of the pair that
   # chapter 4.7 §2.6.2 calls « expressed in the payload », the other half being
   # the ebMS property of the header.

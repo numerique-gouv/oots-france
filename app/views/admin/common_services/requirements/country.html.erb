@@ -32,7 +32,7 @@
 <% end %>
 
 <%= render DirectoryQueryComponent.new(
-      query_id: EvidenceBrokerClient::EVIDENCE_TYPES_QUERY,
+      query: :evidence_types,
       identifiers: { requirement: @requirement.id },
       parameters: { 'requirement-id' => @requirement.id },
     ) %>

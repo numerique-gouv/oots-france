@@ -37,6 +37,7 @@ module Admin
     # otherwise answer for the name.
     class RequestsController < Admin::BaseController
       include ReadsDemoRequest
+      include HoldsDemoNames
 
       def show = render_zone
 
@@ -47,9 +48,9 @@ module Admin
       # leaves and the user is sent back to be shown what they would be asking
       # for.
       def create
-        return redirect_to admin_demo_documents_path unless evidence_named?
+        return redirect_to admin_demo_documents_path unless named_evidence(requirement_uuid).valid?
 
-        result = ::Demo::RequestEvidence.call(identity:, journey:, requirement_uuid:, **named)
+        result = ::Demo::RequestEvidence.call(identity:, journey:, requirement_uuid:, **demo_names(requirement_uuid))
 
         return refuse(result) unless result.success?
 
@@ -73,34 +74,6 @@ module Admin
       end
 
       def requirement_uuid = params[:exigence].to_s
-
-      # What the card of this requirement named, and nothing of its neighbours':
-      # requirement 27 of chapter 1 §2 makes what was shown « before any request
-      # is made » the very thing the request carries, so a click files the names
-      # of the card it was made in.
-      #
-      # The title of the procedure is not among them — it stands once at the top
-      # of the page and belongs to no requirement.
-      def named
-        held = session[:demo_named].presence&.dig(requirement_uuid)&.symbolize_keys || {}
-
-        what_the_card_named(held)
-          .merge(procedure_name: procedure[:title], procedure_language: procedure[:title_language])
-      end
-
-      def what_the_card_named(held)
-        { evidence_type_name: held[:evidence_type], evidence_type_language: held[:evidence_type_language],
-          provider_name: held[:provider], provider_language: held[:provider_language],
-          requirement_id: held[:requirement_id], requirement_name: held[:requirement],
-          requirement_language: held[:requirement_language] }
-      end
-
-      def procedure = session[:demo_procedure].presence&.symbolize_keys || {}
-
-      # The two requirement 27 names, and not the procedure's own title, which
-      # no directory owes anyone: a procedure nobody has named is still one a
-      # user may ask under.
-      def evidence_named? = named.values_at(:evidence_type_name, :provider_name).all?(&:present?)
 
       # A refusal that never opened an exchange: there is nothing to follow, and
       # the zone says why and offers the button again rather than waiting on an

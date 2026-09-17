@@ -50,9 +50,9 @@ module ErrorExceptionConformance
   TIMESTAMP = /[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/
 
   # `C019`, which asks for the scheme of the address and nothing else. What
-  # follows one is another question: `ErrorResponseParser::ACCEPTED_SCHEMES`
-  # admits `http` too, an address France refuses to follow being exactly the one
-  # a dispute will be about.
+  # follows one is another question: `WebAddress#openable?` admits `http` too,
+  # an address France refuses to follow being exactly the one a dispute will be
+  # about.
   SECURE_SCHEME = 'https://'.freeze
 
   TIMESTAMP_SLOT = 'Timestamp'.freeze

@@ -20,7 +20,7 @@ class EvidenceResponseBuilder < ApplicationBuilder
   )
     @specification = specification
     @requester = requester
-    @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
+    @provider = provider || EvidenceProvider.french
     @beneficiary = beneficiary
     @evidence_type = evidence_type
     @evidence_reference = evidence_reference

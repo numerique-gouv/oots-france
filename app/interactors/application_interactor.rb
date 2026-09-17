@@ -49,8 +49,13 @@ class ApplicationInteractor
     nil
   end
 
-  def fail_with_error(key, errors: [])
-    context.fail!(error: { key:, errors: })
+  # Named details ride along with the failure, so that a caller reading it —
+  # a controller, a presenter — asks what happened rather than re-reading the
+  # French sentence composed from it. The key and the descriptions are what
+  # every failure carries; the rest is what one failure knows and the others
+  # do not.
+  def fail_with_error(key, errors: [], **details)
+    context.fail!(error: { key:, errors:, **details })
   end
 
   # A refusal pronounced before anything is submitted: the exchange carries the

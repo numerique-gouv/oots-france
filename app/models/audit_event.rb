@@ -165,6 +165,61 @@ class AuditEvent < ApplicationRecord
     legal_subject_key(eidas_identifier: fields[:eidas_identifier]) if carries?(fields, LEGAL_SUBJECT_FIELDS)
   end
 
+  # Chapter 4.8, in both its tables: « MIME type and full content of first MIME
+  # part ». Written from one value so that a part read only halfway writes
+  # neither column rather than a type nothing backs.
+  def self.circulated(part)
+    return {} if part.nil?
+
+    { regrep_mime_type: part.mime_type, regrep_body: part.content }
+  end
+
+  # The two parties chapter 4.8 asks of every flow, in both directions: one of
+  # them is France on the way out and the correspondent on the way in, and a row
+  # naming only the one it happens to know would not say which.
+  def self.authorities(requesting:, providing:)
+    requesting_authority(requesting).merge(providing_authority(providing))
+  end
+
+  def self.requesting_authority(agent)
+    { requesting_authority_id: agent&.ebms_identity&.id, requesting_authority_scheme: agent&.ebms_identity&.type_id }
+  end
+
+  def self.providing_authority(agent)
+    { providing_authority_id: agent&.ebms_identity&.id, providing_authority_scheme: agent&.ebms_identity&.type_id }
+  end
+
+  # Of the evidence as this application holds it, and deliberately not of what
+  # the gateway signed: `ds:DigestValue` covers the AS4 payload part as
+  # transmitted — MIME framing, and compression on the legs that enable it — so
+  # the two never coincide. The route to that signature is `message_id`, which
+  # chapter 4.8 traces. This digest answers the other question: whether a
+  # document produced later is the one that went through.
+  #
+  # `evidence_content_id` is the other half of the row chapter 4.8 asks the
+  # response flow for: « for evidence content referenced using
+  # `rim:RepositoryItemRef` elements, MIME type and MIME content identifier ».
+  # Its §4 walks the non-repudiation chain through both at once — from the
+  # response identifier one finds the message identifier *and* the MIME content
+  # identifier the evidence was packaged in, and the message identifier is what
+  # then yields the signed metadata.
+  #
+  # Written from the one part, so that an answer carrying no document names
+  # neither type, nor reference, nor digest, rather than a row asserting a third
+  # of what the chapter asks for. That the three are all present the moment the
+  # content is comes from the two places a part is built — `payload_part`
+  # refuses a declaration without an `href`, and the outgoing side mints the
+  # reference before it fills the attachment.
+  def self.fingerprint(part)
+    return {} if part.nil? || part.content.blank?
+
+    {
+      evidence_digest: Digest::SHA256.hexdigest(part.content),
+      evidence_mime_type: part.mime_type,
+      evidence_content_id: part.content_id,
+    }
+  end
+
   # The three ebMS messages the TDD define, in each direction: which end of the
   # gateway one of them went through. The other six types are not one of those
   # three, each for its own reason — a refusal pronounced before the gateway was
@@ -187,6 +242,14 @@ class AuditEvent < ApplicationRecord
     optional: true, inverse_of: :audit_events
 
   scope :about_subject, ->(key) { where(evidence_subject_key: key).order(occurred_at: :desc) }
+
+  # Article 17(4) of the implementing regulation gives the log a term as well as
+  # a duty: past whatever `DUREE_RETENTION_JOURNAL_MOIS` sets — twelve months
+  # being the floor the article imposes, not its value — a line is personal data
+  # with no remaining reason to be kept. Here, where the column is, and not in
+  # the sweep that deletes: `ExpireExchangesJob` reads `Exchange.expired` the
+  # same way.
+  scope :past_retention, -> { where(occurred_at: ...Settings.audit_trail_retention.ago) }
 
   # Chapter 4.4: « A Data Service MUST reject requests that use identifiers that
   # were used in previously processed requests. »
@@ -225,22 +288,6 @@ class AuditEvent < ApplicationRecord
     return {} if evidence_subject.to_s.empty?
 
     JSON.parse(evidence_subject)
-  end
-
-  # What prefills the search for the same subject, taken from the subject rather
-  # than from the key: the key folds the case, so a form filled from it would
-  # show `dupont` where the exchange said `Dupont`.
-  #
-  # The organisation is named by the criterion the form submits and not by the
-  # field the subject holds it under: `SubjectSearch` asks for a
-  # `legal_person_identifier`, chapter 4.5.1's own name for it, so that the two
-  # forms of the page cannot be filled from one address.
-  def subject_criteria
-    described = described_subject.symbolize_keys
-    return described.slice(*SUBJECT_FIELDS) if self.class.carries?(described, SUBJECT_FIELDS)
-    return {} unless self.class.carries?(described, LEGAL_SUBJECT_FIELDS)
-
-    { legal_person_identifier: described[:eidas_identifier] }
   end
 
   # Append-only: a trace that can be rewritten proves nothing.

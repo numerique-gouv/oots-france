@@ -53,10 +53,29 @@ class SubjectSearch
   # neither form filled is a question about nobody.
   def subject_kind = complete_person? ? :person : :organisation
 
-  def events
-    return AuditEvent.none unless searched?
+  # The scope comes in, as `AuditEventFilter#apply` takes one: a filter narrows
+  # what it is given and does not go looking for a table of its own.
+  def apply(scope)
+    return scope.none unless searched?
 
-    AuditEvent.about_subject(key)
+    scope.about_subject(key)
+  end
+
+  # What prefills this form from a subject the journal recorded, taken from the
+  # subject rather than from the key: the key folds the case, so a form filled
+  # from it would show `dupont` where the exchange said `Dupont`.
+  #
+  # Here and not on the record, because these are the parameters of this very
+  # form: the organisation is named by the criterion submitted and not by the
+  # field the subject is held under — `legal_person_identifier`, chapter
+  # 4.5.1's own name for it — so that the two forms of the page cannot be
+  # filled from one address.
+  def self.criteria_for(described)
+    fields = described.symbolize_keys
+    return fields.slice(*AuditEvent::SUBJECT_FIELDS) if AuditEvent.carries?(fields, AuditEvent::SUBJECT_FIELDS)
+    return {} unless AuditEvent.carries?(fields, AuditEvent::LEGAL_SUBJECT_FIELDS)
+
+    { legal_person_identifier: fields[:eidas_identifier] }
   end
 
   private

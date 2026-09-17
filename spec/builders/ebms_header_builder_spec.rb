@@ -50,7 +50,7 @@ RSpec.describe EbmsHeaderBuilder do
 
   it 'declares the attachment as a second payload when there is one' do
     rendered = described_class.new(
-      **attributes, attachment: Attachment.new('cid:1111@pdf.oots.fr', 'JVBERi0='),
+      **attributes, attachment: Attachment.new('cid:1111@oots.eu', 'JVBERi0='),
     ).render
 
     expect(rendered.scan('<eb:PartInfo').size).to eq(2)

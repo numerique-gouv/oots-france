@@ -18,6 +18,7 @@ module Admin
     # no card waits on its neighbour.
     class DocumentsController < Admin::BaseController
       include ReadsDemoRequest
+      include HoldsDemoNames
 
       # A directory that refuses says so with a code and stays on the page; one
       # that cannot be reached carries none, and `DirectoryLookup::Refusing`
@@ -29,40 +30,21 @@ module Admin
 
       # The identity is the one thing on this page no directory has to answer
       # for, and the rescue below renders the same template.
+      #
+      # The chain `DirectoryLookup::ResolveAll` walks is the one the console
+      # already replays on `/admin/common_services/resolution`, and the one a
+      # request walks before sending anything. Replayed here for the screen
+      # alone: the TDD normalise what the portal shows, never how it learns it,
+      # and the request itself goes out through the contract.
       def show
-        leading = lookup
-        @procedure = procedure_wording(leading.requirements)
-        @requirements = resolutions(leading).map { |resolved| DemoResolutionWording.new(resolved) }
+        resolved = DirectoryLookup::ResolveAll.call(procedure_code: code, country_code: provider_country_code)
+        @procedure = procedure_wording(resolved.requirements)
+        @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
 
-        remember_what_is_named
+        remember_demo_names(@procedure, @requirements)
       end
 
       private
-
-      # What requirement 27 had this page show, kept for the click that follows:
-      # the zone says it again, and reading it back there rather than resolving
-      # it again keeps three directory queries off an address made to be asked
-      # over and over.
-      #
-      # One entry per card that can be clicked, under the UUID its address
-      # carries — a click files what its own card named, never a neighbour's.
-      # Whatever a card cannot name it cannot offer to confirm, so it is not
-      # here either.
-      def remember_what_is_named
-        session[:demo_procedure] = { title: @procedure.title, title_language: @procedure.title_language }
-        session[:demo_named] = @requirements.select(&:nameable?)
-          .to_h { |wording| [wording.requirement_uuid, what_the_card_names(wording)] }
-      end
-
-      # The title of the procedure is not among them: it stands once at the top
-      # of the page, belongs to no requirement, and repeating it under each
-      # would swell a session the cookie store bounds at four kibibytes.
-      def what_the_card_names(wording)
-        { evidence_type: wording.evidence_type, evidence_type_language: wording.evidence_type_language,
-          provider: wording.provider, provider_language: wording.provider_language,
-          requirement_id: wording.requirement_id, requirement: wording.requirement,
-          requirement_language: wording.requirement_language }
-      end
 
       # The button of one card, in whatever state the session this page is
       # reloaded from puts it: a reload is not a new request, so a requirement
@@ -73,36 +55,13 @@ module Admin
           requirement_uuid: wording.requirement_uuid)
       end
 
-      # The chain the console already replays on `/admin/common_services/resolution`,
-      # and the one a request walks before sending anything. Replayed here for
-      # the screen alone: the TDD normalise what the portal shows, never how it
-      # learns it, and the request itself goes out through the contract.
-      def lookup(requirement_id = nil)
-        DirectoryLookup::Resolve.call(
-          evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
-          procedure_code: ::Demo::RequestEvidence::PROCEDURE_CODE,
-          country_code: ::Demo::RequestEvidence::PROVIDER_COUNTRY, requirement_id:,
-        )
-      end
-
-      # One resolution per requirement the procedure rests on, the page offering
-      # a card for each. The first is the one already walked — its own step read
-      # the whole list — and the others are asked for by identifier, which is
-      # what the console's resolution page does. The Evidence Broker answer they
-      # share is cached, so each costs the two queries below it and no more.
-      def resolutions(leading)
-        Array(leading.requirements).map do |requirement|
-          requirement.uuid == leading.requirement&.uuid ? leading : lookup(requirement.uuid)
-        end
-      end
-
       # The heading the home page stands under, said again here: the two are one
       # journey, and the procedure is what it is about. Built on the requirements
       # the resolution has already read — its first step asks the very question
       # the home page asks — so the page learns it without a query of its own.
       def procedure_wording(requirements)
         DemoProcedureWording.new(
-          code:, requirements:, published_name: CodeListClient.new.procedure_names(lang: :en)[code],
+          code:, requirements:, published_name: code_lists.procedure_names(lang: :en)[code],
           published_name_language: 'en',
         )
       end
@@ -118,8 +77,13 @@ module Admin
       # In English, like the page. A code list that says nothing leaves the name
       # blank, and the box then shows the code alone.
       def provider_country_name
-        @provider_country_name ||= CodeListClient.new.country_names(lang: :en)[provider_country_code]
+        @provider_country_name ||= code_lists.country_names(lang: :en)[provider_country_code]
       end
+
+      # One client for the page, as `Admin::CommonServices::BaseController` keeps
+      # one for its section: the lists it answers are the same on every call, and
+      # a second instance would fetch them again.
+      def code_lists = @code_lists ||= CodeListClient.new
 
       def report_unreachable_directories(error)
         @unreachable = error.message

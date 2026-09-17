@@ -20,7 +20,7 @@ class DeferredResponseBuilder < ApplicationBuilder
   )
     @specification = specification
     @requester = requester
-    @provider = provider || EvidenceProvider.french(**Settings.french_provider_identity)
+    @provider = provider || EvidenceProvider.french
     @request_id = request_id
     @instant = clock.now
     # Counted from that one reading, so the two instants the message carries

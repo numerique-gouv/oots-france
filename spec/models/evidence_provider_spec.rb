@@ -1,16 +1,20 @@
 require 'rails_helper'
 
 RSpec.describe EvidenceProvider do
+  # It takes no argument: the identity of this deployment comes from the
+  # configuration and from nowhere else.
   describe '.french' do
-    subject(:provider) { described_class.french(id: '00000000000001', name: 'Direction interministérielle du numérique') }
+    subject(:provider) { described_class.french }
+
+    let(:declared) { Settings.french_provider_identity }
 
     it 'identifies the organisation by its SIRET' do
       expect(provider.ebms_identity)
-        .to eq(EbmsIdentity.new(id: '00000000000001', type_id: IdentifierScheme::FRENCH))
+        .to eq(EbmsIdentity.new(id: declared[:id], type_id: IdentifierScheme::FRENCH))
     end
 
     it 'names it in French' do
-      expect(provider.descriptions).to eq('FR' => 'Direction interministérielle du numérique')
+      expect(provider.descriptions).to eq('FR' => declared[:name])
     end
 
     it 'carries a French address' do
@@ -34,7 +38,7 @@ RSpec.describe EvidenceProvider do
 
   # Answering, France is its own C4 and the reply goes back to whoever sent it.
   it 'needs no access point to answer as the French provider' do
-    expect(described_class.french(id: '00000000000001', name: 'DINUM')).to be_valid
+    expect(described_class.french).to be_valid
   end
 
   it 'keeps one name per language, as the common services return them' do

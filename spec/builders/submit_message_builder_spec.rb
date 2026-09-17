@@ -40,7 +40,7 @@ RSpec.describe SubmitMessageBuilder do
 
   describe 'the attachment' do
     subject(:with_attachment) do
-      described_class.new(**attributes, attachment: Attachment.new('cid:1111@pdf.oots.fr', 'JVBERi0xLjQK')).render
+      described_class.new(**attributes, attachment: Attachment.new('cid:1111@oots.eu', 'JVBERi0xLjQK')).render
     end
 
     it 'is absent when there is none' do

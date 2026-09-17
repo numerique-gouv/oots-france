@@ -85,7 +85,7 @@
             </rim:SlotValue>
           </rim:Slot>
           <rim:Classification id="urn:uuid:1a2b3c4d-0000-4000-8000-000000000019" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
-          <rim:RepositoryItemRef xlink:href="cid:1a2b3c4d-0000-4000-8000-000000000003@pdf.oots.fr" xlink:title="Evidence"/>
+          <rim:RepositoryItemRef xlink:href="cid:1a2b3c4d-0000-4000-8000-000000000003@oots.eu" xlink:title="Evidence"/>
         </rim:RegistryObject>
       </rim:RegistryObjectList>
     </rim:RegistryObject>

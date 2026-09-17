@@ -149,7 +149,7 @@ module Oots
     end
 
     def evidence_response(subject: beneficiary)
-      attachment = Attachment.new("cid:#{uuid.next}@pdf.oots.fr", 'JVBERi0=')
+      attachment = Attachment.new(payload_id(uuid.next), 'JVBERi0=')
       body = EvidenceResponseBuilder.new(
         requester:, beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier,
         request_id: REQUEST_ID, specification:, clock:, uuid:,
@@ -273,7 +273,7 @@ module Oots
       @requester ||= EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur")
     end
 
-    def french_provider = @french_provider ||= EvidenceProvider.french(**Settings.french_provider_identity)
+    def french_provider = @french_provider ||= EvidenceProvider.french
 
     def german_provider
       @german_provider ||= EvidenceProvider.new(

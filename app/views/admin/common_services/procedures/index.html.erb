@@ -42,4 +42,4 @@
 
 <p id="aucune-demarche" <%= 'hidden' if @procedures.any? %>><%= t('admin.common_services.procedures.index.empty') %></p>
 
-<%= render DirectoryQueryComponent.new(query_id: EvidenceBrokerClient::REQUIREMENTS_QUERY) %>
+<%= render DirectoryQueryComponent.new(query: :requirements) %>
