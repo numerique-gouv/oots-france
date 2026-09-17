@@ -42,7 +42,7 @@ Comptez plusieurs minutes la première fois, dont l'essentiel revient au déploi
 
 | Étape | Ce qu'elle pose |
 | --- | --- |
-| Environnement | `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, avec des valeurs de développement et une clé de déchiffrement générée à la volée. Une configuration déjà présente est conservée telle quelle |
+| Environnement | `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, dérivés de leurs templates — qui portent, variable par variable, la valeur d'un poste de développement — et trois clés engendrées à la volée. Une configuration déjà présente est conservée telle quelle |
 | Bases | MySQL, celle de Domibus, qui se crée à son premier démarrage ; PostgreSQL, qui porte l'état des échanges, le [journal des échanges](docs/journal_des_echanges.md) et la file des jobs, son schéma, et le rôle applicatif restreint décrit plus bas |
 | Passerelle | Domibus, avec des certificats à elle, le PMode d'exemple, un compte d'accès à son API, et le redémarrage qui active ses notifications |
 
@@ -51,7 +51,7 @@ Le script ([`scripts/setup.sh`](scripts/setup.sh)) est rejouable : le relancer r
 Ce que le relancer ne fait **pas**, c'est compléter un `.env*` déjà là : ces fichiers ne sont pas versionnés, et une valeur locale ne se devine pas. Une variable qu'un template a gagnée depuis l'installation leur manque donc en silence. `make check-env` ([`scripts/check_environment.sh`](scripts/check_environment.sh)) confronte chaque fichier présent aux clés que son template déclare et nomme celles qui manquent, sans rien modifier. `make setup` s'appuie dessus dans les deux cas : directement sur une installation déjà faite, et par `prepare_environment.sh` sur une installation neuve.
 
 > [!WARNING]
-> `make setup` écrit une configuration de **développement** : certificats auto-signés, mots de passe qui n'en sont pas, passerelle qui dialogue avec elle-même. Rien de tout cela ne doit servir sur un environnement réel.
+> `make setup` écrit une configuration de **développement** : certificats auto-signés, mots de passe qui n'en sont pas — ils sont versionnés, dans les templates —, passerelle qui dialogue avec elle-même. Rien de tout cela ne doit servir sur un environnement réel : un serveur s'installe avec `scripts/setup_server.sh`, qui engendre ses secrets, et `make check-secrets` refuse ceux qui seraient restés. Voir [docs/deploiement.md](docs/deploiement.md).
 
 Les identifiants de la base vivent dans `.env.postgres` (lu par l'image) et dans `.env.oots` (lu par l'application, sous les noms `*_BASE_DE_DONNEES`) : les deux doivent rester en phase, comme `.env.domibus` l'impose déjà entre `MYSQL_USER` et `DB_USER`.
 

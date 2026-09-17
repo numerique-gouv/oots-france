@@ -144,21 +144,22 @@ Everything else goes: no restating the code in prose, no walking the reader thro
 `make` lists what it can do; `make <target>` runs it. The targets are the commands this file used to spell out, in one place both a human and a workflow can read.
 
 ```sh
-make              # the list, with one line each
-make lint-fix     # style — use this one while writing, never `make lint`
-make test         # rubocop + rspec in Docker
-make e2e          # Cucumber against a real Domibus (needs the stack up)
-make schematron   # messages against the TDD rules
-make setup        # install from a fresh clone: env files, databases, gateway
-make check-env    # what the .env* templates declare, against what the .env* carry
-make up           # run the app — web and worker, both of them
+make               # the list, with one line each
+make lint-fix      # style — use this one while writing, never `make lint`
+make test          # rubocop + rspec in Docker
+make e2e           # Cucumber against a real Domibus (needs the stack up)
+make schematron    # messages against the TDD rules
+make setup         # install from a fresh clone: env files, databases, gateway
+make check-env     # what the .env* templates declare, against what the .env* carry
+make check-secrets # a deployment's secrets, against the development values the templates carry
+make up            # run the app — web and worker, both of them
 
 bundle exec rspec spec/builders/evidence_request_builder_spec.rb   # a single file
 ```
 
 **Reach for `make lint-fix`, not `make lint`.** Everything RuboCop can settle on its own is noise in a report: reading it, deciding, and editing by hand spends attention on what a flag fixes, and leaves the offences that need judgement buried among the ones that do not. `-a` applies only what is safe. `make lint` is for reading a verdict without touching the tree — a workflow, or someone else's branch.
 
-Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which has no default — `.env.template` leaves it blank and CI sets it to 5433 — and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
+Running the suite outside Docker needs a reachable database. `docker compose up -d postgres` publishes one on `PORT_POSTGRES`, which `.env.template` sets to 5433, and `HOTE_BASE_DE_DONNEES=localhost PORT_BASE_DE_DONNEES=5433` points the suite at it.
 
 CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). The Ruby sources run as they are, with no compilation step; the stylesheets and scripts are the exception — Propshaft serves them from source in development and test and **not at all in production**, where `make assets` must have run first.
 
@@ -181,7 +182,7 @@ CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL,
 - **Everything interpolated goes through `escape`.** ERB renders outside ActionView, so nothing is escaped for us. Part of what is interpolated comes from a foreign correspondent.
 - **Specs mirror `app/`** (`spec/**/*_spec.rb`), with FactoryBot factories and the reference messages of `spec/fixtures/` — see its README for what each directory is worth as evidence. New behaviour comes with specs.
 - **`db/seeds.rb` is part of the change, not an afterthought.** It is the only data the operator console is ever read against by hand, so a column it never fills is a page nobody has actually looked at. Extend it whenever a change adds a column the console shows, renames one, or alters what a writer records — and **make it say what the code writes, never more**: fill a field exactly where the production path fills it, leave it empty everywhere that path leaves it empty. A demonstration that fills every column teaches the console to lie, and the lie is then read as documentation. Where a value can be the real one — a digest of the document actually served — prefer it, so that a procedure the docs describe can be walked on the seeds rather than only read.
-- Config comes from environment variables only (no config files); new variables must be added to the relevant `.env*.template` with a French comment, **and** to `scripts/ci/prepare_environment.sh`, whose own contract check fails otherwise. Never commit real `.env*` files or secrets.
+- Config comes from environment variables only (no config files); a new variable is declared in the relevant `.env*.template`, **with the value a development machine gives it** and a French comment — `scripts/ci/prepare_environment.sh` derives the `.env*` from the templates, so that one line is the whole of it. A secret a deployment must generate itself is also named in `scripts/secret_variables`, which `scripts/setup_server.sh` generates from and `make check-secrets` polices. Never commit real `.env*` files or secrets.
 - **Nothing is in service yet, so nothing is owed backward compatibility.** No deployment holds data anyone would mourn: a schema change is **one migration**, not a three-step dance with a compatibility window, and the seeds are rebuilt rather than migrated. Adopt the modern form of an API outright instead of keeping the inherited one alongside because it still works — carrying two shapes costs a reader forever to spare a rewrite once. **This licence expires the day the system goes into service**; it was true on 2026-08-25, and [docs/oots_context.md](docs/oots_context.md) is where that status is recorded. Re-read it before relying on this.
 
 ### Layered design — apply it while writing, not after
@@ -233,7 +234,7 @@ Rules:
 - **The full stack runs in as many worktrees at once as there are free ports.** The script gives each worktree the smallest offset, between +1 and +99, whose whole port set is free — free meaning neither listening nor already written into another worktree's `.env`, since a stopped stack still owns its ports. One offset applies to every port of a stack, so the worktree on 3007 has its Domibus console on 8187. The Domibus/MySQL volumes are fresh per worktree, so the gateway must be configured there too — `make setup` inside the worktree does it, keeping the `.env*` the script copied in.
 - **Two creations launched at the same time are serialised**, by a `flock` on `.worktrees/.verrou`: they cannot read the same world and retain the same offset. Where `flock` is missing the script says so and carries on unserialised — create the worktrees one after the other in that case.
 - **Run stacks from a worktree, never from the main checkout.** Its ports are the reference set, and they belong to whoever works there — an agent that starts a stack on them takes the machine's `docker compose up` away from a human who has no way of seeing why. The worktree's own set is shifted and free, so nothing is lost by using it. `docker ps -a --filter publish=<port>` names the container holding a port, whatever project it belongs to; `docker compose -p <projet> down` releases it.
-- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env`, in its template **and** in `scripts/ci/prepare_environment.sh` — the contract check fails on a template the script does not write. Only the shifting needs no telling: it reads `.env`.
+- **Every port the local stack publishes is a variable in `.env`** — `web`, `domibus` and `postgres`; the `80` and `443` of `nginx` stay fixed, that service belonging to the deployment. The `PORT_` variables of the other files address the docker network — `PORT_BASE_DE_DONNEES` is the 5432 the container listens on — and are left alone. Adding a published port means wiring `${PORT_X}` into the service's `ports:`, then declaring `PORT_X` in `.env` and in `.env.template`, value included — `scripts/ci/prepare_environment.sh` reads the template rather than a list of its own. Only the shifting needs no telling: it reads `.env`.
 - **Before launching several agents at once, look at what their tickets touch.** Isolated worktrees stop them corrupting each other's tree; they do nothing about the merge. Two tickets whose files overlap produce a green PR each and a conflict on the second merge, discovered by whoever merges rather than by whoever wrote it. Compare the likely files first — the ticket bodies usually name them — and either serialise the pair, or launch both knowing the second will need a rebase, and say so when handing the work over. `git diff --name-only origin/main...<branche>` compares two branches already open.
 
 ## What lives in `.claude/`
