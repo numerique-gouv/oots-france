@@ -86,46 +86,40 @@ systemctl restart docker
 
 ```sh
 $ git clone https://github.com/numerique-gouv/oots-france.git && cd oots-france
-$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… MOT_DE_PASSE_MAGASINS=… \
-  LOGIN_NOTIFICATION_DOMIBUS=… MOT_DE_PASSE_NOTIFICATION_DOMIBUS=… \
-  URL_OOTS_FRANCE=https://<domaine> \
-    scripts/ci/prepare_environment.sh
+$ URL_OOTS_FRANCE=https://<domaine> scripts/setup_server.sh
 ```
 
-Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et engendre lui-même les trois clés JWK. Il honore les variables passées ci-dessus, et pose des valeurs de développement partout ailleurs.
+Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et ne demande rien : il **engendre lui-même chaque secret**, pose `RAILS_ENV=production` avec le `SECRET_KEY_BASE` qui va avec, engendre les trois clés JWK, et prend partout ailleurs la valeur que le template porte. `URL_OOTS_FRANCE` est le seul renseignement qu'il exige, faute de pouvoir le deviner : un `http://localhost:3000` rendrait injoignables les trois adresses que la démarche déclare à FranceConnect+, et rien ne le dirait avant la première authentification d'un usager.
 
-Chaque secret a son format, et trois d'entre eux sont refusés s'il n'est pas respecté — par Domibus au moment de `make setup`, ou par l'application au démarrage. Un générateur par cas, sans guillemet, `$`, `#` ni espace, que Compose réinterpréterait dans un `env_file` :
+Les secrets qu'il engendre sont ceux que [`scripts/secret_variables`](../scripts/secret_variables) nomme, chacun au format que son destinataire exige — et deux d'entre eux sont refusés si ce format ne l'est pas : le compte d'accès, par Domibus au moment de `make setup`, et les clés du journal, par l'application à son démarrage. Aucun générateur ne produit de guillemet, de `$`, de `#` ni d'espace, que Compose réinterpréterait dans un `env_file` :
 
 | Secret | Format | Générateur |
 | --- | --- | --- |
-| `MOT_DE_PASSE_API_REST`, et le mot de passe de la console Domibus | 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial | `echo "$(openssl rand -hex 6)Aa1!$(openssl rand -hex 6)"` |
+| `MOT_DE_PASSE_API_REST` | 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial — ce que Domibus exige d'un compte créé par son API REST | `echo "$(openssl rand -hex 6)Aa1!$(openssl rand -hex 6)"` |
 | `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | 32 caractères au moins | `openssl rand -hex 32` |
 | `SECRET_KEY_BASE` | long, sans autre règle | `openssl rand -hex 64` |
 | `MOT_DE_PASSE_MAGASINS` | sans espace | `openssl rand -hex 16` |
-| les autres mots de passe (bases, notification, rôle applicatif) | libres | `openssl rand -hex 16` |
+| les autres mots de passe (bases, rôle applicatif, et la notification, qui n'est qu'une propriété du plugin) | libres | `openssl rand -hex 16` |
 
-### 2. Remplacer ce qu'il a écrit en dur
+Le mot de passe de la console Domibus n'y est pas : il ne vit pas dans un `.env*`, et se change à la main dans la console une fois la passerelle montée — [étape 3](#3-installer). Sa règle est celle de la première ligne.
 
-| Fichier | À changer | Pourquoi maintenant |
-| --- | --- | --- |
-| `.env.domibus` | `MYSQL_ROOT_PASSWORD`, et `MYSQL_PASSWORD` avec `DB_PASS` qui doit lui être égal | lus à la création du volume, et plus jamais |
-| `.env.postgres` | `POSTGRES_PASSWORD`, et les deux autres si on le souhaite | idem |
-| `.env.oots` | `MOT_DE_PASSE_BASE_DE_DONNEES` **égal à** `POSTGRES_PASSWORD` de `.env.postgres`, et de même `UTILISATEUR_BASE_DE_DONNEES` à `POSTGRES_USER`, `NOM_BASE_DE_DONNEES` à `POSTGRES_DB` : l'application se présente avec les premiers, l'image crée le rôle avec les seconds, et rien ne vérifie l'égalité avant que `db:prepare` ne tombe sur `password authentication failed` ; `MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES` | le rôle applicatif est créé par `make setup` avec ce mot de passe |
-| `.env.oots` | les trois clés du journal, `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | une ligne chiffrée avec un jeu est illisible avec un autre : à fixer avant la première écriture |
-| `.env.oots` | `RAILS_ENV=production` et `SECRET_KEY_BASE=…`, **à ajouter** : le template ne les déclare pas | voir l'encadré ci-dessous |
-| `.env.oots` | `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, `NOM_FOURNISSEUR_FRANCAIS`, `DONNEES_REQUETEURS`, `IDENTIFIANT_REQUETEUR_DEMARCHE` | l'identité que les messages annoncent |
-| `.env.oots` | `URL_FAUX_FRANCE_CONNECT` **et** `URL_FRANCE_CONNECT` à `http://<domaine>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` ; les deux identifiants restent ceux que le script a écrits, ce sont les constantes du faux | l'émetteur doit être une seule adresse pour le navigateur de l'usager et pour `web` : `localhost` ne vaut que sur un poste. Le jour où le bac à sable répond, `URL_FRANCE_CONNECT` et les identifiants deviennent les siens et `URL_FAUX_FRANCE_CONNECT` se vide |
+Il finit par `make check-secrets`, qui confronte ce qu'il vient d'écrire aux valeurs de développement que les templates portent : elles sont versionnées dans ce dépôt, et un déploiement qui en garderait une répondrait exactement comme un déploiement correct. Il refuse aussi un secret **vide** — pire encore, et qu'aucune comparaison n'attrape — et une installation où un `.env*` manque, dont il n'aurait rien pu dire. Cette commande se rejoue à tout moment, et après toute édition à la main d'un `.env*`.
 
-Les deux jeux de clés s'engendrent avec l'image de l'application, avant même que la pile tourne :
+### 2. Ce qu'on lui passe en plus
 
-```sh
-$ docker compose build web
-$ docker compose run --rm --no-deps web bundle exec rails secret            # SECRET_KEY_BASE
-$ docker compose run --rm --no-deps web bundle exec rails db:encryption:init # les trois clés du journal, sous les noms de Rails
-```
+Tout ce que le script n'engendre pas prend la valeur que son template porte — celle d'un poste de développement. Ce qui doit en différer se passe sur la même ligne de commande, une variable par valeur, et le [template](../.env.oots.template) dit ce que chacune attend :
+
+| Variable | Ce qu'elle vaut sur un serveur |
+| --- | --- |
+| `IDENTIFIANT_FOURNISSEUR_FRANCAIS`, `NOM_FOURNISSEUR_FRANCAIS` | l'identité que les messages annoncent : le SIRET et le nom de l'organisation française qui fournit le justificatif |
+| `DONNEES_REQUETEURS`, `IDENTIFIANT_REQUETEUR_DEMARCHE` | l'annuaire des fournisseurs de service requêteurs, et le SIRET sous lequel la démarche de démonstration y est inscrite |
+| `URL_FAUX_FRANCE_CONNECT` **et** `URL_FRANCE_CONNECT`, toutes deux à `http://<domaine>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` | l'émetteur doit être une seule adresse pour le navigateur de l'usager comme pour `web`, et `localhost` ne vaut que sur un poste. Le jour où le bac à sable répond, `URL_FRANCE_CONNECT` et les deux identifiants deviennent les siens, et `URL_FAUX_FRANCE_CONNECT` se vide — ce que `make check-secrets` surveille, le secret client du faux étant public |
+| `POSTGRES_USER`, `POSTGRES_DB`, `MYSQL_USER`, `MYSQL_DATABASE` | si l'on veut d'autres noms que ceux du dépôt. Leurs mots de passe, eux, sont engendrés |
+
+Les identifiants des bases vivent dans deux fichiers chacun, sous le nom que leur image attend et sous celui que l'application lit : `scripts/ci/prepare_environment.sh` les tient égaux, si bien qu'il n'y a **rien à recopier d'un fichier à l'autre** — c'est là que se jouait le `password authentication failed` que rien ne voit venir.
 
 > [!IMPORTANT]
-> **`RAILS_ENV=production` change ce que `make setup` fait**, et pas seulement ce que le serveur sert : c'est lui qui retient `db/seeds.rb` de poser le compte `admin@example.com` et les quinze échanges de démonstration. Posé après coup, le serveur a déjà le compte public dans sa base. Et **ne le déclarez jamais vide** : un `RAILS_ENV=` sans valeur n'est pas absent pour Ruby, et les suites de tests, qui ne posent `test` que si la variable manque, tourneraient alors en `development`. C'est pourquoi `.env.oots.template` ne le déclare pas.
+> **`RAILS_ENV=production` change ce que `make setup` fait**, et pas seulement ce que le serveur sert : c'est lui qui retient `db/seeds.rb` de poser le compte `admin@example.com` et les quinze échanges de démonstration. Posé après coup, le serveur a déjà le compte public dans sa base — d'où sa place ici, avant `make setup`. Et **ne le déclarez jamais vide** : un `RAILS_ENV=` sans valeur n'est pas absent pour Ruby, et les suites de tests, qui ne posent `test` que si la variable manque, tourneraient alors en `development`. C'est pourquoi `.env.oots.template` ne le déclare pas, et pourquoi `scripts/setup_server.sh` est seul à l'écrire.
 >
 > Sans `SECRET_KEY_BASE`, Rails refuse de démarrer en production — `Missing secret_key_base for 'production' environment`. L'application ne lit rien dans ses *credentials* : cette variable suffit, et `config/master.key` n'a pas à exister sur le serveur.
 
@@ -219,6 +213,7 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 ```sh
 $ git pull
 $ make check-env                                  # les variables qu'un template a gagnées depuis
+$ make check-secrets                              # aucun secret revenu à sa valeur de développement
 $ docker compose build web
 $ docker compose run --rm --no-deps web bundle exec rails db:prepare
 $ docker compose run --rm --no-deps web bundle exec rails db:privileges
@@ -226,7 +221,7 @@ $ make assets
 $ docker compose up -d web worker
 ```
 
-`make check-env` nomme les variables à ajouter aux `.env*` ; leurs templates disent ce qu'elles attendent. `db:privileges` se rejoue après chaque migration, pour la raison que `lib/database_privileges.rb` donne. Si la mise à jour touche le PMode ou les certificats, rejouer `scripts/configure_domibus.sh` puis `docker compose restart domibus`. Le script exige ses six variables et ne lit aucun fichier : les recopier des `.env*`, et lui passer le mot de passe de la console s'il a changé —
+`make check-env` nomme les variables à ajouter aux `.env*` ; leurs templates disent ce qu'elles attendent, et la valeur qu'elles prennent sur un poste de développement — à ne pas recopier telle quelle, ce que `make check-secrets` vérifie pour celles qui sont des secrets. `db:privileges` se rejoue après chaque migration, pour la raison que `lib/database_privileges.rb` donne. Si la mise à jour touche le PMode ou les certificats, rejouer `scripts/configure_domibus.sh` puis `docker compose restart domibus`. Le script exige ses six variables et ne lit aucun fichier : les recopier des `.env*`, et lui passer le mot de passe de la console s'il a changé —
 
 ```sh
 $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \

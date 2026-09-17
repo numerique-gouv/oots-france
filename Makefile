@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup check-env up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -14,6 +14,12 @@ setup: ## Install from a fresh clone: env files, databases, configured gateway
 
 check-env: ## What the templates declare, against what the .env* files carry
 	scripts/check_environment.sh
+
+# Neither chained to `check-env` nor run by `make setup`: what `make setup`
+# writes are the templates' own values, so this check would fail on every
+# development machine, every time. A deployment replays it on its own.
+check-secrets: ## What a deployment carries as secrets, against the development values of the templates
+	scripts/check_secrets.sh
 
 up: ## Run the application: server, background worker, fake FranceConnect+, database, gateway
 	$(COMPOSE) up web worker fake-france-connect
