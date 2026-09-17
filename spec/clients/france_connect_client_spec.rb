@@ -14,6 +14,23 @@ RSpec.describe FranceConnectClient do
       expect(client.jwks_url).to eq(FranceConnectStubs::JWKS_URL)
     end
 
+    # Three variables separate the fake, the sandbox and the production, so a
+    # cached document must be the one its issuer published: keyed on nothing
+    # else, it would serve the fake's endpoints to a deployment pointed at the
+    # sandbox, where the check above then refuses them as foreign — and an
+    # operator has no way of guessing that a cache is what stands in the way.
+    it 'never serves the document of one issuer to a deployment configured on another' do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      stub_france_connect(issuer: 'http://ancien-franceconnect.test/api/v2')
+      described_class.new.authorization_url(state: 's' * 32, nonce: 'n' * 32)
+
+      stub_france_connect
+      address = described_class.new.authorization_url(state: 's' * 32, nonce: 'n' * 32)
+
+      expect(address).to start_with(FranceConnectStubs::AUTHORIZATION_ENDPOINT)
+      expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).to have_been_made
+    end
+
     it 'reads the document once and holds it' do
       3.times { client.authorization_url(state: 's' * 32, nonce: 'n' * 32) }
 

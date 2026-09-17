@@ -211,6 +211,13 @@ class FranceConnectClient
 
   def discovery = @discovery ||= published_discovery
 
+  # Keyed by the issuer it was read from, as `JwksFetcher` keys by the address
+  # it fetched: the issuer is a variable of the deployment, and a key that did
+  # not name it would serve the document of one portal to a deployment
+  # configured on another — the endpoints of the fake to a deployment pointed at
+  # the sandbox, refused as foreign by the check above. Changing
+  # `URL_FRANCE_CONNECT` then takes effect without emptying anything by hand.
+  #
   # Parsed **inside** the cache block, and not after it: a body that does not
   # read as JSON — a maintenance page answered with a 200, a truncated
   # response — is then never written, where caching it would serve a passing
@@ -218,8 +225,10 @@ class FranceConnectClient
   # every sign-out of the next hour into the same failure. `CodeListClient`
   # keeps an empty answer out of its cache for the same reason.
   def published_discovery
-    Rails.cache.fetch('france_connect/openid_configuration', expires_in: CACHE_DURATION) do
-      document(get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body)
+    issuer = Settings.france_connect_issuer
+
+    Rails.cache.fetch("france_connect/openid_configuration/#{issuer}", expires_in: CACHE_DURATION) do
+      document(get("#{issuer}#{DISCOVERY_PATH}").body)
     end
   rescue JSON::ParserError => e
     raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)
