@@ -22,7 +22,12 @@ module Demo
     # No `raise_error` middleware, here or on the state client: a refusal is an
     # answer to a service provider, and the page has to show the status and the
     # message it carried.
-    def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:, conversation_id: nil)
+    # `requirement_id` names which of the procedure's requirements is being
+    # asked for. Optional at the contract, and optional here: `compact` drops it
+    # where the page had none to name, and the contract then answers the first
+    # requirement the country publishes for.
+    def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:,
+              conversation_id: nil, requirement_id: nil)
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
         codeDemarche: procedure_code,
@@ -30,6 +35,7 @@ module Demo
         beneficiaire: encrypted_beneficiary,
         previsualisationRequise: NO_PREVIEW,
         idConversation: conversation_id,
+        idExigence: requirement_id,
       }.compact)
 
       ContractAnswer.from(response, path: PATH)

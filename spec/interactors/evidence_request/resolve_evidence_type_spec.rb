@@ -2,8 +2,11 @@ require 'rails_helper'
 
 RSpec.describe EvidenceRequest::ResolveEvidenceType do
   subject(:resolve) do
-    described_class.call(procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, country_code: 'FI', common_services:)
+    described_class.call(procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, country_code: 'FI',
+      requirement_id:, common_services:)
   end
+
+  let(:requirement_id) { nil }
 
   let(:common_services) do
     instance_double(Directories::CommonServices, required_evidence_for_procedure: required)
@@ -52,9 +55,67 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
     # Every requirement of the procedure is due (chapter 3.2.3), so the whole
     # answer stays available to what comes after — the one that published
     # nothing included, since chapter 4.4 multiplies the conversation timeout by
-    # how many there are. How many requests it turns into is OOTS-139.
+    # how many there are.
     it 'keeps every requirement the procedure rests on, not merely the one it sends' do
       expect(resolve.required_evidence).to eq(required)
+    end
+  end
+
+  # Chapter 1 §4.2 leaves the shape of this interface to the member state, and
+  # `idExigence` is what a caller names one requirement of the procedure with.
+  # The parameter is optional throughout: naming none is answered the first
+  # requirement the country publishes evidence for.
+  describe 'a caller naming the requirement it asks for' do
+    let(:required) do
+      [Directories::CommonServices::RequiredEvidence.new(requirement: first, evidence_types: [first_type]),
+       Directories::CommonServices::RequiredEvidence.new(requirement: second, evidence_types: [second_type])]
+    end
+    let(:first) { build(:requirement, id: 'https://sr.oots.tech.ec.europa.eu/requirements/1') }
+    let(:second) { build(:requirement, id: 'https://sr.oots.tech.ec.europa.eu/requirements/2') }
+    let(:first_type) { build(:evidence_type, id: 'https://sr/du-premier') }
+    let(:second_type) { build(:evidence_type, id: 'https://sr/du-second') }
+
+    describe 'the second of two that publish' do
+      let(:requirement_id) { second.id }
+
+      it 'carries that requirement, and the first type published for it' do
+        expect(resolve.requirement).to eq(second)
+        expect(resolve.evidence_type.id).to eq('https://sr/du-second')
+      end
+    end
+
+    # The whole point of the parameter: a requirement nobody serves is refused
+    # rather than exchanged for one that is, which would answer a question the
+    # caller did not ask.
+    describe 'one the country publishes nothing for' do
+      let(:requirement_id) { second.id }
+      let(:second_type) { nil }
+      let(:required) do
+        [Directories::CommonServices::RequiredEvidence.new(requirement: first, evidence_types: [first_type]),
+         Directories::CommonServices::RequiredEvidence.new(requirement: second, evidence_types: [])]
+      end
+
+      it 'fails without falling back on a neighbour' do
+        expect(resolve).to be_failure
+        expect(resolve.error).to include(key: :no_evidence_type, errors: [second.id])
+      end
+    end
+
+    describe 'one the procedure does not rest on' do
+      let(:requirement_id) { 'https://sr.oots.tech.ec.europa.eu/requirements/inconnue' }
+
+      it 'fails under its own key, naming what was asked for' do
+        expect(resolve).to be_failure
+        expect(resolve.error).to include(key: :unknown_requirement)
+        expect(resolve.error[:errors].first).to include(requirement_id)
+      end
+    end
+
+    describe 'nothing at all' do
+      it 'answers the first requirement that publishes' do
+        expect(resolve.requirement).to eq(first)
+        expect(resolve.evidence_type.id).to eq('https://sr/du-premier')
+      end
     end
   end
 

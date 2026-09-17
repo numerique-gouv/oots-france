@@ -1,6 +1,12 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Documents' do
+  # The one requirement `eb_requirements_fr` holds, and the two of
+  # `eb_requirements_t1_fr`, which is the procedure of the demonstration.
+  let(:exigence) { '00000000-0000-0000-0000-000000000000' }
+  let(:premiere) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
+  let(:seconde) { '2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }
+
   before do
     sign_in
     identify_demo_user
@@ -164,18 +170,38 @@ RSpec.describe 'Admin::Demo::Documents' do
         .to eq('⚠️No provider listed by FR for this evidence')
     end
 
-    # The contract names no requirement and its server answers with the first
-    # that publishes evidence types, so a second button would send the same
-    # request under another name. Stub, tracked as OOTS-212.
-    it 'carries the press on one card only, and says why on the others' do
+    # CA9. Each card carries its own press and its own zone, and the address
+    # tells them apart: chapter 4.4 §4.2.2 has « different basic flows …
+    # executed sequentially and/or in parallel », so nothing here makes one card
+    # wait on another.
+    it 'carries a press and a zone on every card it can name, each on its own address' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
 
       get admin_demo_documents_path
 
       cartes = response.parsed_body.css('main .requirement-card')
 
-      expect(cartes.css("form[action='#{admin_demo_demande_path}']").size).to eq(1)
-      expect(cartes.last.text).to include('one document at a time')
+      expect(cartes.css('.demo-request__body').size).to eq(2)
+      expect(cartes.css('button').map { |bouton| bouton.text.squish }).to eq(['Request the document'] * 2)
+      expect(cartes.css('[data-controller="demo-request"]').pluck('data-demo-request-url-value'))
+        .to eq([admin_demo_demande_path(exigence: premiere), admin_demo_demande_path(exigence: seconde)])
+    end
+
+    # CA8. Requirement 27 makes the two names a condition of the request, so a
+    # requirement the country serves with nothing carries neither press nor
+    # zone — and its neighbours keep theirs.
+    it 'leaves a requirement the country does not serve without press or zone' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', requirement: seconde_id)
+
+      get admin_demo_documents_path
+
+      cartes = response.parsed_body.css('main .requirement-card')
+
+      expect(cartes.size).to eq(2)
+      expect(cartes.first.css('.demo-request__body')).to be_present
+      expect(cartes.last.css('.demo-request__body')).to be_empty
+      expect(cartes.last.text).to include('No provider listed by France for this evidence')
     end
 
     # Une panne d'annuaire n'est pas un refus : elle ne porte aucun code, et
@@ -210,7 +236,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_evidence_request
       stub_exchange_state
       get admin_demo_documents_path
-      post admin_demo_demande_path
+      post demande_path
     end
 
     it 'opens on the waiting rather than on a press that would start a second' do
@@ -236,4 +262,8 @@ RSpec.describe 'Admin::Demo::Documents' do
   def reset_session_identity
     allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
   end
+
+  def seconde_id = "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{seconde}"
+
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)
 end

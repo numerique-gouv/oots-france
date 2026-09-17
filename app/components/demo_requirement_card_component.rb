@@ -8,18 +8,16 @@
 # unable to name them offers nothing to press: the requirement is a condition of
 # the request, not a decoration on it.
 #
-# Only one card carries the press for now. The contract a service provider calls
-# names no requirement, and its server answers with the first that publishes
-# evidence types, so a second button would send the same request under another
-# name. Stub, tracked as OOTS-212.
-#
-# `zone` is where that press lives, and it is the one part of the card an answer
+# `zone` is where the press lives, and it is the one part of the card an answer
 # replaces: the card itself says what the requirement is and who satisfies it,
-# which no answer changes.
+# which no answer changes. Every card that can name its two names carries one,
+# and each follows its own request — chapter 4.4 §4.2.2 has « different basic
+# flows … executed sequentially and/or in parallel », so no card waits on its
+# neighbour. The address the browser re-asks is what tells them apart: it names
+# this card's requirement.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, askable:, country_code:, country_name: nil, zone: nil)
+  def initialize(wording:, country_code:, country_name: nil, zone: nil)
     @wording = wording
-    @askable = askable
     @country_code = country_code
     @country_name = country_name
     @zone = zone
@@ -48,10 +46,17 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # one nobody serves is still one the procedure rests on.
   def titled? = requirement.present?
 
-  def askable? = @askable && nameable? && zone.present?
+  def askable? = nameable? && zone.present?
+
+  # The address this card's zone answers on, and the one the browser re-asks
+  # while it waits. The UUID and not the whole identifier: it is what the
+  # console and `DirectoryLookup` already pass between themselves, and a
+  # Semantic Repository URL would have to be escaped into the query string of
+  # every one of these.
+  def zone_path = helpers.admin_demo_demande_path(exigence: requirement_uuid)
 
   delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
-    :provider_language, :requirement, :requirement_language, to: :wording
+    :provider_language, :requirement, :requirement_language, :requirement_uuid, to: :wording
 
   private
 

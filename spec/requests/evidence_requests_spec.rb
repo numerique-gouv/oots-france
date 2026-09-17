@@ -161,6 +161,43 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # Chapter 1 §4.2 leaves the interface a member state's front end calls to that
+  # member state — « they are only used internally in Member State systems » —
+  # so the name and the shape of this parameter are ours. Its value is the
+  # requirement identifier the Evidence Broker publishes, the Semantic
+  # Repository URL entire, which is also what the second Evidence Broker query
+  # of chapter 3.2.4 §4.3 takes.
+  describe 'the requirement the caller may name' do
+    let(:exigence) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }
+
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative', params: parameters.merge(idExigence: exigence)
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(requirement_id: exigence))
+    end
+
+    # Optional throughout: a caller naming none is answered the first
+    # requirement the country publishes for.
+    it 'names none when the caller named none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(requirement_id: nil))
+    end
+
+    # What the caller can correct is a 422, and the reason has to name the value
+    # they would correct: the contract does not vet the shape of the identifier,
+    # so an unknown one is the only refusal there is.
+    it 'refuses one the procedure does not rest on, naming it' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unknown_requirement, "L'exigence « #{exigence} » n'est pas une exigence de la démarche"))
+
+      get '/requete/pieceJustificative', params: parameters.merge(idExigence: exigence)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include(exigence)
+    end
+  end
+
   # Chapter 4.4 lets the Procedure Portal assign the conversation identifier, so
   # that two requests can be said to be one user's.
   describe 'the conversation the caller may name' do

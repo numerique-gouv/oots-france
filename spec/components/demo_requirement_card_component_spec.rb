@@ -2,28 +2,32 @@ require 'rails_helper'
 
 RSpec.describe DemoRequirementCardComponent, type: :component do
   subject(:card) do
-    described_class.new(wording:, askable: true, country_code: 'FR', country_name: 'France',
-      zone: DemoRequestZoneComponent.new(outcome: nil))
+    described_class.new(wording:, country_code: 'FR', country_name: 'France',
+      zone: DemoRequestZoneComponent.new(outcome: nil, requirement_uuid: uuid))
   end
 
+  let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
   let(:wording) do
     instance_double(DemoResolutionWording, nameable?: true, published_nothing?: false,
       evidence_type: 'FR - Test Evidence Type', evidence_type_language: 'en',
       provider: 'FR - Test Evidence Provider', provider_language: 'en',
-      requirement: '(TEST) Test Requirement', requirement_language: 'en')
+      requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
   end
 
   # Ce que le contrôleur Stimulus attend de la carte, et que rien d'autre ne
   # vérifie : l'un de ces trois attributs perdu, Stimulus ne s'attache pas, le
   # clic redevient une soumission de formulaire ordinaire, et le navigateur
   # quitte la page pour la réponse sans gabarit de `RequestsController#create`.
+  #
+  # L'adresse nomme l'exigence de cette carte : la page en porte une par
+  # exigence demandable, et c'est la seule chose qui les distingue.
   it 'hands the browser the controller, the gesture it watches and the address it re-asks' do
     render_inline(card)
 
     element = page.find('[data-controller="demo-request"]', visible: :all)
 
     expect(element['data-action']).to eq('submit->demo-request#submit')
-    expect(element['data-demo-request-url-value']).to eq('/admin/demo/demande')
+    expect(element['data-demo-request-url-value']).to eq("/admin/demo/demande?exigence=#{uuid}")
   end
 
   # Une région remplacée en même temps que ce qu'elle annonce n'annonce rien :

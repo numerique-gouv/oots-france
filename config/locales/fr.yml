@@ -267,11 +267,6 @@ fr:
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
       # savoir. Le code du refus reste à la console, pas au portail.
       no_answer_html: <strong>%{country} could not answer for this evidence</strong>
-      # Le contrat que la démarche appelle ne nomme aucune exigence, et son
-      # serveur répond avec la première qui publie des types : un second bouton
-      # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
-      one_at_a_time: >-
-        This procedure can only request one document at a time for now.
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -1438,6 +1433,7 @@ fr:
       unknown_country: Pays inconnu des annuaires
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
+      unknown_requirement: Exigence inconnue de la démarche
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
     # Les deux moitiés de la cinématique européenne. Chaque phrase est un refus
     # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
@@ -1509,6 +1505,19 @@ fr:
         unsupported: >-
           Le point d'accès %{access_point} annonce %{announced} ; la France parle %{spoken} : la
           requête n'est pas émise.
+      # L'exigence que l'appelant a nommée en `idExigence` n'est aucune de celles
+      # que l'Evidence Broker publie pour cette démarche. Sans le pays : les
+      # exigences d'une démarche se lisent dans notre propre juridiction
+      # (`Settings.common_services_country_code`), jamais dans le pays
+      # interrogé, qui ne sert qu'à en peupler les types — nommer `codePays`
+      # ici enverrait l'appelant le corriger en vain.
+      #
+      # Le refus redit l'exigence : c'est la seule valeur que l'appelant puisse
+      # corriger, et le contrat ne valide pas sa forme — une valeur qui ne
+      # nomme aucune exigence est refusée quelle que soit sa tête.
+      resolve_evidence_type:
+        unknown_requirement: >-
+          L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
       send_to_gateway:
         # La panne est nommée comme locale : aucune des huit exceptions du
         # chapitre 4.5.3 ne décrit un émetteur incapable de construire son

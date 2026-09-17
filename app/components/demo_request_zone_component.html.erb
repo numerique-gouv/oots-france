@@ -15,7 +15,7 @@
     <%# Chapter 1 §4.2: the evidence is « made available to the specific
         procedure end-user that issued the query », and the user « cannot modify
         its content in any way » — so it is offered exactly as it arrived. %>
-    <%= link_to t('components.demo_request_zone.open'), helpers.admin_demo_justificatif_path,
+    <%= link_to t('components.demo_request_zone.open'), evidence_path,
           class: 'fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-attachment-line',
           target: '_blank', rel: 'noopener', lang: 'en' %>
 
@@ -33,7 +33,7 @@
         that left it out would have none to show. Nothing in the browser brings
         it back — giving up offers a way back to the page instead, pressing
         again being a second exchange (chapter 4.4 §4.1). %>
-    <%= button_to submit_label, helpers.admin_demo_demande_path,
+    <%= button_to submit_label, press_path,
           class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line', lang: 'en',
           form: { class: 'demo-request__press', hidden: pending?,
                   data: { demo_request_target: 'press' } } %>

@@ -2,6 +2,9 @@ require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Evidences' do
   let(:content) { "%PDF-1.4\ndrapeau".b }
+  # The one requirement `eb_requirements_fr` holds. A document is offered per
+  # requirement asked for, and the address of each names its own.
+  let(:exigence) { '00000000-0000-0000-0000-000000000000' }
 
   before do
     sign_in
@@ -17,7 +20,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     # named the evidence type and the provider, so the journey is walked whole.
     stub_exchange_state
     get admin_demo_documents_path
-    post admin_demo_demande_path
+    post demande_path
   end
 
   describe 'GET /admin/demo/justificatif' do
@@ -27,7 +30,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     # any way », so the bytes are served as they arrived, and their digest is
     # the digest of what was delivered.
     it 'serves the evidence byte for byte, under its own type' do
-      get admin_demo_justificatif_path
+      get justificatif_path
 
       expect(response.media_type).to eq(Attachment::MIME_TYPE)
       expect(response.body.b).to eq(content)
@@ -41,7 +44,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     it 'sends an operator holding no identity back to the start' do
       allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
 
-      get admin_demo_justificatif_path
+      get justificatif_path
 
       expect(response).to redirect_to(admin_demo_root_path)
     end
@@ -54,9 +57,9 @@ RSpec.describe 'Admin::Demo::Evidences' do
                                     conversation: DemoContractStubs::ACCEPTED_CONVERSATION,
                                     statut: 'pending' }.to_json)
       stub_exchange_state('un-second-echange', statut: 'pending')
-      post admin_demo_demande_path
+      post demande_path
 
-      get admin_demo_justificatif_path
+      get justificatif_path
 
       expect(response).to redirect_to(admin_demo_documents_path)
     end
@@ -68,13 +71,33 @@ RSpec.describe 'Admin::Demo::Evidences' do
   it 'sends the operator back when the register no longer holds the request' do
     forget_the_request
 
-    get admin_demo_justificatif_path
+    get justificatif_path
 
     expect(response).to redirect_to(admin_demo_documents_path)
   end
 
+  # Chapter 1 §4.2 makes the evidence available to « the specific procedure
+  # end-user that issued the query », and the parameter only says which of that
+  # user's requests is meant: one it does not name is one the session never
+  # followed, whatever the register holds.
+  describe 'a requirement the session followed no request for' do
+    before { Demo::Request.sole.receive_evidence!(content) }
+
+    it 'serves nothing for a requirement the session never asked about' do
+      get justificatif_path('11111111-2222-3333-4444-555555555555')
+
+      expect(response).to redirect_to(admin_demo_documents_path)
+    end
+
+    it 'serves nothing when no requirement is named at all' do
+      get admin_demo_justificatif_path
+
+      expect(response).to redirect_to(admin_demo_documents_path)
+    end
+  end
+
   it 'sends the operator back to the page the document is offered from while nothing has been delivered' do
-    get admin_demo_justificatif_path
+    get justificatif_path
 
     expect(response).to redirect_to(admin_demo_documents_path)
   end
@@ -84,4 +107,8 @@ RSpec.describe 'Admin::Demo::Evidences' do
   def forget_the_request
     Demo::Request.delete_all
   end
+
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)
+
+  def justificatif_path(uuid = exigence) = admin_demo_justificatif_path(exigence: uuid)
 end
