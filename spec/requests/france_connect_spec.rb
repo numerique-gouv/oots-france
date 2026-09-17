@@ -89,6 +89,21 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       expect(session[:demo_identity]).to be_nil
     end
 
+    # The authorization code lives thirty seconds and is single use, and the
+    # request log writes the query string in clear: `state` is what the support
+    # of FranceConnect asks for, the code is what nobody may read back.
+    describe 'what the request log keeps of the return address' do
+      it 'filters the authorization code and leaves the state readable' do
+        stub_code_list
+        stub_france_connect
+
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code-a-usage-unique', state: 'un-etat' }
+
+        expect(request.filtered_path).to include('code=[FILTERED]', 'state=un-etat')
+        expect(request.filtered_path).not_to include('un-code-a-usage-unique')
+      end
+    end
+
     # No session of this application asked for it: a code replayed from a
     # history, or one obtained elsewhere.
     it 'refuses a return no departure of this session accounts for' do
