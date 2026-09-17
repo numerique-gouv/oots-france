@@ -58,7 +58,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     # de revue. `failure` est la seule absente ici, l'attente n'ayant aucun
     # refus à rapporter.
     # Le recours que le navigateur montrera quand il renoncera : un lien vers la
-    # page, jamais le bouton — presser ouvrirait un second échange pendant que
+    # page, jamais le bouton — cliquer ouvrirait un second échange pendant que
     # le premier court (chapitre 4.4 §4.1).
     it 'holds a way back to the page, not a second press, for when the browser gives up' do
       render_inline(zone)

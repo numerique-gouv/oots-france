@@ -22,7 +22,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
 
   Scénario: l'attente prend la place du bouton avant qu'aucune réponse ne soit revenue
     Étant donné la soumission de la demande retenue devant le navigateur
-    Quand l'usager presse "Request the document"
+    Quand l'usager clique sur "Request the document"
     Alors la zone annonce qu'elle attend
     Et la page n'affiche aucun bouton de demande
     Et la page des justificatifs est toujours affichée
@@ -78,7 +78,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
 
   Scénario: une demande dont la réponse se perd est retentée par l'interrogation, jamais renvoyée
     Étant donné la soumission de la demande et les deux requêtes suivantes coupées devant le navigateur
-    Quand l'usager presse "Request the document"
+    Quand l'usager clique sur "Request the document"
     Alors la zone annonce qu'elle attend
     Et les essais qui suivent la soumission sont des interrogations
     Et le contrat n'a reçu aucune demande

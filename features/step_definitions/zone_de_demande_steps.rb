@@ -101,7 +101,7 @@ end
   zone_requests.hold
 end
 
-Quand("l'usager presse {string}") do |label|
+Quand("l'usager clique sur {string}") do |label|
   click_button label
 end
 
