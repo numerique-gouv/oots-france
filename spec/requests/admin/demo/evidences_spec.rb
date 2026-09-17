@@ -16,7 +16,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
     stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
     stub_code_list
-    # Requirement 27 of chapter 1 §2: the press exists only once the page has
+    # Requirement 27 of chapter 1 §2: the button exists only once the page has
     # named the evidence type and the provider, so the journey is walked whole.
     stub_exchange_state
     get admin_demo_documents_path

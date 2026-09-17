@@ -11,8 +11,8 @@
 # session's own exchanges is meant.
 #
 # Nothing here redirects: a session following no request for a requirement is
-# the ordinary state of its card before the press, and the zone then offers the
-# press and nothing else.
+# the ordinary state of its card before any click, and the zone then offers the
+# button and nothing else.
 module ReadsDemoRequest
   extend ActiveSupport::Concern
 

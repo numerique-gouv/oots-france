@@ -10,7 +10,7 @@ module BrowserFranceConnectStubs
   def browser_france_connect_issuer = "#{page.server.base_url}#{BrowserFranceConnect::MOUNT}"
 
   # Identifies the user in the browser, as a request spec's `identify_demo_user`
-  # does in its own session: the departure is pressed, the browser is sent to
+  # does in its own session: the departure is clicked, the browser is sent to
   # the authorization endpoint, and it comes back on the return address with a
   # `state` and a `nonce` neither of which the scenario wrote.
   #

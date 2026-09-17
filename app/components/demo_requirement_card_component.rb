@@ -1,14 +1,14 @@
 # One requirement of the procedure, as the documents page offers it: the
 # evidence type that satisfies it, the provider holding that evidence, and the
-# press that asks for it.
+# button that asks for it.
 #
 # The two names are what requirement 27 of chapter 1 §2 asks for word for word —
 # « The user is provided with information about name of evidence provider and
 # evidence type for confirmation, before any request is made » — so a card
-# unable to name them offers nothing to press: the requirement is a condition of
+# unable to name them offers nothing to click: the requirement is a condition of
 # the request, not a decoration on it.
 #
-# `zone` is where the press lives, and it is the one part of the card an answer
+# `zone` is where the button lives, and it is the one part of the card an answer
 # replaces: the card itself says what the requirement is and who satisfies it,
 # which no answer changes. Every card that can name its two names carries one,
 # and each follows its own request — chapter 4.4 §4.2.2 has « different basic

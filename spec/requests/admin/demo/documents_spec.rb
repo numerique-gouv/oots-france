@@ -170,11 +170,11 @@ RSpec.describe 'Admin::Demo::Documents' do
         .to eq('⚠️No provider listed by FR for this evidence')
     end
 
-    # CA9. Each card carries its own press and its own zone, and the address
+    # CA9. Each card carries its own button and its own zone, and the address
     # tells them apart: chapter 4.4 §4.2.2 has « different basic flows …
     # executed sequentially and/or in parallel », so nothing here makes one card
     # wait on another.
-    it 'carries a press and a zone on every card it can name, each on its own address' do
+    it 'carries a button and a zone on every card it can name, each on its own address' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
 
       get admin_demo_documents_path
@@ -188,9 +188,9 @@ RSpec.describe 'Admin::Demo::Documents' do
     end
 
     # CA8. Requirement 27 makes the two names a condition of the request, so a
-    # requirement the country serves with nothing carries neither press nor
+    # requirement the country serves with nothing carries neither button nor
     # zone — and its neighbours keep theirs.
-    it 'leaves a requirement the country does not serve without press or zone' do
+    it 'leaves a requirement the country does not serve without button or zone' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
       stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', requirement: seconde_id)
 
@@ -239,7 +239,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       post demande_path
     end
 
-    it 'opens on the waiting rather than on a press that would start a second' do
+    it 'opens on the waiting rather than on a button that would start a second' do
       get admin_demo_documents_path
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')

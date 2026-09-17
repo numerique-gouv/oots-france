@@ -1,12 +1,12 @@
 /*
- * The zone of the requirement card where the document is asked for: the press,
+ * The zone of the requirement card where the document is asked for: the button,
  * what the asking is doing, and the refusal where there is one.
  *
  * The zone takes a line of its own under the sentence naming the document and
  * its provider, at every width: that sentence says what is being asked for, and
- * a press sharing its line reads as part of it.
+ * a button sharing its line reads as part of it.
  *
- * The press takes the whole width and reads centred: it is the one thing to do
+ * The button takes the whole width and reads centred: it is the one thing to do
  * on this card, and there is nothing to set it against. The waiting that stands
  * in its place does the same, so that nothing shifts when one becomes the other.
  *
@@ -30,17 +30,17 @@
   gap: 0.5rem 1rem;
 }
 
-.demo-request__press {
+.demo-request__button {
   flex: 1 1 100%;
 }
 
-.demo-request__press .fr-btn {
+.demo-request__button .fr-btn {
   width: 100%;
   justify-content: center;
 }
 
 /*
- * The box of the press it stands in, to the pixel: `.fr-btn` is `min-height:
+ * The box of the button it stands in, to the pixel: `.fr-btn` is `min-height:
  * 2.5rem` with `.5rem 1rem` of padding on a `1.5rem` line, and the waiting
  * repeats them so that nothing under it moves when one becomes the other.
  *

@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 // The zone of the documents page where the document is asked for. It answers its
-// own address, so both the press and the waiting come back as the contents of
+// own address, so both the button and the waiting come back as the contents of
 // this element and replace them.
 //
 // The server decides what the zone says and whether it is still waiting: a
@@ -17,9 +17,9 @@ const INTERVAL = 2000
 // What an answer replaces, and what it says of itself.
 const BODY = '.demo-request__body'
 
-// The one word of the server's vocabulary this controller has to know: the
-// press puts the waiting on screen before anything has been asked of anyone, so
-// the zone has to say it is waiting too — see `splice`.
+// The one word of the server's vocabulary this controller has to know: a click
+// puts the waiting on screen before anything has been asked of anyone, so the
+// zone has to say it is waiting too — see `splice`.
 const PENDING = 'pending'
 
 // How many answers in a row the page may fail to get before it says so. A blip
@@ -28,7 +28,7 @@ const PENDING = 'pending'
 const ATTEMPTS = 3
 
 export default class extends Controller {
-  static targets = ["press", "loading", "failure", "disconnected"]
+  static targets = ["button", "loading", "failure", "disconnected"]
   static values = { url: String }
 
   connect() {
@@ -40,19 +40,19 @@ export default class extends Controller {
     clearTimeout(this.timer)
   }
 
-  // The press. Sent as the form was built — `button_to` puts the CSRF token in
+  // The click. Sent as the form was built — `button_to` puts the CSRF token in
   // it — so that what leaves is what would have left without this controller.
   //
-  // The waiting takes the press's place at once, before anything has been asked
+  // The waiting takes the button's place at once, before anything has been asked
   // of anyone: the answer is a round trip away, and a screen that says nothing
-  // until it comes back leaves the user pressing again. Both were rendered by
+  // until it comes back leaves the user clicking again. Both were rendered by
   // the server, so nothing here writes a word.
   submit(event) {
     event.preventDefault()
 
     this.failures = 0
     this.show(this.loadingTargets)
-    this.hide(this.pressTargets)
+    this.hide(this.buttonTargets)
     // What each reports is no longer what is happening.
     this.hide(this.failureTargets)
     this.hide(this.disconnectedTargets)
@@ -94,7 +94,7 @@ export default class extends Controller {
   }
 
   // An answer that says what the zone is already saying replaces nothing. The
-  // waiting is one waiting: it starts under the press and ends when the document
+  // waiting is one waiting: it starts under the button and ends when the document
   // arrives. Built again it would start its spinner over and announce the same
   // sentence a second time in the `aria-live` region — which is read as a second
   // wait beginning, a first one having apparently failed.
@@ -110,8 +110,8 @@ export default class extends Controller {
     this.element.innerHTML = html
   }
 
-  // The zone made to say what the press has just put on screen. Without this the
-  // answer to the press — a waiting, since that is what the press opened — would
+  // The zone made to say what the click has just put on screen. Without this the
+  // answer to the click — a waiting, since that is what the click opened — would
   // arrive as a change of state and replace the waiting with an identical one.
   declareWaiting() {
     if (!this.body) return
@@ -126,11 +126,11 @@ export default class extends Controller {
   // the fragment's, the fragment on screen being the one that never got
   // replaced.
   //
-  // A press whose own answer is lost is a wait too, and retrying it asks nobody
+  // A click whose own answer is lost is a wait too, and retrying it asks nobody
   // for a second document: what a retry sends is the consultation of `schedule`,
   // which chapter 4.4 §4.1 leaves free to be repeated.
   //
-  // What giving up offers is a way back to the page, never the press: pressing
+  // What giving up offers is a way back to the page, never the button: clicking
   // would ask for the document a second time, and chapter 4.4 §4.1 makes that a
   // second exchange — opened while the first is still under way, and losing it,
   // since the session follows one at a time. Reloading asks nobody anything and
@@ -161,7 +161,7 @@ export default class extends Controller {
     return this.element.querySelector(BODY)
   }
 
-  // Plural targets throughout: a settled zone renders neither press nor waiting,
+  // Plural targets throughout: a settled zone renders neither button nor waiting,
   // and a zone with nothing to refuse renders no alert — where the singular form
   // throws on a target that is not there, this one is simply empty.
   hide(targets) {

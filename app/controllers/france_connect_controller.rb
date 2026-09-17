@@ -15,7 +15,7 @@ class FranceConnectController < ApplicationController
   #
   # Identifying starts a journey, and the exchanges the session follows belonged
   # to the one before: all of them are dropped here, so that every zone offers
-  # the press again rather than the document the previous journey obtained. The conversation is
+  # the button again rather than the document the previous journey obtained. The conversation is
   # not dropped with it — chapter 4.4 §4.3.2 has it « SHOULD be reused for combined flows »
   # and forbids reuse only « if the user authenticates with a different
   # identity », which `RequestsController` compares before offering it.

@@ -1,6 +1,6 @@
-# The address of the zone: the press posts to it, and the waiting re-asks it.
+# The address of the zone: the button posts to it, and the waiting re-asks it.
 # Both are intercepted, which is the whole reason the pattern names no method —
-# one scenario is about a press whose own answer is lost being retried as an
+# one scenario is about a click whose own answer is lost being retried as an
 # interrogation, and telling the two apart is what it has to prove.
 ZONE_ADDRESS = '*/admin/demo/demande*'.freeze
 
@@ -55,7 +55,7 @@ EVIDENCE = "%PDF-1.4\ndrapeau".b
   stub_exchange_state
 end
 
-# The whole European flow as the browser walks it: the departure is pressed, the
+# The whole European flow as the browser walks it: the departure is clicked, the
 # authorization endpoint sends the browser back, and the return is accepted on a
 # `state` and a `nonce` this scenario never wrote.
 Étantdonné("l'usager identifié sur la page des justificatifs") do
@@ -74,7 +74,7 @@ end
   zone_requests.cut.cut.cut
 end
 
-# Pressed and answered before anything is planned for what follows: the zone
+# Clicked and answered before anything is planned for what follows: the zone
 # schedules its first interrogation on that answer, so a treatment armed any
 # earlier would meet the submission instead.
 Étantdonné('une demande en cours') do
@@ -160,7 +160,7 @@ Alors('la zone annonce toujours la même attente') do
   expect(page).to have_css("#{BODY}[data-scenario-mark='#{MARK}']", visible: :all)
 end
 
-# Neither of its two labels: asking again after a refusal is the same press
+# Neither of its two labels: asking again after a refusal is the same button
 # under another word, and giving up offers neither.
 Alors('la page n\'affiche aucun bouton de demande') do
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit'))
@@ -210,7 +210,7 @@ Alors('aucune autre interrogation ne part') do
   expect(zone_requests.seen.size).to eq(gone)
 end
 
-# What a lost press is retried as. Chapter 4.4 §4.1 makes a press a new request
+# What a lost click is retried as. Chapter 4.4 §4.1 makes a click a new request
 # — « a new unique request MUST be issued » — so sending it again would open a
 # second exchange while the first is still under way; consulting its address is
 # free to be repeated.
@@ -246,7 +246,7 @@ def mark_the_page
   page.execute_script("document.querySelector('#{ZONE}').dataset.scenarioZone = '#{ZONE_MARK}'")
 end
 
-# The press is answered once the register carries the request: from then on,
+# The click is answered once the register carries the request: from then on,
 # what the zone asks for is its state.
 def wait_until_registered
   wait_until("La demande n'a pas été enregistrée : la soumission n'a pas abouti.") { Demo::Request.exists? }

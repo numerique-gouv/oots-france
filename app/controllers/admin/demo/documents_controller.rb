@@ -10,9 +10,10 @@ module Admin
     # offers nothing to confirm: the requirement is a condition of the request,
     # not a decoration on it.
     #
-    # The press itself, and what becomes of it, belong to `RequestsController`.
-    # This page renders one zone per requirement it can name, each in whatever
-    # state the session it is reloaded from puts it: chapter 4.4 §4.2.2 has
+    # The button itself, and what becomes of a click on it, belong to
+    # `RequestsController`. This page renders one zone per requirement it can
+    # name, each in whatever state the session it is reloaded from puts it:
+    # chapter 4.4 §4.2.2 has
     # « different basic flows … executed sequentially and/or in parallel », so
     # no card waits on its neighbour.
     class DocumentsController < Admin::BaseController
@@ -39,13 +40,13 @@ module Admin
 
       private
 
-      # What requirement 27 had this page show, kept for the press that follows:
+      # What requirement 27 had this page show, kept for the click that follows:
       # the zone says it again, and reading it back there rather than resolving
       # it again keeps three directory queries off an address made to be asked
       # over and over.
       #
-      # One entry per card that can be pressed, under the UUID its address
-      # carries — a press files what its own card named, never a neighbour's.
+      # One entry per card that can be clicked, under the UUID its address
+      # carries — a click files what its own card named, never a neighbour's.
       # Whatever a card cannot name it cannot offer to confirm, so it is not
       # here either.
       def remember_what_is_named
@@ -64,7 +65,7 @@ module Admin
           requirement_language: wording.requirement_language }
       end
 
-      # The press of one card, in whatever state the session this page is
+      # The button of one card, in whatever state the session this page is
       # reloaded from puts it: a reload is not a new request, so a requirement
       # already under way opens on its waiting rather than on a button that
       # would start a second.

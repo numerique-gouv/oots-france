@@ -65,7 +65,7 @@ class DemoOutcomeWording
 
     return settled unless settled == :pending
 
-    # An exchange still under way long after the press. Nothing went wrong that
+    # An exchange still under way long after the click. Nothing went wrong that
     # anyone can name — which is why it is said as its own outcome rather than
     # folded into a refusal — and asking again is the only move chapter 4.4 §4.1
     # leaves: « a new unique request MUST be issued ».

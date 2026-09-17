@@ -65,7 +65,7 @@ Alors('la page affiche le niveau de garantie {string}') do |niveau|
 end
 
 # CA4: the attributes of the identity are shown, never typed. Scoped to the
-# card that holds them: the page carries a form of its own, the one the press
+# card that holds them: the page carries a form of its own, the one the button
 # submits.
 Alors('la page affiche l\'identité sans aucun champ de saisie') do
   expect(Nokogiri::HTML(@navigateur.body).css('.identity-card input, .identity-card select, .identity-card textarea'))
@@ -110,8 +110,8 @@ end
 # Requirement 27 of chapter 1 §2. The two values come from the real directories,
 # so the scenario asserts that they are there — not what they say, which Brussels
 # may rewrite without telling us. They are named on the card that carries the
-# press, in the one sentence that stands between the rule and the button, and
-# each wears the mark of what the directories publish.
+# button, in the one sentence that stands between the rule and it, and each
+# wears the mark of what the directories publish.
 Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
   nommes = Nokogiri::HTML(@navigateur.body)
     .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
@@ -121,9 +121,9 @@ Alors('la page des justificatifs affiche le fournisseur et le type de justificat
   expect(nommes).not_to include('')
 end
 
-# Chapter 1 §3.3: this press is where the user says explicitly that the
+# Chapter 1 §3.3: this click is where the user says explicitly that the
 # Once-Only Technical System is to be used, and nothing leaves without it.
-# The mark is taken before the press and not after: the log is the server's and
+# The mark is taken before the click and not after: the log is the server's and
 # a previous run leaves its own events in it, so what this scenario opened is
 # what was written past this point.
 Quand('l\'usager confirme sa demande') do
@@ -131,7 +131,7 @@ Quand('l\'usager confirme sa demande') do
   @navigateur.submit_to('/admin/demo/demande')
 end
 
-# The press answers with the zone it was made in, saying the request is out. The
+# The click answers with the zone it was made in, saying the request is out. The
 # state is deliberately not asserted beyond that — the exchange is already on
 # its way, and what the correspondent has answered by the time this renders is
 # not this scenario's business.
