@@ -214,7 +214,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `URL_FAUX_FRANCE_CONNECT` | l'adresse du faux FranceConnect+, de la forme `<schéma>://<hôte>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` ; c'est son *issuer*, et le port dont il en déduit son écoute. Laissée vide, le service refuse de démarrer et les scénarios d'identification échouent |
+| `URL_FAUX_FRANCE_CONNECT` | l'adresse à laquelle le faux FranceConnect+ répond, de la forme `<schéma>://<hôte>[:<port>]/api/v2` ; c'est son *issuer*, celle dont il compose chaque endpoint de sa découverte. Le port qu'il **écoute** est `PORT_FAUX_FRANCE_CONNECT` quand la composition le lui passe, et celui de cette adresse sinon — les deux ne diffèrent que derrière un frontal qui termine TLS. Laissée vide, le service refuse de démarrer et les scénarios d'identification échouent |
 | `URL_FRANCE_CONNECT` | l'*issuer* que la démarche appelle : ici, celui du faux, donc la même valeur que ci-dessus |
 | `IDENTIFIANT_CLIENT_FRANCE_CONNECT`, `SECRET_CLIENT_FRANCE_CONNECT` | les deux constantes que le faux déclare pour la démarche |
 | `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | **vides**, faute de quoi elles remplacent la découverte DNS |

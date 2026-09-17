@@ -98,6 +98,13 @@ services:
   fake-france-connect:
     <<: *configuration-base
     command: "bundle exec ruby features/support/fake_france_connect/server.rb"
+    # The port it binds, which `.env.oots` does not carry — `.env` does, and
+    # Compose reads that one to interpolate this file, never to populate a
+    # container. Its issuer says where it answers from outside, which a front
+    # terminating TLS makes a different address entirely; this says where to
+    # knock on the docker network.
+    environment:
+      PORT_FAUX_FRANCE_CONNECT: ${PORT_FAUX_FRANCE_CONNECT}
     network_mode: "service:web"
     depends_on:
       - web
