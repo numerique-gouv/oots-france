@@ -31,6 +31,18 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     )
   end
 
+  # The beneficiary token is filtered out of the request log, and the filter
+  # covering the authorization code of FranceConnect+ is anchored so that it
+  # does not take the two parameters of the requester's contract with it.
+  describe 'what the request log keeps of the query string' do
+    it 'filters the beneficiary token and leaves the contract parameters readable' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(request.filtered_path).to include('codeDemarche=', 'codePays=FR', 'beneficiaire=[FILTERED]')
+      expect(request.filtered_path).not_to include('un-jeton-chiffré')
+    end
+  end
+
   describe 'the feature flag' do
     # Unchanged: the system is not accredited, and the querying stays shut in
     # production until it is.

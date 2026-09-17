@@ -72,7 +72,7 @@ Le même raisonnement vaut au §3.4, et c'est pourquoi `X25519MLKEM768` reste en
 > **La liste des suites TLS 1.2 est dérivée de celle du contexte par défaut, puis augmentée** ; elle ne peut pas s'écrire en chaîne OpenSSL. Les suites CCM vivent dans `COMPLEMENTOFDEFAULT`, que le mot-clé `DEFAULT` supprime par un `!`, et OpenSSL ne réintroduit jamais une suite qu'un `!` a supprimée : `ciphers = 'DEFAULT:ECDHE-ECDSA-AES256-CCM'` n'offre **aucune** suite CCM. Qui voudra « simplifier » la dérivation en chaîne littérale obtiendra une liste silencieusement amputée.
 
 > [!WARNING]
-> `config.cache_store` n'est pas déclaré en production (`config/environments/production.rb` le laisse commenté), donc Rails retombe sur son `:file_store` de `tmp/cache`. Le cache existe et répond au *should* du §4, mais **il n'est partagé entre `web` et `worker` que par le montage du volume de la pile locale** : un déploiement où les deux processus ne partagent pas ce répertoire double les appels aux annuaires sans que rien ne le dise.
+> `config.cache_store` nomme en production le `:file_store` de `tmp/cache` (`config/environments/production.rb`), qui est aussi ce vers quoi Rails retomberait sans lui. Le cache existe et répond au *should* du §4, mais **il n'est partagé entre `web` et `worker` que par le montage du volume de la pile locale** : un déploiement où les deux processus ne partagent pas ce répertoire double les appels aux annuaires sans que rien ne le dise.
 
 ## Ce que ce document ne couvre pas
 

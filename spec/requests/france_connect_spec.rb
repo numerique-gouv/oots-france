@@ -58,6 +58,22 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
   describe 'GET /demo/franceconnect/retour_connexion' do
     before { sign_in }
 
+    # What the operator actually reads once the redirection has been followed:
+    # the alert of the demonstration's home page, title and reason together.
+    def alert = response.parsed_body.css('.fr-alert').text.squish
+
+    # A departure, and the `state` it drew: the return is then one this session
+    # accounts for, and the refusal under test is the one the endpoint answers
+    # rather than the guard in front of it.
+    def departure_of_a_real_identification
+      stub_code_list
+      stub_demonstration_requirements
+      stub_france_connect
+
+      post admin_demo_identification_path
+      URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+    end
+
     it 'holds the identity and hands the operator to the form' do
       identify_demo_user
 
@@ -87,6 +103,126 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
 
       expect(response.parsed_body.css('.fr-alert').text).to include('invalid_acr', 'acr_value is not valid')
       expect(session[:demo_identity]).to be_nil
+    end
+
+    # The alert adds no punctuation of its own, so a sentence of this repository
+    # carries its full stop in its translation and a text the portal sent
+    # carries none.
+    describe 'the full stop of the reason shown' do
+      before do
+        stub_code_list
+        stub_demonstration_requirements
+        stub_france_connect
+      end
+
+      it 'ends a refusal the portal did not explain with a single full stop' do
+        get '/demo/franceconnect/retour_connexion', params: { error: 'access_denied' }
+        follow_redirect!
+
+        expect(alert).to include("FranceConnect+ a refusé l'identification (access_denied) : sans autre explication.")
+        expect(alert).not_to include('explication..')
+      end
+
+      it 'adds nothing behind the explanation the portal sent' do
+        get '/demo/franceconnect/retour_connexion',
+          params: { error: 'access_denied', error_description: 'User cancelled' }
+        follow_redirect!
+
+        expect(alert).to end_with('User cancelled')
+      end
+
+      it 'shows a sentence of this repository with the one full stop it carries' do
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: 'un-etat-invente' }
+        follow_redirect!
+
+        expect(alert).to end_with('Ce retour ne correspond à aucune identification demandée depuis ce navigateur.')
+      end
+    end
+
+    # What the sandbox answered on 2026-09-17, and what nothing read: the
+    # operator must find it on the screen and in the log, the flash being
+    # unreadable after the fact.
+    describe 'a refusal FranceConnect+ motivates on /token' do
+      let(:refusal) do
+        { error: 'invalid_client_metadata',
+          error_description: 'client JSON Web Key Set failed to be refreshed (fetch failed)',
+          error_uri: 'https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-erreurs/' \
+                     '?code=Y044D511&id=4074082d-7095-4067-99d7-ebb795041b72' }
+      end
+
+      before do
+        allow(Rails.logger).to receive(:warn)
+        departure = departure_of_a_real_identification
+
+        stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
+          .to_return(status: 400, body: refusal.to_json)
+
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+      end
+
+      it 'shows the status, the error, the description and the address, and holds nothing' do
+        follow_redirect!
+
+        expect(alert).to include('400', 'invalid_client_metadata',
+          'client JSON Web Key Set failed to be refreshed (fetch failed)',
+          'Y044D511', '4074082d-7095-4067-99d7-ebb795041b72')
+        expect(session[:demo_identity]).to be_nil
+      end
+
+      it 'ends on the address FranceConnect+ gave, with no full stop added behind it' do
+        follow_redirect!
+
+        expect(alert).to end_with('id=4074082d-7095-4067-99d7-ebb795041b72')
+      end
+
+      it 'journalises the same reason' do
+        expect(Rails.logger).to have_received(:warn).with(/invalid_client_metadata.*Y044D511/)
+      end
+    end
+
+    # `/userinfo` refuses a token it does not know the same way, and the fake
+    # FranceConnect+ of the end-to-end suite answers exactly this.
+    it 'relays a refusal motivated on /userinfo' do
+      departure = departure_of_a_real_identification
+
+      stub_france_connect_tokens(france_connect_id_token_claims(nonce: departure.fetch('nonce')))
+      stub_request(:get, FranceConnectStubs::USERINFO_ENDPOINT)
+        .to_return(status: 401, body: { error: 'invalid_token' }.to_json)
+
+      get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+      follow_redirect!
+
+      expect(alert).to include('401', 'invalid_token')
+    end
+
+    # A gateway between the two: nothing of RFC 6749 §5.2 to read, and the
+    # status and the address are what the reason falls back on.
+    it 'names the status and the address when the refusal is motivated by nothing' do
+      departure = departure_of_a_real_identification
+
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
+        .to_return(status: 502, body: '<html><body>Bad Gateway</body></html>')
+
+      get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+
+      expect(response).to redirect_to(admin_demo_root_path)
+      follow_redirect!
+      expect(alert).to include('502', FranceConnectStubs::TOKEN_ENDPOINT)
+    end
+
+    # The authorization code lives thirty seconds and is single use, and the
+    # request log writes the query string in clear: `state` is what the support
+    # of FranceConnect asks for, the code is what nobody may read back.
+    describe 'what the request log keeps of the return address' do
+      it 'filters the authorization code and leaves the state readable' do
+        stub_code_list
+        stub_france_connect
+
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code-a-usage-unique', state: 'un-etat' }
+
+        expect(request.filtered_path).to include('code=[FILTERED]', 'state=un-etat')
+        expect(request.filtered_path).not_to include('un-code-a-usage-unique')
+      end
     end
 
     # No session of this application asked for it: a code replayed from a

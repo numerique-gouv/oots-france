@@ -8,5 +8,11 @@ Rails.application.config.filter_parameters += [
   # `beneficiaire` carries the encrypted beneficiary token in the query string
   # of /requete/pieceJustificative, and an unfiltered query string is written to
   # the request log in clear.
-  :beneficiaire
+  :beneficiaire,
+  # The authorization code FranceConnect+ returns the user with, which the
+  # request log would otherwise write in clear on the return address. Anchored,
+  # where every entry above matches a substring: a bare `:code` would take
+  # `codeDemarche` and `codePays` with it, and the support of FranceConnect asks
+  # for the `state` and the call's parameters to be readable.
+  /\Acode\z/
 ]

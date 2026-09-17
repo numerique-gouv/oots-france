@@ -478,6 +478,19 @@ fr:
       unreadable_discovery: "Le document de découverte de FranceConnect+ ne se lit pas comme du JSON : %{error}"
       unreadable_grant: "Réponse illisible de /token : %{error}"
       incomplete_grant: "La réponse de /token ne porte pas %{names}."
+    # Le refus que FranceConnect+ motive lui-même, dans ses mots : `error`,
+    # `error_description` et `error_uri` tels qu'il les répond, que la
+    # documentation partenaires fait de la première pièce à fournir au support.
+    # Quatre phrases et non une seule recollée : un fragment traduit ne se
+    # concatène pas, et un champ absent ne doit laisser aucun libellé vide
+    # derrière lui. Aucune ne se termine par un point, chacune finissant sur un
+    # texte reçu du portail — l'adresse n'est pas non plus un lien, elle est
+    # choisie par un correspondant.
+    france_connect_refusal:
+      refused: "%{url} a répondu %{status} : %{error}"
+      refused_described: "%{url} a répondu %{status} : %{error} — %{description}"
+      refused_documented: "%{url} a répondu %{status} : %{error} — voir %{uri}"
+      refused_fully: "%{url} a répondu %{status} : %{error} — %{description} — voir %{uri}"
     # La question posée une fois de tout ce que le portail répond : chacun de ses
     # documents est un objet JSON, et un corps qui n'en est pas se refuse avant
     # qu'on l'indexe.
@@ -1462,7 +1475,10 @@ fr:
         unnamed: non fourni
       complete_identification:
         refused_by_portal: "FranceConnect+ a refusé l'identification (%{error}) : %{description}"
-        no_description: sans autre explication
+        # Porte son point : c'est elle qui clôt la phrase quand le portail ne
+        # motive rien, là où une description reçue de FranceConnect+ finit la
+        # phrase telle quelle, sans qu'on lui ajoute quoi que ce soit.
+        no_description: sans autre explication.
         unexpected_state: >-
           Ce retour ne correspond à aucune identification demandée depuis ce navigateur.
         unexpected_nonce: >-

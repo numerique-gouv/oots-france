@@ -98,17 +98,22 @@ class FranceConnectClient
   # accepting no `Authorization: Basic` on this endpoint.
   def exchange(code)
     credentials = Settings.france_connect_credentials
+    url = endpoint('token_endpoint')
 
-    granted(post(endpoint('token_endpoint'), {
-      grant_type: 'authorization_code', code:, redirect_uri:,
-      client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret),
-    }).body)
+    answer = motivated(url) do
+      post(url, { grant_type: 'authorization_code', code:, redirect_uri:,
+                  client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret) })
+    end
+
+    granted(answer.body)
   end
 
   # A signed then encrypted JWT, not JSON: what comes back is handed to
   # `FranceConnectToken` as it stands.
   def userinfo(access_token)
-    get(endpoint('userinfo_endpoint'), {}, 'Authorization' => "Bearer #{access_token}").body
+    url = endpoint('userinfo_endpoint')
+
+    motivated(url) { get(url, {}, 'Authorization' => "Bearer #{access_token}") }.body
   end
 
   def end_session_url(id_token_hint:, state:)
@@ -118,6 +123,19 @@ class FranceConnectClient
   end
 
   private
+
+  # The two endpoints that motivate a refusal, relayed in the portal's own words
+  # rather than in the message the HTTP client raises with, which names only the
+  # verb, the status and the address. What the portal did not motivate is left to
+  # that message.
+  def motivated(url)
+    yield
+  rescue Faraday::Error => e
+    reason = FranceConnectRefusal.new(e, url).reason
+    raise FranceConnectError, reason if reason
+
+    raise
+  end
 
   def granted(body)
     tokens = FranceConnectAnswer.object(JSON.parse(body), :grant)
@@ -211,6 +229,13 @@ class FranceConnectClient
 
   def discovery = @discovery ||= published_discovery
 
+  # Keyed by the issuer it was read from, as `JwksFetcher` keys by the address
+  # it fetched: the issuer is a variable of the deployment, and a key that did
+  # not name it would serve the document of one portal to a deployment
+  # configured on another — the endpoints of the fake to a deployment pointed at
+  # the sandbox, refused as foreign by the check above. Changing
+  # `URL_FRANCE_CONNECT` then takes effect without emptying anything by hand.
+  #
   # Parsed **inside** the cache block, and not after it: a body that does not
   # read as JSON — a maintenance page answered with a 200, a truncated
   # response — is then never written, where caching it would serve a passing
@@ -218,8 +243,10 @@ class FranceConnectClient
   # every sign-out of the next hour into the same failure. `CodeListClient`
   # keeps an empty answer out of its cache for the same reason.
   def published_discovery
-    Rails.cache.fetch('france_connect/openid_configuration', expires_in: CACHE_DURATION) do
-      document(get("#{Settings.france_connect_issuer}#{DISCOVERY_PATH}").body)
+    issuer = Settings.france_connect_issuer
+
+    Rails.cache.fetch("france_connect/openid_configuration/#{issuer}", expires_in: CACHE_DURATION) do
+      document(get("#{issuer}#{DISCOVERY_PATH}").body)
     end
   rescue JSON::ParserError => e
     raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)
