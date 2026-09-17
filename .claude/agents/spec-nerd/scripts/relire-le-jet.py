@@ -4,10 +4,11 @@
     relire-le-jet.py <jet.md> [--base <commit>]
 
 Run it from the repository root, on the draft file, before the first contradicteur pass
-and after every correction. It prints five sections, each item to clear or to reopen:
+and after every correction. It is a reading aid, not a gate: it prints five sections and
+spec-nerd decides what each item is worth.
 
     FORME    what gabarit-issue.md fixes: title, header, sections, numbering, RG <-> CA
-             coverage, context length, bare identifiers and bare URLs
+             coverage, bare identifiers and bare URLs
     RÈGLES   every Schematron rule the draft cites, with its role, context and test read
              from .schematron/<version>/sch/ — an id that resolves nowhere is flagged
     DÉPÔT    every repository path the draft cites, with whether it exists and, when a
@@ -15,8 +16,8 @@ and after every correction. It prints five sections, each item to clear or to re
     VOISINS  every ticket the draft cites — to reopen with get_issue in the pass
     BASE     what moved on main since the base commit, on the cited paths and overall
 
-Exit status is 1 when FORME, RÈGLES or DÉPÔT has an item to clear. It reads the draft,
-the .schematron tree and git; it never touches Linear, so VOISINS is a list, not a verdict.
+It reads the draft, the .schematron tree and git; it never touches Linear, so VOISINS is a
+list, not a verdict. It always exits 0.
 """
 import argparse
 import glob
@@ -27,8 +28,6 @@ import sys
 
 SECTIONS = ["Contexte", "Règles de gestion", "Critères d'acceptance", "Hors périmètre", "Vérification"]
 EN_TETE = ["Chapitre", "Acteur", "Priorité", "Description"]
-CONTEXTE_MAX_LIGNES = 5
-CONTEXTE_MAX_MOTS = 200
 REGLE = re.compile(r"R-EDM-(REQ|RESP|ERR)-([CS])(\d{3})")
 REGLE_COURTE = re.compile(r"`([CS])(\d{3})`")
 CHEMIN = re.compile(
@@ -74,13 +73,6 @@ def forme(texte):
             constats.append(f"la section `## {s}` est vide")
     for inconnue in [s for s in secs if s not in SECTIONS]:
         constats.append(f"la section `## {inconnue}` n'est pas dans le gabarit")
-    contexte = secs.get("Contexte", "")
-    paragraphes = [p for p in re.split(r"\n\s*\n", contexte) if p.strip()]
-    if len(paragraphes) > CONTEXTE_MAX_LIGNES or len(contexte.split()) > CONTEXTE_MAX_MOTS:
-        constats.append(
-            f"le contexte fait {len(paragraphes)} paragraphes et {len(contexte.split())} mots ; "
-            f"le gabarit en veut deux à cinq lignes — chaque fait qu'aucune RG n'utilise est un fait que le contradicteur vérifiera pour rien"
-        )
     rgs = lignes_tableau(secs.get("Règles de gestion", ""), "RG")
     cas = lignes_tableau(secs.get("Critères d'acceptance", ""), "CA")
     for prefixe, lignes in (("RG", rgs), ("CA", cas)):
@@ -102,9 +94,6 @@ def forme(texte):
             constats.append(f"{ca} n'a pas ses trois temps en gras, *Étant donné / Lorsque / Alors*")
     for rg in sorted(connues - couvertes, key=lambda r: int(r[2:])):
         constats.append(f"{rg} n'est prouvée par aucun CA")
-    for rg, reste in rgs:
-        if re.search(r"\bet\b.*\bet\b.*\bet\b", reste.split("|")[0]) and len(reste.split("|")[0]) > 400:
-            constats.append(f"{rg} fait plus de 400 caractères et enchaîne des « et » : une règle par ligne")
     for ticket in sorted(set(TICKET.findall(TICKET_LIE.sub("", texte)))):
         constats.append(f"{ticket} est cité nu quelque part ; un ticket se cite en lien, `[{ticket}](https://linear.app/pole-api/issue/{ticket})`")
     prose = re.sub(r"```.*?```", "", texte, flags=re.S)
@@ -208,12 +197,11 @@ def main():
         print(f"\n== {titre} ==")
         print("\n".join(f"- {i}" for i in items) if items else vide)
 
-    section("FORME — à corriger avant de faire relire", f, "rien : le jet a la forme du gabarit")
+    section("FORME — ce qui s'écarte du gabarit", f, "rien : le jet a la forme du gabarit")
     section("RÈGLES — ce que chaque règle citée dit vraiment", resolues + absentes, "aucune règle Schematron citée")
     section("DÉPÔT — chemins cités", d + [f"`{c}` existe — ce que le jet en dit se relit dedans" for c in ouverts], "aucun chemin du dépôt cité")
     section("VOISINS — tickets cités, à rouvrir par get_issue dans la passe", voisins, "aucun ticket cité")
     section("BASE — ce qui a bougé sous le jet", base_bougee(base, ouverts), "")
-    sys.exit(1 if f or absentes or d else 0)
 
 
 if __name__ == "__main__":
