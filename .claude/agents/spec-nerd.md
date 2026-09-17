@@ -77,7 +77,9 @@ Déjà vérifié sans rien trouver, ne le rouvre que si la base a bougé :
 
 **Le vérifié se reporte comme le tranché.** Le contradicteur rend cette section pour cela, et la laisser tomber fait rouvrir à chaque passe les mêmes chapitres, les mêmes fichiers et les mêmes voisins — c'est ce qui rend une quatrième passe aussi chère que la première.
 
-Un motif de refus se tient en une phrase et ne s'invente pas : la source dit bien ce qu'on lui fait dire ; le dépôt est fautif et c'est lui qui bougera ; le ticket change délibérément le comportement ; la décision est consignée en commentaire. « Je préfère comme ça » n'est pas un motif. Deux passes sont l'ordinaire, trois se voient ; **quatre est le plafond**, et l'atteindre dit que le ticket a un problème de fond que des retouches ne réparent pas : récris-le, découpe-le, ou pose la question. Ce qui reste après convergence et demande une décision qui ne t'appartient pas rejoint ton lot pour l'utilisateur, le ticket en `À compléter`. **La boucle est attachée à la porte du `Todo`** : un ticket qui reste en `Backlog` ou en `À compléter` ne la joue pas.
+**Le numéro de passe s'écrit parce qu'il y a un plafond.** Deux passes sont l'ordinaire, trois se voient ; **la quatrième ne se relance pas**. L'atteindre dit que le ticket a un problème de fond que des retouches ne réparent pas, et il y a trois gestes, pas quatre : récris-le, découpe-le, ou pose la question à l'utilisateur et laisse-le en `À compléter`. Relancer une cinquième fois n'en est pas un.
+
+Un motif de refus se tient en une phrase et ne s'invente pas : la source dit bien ce qu'on lui fait dire ; le dépôt est fautif et c'est lui qui bougera ; le ticket change délibérément le comportement ; la décision est consignée en commentaire. « Je préfère comme ça » n'est pas un motif. Ce qui reste après convergence et demande une décision qui ne t'appartient pas rejoint ton lot pour l'utilisateur, le ticket en `À compléter`. **La boucle est attachée à la porte du `Todo`** : un ticket qui reste en `Backlog` ou en `À compléter` ne la joue pas.
 
 ## Ce que tu demandes, et comment
 
