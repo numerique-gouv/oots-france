@@ -18,6 +18,7 @@ module Admin
     # no card waits on its neighbour.
     class DocumentsController < Admin::BaseController
       include ReadsDemoRequest
+      include HoldsDemoNames
 
       # A directory that refuses says so with a code and stays on the page; one
       # that cannot be reached carries none, and `DirectoryLookup::Refusing`
@@ -40,35 +41,10 @@ module Admin
         @procedure = procedure_wording(resolved.requirements)
         @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
 
-        remember_what_is_named
+        remember_demo_names(@procedure, @requirements)
       end
 
       private
-
-      # What requirement 27 had this page show, kept for the click that follows:
-      # the zone says it again, and reading it back there rather than resolving
-      # it again keeps three directory queries off an address made to be asked
-      # over and over.
-      #
-      # One entry per card that can be clicked, under the UUID its address
-      # carries — a click files what its own card named, never a neighbour's.
-      # Whatever a card cannot name it cannot offer to confirm, so it is not
-      # here either.
-      def remember_what_is_named
-        session[:demo_procedure] = { title: @procedure.title, title_language: @procedure.title_language }
-        session[:demo_named] = @requirements.select(&:nameable?)
-          .to_h { |wording| [wording.requirement_uuid, what_the_card_names(wording)] }
-      end
-
-      # The title of the procedure is not among them: it stands once at the top
-      # of the page, belongs to no requirement, and repeating it under each
-      # would swell a session the cookie store bounds at four kibibytes.
-      def what_the_card_names(wording)
-        { evidence_type: wording.evidence_type, evidence_type_language: wording.evidence_type_language,
-          provider: wording.provider, provider_language: wording.provider_language,
-          requirement_id: wording.requirement_id, requirement: wording.requirement,
-          requirement_language: wording.requirement_language }
-      end
 
       # The button of one card, in whatever state the session this page is
       # reloaded from puts it: a reload is not a new request, so a requirement
