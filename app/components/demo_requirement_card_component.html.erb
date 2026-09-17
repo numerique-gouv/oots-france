@@ -63,13 +63,9 @@
                 nothing were it swapped out with what it announces. %>
             <div class="demo-request fr-mt-2w" aria-live="polite" data-controller="demo-request"
               data-action="submit->demo-request#submit"
-              data-demo-request-url-value="<%= admin_demo_demande_path %>">
+              data-demo-request-url-value="<%= zone_path %>">
               <%= render zone %>
             </div>
-          <% else %>
-            <p class="fr-text--sm fr-mb-0" lang="en">
-              <%= t('components.demo_requirement_card.one_at_a_time') %>
-            </p>
           <% end %>
         <% else %>
           <%# Nothing to name is nothing to press: requirement 27 makes the two

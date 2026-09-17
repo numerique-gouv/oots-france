@@ -267,11 +267,6 @@ fr:
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
       # savoir. Le code du refus reste à la console, pas au portail.
       no_answer_html: <strong>%{country} could not answer for this evidence</strong>
-      # Le contrat que la démarche appelle ne nomme aucune exigence, et son
-      # serveur répond avec la première qui publie des types : un second bouton
-      # enverrait la même requête sous un autre nom. Bouchon, suivi par OOTS-212.
-      one_at_a_time: >-
-        This procedure can only request one document at a time for now.
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la

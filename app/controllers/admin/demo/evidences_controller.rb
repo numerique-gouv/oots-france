@@ -12,6 +12,10 @@ module Admin
     # `inline`, so the browser opens it where it can and offers to save it
     # otherwise: the chapter has the user read the evidence and decide, which a
     # forced download makes a step longer than it is.
+    #
+    # `exigence` says which of the session's own requests is meant, the page
+    # offering one document per requirement it asked for. It names a zone, never
+    # an exchange: what may be served is still what the session followed.
     class EvidencesController < Admin::BaseController
       include HoldsDemoIdentity
       include ReadsDemoRequest
@@ -31,6 +35,8 @@ module Admin
       def require_evidence
         redirect_to admin_demo_documents_path unless demo_request&.evidence?
       end
+
+      def demo_request = demo_request_for(params[:exigence].to_s)
     end
   end
 end

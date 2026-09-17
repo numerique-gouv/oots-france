@@ -1,7 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe DemoRequestZoneComponent, type: :component do
-  subject(:zone) { described_class.new(outcome:) }
+  subject(:zone) { described_class.new(outcome:, requirement_uuid:) }
+
+  let(:requirement_uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
 
   let(:outcome) { DemoOutcomeWording.new(answer:, request:) }
   let(:request) { Demo::Request.new(exchange_id: 'echange-1', conversation_id: 'conversation-1') }
@@ -11,7 +13,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # Nothing has been pressed yet: the zone is the press and nothing else, and it
   # asks nobody anything until it is.
   context 'without a press behind it' do
-    subject(:zone) { described_class.new(outcome: nil) }
+    subject(:zone) { described_class.new(outcome: nil, requirement_uuid:) }
 
     it 'offers the press, and declares nothing to wait on' do
       render_inline(zone)
@@ -84,7 +86,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'offers the document and stops waiting' do
       render_inline(zone)
 
-      expect(page).to have_link('Open the document', href: '/admin/demo/justificatif')
+      expect(page).to have_link('Open the document',
+        href: "/admin/demo/justificatif?exigence=#{requirement_uuid}")
       expect(page).to have_css('.demo-request__body[data-polling="false"]')
       expect(page).to have_no_button('Request the document')
     end
@@ -146,7 +149,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # The contract unreachable says nothing of the exchange: the zone reports the
   # outage rather than presenting it as an answer.
   context 'when the contract could not be read' do
-    subject(:zone) { described_class.new(outcome: DemoOutcomeWording.unanswered(request:, error: 'Panne')) }
+    subject(:zone) { described_class.new(outcome: DemoOutcomeWording.unanswered(request:, error: 'Panne'), requirement_uuid:) }
 
     it 'reports the outage where it would report a refusal' do
       render_inline(zone)
@@ -160,7 +163,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # of the journey before, whose code says nothing of what just happened.
   context 'when the press was refused while an earlier exchange is still followed' do
     subject(:zone) do
-      described_class.new(outcome:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
+      described_class.new(outcome:, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
 
     let(:payload) { { 'statut' => 'failed', 'codeErreur' => 'EDM:ERR:0003' } }
@@ -177,7 +180,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # and the zone names which of the contract's refusals it was.
   context 'when the press itself was refused' do
     subject(:zone) do
-      described_class.new(outcome: nil, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
+      described_class.new(outcome: nil, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
 
     it 'names the refusal and what the contract returned' do
@@ -186,6 +189,22 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       expect(page).to have_text('refusée')
       expect(page).to have_text('EB:ERR:0001')
       expect(page).to have_button('Retry to request')
+    end
+  end
+
+  # A page carries one zone per requirement it can name, and nothing but the
+  # address tells them apart: a press that named no requirement would ask the
+  # contract for whichever one it publishes first, under another card's name.
+  describe 'the requirement each zone is about' do
+    subject(:zone) { described_class.new(outcome: nil, requirement_uuid: '2d21a531-d30e-4e30-9e5e-b53d6aedb30b') }
+
+    it 'names it on the address the press posts to' do
+      render_inline(zone)
+
+      expect(page).to have_css(
+        "form.demo-request__press[action='/admin/demo/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
+        visible: :all,
+      )
     end
   end
 end

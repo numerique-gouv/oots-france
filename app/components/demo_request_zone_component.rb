@@ -13,6 +13,11 @@
 #
 # Only `pending` re-asks. A settled zone carries no polling at all, which is
 # what stops the asking: nothing has to decide to stop.
+#
+# One zone per requirement the page can name, each on its own two addresses:
+# `requirement_uuid` is what says which requirement this press asks for and
+# which request this zone reports on. A page carries several, and none of them
+# knows anything of the others.
 class DemoRequestZoneComponent < ViewComponent::Base
   # What the wording under the press says, per outcome. `expired` is the screen's
   # own deadline rather than anything the exchange did — `DemoOutcomeWording`
@@ -21,15 +26,29 @@ class DemoRequestZoneComponent < ViewComponent::Base
   # one.
   FAILURES = { refused: 'refused', expired: 'expired', preview: 'preview' }.freeze
 
-  def initialize(outcome:, failure: nil)
+  def initialize(outcome:, requirement_uuid:, failure: nil)
     @outcome = outcome
+    @requirement_uuid = requirement_uuid
     @failure = failure
     super()
   end
 
+  # The address the press posts to, and the one the browser re-asks while it
+  # waits — the same one, `RequestsController` answering both. A parameter and
+  # not a segment of the path: the path is what `docs/espace_administration.md`
+  # documents and what the end-to-end suite finds its form by.
+  def press_path = helpers.admin_demo_demande_path(exigence: requirement_uuid)
+
+  # The document this zone's own request obtained. Chapter 1 §4.2 has it
+  # « made available to the specific procedure end-user that issued the query »,
+  # and the requirement only says which of that user's requests is meant.
+  def evidence_path = helpers.admin_demo_justificatif_path(exigence: requirement_uuid)
+
   # Private: outside the class everything is read through the accessors that
   # apply the precedence of `refused_the_press?`, and a raw read would skirt it.
   private attr_reader :outcome, :failure
+
+  attr_reader :requirement_uuid
 
   # `idle` before any press, `pending` while the answer is out, `delivered` once
   # the document is in hand, `failed` for everything else — a refusal the

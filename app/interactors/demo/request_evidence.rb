@@ -24,9 +24,13 @@ module Demo
 
     # What the documents page showed, each name with the language the
     # directory published it in: the zone says them again, and it is
-    # written in English whatever the directories answered.
+    # written in English whatever the directories answered. The requirement
+    # joins them because a press names the one requirement its own card is
+    # about, and a row naming the document without the obligation it was asked
+    # under would not say which press it answers.
     NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
-               procedure_name procedure_language].freeze
+               procedure_name procedure_language
+               requirement_id requirement_name requirement_language].freeze
 
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
@@ -68,6 +72,7 @@ module Demo
         country_code: PROVIDER_COUNTRY,
         encrypted_beneficiary: token_writer.call(context.identity),
         conversation_id: context.conversation_id,
+        requirement_id: context.requirement_id,
       )
     end
 

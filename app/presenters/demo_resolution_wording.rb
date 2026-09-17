@@ -55,6 +55,15 @@ class DemoResolutionWording
 
   def nameable? = provider.present? && evidence_type.present?
 
+  # The requirement as the Evidence Broker names it, where `requirement` above
+  # is what the card stands under. The identifier is what goes out in
+  # `idExigence` — a caller has no business cutting a URL up — and the UUID is
+  # what the console and `DirectoryLookup` already pass between themselves, so
+  # it is what the page's own addresses carry.
+  def requirement_id = lookup.requirement&.id
+
+  def requirement_uuid = lookup.requirement&.uuid
+
   # The refusal of whichever step stopped the chain, in the shape the console's
   # other directory pages already render.
   def failure

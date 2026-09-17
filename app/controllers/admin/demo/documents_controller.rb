@@ -11,8 +11,10 @@ module Admin
     # not a decoration on it.
     #
     # The press itself, and what becomes of it, belong to `RequestsController`.
-    # This page renders the zone that press lives in, in whatever state the
-    # session it is reloaded from puts it.
+    # This page renders one zone per requirement it can name, each in whatever
+    # state the session it is reloaded from puts it: chapter 4.4 §4.2.2 has
+    # « different basic flows … executed sequentially and/or in parallel », so
+    # no card waits on its neighbour.
     class DocumentsController < Admin::BaseController
       include HoldsDemoIdentity
       include ReadsDemoRequest
@@ -31,7 +33,6 @@ module Admin
         leading = lookup
         @procedure = procedure_wording(leading.requirements)
         @requirements = resolutions(leading).map { |resolved| DemoResolutionWording.new(resolved) }
-        @wording = @requirements.find(&:nameable?)
 
         remember_what_is_named
       end
@@ -42,18 +43,35 @@ module Admin
       # the zone says it again, and reading it back there rather than resolving
       # it again keeps three directory queries off an address made to be asked
       # over and over.
+      #
+      # One entry per card that can be pressed, under the UUID its address
+      # carries — a press files what its own card named, never a neighbour's.
+      # Whatever a card cannot name it cannot offer to confirm, so it is not
+      # here either.
       def remember_what_is_named
-        session[:demo_named] = {
-          evidence_type: @wording&.evidence_type, evidence_type_language: @wording&.evidence_type_language,
-          provider: @wording&.provider, provider_language: @wording&.provider_language,
-          procedure: @procedure.title, procedure_language: @procedure.title_language,
-        }
+        session[:demo_procedure] = { title: @procedure.title, title_language: @procedure.title_language }
+        session[:demo_named] = @requirements.select(&:nameable?)
+          .to_h { |wording| [wording.requirement_uuid, what_the_card_names(wording)] }
       end
 
-      # The press, in whatever state the session this page is reloaded from puts
-      # it: a reload is not a new request, so a journey already under way opens
-      # on its waiting rather than on a button that would start a second.
-      def demo_request_zone = DemoRequestZoneComponent.new(outcome: demo_outcome)
+      # The title of the procedure is not among them: it stands once at the top
+      # of the page, belongs to no requirement, and repeating it under each
+      # would swell a session the cookie store bounds at four kibibytes.
+      def what_the_card_names(wording)
+        { evidence_type: wording.evidence_type, evidence_type_language: wording.evidence_type_language,
+          provider: wording.provider, provider_language: wording.provider_language,
+          requirement_id: wording.requirement_id, requirement: wording.requirement,
+          requirement_language: wording.requirement_language }
+      end
+
+      # The press of one card, in whatever state the session this page is
+      # reloaded from puts it: a reload is not a new request, so a requirement
+      # already under way opens on its waiting rather than on a button that
+      # would start a second.
+      def demo_request_zone(wording)
+        DemoRequestZoneComponent.new(outcome: demo_outcome_for(wording.requirement_uuid),
+          requirement_uuid: wording.requirement_uuid)
+      end
 
       # The chain the console already replays on `/admin/common_services/resolution`,
       # and the one a request walks before sending anything. Replayed here for

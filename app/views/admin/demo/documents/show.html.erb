@@ -32,10 +32,12 @@
 <% end %>
 
 <%# One card per requirement the procedure rests on, in the order the Evidence
-    Broker lists them. %>
+    Broker lists them, and a zone on each that can name what it would ask for:
+    requirement 27 of chapter 1 §2 makes the two names a condition of the
+    request, and chapter 4.4 §4.2.2 lets the requests themselves run « sequentially
+    and/or in parallel ». %>
 <% @requirements.each do |requirement| %>
-  <% askable = requirement == @wording %>
-  <%= render DemoRequirementCardComponent.new(wording: requirement, askable:,
+  <%= render DemoRequirementCardComponent.new(wording: requirement,
         country_code: provider_country_code, country_name: provider_country_name,
-        zone: (demo_request_zone if askable)) %>
+        zone: (demo_request_zone(requirement) if requirement.nameable?)) %>
 <% end %>
