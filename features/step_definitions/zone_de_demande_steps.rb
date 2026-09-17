@@ -162,12 +162,12 @@ end
 
 # Neither of its two labels: asking again after a refusal is the same press
 # under another word, and giving up offers neither.
-Alors('la page n\'affiche aucune presse') do
+Alors('la page n\'affiche aucun bouton de demande') do
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit'))
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.retry'))
 end
 
-Alors('la page affiche la presse {string}') do |label|
+Alors('la page affiche le bouton {string}') do |label|
   expect(page).to have_button(label)
 end
 
