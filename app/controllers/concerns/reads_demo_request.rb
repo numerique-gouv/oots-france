@@ -1,14 +1,14 @@
-# The requests the demonstration's session is following, one per requirement of
-# the procedure it has asked for, and what the contract says of each — what the
-# zone of a card on the documents page is built on.
+# The requests the demonstration's journey has made, one per requirement of the
+# procedure it has asked for, and what the contract says of each — what the zone
+# of a card on the documents page is built on.
 #
 # Chapter 1 §4.2: « Any evidences that are returned in response are made
 # available to the specific procedure end-user that issued the query for those
-# evidences. » The session is what says which user issued which query, so the
-# exchange identifier is read from there and never from the request — a zone
-# taking it from a parameter would report on whoever guessed a UUID. The
-# requirement, which does travel in a parameter, only says which of the
-# session's own exchanges is meant.
+# evidences. » The journey held in the session is what says which user issued
+# which query, so a request is looked up under it and never named by the
+# incoming one — a zone taking an exchange identifier from a parameter would
+# report on whoever guessed a UUID. The requirement, which does travel in a
+# parameter, only says which of this journey's own requests is meant.
 #
 # Nothing here redirects: a session following no request for a requirement is
 # the ordinary state of its card before any click, and the zone then offers the
@@ -16,19 +16,30 @@
 module ReadsDemoRequest
   extend ActiveSupport::Concern
 
+  # The journey a request is looked up under comes from there, so the dependency
+  # is declared rather than left to whoever includes this: a controller taking
+  # this concern alone would fail at the first card. `ActiveSupport::Concern`
+  # includes it once however many of the two a controller names.
+  include HoldsDemoJourney
+
   private
 
-  # Keyed by the UUID of the requirement, which is what the page's addresses
-  # carry. One entry per requirement asked for: chapter 4.4 §4.2.2 has « different
-  # basic flows … executed sequentially and/or in parallel », so an exchange
-  # under way on one requirement says nothing about its neighbours.
-  def exchange_ids = session[:demo_exchanges].presence || {}
-
+  # Read from the register, under the journey and the requirement: a click writes
+  # a row naming this journey, so two clicks made in the same instant each file
+  # their own and neither can lose the other.
+  #
+  # The requirement is the UUID the page's addresses carry, and the journey is
+  # never one of them. Chapter 4.4 §4.2.2 has « different basic flows … executed
+  # sequentially and/or in parallel », so a request under way on one requirement
+  # says nothing about its neighbours.
+  #
+  # The latest and not the only one: asking again is « a new unique request »
+  # (chapter 4.4 §4.1), so a requirement clicked twice has two rows, and the
+  # zone reports on the one its last click opened. Two rows of the same instant
+  # are told apart by the order they were written in, which is what `id` says.
   def demo_request_for(requirement_uuid)
     asked_once(:@demo_requests, requirement_uuid) do
-      exchange_id = exchange_ids[requirement_uuid].presence
-
-      exchange_id && ::Demo::Request.find_by(exchange_id:)
+      ::Demo::Request.where(journey_id: journey.id, requirement_uuid:).order(:created_at, :id).last
     end
   end
 

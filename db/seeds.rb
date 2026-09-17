@@ -131,11 +131,11 @@ if Rails.env.development?
     #
     # Arrêté au départ de la requête, et non parce que la démarche s'y arrête :
     # elle mène désormais jusqu'au justificatif remis. Mais ce qu'elle en garde
-    # vit dans `demo_requests`, une ligne par exigence demandée, que la zone de
-    # la carte correspondante ne lit qu'avec l'identifiant d'échange que la
-    # session de l'usager tient sous cette exigence — aucune graine ne pose de
-    # session, donc aucune ne rendrait ces zones visibles. Le parcours complet se
-    # joue, il ne se sème pas : docs/espace_administration.md dit comment.
+    # vit dans `demo_requests`, une ligne par clic, que la zone de la carte
+    # correspondante ne retrouve que par le parcours en session et l'UUID de son
+    # exigence — aucune graine ne pose de parcours, donc aucune ne rendrait ces
+    # zones visibles. Le parcours complet se joue, il ne se sème pas :
+    # docs/espace_administration.md dit comment.
     { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
       specification: EdmSpecification::V2_0,
       evidence_requester_id: '00000000000003', events: %w[request_sent] },

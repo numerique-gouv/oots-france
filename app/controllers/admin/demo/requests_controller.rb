@@ -21,6 +21,11 @@ module Admin
     # per requirement and each answers for its own. The parameter names which
     # zone; what that zone may report on is the session's business alone.
     #
+    # Nothing here writes to the session: a click reads the journey and writes a
+    # row of `demo_requests`. Two clicks made in the same instant therefore each
+    # file their own row, and each zone reads its own request back from the
+    # register, whichever answer returns first.
+    #
     # `show` is what the zone re-asks while it waits, and it reads what the
     # contract says rather than asking anything of anyone. Chapter 4.4 §4.1 —
     # « to return more references to the Online Procedure Portal, even if it is
@@ -31,7 +36,6 @@ module Admin
     # `::Demo::` and not `Demo::`: this file lives in `Admin::Demo`, which would
     # otherwise answer for the name.
     class RequestsController < Admin::BaseController
-      include HoldsDemoIdentity
       include ReadsDemoRequest
 
       def show = render_zone
@@ -45,11 +49,9 @@ module Admin
       def create
         return redirect_to admin_demo_documents_path unless evidence_named?
 
-        result = ::Demo::RequestEvidence.call(identity:, conversation_id: reusable_conversation, **named)
+        result = ::Demo::RequestEvidence.call(identity:, journey:, requirement_uuid:, **named)
 
         return refuse(result) unless result.success?
-
-        keep(result)
 
         render_zone
       end
@@ -100,32 +102,10 @@ module Admin
       # user may ask under.
       def evidence_named? = named.values_at(:evidence_type_name, :provider_name).all?(&:present?)
 
-      def keep(result)
-        # Chapter 4.4 §4.3.2: the conversation « SHOULD be reused for combined flows »
-        # and « MUST NOT be reused if the user authenticates with a different
-        # identity ». The pseudonym FranceConnect+ hands this service provider
-        # is what tells one identity from another, so it is stored beside the
-        # conversation and compared before the conversation is offered again.
-        session[:demo_conversation] = { id: result.conversation_id, subject: identity.subject }
-        # What the zone of this requirement follows, beside what the zones of the
-        # others follow. The session and nothing else: it is what chapter 1 §4.2
-        # makes the evidence available to. A click on a requirement already
-        # followed replaces its entry — chapter 4.4 §4.1 makes asking again « a
-        # new unique request », and it is that one the zone reports on.
-        session[:demo_exchanges] = exchange_ids.merge(requirement_uuid => result.exchange_id)
-      end
-
       # A refusal that never opened an exchange: there is nothing to follow, and
       # the zone says why and offers the button again rather than waiting on an
       # answer nobody is going to send.
       def refuse(result) = render_zone(failure: result.error)
-
-      def reusable_conversation
-        held = session[:demo_conversation].presence&.symbolize_keys
-        return nil if held.nil? || held[:subject] != identity.subject
-
-        held[:id]
-      end
     end
   end
 end

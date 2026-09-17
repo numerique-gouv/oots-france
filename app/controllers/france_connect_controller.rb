@@ -13,19 +13,25 @@ class FranceConnectController < ApplicationController
   # is single use, and leaving in the history a page that carries one invites
   # replaying it.
   #
-  # Identifying starts a journey, and the exchanges the session follows belonged
-  # to the one before: all of them are dropped here, so that every zone offers
-  # the button again rather than the document the previous journey obtained. The conversation is
-  # not dropped with it — chapter 4.4 §4.3.2 has it « SHOULD be reused for combined flows »
-  # and forbids reuse only « if the user authenticates with a different
-  # identity », which `RequestsController` compares before offering it.
+  # Identifying opens a journey, and the requests the session was following
+  # belonged to the one before: the new journey has an identifier of its own, so
+  # every zone offers the button again rather than the document the previous
+  # journey obtained. The conversation is not dropped with it — chapter 4.4
+  # §4.3.2 has it « SHOULD be reused for combined flows » and forbids reuse only
+  # « if the user authenticates with a different identity », which `Demo::Journey`
+  # compares before carrying it over.
+  #
+  # This is the one place the journey is written, and the instant the identity
+  # exists is the earliest it could be: the conversation « Identifies a single
+  # uniquely authenticated user » (chapter 4.4 §4.3.2), which nothing posted
+  # before the authentication could claim to do. A click writes nothing further.
   def retour_connexion
     result = completed_identification
 
     return refuse_identification(result) unless result.success?
 
+    session[:demo_journey] = opened_journey(result.identity).to_session
     session[:demo_identity] = result.identity.to_session
-    session.delete(:demo_exchanges)
 
     redirect_to admin_demo_documents_path
   end
@@ -40,6 +46,10 @@ class FranceConnectController < ApplicationController
   end
 
   private
+
+  def opened_journey(identity)
+    Demo::Journey.opened(previous: Demo::Journey.from_session(session[:demo_journey]), subject: identity.subject)
+  end
 
   def completed_identification
     Demo::CompleteIdentification.call(
