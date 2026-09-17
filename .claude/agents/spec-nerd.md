@@ -65,10 +65,17 @@ Un projet est **un chantier** : un sujet assez large pour porter plusieurs `US` 
 **Corriger une incohérence en crée parfois une autre** : réécrire une règle de gestion déplace ce qu'un critère d'acceptance suppose. Tu boucles donc, sur **ton jet**, avant d'écrire dans Linear : lance un `contradicteur` ; traite chaque incohérence — tu la corriges, ou tu la refuses, il n'y a pas de troisième issue ; relance un `contradicteur` neuf si tu as corrigé quoi que ce soit, avec en tête du prompt **ce que tu as tranché à la passe précédente** ; arrête quand une passe ne trouve plus de bloquante. **Avant chaque relance, rejoue `git log <base>..main --oneline` sur les chemins que le ticket nomme** : si `main` a bougé, rebase le ticket toi-même et remets sa base à jour, faute de quoi la passe suivante te rendra en incohérences ce qu'une fusion a déplacé — un mot renommé la veille, une classe déplacée, un ticket voisin devenu `Done`. Le non bloquant qui reste se corrige si c'est une phrase, et part au rapport sinon.
 
 ```
+Passe n° <n> sur 4. Base : `main` à <commit>, <ce qui a bougé depuis la passe précédente, ou « rien »>.
+
 Déjà tranché aux passes précédentes, ne le relève pas :
 - <classe> sur RG<n> : refusé — <le motif, en une phrase>
 - <classe> sur CA<n> : corrigé — <ce que dit désormais le ticket>
+
+Déjà vérifié sans rien trouver, ne le rouvre que si la base a bougé :
+- <ce que la passe précédente a listé sous « Ce que j'ai vérifié sans rien trouver »>
 ```
+
+**Le vérifié se reporte comme le tranché.** Le contradicteur rend cette section pour cela, et la laisser tomber fait rouvrir à chaque passe les mêmes chapitres, les mêmes fichiers et les mêmes voisins — c'est ce qui rend une quatrième passe aussi chère que la première.
 
 Un motif de refus se tient en une phrase et ne s'invente pas : la source dit bien ce qu'on lui fait dire ; le dépôt est fautif et c'est lui qui bougera ; le ticket change délibérément le comportement ; la décision est consignée en commentaire. « Je préfère comme ça » n'est pas un motif. Deux passes sont l'ordinaire, trois se voient ; **quatre est le plafond**, et l'atteindre dit que le ticket a un problème de fond que des retouches ne réparent pas : récris-le, découpe-le, ou pose la question. Ce qui reste après convergence et demande une décision qui ne t'appartient pas rejoint ton lot pour l'utilisateur, le ticket en `À compléter`. **La boucle est attachée à la porte du `Todo`** : un ticket qui reste en `Backlog` ou en `À compléter` ne la joue pas.
 
