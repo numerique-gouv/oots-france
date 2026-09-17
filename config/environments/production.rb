@@ -43,8 +43,15 @@ Rails.application.configure do
   # Don't log any deprecations.
   config.active_support.report_deprecations = false
 
-  # Replace the default in-process memory cache store with a durable alternative.
-  # config.cache_store = :mem_cache_store
+  # Named rather than inherited, so that a reader knows which store serves and
+  # that it was chosen; it is also what Rails 8.1 falls back on, so nothing of
+  # the behaviour moves. Durability is what the choice is about: the
+  # authorization code of FranceConnect+ is valid thirty seconds, and what sits
+  # between the user's return and `/token` must not depend on a store the
+  # recreation of a container would have emptied. `docs/securite_transport.md`
+  # says what else reads this directory, and what its sharing costs.
+  # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-integration/integration-erreurs/
+  config.cache_store = :file_store, Rails.root.join("tmp/cache")
 
   # Replace the default in-process and non-durable queuing backend for Active Job.
   # config.active_job.queue_adapter = :resque
