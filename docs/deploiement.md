@@ -140,6 +140,9 @@ Voir avec Jo.
 Ce que la pile attend du frontal, quel qu'il soit : il termine TLS, mandate `web` sur `PORT_OOTS_FRANCE`, et Rails le suppose (`config.assume_ssl`, `config.force_ssl`) — ce qui vaut aussi pour la passerelle, qui notifie `web` en HTTP sur le réseau docker sans que rien ne redirige cet appel-là. Le `nginx` de `docker-compose.yml` et son [gabarit](../nginx.template/conf/nginx.conf) sont une façon de le faire, pas la seule.
 
 > [!IMPORTANT]
+> **Le frontal doit accepter des entêtes de réponse plus grandes que ses défauts.** La session de l'application est un cookie, que Rails laisse aller jusqu'à 4 Ko, et le tampon d'entêtes de nginx en fait autant pour le bloc entier : les deux limites se croisent dès que la démarche de démonstration a identifié un usager, et la page des justificatifs revient en `502` — avec `upstream sent too big header` dans le journal d'erreur du frontal, sur une page que Rails avait pourtant rendue. Le gabarit du dépôt porte les `proxy_buffer_size`, `proxy_buffers` et `proxy_busy_buffers_size` qu'il faut ; un autre frontal a son réglage équivalent à poser.
+
+> [!IMPORTANT]
 > **`make assets` n'est pas facultatif, et se rejoue à chaque mise à jour.** Propshaft ne sert rien en production — son réglage `config.assets.server` ne vaut qu'en développement et en test — et sans cette compilation, les pages arrivent sans style ni icône. Les fichiers atterrissent dans `public/assets`, dans le dépôt déployé, que la composition monte par-dessus l'image : les compiler à la construction de l'image ne servirait à rien.
 
 ```sh
