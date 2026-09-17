@@ -1,19 +1,35 @@
 #!/bin/sh
-# Writes the .env* files docker compose expects, with throwaway values meant for
-# continuous integration (see docs/test_e2e.md) and for the local install, which
-# scripts/setup.sh layers on top.
+# Writes the .env* files docker compose expects, by deriving each one from its
+# template: the templates carry both the contract — which variables exist — and
+# the value each takes on a development machine (see docs/test_e2e.md and the
+# local install, which scripts/setup.sh layers on top).
 #
-# No value here is a secret: the database, the gateway and the decryption key are
-# recreated on every run and destroyed with the runner.
+# No value written here is a secret: the database, the gateway and the
+# decryption keys are recreated on every run and destroyed with the runner.
+# `scripts/check_secrets.sh` is what refuses them on a deployment.
 #
 # Usage: scripts/ci/prepare_environment.sh
 #
 # Recognised variables:
 #   FORCER=1  overwrites existing files (see the guard below)
+#   <any variable a template declares>  replaces the value it carries
+#   RAILS_ENV, SECRET_KEY_BASE  added to .env.oots, which no template declares
 
 set -e
 
-FICHIERS=".env .env.domibus .env.oots .env.postgres"
+# The templates are the list, here as everywhere else in this script and in
+# scripts/check_environment.sh: .gitignore keeps `.env*` out of the repository
+# and lets `.env*.template` back in, which makes them exactly the versioned
+# ones. A template added later is therefore covered without being named here.
+FICHIERS=""
+for gabarit in .env*.template; do
+  if [ ! -e "$gabarit" ]; then
+    echo "❌ Aucun fichier .env*.template à la racine du dépôt : le clone est-il complet ?" >&2
+    exit 1
+  fi
+
+  FICHIERS="$FICHIERS ${gabarit%.template}"
+done
 
 # These files are not versioned: overwriting them destroys a local configuration
 # nothing can recover. On a runner they do not exist and the script writes
@@ -30,40 +46,64 @@ if [ -n "$EXISTANTS" ] && [ "$FORCER" != "1" ]; then
   exit 1
 fi
 
-# These credentials must be the same as those passed to
-# scripts/configure_domibus.sh: this is the account the script creates in Domibus
-# and the one the application authenticates with.
+# The two variables no template declares, because they must not exist without a
+# value: declared empty, `RAILS_ENV=` is not absent for Ruby, and the test
+# suites — which set `test` only when it is missing — would run in
+# `development`. `scripts/setup_server.sh` is what sets them.
 #
-# Domibus requires the password to be 16 to 32 characters, with an upper case, a
-# lower case, a digit and a special character: any shorter and it is refused at
-# creation.
-LOGIN_API_REST="${LOGIN_API_REST:-oots_ci}"
-MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:-Ci-OotsFrance-2026!}"
+# Judged here, before anything is written: refused after the loop below, the
+# four files would already be on disk, and every replay would meet the guard
+# above instead of the fault.
+if [ -n "${RAILS_ENV:-}" ] && [ -z "${SECRET_KEY_BASE:-}" ]; then
+  echo "❌ RAILS_ENV=$RAILS_ENV sans SECRET_KEY_BASE." >&2
+  echo "   Rails refuserait de démarrer, et le dirait trois étapes plus loin." >&2
+  exit 1
+fi
 
-# This password protects the certificate stores. The gateway reads it from .env,
-# the scripts from the environment: taking it from here guarantees both see the
-# same value, as for the credentials above.
-MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:-test123}"
+# The value a template gives a variable, its end-of-line comment removed. The
+# comment starts at the first space followed by `#`, which is also the only
+# shape docker compose reads as a comment: `PORT_X=8180#note` is to it the value
+# `8180#note`, which it refuses with `invalid hostPort`.
+valeurDuGabarit() {
+  valeur=$(sed -n "s/^$1=//p" "$2" | head -n 1)
+  printf '%s' "${valeur%% #*}"
+}
 
-# The ports the stack publishes on the host. Held in variables because three
-# addresses below are composed out of them: `web` listens on the very port it
-# publishes, and the fake FranceConnect+ answers on its own from inside `web`'s
-# network namespace — see .env.template.
-PORT_OOTS_FRANCE="${PORT_OOTS_FRANCE:-3000}"
-PORT_FAUX_FRANCE_CONNECT="${PORT_FAUX_FRANCE_CONNECT:-3100}"
-PORT_DOMIBUS="${PORT_DOMIBUS:-8180}"
-PORT_POSTGRES="${PORT_POSTGRES:-5433}"
+# What a variable is worth here: the environment if it defines it, be it to the
+# empty string, and the template otherwise. `printenv` and not an expansion, so
+# that a value carrying quotes, JSON braces or a `$` is never re-parsed.
+valeurEffective() {
+  if printenv "$1" >/dev/null 2>&1; then
+    printenv "$1"
+  else
+    valeurDuGabarit "$1" "$2"
+  fi
+}
+
+# The addresses this deployment answers at are composed out of the ports, so
+# that shifting a port — what scripts/worktree.sh does — carries them along.
+# `.env.template` spells the same values out for the default ports, which is
+# what a reader needs to know what they look like.
+PORT_OOTS_FRANCE=$(valeurEffective PORT_OOTS_FRANCE .env.template)
+PORT_FAUX_FRANCE_CONNECT=$(valeurEffective PORT_FAUX_FRANCE_CONNECT .env.template)
 
 # Where this deployment answers, for the browser as for the container: `web`
 # listens on the port it publishes, so one `localhost:…` serves the two
 # audiences — the browser following the redirection FranceConnect+ hands it, and
 # the procedure calling its own contract.
-URL_OOTS_FRANCE="${URL_OOTS_FRANCE:-http://localhost:$PORT_OOTS_FRANCE}"
+URL_OOTS_FRANCE="${URL_OOTS_FRANCE-http://localhost:$PORT_OOTS_FRANCE}"
 
 # The fake FranceConnect+, single issuer of the local stack: the browser follows
 # the European flow there and `web` fetches the discovery document, the token
-# and the JWKS there, under this one name.
-URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT:-http://localhost:$PORT_FAUX_FRANCE_CONNECT/api/v2}"
+# and the JWKS there, under this one name. The procedure talks to it, hence
+# URL_FRANCE_CONNECT repeating it — the first says whom the procedure calls, the
+# second where the fake answers, and a deployment fills the first with the real
+# FranceConnect+ and leaves the second empty.
+#
+# `${VAR-…}` and not `${VAR:-…}`: emptying the second is how a deployment says
+# it uses the real one, and a default must not fill it back in.
+URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT-http://localhost:$PORT_FAUX_FRANCE_CONNECT/api/v2}"
+URL_FRANCE_CONNECT="${URL_FRANCE_CONNECT-$URL_FAUX_FRANCE_CONNECT}"
 
 # Where the demonstration procedure receives what is addressed to it, which is
 # **not** a path under URL_OOTS_FRANCE: the evidence is delivered by the
@@ -72,29 +112,30 @@ URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT:-http://localhost:$PORT_FAUX_
 # see docs/test_e2e.md.
 URL_DEMARCHE="http://web:$PORT_OOTS_FRANCE/demo"
 
-# The credentials Domibus will put on its notifications towards us. They must be
-# the same here and in `wsplugin.push.auth.*` on the gateway side, which
-# scripts/configure_domibus.sh fills in.
-LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:-domibus_push}"
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:-Push-OotsFrance-2026!}"
+# Written out rather than defaulted with `${VAR-…}`: the value carries braces of
+# its own, and the first `}` would close the expansion instead of the JSON
+# object — which produces a truncated directory nothing complains about until a
+# requester goes unrecognised.
+if ! printenv DONNEES_REQUETEURS >/dev/null 2>&1; then
+  DONNEES_REQUETEURS="{\"00000000000002\":{\"nom\":\"Requêteur de test\",\"url\":\"http://web:4000\"},\"00000000000003\":{\"nom\":\"Université de démonstration\",\"url\":\"$URL_DEMARCHE\"}}"
+fi
 
-# Unquoted heredoc: the values above must be substituted.
-cat > .env <<FIN
-PORT_DOMIBUS=$PORT_DOMIBUS
-PORT_OOTS_FRANCE=$PORT_OOTS_FRANCE
-PORT_FAUX_FRANCE_CONNECT=$PORT_FAUX_FRANCE_CONNECT
-PORT_POSTGRES=$PORT_POSTGRES
-MOT_DE_PASSE_MAGASINS=$MOT_DE_PASSE_MAGASINS
-FIN
+export PORT_OOTS_FRANCE PORT_FAUX_FRANCE_CONNECT
+export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT URL_FRANCE_CONNECT DONNEES_REQUETEURS
 
-cat > .env.domibus <<'FIN'
-MYSQL_ROOT_PASSWORD=root_ci
-MYSQL_DATABASE=domibus
-MYSQL_USER=domibus
-MYSQL_PASSWORD=domibus_ci
-DB_USER=domibus
-DB_PASS=domibus_ci
-FIN
+# The credentials of the two databases live in two files each, under the names
+# their image expects and under the names the application reads. Held in step
+# here rather than asked twice: the application presents the first, the image
+# creates the role with the second, and nothing checks the equality before
+# `db:prepare` meets `password authentication failed`.
+MYSQL_PASSWORD=$(valeurEffective MYSQL_PASSWORD .env.domibus.template)
+DB_USER=$(valeurEffective MYSQL_USER .env.domibus.template)
+DB_PASS="$MYSQL_PASSWORD"
+UTILISATEUR_BASE_DE_DONNEES=$(valeurEffective POSTGRES_USER .env.postgres.template)
+MOT_DE_PASSE_BASE_DE_DONNEES=$(valeurEffective POSTGRES_PASSWORD .env.postgres.template)
+NOM_BASE_DE_DONNEES=$(valeurEffective POSTGRES_DB .env.postgres.template)
+export MYSQL_PASSWORD DB_USER DB_PASS
+export UTILISATEUR_BASE_DE_DONNEES MOT_DE_PASSE_BASE_DE_DONNEES NOM_BASE_DE_DONNEES
 
 # The continuous integration runner installs Ruby for itself; a development
 # machine has only Git and Docker as prerequisites, hence the fallback on the
@@ -217,6 +258,9 @@ verifieCleJwk() {
 # The third one signs where the two others decrypt, hence a curve rather than
 # RSA: chapter 4.5.1 leaves the token unspecified, but `BeneficiaryToken`
 # admits ES256 alone, which no RSA key can produce.
+#
+# No template writes them down: a key is worth being fresh, and there is no
+# value to carry.
 CLE_PRIVEE_JWK_EN_BASE64=$(engendreCleJwk)
 verifieCleJwk "$CLE_PRIVEE_JWK_EN_BASE64" CLE_PRIVEE_JWK_EN_BASE64 qi
 
@@ -226,122 +270,80 @@ verifieCleJwk "$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_DEMARCHE_EN_BA
 CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64=$(engendreCleJwkEc)
 verifieCleJwk "$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64" CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 d
 
-# The French provider keeps its real identity rather than a test name: that
-# identity is copied into the `ErrorProvider` of the reference messages in
-# spec/fixtures/, and `spec/support/test_environment.rb` only sets it with `||=`.
-# A test name here would reach the container through `env_file` and turn the unit
-# suite red, though nothing in it had changed.
+export CLE_PRIVEE_JWK_EN_BASE64 CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
+export CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
+
+# A line stripped of its indentation, so that the continuation of an end-of-line
+# comment reads like the comment it continues.
+deblanchi() {
+  printf '%s' "${1#"${1%%[![:space:]]*}"}"
+}
+
+# One file per template, each line of which is either prose, dropped, or a
+# variable, kept with the value the environment or the template gives it: an
+# end-of-line comment reaches docker compose as part of the value unless it is
+# preceded by a space, and the blank lines are what keeps the groups apart. A
+# blank line is held back until the next variable is written, so that neither
+# the header's nor the trailing ones reach the file.
 #
-# The second database role is the restricted one `web` and `worker` connect
-# with: `rails db:privileges` creates it with this password and refuses it
-# `UPDATE` on the exchange log. It is not declared in .env.postgres, the image
-# creating the owner alone.
-#
-# The procedure talks to the fake FranceConnect+ the stack runs, which is why
-# URL_FRANCE_CONNECT repeats URL_FAUX_FRANCE_CONNECT here: the first says whom
-# the procedure calls, the second where the fake answers — a deployment fills
-# the first with the real FranceConnect+ and leaves the second empty. The two
-# credentials are the fake's own constants,
-# features/support/fake_france_connect/clients.rb.
-#
-# The two directory URLs are left empty so that chapter 3.4's DNS discovery is
-# what names the instance to query, as it does in production: filled, they would
-# replace it, and they exist only for a deployment no NAPTR record can name — a
-# caching proxy. The trust store goes with them, a store being worth only for
-# the directory it authenticates. The end-to-end suite therefore reaches the
-# Commission's acceptance instance — see docs/test_e2e.md.
-cat > .env.oots <<FIN
-AVEC_REQUETE_PIECE_JUSTIFICATIVE=true
-CLE_PRIVEE_JWK_EN_BASE64=$CLE_PRIVEE_JWK_EN_BASE64
-CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
-CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64=$CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
-DONNEES_REQUETEURS={"00000000000002":{"nom":"Requêteur de test","url":"http://web:4000"},"00000000000003":{"nom":"Université de démonstration","url":"$URL_DEMARCHE"}}
-IDENTIFIANT_FOURNISSEUR_FRANCAIS=00000000000001
-IDENTIFIANT_REQUETEUR_DEMARCHE=00000000000003
-NOM_FOURNISSEUR_FRANCAIS=Direction interministérielle du numérique
-URL_OOTS_FRANCE=$URL_OOTS_FRANCE
-URL_FRANCE_CONNECT=$URL_FAUX_FRANCE_CONNECT
-IDENTIFIANT_CLIENT_FRANCE_CONNECT=oots-france-demarche
-SECRET_CLIENT_FRANCE_CONNECT=faux-france-connect-secret-de-la-demarche
-URL_FAUX_FRANCE_CONNECT=$URL_FAUX_FRANCE_CONNECT
+# A line that is neither stops the run rather than being skipped. That is the
+# whole point of naming the two shapes: a key in lower case, a space around the
+# `=`, and the variable would simply be missing from the file — which nothing
+# downstream would catch, scripts/check_environment.sh reading the templates
+# through the same character class and not considering such a line a
+# declaration either.
+ecrisDepuisLeGabarit() {
+  fichier="${1%.template}"
+  : > "$fichier"
+  enAttente=""
 
-CERTIFICATS_SERVICES_COMMUNS=config/certificats/services_communs_acc.pem
-DELAI_MAX_SERVICES_COMMUNS=10000
-DUREE_CACHE_SERVICES_COMMUNS=3600
-ENVIRONNEMENT_SERVICES_COMMUNS=acc
-PAYS_SERVICES_COMMUNS=FR
-URL_BASE_EVIDENCE_BROKER=
-URL_BASE_DATA_SERVICE_DIRECTORY=
+  while IFS= read -r ligne || [ -n "$ligne" ]; do
+    nu=$(deblanchi "$ligne")
 
-DELAI_MAX_ATTENTE_DOMIBUS=30000
-IDENTIFIANT_EXPEDITEUR_DOMIBUS=AP_FR_01
-SUFFIXE_IDENTIFIANTS_DOMIBUS=oots.eu
-TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS=urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR
-URL_BASE_DOMIBUS=http://domibus:8080/domibus
+    if [ -z "$nu" ]; then
+      enAttente="oui"
+      continue
+    fi
 
-LOGIN_API_REST=$LOGIN_API_REST
-MOT_DE_PASSE_API_REST=$MOT_DE_PASSE_API_REST
-LOGIN_NOTIFICATION_DOMIBUS=$LOGIN_NOTIFICATION_DOMIBUS
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$MOT_DE_PASSE_NOTIFICATION_DOMIBUS
+    case "$nu" in
+      '#'*) continue ;;
+    esac
 
-AVEC_DELAI_EXPIRATION=
-DELAI_EXPIRATION_REQUETEUR_MINUTES=6
-DELAI_EXPIRATION_FOURNISSEUR_MINUTES=5
-DELAI_RESERVATION_REMISE_MINUTES=6
+    cle="${ligne%%=*}"
+    case "$ligne" in
+      *=*) ;;
+      *) cle="" ;;
+    esac
+    case "$cle" in
+      '' | *[!A-Z_0-9]*)
+        echo "❌ $1 : « $ligne » n'est ni de la prose ni une déclaration." >&2
+        echo "   Une déclaration s'écrit NOM=valeur, sans espace autour du \`=\`," >&2
+        echo "   en majuscules, chiffres et tirets bas ; une ligne de prose commence" >&2
+        echo "   par un \`#\`. Toute autre forme serait écartée sans que rien ne le dise." >&2
+        exit 1
+        ;;
+    esac
 
-CLE_CHIFFREMENT_JOURNAL=journal_cle_de_chiffrement_pour_integration_continue
-CLE_CHIFFREMENT_DETERMINISTE_JOURNAL=journal_cle_deterministe_pour_integration_continue
-SEL_DERIVATION_CLES_JOURNAL=journal_sel_de_derivation_pour_integration_continue
-DUREE_RETENTION_JOURNAL_MOIS=12
+    valeur=$(valeurEffective "$cle" "$1")
 
-HOTE_BASE_DE_DONNEES=postgres
-PORT_BASE_DE_DONNEES=5432
-UTILISATEUR_BASE_DE_DONNEES=oots_france
-MOT_DE_PASSE_BASE_DE_DONNEES=oots_france
-NOM_BASE_DE_DONNEES=oots_france
-UTILISATEUR_APPLICATIF_BASE_DE_DONNEES=oots_france_app
-MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES=oots_france_app
-FIN
+    [ -z "$enAttente" ] || printf '\n' >> "$fichier"
+    enAttente=""
+    printf '%s=%s\n' "$cle" "$valeur" >> "$fichier"
+  done < "$1"
+}
 
-# The same values, under the names the PostgreSQL image expects. They must stay
-# in step with those above, as .env.domibus already requires between MYSQL_USER
-# and DB_USER.
-cat > .env.postgres <<'FIN'
-POSTGRES_USER=oots_france
-POSTGRES_PASSWORD=oots_france
-POSTGRES_DB=oots_france
-FIN
-
-# The templates declare the contract: every variable one of them names must be
-# written here. Without this check, forgetting a newly mandatory variable shows
-# only when the stack starts, two steps further on, as a wait that expires with
-# nothing to say.
-#
-# The comparison itself is scripts/check_environment.sh, which serves the same
-# need on an installation already made. It only judges the files that exist, so
-# a missing one is caught here instead: the files have just been written, and
-# one absent betrays a `cat >` lost above.
-#
-# Driven by the templates rather than by FICHIERS above, for the same reason
-# that script is: a template added later without teaching this one to write its
-# file would otherwise pass both checks — this guard not knowing that file, and
-# the shared check leaving an absent one alone.
-MANQUANTS=""
 for gabarit in .env*.template; do
-  # An unexpanded glob leaves the missing templates to the shared check below,
-  # which has the message for it.
-  [ -e "$gabarit" ] || break
-  fichier="${gabarit%.template}"
-  [ -e "$fichier" ] || MANQUANTS="$MANQUANTS $fichier"
+  ecrisDepuisLeGabarit "$gabarit"
 done
 
-if [ -n "$MANQUANTS" ]; then
-  echo "❌ Fichiers que ce script devait écrire et qui manquent :$MANQUANTS" >&2
-  echo "   Corriger scripts/ci/prepare_environment.sh." >&2
-  exit 1
-fi
+# The pair judged at the top, once the file it belongs in exists.
+[ -z "${RAILS_ENV:-}" ] ||
+  printf '\nRAILS_ENV=%s\nSECRET_KEY_BASE=%s\n' "$RAILS_ENV" "$SECRET_KEY_BASE" >> .env.oots
 
-# What is to be completed here is this script, not the file it just wrote.
-CONSEIL="Compléter scripts/ci/prepare_environment.sh." scripts/check_environment.sh
+# What a template declares and the file derived from it carries agree by
+# construction, the loop above refusing every line it cannot read. The check
+# stays all the same: it is the one that reads the two files rather than the
+# rule that writes them, and it costs a `grep` per variable.
+CONSEIL="Corriger la ligne fautive du template, ou scripts/ci/prepare_environment.sh." scripts/check_environment.sh
 
-echo "Fichiers .env, .env.domibus, .env.oots et .env.postgres écrits."
+echo "Fichiers$FICHIERS écrits."
