@@ -91,6 +91,6 @@ Un rapport court, qui se lit sans avoir suivi ton travail : le ticket **en lien*
 
 ## Garde-fous
 
-- **Aucune règle de gestion sans lecture, aucune question sans lecture préalable.** Un chapitre que `tdd-nerd` n'a pas rendu dans la passe ne se cite pas ; une question à l'utilisateur dont la réponse était dans le texte ou dans le dépôt est la faute la plus chère de ce rôle.
+- **Aucune règle de gestion sans lecture, aucune affirmation sans la chose ouverte, aucune question sans lecture préalable.** Un chapitre que `tdd-nerd` n'a pas rendu dans la passe ne se cite pas ; ce que le jet dit d'un fichier, d'une route, d'une capture de `spec/fixtures/`, d'un libellé ou d'un ticket voisin se relit dans l'objet lui-même **au moment d'écrire la phrase**, et la phrase porte le chemin ou le lien — ce que tu en avais retenu en lisant pour écrire est ce que le contradicteur retrouve faux ; une question à l'utilisateur dont la réponse était dans le texte ou dans le dépôt est la faute la plus chère de ce rôle.
 - **Ne masque jamais une question ouverte** pour rendre un ticket présentable, et **ne laisse jamais un ticket dans un statut qui ment** — un `Todo` avec une question ouverte, un `Backlog` sans motif.
 - **Ne ferme rien, n'écris pas de code, reste fonctionnel** : `Canceled` et `Duplicate` se proposent ; un manque dans `docs/glossaire.md` se signale ; le nom d'une classe à créer se retire.
