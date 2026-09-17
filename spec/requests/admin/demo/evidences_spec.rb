@@ -49,6 +49,18 @@ RSpec.describe 'Admin::Demo::Evidences' do
       expect(response).to redirect_to(admin_demo_root_path)
     end
 
+    # The other half of the same condition, which an identity alone would hide:
+    # the guard is declared by the concern this page includes, so nothing here
+    # says it applies, and a page that lost it would still pass the example
+    # above.
+    it 'sends an operator holding no journey back to the start' do
+      allow(Demo::Journey).to receive(:from_session).and_return(nil)
+
+      get justificatif_path
+
+      expect(response).to redirect_to(admin_demo_root_path)
+    end
+
     # Chapter 1 §4.2 makes the evidence available to « the specific procedure
     # end-user that issued the query for those evidences »: another session
     # follows another exchange, and this row is not on its way.

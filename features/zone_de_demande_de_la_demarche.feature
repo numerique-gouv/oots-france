@@ -6,9 +6,10 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   où le navigateur décide le plus par lui-même : l'attente prend la place du
   bouton avant qu'aucune réponse ne soit revenue, l'adresse de la zone est
   interrogée tant que la demande court, une seule interrogation à la fois, et
-  une suite d'échecs fait renoncer la zone en offrant le retour à la page. Le
-  serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
-  reconstruit.
+  une suite d'échecs fait renoncer la zone en offrant le retour à la page. Deux
+  cartes cliquées coup sur coup y suivent chacune sa propre demande, quel que
+  soit l'ordre dans lequel les réponses reviennent. Le serveur décide de tout
+  le reste, et ce qu'il dit déjà à l'écran n'est jamais reconstruit.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -89,6 +90,28 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la page n'affiche aucun bouton de demande
     Quand l'usager suit le lien "Reload the page"
     Alors la page affiche le bouton "Request the document"
+
+  Scénario: la demande retenue n'est pas perdue par la réponse qui revient avant la sienne
+    Étant donné les deux exigences de la démarche affichées
+    Et la soumission de la demande retenue devant le navigateur
+    Quand l'usager clique sur le bouton de la première carte
+    Et que l'usager clique sur le bouton de la seconde carte
+    Alors la zone de la seconde carte annonce qu'elle attend
+    Et le contrat a reçu la demande de la seconde carte
+    Quand la soumission retenue est libérée
+    Alors les deux zones annoncent qu'elles attendent
+    Quand l'usager recharge la page des justificatifs
+    Alors les deux zones annoncent qu'elles attendent
+
+  Scénario: deux soumissions retenues ensemble laissent chaque zone sur sa propre demande
+    Étant donné les deux exigences de la démarche affichées
+    Et les soumissions des deux cartes retenues devant le navigateur
+    Quand l'usager clique sur le bouton de la première carte
+    Et que l'usager clique sur le bouton de la seconde carte
+    Et que les deux soumissions retenues sont libérées dans l'ordre des clics
+    Alors les deux zones annoncent qu'elles attendent
+    Quand l'usager recharge la page des justificatifs
+    Alors les deux zones annoncent qu'elles attendent
 
   Scénario: une session finie pendant l'attente mène à la page de connexion dans la fenêtre
     Étant donné une demande en cours
