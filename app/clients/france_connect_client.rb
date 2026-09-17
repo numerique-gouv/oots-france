@@ -98,17 +98,22 @@ class FranceConnectClient
   # accepting no `Authorization: Basic` on this endpoint.
   def exchange(code)
     credentials = Settings.france_connect_credentials
+    url = endpoint('token_endpoint')
 
-    granted(post(endpoint('token_endpoint'), {
-      grant_type: 'authorization_code', code:, redirect_uri:,
-      client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret),
-    }).body)
+    answer = motivated(url) do
+      post(url, { grant_type: 'authorization_code', code:, redirect_uri:,
+                  client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret) })
+    end
+
+    granted(answer.body)
   end
 
   # A signed then encrypted JWT, not JSON: what comes back is handed to
   # `FranceConnectToken` as it stands.
   def userinfo(access_token)
-    get(endpoint('userinfo_endpoint'), {}, 'Authorization' => "Bearer #{access_token}").body
+    url = endpoint('userinfo_endpoint')
+
+    motivated(url) { get(url, {}, 'Authorization' => "Bearer #{access_token}") }.body
   end
 
   def end_session_url(id_token_hint:, state:)
@@ -118,6 +123,19 @@ class FranceConnectClient
   end
 
   private
+
+  # The two endpoints that motivate a refusal, relayed in the portal's own words
+  # rather than in the message the HTTP client raises with, which names only the
+  # verb, the status and the address. What the portal did not motivate is left to
+  # that message.
+  def motivated(url)
+    yield
+  rescue Faraday::Error => e
+    reason = FranceConnectRefusal.new(e, url).reason
+    raise FranceConnectError, reason if reason
+
+    raise
+  end
 
   def granted(body)
     tokens = FranceConnectAnswer.object(JSON.parse(body), :grant)

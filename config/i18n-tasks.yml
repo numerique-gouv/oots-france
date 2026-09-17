@@ -81,6 +81,10 @@ ignore_unused:
   # Composé du document dont on demande la forme, comme les sujets de
   # `strict_validation` juste au-dessus.
   - clients.france_connect_answer.subjects.*
+  # Composée de ceux des trois champs qu'un refus de FranceConnect+ porte :
+  # quatre phrases pour quatre combinaisons, `FranceConnectRefusal` choisissant
+  # laquelle. Feuille par feuille, comme le reste de cette liste.
+  - clients.france_connect_refusal.{refused,refused_described,refused_documented,refused_fully}
   - interactors.incoming_message.process.{exchange_failed,exchange_impossible,invalid_configuration,unreadable}
   - interactors.incoming_message.settle_exchange.{already_settled,already_delivering,foreign_request}
   # Composed from the direction of the exchange by `Exchange#expire!`: one

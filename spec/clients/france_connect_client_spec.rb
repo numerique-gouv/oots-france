@@ -234,7 +234,36 @@ RSpec.describe FranceConnectClient do
       stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
         .to_return(status: 400, body: { error: 'invalid_grant' }.to_json)
 
-      expect { client.exchange('un-code') }.to raise_error(Faraday::Error)
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError, /invalid_grant/)
+    end
+
+    # The refusal the sandbox answered on 2026-09-17: the status and the address
+    # are what the HTTP client already said, the three fields are what it dropped.
+    it 'relays the refusal in the words FranceConnect+ chose' do
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT).to_return(status: 400, body: {
+        error: 'invalid_client_metadata',
+        error_description: 'client JSON Web Key Set failed to be refreshed (fetch failed)',
+        error_uri: 'https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-erreurs/' \
+                   '?code=Y044D511&id=4074082d-7095-4067-99d7-ebb795041b72',
+      }.to_json)
+
+      expect { client.exchange('un-code') }.to raise_error(FranceConnectError) do |raised|
+        expect(raised.message).to include('400', FranceConnectStubs::TOKEN_ENDPOINT,
+          'invalid_client_metadata', 'client JSON Web Key Set failed to be refreshed (fetch failed)')
+        expect(raised.message).to end_with('id=4074082d-7095-4067-99d7-ebb795041b72')
+      end
+    end
+
+    # A gateway between the two, a maintenance page: nothing of RFC 6749 §5.2 to
+    # read, and the raising of the HTTP client already names the status and the
+    # address.
+    it 'lets an unmotivated refusal through as the HTTP client raised it' do
+      stub_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)
+        .to_return(status: 502, body: '<html><body>Bad Gateway</body></html>')
+
+      expect { client.exchange('un-code') }.to raise_error(Faraday::Error, /502/) do |raised|
+        expect(raised.message).to include(FranceConnectStubs::TOKEN_ENDPOINT)
+      end
     end
   end
 
