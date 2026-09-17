@@ -28,7 +28,8 @@ class ApplicationInteractor
                 demo_unplaceable demo_unreachable
                 gateway_refused identification_refused invalid_configuration
                 invalid_directory_entry invalid_token no_evidence_type no_provider unknown_country
-                unknown_procedure unknown_requester unsupported_specification].freeze
+                unknown_procedure unknown_requester unknown_requirement
+                unsupported_specification].freeze
 
   # A reading of a received message that may itself be unreadable, where that
   # second failure is an answer and not an incident: what cannot be read is
