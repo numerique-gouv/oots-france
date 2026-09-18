@@ -7,12 +7,20 @@
 module FranceConnectStubs
   # Pinned here and forced onto `Settings`, rather than read from the
   # environment: `.env.oots` reaches the container through `env_file` and would
-  # otherwise decide what these examples assert.
+  # otherwise decide what these examples assert — how many cards the home page
+  # offers as much as where the flow departs.
   PROCEDURE_URL = 'http://oots.test'.freeze
   CLIENT_ID = 'oots-france-demarche'.freeze
   CLIENT_SECRET = 'secret-de-la-demarche'.freeze
 
   ISSUER = 'http://franceconnect.test/api/v2'.freeze
+
+  # The second FranceConnect+ a deployment may declare, distinct from the first
+  # in all three values: an example proving a departure reached one and not the
+  # other proves nothing if the two share an address or a credential.
+  REAL_ISSUER = 'http://vrai-franceconnect.test/api/v2'.freeze
+  REAL_CLIENT_ID = 'oots-france-demarche-au-vrai'.freeze
+  REAL_CLIENT_SECRET = 'secret-de-la-demarche-au-vrai'.freeze
 
   # The five paths FranceConnect+ publishes under its base, in one place: the
   # constants below and the document the doubles serve are both built from this,
@@ -28,6 +36,12 @@ module FranceConnectStubs
   USERINFO_ENDPOINT = "#{ISSUER}#{PATHS[:userinfo_endpoint]}".freeze
   JWKS_URL = "#{ISSUER}#{PATHS[:jwks_uri]}".freeze
   END_SESSION_ENDPOINT = "#{ISSUER}#{PATHS[:end_session_endpoint]}".freeze
+
+  # The three addresses of the other double an example asserts on: where a
+  # departure lands, where its discovery is read, where a sign-out goes.
+  REAL_DISCOVERY_URL = "#{REAL_ISSUER}#{FranceConnectClient::DISCOVERY_PATH}".freeze
+  REAL_AUTHORIZATION_ENDPOINT = "#{REAL_ISSUER}#{PATHS[:authorization_endpoint]}".freeze
+  REAL_END_SESSION_ENDPOINT = "#{REAL_ISSUER}#{PATHS[:end_session_endpoint]}".freeze
 
   KEY_MANAGEMENT = 'RSA-OAEP-256'.freeze
   CONTENT_ENCRYPTION = 'A256GCM'.freeze
@@ -49,22 +63,64 @@ module FranceConnectStubs
       .merge('alg' => KEY_MANAGEMENT)
   end
 
+  # What a deployment declares, as `Settings` answers for it. Accumulated across
+  # calls, in the order `Settings::FRANCE_CONNECT` writes — which is the order
+  # the home page reads — so that an example declaring the second keeps the
+  # first, and both cards appear where they would on a deployment.
+  def declare_france_connect(*instances)
+    @declared_france_connect = (@declared_france_connect || {}).merge(instances.index_by(&:name))
+    declared = Settings::FRANCE_CONNECT.keys.filter_map { |name| @declared_france_connect[name] }
+
+    allow(Settings).to receive(:france_connect_instances).and_return(declared)
+    allow(Settings).to receive(:france_connect_instance) { |name| @declared_france_connect[name] }
+
+    instances.last
+  end
+
+  # The other way a deployment changes: one it declared, it declares no more.
+  # What a session written under the earlier configuration meets on its return.
+  def undeclare_france_connect(name)
+    @declared_france_connect = (@declared_france_connect || {}).except(name)
+
+    declare_france_connect
+  end
+
+  def fake_france_connect(issuer: ISSUER)
+    FranceConnectInstance.new(name: 'fake', issuer:, client_id: CLIENT_ID, client_secret: CLIENT_SECRET)
+  end
+
+  def real_france_connect(issuer: REAL_ISSUER)
+    FranceConnectInstance.new(name: 'real', issuer:, client_id: REAL_CLIENT_ID,
+      client_secret: REAL_CLIENT_SECRET)
+  end
+
   # `issuer:` is what a scenario played in a browser moves: the authorization
   # endpoint has to be somewhere the browser can reach, and
   # `FranceConnectClient#endpoint` rebuilds every address on the origin of the
   # configured issuer. Everything else is the same double — hence the parameter
   # rather than a second copy of it.
-  def stub_france_connect(userinfo: DANISH_USERINFO, issuer: ISSUER)
-    allow(Settings).to receive_messages(
-      france_connect_private_key_jwk: procedure_jwk, france_connect_issuer: issuer,
-      france_connect_credentials: { id: CLIENT_ID, secret: CLIENT_SECRET },
-      oots_france_url: PROCEDURE_URL,
-    )
+  def stub_france_connect(userinfo: DANISH_USERINFO, issuer: ISSUER, instance: nil)
+    instance = declare_france_connect(instance || fake_france_connect(issuer:))
 
+    allow(Settings).to receive_messages(
+      france_connect_private_key_jwk: procedure_jwk, oots_france_url: PROCEDURE_URL,
+    )
+    stub_france_connect_endpoints(instance.issuer, userinfo)
+
+    instance
+  end
+
+  def stub_france_connect_endpoints(issuer, userinfo)
     stub_request(:get, "#{issuer}#{FranceConnectClient::DISCOVERY_PATH}")
       .to_return(body: discovery_document(issuer).to_json)
     stub_request(:get, "#{issuer}#{PATHS[:jwks_uri]}").to_return(body: france_connect_key_set.to_json)
     stub_france_connect_userinfo(userinfo, issuer:)
+  end
+
+  # The other one, doubled exactly as the fake is: the two differ by an issuer
+  # and two credentials, which is the whole of what this ticket makes vary.
+  def stub_real_france_connect(userinfo: DANISH_USERINFO, issuer: REAL_ISSUER)
+    stub_france_connect(userinfo:, instance: real_france_connect(issuer:))
   end
 
   def stub_france_connect_userinfo(claims, issuer: ISSUER)
@@ -72,8 +128,8 @@ module FranceConnectStubs
       .to_return(body: sealed_for_procedure(claims), headers: { 'Content-Type' => 'application/jwt' })
   end
 
-  def stub_france_connect_tokens(id_token_claims, access_token: 'un-jeton-d-acces')
-    stub_request(:post, TOKEN_ENDPOINT).to_return(
+  def stub_france_connect_tokens(id_token_claims, access_token: 'un-jeton-d-acces', issuer: ISSUER)
+    stub_request(:post, "#{issuer}#{PATHS[:token_endpoint]}").to_return(
       body: { access_token:, token_type: 'Bearer', expires_in: 60,
               id_token: sealed_for_procedure(id_token_claims) }.to_json,
       headers: { 'Content-Type' => 'application/json' },
@@ -94,14 +150,28 @@ module FranceConnectStubs
   # `state` and `nonce` are read off the address the browser is sent to — never
   # written into the session by hand, which would prove nothing about what ties
   # the return to the departure — and the return itself.
-  def identify_demo_user(userinfo: DANISH_USERINFO, **id_token)
-    stub_france_connect(userinfo:)
-    post admin_demo_identification_path
-    departure = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+  def identify_demo_user(userinfo: DANISH_USERINFO, instance: nil, **id_token)
+    instance = stub_france_connect(userinfo:, instance:)
+    departure = depart_from_demo_home(instance)
 
-    stub_france_connect_tokens(france_connect_id_token_claims(nonce: departure.fetch('nonce'), **id_token))
+    stub_france_connect_tokens(granted_id_token(instance, departure, id_token), issuer: instance.issuer)
 
     get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+  end
+
+  # The card of one FranceConnect+, submitted as the home page submits it — the
+  # name travels in the body, and nothing else says where the flow departs — and
+  # what the departure was written with, read off the address the browser is
+  # sent to rather than out of the session.
+  def depart_from_demo_home(instance)
+    post admin_demo_identification_path, params: { france_connect: instance.name }
+
+    URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+  end
+
+  def granted_id_token(instance, departure, overrides)
+    france_connect_id_token_claims(iss: instance.issuer, aud: instance.client_id,
+      nonce: departure.fetch('nonce'), **overrides)
   end
 
   # The document as the portal publishes it, every endpoint built on `PATHS`:

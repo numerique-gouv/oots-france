@@ -19,8 +19,8 @@ Quand('l\'administrateur ouvre la démarche de démonstration') do
   @navigateur.visit('/admin/demo')
 end
 
-Quand('il clique sur le bouton de la cinématique européenne') do
-  @navigateur.start_identification
+Quand('il choisit la carte du faux FranceConnect+') do
+  @navigateur.start_identification('fake')
 end
 
 Alors('l\'administrateur arrive sur la page de choix du pays') do
@@ -42,7 +42,7 @@ end
 # The whole flow, for the scenarios that are about what comes after it.
 Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |cle|
   @navigateur.visit('/admin/demo')
-  @navigateur.start_identification
+  @navigateur.start_identification('fake')
   @navigateur.choose('country', 'DK')
   @navigateur.choose('identity', cle)
   @navigateur.choose('consent', 'yes')

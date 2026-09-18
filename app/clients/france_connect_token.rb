@@ -19,7 +19,10 @@ class FranceConnectToken
   # management algorithms it accepts.
   CONTENT_ENCRYPTION = 'A256GCM'.freeze
 
-  def initialize(client: FranceConnectClient.new, key_fetcher: JwksFetcher.new)
+  # The client is named and never defaulted: it carries which FranceConnect+
+  # this token came from, and the published keys that verify it are that
+  # portal's alone.
+  def initialize(client:, key_fetcher: JwksFetcher.new)
     @client = client
     @key_fetcher = key_fetcher
   end

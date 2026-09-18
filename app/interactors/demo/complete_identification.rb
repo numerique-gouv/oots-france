@@ -10,6 +10,7 @@ module Demo
     def call
       refuse_announced_refusal
       check_state
+      check_instance
 
       context.identity = identity_behind(client.exchange(context.code))
     rescue FranceConnectError, Faraday::Error => e
@@ -27,7 +28,12 @@ module Demo
       accepted(claims, userinfo, signed_id_token)
     end
 
-    def client = context.client ||= FranceConnectClient.new
+    def client = context.client ||= FranceConnectClient.new(instance:)
+
+    # The FranceConnect+ this return departed on, named by the session and
+    # looked up among those the deployment declares — never taken from what
+    # came back, which is the correspondent's word about itself.
+    def instance = context.instance ||= Settings.france_connect_instance(expected[:name])
 
     def token = context.token ||= FranceConnectToken.new(client:)
 
@@ -51,6 +57,18 @@ module Demo
       return if matches?(expected[:state], context.state)
 
       refuse(I18n.t('interactors.demo.complete_identification.unexpected_state'))
+    end
+
+    # The departure named a FranceConnect+ this deployment no longer declares —
+    # a session written when it still did, or a departure that never happened.
+    # Refused here, before the code is exchanged with anyone: there is no
+    # correspondent to present it to, and choosing one would be choosing for the
+    # session.
+    def check_instance
+      return unless instance.nil?
+
+      refuse(I18n.t('interactors.demo.complete_identification.undeclared_france_connect',
+        name: expected[:name].presence || I18n.t('interactors.demo.complete_identification.unnamed_france_connect')))
     end
 
     # Present, and equal in constant time: the two values that tie a return to
@@ -95,7 +113,8 @@ module Demo
     end
 
     def accepted(claims, userinfo, signed_id_token)
-      identity = FranceConnectIdentity.new(id_token: claims, userinfo:, signed_id_token:).identity
+      identity = FranceConnectIdentity.new(id_token: claims, userinfo:, signed_id_token:,
+        france_connect: instance.name).identity
       return identity if identity.valid?
 
       refuse(identity.errors.full_messages.join(', '))

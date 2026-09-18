@@ -1,6 +1,7 @@
 module Demo
-  # Opens the European flow of FranceConnect+: it draws what will tie the return
-  # to this departure, and builds the `/authorize` address the browser is sent to.
+  # Opens the European flow of the FranceConnect+ the departure names: it draws
+  # what will tie the return to this departure, and builds the `/authorize`
+  # address the browser is sent to.
   #
   # It draws and does not store: the two values belong to the session, and a
   # session is the controller's to touch.
@@ -27,6 +28,6 @@ module Demo
 
     private
 
-    def client = context.client ||= FranceConnectClient.new
+    def client = context.client ||= FranceConnectClient.new(instance: context.instance)
   end
 end

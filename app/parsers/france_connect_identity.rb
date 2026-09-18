@@ -41,17 +41,21 @@ class FranceConnectIdentity
     ranks.none?(&:nil?) && ranks.first >= ranks.last
   end
 
-  def initialize(id_token:, userinfo:, signed_id_token:)
+  # `france_connect` is the one thing here that comes from neither document: it
+  # is which FranceConnect+ was asked, and only the caller knows that — the
+  # portal says nothing of the name a deployment declares it under.
+  def initialize(id_token:, userinfo:, signed_id_token:, france_connect:)
     @id_token = id_token
     @userinfo = userinfo
     @signed_id_token = signed_id_token
+    @france_connect = france_connect
   end
 
-  def identity = Demo::UserIdentity.new(**attested, **declared)
+  def identity = Demo::UserIdentity.new(france_connect:, **attested, **declared)
 
   private
 
-  attr_reader :id_token, :userinfo, :signed_id_token
+  attr_reader :id_token, :userinfo, :signed_id_token, :france_connect
 
   # What the authentication itself says, all of it read from the ID Token: the
   # level reached, the path taken, the pseudonym, and the token that ends the

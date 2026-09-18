@@ -14,6 +14,8 @@ module Settings
       reject_unless_whole
       reject_unless_lawful_retention
       reject_unless_timeouts_ordered
+      reject_unless_france_connect_whole
+      reject_unless_a_france_connect_declared
       reject_unless_france_connect_algorithm
       reject_unless_demo_signing_curve
     end
@@ -28,7 +30,7 @@ module Settings
     def reject_unless_evidence_request_switch_readable = Settings.evidence_request_enabled?
 
     def reject_unless_present
-      missing = with_timeouts(REQUIRED).reject { |name| ENV.fetch(name, nil).to_s.strip.present? }
+      missing = with_timeouts(REQUIRED).reject { |name| filled?(name) }
       return if missing.empty?
 
       refuse(I18n.t('lib.settings.missing', names: missing.join(', ')))
@@ -74,6 +76,44 @@ module Settings
 
       refuse(I18n.t('lib.settings.timeouts_out_of_order', requester:, provider:))
     end
+
+    # A FranceConnect+ is declared by its three variables, or not at all: one
+    # begun and left with holes would serve a card leading to a refusal known in
+    # advance, or none at all without a word. The refusal names every variable
+    # the declaration lacks, so that a file with an issuer and no credentials is
+    # corrected in one pass.
+    def reject_unless_france_connect_whole
+      holes = FRANCE_CONNECT.each_value.select { |variables| partly_declared?(variables) }
+        .flat_map { |variables| variables.each_value.reject { |name| filled?(name) } }
+      return if holes.empty?
+
+      refuse(I18n.t('lib.settings.france_connect_incomplete', names: holes.join(', ')))
+    end
+
+    # And the demonstration needs one of them: neither is in REQUIRED, a
+    # deployment declaring the fake, the real one, or both, so what is mandatory
+    # is that at least one be there.
+    #
+    # After the rule above, which has already refused a declaration with holes:
+    # what is left is the file that declares nothing at all, and the refusal
+    # names the six to choose three from.
+    def reject_unless_a_france_connect_declared
+      return if FRANCE_CONNECT.each_value.any? { |variables| complete?(variables) }
+
+      refuse(I18n.t('lib.settings.france_connect_absent',
+        names: FRANCE_CONNECT.each_value.flat_map(&:values).join(', ')))
+    end
+
+    # Some of its three filled and not all: a declaration begun and left
+    # unfinished, which is the only shape the rule above refuses — all three, or
+    # none of them, are both legitimate.
+    def partly_declared?(variables)
+      !complete?(variables) && variables.each_value.any? { |name| filled?(name) }
+    end
+
+    def complete?(variables) = variables.each_value.all? { |name| filled?(name) }
+
+    def filled?(name) = ENV.fetch(name, nil).to_s.strip.present?
 
     # `FRANCE_CONNECT_KEY_ALGORITHMS` says which two are admitted, and why they
     # are refused here rather than at the exchange.

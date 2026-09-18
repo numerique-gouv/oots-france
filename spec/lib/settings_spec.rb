@@ -92,6 +92,84 @@ RSpec.describe Settings do
   # configured to a value that exceeds the timeout interval of the Data
   # Service ». Set the other way round, this side gives up while the
   # correspondent may still answer.
+  # A FranceConnect+ is declared by its three variables, and the demonstration
+  # needs one declared to offer anything at all. Neither is in REQUIRED: a
+  # deployment declares the fake, the real one, or both.
+  describe 'the FranceConnect+ a deployment declares' do
+    def only_the_real
+      filled.merge(no_france_connect).merge(Settings::FRANCE_CONNECT.fetch('real').each_value.index_with { 'valeur' })
+    end
+
+    # CA3: a card served in silence on a configuration that declares nothing
+    # would lead to a refusal known in advance, and none at all would leave the
+    # demonstration with no way in and nothing said about it.
+    it 'refuses a configuration that declares none, naming the six variables' do
+      with_environment(filled.merge(no_france_connect)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('Aucun FranceConnect+ déclaré',
+            *Settings::FRANCE_CONNECT.each_value.flat_map(&:values))
+        end
+      end
+    end
+
+    # CA13: an issuer without its credentials is a declaration begun and left
+    # with holes, which the start refuses rather than serving half of.
+    it 'refuses a declaration with holes, naming every variable it lacks at once' do
+      with_environment(only_the_real.merge('SECRET_CLIENT_VRAI_FRANCE_CONNECT' => '',
+        'IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT' => '')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('SECRET_CLIENT_VRAI_FRANCE_CONNECT',
+            'IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT')
+        end
+      end
+    end
+
+    # CA14: an installation whose `.env.oots` predates the two sets of names
+    # carries `URL_FAUX_FRANCE_CONNECT` and neither credential — a declaration
+    # with holes, and the refusal names the two to add rather than starting on a
+    # deployment that would offer no card.
+    it 'refuses a file written before the two sets of names, naming the credentials it lacks' do
+      ancien = filled.merge(no_france_connect)
+        .merge('URL_FAUX_FRANCE_CONNECT' => 'http://localhost:3100/api/v2')
+
+      with_environment(ancien) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT',
+            'SECRET_CLIENT_FAUX_FRANCE_CONNECT')
+        end
+      end
+    end
+
+    it 'is content with one of the two declared in full' do
+      with_environment(only_the_real) do
+        expect { described_class.verify! }.not_to raise_error
+      end
+    end
+
+    it 'reads the declared ones in the order the home page offers them' do
+      with_environment(filled.merge(Settings::FRANCE_CONNECT.fetch('real').each_value.index_with { 'valeur' })) do
+        expect(described_class.france_connect_instances.map(&:name)).to eq(%w[fake real])
+      end
+    end
+
+    it 'reads one by its name, and answers nothing for a name it does not declare' do
+      with_environment(only_the_real) do
+        expect(described_class.france_connect_instance('real'))
+          .to have_attributes(issuer: 'valeur', client_id: 'valeur', client_secret: 'valeur')
+        expect(described_class.france_connect_instance('fake')).to be_nil
+        expect(described_class.france_connect_instance('un-nom-invente')).to be_nil
+      end
+    end
+
+    # The issuer is the base every endpoint is rebuilt on, so a trailing slash
+    # would double the one the published path carries.
+    it 'reads an issuer without its trailing slash' do
+      with_environment(only_the_real.merge('URL_VRAI_FRANCE_CONNECT' => 'https://auth.test/api/v2/')) do
+        expect(described_class.france_connect_instance('real').issuer).to eq('https://auth.test/api/v2')
+      end
+    end
+  end
+
   describe 'the two expiry intervals' do
     # The switch is posed rather than left absent: the two answer the same, and a
     # rule that only ever meets the absent one proves half of what it says.

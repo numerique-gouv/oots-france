@@ -49,7 +49,7 @@ ignore_unused:
   - activemodel.attributes.resolution_filter.{procedure_code,country_code,requirement_id,evidence_type_id}
   - activemodel.attributes.audit_event_filter.{event_type,exchange_id,conversation_id,country_code,evidence_requester_id,procedure_code,depuis,jusqu_a}
   - activemodel.attributes.subject_search.{family_name,given_name,date_of_birth,legal_person_identifier}
-  - activemodel.attributes.demo/user_identity.{given_name,family_name,birthdate,eidas_identifier,level_of_assurance,gender,place_of_birth,subject,id_token}
+  - activemodel.attributes.demo/user_identity.{given_name,family_name,birthdate,eidas_identifier,level_of_assurance,gender,place_of_birth,subject,id_token,france_connect}
   - activemodel.errors.models.address.attributes.country.format
   - activemodel.errors.models.natural_person.attributes.{date_of_birth,eidas_identifier}.format
   - activemodel.errors.models.natural_person.attributes.{level_of_assurance,gender}.inclusion
@@ -78,6 +78,9 @@ ignore_unused:
   - interactors.failures.*
   # Composé du code que FranceConnect+ publie pour le sexe d'un usager européen.
   - presenters.demo_identity.genders.*
+  # Composé du nom sous lequel `Settings::FRANCE_CONNECT` déclare chacun des
+  # FranceConnect+, l'accueil de la démarche servant une carte par déclaration.
+  - admin.demo.home.show.france_connect.*
   # Composé du document dont on demande la forme, comme les sujets de
   # `strict_validation` juste au-dessus.
   - clients.france_connect_answer.subjects.*

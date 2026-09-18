@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Demo::StartIdentification do
-  subject(:result) { described_class.call }
+  subject(:result) { described_class.call(instance: fake_france_connect) }
 
   before { stub_france_connect }
 
@@ -21,7 +21,7 @@ RSpec.describe Demo::StartIdentification do
   end
 
   it 'draws a new pair on every departure' do
-    expect(described_class.call.state).not_to eq(result.state)
+    expect(described_class.call(instance: fake_france_connect).state).not_to eq(result.state)
   end
 
   it 'refuses a discovery document that publishes no authorization endpoint' do

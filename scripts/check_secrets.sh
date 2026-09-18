@@ -168,9 +168,9 @@ for nom in $NOMS $RECOPIES; do
 done
 
 # The credentials of the fake FranceConnect+ are constants of the repository,
-# and legitimately kept as long as the fake is the issuer. Emptying
-# URL_FAUX_FRANCE_CONNECT is precisely how a deployment says it faces the real
-# one — which then knows this client by a secret it delivered itself.
+# and legitimately kept: they are the fake's, and a deployment declares the fake
+# and the real one side by side. What must never be kept is one of them in front
+# of the real FranceConnect+, which delivers a secret of its own.
 if contient .env.oots "$INSTALLES"; then
   # The other half of « both or neither ». A username emptied by hand, next to
   # the password a run engendered, is the pair broken the way no comparison
@@ -183,9 +183,14 @@ if contient .env.oots "$INSTALLES"; then
     signale "❌ .env.oots : MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES est posé sans UTILISATEUR_APPLICATIF_BASE_DE_DONNEES."
   fi
 
-  if [ -z "$(valeur URL_FAUX_FRANCE_CONNECT .env.oots)" ] &&
-     [ "$(valeur SECRET_CLIENT_FRANCE_CONNECT .env.oots)" = "$(valeur SECRET_CLIENT_FRANCE_CONNECT .env.oots.template)" ]; then
-    signale "❌ .env.oots : SECRET_CLIENT_FRANCE_CONNECT est celui du faux FranceConnect+, devant le vrai."
+  # The real FranceConnect+ declared with the secret the template publishes for
+  # the fake: that value is versioned in this repository, and whoever reads it
+  # can present themselves to the real portal as this deployment. The issuer is
+  # what says the real one is declared at all — an empty one declares nothing,
+  # and its credentials are then read by nobody.
+  if [ -n "$(valeur URL_VRAI_FRANCE_CONNECT .env.oots)" ] &&
+     [ "$(valeur SECRET_CLIENT_VRAI_FRANCE_CONNECT .env.oots)" = "$(valeur SECRET_CLIENT_FAUX_FRANCE_CONNECT .env.oots.template)" ]; then
+    signale "❌ .env.oots : SECRET_CLIENT_VRAI_FRANCE_CONNECT porte le secret que .env.oots.template publie pour le faux FranceConnect+."
   fi
 
   # No template declares either, for the reason SANS_GABARIT gives. So this is

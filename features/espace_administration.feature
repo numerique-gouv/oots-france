@@ -44,6 +44,7 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
     Alors la fiche affiche le sens "Reçu"
 
   Scénario: la démarche de démonstration s'ouvre depuis le menu
+    Étant donné le faux FranceConnect+ déclaré par la France
     Quand l'administrateur suit l'entrée « Démo » du menu
     Alors la page d'accueil de la démarche de démonstration s'affiche
     Et la page propose de s'identifier avec une identité d'un autre État membre

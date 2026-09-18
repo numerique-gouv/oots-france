@@ -13,7 +13,11 @@ module Admin
       # this page is for is the way in, and that way needs no directory.
       rescue_from CommonServicesError, with: :stand_without_the_directories
 
+      # One card per FranceConnect+ this deployment declares, in the order
+      # `Settings::FRANCE_CONNECT` writes them: a card for one that is not
+      # declared would lead to a refusal known in advance.
       def show
+        @france_connect_instances = Settings.france_connect_instances
         @wording = wording(requirements)
       end
 

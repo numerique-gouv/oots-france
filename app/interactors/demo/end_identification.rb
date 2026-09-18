@@ -1,6 +1,7 @@
 module Demo
-  # Ends the FranceConnect+ session that attested the identity, the other half
-  # of `StartIdentification`: it draws the `state` the return will be checked
+  # Ends the session of the FranceConnect+ that attested the identity — the one
+  # the caller hands over, and never the other — the other half of
+  # `StartIdentification`: it draws the `state` the return will be checked
   # against, and builds the `/session/end` address the browser is sent to.
   #
   # It draws and does not store, for the reason its sibling gives: a session is
@@ -25,6 +26,6 @@ module Demo
 
     private
 
-    def client = context.client ||= FranceConnectClient.new
+    def client = context.client ||= FranceConnectClient.new(instance: context.instance)
   end
 end

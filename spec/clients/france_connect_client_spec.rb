@@ -1,31 +1,32 @@
 require 'rails_helper'
 
 RSpec.describe FranceConnectClient do
-  subject(:client) { described_class.new }
+  subject(:client) { described_class.new(instance: fake_france_connect) }
 
   before { stub_france_connect }
 
   # Every address comes from the discovery document and none is built here:
   # that is what makes the sandbox, the production and the fake a change of
-  # environment rather than of code.
+  # configuration rather than of code.
   describe 'what it knows of FranceConnect+' do
     it 'reads the issuer and the key set from the document it publishes' do
       expect(client.issuer).to eq(FranceConnectStubs::ISSUER)
       expect(client.jwks_url).to eq(FranceConnectStubs::JWKS_URL)
     end
 
-    # Three variables separate the fake, the sandbox and the production, so a
-    # cached document must be the one its issuer published: keyed on nothing
-    # else, it would serve the fake's endpoints to a deployment pointed at the
-    # sandbox, where the check above then refuses them as foreign — and an
-    # operator has no way of guessing that a cache is what stands in the way.
-    it 'never serves the document of one issuer to a deployment configured on another' do
+    # Three variables separate the fake, the sandbox and the production, and a
+    # deployment declares two of them at once: a cached document must be the one
+    # its issuer published. Keyed on nothing else, it would serve the fake's
+    # endpoints to a client built on the real one, where the check above then
+    # refuses them as foreign — and an operator has no way of guessing that a
+    # cache is what stands in the way.
+    it 'never serves the document of one issuer to a client built on another' do
       allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
-      stub_france_connect(issuer: 'http://ancien-franceconnect.test/api/v2')
-      described_class.new.authorization_url(state: 's' * 32, nonce: 'n' * 32)
+      real = stub_real_france_connect
+      described_class.new(instance: real).authorization_url(state: 's' * 32, nonce: 'n' * 32)
 
-      stub_france_connect
-      address = described_class.new.authorization_url(state: 's' * 32, nonce: 'n' * 32)
+      address = described_class.new(instance: fake_france_connect)
+        .authorization_url(state: 's' * 32, nonce: 'n' * 32)
 
       expect(address).to start_with(FranceConnectStubs::AUTHORIZATION_ENDPOINT)
       expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).to have_been_made
@@ -200,6 +201,21 @@ RSpec.describe FranceConnectClient do
             ['authorization_code', 'un-code', 'oots-france-demarche', 'secret-de-la-demarche',
              client.redirect_uri]
         end
+      end).to have_been_made
+    end
+
+    # Ce que le portail lit pour décider si c'est bien nous : présenté au vrai,
+    # le secret du faux n'ouvre rien, et un client qui les confondrait enverrait
+    # un secret public du dépôt à un correspondant qui n'en veut pas.
+    it 'presents the credentials of the FranceConnect+ it was built on, and never the other pair' do
+      stub_real_france_connect
+      stub_france_connect_tokens(france_connect_id_token_claims, issuer: FranceConnectStubs::REAL_ISSUER)
+
+      described_class.new(instance: real_france_connect).exchange('un-code')
+
+      expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token").with do |request|
+        URI.decode_www_form(request.body).to_h.values_at('client_id', 'client_secret') ==
+          [FranceConnectStubs::REAL_CLIENT_ID, FranceConnectStubs::REAL_CLIENT_SECRET]
       end).to have_been_made
     end
 

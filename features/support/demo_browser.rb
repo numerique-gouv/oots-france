@@ -47,9 +47,11 @@ class DemoBrowser
 
   def visit(path) = follow(get("#{procedure_url}#{path}"))
 
-  # The one button that starts everything: what follows crosses to the portal and
-  # comes back on its own.
-  def start_identification = submit_to('/admin/demo/identification')
+  # The button of one card, which is what starts everything: what follows
+  # crosses to the portal and comes back on its own. The card is named rather
+  # than the address it submits to, every card submitting to the same one — and
+  # the first of them is not necessarily the one the scenario means.
+  def start_identification(france_connect) = send_form(card_of(france_connect))
 
   # The three pages of the European path, each submitted where the page itself
   # says to.
@@ -102,6 +104,11 @@ class DemoBrowser
     document.at_css('form') || raise("Aucun formulaire dans la page « #{title} » : #{body}")
   end
 
+  def card_of(france_connect)
+    document.css('form').find { |form| form.at_css("input[name=france_connect][value='#{france_connect}']") } ||
+      raise("Aucune carte du FranceConnect+ « #{france_connect} » dans la page « #{title} » : #{body}")
+  end
+
   def form_posting_to(path)
     document.css('form').find { |form| URI.parse(form['action'].to_s).path == path } ||
       raise("Aucun formulaire vers #{path} dans la page « #{title} » : #{body}")
@@ -110,7 +117,7 @@ class DemoBrowser
   # The hidden fields first, the scenario's own values second: what a form
   # carries — the CSRF token, the `_method` of a non-POST button — travels
   # exactly as the page wrote it.
-  def send_form(form, fields)
+  def send_form(form, fields = {})
     parameters = form.css('input[type=hidden]').to_h { |input| [input['name'], input['value']] }
 
     follow(post(absolute(form['action']), parameters.merge(fields.transform_keys(&:to_s))))
