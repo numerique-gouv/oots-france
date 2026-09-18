@@ -23,6 +23,15 @@ module BrowserFranceConnectStubs
     stub_browser_france_connect_tokens(issuer)
   end
 
+  # The button of one card, designated by the FranceConnect+ its form names.
+  # Every card carries the same visible label, being the one FranceConnect+
+  # gives its European flow, so what tells them apart on the page is the
+  # accessible name — and here, the name the form submits.
+  def sign_in_from_card(name)
+    page.find(:xpath, "//form[input[@name='france_connect' and @value='#{name}']]")
+      .click_button(I18n.t('admin.demo.home.show.sign_in'))
+  end
+
   # The one double that cannot be shared. The block is evaluated when the
   # application calls, in this same process, so it sees the `nonce` the
   # authorization endpoint has just retained; a body fixed beforehand would have

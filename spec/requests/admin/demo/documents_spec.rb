@@ -69,6 +69,19 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(card.css('input, select, textarea')).to be_empty
     end
 
+    # CA10: the demonstration is the same from either card — the same identity
+    # shown, the same requirements, the same request zones. Which FranceConnect+
+    # attested is held in the session and said nowhere on this page.
+    it 'shows the same page whichever FranceConnect+ attested the identity' do
+      get admin_demo_documents_path
+      by_the_fake = response.parsed_body.at_css('main').text.squish
+
+      identify_demo_user(instance: real_france_connect)
+      get admin_demo_documents_path
+
+      expect(response.parsed_body.at_css('main').text.squish).to eq(by_the_fake)
+    end
+
     # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
     # showing it beside a missing eIDAS identifier would invite taking it for
     # one.

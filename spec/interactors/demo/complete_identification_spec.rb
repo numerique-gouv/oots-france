@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Demo::CompleteIdentification do
   subject(:result) { described_class.call(code: 'un-code', state: 'l-etat-de-depart', expected:) }
 
-  let(:expected) { { state: 'l-etat-de-depart', nonce: 'le-nonce-de-depart' } }
+  let(:expected) { { state: 'l-etat-de-depart', nonce: 'le-nonce-de-depart', name: 'fake' } }
 
   before do
     stub_france_connect
@@ -48,6 +48,27 @@ RSpec.describe Demo::CompleteIdentification do
     it 'refuses a return whose state is not the one this session departed on' do
       expect(described_class.call(code: 'un-code', state: 'un-autre-etat', expected:))
         .to be_a_failure
+    end
+
+    # Une session écrite sans nom de FranceConnect+ : il n'y a personne à qui
+    # présenter le code, et en choisir un serait choisir à la place de la
+    # session. Le refus le dit plutôt que de laisser un nom vide dans sa phrase.
+    it 'refuses a departure that named no FranceConnect+ at all' do
+      refused = described_class.call(code: 'un-code', state: 'l-etat-de-depart',
+        expected: expected.except(:name))
+
+      expect(refused).to be_a_failure
+      expect(refused.error[:errors].join).to include('non nommé')
+      expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
+    end
+
+    it 'refuses a departure naming a FranceConnect+ this deployment does not declare' do
+      refused = described_class.call(code: 'un-code', state: 'l-etat-de-depart',
+        expected: expected.merge(name: 'real'))
+
+      expect(refused).to be_a_failure
+      expect(refused.error[:errors].join).to include('real')
+      expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
     end
 
     # The flash cannot be read back after the fact, and several of these

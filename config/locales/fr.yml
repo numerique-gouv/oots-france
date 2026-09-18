@@ -90,6 +90,7 @@ fr:
         place_of_birth: Le lieu de naissance
         subject: L'identifiant FranceConnect+
         id_token: L'ID Token
+        france_connect: Le FranceConnect+ ayant attesté l'identité
     errors:
       models:
         address:
@@ -516,6 +517,13 @@ fr:
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
         home:
           no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
+      # Écrit dans le log et nulle part ailleurs : l'exploitant est déconnecté
+      # quoi qu'il arrive, et rien à l'écran ne distinguerait une session
+      # FranceConnect+ close d'une session laissée ouverte faute de savoir à qui
+      # la demander. Même trace que le portail injoignable, que
+      # `Demo::EndIdentification` écrit pour lui-même.
+      sessions:
+        france_connect_undeclared: "Session FranceConnect+ non close : l'identité avait été attestée par « %{name} », que ce déploiement ne déclare plus."
     # Écrit dans le log et nulle part ailleurs. La zone dit déjà la panne à
     # l'usager dans ses propres mots ; ce que le log garde, c'est qu'elle a eu
     # lieu — le client qui lève l'erreur ne journalise pas, laissant la trace à
@@ -551,6 +559,12 @@ fr:
       france_connect_algorithm: "La clé de la démarche déclare l'algorithme « %{algorithm} » : FranceConnect+ n'accepte que %{expected}."
       france_connect_algorithm_absent: "La clé de la démarche ne déclare aucun algorithme : FranceConnect+ n'accepte que %{expected}, et une clé JWK n'en porte un que si on l'y écrit."
       france_connect_key_unreadable: "CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
+      # Un FranceConnect+ se déclare par ses trois variables, et la démarche en
+      # veut au moins un. Les deux refus nomment toutes les variables en cause
+      # d'un coup : en corriger une pour découvrir la suivante au déploiement
+      # d'après est l'aller-retour que ce contrôle existe pour épargner.
+      france_connect_incomplete: "Déclaration de FranceConnect+ à trous : il manque %{names}. Un FranceConnect+ se déclare par son issuer et ses deux identifiants, ou pas du tout."
+      france_connect_absent: "Aucun FranceConnect+ déclaré : la démarche de démonstration n'aurait aucune manière de s'identifier. Renseigner les trois variables de l'un au moins parmi %{names}."
       demo_signing_key_unreadable: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
       # Le jeton du bénéficiaire ne se signe qu'en ES256, et ES256 n'existe que
       # sur P-256 : une clé d'un autre type échouerait à la première signature,
@@ -1481,6 +1495,13 @@ fr:
         no_description: sans autre explication.
         unexpected_state: >-
           Ce retour ne correspond à aucune identification demandée depuis ce navigateur.
+        # Le départ nommait un FranceConnect+ que le déploiement ne déclare
+        # plus : une session écrite quand il l'était encore, ou un départ forgé.
+        # Refusé avant tout échange du code — il n'y a personne à qui le
+        # présenter, et en choisir un serait choisir à la place de la session.
+        undeclared_france_connect: >-
+          Ce retour vient d'un FranceConnect+ que ce déploiement ne déclare pas (%{name}).
+        unnamed_france_connect: non nommé
         unexpected_nonce: >-
           L'ID Token ne porte pas le nonce de l'appel : il ne répond pas à cette identification.
         level_too_low: "Le niveau de garantie obtenu (%{reached}) est inférieur à celui demandé (%{requested})."
@@ -1825,7 +1846,33 @@ fr:
           # Le drapeau est dans la phrase et non dans le gabarit : le DSFR n'a
           # pas d'icône pour lui, et un lecteur d'écran le nomme comme il nomme
           # un mot.
+          #
+          # Le même sur chaque carte : ce qui distingue les deux boutons est
+          # leur nom accessible, ci-dessous.
           sign_in: 🇪🇺 Sign-in from another European country
+          # Le nom accessible du bouton d'une carte, que le critère 11.9 du RGAA
+          # réclame — deux boutons de même intitulé menant à deux endroits ne
+          # sont pas « pertinents » l'un sans l'autre. Il enveloppe le libellé
+          # visible plutôt que de le remplacer : la WCAG 2.5.3 veut que le nom
+          # accessible contienne le texte lu, faute de quoi la commande vocale
+          # ne trouve plus le bouton. La colle vit dans la clé, jamais entre
+          # deux fragments.
+          sign_in_named: "%{label}, with %{provider}"
+          # Un titre et une phrase par FranceConnect+ que le déploiement peut
+          # déclarer, sous le nom que `Settings::FRANCE_CONNECT` lui donne : la
+          # vue en dérive la clé, d'où leur présence dans `ignore_unused` de
+          # config/i18n-tasks.yml. En anglais comme le reste de la page.
+          france_connect:
+            fake:
+              title: Fake FranceConnect+
+              lead: >-
+                The stand-in this deployment runs itself: choose a country and a test identity, no
+                account needed.
+            real:
+              title: FranceConnect+
+              lead: >-
+                FranceConnect+ as this deployment is registered with it, sandbox or production, and
+                its eIDAS bridge.
       # La deuxième page du parcours : l'identité que l'authentification a
       # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
       # « before any request is made » — le nom du fournisseur et le type de

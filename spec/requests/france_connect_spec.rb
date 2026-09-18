@@ -68,10 +68,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
     def departure_of_a_real_identification
       stub_code_list
       stub_demonstration_requirements
-      stub_france_connect
-
-      post admin_demo_identification_path
-      URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+      depart_from_demo_home(stub_france_connect)
     end
 
     it 'holds the identity and hands the operator to the form' do
@@ -79,6 +76,77 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
 
       expect(response).to redirect_to(admin_demo_documents_path)
       expect(session[:demo_identity].symbolize_keys).to include(family_name: 'Sørensen')
+    end
+
+    # CA5: the return is addressed to the FranceConnect+ the departure was made
+    # on, all the way through — the code exchanged there, the UserInfo read
+    # there, the `iss` checked against that issuer.
+    it 'exchanges the code and reads the UserInfo where the departure was made, and nowhere else' do
+      identify_demo_user(instance: real_france_connect)
+
+      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).to have_been_made
+      expect(a_request(:get, "#{FranceConnectStubs::REAL_ISSUER}/userinfo")).to have_been_made
+      expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
+      expect(a_request(:get, FranceConnectStubs::USERINFO_ENDPOINT)).not_to have_been_made
+    end
+
+    # L'autre sens, les deux déclarés : ce que la carte du faux ouvre ne peut pas
+    # plus atteindre le vrai que l'inverse.
+    it 'exchanges and reads the UserInfo on the fake when the departure was made there, the real declared too' do
+      stub_real_france_connect
+      identify_demo_user
+
+      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).to have_been_made
+      expect(a_request(:get, FranceConnectStubs::USERINFO_ENDPOINT)).to have_been_made
+      expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).not_to have_been_made
+      expect(a_request(:get, "#{FranceConnectStubs::REAL_ISSUER}/userinfo")).not_to have_been_made
+    end
+
+    it 'holds which FranceConnect+ attested the identity, so the sign-out knows whose session to end' do
+      identify_demo_user(instance: real_france_connect)
+
+      expect(session[:demo_identity].symbolize_keys).to include(france_connect: 'real')
+    end
+
+    # The issuer is compared to the one this departure was made on, never to
+    # whichever of the two the token names: an ID Token from the other portal
+    # attests an authentication nobody here asked for.
+    it 'refuses an ID Token bearing the issuer of the other FranceConnect+' do
+      stub_code_list
+      stub_demonstration_requirements
+      identify_demo_user(instance: real_france_connect, iss: FranceConnectStubs::ISSUER)
+
+      expect(response).to redirect_to(admin_demo_root_path)
+      expect(session[:demo_identity]).to be_nil
+    end
+
+    # Et symétriquement : l'issuer attendu est celui du départ, quel qu'il soit.
+    it 'refuses an ID Token bearing the issuer of the real one when the departure was made on the fake' do
+      stub_code_list
+      stub_demonstration_requirements
+      stub_real_france_connect
+      identify_demo_user(iss: FranceConnectStubs::REAL_ISSUER)
+
+      expect(response).to redirect_to(admin_demo_root_path)
+      expect(session[:demo_identity]).to be_nil
+    end
+
+    # A session written when the deployment still declared that FranceConnect+,
+    # or a departure forged: there is no correspondent to present the code to,
+    # and choosing one would be choosing for the session.
+    it 'refuses a return whose departure named a FranceConnect+ no longer declared' do
+      stub_code_list
+      stub_demonstration_requirements
+      departure = depart_from_demo_home(stub_real_france_connect)
+      undeclare_france_connect('real')
+
+      get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+
+      expect(response).to redirect_to(admin_demo_root_path)
+      expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).not_to have_been_made
+      expect(session[:demo_identity]).to be_nil
     end
 
     # An authorization code is single use: leaving in the history a page that

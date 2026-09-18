@@ -11,15 +11,20 @@ require 'rspec/mocks'
 # the console has a screen for cannot be served through the whole client any
 # other way, and `spec/` already answers this exact problem this exact way.
 #
-# The lifecycle is opened for the tagged scenarios alone. Elsewhere `allow`
-# raises rather than silently doing nothing, which is what keeps the scope
-# honest: `@bout_en_bout` verifies every signature against the real directories,
-# and that is the whole point there.
+# It is also what lets a scenario say which FranceConnect+ this deployment
+# declares, rather than depending on what the `.env.oots` of the machine
+# carries: `Settings` is the one reader of that, and forcing it is how the
+# scenario states it.
+#
+# Everywhere but `@bout_en_bout`, where `allow` raises rather than silently
+# doing nothing — and that is what keeps the scope honest: those scenarios
+# verify every signature against the real directories and walk the real
+# configuration, which is the whole point there.
 World(RSpec::Mocks::ExampleMethods)
 
-Before('@javascript') { RSpec::Mocks.setup }
+Before('not @bout_en_bout') { RSpec::Mocks.setup }
 
-After('@javascript') do
+After('not @bout_en_bout') do
   RSpec::Mocks.verify
 ensure
   RSpec::Mocks.teardown

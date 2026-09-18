@@ -4,8 +4,9 @@ module Demo
   # Not a `NaturalPerson`: that one is the subject a request is *about*, read
   # from a beneficiary token and written into an ebMS message. This one is what
   # an authentication attested — it carries the pseudonym FranceConnect+ hands
-  # each service provider, the ID Token that ends the session, and where the
-  # identity came from, none of which a request has any use for. The overlap is
+  # each service provider, the ID Token that ends the session, which
+  # FranceConnect+ attested it, and where the identity came from, none of which
+  # a request has any use for. The overlap is
   # the minimum data set, and it is held here in the vocabulary FranceConnect+
   # publishes it in; translating it is the requester's job, at the other end of
   # the beneficiary token.
@@ -33,9 +34,14 @@ module Demo
     attribute :provenance, :string
     attribute :subject, :string
     attribute :id_token, :string
+    # Which FranceConnect+ attested this identity, by the name
+    # `Settings::FRANCE_CONNECT` declares it under. Mandatory like the ID Token
+    # and for its reason: the sign-out happens minutes later, and the session is
+    # all that is left to say whose session to end.
+    attribute :france_connect, :string
 
     validates :given_name, :family_name, :birthdate, :level_of_assurance, :subject, :id_token,
-      presence: true
+      :france_connect, presence: true
     # `R-EDM-REQ-C036` and `C037` (both FATAL): the level travels in the request
     # and belongs to `LevelsOfAssurance-CodeList`. Read from `NaturalPerson`,
     # which already holds the three codes for the other direction.

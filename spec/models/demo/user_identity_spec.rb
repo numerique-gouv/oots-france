@@ -5,7 +5,8 @@ RSpec.describe Demo::UserIdentity do
 
   let(:attributes) do
     { given_name: 'Freja Marie', family_name: 'Sørensen', birthdate: '2001-04-17',
-      level_of_assurance: 'Substantial', subject: 'un-pseudonyme', id_token: 'le-jeton-signe' }
+      level_of_assurance: 'Substantial', subject: 'un-pseudonyme', id_token: 'le-jeton-signe',
+      france_connect: 'fake' }
   end
 
   it 'is valid on the minimum data set alone, with no identifier' do
@@ -13,7 +14,10 @@ RSpec.describe Demo::UserIdentity do
     expect(identity).not_to be_identified
   end
 
-  %i[given_name family_name birthdate level_of_assurance subject id_token].each do |attribute|
+  # `france_connect` among them: the sign-out happens minutes after the
+  # identification, and the session is all that is left to say whose session to
+  # end. An identity that has forgotten it is one this code no longer reads.
+  %i[given_name family_name birthdate level_of_assurance subject id_token france_connect].each do |attribute|
     it "refuses an identity without #{attribute}" do
       expect(described_class.new(**attributes.except(attribute))).not_to be_valid
     end

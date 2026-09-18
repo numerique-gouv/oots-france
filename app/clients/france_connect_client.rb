@@ -7,7 +7,11 @@
 # It knows the portal by its **discovery document** and by nothing else — every
 # endpoint below is read from it, none is built here. That is what makes the
 # sandbox, the production and the fake of the end-to-end suite a change of
-# environment: an issuer and two credentials, and no line of code.
+# configuration: a `FranceConnectInstance`, and no line of code.
+#
+# Which one it is, is the caller's to say and never this file's to look up: a
+# deployment declares several, and the one an identification departed on is the
+# one its return, its UserInfo and its sign-out must address.
 #
 # The document is cached like the code lists are, and for the same reason: it is
 # read on every authentication and changes about never.
@@ -60,7 +64,8 @@ class FranceConnectClient
   # reader of this code, and a taint analysis, can both check.
   PATH_CHARACTERS = [*'a'..'z', *'A'..'Z', *'0'..'9', '/', '.', '_', '~', '-'].index_by(&:itself).freeze
 
-  def initialize(connection: nil)
+  def initialize(instance:, connection: nil)
+    @instance = instance
     @connection = connection
   end
 
@@ -69,15 +74,15 @@ class FranceConnectClient
   # talk to, never what the answer said of itself.
   def issuer
     announced = discovery.fetch('issuer', nil)
-    return Settings.france_connect_issuer if announced.to_s.chomp('/') == Settings.france_connect_issuer
+    return configured_issuer if announced.to_s.chomp('/') == configured_issuer
 
     raise FranceConnectError,
-      I18n.t('clients.france_connect_client.foreign_issuer', announced:, expected: Settings.france_connect_issuer)
+      I18n.t('clients.france_connect_client.foreign_issuer', announced:, expected: configured_issuer)
   end
 
   def jwks_url = endpoint('jwks_uri')
 
-  def client_id = Settings.france_connect_credentials.fetch(:id)
+  delegate :client_id, to: :instance
 
   # Never derived from the request: FranceConnect+ refuses an address it was not
   # declared, and the path is the one `config/routes.rb` publishes.
@@ -97,12 +102,11 @@ class FranceConnectClient
   # `client_secret_post`: the credentials travel in the body, FranceConnect+
   # accepting no `Authorization: Basic` on this endpoint.
   def exchange(code)
-    credentials = Settings.france_connect_credentials
     url = endpoint('token_endpoint')
 
     answer = motivated(url) do
       post(url, { grant_type: 'authorization_code', code:, redirect_uri:,
-                  client_id: credentials.fetch(:id), client_secret: credentials.fetch(:secret) })
+                  client_id:, client_secret: instance.client_secret })
     end
 
     granted(answer.body)
@@ -123,6 +127,11 @@ class FranceConnectClient
   end
 
   private
+
+  # Read and never published: it carries the `client_secret`, and what this
+  # client legitimately exposes of it — the `client_id`, the issuer once the
+  # document has claimed it — it exposes one value at a time.
+  attr_reader :instance
 
   # The two endpoints that motivate a refusal, relayed in the portal's own words
   # rather than in the message the HTTP client raises with, which names only the
@@ -160,10 +169,10 @@ class FranceConnectClient
   # https://docs.partenaires.franceconnect.gouv.fr/fs/fs-technique/fs-technique-endpoints/
   def endpoint(name)
     published = published_endpoint(name)
-    origin = URI.parse(Settings.france_connect_issuer)
+    origin = URI.parse(configured_issuer)
     path = shape(name, published, origin)
 
-    under_issuer(name, published, origin, "#{Settings.france_connect_issuer}#{rebuilt(path)}")
+    under_issuer(name, published, origin, "#{configured_issuer}#{rebuilt(path)}")
   end
 
   # What the document publishes under the base, once the base is taken off it:
@@ -185,7 +194,7 @@ class FranceConnectClient
   # attacker actually asks.
   # https://datatracker.ietf.org/doc/html/rfc3986#section-5.2
   def under_issuer(name, published, origin, address)
-    base = Settings.france_connect_issuer
+    base = configured_issuer
     called = origin.dup.tap { |root| root.path = '/' }.merge(URI.parse(address).path).to_s
     return address if address.start_with?(base) && called.start_with?(base)
 
@@ -229,12 +238,18 @@ class FranceConnectClient
 
   def discovery = @discovery ||= published_discovery
 
+  # Read from the instance this client was built on, and never from the
+  # environment: `Settings` says which FranceConnect+ exist, the caller says
+  # which of them this identification is talking to.
+  def configured_issuer = instance.issuer
+
   # Keyed by the issuer it was read from, as `JwksFetcher` keys by the address
   # it fetched: the issuer is a variable of the deployment, and a key that did
   # not name it would serve the document of one portal to a deployment
   # configured on another — the endpoints of the fake to a deployment pointed at
-  # the sandbox, refused as foreign by the check above. Changing
-  # `URL_FRANCE_CONNECT` then takes effect without emptying anything by hand.
+  # the sandbox, refused as foreign by the check above. Declaring another issuer
+  # then takes effect without emptying anything by hand, and the two a
+  # deployment declares can never be served for each other.
   #
   # Parsed **inside** the cache block, and not after it: a body that does not
   # read as JSON — a maintenance page answered with a 200, a truncated
@@ -243,10 +258,8 @@ class FranceConnectClient
   # every sign-out of the next hour into the same failure. `CodeListClient`
   # keeps an empty answer out of its cache for the same reason.
   def published_discovery
-    issuer = Settings.france_connect_issuer
-
-    Rails.cache.fetch("france_connect/openid_configuration/#{issuer}", expires_in: CACHE_DURATION) do
-      document(get("#{issuer}#{DISCOVERY_PATH}").body)
+    Rails.cache.fetch("france_connect/openid_configuration/#{configured_issuer}", expires_in: CACHE_DURATION) do
+      document(get("#{configured_issuer}#{DISCOVERY_PATH}").body)
     end
   rescue JSON::ParserError => e
     raise FranceConnectError, I18n.t('clients.france_connect_client.unreadable_discovery', error: e.message)

@@ -118,6 +118,24 @@ RSpec.describe 'Admin::Sessions' do
         expect(response.parsed_body.css('main').text).to include('session FranceConnect+ est close')
       end
 
+      # A deployment that no longer declares it has no session of its own to
+      # end, and signing the operator out locally is the whole of what is left
+      # to do — as when the portal cannot be reached.
+      # L'exploitant est déconnecté quoi qu'il arrive, et rien à l'écran ne
+      # distinguerait une session FranceConnect+ close d'une session laissée
+      # ouverte faute de savoir à qui la demander : le log est le seul endroit
+      # où cela se lit.
+      it 'signs the operator out plainly when that FranceConnect+ is no longer declared, and says so' do
+        undeclare_france_connect('fake')
+        allow(Rails.logger).to receive(:warn)
+
+        delete admin_session_path
+
+        expect(response).to redirect_to(new_admin_session_path)
+        expect(session[:demo_identity]).to be_nil
+        expect(Rails.logger).to have_received(:warn).with(/Session FranceConnect\+ non close.*fake/)
+      end
+
       # The operator is signed out either way: FranceConnect+ closes its own
       # session on inactivity, and failing here would leave them stuck signed in.
       it 'signs the operator out even when the portal cannot be reached' do
@@ -126,6 +144,51 @@ RSpec.describe 'Admin::Sessions' do
         delete admin_session_path
 
         expect(response).to redirect_to(new_admin_session_path)
+      end
+    end
+
+    # CA7: the session ended is the one that attested, and no other. The
+    # identity carries which FranceConnect+ that was, the sign-out happening
+    # minutes after the identification and having nothing else to read it from.
+    context 'when the real FranceConnect+ attested the identity' do
+      before do
+        sign_in
+        identify_demo_user(instance: real_france_connect)
+      end
+
+      it 'ends its session, on the address its own discovery publishes' do
+        delete admin_session_path
+
+        parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+
+        expect(response.headers['Location']).to start_with(FranceConnectStubs::REAL_END_SESSION_ENDPOINT)
+        expect(parameters.fetch('post_logout_redirect_uri'))
+          .to eq("#{FranceConnectStubs::PROCEDURE_URL}/demo/franceconnect/retour_deconnexion")
+        expect(parameters.fetch('id_token_hint').split('.').size).to eq(3)
+      end
+
+      it 'never ends the session of the other, which attested nothing here' do
+        delete admin_session_path
+
+        expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).not_to have_been_made
+        expect(response.headers['Location']).not_to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+      end
+    end
+
+    # L'autre sens, les deux déclarés : c'est celui qui a attesté qu'on ferme,
+    # et la présence de l'autre n'y change rien.
+    context 'when the fake attested the identity and the real is declared too' do
+      before do
+        sign_in
+        stub_real_france_connect
+        identify_demo_user
+      end
+
+      it 'ends the fake session, and never the real one' do
+        delete admin_session_path
+
+        expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+        expect(a_request(:get, FranceConnectStubs::REAL_DISCOVERY_URL)).not_to have_been_made
       end
     end
   end

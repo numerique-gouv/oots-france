@@ -15,9 +15,6 @@ module Settings
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
     CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
-    URL_FRANCE_CONNECT
-    IDENTIFIANT_CLIENT_FRANCE_CONNECT
-    SECRET_CLIENT_FRANCE_CONNECT
     URL_BASE_DOMIBUS
     LOGIN_API_REST
     MOT_DE_PASSE_API_REST
@@ -90,6 +87,24 @@ module Settings
     password: 'MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES',
   }.freeze
 
+  # The FranceConnect+ a deployment may declare, each by its issuer and its own
+  # two credentials, in the order the home page of the demonstration offers
+  # them. Outside REQUIRED because a deployment declares one, the other or both:
+  # what is mandatory is that at least one be complete, and a declaration begun
+  # be finished, which `Settings::Contract` is what refuses.
+  #
+  # The names say which of the two they declare, so that editing the file cannot
+  # fill half of one with half of the other. No value of the fake is written
+  # here — its own constants live in `features/support/fake_france_connect/`.
+  FRANCE_CONNECT = {
+    'fake' => { issuer: 'URL_FAUX_FRANCE_CONNECT',
+                client_id: 'IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT',
+                client_secret: 'SECRET_CLIENT_FAUX_FRANCE_CONNECT' },
+    'real' => { issuer: 'URL_VRAI_FRANCE_CONNECT',
+                client_id: 'IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT',
+                client_secret: 'SECRET_CLIENT_VRAI_FRANCE_CONNECT' },
+  }.freeze
+
   # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.
   COMMON_SERVICES_BASE_URLS = {
     'eb' => 'URL_BASE_EVIDENCE_BROKER',
@@ -118,14 +133,24 @@ module Settings
     # `Host` header would fail on the header an attacker sets, and only there.
     def oots_france_url = required('URL_OOTS_FRANCE').delete_suffix('/')
 
-    # The *issuer* of FranceConnect+, from which the discovery document — and
-    # from it every endpoint — is derived. The sandbox, the production and the
-    # fake of the end-to-end suite differ by this value and by the two
-    # credentials below, and by no line of code.
-    def france_connect_issuer = required('URL_FRANCE_CONNECT').delete_suffix('/')
+    # The FranceConnect+ this deployment declares, in the order `FRANCE_CONNECT`
+    # writes them: what the home page of the demonstration offers a card for.
+    def france_connect_instances = FRANCE_CONNECT.keys.filter_map { |name| france_connect_instance(name) }
 
-    def france_connect_credentials
-      { id: required('IDENTIFIANT_CLIENT_FRANCE_CONNECT'), secret: required('SECRET_CLIENT_FRANCE_CONNECT') }
+    # One of them by name, or `nil` for a name this deployment does not declare
+    # — which is what the submission of the home page is checked against, and
+    # what a session written when the other one was still declared meets. `nil`
+    # and not a refusal: a name that designates nothing is a caller's mistake to
+    # answer, not an exception to propagate, and every caller here has an
+    # answer for it.
+    def france_connect_instance(name)
+      variables = FRANCE_CONNECT[name]
+      return nil if variables.nil?
+
+      values = variables.transform_values { |variable| optional(variable) }
+      return nil if values.each_value.any?(&:nil?)
+
+      FranceConnectInstance.new(name:, **values)
     end
 
     def private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_EN_BASE64')

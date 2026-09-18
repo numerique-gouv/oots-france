@@ -1,12 +1,21 @@
 require 'rails_helper'
 
 RSpec.describe FranceConnectIdentity do
-  subject(:identity) { described_class.new(id_token:, userinfo:, signed_id_token: 'le-jeton-signe').identity }
+  subject(:identity) do
+    described_class.new(id_token:, userinfo:, signed_id_token: 'le-jeton-signe', france_connect: 'fake').identity
+  end
 
   let(:id_token) { { 'sub' => 'un-pseudonyme', 'acr' => 'eidas2', 'amr' => %w[eidas] } }
   let(:userinfo) do
     { 'sub' => 'un-pseudonyme', 'given_name' => 'Freja Marie', 'family_name' => 'Sørensen',
       'birthdate' => '2001-04-17' }
+  end
+
+  # The one thing here that comes from neither document: the portal says nothing
+  # of the name a deployment declares it under, and the sign-out has only the
+  # session to read it from.
+  it 'holds which FranceConnect+ was asked, which neither document says' do
+    expect(identity.france_connect).to eq('fake')
   end
 
   # Chapter 2.1 §2.2: the mandatory attributes of the minimum data set, carried

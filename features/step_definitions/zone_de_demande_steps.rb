@@ -71,7 +71,7 @@ end
 # `state` and a `nonce` this scenario never wrote.
 Étantdonné("l'usager identifié sur la page des justificatifs") do
   visit admin_demo_root_path
-  click_button I18n.t('admin.demo.home.show.sign_in')
+  sign_in_from_card('fake')
 
   expect(page).to have_button(press_label)
   mark_the_page

@@ -93,17 +93,16 @@ PORT_FAUX_FRANCE_CONNECT=$(valeurEffective PORT_FAUX_FRANCE_CONNECT .env.templat
 # the procedure calling its own contract.
 URL_OOTS_FRANCE="${URL_OOTS_FRANCE-http://localhost:$PORT_OOTS_FRANCE}"
 
-# The fake FranceConnect+, single issuer of the local stack: the browser follows
-# the European flow there and `web` fetches the discovery document, the token
-# and the JWKS there, under this one name. The procedure talks to it, hence
-# URL_FRANCE_CONNECT repeating it — the first says whom the procedure calls, the
-# second where the fake answers, and a deployment fills the first with the real
-# FranceConnect+ and leaves the second empty.
+# The fake FranceConnect+, sole FranceConnect+ of the local stack: the browser
+# follows the European flow there and `web` fetches the discovery document, the
+# token and the JWKS there, under this one name. Its two credentials come from
+# .env.oots.template, being constants of this repository; the three variables of
+# the real one stay empty, the sandbox requiring a declared domain — so a fresh
+# clone gets the one card, with nothing to edit by hand.
 #
-# `${VAR-…}` and not `${VAR:-…}`: emptying the second is how a deployment says
-# it uses the real one, and a default must not fill it back in.
+# `${VAR-…}` and not `${VAR:-…}`: emptying it is how a deployment says it offers
+# no fake, and a default must not fill it back in.
 URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT-http://localhost:$PORT_FAUX_FRANCE_CONNECT/api/v2}"
-URL_FRANCE_CONNECT="${URL_FRANCE_CONNECT-$URL_FAUX_FRANCE_CONNECT}"
 
 # Where the demonstration procedure receives what is addressed to it, which is
 # **not** a path under URL_OOTS_FRANCE: the evidence is delivered by the
@@ -121,7 +120,7 @@ if ! printenv DONNEES_REQUETEURS >/dev/null 2>&1; then
 fi
 
 export PORT_OOTS_FRANCE PORT_FAUX_FRANCE_CONNECT
-export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT URL_FRANCE_CONNECT DONNEES_REQUETEURS
+export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT DONNEES_REQUETEURS
 
 # The credentials of the two databases live in two files each, under the names
 # their image expects and under the names the application reads. Held in step

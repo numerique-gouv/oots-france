@@ -15,9 +15,13 @@ ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
 ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] ||= '00000000000003'
 ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 ENV['URL_OOTS_FRANCE'] ||= 'http://localhost:3000'
-ENV['URL_FRANCE_CONNECT'] ||= 'http://franceconnect.test/api/v2'
-ENV['IDENTIFIANT_CLIENT_FRANCE_CONNECT'] ||= 'oots-france-demarche'
-ENV['SECRET_CLIENT_FRANCE_CONNECT'] ||= 'secret-de-la-demarche'
+# The fake FranceConnect+, as a development machine declares it. Only
+# `Settings` reads these: what an example sees of the declarations is what
+# `FranceConnectStubs` pins on it, so that the number of cards a page offers
+# never depends on the `.env.oots` of the machine.
+ENV['URL_FAUX_FRANCE_CONNECT'] ||= 'http://franceconnect.test/api/v2'
+ENV['IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT'] ||= 'oots-france-demarche'
+ENV['SECRET_CLIENT_FAUX_FRANCE_CONNECT'] ||= 'secret-de-la-demarche'
 ENV['ENVIRONNEMENT_SERVICES_COMMUNS'] ||= 'acc'
 ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
 ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'

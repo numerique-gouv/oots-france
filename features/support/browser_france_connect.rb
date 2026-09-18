@@ -10,10 +10,11 @@ require Rails.root.join('spec/support/france_connect_stubs')
 # answers them exactly as it answers a request spec.
 #
 # That one leg cannot be sent elsewhere: `FranceConnectClient#endpoint`
-# **rebuilds** every address on the origin of `Settings.france_connect_issuer`
-# and refuses anything that is not under it. The authorization endpoint is
-# therefore on the issuer by construction, and the issuer has to be somewhere
-# the browser can reach — which is the server Capybara is already running.
+# **rebuilds** every address on the origin of the issuer of the FranceConnect+
+# it was built on, and refuses anything that is not under it. The authorization
+# endpoint is therefore on the issuer by construction, and the issuer has to be
+# somewhere the browser can reach — which is the server Capybara is already
+# running.
 #
 # So the issuer becomes an address of that server, and this wraps the
 # application to answer the single path underneath it the browser touches.

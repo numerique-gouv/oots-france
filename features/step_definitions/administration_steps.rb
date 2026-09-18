@@ -42,11 +42,16 @@ Alors("la page d'accueil de la démarche de démonstration s'affiche") do
   expect(page).to have_css('h1 .directory-value', text: 'Apply for funding for higher education')
 end
 
-# A button and not a link: starting the flow writes the `state` and the `nonce`
-# its return will be checked against, and a replayed GET would overwrite those
-# of a flow under way.
+Étantdonné('le faux FranceConnect+ déclaré par la France') do
+  declare_france_connect(fake_france_connect)
+end
+
+# One card per FranceConnect+ declared, and a button and not a link: starting
+# the flow writes the `state` and the `nonce` its return will be checked
+# against, and a replayed GET would overwrite those of a flow under way.
 Alors("la page propose de s'identifier avec une identité d'un autre État membre") do
-  expect(page).to have_button(I18n.t('admin.demo.home.show.sign_in'))
+  expect(page).to have_css('.fr-card__title', text: I18n.t('admin.demo.home.show.france_connect.fake.title'))
+  expect(page).to have_button(I18n.t('admin.demo.home.show.sign_in'), count: 1)
   expect(page).to have_css("form[action='#{admin_demo_identification_path}'][method='post']")
 end
 

@@ -10,9 +10,24 @@ module SettingsEnvironment
   def complete_environment
     Settings::REQUIRED
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
+      .merge(france_connect_environment)
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
       .merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key)
       .merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key)
+  end
+
+  # A FranceConnect+ declared at last: the contract refuses an environment that
+  # declares none, and none of them is in REQUIRED — a deployment declares one,
+  # the other or both. The fake alone, which is what a development machine and a
+  # runner carry; the examples that are about the real one add its three.
+  def france_connect_environment
+    Settings::FRANCE_CONNECT.fetch('fake').each_value.index_with { 'valeur' }
+  end
+
+  # Every FranceConnect+ variable emptied, for the examples about a deployment
+  # that declares none or half of one.
+  def no_france_connect
+    Settings::FRANCE_CONNECT.each_value.flat_map(&:values).index_with { '' }
   end
 
   # The contract reads this one rather than merely finding it filled: it must

@@ -20,7 +20,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
 
   Scénario: un étudiant danois s'identifie et retrouve son identité sur la page des justificatifs
     Quand l'administrateur ouvre la démarche de démonstration
-    Et qu'il clique sur le bouton de la cinématique européenne
+    Et qu'il choisit la carte du faux FranceConnect+
     Alors l'administrateur arrive sur la page de choix du pays
     Quand l'administrateur choisit le pays "DK"
     Et que l'administrateur choisit l'identité de test "dk-substantial"

@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe FranceConnectToken do
-  subject(:opener) { described_class.new }
+  subject(:opener) { described_class.new(client: FranceConnectClient.new(instance: fake_france_connect)) }
 
   let(:claims) { { 'sub' => 'un-pseudonyme', 'acr' => 'eidas2' } }
 

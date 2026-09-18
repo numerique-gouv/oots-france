@@ -20,7 +20,7 @@ Fonctionnalité: Lire à l'écran la raison d'un refus de FranceConnect+
 
   Scénario: l'accueil de la démarche nomme le refus que FranceConnect+ a répondu
     Étant donné FranceConnect+ qui refuse l'échange du code par "invalid_grant"
-    Quand l'administrateur s'identifie depuis l'accueil de la démarche
+    Quand l'administrateur s'identifie depuis la carte du faux FranceConnect+
     Alors la page affiche "invalid_grant"
     Et la page affiche le refus sans libellé vide ni point doublé
 
