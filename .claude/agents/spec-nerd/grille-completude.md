@@ -1,6 +1,6 @@
 # Ce qui rend un ticket complet
 
-Lu avant de poser le statut (CRÉER étape 7, COMPLÉTER étape 6), contrôle par contrôle.
+Lu avant de poser le statut (CRÉER étape 8, COMPLÉTER étape 6), contrôle par contrôle.
 
 La question est une seule : **un ouvrier peut-il l'implémenter seul, tel qu'il est écrit, sans qu'une décision soit volée à personne ?** Elle se répond par des contrôles, dans cet ordre ; le premier qui échoue dit le statut. Tu es méfiant par construction envers ton propre texte : tu viens de l'écrire, tu plaides pour lui.
 
@@ -17,13 +17,13 @@ Un ouvrier lit des dizaines de tickets ; il retrouve chaque chose à sa place ou
 7. **Les libellés sont cités entre guillemets** — « `Requête déjà traitée` », le code `EDM:ERR:0006` — quand le ticket fixe un texte ou une valeur, pour qu'on sache que c'est ce texte-là, au caractère près.
 8. **Les renvois sont des liens** : un chapitre, une règle, un ticket voisin. Jamais une URL nue collée dans la phrase, jamais un identifiant nu.
 
-Un écart de forme se répare en écrivant, avant de poser le statut : il n'y a rien à demander à personne.
+Un écart de forme se répare en écrivant, avant de poser le statut : il n'y a rien à demander à personne. `scripts/relire-le-jet.py` joue ces huit contrôles sur le fichier du jet (CRÉER étape 6, COMPLÉTER étape 4) ; ce qui reste ici à lire est ce qu'un script ne voit pas — un titre qui ne dit pas ce qui sera vrai, un libellé cité de travers.
 
 ### Le contenu — ce que le ticket doit dire
 
 1. **Aucune question n'y reste ouverte** — pas de titre en « Trancher… », pas de RG « sans source », « sous réserve » ou « à trancher », pas de section `Questions ouvertes`. S'il en reste une, elle est dans ton lot pour l'utilisateur, et le ticket attend en `À compléter`.
 2. **Chaque RG porte une source, et la source est un lien.** Un chapitre ou une règle des TDD quand la RG en vient ; sinon ce qui l'a décidée — le commentaire de l'utilisateur, le ticket voisin, le fichier du dépôt qui porte la contrainte. Sans cela, elle est invérifiable, ce qui suffit.
-3. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte, et il porte sur les RG qui se réclament des TDD : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Une RG fondée sur une décision locale se relit contre le commentaire qui l'a rendue, pas contre un chapitre. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../../docs/glossaire.md) tranche le dernier.
+3. **La source dit ce que le ticket lui fait dire.** C'est le contrôle qui coûte, et il porte sur les RG qui se réclament des TDD : `tdd-nerd` en `AVIS` sur le texte enregistré, pas sur ton jet. Une RG fondée sur une décision locale se relit contre le commentaire qui l'a rendue, pas contre un chapitre. Une RG qui affirme quelque chose du dépôt ou d'un ticket voisin se relit dans le fichier ou le ticket lui-même, ouvert dans la passe — `relire-le-jet.py` liste ce qu'il faut rouvrir, il ne le lit pas à ta place. Trois écarts, par fréquence : une règle durcie, une règle inventée, un vocabulaire local — [`docs/glossaire.md`](../../../docs/glossaire.md) tranche le dernier.
 4. **Chaque CA se lit comme un test qu'on saurait écrire.** Saurais-tu dire, en lisant ce seul critère, quelle assertion l'écrit ? « Le journal est correct » ne passe pas.
 5. **Le hors-périmètre est écrit** dès que le ticket a un voisin évident qu'un ouvrier construirait sans qu'on le lui demande : le cas symétrique d'une règle, le reste d'un chapitre dont on n'implémente qu'une partie, les champs optionnels d'un format, l'écran à côté de celui qu'on ajoute. Une ligne par exclusion, avec le ticket qui la porte s'il existe ; rien à exclure, rien à écrire.
 6. **Le ticket nomme la règle, jamais la solution.** Une classe à créer, une méthode à ajouter : retire-la.
