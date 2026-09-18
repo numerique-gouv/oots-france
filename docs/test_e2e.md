@@ -132,7 +132,7 @@ Le scénario d'erreur emprunte exactement le même trajet ; seule change la rép
 
 Le faux ci-dessous est un processus lancé à côté de la suite, et le profil par défaut ne le lance pas. Or la page des justificatifs de la démarche n'a d'identité que par le retour de FranceConnect+, et les scénarios de `features/zone_de_demande_de_la_demarche.feature` et de `features/refus_de_france_connect.feature` en ont besoin sans lui.
 
-Ce qu'ils doublent est **un seul aller**. De toute la cinématique, une seule requête part du navigateur — la redirection vers le point d'autorisation ; le document de découverte, le JWKS, `/token` et `/userinfo` sont demandés par l'application, dans le processus du scénario, donc doublés par WebMock comme les specs de requête les doublent. Et cet aller-là ne peut pas être détourné ailleurs : `FranceConnectClient` reconstruit chaque adresse sur l'origine de `Settings.france_connect_issuer` et refuse tout ce qui n'en relève pas, si bien que le point d'autorisation est nécessairement sur l'émetteur.
+Ce qu'ils doublent est **un seul aller**. De toute la cinématique, une seule requête part du navigateur — la redirection vers le point d'autorisation ; le document de découverte, le JWKS, `/token` et `/userinfo` sont demandés par l'application, dans le processus du scénario, donc doublés par WebMock comme les specs de requête les doublent. Et cet aller-là ne peut pas être détourné ailleurs : `FranceConnectClient` reconstruit chaque adresse sur l'origine de l'*issuer* du FranceConnect+ qu'on lui a donné, et refuse tout ce qui n'en relève pas, si bien que le point d'autorisation est nécessairement sur cet émetteur.
 
 L'émetteur devient donc, le temps d'un scénario, une adresse du **serveur de Capybara lui-même**, et `features/support/browser_france_connect.rb` enrobe l'application pour servir le seul chemin que le navigateur touche : il lit `state` et `nonce` sur l'adresse reçue, retient le `nonce`, et redirige sur le chemin de `redirect_uri`. Tout le reste de cette origine tombe dans l'application, ce qui rend le montage invisible aux autres scénarios.
 
@@ -174,9 +174,13 @@ L'identifiant `DK/FR/…` que le nœud rendrait ne sort jamais du faux : il n'en
 | Tient une session unique (`allowedSsoAcrs`), exige un TLD dans les `redirect_uri`, vérifie les adresses IP sortantes | réauthentifie à chaque appel et ne reproduit rien de cela | hors du périmètre de la démonstration |
 | Montre une page par étape du cœur, de la passerelle et du nœud | condense la cinématique en trois pages : le choix du pays, le choix d'une identité de test, la confirmation en anglais | le faux joue ce que l'usager voit, pas le protocole entre les trois |
 
-### Passer du faux au bac à sable
+### Déclarer le faux, le vrai, ou les deux
 
-La démarche ne connaît FranceConnect+ **que par son document de découverte** : passer de l'un à l'autre est un changement de trois variables d'environnement, et rien dans le code. `URL_FRANCE_CONNECT` porte l'*issuer* dont la découverte est déduite, `IDENTIFIANT_CLIENT_FRANCE_CONNECT` et `SECRET_CLIENT_FRANCE_CONNECT` les identifiants du fournisseur de service. Sur la pile locale comme en intégration continue, les trois valent l'adresse du faux et les deux constantes qu'il déclare (`features/support/fake_france_connect/clients.rb`) — d'où `URL_FRANCE_CONNECT` recopiant `URL_FAUX_FRANCE_CONNECT` dans `scripts/ci/prepare_environment.sh` : la première dit qui la démarche appelle, la seconde où le faux répond. Un déploiement renseigne la première et laisse la seconde vide.
+La démarche ne connaît FranceConnect+ **que par son document de découverte** : déclarer l'un ou l'autre est un changement de trois variables d'environnement, et rien dans le code. Chacun a son jeu, nommé pour dire lequel des deux il déclare — `URL_FAUX_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT` et `SECRET_CLIENT_FAUX_FRANCE_CONNECT` pour le faux du dépôt, `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT` et `SECRET_CLIENT_VRAI_FRANCE_CONNECT` pour le vrai —, la première de chaque jeu portant l'*issuer* dont la découverte est déduite. **L'accueil de la démarche offre une carte par jeu renseigné**, et un déploiement peut donc les porter tous les deux : montrer le parcours sur des identités de test et l'éprouver contre le bac à sable ne demande plus de le reconfigurer entre les deux.
+
+Un jeu renseigné à moitié refuse le démarrage en nommant les variables manquantes, et une configuration qui n'en renseigne aucun aussi : une carte qui mène à un refus certain mentirait, et aucune carte sans un mot laisserait la démonstration sans porte d'entrée.
+
+Sur la pile locale comme en intégration continue, seul le faux est déclaré — son adresse et les deux constantes qu'il déclare (`features/support/fake_france_connect/clients.rb`), que `scripts/ci/prepare_environment.sh` et `.env.oots.template` écrivent sans rien à éditer à la main : le bac à sable exige un domaine déclaré, qu'aucune des deux n'a.
 
 ## Les annuaires centraux sont les vrais
 
@@ -214,9 +218,9 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | --- | --- |
 | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` | `true`, sinon l'API répond `501` |
 | `DONNEES_REQUETEURS` | déclare le requêteur `00000000000002`, dont l'URL fixe aussi le port d'écoute du faux requêteur |
-| `URL_FAUX_FRANCE_CONNECT` | l'adresse à laquelle le faux FranceConnect+ répond, de la forme `<schéma>://<hôte>[:<port>]/api/v2` ; c'est son *issuer*, celle dont il compose chaque endpoint de sa découverte. Le port qu'il **écoute** est `PORT_FAUX_FRANCE_CONNECT` quand la composition le lui passe, et celui de cette adresse sinon — les deux ne diffèrent que derrière un frontal qui termine TLS. Laissée vide, le service refuse de démarrer et les scénarios d'identification échouent |
-| `URL_FRANCE_CONNECT` | l'*issuer* que la démarche appelle : ici, celui du faux, donc la même valeur que ci-dessus |
-| `IDENTIFIANT_CLIENT_FRANCE_CONNECT`, `SECRET_CLIENT_FRANCE_CONNECT` | les deux constantes que le faux déclare pour la démarche |
+| `URL_FAUX_FRANCE_CONNECT` | l'adresse à laquelle le faux FranceConnect+ répond, de la forme `<schéma>://<hôte>[:<port>]/api/v2` ; c'est son *issuer*, celle dont il compose chaque endpoint de sa découverte, et celle que la démarche appelle. Le port qu'il **écoute** est `PORT_FAUX_FRANCE_CONNECT` quand la composition le lui passe, et celui de cette adresse sinon — les deux ne diffèrent que derrière un frontal qui termine TLS. Laissée vide, le service refuse de démarrer et les scénarios d'identification échouent |
+| `IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT`, `SECRET_CLIENT_FAUX_FRANCE_CONNECT` | les deux constantes que le faux déclare pour la démarche |
+| `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT`, `SECRET_CLIENT_VRAI_FRANCE_CONNECT` | **vides** : le bac à sable exige un domaine déclaré, que ni la pile locale ni l'intégration continue n'ont |
 | `URL_BASE_EVIDENCE_BROKER`, `URL_BASE_DATA_SERVICE_DIRECTORY` | **vides**, faute de quoi elles remplacent la découverte DNS |
 | `CERTIFICATS_SERVICES_COMMUNS` | `config/certificats/services_communs_acc.pem`, la racine de la Commission pour l'acceptation |
 | `ENVIRONNEMENT_SERVICES_COMMUNS`, `PAYS_SERVICES_COMMUNS` | `acc` et `FR` : les deux segments du nom NAPTR à résoudre |
