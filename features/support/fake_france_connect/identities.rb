@@ -75,11 +75,18 @@ module FakeFranceConnect
     end
   end
 
-  # The identities the fake serves, and the countries its first page offers —
-  # which are exactly the countries it has an identity for, so that a button
-  # always leads somewhere.
+  # The identities the fake serves, and the countries its first page offers:
+  # every member state, and the same two identities behind each of them — what
+  # a country button changes is the screen, never who signs in.
   module Identities
-    COUNTRY_NAMES = { 'DK' => 'Denmark' }.freeze
+    COUNTRY_NAMES = {
+      'AT' => 'Austria', 'BE' => 'Belgium', 'BG' => 'Bulgaria', 'HR' => 'Croatia', 'CY' => 'Cyprus',
+      'CZ' => 'Czechia', 'DK' => 'Denmark', 'EE' => 'Estonia', 'FI' => 'Finland', 'FR' => 'France',
+      'DE' => 'Germany', 'GR' => 'Greece', 'HU' => 'Hungary', 'IE' => 'Ireland', 'IT' => 'Italy', 'LV' => 'Latvia',
+      'LT' => 'Lithuania', 'LU' => 'Luxembourg', 'MT' => 'Malta', 'NL' => 'Netherlands', 'PL' => 'Poland',
+      'PT' => 'Portugal', 'RO' => 'Romania', 'SK' => 'Slovakia', 'SI' => 'Slovenia', 'ES' => 'Spain',
+      'SE' => 'Sweden',
+    }.freeze
 
     # `A` is the twenty-sixth character before the regional indicator symbol that
     # stands for it, and a pair of those is what a flag emoji is made of. Written
@@ -101,16 +108,16 @@ module FakeFranceConnect
       ),
     ].freeze
 
-    def self.countries = ALL.map(&:country).uniq
+    def self.countries = COUNTRY_NAMES.keys
 
-    def self.country_name(code) = COUNTRY_NAMES.fetch(code, code)
+    def self.country_name(code) = COUNTRY_NAMES.fetch(code)
 
     # The flag before the name, as the bridge's own country page shows it.
     def self.flag(code)
       code.upcase.chars.map { |letter| (letter.ord + REGIONAL_INDICATOR).chr(Encoding::UTF_8) }.join
     end
 
-    def self.of_country(code) = ALL.select { |identity| identity.country == code }
+    def self.of_country(code) = COUNTRY_NAMES.key?(code) ? ALL : []
 
     def self.find(key) = ALL.find { |identity| identity.key == key }
   end

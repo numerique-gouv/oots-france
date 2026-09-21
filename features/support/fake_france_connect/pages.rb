@@ -73,6 +73,8 @@ module FakeFranceConnect
         cursor: pointer;
       }
       button:hover { background: #1212ff; border-color: #1212ff; }
+      .secondary { background: #fff; color: #000091; }
+      .secondary:hover { background: #f5f5fe; border-color: #000091; }
       button:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
       .card { background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem; padding: 1.5rem; }
       .quiet { color: #666; font-size: .875rem; }
@@ -80,7 +82,7 @@ module FakeFranceConnect
 
     def self.countries(action, codes)
       buttons = codes.map do |code|
-        button('country', code, "#{Identities.flag(code)} #{Identities.country_name(code)}")
+        button('country', code, "#{Identities.flag(code)} #{Identities.country_name(code)}", 'secondary')
       end
 
       layout('Choose your country', form(action, buttons))
@@ -118,8 +120,11 @@ module FakeFranceConnect
       layout('Signed out', '<p>You are signed out. You can close your browser.</p>')
     end
 
-    def self.button(field, value, label)
-      "<button type=\"submit\" name=\"#{escape(field)}\" value=\"#{escape(value)}\">#{escape(label)}</button>"
+    def self.button(field, value, label, css_class = nil)
+      attributes = "type=\"submit\" name=\"#{escape(field)}\" value=\"#{escape(value)}\""
+      attributes += " class=\"#{css_class}\"" if css_class
+
+      "<button #{attributes}>#{escape(label)}</button>"
     end
 
     def self.form(action, controls)
@@ -134,7 +139,7 @@ module FakeFranceConnect
         '<meta name="viewport" content="width=device-width, initial-scale=1">' \
         "<title>#{SERVICE} — #{escape(title)}</title><style>#{STYLE}</style></head><body>" \
         "<header class=\"banner\"><p>#{SERVICE}" \
-        '<span>Fake FranceConnect+ and eIDAS bridge — for testing, no real data</span>' \
+        '<span>Fake eIDAS Node for testing, no real data</span>' \
         "</p></header><main><h1>#{escape(title)}</h1>#{body}</main></body></html>"
     end
 
