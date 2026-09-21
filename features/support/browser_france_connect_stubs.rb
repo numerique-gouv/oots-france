@@ -29,7 +29,7 @@ module BrowserFranceConnectStubs
   # accessible name — and here, the name the form submits.
   def sign_in_from_card(name)
     page.find(:xpath, "//form[input[@name='france_connect' and @value='#{name}']]")
-      .click_button(I18n.t('admin.demo.home.show.sign_in'))
+      .click_button(I18n.t("admin.demo.home.show.france_connect.#{name}.button"))
   end
 
   # The one double that cannot be shared. The block is evaluated when the

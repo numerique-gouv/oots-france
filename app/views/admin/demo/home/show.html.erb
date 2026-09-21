@@ -21,31 +21,20 @@
   </div>
 <% end %>
 
-<%# One card per FranceConnect+ this deployment declares. The demonstration is
-    the same from either — the card says which FranceConnect+ attests the
-    identity, and nothing else.
-
-    `button_to` and not a link: starting the European flow writes the `state`
+<%# `button_to` and not a link: starting the European flow writes the `state`
     and the `nonce` its return is checked against, and a GET the browser
-    prefetched or replayed would overwrite those of a flow under way. The name
-    of the FranceConnect+ travels in the body of that same submission.
+    prefetched or replayed would overwrite those of a flow under way. %>
+<div class="fr-col-12 fr-col-md-8 fr-mt-4w" lang="en">
+  <h2 class="fr-h3"><%= t('admin.demo.home.show.sign_in.heading') %></h2>
+  <p><%= t('admin.demo.home.show.sign_in.lead') %></p>
 
-    The visible label is the same on every card, being the one FranceConnect+
-    gives its European flow; the accessible name adds which card it belongs to,
-    two buttons reading alike and leading elsewhere being what criterion 11.9 of
-    the RGAA refuses. It *wraps* the visible label rather than replacing it, so
-    that voice control still finds the button by what it reads (WCAG 2.5.3). %>
-<div class="fr-col-12 fr-col-md-8" lang="en">
-  <% @france_connect_instances.each do |instance| %>
-    <% title = t("admin.demo.home.show.france_connect.#{instance.name}.title") %>
-    <% sign_in = t('admin.demo.home.show.sign_in') %>
-
-    <%= render CardComponent.new(title:, heading_level: 2) do %>
-      <p class="fr-mb-2w"><%= t("admin.demo.home.show.france_connect.#{instance.name}.lead") %></p>
-
-      <%= button_to sign_in, admin_demo_identification_path,
-            params: { france_connect: instance.name }, class: 'fr-btn',
-            aria: { label: t('admin.demo.home.show.sign_in_named', label: sign_in, provider: title) } %>
+  <ul class="fr-btns-group fr-btns-group--inline-md">
+    <% @france_connect_instances.each do |instance| %>
+      <li>
+        <%= button_to t("admin.demo.home.show.france_connect.#{instance.name}.button"),
+              admin_demo_identification_path, params: { france_connect: instance.name },
+              class: instance.name == 'real' ? 'fr-btn fr-btn--secondary' : 'fr-btn fr-btn--tertiary' %>
+      </li>
     <% end %>
-  <% end %>
+  </ul>
 </div>
