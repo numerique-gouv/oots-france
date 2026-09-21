@@ -97,12 +97,12 @@ module Settings
   # fill half of one with half of the other. No value of the fake is written
   # here — its own constants live in `features/support/fake_france_connect/`.
   FRANCE_CONNECT = {
-    'fake' => { issuer: 'URL_FAUX_FRANCE_CONNECT',
-                client_id: 'IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT',
-                client_secret: 'SECRET_CLIENT_FAUX_FRANCE_CONNECT' },
     'real' => { issuer: 'URL_VRAI_FRANCE_CONNECT',
                 client_id: 'IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT',
                 client_secret: 'SECRET_CLIENT_VRAI_FRANCE_CONNECT' },
+    'fake' => { issuer: 'URL_FAUX_FRANCE_CONNECT',
+                client_id: 'IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT',
+                client_secret: 'SECRET_CLIENT_FAUX_FRANCE_CONNECT' },
   }.freeze
 
   # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.

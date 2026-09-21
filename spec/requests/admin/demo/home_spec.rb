@@ -97,68 +97,73 @@ RSpec.describe 'Admin::Demo::Home' do
     end
 
     # CA2: a fresh clone declares the fake and nothing else, so the page offers
-    # the one card — and `make setup` leaves the three variables of the real one
-    # empty, which is what makes that the default rather than an arrangement.
-    it 'offers one card per FranceConnect+ declared, and none for one that is not' do
+    # the one button — and `make setup` leaves the three variables of the real
+    # one empty, which is what makes that the default rather than an arrangement.
+    it 'offers one button per FranceConnect+ declared, and none for one that is not' do
       get admin_demo_root_path
 
-      expect(seen_all('main .fr-card__title')).to eq(['Fake FranceConnect+'])
+      expect(seen_all('main button.fr-btn')).to eq(['🇪🇺 Choose a country to sign-in (mocked)'])
       expect(response.parsed_body.css('main form').pluck('action'))
         .to include(admin_demo_identification_path)
     end
 
-    # CA1: the two cards, in the order the home page offers them, each with the
-    # sentence that says which FranceConnect+ it plays.
-    it 'offers a card per FranceConnect+ when the deployment declares both, the fake first' do
+    # The way in is introduced by a heading and a sentence, in English, since
+    # the reader is a user of another Member State.
+    it 'invites the user to sign in to start the procedure' do
+      get admin_demo_root_path
+
+      expect(seen_all('main h2')).to include('Sign-in to start the procedure')
+      expect(response.parsed_body.css('main').text)
+        .to include('Use your European identity to sign-in.',
+          'even different states than the one you chose to sign-in with.')
+    end
+
+    # CA1: the two buttons, the real FranceConnect+ first, the fake saying it is
+    # one. Criterion 11.9 of the RGAA: two buttons reading alike and leading
+    # elsewhere are not « pertinents » one without the other.
+    it 'offers a button per FranceConnect+ when the deployment declares both, the real first' do
       declare_france_connect(real_france_connect)
 
       get admin_demo_root_path
 
-      expect(seen_all('main .fr-card__title')).to eq(['Fake FranceConnect+', 'FranceConnect+'])
-      expect(response.parsed_body.css('main .fr-card').map(&:text))
-        .to include(a_string_including('choose a country and a test identity'),
-          a_string_including('sandbox or production'))
+      expect(seen_all('main button.fr-btn'))
+        .to eq(['🇪🇺 Choose a country to sign-in', '🇪🇺 Choose a country to sign-in (mocked)'])
+    end
+
+    # Neither is the page's main action — that is the request, two pages on —
+    # and the fake stands one step behind the real: secondary, then tertiary.
+    it 'ranks the real FranceConnect+ secondary and the fake tertiary' do
+      declare_france_connect(real_france_connect)
+
+      get admin_demo_root_path
+
+      expect(response.parsed_body.css('main button.fr-btn').pluck('class'))
+        .to eq(['fr-btn fr-btn--secondary', 'fr-btn fr-btn--tertiary'])
     end
 
     # RG2: the name of the FranceConnect+ travels in the body of the submission
     # the button already is — a `POST`, because starting the flow writes the
     # `state` and the `nonce` its return is checked against.
-    it 'lets each card name its own FranceConnect+ in the body of its submission' do
+    it 'lets each button name its own FranceConnect+ in the body of its submission' do
       declare_france_connect(real_france_connect)
 
       get admin_demo_root_path
 
       expect(response.parsed_body.css('main form input[name=france_connect]').pluck('value'))
-        .to eq(%w[fake real])
+        .to eq(%w[real fake])
       expect(response.parsed_body.css('main form').pluck('method').uniq).to eq(['post'])
     end
 
-    # Criterion 11.9 of the RGAA: two buttons reading alike and leading
-    # elsewhere are not « pertinents » one without the other. The accessible
-    # name wraps the visible label rather than replacing it, so that voice
-    # control still finds the button by what it reads (WCAG 2.5.3).
-    it 'names each button by the FranceConnect+ its card plays, visible label included' do
-      declare_france_connect(real_france_connect)
-
-      get admin_demo_root_path
-
-      expect(response.parsed_body.css('main button.fr-btn').pluck('aria-label'))
-        .to eq(['🇪🇺 Sign-in from another European country, with Fake FranceConnect+',
-                '🇪🇺 Sign-in from another European country, with FranceConnect+'])
-    end
-
     # The demonstration plays a Danish student and nothing else: the French
-    # identity of FranceConnect+ has no button here. The page names the platform
-    # now, on the card saying which one attests — but every way in it offers
-    # opens the European flow, under the label that flow carries, in English and
-    # word for word.
+    # identity of FranceConnect+ has no button here. Every way in the page
+    # offers opens the European flow.
     it 'carries no FranceConnect+ button of its own' do
       declare_france_connect(real_france_connect)
 
       get admin_demo_root_path
 
-      expect(response.parsed_body.css('main .fr-btn').map { |button| button.text.strip }.uniq)
-        .to eq(['🇪🇺 Sign-in from another European country'])
+      expect(response.parsed_body.css('main form').pluck('action').uniq)
+        .to eq([admin_demo_identification_path])
     end
 
     # A name is an ornament here as everywhere else in the console: the code

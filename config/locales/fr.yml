@@ -1836,43 +1836,19 @@ fr:
           # La phrase qui annonce la liste des exigences que l'Evidence Broker
           # publie pour la démarche.
           requirements: "Documents to be retrieved from another EU Member State:"
-          # En anglais : il s'adresse à un usager qui ne lit pas le français, ce
-          # qui est tout son objet. Plus court que le libellé que FranceConnect+
-          # montre au bouton de sa cinématique européenne — « Sign-in with a
-          # digital identity from another European country » —, écart assumé,
-          # ses règles d'intégration étant de toute façon annoncées comme
-          # « bientôt publiées ».
-          #
-          # Le drapeau est dans la phrase et non dans le gabarit : le DSFR n'a
-          # pas d'icône pour lui, et un lecteur d'écran le nomme comme il nomme
-          # un mot.
-          #
-          # Le même sur chaque carte : ce qui distingue les deux boutons est
-          # leur nom accessible, ci-dessous.
-          sign_in: 🇪🇺 Sign-in from another European country
-          # Le nom accessible du bouton d'une carte, que le critère 11.9 du RGAA
-          # réclame — deux boutons de même intitulé menant à deux endroits ne
-          # sont pas « pertinents » l'un sans l'autre. Il enveloppe le libellé
-          # visible plutôt que de le remplacer : la WCAG 2.5.3 veut que le nom
-          # accessible contienne le texte lu, faute de quoi la commande vocale
-          # ne trouve plus le bouton. La colle vit dans la clé, jamais entre
-          # deux fragments.
-          sign_in_named: "%{label}, with %{provider}"
-          # Un titre et une phrase par FranceConnect+ que le déploiement peut
-          # déclarer, sous le nom que `Settings::FRANCE_CONNECT` lui donne : la
-          # vue en dérive la clé, d'où leur présence dans `ignore_unused` de
-          # config/i18n-tasks.yml. En anglais comme le reste de la page.
+          sign_in:
+            heading: Sign-in to start the procedure
+            lead: >-
+              Use your European identity to sign-in. Your documents can be automatically retrieved from
+              other EU Member States, even different states than the one you chose to sign-in with.
+          # Un bouton par FranceConnect+ que le déploiement peut déclarer, sous
+          # le nom que `Settings::FRANCE_CONNECT` lui donne : la vue en dérive la
+          # clé, d'où leur présence dans `ignore_unused` de config/i18n-tasks.yml.
           france_connect:
-            fake:
-              title: Fake FranceConnect+
-              lead: >-
-                The stand-in this deployment runs itself: choose a country and a test identity, no
-                account needed.
             real:
-              title: FranceConnect+
-              lead: >-
-                FranceConnect+ as this deployment is registered with it, sandbox or production, and
-                its eIDAS bridge.
+              button: 🇪🇺 Choose a country to sign-in
+            fake:
+              button: 🇪🇺 Choose a country to sign-in (mocked)
       # La deuxième page du parcours : l'identité que l'authentification a
       # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
       # « before any request is made » — le nom du fournisseur et le type de

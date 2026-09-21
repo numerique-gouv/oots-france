@@ -56,7 +56,7 @@ module FakeFranceConnect
 
     def choose_country(response, uid, code)
       identities = Identities.of_country(code)
-      return error_page(response, 'invalid_country', "no test identity for #{code}") if identities.empty?
+      return error_page(response, 'invalid_country', "no such country: #{code}") if identities.empty?
 
       page(response, Pages.identities(step(uid, 'identity'), identities))
     end

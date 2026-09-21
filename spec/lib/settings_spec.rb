@@ -148,7 +148,7 @@ RSpec.describe Settings do
 
     it 'reads the declared ones in the order the home page offers them' do
       with_environment(filled.merge(Settings::FRANCE_CONNECT.fetch('real').each_value.index_with { 'valeur' })) do
-        expect(described_class.france_connect_instances.map(&:name)).to eq(%w[fake real])
+        expect(described_class.france_connect_instances.map(&:name)).to eq(%w[real fake])
       end
     end
 

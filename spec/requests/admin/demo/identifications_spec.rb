@@ -65,9 +65,9 @@ RSpec.describe 'Admin::Demo::Identifications' do
       end
 
       # CA8: a portal that cannot be reached costs its own identification and
-      # nothing more — the home page comes back with its two cards, and the
+      # nothing more — the home page comes back with its two buttons, and the
       # other one is played straight away.
-      it 'brings the operator back to the two cards when one portal cannot be reached, and plays the other' do
+      it 'brings the operator back to the two buttons when one portal cannot be reached, and plays the other' do
         stub_request(:get, FranceConnectStubs::REAL_DISCOVERY_URL).to_timeout
 
         post admin_demo_identification_path, params: { france_connect: 'real' }
@@ -76,8 +76,8 @@ RSpec.describe 'Admin::Demo::Identifications' do
         follow_redirect!
         expect(response.parsed_body.css('.fr-alert').text)
           .to include("L'identification par FranceConnect+ n'a pas abouti")
-        expect(response.parsed_body.css('main .fr-card__title').map { |card| card.text.strip })
-          .to eq(['Fake FranceConnect+', 'FranceConnect+'])
+        expect(response.parsed_body.css('main button.fr-btn').map { |button| button.text.strip })
+          .to eq(['🇪🇺 Choose a country to sign-in', '🇪🇺 Choose a country to sign-in (mocked)'])
 
         post admin_demo_identification_path, params: { france_connect: 'fake' }
         expect(response.headers['Location']).to start_with("#{FranceConnectStubs::AUTHORIZATION_ENDPOINT}?")

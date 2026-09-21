@@ -154,10 +154,12 @@ Le lancement tient à deux conditions. `URL_FAUX_FRANCE_CONNECT` doit être rens
 
 Ce sont les identités du faux, pas des personnes : les noms sont des noms d'usage inventés, et « il est interdit d'utiliser de vraies données personnelles » vaut ici comme au bac à sable.
 
-| Clé | Pays | Niveau (`acr`) | Claims |
-| --- | --- | --- | --- |
-| `dk-substantial` | `DK` | substantiel (`eidas2`) | `given_name` « Freja Marie », `family_name` « Sørensen », `birthdate` `2001-04-17`, `gender` `female`, `birthplace` « Aarhus » |
-| `dk-high` | `DK` | élevé (`eidas3`) | `given_name` « Mikkel Anker », `family_name` « Bruun », `birthdate` `1998-09-03` — ni `gender`, ni `birthplace`, qui sont facultatifs |
+La première page du faux offre **un bouton par État membre**, France comprise, et les deux identités ci-dessous derrière chacun d'eux : le pays choisi ne change que l'écran, jamais qui s'identifie — ce qui est fidèle, la passerelle ne rendant aucun pays à la démarche.
+
+| Clé | Niveau (`acr`) | Claims |
+| --- | --- | --- |
+| `dk-substantial` | substantiel (`eidas2`) | `given_name` « Freja Marie », `family_name` « Sørensen », `birthdate` `2001-04-17`, `gender` `female`, `birthplace` « Aarhus » |
+| `dk-high` | élevé (`eidas3`) | `given_name` « Mikkel Anker », `family_name` « Bruun », `birthdate` `1998-09-03` — ni `gender`, ni `birthplace`, qui sont facultatifs |
 
 Un `preferred_username` égal au `family_name` s'ajoute sous le scope `profile` ou sous le sien, et sous aucun autre. Aucune des deux identités ne porte **ni identifiant eIDAS, ni pays, ni `birthcountry`, ni `email`** : le faux reproduit cette lacune de FranceConnect+ plutôt que de la combler, et c'est elle qui laissera `sdg:Identifier` absent de la requête, ce que le [XSD du profil de métadonnées](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/xsd/sdg/SDG-GenericMetadataProfile-v2.0.1.xsd) permet (`minOccurs="0"`). Ce que les deux identités portent toutes, en revanche : `FamilyName`, `GivenName` et `DateOfBirth`, obligatoires au XSD même, et le niveau de garantie, que le XSD laisse facultatif mais que la règle Schematron `R-EDM-REQ-C036` (FATAL) impose.
 
@@ -176,7 +178,7 @@ L'identifiant `DK/FR/…` que le nœud rendrait ne sort jamais du faux : il n'en
 
 ### Déclarer le faux, le vrai, ou les deux
 
-La démarche ne connaît FranceConnect+ **que par son document de découverte** : déclarer l'un ou l'autre est un changement de trois variables d'environnement, et rien dans le code. Chacun a son jeu, nommé pour dire lequel des deux il déclare — `URL_FAUX_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT` et `SECRET_CLIENT_FAUX_FRANCE_CONNECT` pour le faux du dépôt, `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT` et `SECRET_CLIENT_VRAI_FRANCE_CONNECT` pour le vrai —, la première de chaque jeu portant l'*issuer* dont la découverte est déduite. **L'accueil de la démarche offre une carte par jeu renseigné**, et un déploiement peut donc les porter tous les deux : montrer le parcours sur des identités de test et l'éprouver contre le bac à sable ne demande plus de le reconfigurer entre les deux.
+La démarche ne connaît FranceConnect+ **que par son document de découverte** : déclarer l'un ou l'autre est un changement de trois variables d'environnement, et rien dans le code. Chacun a son jeu, nommé pour dire lequel des deux il déclare — `URL_FAUX_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT` et `SECRET_CLIENT_FAUX_FRANCE_CONNECT` pour le faux du dépôt, `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT` et `SECRET_CLIENT_VRAI_FRANCE_CONNECT` pour le vrai —, la première de chaque jeu portant l'*issuer* dont la découverte est déduite. **L'accueil de la démarche offre un bouton d'identification par jeu renseigné**, et un déploiement peut donc les porter tous les deux : montrer le parcours sur des identités de test et l'éprouver contre le bac à sable ne demande plus de le reconfigurer entre les deux.
 
 Un jeu renseigné à moitié refuse le démarrage en nommant les variables manquantes, et une configuration qui n'en renseigne aucun aussi : une carte qui mène à un refus certain mentirait, et aucune carte sans un mot laisserait la démonstration sans porte d'entrée.
 

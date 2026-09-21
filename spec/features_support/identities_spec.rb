@@ -47,12 +47,18 @@ RSpec.describe FakeFranceConnect::Identity do
   end
 
   describe FakeFranceConnect::Identities do
-    it 'sert au moins une identité danoise de chaque niveau' do
+    it 'sert une identité de chaque niveau' do
       expect(described_class.of_country('DK').map(&:acr)).to include('eidas2', 'eidas3')
     end
 
-    it 'n\'offre que les pays dont il a une identité' do
-      expect(described_class.countries).to eq(%w[DK])
+    it 'offre tous les États membres, et les mêmes identités derrière chacun' do
+      expect(described_class.countries.size).to eq(27)
+      expect(described_class.countries).to include('DK', 'ES', 'FR')
+      expect(described_class.of_country('ES')).to eq(described_class.of_country('DK'))
+    end
+
+    it 'ne sert rien pour un pays qu\'il n\'offre pas' do
+      expect(described_class.of_country('ZZ')).to be_empty
     end
   end
 end

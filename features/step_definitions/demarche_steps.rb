@@ -19,7 +19,7 @@ Quand('l\'administrateur ouvre la démarche de démonstration') do
   @navigateur.visit('/admin/demo')
 end
 
-Quand('il choisit la carte du faux FranceConnect+') do
+Quand('il choisit le bouton du faux FranceConnect+') do
   @navigateur.start_identification('fake')
 end
 
