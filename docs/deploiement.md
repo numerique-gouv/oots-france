@@ -215,17 +215,20 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 ## Mettre à jour
 
 ```sh
-$ git pull
-$ make check-env                                  # les variables qu'un template a gagnées depuis
-$ make check-secrets                              # aucun secret revenu à sa valeur de développement
-$ docker compose build web
-$ docker compose run --rm --no-deps web bundle exec rails db:prepare
-$ docker compose run --rm --no-deps web bundle exec rails db:privileges
-$ make assets
-$ docker compose up -d web worker
+$ make update
 ```
 
-`make check-env` nomme les variables à ajouter aux `.env*` ; leurs templates disent ce qu'elles attendent, et la valeur qu'elles prennent sur un poste de développement — à ne pas recopier telle quelle, ce que `make check-secrets` vérifie pour celles qui sont des secrets. `db:privileges` se rejoue après chaque migration, pour la raison que `lib/database_privileges.rb` donne. Si la mise à jour touche le PMode ou les certificats, rejouer `scripts/configure_domibus.sh` puis `docker compose restart domibus`. Le script exige ses six variables et ne lit aucun fichier : les recopier des `.env*`, et lui passer le mot de passe de la console s'il a changé —
+[`scripts/update_server.sh`](../scripts/update_server.sh) enchaîne, dans cet ordre, et s'arrête au premier pas qui échoue :
+
+1. `git pull --ff-only` — puis il se relance lui-même depuis la copie tirée, pour ne pas jouer la moitié d'une version et la moitié de la suivante. Un arbre qui ne s'avance pas en *fast-forward* a été édité sur place, et le script s'y arrête ;
+2. `make check-env` et `make check-secrets` — avant de rien construire, pour qu'une variable gagnée par un template soit nommée ici et non par un `web` qui refuse de démarrer une fois l'ancien conteneur parti. `make check-env` nomme les variables à ajouter aux `.env*` ; leurs templates disent ce qu'elles attendent, et la valeur qu'elles prennent sur un poste de développement — à ne pas recopier telle quelle, ce que `make check-secrets` vérifie pour celles qui sont des secrets ;
+3. `docker compose build web` ;
+4. `rails db:prepare` puis `rails db:privileges`, sur la nouvelle image, pendant que l'ancienne version sert encore : une migration qui échoue la laisse en place. `db:privileges` se rejoue après chaque migration, pour la raison que `lib/database_privileges.rb` donne ;
+5. `make assets` ;
+6. `docker compose up -d web worker`, et `fake-france-connect` avec eux s'il tournait — il emprunte le réseau de `web`, que la recréation détruit ;
+7. `curl` sur `/up`, jusqu'au `200`, deux minutes au plus.
+
+Si la mise à jour touche le PMode ou les certificats, rejouer `scripts/configure_domibus.sh` puis `docker compose restart domibus`. Le script exige ses six variables et ne lit aucun fichier : les recopier des `.env*`, et lui passer le mot de passe de la console s'il a changé —
 
 ```sh
 $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \
