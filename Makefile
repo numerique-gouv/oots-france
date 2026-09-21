@@ -4,13 +4,18 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup update check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
 
 setup: ## Install from a fresh clone: env files, databases, configured gateway
 	scripts/setup.sh
+
+# For a server: pull, checks, image, schema, assets, restart. `make setup` is
+# the first install, this the next ones.
+update: ## Update a running server: pull, checks, image, migrations, assets, restart
+	scripts/update_server.sh
 
 check-env: ## What the templates declare, against what the .env* files carry
 	scripts/check_environment.sh
