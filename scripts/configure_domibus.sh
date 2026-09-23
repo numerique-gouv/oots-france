@@ -216,8 +216,8 @@ fi
 
 # Second guard rail, far more telling: the console's connectivity test — the
 # "paper plane". It circulates a real AS4 message in a loop through the gateway,
-# so it exercises signing and encryption, and validates the security profiles'
-# aliases along the way. All of it owing nothing to the application: if it passes
+# so it exercises signing and encryption, and validates the aliases of both
+# stores along the way. All of it owing nothing to the application: if it passes
 # and the end-to-end test fails, the gateway is out of the picture.
 echo "→ Test de connectivité $PARTIE → $PARTIE"
 CODE_TEST=$(appelAvecCode \
@@ -255,7 +255,7 @@ done
 
 if [ "$STATUT" != "ACKNOWLEDGED" ]; then
   echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
-  echo "   Certificats et alias des profils de sécurité en cause ?" >&2
+  echo "   Certificats ou alias des magasins en cause ?" >&2
   echo "   scripts/ci/diagnose_domibus.sh détaille les magasins et les erreurs." >&2
   exit 1
 fi

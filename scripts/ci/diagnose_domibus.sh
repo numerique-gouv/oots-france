@@ -47,11 +47,11 @@ montre "Journal des erreurs" "rest/internal/user/errorlogs?page=0&pageSize=20&or
 # the file with `keytool` inside the container, as 5.0.4 required for want of a
 # keystore route.
 #
-# The aliases are what to look at first: the security profiles impose them
-# (AP_FR_01_rsa_sign, AP_FR_01_rsa_decrypt on the keystore side;
-# AP_FR_01_rsa_sign, AP_FR_01_rsa_encrypt on the truststore side), and an alias
-# that departs from them makes signing or encryption fail with no symptom other
-# than a message never acknowledged.
+# The aliases are what to look at first: the gateway runs without security
+# profiles, so it wants its own key under `domibus.security.key.private.alias`
+# (AP_FR_01) and a peer's certificate under that peer's party name, no suffix.
+# An alias that departs from this makes signing or encryption fail with no
+# symptom other than a message never acknowledged.
 montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
 montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
 montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"
