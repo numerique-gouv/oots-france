@@ -48,7 +48,7 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 
 Les certificats livrés avec l'image sont publics et partagés par toutes les installations : `scripts/configure_domibus.sh` en génère d'autres et les téléverse. Tout passe par l'API REST, rien n'est à déposer sur le disque de la passerelle.
 
-Ce sont les **alias** qui demandent de l'attention. Les profils de sécurité les imposent, et un alias qui s'en écarte fait échouer la signature ou le chiffrement — la convention est donnée dans [domibus_context.md](domibus_context.md).
+Ce sont les **alias** qui demandent de l'attention : le nom de la partie, et rien d'autre. Un alias qui s'en écarte fait échouer la signature ou le chiffrement — la convention est donnée dans [domibus_context.md](domibus_context.md).
 
 > [!IMPORTANT]
 > Le truststore porte les certificats du *destinataire*, le keystore les clés de l'*émetteur* : corriger l'un sans l'autre ne fait que déplacer l'erreur de `receiver certificate is not valid` à `sender certificate is not valid`.
@@ -251,7 +251,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | La passerelle reçoit `403` de notre route | Ce n'est pas l'authentification : c'est le contrôle d'hôte de Rails, qui refuse le nom de service `web`. Voir `config.hosts` |
 | `504` alors que le journal des messages montre un `ACKNOWLEDGED` **et** un `RECEIVED` | l'échange AS4 a abouti, mais le message entrant est parti à un autre plugin : vérifier que son `pluginType` vaut bien `backendWSPlugin` |
 | `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
-| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne suivent pas la convention des profils de sécurité — `scripts/ci/diagnose_domibus.sh` les affiche |
+| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne sont pas le nom de la partie — `scripts/ci/diagnose_domibus.sh` les affiche |
 | `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : AP_FR_01` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 | « Le faux FranceConnect+ n'a pas répondu sur … » au démarrage du run | le service `fake-france-connect` n'est pas monté — `docker compose logs fake-france-connect` dit pourquoi —, ou le run a tenté d'en démarrer un à lui et le port était déjà pris |

@@ -22,7 +22,7 @@ La composition livrée installe tout sur une seule machine : l'application (`web
 Trois choses restent hors de sa portée, chacune documentée ailleurs :
 
 - **Le vrai FranceConnect+.** La démarche de démonstration s'identifie sur le faux FranceConnect+ du dépôt, que ce serveur lance avec la pile, en HTTP, sur des identités de test — de quoi montrer la démarche, rien de plus. Le vrai se déclare **à côté** de lui, par ses trois variables à lui (`URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT`, `SECRET_CLIENT_VRAI_FRANCE_CONNECT`) : l'accueil de la démarche offre alors une carte par FranceConnect+ déclaré, et montrer le parcours sur des identités de test puis l'éprouver contre le bac à sable ne demande pas de reconfigurer le serveur entre les deux. [eidas_context.md](eidas_context.md#les-adresses-que-ce-dépôt-déclarera) dit quoi déclarer auprès de FranceConnect+.
-- **Un autre État membre.** La passerelle dialogue avec elle-même : certificats auto-signés, PMode à une seule partie sur `localhost`. Un échange réel demande un certificat de la PKI eDelivery, un PMode qui nomme les correspondants et l'endpoint MSH public, et un `nginx` qui le mandate — le [gabarit](../nginx.template/conf/nginx.conf) ne mandate que `web`. Voir [domibus_context.md](domibus_context.md#le-pmode-dexemple).
+- **Un autre État membre.** Tant que [le raccordement à l'acceptation](#raccorder-la-passerelle-à-lacceptation) n'a pas été joué, la passerelle dialogue avec elle-même : certificats auto-signés, PMode à une seule partie sur `localhost` (voir [domibus_context.md](domibus_context.md#le-pmode-dexemple)). Et il faut un `nginx` qui mandate `/domibus/services/msh` — le [gabarit](../nginx.template/conf/nginx.conf) ne mandate que `web`.
 - **Être trouvé.** La France est inscrite à l'Evidence Broker et au Data Service Directory de l'acceptation sous `AP_FR_01`, mais ce point d'accès est la passerelle de démonstration : [reste_à_faire.md](reste_à_faire.md) tient l'état de ce raccordement.
 
 ## Le serveur
@@ -240,3 +240,26 @@ $ docker compose restart domibus && scripts/ci/wait_for_domibus.sh
 ```
 
 Sans `REPERTOIRE_MAGASINS`, il engendre des magasins neufs et les téléverse — ce qu'on veut pour renouveler les certificats, pas pour recharger un PMode. Le [README](../README.md#configurer-domibus-en-une-commande) détaille.
+
+## Raccorder la passerelle à l'acceptation
+
+Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le dashboard un **PMode** (`AP_FR_01.xml`) et un **magasin de confiance** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le dashboard le notifie, et il faut alors les recharger.
+
+Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte. Les trois magasins de la passerelle sont alors, tous au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose :
+
+```sh
+# le keystore : la clé privée du CSR et le certificat de la PKI, sous l'alias de la partie
+$ openssl pkcs12 -export -name AP_FR_01 -inkey <clé privée du CSR> \
+    -in OOTS_AP_ACC_FR_001.pem -certfile OOTS_AP_ACC_FR_001-bundle.pem \
+    -out domibus/keystores/gateway_keystore.p12 -passout "pass:$MOT_DE_PASSE_MAGASINS"
+# le magasin de confiance du dashboard, tel quel, sous le mot de passe de la passerelle
+$ keytool -importkeystore -srckeystore gateway_truststore.jks -srcstoretype JKS -srcstorepass test123 \
+    -destkeystore domibus/keystores/gateway_truststore.p12 -deststoretype PKCS12 \
+    -deststorepass "$MOT_DE_PASSE_MAGASINS"
+$ cp AP_FR_01.xml domibus/
+```
+
+Puis la commande de [la mise à jour](#mettre-à-jour), avec le PMode du dashboard à la place de celui d'exemple — `FICHIER_PMODE=domibus/AP_FR_01.xml` devant `scripts/configure_domibus.sh`, à côté de `REPERTOIRE_MAGASINS=domibus/keystores` —, et le redémarrage qui suit. Le script se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+
+> [!IMPORTANT]
+> Les alias du magasin de confiance ne se retouchent pas : la passerelle cherche le certificat d'un correspondant sous le nom de sa partie, exactement comme la Commission l'y a mis — c'est pourquoi elle tourne sans les profils de sécurité de Domibus, voir [domibus_context.md](domibus_context.md#concepts-clés). Rejouer `scripts/configure_domibus.sh` **sans** `REPERTOIRE_MAGASINS` remplacerait ces magasins par des auto-signés sans rien signaler.
