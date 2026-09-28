@@ -192,7 +192,9 @@ RSpec.describe Settings do
     end
 
     it 'reads both in minutes' do
-      with_environment(filled) do
+      intervals = { 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '16', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40' }
+
+      with_environment(filled.merge(intervals)) do
         expect(described_class.requester_timeout).to eq(6.minutes)
         expect(described_class.provider_timeout).to eq(5.minutes)
       end
@@ -326,6 +328,28 @@ RSpec.describe Settings do
       with_environment(filled.merge(off)) do
         expect { described_class.verify! }
           .to raise_error(ConfigurationError, /DELAI_RESERVATION_REMISE_MINUTES/)
+      end
+    end
+  end
+
+  # T2 and T3 of chapter 4.4.3, which the preview space applies whether or not
+  # the timeout dispositif is on: what it keeps of a user cannot outlive them.
+  describe 'the two intervals of the preview space' do
+    it 'reads both in minutes' do
+      intervals = { 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '16', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40' }
+
+      with_environment(filled.merge(intervals)) do
+        expect([described_class.preview_redirection_timeout, described_class.preview_decision_timeout])
+          .to eq([16.minutes, 40.minutes])
+      end
+    end
+
+    it 'asks for them even with the dispositif off' do
+      off = { Settings::TIMEOUT_SWITCH => 'false', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => nil }
+
+      with_environment(filled.merge(off)) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES/)
       end
     end
   end

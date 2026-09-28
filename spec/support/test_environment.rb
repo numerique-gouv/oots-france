@@ -33,6 +33,8 @@ ENV['DUREE_RETENTION_JOURNAL_MOIS'] ||= '12'
 ENV['DELAI_EXPIRATION_REQUETEUR_MINUTES'] ||= '6'
 ENV['DELAI_EXPIRATION_FOURNISSEUR_MINUTES'] ||= '5'
 ENV['DELAI_RESERVATION_REMISE_MINUTES'] ||= '6'
+ENV['DELAI_REDIRECTION_FOURNISSEUR_MINUTES'] ||= '16'
+ENV['DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES'] ||= '40'
 
 # The key the demonstration procedure signs its beneficiary token with. Drawn
 # rather than pinned, and an EC one: `BeneficiaryToken` admits ES256 alone, and
