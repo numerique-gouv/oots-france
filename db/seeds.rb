@@ -246,6 +246,19 @@ if Rails.env.development?
       error_description: I18n.t('models.exchange.expired.incoming'),
       presumed: true,
       events: %w[request_received] },
+    # Une requête qui demande la prévisualisation (chapitre 4.9) : la France
+    # répond `EDM:ERR:0002` avec l'adresse de son espace, l'usager l'ouvre et
+    # accepte, et la seconde requête reçoit le justificatif. L'échange garde
+    # l'adresse que `preview_required!` y a inscrite. Aucune `PreviewSession`
+    # n'est semée : elle vit au plus T2 + T3, et une graine serait morte avant
+    # qu'on l'ouvre.
+    { incoming: true, status: 'delivered', country_code: 'SE',
+      procedure_code: ProcedureCode::STUDY_FINANCING,
+      specification: EdmSpecification::V2_0,
+      message_error_code: EdmException::AUTHORIZATION.code,
+      preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'),
+      decision: PreviewSession::ACCEPTED,
+      events: %w[request_received error_sent preview_visited preview_decided response_sent] },
   ]
 
   # Le sujet tel qu'une réponse le confirme. Le chapitre 4.5.2 fait porter à
@@ -304,6 +317,7 @@ if Rails.env.development?
   # same.
   demonstration_detail = lambda do |event_type, scenario, exchange|
     return scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')
+    return scenario[:decision] if event_type == 'preview_decided'
 
     scenario[:response_detail] if event_type == 'response_received'
   end
@@ -532,7 +546,7 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without, :presumed).merge(
+        :confirmed_without, :presumed, :decision).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre, et
           # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
@@ -574,11 +588,12 @@ if Rails.env.development?
 
       occurred_at = opened + (step * 7).minutes
 
-      # L'adresse que le correspondant a déclarée, et que `received_error` seul
-      # inscrit : la France n'émet aucune prévisualisation, faute d'espace où
-      # l'ouvrir. Le corps conservé porte le slot d'où elle vient, sans quoi la
-      # fiche montrerait une colonne que le message d'à côté ne dit pas.
-      declared_preview = (exchange.preview_location if event_type == 'error_received')
+      # L'adresse de prévisualisation, là où `AuditTrail` l'inscrit : celle que
+      # le correspondant a déclarée sur l'erreur reçue, celle que la France a
+      # émise sur l'erreur envoyée, et celle que l'usager a visitée. Le corps
+      # conservé porte le slot d'où elle vient, sans quoi la fiche montrerait
+      # une colonne que le message d'à côté ne dit pas.
+      declared_preview = (exchange.preview_location if event_type.in?(%w[error_received error_sent preview_visited]))
 
       AuditEvent.create!(
         event_type:,

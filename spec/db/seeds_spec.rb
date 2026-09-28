@@ -27,7 +27,7 @@ RSpec.describe 'db/seeds.rb' do
     named = AuditEvent.where.not(evidence_identifier: nil)
 
     expect(named.pluck(:event_type).uniq).to match_array(%w[response_sent response_received])
-    expect(named.count).to eq(4)
+    expect(named.count).to eq(5)
   end
 
   # RG10: what the journal keeps of a document France served has to be
@@ -258,5 +258,18 @@ RSpec.describe 'db/seeds.rb' do
     load Rails.root.join('db/seeds.rb')
   ensure
     $stdout = spoken
+  end
+
+  # RG32 of OOTS-72: an exchange that went through France's preview space,
+  # with the events article 17(2) and chapter 4.8 §3.2 ask for.
+  it 'shows an exchange through the preview space, with its address, visit and decision' do
+    replay
+
+    previewed = Exchange.find_by(incoming: true, country_code: 'SE')
+    events = AuditEvent.where(exchange_id: previewed.exchange_id).order(:occurred_at)
+
+    expect(events.pluck(:event_type)).to eq(%w[request_received error_sent preview_visited preview_decided response_sent])
+    expect(events.find_by(event_type: 'error_sent').preview_location).to eq(previewed.preview_location)
+    expect(events.find_by(event_type: 'preview_decided').detail).to eq(PreviewSession::ACCEPTED)
   end
 end
