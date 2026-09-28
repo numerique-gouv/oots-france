@@ -1443,6 +1443,39 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
+  # L'espace de prévisualisation de la France (chapitre 4.9), la seule page
+  # que ce composant sert à un usager final. Le chapitre ne dit rien de ses
+  # mots : ils sont à nous.
+  preview_sessions:
+    show:
+      open:
+        title: Votre document avant son envoi
+        lead_html: "%{requester} demande à l'administration française qui le détient ce document : %{evidence}."
+        return_warning: Votre démarche n'a pas indiqué d'adresse sûre pour y revenir. Vous pouvez consulter le document et choisir, mais il faudra peut-être revenir à votre démarche par vos propres moyens.
+        optional: Vous pouvez le consulter avant de choisir, sans y être obligé.
+        consult: "Consulter le document (PDF – %{size})"
+        consult_title: "Consulter le document (PDF – %{size}) - nouvelle fenêtre"
+        legend: Voulez-vous utiliser ce document dans votre démarche ?
+        accepted: Utiliser ce document dans ma démarche
+        refused: Ne pas l'utiliser
+        choice_missing: Choisissez d'utiliser ce document ou non.
+        submit: Valider mon choix
+      recorded:
+        title: Votre choix est enregistré
+        lead: L'administration française transmet votre choix à votre démarche.
+      expired:
+        title: Le délai est écoulé
+        lead: Ce lien n'est plus valable, car le délai pour choisir est écoulé. Revenez à votre démarche pour la reprendre.
+      invalid:
+        title: Ce lien n'est plus valable
+        lead: Revenez à votre démarche pour la reprendre.
+    document:
+      filename: justificatif.pdf
+    return:
+      awaiting: Votre démarche va reprendre la main. Un lien pour y revenir s'affichera ici.
+      refresh: Actualiser la page
+      none: Vous pouvez fermer cette page et revenir à votre démarche.
+      back: Revenir à ma démarche
   interactors:
     # Les échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
