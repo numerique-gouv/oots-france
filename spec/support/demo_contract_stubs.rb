@@ -91,14 +91,15 @@ module DemoContractStubs
 
   # The register the procedure keeps of what it asked for, and which a delivery
   # is placed against. Written as `Demo::RequestEvidence` writes it: the
-  # identifiers of the exchange, the journey that clicked and the requirement it
-  # clicked under, the evidence arriving later or not at all.
+  # identifiers of the exchange, the journey that clicked, the requirement it
+  # clicked under and the country it asked, the evidence arriving later or not
+  # at all.
   #
   # The journey stands for a session no delivery ever meets — a document is
   # placed on the exchange it names, and the register is what says that exchange
   # is one of the known.
   def registered_request(exchange_id = ACCEPTED_EXCHANGE, **attributes)
     Demo::Request.create!(exchange_id:, conversation_id: ACCEPTED_CONVERSATION,
-      journey_id: REGISTERED_JOURNEY, requirement_uuid: REGISTERED_REQUIREMENT, **attributes)
+      journey_id: REGISTERED_JOURNEY, requirement_uuid: REGISTERED_REQUIREMENT, country_code: 'FR', **attributes)
   end
 end

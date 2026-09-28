@@ -71,6 +71,13 @@ class DemoOutcomeWording
 
   def refusal = answer.error
 
+  # A request still under way, or one whose document is in hand: the card then
+  # stays in the country that request went to, since a card naming another over
+  # a zone following it would say something no exchange rests on. Exactly the
+  # states in which the zone offers no button; once it offers one again, the
+  # country may change with it.
+  def holds_country? = !unreadable? && %i[pending delivered].include?(outcome)
+
   def secure_preview? = WebAddress.new(preview_location).secure?
 
   # What the journey named before the request left, filed with it: the heading

@@ -15,16 +15,21 @@
 # flows … executed sequentially and/or in parallel », so no card waits on its
 # neighbour. The address the browser re-asks is what tells them apart: it names
 # this card's requirement.
+#
+# `countries` is the member states the user may pick the evidence to come from —
+# step 16 of chapter 1 §10.1 — as `[label, code]` pairs; `nil` where the card
+# stays in the country of the request it follows, which it then only names.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, country_code:, country_name: nil, zone: nil)
+  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil)
     @wording = wording
     @country_code = country_code
     @country_name = country_name
     @zone = zone
+    @countries = countries
     super()
   end
 
-  attr_reader :zone
+  attr_reader :zone, :countries, :country_code
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.
@@ -54,6 +59,16 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # Semantic Repository URL would have to be escaped into the query string of
   # every one of these.
   def zone_path = helpers.admin_demo_demande_path(exigence: requirement_uuid)
+
+  # Posted outside the zone the request controller watches: the answer replaces
+  # what the resolution produced — the country line and the foot of the card,
+  # button included — and never the list, nor the region announcing the change.
+  def country_path = helpers.admin_demo_pays_path(exigence: requirement_uuid)
+
+  # The card's own address in the page, which a reload of the page can land on.
+  def anchor = "exigence-#{requirement_uuid}"
+
+  def country_field = "pays-#{requirement_uuid}"
 
   delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
     :provider_language, :requirement, :requirement_language, :requirement_uuid, to: :wording

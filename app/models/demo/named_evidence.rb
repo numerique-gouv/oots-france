@@ -33,11 +33,16 @@ module Demo
     attribute :requirement_id, :string
     attribute :requirement_name, :string
     attribute :requirement_language, :string
+    # The member state the card resolved the requirement in, which the user
+    # chose on it — step 16 of chapter 1 §10.1 — and the request is addressed
+    # to: the two names above are what that country publishes, and nothing else.
+    attribute :country_code, :string
 
-    # The two of requirement 27, and no more: the requirement is what tells two
+    # The two of requirement 27, and the country they were published in, which
+    # the request goes to. No more: the requirement is what tells two
     # cards apart, not what the user is asked to confirm, and a directory naming
     # it in no language leaves the card standing under its evidence type.
-    validates :evidence_type_name, :provider_name, presence: true
+    validates :evidence_type_name, :provider_name, :country_code, presence: true
 
     # The session cookie holds a plain hash and gives back string keys — and it
     # outlives the shape this class had when it was written, as

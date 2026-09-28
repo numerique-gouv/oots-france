@@ -9,9 +9,9 @@ module Demo
   # slot true on every request, so the condition always holds and the request is
   # issued here, on the click, rather than prepared ahead.
   #
-  # `T1` and `FR` are fixed rather than asked: the demonstration makes France
-  # talk to France, and offers the user no member state to pick — the choice is
-  # step 16 of chapter 1 §10.1, which this procedure does not play.
+  # `T1` is fixed rather than asked: the demonstration plays one procedure. The
+  # member state is the one the user picked on the card — step 16 of chapter 1
+  # §10.1 — and travels with the other names it showed.
   #
   # The conversation is not minted here: the journey already carries one, named
   # when the authentication opened it. Chapter 4.7 §2.5.1 allows exactly that —
@@ -27,7 +27,6 @@ module Demo
   # shown.
   class RequestEvidence < ApplicationInteractor
     PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
-    PROVIDER_COUNTRY = 'FR'.freeze
 
     # What the documents page showed, each name with the language the
     # directory published it in: the zone says them again, and it is
@@ -37,7 +36,7 @@ module Demo
     # under would not say which click it answers.
     NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
-               requirement_id requirement_name requirement_language].freeze
+               requirement_id requirement_name requirement_language country_code].freeze
 
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
@@ -76,7 +75,7 @@ module Demo
       client.fetch(
         requester_id: Settings.demo_requester_id,
         procedure_code: PROCEDURE_CODE,
-        country_code: PROVIDER_COUNTRY,
+        country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),
         conversation_id: context.journey.conversation_id,
         requirement_id: context.requirement_id,

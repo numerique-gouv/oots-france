@@ -39,6 +39,39 @@ RSpec.describe DirectoryLookup::ResolveAll do
       .with(requirement_id: 'https://sr/requirements/bbb', country_code: 'FI')
   end
 
+  # Step 16 of chapter 1 §10.1 has the user say, evidence by evidence, which
+  # member state it is to come from, and chapter 3.2.4 §4.3 has the second query
+  # « reflect the country and jurisdiction of the Evidence Provider ».
+  describe 'with a country named per requirement' do
+    subject(:resolved) do
+      described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'FR',
+        countries: { 'bbb' => 'FI' })
+    end
+
+    it 'resolves each requirement in its own country, and the others in the default one' do
+      expect(resolved.resolutions.map(&:country_code)).to eq(%w[FR FI])
+      expect(data_service_directory).to have_received(:data_services).with(hash_including(country_code: 'FI')).once
+    end
+
+    # Chapter 3.2.4 §4.2: the first query « should relate to the country of
+    # the Evidence Requester », whichever country a card is resolved in.
+    it 'never asks for the requirements themselves in the country of a card' do
+      resolved
+
+      expect(evidence_broker).not_to have_received(:requirements).with(hash_including(country_code: 'FI'))
+    end
+
+    # The opening run answered for its requirement in the default country, and
+    # says nothing of what another publishes.
+    it 'walks the first requirement again when it is named another country' do
+      described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'FR',
+        countries: { 'aaa' => 'DE' })
+
+      expect(evidence_broker).to have_received(:evidence_type_lists)
+        .with(requirement_id: 'https://sr/requirements/aaa', country_code: 'DE').once
+    end
+  end
+
   # Chapter 4.4 §4.2.2 has the basic flows run « sequentially and/or in
   # parallel », so a refusal belongs to the card it fell on. The page shows it
   # there, beside the neighbours that answered.

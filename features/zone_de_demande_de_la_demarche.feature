@@ -8,8 +8,10 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   interrogée tant que la demande court, une seule interrogation à la fois, et
   une suite d'échecs fait renoncer la zone en offrant le retour à la page. Deux
   cartes cliquées coup sur coup y suivent chacune sa propre demande, quel que
-  soit l'ordre dans lequel les réponses reviennent. Le serveur décide de tout
-  le reste, et ce qu'il dit déjà à l'écran n'est jamais reconstruit.
+  soit l'ordre dans lequel les réponses reviennent. Le choix du pays
+  fournisseur s'y joue aussi : la carte nomme ce que le pays choisi publie, et
+  la demande part vers lui. Le serveur décide de tout le reste, et ce qu'il dit
+  déjà à l'écran n'est jamais reconstruit.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -120,3 +122,13 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et que l'interrogation retenue est libérée
     Alors la page de connexion s'affiche
     Et la page n'affiche pas "This page could not reach the service."
+
+  Scénario: la carte nomme ce que publie le pays choisi, et la demande part vers lui
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la carte nomme le pays "Finland (FI)"
+    Et la carte annonce "Satisfied by the following documents in 🇫🇮 Finland (FI)"
+    Et la page affiche "Keha v. 2.0"
+    Et la page des justificatifs n'a pas été rechargée
+    Et le contrat n'a reçu aucune demande
+    Quand l'usager clique sur "Request the document"
+    Alors le contrat a reçu la demande pour le pays "FI"

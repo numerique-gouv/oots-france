@@ -107,6 +107,38 @@ RSpec.describe DemoOutcomeWording do
     end
   end
 
+  # The states in which the card stays in the country of its request: the zone
+  # then follows that request, and offers no button to ask elsewhere.
+  describe '#holds_country?' do
+    it 'holds it while the exchange is under way' do
+      expect(wording).to be_holds_country
+    end
+
+    it 'holds it once the document is in hand' do
+      allow(request).to receive(:evidence?).and_return(true)
+
+      expect(wording).to be_holds_country
+    end
+
+    it 'lets it go once the correspondent refused' do
+      payload['statut'] = 'failed'
+
+      expect(wording).not_to be_holds_country
+    end
+
+    it 'lets it go once the screen gave up waiting' do
+      request.created_at = 1.hour.ago
+
+      expect(wording).not_to be_holds_country
+    end
+
+    it 'lets it go when the contract cannot say' do
+      allow(answer).to receive(:status).and_return(404)
+
+      expect(wording).not_to be_holds_country
+    end
+  end
+
   describe '#unreadable?' do
     it 'is false when the contract answered about the exchange' do
       expect(wording).not_to be_unreadable
