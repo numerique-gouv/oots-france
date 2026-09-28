@@ -245,6 +245,44 @@ RSpec.describe 'Admin::Demo::Requests' do
   # The same requirement 27, seen from the page that did open but could name
   # nothing: the session then holds a record with blank names, which is not the
   # same shape as no record at all.
+  # Step 16 of chapter 1 §10.1: the user picks, card by card, the member state
+  # the evidence is to come from, and the button of that card asks it.
+  describe 'POST /admin/demo/demande, on a card resolved in another country' do
+    let(:premiere) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
+    let(:seconde) { '2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }
+
+    before do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      patch admin_demo_pays_path(exigence: premiere), params: { pays: 'FI' }
+      get admin_demo_documents_path
+      post demande_path(premiere)
+    end
+
+    # CA4.
+    it 'asks the contract in the country chosen on that card, for the requirement of that card' do
+      expect(evidence_request_query).to include('codePays' => 'FI', 'idExigence' => requirement_uri(premiere))
+    end
+
+    it 'leaves the other card in its own country' do
+      get admin_demo_documents_path
+
+      seconde_carte = response.parsed_body.at_css("#exigence-#{seconde}")
+
+      expect(seconde_carte.at_css('select option[selected]')['value']).to eq('FR')
+    end
+
+    # CA7: the register keeps the country beside what the card named.
+    it 'files the country with the type, the provider and the requirement' do
+      expect(Demo::Request.sole).to have_attributes(
+        country_code: 'FI', evidence_type_name: 'Dummy PDF - FI', provider_name: 'Keha v. 2.0',
+        requirement_id: requirement_uri(premiere),
+      )
+    end
+  end
+
   describe 'POST /admin/demo/demande, the page having named nothing' do
     before do
       stub_oots_france_public_keys

@@ -27,6 +27,15 @@ module HoldsDemoNames
       .to_h { |wording| [wording.requirement_uuid, named_evidence_of(wording).to_session] }
   end
 
+  # One card resolved anew, in the country just chosen on it: what it names now
+  # is what its button will send, and its neighbours keep theirs.
+  def remember_demo_name(wording)
+    named = session[:demo_named].to_h.except(wording.requirement_uuid)
+    named[wording.requirement_uuid] = named_evidence_of(wording).to_session if wording.nameable?
+
+    session[:demo_named] = named
+  end
+
   # What the card of this requirement named, and nothing of its neighbours'. The
   # requirement is passed rather than read off whoever includes this, as
   # `ReadsDemoRequest` passes it too: a page carries one zone per requirement,
@@ -51,7 +60,7 @@ module HoldsDemoNames
       evidence_type_name: wording.evidence_type, evidence_type_language: wording.evidence_type_language,
       provider_name: wording.provider, provider_language: wording.provider_language,
       requirement_id: wording.requirement_id, requirement_name: wording.requirement,
-      requirement_language: wording.requirement_language,
+      requirement_language: wording.requirement_language, country_code: wording.country_code,
     )
   end
 

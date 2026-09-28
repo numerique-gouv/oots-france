@@ -140,6 +140,14 @@ Quand("l'usager clique sur le bouton de la {word} carte") do |rank|
   within(card_zone(rank)) { click_button press_label }
 end
 
+# The option is named as the list shows it, flag aside: the flag is an emoji the
+# label begins with, and a scenario spells the country, not its picture.
+Quand("l'usager choisit {string} dans la liste des pays de la carte") do |country|
+  label = I18n.t('components.demo_requirement_card.country_label')
+
+  find_field(label).find('option', text: country).select_option
+end
+
 Quand('la soumission retenue est libérée') do
   zone_requests.release
 end
@@ -262,6 +270,22 @@ end
 # demand reaches the contract after this step has begun.
 Alors('le contrat a reçu la demande') do
   wait_until('Le contrat n\'a reçu aucune demande.') { contract_demands.any? }
+end
+
+Alors('la carte nomme le pays {string}') do |country|
+  expect(page).to have_css('.requirement-card .fr-card__desc .country-tag', text: country)
+end
+
+# The region a screen reader hears, which no eye sees: read in the page as the
+# assistive technologies read it, hidden or not.
+Alors('la carte annonce {string}') do |sentence|
+  expect(page).to have_css('[data-demo-country-target="status"]', text: sentence, visible: :all)
+end
+
+Alors('le contrat a reçu la demande pour le pays {string}') do |code|
+  wait_until("Le contrat n'a reçu aucune demande pour le pays #{code}.") do
+    contract_demands.any? { |demand| Rack::Utils.parse_nested_query(demand.uri.query.to_s)['codePays'] == code }
+  end
 end
 
 # Asked before the held submission is released, which is what it proves: the

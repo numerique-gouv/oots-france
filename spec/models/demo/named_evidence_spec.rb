@@ -7,7 +7,7 @@ RSpec.describe Demo::NamedEvidence do
     { evidence_type_name: 'Dummy PDF - FI', evidence_type_language: 'EN',
       provider_name: 'Keha v. 2.0', provider_language: 'EN',
       requirement_id: 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000',
-      requirement_name: '(TEST) Test Requirement', requirement_language: 'EN' }
+      requirement_name: '(TEST) Test Requirement', requirement_language: 'EN', country_code: 'FI' }
   end
 
   # Requirement 27 of chapter 1 §2 — « The user is provided with information
@@ -25,6 +25,12 @@ RSpec.describe Demo::NamedEvidence do
 
     it 'refuses a card that cannot name the provider' do
       expect(described_class.new(attributes.merge(provider_name: nil))).not_to be_valid
+    end
+
+    # The two names are what one member state publishes, and the request goes
+    # to that one: named without it, they say nothing of where to ask.
+    it 'refuses a card that cannot name the country it was resolved in' do
+      expect(described_class.new(attributes.merge(country_code: nil))).not_to be_valid
     end
 
     # The requirement tells two cards apart; it is not one of the two names the

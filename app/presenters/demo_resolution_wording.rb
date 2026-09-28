@@ -64,6 +64,10 @@ class DemoResolutionWording
 
   def requirement_uuid = lookup.requirement&.uuid
 
+  # The member state the evidence types and the providers were asked for in,
+  # which is what the card names them in: each card is resolved in its own.
+  delegate :country_code, to: :lookup
+
   # The refusal of whichever step stopped the chain, in the shape the console's
   # other directory pages already render.
   def failure

@@ -268,6 +268,10 @@ fr:
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
       # savoir. Le code du refus reste à la console, pas au portail.
       no_answer_html: <strong>%{country} could not answer for this evidence</strong>
+      # Le choix de l'État membre auquel le justificatif est demandé, carte par
+      # carte — l'étape 16 du chapitre 1 §10.1. Les options sont des pays, lus
+      # comme partout dans la console : aucune clé pour elles.
+      country_label: Country to request the document from
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -512,6 +516,11 @@ fr:
   controllers:
     admin:
       demo:
+        # Écrit dans le log : le navigateur recharge la page des justificatifs,
+        # qui dit la panne si elle dure, et la trace de celle-ci resterait sinon
+        # introuvable.
+        countries:
+          unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
         # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
         # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.

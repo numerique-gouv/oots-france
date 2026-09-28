@@ -21,6 +21,9 @@ module Demo
     # it, and the table has all four `null: false`.
     validates :exchange_id, :conversation_id, :journey_id, :requirement_uuid, presence: true
     validates :exchange_id, uniqueness: true
+    # The member state the request was addressed to, which the card of its
+    # requirement stays in for as long as the request is under way.
+    validates :country_code, presence: true
 
     # Chapter 4.4 §4.3.2 gives each identifier its own job — the `ExchangeId`
     # ties together the messages of one exchange, the `ConversationId` ties them

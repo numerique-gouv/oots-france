@@ -18,16 +18,19 @@ module DirectoryStubs
   # their `queryId`. `requirement:` narrows the second one further: a procedure
   # resting on several requirements is asked about each of them separately, and
   # a double answering all of them alike cannot tell which was asked for.
-  def stub_directory(service, query_fragment, fixture, requirement: nil)
+  # `country:` narrows on the `country-code` in the same way: a card resolved in
+  # another member state is answered what that one publishes.
+  def stub_directory(service, query_fragment, fixture, requirement: nil, country: nil)
     body, headers = common_services_answer(fixture)
 
-    stub_directory_body(service, query_fragment, body, headers, requirement:)
+    stub_directory_body(service, query_fragment, body, headers, requirement:, country:)
   end
 
   def stub_directory_body(service, query_fragment, body,
-                          headers = { 'content-type' => 'application/x-ebrs+xml' }, requirement: nil)
+                          headers = { 'content-type' => 'application/x-ebrs+xml' }, requirement: nil, country: nil)
     asked = { 'queryId' => a_string_including(query_fragment) }
     asked['requirement-id'] = requirement if requirement
+    asked['country-code'] = country if country
 
     stub_request(:get, "#{ACCEPTANCE}/#{service}/rest/search")
       .with(query: hash_including(asked))

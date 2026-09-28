@@ -19,6 +19,7 @@ module Admin
     class DocumentsController < Admin::BaseController
       include ReadsDemoRequest
       include HoldsDemoNames
+      include BuildsDemoCards
 
       # A directory that refuses says so with a code and stays on the page; one
       # that cannot be reached carries none, and `DirectoryLookup::Refusing`
@@ -26,7 +27,7 @@ module Admin
       # pages rescue it: the operator reads what happened rather than a 500.
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
-      helper_method :provider_country_code, :provider_country_name, :demo_request_zone
+      helper_method :requirement_card
 
       # The identity is the one thing on this page no directory has to answer
       # for, and the rescue below renders the same template.
@@ -36,8 +37,12 @@ module Admin
       # request walks before sending anything. Replayed here for the screen
       # alone: the TDD normalise what the portal shows, never how it learns it,
       # and the request itself goes out through the contract.
+      #
+      # Each card is resolved in its own member state, the one the user chose on
+      # it or the one its request went to — `HoldsDemoCountries` says which.
       def show
-        resolved = DirectoryLookup::ResolveAll.call(procedure_code: code, country_code: provider_country_code)
+        resolved = DirectoryLookup::ResolveAll.call(procedure_code: code,
+          country_code: Settings.common_services_country_code, countries: card_countries)
         @procedure = procedure_wording(resolved.requirements)
         @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
 
@@ -45,15 +50,6 @@ module Admin
       end
 
       private
-
-      # The button of one card, in whatever state the session this page is
-      # reloaded from puts it: a reload is not a new request, so a requirement
-      # already under way opens on its waiting rather than on a button that
-      # would start a second.
-      def demo_request_zone(wording)
-        DemoRequestZoneComponent.new(outcome: demo_outcome_for(wording.requirement_uuid),
-          requirement_uuid: wording.requirement_uuid)
-      end
 
       # The heading the home page stands under, said again here: the two are one
       # journey, and the procedure is what it is about. Built on the requirements
@@ -67,23 +63,6 @@ module Admin
       end
 
       def code = ::Demo::RequestEvidence::PROCEDURE_CODE
-
-      # The jurisdiction the evidence is sought in, named as the card has to name
-      # it when nothing is published there. The code and the name travel apart,
-      # and not the box around them: a ViewComponent instance is single-use, and
-      # a card names the country more than once.
-      def provider_country_code = ::Demo::RequestEvidence::PROVIDER_COUNTRY
-
-      # In English, like the page. A code list that says nothing leaves the name
-      # blank, and the box then shows the code alone.
-      def provider_country_name
-        @provider_country_name ||= code_lists.country_names(lang: :en)[provider_country_code]
-      end
-
-      # One client for the page, as `Admin::CommonServices::BaseController` keeps
-      # one for its section: the lists it answers are the same on every call, and
-      # a second instance would fetch them again.
-      def code_lists = @code_lists ||= CodeListClient.new
 
       def report_unreachable_directories(error)
         @unreachable = error.message

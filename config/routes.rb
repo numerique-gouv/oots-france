@@ -72,6 +72,10 @@ Rails.application.routes.draw do
       # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
       # never asks.
       resource :demande, only: %i[show create], controller: 'requests'
+      # The member state one card resolves its requirement in, which the user
+      # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
+      # answers with the card alone, and opens nothing.
+      resource :pays, only: :update, controller: 'countries'
       # The evidence itself. Nothing reaches it without the exchange the session
       # is following.
       get 'justificatif', to: 'evidences#show', as: :justificatif

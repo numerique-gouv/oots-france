@@ -41,4 +41,22 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     expect(element['aria-live']).to eq('polite')
     expect(element).to have_css('.demo-request__body', visible: :all)
   end
+
+  # Posted apart from the zone: the list is not part of what a change of
+  # country replaces, and keeps the focus.
+  it 'offers the countries it is given in a form of its own, outside the zone' do
+    render_inline(described_class.new(wording:, country_code: 'FI', countries: [['🇫🇮 Finland (FI)', 'FI'], ['🇫🇷 France (FR)', 'FR']]))
+
+    form = page.find('form.requirement-card__country')
+
+    expect(form['action']).to eq("/admin/demo/pays?exigence=#{uuid}")
+    expect(form).to have_select('Country to request the document from', selected: '🇫🇮 Finland (FI)')
+    expect(page).to have_no_css('.demo-request form.requirement-card__country')
+  end
+
+  it 'offers no choice when it is given none' do
+    render_inline(card)
+
+    expect(page).to have_no_select
+  end
 end

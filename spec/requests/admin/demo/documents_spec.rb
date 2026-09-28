@@ -46,8 +46,8 @@ RSpec.describe 'Admin::Demo::Documents' do
     end
 
     # The resolution walks the chain a request walks: the procedure is asked at
-    # home, the evidence types in the country the evidence is sought in — both
-    # `FR` here, the demonstration making France talk to France.
+    # home, the evidence types in the country the evidence is sought in — the
+    # deployment's own until the user picks another.
     it 'asks about the study financing procedure in France' do
       get admin_demo_documents_path
 
@@ -250,6 +250,245 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path
 
       expect(response).to redirect_to(admin_demo_root_path)
+    end
+  end
+
+  # Step 16 of chapter 1 §10.1: « The sample Portal asks the user to specify
+  # from which Member State the evidence is to be requested. » The doubled
+  # directories answer by the `country-code` they receive: France and Finland
+  # both publish a type and a provider — what the specs have France publish is
+  # the Finnish capture, and nothing is made up —, Germany publishes nothing,
+  # and Austria's Data Service Directory refuses with `DSD:ERR:0001`.
+  describe 'the member state each card asks' do
+    before do
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', country: 'DE')
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr', country: 'AT')
+    end
+
+    # CA1.
+    it 'offers the thirty countries of the list without EU, France selected, sorted by name' do
+      get admin_demo_documents_path
+
+      choix = carte.at_css('select')
+      options = choix.css('option')
+
+      expect(carte.at_css("label[for='#{choix['id']}']").text.squish).to eq('Country to request the document from')
+      expect(options.size).to eq(30)
+      expect(options.pluck('value')).not_to include('EU')
+      expect(options.find { |option| option['selected'] }['value']).to eq('FR')
+      expect(options.map(&:text).first(3)).to eq(['🇦🇹 AT', '🇧🇪 BE', '🇧🇬 BG'])
+      expect(options.map(&:text)).to include('🇫🇮 Finland (FI)', '🇬🇷 EL')
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Satisfied by the following documents in 🇫🇷 France (FR)')
+    end
+
+    # CA2 and RG6: changing the country asks the directories alone.
+    it 'resolves the card in the chosen country, and asks nothing of the contract' do
+      choose_country('FI')
+      get admin_demo_documents_path
+
+      expect(eb_asked('evidence-types-by-requirement', 'FI')).to have_been_made.at_least_once
+      expect(dsd_asked('FI')).to have_been_made.at_least_once
+      expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('queryId' => a_string_including('requirements-by-procedure'),
+          'country-code' => 'FR'))).to have_been_made.at_least_once
+      expect(carte.at_css('.fr-card__desc').text.squish)
+        .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+      expect(carte.text).to include('Dummy PDF - FI', 'Keha v. 2.0')
+      expect(carte.at_css('select option[selected]')['value']).to eq('FI')
+      expect(contract_demands).to be_empty
+    end
+
+    # The browser splices the answer into the card around the list: a fragment
+    # it can tell is ours, the card alone, resolved in the country chosen.
+    it 'answers the card alone, resolved in the country chosen' do
+      choose_country('FI')
+
+      fragment = response.parsed_body
+
+      expect(response.headers['Deferred-Fragment']).to eq('1')
+      expect(fragment.css('header, footer, nav')).to be_empty
+      expect(fragment.at_css("#exigence-#{exigence} .fr-card__desc").text.squish)
+        .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+      expect(fragment.at_css('select option[selected]')['value']).to eq('FI')
+      expect(contract_demands).to be_empty
+    end
+
+    # What the card names now is what its button sends: the click after the
+    # choice goes out with the names of that country, without a reload between.
+    it 'has the button send what the card now names' do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      get admin_demo_documents_path
+      choose_country('FI')
+      post demande_path
+
+      expect(evidence_request_query['codePays']).to eq('FI')
+      expect(Demo::Request.sole.country_code).to eq('FI')
+    end
+
+    # The page is what says the directories are out of reach: the browser
+    # reloads it on anything but a fragment, so none is answered, and the log
+    # keeps what failed.
+    it 'answers no fragment, and logs why, when the directories cannot be reached' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({})).to_timeout
+      allow(Rails.logger).to receive(:warn)
+
+      choose_country('FI')
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(response.headers['Deferred-Fragment']).to be_nil
+      expect(Rails.logger).to have_received(:warn).with(a_string_including('Annuaires injoignables'))
+    end
+
+    it 'refuses a requirement the procedure does not rest on' do
+      choose_country('FI', 'abababab-abab-abab-abab-abababababab')
+
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    # CA3.
+    it 'says the card unsatisfiable by a country that publishes nothing, and still offers the choice' do
+      choose_country('DE')
+      get admin_demo_documents_path
+
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇩🇪 Germany (DE)')
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by Germany for this evidence')
+      expect(carte.css('.demo-request')).to be_empty
+      expect(carte.at_css('select option[selected]')['value']).to eq('DE')
+    end
+
+    it 'says the same when the Data Service Directory of the country lists no service' do
+      choose_country('AT')
+      get admin_demo_documents_path
+
+      expect(carte.at_css('.requirement-card__actions').text.squish)
+        .to eq('⚠️No provider listed by AT for this evidence')
+      expect(carte.css('.demo-request')).to be_empty
+      expect(carte.at_css('select option[selected]')['value']).to eq('AT')
+    end
+
+    # CA8: the page refuses what it never offers, before any directory hears
+    # of it.
+    %w[XX EU fi].each do |code|
+      it "refuses #{code} and asks no directory about it" do
+        choose_country(code)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+          .with(query: hash_including({}))).not_to have_been_made
+      end
+    end
+
+    # CA10: the choice of each card is kept, and a reload asks nothing.
+    it 'keeps the country chosen on each card across a reload' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+
+      choose_country('DE', seconde)
+      choose_country('FI', premiere)
+      get admin_demo_documents_path
+
+      choisis = response.parsed_body.css('main .requirement-card select option[selected]').pluck('value')
+
+      expect(choisis).to eq(%w[FI DE])
+      expect(contract_demands).to be_empty
+    end
+
+    # CA9: a new identification opens a new journey, and the cards start again
+    # in the deployment's own country.
+    it 'starts every card again in France once the user has identified anew' do
+      choose_country('FI')
+      identify_demo_user
+      get admin_demo_documents_path
+
+      expect(carte.at_css('select option[selected]')['value']).to eq('FR')
+    end
+
+    # RG8: a card following a request stays in the country that request went to.
+    describe 'on a card following a request' do
+      before do
+        stub_oots_france_public_keys
+        stub_evidence_request
+        stub_exchange_state
+        choose_country('FI')
+        get admin_demo_documents_path
+        post demande_path
+      end
+
+      # CA5, first half.
+      it 'names the country of the request and offers no choice' do
+        get admin_demo_documents_path
+
+        expect(carte.css('select')).to be_empty
+        expect(carte.at_css('.fr-card__desc').text.squish)
+          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+      end
+
+      it 'names it too once the document is in hand' do
+        Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
+
+        get admin_demo_documents_path
+
+        expect(carte.css('select')).to be_empty
+        expect(carte.text).to include('Finland', 'Document retrieved successfully')
+      end
+
+      # CA5, second half: a change submitted meanwhile is without effect.
+      it 'ignores a change submitted while the request is under way' do
+        choose_country('DE')
+        get admin_demo_documents_path
+
+        expect(carte.at_css('.fr-card__desc').text.squish)
+          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+        expect(eb_asked('evidence-types-by-requirement', 'DE')).not_to have_been_made
+      end
+
+      # CA5, last: once the zone offers « Retry to request », the choice is back.
+      it 'offers the choice again once the correspondent refused' do
+        stub_exchange_state(statut: 'failed')
+
+        get admin_demo_documents_path
+
+        expect(carte.at_css('select option[selected]')['value']).to eq('FI')
+        expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
+      end
+    end
+
+    # CA6: the request's country on its card, the choice on its neighbour, and
+    # a reload opens nothing.
+    it 'keeps each card in its own country on a reload' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      choose_country('FI', premiere)
+      get admin_demo_documents_path
+      post demande_path(premiere)
+      choose_country('DE', seconde)
+
+      get admin_demo_documents_path
+
+      cartes = response.parsed_body.css('main .requirement-card')
+
+      expect(cartes.map { |une| une.at_css('.fr-card__desc .country-tag').text.squish })
+        .to eq(['🇫🇮 Finland (FI)', '🇩🇪 Germany (DE)'])
+      expect(cartes.first.css('select')).to be_empty
+      expect(contract_demands.size).to eq(1)
+    end
+
+    def carte = response.parsed_body.at_css("main #exigence-#{exigence}")
+
+    def choose_country(code, uuid = exigence) = patch(admin_demo_pays_path(exigence: uuid), params: { pays: code })
+
+    def eb_asked(query, country)
+      a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including('queryId' => a_string_including(query), 'country-code' => country))
+    end
+
+    def dsd_asked(country)
+      a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/dsd/rest/search")
+        .with(query: hash_including('country-code' => country))
     end
   end
 

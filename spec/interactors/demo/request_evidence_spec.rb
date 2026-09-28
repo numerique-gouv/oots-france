@@ -2,7 +2,8 @@ require 'rails_helper'
 
 RSpec.describe Demo::RequestEvidence do
   subject(:result) do
-    described_class.call(identity:, journey:, requirement_uuid:, evidence_request_client: client, token_writer:)
+    described_class.call(identity:, journey:, requirement_uuid:, country_code: 'FI',
+      evidence_request_client: client, token_writer:)
   end
 
   let(:identity) { Demo::UserIdentity.new(family_name: 'Sørensen') }
@@ -16,11 +17,13 @@ RSpec.describe Demo::RequestEvidence do
     Demo::ContractAnswer.new(status: 202, payload: { 'echange' => 'un-échange', 'conversation' => 'une-conversation' })
   end
 
-  it 'asks for the study financing in France, the demonstration making France talk to France' do
+  # Step 16 of chapter 1 §10.1: the member state is the one the user picked on
+  # the card, and nothing here decides it.
+  it 'asks for the study financing in the member state the card named' do
     result
 
     expect(client).to have_received(:fetch).with(
-      hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'T1', country_code: 'FR'),
+      hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'T1', country_code: 'FI'),
     )
   end
 
@@ -52,7 +55,8 @@ RSpec.describe Demo::RequestEvidence do
     result
 
     expect(Demo::Request.sole)
-      .to have_attributes(journey_id: 'un-parcours', requirement_uuid: '00000000-0000-0000-0000-000000000000')
+      .to have_attributes(journey_id: 'un-parcours', requirement_uuid: '00000000-0000-0000-0000-000000000000',
+        country_code: 'FI')
   end
 
   it 'registers nothing when the contract refused' do

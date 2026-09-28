@@ -37,7 +37,5 @@
     request, and chapter 4.4 §4.2.2 lets the requests themselves run « sequentially
     and/or in parallel ». %>
 <% @requirements.each do |requirement| %>
-  <%= render DemoRequirementCardComponent.new(wording: requirement,
-        country_code: provider_country_code, country_name: provider_country_name,
-        zone: (demo_request_zone(requirement) if requirement.nameable?)) %>
+  <%= render requirement_card(requirement) %>
 <% end %>
