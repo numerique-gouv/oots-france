@@ -25,6 +25,10 @@ default: &commun
     cron: '* * * * *'
     class: ExpireExchangesJob
     description: Clôt les échanges qu'aucune réponse n'a réglés dans le délai imparti
+  expiration_previsualisations:
+    cron: '* * * * *'
+    class: ExpirePreviewSessionsJob
+    description: Clôt les prévisualisations dont T2 ou T3 est écoulé, et efface ce qu'elles gardaient
 
 development: *commun
 test: {}

@@ -1,6 +1,6 @@
 module Answers
-  # What the three answers France returns share — a refusal, the document, or
-  # the announcement of a date.
+  # What the answers France returns share — a refusal, the document, the
+  # announcement of a date, and those of a preview.
   #
   # One type each, so that no object can carry two answers at once: the
   # constructors are the only thing that could hold that invariant, and an
@@ -9,7 +9,7 @@ module Answers
   # document, a deferral with no date and a refusal with no exception are
   # exactly the states these types exist to rule out.
   #
-  # Including this module is what declares membership: a fourth answer that
+  # Including this module is what declares membership: a new answer that
   # forgot `record` or `settle` would otherwise be found by a `NoMethodError`,
   # the first time that path ran.
   #
@@ -23,6 +23,9 @@ module Answers
     # answer the gateway would not take. Overridden by the member `Refusal`
     # declares, an accessor of the class winning over an included module.
     def exception = nil
+
+    # Whether nothing goes out at all, which `Answers::Withheld` alone declares.
+    def withheld? = false
 
     private
 

@@ -17,9 +17,21 @@ module IncomingMessage
       refuse_unless_identified
 
       context.exchange ||= open
+      reopen_previewed(context.exchange)
     end
 
     private
+
+    # Chapter 4.7 §2.5.2: on the 2.0 line the second request of a preview
+    # reuses the `ExchangeId` of the first, whose answer left this row
+    # `preview_required`, and opens it again under its own request identifier,
+    # the one the answer echoes. The 1.2 line names no exchange: its second
+    # request opens a row of its own, tied to the first by the address alone.
+    def reopen_previewed(exchange)
+      return unless exchange.incoming? && exchange.preview_required?
+
+      exchange.reopen!(readable { request.request_id })
+    end
 
     # `find_or_create_by!` and not `create!`: the fallback sweep can bring back a
     # message the push notification already delivered, and the unique index would

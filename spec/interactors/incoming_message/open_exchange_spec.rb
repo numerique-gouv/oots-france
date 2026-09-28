@@ -61,6 +61,24 @@ RSpec.describe IncomingMessage::OpenExchange do
       expect(Exchange.sole).to have_attributes(incoming: false, country_code: 'FI', ebms_sent_at: nil)
     end
 
+    # Chapter 4.7 §2.5.2: the second request of a preview reopens the row the
+    # first answer left — France's own, as a provider, and no other.
+    it 'reopens the row its own preview answer left, under the second request identifier' do
+      create(:exchange, :received, exchange_id: FOREIGN_EXCHANGE, status: 'preview_required')
+
+      open_exchange
+
+      expect(Exchange.sole).to have_attributes(status: 'pending', request_id: message.body.request_id)
+    end
+
+    it 'leaves alone a row of its own request a correspondent sent to preview' do
+      create(:exchange, exchange_id: FOREIGN_EXCHANGE, incoming: false, status: 'preview_required')
+
+      open_exchange
+
+      expect(Exchange.sole.status).to eq('preview_required')
+    end
+
     # The exchange an auditor most needs to find is the one nobody could honour.
     context 'when the body cannot be read' do
       before { allow(body).to receive(:procedure_code).and_raise(UnreadableMessageError, 'illisible') }

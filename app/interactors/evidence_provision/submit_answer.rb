@@ -4,6 +4,8 @@ module EvidenceProvision
     include Answered
 
     def call
+      return if context.answer.withheld?
+
       context.answer_message_id = submit(context.answer.envelope.render)
     end
 

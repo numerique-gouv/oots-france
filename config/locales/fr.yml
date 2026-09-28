@@ -563,6 +563,8 @@ fr:
   jobs:
     expire_exchanges_job:
       failed: "Expiration impossible pour l'échange %{id} : %{error}"
+    expire_preview_sessions_job:
+      failed: "Expiration impossible pour la prévisualisation %{id} : %{error}"
   lib:
     audit_trail:
       unreadable_field: "Champ « %{field} » illisible, absent de la ligne de journal : %{error}"
@@ -1532,6 +1534,8 @@ fr:
           L'ID Token et la réponse UserInfo ne désignent pas la même personne.
         refused: "Identification FranceConnect+ refusée : %{reason}"
     evidence_provision:
+      recall_second_request:
+        nothing_held: "La prévisualisation %{id} ne garde plus de seconde requête : rien à répondre."
       choose_answer:
         # Le rejeu d'un identifiant de requête, que le chapitre 4.4 impose de
         # refuser, et la version que l'entête annonce sans que le corps la
@@ -1691,6 +1695,10 @@ fr:
         message_unreadable: Message illisible
         message_unhandled: Message non traité
         answer_not_sent: Réponse non remise
+        # Les deux pas de l'usager dans l'espace de prévisualisation de la
+        # France (chapitre 4.8 §3.2, article 17(2) du règlement 2022/1463).
+        preview_visited: Prévisualisation ouverte
+        preview_decided: Choix de l'usager
       filtre:
         legend: Filtrer le journal
         all: Tous

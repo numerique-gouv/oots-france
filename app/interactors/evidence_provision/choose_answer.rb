@@ -1,12 +1,19 @@
 module EvidenceProvision
-  # Decides which of the three answers goes back, and builds it.
+  # Decides which answer goes back, and builds it.
   #
   # The order below is the whole of this step, and it is significant: chapter
   # 4.4 has a data service implementing timeout « return a timeout exception
   # response … instead of a successful response », which puts the deadline last,
   # where the successful answer is chosen — a procedure nobody serves is worth
   # `EDM:ERR:0004` however late the request.
+  #
+  # A second request of chapter 4.9 escapes T1: T3 of `PreviewSession` bounds
+  # it, counted from its own arrival (chapter 4.10 §6.1). And the preview is
+  # asked where a document would otherwise go, never before a refusal or a
+  # deferral — step 4 of §2 needs no preview where there is no evidence.
   class ChooseAnswer < ApplicationInteractor
+    include PreviewAnswers
+
     # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
     # detail names the chapter where every other one names a rule.
     REPLAYED_IDENTIFIER = 'TDD 4.4: request identifier already used'.freeze
@@ -65,8 +72,15 @@ module EvidenceProvision
 
       return refusal(EdmException::OBJECT_NOT_FOUND) unless ProcedureCode.answered?(procedure_code)
       return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
+      return second_exchange if request.preview_location
+
+      timely_answer
+    end
+
+    def timely_answer
       return refusal(EdmException::TIMEOUT) if expired?
       return deferral if ProcedureCode.deferred?(procedure_code)
+      return preview_required if request.possibility_for_preview?
 
       served
     end

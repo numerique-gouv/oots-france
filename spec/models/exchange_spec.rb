@@ -217,6 +217,18 @@ RSpec.describe Exchange do
       expect(described_class.expired).to include(received)
     end
 
+    # Chapter 4.9 §3: a preview withholds the answer until the user decides,
+    # and T3 bounds that wait; the other exchanges still expire.
+    it 'leaves a received exchange a preview holds, and only that one' do
+      held, overdue = Array.new(2) do
+        create(:exchange, :received, ebms_sent_at: Settings.requester_timeout.ago - 1.minute)
+      end
+      create(:preview_session, answering_exchange_id: held.exchange_id)
+
+      expect(described_class.expired).to include(overdue)
+      expect(described_class.expired).not_to include(held)
+    end
+
     it 'leaves a received exchange the correspondent stamped a moment ago' do
       recent = create(:exchange, :received, ebms_sent_at: 1.minute.ago,
         created_at: Settings.requester_timeout.ago - 1.day)
