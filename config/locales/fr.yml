@@ -722,6 +722,11 @@ fr:
         Le mandat du représentant nomme des démarches (%{procedures}) qui ne sont pas de la
         liste Procedures.
       slot_required: La requête reçue doit porter exactement un slot « %{name} ».
+      # Chapitre 4.9 : le drapeau de prévisualisation et les deux adresses du
+      # second échange.
+      possibility_for_preview_not_boolean: Le slot « PossibilityForPreview » doit valoir un booléen XML (true, false, 1 ou 0), et non « %{value} ».
+      preview_locations_unpaired: La requête doit porter les slots « PreviewLocation » et « ReturnLocation » ensemble, ou aucun des deux.
+      location_not_secure: Le slot « %{name} » doit porter une adresse en https://, et non « %{location} ».
       unexpected_specification: La requête reçue annonce %{announced}, et non %{expected}.
       unnamed_specification: une version sans nom
       evidence_subject_not_alone: >-

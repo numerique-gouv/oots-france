@@ -2472,8 +2472,15 @@ RSpec.describe EvidenceRequestParser do
       # `rim:SlotValue` d'un slot présent, donc un slot absent ne déclenche rien.
       # L'ancre dit sous quel élément il se pose — `query:QueryRequest` pour les
       # deux premiers, `query:Query` pour les deux derniers.
+      # `R-EDM-REQ-S062` pairs the two addresses of chapter 4.9, so each is
+      # written beside a well-typed other half.
+      PAIRED = {
+        'PreviewLocation' => 'ReturnLocation', 'ReturnLocation' => 'PreviewLocation',
+      }.freeze
+
       def slot_written(name, type, content, before: '<rim:Slot name="EvidenceRequester">')
         written = %(<rim:Slot name="#{name}"><rim:SlotValue xsi:type="#{type}">#{content}</rim:SlotValue></rim:Slot>)
+        written = "#{string_slot(PAIRED[name], 'https://example.si/autre')}#{written}" if PAIRED.key?(name)
 
         with_body { |body| body.sub(before) { "#{written}#{before}" } }
       end
@@ -3777,8 +3784,7 @@ RSpec.describe EvidenceRequestParser do
     it 'admits a well-typed ReturnLocation on the 2.0 line' do
       written = with_body do |body|
         body.sub('<rim:Slot name="EvidenceRequester">') do
-          '<rim:Slot name="ReturnLocation"><rim:SlotValue xsi:type="rim:StringValueType">' \
-            '<rim:Value>https://example.si/retour</rim:Value></rim:SlotValue></rim:Slot>' \
+          "#{preview_slots('https://example.si/apercu', 'https://example.si/retour')}" \
             '<rim:Slot name="EvidenceRequester">'
         end
       end
