@@ -233,4 +233,28 @@ RSpec.describe EvidenceResponseBuilder do
       expect(document.root['requestId']).to eq('urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797')
     end
   end
+
+  # Chapter 4.9 §1: « if the user decides not to use any piece of evidence, the
+  # evidence response shall contain an empty registry object list ».
+  describe 'the answer to a user who used nothing' do
+    %w[v2_0 v1_2].each do |slug|
+      it "carries an empty registry object list on the #{slug} line" do
+        rendered = described_class.new(
+          **attributes.slice(:requester, :request_id, :clock, :uuid),
+          specification: EdmSpecification::SPOKEN.find { |spoken| spoken.slug == slug },
+        ).render
+        list = Nokogiri::XML(rendered).xpath('/*/rim:RegistryObjectList', namespaces)
+
+        expect(list.map { |found| found.children.size }).to eq([0])
+      end
+    end
+  end
+
+  # Chapter 4.9 §3: the response carries the evidence the user saw, so it
+  # repeats the identifier that evidence was given when it was produced.
+  it 'describes an evidence produced already under the identifier it was given' do
+    rendered = described_class.new(**attributes, evidence_id: 'deja-produit').render
+
+    expect(Nokogiri::XML(rendered).at_xpath('//sdg:Evidence/sdg:Identifier', namespaces).text).to eq('deja-produit')
+  end
 end

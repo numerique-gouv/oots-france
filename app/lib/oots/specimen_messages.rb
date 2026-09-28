@@ -24,6 +24,9 @@ module Oots
     CONVERSATION_ID = 'e0a6a5b7-6b2e-4b9c-9a63-8f0c6d3a1b24'.freeze
     EXCHANGE_ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7'.freeze
 
+    # `R-EDM-ERR-C019` asks for `https://`, whatever the deployment runs on.
+    PREVIEW_LOCATION = 'https://oots.example.gouv.fr/previsualisation/9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'.freeze
+
     # A specimen for every code the repository emits: the exception type changes
     # with the code and the rules constrain it, so a code never produced here is
     # a code never confronted with the rules.
@@ -93,15 +96,20 @@ module Oots
       write(IDENTIFIERLESS_SPECIMEN,
         *error_response(EdmException::INVALID_REQUEST.with_detail('R-EDM-REQ-S004'), request_id: nil))
 
-      # Last for the reason the specimen above is last: `header` draws a message
-      # identifier from the sequence, and the specimens the rules accept must not
-      # shift because of the one they refuse.
+      write_refused_specimens
+      write_preview_specimens
+    end
+
+    private
+
+    # Last for the reason the specimen above is last: `header` draws a message
+    # identifier from the sequence, and the specimens the rules accept must not
+    # shift because of the one they refuse.
+    def write_refused_specimens
       write_header(MALFORMED_IDENTIFIERS_SPECIMEN, malformed_header)
       write_earlier_line_header unless specification == EdmSpecification::V1_2
       write_several_distributions_request if specification == EdmSpecification::V1_2
     end
-
-    private
 
     attr_reader :destination, :specification
 
@@ -182,9 +190,24 @@ module Oots
       ]
     end
 
-    def error_response(exception, request_id: REQUEST_ID)
+    # The two messages of chapter 4.9 France emits as a provider: the exception
+    # sending the user to its preview space, and the answer to a user who used
+    # nothing. Last, so that the identifiers drawn above do not shift.
+    def write_preview_specimens
+      write('erreurPrevisualisationRequise',
+        *error_response(EdmException::AUTHORIZATION, preview_location: PREVIEW_LOCATION))
+      write('reponseVide', *empty_response)
+    end
+
+    def empty_response
+      body = EvidenceResponseBuilder.new(requester:, request_id: REQUEST_ID, specification:, clock:, uuid:)
+
+      [body.render, evidence_response_header(body, EmptyAttachment.new)]
+    end
+
+    def error_response(exception, request_id: REQUEST_ID, preview_location: nil)
       body = ErrorResponseBuilder.new(
-        requester:, exception:, request_id:, specification:, clock:, uuid:,
+        requester:, exception:, request_id:, preview_location:, specification:, clock:, uuid:,
       )
 
       [

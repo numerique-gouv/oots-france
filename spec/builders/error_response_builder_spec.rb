@@ -130,6 +130,35 @@ RSpec.describe ErrorResponseBuilder do
     it 'is absent otherwise, rather than emitted empty' do
       expect(response).not_to include('PreviewLocation')
     end
+
+    def previewed(specification = EdmSpecification::V2_0)
+      Nokogiri::XML(described_class.new(**attributes, specification:, exception: EdmException::AUTHORIZATION,
+        preview_location: 'https://oots.example/previsualisation/x').render)
+    end
+
+    def slot_names(document) = document.xpath('//rs:Exception/rim:Slot/@name', namespaces).map(&:value)
+
+    # RG5 of OOTS-72: `R-EDM-ERR-S024` types it, `C020` takes its languages
+    # from `LanguageCode`.
+    it 'comes with a description in English and in French' do
+      languages = previewed.xpath("//rim:Slot[@name='PreviewDescription']//rim:LocalizedString/@xml:lang",
+        namespaces).map(&:value)
+
+      expect(languages).to eq(%w[EN FR])
+    end
+
+    # RG6: `R-EDM-ERR-S027` closes the list on 2.0, which removed `PreviewMethod`.
+    it 'carries no PreviewMethod on the 2.0 line' do
+      expect(slot_names(previewed)).to eq(%w[Timestamp PreviewLocation PreviewDescription])
+    end
+
+    # RG6: `R-EDM-ERR-S031` asks for it on the 1.2 line, and France serves `GET`.
+    it 'carries a PreviewMethod GET on the 1.2 line' do
+      document = previewed(EdmSpecification::V1_2)
+
+      expect(slot_names(document)).to eq(%w[Timestamp PreviewLocation PreviewDescription PreviewMethod])
+      expect(document.at_xpath("//rim:Slot[@name='PreviewMethod']//rim:Value", namespaces).text).to eq('GET')
+    end
   end
 
   it 'escapes a requester name read from the message that asked' do

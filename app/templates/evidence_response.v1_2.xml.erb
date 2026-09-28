@@ -44,6 +44,9 @@
     `rim:RegistryPackageType`. No `rim:Classification` either — the 1.2 rules
     forbid none, but 1.2 has no `MainEvidence` to name, one response carrying
     one document. -%>
+<%- if empty? -%>
+  <rim:RegistryObjectList/>
+<%- else -%>
   <rim:RegistryObjectList>
     <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:<%= escape(extrinsic_object_id) %>">
       <rim:Slot name="EvidenceMetadata">
@@ -75,4 +78,5 @@
       <rim:RepositoryItemRef xlink:href="<%= escape(evidence_reference) %>" xlink:title="Evidence"/>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
+<%- end -%>
 </query:QueryResponse>

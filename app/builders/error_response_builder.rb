@@ -4,10 +4,18 @@
 # and the requester that asked is C4. The provider is classified `ERRP` here,
 # not `EP`: it is answering for an error, not delivering evidence.
 #
-# The template accepts a `PreviewLocation` slot, which the application it
-# replaces could not emit at all. It is what `EDM:ERR:0002` needs, and chapter
-# 4.9 on the provider side will need it; nothing emits it yet.
+# Given a `preview_location`, it is the `EDM:ERR:0002` of chapter 4.9 §2 step 9,
+# sending the user to France's preview space.
 class ErrorResponseBuilder < ApplicationBuilder
+  # Chapter 4.9 §1 advises against any other method, and France serves the
+  # space it issues in `GET` alone.
+  PREVIEW_METHOD = 'GET'.freeze
+
+  # `R-EDM-ERR-C020` takes the languages from the `LanguageCode` list. Chapter
+  # 4.9 §4 asks for one broadly understood language at least: English, and the
+  # French of the space itself.
+  PREVIEW_LANGUAGES = %w[EN FR].freeze
+
   attr_reader :request_id, :document_id, :exception, :preview_location
 
   def initialize(
@@ -22,6 +30,15 @@ class ErrorResponseBuilder < ApplicationBuilder
     @preview_location = preview_location
     @instant = clock.now
     @document_id = uuid.next
+  end
+
+  # `R-EDM-ERR-S031` asks for it on the 1.2 line, and 2.0 removed the slot.
+  def preview_method? = preview_location.present? && specification.preview_method_slot?
+
+  def preview_descriptions
+    PREVIEW_LANGUAGES.index_with do |language|
+      I18n.t("builders.error_response_builder.preview_description.#{language.downcase}")
+    end
   end
 
   protected

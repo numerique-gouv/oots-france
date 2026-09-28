@@ -405,6 +405,14 @@ fr:
         legal_name: Raison sociale
         identifiers: Identifiants
   builders:
+    # La description de l'espace de prévisualisation que l'exception
+    # EDM:ERR:0002 porte (chapitre 4.9 §4). L'anglais est là pour l'usager qui
+    # ne lit pas le français : le chapitre demande au moins une langue largement
+    # comprise, et l'espace lui-même est en français.
+    error_response_builder:
+      preview_description:
+        en: The French administration holding your document will show it to you before sending it, and let you decide whether to use it.
+        fr: L'administration française qui détient votre document vous le montrera avant de l'envoyer, et vous laissera décider de l'utiliser ou non.
     # Le justificatif de démonstration que la France sert. Aucun chapitre ne dit
     # ce qu'un PDF porte : ces libellés sont à nous, et l'ordre dans lequel le
     # document les pose aussi. Les titres du type demandé, eux, restent dans la
