@@ -271,6 +271,16 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       )
     end
 
+    # Chapter 4.10 §2.1, steps 17-18: « The portal should notify the user ».
+    it 'reports that no evidence matched, with neither code nor date' do
+      exchange.unmatched!
+
+      get "/requete/#{exchange.exchange_id}"
+
+      expect(response.parsed_body).to include('statut' => 'unmatched')
+      expect(response.parsed_body).not_to include('codeErreur', 'dateDisponibilite')
+    end
+
     it 'says nothing of a date on an exchange nobody deferred' do
       exchange.delivered!
 

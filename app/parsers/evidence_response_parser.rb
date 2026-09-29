@@ -9,9 +9,9 @@ class EvidenceResponseParser
   include EvidenceAssociationConformance
 
   # The two values `R-EDM-RESP-S006` allows: the evidence travels with the
-  # response, or it is announced for later. Only the deferral is asked about by
-  # the readings below — a response claiming success and carrying nothing stays
-  # unreadable, which is what it is — where the rules ask about both.
+  # response, or it is announced for later. A success may also carry nothing at
+  # all, which chapter 4.10 §2.1 has mean that no evidence matches — the one
+  # reading of `SUCCESS` besides the rules.
   SUCCESS = 'urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success'.freeze
   UNAVAILABLE = 'urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Unavailable'.freeze
   STATUSES = [SUCCESS, UNAVAILABLE].freeze
@@ -26,6 +26,12 @@ class EvidenceResponseParser
     'EvidenceProvider' => 'R-EDM-RESP-S012',
     'EvidenceRequester' => 'R-EDM-RESP-S013',
   }.freeze
+
+  OBJECT_LIST = './rim:RegistryObjectList'.freeze
+
+  # Every object no list hangs from: the objects of a flat list, and those
+  # inside each package — a package whose nested list is empty is no evidence.
+  EVIDENCE_OBJECTS = "#{OBJECT_LIST}//rim:RegistryObject[not(rim:RegistryObjectList)]".freeze
 
   AVAILABLE_AT_SLOT = 'ResponseAvailableDateTime'.freeze
   AVAILABLE_AT = "./rim:Slot[@name='#{AVAILABLE_AT_SLOT}']/rim:SlotValue/rim:Value".freeze
@@ -93,6 +99,22 @@ class EvidenceResponseParser
   def response_id = text_at(response, "./rim:Slot[@name='EvidenceResponseIdentifier']/rim:SlotValue/rim:Value")
 
   def unavailable? = attribute(response, 'status') == UNAVAILABLE
+
+  def succeeded? = attribute(response, 'status') == SUCCESS
+
+  # A success whose list holds no evidence object: chapter 4.10 §2.1, step 11,
+  # « Absences of any evidence is encoded as a RegistryObjectList that does not
+  # contain any RegistryObject elements ». The list must be there — its absence
+  # breaks `R-EDM-RESP-S007` and says nothing. In 2.0 the objects sit in the
+  # nested list of each package, which chapter 4.5.2 §2.1 lets be empty « if no
+  # matching Evidence is available » although `R-EDM-RESP-S047` refuses it.
+  #
+  # Read on the shape and not on the version the response announces: an
+  # announcement a correspondent got wrong would otherwise look one level too
+  # deep and miss the evidence a flat list carries.
+  def matches_nothing?
+    succeeded? && at(response, OBJECT_LIST).present? && all(response, EVIDENCE_OBJECTS).empty?
+  end
 
   # `R-EDM-RESP-S045` requires the slot on a deferral and `R-EDM-RESP-S014`
   # forbids it anywhere else, which is what the guard reads: past it, this
@@ -309,7 +331,7 @@ class EvidenceResponseParser
   # have — an answer carrying no document still declares the package it carries
   # nothing in.
   def missing_object_list
-    return if at(response, './rim:RegistryObjectList')
+    return if at(response, OBJECT_LIST)
 
     violation('R-EDM-RESP-S007', 'no_object_list')
   end
@@ -320,7 +342,7 @@ class EvidenceResponseParser
   # that succeeded carries no exception. A deferral that carries one is caught
   # all the same, by `-S016`, which counts every child.
   def exception_in_a_success
-    return unless attribute(response, 'status') == SUCCESS
+    return unless succeeded?
     return if at(response, './rs:Exception').nil?
 
     violation('R-EDM-RESP-S008', 'exception_in_a_success')

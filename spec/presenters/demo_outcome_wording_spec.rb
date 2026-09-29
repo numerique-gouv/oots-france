@@ -20,6 +20,14 @@ RSpec.describe DemoOutcomeWording do
       expect(wording.outcome).to eq(:refused)
     end
 
+    # Chapter 4.10 §2.1: the portal tells the user, and does not wait for the
+    # screen's deadline to do so.
+    it 'is a refusal, at once, when no evidence matched' do
+      payload['statut'] = 'unmatched'
+
+      expect(wording.outcome).to eq(:refused)
+    end
+
     it 'is a preview when the correspondent asked for one' do
       payload['statut'] = 'preview_required'
 
@@ -81,6 +89,12 @@ RSpec.describe DemoOutcomeWording do
       # instead would send the reader looking for an answer that was given.
       it 'leaves a refusal a refusal' do
         payload['statut'] = 'failed'
+
+        expect(wording.outcome).to eq(:refused)
+      end
+
+      it 'leaves an answer that no evidence matches a refusal' do
+        payload['statut'] = 'unmatched'
 
         expect(wording.outcome).to eq(:refused)
       end

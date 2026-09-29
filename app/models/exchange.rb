@@ -34,23 +34,25 @@ class Exchange < ApplicationRecord
   # deferral aside; where it answers, pending → delivered, deferred or failed.
   # `declined` — the user saw the evidence in a correspondent's preview space and
   # used none of it, which chapter 4.9 §1 has the second response say with an
-  # empty list: an outcome, and not a failure.
+  # empty list: an outcome, and not a failure. `unmatched` — the same empty list
+  # answering the first request, no preview having taken place: the provider
+  # found no evidence to match, chapter 4.9 §2, step 4.
   # `preview_required` — the user must visit a preview space before the
   # answer — is where either side stands between the two round trips of
   # chapter 4.9: France asking, a correspondent sent it there; France answering,
   # it sent the user to its own. `deferred` — it answered that the evidence will
   # exist later, and named when, where it said so.
   #
-  # Every one of the four answers may also reach a `failed` exchange, but only
-  # one the expiry sweep presumed: an answer refutes a guess, where a guess
-  # displaces nothing. That is the whole of `if: :refutable?`, written here as a
-  # condition of the transition rather than argued in a private method — it is
-  # the rule this table exists to state.
+  # Every answer may also reach a `failed` exchange, but only one the expiry
+  # sweep presumed: an answer refutes a guess, where a guess displaces nothing.
+  # That is the whole of `if: :refutable?`, written here as a condition of the
+  # transition rather than argued in a private method — it is the rule this
+  # table exists to state.
   #
   # Nothing here takes a lock. The two races an exchange runs into are settled
   # by the `with_lock` of `fire` below, inside which every event is triggered.
   state_machine :status, initial: :pending do
-    state :pending, :sent, :preview_required, :deferred, :delivered, :declined, :failed
+    state :pending, :sent, :preview_required, :deferred, :delivered, :declined, :unmatched, :failed
 
     # From `sent` as well as from `pending`: a submission repeated says the same
     # thing twice, which is not a contradiction to refuse.
@@ -82,6 +84,11 @@ class Exchange < ApplicationRecord
       transition from: :failed, to: :declined, if: :refutable?
     end
 
+    event :match_nothing do
+      transition from: %i[pending sent], to: :unmatched
+      transition from: :failed, to: :unmatched, if: :refutable?
+    end
+
     event :record_failure do
       transition from: %i[pending sent], to: :failed
       transition from: :failed, to: :failed, if: :refutable?
@@ -99,9 +106,9 @@ class Exchange < ApplicationRecord
 
   # Read off the machine rather than declared beside it, so that the two cannot
   # drift. It carries no further: `ExchangeStatusComponent::BADGES` and the
-  # `models.exchange.statuses` of `fr.yml` spell the seven out again, and a state
-  # added here would fall back to their defaults until someone wrote it there
-  # too.
+  # `admin.journal.exchanges.statuses` of `fr.yml` spell the eight out again,
+  # and a state added here would fall back to their defaults until someone wrote
+  # it there too.
   STATUSES = state_machines[:status].states.map { |state| state.name.to_s }.freeze
 
   # `R-EDM-ebMS-017` and `-037`: both identifiers travel in the ebMS header and
@@ -300,6 +307,8 @@ class Exchange < ApplicationRecord
   def delivered! = answered(:deliver)
 
   def declined! = answered(:decline)
+
+  def unmatched! = answered(:match_nothing)
 
   def failed!(code:, description:)
     answered(:record_failure, edm_error_code: code, error_description: description)

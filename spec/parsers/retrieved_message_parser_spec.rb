@@ -71,6 +71,32 @@ RSpec.describe RetrievedMessageParser do
     end
   end
 
+  # Read on the body and on the envelope together: chapter 4.7 §5 has an empty
+  # list add no part to the RegRep document.
+  describe 'a response saying that no evidence matches' do
+    it 'is recognised by an empty list and no part beside the document' do
+      expect(response_matching_nothing).to be_reports_no_evidence
+    end
+
+    it 'is not a response carrying evidence' do
+      expect(described_class.new(real_envelope('reponseAvecPieceJointe'))).not_to be_reports_no_evidence
+    end
+
+    it 'is not a response whose list names evidence the envelope does not carry' do
+      missing = described_class.new(without_evidence(real_envelope('reponseAvecPieceJointe')))
+
+      expect(missing).not_to be_reports_no_evidence
+    end
+
+    it 'is not an empty list the envelope still declares a part beside' do
+      emptied = envelope_with_body('reponseAvecPieceJointe') do |body|
+        with_emptied_list(body, '/query:QueryResponse/rim:RegistryObjectList')
+      end
+
+      expect(emptied).not_to be_reports_no_evidence
+    end
+  end
+
   describe 'an incoming error' do
     subject(:message) { described_class.new(real_envelope('erreurObjetIntrouvable')) }
 

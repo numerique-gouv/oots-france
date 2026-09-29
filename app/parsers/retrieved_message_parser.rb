@@ -113,6 +113,15 @@ class RetrievedMessageParser
   # that are available while flagging that others are not.
   def carries_evidence? = declared_part(PDF).present?
 
+  # A response saying that no evidence matches, read on the body and on the
+  # envelope together: chapter 4.7 §5 has the message carry « as many additional
+  # MIME parts as there are RegistryObject elements », so an empty list adds
+  # none. A list that names an object the envelope does not carry is not this —
+  # it is a response missing its evidence, and unreadable as such.
+  def reports_no_evidence?
+    body.matches_nothing? && header.payload_parts.all? { |part| part[:mime_type] == REGREP }
+  end
+
   # The first MIME part as it arrived, bytes and declared type: chapter 4.8 asks
   # both its tables for it, and `retention_downloaded="0"` has Domibus erase the
   # message the instant `retrieveMessage` returns — nothing can read it twice.

@@ -76,6 +76,11 @@ FactoryBot.define do
       settled_at { Time.current }
     end
 
+    trait :unmatched do
+      status { 'unmatched' }
+      settled_at { Time.current }
+    end
+
     trait :deferred do
       status { 'deferred' }
       response_available_at { 3.days.from_now }

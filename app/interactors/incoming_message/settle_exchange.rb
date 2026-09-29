@@ -68,17 +68,22 @@ module IncomingMessage
     # exactly what a deferral has not — and before `claim_delivery!`, which
     # would reserve a handover nothing is going to make.
     #
-    # A second response carrying nothing is the user's decision, chapter 4.9 §1:
-    # « the evidence response shall contain an empty registry object list ». Only
-    # the second: before a preview, no user has decided anything, and an empty
-    # answer to the first request is left to fail as the unusable answer it is.
+    # A success carrying no evidence says that none matches. Chapter 4.9 §2,
+    # step 4, has a provider answer so at once, « independent of the value of
+    # the "PossibilityForPreview" flag », and chapter 4.10 §2.1 has the portal
+    # tell the user: `unmatched`. After a confirmed preview, chapter 4.9 §1 has
+    # the same empty list say the user used none of it: `declined`.
     def respond(exchange)
       body = context.message.body
 
       return exchange.deferred!(body.response_available_at) if body.unavailable?
-      return exchange.declined! if exchange.preview_confirmed? && !context.message.carries_evidence?
+      return settle_without_evidence(exchange) if context.message.reports_no_evidence?
 
       deliver(exchange)
+    end
+
+    def settle_without_evidence(exchange)
+      exchange.preview_confirmed? ? exchange.declined! : exchange.unmatched!
     end
 
     # `processable?` decided on the exchange as it stood when the message

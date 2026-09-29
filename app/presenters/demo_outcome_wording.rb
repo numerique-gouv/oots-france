@@ -5,14 +5,17 @@
 # never on this deployment's own state: the page is a service provider's screen,
 # and it knows exactly what a service provider knows.
 class DemoOutcomeWording
-  # The two states the page has something of its own to say about on the word of
-  # the contract alone. Anything else — `pending`, `sent`, and the `deferred`
-  # this procedure never meets, asking only for `T1`, which France always serves
+  # The states the page has something of its own to say about on the word of
+  # the contract alone. An `unmatched` is said as a failure: chapter 4.10 §2.1
+  # has the portal tell the user, and the page says the one refusal it has for
+  # every failure. Anything else — `pending`, `sent`, and the `deferred` this
+  # procedure never meets, asking only for `T1`, which France always serves
   # with a document — is still under way as far as the user is concerned. A
   # contract `delivered` is deliberately absent: the document in hand is what
   # settles that one, and `outcome` has already answered before reading here.
   OUTCOMES = {
     'failed' => :refused,
+    'unmatched' => :refused,
     'preview_required' => :preview,
   }.freeze
 

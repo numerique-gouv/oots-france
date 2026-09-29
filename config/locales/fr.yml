@@ -294,7 +294,8 @@ fr:
       # process of identity and evidence matching does not result in a match or
       # the identity matching generates two or more results » —, et le chapitre
       # 4.10 §2.1, informatif, le recommande pour tout refus. La démarche le dit
-      # pour tous, ce qui va au-delà du `MUST`.
+      # pour tous, ce qui va au-delà du `MUST`. Un échange `unmatched` — le
+      # fournisseur n'a trouvé aucun justificatif — le reçoit comme tout refus.
       refused_title: The document cannot be provided
       refused_body: >-
         The administration could not send the document. You will have to obtain it another way.
@@ -1832,6 +1833,7 @@ fr:
           deferred: Différé
           delivered: Délivré
           declined: Refusé par l'usager
+          unmatched: Aucun justificatif
           failed: Échec
         # Ce que la fiche met en tête de ligne.
         attributes:

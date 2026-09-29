@@ -9,6 +9,12 @@ RSpec.describe ExchangeStatusComponent, type: :component do
     expect(described_class::BADGES['failed']).to eq(:error)
   end
 
+  it 'reads an exchange no evidence matched as a warning' do
+    render_inline(described_class.new(status: 'unmatched'))
+
+    expect(page).to have_css('.fr-badge.fr-badge--warning', text: 'Aucun justificatif')
+  end
+
   it 'renders the state in French, in a DSFR badge' do
     render_inline(described_class.new(status: 'delivered'))
 
