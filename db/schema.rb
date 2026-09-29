@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_29_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -78,6 +78,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_120000) do
     t.string "requirement_name"
     t.string "requirement_uuid", null: false
     t.datetime "updated_at", null: false
+    t.string "specification"
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_requests_on_journey_id_and_requirement_uuid"
   end

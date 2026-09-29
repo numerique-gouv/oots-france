@@ -1,10 +1,14 @@
 require 'rails_helper'
 
 RSpec.describe DemoRequirementCardComponent, type: :component do
+  # The pages of the walk live under the line they play, and the addresses a
+  # component writes take it from the page being rendered.
   subject(:card) do
     described_class.new(wording:, country_code: 'FR', country_name: 'France',
       zone: DemoRequestZoneComponent.new(outcome: nil, requirement_uuid: uuid))
   end
+
+  around { |example| with_request_url('/admin/demo/v2.0/documents') { example.run } }
 
   let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
   let(:wording) do
@@ -27,7 +31,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     element = page.find('[data-controller="demo-request"]', visible: :all)
 
     expect(element['data-action']).to eq('submit->demo-request#submit')
-    expect(element['data-demo-request-url-value']).to eq("/admin/demo/demande?exigence=#{uuid}")
+    expect(element['data-demo-request-url-value']).to eq("/admin/demo/v2.0/demande?exigence=#{uuid}")
   end
 
   # Une région remplacée en même temps que ce qu'elle annonce n'annonce rien :
@@ -49,7 +53,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     form = page.find('form.requirement-card__country')
 
-    expect(form['action']).to eq("/admin/demo/pays?exigence=#{uuid}")
+    expect(form['action']).to eq("/admin/demo/v2.0/pays?exigence=#{uuid}")
     expect(form).to have_select('Country to request the document from', selected: '🇫🇮 Finland (FI)')
     expect(page).to have_no_css('.demo-request form.requirement-card__country')
   end
@@ -58,5 +62,24 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     render_inline(card)
 
     expect(page).to have_no_select
+  end
+
+  # RG12 of OOTS-237: a provider whose gateway does not announce the line of the
+  # journey is named, and offers no button to ask it.
+  describe 'a provider that does not support the line of the journey' do
+    subject(:card) do
+      described_class.new(wording:, country_code: 'FI', country_name: 'Finland', countries: [['🇫🇮 Finland (FI)', 'FI']],
+        unspoken: EdmSpecification::V1_2)
+    end
+
+    it 'says so under the provider, offers neither button nor zone, and still offers the country' do
+      render_inline(card)
+
+      expect(page).to have_text('FR - Test Evidence Provider')
+      expect(page).to have_text('This provider does not support OOTS 1.2')
+      expect(page).to have_no_css('.demo-request')
+      expect(page).to have_no_button
+      expect(page).to have_select('Country to request the document from')
+    end
   end
 end

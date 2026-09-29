@@ -2,13 +2,13 @@
     is known once the second request has arrived, so the zone asks again until
     then — announced, and never by a refresh the user does not control. %>
 <div aria-live="polite" data-controller="preview-return"
-  data-preview-return-url-value="<%= preview_session_return_path(preview.token) %>"
+  data-preview-return-url-value="<%= preview_session_return_path(token: preview.token) %>"
   data-preview-return-waiting-value="<%= preview.awaiting_return? %>">
   <% if preview.awaiting_return? %>
     <p><%= t('preview_sessions.return.awaiting') %></p>
     <%# Shown whatever the browser: without JavaScript it is the only way to
         ask again, and with it the way out when the server stops answering. %>
-    <p><%= link_to t('preview_sessions.return.refresh'), preview_session_path(preview.token), class: 'fr-link' %></p>
+    <p><%= link_to t('preview_sessions.return.refresh'), preview_session_path(token: preview.token), class: 'fr-link' %></p>
   <% elsif preview.return_location.blank? %>
     <p><%= t('preview_sessions.return.none') %></p>
   <% elsif preview.return_by_form? %>

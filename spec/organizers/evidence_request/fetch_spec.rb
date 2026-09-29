@@ -73,6 +73,55 @@ RSpec.describe EvidenceRequest::Fetch do
     end
   end
 
+  # A line the caller asked for has to reach the message itself, and not the
+  # exchange alone: the slot of the body and the header both say it.
+  describe 'a line the caller asks for' do
+    let(:access_point) { build(:access_point, :foreign, conforms_to: ['oots-edm:v1.2', 'oots-edm:v2.0']) }
+    let(:arguments) { super().merge(requested_specification:) }
+
+    context 'when it is 1.2 and the access point announces both' do
+      let(:requested_specification) { EdmSpecification::V1_2 }
+
+      it 'submits a 1.2 request, with the two properties of its header' do
+        expect(fetch).to be_success
+        expect(fetch.exchange.specification).to eq(EdmSpecification::V1_2)
+
+        expect(submitted_properties).to contain_exactly('originalSender', 'finalRecipient')
+        expect(submitted_body).to include('oots-edm:v1.2')
+      end
+    end
+
+    context 'when it is 2.0' do
+      let(:requested_specification) { EdmSpecification::V2_0 }
+
+      it 'submits a 2.0 request' do
+        expect(fetch.exchange.specification).to eq(EdmSpecification::V2_0)
+        expect(submitted_properties).to include('SpecificationId')
+      end
+    end
+
+    context 'when the access point does not announce it' do
+      let(:access_point) { build(:access_point, :foreign) }
+      let(:requested_specification) { EdmSpecification::V1_2 }
+
+      it 'opens the exchange, settles it as failed, and submits nothing' do
+        expect(fetch).to be_failure
+        expect(fetch.error).to include(key: :unannounced_specification)
+
+        expect(fetch.exchange.status).to eq('failed')
+        expect(gateway).not_to have_received(:submit)
+      end
+    end
+
+    def submitted
+      expect(gateway).to have_received(:submit) { |envelope| return Nokogiri::XML(envelope) }
+    end
+
+    def submitted_properties = submitted.xpath('//*[local-name()="MessageProperties"]/*[local-name()="Property"]/@name').map(&:value)
+
+    def submitted_body = Base64.decode64(submitted.at_xpath('//*[local-name()="payload"]/*[local-name()="value"]').text)
+  end
+
   # The other question the steps cannot answer separately: what a requirement
   # named in `idExigence` costs when the country serves it with nothing. The
   # refusal has to come before the exchange is opened, so that a caller correcting

@@ -25,15 +25,21 @@ class FranceConnectController < ApplicationController
   # exists is the earliest it could be: the conversation « Identifies a single
   # uniquely authenticated user » (chapter 4.4 §4.3.2), which nothing posted
   # before the authentication could claim to do. A click writes nothing further.
+  #
+  # The journey plays the line of the sign-in page the flow left from, which
+  # the departure kept with the `state`: these addresses are declared to
+  # FranceConnect+ once and for all, and name none.
   def retour_connexion
-    result = completed_identification
+    expected = session.delete(:france_connect)
+    specification = departed_line(expected)
+    result = completed_identification(expected)
 
-    return refuse_identification(result) unless result.success?
+    return refuse_identification(result, version: specification&.segment) unless result.success?
+    return refuse_lineless_departure if specification.nil?
 
-    session[:demo_journey] = opened_journey(result.identity).to_session
-    session[:demo_identity] = result.identity.to_session
+    open_journey(result.identity, specification)
 
-    redirect_to admin_demo_documents_path
+    redirect_to admin_demo_documents_path(version: specification.segment)
   end
 
   # A page, where the other return is a redirection: FranceConnect+ brings back
@@ -47,13 +53,28 @@ class FranceConnectController < ApplicationController
 
   private
 
-  def opened_journey(identity)
-    Demo::Journey.opened(previous: Demo::Journey.from_session(session[:demo_journey]), subject: identity.subject)
+  def departed_line(expected) = EdmSpecification.from_segment(expected.to_h.symbolize_keys[:version])
+
+  # An identification that succeeded from a departure naming no line — a
+  # session written before the line was kept — opens no journey: none of its
+  # pages would have an address. Said and logged like the other refusals.
+  def refuse_lineless_departure
+    reason = t('controllers.france_connect.lineless_departure')
+    Rails.logger.warn(reason)
+
+    redirect_to admin_demo_root_path, flash: { alert: :'interactors.failures.identification_refused', details: [reason] }
   end
 
-  def completed_identification
+  def open_journey(identity, specification)
+    previous = Demo::Journey.from_session(session[:demo_journey])
+
+    session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:).to_session
+    session[:demo_identity] = identity.to_session
+  end
+
+  def completed_identification(expected)
     Demo::CompleteIdentification.call(
-      code: params[:code], state: params[:state], expected: session.delete(:france_connect),
+      code: params[:code], state: params[:state], expected:,
       announced_error: params[:error], error_description: params[:error_description],
     )
   end

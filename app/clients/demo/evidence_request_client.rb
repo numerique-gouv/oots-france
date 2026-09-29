@@ -27,8 +27,11 @@ module Demo
     # asked for. Optional at the contract, and optional here: `compact` drops it
     # where the page had none to name, and the contract then answers the first
     # requirement the country publishes for.
+    #
+    # `specification` is the line of the journey, a parameter no French
+    # procedure has to set: each screen of the demonstration plays one line.
     def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:,
-              conversation_id: nil, requirement_id: nil)
+              conversation_id: nil, requirement_id: nil, specification: nil)
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
         codeDemarche: procedure_code,
@@ -37,6 +40,7 @@ module Demo
         previsualisationRequise: NO_PREVIEW,
         idConversation: conversation_id,
         idExigence: requirement_id,
+        specification:,
       }.compact)
 
       ContractAnswer.from(response, path: PATH)

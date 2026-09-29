@@ -77,7 +77,11 @@
                   provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
           </p>
 
-          <% if askable? %>
+          <% if unspoken %>
+            <p class="fr-mb-0 fr-mt-2w requirement-card__refusal" lang="en">
+              <%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %>
+            </p>
+          <% elsif askable? %>
             <%# The button that opens the exchange, and everything that becomes of
                 it. This element persists and its contents are what an answer
                 replaces: it holds the announced region, which would announce

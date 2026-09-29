@@ -19,17 +19,21 @@
 # `countries` is the member states the user may pick the evidence to come from —
 # step 16 of chapter 1 §10.1 — as `[label, code]` pairs; `nil` where the card
 # stays in the country of the request it follows, which it then only names.
+#
+# `unspoken` is the line of the journey where the provider's gateway announces
+# others and not it: the card says so in place of the button.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil)
+  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, unspoken: nil)
     @wording = wording
     @country_code = country_code
     @country_name = country_name
     @zone = zone
     @countries = countries
+    @unspoken = unspoken
     super()
   end
 
-  attr_reader :zone, :countries, :country_code
+  attr_reader :zone, :countries, :country_code, :unspoken
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.

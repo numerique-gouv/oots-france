@@ -25,7 +25,7 @@ module Oots
     EXCHANGE_ID = '7c9e6679-7425-40de-944b-e07fc1f90ae7'.freeze
 
     # `R-EDM-ERR-C019` asks for `https://`, whatever the deployment runs on.
-    PREVIEW_LOCATION = 'https://oots.example.gouv.fr/previsualisation/9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'.freeze
+    PREVIEW_TOKEN = '9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'.freeze
 
     # The two addresses of the second request France sends as a requester:
     # the one a correspondent returned, and France's own return address. Fixed
@@ -209,10 +209,14 @@ module Oots
     # last of all.
     def write_preview_specimens
       write('erreurPrevisualisationRequise',
-        *error_response(EdmException::AUTHORIZATION, preview_location: PREVIEW_LOCATION))
+        *error_response(EdmException::AUTHORIZATION, preview_location:))
       write('reponseVide', *empty_response)
       write('requeteSeconde', *request(preview_location: FOREIGN_PREVIEW_LOCATION, return_location: RETURN_LOCATION))
     end
+
+    # Under the segment of the line of the set, as `PreviewSession.location_for`
+    # composes it.
+    def preview_location = "https://oots.example.gouv.fr/previsualisation/#{specification.segment}/#{PREVIEW_TOKEN}"
 
     def empty_response
       body = EvidenceResponseBuilder.new(requester:, request_id: REQUEST_ID, specification:, clock:, uuid:)

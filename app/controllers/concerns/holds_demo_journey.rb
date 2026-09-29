@@ -13,11 +13,17 @@
 # session written under an earlier shape would otherwise render as a form with
 # blank rows, or seal a beneficiary token naming nobody — neither of which any
 # layer below would notice.
+#
+# A journey plays one line, from its opening to the next identification, and
+# its pages live under that line's segment: one opened under the other segment
+# is not a page of this walk, and is sent back to the screen the line is chosen
+# on.
 module HoldsDemoJourney
   extend ActiveSupport::Concern
 
   included do
     before_action :require_journey
+    helper_method :demo_specification
   end
 
   private
@@ -26,7 +32,11 @@ module HoldsDemoJourney
 
   def journey = @journey ||= ::Demo::Journey.from_session(session[:demo_journey])
 
+  def demo_specification = journey.specification
+
   def require_journey
-    redirect_to admin_demo_root_path unless identity&.valid? && journey&.valid?
+    redirect_to admin_demo_root_path unless identity&.valid? && journey&.valid? && walked_line?
   end
+
+  def walked_line? = journey.specification.segment == params[:version]
 end

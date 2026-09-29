@@ -45,11 +45,16 @@ Rails.application.routes.draw do
   # a relay that renders nothing and redirects to the procedure.
   get 'retour/:token', to: 'returns#show', as: :preview_return
 
-  # France's preview space (chapter 4.9), the one page an end user reaches.
-  get 'previsualisation/:token', to: 'preview_sessions#show', as: :preview_session
-  get 'previsualisation/:token/document', to: 'preview_sessions#document', as: :preview_session_document
-  get 'previsualisation/:token/retour', to: 'preview_sessions#return_link', as: :preview_session_return
-  post 'previsualisation/:token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
+  # France's preview space (chapter 4.9), the one page an end user reaches,
+  # under the segment of the line of the request it settles. Any segment is
+  # routed, dot included: one France did not issue gets the page saying the
+  # link is no longer valid, not a routing error.
+  scope 'previsualisation/:version', constraints: { version: %r{[^/]+} } do
+    get ':token', to: 'preview_sessions#show', as: :preview_session
+    get ':token/document', to: 'preview_sessions#document', as: :preview_session_document
+    get ':token/retour', to: 'preview_sessions#return_link', as: :preview_session_return
+    post ':token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
+  end
 
   # Domibus is the caller, and it calls from the network: the route is
   # authenticated.
@@ -64,35 +69,45 @@ Rails.application.routes.draw do
     # observe an exchange — `docs/espace_administration.md` says why it is
     # nonetheless here.
     namespace :demo do
-      root to: 'home#show'
-      # `create` and not `show`: starting the European flow writes the `state`
-      # and the `nonce` its return is checked against, which a prefetched or
-      # replayed GET would overwrite.
-      resource :identification, only: :create
-      # Where the user comes back to, identified, and the only page an exchange
-      # is asked for from. It carries the identity the authentication attested,
-      # and names the provider and the evidence type the directories resolve,
-      # which requirement 27 of chapter 1 asks for « before any request is
-      # made ».
-      #
-      # `resource` and not `resources`: there is one such page and no identifier
-      # reaches it, the session saying which documents are this user's.
-      resource :documents, only: :show, controller: 'documents'
-      # The request itself, and what became of it. `create` **is** the explicit
-      # request of chapter 1 §3.3, and the request leaves as the button is
-      # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
-      # from that instant. `show` renders the zone of the documents page that says where
-      # the request stands, and is the address that zone re-asks while it waits:
-      # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
-      # never asks.
-      resource :demande, only: %i[show create], controller: 'requests'
-      # The member state one card resolves its requirement in, which the user
-      # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
-      # answers with the card alone, and opens nothing.
-      resource :pays, only: :update, controller: 'countries'
-      # The evidence itself. Nothing reaches it without the exchange the session
-      # is following.
-      get 'justificatif', to: 'evidences#show', as: :justificatif
+      # The screen the operator picks the line of the walk on, and the one
+      # address of the walk no line names.
+      root to: 'versions#index'
+
+      # Every page of the walk under the line it plays: `v2.0` or `v1.2`, the
+      # identifier `R-DSD-RESP-C015` writes less its prefix. Constrained, and so
+      # read whole despite its dot, which Rails would otherwise take for a format;
+      # any other segment is an address that does not exist.
+      scope ':version', constraints: { version: EdmSpecification::SEGMENTS } do
+        get '/', to: 'home#show', as: :home
+        # `create` and not `show`: starting the European flow writes the `state`
+        # and the `nonce` its return is checked against, which a prefetched or
+        # replayed GET would overwrite.
+        resource :identification, only: :create
+        # Where the user comes back to, identified, and the only page an exchange
+        # is asked for from. It carries the identity the authentication attested,
+        # and names the provider and the evidence type the directories resolve,
+        # which requirement 27 of chapter 1 asks for « before any request is
+        # made ».
+        #
+        # `resource` and not `resources`: there is one such page and no identifier
+        # reaches it, the session saying which documents are this user's.
+        resource :documents, only: :show, controller: 'documents'
+        # The request itself, and what became of it. `create` **is** the explicit
+        # request of chapter 1 §3.3, and the request leaves as the button is
+        # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
+        # from that instant. `show` renders the zone of the documents page that says where
+        # the request stands, and is the address that zone re-asks while it waits:
+        # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
+        # never asks.
+        resource :demande, only: %i[show create], controller: 'requests'
+        # The member state one card resolves its requirement in, which the user
+        # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
+        # answers with the card alone, and opens nothing.
+        resource :pays, only: :update, controller: 'countries'
+        # The evidence itself. Nothing reaches it without the exchange the session
+        # is following.
+        get 'justificatif', to: 'evidences#show', as: :justificatif
+      end
     end
 
     # The log is walked through its events, and only through them: the listing

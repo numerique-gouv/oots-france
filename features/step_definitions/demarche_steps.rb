@@ -19,6 +19,15 @@ Quand('l\'administrateur ouvre la démarche de démonstration') do
   @navigateur.visit('/admin/demo')
 end
 
+# The card of one line, chosen from the screen that offers both: every page of
+# the walk after it lives under that line's segment, and the steps below
+# compose their addresses on it.
+Quand('l\'administrateur choisit la version {string}') do |carte|
+  @navigateur.visit('/admin/demo')
+  @navigateur.choose_card(carte)
+  @ligne = EdmSpecification.from_segment("v#{carte.delete_prefix('OOTS ')}")
+end
+
 Quand('il choisit le bouton du faux FranceConnect+') do
   @navigateur.start_identification('fake')
 end
@@ -41,7 +50,7 @@ end
 
 # The whole flow, for the scenarios that are about what comes after it.
 Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |cle|
-  @navigateur.visit('/admin/demo')
+  @navigateur.visit(adresse_de_la_demarche)
   @navigateur.start_identification('fake')
   @navigateur.choose('country', 'DK')
   @navigateur.choose('identity', cle)
@@ -50,7 +59,7 @@ end
 
 # The heading is the procedure's, as on the home page: the two are one journey.
 Alors('l\'administrateur arrive sur la page des justificatifs') do
-  expect(@navigateur.current_url).to end_with('/admin/demo/documents')
+  expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
   expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
 end
 
@@ -100,10 +109,10 @@ Quand('il se reconnecte à l\'espace d\'administration') do
 end
 
 Quand('il ouvre la page des justificatifs de la démarche') do
-  @navigateur.visit('/admin/demo/documents')
+  @navigateur.visit(adresse_de_la_demarche('documents'))
 end
 
-Alors('l\'administrateur arrive sur la page d\'accueil de la démarche de démonstration, sans identité') do
+Alors('l\'administrateur arrive sur l\'écran du choix de la version, sans identité') do
   expect(@navigateur.current_url).to end_with('/admin/demo')
 end
 
@@ -116,7 +125,7 @@ Alors('la page des justificatifs affiche le fournisseur et le type de justificat
   nommes = Nokogiri::HTML(@navigateur.body)
     .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
 
-  expect(@navigateur.current_url).to end_with('/admin/demo/documents')
+  expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
   expect(nommes.size).to eq(2)
   expect(nommes).not_to include('')
 end
@@ -128,7 +137,7 @@ end
 # what was written past this point.
 Quand('l\'usager confirme sa demande') do
   @journal_avant = ServerAuditEvent.maximum(:id).to_i
-  @navigateur.submit_to('/admin/demo/demande')
+  @navigateur.submit_to(adresse_de_la_demarche('demande'))
 end
 
 # The click answers with the zone it was made in, saying the request is out. The
@@ -184,6 +193,21 @@ end
 # The log is written by the server, in a database the scenario does not share,
 # and `SendToGateway` writes it after submitting to the gateway — hence the wait
 # every outcome of these scenarios goes through.
+# The console's page of the exchange the click opened, which says the line it
+# was conducted in.
+Alors('la fiche de cet échange affiche la version {string}') do |version|
+  @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
+
+  expect(@navigateur.rows).to include(I18n.t('admin.journal.exchanges.attributes.specification') => version)
+end
+
+# An address of the walk, under the segment of the line the scenario chose.
+def adresse_de_la_demarche(page = nil)
+  raise 'Aucune version choisie : le pas « choisit la version » précède celui-ci.' if @ligne.nil?
+
+  ['/admin/demo', @ligne.segment, page].compact.join('/')
+end
+
 # The departure this scenario opened, found by the requester it was sent under
 # rather than by an identifier read off a screen: the procedure keeps its
 # exchange in its own register, which no route publishes, and the log is where

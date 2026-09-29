@@ -7,7 +7,11 @@ RSpec.describe 'The preview space' do
   let!(:session) { create(:preview_session) }
   let(:page) { response.parsed_body }
 
-  def visit_space(token = session.token, params: {}) = get(preview_session_path(token), params:)
+  # The segment of the line the session was issued for, which every address of
+  # the space carries.
+  def segment = session.specification.segment
+
+  def visit_space(token = session.token, params: {}) = get(preview_session_path(segment, token), params:)
 
   describe 'a first visit within T2' do
     before { visit_space }
@@ -16,7 +20,7 @@ RSpec.describe 'The preview space' do
     it 'shows who asks for which document, and offers it' do
       expect(response).to have_http_status(:ok)
       expect(page.text).to include('Requêteur de test')
-      link = page.at_css("a[href='#{preview_session_document_path(session.token)}']")
+      link = page.at_css("a[href='#{preview_session_document_path(segment, session.token)}']")
 
       expect(link).to have_attributes(attributes: include('target', 'rel', 'title'))
       expect([link['target'], link['rel'], link['download']]).to eq(['_blank', 'noopener', nil])
@@ -32,13 +36,13 @@ RSpec.describe 'The preview space' do
     # CA26: chapter 4.8 §3.2, the URL visited.
     it 'journals the visit with the address visited' do
       expect(AuditEvent.sole).to have_attributes(event_type: 'preview_visited', exchange_id: session.exchange_id,
-        preview_location: "http://www.example.com#{preview_session_path(session.token)}")
+        preview_location: "http://www.example.com#{preview_session_path(segment, session.token)}")
     end
   end
 
   # CA8: the document offered is the one the answer will carry.
   it 'serves the very document it keeps' do
-    get preview_session_document_path(session.token)
+    get preview_session_document_path(segment, session.token)
 
     expect(response.media_type).to eq('application/pdf')
     expect(response.headers['Content-Disposition']).to start_with('inline')
@@ -48,7 +52,7 @@ RSpec.describe 'The preview space' do
   # CA9: once the choice is made, the document is no longer served.
   it 'no longer serves the document once the choice is made' do
     session.decide!(accepted: true)
-    get preview_session_document_path(session.token)
+    get preview_session_document_path(segment, session.token)
 
     expect(response).to have_http_status(:not_found)
   end
@@ -62,6 +66,29 @@ RSpec.describe 'The preview space' do
     expect(page.text).not_to include('Requêteur de test')
   end
 
+  # CA12 of OOTS-237: the same UUID under the segment of the other line is an
+  # address France did not issue, and says nothing of the request either.
+  describe 'the segment of the line' do
+    let!(:session) { create(:preview_session, :legacy_line) }
+
+    it 'says the link is no longer valid under the segment of the other line' do
+      get preview_session_path('v2.0', session.token)
+
+      expect(response).to have_http_status(:not_found)
+      expect(page.at_css('h1').text).to eq(I18n.t('preview_sessions.show.invalid.title'))
+      expect(page.text).not_to include('Requêteur de test')
+    end
+
+    it 'serves the space under the segment it was issued with, and nothing else under the other' do
+      get preview_session_path('v1.2', session.token)
+      expect(response).to have_http_status(:ok)
+      expect(session.location).to end_with("/previsualisation/v1.2/#{session.token}")
+
+      get preview_session_document_path('v2.0', session.token)
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   it 'says the delay ran out past T2' do
     travel(17.minutes) { visit_space }
 
@@ -69,7 +96,7 @@ RSpec.describe 'The preview space' do
   end
 
   describe 'the choice' do
-    def choose(choice) = post(preview_session_choice_path(session.token), params: { choice: })
+    def choose(choice) = post(preview_session_choice_path(segment, session.token), params: { choice: })
 
     # CA12, and article 17(2): the decision is logged, the interaction ends.
     it 'records the decision and stops offering one' do
@@ -111,7 +138,7 @@ RSpec.describe 'The preview space' do
 
       expect(page.text).to include(I18n.t('preview_sessions.return.awaiting'))
       session.update!(return_location: 'https://portail.example/retour')
-      get preview_session_return_path(session.token)
+      get preview_session_return_path(segment, session.token)
 
       expect(response.parsed_body.at_css('a')['href']).to eq('https://portail.example/retour')
     end
@@ -123,7 +150,7 @@ RSpec.describe 'The preview space' do
     # CA17: the way back comes with the visit, offered as soon as the choice is made.
     it 'offers the way back the visit brought' do
       visit_space(params: { returnurl: 'https://portail.example/retour', returnmethod: 'GET' })
-      post preview_session_choice_path(session.token), params: { choice: 'accepted' }
+      post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
       follow_redirect!
 
       expect(response.parsed_body.at_css('a.fr-btn')['href']).to eq('https://portail.example/retour')
@@ -133,7 +160,7 @@ RSpec.describe 'The preview space' do
     # with an empty body.
     it 'offers the way back as a form when the visit asked for POST' do
       visit_space(params: { returnurl: 'https://portail.example/retour', returnmethod: 'post' })
-      post preview_session_choice_path(session.token), params: { choice: 'refused' }
+      post preview_session_choice_path(segment, session.token), params: { choice: 'refused' }
       follow_redirect!
 
       form = response.parsed_body.at_css("form[action='https://portail.example/retour']")
@@ -146,7 +173,7 @@ RSpec.describe 'The preview space' do
     # page offers.
     it 'keeps the way back once the choice is made' do
       visit_space(params: { returnurl: 'https://portail.example/retour' })
-      post preview_session_choice_path(session.token), params: { choice: 'accepted' }
+      post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
       visit_space(params: { returnurl: 'https://ailleurs.example/' })
 
       expect(session.reload.return_location).to eq('https://portail.example/retour')

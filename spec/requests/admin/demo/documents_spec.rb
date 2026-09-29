@@ -22,7 +22,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # provided with information about name of evidence provider and evidence
     # type for confirmation, before any request is made. »
     it 'names the evidence provider and the evidence type the resolution returns' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('main').text).to include('Keha v. 2.0', 'Dummy PDF - FI')
@@ -31,7 +31,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # A portal's own sentences and the words Brussels publishes read alike on a
     # screen: these two are the directories', and the page says so.
     it 'marks those two as published by the directories, and the identity not' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       marked = response.parsed_body.css('main .directory-value').map { |value| seen(value) }
 
@@ -39,7 +39,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     end
 
     it 'asks the contract nothing: nothing is opened by looking at the page' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
@@ -49,7 +49,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # home, the evidence types in the country the evidence is sought in — the
     # deployment's own until the user picks another.
     it 'asks about the study financing procedure in France' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('procedure-id' => 'T1', 'country-code' => 'FR'))).to have_been_made
@@ -59,7 +59,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # matching the one the eID means yielded, so the page shows it and offers no
     # field on it.
     it 'shows the identity the authentication attested, and offers no field on it' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       card = response.parsed_body.at_css('main .identity-card')
       rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
@@ -73,11 +73,11 @@ RSpec.describe 'Admin::Demo::Documents' do
     # shown, the same requirements, the same request zones. Which FranceConnect+
     # attested is held in the session and said nowhere on this page.
     it 'shows the same page whichever FranceConnect+ attested the identity' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       by_the_fake = response.parsed_body.at_css('main').text.squish
 
       identify_demo_user(instance: real_france_connect)
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.parsed_body.at_css('main').text.squish).to eq(by_the_fake)
     end
@@ -86,7 +86,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # showing it beside a missing eIDAS identifier would invite taking it for
     # one.
     it 'never shows the pseudonym FranceConnect+ handed this service provider' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.body).not_to include(FranceConnectStubs::DANISH_USERINFO.fetch('sub'))
     end
@@ -99,7 +99,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'keeps the card and says in its footer that nothing is published' do
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       carte = response.parsed_body.at_css('main .requirement-card')
 
@@ -109,7 +109,7 @@ RSpec.describe 'Admin::Demo::Documents' do
         .to eq('⚠️No provider listed by France for this evidence')
       expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
       expect(carte.classes).to include('requirement-card--unsatisfiable')
-      expect(response.parsed_body.css("form[action='#{admin_demo_demande_path}']")).to be_empty
+      expect(response.parsed_body.css("form[action='#{admin_demo_demande_path(version: 'v2.0')}']")).to be_empty
     end
 
     # A directory that refuses carries a code and raises nothing: the page keeps
@@ -118,7 +118,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'says that nothing was listed when the Evidence Broker refuses' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('main .requirement-card')).to be_empty
@@ -136,7 +136,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_directory_signature
       stub_directory_body('dsd', 'dataservices-by-evidencetype', refused.sub('DSD:ERR:0001', 'DSD:ERR:0003'))
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.parsed_body.at_css('main .requirement-card__actions').text.squish)
         .to eq('⚠️France could not answer for this evidence')
@@ -147,7 +147,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'offers a card per requirement the procedure rests on' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       titres = response.parsed_body.css('main .requirement-card h3').map { |titre| seen(titre) }
 
@@ -158,7 +158,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # directory pages name one: a requirement is satisfied somewhere, and
     # « somewhere » is a country.
     it 'names the country the documents would be requested in' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       contenu = response.parsed_body.at_css('main .requirement-card .fr-card__desc')
 
@@ -174,7 +174,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_code_list(country_names: {})
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       carte = response.parsed_body.at_css('main .requirement-card')
 
@@ -190,14 +190,14 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'carries a button and a zone on every card it can name, each on its own address' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       cartes = response.parsed_body.css('main .requirement-card')
 
       expect(cartes.css('.demo-request__body').size).to eq(2)
       expect(cartes.css('button').map { |bouton| bouton.text.squish }).to eq(['Request the document'] * 2)
       expect(cartes.css('[data-controller="demo-request"]').pluck('data-demo-request-url-value'))
-        .to eq([admin_demo_demande_path(exigence: premiere), admin_demo_demande_path(exigence: seconde)])
+        .to eq([admin_demo_demande_path(exigence: premiere, version: 'v2.0'), admin_demo_demande_path(exigence: seconde, version: 'v2.0')])
     end
 
     # CA8. Requirement 27 makes the two names a condition of the request, so a
@@ -207,7 +207,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
       stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides', requirement: seconde_id)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       cartes = response.parsed_body.css('main .requirement-card')
 
@@ -224,17 +224,17 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'says so, and offers nothing to confirm, when the directories cannot be reached' do
       stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({})).to_timeout
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response).to have_http_status(:bad_gateway)
       expect(response.parsed_body.css('main').text).to include('could not be reached')
-      expect(response.parsed_body.css("form[action='#{admin_demo_demande_path}']")).to be_empty
+      expect(response.parsed_body.css("form[action='#{admin_demo_demande_path(version: 'v2.0')}']")).to be_empty
     end
 
     it 'sends an operator holding no identity back to the start' do
       reset_session_identity
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response).to redirect_to(admin_demo_root_path)
     end
@@ -247,9 +247,65 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'sends an operator holding no journey back to the start, identity or no identity' do
       allow(Demo::Journey).to receive(:from_session).and_return(nil)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response).to redirect_to(admin_demo_root_path)
+    end
+  end
+
+  # The line the journey plays, chosen before the identification: the pages
+  # of the walk live under it, and a provider whose gateway does not announce it
+  # offers no button.
+  describe 'the line of the journey' do
+    it 'names a provider that does not support 1.2, and offers no button to ask it' do
+      identify_demo_user(version: 'v1.2')
+
+      get admin_demo_documents_path(version: 'v1.2')
+
+      carte = response.parsed_body.at_css('main .requirement-card')
+      expect(carte.text).to include('Keha v. 2.0', 'This provider does not support OOTS 1.2')
+      expect(carte.css('button, .demo-request')).to be_empty
+      expect(carte.at_css('select')).to be_present
+    end
+
+    # One crumb per segment of the address.
+    it 'hangs its trail on the segments of its address' do
+      get admin_demo_documents_path(version: 'v2.0')
+
+      expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
+        .to eq(['Espace d’administration', 'Démo', '2.0', 'Your documents'])
+    end
+
+    it 'offers the button on the same card in 2.0' do
+      get admin_demo_documents_path(version: 'v2.0')
+
+      expect(response.parsed_body.at_css('main .requirement-card').text).not_to include('does not support')
+      expect(response.parsed_body.css('main .requirement-card button').size).to eq(1)
+    end
+
+    it 'sends a page of the other line back to the screen the line is chosen on' do
+      identify_demo_user(version: 'v1.2')
+
+      get admin_demo_documents_path(version: 'v2.0')
+      expect(response).to redirect_to(admin_demo_root_path)
+
+      get admin_demo_demande_path(exigence:, version: 'v2.0')
+      expect(response).to redirect_to(admin_demo_root_path)
+    end
+
+    # A new identification opens a new journey, in the line of the page it left
+    # from, and every card starts again where a first one would.
+    it 'plays the other line once identified anew from its sign-in page' do
+      identify_demo_user(version: 'v1.2')
+      patch admin_demo_pays_path(exigence:, version: 'v1.2'), params: { pays: 'FI' }
+
+      identify_demo_user(version: 'v2.0')
+
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      get admin_demo_documents_path(version: 'v2.0')
+      carte = response.parsed_body.at_css('main .requirement-card')
+      expect(carte.at_css('select option[selected]')['value']).to eq('FR')
+      expect(carte.css('button').size).to eq(1)
     end
   end
 
@@ -267,7 +323,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
     # CA1.
     it 'offers the thirty countries of the list without EU, France selected, sorted by name' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       choix = carte.at_css('select')
       options = choix.css('option')
@@ -284,7 +340,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # CA2 and RG6: changing the country asks the directories alone.
     it 'resolves the card in the chosen country, and asks nothing of the contract' do
       choose_country('FI')
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(eb_asked('evidence-types-by-requirement', 'FI')).to have_been_made.at_least_once
       expect(dsd_asked('FI')).to have_been_made.at_least_once
@@ -319,7 +375,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       choose_country('FI')
       post demande_path
 
@@ -350,7 +406,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # CA3.
     it 'says the card unsatisfiable by a country that publishes nothing, and still offers the choice' do
       choose_country('DE')
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇩🇪 Germany (DE)')
       expect(carte.at_css('.requirement-card__actions').text.squish)
@@ -361,7 +417,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
     it 'says the same when the Data Service Directory of the country lists no service' do
       choose_country('AT')
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(carte.at_css('.requirement-card__actions').text.squish)
         .to eq('⚠️No provider listed by AT for this evidence')
@@ -387,7 +443,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       choose_country('DE', seconde)
       choose_country('FI', premiere)
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       choisis = response.parsed_body.css('main .requirement-card select option[selected]').pluck('value')
 
@@ -400,7 +456,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'starts every card again in France once the user has identified anew' do
       choose_country('FI')
       identify_demo_user
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(carte.at_css('select option[selected]')['value']).to eq('FR')
     end
@@ -412,13 +468,13 @@ RSpec.describe 'Admin::Demo::Documents' do
         stub_evidence_request
         stub_exchange_state
         choose_country('FI')
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
         post demande_path
       end
 
       # CA5, first half.
       it 'names the country of the request and offers no choice' do
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         expect(carte.css('select')).to be_empty
         expect(carte.at_css('.fr-card__desc').text.squish)
@@ -428,7 +484,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       it 'names it too once the document is in hand' do
         Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
 
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         expect(carte.css('select')).to be_empty
         expect(carte.text).to include('Finland', 'Document retrieved successfully')
@@ -437,7 +493,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       # CA5, second half: a change submitted meanwhile is without effect.
       it 'ignores a change submitted while the request is under way' do
         choose_country('DE')
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         expect(carte.at_css('.fr-card__desc').text.squish)
           .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
@@ -448,7 +504,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       it 'offers the choice again once the correspondent refused' do
         stub_exchange_state(statut: 'failed')
 
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         expect(carte.at_css('select option[selected]')['value']).to eq('FI')
         expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
@@ -463,11 +519,11 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_evidence_request
       stub_exchange_state
       choose_country('FI', premiere)
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path(premiere)
       choose_country('DE', seconde)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       cartes = response.parsed_body.css('main .requirement-card')
 
@@ -479,7 +535,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
     def carte = response.parsed_body.at_css("main #exigence-#{exigence}")
 
-    def choose_country(code, uuid = exigence) = patch(admin_demo_pays_path(exigence: uuid), params: { pays: code })
+    def choose_country(code, uuid = exigence) = patch(admin_demo_pays_path(exigence: uuid, version: 'v2.0'), params: { pays: code })
 
     def eb_asked(query, country)
       a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
@@ -500,12 +556,12 @@ RSpec.describe 'Admin::Demo::Documents' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path
     end
 
     it 'opens on the waiting rather than on a button that would start a second' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
       expect(response.parsed_body.css('main').text).to include('Requesting the document')
@@ -514,7 +570,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'opens on the document once it has been filed, and asks the contract nothing more' do
       Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.parsed_body.css('main').text).to include('Document retrieved successfully')
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
@@ -530,5 +586,5 @@ RSpec.describe 'Admin::Demo::Documents' do
 
   def seconde_id = "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{seconde}"
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0')
 end

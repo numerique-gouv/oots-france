@@ -1,6 +1,7 @@
 <% content_for :title, t('admin.demo.documents.show.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
+      specification: demo_specification,
       trail: [[t('admin.demo.documents.show.title'), nil]],
     ) %>
 

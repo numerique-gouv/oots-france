@@ -9,12 +9,21 @@ module BuildsDemoCards
 
   private
 
+  # A provider whose gateway does not announce the line of the journey offers
+  # no button: requirement 27 of chapter 1 §2 has the user told « before any
+  # request is made », and the contract would refuse the request anyway
+  # (chapter 4.5.1 §2.2).
   def requirement_card(wording)
+    spoken = spoken?(wording)
+
     DemoRequirementCardComponent.new(
       wording:, country_code: wording.country_code, country_name: country_name(wording.country_code),
-      countries: country_options(wording), zone: (demo_request_zone(wording) if wording.nameable?),
+      countries: country_options(wording), zone: (demo_request_zone(wording) if wording.nameable? && spoken),
+      unspoken: (demo_specification unless spoken),
     )
   end
+
+  def spoken?(wording) = wording.access_point.nil? || wording.access_point.speaks?(demo_specification)
 
   # The button of one card, in whatever state the register puts it: a reload is
   # not a new request, so a requirement already under way opens on its waiting

@@ -11,18 +11,26 @@ RSpec.describe 'Admin::Demo::Identifications' do
     # values the return will be checked against are written where only this
     # session can read them.
     it 'hands the browser to FranceConnect+ and remembers what ties the return to this departure' do
-      post admin_demo_identification_path, params: { france_connect: 'fake' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
 
       expect(response.headers['Location']).to start_with("#{FranceConnectStubs::AUTHORIZATION_ENDPOINT}?")
       expect(session[:france_connect].symbolize_keys)
         .to include(name: 'fake').and(have_key(:state)).and(have_key(:nonce))
     end
 
+    # The return addresses name no line, so the departure keeps the one of the
+    # page it left from.
+    it 'remembers the line of the sign-in page the departure left from' do
+      post admin_demo_identification_path(version: 'v1.2'), params: { france_connect: 'fake' }
+
+      expect(session[:france_connect].symbolize_keys).to include(version: 'v1.2')
+    end
+
     it 'departs afresh each time, rather than replaying a state already spent' do
-      post admin_demo_identification_path, params: { france_connect: 'fake' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
       first = session[:france_connect].symbolize_keys.fetch(:state)
 
-      post admin_demo_identification_path, params: { france_connect: 'fake' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
 
       expect(session[:france_connect].symbolize_keys.fetch(:state)).not_to eq(first)
     end
@@ -38,7 +46,7 @@ RSpec.describe 'Admin::Demo::Identifications' do
       end
 
       it 'departs on the /authorize the real one publishes, and asks the fake nothing' do
-        post admin_demo_identification_path, params: { france_connect: 'real' }
+        post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'real' }
 
         parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
 
@@ -52,14 +60,14 @@ RSpec.describe 'Admin::Demo::Identifications' do
       # CA6, the same the other way round: one card cannot reach the other's
       # portal, the client rebuilding every address on the issuer it was given.
       it 'departs on the /authorize the fake publishes, and asks the real one nothing' do
-        post admin_demo_identification_path, params: { france_connect: 'fake' }
+        post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
 
         expect(response.headers['Location']).to start_with("#{FranceConnectStubs::AUTHORIZATION_ENDPOINT}?")
         expect(a_request(:get, FranceConnectStubs::REAL_DISCOVERY_URL)).not_to have_been_made
       end
 
       it 'remembers which FranceConnect+ the departure was made on' do
-        post admin_demo_identification_path, params: { france_connect: 'real' }
+        post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'real' }
 
         expect(session[:france_connect].symbolize_keys.fetch(:name)).to eq('real')
       end
@@ -70,16 +78,16 @@ RSpec.describe 'Admin::Demo::Identifications' do
       it 'brings the operator back to the two buttons when one portal cannot be reached, and plays the other' do
         stub_request(:get, FranceConnectStubs::REAL_DISCOVERY_URL).to_timeout
 
-        post admin_demo_identification_path, params: { france_connect: 'real' }
+        post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'real' }
 
-        expect(response).to redirect_to(admin_demo_root_path)
+        expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
         follow_redirect!
         expect(response.parsed_body.css('.fr-alert').text)
           .to include("L'identification par FranceConnect+ n'a pas abouti")
         expect(response.parsed_body.css('main button.fr-btn').map { |button| button.text.strip })
           .to eq(['🇪🇺 Choose a country to sign-in', '🇪🇺 Choose a country to sign-in (mocked)'])
 
-        post admin_demo_identification_path, params: { france_connect: 'fake' }
+        post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
         expect(response.headers['Location']).to start_with("#{FranceConnectStubs::AUTHORIZATION_ENDPOINT}?")
       end
     end
@@ -88,17 +96,17 @@ RSpec.describe 'Admin::Demo::Identifications' do
     # `client_secret` and the user are sent. Refused before any discovery —
     # there is nothing to ask, and asking would be choosing for the operator.
     it 'sends a submission naming a FranceConnect+ this deployment does not declare back to the procedure' do
-      post admin_demo_identification_path, params: { france_connect: 'real' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'real' }
 
-      expect(response).to redirect_to(admin_demo_root_path)
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
       expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).not_to have_been_made
       expect(session[:france_connect]).to be_nil
     end
 
     it 'sends a submission naming no FranceConnect+ at all back the same way' do
-      post admin_demo_identification_path
+      post admin_demo_identification_path(version: 'v2.0')
 
-      expect(response).to redirect_to(admin_demo_root_path)
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
       expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).not_to have_been_made
     end
 
@@ -110,9 +118,9 @@ RSpec.describe 'Admin::Demo::Identifications' do
       stub_demonstration_requirements
       stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_timeout
 
-      post admin_demo_identification_path, params: { france_connect: 'fake' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
 
-      expect(response).to redirect_to(admin_demo_root_path)
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
       follow_redirect!
       expect(response.parsed_body.css('.fr-alert').text)
         .to include("L'identification par FranceConnect+ n'a pas abouti", 'découverte')
@@ -121,7 +129,7 @@ RSpec.describe 'Admin::Demo::Identifications' do
 
   describe 'POST /admin/demo/identification without a session' do
     it 'sends the visitor to the login page' do
-      post admin_demo_identification_path, params: { france_connect: 'fake' }
+      post admin_demo_identification_path(version: 'v2.0'), params: { france_connect: 'fake' }
 
       expect(response).to redirect_to(new_admin_session_path)
     end
@@ -129,9 +137,9 @@ RSpec.describe 'Admin::Demo::Identifications' do
 
   # A GET would be prefetched and replayed, overwriting the state and the nonce
   # of a flow under way.
-  describe 'GET /admin/demo/identification' do
+  describe 'GET /admin/demo/v2.0/identification' do
     it 'is not a route at all' do
-      get '/admin/demo/identification'
+      get '/admin/demo/v2.0/identification'
 
       expect(response).to have_http_status(:not_found)
     end

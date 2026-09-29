@@ -34,6 +34,7 @@ class EvidenceRequestsController < ApplicationController
   before_action :check_feature_flag
   before_action :check_beneficiary, only: :create
   before_action :check_conversation_id, only: :create
+  before_action :check_specification, only: :create
 
   def create
     result = EvidenceRequest::Fetch.call(**fetch_arguments)
@@ -52,7 +53,7 @@ class EvidenceRequestsController < ApplicationController
   # A query string and not a form: the caller is a server-side integration.
   def query
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
-      :previsualisationRequise, :idConversation, :idExigence)
+      :previsualisationRequise, :idConversation, :idExigence, :specification)
   end
 
   # Upcased on the way in: both console filters upcase what they are asked, so
@@ -76,6 +77,7 @@ class EvidenceRequestsController < ApplicationController
       procedure_code: query[:codeDemarche],
       requirement_id: query[:idExigence],
       country_code:,
+      requested_specification: EdmSpecification.find(query[:specification]),
       preview_possible: preview_possible?,
       audit_trail:,
     }
@@ -96,10 +98,7 @@ class EvidenceRequestsController < ApplicationController
   def check_beneficiary
     return if query[:beneficiaire].present?
 
-    raison = t('evidence_requests.beneficiary_required')
-    refuse(raison)
-
-    render json: { erreur: raison }, status: :unprocessable_content
+    refuse_as_unprocessable(t('evidence_requests.beneficiary_required'))
   end
 
   # `R-EDM-ebMS-017` requires a UUID, and the rule is FATAL: a value of another
@@ -110,7 +109,20 @@ class EvidenceRequestsController < ApplicationController
     supplied = query[:idConversation]
     return if supplied.blank? || supplied.match?(Exchange::UUID)
 
-    raison = t('evidence_requests.conversation_invalid')
+    refuse_as_unprocessable(t('evidence_requests.conversation_invalid'))
+  end
+
+  # The line a caller may ask for, with the values chapter 3.1.4 §4.2.2 gives
+  # the `specification` parameter of the DSD query, and only those France
+  # speaks. Refused before anything is decrypted, like the conversation above.
+  def check_specification
+    supplied = query[:specification]
+    return if supplied.nil? || EdmSpecification.find(supplied)
+
+    refuse_as_unprocessable(t('evidence_requests.specification_invalid', spoken: EdmSpecification.identifiers.join(', ')))
+  end
+
+  def refuse_as_unprocessable(raison)
     refuse(raison)
 
     render json: { erreur: raison }, status: :unprocessable_content

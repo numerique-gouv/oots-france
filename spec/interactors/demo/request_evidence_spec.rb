@@ -8,7 +8,8 @@ RSpec.describe Demo::RequestEvidence do
 
   let(:identity) { Demo::UserIdentity.new(family_name: 'Sørensen') }
   let(:journey) do
-    Demo::Journey.new(id: 'un-parcours', conversation_id: 'une-conversation', subject: 'un-pseudonyme')
+    Demo::Journey.new(id: 'un-parcours', conversation_id: 'une-conversation', subject: 'un-pseudonyme',
+      specification: EdmSpecification::V1_2)
   end
   let(:requirement_uuid) { '00000000-0000-0000-0000-000000000000' }
   let(:token_writer) { instance_double(Demo::BeneficiaryTokenWriter, call: 'un-jeton-chiffré') }
@@ -25,6 +26,15 @@ RSpec.describe Demo::RequestEvidence do
     expect(client).to have_received(:fetch).with(
       hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'T1', country_code: 'FI'),
     )
+  end
+
+  # The line the journey plays, which a French procedure would not name: the
+  # demonstration has one screen per line.
+  it 'asks in the line of the journey, and registers it' do
+    result
+
+    expect(client).to have_received(:fetch).with(hash_including(specification: 'oots-edm:v1.2'))
+    expect(Demo::Request.sole.specification).to eq(EdmSpecification::V1_2)
   end
 
   # Chapter 4.7 §2.5.1: « The initial ConversationId for a conversation MAY be

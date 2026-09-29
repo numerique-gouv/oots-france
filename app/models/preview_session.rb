@@ -47,18 +47,27 @@ class PreviewSession < ApplicationRecord
 
   def self.retention = Settings.preview_redirection_timeout + Settings.preview_decision_timeout
 
-  def self.location_for(token) = "#{Settings.oots_france_url}/previsualisation/#{token}"
+  # Under the segment of the line of the request it settles, which a reader of
+  # the address sees; the UUID stays the key. Chapter 4.9 §4 leaves the path
+  # free.
+  def self.location_for(token, specification)
+    "#{Settings.oots_france_url}/previsualisation/#{specification.segment}/#{token}"
+  end
 
   # `exchange_id` names the row the first request opened: on the 1.2 line, one
   # France minted, the header carrying none.
   def self.issue(token:, exchange_id:, conversation_id:, specification:, first_request:, document:, evidence_id:,
                  evidence_issued_at:)
     create!(
-      token:, location: location_for(token), issued_at: Time.current,
+      token:, location: location_for(token, specification), issued_at: Time.current,
       exchange_id:, conversation_id:, specification:, first_request:,
       document: Base64.strict_encode64(document), evidence_id:, evidence_issued_at: evidence_issued_at.iso8601(6)
     )
   end
+
+  # Chapter 4.9 §3: « shall only allow access for preview URLs that it
+  # issued », and France issued this one under the segment of its line alone.
+  def issued_under?(segment) = specification&.segment == segment
 
   def document_bytes = document && Base64.strict_decode64(document)
 

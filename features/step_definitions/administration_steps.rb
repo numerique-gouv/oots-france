@@ -36,8 +36,18 @@ Quand("l'administrateur suit l'entrée « Démo » du menu") do
   click_link I18n.t('layouts.entete.demo')
 end
 
-Alors("la page d'accueil de la démarche de démonstration s'affiche") do
+# The screen the line is chosen on, in the order France prefers them.
+Alors("l'écran du choix de la version affiche les cartes {string} puis {string}") do |premiere, seconde|
   expect(page).to have_current_path(admin_demo_root_path)
+  expect(page.all('.fr-card__title').map { |titre| titre.text.strip }).to eq([premiere, seconde])
+end
+
+Quand("l'administrateur choisit la carte {string} de l'écran du choix de la version") do |carte|
+  click_link carte
+end
+
+Alors("la page d'accueil de la démarche de démonstration s'affiche") do
+  expect(page).to have_current_path(admin_demo_home_path(version: 'v2.0'))
   expect(page).to have_css('h1', text: "🇫🇷 #{ProcedureCode::STUDY_FINANCING}")
   expect(page).to have_css('h1 .directory-value', text: 'Apply for funding for higher education')
 end
@@ -52,7 +62,7 @@ end
 Alors("la page propose de s'identifier avec une identité d'un autre État membre") do
   expect(page).to have_css('h2', text: I18n.t('admin.demo.home.show.sign_in.heading'))
   expect(page).to have_button(I18n.t('admin.demo.home.show.france_connect.fake.button'), count: 1)
-  expect(page).to have_css("form[action='#{admin_demo_identification_path}'][method='post']")
+  expect(page).to have_css("form[action='#{admin_demo_identification_path(version: 'v2.0')}'][method='post']")
 end
 
 Quand('un visiteur ouvre le tableau de bord des jobs') do

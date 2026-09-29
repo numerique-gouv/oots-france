@@ -15,6 +15,22 @@ RSpec.describe EdmSpecification do
     end
   end
 
+  describe 'the segment an address carries' do
+    it 'is the identifier less its prefix, and names the line back' do
+      expect(described_class::V1_2.segment).to eq('v1.2')
+      expect(described_class::V2_0.number).to eq('2.0')
+      expect(described_class.from_segment('v1.2')).to eq(described_class::V1_2)
+      expect(described_class.from_segment('v1.0')).to be_nil
+    end
+
+    it 'is what the routes accept' do
+      anchored = /\A#{described_class::SEGMENTS}\z/o
+
+      expect(anchored).to match('v1.2')
+      expect(anchored).not_to match('v1.0')
+    end
+  end
+
   describe 'what separates the two lines' do
     it 'carries the version and the exchange in the header of a 2.0 message alone' do
       expect(described_class::V2_0).to be_announced_in_header

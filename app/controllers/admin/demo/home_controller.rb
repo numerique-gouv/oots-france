@@ -17,6 +17,7 @@ module Admin
       # `Settings::FRANCE_CONNECT` writes them: a card for one that is not
       # declared would lead to a refusal known in advance.
       def show
+        @specification = EdmSpecification.from_segment(params[:version])
         @france_connect_instances = Settings.france_connect_instances
         @wording = wording(requirements)
       end
@@ -54,6 +55,7 @@ module Admin
       def stand_without_the_directories(error)
         Rails.logger.warn(I18n.t('controllers.admin.demo.home.no_requirements', error: error.message))
 
+        @specification = EdmSpecification.from_segment(params[:version])
         @wording = wording(nil)
 
         render :show

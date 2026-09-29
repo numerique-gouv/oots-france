@@ -77,9 +77,17 @@ module Demo
         procedure_code: PROCEDURE_CODE,
         country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),
-        conversation_id: context.journey.conversation_id,
         requirement_id: context.requirement_id,
+        **journey_arguments,
       )
+    end
+
+    # The conversation and the line are the journey's, named when the
+    # authentication opened it.
+    def journey_arguments
+      journey = context.journey
+
+      { conversation_id: journey.conversation_id, specification: journey.specification.to_s }
     end
 
     # Registered as well as returned. Chapter 4.10 §4.1, informative, has a later
@@ -99,7 +107,12 @@ module Demo
     # holding nothing of it. Chapter 1 §4.2 has the evidence « made available to
     # the specific procedure end-user that issued the query », and the journey is
     # who that is.
-    def whose_click = { journey_id: context.journey.id, requirement_uuid: context.requirement_uuid }
+    #
+    # The line goes with them: it is the journey's, and what the click asked for.
+    def whose_click
+      { journey_id: context.journey.id, requirement_uuid: context.requirement_uuid,
+        specification: context.journey.specification }
+    end
 
     def what_was_named = NAMED.index_with { |named| context.public_send(named) }
 
