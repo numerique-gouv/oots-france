@@ -16,7 +16,7 @@ if ! command -v keytool > /dev/null 2>&1; then
   exit 1
 fi
 if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-  echo "❌ Refus de créer une clé privée dans un dépôt git : se placer ailleurs, par exemple ~/certif_stuff." >&2
+  echo "❌ Refus de créer une clé privée dans un dépôt git : se placer ailleurs." >&2
   exit 1
 fi
 

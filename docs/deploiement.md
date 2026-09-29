@@ -249,10 +249,10 @@ Sans `REPERTOIRE_KEYSTORE_TRUSTSTORE`, il engendre un keystore et un truststore 
 > [!IMPORTANT]
 > Ce raccordement échoue tant que le frontal ne mandate pas `/domibus/services/msh` vers la passerelle : le PMode du Technical Support Dashboard donne à `AP_FR_01` son adresse publique, et le test de connectivité qui clôt la procédure sort par elle. Le [gabarit](../nginx.template/conf/nginx.conf) du dépôt ne mandate que `web`. Et le frontal ne mandate **que** ce chemin : la console, `/domibus/rest/` et `/domibus/services/wsplugin` ne regardent que l'exploitant et `web`, voir [plus haut](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre).
 
-Notre certificat se demande d'abord, sur le serveur et hors du dépôt, avec les deux scripts de [`scripts/pki/`](../scripts/pki/) — dans `~/certif_stuff`, par exemple :
+Notre certificat se demande d'abord, sur le serveur et hors du dépôt, avec les deux scripts de [`scripts/pki/`](../scripts/pki/) :
 
 ```sh
-$ mkdir -p ~/certif_stuff && cd ~/certif_stuff
+$ cd <répertoire hors du dépôt>
 $ <dépôt>/scripts/pki/generate_keystore.sh   # demande le keystore password, puis le keypair password
 $ <dépôt>/scripts/pki/generate_csr.sh        # écrit OOTS_AP_ACC_FR_001.csr
 ```
