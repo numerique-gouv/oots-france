@@ -7,26 +7,39 @@
 # access point changes, whatever its Member State: this is the command to
 # replay then.
 #
-# Given our private key, the certificate the eDelivery PKI returned for it and
-# that certificate's chain, it rebuilds the keystore first: the first connection,
+# Given our private key — in the keystore keytool created it in, or as a PEM —,
+# the certificate the eDelivery PKI returned for it and that certificate's
+# chain, it rebuilds the keystore first: the first connection,
 # and every renewal of our certificate. Without them it keeps the keystore in
 # place, and refuses to run if there is none.
 #
 # Usage: make update-certifs   (asks what to update, then for each file)
 #        DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
-#          [CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]
+#          [CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]
 #   MOT_DE_PASSE_MAGASIN_PUBLIE  password of the published truststore (test123)
+#   MOT_DE_PASSE_MAGASIN_CLE     keystore password of the keystore CLE names, when it is one
+#   MOT_DE_PASSE_CLE             keypair password of the key inside it, when it differs
+#   ALIAS_CLE                    the key's alias, when that keystore holds several
 
 set -e
 
 ORIGINE=$(pwd)
 cd "$(dirname "$0")/.."
 
+# Private from the start: our private key, taken out of its keystore, lands
+# here, and must neither be readable by others nor outlive the script.
+umask 077
+TEMPORAIRE=$(mktemp -d)
+trap 'rm -rf "$TEMPORAIRE"' EXIT
+
 PMODE="${1:-}"
 TRUSTSTORE="${2:-}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-}"
 MOT_DE_PASSE_MAGASIN_PUBLIE="${MOT_DE_PASSE_MAGASIN_PUBLIE:-test123}"
 CLE="${CLE:-}"
+MOT_DE_PASSE_MAGASIN_CLE="${MOT_DE_PASSE_MAGASIN_CLE:-}"
+MOT_DE_PASSE_CLE="${MOT_DE_PASSE_CLE:-}"
+ALIAS_CLE="${ALIAS_CLE:-}"
 CERTIFICAT="${CERTIFICAT:-}"
 CHAINE="${CHAINE:-}"
 PARTIE="AP_FR_01"
@@ -41,6 +54,10 @@ chemin() {
     /*) echo "$1" ;;
     *) echo "$ORIGINE/$1" ;;
   esac
+}
+
+estPem() {
+  head -n 1 "$1" 2> /dev/null | grep -q -- '-----BEGIN'
 }
 
 demande() {
@@ -64,7 +81,7 @@ if [ -z "$PMODE" ] || [ -z "$TRUSTSTORE" ]; then
   if [ ! -t 0 ]; then
     echo "❌ Sans terminal, tout se donne à la commande :" >&2
     echo "   DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \\" >&2
-    echo "     [CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]" >&2
+    echo "     [CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]" >&2
     exit 1
   fi
 
@@ -92,8 +109,13 @@ QUESTION
   PMODE=$(chemin "$(demande "  PMode" AP_FR_01.xml)")
   TRUSTSTORE=$(chemin "$(demande "  Magasin de confiance" gateway_truststore.jks)")
   if [ -n "$NOUVEAU_KEYSTORE" ]; then
-    echo "Notre certificat, et la clé privée qui a signé sa demande :" >&2
-    CLE=$(chemin "$(demande "  Clé privée" OOTS_AP_ACC_FR_001.key)")
+    echo "Notre clé privée : le magasin où keytool l'a créée avant le CSR (.jks, .p12), ou son fichier PEM :" >&2
+    CLE=$(chemin "$(demande "  Clé privée")")
+    if ! estPem "$CLE" && [ -z "$MOT_DE_PASSE_MAGASIN_CLE" ]; then
+      MOT_DE_PASSE_MAGASIN_CLE=$(demandeSecret "  Keystore password, le mot de passe de ce magasin")
+      MOT_DE_PASSE_CLE=$(demandeSecret "  Keypair password, le mot de passe de la clé (Entrée s'il est le même)")
+    fi
+    echo "Le certificat que la PKI a rendu pour elle :" >&2
     CERTIFICAT=$(chemin "$(demande "  Certificat rendu par la PKI" OOTS_AP_ACC_FR_001.pem)")
     CHAINE=$(chemin "$(demande "  Sa chaîne" OOTS_AP_ACC_FR_001-bundle.pem)")
   fi
@@ -149,7 +171,7 @@ done
 # own key there, it would upload a keystore that cannot sign.
 if [ -z "$NOUVEAU_KEYSTORE" ] && [ ! -f "$KEYSTORE" ]; then
   echo "❌ $KEYSTORE manque : la première fois, c'est le choix 2, qui installe aussi notre certificat —" >&2
-  echo "   ou, à la commande : CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>" >&2
+  echo "   ou, à la commande : CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>" >&2
   exit 1
 fi
 
@@ -163,9 +185,6 @@ MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$(lisVariable MOT_DE_PASSE_NOTIFICATION_DOMIBU
 export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
 export LOGIN_NOTIFICATION_DOMIBUS MOT_DE_PASSE_NOTIFICATION_DOMIBUS DOMIBUS_MOT_DE_PASSE_ADMIN
 
-TEMPORAIRE=$(mktemp -d)
-trap 'rm -rf "$TEMPORAIRE"' EXIT
-
 # keytool is not always installed on the host machine; failing that, it is run
 # from a Docker image carrying a JRE.
 lanceKeytool() {
@@ -178,14 +197,59 @@ lanceKeytool() {
   fi
 }
 
+# keytool creates the key inside a keystore, and the CSR from it: the key is
+# taken out of there, under a password of the script's own, as the PEM openssl
+# works with.
+extraisCle() {
+  cp "$CLE" "$TEMPORAIRE/source"
+  if ! lanceKeytool -list -keystore source -storepass "$MOT_DE_PASSE_MAGASIN_CLE" \
+    > "$TEMPORAIRE/liste" 2>&1; then
+    echo "❌ $CLE ne s'ouvre pas — keystore password erroné ? keytool a répondu :" >&2
+    sed 's/^/   /' "$TEMPORAIRE/liste" >&2
+    exit 1
+  fi
+  if [ -z "$ALIAS_CLE" ]; then
+    ALIAS_CLE=$(sed -n 's/^\([^,]*\), .*PrivateKeyEntry.*/\1/p' "$TEMPORAIRE/liste")
+    case "$(echo "$ALIAS_CLE" | grep -c .)" in
+      1) ;;
+      0) echo "❌ $CLE ne contient aucune clé privée." >&2; exit 1 ;;
+      *) echo "❌ $CLE contient plusieurs clés privées, $(echo $ALIAS_CLE) : désigner la bonne par ALIAS_CLE=…" >&2; exit 1 ;;
+    esac
+  fi
+  if ! lanceKeytool -importkeystore -noprompt \
+    -srckeystore source -srcstorepass "$MOT_DE_PASSE_MAGASIN_CLE" \
+    -srcalias "$ALIAS_CLE" -srckeypass "${MOT_DE_PASSE_CLE:-$MOT_DE_PASSE_MAGASIN_CLE}" \
+    -destkeystore cle.p12 -deststoretype PKCS12 \
+    -deststorepass extraction -destkeypass extraction > "$TEMPORAIRE/extraction" 2>&1; then
+    echo "❌ La clé « $ALIAS_CLE » ne s'ouvre pas — keypair password erroné ? keytool a répondu :" >&2
+    sed 's/^/   /' "$TEMPORAIRE/extraction" >&2
+    exit 1
+  fi
+  if ! openssl pkcs12 -in "$TEMPORAIRE/cle.p12" -passin pass:extraction -nocerts -nodes \
+    -out "$TEMPORAIRE/cle.pem" 2> "$TEMPORAIRE/conversion"; then
+    echo "❌ La clé « $ALIAS_CLE » ne se convertit pas en PEM ; openssl a répondu :" >&2
+    sed 's/^/   /' "$TEMPORAIRE/conversion" >&2
+    exit 1
+  fi
+  echo "  clé « $ALIAS_CLE » lue dans $CLE"
+  CLE="$TEMPORAIRE/cle.pem"
+}
+
 # Built aside and checked before anything under domibus/ is touched: a key that
 # is not the certificate's would sign what no correspondent can verify, with no
 # symptom but messages never acknowledged. The alias is the party's name, the
 # one docker-compose.yml gives domibus.security.key.private.alias.
 if [ -n "$NOUVEAU_KEYSTORE" ]; then
   echo "→ Keystore : $CLE et $CERTIFICAT, sous l'alias $PARTIE"
+  if ! estPem "$CLE"; then
+    if [ -z "$MOT_DE_PASSE_MAGASIN_CLE" ]; then
+      echo "❌ $CLE est un magasin : donner son keystore password par MOT_DE_PASSE_MAGASIN_CLE=…" >&2
+      exit 1
+    fi
+    extraisCle
+  fi
   if [ "$(openssl x509 -in "$CERTIFICAT" -noout -pubkey)" != "$(openssl pkey -in "$CLE" -pubout)" ]; then
-    echo "❌ $CLE n'est pas la clé de $CERTIFICAT : chercher la clé qui a signé le CSR." >&2
+    echo "❌ La clé donnée n'est pas celle de $CERTIFICAT : chercher celle qui a signé le CSR." >&2
     exit 1
   fi
   openssl pkcs12 -export -name "$PARTIE" -inkey "$CLE" \
