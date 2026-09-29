@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup update check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup update update-certifs check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -16,6 +16,12 @@ setup: ## Install from a fresh clone: env files, databases, configured gateway
 # the first install, this the next ones.
 update: ## Update a running server: pull, checks, image, migrations, assets, restart
 	scripts/update_server.sh
+
+# The files the Technical Support Dashboard published stay wherever the
+# operator downloaded them: the script copies them under domibus/, which
+# .gitignore keeps local.
+update-certifs: ## Update the gateway's PMode and truststore from the Technical Support Dashboard, and our certificate if it changed — asks which
+	@CLE="$(CLE)" CERTIFICAT="$(CERTIFICAT)" CHAINE="$(CHAINE)" scripts/update_certificates.sh "$(PMODE)" "$(TRUSTSTORE)"
 
 check-env: ## What the templates declare, against what the .env* files carry
 	scripts/check_environment.sh
