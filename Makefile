@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup update dashboard check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup update update-certifs check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -19,7 +19,7 @@ update: ## Update a running server: pull, checks, image, migrations, assets, res
 
 # The files the dashboard published stay wherever the operator downloaded
 # them: the script copies them under domibus/, which .gitignore keeps local.
-dashboard: ## Load into the gateway the PMode and truststore the Technical Support Dashboard published (PMODE=…, TRUSTSTORE=…)
+update-certifs: ## Load into the gateway the PMode and truststore the Technical Support Dashboard published (PMODE=…, TRUSTSTORE=…)
 	scripts/load_dashboard_publication.sh "$(PMODE)" "$(TRUSTSTORE)"
 
 check-env: ## What the templates declare, against what the .env* files carry

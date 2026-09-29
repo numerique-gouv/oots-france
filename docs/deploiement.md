@@ -263,7 +263,7 @@ $ openssl pkcs12 -export -name AP_FR_01 -inkey <clé privée du CSR> \
 Le **PMode et le magasin de confiance** se chargent ensuite, puis à chaque publication du dashboard, en une commande :
 
 ```sh
-$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make dashboard PMODE=<chemin>/AP_FR_01.xml TRUSTSTORE=<chemin>/gateway_truststore.jks
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<chemin>/AP_FR_01.xml TRUSTSTORE=<chemin>/gateway_truststore.jks
 ```
 
 [`scripts/load_dashboard_publication.sh`](../scripts/load_dashboard_publication.sh) lit les identifiants dans les `.env*` ; seul le mot de passe de la console, qui n'y vit pas, se donne à la commande. Il refuse de tourner sans le keystore ci-dessus. Il convertit le magasin publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose les deux fichiers sous `domibus/` en gardant les précédents en `*.precedent`, les charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.

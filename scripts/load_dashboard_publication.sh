@@ -10,15 +10,15 @@
 # certificate the eDelivery PKI returned, built once as docs/deploiement.md says,
 # and must already be in place.
 #
-# Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make dashboard PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>
+# Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>
 #   MOT_DE_PASSE_MAGASIN_DASHBOARD  password of the published truststore (test123)
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-PMODE="${1:?le PMode du dashboard est à donner : make dashboard PMODE=… TRUSTSTORE=…}"
-TRUSTSTORE="${2:?le magasin de confiance du dashboard est à donner : make dashboard PMODE=… TRUSTSTORE=…}"
+PMODE="${1:?le PMode du dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
+TRUSTSTORE="${2:?le magasin de confiance du dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:?le mot de passe du compte admin de la console Domibus est à donner}"
 MOT_DE_PASSE_MAGASIN_DASHBOARD="${MOT_DE_PASSE_MAGASIN_DASHBOARD:-test123}"
 
