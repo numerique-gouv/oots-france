@@ -2,7 +2,7 @@
 #
 # No SOAP client: a `POST` in `text/xml` with basic authentication is all the
 # plugin asks for. No MTOM and no WS-Security either — the gateway signs and
-# encrypts the AS4 exchange itself, with the keystores of its security profile.
+# encrypts the AS4 exchange itself, with its own keystore and truststore.
 class DomibusClient
   WS_PLUGIN_PATH = 'services/wsplugin'.freeze
 

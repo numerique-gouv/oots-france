@@ -5,7 +5,7 @@
 > | Pour… | Voir |
 > | --- | --- |
 > | installer l'environnement de développement, démarrer la pile | [README](../README.md) |
-> | ce qu'est Domibus, les profils de sécurité, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
+> | ce qu'est Domibus, son mode de sécurité et ses alias, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
 > | la version utilisée et ce qu'elle impose | [versions_domibus.md](versions_domibus.md) |
 
 L'interface d'administration s'ouvre sur `http://localhost:[PORT_DOMIBUS]/domibus`, `PORT_DOMIBUS` étant la valeur du `.env`. Les deux dernières sections, sur les comptes d'administration, sont les seules qui n'aient aucun équivalent scripté.
@@ -27,7 +27,7 @@ $ MOT_DE_PASSE_MAGASINS=… scripts/generate_certificates.sh
 
 Le mot de passe doit être celui du `.env` avec lequel tourne la passerelle : le script ne lit pas ce fichier, et refuse de tourner sans qu'on le lui donne plutôt que de retomber sur un défaut qui masquerait l'écart.
 
-Il écrit deux magasins PKCS#12 dans `domibus/keystores/` : `gateway_keystore.p12`, qui porte **deux** clés privées — une de signature, une de déchiffrement —, et `gateway_truststore.p12`, qui porte leurs certificats. Les alias ne sont pas libres : les profils de sécurité de Domibus 5.1+ les imposent, et [domibus_context.md](domibus_context.md) en donne la convention.
+Il écrit deux magasins PKCS#12 dans `domibus/keystores/` : `gateway_keystore.p12`, qui porte **une** clé privée sous l'alias `AP_FR_01`, et `gateway_truststore.p12`, qui porte son certificat sous le même alias. L'alias n'est pas libre : c'est le nom de la partie au PMode, et [domibus_context.md](domibus_context.md) dit pourquoi la passerelle n'en veut pas d'autre.
 
 Les mêmes certificats servent des deux côtés parce que le PMode d'exemple configure Domibus pour dialoguer avec lui-même : la passerelle doit donc faire confiance à ses propres certificats pour valider les messages qu'elle s'envoie.
 

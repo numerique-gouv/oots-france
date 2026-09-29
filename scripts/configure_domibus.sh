@@ -66,7 +66,8 @@ MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:?doit êt
 
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)
-trap 'rm -f "$BOCAL" "$REPONSE"' EXIT
+PMODE_CHARGE=$(mktemp)
+trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"' EXIT
 
 # The API's responses are prefixed with `)]}',` (Angular's protection against
 # JSON hijacking): that prefix must go before any parsing.
@@ -117,13 +118,73 @@ messageDomibus() {
   fi
 }
 
+# Chapter 4.7 has the PartyId and its type processed case-sensitively, and the
+# rest of this script names our party by that same string: a PMode that declares
+# it otherwise — one the Commission's dashboard generated, say — is refused here,
+# before anything is uploaded, rather than surfacing as a message never
+# acknowledged.
+#
+# The dashboard generates one PMode for the whole network, with every process of
+# it: lcmProcess lists the access points declared for LCM, which ours is not.
+# Domibus 5.2 refuses a PMode where its own party takes part in a process neither
+# as initiator nor as responder (BusinessProcessValidator, DOM_003), so such
+# processes are dropped from what is uploaded. None carries a message ours sends
+# or receives; the file on disk is left as published.
+echo "→ Vérification de la partie $PARTIE dans $FICHIER_PMODE"
+if ! python3 - "$FICHIER_PMODE" "$PARTIE" "$PMODE_CHARGE" <<'PYTHON'
+import shutil
+import sys
+import xml.etree.ElementTree as ET
+
+fichier, partie, sortie = sys.argv[1], sys.argv[2], sys.argv[3]
+arbre = ET.parse(fichier)
+local = lambda element: element.tag.rsplit('}', 1)[-1]
+
+declarees = [
+    (element.get('name'), identifiant.get('partyId'))
+    for element in arbre.iter()
+    if local(element) == 'party'
+    for identifiant in element
+    if local(identifiant) == 'identifier'
+]
+if (partie, partie) not in declarees:
+    proches = [d for d in declarees if partie.lower() in (str(d[0]).lower(), str(d[1]).lower())]
+    print(f"❌ Aucune partie nommée {partie} et d'identifiant {partie}, à la casse près, dans {fichier}.", file=sys.stderr)
+    if proches:
+        print('   Déclarées à la casse près (nom, partyId) : ' + ', '.join(map(str, proches)), file=sys.stderr)
+    sys.exit(1)
+
+retires = []
+for parent in list(arbre.iter()):
+    for process in [e for e in parent if local(e) == 'process']:
+        participants = {
+            e.get('name') for e in process.iter()
+            if local(e) in ('initiatorParty', 'responderParty')
+        }
+        if partie not in participants:
+            parent.remove(process)
+            retires.append(process.get('name'))
+
+if retires:
+    racine = arbre.getroot()
+    if racine.tag.startswith('{'):
+        ET.register_namespace('db', racine.tag[1:].split('}')[0])
+    arbre.write(sortie, encoding='UTF-8', xml_declaration=True)
+    print(f"  processus sans {partie}, retirés du PMode chargé : {', '.join(retires)}")
+else:
+    shutil.copyfile(fichier, sortie)
+PYTHON
+then
+  exit 1
+fi
+
 # The certificates shipped with the image are public and shared by every
 # installation: ours are imposed instead. Where no stores are supplied they are
 # generated — they need not outlive the script, the gateway keeping them in its
 # database once uploaded.
 if [ -z "$REPERTOIRE_MAGASINS" ]; then
   REPERTOIRE_MAGASINS=$(mktemp -d)
-  trap 'rm -f "$BOCAL" "$REPONSE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
+  trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
   echo "→ Génération des magasins dans $REPERTOIRE_MAGASINS"
   DESTINATION="$REPERTOIRE_MAGASINS" MOT_DE_PASSE_MAGASINS="$MOT_DE_PASSE_MAGASINS" \
     "$(dirname "$0")/generate_certificates.sh" > /dev/null
@@ -163,12 +224,33 @@ chargeMagasin() {
 chargeMagasin truststore
 chargeMagasin keystore
 
+# Stores generated before the gateway left Domibus's security profiles hold
+# AP_FR_01_rsa_sign and AP_FR_01_rsa_decrypt, and generate_certificates.sh
+# refuses to overwrite them: uploaded again, they leave the gateway without the
+# key docker-compose.yml names. Java store aliases being case-insensitive, so is
+# the comparison.
+echo "→ Vérification de la clé $PARTIE dans le keystore"
+ALIAS_CLES=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/keystore/list" \
+  | sansPrefixeJSON \
+  | python3 -c "
+import json, sys
+print(' '.join(entree.get('name', '') for entree in json.load(sys.stdin).get('trustStoreList') or []))
+" 2> /dev/null || true)
+if ! printf '%s\n' $ALIAS_CLES | grep -qix "$PARTIE"; then
+  echo "❌ Le keystore chargé n'a pas de clé $PARTIE (alias : ${ALIAS_CLES:-aucun})." >&2
+  echo "   Des magasins d'avant le mode legacy ? Supprimer $REPERTOIRE_MAGASINS/*.p12," >&2
+  echo "   relancer scripts/generate_certificates.sh, puis ce script." >&2
+  exit 1
+fi
+
 echo "→ Chargement du PMode $FICHIER_PMODE"
 # Domibus answers 200 while reporting the PMode's warnings: those of the example
 # PMode (identical initiator and responder roles) are expected, the gateway
-# talking to itself.
+# talking to itself. The file sent is the temporary copy, whose name curl cannot
+# infer a type from: Domibus refuses anything but XML (DOM_001), hence the type
+# and name given explicitly.
 CODE_PMODE=$(appelAvecCode \
-  -F "file=@$FICHIER_PMODE" \
+  -F "file=@$PMODE_CHARGE;filename=$(basename "$FICHIER_PMODE");type=text/xml" \
   --form-string "description=Configuration automatique" \
   "$URL_DOMIBUS/rest/internal/admin/pmode")
 if [ "$CODE_PMODE" != "200" ]; then
@@ -216,8 +298,8 @@ fi
 
 # Second guard rail, far more telling: the console's connectivity test — the
 # "paper plane". It circulates a real AS4 message in a loop through the gateway,
-# so it exercises signing and encryption, and validates the security profiles'
-# aliases along the way. All of it owing nothing to the application: if it passes
+# so it exercises signing and encryption, and validates the aliases of both
+# stores along the way. All of it owing nothing to the application: if it passes
 # and the end-to-end test fails, the gateway is out of the picture.
 echo "→ Test de connectivité $PARTIE → $PARTIE"
 CODE_TEST=$(appelAvecCode \
@@ -255,7 +337,7 @@ done
 
 if [ "$STATUT" != "ACKNOWLEDGED" ]; then
   echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
-  echo "   Certificats et alias des profils de sécurité en cause ?" >&2
+  echo "   Certificats ou alias des magasins en cause ?" >&2
   echo "   scripts/ci/diagnose_domibus.sh détaille les magasins et les erreurs." >&2
   exit 1
 fi
