@@ -66,7 +66,8 @@ MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:?doit êt
 
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)
-trap 'rm -f "$BOCAL" "$REPONSE"' EXIT
+PMODE_CHARGE=$(mktemp)
+trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"' EXIT
 
 # The API's responses are prefixed with `)]}',` (Angular's protection against
 # JSON hijacking): that prefix must go before any parsing.
@@ -122,26 +123,56 @@ messageDomibus() {
 # it otherwise — one the Commission's dashboard generated, say — is refused here,
 # before anything is uploaded, rather than surfacing as a message never
 # acknowledged.
+#
+# The dashboard generates one PMode for the whole network, with every process of
+# it: lcmProcess lists the access points declared for LCM, which ours is not.
+# Domibus 5.2 refuses a PMode where its own party takes part in a process neither
+# as initiator nor as responder (BusinessProcessValidator, DOM_003), so such
+# processes are dropped from what is uploaded. None carries a message ours sends
+# or receives; the file on disk is left as published.
 echo "→ Vérification de la partie $PARTIE dans $FICHIER_PMODE"
-if ! python3 - "$FICHIER_PMODE" "$PARTIE" <<'PYTHON'
+if ! python3 - "$FICHIER_PMODE" "$PARTIE" "$PMODE_CHARGE" <<'PYTHON'
+import shutil
 import sys
 import xml.etree.ElementTree as ET
 
-fichier, partie = sys.argv[1], sys.argv[2]
+fichier, partie, sortie = sys.argv[1], sys.argv[2], sys.argv[3]
+arbre = ET.parse(fichier)
+local = lambda element: element.tag.rsplit('}', 1)[-1]
+
 declarees = [
     (element.get('name'), identifiant.get('partyId'))
-    for element in ET.parse(fichier).iter()
-    if element.tag.rsplit('}', 1)[-1] == 'party'
+    for element in arbre.iter()
+    if local(element) == 'party'
     for identifiant in element
-    if identifiant.tag.rsplit('}', 1)[-1] == 'identifier'
+    if local(identifiant) == 'identifier'
 ]
-if (partie, partie) in declarees:
-    sys.exit(0)
-proches = [d for d in declarees if partie.lower() in (str(d[0]).lower(), str(d[1]).lower())]
-print(f"❌ Aucune partie nommée {partie} et d'identifiant {partie}, à la casse près, dans {fichier}.", file=sys.stderr)
-if proches:
-    print('   Déclarées à la casse près (nom, partyId) : ' + ', '.join(map(str, proches)), file=sys.stderr)
-sys.exit(1)
+if (partie, partie) not in declarees:
+    proches = [d for d in declarees if partie.lower() in (str(d[0]).lower(), str(d[1]).lower())]
+    print(f"❌ Aucune partie nommée {partie} et d'identifiant {partie}, à la casse près, dans {fichier}.", file=sys.stderr)
+    if proches:
+        print('   Déclarées à la casse près (nom, partyId) : ' + ', '.join(map(str, proches)), file=sys.stderr)
+    sys.exit(1)
+
+retires = []
+for parent in list(arbre.iter()):
+    for process in [e for e in parent if local(e) == 'process']:
+        participants = {
+            e.get('name') for e in process.iter()
+            if local(e) in ('initiatorParty', 'responderParty')
+        }
+        if partie not in participants:
+            parent.remove(process)
+            retires.append(process.get('name'))
+
+if retires:
+    racine = arbre.getroot()
+    if racine.tag.startswith('{'):
+        ET.register_namespace('db', racine.tag[1:].split('}')[0])
+    arbre.write(sortie, encoding='UTF-8', xml_declaration=True)
+    print(f"  processus sans {partie}, retirés du PMode chargé : {', '.join(retires)}")
+else:
+    shutil.copyfile(fichier, sortie)
 PYTHON
 then
   exit 1
@@ -153,7 +184,7 @@ fi
 # database once uploaded.
 if [ -z "$REPERTOIRE_MAGASINS" ]; then
   REPERTOIRE_MAGASINS=$(mktemp -d)
-  trap 'rm -f "$BOCAL" "$REPONSE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
+  trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
   echo "→ Génération des magasins dans $REPERTOIRE_MAGASINS"
   DESTINATION="$REPERTOIRE_MAGASINS" MOT_DE_PASSE_MAGASINS="$MOT_DE_PASSE_MAGASINS" \
     "$(dirname "$0")/generate_certificates.sh" > /dev/null
@@ -215,9 +246,11 @@ fi
 echo "→ Chargement du PMode $FICHIER_PMODE"
 # Domibus answers 200 while reporting the PMode's warnings: those of the example
 # PMode (identical initiator and responder roles) are expected, the gateway
-# talking to itself.
+# talking to itself. The file sent is the temporary copy, whose name curl cannot
+# infer a type from: Domibus refuses anything but XML (DOM_001), hence the type
+# and name given explicitly.
 CODE_PMODE=$(appelAvecCode \
-  -F "file=@$FICHIER_PMODE" \
+  -F "file=@$PMODE_CHARGE;filename=$(basename "$FICHIER_PMODE");type=text/xml" \
   --form-string "description=Configuration automatique" \
   "$URL_DOMIBUS/rest/internal/admin/pmode")
 if [ "$CODE_PMODE" != "200" ]; then

@@ -262,7 +262,7 @@ $ keytool -importkeystore -srckeystore gateway_truststore.jks -srcstoretype JKS 
 $ cp AP_FR_01.xml domibus/
 ```
 
-Puis la commande de [la mise à jour](#mettre-à-jour), avec le PMode du dashboard à la place de celui d'exemple — `FICHIER_PMODE=domibus/AP_FR_01.xml` devant `scripts/configure_domibus.sh`, à côté de `REPERTOIRE_MAGASINS=domibus/keystores` —, et le redémarrage qui suit. Le script se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+Puis la commande de [la mise à jour](#mettre-à-jour), avec le PMode du dashboard à la place de celui d'exemple — `FICHIER_PMODE=domibus/AP_FR_01.xml` devant `scripts/configure_domibus.sh`, à côté de `REPERTOIRE_MAGASINS=domibus/keystores` —, et le redémarrage qui suit. Le script charge ce PMode privé des processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier du dashboard intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
 
 > [!IMPORTANT]
 > Les alias du magasin de confiance ne se retouchent pas : la passerelle cherche le certificat d'un correspondant sous le nom de sa partie, exactement comme la Commission l'y a mis — c'est pourquoi elle tourne sans les profils de sécurité de Domibus, voir [domibus_context.md](domibus_context.md#concepts-clés). Rejouer `scripts/configure_domibus.sh` **sans** `REPERTOIRE_MAGASINS` remplacerait ces magasins par des auto-signés sans rien signaler.
