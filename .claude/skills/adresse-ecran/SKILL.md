@@ -17,6 +17,8 @@ docker compose exec -T web bundle exec rails db:seed      # compte et jeu de dé
 
 Ne pas éteindre `web` en fin de course : le laisser debout coûte un conteneur, l'éteindre coûte un aller-retour. Éteindre en revanche ce qui est lourd et sans rapport — Domibus et MySQL — sauf si la branche les concerne : la VM a 8 Gio et d'autres agents y travaillent.
 
+**La branche touche la démarche de démonstration — `app/controllers/admin/demo/`, `app/components/demo_*`, `features/*demarche*`, un ticket du projet « Le portail de démonstration » — : la pile est complète, et l'écran est un parcours.** L'utilisateur joue la démarche de bout en bout à chaque écran, et un « Request the document » qui meurt sur `domibus:8080` lui coûte un aller-retour (demandé trois fois, les 2026-09-28 et 2026-09-29 sur OOTS-72 et OOTS-237). Donc en plus de `web` et `postgres` : `fake-france-connect`, `worker`, `mysql` et `domibus`, la passerelle configurée par `scripts/configure_domibus.sh` (avec `REPERTOIRE_KEYSTORE_TRUSTSTORE=domibus/keystores`, qu'il ne devine pas), puis une demande de la démarche jouée jusqu'au justificatif — l'échange `delivered` dans le journal — avant de rendre l'adresse. Une seule pile Domibus tourne à la fois sur la machine : si une autre est debout (`docker ps`), l'appelant attend ou tranche. Ce parcours vérifié est la seule dérogation à « ne monte pas la pile Domibus » de `ouvrier.md` § 4.
+
 ## 2. Lire le port, jamais le supposer
 
 ```sh

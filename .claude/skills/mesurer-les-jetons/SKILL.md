@@ -13,18 +13,18 @@ Le CPU dit combien d'ouvriers travaillent **en même temps** ; les jetons disent
 
 ```sh
 T=$(jq -r .transcript_path ~/.claude/.statusline-derniere-entree.json); D="${T%.jsonl}/subagents"
-neufs='[.[] | select(.type=="assistant" and .message.usage) | {id: .message.id, u: .message.usage}]
+neufs='[inputs | fromjson? // empty | select(.type=="assistant" and .message.usage) | {id: .message.id, u: .message.usage}]
   | group_by(.id) | map(.[0].u)
   | "\(((map((.input_tokens//0)+(.output_tokens//0)+(.cache_creation_input_tokens//0))|add)/1e6*100|floor)/100) M neufs, \((map(.cache_read_input_tokens//0)|add)/1e6|floor) M relus"'
 arbre() {  # un agent et ses enfants
   { echo "$1/agent-$2.jsonl"; grep -l "\"parentAgentId\":\"$2\"" "$1"/*.meta.json | sed 's/\.meta\.json$/.jsonl/'; } |
-    xargs jq -rs "$neufs"
+    xargs jq -rRn "$neufs"
 }
 for m in "$D"/*.meta.json; do                              # chaque ouvrier, arbre compris
   [ "$(jq -r .agentType "$m")" = ouvrier ] || continue
   id=$(basename "$m" .meta.json); printf '%-24s %s\n' "$(jq -r .description "$m")" "$(arbre "$D" "${id#agent-}")"
 done
-jq -rs "$neufs" "$T"                                       # toi
+jq -rRn "$neufs" "$T"                                      # toi
 ```
 
 Les **jetons neufs** sont ce que le travail coûte ; le **cache relu**, ce que les contextes accumulés font repayer à chaque tour — vingt à vingt-cinq fois les jetons neufs, et c'est là que part l'essentiel : un agent repris rejoue tout son transcript, donc sa dépense par action ne cesse de croître.
@@ -42,7 +42,7 @@ E=~/.claude/.statusline-derniere-entree.json
 OUV=$(jq -r '(.rate_limits.five_hour.resets_at - 18000) | todate' "$E")
 PCT=$(jq -r '.rate_limits.five_hour.used_percentage' "$E")
 NEUFS=$(find ~/.claude/projects -name '*.jsonl' -newermt "$(date -d "$OUV" '+%F %T')" -print0 |
-  xargs -0 jq -r --arg o "$OUV" 'select(.type=="assistant" and .message.usage and .timestamp >= $o)
+  xargs -0 jq -rR --arg o "$OUV" 'fromjson? // empty | select(.type=="assistant" and .message.usage and .timestamp >= $o)
     | [.message.id, ((.message.usage.input_tokens//0)+(.message.usage.output_tokens//0)+(.message.usage.cache_creation_input_tokens//0))] | @tsv' |
   sort -u -k1,1 | awk -F'\t' '{n+=$2} END {printf "%.2f", n/1e6}')
 awk -v p="$PCT" -v n="$NEUFS" 'BEGIN {
@@ -50,7 +50,7 @@ awk -v p="$PCT" -v n="$NEUFS" 'BEGIN {
   else printf "fenêtre ≈ %.0f M de jetons neufs, dont %.2f M déjà dépensés\n", n * 100 / p, n }'
 ```
 
-Ce `xargs` tourne sans `-P` : deux `jq` qui écrivent dans le même tube entrelacent leurs lignes, et la somme meurt sur une erreur de parsing. Ce qui reste se lit ensuite dans le même payload, que [`session.sh`](../../statusline/session.sh) dépose sur disque — `m` étant la taille que l'étalonnage vient de rendre :
+Ce `xargs` tourne sans `-P` : deux `jq` qui écrivent dans le même tube entrelacent leurs lignes, et la somme meurt sur une erreur de parsing. Et les deux commandes lisent en `-R` avec `fromjson? // empty`, jamais en `-s` ni en JSON direct : un transcript en cours d'écriture finit sur une ligne tronquée, sur laquelle `jq` meurt en abandonnant le fichier entier — la même mesure a rendu 4,31 M puis 7,35 M le 2026-09-10 selon que la ligne était filtrée ou non. Ce qui reste se lit ensuite dans le même payload, que [`session.sh`](../../statusline/session.sh) dépose sur disque — `m` étant la taille que l'étalonnage vient de rendre :
 
 ```sh
 jq -r --argjson m <taille> '.rate_limits.five_hour as $f |

@@ -78,7 +78,7 @@ En cas de doute, **relis** — les lectures de la phase 1 de `plan-issue` — pu
 
 ### 4. Implémenter
 
-Dans ton worktree, sur ta branche, selon `CLAUDE.md` — commits, specs, `make lint-fix`, schéma jetable. Lance la suite unitaire localement avant de pousser, mais **ne monte pas la pile Domibus et ne joue pas `make e2e`** : le bout-en-bout tourne en CI (`e2e.yml`), et trois agents montant chacun mysql + domibus étoufferaient la VM. La CI est donc le seul endroit où le bout-en-bout est joué, et tu ne rends jamais la main sans l'avoir lue.
+Dans ton worktree, sur ta branche, selon `CLAUDE.md` — commits, specs, `make lint-fix`, schéma jetable. Lance la suite unitaire localement avant de pousser, mais **ne monte pas la pile Domibus et ne joue pas `make e2e`** : le bout-en-bout tourne en CI (`e2e.yml`), et trois agents montant chacun mysql + domibus étoufferaient la VM. La CI est donc le seul endroit où le bout-en-bout est joué, et tu ne rends jamais la main sans l'avoir lue. Une exception, l'écran d'un ticket de la démarche de démonstration, que `adresse-ecran` § 1 monte entier et vérifie par une demande aboutie.
 
 ### 4 bis. Deux temps, quand le ticket touche à l'UI
 

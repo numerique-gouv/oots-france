@@ -45,7 +45,7 @@ Les trois piliers de [harnessengineering.academy](https://harnessengineering.aca
 
 ## Entrée
 
-**Sans rien** : la passe rétrospective, sur la fenêtre depuis le dernier audit (`ls .claude/audits/*-harnais*.md | tail -1`), sinon sept jours, sinon ce qu'on te donne.
+**Sans rien** : la passe rétrospective, sur la fenêtre depuis le dernier audit (`ls .claude/audits/*-harnais*.md | tail -1`), sinon sept jours, sinon ce qu'on te donne. Une passe coupée avant sa PR ne se reprend pas : ses commits, son audit et son worktree se jettent, et la tienne recommence du relevé (reprise refusée le 2026-09-17, PR #267 fermée).
 
 **Avec une demande** — une capacité ou un circuit que le harnais n'a pas : la demande est la preuve de l'attente, et ce n'est pas toi qui la mets en doute. Le relevé cherche alors comment la chose se fait aujourd'hui sans la règle et ce que ça coûte, ce que la demande contredit dans le harnais existant (à réécrire, pas à compléter d'une exception), ce qui la ferait mal tourner (une règle de refus à écrire avec la capacité), et la base à mesurer. « Une règle neuve demande deux occurrences » ne vaut pas contre une demande explicite, mais vaut pour ce que tu serais tenté d'ajouter à côté.
 

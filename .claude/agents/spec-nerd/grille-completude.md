@@ -17,7 +17,7 @@ Un ouvrier lit des dizaines de tickets ; il retrouve chaque chose à sa place ou
 7. **Les libellés sont cités entre guillemets** — « `Requête déjà traitée` », le code `EDM:ERR:0006` — quand le ticket fixe un texte ou une valeur, pour qu'on sache que c'est ce texte-là, au caractère près.
 8. **Les renvois sont des liens** : un chapitre, une règle, un ticket voisin. Jamais une URL nue collée dans la phrase, jamais un identifiant nu.
 
-Un écart de forme se répare en écrivant, avant de poser le statut : il n'y a rien à demander à personne. `scripts/relire-le-jet.py` joue ces huit contrôles sur le fichier du jet (CRÉER étape 6, COMPLÉTER étape 4) ; ce qui reste ici à lire est ce qu'un script ne voit pas — un titre qui ne dit pas ce qui sera vrai, un libellé cité de travers.
+Un écart de forme se répare en écrivant, avant de poser le statut : il n'y a rien à demander à personne. `.claude/agents/spec-nerd/scripts/relire-le-jet.py` joue ces huit contrôles sur le fichier du jet (CRÉER étape 6, COMPLÉTER étape 4) ; ce qui reste ici à lire est ce qu'un script ne voit pas — un titre qui ne dit pas ce qui sera vrai, un libellé cité de travers.
 
 ### Le contenu — ce que le ticket doit dire
 
