@@ -137,8 +137,8 @@ class AuditTrail
   # return address of chapter 4.9 §5 — this deployment's own addition, as
   # `preview_visited` is on the other side: the address visited, and nothing of
   # who visited it.
-  def return_visited(exchange:, location:)
-    record('return_visited', **borne_by(exchange), preview_location: location)
+  def return_to_procedure(exchange:, location:)
+    record('return_to_procedure', **borne_by(exchange), preview_location: location)
   end
 
   def preview_decided(session:, decision:)

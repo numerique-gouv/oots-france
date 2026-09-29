@@ -278,7 +278,7 @@ if Rails.env.development?
       preview_descriptions: preview_descriptions,
       message_error_code: EdmException::AUTHORIZATION.code,
       previewed: true,
-      events: %w[request_sent error_received request_sent return_visited response_received evidence_delivered] },
+      events: %w[request_sent error_received request_sent return_to_procedure response_received evidence_delivered] },
     # La même, où l'usager n'a rien accepté : la seconde réponse porte une liste
     # vide (chapitre 4.9 §1), rien n'est remis, et l'échange est `declined`.
     { status: 'declined', country_code: 'LV', procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
@@ -287,7 +287,7 @@ if Rails.env.development?
       preview_descriptions: preview_descriptions,
       message_error_code: EdmException::AUTHORIZATION.code,
       previewed: true,
-      events: %w[request_sent error_received request_sent return_visited response_received] },
+      events: %w[request_sent error_received request_sent return_to_procedure response_received] },
   ]
 
   # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
@@ -390,8 +390,8 @@ if Rails.env.development?
   # received request names its procedure but not the requester, whom
   # `AuditTrail` records as a requesting authority instead; and only what
   # travelled through the gateway names a message.
-  carries_procedure = %w[request_sent request_refused evidence_delivered request_received return_visited].freeze
-  carries_requester = %w[request_sent request_refused evidence_delivered return_visited].freeze
+  carries_procedure = %w[request_sent request_refused evidence_delivered request_received return_to_procedure].freeze
+  carries_requester = %w[request_sent request_refused evidence_delivered return_to_procedure].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
   # The ebMS action, which every message names and nothing else does: what
@@ -693,11 +693,11 @@ if Rails.env.development?
       #
       # Du côté qui demande, la seconde requête porte le lien présenté à
       # l'usager — l'adresse reçue, en 2.0 —, et le retour l'adresse de retour
-      # visitée (`AuditTrail#return_visited`).
+      # visitée (`AuditTrail#return_to_procedure`).
       declared_preview =
         if event_type.in?(%w[error_received error_sent preview_visited]) || second
           exchange.preview_location
-        elsif event_type == 'return_visited'
+        elsif event_type == 'return_to_procedure'
           exchange.return_location
         end
 

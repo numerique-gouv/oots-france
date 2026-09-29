@@ -17,7 +17,7 @@ class ReturnsController < ActionController::API
     return refuse(:unknown, :not_found) unless exchange&.preview_confirmed? && !exchange.pending?
     return refuse(:expired, :gone) unless exchange.return_open?
 
-    AuditTrail.new.return_visited(exchange:, location: request.original_url)
+    AuditTrail.new.return_to_procedure(exchange:, location: request.original_url)
     redirect_to resume_address(exchange), allow_other_host: true, status: :see_other
   end
 

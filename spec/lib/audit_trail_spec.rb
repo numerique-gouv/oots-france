@@ -785,8 +785,8 @@ RSpec.describe AuditTrail do
       expect(journalled).to have_attributes(event_type: 'request_sent',
         preview_location: 'https://ap.example.si/espace?returnurl=x')
 
-      audit_trail.return_visited(exchange:, location: exchange.return_location)
-      expect(journalled).to have_attributes(event_type: 'return_visited', exchange_id: exchange.exchange_id,
+      audit_trail.return_to_procedure(exchange:, location: exchange.return_location)
+      expect(journalled).to have_attributes(event_type: 'return_to_procedure', exchange_id: exchange.exchange_id,
         conversation_id: exchange.conversation_id, preview_location: exchange.return_location)
     end
 

@@ -125,7 +125,7 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 
 | Scénario | Ce que l'usager choisit | Ce que le portail reçoit |
 | --- | --- | --- |
-| L'usager accepte le document, et le portail le reçoit | « Utiliser ce document dans ma démarche » | le justificatif sur `/oots/document`, l'état `delivered` ; le journal porte deux `request_sent` et le `return_visited` |
+| L'usager accepte le document, et le portail le reçoit | « Utiliser ce document dans ma démarche » | le justificatif sur `/oots/document`, l'état `delivered` ; le journal porte deux `request_sent` et le `return_to_procedure` |
 | L'usager refuse le document, et le portail ne reçoit rien | « Ne pas l'utiliser » | aucun justificatif, l'état `declined` |
 
 L'émission en 1.2 — sans `ReturnLocation`, l'adresse de retour ajoutée au lien — ne se joue pas ici, la boucle partant en 2.0 : `make schematron` juge la seconde requête dans les deux lignes, et `make test` le lien.

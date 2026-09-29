@@ -25,7 +25,7 @@ RSpec.describe 'GET /retour/:token' do
   it 'journals the visit on the exchange' do
     get "/retour/#{exchange.return_token}"
 
-    expect(AuditEvent.last).to have_attributes(event_type: 'return_visited', exchange_id: exchange.exchange_id,
+    expect(AuditEvent.last).to have_attributes(event_type: 'return_to_procedure', exchange_id: exchange.exchange_id,
       preview_location: "http://www.example.com/retour/#{exchange.return_token}")
   end
 

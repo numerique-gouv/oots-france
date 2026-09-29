@@ -284,9 +284,9 @@ RSpec.describe 'db/seeds.rb' do
     events = AuditEvent.where(exchange_id: delivered.exchange_id).order(:occurred_at)
 
     expect(events.pluck(:event_type))
-      .to eq(%w[request_sent error_received request_sent return_visited response_received evidence_delivered])
+      .to eq(%w[request_sent error_received request_sent return_to_procedure response_received evidence_delivered])
     expect(events.where(event_type: 'request_sent').last.preview_location).to eq(delivered.preview_location)
-    expect(events.find_by(event_type: 'return_visited').preview_location).to eq(delivered.return_location)
+    expect(events.find_by(event_type: 'return_to_procedure').preview_location).to eq(delivered.return_location)
     expect(events.find_by(event_type: 'response_received').request_id).to eq(delivered.request_id)
     expect(declined).to have_attributes(status: 'declined', preview_confirmed_at: be_present)
     expect(AuditEvent.where(exchange_id: declined.exchange_id, event_type: 'evidence_delivered')).to be_none

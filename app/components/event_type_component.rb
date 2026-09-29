@@ -14,7 +14,7 @@ class EventTypeComponent < ViewComponent::Base
     'answer_not_sent' => :error,
     'preview_visited' => :info,
     'preview_decided' => :info,
-    'return_visited' => :info,
+    'return_to_procedure' => :info,
   }.freeze
 
   def initialize(event_type:)
