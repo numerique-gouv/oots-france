@@ -117,6 +117,36 @@ messageDomibus() {
   fi
 }
 
+# Chapter 4.7 has the PartyId and its type processed case-sensitively, and the
+# rest of this script names our party by that same string: a PMode that declares
+# it otherwise — one the Commission's dashboard generated, say — is refused here,
+# before anything is uploaded, rather than surfacing as a message never
+# acknowledged.
+echo "→ Vérification de la partie $PARTIE dans $FICHIER_PMODE"
+if ! python3 - "$FICHIER_PMODE" "$PARTIE" <<'PYTHON'
+import sys
+import xml.etree.ElementTree as ET
+
+fichier, partie = sys.argv[1], sys.argv[2]
+declarees = [
+    (element.get('name'), identifiant.get('partyId'))
+    for element in ET.parse(fichier).iter()
+    if element.tag.rsplit('}', 1)[-1] == 'party'
+    for identifiant in element
+    if identifiant.tag.rsplit('}', 1)[-1] == 'identifier'
+]
+if (partie, partie) in declarees:
+    sys.exit(0)
+proches = [d for d in declarees if partie.lower() in (str(d[0]).lower(), str(d[1]).lower())]
+print(f"❌ Aucune partie nommée {partie} et d'identifiant {partie}, à la casse près, dans {fichier}.", file=sys.stderr)
+if proches:
+    print('   Déclarées à la casse près (nom, partyId) : ' + ', '.join(map(str, proches)), file=sys.stderr)
+sys.exit(1)
+PYTHON
+then
+  exit 1
+fi
+
 # The certificates shipped with the image are public and shared by every
 # installation: ours are imposed instead. Where no stores are supplied they are
 # generated — they need not outlive the script, the gateway keeping them in its
@@ -162,6 +192,25 @@ chargeMagasin() {
 
 chargeMagasin truststore
 chargeMagasin keystore
+
+# Stores generated before the gateway left Domibus's security profiles hold
+# AP_FR_01_rsa_sign and AP_FR_01_rsa_decrypt, and generate_certificates.sh
+# refuses to overwrite them: uploaded again, they leave the gateway without the
+# key docker-compose.yml names. Java store aliases being case-insensitive, so is
+# the comparison.
+echo "→ Vérification de la clé $PARTIE dans le keystore"
+ALIAS_CLES=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/keystore/list" \
+  | sansPrefixeJSON \
+  | python3 -c "
+import json, sys
+print(' '.join(entree.get('name', '') for entree in json.load(sys.stdin).get('trustStoreList') or []))
+" 2> /dev/null || true)
+if ! printf '%s\n' $ALIAS_CLES | grep -qix "$PARTIE"; then
+  echo "❌ Le keystore chargé n'a pas de clé $PARTIE (alias : ${ALIAS_CLES:-aucun})." >&2
+  echo "   Des magasins d'avant le mode legacy ? Supprimer $REPERTOIRE_MAGASINS/*.p12," >&2
+  echo "   relancer scripts/generate_certificates.sh, puis ce script." >&2
+  exit 1
+fi
 
 echo "→ Chargement du PMode $FICHIER_PMODE"
 # Domibus answers 200 while reporting the PMode's warnings: those of the example
