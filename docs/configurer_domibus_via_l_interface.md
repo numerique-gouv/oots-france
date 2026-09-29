@@ -22,26 +22,26 @@ Dans la colonne de gauche, cliquer sur « Plugin Users », puis sur le bouton «
 Les certificats livrés avec l'image Docker Domibus sont publics et partagés par toutes les installations. Le script suivant les remplace par des certificats auto-signés fraîchement générés (identité `AP_FR_01`, valides dix ans) :
 
 ```sh
-$ MOT_DE_PASSE_MAGASINS=… scripts/generate_certificates.sh
+$ MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=… scripts/generate_certificates.sh
 ```
 
 Le mot de passe doit être celui du `.env` avec lequel tourne la passerelle : le script ne lit pas ce fichier, et refuse de tourner sans qu'on le lui donne plutôt que de retomber sur un défaut qui masquerait l'écart.
 
-Il écrit deux magasins PKCS#12 dans `domibus/keystores/` : `gateway_keystore.p12`, qui porte **une** clé privée sous l'alias `AP_FR_01`, et `gateway_truststore.p12`, qui porte son certificat sous le même alias. L'alias n'est pas libre : c'est le nom de la partie au PMode, et [domibus_context.md](domibus_context.md) dit pourquoi la passerelle n'en veut pas d'autre.
+Il écrit deux fichiers PKCS#12 dans `domibus/keystores/` : `gateway_keystore.p12`, qui porte **une** clé privée sous l'alias `AP_FR_01`, et `gateway_truststore.p12`, qui porte son certificat sous le même alias. L'alias n'est pas libre : c'est le nom de la partie au PMode, et [domibus_context.md](domibus_context.md) dit pourquoi la passerelle n'en veut pas d'autre.
 
 Les mêmes certificats servent des deux côtés parce que le PMode d'exemple configure Domibus pour dialoguer avec lui-même : la passerelle doit donc faire confiance à ses propres certificats pour valider les messages qu'elle s'envoie.
 
-Le script s'appuie sur `keytool` s'il est installé, sinon sur une image Docker contenant un JRE ; il refuse d'écraser des magasins existants, qu'il faut donc supprimer au préalable pour régénérer les certificats.
+Le script s'appuie sur `keytool` s'il est installé, sinon sur une image Docker contenant un JRE ; il refuse d'écraser un keystore et un truststore existants, qu'il faut donc supprimer au préalable pour régénérer les certificats.
 
 > [!WARNING]
 > Ces certificats sont réservés au poste de développement : auto-signés et protégés par le mot de passe choisi dans `.env`, ils ne doivent jamais servir sur un environnement réel.
 
 Domibus relit ces fichiers **à chaque démarrage**, à l'emplacement que lui donnent `domibus.security.keystore.location` et son équivalent truststore. Les y déposer ne suffit pourtant pas sur une passerelle déjà démarrée : il faut les lui téléverser, ce qui les installe *et* les réécrit à cet emplacement.
 
-Depuis l'interface d'administration : dans la colonne de gauche, cliquer sur « Truststores », puis « Domibus », enfin sur « Upload » ; sélectionner le magasin (type : PKCS12, mot de passe : celui de `MOT_DE_PASSE_MAGASINS`). Les deux magasins se téléversent de la même façon — le détour par le disque et le bouton « Reload KeyStore », qu'imposait Domibus 5.0.4, n'ont plus lieu d'être.
+Depuis l'interface d'administration : dans la colonne de gauche, cliquer sur « Truststores », puis « Domibus », enfin sur « Upload » ; sélectionner le fichier (type : PKCS12, mot de passe : celui de `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE`). Le keystore et le truststore se téléversent de la même façon — le détour par le disque et le bouton « Reload KeyStore », qu'imposait Domibus 5.0.4, n'ont plus lieu d'être.
 
 > [!IMPORTANT]
-> Le mot de passe des magasins déposés doit rester celui du `.env` : la passerelle les rouvre avec cette valeur au démarrage suivant. Un écart ne se voit pas tout de suite — l'échange continue de fonctionner jusqu'au redémarrage, puis échoue en `SEND_FAILURE`.
+> Le mot de passe du keystore et du truststore déposés doit rester celui du `.env` : la passerelle les rouvre avec cette valeur au démarrage suivant. Un écart ne se voit pas tout de suite — l'échange continue de fonctionner jusqu'au redémarrage, puis échoue en `SEND_FAILURE`.
 
 ## Charger un fichier de configuration PMode
 

@@ -16,10 +16,10 @@
 # Usage: make update-certifs   (asks what to update, then for each file)
 #        DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
 #          [CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]
-#   MOT_DE_PASSE_MAGASIN_PUBLIE  password of the published truststore (test123)
-#   MOT_DE_PASSE_MAGASIN_CLE     keystore password of the keystore CLE names, when it is one
-#   MOT_DE_PASSE_CLE             keypair password of the key inside it, when it differs
-#   ALIAS_CLE                    the key's alias, when that keystore holds several
+#   MOT_DE_PASSE_TRUSTSTORE_PUBLIE  password of the published truststore (test123)
+#   MOT_DE_PASSE_KEYSTORE_CLE       keystore password of the keystore CLE names, when it is one
+#   MOT_DE_PASSE_KEYPAIR            keypair password of the key inside it, when it differs
+#   ALIAS_CLE                       the key's alias, when that keystore holds several
 
 set -e
 
@@ -35,10 +35,10 @@ trap 'rm -rf "$TEMPORAIRE"' EXIT
 PMODE="${1:-}"
 TRUSTSTORE="${2:-}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-}"
-MOT_DE_PASSE_MAGASIN_PUBLIE="${MOT_DE_PASSE_MAGASIN_PUBLIE:-test123}"
+MOT_DE_PASSE_TRUSTSTORE_PUBLIE="${MOT_DE_PASSE_TRUSTSTORE_PUBLIE:-test123}"
 CLE="${CLE:-}"
-MOT_DE_PASSE_MAGASIN_CLE="${MOT_DE_PASSE_MAGASIN_CLE:-}"
-MOT_DE_PASSE_CLE="${MOT_DE_PASSE_CLE:-}"
+MOT_DE_PASSE_KEYSTORE_CLE="${MOT_DE_PASSE_KEYSTORE_CLE:-}"
+MOT_DE_PASSE_KEYPAIR="${MOT_DE_PASSE_KEYPAIR:-}"
 ALIAS_CLE="${ALIAS_CLE:-}"
 CERTIFICAT="${CERTIFICAT:-}"
 CHAINE="${CHAINE:-}"
@@ -88,13 +88,13 @@ if [ -z "$PMODE" ] || [ -z "$TRUSTSTORE" ]; then
   cat >&2 <<'QUESTION'
 Que faut-il mettre à jour ?
 
-  1. Le PMode et le magasin de confiance, que le Technical Support Dashboard
+  1. Le PMode et le truststore, que le Technical Support Dashboard
      vient de republier. C'est le cas courant : il les régénère dès qu'un point
      d'accès du réseau change, quel que soit l'État membre.
 
   2. Notre certificat aussi — premier raccordement, ou renouvellement du
      certificat que la PKI eDelivery a délivré. Le keystore est reconstruit avec
-     notre clé privée et ce certificat, puis le PMode et le magasin de confiance
+     notre clé privée et ce certificat, puis le PMode et le truststore
      sont chargés comme en 1.
 
 QUESTION
@@ -107,13 +107,13 @@ QUESTION
   echo >&2
   echo "Fichiers publiés par le Technical Support Dashboard :" >&2
   PMODE=$(chemin "$(demande "  PMode" AP_FR_01.xml)")
-  TRUSTSTORE=$(chemin "$(demande "  Magasin de confiance" gateway_truststore.jks)")
+  TRUSTSTORE=$(chemin "$(demande "  Truststore" gateway_truststore.jks)")
   if [ -n "$NOUVEAU_KEYSTORE" ]; then
-    echo "Notre clé privée : le magasin où keytool l'a créée avant le CSR (.jks, .p12), ou son fichier PEM :" >&2
+    echo "Notre clé privée : le keystore où keytool l'a créée avant le CSR (.jks, .p12), ou son fichier PEM :" >&2
     CLE=$(chemin "$(demande "  Clé privée")")
-    if ! estPem "$CLE" && [ -z "$MOT_DE_PASSE_MAGASIN_CLE" ]; then
-      MOT_DE_PASSE_MAGASIN_CLE=$(demandeSecret "  Keystore password, le mot de passe de ce magasin")
-      MOT_DE_PASSE_CLE=$(demandeSecret "  Keypair password, le mot de passe de la clé (Entrée s'il est le même)")
+    if ! estPem "$CLE" && [ -z "$MOT_DE_PASSE_KEYSTORE_CLE" ]; then
+      MOT_DE_PASSE_KEYSTORE_CLE=$(demandeSecret "  Keystore password, le mot de passe de ce keystore")
+      MOT_DE_PASSE_KEYPAIR=$(demandeSecret "  Keypair password, le mot de passe de la clé (Entrée s'il est le même)")
     fi
     echo "Le certificat que la PKI a rendu pour elle :" >&2
     CERTIFICAT=$(chemin "$(demande "  Certificat rendu par la PKI" OOTS_AP_ACC_FR_001.pem)")
@@ -136,9 +136,9 @@ if [ -z "$DOMIBUS_MOT_DE_PASSE_ADMIN" ]; then
   exit 1
 fi
 
-REPERTOIRE_MAGASINS=domibus/keystores
-KEYSTORE="$REPERTOIRE_MAGASINS/gateway_keystore.p12"
-TRUSTSTORE_PASSERELLE="$REPERTOIRE_MAGASINS/gateway_truststore.p12"
+REPERTOIRE_KEYSTORE_TRUSTSTORE=domibus/keystores
+KEYSTORE="$REPERTOIRE_KEYSTORE_TRUSTSTORE/gateway_keystore.p12"
+TRUSTSTORE_PASSERELLE="$REPERTOIRE_KEYSTORE_TRUSTSTORE/gateway_truststore.p12"
 PMODE_PASSERELLE="domibus/$(basename "$PMODE")"
 
 # The values of a .env* cannot be sourced with `.`: they carry JSON braces and
@@ -177,12 +177,12 @@ fi
 
 PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
 PORT_OOTS_FRANCE=$(lisVariable PORT_OOTS_FRANCE .env)
-MOT_DE_PASSE_MAGASINS=$(lisVariable MOT_DE_PASSE_MAGASINS .env)
+MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=$(lisVariable MOT_DE_PASSE_KEYSTORE_TRUSTSTORE .env)
 LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
 MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
 LOGIN_NOTIFICATION_DOMIBUS=$(lisVariable LOGIN_NOTIFICATION_DOMIBUS .env.oots)
 MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$(lisVariable MOT_DE_PASSE_NOTIFICATION_DOMIBUS .env.oots)
-export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
+export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_KEYSTORE_TRUSTSTORE LOGIN_API_REST MOT_DE_PASSE_API_REST
 export LOGIN_NOTIFICATION_DOMIBUS MOT_DE_PASSE_NOTIFICATION_DOMIBUS DOMIBUS_MOT_DE_PASSE_ADMIN
 
 # keytool is not always installed on the host machine; failing that, it is run
@@ -192,7 +192,7 @@ lanceKeytool() {
     (cd "$TEMPORAIRE" && keytool "$@")
   else
     docker run --rm --user "$(id -u):$(id -g)" \
-      --volume "$TEMPORAIRE:/magasins" --workdir /magasins \
+      --volume "$TEMPORAIRE:/stores" --workdir /stores \
       eclipse-temurin:21-jre keytool "$@"
   fi
 }
@@ -202,7 +202,7 @@ lanceKeytool() {
 # works with.
 extraisCle() {
   cp "$CLE" "$TEMPORAIRE/source"
-  if ! lanceKeytool -list -keystore source -storepass "$MOT_DE_PASSE_MAGASIN_CLE" \
+  if ! lanceKeytool -list -keystore source -storepass "$MOT_DE_PASSE_KEYSTORE_CLE" \
     > "$TEMPORAIRE/liste" 2>&1; then
     echo "❌ $CLE ne s'ouvre pas — keystore password erroné ? keytool a répondu :" >&2
     sed 's/^/   /' "$TEMPORAIRE/liste" >&2
@@ -217,8 +217,8 @@ extraisCle() {
     esac
   fi
   if ! lanceKeytool -importkeystore -noprompt \
-    -srckeystore source -srcstorepass "$MOT_DE_PASSE_MAGASIN_CLE" \
-    -srcalias "$ALIAS_CLE" -srckeypass "${MOT_DE_PASSE_CLE:-$MOT_DE_PASSE_MAGASIN_CLE}" \
+    -srckeystore source -srcstorepass "$MOT_DE_PASSE_KEYSTORE_CLE" \
+    -srcalias "$ALIAS_CLE" -srckeypass "${MOT_DE_PASSE_KEYPAIR:-$MOT_DE_PASSE_KEYSTORE_CLE}" \
     -destkeystore cle.p12 -deststoretype PKCS12 \
     -deststorepass extraction -destkeypass extraction > "$TEMPORAIRE/extraction" 2>&1; then
     echo "❌ La clé « $ALIAS_CLE » ne s'ouvre pas — keypair password erroné ? keytool a répondu :" >&2
@@ -242,8 +242,8 @@ extraisCle() {
 if [ -n "$NOUVEAU_KEYSTORE" ]; then
   echo "→ Keystore : $CLE et $CERTIFICAT, sous l'alias $PARTIE"
   if ! estPem "$CLE"; then
-    if [ -z "$MOT_DE_PASSE_MAGASIN_CLE" ]; then
-      echo "❌ $CLE est un magasin : donner son keystore password par MOT_DE_PASSE_MAGASIN_CLE=…" >&2
+    if [ -z "$MOT_DE_PASSE_KEYSTORE_CLE" ]; then
+      echo "❌ $CLE est un keystore : donner son keystore password par MOT_DE_PASSE_KEYSTORE_CLE=…" >&2
       exit 1
     fi
     extraisCle
@@ -254,7 +254,7 @@ if [ -n "$NOUVEAU_KEYSTORE" ]; then
   fi
   openssl pkcs12 -export -name "$PARTIE" -inkey "$CLE" \
     -in "$CERTIFICAT" -certfile "$CHAINE" \
-    -out "$TEMPORAIRE/gateway_keystore.p12" -passout "pass:$MOT_DE_PASSE_MAGASINS"
+    -out "$TEMPORAIRE/gateway_keystore.p12" -passout "pass:$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE"
   openssl x509 -in "$CERTIFICAT" -noout -subject -enddate | sed 's/^/  /'
 fi
 
@@ -262,13 +262,13 @@ fi
 # certificate up under its party name, see docs/domibus_context.md. Only the
 # format and the password change, those the gateway reopens its stores with at
 # every start.
-echo "→ Conversion du magasin de confiance $TRUSTSTORE"
+echo "→ Conversion du truststore $TRUSTSTORE"
 cp "$TRUSTSTORE" "$TEMPORAIRE/publie.jks"
 lanceKeytool -importkeystore -noprompt \
-  -srckeystore publie.jks -srcstoretype JKS -srcstorepass "$MOT_DE_PASSE_MAGASIN_PUBLIE" \
+  -srckeystore publie.jks -srcstoretype JKS -srcstorepass "$MOT_DE_PASSE_TRUSTSTORE_PUBLIE" \
   -destkeystore gateway_truststore.p12 -deststoretype PKCS12 \
-  -deststorepass "$MOT_DE_PASSE_MAGASINS" > /dev/null
-lanceKeytool -list -keystore gateway_truststore.p12 -storepass "$MOT_DE_PASSE_MAGASINS" \
+  -deststorepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" > /dev/null
+lanceKeytool -list -keystore gateway_truststore.p12 -storepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" \
   | grep -c ', trustedCertEntry' | sed 's/^/  certificats : /'
 
 # What is replaced is kept alongside, so that a publication that breaks the
@@ -286,7 +286,7 @@ if [ -n "$NOUVEAU_KEYSTORE" ]; then
 fi
 cp "$PMODE" "$PMODE_PASSERELLE"
 
-REPERTOIRE_MAGASINS="$REPERTOIRE_MAGASINS" FICHIER_PMODE="$PMODE_PASSERELLE" \
+REPERTOIRE_KEYSTORE_TRUSTSTORE="$REPERTOIRE_KEYSTORE_TRUSTSTORE" FICHIER_PMODE="$PMODE_PASSERELLE" \
   scripts/configure_domibus.sh
 
 # The notification rules configure_domibus.sh writes take effect only on a
@@ -295,4 +295,4 @@ echo "→ Redémarrage de la passerelle"
 docker compose restart domibus
 scripts/ci/wait_for_domibus.sh
 
-echo "✅ PMode et magasin de confiance du Technical Support Dashboard chargés${NOUVEAU_KEYSTORE:+, keystore reconstruit} ; les précédents sont en *.precedent sous domibus/."
+echo "✅ PMode et truststore du Technical Support Dashboard chargés${NOUVEAU_KEYSTORE:+, keystore reconstruit} ; les précédents sont en *.precedent sous domibus/."

@@ -63,7 +63,7 @@ Node.js, TypeScript, Next.js et Fastify, en monorepo Nx : un **pont** génériqu
 
 | Ce qu'on y trouve | Ce que c'est |
 | --- | --- |
-| `pmode_export/` — les PMode de tous les points d'accès participants, `AP_FR_01.xml` compris, plus `gateway_truststore.jks`, `tls_truststore.jks` et `clientauthentication.xml` | La configuration Domibus **réelle** d'une vingtaine d'États membres : identifiants de parties, endpoints MSH, routage, magasins de confiance |
+| `pmode_export/` — les PMode de tous les points d'accès participants, `AP_FR_01.xml` compris, plus `gateway_truststore.jks`, `tls_truststore.jks` et `clientauthentication.xml` | La configuration Domibus **réelle** d'une vingtaine d'États membres : identifiants de parties, endpoints MSH, routage, truststores |
 | `Evidence_Requests_Responses/TC01…TC05/` — douze échanges complets entre pays (`cz-sk`, `hu-sk`, `sk-cz`, `sk-at`, `sk-de`, `sk-be`) | Pour chacun : le `submitMessage.xml` remis à la passerelle, l'enveloppe `message.xml` telle qu'émise, la requête, la réponse, l'archive récupérée sur Domibus et le justificatif PDF. Des messages qui ont **réellement circulé**, et non des exemples rédigés pour la spécification |
 | `Common_Service_Requests/` — une collection Postman, et les fichiers `EB1/EB2/DSD-request.url` avec leurs réponses | Les URL de requête exactes de l'Evidence Broker et du DSD, et ce que ces annuaires ont vraiment répondu |
 

@@ -38,7 +38,7 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 | --- | --- |
 | Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/prepare_environment.sh` |
 | Attendre le déploiement de la webapp | `scripts/ci/wait_for_domibus.sh` |
-| Générer les certificats, charger les deux magasins et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configure_domibus.sh`, qui appelle `scripts/generate_certificates.sh` |
+| Générer les certificats, charger le keystore, le truststore et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configure_domibus.sh`, qui appelle `scripts/generate_certificates.sh` |
 | Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnose_domibus.sh` |
 
 > [!WARNING]
@@ -257,7 +257,7 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | `501 Not Implemented Yet!` | `AVEC_REQUETE_PIECE_JUSTIFICATIVE` ne vaut pas `true` |
 | « `URL_BASE_…` est renseignée » au démarrage du scénario | un `.env.oots` antérieur au retrait du double nomme encore le faux annuaire : vider les deux variables |
 | `502` avec « Annuaire injoignable » | l'acceptation ne répond pas, ou le HTTPS sortant et la résolution NAPTR sont filtrés sur le réseau qui joue le test |
-| `500` avec « Magasin de confiance des annuaires illisible » | `CERTIFICATS_SERVICES_COMMUNS` ne désigne pas `config/certificats/services_communs_acc.pem` |
+| `500` avec « Truststore des annuaires illisible » | `CERTIFICATS_SERVICES_COMMUNS` ne désigne pas `config/certificats/services_communs_acc.pem` |
 | `500`, signature refusée | la chaîne `EC-OOTS-CS-ACC` → `CommisSign - 2 test` → racine a été renouvelée : reprendre `config/certificats/services_communs_acc.pem` |
 | `422` avec `EB:ERR:0001` à l'étape des types | **aucune** des deux exigences de `00` / FR ne publie plus de type français : le refus n'est relevé que là. Vérifier l'entrée française de l'Evidence Broker |
 | `422` avec `DSD:ERR:0001` | l'entrée française du Data Service Directory a été éditée ou retirée |
@@ -269,8 +269,8 @@ Le test vérifie ces points avant de commencer et échoue sur un message explici
 | La passerelle reçoit `403` de notre route | Ce n'est pas l'authentification : c'est le contrôle d'hôte de Rails, qui refuse le nom de service `web`. Voir `config.hosts` |
 | `504` alors que le journal des messages montre un `ACKNOWLEDGED` **et** un `RECEIVED` | l'échange AS4 a abouti, mais le message entrant est parti à un autre plugin : vérifier que son `pluginType` vaut bien `backendWSPlugin` |
 | `Unknown column 'PROCESSING_DETAIL' in 'field list'` | la base ne vient pas de l'image MySQL du même tag que Domibus — voir [versions_domibus.md](versions_domibus.md) |
-| Un message jamais acquitté, sans erreur explicite | les alias des magasins ne sont pas le nom de la partie — `scripts/ci/diagnose_domibus.sh` les affiche |
-| `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_MAGASINS` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert des magasins téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
+| Un message jamais acquitté, sans erreur explicite | les alias du keystore et du truststore ne sont pas le nom de la partie — `scripts/ci/diagnose_domibus.sh` les affiche |
+| `SEND_FAILURE` et un statut `BROKEN` **après un redémarrage** de la passerelle, alors que tout fonctionnait avant | le `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` du `.env` et celui passé aux scripts divergent. Tant que la passerelle tourne, elle se sert du keystore et du truststore téléversés ; au redémarrage elle les relit depuis le disque avec le mot de passe du `.env`, et ne les ouvre plus |
 | `500` avec `Point d'accès inexistant : AP_FR_01` | le PMode n'est pas chargé, ou les identifiants du Plugin User ne correspondent pas |
 | « Le faux FranceConnect+ n'a pas répondu sur … » au démarrage du run | le service `fake-france-connect` n'est pas monté — `docker compose logs fake-france-connect` dit pourquoi —, ou le run a tenté d'en démarrer un à lui et le port était déjà pris |
 | Les scénarios d'identification échouent tous sur le premier `Étant donné` | `URL_FAUX_FRANCE_CONNECT` n'est pas renseignée dans le `.env.oots` du conteneur `web` |

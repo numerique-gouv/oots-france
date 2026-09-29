@@ -62,12 +62,12 @@ fi
 # correspondent without a word.
 PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
 PORT_OOTS_FRANCE=$(lisVariable PORT_OOTS_FRANCE .env)
-MOT_DE_PASSE_MAGASINS=$(lisVariable MOT_DE_PASSE_MAGASINS .env)
+MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=$(lisVariable MOT_DE_PASSE_KEYSTORE_TRUSTSTORE .env)
 LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
 MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
 LOGIN_NOTIFICATION_DOMIBUS=$(lisVariable LOGIN_NOTIFICATION_DOMIBUS .env.oots)
 MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$(lisVariable MOT_DE_PASSE_NOTIFICATION_DOMIBUS .env.oots)
-export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_MAGASINS LOGIN_API_REST MOT_DE_PASSE_API_REST
+export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_KEYSTORE_TRUSTSTORE LOGIN_API_REST MOT_DE_PASSE_API_REST
 export LOGIN_NOTIFICATION_DOMIBUS MOT_DE_PASSE_NOTIFICATION_DOMIBUS
 
 # Domibus's database is created on the container's first start, and the gateway
@@ -94,7 +94,7 @@ scripts/ci/wait_for_domibus.sh
 # The certificates shipped with the image are public and shared by every
 # installation: the script generates others. It ends with a test AS4 message,
 # whose acknowledgement it waits for.
-echo "→ Configuration de la passerelle : magasins, PMode, compte d'accès"
+echo "→ Configuration de la passerelle : keystore, truststore, PMode, compte d'accès"
 scripts/configure_domibus.sh
 
 # The notification rules (`wsplugin.push.rules`) cannot be changed through the
