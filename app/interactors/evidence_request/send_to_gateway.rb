@@ -1,5 +1,6 @@
 module EvidenceRequest
-  # Builds the request and hands it to Domibus.
+  # Builds the request and hands it to Domibus — the first of an exchange, or
+  # the second of a preview, which `ConfirmExchange` has given its two addresses.
   class SendToGateway < ApplicationInteractor
     def call
       exchange = context.exchange
@@ -44,16 +45,20 @@ module EvidenceRequest
         I18n.t('interactors.evidence_request.send_to_gateway.invalid_configuration', error: e.message))
     end
 
+    # `context` is aliased for the reason `request_attributes` gives.
     def journal(message_id)
+      sent = context
+
       audit_trail.request_sent(
-        exchange: context.exchange,
-        requester: context.requester,
-        provider: context.provider,
-        beneficiary: context.beneficiary,
-        evidence_type: context.evidence_type,
+        exchange: sent.exchange,
+        requester: sent.requester,
+        provider: sent.provider,
+        beneficiary: sent.beneficiary,
+        evidence_type: sent.evidence_type,
         request_id: body.request_id,
         message_id:,
         first_part: envelope.first_part,
+        preview_location: sent.preview_link&.address,
       )
     end
 
@@ -69,6 +74,7 @@ module EvidenceRequest
         requester: resolved.requester, provider: resolved.provider, beneficiary: resolved.beneficiary,
         requirement: resolved.requirement, data_service: resolved.data_service,
         procedure_code: resolved.procedure_code, preview_possible: resolved.preview_possible,
+        preview_location: resolved.preview_location, return_location: resolved.return_location,
         specification: resolved.exchange.specification, uuid:,
       }
     end

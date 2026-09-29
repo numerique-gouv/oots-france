@@ -1445,6 +1445,19 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
+  # La confirmation d'une prévisualisation qu'un correspondant demande, second
+  # appel de l'interface requêteur.
+  preview_confirmations:
+    create:
+      beneficiary_required: Le bénéficiaire doit être renseigné
+      not_awaited: Cet échange n'attend pas la confirmation d'une prévisualisation.
+      resume_location_invalid: L'adresse de retour doit être une adresse absolue en https:// ou http://
+  # Ce que l'adresse de retour répond quand elle ne ramène personne : du texte
+  # brut, aucune page n'étant rendue à l'usager.
+  returns:
+    show:
+      unknown: Cette adresse de retour est inconnue.
+      expired: Cette adresse de retour n'est plus valable ; revenez à votre démarche pour la reprendre.
   # L'espace de prévisualisation de la France (chapitre 4.9), la seule page
   # que ce composant sert à un usager final. Le chapitre ne dit rien de ses
   # mots : ils sont à nous.
@@ -1516,6 +1529,7 @@ fr:
       invalid_token: Jeton bénéficiaire invalide
       no_evidence_type: Aucun type de justificatif dans ce pays
       no_provider: Aucun fournisseur dans ce pays
+      preview_not_awaited: Aucune prévisualisation n'attend de confirmation
       unknown_country: Pays inconnu des annuaires
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
@@ -1596,6 +1610,8 @@ fr:
           les règles de la réponse d'erreur.
         unnamed_rule: sans règle nommée
     evidence_request:
+      confirm_exchange:
+        not_awaited: "L'échange n'attend plus la confirmation d'une prévisualisation : elle a déjà été donnée, ou le délai T2 est écoulé."
       # Le point d'accès retenu n'annonce aucune des deux versions que la France
       # parle. Rien n'est émis, et la description est le seul endroit qui le dit
       # — l'échange ne porte aucun code EDM.

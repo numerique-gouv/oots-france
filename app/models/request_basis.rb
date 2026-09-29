@@ -44,6 +44,13 @@ class RequestBasis
 
   private_class_method :provider, :access_point
 
+  # By value: Active Record compares what it loaded to what it holds to know
+  # whether the column changed, and two readings of one row are two objects.
+  def ==(other) = other.is_a?(RequestBasis) && other.to_h == to_h
+  alias eql? ==
+
+  delegate :hash, to: :to_h
+
   def to_h
     {
       'requirement' => requirement_h,
