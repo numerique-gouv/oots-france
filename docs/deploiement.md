@@ -252,21 +252,21 @@ Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-a
 
 Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte.
 
-Le **keystore** se construit une fois, et à chaque renouvellement de notre certificat : la clé privée du CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`), sous l'alias de la partie, au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose :
+Le premier chargement, et chaque renouvellement de notre certificat, donnent aussi de quoi construire le **keystore** : la clé privée du CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`) —
 
 ```sh
-$ openssl pkcs12 -export -name AP_FR_01 -inkey <clé privée du CSR> \
-    -in OOTS_AP_ACC_FR_001.pem -certfile OOTS_AP_ACC_FR_001-bundle.pem \
-    -out domibus/keystores/gateway_keystore.p12 -passout "pass:$MOT_DE_PASSE_MAGASINS"
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs \
+    PMODE=AP_FR_01.xml TRUSTSTORE=gateway_truststore.jks \
+    CLE=OOTS_AP_ACC_FR_001.key CERTIFICAT=OOTS_AP_ACC_FR_001.pem CHAINE=OOTS_AP_ACC_FR_001-bundle.pem
 ```
 
-Le **PMode et le magasin de confiance** se chargent ensuite, puis à chaque publication du Technical Support Dashboard, en une commande :
+Les publications suivantes du Technical Support Dashboard, qui ne changent que le **PMode et le magasin de confiance**, se chargent sans les trois derniers :
 
 ```sh
-$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<chemin>/AP_FR_01.xml TRUSTSTORE=<chemin>/gateway_truststore.jks
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=AP_FR_01.xml TRUSTSTORE=gateway_truststore.jks
 ```
 
-[`scripts/load_technical_support_dashboard_files.sh`](../scripts/load_technical_support_dashboard_files.sh) lit les identifiants dans les `.env*` ; seul le mot de passe de la console, qui n'y vit pas, se donne à la commande. Il refuse de tourner sans le keystore ci-dessus. Il convertit le magasin publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose les deux fichiers sous `domibus/` en gardant les précédents en `*.precedent`, les charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+[`scripts/update_certificates.sh`](../scripts/update_certificates.sh) lit les identifiants dans les `.env*` ; seul le mot de passe de la console, qui n'y vit pas, se donne à la commande. Avec `CLE`, `CERTIFICAT` et `CHAINE`, il vérifie que la clé est bien celle du certificat, puis construit le keystore sous l'alias `AP_FR_01`, au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose ; une clé protégée par une phrase de passe la fait demander deux fois. Sans eux, il garde le keystore en place, et refuse de tourner s'il n'y en a pas. Il convertit le magasin publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose le tout sous `domibus/` en gardant les précédents en `*.precedent`, le charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
 
 Pour revenir à la publication précédente : remettre les `*.precedent` à leur place, puis rejouer `scripts/configure_domibus.sh` comme à [la mise à jour](#mettre-à-jour), avec `FICHIER_PMODE=domibus/AP_FR_01.xml`.
 
