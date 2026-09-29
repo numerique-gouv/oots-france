@@ -12,6 +12,40 @@ module Fixtures
 
   def built_envelope(name) = read_fixture("incoming/#{name}.xml")
 
+  # The captured response, its evidence part and the declaration of that part
+  # removed. The list is left as it was, still naming the object: a response
+  # missing its evidence, and not one saying that none matches.
+  def without_evidence(envelope)
+    document = Nokogiri::XML(envelope)
+    document.xpath("//*[local-name()='PartInfo'][contains(@href, '@pdf')] | //payload[@contentType='application/pdf']")
+      .each(&:remove)
+
+    document.to_xml
+  end
+
+  TOP_LEVEL_LIST = '/query:QueryResponse/rim:RegistryObjectList'.freeze
+  EMPTIED_LISTS = {
+    top_level: TOP_LEVEL_LIST,
+    package: "#{TOP_LEVEL_LIST}/rim:RegistryObject/rim:RegistryObjectList",
+  }.freeze
+
+  # The captured response saying that no evidence matches, chapter 4.10 §2.1:
+  # no evidence part, and a list holding no object — the top-level one, or only
+  # the nested list of its package, which `R-EDM-RESP-S047` refuses.
+  def response_matching_nothing(emptied: :top_level)
+    document = Nokogiri::XML(without_evidence(real_envelope('reponseAvecPieceJointe')))
+    rewrite_body(document) { |body| with_emptied_list(body, EMPTIED_LISTS.fetch(emptied)) }
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
+  # The same answer on the 1.2 line, whose list is flat.
+  def earlier_line_response_matching_nothing
+    flat = earlier_line_response { |body| with_emptied_list(body, TOP_LEVEL_LIST) }
+
+    RetrievedMessageParser.new(without_evidence(flat.raw))
+  end
+
   # A directory answer captured on the acceptance environment, with the two
   # headers that carry its signature.
   def common_services_answer(name)
@@ -352,6 +386,13 @@ module Fixtures
     objects = package.xpath('./rim:RegistryObjectList/rim:RegistryObject', SlotReading::NAMESPACES)
     objects.xpath('./rim:Classification', SlotReading::NAMESPACES).each(&:remove)
     package.replace(objects.map(&:to_xml).join)
+
+    document.to_xml
+  end
+
+  def with_emptied_list(body, list)
+    document = Nokogiri::XML(body)
+    document.xpath("#{list}/rim:RegistryObject", OotsNamespaces::NAMESPACES).each(&:remove)
 
     document.to_xml
   end

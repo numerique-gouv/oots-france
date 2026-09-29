@@ -233,28 +233,56 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
-  # Only the deferral of chapter 4.5.2 excuses a response without evidence, and
-  # it says so in its status. One claiming `Success` and carrying nothing is
-  # unreadable, which is what this side has always made of it.
-  describe 'a response claiming success and carrying no evidence' do
-    let(:message) do
-      namespaces = OotsNamespaces::NAMESPACES
-      document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
-      document.xpath('//eb:PartInfo', namespaces).find { |part|
-        part.at_xpath('.//eb:Property[@name="MimeType"]', namespaces)&.text == RetrievedMessageParser::PDF
-      }.remove
-
-      RetrievedMessageParser.new(document.to_xml)
-    end
+  # A list naming evidence the envelope does not carry is a response missing
+  # its evidence: unreadable, on either request of an exchange.
+  describe 'a response whose list names evidence it does not carry' do
+    let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
 
     let!(:conversation) do
       create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
     end
 
-    it 'settles the exchange as a failure' do
+    it 'settles the exchange as a failure, under no code' do
       process
 
-      expect(conversation.reload).to have_attributes(status: 'failed')
+      expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+    end
+
+    context 'when it answers a confirmed preview' do
+      let!(:conversation) { create(:exchange, :preview_confirmed, exchange_id: message.exchange_id) }
+
+      it 'settles the exchange as a failure, and not as the user declining' do
+        process
+
+        expect(conversation.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+      end
+    end
+  end
+
+  # Chapter 4.8 §3.2: « the information included in the evidence response, with
+  # the exception of the evidence itself, must be logged » — and there is none.
+  describe 'a response saying that no evidence matches' do
+    let(:message) { response_matching_nothing }
+
+    let!(:conversation) do
+      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+    end
+
+    it 'settles the exchange as unmatched' do
+      process
+
+      expect(conversation.reload).to have_attributes(status: 'unmatched', edm_error_code: nil)
+    end
+
+    it 'journals the response it received, naming no evidence and no subject' do
+      process
+
+      expect(AuditEvent.sole).to have_attributes(
+        event_type: 'response_received', message_id: 'un-message', request_id: message.body.request_id,
+        response_id: message.body.response_id, requesting_authority_id: be_present,
+        providing_authority_id: be_present, regrep_body: be_present,
+        evidence_identifier: nil, evidence_content_id: nil, evidence_subject: nil,
+      )
     end
   end
 

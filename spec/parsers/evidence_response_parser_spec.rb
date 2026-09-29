@@ -145,6 +145,54 @@ RSpec.describe EvidenceResponseParser do
   # Chapter 4.5.2: the status tells a deferral from an answer carrying the
   # document, and `R-EDM-RESP-S045` puts the announced date in a slot that
   # `R-EDM-RESP-S014` forbids to any other status.
+  # Chapter 4.10 §2.1, step 11: « Absences of any evidence is encoded as a
+  # RegistryObjectList that does not contain any RegistryObject elements ».
+  describe 'a success saying that no evidence matches' do
+    it 'is recognised when its top-level list is empty' do
+      expect(response_matching_nothing.body).to be_matches_nothing
+    end
+
+    # Chapter 4.5.2 §2.1 lets the nested list be empty, `R-EDM-RESP-S047`
+    # refuses it: the rule is recorded, and the response read all the same.
+    it 'is recognised when the nested list of its package is empty, the rule it breaks recorded' do
+      body = response_matching_nothing(emptied: :package).body
+
+      expect(body).to be_matches_nothing
+      expect(body.violations.map(&:rule)).to include('R-EDM-RESP-S047')
+    end
+
+    it 'is recognised on the 1.2 line, whose list is flat' do
+      expect(earlier_line_response_matching_nothing.body).to be_matches_nothing
+    end
+
+    it 'is not a success missing its list altogether' do
+      missing = envelope_with_body('reponseAvecPieceJointe') do |body|
+        body.sub(%r{<rim:RegistryObjectList>.*</rim:RegistryObjectList>}m, '')
+      end
+
+      expect(missing.body.violations.map(&:rule)).to include('R-EDM-RESP-S007')
+      expect(missing.body).not_to be_matches_nothing
+    end
+
+    # The version announced does not decide where the evidence is looked for:
+    # a flat list under a 2.0 announcement still carries its object.
+    it 'is not a flat list announced on the 2.0 line' do
+      flat = envelope_with_body('reponseAvecPieceJointe') { |body| flattened_registry_objects(body) }
+
+      expect(flat.body.specification).to eq(EdmSpecification::V2_0)
+      expect(flat.body).not_to be_matches_nothing
+    end
+
+    it 'is not what a response carrying evidence looks like' do
+      expect(response).not_to be_matches_nothing
+      expect(earlier_line_response.body).not_to be_matches_nothing
+    end
+
+    it 'is not what a deferral looks like, whatever its list holds' do
+      expect(RetrievedMessageParser.new(built_envelope('reponseDifferee')).body).not_to be_matches_nothing
+    end
+  end
+
   describe 'a response announcing the evidence for later' do
     subject(:deferred) { RetrievedMessageParser.new(built_envelope('reponseDifferee')).body }
 

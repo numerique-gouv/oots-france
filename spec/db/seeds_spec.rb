@@ -292,6 +292,20 @@ RSpec.describe 'db/seeds.rb' do
     expect(AuditEvent.where(exchange_id: declined.exchange_id, event_type: 'evidence_delivered')).to be_none
   end
 
+  # RG7 of OOTS-241: the first response said no evidence matches, and the
+  # journal names neither evidence nor subject for it.
+  it 'shows an exchange no evidence matched, with its request and its response alone' do
+    replay
+
+    unmatched = Exchange.find_by(status: 'unmatched')
+    events = AuditEvent.where(exchange_id: unmatched.exchange_id).order(:occurred_at)
+
+    expect(unmatched).to have_attributes(incoming: false, edm_error_code: nil, preview_confirmed_at: nil)
+    expect(events.pluck(:event_type)).to eq(%w[request_sent response_received])
+    expect(events.find_by(event_type: 'response_received'))
+      .to have_attributes(evidence_identifier: nil, evidence_digest: nil, evidence_subject: nil)
+  end
+
   it 'writes the second request once, however many times it is replayed' do
     2.times { replay }
 

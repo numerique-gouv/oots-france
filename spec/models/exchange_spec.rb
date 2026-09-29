@@ -19,9 +19,9 @@ RSpec.describe Exchange do
   # what none of them proved is that the illegal ones are refused, which until
   # now nothing but that order prevented.
   describe 'the legal transitions' do
-    it 'names exactly the seven states the console, the seeds and the badges know' do
+    it 'names exactly the eight states the console, the seeds and the badges know' do
       expect(described_class::STATUSES)
-        .to eq(%w[pending sent preview_required deferred delivered declined failed])
+        .to eq(%w[pending sent preview_required deferred delivered declined unmatched failed])
     end
 
     # Both, `sent` included: a submission repeated says the same thing twice,
@@ -31,8 +31,8 @@ RSpec.describe Exchange do
       expect(exchange).to handle_events(:transmit, when: :sent)
     end
 
-    it 'lets any of the five answers settle an exchange in progress' do
-      answers = %i[require_preview defer deliver decline record_failure]
+    it 'lets any of the six answers settle an exchange in progress' do
+      answers = %i[require_preview defer deliver decline match_nothing record_failure]
 
       expect(exchange).to handle_events(*answers, when: :pending)
       expect(exchange).to handle_events(*answers, when: :sent)
@@ -43,13 +43,13 @@ RSpec.describe Exchange do
     # condition that would let an answer back in does not apply.
     it 'refuses everything on an exchange an answer has settled' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :match_nothing, :record_failure,
           :presume_timeout, when: :delivered)
     end
 
     it 'refuses everything on an exchange a correspondent refused' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :match_nothing, :record_failure,
           :presume_timeout, when: :failed)
     end
 
@@ -58,20 +58,26 @@ RSpec.describe Exchange do
     # chapter 4.4.3 closes it.
     it 'refuses every answer on an exchange sent to a preview space' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :defer, :deliver, :decline, :record_failure,
-          when: :preview_required)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :decline, :match_nothing,
+          :record_failure, when: :preview_required)
       expect(exchange).to handle_events(:resume, :presume_timeout, when: :preview_required)
     end
 
     it 'refuses everything on an exchange the user declined' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :resume, :defer, :deliver, :decline, :record_failure,
-          :presume_timeout, when: :declined)
+        .to reject_events(:transmit, :require_preview, :resume, :defer, :deliver, :decline, :match_nothing,
+          :record_failure, :presume_timeout, when: :declined)
+    end
+
+    it 'refuses everything on an exchange no evidence matched' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :resume, :defer, :deliver, :decline, :match_nothing,
+          :record_failure, :presume_timeout, when: :unmatched)
     end
 
     it 'refuses everything on an exchange answered for later' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :match_nothing, :record_failure,
           :presume_timeout, when: :deferred)
     end
 
@@ -92,6 +98,19 @@ RSpec.describe Exchange do
       presumed = create(:exchange, :sent).tap(&:expire!)
 
       expect(described_class.find(presumed.id).delivered!.status).to eq('delivered')
+    end
+
+    it 'lets the answer that no evidence matches refute a presumed failure, clearing its code' do
+      presumed = create(:exchange, :sent).tap(&:expire!)
+
+      expect(described_class.find(presumed.id).unmatched!.reload)
+        .to have_attributes(status: 'unmatched', edm_error_code: nil, error_description: nil, presumed_at: nil)
+    end
+
+    it 'leaves a failure this side did not presume as it was' do
+      failed = create(:exchange, :sent).tap { |row| row.failed!(code: 'EDM:ERR:0004', description: 'Absent') }
+
+      expect(failed.unmatched!.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0004')
     end
 
     # Giving up overrules nothing — not even an earlier guess, which would

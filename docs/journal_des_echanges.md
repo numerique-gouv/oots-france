@@ -31,7 +31,7 @@ Un événement par fait, dans `audit_events` (`AuditEvent`), écrit par `AuditTr
 | --- | --- | --- |
 | `request_sent` | la requête est partie, et la passerelle l'a nommée | `EvidenceRequest::SendToGateway` |
 | `request_refused` | une requête est refusée sans qu'aucun message ebMS n'en résulte : l'appel d'un fournisseur français **avant** tout envoi à la passerelle, ou la requête d'un correspondant **sans qu'aucune réponse ne reparte** — celle-ci a bien transité par la passerelle, qui en garde trace dans son *Message Log*, mais rien ne lui répond | `EvidenceRequestsController`, `IncomingMessage::OpenExchange`, `EvidenceProvision::RejectMalformedIdentifiers`, `EvidenceProvision::RejectUnanswerableRequester` |
-| `response_received` | un correspondant a répondu avec un justificatif | `IncomingMessage::Process` |
+| `response_received` | un correspondant a répondu avec un justificatif, ou pour dire qu'aucun ne correspond | `IncomingMessage::Process` |
 | `error_received` | un correspondant a refusé | `IncomingMessage::Process` |
 | `evidence_delivered` | le justificatif est parvenu au requêteur | `IncomingMessage::SettleExchange` |
 | `response_refused` | une réponse est écartée sans régler l'échange | `IncomingMessage::SettleExchange` |

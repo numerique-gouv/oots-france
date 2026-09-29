@@ -288,6 +288,12 @@ if Rails.env.development?
       message_error_code: EdmException::AUTHORIZATION.code,
       previewed: true,
       events: %w[request_sent error_received request_sent return_to_procedure response_received] },
+    # Le fournisseur ne trouve aucun justificatif et le dit dès la première
+    # réponse, par une liste vide (chapitre 4.9 §2, étape 4) : rien n'est remis,
+    # l'échange est `unmatched`, et le journal ne nomme ni justificatif ni sujet.
+    { status: 'unmatched', country_code: 'HR', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
+      specification: EdmSpecification::V2_0,
+      events: %w[request_sent response_received] },
   ]
 
   # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
@@ -359,6 +365,11 @@ if Rails.env.development?
     )
   end
 
+  # Les réponses qui ne portent aucun justificatif, donc ni métadonnée ni
+  # sujet : une différée, une liste vide après prévisualisation, une liste vide
+  # dès la première réponse.
+  answered_without_evidence = %w[deferred declined unmatched].freeze
+
   # Les deux sujets que le journal garde d'un même échange : celui que la
   # requête demande, et celui que la réponse confirme. Une réponse différée
   # n'annonce aucune métadonnée, donc aucun sujet — comme le code, qui n'en lit
@@ -366,7 +377,7 @@ if Rails.env.development?
   # n'en écrit aucun, le sujet lu de la requête reçue ayant déjà sa ligne.
   demonstration_subject = lambda do |event_type, scenario, exchange|
     return AuditEvent.subject(scenario.fetch(:subject, person)) if event_type.start_with?('request')
-    return {} unless event_type == 'response_received' && !exchange.status.in?(%w[deferred declined])
+    return {} unless event_type == 'response_received' && !exchange.status.in?(answered_without_evidence)
 
     AuditEvent.subject(matched_person.call(exchange, scenario))
   end
@@ -541,7 +552,7 @@ if Rails.env.development?
   end
 
   evidence_fingerprint = lambda do |event_type, exchange, scenario, evidence_id, content_id, occurred_at|
-    return {} unless event_type.in?(carries_evidence) && !exchange.status.in?(%w[deferred declined])
+    return {} unless event_type.in?(carries_evidence) && !exchange.status.in?(answered_without_evidence)
 
     digest = if exchange.incoming?
                served_digest.call(scenario, evidence_id, occurred_at)
@@ -561,7 +572,7 @@ if Rails.env.development?
   names_evidence = %w[response_sent response_received].freeze
 
   evidence_identifier = lambda do |event_type, exchange, evidence_id|
-    return {} unless event_type.in?(names_evidence) && !exchange.status.in?(%w[deferred declined])
+    return {} unless event_type.in?(names_evidence) && !exchange.status.in?(answered_without_evidence)
 
     { evidence_identifier: evidence_id }
   end
@@ -826,7 +837,7 @@ if Rails.env.development?
     )
   end
 
-  puts "#{demonstrations.count { |one| !one.incoming? }} échanges émis, un par état, " \
+  puts "#{demonstrations.count { |one| !one.incoming? }} échanges émis — chaque état au moins une fois —, " \
        "#{demonstrations.count(&:incoming?)} reçus, " \
        "sur #{demonstrations.map(&:conversation_id).uniq.count} conversations."
   puts "#{AuditEvent.count} événements de journal, dont un refus sans échange " \

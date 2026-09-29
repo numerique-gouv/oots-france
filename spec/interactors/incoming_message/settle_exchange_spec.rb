@@ -291,13 +291,24 @@ RSpec.describe IncomingMessage::SettleExchange do
     # Chapter 4.9 §1: the user used nothing, and the response says so with an
     # empty registry object list.
     context 'when it carries nothing' do
-      let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
+      let(:message) { response_matching_nothing }
 
       it 'records that the user declined, handing nothing over' do
         settle
 
         expect(evidence_forwarder).not_to have_received(:deliver)
         expect(exchange.reload).to have_attributes(status: 'declined', edm_error_code: nil)
+      end
+    end
+
+    # A list naming an object the envelope does not carry is a response missing
+    # its evidence, on this request as on the first: no decision reads from it.
+    context 'when its list names evidence the envelope does not carry' do
+      let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
+
+      it 'does not read it as a decision' do
+        expect { settle }.to raise_error(UnreadableMessageError)
+        expect(exchange.reload.status).not_to eq('declined')
       end
     end
 
@@ -314,16 +325,76 @@ RSpec.describe IncomingMessage::SettleExchange do
     end
   end
 
-  # Before a preview no user has decided anything: an empty answer to the first
-  # request is the unusable answer it has always been.
-  it 'does not read an empty answer to the first request as a decision' do
-    empty = RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe')))
+  # A list naming an object the envelope does not carry: the evidence is
+  # missing, which is not the provider saying that none matches.
+  it 'reads an answer missing the evidence its list names as unreadable' do
+    missing = RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe')))
 
     expect {
-      described_class.call(message: empty, exchange: correlated(empty), evidence_forwarder:, requesters:,
+      described_class.call(message: missing, exchange: correlated(missing), evidence_forwarder:, requesters:,
         audit_trail: AuditTrail.new)
     }.to raise_error(UnreadableMessageError)
-    expect(exchange.reload.status).not_to eq('declined')
+    expect(exchange.reload.status).to eq('sent')
+  end
+
+  # Chapter 4.9 §2, step 4: a provider that knows no evidence matches answers
+  # an empty list at once, « independent of the value of the
+  # "PossibilityForPreview" flag ».
+  describe 'an answer to the first request matching nothing' do
+    {
+      'its top-level list empty' => -> { response_matching_nothing },
+      'the nested list of its package empty' => -> { response_matching_nothing(emptied: :package) },
+    }.each do |shape, build|
+      context "with #{shape}" do
+        let(:message) { instance_exec(&build) }
+
+        it 'settles the exchange as unmatched, handing nothing over' do
+          settle
+
+          expect(evidence_forwarder).not_to have_received(:deliver)
+          expect(exchange.reload).to have_attributes(status: 'unmatched', edm_error_code: nil,
+            error_description: nil)
+        end
+      end
+    end
+
+    context 'when the sweep had presumed the exchange lost' do
+      let(:message) { response_matching_nothing }
+
+      before { exchange.expire! }
+
+      it 'settles it as unmatched, the answer refuting the presumption' do
+        expect(exchange.reload.edm_error_code).to eq('EDM:ERR:0005')
+
+        settle
+
+        expect(exchange.reload).to have_attributes(status: 'unmatched', edm_error_code: nil, presumed_at: nil)
+      end
+    end
+
+    context 'when the exchange already reached that outcome' do
+      let(:message) { response_matching_nothing }
+      let!(:exchange) { create(:exchange, :unmatched, exchange_id: message.exchange_id) }
+
+      it 'turns a second answer away, and leaves the outcome as it was' do
+        expect { settle }.to change { AuditEvent.where(event_type: 'response_refused').count }.by(1)
+        expect(exchange.reload.status).to eq('unmatched')
+      end
+    end
+
+    context 'when it arrives on the 1.2 line' do
+      let(:message) { earlier_line_response_matching_nothing }
+      let!(:exchange) do
+        create(:exchange, :legacy_line, conversation_id: message.conversation_id,
+          request_id: message.body.request_id).tap(&:sent!)
+      end
+
+      it 'settles the exchange as unmatched' do
+        settle
+
+        expect(exchange.reload.status).to eq('unmatched')
+      end
+    end
   end
 
   describe 'what a request for a preview records beside the address' do
@@ -481,16 +552,6 @@ RSpec.describe IncomingMessage::SettleExchange do
     Exchange.delete_all
 
     expect { settle }.not_to raise_error
-  end
-
-  # The part and its declaration gone, as a response whose list is empty
-  # carries neither.
-  def without_evidence(envelope)
-    document = Nokogiri::XML(envelope)
-    document.xpath("//*[local-name()='PartInfo'][contains(@href, '@pdf')] | //payload[@contentType='application/pdf']")
-      .each(&:remove)
-
-    document.to_xml
   end
 
   def with_preview_slots(slots)
