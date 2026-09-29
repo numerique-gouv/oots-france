@@ -27,6 +27,14 @@ module Oots
     # `R-EDM-ERR-C019` asks for `https://`, whatever the deployment runs on.
     PREVIEW_LOCATION = 'https://oots.example.gouv.fr/previsualisation/9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'.freeze
 
+    # The two addresses of the second request France sends as a requester:
+    # the one a correspondent returned, and France's own return address. Fixed
+    # here and not read from `URL_OOTS_FRANCE`, which the local loop and the
+    # continuous integration set to `http://` — `R-EDM-REQ-C005` and `C120` ask
+    # for `https://` whatever the deployment runs on.
+    FOREIGN_PREVIEW_LOCATION = 'https://ap.example.de/preview/2d7c4b1a-8e3f-4a6b-9c5d-0e1f2a3b4c5d?session=abc'.freeze
+    RETURN_LOCATION = 'https://oots.example.gouv.fr/retour/5a6b7c8d-9e0f-4a1b-8c2d-3e4f5a6b7c8d'.freeze
+
     # A specimen for every code the repository emits: the exception type changes
     # with the code and the rules constrain it, so a code never produced here is
     # a code never confronted with the rules.
@@ -137,23 +145,27 @@ module Oots
 
     def write_header(name, header) = destination.join("#{name}.entete.xml").write(header.strip)
 
-    def request(subject: beneficiary)
+    # A preview location makes it the second request of chapter 4.9 §2 step 12,
+    # which only a request that offered the preview can be.
+    def request(subject: beneficiary, preview_location: nil, return_location: nil)
       body = EvidenceRequestBuilder.new(
         requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         associated_documents: [AssociatedDocument::TRANSLATION],
+        preview_possible: preview_location.present?, preview_location:, return_location:,
         specification:, clock:, uuid:,
       )
 
-      [
-        body.render,
-        header(
-          action: EbmsAction::EXECUTE_QUERY_REQUEST,
-          original_sender: requester.ebms_identity,
-          final_recipient: german_provider.ebms_identity,
-          payload_id: payload_id(body.document_id),
-        ),
-      ]
+      [body.render, request_header(body)]
+    end
+
+    def request_header(body)
+      header(
+        action: EbmsAction::EXECUTE_QUERY_REQUEST,
+        original_sender: requester.ebms_identity,
+        final_recipient: german_provider.ebms_identity,
+        payload_id: payload_id(body.document_id),
+      )
     end
 
     def evidence_response(subject: beneficiary)
@@ -192,11 +204,14 @@ module Oots
 
     # The two messages of chapter 4.9 France emits as a provider: the exception
     # sending the user to its preview space, and the answer to a user who used
-    # nothing. Last, so that the identifiers drawn above do not shift.
+    # nothing; and the one it emits as a requester, the second request. Last,
+    # so that the identifiers drawn above do not shift — the second request
+    # last of all.
     def write_preview_specimens
       write('erreurPrevisualisationRequise',
         *error_response(EdmException::AUTHORIZATION, preview_location: PREVIEW_LOCATION))
       write('reponseVide', *empty_response)
+      write('requeteSeconde', *request(preview_location: FOREIGN_PREVIEW_LOCATION, return_location: RETURN_LOCATION))
     end
 
     def empty_response

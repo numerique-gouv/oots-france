@@ -188,6 +188,11 @@ valide erreurPrevisualisationRequise EDM-ERR-C
 valide erreurPrevisualisationRequise EDM-ERR-S
 valide reponseVide EDM-RESP-C
 valide reponseVide EDM-RESP-S
+# Et celui qu'elle émet en requêteur : la seconde requête, qui porte
+# `PreviewLocation` et, en 2.0, `ReturnLocation` — que `R-EDM-REQ-S062` apparie,
+# et dont `C005` et `C120` exigent le `https://`.
+valide requeteSeconde EDM-REQ-C
+valide requeteSeconde EDM-REQ-S
 
 # The ebMS headers fall under a rule of their own, whose contexts are anchored
 # on `//eb:Messaging`: the document `EbmsHeaderBuilder` produces is enough for
@@ -204,6 +209,7 @@ valide erreurExpiration.entete EDM-ebMS
 valide erreurSansIdentifiantDeRequete.entete EDM-ebMS
 valide erreurPrevisualisationRequise.entete EDM-ebMS
 valide reponseVide.entete EDM-ebMS
+valide requeteSeconde.entete EDM-ebMS
 
 # Les règles FATAL que `EvidenceProvision::RejectMalformedIdentifiers` invoque
 # pour refuser de répondre à une requête dont les identifiants ne sont pas des
