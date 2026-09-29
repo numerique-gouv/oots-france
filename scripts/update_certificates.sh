@@ -12,23 +12,107 @@
 # and every renewal of our certificate. Without them it keeps the keystore in
 # place, and refuses to run if there is none.
 #
-# Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
+# Usage: make update-certifs   (asks what to update, then for each file)
+#        DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
 #          [CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]
 #   MOT_DE_PASSE_MAGASIN_PUBLIE  password of the published truststore (test123)
 
 set -e
 
+ORIGINE=$(pwd)
 cd "$(dirname "$0")/.."
 
-PMODE="${1:?le PMode du Technical Support Dashboard est à donner : make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>}"
-TRUSTSTORE="${2:?le magasin de confiance du Technical Support Dashboard est à donner : make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>}"
-DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:?le mot de passe du compte admin de la console Domibus est à donner}"
+PMODE="${1:-}"
+TRUSTSTORE="${2:-}"
+DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-}"
 MOT_DE_PASSE_MAGASIN_PUBLIE="${MOT_DE_PASSE_MAGASIN_PUBLIE:-test123}"
 CLE="${CLE:-}"
 CERTIFICAT="${CERTIFICAT:-}"
 CHAINE="${CHAINE:-}"
 PARTIE="AP_FR_01"
 NOUVEAU_KEYSTORE=""
+
+# What `read` returns is taken literally: neither `~` nor a path relative to
+# where the operator stood survives the `cd` above unless resolved here.
+chemin() {
+  case "$1" in
+    "") echo "" ;;
+    "~/"*) echo "$HOME/${1#\~/}" ;;
+    /*) echo "$1" ;;
+    *) echo "$ORIGINE/$1" ;;
+  esac
+}
+
+demande() {
+  printf '%s%s : ' "$1" "${2:+ [$2]}" >&2
+  read -r reponse
+  echo "${reponse:-$2}"
+}
+
+demandeSecret() {
+  printf '%s : ' "$1" >&2
+  trap 'stty echo; exit 1' INT
+  stty -echo
+  read -r reponse
+  stty echo
+  trap - INT
+  echo >&2
+  echo "$reponse"
+}
+
+if [ -z "$PMODE" ] || [ -z "$TRUSTSTORE" ]; then
+  if [ ! -t 0 ]; then
+    echo "❌ Sans terminal, tout se donne à la commande :" >&2
+    echo "   DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \\" >&2
+    echo "     [CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]" >&2
+    exit 1
+  fi
+
+  cat >&2 <<'QUESTION'
+Que faut-il mettre à jour ?
+
+  1. Le PMode et le magasin de confiance, que le Technical Support Dashboard
+     vient de republier. C'est le cas courant : il les régénère dès qu'un point
+     d'accès du réseau change, quel que soit l'État membre.
+
+  2. Notre certificat aussi — premier raccordement, ou renouvellement du
+     certificat que la PKI eDelivery a délivré. Le keystore est reconstruit avec
+     notre clé privée et ce certificat, puis le PMode et le magasin de confiance
+     sont chargés comme en 1.
+
+QUESTION
+  case "$(demande "Choix" 1)" in
+    1) ;;
+    2) NOUVEAU_KEYSTORE=oui ;;
+    *) echo "❌ Répondre 1 ou 2." >&2; exit 1 ;;
+  esac
+
+  echo >&2
+  echo "Fichiers publiés par le Technical Support Dashboard :" >&2
+  PMODE=$(chemin "$(demande "  PMode" AP_FR_01.xml)")
+  TRUSTSTORE=$(chemin "$(demande "  Magasin de confiance" gateway_truststore.jks)")
+  if [ -n "$NOUVEAU_KEYSTORE" ]; then
+    echo "Notre certificat, et la clé privée qui a signé sa demande :" >&2
+    CLE=$(chemin "$(demande "  Clé privée" OOTS_AP_ACC_FR_001.key)")
+    CERTIFICAT=$(chemin "$(demande "  Certificat rendu par la PKI" OOTS_AP_ACC_FR_001.pem)")
+    CHAINE=$(chemin "$(demande "  Sa chaîne" OOTS_AP_ACC_FR_001-bundle.pem)")
+  fi
+  if [ -z "$DOMIBUS_MOT_DE_PASSE_ADMIN" ]; then
+    DOMIBUS_MOT_DE_PASSE_ADMIN=$(demandeSecret "Mot de passe du compte admin de la console Domibus")
+  fi
+  echo >&2
+else
+  PMODE=$(chemin "$PMODE")
+  TRUSTSTORE=$(chemin "$TRUSTSTORE")
+  CLE=$(chemin "$CLE")
+  CERTIFICAT=$(chemin "$CERTIFICAT")
+  CHAINE=$(chemin "$CHAINE")
+fi
+
+if [ -z "$DOMIBUS_MOT_DE_PASSE_ADMIN" ]; then
+  echo "❌ Le mot de passe du compte admin de la console Domibus est à donner : DOMIBUS_MOT_DE_PASSE_ADMIN=…" >&2
+  exit 1
+fi
 
 REPERTOIRE_MAGASINS=domibus/keystores
 KEYSTORE="$REPERTOIRE_MAGASINS/gateway_keystore.p12"
@@ -46,7 +130,7 @@ lisVariable() {
   echo "$valeur"
 }
 
-if [ -n "$CLE$CERTIFICAT$CHAINE" ]; then
+if [ -n "$NOUVEAU_KEYSTORE$CLE$CERTIFICAT$CHAINE" ]; then
   if [ -z "$CLE" ] || [ -z "$CERTIFICAT" ] || [ -z "$CHAINE" ]; then
     echo "❌ CLE, CERTIFICAT et CHAINE se donnent ensemble, ou pas du tout." >&2
     exit 1
@@ -64,8 +148,8 @@ done
 # configure_domibus.sh uploads both stores from the same directory: without our
 # own key there, it would upload a keystore that cannot sign.
 if [ -z "$NOUVEAU_KEYSTORE" ] && [ ! -f "$KEYSTORE" ]; then
-  echo "❌ $KEYSTORE manque : la première fois, donner aussi notre clé et notre certificat —" >&2
-  echo "   make update-certifs … CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>" >&2
+  echo "❌ $KEYSTORE manque : la première fois, c'est le choix 2, qui installe aussi notre certificat —" >&2
+  echo "   ou, à la commande : CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>" >&2
   exit 1
 fi
 
