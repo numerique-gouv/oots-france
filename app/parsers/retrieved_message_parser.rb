@@ -14,7 +14,13 @@ class RetrievedMessageParser
   # `eb:` prefix, and `EDM-ebMS.sch` neither `rim` nor `query`.
   CONSISTENT_SPECIFICATION = 'TDD 4.7 §2.6.2: SpecificationId property and SpecificationIdentifier slot agree'.freeze
 
+  # The envelope as the gateway handed it over. `retention_downloaded="0"`
+  # erases the message on retrieval, so this is what a preview keeps to answer
+  # the second request once the user has decided (chapter 4.9 §3).
+  attr_reader :raw
+
   def initialize(xml)
+    @raw = xml
     @document = Nokogiri::XML(xml)
     raise UnreadableMessageError, I18n.t('parsers.retrieved_message.unreadable_envelope') if @document.errors.any?
 

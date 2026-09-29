@@ -33,7 +33,13 @@ class AuditEvent < ApplicationRecord
     request_sent request_refused response_received error_received evidence_delivered
     request_received response_sent error_sent response_refused
     message_unreadable message_unhandled answer_not_sent
+    preview_visited preview_decided
   ].freeze
+
+  # What `preview_decided` records of a user who left the preview space
+  # without deciding, article 17(2) of implementing regulation 2022/1463
+  # asking for that fact as much as for a decision.
+  UNDECIDED = 'undecided'.freeze
 
   encrypts :evidence_subject
   encrypts :evidence_subject_key, deterministic: true

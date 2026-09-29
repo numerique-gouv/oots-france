@@ -47,6 +47,13 @@ class DemoBrowser
 
   def visit(path) = follow(get("#{procedure_url}#{path}"))
 
+  # An address given whole, as a correspondent hands the user one.
+  def follow_address(url) = follow(get(url))
+
+  def links(selector) = document.css(selector).pluck('href')
+
+  def fetch(url) = get(absolute(url)).body
+
   # The button of one card, which is what starts everything: what follows
   # crosses to the portal and comes back on its own. The card is named rather
   # than the address it submits to, every card submitting to the same one — and

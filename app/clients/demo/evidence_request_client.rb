@@ -10,9 +10,10 @@ module Demo
   class EvidenceRequestClient
     PATH = '/requete/pieceJustificative'.freeze
 
-    # The demonstration asks for the evidence itself, never for a preview: the
-    # preview space of chapter 4.9 is not implemented here. Written out rather
-    # than omitted — `EvidenceRequestsController` reads a bare parameter as true.
+    # The demonstration asks for the evidence itself, never for a preview:
+    # France's preview space serves correspondents, and a demonstration going
+    # through it has yet to be designed. Written out rather than omitted —
+    # `EvidenceRequestsController` reads a bare parameter as true.
     NO_PREVIEW = 'false'.freeze
 
     def initialize(connection: Faraday.new)

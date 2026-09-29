@@ -14,8 +14,13 @@ class EvidenceResponseBuilder < ApplicationBuilder
   # templates read of it, and the document that attachment carries is produced
   # from the identifier and the instant this constructor settles — so the body
   # has to be built before the document it describes exists.
+  #
+  # Without a reference, the response carries no evidence at all: chapter 4.9
+  # §1 answers a user who decided to use none with « an empty registry object
+  # list ». With an `evidence_id`, the evidence is one described already — the
+  # document the user previewed, whose identifier the response must repeat.
   def initialize(
-    requester:, beneficiary:, evidence_type:, evidence_reference:, request_id:,
+    requester:, request_id:, beneficiary: nil, evidence_type: nil, evidence_reference: nil, evidence_id: nil,
     provider: nil, specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
@@ -33,7 +38,8 @@ class EvidenceResponseBuilder < ApplicationBuilder
     # version, and nothing would then be comparable between the two.
     @package_id = uuid.next
     @extrinsic_object_id = uuid.next
-    @evidence_id = uuid.next
+    drawn = uuid.next
+    @evidence_id = evidence_id || drawn
     @classification_id = uuid.next
   end
 
@@ -43,6 +49,8 @@ class EvidenceResponseBuilder < ApplicationBuilder
   # time, where the slot beside it writes the same instant in UTC: the two name
   # one moment in the two ways their own definitions ask for.
   def issuing_date = instant.in_time_zone.to_date.iso8601
+
+  def empty? = evidence_reference.nil?
 
   protected
 

@@ -37,6 +37,12 @@ Rails.application.routes.draw do
   # route is greedy: whatever must live under /requete is declared before it.
   get '/requete/:exchange_id', to: 'evidence_requests#show', as: :exchange
 
+  # France's preview space (chapter 4.9), the one page an end user reaches.
+  get 'previsualisation/:token', to: 'preview_sessions#show', as: :preview_session
+  get 'previsualisation/:token/document', to: 'preview_sessions#document', as: :preview_session_document
+  get 'previsualisation/:token/retour', to: 'preview_sessions#return_link', as: :preview_session_return
+  post 'previsualisation/:token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
+
   # Domibus is the caller, and it calls from the network: the route is
   # authenticated.
   post '/domibus/notifications', to: 'domibus_notifications#create'

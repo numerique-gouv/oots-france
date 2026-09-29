@@ -55,6 +55,22 @@
         <rim:Value><%= escape(preview_location) %></rim:Value>
       </rim:SlotValue>
     </rim:Slot>
+    <rim:Slot name="PreviewDescription">
+      <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+        <rim:Value>
+<%- preview_descriptions.each do |language, text| -%>
+          <rim:LocalizedString xml:lang="<%= escape(language) %>" value="<%= escape(text) %>"/>
+<%- end -%>
+        </rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+<%- end -%>
+<%- if preview_method? -%>
+    <rim:Slot name="PreviewMethod">
+      <rim:SlotValue xsi:type="rim:StringValueType">
+        <rim:Value><%= ErrorResponseBuilder::PREVIEW_METHOD %></rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
 <%- end -%>
   </rs:Exception>
 </query:QueryResponse>

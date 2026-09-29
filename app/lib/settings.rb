@@ -33,6 +33,8 @@ module Settings
     SEL_DERIVATION_CLES_JOURNAL
     DUREE_RETENTION_JOURNAL_MOIS
     DELAI_RESERVATION_REMISE_MINUTES
+    DELAI_REDIRECTION_FOURNISSEUR_MINUTES
+    DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
@@ -41,7 +43,8 @@ module Settings
   # checking here rather than at the point of use.
   NUMERIC = %w[
     DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS
-    DELAI_RESERVATION_REMISE_MINUTES
+    DELAI_RESERVATION_REMISE_MINUTES DELAI_REDIRECTION_FOURNISSEUR_MINUTES
+    DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES
   ].freeze
 
   # The two columns of the timeout table of chapter 4.4.3, asked of a deployment
@@ -223,6 +226,15 @@ module Settings
     # evidence over, so it is configured and read whether or not the dispositif
     # applies — and the method it serves says what the value arbitrates.
     def delivery_lease = whole('DELAI_RESERVATION_REMISE_MINUTES').minutes
+
+    # T2 and T3 of chapter 4.4 §4.4.3, provider side: how long France waits for
+    # the user to reach its preview space and for the second request, then for
+    # the user to decide once that request has arrived. Outside `TIMEOUTS`:
+    # what the preview space keeps of a user cannot outlive them, so they apply
+    # whether or not the timeout dispositif does.
+    def preview_redirection_timeout = whole('DELAI_REDIRECTION_FOURNISSEUR_MINUTES').minutes
+
+    def preview_decision_timeout = whole('DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES').minutes
 
     # Both or neither. Left empty, the two say « this deployment does not want
     # the dispositif », and everything runs as the owner of the tables, under

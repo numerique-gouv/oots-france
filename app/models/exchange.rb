@@ -1,7 +1,8 @@
 # One evidence exchange, shared and persisted: the worker that receives a
 # gateway notification is rarely the one that handled the request, and a state
-# held in memory would leave each blind to the other. Chapter 4.9 will need it
-# too, to tie a second request to the first across a foreign preview space.
+# held in memory would leave each blind to the other. Chapter 4.9 needs it too,
+# to tie a second request to the first across a preview space — on the 2.0
+# line, where the `ExchangeId` names it.
 #
 # Chapter 4.4 keeps two identifiers apart, and so does this table. `exchange_id`
 # names this exchange, and every message of it carries that value — which is
@@ -19,7 +20,9 @@
 # outgoing exchange always knows are required of that direction only.
 #
 # **No personal data.** The beneficiary lives in the token the requester
-# supplies, and the exchange advances without keeping it.
+# supplies, and the exchange advances without keeping it. The one exception on
+# this side is a preview, whose `PreviewSession` keeps what chapter 4.9 asks
+# for, encrypted, and not here.
 class Exchange < ApplicationRecord
   include NormalisesCountryCode
 
@@ -27,10 +30,11 @@ class Exchange < ApplicationRecord
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
   # deferral aside; where it answers, pending → delivered, deferred or failed.
-  # `preview_required` — the correspondent wants the user to visit its own space
-  # before it will answer — describes the requesting side alone. `deferred` — it
-  # answered that the evidence will exist later, and named when, where it said
-  # so.
+  # `preview_required` — the user must visit a preview space before the
+  # answer — is where either side stands between the two round trips of
+  # chapter 4.9: France asking, a correspondent sent it there; France answering,
+  # it sent the user to its own. `deferred` — it answered that the evidence will
+  # exist later, and named when, where it said so.
   #
   # Every one of the four answers may also reach a `failed` exchange, but only
   # one the expiry sweep presumed: an answer refutes a guess, where a guess
@@ -53,6 +57,10 @@ class Exchange < ApplicationRecord
       transition from: %i[pending sent], to: :preview_required
       transition from: :failed, to: :preview_required, if: :refutable?
     end
+
+    # Chapter 4.7 §2.5.2: the second request of a preview reuses the
+    # `ExchangeId` of the first, and reopens the row the first one left.
+    event(:resume) { transition from: :preview_required, to: :pending }
 
     event :defer do
       transition from: %i[pending sent], to: :deferred
@@ -172,6 +180,10 @@ class Exchange < ApplicationRecord
   # which chapter 4.4.3 lets it decide — `ResponseDeadline` is that reading, and
   # holds the requester's own duration. `none` and not an impossible condition:
   # a sweep that gave no exchange up is what an absent timeout means.
+  #
+  # Nor a received exchange whose answer a preview holds: chapter 4.9 §3
+  # withholds it until the user decides, and T3 of `PreviewSession`, not T1,
+  # is what bounds that wait.
   scope :expired, lambda {
     deadline = ResponseDeadline.for_requester
     next none if deadline.nil?
@@ -180,6 +192,7 @@ class Exchange < ApplicationRecord
 
     in_progress.where(incoming: false, created_at: ...deadline)
       .or(in_progress.where(incoming: true, ebms_sent_at: ...deadline))
+      .where.not(exchange_id: PreviewSession.holding.select(:answering_exchange_id))
   }
 
   # Which exchange a message that has just arrived belongs to.
@@ -217,6 +230,8 @@ class Exchange < ApplicationRecord
   def sent! = fire(:transmit, settled_at: nil)
 
   def preview_required!(location) = answered(:require_preview, preview_location: location)
+
+  def reopen!(request_id) = fire(:resume, settled_at: nil, request_id:)
 
   # A correspondent announcing a date has answered, and chapter 4.5.2 sends the
   # portal back with a new Evidence Request « at the time of availability ». So

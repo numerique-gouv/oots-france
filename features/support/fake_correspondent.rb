@@ -58,8 +58,10 @@ class FakeCorrespondent
   # The conversation is minted alongside and kept apart, as chapter 4.4 keeps
   # them apart: a correspondent that reused one for the other would let a spec
   # pass against an application that confused them.
-  def submit(body, specification: EdmSpecification.preferred)
-    exchange_id = uuid.next
+  #
+  # The second request of a preview is the exception: chapter 4.7 §2.5.2 has it
+  # reuse the `ExchangeId` of the first, which the caller then passes.
+  def submit(body, specification: EdmSpecification.preferred, exchange_id: uuid.next)
     gateway.submit(envelope(body, exchange_id, uuid.next, specification))
 
     exchange_id

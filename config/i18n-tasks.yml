@@ -196,6 +196,9 @@ ignore_unused:
   # the entries above are — they reach `refuse` and never `t()`, which is what
   # the scanner reads. `unnamed_slot_type` is not here: `I18n.t` names it, and
   # the scanner does see that.
+  # The three refusals of chapter 4.9 a request meets: the flag `rim.xsd` types
+  # as a boolean, and the two addresses of a second request.
+  - parsers.evidence_request.{possibility_for_preview_not_boolean,preview_locations_unpaired,location_not_secure}
   - parsers.evidence_request.{slot_type_unexpected,element_type_unexpected}
   - parsers.evidence_request.{collection_without_element,collection_type_unexpected}
   - parsers.evidence_request.{wording_too_short,wording_empty}

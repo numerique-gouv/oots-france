@@ -26,6 +26,12 @@ class WebAddress
 
   def secure? = scheme == SECURE_SCHEME
 
+  # What this deployment accepts where chapter 4.9 asks for `https://`: the
+  # secure scheme, or `http://` where this deployment itself runs without TLS —
+  # the local loop and continuous integration, whose own preview addresses are
+  # then in `http://` and come back as such.
+  def admitted? = secure? || (scheme == 'http' && Settings.oots_france_url.downcase.start_with?('http:'))
+
   private
 
   attr_reader :declared
@@ -41,5 +47,5 @@ class WebAddress
     @uri = nil
   end
 
-  def scheme = uri&.scheme
+  def scheme = uri&.scheme&.downcase
 end

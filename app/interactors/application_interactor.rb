@@ -80,5 +80,7 @@ class ApplicationInteractor
 
   def uuid = context.uuid ||= UuidGenerator.new
 
+  def clock = context.clock ||= Clock.new
+
   def audit_trail = context.audit_trail ||= AuditTrail.new
 end

@@ -5,6 +5,7 @@ module EvidenceProvision
 
     def call
       answer = context.answer
+      return if answer.withheld?
 
       answer.record(audit_trail, **answered(context.answer_message_id))
       settle(answer)

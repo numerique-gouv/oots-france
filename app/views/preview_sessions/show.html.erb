@@ -1,0 +1,60 @@
+<% title = t("preview_sessions.show.#{@preview.state}.title") %>
+<% content_for :title, title %>
+
+<div class="fr-grid-row">
+  <div class="fr-col-12 fr-col-md-8">
+    <h1><%= title %></h1>
+
+    <% case @preview.state %>
+    <% when :open %>
+      <p class="fr-text--lead">
+        <%= t('preview_sessions.show.open.lead_html', requester: tag.strong(@preview.requester_name),
+              evidence: tag.strong(@preview.evidence_title)) %>
+      </p>
+
+      <% if @preview.return_warning? %>
+        <div class="fr-alert fr-alert--warning fr-mb-4w">
+          <p><%= t('preview_sessions.show.open.return_warning') %></p>
+        </div>
+      <% end %>
+
+      <p><%= t('preview_sessions.show.open.optional') %></p>
+      <p>
+        <%# Opened in a new tab rather than downloaded, and the new window said in
+            the `title`, as the DSFR writes it. %>
+        <%= link_to t('preview_sessions.show.open.consult', size: @preview.document_size),
+              preview_session_document_path(@preview.token), class: 'fr-link', target: '_blank', rel: 'noopener',
+              title: t('preview_sessions.show.open.consult_title', size: @preview.document_size) %>
+      </p>
+
+      <%= form_with url: preview_session_choice_path(@preview.token), method: :post, class: 'fr-mt-4w',
+            data: { controller: 'preview-choice' } do %>
+        <fieldset class="fr-fieldset<%= ' fr-fieldset--error' if @choice_missing %>" id="choix"
+          aria-labelledby="choix-legende<%= ' choix-erreur' if @choice_missing %>">
+          <legend class="fr-fieldset__legend" id="choix-legende"><%= t('preview_sessions.show.open.legend') %></legend>
+          <% PreviewSession::DECISIONS.each do |decision| %>
+            <div class="fr-fieldset__element">
+              <div class="fr-radio-group">
+                <%= radio_button_tag :choice, decision, false, id: "choix-#{decision}",
+                      data: { action: 'preview-choice#enable' } %>
+                <label class="fr-label" for="choix-<%= decision %>"><%= t("preview_sessions.show.open.#{decision}") %></label>
+              </div>
+            </div>
+          <% end %>
+          <% if @choice_missing %>
+            <div class="fr-messages-group" id="choix-erreur" aria-live="assertive">
+              <p class="fr-message fr-message--error"><%= t('preview_sessions.show.open.choice_missing') %></p>
+            </div>
+          <% end %>
+        </fieldset>
+        <%= submit_tag t('preview_sessions.show.open.submit'), class: 'fr-btn', name: nil,
+              data: { preview_choice_target: 'submit' } %>
+      <% end %>
+    <% when :recorded %>
+      <p class="fr-text--lead"><%= t('preview_sessions.show.recorded.lead') %></p>
+      <%= render 'return', preview: @preview %>
+    <% else %>
+      <p class="fr-text--lead"><%= t("preview_sessions.show.#{@preview.state}.lead") %></p>
+    <% end %>
+  </div>
+</div>

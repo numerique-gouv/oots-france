@@ -39,6 +39,9 @@
     </rim:SlotValue>
   </rim:Slot>
 
+<%- if empty? -%>
+  <rim:RegistryObjectList/>
+<%- else -%>
   <rim:RegistryObjectList>
     <rim:RegistryObject xsi:type="rim:RegistryPackageType" id="urn:uuid:<%= escape(package_id) %>">
       <rim:RegistryObjectList>
@@ -75,4 +78,5 @@
       </rim:RegistryObjectList>
     </rim:RegistryObject>
   </rim:RegistryObjectList>
+<%- end -%>
 </query:QueryResponse>

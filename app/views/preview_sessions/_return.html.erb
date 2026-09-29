@@ -1,0 +1,23 @@
+<%# The way back to the procedure, chapter 4.9 §2 step 26. On the 2.0 line it
+    is known once the second request has arrived, so the zone asks again until
+    then — announced, and never by a refresh the user does not control. %>
+<div aria-live="polite" data-controller="preview-return"
+  data-preview-return-url-value="<%= preview_session_return_path(preview.token) %>"
+  data-preview-return-waiting-value="<%= preview.awaiting_return? %>">
+  <% if preview.awaiting_return? %>
+    <p><%= t('preview_sessions.return.awaiting') %></p>
+    <%# Shown whatever the browser: without JavaScript it is the only way to
+        ask again, and with it the way out when the server stops answering. %>
+    <p><%= link_to t('preview_sessions.return.refresh'), preview_session_path(preview.token), class: 'fr-link' %></p>
+  <% elsif preview.return_location.blank? %>
+    <p><%= t('preview_sessions.return.none') %></p>
+  <% elsif preview.return_by_form? %>
+    <%# Chapter 4.9 v1.2.3 §5: « even with PUT or POST methods the body is
+        empty ». An HTML form knows no PUT, so it posts. %>
+    <form action="<%= preview.return_location %>" method="post">
+      <button type="submit" class="fr-btn"><%= t('preview_sessions.return.back') %></button>
+    </form>
+  <% else %>
+    <%= link_to t('preview_sessions.return.back'), preview.return_location, class: 'fr-btn' %>
+  <% end %>
+</div>

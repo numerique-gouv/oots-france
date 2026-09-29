@@ -112,6 +112,15 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 | Requête de la ligne 1.2 | un entête à deux propriétés et un corps en `oots-edm:v1.2` | le justificatif, dans une réponse `oots-edm:v1.2` |
 | Entête et corps en désaccord | un entête disant `oots-edm:v2.0` et un corps `oots-edm:v1.2` | `EDM:ERR:0003`, `detail="R-EDM-REQ-C001"`, dans la version de l'entête |
 
+[`previsualisation.feature`](../features/previsualisation.feature) la garde en fournisseur et joue son espace de prévisualisation ([chapitre 4.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932935)) : le faux correspondant forge les deux requêtes, et l'usager suit l'adresse émise avec le navigateur sans JavaScript de `features/support/demo_browser.rb`. L'adresse se lit sur l'`error_sent` du journal, et le document servi se compare, par son empreinte, à celui que la page a offert.
+
+| Scénario | Ce qui est forgé | Ce que la France répond |
+| --- | --- | --- |
+| L'usager accepte | une requête `PossibilityForPreview` à vrai, puis la seconde sous le même `ExchangeId`, avec `PreviewLocation` et `ReturnLocation` | `EDM:ERR:0002` et son adresse, puis le document vu ; la page offre le lien de retour |
+| L'usager refuse | la même paire | `EDM:ERR:0002`, puis une réponse de succès à liste vide |
+| Ligne 1.2 | la même paire en `oots-edm:v1.2`, sans `ReturnLocation`, l'adresse de retour venant par `returnurl` | `EDM:ERR:0002` avec `PreviewMethod` à `GET`, puis le document ; le lien de retour dès le choix |
+| Espace rouvert | la première requête seule | la page dit le choix enregistré et n'offre plus rien |
+
 Le scénario nominal de [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) reste en 2.0 : la France déclare les deux versions dans le DSD d'acceptation, et c'est ce que le service retenu annonce qui décide — il les annonce toutes deux, et la 2.0 est celle que ce dépôt préfère (voir [versions_tdd.md](versions_tdd.md)). L'émission en 1.2 se prouvera de bout en bout le jour où un correspondant resté sur cette ligne sera joignable ; jusque-là, `make schematron` la juge sur les règles de l'étiquette 1.2.5.
 
 L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :

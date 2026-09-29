@@ -113,9 +113,22 @@ class AuditTrail
   # `detail` names the rule the refused request broke, so that the journal says
   # what the correspondent was told and not merely that they were told
   # something.
-  def error_sent(exception:, **answer)
+  #
+  # Chapter 4.8 §3.2 asks the data service for the `PreviewLocation` it issued.
+  def error_sent(exception:, preview_location: nil, **answer)
     record('error_sent', ebms_action: EbmsAction::EXCEPTION_RESPONSE,
-      edm_error_code: exception.code, detail: exception.detail, **answered(**answer))
+      edm_error_code: exception.code, detail: exception.detail, preview_location:, **answered(**answer))
+  end
+
+  # Chapter 4.8 §3.2 asks the preview space for the « URL visited », and
+  # article 17(2) of implementing regulation 2022/1463 for the user's decision
+  # — or that they left without one, `decision` then nil.
+  def preview_visited(session:, location:)
+    record('preview_visited', **previewed(session), preview_location: location)
+  end
+
+  def preview_decided(session:, decision:)
+    record('preview_decided', **previewed(session), detail: decision || AuditEvent::UNDECIDED)
   end
 
   # What a response was turned away for — the two grounds chapter 4.4 names,
@@ -174,6 +187,8 @@ class AuditTrail
       **AuditEvent.circulated(first_part),
     }
   end
+
+  def previewed(session) = { conversation_id: session.conversation_id, exchange_id: session.exchange_id }
 
   def record(event_type, **attributes)
     AuditEvent.create!(event_type:, occurred_at: Time.current, **attributes)
