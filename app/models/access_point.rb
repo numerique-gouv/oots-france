@@ -26,23 +26,25 @@ class AccessPoint
     super
   end
 
-  # The EDM version to write for this gateway, of the two France speaks, and
-  # `nil` where it declares versions and none of them is either.
+  # The EDM version to write for this gateway: `requested` where the caller
+  # named one, otherwise the first of the two France speaks; `nil` where the
+  # gateway declares versions and none of them is that one.
   #
   # Chapter 4.5.1 §2.2 has the `SpecificationIdentifier` agree with the
   # `ConformsTo` of the Access Service the requester chose, and nothing beyond
   # that ranks the versions a gateway offers: `EdmSpecification::SPOKEN` carries
   # the order, and the first match wins.
-  #
-  # A silent access point takes the preferred version. Chapter 3.1.4 gives
+  def specification(requested = nil)
+    candidates = requested ? [requested] : EdmSpecification::SPOKEN
+
+    candidates.find { |candidate| speaks?(candidate) }
+  end
+
+  # A silent access point speaks whatever is asked of it. Chapter 3.1.4 gives
   # `sdg:ConformsTo` a cardinality of 1..n, so an empty list is a directory
   # saying nothing rather than one saying no, and dropping a correspondent on
   # the strength of an omission would answer a directory's fault with ours.
-  def specification
-    return EdmSpecification.preferred if conforms_to.empty?
-
-    EdmSpecification::SPOKEN.find { |spoken| conforms_to.include?(spoken.identifier) }
-  end
+  def speaks?(specification) = conforms_to.empty? || conforms_to.include?(specification.identifier)
 
   # Ours, as the gateway knows it.
   def self.sender = new(**Settings.domibus_sender)

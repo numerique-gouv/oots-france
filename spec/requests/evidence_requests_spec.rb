@@ -245,6 +245,46 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # Optional, for the screens of the demonstration: one per line.
+  describe 'the line the caller may ask for' do
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative', params: parameters.merge(specification: 'oots-edm:v1.2')
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(requested_specification: EdmSpecification::V1_2))
+    end
+
+    it 'asks for none when the caller named none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(requested_specification: nil))
+    end
+
+    # The caller asked for what the access point does not announce: theirs to
+    # correct, where `unsupported_specification` is the correspondent's.
+    it 'reports a line the access point does not announce as the caller fault' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unannounced_specification,
+          "Le point d'accès AP_DE_01 annonce oots-edm:v2.0 ; la version demandée, oots-edm:v1.2, n'en est pas."))
+
+      get '/requete/pieceJustificative', params: parameters.merge(specification: 'oots-edm:v1.2')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('oots-edm:v1.2', 'oots-edm:v2.0')
+    end
+
+    %w[oots-edm:v1.0 2.0].each do |value|
+      it "refuses #{value} before calling anything, and journals it" do
+        get '/requete/pieceJustificative', params: parameters.merge(specification: value)
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.parsed_body['erreur']).to include('oots-edm:v2.0', 'oots-edm:v1.2')
+        expect(EvidenceRequest::Fetch).not_to have_received(:call)
+        expect(AuditEvent.sole).to have_attributes(event_type: 'request_refused')
+      end
+    end
+  end
+
   # The exchange settles on another connection entirely, so this is where a
   # caller holding the identifier learns how it ended.
   describe 'reading the state back' do

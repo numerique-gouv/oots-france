@@ -1446,6 +1446,7 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
+    specification_invalid: "La version demandée doit être %{spoken}"
   # La confirmation d'une prévisualisation qu'un correspondant demande, second
   # appel de l'interface requêteur.
   preview_confirmations:
@@ -1535,6 +1536,7 @@ fr:
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
       unknown_requirement: Exigence inconnue de la démarche
+      unannounced_specification: Le point d'accès n'annonce pas la version demandée
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
     # Les deux moitiés de la cinématique européenne. Chaque phrase est un refus
     # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
@@ -1620,6 +1622,11 @@ fr:
         unsupported: >-
           Le point d'accès %{access_point} annonce %{announced} ; la France parle %{spoken} : la
           requête n'est pas émise.
+        # L'appelant a demandé une version que la France parle, mais que le point
+        # d'accès retenu n'annonce pas : c'est sa demande qui est en cause.
+        unannounced: >-
+          Le point d'accès %{access_point} annonce %{announced} ; la version demandée, %{requested},
+          n'en est pas : la requête n'est pas émise.
       # L'exigence que l'appelant a nommée en `idExigence` n'est aucune de celles
       # que l'Evidence Broker publie pour cette démarche. Sans le pays : les
       # exigences d'une démarche se lisent dans notre propre juridiction

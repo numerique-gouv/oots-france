@@ -45,7 +45,19 @@ class EdmSpecification
 
   def self.identifiers = SPOKEN.map(&:identifier)
 
+  def self.from_segment(segment) = find("oots-edm:#{segment}")
+
   def to_s = identifier
+
+  # The `v<MAJOR>.<MINOR>` an address of the demonstration and of the preview
+  # space carries, which is the identifier `R-DSD-RESP-C015` and
+  # `R-EDM-ebMS-038` write, less its `oots-edm:` prefix.
+  def segment = identifier.delete_prefix('oots-edm:')
+
+  SEGMENTS = Regexp.union(SPOKEN.map(&:segment))
+
+  # What a page names the line by: « OOTS 2.0 ».
+  def number = segment.delete_prefix('v')
 
   # `R-EDM-ebMS-019` and `-038`, of 2.0.1 alone: the `SpecificationId` property
   # announces the version in the header, which is what lets a receiver settle

@@ -65,4 +65,38 @@ RSpec.describe EvidenceRequest::ChooseSpecification do
       expect(exchange.status).to eq('pending')
     end
   end
+
+  describe 'a line the caller asked for' do
+    subject(:choice) { described_class.call(exchange:, recipient:, requested_specification: EdmSpecification::V1_2) }
+
+    context 'when the access point announces it beside the other' do
+      let(:recipient) { build(:access_point, :foreign, conforms_to: ['oots-edm:v1.2', 'oots-edm:v2.0']) }
+
+      it 'writes it on the exchange rather than the preferred one' do
+        expect(choice).to be_success
+        expect(exchange.reload.specification).to eq(EdmSpecification::V1_2)
+      end
+    end
+
+    context 'when the access point announces only the other' do
+      let(:recipient) { build(:access_point, :foreign) }
+
+      it 'settles the exchange as failed under a key of its own, naming both lines' do
+        expect(choice).to be_failure
+        expect(choice.error[:key]).to eq(:unannounced_specification)
+
+        expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: nil, specification: nil)
+        expect(exchange.error_description).to include('AP_DE_01', 'oots-edm:v1.2', 'oots-edm:v2.0')
+      end
+    end
+
+    context 'when the access point announces no version at all' do
+      let(:recipient) { build(:access_point, :foreign, conforms_to: []) }
+
+      it 'writes the requested line' do
+        expect(choice).to be_success
+        expect(exchange.reload.specification).to eq(EdmSpecification::V1_2)
+      end
+    end
+  end
 end

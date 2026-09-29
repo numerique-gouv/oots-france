@@ -35,4 +35,35 @@ RSpec.describe AccessPoint do
       expect(silent.specification).to eq(EdmSpecification.preferred)
     end
   end
+
+  describe '#specification of a requested line' do
+    let(:both) { build(:access_point, conforms_to: ['oots-edm:v1.2', 'oots-edm:v2.0']) }
+
+    it 'takes the requested line from an access point announcing both' do
+      expect(both.specification(EdmSpecification::V1_2)).to eq(EdmSpecification::V1_2)
+      expect(both.specification(EdmSpecification::V2_0)).to eq(EdmSpecification::V2_0)
+    end
+
+    it 'names none where the access point does not announce the requested line' do
+      recent = build(:access_point, conforms_to: ['oots-edm:v2.0'])
+
+      expect(recent.specification(EdmSpecification::V1_2)).to be_nil
+    end
+
+    # The same silence as above: nothing said, so nothing refused.
+    it 'takes the requested line from an access point that announces nothing' do
+      silent = build(:access_point, conforms_to: [])
+
+      expect(silent.specification(EdmSpecification::V1_2)).to eq(EdmSpecification::V1_2)
+    end
+  end
+
+  describe '#speaks?' do
+    it 'answers from what the access point announces' do
+      legacy = build(:access_point, :legacy_line)
+
+      expect(legacy.speaks?(EdmSpecification::V1_2)).to be(true)
+      expect(legacy.speaks?(EdmSpecification::V2_0)).to be(false)
+    end
+  end
 end
