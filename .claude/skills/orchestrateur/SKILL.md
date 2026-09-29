@@ -61,7 +61,7 @@ Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils n
 - **trois** en régime ordinaire, quand la fenêtre rend de quoi les finir, reliquats compris — compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket ;
 - **deux** quand la fenêtre est déjà entamée, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code : regarde le nombre d'ouvriers **en phase de revue** ;
 - **quatre** jamais : les deux cœurs ne les portent pas, quoi qu'en dise le budget ;
-- **un seul** si l'autre joue `make e2e` en local — deux piles Domibus sur deux cœurs se battent jusqu'au timeout, et l'échec ressemble à un défaut du code.
+- **un seul** si l'autre joue `make e2e` en local ou tient la pile complète d'un écran de la démarche de démonstration (`adresse-ecran` § 1) — deux piles Domibus sur deux cœurs se battent jusqu'au timeout, et l'échec ressemble à un défaut du code.
 
 Trois règles de lancement tiennent quel que soit le forfait. **Le prix d'une attente est la taille du contexte du parent**, pas celle du sous-agent : un parent qui a lu en vrac paie chaque attente quatre fois plus cher. **Le prix est par attente, pas par sous-agent** : sept relecteurs lancés dans le même message coûtent une reprise, trois passes séquentielles en coûtent trois. **Un ouvrier arrêté tard se relance de zéro sur une branche déjà poussée** quand ce qui reste tient dans un contexte neuf — jamais sur `ÉCRAN` (§ 5). Le budget se compte sur le compte, pas sur la session : un ouvrier lancé d'ailleurs puise au même endroit. Quand il s'épuise en cours de lot, c'est le § 6, à une frontière propre.
 
