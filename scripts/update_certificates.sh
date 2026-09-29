@@ -12,16 +12,16 @@
 # and every renewal of our certificate. Without them it keeps the keystore in
 # place, and refuses to run if there is none.
 #
-# Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=AP_FR_01.xml TRUSTSTORE=gateway_truststore.jks \
-#          [CLE=OOTS_AP_ACC_FR_001.key CERTIFICAT=OOTS_AP_ACC_FR_001.pem CHAINE=OOTS_AP_ACC_FR_001-bundle.pem]
+# Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
+#          [CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]
 #   MOT_DE_PASSE_MAGASIN_PUBLIE  password of the published truststore (test123)
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-PMODE="${1:?le PMode du Technical Support Dashboard est à donner : make update-certifs PMODE=AP_FR_01.xml TRUSTSTORE=gateway_truststore.jks}"
-TRUSTSTORE="${2:?le magasin de confiance du Technical Support Dashboard est à donner : make update-certifs PMODE=AP_FR_01.xml TRUSTSTORE=gateway_truststore.jks}"
+PMODE="${1:?le PMode du Technical Support Dashboard est à donner : make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>}"
+TRUSTSTORE="${2:?le magasin de confiance du Technical Support Dashboard est à donner : make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:?le mot de passe du compte admin de la console Domibus est à donner}"
 MOT_DE_PASSE_MAGASIN_PUBLIE="${MOT_DE_PASSE_MAGASIN_PUBLIE:-test123}"
 CLE="${CLE:-}"
@@ -65,7 +65,7 @@ done
 # own key there, it would upload a keystore that cannot sign.
 if [ -z "$NOUVEAU_KEYSTORE" ] && [ ! -f "$KEYSTORE" ]; then
   echo "❌ $KEYSTORE manque : la première fois, donner aussi notre clé et notre certificat —" >&2
-  echo "   make update-certifs … CLE=OOTS_AP_ACC_FR_001.key CERTIFICAT=OOTS_AP_ACC_FR_001.pem CHAINE=OOTS_AP_ACC_FR_001-bundle.pem" >&2
+  echo "   make update-certifs … CLE=<OOTS_AP_ACC_FR_001.key> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>" >&2
   exit 1
 fi
 
