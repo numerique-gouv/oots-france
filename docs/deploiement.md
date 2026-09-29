@@ -244,25 +244,29 @@ Sans `REPERTOIRE_MAGASINS`, il engendre des magasins neufs et les téléverse �
 ## Raccorder la passerelle à l'acceptation
 
 > [!IMPORTANT]
-> Ce raccordement échoue tant que `nginx` ne mandate pas `/domibus/services/msh` vers la passerelle, ce que [OOTS-207](https://linear.app/pole-api/issue/OOTS-207) apporte : le PMode du dashboard donne à `AP_FR_01` son adresse publique, et le test de connectivité qui clôt la procédure sort par elle. Tant que le [gabarit](../nginx.template/conf/nginx.conf) ne mandate que `web`, le test reste non acquitté.
+> Ce raccordement échoue tant que le frontal ne mandate pas `/domibus/services/msh` vers la passerelle : le PMode du dashboard donne à `AP_FR_01` son adresse publique, et le test de connectivité qui clôt la procédure sort par elle. Le [gabarit](../nginx.template/conf/nginx.conf) du dépôt ne mandate que `web`. Et le frontal ne mandate **que** ce chemin : la console, `/domibus/rest/` et `/domibus/services/wsplugin` ne regardent que l'exploitant et `web`, voir [plus haut](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre).
 
 Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le dashboard un **PMode** (`AP_FR_01.xml`) et un **magasin de confiance** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le dashboard le notifie, et il faut alors les recharger.
 
-Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte. Les trois magasins de la passerelle sont alors, tous au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose :
+Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte.
+
+Le **keystore** se construit une fois, et à chaque renouvellement de notre certificat : la clé privée du CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`), sous l'alias de la partie, au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose :
 
 ```sh
-# le keystore : la clé privée du CSR et le certificat de la PKI, sous l'alias de la partie
 $ openssl pkcs12 -export -name AP_FR_01 -inkey <clé privée du CSR> \
     -in OOTS_AP_ACC_FR_001.pem -certfile OOTS_AP_ACC_FR_001-bundle.pem \
     -out domibus/keystores/gateway_keystore.p12 -passout "pass:$MOT_DE_PASSE_MAGASINS"
-# le magasin de confiance du dashboard, tel quel, sous le mot de passe de la passerelle
-$ keytool -importkeystore -srckeystore gateway_truststore.jks -srcstoretype JKS -srcstorepass test123 \
-    -destkeystore domibus/keystores/gateway_truststore.p12 -deststoretype PKCS12 \
-    -deststorepass "$MOT_DE_PASSE_MAGASINS"
-$ cp AP_FR_01.xml domibus/
 ```
 
-Puis la commande de [la mise à jour](#mettre-à-jour), avec le PMode du dashboard à la place de celui d'exemple — `FICHIER_PMODE=domibus/AP_FR_01.xml` devant `scripts/configure_domibus.sh`, à côté de `REPERTOIRE_MAGASINS=domibus/keystores` —, et le redémarrage qui suit. Le script charge ce PMode privé des processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier du dashboard intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+Le **PMode et le magasin de confiance** se chargent ensuite, puis à chaque publication du dashboard, en une commande :
+
+```sh
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… make dashboard PMODE=<chemin>/AP_FR_01.xml TRUSTSTORE=<chemin>/gateway_truststore.jks
+```
+
+[`scripts/load_dashboard_publication.sh`](../scripts/load_dashboard_publication.sh) lit les identifiants dans les `.env*` ; seul le mot de passe de la console, qui n'y vit pas, se donne à la commande. Il refuse de tourner sans le keystore ci-dessus. Il convertit le magasin publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose les deux fichiers sous `domibus/` en gardant les précédents en `*.precedent`, les charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+
+Pour revenir à la publication précédente : remettre les `*.precedent` à leur place, puis rejouer `scripts/configure_domibus.sh` comme à [la mise à jour](#mettre-à-jour), avec `FICHIER_PMODE=domibus/AP_FR_01.xml`.
 
 > [!IMPORTANT]
 > Les alias du magasin de confiance ne se retouchent pas : la passerelle cherche le certificat d'un correspondant sous le nom de sa partie, exactement comme la Commission l'y a mis — c'est pourquoi elle tourne sans les profils de sécurité de Domibus, voir [domibus_context.md](domibus_context.md#concepts-clés). Rejouer `scripts/configure_domibus.sh` **sans** `REPERTOIRE_MAGASINS` remplacerait ces magasins par des auto-signés sans rien signaler.
