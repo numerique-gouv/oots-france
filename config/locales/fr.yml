@@ -225,6 +225,12 @@ fr:
   components:
     admin_breadcrumbs:
       admin: Espace d’administration
+    # La miette de l'écran du choix de la version, sous laquelle pend chaque
+    # page du parcours : le mot du menu, en français, la console parlant à
+    # l'exploitant. La miette de la version, elle, est son numéro, qui ne se
+    # traduit pas.
+    demo_breadcrumbs:
+      demo: Démo
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     # Le bouton qui déplie le corps RegRep d'un événement : il en annonce la
@@ -253,6 +259,9 @@ fr:
       # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
       unsatisfiable_html: Evidence impossible to satisfy by %{country}
       from_html: "%{evidence_type} from %{provider}"
+      # Ce que la carte dit à la place du bouton quand le point d'accès du
+      # fournisseur n'annonce pas la version du parcours.
+      unsupported_version: This provider does not support OOTS %{version}
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
@@ -549,6 +558,12 @@ fr:
     # son appelant, comme les interacteurs de `Demo::` le font tous.
     reads_demo_request:
       unanswered: "État de la demande de la démarche de démonstration illisible : %{error}"
+    # Une identification réussie dont le départ n'a retenu aucune version : aucun
+    # parcours ne s'ouvre, et l'exploitant repart de l'écran du choix.
+    france_connect:
+      lineless_departure: >-
+        Le départ vers FranceConnect+ n'a retenu aucune version de la démarche : choisir une version,
+        puis s'identifier de nouveau.
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -1913,6 +1928,20 @@ fr:
     # La seule partie de la console qui ne relise rien : `docs/espace_administration.md`
     # dit quel rôle l'exploitant y tient, et pourquoi elle est là.
     demo:
+      # Le premier écran de la démonstration, où l'exploitant choisit la ligne
+      # des TDD que le parcours joue. Il est de la console et parle en
+      # français : aucun usager d'un portail ne choisit une version des TDD.
+      versions:
+        index:
+          title: Choisir la version OOTS
+          lead: >-
+            La démarche de démonstration demande chaque justificatif du parcours dans la version
+            choisie ici, jusqu'à la prochaine identification.
+          card: OOTS %{number}
+          # Une phrase par ligne, sous la clé que `EdmSpecification#slug` donne.
+          descriptions:
+            v2_0: La version la plus récente mais encore peu implémentée
+            v1_2: La version supportée par la majorité des états membres
       home:
         show:
           title: Demonstration procedure

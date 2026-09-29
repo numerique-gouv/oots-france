@@ -26,7 +26,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_exchange_state
       # The page requirement 27 is satisfied on: the button only exists once it
       # has been shown what it would ask for.
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
     end
 
     # CA3: the request goes out through the contract, with the query string a
@@ -121,6 +121,15 @@ RSpec.describe 'Admin::Demo::Requests' do
         requirement_id: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{exigence}",
         requirement_name: '(TEST) Test Requirement', requirement_language: 'EN',
       )
+    end
+
+    # The line the journey plays travels beside the country and the
+    # requirement, and the register keeps it with them.
+    it 'asks in the line of the journey, and files it' do
+      post demande_path
+
+      expect(evidence_request_query).to include('specification' => 'oots-edm:v2.0')
+      expect(Demo::Request.last).to have_attributes(specification: EdmSpecification::V2_0, country_code: 'FR')
     end
 
     # The whole point of `idExigence`: the button of one card asks for that
@@ -256,8 +265,8 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      patch admin_demo_pays_path(exigence: premiere), params: { pays: 'FI' }
-      get admin_demo_documents_path
+      patch admin_demo_pays_path(exigence: premiere, version: 'v2.0'), params: { pays: 'FI' }
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path(premiere)
     end
 
@@ -267,7 +276,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     it 'leaves the other card in its own country' do
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       seconde_carte = response.parsed_body.at_css("#exigence-#{seconde}")
 
@@ -288,7 +297,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
     end
 
     it 'asks the contract nothing, and sends the user back' do
@@ -296,7 +305,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
     end
   end
 
@@ -311,7 +320,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
     end
 
     # Never the first requirement that publishes: falling back would ask for a
@@ -321,16 +330,16 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
       expect(Demo::Request.count).to eq(0)
     end
 
     it 'asks the contract nothing when no requirement is named at all' do
-      post admin_demo_demande_path
+      post admin_demo_demande_path(version: 'v2.0')
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
       expect(Demo::Request.count).to eq(0)
     end
   end
@@ -354,7 +363,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     it 'sends the user back to the page that names what would be asked' do
       post demande_path
 
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
     end
   end
 
@@ -366,14 +375,14 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path
       Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
     end
 
     it 'offers the button again once the user has identified anew' do
       identify_demo_user
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       expect(response.parsed_body.at_css('.demo-request__body').text).to include('Request the document')
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
@@ -389,7 +398,7 @@ RSpec.describe 'Admin::Demo::Requests' do
                                     statut: 'pending' }.to_json)
       stub_exchange_state('un-second-echange', statut: 'pending')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path
 
       expect(Demo::Request.pluck(:exchange_id))
@@ -403,7 +412,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       identify_demo_user
       stub_exchange_state('un-second-echange', statut: 'pending')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path
 
       expect(conversations_asked.uniq.size).to eq(1)
@@ -420,7 +429,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
       post demande_path
     end
 
@@ -512,7 +521,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_evidence_request_for(seconde, second_echange)
       stub_exchange_state
       stub_exchange_state(second_echange, statut: 'pending')
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
     end
 
     # CA6. Chapter 4.4 §4.3.2 gives each identifier its own job: the
@@ -561,7 +570,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -577,7 +586,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       stub_exchange_state(statut: 'failed', codeErreur: 'EDM:ERR:0003')
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -595,7 +604,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
       Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-      get admin_demo_justificatif_path(exigence: seconde)
+      get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0')
 
       expect(response.body.b).to eq(autre_document)
     end
@@ -608,8 +617,8 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       identify_demo_user
 
-      get admin_demo_justificatif_path(exigence: premiere)
-      expect(response).to redirect_to(admin_demo_documents_path)
+      get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0')
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
 
       get demande_path(premiere)
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
@@ -645,7 +654,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
 
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -662,7 +671,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
 
       identify_demo_user
-      get admin_demo_documents_path
+      get admin_demo_documents_path(version: 'v2.0')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -712,7 +721,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
         [cookies[session_cookie], held].each do |cookie|
           cookies[session_cookie] = cookie
-          get admin_demo_documents_path
+          get admin_demo_documents_path(version: 'v2.0')
 
           expect(response.parsed_body.css('main .demo-request__body').pluck('data-outcome'))
             .to eq(%w[pending pending])
@@ -733,10 +742,10 @@ RSpec.describe 'Admin::Demo::Requests' do
         Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
         Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-        get admin_demo_justificatif_path(exigence: premiere)
+        get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0')
         expect(response.body.b).to eq(document)
 
-        get admin_demo_justificatif_path(exigence: seconde)
+        get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0')
         expect(response.body.b).to eq(autre_document)
       end
 
@@ -748,7 +757,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         clicking_at_once(premiere, seconde)
 
         identify_demo_user
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         zones = response.parsed_body.css('main .demo-request__body')
 
@@ -774,7 +783,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       end
 
       def rendered_identifiers
-        get admin_demo_documents_path
+        get admin_demo_documents_path(version: 'v2.0')
 
         response.parsed_body.at_css('main').text.scan(%r{\h{8}-\h{4}-\h{4}-\h{4}-\h{12}|https://sr\.\S+})
       end
@@ -799,5 +808,39 @@ RSpec.describe 'Admin::Demo::Requests' do
     def autre_document = "%PDF-1.4\nsecond".b
   end
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)
+  # A journey opened from the sign-in page of the other line, which leaves
+  # every request of it in that line.
+  describe 'POST /admin/demo/v1.2/demande' do
+    before do
+      identify_demo_user(version: 'v1.2')
+      stub_directory_signature
+      stub_directory_body('dsd', 'dataservices-by-evidencetype', provider_announcing('oots-edm:v1.2'))
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      get admin_demo_documents_path(version: 'v1.2')
+    end
+
+    it 'asks in 1.2, and files it' do
+      post admin_demo_demande_path(exigence:, version: 'v1.2')
+
+      expect(evidence_request_query).to include('specification' => 'oots-edm:v1.2', 'codePays' => 'FR')
+      expect(Demo::Request.last.specification).to eq(EdmSpecification::V1_2)
+    end
+
+    # RG11 of OOTS-237: a journey plays one line, and the pages of the other
+    # are not its own.
+    it 'sends a click made under the other line back to the screen the line is chosen on' do
+      post demande_path
+
+      expect(response).to redirect_to(admin_demo_root_path)
+      expect(contract_demands).to be_empty
+    end
+  end
+
+  # The Finnish capture, its access point announcing another line: made in the
+  # spec, as `spec/fixtures/README.md` has a body no capture holds made.
+  def provider_announcing(line) = common_services_answer('dsd_data_services_fi').first.sub('oots-edm:v2.0', line)
+
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0')
 end

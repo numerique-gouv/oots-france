@@ -21,6 +21,10 @@ class DemoResolutionWording
 
   def provider = provider_entry&.label(languages: LANGUAGES).presence
 
+  # The gateway of the provider this card names: what it announces is whether
+  # the line of the journey can reach it.
+  def access_point = provider_entry&.access_point
+
   # The language of each value, where the directory published one: a wording in
   # another language than the sentence around it carries its own `lang`, failing
   # which a screen reader pronounces French as English (RGAA 8.7). Nothing when

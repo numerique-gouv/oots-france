@@ -36,8 +36,11 @@ module Demo
     # tells one identity from another. Personal data, like the identity beside
     # it in the session, and persisted no further than the encrypted cookie.
     attribute :subject, :string
+    # The line every request of the walk goes out in, chosen before the
+    # identification and kept until the next one.
+    attribute :specification, EdmSpecification::Type.new
 
-    validates :id, :conversation_id, :subject, presence: true
+    validates :id, :conversation_id, :subject, :specification, presence: true
 
     # The journey an identification opens. `previous` is the one it replaces,
     # `nil` on a first sign-in; its conversation is carried over when the same
@@ -46,8 +49,9 @@ module Demo
     # `R-EDM-ebMS-017` (FATAL) — « The eb:ConversationId MUST be expressed as
     # UUID » — which is what `UuidGenerator` mints, injected by keyword like the
     # builders take it so a spec can freeze both identifiers.
-    def self.opened(previous:, subject:, uuid: UuidGenerator.new)
-      new(id: uuid.next, conversation_id: conversation_for(previous, subject) || uuid.next, subject:).freeze
+    def self.opened(previous:, subject:, specification:, uuid: UuidGenerator.new)
+      new(id: uuid.next, conversation_id: conversation_for(previous, subject) || uuid.next, subject:,
+        specification:).freeze
     end
 
     def self.conversation_for(previous, subject)
@@ -68,6 +72,6 @@ module Demo
       nil
     end
 
-    def to_session = attributes.compact
+    def to_session = attributes.merge('specification' => specification&.identifier).compact
   end
 end

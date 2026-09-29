@@ -19,7 +19,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     # Requirement 27 of chapter 1 §2: the button exists only once the page has
     # named the evidence type and the provider, so the journey is walked whole.
     stub_exchange_state
-    get admin_demo_documents_path
+    get admin_demo_documents_path(version: 'v2.0')
     post demande_path
   end
 
@@ -73,7 +73,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
 
       get justificatif_path
 
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
     end
   end
 
@@ -85,7 +85,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
 
     get justificatif_path
 
-    expect(response).to redirect_to(admin_demo_documents_path)
+    expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
   end
 
   # Chapter 1 §4.2 makes the evidence available to « the specific procedure
@@ -98,20 +98,20 @@ RSpec.describe 'Admin::Demo::Evidences' do
     it 'serves nothing for a requirement the session never asked about' do
       get justificatif_path('11111111-2222-3333-4444-555555555555')
 
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
     end
 
     it 'serves nothing when no requirement is named at all' do
-      get admin_demo_justificatif_path
+      get admin_demo_justificatif_path(version: 'v2.0')
 
-      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
     end
   end
 
   it 'sends the operator back to the page the document is offered from while nothing has been delivered' do
     get justificatif_path
 
-    expect(response).to redirect_to(admin_demo_documents_path)
+    expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
   end
 
   # La ligne s'en va, la session garde l'identifiant : c'est cet écart que la
@@ -120,7 +120,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     Demo::Request.delete_all
   end
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid)
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0')
 
-  def justificatif_path(uuid = exigence) = admin_demo_justificatif_path(exigence: uuid)
+  def justificatif_path(uuid = exigence) = admin_demo_justificatif_path(exigence: uuid, version: 'v2.0')
 end

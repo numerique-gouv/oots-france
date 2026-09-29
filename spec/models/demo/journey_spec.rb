@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe Demo::Journey do
-  subject(:journey) { described_class.opened(previous:, subject: 'un-pseudonyme', uuid:) }
+  subject(:journey) { described_class.opened(previous:, subject: 'un-pseudonyme', specification: EdmSpecification::V1_2, uuid:) }
 
   let(:previous) { nil }
   # Frozen, so that what is minted can be told from what is carried over.
@@ -17,6 +17,7 @@ RSpec.describe Demo::Journey do
         id: '11111111-0000-4000-8000-000000000001',
         conversation_id: '22222222-0000-4000-8000-000000000002',
         subject: 'un-pseudonyme',
+        specification: EdmSpecification::V1_2,
       )
     end
 
@@ -79,8 +80,11 @@ RSpec.describe Demo::Journey do
     # The cookie gives back string keys, which is the shape `to_session` is
     # written in and the one this reads.
     it 'reads back what it wrote' do
-      expect(described_class.from_session(journey.to_session))
-        .to have_attributes(journey.to_session.symbolize_keys)
+      expect(described_class.from_session(journey.to_session).attributes).to eq(journey.attributes)
+    end
+
+    it 'writes the line as the identifier a cookie can hold' do
+      expect(journey.to_session).to include('specification' => 'oots-edm:v1.2')
     end
 
     it 'reads no journey from a session holding none' do
@@ -96,14 +100,14 @@ RSpec.describe Demo::Journey do
   end
 
   # The one condition `HoldsDemoJourney` renders on: a journey missing any of
-  # the three could neither name a conversation to ask under nor say whose
-  # requests it is following.
+  # the four could neither name a conversation to ask under, nor say whose
+  # requests it is following, nor in which line they go out.
   describe 'validity' do
     it 'is valid once opened' do
       expect(journey).to be_valid
     end
 
-    %i[id conversation_id subject].each do |attribute|
+    %i[id conversation_id subject specification].each do |attribute|
       it "is invalid without #{attribute}" do
         expect(described_class.new(journey.to_session.except(attribute.to_s))).not_to be_valid
       end

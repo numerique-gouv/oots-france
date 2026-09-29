@@ -25,6 +25,10 @@ module Demo
     # requirement stays in for as long as the request is under way.
     validates :country_code, presence: true
 
+    # The line the journey plays, which the click asked the contract for.
+    attribute :specification, EdmSpecification::Type.new
+    validates :specification, presence: true
+
     # Chapter 4.4 §4.3.2 gives each identifier its own job — the `ExchangeId`
     # ties together the messages of one exchange, the `ConversationId` ties them
     # to one authenticated user — so a delivery is asked for both: one naming

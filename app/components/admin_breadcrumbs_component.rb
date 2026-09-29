@@ -22,8 +22,12 @@ class AdminBreadcrumbsComponent < ViewComponent::Base
 
   def section = raise(NotImplementedError)
 
+  # What hangs between the console and the page, the section alone unless a
+  # section's addresses nest deeper.
+  def sections = [section]
+
   def crumbs
-    walked = [[t('components.admin_breadcrumbs.admin'), helpers.admin_root_path], section, *@trail]
+    walked = [[t('components.admin_breadcrumbs.admin'), helpers.admin_root_path], *sections, *@trail]
 
     walked[..-2] + [[walked.last.first, nil]]
   end
