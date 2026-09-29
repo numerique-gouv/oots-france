@@ -209,6 +209,7 @@ Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotati
 Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la machine :
 
 - les fichiers `.env*`, qui portent tous les secrets, et le `docker-compose.override.yml` s'il existe ;
+- le keystore de notre clé privée, `oots_acceptance_keystore.jks`, là où [`scripts/pki/`](../scripts/pki/) l'a créé, et ses deux mots de passe : sans eux, le certificat de la PKI ne sert plus à rien ;
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
 - le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, le keystore et le truststore téléversés, et le compte d'accès ;
 - le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
@@ -248,6 +249,19 @@ Sans `REPERTOIRE_KEYSTORE_TRUSTSTORE`, il engendre un keystore et un truststore 
 > [!IMPORTANT]
 > Ce raccordement échoue tant que le frontal ne mandate pas `/domibus/services/msh` vers la passerelle : le PMode du Technical Support Dashboard donne à `AP_FR_01` son adresse publique, et le test de connectivité qui clôt la procédure sort par elle. Le [gabarit](../nginx.template/conf/nginx.conf) du dépôt ne mandate que `web`. Et le frontal ne mandate **que** ce chemin : la console, `/domibus/rest/` et `/domibus/services/wsplugin` ne regardent que l'exploitant et `web`, voir [plus haut](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre).
 
+Notre certificat se demande d'abord, sur le serveur et hors du dépôt, avec les deux scripts de [`scripts/pki/`](../scripts/pki/) :
+
+```sh
+$ cd <répertoire hors du dépôt>
+$ <dépôt>/scripts/pki/generate_keystore.sh   # demande le keystore password, puis le keypair password
+$ <dépôt>/scripts/pki/generate_csr.sh        # écrit OOTS_AP_ACC_FR_001.csr
+```
+
+Le premier crée `oots_acceptance_keystore.jks`, qui porte notre clé privée ; le second en tire le CSR, qui part à la PKI eDelivery. Elle rend, dans S-CIRCABC, `OOTS_AP_ACC_FR_001.pem`, notre certificat, `OOTS_AP_ACC_FR_001-bundle.pem`, sa chaîne, et `OOTS_AP_ACC_FR_001.p7b`, les mêmes au format PKCS#7, qui ne sert pas ici.
+
+> [!IMPORTANT]
+> `oots_acceptance_keystore.jks` et ses deux mots de passe sont la seule copie de notre clé privée : la PKI ne la rend jamais, et sans elle le certificat ne sert à rien. Les deux scripts refusent de tourner dans un dépôt git, pour que ce fichier n'y entre jamais ; [la sauvegarde](#ce-quil-faut-sauvegarder) l'emporte.
+
 Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le Technical Support Dashboard un **PMode** (`AP_FR_01.xml`) et un **truststore** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le Technical Support Dashboard le notifie, et il faut alors les recharger.
 
 Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte.
@@ -259,9 +273,9 @@ $ make update-certifs
 ```
 
 - **Le PMode et le truststore** — le cas courant : le Technical Support Dashboard les régénère dès qu'un point d'accès du réseau change.
-- **Notre certificat aussi** — le premier raccordement, ou un renouvellement : le keystore est reconstruit avec la clé privée qui a signé le CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`). La clé est dans le keystore où `keytool -genkeypair` l'a créée avant le CSR — `oots_acceptance_keystore.jks` pour l'acceptation —, que la commande ouvre avec les deux mots de passe donnés à sa création : le *keystore password*, celui du keystore, et le *keypair password*, celui de la clé ; un fichier PEM `-----BEGIN … PRIVATE KEY-----` convient aussi.
+- **Notre certificat aussi** — le premier raccordement, ou un renouvellement : le keystore est reconstruit avec la clé privée qui a signé le CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`). La clé est dans le keystore que `scripts/pki/generate_keystore.sh` a créé avant le CSR — `oots_acceptance_keystore.jks` pour l'acceptation —, que la commande ouvre avec les deux mots de passe donnés à sa création : le *keystore password*, celui du keystore, et le *keypair password*, celui de la clé ; un fichier PEM `-----BEGIN … PRIVATE KEY-----` convient aussi. Un keystore qui porte plusieurs clés, une par CSR, les fait lister par la commande, qui marque celle du certificat et la propose par défaut ; en donnant tout à la commande, `ALIAS_CLE` la désigne.
 
-Sans terminal, tout se donne à la commande, les trois derniers seulement quand notre certificat change, avec le *keystore password* dans `MOT_DE_PASSE_KEYSTORE_CLE` et, s'il diffère, le *keypair password* dans `MOT_DE_PASSE_KEYPAIR` :
+Pour rejouer la commande sans questions, tout se donne sur sa ligne — les trois derniers seulement quand notre certificat change —, avec le *keystore password* dans `MOT_DE_PASSE_KEYSTORE_CLE` et, s'il diffère, le *keypair password* dans `MOT_DE_PASSE_KEYPAIR` :
 
 ```sh
 $ DOMIBUS_MOT_DE_PASSE_ADMIN=… MOT_DE_PASSE_KEYSTORE_CLE=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \

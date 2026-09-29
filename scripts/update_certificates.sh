@@ -44,6 +44,7 @@ CERTIFICAT="${CERTIFICAT:-}"
 CHAINE="${CHAINE:-}"
 PARTIE="AP_FR_01"
 NOUVEAU_KEYSTORE=""
+INTERACTIF=""
 
 # What `read` returns is taken literally: neither `~` nor a path relative to
 # where the operator stood survives the `cd` above unless resolved here.
@@ -79,12 +80,13 @@ demandeSecret() {
 
 if [ -z "$PMODE" ] || [ -z "$TRUSTSTORE" ]; then
   if [ ! -t 0 ]; then
-    echo "❌ Sans terminal, tout se donne à la commande :" >&2
+    echo "❌ Aucune question possible : l'entrée n'est pas un clavier (ssh sans -t, cron, redirection). Tout se donne à la commande :" >&2
     echo "   DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \\" >&2
     echo "     [CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]" >&2
     exit 1
   fi
 
+  INTERACTIF=oui
   cat >&2 <<'QUESTION'
 Que faut-il mettre à jour ?
 
@@ -197,6 +199,37 @@ lanceKeytool() {
   fi
 }
 
+# A keystore may hold several keys, one per CSR it served: the one whose public
+# key is the certificate's is marked, and offered by default.
+choisisCle() {
+  echo "$1" > "$TEMPORAIRE/alias"
+  attendue=$(openssl x509 -in "$CERTIFICAT" -noout -pubkey)
+  echo "  $CLE contient plusieurs clés privées :" >&2
+  numero=0
+  defaut=""
+  while IFS= read -r alias; do
+    numero=$((numero + 1))
+    publique=$(lanceKeytool -exportcert -rfc -alias "$alias" -keystore source \
+      -storepass "$MOT_DE_PASSE_KEYSTORE_CLE" 2> /dev/null | openssl x509 -noout -pubkey 2> /dev/null || true)
+    if [ -n "$publique" ] && [ "$publique" = "$attendue" ]; then
+      echo "    $numero. $alias — celle du certificat de la PKI" >&2
+      defaut=$numero
+    else
+      echo "    $numero. $alias" >&2
+    fi
+  done < "$TEMPORAIRE/alias"
+  choix=$(demande "  Clé à prendre" "$defaut")
+  case "$choix" in
+    *[!0-9]* | "" | 0) alias="" ;;
+    *) alias=$(sed -n "${choix}p" "$TEMPORAIRE/alias") ;;
+  esac
+  if [ -z "$alias" ]; then
+    echo "❌ Répondre par un numéro de la liste." >&2
+    exit 1
+  fi
+  echo "$alias"
+}
+
 # keytool creates the key inside a keystore, and the CSR from it: the key is
 # taken out of there, under a password of the script's own, as the PEM openssl
 # works with.
@@ -213,7 +246,13 @@ extraisCle() {
     case "$(echo "$ALIAS_CLE" | grep -c .)" in
       1) ;;
       0) echo "❌ $CLE ne contient aucune clé privée." >&2; exit 1 ;;
-      *) echo "❌ $CLE contient plusieurs clés privées, $(echo $ALIAS_CLE) : désigner la bonne par ALIAS_CLE=…" >&2; exit 1 ;;
+      *)
+        if [ -z "$INTERACTIF" ]; then
+          echo "❌ $CLE contient plusieurs clés privées, $(echo $ALIAS_CLE) : désigner la bonne par ALIAS_CLE=…" >&2
+          exit 1
+        fi
+        ALIAS_CLE=$(choisisCle "$ALIAS_CLE")
+        ;;
     esac
   fi
   if ! lanceKeytool -importkeystore -noprompt \
