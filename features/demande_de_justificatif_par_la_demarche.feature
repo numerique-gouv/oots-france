@@ -3,7 +3,8 @@
 Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   L'administrateur tient ici le rôle d'un étudiant danois qui demande une
-  bourse. Une fois identifié, l'usager voit qui fournira son justificatif
+  bourse, dans la version OOTS qu'il a choisie en ouvrant la démarche : la
+  requête part dans cette version. Une fois identifié, l'usager voit qui fournira son justificatif
   d'inscription et de quel type, puis confirme — et c'est cette confirmation
   qui demande le justificatif et envoie la requête.
 
@@ -24,10 +25,21 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et l'administrateur de démonstration connecté à l'espace d'administration
 
   Scénario: l'usager demande son justificatif et la requête part pour de bon
-    Quand l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Alors la page des justificatifs affiche le fournisseur et le type de justificatif
     Quand l'usager confirme sa demande
     Alors la page des justificatifs affiche que la demande de l'usager est en cours
     Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
     Et cette requête contient l'identité que FranceConnect+ a donnée à la démarche
     Et cette requête déclare que l'usager a demandé le justificatif
+    Et la fiche de cet échange affiche la version "oots-edm:v2.0"
+
+  Scénario: l'usager qui a choisi la version 1.2 demande son justificatif en 1.2
+    Quand l'administrateur choisit la version "OOTS 1.2"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Alors la page des justificatifs affiche le fournisseur et le type de justificatif
+    Quand l'usager confirme sa demande
+    Alors la page des justificatifs affiche que la demande de l'usager est en cours
+    Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
+    Et la fiche de cet échange affiche la version "oots-edm:v1.2"

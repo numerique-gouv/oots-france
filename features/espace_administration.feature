@@ -46,6 +46,8 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   Scénario: la démarche de démonstration s'ouvre depuis le menu
     Étant donné le faux FranceConnect+ déclaré par la France
     Quand l'administrateur suit l'entrée « Démo » du menu
+    Alors l'écran du choix de la version affiche les cartes "OOTS 2.0" puis "OOTS 1.2"
+    Quand l'administrateur choisit la carte "OOTS 2.0" de l'écran du choix de la version
     Alors la page d'accueil de la démarche de démonstration s'affiche
     Et la page propose de s'identifier avec une identité d'un autre État membre
 

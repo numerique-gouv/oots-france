@@ -60,6 +60,15 @@ class DemoBrowser
   # the first of them is not necessarily the one the scenario means.
   def start_identification(france_connect) = send_form(card_of(france_connect))
 
+  # A card of the screen the line is chosen on, named by its title as the
+  # operator reads it, and followed where its link leads.
+  def choose_card(title)
+    link = document.css('.fr-card__title a').find { |candidate| candidate.text.strip == title }
+    raise ArgumentError, "Aucune carte « #{title} » sur #{procedure_url}" if link.nil?
+
+    visit(link['href'])
+  end
+
   # The three pages of the European path, each submitted where the page itself
   # says to.
   def choose(name, value) = submit(name => value)

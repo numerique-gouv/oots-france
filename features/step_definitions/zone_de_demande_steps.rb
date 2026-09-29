@@ -2,7 +2,7 @@
 # Both are intercepted, which is the whole reason the pattern names no method —
 # one scenario is about a click whose own answer is lost being retried as an
 # interrogation, and telling the two apart is what it has to prove.
-ZONE_ADDRESS = '*/admin/demo/demande*'.freeze
+ZONE_ADDRESS = '*/admin/demo/v2.0/demande*'.freeze
 
 # What an answer replaces, and what says which outcome is on screen.
 BODY = '.demo-request__body'.freeze
@@ -71,6 +71,7 @@ end
 # `state` and a `nonce` this scenario never wrote.
 Étantdonné("l'usager identifié sur la page des justificatifs") do
   visit admin_demo_root_path
+  click_link 'OOTS 2.0'
   sign_in_with('fake')
 
   expect(page).to have_button(press_label)
@@ -90,7 +91,7 @@ end
   stub_evidence_request_for(REQUIREMENTS.fetch('seconde'), SECOND_EXCHANGE)
   stub_exchange_state(SECOND_EXCHANGE, statut: 'pending')
 
-  visit admin_demo_documents_path
+  visit admin_demo_documents_path(version: 'v2.0')
 
   expect(page).to have_css(ZONE, count: REQUIREMENTS.size)
 end
@@ -247,7 +248,7 @@ Alors('la page affiche le lien {string}') do |label|
 end
 
 Alors('la page des justificatifs est toujours affichée') do
-  expect(page).to have_current_path(admin_demo_documents_path)
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
 end
 
 # Chapter-free and structural: the element that holds the announced region is
@@ -258,7 +259,7 @@ Alors("la zone n'a pas été remplacée, seulement son contenu") do
 end
 
 Alors("la page des justificatifs n'a pas été rechargée") do
-  expect(page).to have_current_path(admin_demo_documents_path)
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
   expect(page.evaluate_script('window.pageMark')).to eq(PAGE_MARK)
 end
 
