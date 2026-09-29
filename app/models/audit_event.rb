@@ -33,7 +33,7 @@ class AuditEvent < ApplicationRecord
     request_sent request_refused response_received error_received evidence_delivered
     request_received response_sent error_sent response_refused
     message_unreadable message_unhandled answer_not_sent
-    preview_visited preview_decided
+    preview_visited preview_decided return_visited
   ].freeze
 
   # What `preview_decided` records of a user who left the preview space

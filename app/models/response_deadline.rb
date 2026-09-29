@@ -28,6 +28,17 @@ module ResponseDeadline
     Settings.provider_timeout.ago if handled?
   end
 
+  # T2 and T3 of the same table, requester side, which replace T1 once a
+  # correspondent has asked for a preview: how long the portal may take to
+  # confirm it, then how long the second response may take.
+  def self.for_redirection
+    Settings.requester_redirection_timeout.ago if handled?
+  end
+
+  def self.for_second_response
+    Settings.requester_decision_timeout.ago if handled?
+  end
+
   # Whether a request arrived too late for the data service to owe it an answer.
   # Asked of the instant the message was sent: that side holds no `Exchange` to
   # interrogate, only the arrival itself.

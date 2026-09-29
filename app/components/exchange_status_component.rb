@@ -9,6 +9,7 @@ class ExchangeStatusComponent < ViewComponent::Base
     'preview_required' => :warning,
     'deferred' => :warning,
     'delivered' => :success,
+    'declined' => :info,
     'failed' => :error,
   }.freeze
 

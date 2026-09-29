@@ -1416,6 +1416,7 @@ fr:
       expired:
         incoming: L'échange n'a pas été traité dans le délai imparti.
         outgoing: Le correspondant n'a pas répondu dans le délai imparti.
+        unconfirmed: Le portail n'a pas confirmé la prévisualisation dans le délai imparti.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une
@@ -1732,6 +1733,9 @@ fr:
         # France (chapitre 4.8 §3.2, article 17(2) du règlement 2022/1463).
         preview_visited: Prévisualisation ouverte
         preview_decided: Choix de l'usager
+        # Et, côté requêteur, l'usager qui revient d'un espace étranger par
+        # l'adresse de retour de la France (chapitre 4.9 §5).
+        return_visited: Retour au portail
       filtre:
         legend: Filtrer le journal
         all: Tous
@@ -1810,6 +1814,7 @@ fr:
           preview_required: Prévisualisation requise
           deferred: Différé
           delivered: Délivré
+          declined: Refusé par l'usager
           failed: Échec
         # Ce que la fiche met en tête de ligne.
         attributes:
