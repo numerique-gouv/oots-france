@@ -87,6 +87,13 @@ if Rails.env.development?
   # de plus, et `SK`, abandonné faute d'une version commune —, qui la laissent
   # vide : c'est ce qu'un échange conduit dans aucune version montre à la
   # console.
+  # Ce qu'une exception `EDM:ERR:0002` décrit de l'espace où elle envoie
+  # l'usager, et que `IncomingMessage::SettleExchange` garde pour le portail.
+  preview_descriptions = [
+    { 'language' => 'EN', 'text' => 'Check the document before it is sent to the procedure.' },
+    { 'language' => 'FR', 'text' => 'Vérifiez le document avant son envoi à la démarche.' },
+  ].freeze
+
   scenarios = [
     { status: 'delivered', country_code: 'FI', procedure_code: ProcedureCode::SYSTEM_CHECK,
       specification: EdmSpecification::V2_0,
@@ -118,6 +125,7 @@ if Rails.env.development?
     # portait un, et `AuditTrail#received_error` l'inscrit sur l'événement.
     { status: 'preview_required', country_code: 'SI', procedure_code: 'S1',
       preview_location: 'https://previsualisation.example.si/consentement',
+      preview_descriptions: preview_descriptions,
       message_error_code: EdmException::AUTHORIZATION.code,
       specification: EdmSpecification::V2_0,
       events: %w[request_sent error_received] },
@@ -259,7 +267,60 @@ if Rails.env.development?
       preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'),
       decision: PreviewSession::ACCEPTED,
       events: %w[request_received error_sent preview_visited preview_decided response_sent] },
+    # Le chapitre 4.9 du côté qui demande : le correspondant envoie l'usager à
+    # son espace, le portail confirme, la seconde requête part sous l'adresse de
+    # retour de la France, l'usager revient par elle, et la réponse remet le
+    # justificatif. Deux `request_sent`, donc : la seconde porte le lien
+    # présenté à l'usager, qui en 2.0 est l'adresse reçue.
+    { status: 'delivered', country_code: 'EE', procedure_code: ProcedureCode::STUDY_FINANCING,
+      specification: EdmSpecification::V2_0,
+      preview_location: 'https://previsualisation.example.ee/espace/4b7d2e9a',
+      preview_descriptions: preview_descriptions,
+      message_error_code: EdmException::AUTHORIZATION.code,
+      previewed: true,
+      events: %w[request_sent error_received request_sent return_visited response_received evidence_delivered] },
+    # La même, où l'usager n'a rien accepté : la seconde réponse porte une liste
+    # vide (chapitre 4.9 §1), rien n'est remis, et l'échange est `declined`.
+    { status: 'declined', country_code: 'LV', procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
+      specification: EdmSpecification::V2_0,
+      preview_location: 'https://previsualisation.example.lv/espace/8c1f5a3d',
+      preview_descriptions: preview_descriptions,
+      message_error_code: EdmException::AUTHORIZATION.code,
+      previewed: true,
+      events: %w[request_sent error_received request_sent return_visited response_received] },
   ]
+
+  # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
+  # seconde requête éventuelle : ce que les annuaires ont résolu. Le point
+  # d'accès porte le pays sollicité, comme celui que l'annuaire aurait nommé.
+  demonstration_basis = lambda do |country_code|
+    access_point = AccessPoint.new(id: "AP_#{country_code}_01",
+      type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots',
+      conforms_to: [EdmSpecification.preferred.identifier])
+
+    RequestBasis.new(
+      requirement: Requirement.new(
+        id: 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42',
+        descriptions: { 'EN' => 'Proof of tertiary education diploma/certificate/degree' },
+      ),
+      provider: EvidenceProvider.new(
+        identifier: EbmsIdentity.new(id: "#{country_code}0000000001", type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+        descriptions: { 'EN' => "Evidence provider (#{country_code})" }, address: Address.new(country: country_code),
+        access_point:,
+      ),
+      recipient: access_point,
+      data_service: DataService.new(
+        id: '41170824-15d9-4c16-984e-63b75b937b8c',
+        evidence_type_classification:
+          "https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/#{country_code}/ca8afed6-2dc0-422a-a931-d21c3d8d370e",
+        distribution_format: EvidenceType::PDF, descriptions: { 'EN' => 'Certificate of enrolment' },
+      ),
+      evidence_type: EvidenceType.new(
+        id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/6f9619ff-8b86-d011-b42d-00c04fc964ff',
+      ),
+      preview_possible: false,
+    )
+  end
 
   # Le sujet tel qu'une réponse le confirme. Le chapitre 4.5.2 fait porter à
   # `sdg:IsAbout` le *Minimum Data Set* du sujet demandé « to confirm identity
@@ -305,7 +366,7 @@ if Rails.env.development?
   # n'en écrit aucun, le sujet lu de la requête reçue ayant déjà sa ligne.
   demonstration_subject = lambda do |event_type, scenario, exchange|
     return AuditEvent.subject(scenario.fetch(:subject, person)) if event_type.start_with?('request')
-    return {} unless event_type == 'response_received' && exchange.status != 'deferred'
+    return {} unless event_type == 'response_received' && !exchange.status.in?(%w[deferred declined])
 
     AuditEvent.subject(matched_person.call(exchange, scenario))
   end
@@ -329,8 +390,8 @@ if Rails.env.development?
   # received request names its procedure but not the requester, whom
   # `AuditTrail` records as a requesting authority instead; and only what
   # travelled through the gateway names a message.
-  carries_procedure = %w[request_sent request_refused evidence_delivered request_received].freeze
-  carries_requester = %w[request_sent request_refused evidence_delivered].freeze
+  carries_procedure = %w[request_sent request_refused evidence_delivered request_received return_visited].freeze
+  carries_requester = %w[request_sent request_refused evidence_delivered return_visited].freeze
   carries_message = (AuditEvent::SENT_BY_FRANCE + AuditEvent::RECEIVED_BY_FRANCE).freeze
 
   # The ebMS action, which every message names and nothing else does: what
@@ -382,13 +443,26 @@ if Rails.env.development?
         format('<rs:Exception code="%<code>s"/>', code:)
       end
 
+    # La seconde requête d'une prévisualisation porte le slot dont la colonne
+    # `preview_location` de sa ligne est la copie, en 2.0.
+    preview_slot =
+      if preview.present?
+        format(<<~XML.chomp, preview:)
+          <rim:Slot name="PreviewLocation">
+              <rim:SlotValue><rim:Value>%<preview>s</rim:Value></rim:SlotValue>
+            </rim:Slot>
+            
+        XML
+      end
+
     case event_type
     when 'request_sent', 'request_received'
-      format(<<~XML, id: sent)
+      format(<<~XML, id: sent, preview: preview_slot)
         <?xml version="1.0" encoding="UTF-8"?>
         <query:QueryRequest xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                            xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
                             id="%<id>s">
-          <!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
+          %<preview>s<!-- Corps de démonstration : voir docs/journal_des_echanges.md -->
         </query:QueryRequest>
       XML
     when 'error_sent', 'error_received'
@@ -467,7 +541,7 @@ if Rails.env.development?
   end
 
   evidence_fingerprint = lambda do |event_type, exchange, scenario, evidence_id, content_id, occurred_at|
-    return {} unless event_type.in?(carries_evidence) && exchange.status != 'deferred'
+    return {} unless event_type.in?(carries_evidence) && !exchange.status.in?(%w[deferred declined])
 
     digest = if exchange.incoming?
                served_digest.call(scenario, evidence_id, occurred_at)
@@ -487,7 +561,7 @@ if Rails.env.development?
   names_evidence = %w[response_sent response_received].freeze
 
   evidence_identifier = lambda do |event_type, exchange, evidence_id|
-    return {} unless event_type.in?(names_evidence) && exchange.status != 'deferred'
+    return {} unless event_type.in?(names_evidence) && !exchange.status.in?(%w[deferred declined])
 
     { evidence_identifier: evidence_id }
   end
@@ -529,6 +603,10 @@ if Rails.env.development?
     request_id = scenario.fetch(:request_id, format('urn:uuid:%s', SecureRandom.uuid))
     circulated_id = scenario.fetch(:request_id_as_sent, request_id)
     response_id = SecureRandom.uuid
+    # La seconde requête d'une prévisualisation a son propre identifiant — le
+    # chapitre 4.4 §4.1 interdit d'en resservir un —, et c'est lui que la
+    # réponse renvoie et que l'échange garde.
+    second_request_id = (format('urn:uuid:%s', SecureRandom.uuid) if scenario[:previewed])
 
     # Le code que le message d'erreur portait, que les deux écrivains
     # d'`AuditTrail` lisent du message et non de l'échange : le plus souvent le
@@ -546,13 +624,23 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without, :presumed, :decision).merge(
+        :confirmed_without, :presumed, :decision, :previewed).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre, et
           # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
           # n'a encore quitté n'en porte pas, un échange reçu le porte toujours
           # — c'est par lui qu'un message de la ligne 1.2 retrouve le sien.
-          request_id: (request_id if incoming || scenario[:status] != 'pending'),
+          request_id: (second_request_id || request_id if incoming || scenario[:status] != 'pending'),
+          request_basis: (demonstration_basis.call(scenario[:country_code]) unless incoming),
+          # Ce que `Exchange#confirm_preview!` écrit quand le portail confirme :
+          # l'adresse de retour de la France, et celle du portail où elle mène.
+          **(if scenario[:previewed]
+               { preview_confirmed_at: opened + 14.minutes,
+                 return_token: format('00000000-0000-4000-8000-%012d', rank + 1),
+                 resume_location: 'https://demarche.example.fr/reprise' }
+             else
+               {}
+             end),
           # Le requêteur du scénario quand il en nomme un — la démarche de
           # démonstration est le seul à en nommer —, et sinon celui que le sens
           # de l'échange désigne.
@@ -584,7 +672,16 @@ if Rails.env.development?
     evidence_id = SecureRandom.uuid
 
     events.each_with_index do |event_type, step|
-      next if AuditEvent.exists?(exchange_id: exchange.exchange_id, event_type:)
+      # Compté et non seulement cherché : une prévisualisation émet deux
+      # `request_sent`, et le second doit s'écrire au premier passage comme au
+      # rejeu ne rien ajouter.
+      written = AuditEvent.where(exchange_id: exchange.exchange_id, event_type:).count
+      next if written >= events.first(step + 1).count(event_type)
+
+      # À partir de la seconde requête, tout ce qui circule nomme celle-là.
+      second = event_type == 'request_sent' && events.first(step).include?('request_sent')
+      after_second = events.first(step + 1).count('request_sent') > 1
+      answered_request = after_second && second_request_id ? second_request_id : request_id
 
       occurred_at = opened + (step * 7).minutes
 
@@ -593,7 +690,16 @@ if Rails.env.development?
       # émise sur l'erreur envoyée, et celle que l'usager a visitée. Le corps
       # conservé porte le slot d'où elle vient, sans quoi la fiche montrerait
       # une colonne que le message d'à côté ne dit pas.
-      declared_preview = (exchange.preview_location if event_type.in?(%w[error_received error_sent preview_visited]))
+      #
+      # Du côté qui demande, la seconde requête porte le lien présenté à
+      # l'usager — l'adresse reçue, en 2.0 —, et le retour l'adresse de retour
+      # visitée (`AuditTrail#return_visited`).
+      declared_preview =
+        if event_type.in?(%w[error_received error_sent preview_visited]) || second
+          exchange.preview_location
+        elsif event_type == 'return_visited'
+          exchange.return_location
+        end
 
       AuditEvent.create!(
         event_type:,
@@ -605,13 +711,13 @@ if Rails.env.development?
         evidence_requester_id: (exchange.evidence_requester_id if event_type.in?(carries_requester)),
         message_id: (format('%s@domibus.eu', SecureRandom.uuid) if event_type.in?(carries_message)),
         ebms_action: ebms_actions[event_type],
-        request_id: (request_id if event_type.in?(carries_message)),
+        request_id: (answered_request if event_type.in?(carries_message)),
         response_id: (response_id if event_type.in?(carries_response_id)),
         edm_error_code: (message_error_code if event_type.start_with?('error')),
         detail: demonstration_detail.call(event_type, scenario, exchange),
         **demonstration_subject.call(event_type, scenario, exchange),
         preview_location: declared_preview,
-        **regrep_body.call(event_type, sent: circulated_id, echoed: request_id,
+        **regrep_body.call(event_type, sent: (second ? second_request_id : circulated_id), echoed: answered_request,
           code: message_error_code, preview: declared_preview),
         **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
         **evidence_identifier.call(event_type, exchange, evidence_id),
