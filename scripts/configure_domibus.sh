@@ -120,12 +120,13 @@ messageDomibus() {
 
 # Chapter 4.7 has the PartyId and its type processed case-sensitively, and the
 # rest of this script names our party by that same string: a PMode that declares
-# it otherwise — one the Commission's dashboard generated, say — is refused here,
-# before anything is uploaded, rather than surfacing as a message never
+# it otherwise — one the Technical Support Dashboard generated, say — is refused
+# here, before anything is uploaded, rather than surfacing as a message never
 # acknowledged.
 #
-# The dashboard generates one PMode for the whole network, with every process of
-# it: lcmProcess lists the access points declared for LCM, which ours is not.
+# The Technical Support Dashboard generates one PMode for the whole network,
+# with every process of it: lcmProcess lists the access points declared for LCM,
+# which ours is not.
 # Domibus 5.2 refuses a PMode where its own party takes part in a process neither
 # as initiator nor as responder (BusinessProcessValidator, DOM_003), so such
 # processes are dropped from what is uploaded. None carries a message ours sends

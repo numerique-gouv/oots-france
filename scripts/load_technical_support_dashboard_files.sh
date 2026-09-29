@@ -3,24 +3,25 @@
 # Dashboard published for AP_FR_01, as published: converts the truststore to the
 # PKCS#12 and the password the gateway reopens it with, lays both down under
 # domibus/, uploads them through scripts/configure_domibus.sh, and restarts the
-# gateway. The dashboard publishes new ones whenever any access point changes,
-# whatever its Member State: this is the command to replay then.
+# gateway. The Technical Support Dashboard publishes new ones whenever any
+# access point changes, whatever its Member State: this is the command to
+# replay then.
 #
 # The keystore is not touched: it holds the private key of our CSR and the
 # certificate the eDelivery PKI returned, built once as docs/deploiement.md says,
 # and must already be in place.
 #
 # Usage: DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks>
-#   MOT_DE_PASSE_MAGASIN_DASHBOARD  password of the published truststore (test123)
+#   MOT_DE_PASSE_MAGASIN_PUBLIE  password of the published truststore (test123)
 
 set -e
 
 cd "$(dirname "$0")/.."
 
-PMODE="${1:?le PMode du dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
-TRUSTSTORE="${2:?le magasin de confiance du dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
+PMODE="${1:?le PMode du Technical Support Dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
+TRUSTSTORE="${2:?le magasin de confiance du Technical Support Dashboard est à donner : make update-certifs PMODE=… TRUSTSTORE=…}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:?le mot de passe du compte admin de la console Domibus est à donner}"
-MOT_DE_PASSE_MAGASIN_DASHBOARD="${MOT_DE_PASSE_MAGASIN_DASHBOARD:-test123}"
+MOT_DE_PASSE_MAGASIN_PUBLIE="${MOT_DE_PASSE_MAGASIN_PUBLIE:-test123}"
 
 REPERTOIRE_MAGASINS=domibus/keystores
 KEYSTORE="$REPERTOIRE_MAGASINS/gateway_keystore.p12"
@@ -85,7 +86,7 @@ lanceKeytool() {
 echo "→ Conversion du magasin de confiance $TRUSTSTORE"
 cp "$TRUSTSTORE" "$TEMPORAIRE/publie.jks"
 lanceKeytool -importkeystore -noprompt \
-  -srckeystore publie.jks -srcstoretype JKS -srcstorepass "$MOT_DE_PASSE_MAGASIN_DASHBOARD" \
+  -srckeystore publie.jks -srcstoretype JKS -srcstorepass "$MOT_DE_PASSE_MAGASIN_PUBLIE" \
   -destkeystore gateway_truststore.p12 -deststoretype PKCS12 \
   -deststorepass "$MOT_DE_PASSE_MAGASINS" > /dev/null
 lanceKeytool -list -keystore gateway_truststore.p12 -storepass "$MOT_DE_PASSE_MAGASINS" \
@@ -112,4 +113,4 @@ echo "→ Redémarrage de la passerelle"
 docker compose restart domibus
 scripts/ci/wait_for_domibus.sh
 
-echo "✅ PMode et magasin de confiance du dashboard chargés ; les précédents sont en *.precedent sous domibus/."
+echo "✅ PMode et magasin de confiance du Technical Support Dashboard chargés ; les précédents sont en *.precedent sous domibus/."

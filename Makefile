@@ -17,10 +17,11 @@ setup: ## Install from a fresh clone: env files, databases, configured gateway
 update: ## Update a running server: pull, checks, image, migrations, assets, restart
 	scripts/update_server.sh
 
-# The files the dashboard published stay wherever the operator downloaded
-# them: the script copies them under domibus/, which .gitignore keeps local.
+# The files the Technical Support Dashboard published stay wherever the
+# operator downloaded them: the script copies them under domibus/, which
+# .gitignore keeps local.
 update-certifs: ## Load into the gateway the PMode and truststore the Technical Support Dashboard published (PMODE=…, TRUSTSTORE=…)
-	scripts/load_dashboard_publication.sh "$(PMODE)" "$(TRUSTSTORE)"
+	scripts/load_technical_support_dashboard_files.sh "$(PMODE)" "$(TRUSTSTORE)"
 
 check-env: ## What the templates declare, against what the .env* files carry
 	scripts/check_environment.sh
