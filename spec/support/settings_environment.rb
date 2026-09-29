@@ -4,14 +4,16 @@
 module SettingsEnvironment
   # Those read as numbers need one, the others take anything non-blank. The two
   # timeouts are added rather than indexed — they leave REQUIRED to a deployment
-  # that provides the dispositif — and take the values of the table of chapter
-  # 4.4.3: the contract refuses them equal, which one value for every number
-  # would make them.
+  # that provides the dispositif — and all six intervals take the values of the
+  # table of chapter 4.4.3: the contract refuses each pair equal, which one value
+  # for every number would make them.
   def complete_environment
     Settings::REQUIRED
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
       .merge(france_connect_environment)
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
+      .merge('DELAI_REDIRECTION_REQUETEUR_MINUTES' => '15', 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '16')
+      .merge('DELAI_PREVISUALISATION_REQUETEUR_MINUTES' => '41', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40')
       .merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key)
       .merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key)
   end
