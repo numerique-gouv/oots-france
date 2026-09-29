@@ -67,10 +67,16 @@ module IncomingMessage
     # carries none, and is not a failure. Read before the evidence — which is
     # exactly what a deferral has not — and before `claim_delivery!`, which
     # would reserve a handover nothing is going to make.
+    #
+    # A second response carrying nothing is the user's decision, chapter 4.9 §1:
+    # « the evidence response shall contain an empty registry object list ». Only
+    # the second: before a preview, no user has decided anything, and an empty
+    # answer to the first request is left to fail as the unusable answer it is.
     def respond(exchange)
       body = context.message.body
 
       return exchange.deferred!(body.response_available_at) if body.unavailable?
+      return exchange.declined! if exchange.preview_confirmed? && !context.message.carries_evidence?
 
       deliver(exchange)
     end
@@ -102,14 +108,21 @@ module IncomingMessage
     def record_error(exchange)
       error = context.message.body
 
-      # An authorisation error naming a usable preview location asks for a
-      # detour, not a failure. One naming nowhere usable is a failure like any
-      # other — better than sending a user to a link we could not vet.
-      if error.preview_required? && error.preview_location?
-        exchange.preview_required!(error.preview_location)
+      if preview_asked?(exchange, error)
+        exchange.preview_required!(error.preview_location, descriptions: error.preview_descriptions,
+          method: error.preview_method)
       else
         exchange.failed!(code: error.code, description: error.description)
       end
+    end
+
+    # An authorisation error naming a usable preview location asks for a
+    # detour, not a failure. One naming nowhere usable is a failure like any
+    # other — better than sending a user to a link we could not vet. And one
+    # answering the second request is a failure too: chapter 1 §7.3 has no
+    # preview offered in the second flow, and the exchange ends there.
+    def preview_asked?(exchange, error)
+      error.preview_required? && error.preview_location? && !exchange.preview_confirmed?
     end
   end
 end

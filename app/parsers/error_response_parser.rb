@@ -102,6 +102,28 @@ class ErrorResponseParser
 
   def preview_location? = preview_location.present?
 
+  # What the portal builds its launch page from — chapter 4.9 §5, « Process
+  # the language specific information of the preview location description
+  # metadata » — one entry per `rim:LocalizedString`, in the order received.
+  # Read as it arrived: `R-EDM-ERR-C020` is judged in `violations`, and a
+  # description is only words for the portal to show or not.
+  def preview_descriptions
+    path = "./rim:Slot[@name='PreviewDescription']/rim:SlotValue/rim:Value/rim:LocalizedString"
+
+    all(exception, path).map do |localised|
+      { 'language' => attribute(localised, 'lang', 'xml'), 'text' => attribute(localised, 'value') }
+    end
+  end
+
+  # The HTTP verb of the 1.2 line, and nil where the slot is absent or holds
+  # none of the three `R-EDM-ERR-C021` admits: `PreviewLink` then reaches the
+  # space the way a link is followed.
+  def preview_method
+    declared = optional_slot_text('PreviewMethod', exception)&.strip
+
+    declared if ErrorExceptionConformance::PREVIEW_METHODS.include?(declared)
+  end
+
   # The code distinguishes the eight errors of the TDD, which the message
   # alone conflates.
   def description = [code, message].compact_blank.join(' : ')
@@ -131,7 +153,14 @@ class ErrorResponseParser
                    raise(UnreadableMessageError, I18n.t('parsers.error_response.no_exception'))
   end
 
-  def usable?(location) = WebAddress.new(location).openable?
+  # Openable, and in the scheme chapter 4.9 §4 requires — or in `http://`
+  # where this deployment itself runs without TLS, which `WebAddress#admitted?`
+  # answers.
+  def usable?(location)
+    address = WebAddress.new(location)
+
+    address.openable? && address.admitted?
+  end
 
   def violation(rule, key, **)
     BusinessRuleViolation.new(rule:, description: I18n.t("parsers.error_response.#{key}", **))

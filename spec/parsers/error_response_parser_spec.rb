@@ -60,6 +60,58 @@ RSpec.describe ErrorResponseParser do
       expect(ordinary.preview_location).to be_nil
     end
 
+    # RG18 of OOTS-67: chapter 4.9 §4 forbids `http://`, which this deployment
+    # admits only where it runs without TLS itself.
+    it 'refuses to hand out an address in http:// where France runs on https://' do
+      allow(Settings).to receive(:oots_france_url).and_return('https://oots.example.fr')
+      plain = RetrievedMessageParser.new(envelope_with_preview('http://previsualisation.example.si/espace')).body
+
+      expect(plain.preview_location).to be_nil
+    end
+
+    it 'hands one out where France itself runs on http://' do
+      allow(Settings).to receive(:oots_france_url).and_return('http://localhost:3000')
+      plain = RetrievedMessageParser.new(envelope_with_preview('http://previsualisation.example.si/espace')).body
+
+      expect(plain.preview_location).to eq('http://previsualisation.example.si/espace')
+    end
+
+    # Chapter 4.9 §5: what the portal builds its launch page from.
+    it 'reads every language of the description, in the order received' do
+      described = RetrievedMessageParser.new(envelope_with_preview_slots(
+        [%(<rim:Slot name="PreviewDescription"><rim:SlotValue xsi:type="rim:InternationalStringValueType"><rim:Value>),
+         %(<rim:LocalizedString xml:lang="EN" value="Check your diploma"/>),
+         %(<rim:LocalizedString xml:lang="FR" value="Vérifiez votre diplôme"/>),
+         %(</rim:Value></rim:SlotValue></rim:Slot>)].join,
+      )).body
+
+      expect(described.preview_descriptions).to eq([
+        { 'language' => 'EN', 'text' => 'Check your diploma' },
+        { 'language' => 'FR', 'text' => 'Vérifiez votre diplôme' },
+      ])
+    end
+
+    it 'reads no description where none was given' do
+      expect(error.preview_descriptions).to eq([])
+    end
+
+    it 'reads the method of the 1.2 line' do
+      posted = RetrievedMessageParser.new(envelope_with_preview_slots(
+        %(<rim:Slot name="PreviewMethod"><rim:SlotValue xsi:type="rim:StringValueType"><rim:Value>POST</rim:Value></rim:SlotValue></rim:Slot>),
+      )).body
+
+      expect(posted.preview_method).to eq('POST')
+    end
+
+    # `R-EDM-ERR-C021` admits three verbs; anything else is no method at all.
+    it 'reads no method it could not use' do
+      patched = RetrievedMessageParser.new(envelope_with_preview_slots(
+        %(<rim:Slot name="PreviewMethod"><rim:SlotValue xsi:type="rim:StringValueType"><rim:Value>PATCH</rim:Value></rim:SlotValue></rim:Slot>),
+      )).body
+
+      expect(patched.preview_method).to be_nil
+    end
+
     # The type is `rs:AuthorizationExceptionType`, whose prefix is bound in the
     # document and could be anything. The severity says the same thing without
     # that trap, and R-EDM-ERR-C022 is what ties it to the preview slot.
@@ -662,6 +714,15 @@ RSpec.describe ErrorResponseParser do
     def preview_method_slot(verb = 'GET')
       %(<rim:Slot name="PreviewMethod"><rim:SlotValue xsi:type="rim:StringValueType"><rim:Value>#{verb}</rim:Value></rim:SlotValue></rim:Slot>)
     end
+  end
+
+  def envelope_with_preview_slots(slots)
+    document = Nokogiri::XML(built_envelope('erreurAutorisationRequise'))
+    value = document.xpath('//payload/value').first
+    body = Base64.decode64(value.text).sub('<rim:Slot name="Timestamp">', "#{slots}<rim:Slot name=\"Timestamp\">")
+    value.content = Base64.strict_encode64(body)
+
+    document.to_xml
   end
 
   def envelope_with_preview(location)
