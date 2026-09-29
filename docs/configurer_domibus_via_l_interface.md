@@ -5,7 +5,7 @@
 > | Pour… | Voir |
 > | --- | --- |
 > | installer l'environnement de développement, démarrer la pile | [README](../README.md) |
-> | ce qu'est Domibus, les profils de sécurité, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
+> | ce qu'est Domibus, son mode de sécurité et ses alias, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
 > | la version utilisée et ce qu'elle impose | [versions_domibus.md](versions_domibus.md) |
 
 L'interface d'administration s'ouvre sur `http://localhost:[PORT_DOMIBUS]/domibus`, `PORT_DOMIBUS` étant la valeur du `.env`. Les deux dernières sections, sur les comptes d'administration, sont les seules qui n'aient aucun équivalent scripté.

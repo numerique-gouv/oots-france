@@ -54,7 +54,6 @@ montre "Journal des erreurs" "rest/internal/user/errorlogs?page=0&pageSize=20&or
 # symptom other than a message never acknowledged.
 montre "Clés de la passerelle (keystore)" "rest/internal/admin/keystore/list"
 montre "Certificats de confiance (truststore)" "rest/internal/admin/truststore/list"
-montre "Profils de sécurité reconnus" "rest/internal/admin/truststore/securityProfiles"
 
 # The one failure this stack has no other way of showing. The gateway pushes at
 # the port `web` listens on, which is PORT_OOTS_FRANCE and shifts with a

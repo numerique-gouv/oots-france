@@ -4,7 +4,7 @@
 >
 > | Pour… | Voir |
 > | --- | --- |
-> | ce qu'est Domibus, les profils de sécurité, les filtres de message, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
+> | ce qu'est Domibus, son mode de sécurité et ses alias, les filtres de message, le PMode d'exemple | [domibus_context.md](domibus_context.md) |
 > | installer et configurer Domibus | [README](../README.md#configurer-domibus-en-une-commande) |
 > | refaire cette configuration dans l'interface | [configurer_domibus_via_l_interface.md](configurer_domibus_via_l_interface.md) |
 > | le scénario de bout en bout et la configuration automatisée | [test_e2e.md](test_e2e.md) |
@@ -72,7 +72,7 @@ Les deux magasins portent **un seul mot de passe**, partagé avec les clés priv
 >
 > `docker compose down --volumes` efface le volume ; reprendre ensuite le [README](../README.md) depuis le démarrage de MySQL, puis rejouer `scripts/configure_domibus.sh` — magasins, PMode et Plugin User vivent dans la base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence désormais les messages par leur identifiant d'entité, et le reste du schéma a suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner vierge.
 
-La montée a par ailleurs permis de sortir de `domibus/` — répertoire non versionné et recréé à chaque table rase — les réglages dont le dépôt dépend : niveaux de journalisation et activation des profils de sécurité sont désormais déclarés dans `docker-compose.yml`, via `LOGGER_LEVEL_*` et `SERVER_INIT_PROPERTIES`.
+La montée a par ailleurs permis de sortir de `domibus/` — répertoire non versionné et recréé à chaque table rase — les réglages dont le dépôt dépend : niveaux de journalisation et mode de sécurité sont désormais déclarés dans `docker-compose.yml`, via `LOGGER_LEVEL_*` et `SERVER_INIT_PROPERTIES`.
 
 ## Lire les routes d'administration à la source
 
