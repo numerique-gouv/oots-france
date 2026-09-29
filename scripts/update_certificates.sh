@@ -80,7 +80,7 @@ demandeSecret() {
 
 if [ -z "$PMODE" ] || [ -z "$TRUSTSTORE" ]; then
   if [ ! -t 0 ]; then
-    echo "❌ Sans terminal, tout se donne à la commande :" >&2
+    echo "❌ Aucune question possible : l'entrée n'est pas un clavier (ssh sans -t, cron, redirection). Tout se donne à la commande :" >&2
     echo "   DOMIBUS_MOT_DE_PASSE_ADMIN=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \\" >&2
     echo "     [CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>]" >&2
     exit 1
