@@ -99,6 +99,8 @@ Le `description` nomme l'instance dans le panneau d'agents et **est le seul cham
 
 **Un compte rendu de livraison porte les adresses à consulter, dès que quelque chose se regarde** — recopiées dans ton compte rendu, jamais « les URL sont dans son rapport », que l'utilisateur ne voit pas ; chacune entière et avec ce qu'on y regarde, comme `adresse-ecran` les rend, et un `303` est normal, la console est protégée. Les écrans meurent avec le worktree : donne-les avant de ranger.
 
+**Un tour qui attend l'utilisateur fait sonner peon-ping ; les autres non.** Sur ce poste, le script branché sur le hook `Stop` de peon-ping tait un tour qu'un message d'ouvrier ou une tâche de fond a déclenché, sauf si son dernier texte porte une question, une adresse d'écran ou une PR à relire ou à merger — les trois moments où l'utilisateur veut être appelé (dit le 2026-09-29). Quand tu finis sur une remontée d'une autre forme, pose le marqueur avant de finir : `~/.claude/hooks/peon-quiet.sh ring`, si le poste l'a (`CLAUDE.local.md` dit ce que le script reconnaît seul). Un compte rendu d'étape — plan écrit, PR en brouillon, ouvrier relancé — n'appelle personne.
+
 **Un ouvrier silencieux se vérifie, il ne s'attend pas.** Un ouvrier au travail et un ouvrier pendu envoient le même signal : rien. Au-delà de trente minutes sans message ni commit, date son dernier geste :
 
 ```sh
