@@ -35,13 +35,16 @@ class PreviewSessionsController < ApplicationController
     return refuse_empty_choice unless choice.in?(PreviewSession::DECISIONS)
 
     EvidenceProvision::RecordPreviewDecision.call(preview_session: @session, decision: choice)
-    redirect_to preview_session_path(@session.token), status: :see_other
+    redirect_to preview_session_path(token: @session.token), status: :see_other
   end
 
   private
 
+  # Found by its token, and under the segment France issued it with: any other
+  # is an address France never issued.
   def find_session
-    @session = PreviewSession.find_by(token: params[:token])
+    found = PreviewSession.find_by(token: params[:token])
+    @session = found if found&.issued_under?(params[:version])
     @preview = PreviewSessionPresenter.new(@session, first_request: read_first_request)
   end
 

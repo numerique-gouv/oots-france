@@ -264,7 +264,7 @@ if Rails.env.development?
       procedure_code: ProcedureCode::STUDY_FINANCING,
       specification: EdmSpecification::V2_0,
       message_error_code: EdmException::AUTHORIZATION.code,
-      preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c'),
+      preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c', EdmSpecification::V2_0),
       decision: PreviewSession::ACCEPTED,
       events: %w[request_received error_sent preview_visited preview_decided response_sent] },
     # Le chapitre 4.9 du côté qui demande : le correspondant envoie l'usager à

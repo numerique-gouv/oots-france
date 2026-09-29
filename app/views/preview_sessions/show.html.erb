@@ -23,11 +23,11 @@
         <%# Opened in a new tab rather than downloaded, and the new window said in
             the `title`, as the DSFR writes it. %>
         <%= link_to t('preview_sessions.show.open.consult', size: @preview.document_size),
-              preview_session_document_path(@preview.token), class: 'fr-link', target: '_blank', rel: 'noopener',
+              preview_session_document_path(token: @preview.token), class: 'fr-link', target: '_blank', rel: 'noopener',
               title: t('preview_sessions.show.open.consult_title', size: @preview.document_size) %>
       </p>
 
-      <%= form_with url: preview_session_choice_path(@preview.token), method: :post, class: 'fr-mt-4w',
+      <%= form_with url: preview_session_choice_path(token: @preview.token), method: :post, class: 'fr-mt-4w',
             data: { controller: 'preview-choice' } do %>
         <fieldset class="fr-fieldset<%= ' fr-fieldset--error' if @choice_missing %>" id="choix"
           aria-labelledby="choix-legende<%= ' choix-erreur' if @choice_missing %>">

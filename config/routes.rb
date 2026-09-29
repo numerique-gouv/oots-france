@@ -45,11 +45,16 @@ Rails.application.routes.draw do
   # a relay that renders nothing and redirects to the procedure.
   get 'retour/:token', to: 'returns#show', as: :preview_return
 
-  # France's preview space (chapter 4.9), the one page an end user reaches.
-  get 'previsualisation/:token', to: 'preview_sessions#show', as: :preview_session
-  get 'previsualisation/:token/document', to: 'preview_sessions#document', as: :preview_session_document
-  get 'previsualisation/:token/retour', to: 'preview_sessions#return_link', as: :preview_session_return
-  post 'previsualisation/:token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
+  # France's preview space (chapter 4.9), the one page an end user reaches,
+  # under the segment of the line of the request it settles. Any segment is
+  # routed, dot included: one France did not issue gets the page saying the
+  # link is no longer valid, not a routing error.
+  scope 'previsualisation/:version', constraints: { version: %r{[^/]+} } do
+    get ':token', to: 'preview_sessions#show', as: :preview_session
+    get ':token/document', to: 'preview_sessions#document', as: :preview_session_document
+    get ':token/retour', to: 'preview_sessions#return_link', as: :preview_session_return
+    post ':token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
+  end
 
   # Domibus is the caller, and it calls from the network: the route is
   # authenticated.

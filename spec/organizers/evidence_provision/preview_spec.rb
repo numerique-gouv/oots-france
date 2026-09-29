@@ -58,7 +58,8 @@ RSpec.describe 'The preview France offers as a provider' do
     # CA6, with a deployment in http as the suite runs: the address is under
     # `URL_OOTS_FRANCE`, carries a UUID v4 and nothing a return could collide with.
     it 'issues an address of this deployment, unpredictable and short' do
-      expect(location).to match(%r{\A#{Settings.oots_france_url}/previsualisation/\h{8}-\h{4}-4\h{3}-[89ab]\h{3}-\h{12}\z})
+      expect(location)
+        .to match(%r{\A#{Settings.oots_france_url}/previsualisation/v2\.0/\h{8}-\h{4}-4\h{3}-[89ab]\h{3}-\h{12}\z})
       expect(location.size).to be <= 256
     end
 
@@ -243,6 +244,12 @@ RSpec.describe 'The preview France offers as a provider' do
 
     it 'asks for the preview with a PreviewMethod GET' do
       expect(slot(body_of(submitted.sole), 'PreviewMethod')).to eq('GET')
+    end
+
+    # CA11 of OOTS-237: the address carries the segment of the line it settles.
+    it 'issues the address under the segment of the 1.2 line' do
+      expect(slot(body_of(submitted.sole), 'PreviewLocation'))
+        .to match(%r{\A#{Settings.oots_france_url}/previsualisation/v1\.2/\h{8}-\h{4}-4\h{3}-[89ab]\h{3}-\h{12}\z})
     end
 
     it 'recognises the second request by its address, and answers its own identifier' do

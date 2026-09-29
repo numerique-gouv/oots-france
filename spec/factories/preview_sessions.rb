@@ -2,7 +2,7 @@ FactoryBot.define do
   # A preview issued for the captured request, the way `ChooseAnswer` issues one.
   factory :preview_session do
     sequence(:token) { |n| format('9b2f6c1e-3d4a-4f8b-a1c2-%012d', n) }
-    location { PreviewSession.location_for(token) }
+    location { PreviewSession.location_for(token, specification) }
     exchange_id { '9f8e8b3a-1c2d-4e5f-8a9b-0c1d2e3f4a5b' }
     conversation_id { '5fe50e16-d6b8-4005-b5ec-000000000001' }
     specification { EdmSpecification::V2_0 }
