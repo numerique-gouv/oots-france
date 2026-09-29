@@ -40,32 +40,14 @@ class EvidenceRequestsController < ApplicationController
 
     return report_failure(result) unless result.success?
 
-    render json: state_of(result.exchange), status: :accepted
+    render json: ExchangeState.new(result.exchange).to_h, status: :accepted
   end
 
   def show
-    render json: state_of(Exchange.find_by!(exchange_id: params.expect(:exchange_id)))
+    render json: ExchangeState.new(Exchange.find_by!(exchange_id: params.expect(:exchange_id))).to_h
   end
 
   private
-
-  # The EDM code travels with the state: a correspondent that refuses says why,
-  # and that reason is the only thing the caller can act on.
-  #
-  # So does the announced date, which chapter 4.5.2 exists to convey: « … the
-  # Online Procedure Portal may use this information to inform the user to
-  # pause the procedure and to return at a later point … ». Without it the
-  # portal learns that it gets nothing, never when to come back and ask again.
-  def state_of(exchange)
-    {
-      echange: exchange.exchange_id,
-      conversation: exchange.conversation_id,
-      statut: exchange.status,
-      codeErreur: exchange.edm_error_code,
-      adressePrevisualisation: exchange.preview_location,
-      dateDisponibilite: exchange.response_available_at&.iso8601,
-    }.compact
-  end
 
   # A query string and not a form: the caller is a server-side integration.
   def query
