@@ -72,7 +72,7 @@ Keep them rare enough to stay meaningful, and put the actionable consequence in 
 
 The domain loses nothing by this — it gains. The vocabulary of the TDD *is* English: `EvidenceRequester`, `NaturalPerson`, `ProcedureCode` are not translations of French names, they are the terms the specifications and the EDM elements themselves use. The ubiquitous language stops being a French layer laid over an English vocabulary and becomes that of the source.
 
-The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the class that carries it. Read it before naming anything new, and add the entry there when a change introduces a term — nowhere else defines vocabulary.
+The glossary in [docs/glossaire.md](docs/glossaire.md) maps each TDD term to the class that carries it. Read it before naming anything new, and add the entry there when a change introduces a term — nowhere else defines vocabulary. A term the glossary carries is written in full everywhere — code, docs, PR, tickets, scripts: *Technical Support Dashboard*, never « le dashboard », which is a synonym the glossary does not know.
 
 Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`: they address the business and belong to the documentation. Their step definitions are code, and are English.
 
@@ -101,7 +101,7 @@ Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`:
 - **The narrative under `Fonctionnalité` says what the feature proves and what it takes to run it** — a real gateway, the fake FranceConnect+, the seeded account — and stops there. No ticket number, no commit, no `make` target, no mechanism: [docs/test_e2e.md](docs/test_e2e.md) owns all of that, and one sentence pointing to it is enough. A scenario title states the expected behaviour as a plain sentence, not a wink.
 - **Renaming a step is renaming its definition, and nothing else.** The text is the whole contract between the two; `bundle exec cucumber --dry-run` on both profiles proves every step is bound and none is ambiguous, and it is the check to run before the suite itself. The scenario titles `docs/test_e2e.md` quotes follow in the same commit.
 
-**Infrastructure vocabulary stays English inside French prose** — a *job*, a *worker*, a *build*, never « un travail » or « un ouvrier ». These are the words the tools print, the words a log line carries and the words one types to search; translating them severs the prose from the thing it describes. This holds in documentation, in commit messages and **in URLs**, where a translated segment outlives the page that introduced it. The test is simple: if the word appears in the output of a command we run, it keeps that spelling.
+**Infrastructure vocabulary stays English inside French prose** — a *job*, a *worker*, a *build*, a *legacy* mode, never « un travail », « un ouvrier » or « un mode hérité ». These are the words the tools print, the words a log line carries and the words one types to search; translating them severs the prose from the thing it describes. This holds in documentation, in commit messages and **in URLs**, where a translated segment outlives the page that introduced it. The test is simple: if the word appears in the output of a command we run, it keeps that spelling.
 
 ### Every word a human reads lives in `config/locales/fr.yml`
 
