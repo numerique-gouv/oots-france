@@ -32,7 +32,7 @@ PARTIE="AP_FR_01"
 # "Possibility to upload a keystore with a keystore password that is not the same
 # as the password for the private keys", under *Known Issues* — a known
 # limitation, not a feature.
-MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
+MOT_DE_PASSE_KEYSTORE_TRUSTSTORE="${MOT_DE_PASSE_KEYSTORE_TRUSTSTORE:?doit être renseigné, et correspondre à celui de .env}"
 VALIDITE="${1:-3650}"
 
 KEYSTORE="gateway_keystore.p12"
@@ -72,19 +72,19 @@ genereCle() {
   lanceKeytool -genkeypair -alias "$PARTIE" -dname "CN=$PARTIE" \
     -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity "$VALIDITE" \
     -keystore "$KEYSTORE" -storetype PKCS12 \
-    -storepass "$MOT_DE_PASSE_MAGASINS" -keypass "$MOT_DE_PASSE_MAGASINS"
+    -storepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" -keypass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE"
 }
 
 # The certificate is exported from the keystore then imported into the
 # truststore under the same alias: the peer the gateway trusts is itself.
 importeCertificat() {
   lanceKeytool -exportcert -alias "$PARTIE" -rfc \
-    -keystore "$KEYSTORE" -storepass "$MOT_DE_PASSE_MAGASINS" \
+    -keystore "$KEYSTORE" -storepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" \
     -file "$PARTIE.cer"
 
   lanceKeytool -importcert -noprompt -alias "$PARTIE" -file "$PARTIE.cer" \
     -keystore "$TRUSTSTORE" -storetype PKCS12 \
-    -storepass "$MOT_DE_PASSE_MAGASINS"
+    -storepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE"
 
   rm "$DESTINATION/$PARTIE.cer"
 }

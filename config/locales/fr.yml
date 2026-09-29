@@ -458,7 +458,7 @@ fr:
       digest_mismatch: L'empreinte annoncée ne couvre pas la réponse de l'annuaire.
       not_http_headers: Signature de l'annuaire non conforme au mécanisme HttpHeaders.
       no_certificate: La réponse de l'annuaire ne porte aucun certificat.
-      certificate_rejected: "Certificat de l'annuaire rejeté par le magasin de confiance : %{error}."
+      certificate_rejected: "Certificat de l'annuaire rejeté par le truststore : %{error}."
       header_unreadable: En-tête de signature illisible sur la réponse de l'annuaire.
       header_unreadable_detail: "En-tête de signature illisible sur la réponse de l'annuaire : %{error}."
       certificate_unreadable: "Certificat illisible dans la réponse de l'annuaire : %{error}."

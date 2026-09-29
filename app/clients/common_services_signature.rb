@@ -79,7 +79,7 @@ class CommonServicesSignature
 
     @store ||= OpenSSL::X509::Store.new.tap { |built| built.add_file(path) }
   rescue OpenSSL::X509::StoreError, SystemCallError => e
-    raise ConfigurationError, "Magasin de confiance des annuaires illisible (#{path}) : #{e.message}."
+    raise ConfigurationError, "Truststore des annuaires illisible (#{path}) : #{e.message}."
   end
 
   def split(signature)

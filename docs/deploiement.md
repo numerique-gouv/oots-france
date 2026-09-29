@@ -80,7 +80,7 @@ systemctl restart docker
 
 ## L'ordre des opérations
 
-`make setup` fige certaines valeurs là où on ne les change plus sans tout refaire : les identifiants des bases dans leurs volumes, le mot de passe des magasins dans les certificats, le compte d'accès et les identifiants de notification dans la passerelle. **Les fichiers d'environnement se remplissent donc avant `make setup`**, et non après.
+`make setup` fige certaines valeurs là où on ne les change plus sans tout refaire : les identifiants des bases dans leurs volumes, le mot de passe du keystore et du truststore dans les certificats, le compte d'accès et les identifiants de notification dans la passerelle. **Les fichiers d'environnement se remplissent donc avant `make setup`**, et non après.
 
 ### 1. Cloner, et engendrer les fichiers d'environnement
 
@@ -98,7 +98,7 @@ Les secrets qu'il engendre sont ceux que [`scripts/secret_variables`](../scripts
 | `MOT_DE_PASSE_API_REST` | 16 à 32 caractères, avec majuscule, minuscule, chiffre et caractère spécial — ce que Domibus exige d'un compte créé par son API REST | `echo "$(openssl rand -hex 6)Aa1!$(openssl rand -hex 6)"` |
 | `CLE_CHIFFREMENT_JOURNAL`, `CLE_CHIFFREMENT_DETERMINISTE_JOURNAL`, `SEL_DERIVATION_CLES_JOURNAL` | 32 caractères au moins | `openssl rand -hex 32` |
 | `SECRET_KEY_BASE` | long, sans autre règle | `openssl rand -hex 64` |
-| `MOT_DE_PASSE_MAGASINS` | sans espace | `openssl rand -hex 16` |
+| `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` | sans espace | `openssl rand -hex 16` |
 | les autres mots de passe (bases, rôle applicatif, et la notification, qui n'est qu'une propriété du plugin) | libres | `openssl rand -hex 16` |
 
 Le mot de passe de la console Domibus n'y est pas : il ne vit pas dans un `.env*`, et se change à la main dans la console une fois la passerelle montée — [étape 3](#3-installer). Sa règle est celle de la première ligne.
@@ -210,7 +210,7 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 
 - les fichiers `.env*`, qui portent tous les secrets, et le `docker-compose.override.yml` s'il existe ;
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
-- le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, les magasins téléversés et le compte d'accès ;
+- le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, le keystore et le truststore téléversés, et le compte d'accès ;
 - le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
 - ce que le frontal garde sur cette machine — avec le gabarit du dépôt, le répertoire `./nginx` : la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
 
@@ -235,20 +235,20 @@ Si la mise à jour touche le PMode ou les certificats, rejouer `scripts/configur
 ```sh
 $ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \
   LOGIN_NOTIFICATION_DOMIBUS=… MOT_DE_PASSE_NOTIFICATION_DOMIBUS=… \
-  MOT_DE_PASSE_MAGASINS=… PORT_OOTS_FRANCE=3000 \
-  DOMIBUS_MOT_DE_PASSE_ADMIN=… REPERTOIRE_MAGASINS=domibus/keystores \
+  MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=… PORT_OOTS_FRANCE=3000 \
+  DOMIBUS_MOT_DE_PASSE_ADMIN=… REPERTOIRE_KEYSTORE_TRUSTSTORE=domibus/keystores \
     scripts/configure_domibus.sh
 $ docker compose restart domibus && scripts/ci/wait_for_domibus.sh
 ```
 
-Sans `REPERTOIRE_MAGASINS`, il engendre des magasins neufs et les téléverse — ce qu'on veut pour renouveler les certificats, pas pour recharger un PMode. Le [README](../README.md#configurer-domibus-en-une-commande) détaille.
+Sans `REPERTOIRE_KEYSTORE_TRUSTSTORE`, il engendre un keystore et un truststore neufs et les téléverse — ce qu'on veut pour renouveler les certificats, pas pour recharger un PMode. Le [README](../README.md#configurer-domibus-en-une-commande) détaille.
 
 ## Raccorder la passerelle à l'acceptation
 
 > [!IMPORTANT]
 > Ce raccordement échoue tant que le frontal ne mandate pas `/domibus/services/msh` vers la passerelle : le PMode du Technical Support Dashboard donne à `AP_FR_01` son adresse publique, et le test de connectivité qui clôt la procédure sort par elle. Le [gabarit](../nginx.template/conf/nginx.conf) du dépôt ne mandate que `web`. Et le frontal ne mandate **que** ce chemin : la console, `/domibus/rest/` et `/domibus/services/wsplugin` ne regardent que l'exploitant et `web`, voir [plus haut](#ce-qui-est-exposé-et-ce-qui-ne-doit-pas-lêtre).
 
-Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le Technical Support Dashboard un **PMode** (`AP_FR_01.xml`) et un **magasin de confiance** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le Technical Support Dashboard le notifie, et il faut alors les recharger.
+Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le Technical Support Dashboard un **PMode** (`AP_FR_01.xml`) et un **truststore** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le Technical Support Dashboard le notifie, et il faut alors les recharger.
 
 Ni l'un ni l'autre n'entre dans le dépôt : le PMode nomme les points d'accès de tous les États membres et n'est téléchargeable que par les TCP du même État. Ils vivent sur le serveur, sous `./domibus`, que `.gitignore` laisse sur place et que [la sauvegarde](#ce-quil-faut-sauvegarder) emporte.
 
@@ -258,19 +258,19 @@ Tout se charge par une commande, qui demande d'abord quoi mettre à jour, puis c
 $ make update-certifs
 ```
 
-- **Le PMode et le magasin de confiance** — le cas courant : le Technical Support Dashboard les régénère dès qu'un point d'accès du réseau change.
-- **Notre certificat aussi** — le premier raccordement, ou un renouvellement : le keystore est reconstruit avec la clé privée qui a signé le CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`). La clé est dans le magasin où `keytool -genkeypair` l'a créée avant le CSR — `oots_acceptance_keystore.jks` pour l'acceptation —, que la commande ouvre avec les deux mots de passe donnés à sa création : le *keystore password*, celui du magasin, et le *keypair password*, celui de la clé ; un fichier PEM `-----BEGIN … PRIVATE KEY-----` convient aussi.
+- **Le PMode et le truststore** — le cas courant : le Technical Support Dashboard les régénère dès qu'un point d'accès du réseau change.
+- **Notre certificat aussi** — le premier raccordement, ou un renouvellement : le keystore est reconstruit avec la clé privée qui a signé le CSR, le certificat que la PKI a rendu (`OOTS_AP_ACC_FR_001.pem`) et sa chaîne (`OOTS_AP_ACC_FR_001-bundle.pem`). La clé est dans le keystore où `keytool -genkeypair` l'a créée avant le CSR — `oots_acceptance_keystore.jks` pour l'acceptation —, que la commande ouvre avec les deux mots de passe donnés à sa création : le *keystore password*, celui du keystore, et le *keypair password*, celui de la clé ; un fichier PEM `-----BEGIN … PRIVATE KEY-----` convient aussi.
 
-Sans terminal, tout se donne à la commande, les trois derniers seulement quand notre certificat change, avec le *keystore password* dans `MOT_DE_PASSE_MAGASIN_CLE` et, s'il diffère, le *keypair password* dans `MOT_DE_PASSE_CLE` :
+Sans terminal, tout se donne à la commande, les trois derniers seulement quand notre certificat change, avec le *keystore password* dans `MOT_DE_PASSE_KEYSTORE_CLE` et, s'il diffère, le *keypair password* dans `MOT_DE_PASSE_KEYPAIR` :
 
 ```sh
-$ DOMIBUS_MOT_DE_PASSE_ADMIN=… MOT_DE_PASSE_MAGASIN_CLE=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… MOT_DE_PASSE_KEYSTORE_CLE=… make update-certifs PMODE=<AP_FR_01.xml> TRUSTSTORE=<gateway_truststore.jks> \
     CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>
 ```
 
-[`scripts/update_certificates.sh`](../scripts/update_certificates.sh) lit les identifiants dans les `.env*` ; les mots de passe qui n'y vivent pas — celui de la console, ceux du magasin de notre clé — se demandent ou se donnent. Quand notre certificat change, il lit la clé dans son magasin s'il en reçoit un, vérifie qu'elle est bien celle du certificat, puis construit le keystore sous l'alias `AP_FR_01`, au mot de passe de `MOT_DE_PASSE_MAGASINS` et au format PKCS#12 que `docker-compose.yml` impose. Sinon, il garde le keystore en place, et refuse de tourner s'il n'y en a pas. Il convertit le magasin publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose le tout sous `domibus/` en gardant les précédents en `*.precedent`, le charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le magasin du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+[`scripts/update_certificates.sh`](../scripts/update_certificates.sh) lit les identifiants dans les `.env*` ; les mots de passe qui n'y vivent pas — celui de la console, ceux du keystore de notre clé — se demandent ou se donnent. Quand notre certificat change, il lit la clé dans son keystore s'il en reçoit un, vérifie qu'elle est bien celle du certificat, puis construit le keystore sous l'alias `AP_FR_01`, au mot de passe de `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` et au format PKCS#12 que `docker-compose.yml` impose. Sinon, il garde le keystore en place, et refuse de tourner s'il n'y en a pas. Il convertit le truststore publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose le tout sous `domibus/` en gardant les précédents en `*.precedent`, le charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`), et laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le truststore du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
 
 Pour revenir à la publication précédente : remettre les `*.precedent` à leur place, puis rejouer `scripts/configure_domibus.sh` comme à [la mise à jour](#mettre-à-jour), avec `FICHIER_PMODE=domibus/AP_FR_01.xml`.
 
 > [!IMPORTANT]
-> Les alias du magasin de confiance ne se retouchent pas : la passerelle cherche le certificat d'un correspondant sous le nom de sa partie, exactement comme la Commission l'y a mis — c'est pourquoi elle tourne sans les profils de sécurité de Domibus, voir [domibus_context.md](domibus_context.md#concepts-clés). Rejouer `scripts/configure_domibus.sh` **sans** `REPERTOIRE_MAGASINS` remplacerait ces magasins par des auto-signés sans rien signaler.
+> Les alias du truststore ne se retouchent pas : la passerelle cherche le certificat d'un correspondant sous le nom de sa partie, exactement comme la Commission l'y a mis — c'est pourquoi elle tourne sans les profils de sécurité de Domibus, voir [domibus_context.md](domibus_context.md#concepts-clés). Rejouer `scripts/configure_domibus.sh` **sans** `REPERTOIRE_KEYSTORE_TRUSTSTORE` remplacerait ce keystore et ce truststore par des auto-signés sans rien signaler.

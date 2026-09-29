@@ -204,7 +204,7 @@ fi
 if [ -n "$ERREURS" ]; then
   echo "$ERREURS" >&2
   echo "   Une valeur de développement est publiée dans ce dépôt ; une valeur vide ne" >&2
-  echo "   protège rien. Les remplacer, puis refaire les volumes et les magasins qui en" >&2
+  echo "   protège rien. Les remplacer, puis refaire les volumes, le keystore et le truststore qui en" >&2
   echo "   dépendent — voir docs/deploiement.md." >&2
   exit 1
 fi

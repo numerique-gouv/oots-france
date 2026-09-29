@@ -39,7 +39,7 @@ Deux irritants seulement subsistent :
 | L'API d'administration de la console n'est toujours pas documentée | Les routes se lisent dans le code source (voir plus bas) — ce qui est sûr, mais reste hors contrat |
 | Les réponses de la console sont préfixées par `)]}',` | Ce préfixe doit sauter avant tout parsage |
 
-Les magasins sont au format **PKCS#12**, JKS étant un format propriétaire déprécié depuis Java 9. Le passage demande deux précautions, car Domibus ne traite pas ses deux magasins de la même façon :
+Le keystore et le truststore sont au format **PKCS#12**, JKS étant un format propriétaire déprécié depuis Java 9. Le passage demande deux précautions, car Domibus ne traite pas son keystore et son truststore de la même façon :
 
 - le **truststore** se convertit seul : le téléversement bascule `domibus.security.truststore.type` et son emplacement ;
 - le **keystore**, non. Son type et son emplacement doivent être imposés au démarrage, dans `SERVER_INIT_PROPERTIES`. Sans le type, la passerelle écrit le PKCS#12 reçu à l'emplacement `.jks` en le croyant JKS, répond `200`, puis échoue à la relecture suivante sur une `java.io.EOFException`. Sans l'emplacement, elle refuse plus franchement le téléversement : `[DOM_005] Store file extension [jks] should match the configured truststore type [pkcs12]`.
@@ -47,20 +47,20 @@ Les magasins sont au format **PKCS#12**, JKS étant un format propriétaire dép
 Ni l'un ni l'autre ne se règle à chaud : le type s'écrit par l'API des propriétés, mais pas l'emplacement, et un réglage à chaud ne survivrait pas à la réinitialisation du répertoire de configuration.
 
 > [!WARNING]
-> La [documentation Domibus](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) signale, à la section *Private Keys and Certificates*, qu'un keystore PKCS#12 lu sous **Java 21** — la version qu'embarque l'image — peut échouer sur `Could not load key store: keystore password was incorrect`, alors que le mot de passe est correct. Le cas ne s'est pas produit ici, les magasins étant produits et relus par le même Java 21. S'il survient, la documentation donne le remède : régénérer le magasin au format hérité, `keytool -J-Dkeystore.pkcs12.legacy -importkeystore -srckeystore … -deststoretype PKCS12`.
+> La [documentation Domibus](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/) signale, à la section *Private Keys and Certificates*, qu'un keystore PKCS#12 lu sous **Java 21** — la version qu'embarque l'image — peut échouer sur `Could not load key store: keystore password was incorrect`, alors que le mot de passe est correct. Le cas ne s'est pas produit ici, le keystore et le truststore étant produits et relus par le même Java 21. S'il survient, la documentation donne le remède : régénérer le store au format legacy, `keytool -J-Dkeystore.pkcs12.legacy -importkeystore -srckeystore … -deststoretype PKCS12`.
 
-Les deux magasins portent **un seul mot de passe**, partagé avec les clés privées qu'ils contiennent. Domibus ne sait pas les dissocier : les notes de version [5.1.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/905218215/Domibus+-+v5.1.9) rangent EDELIVERY-13917, « *Possibility to upload a keystore with a keystore password that is not the same as the password for the private keys* », parmi les **Known Issues** — c'est une limitation ouverte, non une fonctionnalité livrée.
+Le keystore et le truststore portent **un seul mot de passe**, partagé avec les clés privées qu'ils contiennent. Domibus ne sait pas les dissocier : les notes de version [5.1.9](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/905218215/Domibus+-+v5.1.9) rangent EDELIVERY-13917, « *Possibility to upload a keystore with a keystore password that is not the same as the password for the private keys* », parmi les **Known Issues** — c'est une limitation ouverte, non une fonctionnalité livrée.
 
 ## Ce que la montée depuis 5.0.4 a réglé
 
 | Contournement de 5.0.4 | Ce qui l'a remplacé |
 | --- | --- |
-| Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Les deux magasins se posent par la même API, sans jamais écrire dans un répertoire appartenant au conteneur |
+| Le keystore ne se téléversait pas ; il fallait déposer le fichier sur le disque de la passerelle puis demander sa relecture (`POST rest/keystore/resets`) | Le keystore et le truststore se posent par la même API, sans jamais écrire dans un répertoire appartenant au conteneur |
 | Aucune route de santé : la disponibilité se sondait sur `rest/application/name`, publique par accident | `rest/public/**` est la famille explicitement publique ; `wait_for_domibus.sh` interroge `rest/public/application/title` |
 | Le keystore ne se lisait pas en REST : `diagnose_domibus.sh` ouvrait le fichier au `keytool` dans le conteneur | `rest/internal/admin/keystore/list`, symétrique de celle du truststore |
 | Les certificats de démonstration livrés avec l'image avaient expiré | Ceux de la 5.2 sont valides — mais restent publics et partagés par toutes les installations, donc toujours régénérés |
 | L'image écrasait le répertoire de configuration monté à son premier démarrage, ce qui obligeait à remplacer les certificats **après** ce démarrage | Toujours vrai, mais sans conséquence : plus rien n'a besoin d'être déposé sur le disque de la passerelle |
-| Domibus absorbait `gateway_truststore.jks` au démarrage et retirait le fichier | Idem : les magasins sont générés dans un répertoire temporaire et téléversés |
+| Domibus absorbait `gateway_truststore.jks` au démarrage et retirait le fichier | Idem : le keystore et le truststore sont générés dans un répertoire temporaire et téléversés |
 
 > [!IMPORTANT]
 > Un poste installé avant cette montée doit repartir d'une base vide : le volume `shared_db_file_system` porte encore le schéma écrit par `domibus-mysql8:5.0.4`, que le WAR 5.2 ne sait pas lire. Le symptôme est une `Fault` au premier appel du plugin WS :
@@ -70,7 +70,7 @@ Les deux magasins portent **un seul mot de passe**, partagé avec les clés priv
 > [Unknown column 'wle1_0.MESSAGE_ENTITY_ID' in 'field list']
 > ```
 >
-> `docker compose down --volumes` efface le volume ; reprendre ensuite le [README](../README.md) depuis le démarrage de MySQL, puis rejouer `scripts/configure_domibus.sh` — magasins, PMode et Plugin User vivent dans la base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence désormais les messages par leur identifiant d'entité, et le reste du schéma a suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner vierge.
+> `docker compose down --volumes` efface le volume ; reprendre ensuite le [README](../README.md) depuis le démarrage de MySQL, puis rejouer `scripts/configure_domibus.sh` — keystore, truststore, PMode et Plugin User vivent dans la base. Rattraper la colonne à la main ne suffirait pas : le plugin WS référence désormais les messages par leur identifiant d'entité, et le reste du schéma a suivi. La CI ne rencontre jamais le cas, chaque exécution partant d'un runner vierge.
 
 La montée a par ailleurs permis de sortir de `domibus/` — répertoire non versionné et recréé à chaque table rase — les réglages dont le dépôt dépend : niveaux de journalisation et mode de sécurité sont désormais déclarés dans `docker-compose.yml`, via `LOGGER_LEVEL_*` et `SERVER_INIT_PROPERTIES`.
 

@@ -127,7 +127,7 @@ RSpec.describe CommonServicesSignature do
     elsewhere.flush
 
     expect { described_class.new(trust_store_path: elsewhere.path).verify!(body:, **signed_headers) }
-      .to raise_error(CommonServicesError, /magasin de confiance/)
+      .to raise_error(CommonServicesError, /truststore/)
   ensure
     elsewhere&.close!
   end
@@ -140,14 +140,14 @@ RSpec.describe CommonServicesSignature do
     production = Rails.root.join('config/certificats/services_communs_prod.pem').to_s
 
     expect { described_class.new(trust_store_path: production).verify!(body:, **signed_headers) }
-      .to raise_error(CommonServicesError, /magasin de confiance/)
+      .to raise_error(CommonServicesError, /truststore/)
   end
 
   it 'names a trust store it cannot read as a deployment fault' do
     empty = Tempfile.new(['vide', '.pem'])
 
     expect { described_class.new(trust_store_path: empty.path).verify!(body:, **signed_headers) }
-      .to raise_error(ConfigurationError, /Magasin de confiance des annuaires illisible/)
+      .to raise_error(ConfigurationError, /Truststore des annuaires illisible/)
   ensure
     empty&.close!
   end

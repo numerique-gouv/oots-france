@@ -28,10 +28,12 @@
 # rather than derived, a .env.oots not being sourceable from a shell script — its
 # values contain `&` and JSON braces.
 #   FICHIER_PMODE               PMode to load (exemples/configuration_PMode_Domibus.xml)
-#   REPERTOIRE_MAGASINS         where to read keystore and truststore; failing
+#   REPERTOIRE_KEYSTORE_TRUSTSTORE
+#                               where to read keystore and truststore; failing
 #                               that, they are generated into a temporary
 #                               directory by scripts/generate_certificates.sh
-#   MOT_DE_PASSE_MAGASINS       their password — mandatory, and having to match
+#   MOT_DE_PASSE_KEYSTORE_TRUSTSTORE
+#                               their password — mandatory, and having to match
 #                               the one in the .env the gateway runs with
 #   PORT_OOTS_FRANCE            the port `web` listens on, out of which the
 #                               notification address towards us is composed —
@@ -47,7 +49,7 @@ DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-123456}"
 LOGIN_API_REST="${LOGIN_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
 MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
 FICHIER_PMODE="${FICHIER_PMODE:-exemples/configuration_PMode_Domibus.xml}"
-MOT_DE_PASSE_MAGASINS="${MOT_DE_PASSE_MAGASINS:?doit être renseigné, et correspondre à celui de .env}"
+MOT_DE_PASSE_KEYSTORE_TRUSTSTORE="${MOT_DE_PASSE_KEYSTORE_TRUSTSTORE:?doit être renseigné, et correspondre à celui de .env}"
 PARTIE="AP_FR_01"
 
 # The directory mounted into the gateway, where the plugin's properties live.
@@ -183,11 +185,11 @@ fi
 # installation: ours are imposed instead. Where no stores are supplied they are
 # generated — they need not outlive the script, the gateway keeping them in its
 # database once uploaded.
-if [ -z "$REPERTOIRE_MAGASINS" ]; then
-  REPERTOIRE_MAGASINS=$(mktemp -d)
-  trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; rm -rf "$REPERTOIRE_MAGASINS"' EXIT
-  echo "→ Génération des magasins dans $REPERTOIRE_MAGASINS"
-  DESTINATION="$REPERTOIRE_MAGASINS" MOT_DE_PASSE_MAGASINS="$MOT_DE_PASSE_MAGASINS" \
+if [ -z "$REPERTOIRE_KEYSTORE_TRUSTSTORE" ]; then
+  REPERTOIRE_KEYSTORE_TRUSTSTORE=$(mktemp -d)
+  trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; rm -rf "$REPERTOIRE_KEYSTORE_TRUSTSTORE"' EXIT
+  echo "→ Génération du keystore et du truststore dans $REPERTOIRE_KEYSTORE_TRUSTSTORE"
+  DESTINATION="$REPERTOIRE_KEYSTORE_TRUSTSTORE" MOT_DE_PASSE_KEYSTORE_TRUSTSTORE="$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" \
     "$(dirname "$0")/generate_certificates.sh" > /dev/null
 fi
 
@@ -198,32 +200,32 @@ fi
 # allowChangingDiskStoreProps lets Domibus align its store properties on the file
 # it receives. It does so for the truststore alone — the keystore's type and
 # location are forced at start-up, see docker-compose.yml.
-chargeMagasin() {
-  magasinNom="$1"
-  magasinFichier="$REPERTOIRE_MAGASINS/gateway_$1.p12"
+chargeStore() {
+  storeNom="$1"
+  storeFichier="$REPERTOIRE_KEYSTORE_TRUSTSTORE/gateway_$1.p12"
 
-  if [ ! -f "$magasinFichier" ]; then
-    echo "❌ Magasin introuvable : $magasinFichier" >&2
+  if [ ! -f "$storeFichier" ]; then
+    echo "❌ Fichier introuvable : $storeFichier" >&2
     exit 1
   fi
 
-  echo "→ Chargement du $magasinNom $magasinFichier"
+  echo "→ Chargement du $storeNom $storeFichier"
   # --form-string rather than -F for the values: -F treats a leading `@` or `<`
   # as a filename to read, which would send its contents in place of the
   # password. The store itself is the only real file here.
-  magasinCode=$(appelAvecCode \
-    -F "file=@$magasinFichier" \
-    --form-string "password=$MOT_DE_PASSE_MAGASINS" \
+  storeCode=$(appelAvecCode \
+    -F "file=@$storeFichier" \
+    --form-string "password=$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" \
     --form-string "allowChangingDiskStoreProps=true" \
-    "$URL_DOMIBUS/rest/internal/admin/$magasinNom/save")
-  if [ "$magasinCode" != "200" ]; then
-    echo "❌ Chargement du $magasinNom refusé ($magasinCode) : $(messageDomibus)" >&2
+    "$URL_DOMIBUS/rest/internal/admin/$storeNom/save")
+  if [ "$storeCode" != "200" ]; then
+    echo "❌ Chargement du $storeNom refusé ($storeCode) : $(messageDomibus)" >&2
     exit 1
   fi
 }
 
-chargeMagasin truststore
-chargeMagasin keystore
+chargeStore truststore
+chargeStore keystore
 
 # Stores generated before the gateway left Domibus's security profiles hold
 # AP_FR_01_rsa_sign and AP_FR_01_rsa_decrypt, and generate_certificates.sh
@@ -239,7 +241,7 @@ print(' '.join(entree.get('name', '') for entree in json.load(sys.stdin).get('tr
 " 2> /dev/null || true)
 if ! printf '%s\n' $ALIAS_CLES | grep -qix "$PARTIE"; then
   echo "❌ Le keystore chargé n'a pas de clé $PARTIE (alias : ${ALIAS_CLES:-aucun})." >&2
-  echo "   Des magasins d'avant le mode legacy ? Supprimer $REPERTOIRE_MAGASINS/*.p12," >&2
+  echo "   Un keystore d'avant le mode legacy ? Supprimer $REPERTOIRE_KEYSTORE_TRUSTSTORE/*.p12," >&2
   echo "   relancer scripts/generate_certificates.sh, puis ce script." >&2
   exit 1
 fi
@@ -338,8 +340,8 @@ done
 
 if [ "$STATUT" != "ACKNOWLEDGED" ]; then
   echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
-  echo "   Certificats ou alias des magasins en cause ?" >&2
-  echo "   scripts/ci/diagnose_domibus.sh détaille les magasins et les erreurs." >&2
+  echo "   Certificats ou alias du keystore et du truststore en cause ?" >&2
+  echo "   scripts/ci/diagnose_domibus.sh détaille le keystore, le truststore et les erreurs." >&2
   exit 1
 fi
 
@@ -417,5 +419,5 @@ FIN_PROPRIETES
 
 echo "  écrit dans $PROPRIETES_PLUGIN — un redémarrage de la passerelle est nécessaire"
 
-echo "✅ Domibus configuré : magasins chargés, PMode chargé, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
+echo "✅ Domibus configuré : keystore et truststore chargés, PMode chargé, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
 echo "   Notification vers le dorsal écrite ; redémarrer la passerelle pour qu'elle s'applique."

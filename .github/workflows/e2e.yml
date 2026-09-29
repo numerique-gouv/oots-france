@@ -40,7 +40,7 @@ jobs:
     env:
       LOGIN_API_REST: oots_ci
       MOT_DE_PASSE_API_REST: 'Ci-OotsFrance-2026!'
-      MOT_DE_PASSE_MAGASINS: test123
+      MOT_DE_PASSE_KEYSTORE_TRUSTSTORE: test123
       PORT_OOTS_FRANCE: 3000
       LOGIN_NOTIFICATION_DOMIBUS: domibus_push
       MOT_DE_PASSE_NOTIFICATION_DOMIBUS: 'Push-OotsFrance-2026!'
@@ -104,7 +104,7 @@ jobs:
       - name: Attend que Domibus réponde
         run: scripts/ci/wait_for_domibus.sh
 
-      - name: Configure Domibus (magasins, PMode, Plugin User)
+      - name: Configure Domibus (keystore, truststore, PMode, Plugin User)
         # The script generates the certificates itself: those shipped with the
         # image are public and shared by every installation. It ends with a test
         # AS4 message, which must come back acknowledged.
