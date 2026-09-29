@@ -60,21 +60,45 @@ module Settings
     # be configured to a value that exceeds the timeout interval of the Data
     # Service and also takes into account the time needed for transmission and
     # processing of the response including eDelivery. » Set the other way round,
-    # this side gives up while the correspondent may still answer, and then
-    # receives the answer to an exchange it has closed.
+    # the side that waits gives up while the other may still act, and then
+    # receives what it no longer expects.
+    #
+    # Three lines of the table of §4.4.3, and the waiting side is not always the
+    # same: the requester waits for the response (T1) and for the second one
+    # (T3), where it is the provider that waits for the second request (T2,
+    # « EP Side: 16 minutes », one more than the requester's 15). Each pair is
+    # ordered so that the side waiting has its minute of buffer.
     #
     # After `reject_unless_whole` and for its reason: a `nil` here can only mean
-    # a variable dropped from NUMERIC. Skipped altogether where the dispositif
-    # is off — the order of two intervals nothing reads settles nothing, and
-    # residual values a deployment stopped using would refuse to start on it.
+    # a variable dropped from NUMERIC. T1 is skipped where the dispositif is off
+    # — the order of two intervals nothing reads settles nothing, and residual
+    # values a deployment stopped using would refuse to start on it — where T2
+    # and T3 are read either way, and ordered either way.
     def reject_unless_timeouts_ordered
-      return unless Settings.timeout_enabled?
+      wrong = ordered_timeouts.reject { |longer, shorter| longer_than?(longer, shorter) }
+      return if wrong.empty?
 
-      requester = whole('DELAI_EXPIRATION_REQUETEUR_MINUTES')
-      provider = whole('DELAI_EXPIRATION_FOURNISSEUR_MINUTES')
-      return if requester.nil? || provider.nil? || requester > provider
+      refuse(wrong.map { |longer, shorter| out_of_order(longer, shorter) }.join(' '))
+    end
 
-      refuse(I18n.t('lib.settings.timeouts_out_of_order', requester:, provider:))
+    def ordered_timeouts
+      [
+        (%w[DELAI_EXPIRATION_REQUETEUR_MINUTES DELAI_EXPIRATION_FOURNISSEUR_MINUTES] if Settings.timeout_enabled?),
+        %w[DELAI_REDIRECTION_FOURNISSEUR_MINUTES DELAI_REDIRECTION_REQUETEUR_MINUTES],
+        %w[DELAI_PREVISUALISATION_REQUETEUR_MINUTES DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES],
+      ].compact
+    end
+
+    def longer_than?(longer, shorter)
+      waiting = whole(longer)
+      acting = whole(shorter)
+
+      waiting.nil? || acting.nil? || waiting > acting
+    end
+
+    def out_of_order(longer, shorter)
+      I18n.t('lib.settings.timeouts_out_of_order',
+        longer:, longer_value: whole(longer), shorter:, shorter_value: whole(shorter))
     end
 
     # A FranceConnect+ is declared by its three variables, or not at all: one

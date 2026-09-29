@@ -20,9 +20,11 @@
 # outgoing exchange always knows are required of that direction only.
 #
 # **No personal data.** The beneficiary lives in the token the requester
-# supplies, and the exchange advances without keeping it. The one exception on
-# this side is a preview, whose `PreviewSession` keeps what chapter 4.9 asks
-# for, encrypted, and not here.
+# supplies, and the exchange advances without keeping it — the portal gives it
+# again when it confirms a preview, and `request_basis` keeps everything else
+# the second request repeats. The one exception on this side is a preview France
+# answers, whose `PreviewSession` keeps what chapter 4.9 asks for, encrypted,
+# and not here.
 class Exchange < ApplicationRecord
   include NormalisesCountryCode
 
@@ -30,6 +32,9 @@ class Exchange < ApplicationRecord
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
   # deferral aside; where it answers, pending → delivered, deferred or failed.
+  # `declined` — the user saw the evidence in a correspondent's preview space and
+  # used none of it, which chapter 4.9 §1 has the second response say with an
+  # empty list: an outcome, and not a failure.
   # `preview_required` — the user must visit a preview space before the
   # answer — is where either side stands between the two round trips of
   # chapter 4.9: France asking, a correspondent sent it there; France answering,
@@ -45,7 +50,7 @@ class Exchange < ApplicationRecord
   # Nothing here takes a lock. The two races an exchange runs into are settled
   # by the `with_lock` of `fire` below, inside which every event is triggered.
   state_machine :status, initial: :pending do
-    state :pending, :sent, :preview_required, :deferred, :delivered, :failed
+    state :pending, :sent, :preview_required, :deferred, :delivered, :declined, :failed
 
     # From `sent` as well as from `pending`: a submission repeated says the same
     # thing twice, which is not a contradiction to refuse.
@@ -72,6 +77,11 @@ class Exchange < ApplicationRecord
       transition from: :failed, to: :delivered, if: :refutable?
     end
 
+    event :decline do
+      transition from: %i[pending sent], to: :declined
+      transition from: :failed, to: :declined, if: :refutable?
+    end
+
     event :record_failure do
       transition from: %i[pending sent], to: :failed
       transition from: :failed, to: :failed, if: :refutable?
@@ -80,15 +90,16 @@ class Exchange < ApplicationRecord
     # No `refutable?` line, and that is the rule: giving up on an exchange
     # overrules nothing, not even an earlier guess. Named for what it does
     # rather than `expire`, which would generate an `expire!` over the public
-    # method below.
+    # method below. From `preview_required` too: the portal that never confirms
+    # leaves the exchange there, and T2 of chapter 4.4.3 bounds that wait.
     event :presume_timeout do
-      transition from: %i[pending sent], to: :failed
+      transition from: %i[pending sent preview_required], to: :failed
     end
   end
 
   # Read off the machine rather than declared beside it, so that the two cannot
   # drift. It carries no further: `ExchangeStatusComponent::BADGES` and the
-  # `models.exchange.statuses` of `fr.yml` spell the six out again, and a state
+  # `models.exchange.statuses` of `fr.yml` spell the seven out again, and a state
   # added here would fall back to their defaults until someone wrote it there
   # too.
   STATUSES = state_machines[:status].states.map { |state| state.name.to_s }.freeze
@@ -120,6 +131,10 @@ class Exchange < ApplicationRecord
   # what a response is judged against — settled by `EvidenceRequest::ChooseSpecification`
   # where France asks, and read off the request where France answers.
   attribute :specification, EdmSpecification::Type.new
+
+  # What the second request of a preview repeats of the first, written when the
+  # first is emitted. `RequestBasis` says why it is kept rather than asked again.
+  attribute :request_basis, RequestBasis::Type.new
 
   validates :exchange_id, presence: true, uniqueness: true
   validates :conversation_id, presence: true
@@ -184,13 +199,24 @@ class Exchange < ApplicationRecord
   # Nor a received exchange whose answer a preview holds: chapter 4.9 §3
   # withholds it until the user decides, and T3 of `PreviewSession`, not T1,
   # is what bounds that wait.
+  #
+  # Where France asks and a correspondent sent the user to a preview, T1 gives
+  # way to the two other lines of the same table: T2 bounds how long the portal
+  # may take to confirm, counted from the exception that asked — `settled_at` —
+  # and T3 how long the second response may take, counted from the
+  # confirmation. From the confirmation and not from the submission it leads
+  # to: the two are one gateway call apart, and a worker that died between them
+  # leaves an exchange this sweep must still be able to close.
   scope :expired, lambda {
     deadline = ResponseDeadline.for_requester
     next none if deadline.nil?
 
     in_progress = where(status: IN_PROGRESS)
+    outgoing = in_progress.where(incoming: false)
 
-    in_progress.where(incoming: false, created_at: ...deadline)
+    outgoing.where(preview_confirmed_at: nil, created_at: ...deadline)
+      .or(outgoing.where(preview_confirmed_at: ...ResponseDeadline.for_second_response))
+      .or(where(incoming: false, status: 'preview_required', settled_at: ...ResponseDeadline.for_redirection))
       .or(in_progress.where(incoming: true, ebms_sent_at: ...deadline))
       .where.not(exchange_id: PreviewSession.holding.select(:answering_exchange_id))
   }
@@ -229,9 +255,41 @@ class Exchange < ApplicationRecord
 
   def sent! = fire(:transmit, settled_at: nil)
 
-  def preview_required!(location) = answered(:require_preview, preview_location: location)
+  # What the correspondent said of its preview beyond the address — the
+  # descriptions a portal builds its launch page from (chapter 4.9 §5), and on
+  # the 1.2 line the method to reach it with — kept for the confirmation to
+  # come. France answering passes neither: it holds them in `PreviewSession`.
+  def preview_required!(location, descriptions: nil, method: nil)
+    answered(:require_preview, preview_location: location, preview_descriptions: descriptions,
+      preview_method: method)
+  end
 
   def reopen!(request_id) = fire(:resume, settled_at: nil, request_id:)
+
+  # The portal confirming a preview France asked for: the row the exception
+  # left is reopened for the second request (chapter 4.9 §2 step 12), under the
+  # return address that request will carry. False where the exchange no longer
+  # stood in `preview_required` — T2 expired it, or a concurrent confirmation
+  # took it first — the lock of `fire` deciding between the two.
+  def confirm_preview!(return_token:, resume_location:)
+    fired?(:resume, settled_at: nil, preview_confirmed_at: Time.current, return_token:, resume_location:)
+  end
+
+  def preview_confirmed? = preview_confirmed_at.present?
+
+  # Chapter 4.9 §5: « Return URLs shall not be accessible before the second
+  # request is issued and the user is presented a link », « for a time-limited
+  # period ». Open once the row has left `pending` — the second request has gone,
+  # or the exchange settled since — and for T3 from the confirmation. A
+  # submission the gateway refused leaves the row `failed` and so open too, on
+  # an address nobody was ever handed.
+  def return_open? = preview_confirmed? && !pending? && preview_confirmed_at > Settings.requester_decision_timeout.ago
+
+  # The *Return URL* of chapter 4.9 §5, as the second request carries it: an
+  # address of this deployment that sends the user back to `resume_location`.
+  def return_location
+    "#{Settings.oots_france_url}/retour/#{return_token}" if return_token.present?
+  end
 
   # A correspondent announcing a date has answered, and chapter 4.5.2 sends the
   # portal back with a new Evidence Request « at the time of availability ». So
@@ -240,6 +298,8 @@ class Exchange < ApplicationRecord
   def deferred!(available_at) = answered(:defer, response_available_at: available_at)
 
   def delivered! = answered(:deliver)
+
+  def declined! = answered(:decline)
 
   def failed!(code:, description:)
     answered(:record_failure, edm_error_code: code, error_description: description)
@@ -258,10 +318,12 @@ class Exchange < ApplicationRecord
   # nothing was emitted at all and the exchange died on the way. Not so that an
   # operator can tell which way round — the console prints the direction of its
   # own — but so as not to impute to a correspondent a silence that was ours.
+  # And a third where the silence was the portal's, which never confirmed the
+  # preview a correspondent asked for.
   def expire!
     fire(:presume_timeout,
       edm_error_code: EdmException::TIMEOUT.code,
-      error_description: I18n.t("models.exchange.expired.#{direction}"),
+      error_description: I18n.t("models.exchange.expired.#{preview_required? ? :unconfirmed : direction}"),
       presumed_at: Time.current)
   end
 
@@ -370,13 +432,18 @@ class Exchange < ApplicationRecord
   # would. Nothing rescues either today; whoever adds a `rescue` here should
   # know which one arrives.
   def fire(event, **attributes)
+    fired?(event, **attributes)
+
+    self
+  end
+
+  # The same, saying whether the transition took place.
+  def fired?(event, **attributes)
     with_lock do
-      next unless send(:"can_#{event}?")
+      next false unless send(:"can_#{event}?")
 
       assign_attributes({ settled_at: Time.current }.merge(attributes))
       send(:"#{event}!")
     end
-
-    self
   end
 end

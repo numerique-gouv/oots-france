@@ -12,6 +12,10 @@ class FakeRequester
   # its users this document answers.
   attr_reader :received_evidence, :received_delivery
 
+  # What the user brought back to the page the portal named for resuming the
+  # procedure (chapter 4.9 §5): the identifiers it resumes by.
+  attr_reader :received_return
+
   def initialize
     @signing_key = OpenSSL::PKey::EC.generate('prime256v1')
     @received_evidence = nil
@@ -61,7 +65,10 @@ class FakeRequester
 
     @server.mount_proc('/oots/document') { |request, response| take_delivery(request, response) }
 
-    @server.mount_proc('/oots/callback') { |_request, response| response.status = 200 }
+    @server.mount_proc('/oots/callback') do |request, response|
+      @received_return = Rack::Utils.parse_nested_query(request.query_string.to_s)
+      response.status = 200
+    end
   end
 
   # Refused when it names no exchange, as a service provider with two users in

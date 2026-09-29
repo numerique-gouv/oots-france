@@ -47,6 +47,35 @@ FactoryBot.define do
       settled_at { Time.current }
     end
 
+    # What the first request left for a second one: `EvidenceRequest::OpenExchange`
+    # writes it where France asks.
+    trait :with_request_basis do
+      request_basis do
+        provider = FactoryBot.build(:evidence_provider)
+
+        RequestBasis.new(
+          requirement: FactoryBot.build(:requirement), provider:, recipient: provider.access_point,
+          data_service: FactoryBot.build(:data_service), evidence_type: FactoryBot.build(:evidence_type),
+          preview_possible: true,
+        )
+      end
+    end
+
+    # A preview France asked for, confirmed by the portal: the second request is
+    # out under its return address.
+    trait :preview_confirmed do
+      status { 'sent' }
+      preview_location { 'https://previsualisation.example.fi/consentement' }
+      preview_confirmed_at { Time.current }
+      sequence(:return_token) { |n| format('9b1f0e4c-2d5a-4e7b-8c3d-%012d', n) }
+      resume_location { 'https://demarche.example.fr/reprise' }
+    end
+
+    trait :declined do
+      status { 'declined' }
+      settled_at { Time.current }
+    end
+
     trait :deferred do
       status { 'deferred' }
       response_available_at { 3.days.from_now }

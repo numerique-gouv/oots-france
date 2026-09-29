@@ -88,6 +88,9 @@ Metrics/BlockLength:
     - "get"
     - "response"
     - "included"
+    # The transition table of `Exchange`: one declaration per event, which is
+    # what the table exists to state, and grows by one with every status.
+    - "state_machine"
 
 # The remedy this cop names — read the data from an external source — is the one
 # thing the code lists of the TDD must not do. `LanguageCode` says why: the

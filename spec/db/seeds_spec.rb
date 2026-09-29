@@ -27,7 +27,7 @@ RSpec.describe 'db/seeds.rb' do
     named = AuditEvent.where.not(evidence_identifier: nil)
 
     expect(named.pluck(:event_type).uniq).to match_array(%w[response_sent response_received])
-    expect(named.count).to eq(5)
+    expect(named.count).to eq(6)
   end
 
   # RG10: what the journal keeps of a document France served has to be
@@ -215,7 +215,7 @@ RSpec.describe 'db/seeds.rb' do
       .reject { |one| one.evidence_subject.nil? }
 
     expect(carrying.map { |one| [one.event_type, one.exchange.status] })
-      .to contain_exactly(%w[response_received delivered], %w[response_received delivered])
+      .to match_array(Array.new(3) { %w[response_received delivered] })
   end
 
   # The evidence type the demonstration gives a served document, no column of the
@@ -271,5 +271,31 @@ RSpec.describe 'db/seeds.rb' do
     expect(events.pluck(:event_type)).to eq(%w[request_received error_sent preview_visited preview_decided response_sent])
     expect(events.find_by(event_type: 'error_sent').preview_location).to eq(previewed.preview_location)
     expect(events.find_by(event_type: 'preview_decided').detail).to eq(PreviewSession::ACCEPTED)
+  end
+
+  # CA19 of OOTS-67: the two ends a preview France asked for can reach, each
+  # with the second request, the return and — for the one delivered — the
+  # evidence handed over.
+  it 'shows exchanges through a correspondent\'s preview, delivered and declined' do
+    replay
+
+    delivered = Exchange.find_by(incoming: false, country_code: 'EE')
+    declined = Exchange.find_by(incoming: false, country_code: 'LV')
+    events = AuditEvent.where(exchange_id: delivered.exchange_id).order(:occurred_at)
+
+    expect(events.pluck(:event_type))
+      .to eq(%w[request_sent error_received request_sent return_to_procedure response_received evidence_delivered])
+    expect(events.where(event_type: 'request_sent').last.preview_location).to eq(delivered.preview_location)
+    expect(events.find_by(event_type: 'return_to_procedure').preview_location).to eq(delivered.return_location)
+    expect(events.find_by(event_type: 'response_received').request_id).to eq(delivered.request_id)
+    expect(declined).to have_attributes(status: 'declined', preview_confirmed_at: be_present)
+    expect(AuditEvent.where(exchange_id: declined.exchange_id, event_type: 'evidence_delivered')).to be_none
+  end
+
+  it 'writes the second request once, however many times it is replayed' do
+    2.times { replay }
+
+    expect(AuditEvent.where(exchange_id: Exchange.find_by(country_code: 'EE').exchange_id,
+      event_type: 'request_sent').count).to eq(2)
   end
 end

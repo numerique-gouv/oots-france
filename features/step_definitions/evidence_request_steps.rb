@@ -171,12 +171,12 @@ def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
 # requests one conversation.
 SESSION_USAGER = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'.freeze
 
-def demande(procedure, conversation: nil)
+def demande(procedure, conversation: nil, preview: false)
   token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
 
   Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
     codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
-    idConversation: conversation,
+    idConversation: conversation, previsualisationRequise: (true if preview),
   }.compact)
 end
 

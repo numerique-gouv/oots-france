@@ -19,9 +19,9 @@ RSpec.describe Exchange do
   # what none of them proved is that the illegal ones are refused, which until
   # now nothing but that order prevented.
   describe 'the legal transitions' do
-    it 'names exactly the six states the console, the seeds and the badges know' do
+    it 'names exactly the seven states the console, the seeds and the badges know' do
       expect(described_class::STATUSES)
-        .to eq(%w[pending sent preview_required deferred delivered failed])
+        .to eq(%w[pending sent preview_required deferred delivered declined failed])
     end
 
     # Both, `sent` included: a submission repeated says the same thing twice,
@@ -31,8 +31,8 @@ RSpec.describe Exchange do
       expect(exchange).to handle_events(:transmit, when: :sent)
     end
 
-    it 'lets any of the four answers settle an exchange in progress' do
-      answers = %i[require_preview defer deliver record_failure]
+    it 'lets any of the five answers settle an exchange in progress' do
+      answers = %i[require_preview defer deliver decline record_failure]
 
       expect(exchange).to handle_events(*answers, when: :pending)
       expect(exchange).to handle_events(*answers, when: :sent)
@@ -53,13 +53,20 @@ RSpec.describe Exchange do
           :presume_timeout, when: :failed)
     end
 
-    # The two settled states the sweep never presumes, and which no answer may
-    # therefore reopen: a correspondent that sent us to its preview space or
-    # named a date has answered, and the exchange ends there.
-    it 'refuses everything on an exchange sent to a preview space' do
+    # A correspondent that sent us to its preview space has answered the first
+    # round trip: only the portal's confirmation reopens the row, or T2 of
+    # chapter 4.4.3 closes it.
+    it 'refuses every answer on an exchange sent to a preview space' do
       expect(exchange)
-        .to reject_events(:transmit, :require_preview, :defer, :deliver, :record_failure,
-          :presume_timeout, when: :preview_required)
+        .to reject_events(:transmit, :require_preview, :defer, :deliver, :decline, :record_failure,
+          when: :preview_required)
+      expect(exchange).to handle_events(:resume, :presume_timeout, when: :preview_required)
+    end
+
+    it 'refuses everything on an exchange the user declined' do
+      expect(exchange)
+        .to reject_events(:transmit, :require_preview, :resume, :defer, :deliver, :decline, :record_failure,
+          :presume_timeout, when: :declined)
     end
 
     it 'refuses everything on an exchange answered for later' do
@@ -539,6 +546,137 @@ RSpec.describe Exchange do
 
       expect(exchange.errors.full_messages)
         .to eq(["L'adresse de prévisualisation doit être une adresse http ou https"])
+    end
+  end
+
+  # Chapter 4.9 on the side that asks: the portal confirms, the second request
+  # goes out under a return address, and T2 then T3 of chapter 4.4.3 bound the
+  # two waits in place of T1.
+  describe 'a preview France asked for' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:awaiting) { create(:exchange, :preview_required) }
+
+    def confirm(exchange, token: '3f2c1a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b')
+      exchange.confirm_preview!(return_token: token, resume_location: 'https://demarche.example.fr/reprise')
+    end
+
+    it 'reopens the row for the second request, under its return address' do
+      expect(confirm(awaiting)).to be(true)
+      expect(awaiting.reload).to have_attributes(status: 'pending', settled_at: nil,
+        resume_location: 'https://demarche.example.fr/reprise',
+        return_location: "#{Settings.oots_france_url}/retour/3f2c1a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b")
+      expect(awaiting).to be_preview_confirmed
+    end
+
+    # The lock of `fire` decides between two confirmations, and the second is
+    # told so rather than overwriting the first one's return address.
+    it 'refuses a second confirmation' do
+      confirm(awaiting)
+
+      expect(confirm(described_class.find(awaiting.id), token: 'd1e2f3a4-b5c6-4d7e-8f9a-0b1c2d3e4f5a')).to be(false)
+      expect(awaiting.reload.return_token).to eq('3f2c1a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b')
+    end
+
+    it 'refuses to confirm an exchange T2 has closed' do
+      awaiting.expire!
+
+      expect(confirm(described_class.find(awaiting.id))).to be(false)
+    end
+
+    # RG13 of OOTS-67: the silence is the portal's, and the description must not
+    # impute it to the correspondent.
+    it 'says, when T2 closes it, that the portal never confirmed' do
+      awaiting.expire!
+
+      expect(awaiting.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0005',
+        error_description: I18n.t('models.exchange.expired.unconfirmed'))
+    end
+
+    # Chapter 4.9 §1: the user used nothing, and the second response says so
+    # with an empty list.
+    it 'ends declined, with no error' do
+      declined = create(:exchange, :preview_confirmed).declined!
+
+      expect(declined.reload).to have_attributes(status: 'declined', edm_error_code: nil)
+    end
+
+    describe 'the return address' do
+      it 'is not open before the second request has gone' do
+        confirm(awaiting)
+
+        expect(awaiting.reload).not_to be_return_open
+      end
+
+      it 'is open once it has, and stays so for T3' do
+        expect(create(:exchange, :preview_confirmed,
+          preview_confirmed_at: Settings.requester_decision_timeout.ago + 1.minute)).to be_return_open
+      end
+
+      it 'stays open once the exchange has settled' do
+        expect(create(:exchange, :preview_confirmed, :delivered)).to be_return_open
+      end
+
+      it 'closes past T3' do
+        expect(create(:exchange, :preview_confirmed,
+          preview_confirmed_at: Settings.requester_decision_timeout.ago - 1.minute)).not_to be_return_open
+      end
+    end
+
+    describe 'expiring' do
+      it 'takes an exchange the portal has not confirmed within T2' do
+        overdue = create(:exchange, :preview_required, settled_at: Settings.requester_redirection_timeout.ago - 1.minute)
+
+        expect(described_class.expired).to include(overdue)
+      end
+
+      it 'leaves one T2 still covers' do
+        recent = create(:exchange, :preview_required, settled_at: Settings.requester_redirection_timeout.ago + 1.minute,
+          created_at: 1.day.ago)
+
+        expect(described_class.expired).not_to include(recent)
+      end
+
+      # France answering holds its own preview in `PreviewSession`, and its
+      # T2 there.
+      it "leaves a received exchange sent to France's own preview space" do
+        received = create(:exchange, :received, :preview_required, settled_at: 1.day.ago)
+
+        expect(described_class.expired).not_to include(received)
+      end
+
+      # T1 gives way to T3 once the second request is out, counted from the
+      # confirmation rather than from the opening.
+      it 'waits T3 for the second response, however old the first request' do
+        waiting = create(:exchange, :preview_confirmed, created_at: 1.day.ago,
+          preview_confirmed_at: Settings.requester_decision_timeout.ago + 1.minute)
+
+        expect(described_class.expired).not_to include(waiting)
+      end
+
+      it 'takes a second request unanswered past T3' do
+        overdue = create(:exchange, :preview_confirmed,
+          preview_confirmed_at: Settings.requester_decision_timeout.ago - 1.minute)
+
+        expect(described_class.expired).to include(overdue)
+      end
+
+      # CA14 of OOTS-67: T2 and T3 close exchanges under the dispositif only.
+      it 'takes neither where the deployment provides no timeout handling' do
+        allow(Settings).to receive(:timeout_enabled?).and_return(false)
+        unconfirmed = create(:exchange, :preview_required, settled_at: 1.year.ago)
+        unanswered = create(:exchange, :preview_confirmed, preview_confirmed_at: 1.year.ago)
+
+        expect(described_class.expired).not_to include(unconfirmed, unanswered)
+      end
+
+      # A late answer to the second request refutes the presumption as it does
+      # for the first.
+      it 'lets a second response that arrives late settle the exchange' do
+        overdue = create(:exchange, :preview_confirmed, preview_confirmed_at: 1.day.ago).tap(&:expire!)
+
+        expect(described_class.find(overdue.id).delivered!.status).to eq('delivered')
+      end
     end
   end
 

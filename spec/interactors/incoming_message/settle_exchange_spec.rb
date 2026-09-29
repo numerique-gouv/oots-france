@@ -274,6 +274,78 @@ RSpec.describe IncomingMessage::SettleExchange do
     end
   end
 
+  # Chapter 4.9 on the side that asks, once the portal has confirmed and the
+  # second request has gone.
+  describe 'an answer to the second request of a preview' do
+    let!(:exchange) do
+      create(:exchange, :preview_confirmed, exchange_id: message.exchange_id)
+    end
+
+    it 'hands the evidence over, as the first would have' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver)
+      expect(exchange.reload).to have_attributes(status: 'delivered')
+    end
+
+    # Chapter 4.9 §1: the user used nothing, and the response says so with an
+    # empty registry object list.
+    context 'when it carries nothing' do
+      let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
+
+      it 'records that the user declined, handing nothing over' do
+        settle
+
+        expect(evidence_forwarder).not_to have_received(:deliver)
+        expect(exchange.reload).to have_attributes(status: 'declined', edm_error_code: nil)
+      end
+    end
+
+    # Chapter 1 §7.3: no preview is offered in the second flow, so an
+    # authorisation error there ends the exchange.
+    context 'when it is another request for a preview' do
+      let(:message) { RetrievedMessageParser.new(built_envelope('erreurAutorisationRequise')) }
+
+      it 'records a failure under the code received' do
+        settle
+
+        expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: 'EDM:ERR:0002')
+      end
+    end
+  end
+
+  # Before a preview no user has decided anything: an empty answer to the first
+  # request is the unusable answer it has always been.
+  it 'does not read an empty answer to the first request as a decision' do
+    empty = RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe')))
+
+    expect {
+      described_class.call(message: empty, exchange: correlated(empty), evidence_forwarder:, requesters:,
+        audit_trail: AuditTrail.new)
+    }.to raise_error(UnreadableMessageError)
+    expect(exchange.reload.status).not_to eq('declined')
+  end
+
+  describe 'what a request for a preview records beside the address' do
+    let(:message) do
+      RetrievedMessageParser.new(with_preview_slots(
+        [%(<rim:Slot name="PreviewDescription"><rim:SlotValue xsi:type="rim:InternationalStringValueType"><rim:Value>),
+         %(<rim:LocalizedString xml:lang="EN" value="Check"/><rim:LocalizedString xml:lang="FR" value="Vérifiez"/>),
+         %(</rim:Value></rim:SlotValue></rim:Slot>),
+         %(<rim:Slot name="PreviewMethod"><rim:SlotValue xsi:type="rim:StringValueType"><rim:Value>GET</rim:Value></rim:SlotValue></rim:Slot>)].join,
+      ))
+    end
+
+    it 'keeps the description and the method for the confirmation to come' do
+      settle
+
+      expect(exchange.reload).to have_attributes(
+        preview_descriptions: [{ 'language' => 'EN', 'text' => 'Check' }, { 'language' => 'FR', 'text' => 'Vérifiez' }],
+        preview_method: 'GET',
+      )
+    end
+  end
+
   # An address whose scheme we do not accept is no address at all: a
   # correspondent asking for a preview without saying where has failed the
   # exchange, and sending the user to a link of its choosing is not an option.
@@ -409,6 +481,25 @@ RSpec.describe IncomingMessage::SettleExchange do
     Exchange.delete_all
 
     expect { settle }.not_to raise_error
+  end
+
+  # The part and its declaration gone, as a response whose list is empty
+  # carries neither.
+  def without_evidence(envelope)
+    document = Nokogiri::XML(envelope)
+    document.xpath("//*[local-name()='PartInfo'][contains(@href, '@pdf')] | //payload[@contentType='application/pdf']")
+      .each(&:remove)
+
+    document.to_xml
+  end
+
+  def with_preview_slots(slots)
+    document = Nokogiri::XML(built_envelope('erreurAutorisationRequise'))
+    value = document.xpath('//payload/value').first
+    body = Base64.decode64(value.text).sub('<rim:Slot name="Timestamp">', "#{slots}<rim:Slot name=\"Timestamp\">")
+    value.content = Base64.strict_encode64(body)
+
+    document.to_xml
   end
 
   def hostile_preview(location)

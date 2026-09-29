@@ -17,7 +17,12 @@ class AuditTrail
     EbmsAction::EXCEPTION_RESPONSE => 'error_received',
   }.freeze
 
-  def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:, first_part:)
+  # Chapter 4.8 §3.1 asks the requester for « Content of the PreviewLocation
+  # slot and URL visited by user »: the second request names the link the user
+  # was presented, which is all the requester knows of the visit — the slot
+  # itself reads in `regrep_body`, as emitted.
+  def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:,
+                   first_part:, preview_location: nil)
     record(
       'request_sent',
       ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
@@ -25,6 +30,7 @@ class AuditTrail
       evidence_type_id: evidence_type&.id,
       request_id:,
       message_id:,
+      preview_location:,
       **AuditEvent.authorities(requesting: requester, providing: provider),
       **AuditEvent.subject(beneficiary),
       **AuditEvent.circulated(first_part),
@@ -125,6 +131,14 @@ class AuditTrail
   # — or that they left without one, `decision` then nil.
   def preview_visited(session:, location:)
     record('preview_visited', **previewed(session), preview_location: location)
+  end
+
+  # The user coming back from a correspondent's preview space through the
+  # return address of chapter 4.9 §5 — this deployment's own addition, as
+  # `preview_visited` is on the other side: the address visited, and nothing of
+  # who visited it.
+  def return_to_procedure(exchange:, location:)
+    record('return_to_procedure', **borne_by(exchange), preview_location: location)
   end
 
   def preview_decided(session:, decision:)

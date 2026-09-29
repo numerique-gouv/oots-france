@@ -35,6 +35,8 @@ module Settings
     DELAI_RESERVATION_REMISE_MINUTES
     DELAI_REDIRECTION_FOURNISSEUR_MINUTES
     DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES
+    DELAI_REDIRECTION_REQUETEUR_MINUTES
+    DELAI_PREVISUALISATION_REQUETEUR_MINUTES
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
@@ -44,7 +46,8 @@ module Settings
   NUMERIC = %w[
     DUREE_CACHE_SERVICES_COMMUNS DELAI_MAX_SERVICES_COMMUNS DUREE_RETENTION_JOURNAL_MOIS
     DELAI_RESERVATION_REMISE_MINUTES DELAI_REDIRECTION_FOURNISSEUR_MINUTES
-    DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES
+    DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES DELAI_REDIRECTION_REQUETEUR_MINUTES
+    DELAI_PREVISUALISATION_REQUETEUR_MINUTES
   ].freeze
 
   # The two columns of the timeout table of chapter 4.4.3, asked of a deployment
@@ -235,6 +238,16 @@ module Settings
     def preview_redirection_timeout = whole('DELAI_REDIRECTION_FOURNISSEUR_MINUTES').minutes
 
     def preview_decision_timeout = whole('DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES').minutes
+
+    # T2 and T3 again, requester side: how long an exchange a correspondent
+    # sent to a preview waits for the portal to confirm, then for the second
+    # response once the second request is out. Required whatever the
+    # dispositif, like their provider counterparts: the return address of
+    # chapter 4.9 §5 is « time-limited » in its own right, and reads T3. Only
+    # the closing of exchanges by `Exchange.expired` obeys the switch.
+    def requester_redirection_timeout = whole('DELAI_REDIRECTION_REQUETEUR_MINUTES').minutes
+
+    def requester_decision_timeout = whole('DELAI_PREVISUALISATION_REQUETEUR_MINUTES').minutes
 
     # Both or neither. Left empty, the two say « this deployment does not want
     # the dispositif », and everything runs as the owner of the tables, under

@@ -32,10 +32,18 @@ Rails.application.routes.draw do
   # because the implementation behind it does.
   get '/requete/pieceJustificative', to: 'evidence_requests#create'
 
+  # Chapter 4.9: the procedure confirms the preview a correspondent asked for,
+  # and France emits the second request.
+  post '/requete/:exchange_id/previsualisation', to: 'preview_confirmations#create', as: :preview_confirmation
+
   # The exchange settles afterwards, on another connection: the procedure reads
   # back here the state of the exchange whose identifier it was given. The
   # route is greedy: whatever must live under /requete is declared before it.
   get '/requete/:exchange_id', to: 'evidence_requests#show', as: :exchange
+
+  # Where a correspondent's preview space sends the user back (chapter 4.9 §5):
+  # a relay that renders nothing and redirects to the procedure.
+  get 'retour/:token', to: 'returns#show', as: :preview_return
 
   # France's preview space (chapter 4.9), the one page an end user reaches.
   get 'previsualisation/:token', to: 'preview_sessions#show', as: :preview_session

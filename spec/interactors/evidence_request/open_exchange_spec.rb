@@ -6,9 +6,13 @@ RSpec.describe EvidenceRequest::OpenExchange do
   let(:requester) { build(:evidence_requester) }
   let(:uuid) { Oots::SequentialUuids.new }
 
+  let(:provider) { build(:evidence_provider) }
+
   def open_one(conversation_id: nil)
     described_class.call(
       requester:, procedure_code: ProcedureCode::SYSTEM_CHECK, country_code: 'DE', uuid:, conversation_id:,
+      requirement: build(:requirement), provider:, recipient: provider.access_point,
+      data_service: build(:data_service), evidence_type: build(:evidence_type), preview_possible: true,
     )
   end
 
@@ -27,6 +31,13 @@ RSpec.describe EvidenceRequest::OpenExchange do
     expect(open_exchange.exchange)
       .to have_attributes(evidence_requester_id: requester.id, procedure_code: ProcedureCode::SYSTEM_CHECK,
         country_code: 'DE')
+  end
+
+  # Chapter 4.9 §2 step 12: should a correspondent ask for a preview, the
+  # second request repeats this one, subject aside.
+  it 'keeps what a second request would repeat' do
+    expect(open_exchange.exchange.reload.request_basis)
+      .to have_attributes(preview_possible: true, recipient: have_attributes(id: provider.access_point.id))
   end
 
   # `pending` and not merely unsettled: `sent` is unsettled too, and marking an

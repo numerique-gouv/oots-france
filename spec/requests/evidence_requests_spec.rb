@@ -279,6 +279,32 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response.parsed_body).not_to have_key('dateDisponibilite')
     end
 
+    # CA1 of OOTS-67: chapter 4.9 §5 has the portal build its launch page from
+    # the description, one variant per language.
+    it 'reports where the preview is, and how the correspondent describes it' do
+      exchange.preview_required!('https://previsualisation.example.si/espace',
+        descriptions: [{ 'language' => 'EN', 'text' => 'Check' }, { 'language' => 'FR', 'text' => 'Vérifiez' }])
+
+      get "/requete/#{exchange.exchange_id}"
+
+      expect(response.parsed_body).to include(
+        'statut' => 'preview_required',
+        'adressePrevisualisation' => 'https://previsualisation.example.si/espace',
+        'descriptionPrevisualisation' => [{ 'langue' => 'EN', 'texte' => 'Check' }, { 'langue' => 'FR', 'texte' => 'Vérifiez' }],
+      )
+    end
+
+    # CA8 and CA10 of OOTS-67: once the second request is out the address is
+    # no longer one to send a user to, whatever becomes of the exchange.
+    it 'says nothing of the preview once the portal has confirmed it' do
+      confirmed = create(:exchange, :preview_confirmed, preview_descriptions: [{ 'language' => 'EN', 'text' => 'x' }])
+
+      get "/requete/#{confirmed.exchange_id}"
+
+      expect(response.parsed_body).to include('statut' => 'sent')
+      expect(response.parsed_body.keys).not_to include('adressePrevisualisation', 'descriptionPrevisualisation')
+    end
+
     it 'answers 404 for an exchange it never opened' do
       get '/requete/un-echange-inconnu'
 

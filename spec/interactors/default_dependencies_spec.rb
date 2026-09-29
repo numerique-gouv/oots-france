@@ -61,8 +61,11 @@ RSpec.describe 'Les dépendances par défaut des interactors' do
   # précédente a déposé, ce qui est ce qui rend un message sortant comparable
   # dès qu'une spec fige le générateur.
   it 'partage un seul générateur d\'identifiants sur toute une chaîne' do
+    provider = build(:evidence_provider)
     context = Interactor::Context.build(conversation_id: nil, procedure_code: '00',
-      country_code: 'FI', requester: build(:evidence_requester))
+      country_code: 'FI', requester: build(:evidence_requester), requirement: build(:requirement), provider:,
+      recipient: provider.access_point, data_service: build(:data_service), evidence_type: build(:evidence_type),
+      preview_possible: false)
 
     EvidenceRequest::OpenExchange.call(context)
     minted = context.uuid

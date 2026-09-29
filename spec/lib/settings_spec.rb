@@ -354,6 +354,51 @@ RSpec.describe Settings do
     end
   end
 
+  # T2 and T3 of chapter 4.4.3 on the requester side: the return address of
+  # chapter 4.9 §5 reads T3 whatever the dispositif, so both are asked for, and
+  # ordered, either way.
+  describe 'the two intervals of a preview France asked for' do
+    it 'reads both in minutes' do
+      with_environment(filled) do
+        expect([described_class.requester_redirection_timeout, described_class.requester_decision_timeout])
+          .to eq([15.minutes, 41.minutes])
+      end
+    end
+
+    it 'asks for them even with the dispositif off' do
+      off = { Settings::TIMEOUT_SWITCH => 'false', 'DELAI_REDIRECTION_REQUETEUR_MINUTES' => nil }
+
+      with_environment(filled.merge(off)) do
+        expect { described_class.verify! }
+          .to raise_error(ConfigurationError, /DELAI_REDIRECTION_REQUETEUR_MINUTES/)
+      end
+    end
+
+    # T3 is the requester's to outlast: it waits for the second response.
+    it 'refuses a requester T3 no longer than the provider one, naming both' do
+      with_environment(filled.merge('DELAI_PREVISUALISATION_REQUETEUR_MINUTES' => '40')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError,
+          /DELAI_PREVISUALISATION_REQUETEUR_MINUTES vaut 40 et DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES 40/)
+      end
+    end
+
+    # T2 the other way round: the provider waits for the second request.
+    it 'refuses a provider T2 no longer than the requester one, naming both' do
+      with_environment(filled.merge('DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '15')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError,
+          /DELAI_REDIRECTION_FOURNISSEUR_MINUTES vaut 15 et DELAI_REDIRECTION_REQUETEUR_MINUTES 15/)
+      end
+    end
+
+    it 'orders them even with the dispositif off' do
+      off = { Settings::TIMEOUT_SWITCH => 'false', 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '10' }
+
+      with_environment(filled.merge(off)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /DELAI_REDIRECTION_FOURNISSEUR_MINUTES/)
+      end
+    end
+  end
+
   describe '.audit_trail_encryption' do
     # Read while the framework boots, so it cannot raise: `rails db:test:prepare`
     # and the task that renders the specimen messages both load the application

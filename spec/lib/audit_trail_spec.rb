@@ -773,6 +773,23 @@ RSpec.describe AuditTrail do
       )
     end
 
+    # CA18 of OOTS-67 — chapter 4.8 §3.1, « Content of the PreviewLocation
+    # slot and URL visited by user »: the second request names the link the
+    # user was presented, and the return through France's relay is recorded.
+    it 'keeps the link a second request presented, and the return that followed' do
+      exchange = create(:exchange, :preview_confirmed)
+
+      audit_trail.request_sent(exchange:, requester: nil, provider: nil, beneficiary: nil, evidence_type: nil,
+        request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:,
+        preview_location: 'https://ap.example.si/espace?returnurl=x')
+      expect(journalled).to have_attributes(event_type: 'request_sent',
+        preview_location: 'https://ap.example.si/espace?returnurl=x')
+
+      audit_trail.return_to_procedure(exchange:, location: exchange.return_location)
+      expect(journalled).to have_attributes(event_type: 'return_to_procedure', exchange_id: exchange.exchange_id,
+        conversation_id: exchange.conversation_id, preview_location: exchange.return_location)
+    end
+
     it 'keeps the answer and the refusal alike' do
       audit_trail.response_sent(**answered, evidence: nil)
       expect(journalled).to have_attributes(event_type: 'response_sent', regrep_body: first_part.content)

@@ -503,4 +503,73 @@ RSpec.describe EvidenceRequestBuilder do
     expect(distribution.at_xpath('sdg:AssociatedDocumentRequest', namespaces).text)
       .to eq(AssociatedDocument::TRANSLATION)
   end
+
+  # Chapter 4.9 §2 step 12: « For all rim:Slots except IssueDateTime, this
+  # evidence request have the same content as the first request », plus the
+  # address the correspondent returned and, on 2.0, where to send the user back.
+  describe 'the second request of a preview' do
+    let(:preview) { 'https://previsualisation.example.si/espace?session=abc&x=<1>' }
+    let(:back) { 'https://oots.example.fr/retour/3f2c1a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b' }
+    let(:rim) { { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0' } }
+
+    def second(specification: EdmSpecification::V2_0, return_location: back, clock: Time.utc(2026, 8, 6, 10, 5))
+      described_class.new(**attributes, preview_possible: true, preview_location: preview, return_location:,
+        specification:, clock: instance_double(Clock, now: clock)).render
+    end
+
+    def slots(rendered)
+      Nokogiri::XML(rendered).xpath('/*/rim:Slot', rim).to_h do |slot|
+        [slot['name'], slot.xpath('.//rim:Value', rim).map(&:to_s)]
+      end
+    end
+
+    # CA4 of OOTS-67, slot by slot and the query's own slots included — which is
+    # where the subject sits.
+    it 'repeats every slot of the first request but IssueDateTime' do
+      first = described_class.new(**attributes, preview_possible: true).render
+      repeated = second
+
+      expect(slots(repeated).except('IssueDateTime', 'PreviewLocation', 'ReturnLocation'))
+        .to eq(slots(first).except('IssueDateTime'))
+      expect(Nokogiri::XML(repeated).at_xpath('//*[local-name()="Query"]').to_s)
+        .to eq(Nokogiri::XML(first).at_xpath('//*[local-name()="Query"]').to_s)
+      expect(slots(repeated)['IssueDateTime']).not_to eq(slots(first)['IssueDateTime'])
+    end
+
+    it 'copies the preview address exactly as the correspondent returned it' do
+      value = Nokogiri::XML(second).at_xpath('//rim:Slot[@name="PreviewLocation"]//rim:Value', rim)
+
+      expect(value.text).to eq(preview)
+    end
+
+    it 'names where to send the user back, on 2.0' do
+      value = Nokogiri::XML(second).at_xpath('//rim:Slot[@name="ReturnLocation"]//rim:Value', rim)
+
+      expect(value.text).to eq(back)
+    end
+
+    # Chapter 4.9 §2 step 12: « shall not contain a "PreviewLocationDescription"
+    # slot ».
+    it 'carries no description of the preview' do
+      expect(slots(second).keys).not_to include('PreviewDescription')
+    end
+
+    # CA12 of OOTS-67: `R-EDM-REQ-S019` @ 1.2.5 closes the list without
+    # `ReturnLocation`, and a request has no `PreviewMethod` on either line.
+    it 'names no return address on the 1.2 line, nor any method' do
+      names = slots(second(specification: EdmSpecification::V1_2)).keys
+
+      expect(names).to include('PreviewLocation')
+      expect(names).not_to include('ReturnLocation', 'PreviewMethod')
+    end
+
+    it 'refuses a return address the slot cannot hold' do
+      expect { second(return_location: "https://oots.example.fr/#{'a' * 250}") }
+        .to raise_error(ConfigurationError, /256/)
+    end
+
+    it 'writes neither slot on a first request' do
+      expect(slots(request).keys).not_to include('PreviewLocation', 'ReturnLocation')
+    end
+  end
 end

@@ -121,6 +121,15 @@ Le justificatif d'une réponse différée n'est **pas** attendu sur le même éc
 | Ligne 1.2 | la même paire en `oots-edm:v1.2`, sans `ReturnLocation`, l'adresse de retour venant par `returnurl` | `EDM:ERR:0002` avec `PreviewMethod` à `GET`, puis le document ; le lien de retour dès le choix |
 | Espace rouvert | la première requête seule | la page dit le choix enregistré et n'offre plus rien |
 
+[`previsualisation_demandee.feature`](../features/previsualisation_demandee.feature) joue le même chapitre du côté qui demande, sur la boucle où la France se répond à elle-même : le faux requêteur demande `T1` avec `previsualisationRequise`, lit `preview_required` et la description, confirme par `POST /requete/:exchange_id/previsualisation` avec son jeton et `/oots/callback` pour `adresseRetour`, et l'usager, dans le navigateur de `features/support/demo_browser.rb`, ouvre l'espace de la France par le lien reçu, choisit, puis suit le lien de retour — le relais `/retour/` de la France, qui le redirige vers `/oots/callback?echange=…&conversation=…`, où le faux requêteur relève les deux identifiants.
+
+| Scénario | Ce que l'usager choisit | Ce que le portail reçoit |
+| --- | --- | --- |
+| L'usager accepte le document, et le portail le reçoit | « Utiliser ce document dans ma démarche » | le justificatif sur `/oots/document`, l'état `delivered` ; le journal porte deux `request_sent` et le `return_to_procedure` |
+| L'usager refuse le document, et le portail ne reçoit rien | « Ne pas l'utiliser » | aucun justificatif, l'état `declined` |
+
+L'émission en 1.2 — sans `ReturnLocation`, l'adresse de retour ajoutée au lien — ne se joue pas ici, la boucle partant en 2.0 : `make schematron` juge la seconde requête dans les deux lignes, et `make test` le lien.
+
 Le scénario nominal de [`requete_de_justificatif.feature`](../features/requete_de_justificatif.feature) reste en 2.0 : la France déclare les deux versions dans le DSD d'acceptation, et c'est ce que le service retenu annonce qui décide — il les annonce toutes deux, et la 2.0 est celle que ce dépôt préfère (voir [versions_tdd.md](versions_tdd.md)). L'émission en 1.2 se prouvera de bout en bout le jour où un correspondant resté sur cette ligne sera joignable ; jusque-là, `make schematron` la juge sur les règles de l'étiquette 1.2.5.
 
 L'échange boucle sur la seule passerelle `AP_FR_01` du PMode d'exemple : l'application se répond donc à elle-même, sans dépendre d'un autre État membre (voir [domibus_context.md](domibus_context.md)). Le test tient les quatre rôles que l'application n'assure pas :
