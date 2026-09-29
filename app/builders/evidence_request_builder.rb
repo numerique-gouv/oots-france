@@ -19,7 +19,11 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # choice. 2.0 dropped the element and asks for none.
   PROCEDURE_LANGUAGE = 'EN'.freeze
 
-  attr_reader :document_id, :procedure_code, :preview_possible, :requirement
+  # Chapter 4.5.1, table of the request slots: `ReturnLocation` is a
+  # `rim:LongText`, 256 characters at most.
+  RETURN_LOCATION_LENGTH = 256
+
+  attr_reader :document_id, :procedure_code, :preview_possible, :requirement, :preview_location
 
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
   # This qualified form, and not the bare UUID, is what a correspondent echoes
@@ -33,7 +37,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # and what a national parameter would then be worth publishing for.
   def initialize(
     requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:,
-    associated_documents: [], preview_possible: false,
+    associated_documents: [], preview_possible: false, preview_location: nil, return_location: nil,
     specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
@@ -45,8 +49,22 @@ class EvidenceRequestBuilder < ApplicationBuilder
     @procedure_code = procedure_code
     @associated_documents = associated_documents
     @preview_possible = preview_possible
+    @preview_location = preview_location
+    @return_location = return_location
     @instant = clock.now
     @document_id = uuid.next
+  end
+
+  # The second request of chapter 4.9 §2 step 12 carries, on 2.0, where the
+  # correspondent sends the user back: `R-EDM-REQ-S062` pairs the slot with
+  # `PreviewLocation`. The 1.2 line has no such slot — `R-EDM-REQ-S019` @ 1.2.5
+  # closes the list without it — and the address travels in the link instead.
+  def return_location
+    return unless @return_location.present? && specification.return_location_slot?
+    return @return_location if @return_location.length <= RETURN_LOCATION_LENGTH
+
+    raise ConfigurationError, I18n.t('builders.evidence_request_builder.return_location_too_long',
+      length: @return_location.length, limit: RETURN_LOCATION_LENGTH)
   end
 
   protected

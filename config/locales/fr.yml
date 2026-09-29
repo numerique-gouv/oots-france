@@ -441,6 +441,7 @@ fr:
       identifier: "Identifiant du justificatif : %{id}"
       unknown_subject: "Sujet de justificatif d'un type que le document ne sait pas décrire : « %{type} »."
     evidence_request_builder:
+      return_location_too_long: "L'adresse de retour compte %{length} caractères, quand le slot ReturnLocation en admet %{limit} (chapitre 4.5.1 des TDD) : URL_OOTS_FRANCE est trop longue."
       unknown_subject: "Sujet de justificatif d'un type que la requête ne sait pas écrire : « %{type} »."
     evidence_subject_builder:
       unknown_subject: "Sujet de justificatif d'un type que la réponse ne sait pas écrire : « %{type} »."

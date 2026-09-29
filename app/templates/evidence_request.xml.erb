@@ -36,6 +36,23 @@
     </rim:SlotValue>
   </rim:Slot>
 <%- end -%>
+<%# Chapter 4.9 §2 step 12: the second request carries the address the
+    correspondent returned, « an exact copy », and on 2.0 where to send the user
+    back. -%>
+<%- if preview_location.present? -%>
+  <rim:Slot name="PreviewLocation">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(preview_location) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+<%- end -%>
+<%- if return_location.present? -%>
+  <rim:Slot name="ReturnLocation">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value><%= escape(return_location) %></rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+<%- end -%>
   <rim:Slot name="PossibilityForPreview">
     <rim:SlotValue xsi:type="rim:BooleanValueType">
       <rim:Value><%= preview_possible %></rim:Value>
