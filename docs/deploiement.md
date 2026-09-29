@@ -200,6 +200,8 @@ Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans l
 >
 > `!override` parce qu'une liste de ports s'ajoute à celle du fichier principal au lieu de la remplacer ; il demande Compose 2.24. Écrit avant `make setup`, il vaut dès la création des conteneurs ; après, il faut les recréer.
 
+La passerelle, elle, a une adresse publique par nature : `/domibus/services/msh`, où un correspondant envoie ses messages. Le frontal mandate ce chemin **et lui seul** : sous le même `/domibus/` vivent la console d'administration, son API `/domibus/rest/` et le plugin WS `/domibus/services/wsplugin` par lequel `web` soumet ses messages, qu'un mot de passe serait alors seul à garder. L'exploitant atteint la console par un tunnel SSH sur `PORT_DOMIBUS`, `web` le plugin par le réseau docker.
+
 Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotation posée [à l'installation](#installer-les-outils-sur-une-machine-nue). Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
 
 ## Ce qu'il faut sauvegarder
