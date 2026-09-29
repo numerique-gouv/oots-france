@@ -168,12 +168,43 @@ for parent in list(arbre.iter()):
             parent.remove(process)
             retires.append(process.get('name'))
 
-if retires:
+# Chapter 4.7, 2.5.2 and 2.6.2: in 2.0.1 every message carries ExchangeId and
+# SpecificationId as eb:Property. Domibus refuses a message property its leg's
+# property set does not declare (PropertyProfileValidator, EBMS:0010), on
+# submission as on reception, and the PMode the Technical Support Dashboard
+# publishes declares neither. Not required: the same legs carry 1.2 messages,
+# which have neither.
+AJOUTEES = {'ExchangeId': 'exchangeIdProperty', 'SpecificationId': 'specificationIdProperty'}
+ajoutees = []
+proprietes = next((e for e in arbre.iter() if local(e) == 'properties'), None)
+if proprietes is not None:
+    declarees = {e.get('key'): e.get('name') for e in proprietes if local(e) == 'property'}
+    ensembles = {e.get('name'): e for e in proprietes if local(e) == 'propertySet'}
+    utilises = {
+        e.get('propertySet') for e in arbre.iter()
+        if local(e) == 'legConfiguration' and e.get('service') == 'queryManager'
+    }
+    for cle, nom in AJOUTEES.items():
+        if cle not in declarees:
+            element = ET.Element('property', name=nom, key=cle, datatype='string', required='false')
+            proprietes.insert(sum(1 for e in proprietes if local(e) == 'property'), element)
+            declarees[cle] = nom
+        for ensemble in (ensembles[n] for n in utilises if n in ensembles):
+            references = {e.get('property') for e in ensemble if local(e) == 'propertyRef'}
+            if declarees[cle] not in references:
+                ET.SubElement(ensemble, 'propertyRef', property=declarees[cle])
+                if cle not in ajoutees:
+                    ajoutees.append(cle)
+
+if retires or ajoutees:
     racine = arbre.getroot()
     if racine.tag.startswith('{'):
         ET.register_namespace('db', racine.tag[1:].split('}')[0])
     arbre.write(sortie, encoding='UTF-8', xml_declaration=True)
-    print(f"  processus sans {partie}, retirés du PMode chargé : {', '.join(retires)}")
+    if retires:
+        print(f"  processus sans {partie}, retirés du PMode chargé : {', '.join(retires)}")
+    if ajoutees:
+        print(f"  propriétés de la 2.0.1, ajoutées au PMode chargé : {', '.join(ajoutees)}")
 else:
     shutil.copyfile(fichier, sortie)
 PYTHON
