@@ -35,7 +35,7 @@ Répéter tant que la dernière passe a confirmé au moins un finding **bloquant
 
 6. Un finding bloquant a-t-il été confirmé à cette passe (revue **ou** CI) ?
    - Oui → repasser à l'étape 1 pour une nouvelle passe — sauf si cinq passes s'enchaînent sans qu'aucun rebond ni oscillation ne se voie d'une passe à l'autre : [`non-convergence.md`](non-convergence.md) dit alors de s'arrêter et de remonter, avec le coût.
-   - Non → ne sortir qu'une fois la CI du dernier push **verte** : c'est le seul moment où on l'attend réellement. Rouge → bloquant, retour à l'étape 1. Vert → passer à l'étape 7.
+   - Non → ne sortir qu'une fois la CI du dernier push **verte** : c'est le seul moment où on l'attend réellement. Si l'étape 5 a poussé des correctifs, le verdict relevé à l'étape 4 bis est celui de la tête d'avant : relancer `ci-en-fond` sur la tête qu'on vient de pousser, et attendre son verdict. Rouge → bloquant, retour à l'étape 1. Vert → passer à l'étape 7.
 
    **Et le fichier de revue existe sur disque, une section par passe** : un `ls .claude/reviews/` avant de sortir, pas la mémoire de l'avoir écrit. S'il manque, la passe n'a pas eu lieu pour qui que ce soit d'autre — l'écrire de ce qu'on a, puis continuer. Constaté le 2026-09-14 sur la [PR #240](https://github.com/numerique-gouv/oots-france/pull/240) : deux passes de sept relecteurs, convergence annoncée dans le fil, PR fusionnée trois minutes plus tard, et aucun fichier — les faux positifs de sa passe 1 ne seront relayés à personne.
 

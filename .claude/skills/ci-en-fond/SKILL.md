@@ -9,7 +9,9 @@ Entrée : l'URL ou le numéro de la PR. La CI est un relecteur de plus, pas un f
 
 ## 1. Mettre sous surveillance, sans attendre
 
-Lancer `gh pr checks <url> --watch` **en tâche de fond** (`Bash(run_in_background: true)`), puis enchaîner sur ce qui reste à faire. Dans les secondes qui suivent un push, `gh pr checks` répond `no checks reported` : les workflows ne sont pas encore enregistrés. Guette-le, ne devine pas un délai — `timeout 120 sh -c 'until gh pr checks <n> >/dev/null 2>&1; do sleep 5; done'` avant le `--watch` (relevé sur 6 ouvriers sur 31 entre le 2026-09-15 et le 2026-09-29, chacun paré par un `sleep` nu de 25 à 50 s). CI et revue portent sur le même diff sans dépendre l'une de l'autre ; les paralléliser économise une CI complète (`e2e.yml` monte une stack Domibus) par passe.
+Lancer `gh pr checks <url> --watch` **en tâche de fond** (`Bash(run_in_background: true)`), puis enchaîner sur ce qui reste à faire. Dans les secondes qui suivent un push, `gh pr checks` répond `no checks reported` : les workflows ne sont pas encore enregistrés. Guette-le, ne devine pas un délai — `timeout 120 sh -c 'until ! gh pr checks <n> 2>&1 | grep -q "no checks reported"; do sleep 5; done'` avant le `--watch` (relevé sur 6 ouvriers sur 31 entre le 2026-09-15 et le 2026-09-29, chacun paré par un `sleep` nu de 25 à 50 s). CI et revue portent sur le même diff sans dépendre l'une de l'autre ; les paralléliser économise une CI complète (`e2e.yml` monte une stack Domibus) par passe.
+
+Le code de sortie de `gh pr checks` ne dit pas que les checks existent : il vaut 8 tant qu'ils tournent et 1 dès que l'un échoue, si bien qu'une boucle sur lui attend le vert et non leur enregistrement. C'est le message qu'on guette.
 
 **Vaut dès la première passe** : la CI de l'ouverture de la PR tourne souvent encore quand la boucle démarre, et ne doit pas retarder la première revue. Si elle est déjà finie, `--watch` rend la main aussitôt. Un brouillon (`--draft`) déclenche les trois workflows comme une PR ordinaire, tous posés sur `pull_request` sans condition de brouillon : `e2e.yml` tourne donc bel et bien, et c'est le seul endroit où le bout-en-bout est joué.
 
@@ -22,7 +24,9 @@ Lancer `gh pr checks <url> --watch` **en tâche de fond** (`Bash(run_in_backgrou
 
 ```sh
 timeout 240 gh pr checks <n> --watch --interval 30
-#   0 → tout est vert          1 → un check a échoué
+#   0 → tout est vert
+#   1 → un check a échoué — ou aucun n'est encore enregistré : lire la sortie,
+#       et sur « no checks reported » les guetter comme en section 1
 # 124 → toujours en cours, relance la même commande
 ```
 
