@@ -5,9 +5,10 @@
 #
 # A card stands in the country of the request it follows while that request is
 # under way or its document is in hand, whatever was chosen since; otherwise in
-# the last country chosen on it during this journey; otherwise in the
-# deployment's own. The choice is filed under the journey it was made in, so a
-# new identification, which opens a new journey, starts every card afresh.
+# the last country chosen on it during this journey, which its row of
+# `Demo::Card` holds; otherwise in the deployment's own. The row is filed under
+# the journey, so a new identification, which opens a new journey, starts every
+# card afresh.
 module HoldsDemoCountries
   extend ActiveSupport::Concern
 
@@ -26,7 +27,7 @@ module HoldsDemoCountries
     held_country(requirement_uuid) || chosen_countries[requirement_uuid] || Settings.common_services_country_code
   end
 
-  # The country of every card this journey has either chosen one on or asked
+  # The country of every card this journey has either stood somewhere or asked
   # something under, which is what the page resolves each in.
   def card_countries
     asked = ::Demo::Request.where(journey_id: journey.id).distinct.pluck(:requirement_uuid)
@@ -39,13 +40,5 @@ module HoldsDemoCountries
     demo_request_for(requirement_uuid)&.country_code if demo_outcome_for(requirement_uuid)&.holds_country?
   end
 
-  def choose_country(requirement_uuid, code)
-    session[:demo_countries] = { 'journey' => journey.id,
-                                 'countries' => chosen_countries.merge(requirement_uuid => code) }
-  end
-
-  def chosen_countries
-    stored = session[:demo_countries].to_h
-    stored['journey'] == journey.id ? stored['countries'].to_h : {}
-  end
+  def chosen_countries = @chosen_countries ||= ::Demo::Card.countries(journey.id)
 end

@@ -98,6 +98,8 @@ RSpec.describe 'Admin::Demo::Requests' do
         # Token and a UserInfo response naming two different people.
         autre = "#{'b' * 64}v1"
         identify_demo_user(userinfo: FranceConnectStubs::DANISH_USERINFO.merge('sub' => autre), sub: autre)
+        # The new journey starts with no card: the page names them again.
+        get admin_demo_documents_path(version: 'v2.0')
         post demande_path
 
         expect(conversations_asked.uniq.size).to eq(2)

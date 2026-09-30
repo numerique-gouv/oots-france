@@ -9,9 +9,11 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   une suite d'échecs fait renoncer la zone en offrant le retour à la page. Deux
   cartes cliquées coup sur coup y suivent chacune sa propre demande, quel que
   soit l'ordre dans lequel les réponses reviennent. Le choix du pays
-  fournisseur s'y joue aussi : la carte nomme ce que le pays choisi publie, et
-  la demande part vers lui. Le serveur décide de tout le reste, et ce qu'il dit
-  déjà à l'écran n'est jamais reconstruit.
+  fournisseur s'y joue aussi : la carte nomme ce que le pays choisi publie, sur
+  chaque carte de la page, et la demande part vers lui ; un choix resté sans
+  réponse laisse la carte dans son pays et le dit à côté de la liste. Le
+  serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
+  reconstruit.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -132,3 +134,42 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et le contrat n'a reçu aucune demande
     Quand l'usager clique sur "Request the document"
     Alors le contrat a reçu la demande pour le pays "FI"
+
+  Scénario: le pays choisi sur une deuxième carte nommée la résout sans recharger la page, et la demande part vers lui
+    Étant donné les deux exigences de la démarche affichées
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la seconde carte
+    Alors la seconde carte nomme le pays "Finland (FI)"
+    Et la première carte nomme le pays "France (FR)"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager clique sur le bouton de la seconde carte
+    Alors le contrat a reçu la demande pour le pays "FI"
+
+  Scénario: un choix de pays resté sans réponse laisse la carte dans son pays et le dit, jusqu'au choix suivant qui aboutit
+    Étant donné le choix du pays répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la carte affiche "The country could not be changed: this page could not reach the service."
+    Et la carte annonce "The country could not be changed: this page could not reach the service."
+    Et la liste des pays de la carte affiche "France (FR)"
+    Et la carte nomme le pays "France (FR)"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la carte affiche "The country could not be changed: this page could not reach the service."
+    Et la liste des pays de la carte affiche "France (FR)"
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la carte nomme le pays "Finland (FI)"
+    Et la page n'affiche pas "The country could not be changed"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand le choix suivant du pays est coupé devant le navigateur
+    Et que l'usager choisit "Germany (DE)" dans la liste des pays de la carte
+    Alors la carte affiche "The country could not be changed: this page could not reach the service."
+    Et la liste des pays de la carte affiche "Finland (FI)"
+    Et la carte nomme le pays "Finland (FI)"
+
+  Scénario: un choix de pays refusé par la page la recharge, et une session finie mène à la page de connexion
+    Étant donné le choix du pays répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la page des justificatifs a été rechargée
+    Et la page n'affiche pas "The country could not be changed"
+    Quand le compte de l'administrateur est supprimé
+    Et que l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la page de connexion s'affiche

@@ -281,6 +281,13 @@ fr:
       # carte — l'étape 16 du chapitre 1 §10.1. Les options sont des pays, lus
       # comme partout dans la console : aucune clé pour elles.
       country_label: Country to request the document from
+      # Ce que la carte dit, à côté de la liste, quand le choix d'un pays n'a
+      # reçu aucune réponse que cette application a écrite : une erreur du
+      # serveur, des annuaires injoignables, un frontal sans serveur derrière,
+      # le réseau tombé. Une seule phrase pour toutes ces causes. La liste est revenue sur le pays de la carte, d'où
+      # « choose it again » ; le lien recharge la page des justificatifs.
+      unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      reload: reload the page
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -535,9 +542,8 @@ fr:
   controllers:
     admin:
       demo:
-        # Écrit dans le log : le navigateur recharge la page des justificatifs,
-        # qui dit la panne si elle dure, et la trace de celle-ci resterait sinon
-        # introuvable.
+        # Écrit dans le log : la carte ne dit qu'une phrase pour toutes les
+        # causes, et la trace de celle-ci resterait sinon introuvable.
         countries:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
         # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche

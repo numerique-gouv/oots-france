@@ -12,7 +12,7 @@ module Admin
     #
     # The button itself, and what becomes of a click on it, belong to
     # `RequestsController`. This page renders one zone per requirement it can
-    # name, each in whatever state the session it is reloaded from puts it:
+    # name, each in whatever state the register of its journey puts it:
     # chapter 4.4 §4.2.2 has
     # « different basic flows … executed sequentially and/or in parallel », so
     # no card waits on its neighbour.

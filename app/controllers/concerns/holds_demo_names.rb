@@ -2,46 +2,45 @@
 # « before any request is made », and the title that page stands under, kept from
 # the page to the click that follows.
 #
-# One concern for the two keys, because the two addresses are two halves of one
+# One concern for both, because the two addresses are two halves of one
 # gesture: the documents page writes them and `RequestsController` reads them
 # back, and a correspondence spread over two files holds only as long as both are
 # read together. Reading them back rather than resolving them again keeps three
 # directory queries off an address made to be asked over and over — and chapter
 # 4.5.1 §2.3 leaves the `IssueDateTime` no material distance from the click.
 #
-# What is held is `Demo::NamedEvidence` and `Demo::NamedProcedure`, in the
-# vocabulary the request carries: this is the one place the words of the screen
-# and the words of the register meet.
+# The title is one per page and stays in the session. What each card names is
+# one row of `Demo::Card` per card, under the journey: the session is a cookie
+# bounded at four kibibytes, and a second card named in it would overflow it.
 module HoldsDemoNames
   extend ActiveSupport::Concern
 
+  # The cards are filed under the journey, which comes from there.
+  include HoldsDemoJourney
+
   private
 
-  # One entry per card that can be clicked, under the UUID its address carries.
-  # Whatever a card cannot name it cannot offer to confirm, so it is not written
-  # at all, and the click that finds nothing under its own UUID is sent back to
-  # the page.
+  # One row per card the page renders, nameable or not: the country it stands
+  # in is kept either way, and a card that names nothing holds an invalid
+  # `Demo::NamedEvidence`, which the click refuses to leave on.
   def remember_demo_names(procedure, wordings)
     session[:demo_procedure] = named_procedure_of(procedure).to_session
-    session[:demo_named] = wordings.select(&:nameable?)
-      .to_h { |wording| [wording.requirement_uuid, named_evidence_of(wording).to_session] }
+    wordings.each { |wording| remember_demo_name(wording) }
   end
 
-  # One card resolved anew, in the country just chosen on it: what it names now
-  # is what its button will send, and its neighbours keep theirs.
+  # One card resolved in a country: what it names now is what its button will
+  # send, and its neighbours keep theirs.
   def remember_demo_name(wording)
-    named = session[:demo_named].to_h.except(wording.requirement_uuid)
-    named[wording.requirement_uuid] = named_evidence_of(wording).to_session if wording.nameable?
-
-    session[:demo_named] = named
+    ::Demo::Card.remember(journey_id: journey.id, requirement_uuid: wording.requirement_uuid,
+      named_evidence: named_evidence_of(wording))
   end
 
   # What the card of this requirement named, and nothing of its neighbours'. The
   # requirement is passed rather than read off whoever includes this, as
   # `ReadsDemoRequest` passes it too: a page carries one zone per requirement,
-  # and each answers for its own.
+  # and each answers for its own. A card the page never rendered names nothing.
   def named_evidence(requirement_uuid)
-    ::Demo::NamedEvidence.from_session(session[:demo_named].presence&.dig(requirement_uuid))
+    ::Demo::Card.find_by(journey_id: journey.id, requirement_uuid:)&.named_evidence || ::Demo::NamedEvidence.new
   end
 
   def named_procedure = ::Demo::NamedProcedure.from_session(session[:demo_procedure])

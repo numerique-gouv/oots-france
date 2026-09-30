@@ -383,9 +383,8 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(Demo::Request.sole.country_code).to eq('FI')
     end
 
-    # The page is what says the directories are out of reach: the browser
-    # reloads it on anything but a fragment, so none is answered, and the log
-    # keeps what failed.
+    # No fragment, so the card says it could not reach the service — one
+    # sentence for every cause — and the log keeps which cause it was.
     it 'answers no fragment, and logs why, when the directories cannot be reached' do
       stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({})).to_timeout
       allow(Rails.logger).to receive(:warn)
@@ -451,14 +450,89 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(contract_demands).to be_empty
     end
 
+    # What each card names and where it stands live in `demo_cards`, one row per
+    # card: the session is a cookie bounded at four kibibytes, which a second
+    # card named in it would overflow.
+    describe 'on a page of two named cards' do
+      before do
+        stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
+        # An ID Token as long as the one FranceConnect+ hands back — about 570
+        # bytes when measured on 2026-09-29 — without which the cookie would
+        # stay under the bound whatever the page wrote in it.
+        identify_demo_user(padding: 'x' * 10)
+        get admin_demo_documents_path(version: 'v2.0')
+      end
+
+      it 'answers the second card resolved in the country chosen on it' do
+        choose_country('FI', seconde)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.headers['Deferred-Fragment']).to eq('1')
+        expect(response.parsed_body.at_css("#exigence-#{seconde} .fr-card__desc").text.squish)
+          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+      end
+
+      it 'keeps neither the names nor the countries in the session, which stays under the bound' do
+        expect(session[:demo_identity]['id_token'].bytesize).to be >= 570
+
+        choose_country('FI', premiere)
+        choose_country('FI', seconde)
+
+        expect(session.to_h.keys).not_to include('demo_named', 'demo_countries')
+        expect(response.headers['Set-Cookie'].to_s[/_oots_france_session=[^;]*/].bytesize).to be < 4096
+        expect(Demo::Card.countries(session[:demo_journey]['id'])).to eq(premiere => 'FI', seconde => 'FI')
+      end
+
+      # Requirement 27 of chapter 1 §2: what the card showed is what leaves, read
+      # back and never resolved anew at the click.
+      it 'has the button send what the card named, without asking the directories again' do
+        stub_oots_france_public_keys
+        stub_evidence_request
+        stub_exchange_state
+        choose_country('FI', seconde)
+        WebMock::RequestRegistry.instance.reset!
+
+        post demande_path(seconde)
+
+        expect(evidence_request_query['codePays']).to eq('FI')
+        expect(Demo::Request.sole).to have_attributes(country_code: 'FI', evidence_type_name: 'Dummy PDF - FI',
+          provider_name: 'Keha v. 2.0', requirement_uuid: seconde)
+        expect(a_request(:get, %r{\A#{DirectoryStubs::ACCEPTANCE}/(eb|dsd)/}o)).not_to have_been_made
+      end
+    end
+
+    it 'sends back to the page a click on a card the page never named' do
+      post demande_path('abababab-abab-abab-abab-abababababab')
+
+      expect(response).to redirect_to(admin_demo_documents_path)
+      expect(Demo::Request.count).to eq(0)
+    end
+
     # CA9: a new identification opens a new journey, and the cards start again
     # in the deployment's own country.
     it 'starts every card again in France once the user has identified anew' do
       choose_country('FI')
+      previous = session[:demo_journey]['id']
       identify_demo_user
+
+      expect(Demo::Card.where(journey_id: previous)).to be_empty
+
       get admin_demo_documents_path(version: 'v2.0')
 
       expect(carte.at_css('select option[selected]')['value']).to eq('FR')
+    end
+
+    # What the cards kept goes with the journey; what it asked stays filed.
+    it 'keeps the requests of the previous journey' do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      get admin_demo_documents_path(version: 'v2.0')
+      post demande_path
+
+      identify_demo_user
+
+      expect(Demo::Request.count).to eq(1)
     end
 
     # RG8: a card following a request stays in the country that request went to.
@@ -493,6 +567,11 @@ RSpec.describe 'Admin::Demo::Documents' do
       # CA5, second half: a change submitted meanwhile is without effect.
       it 'ignores a change submitted while the request is under way' do
         choose_country('DE')
+
+        expect(response.parsed_body.css('select')).to be_empty
+        expect(response.parsed_body.at_css('.fr-card__desc').text.squish)
+          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+
         get admin_demo_documents_path(version: 'v2.0')
 
         expect(carte.at_css('.fr-card__desc').text.squish)

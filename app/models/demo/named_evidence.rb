@@ -1,5 +1,6 @@
 module Demo
-  # What one card of the documents page named, kept for the click that follows.
+  # What one card of the documents page named, kept for the click that follows
+  # in the row `Demo::Card` holds for it.
   #
   # Requirement 27 of chapter 1 §2 asks for those names word for word — « The
   # user is provided with information about name of evidence provider and
@@ -43,21 +44,5 @@ module Demo
     # cards apart, not what the user is asked to confirm, and a directory naming
     # it in no language leaves the card standing under its evidence type.
     validates :evidence_type_name, :provider_name, :country_code, presence: true
-
-    # The session cookie holds a plain hash and gives back string keys — and it
-    # outlives the shape this class had when it was written, as
-    # `Demo::UserIdentity` says of its own. Both accidents land on the same
-    # value: names nobody can read are no names, and an instance holding none is
-    # invalid, which is the state the click already refuses to leave on.
-    def self.from_session(stored)
-      new(stored.to_h.symbolize_keys)
-    rescue ActiveModel::UnknownAttributeError
-      new
-    end
-
-    # Compacted, the session cookie being bounded at four kibibytes and a page
-    # holding one entry per card: a language no directory published is worth no
-    # bytes, and comes back `nil` either way.
-    def to_session = attributes.compact
   end
 end

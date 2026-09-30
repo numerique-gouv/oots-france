@@ -2,8 +2,8 @@ module Demo
   # What the documents page stands under, kept for the clicks made on it.
   #
   # Apart from `Demo::NamedEvidence` and not folded into it: the title belongs to
-  # no requirement, it stands once at the top of the page, and repeating it under
-  # each card would swell a session the cookie store bounds at four kibibytes.
+  # no requirement, it stands once at the top of the page, and is kept once, in
+  # the session, where each card has a row of `Demo::Card`.
   #
   # Nothing is required of it. Requirement 27 of chapter 1 §2 makes the evidence
   # type and the provider a condition of the request and says nothing of the

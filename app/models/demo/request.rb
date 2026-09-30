@@ -11,9 +11,9 @@ module Demo
   # informative, has an uncorrelatable response « logged for investigation »,
   # which presupposes a set of known ones to fail against.
   class Request < ApplicationRecord
-    # `Demo::` namespaces classes of every layer and this is the only record
-    # under it, so the table is named here rather than through a
-    # `table_name_prefix` governing the whole module for one row.
+    # `Demo::` namespaces classes of every layer, records among them, so each
+    # record names its table rather than a `table_name_prefix` governing the
+    # value objects too.
     self.table_name = 'demo_requests'
 
     # The journey and the requirement join the two identifiers: they are how the

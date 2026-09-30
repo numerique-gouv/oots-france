@@ -58,6 +58,23 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     expect(page).to have_no_css('.demo-request form.requirement-card__country')
   end
 
+  # The server cannot say it could not be reached, so the sentence is rendered
+  # with the list, hidden, and the controller shows it — outside what an answer
+  # replaces, in the group the DSFR puts in its error state.
+  it 'renders, hidden beside the list, what it says of a choice that got no answer' do
+    render_inline(described_class.new(wording:, country_code: 'FI', countries: [['🇫🇮 Finland (FI)', 'FI']]))
+
+    failure = page.find('.fr-select-group [data-demo-country-target="failure"]', visible: :hidden)
+
+    expect(failure['id']).to eq("pays-#{uuid}-erreur")
+    expect(failure[:class]).to eq('fr-error-text')
+    expect(failure.text(:all).squish).to eq('The country could not be changed: this page could not reach the ' \
+                                            'service. Choose it again, or reload the page.')
+    expect(failure).to have_link('reload the page', href: '/admin/demo/v2.0/documents', visible: :hidden)
+    expect(page).to have_no_css('[data-demo-country-target="resolution"] [data-demo-country-target="failure"]',
+      visible: :all)
+  end
+
   it 'offers no choice when it is given none' do
     render_inline(card)
 
@@ -76,7 +93,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       render_inline(card)
 
       expect(page).to have_text('FR - Test Evidence Provider')
-      expect(page).to have_text('This provider does not support OOTS 1.2')
+      expect(page).to have_css('.fr-alert.fr-alert--warning', text: 'This provider does not support OOTS 1.2')
       expect(page).to have_no_css('.demo-request')
       expect(page).to have_no_button
       expect(page).to have_select('Country to request the document from')

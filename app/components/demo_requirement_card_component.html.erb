@@ -39,12 +39,22 @@
           <% if countries %>
             <%= form_with url: country_path, method: :patch, class: 'requirement-card__country fr-my-2w',
                   html: { lang: 'en' } do |form| %>
-              <div class="fr-select-group fr-mb-0">
+              <div class="fr-select-group fr-mb-0" data-demo-country-target="group">
                 <%= form.label :pays, t('components.demo_requirement_card.country_label'),
                       class: 'fr-label', for: country_field %>
                 <%= form.select :pays, options_for_select(countries, country_code), {},
                       class: 'fr-select', id: country_field,
                       data: { demo_country_target: 'select', action: 'change->demo-country#choose' } %>
+                <%# What the card says when the choice got no answer this
+                    application wrote: the server cannot say that it could not
+                    be reached, so the sentence is rendered here, hidden, and
+                    the controller shows it. Outside what an answer replaces,
+                    so no answer takes it away but the controller. %>
+                <%= tag.p t('components.demo_requirement_card.unreachable_html',
+                            reload: link_to(t('components.demo_requirement_card.reload'),
+                                            helpers.admin_demo_documents_path)),
+                          class: 'fr-error-text', id: failure_field, hidden: true,
+                          data: { demo_country_target: 'failure' } %>
               </div>
               <p class="fr-sr-only" aria-live="polite" data-demo-country-target="status"></p>
             <% end %>
@@ -78,9 +88,12 @@
           </p>
 
           <% if unspoken %>
-            <p class="fr-mb-0 fr-mt-2w requirement-card__refusal" lang="en">
-              <%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %>
-            </p>
+            <%# A warning and not a sentence among others: the card names a
+                provider and offers nothing to ask it. The DSFR alert carries
+                its icon besides its colour, which RGAA 3.1 wants. %>
+            <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
+              <p><%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %></p>
+            </div>
           <% elsif askable? %>
             <%# The button that opens the exchange, and everything that becomes of
                 it. This element persists and its contents are what an answer
