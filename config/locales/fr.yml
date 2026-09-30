@@ -346,10 +346,9 @@ fr:
       # La confirmation elle-même refusée ou sans réponse. Ce que le contrat a
       # répondu, ou l'exception, est écrit pour l'exploitant et en français :
       # il reste au journal applicatif, et l'usager lit une phrase du portail.
-      unconfirmed_title: The preview could not be arranged
+      unconfirmed_title: The preview has failed
       unconfirmed_body: >-
-        Ask for the document again. If it happens again, the operator will find the reason in the
-        console.
+        The preview of your document could not be started. You can try to request the document again.
       # Le contrat injoignable, ou qui refuse de dire l'état : la raison reste
       # au journal applicatif, comme pour la confirmation.
       unreadable_title: The state of the request could not be read

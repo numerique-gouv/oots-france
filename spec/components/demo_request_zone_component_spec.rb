@@ -222,8 +222,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--error',
-        text: 'The preview could not be arranged')
-      expect(page).to have_text('the operator will find the reason in the console')
+        text: 'The preview has failed')
+      expect(page).to have_text('The preview of your document could not be started')
       expect(page).to have_no_text('refusée')
       expect(page).to have_button('Retry to request')
     end

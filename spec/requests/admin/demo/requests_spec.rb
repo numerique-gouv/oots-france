@@ -593,7 +593,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('The preview could not be arranged')
+      expect(response.parsed_body.text).to include('The preview has failed')
       expect(response.parsed_body.text).not_to include("n'est pas une URL absolue")
       expect(Rails.logger).to have_received(:warn).with(include("n'est pas une URL absolue"))
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
