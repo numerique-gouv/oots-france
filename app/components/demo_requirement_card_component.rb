@@ -74,6 +74,8 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   def country_field = "pays-#{requirement_uuid}"
 
+  def failure_field = "#{country_field}-erreur"
+
   delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
     :provider_language, :requirement, :requirement_language, :requirement_uuid, to: :wording
 

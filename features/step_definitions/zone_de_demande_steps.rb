@@ -4,6 +4,13 @@
 # interrogation, and telling the two apart is what it has to prove.
 ZONE_ADDRESS = '*/admin/demo/v2.0/demande*'.freeze
 
+# The address a card's list posts the chosen country to.
+COUNTRY_ADDRESS = '*/admin/demo/v2.0/pays*'.freeze
+
+# The card of one requirement, which the list, the country line and the
+# sentence of a choice left unanswered all belong to.
+CARD = '.requirement-card'.freeze
+
 # What an answer replaces, and what says which outcome is on screen.
 BODY = '.demo-request__body'.freeze
 
@@ -94,6 +101,22 @@ end
   visit admin_demo_documents_path(version: 'v2.0')
 
   expect(page).to have_css(ZONE, count: REQUIREMENTS.size)
+  mark_the_page
+end
+
+# An answer this application never wrote, then none at all: the two ways a
+# choice gets nothing the card can splice.
+Étantdonné('le choix du pays répondu en {string} sans l\'en-tête "Deferred-Fragment", puis coupé, devant le navigateur') do |status|
+  country_requests.answer(status: status.to_i, body: BAD_GATEWAY_PAGE).cut
+end
+
+# Planned after the choices already made: the double treats requests in order.
+Quand('le choix suivant du pays est coupé devant le navigateur') do
+  country_requests.cut
+end
+
+Étantdonné('le choix du pays répondu en {string} sans l\'en-tête "Deferred-Fragment" devant le navigateur') do |status|
+  country_requests.answer(status: status.to_i, body: '')
 end
 
 # Both clicks held before either is answered: the second leaves while the first
@@ -147,6 +170,12 @@ Quand("l'usager choisit {string} dans la liste des pays de la carte") do |countr
   label = I18n.t('components.demo_requirement_card.country_label')
 
   find_field(label).find('option', text: country).select_option
+end
+
+Quand("l'usager choisit {string} dans la liste des pays de la {word} carte") do |country, rank|
+  label = I18n.t('components.demo_requirement_card.country_label')
+
+  within(card(rank)) { find_field(label).find('option', text: country).select_option }
 end
 
 Quand('la soumission retenue est libérée') do
@@ -274,7 +303,26 @@ Alors('le contrat a reçu la demande') do
 end
 
 Alors('la carte nomme le pays {string}') do |country|
-  expect(page).to have_css('.requirement-card .fr-card__desc .country-tag', text: country)
+  expect(page).to have_css("#{CARD} .fr-card__desc .country-tag", text: country)
+end
+
+Alors('la {word} carte nomme le pays {string}') do |rank, country|
+  expect(card(rank)).to have_css('.fr-card__desc .country-tag', text: country)
+end
+
+# The sentence stands beside the list, in the group the DSFR puts in its error
+# state; its link breaks the rendering over several lines.
+Alors('la carte affiche {string}') do |sentence|
+  expect(page).to have_css("#{CARD} .fr-select-group--error .fr-error-text", text: sentence, normalize_ws: true)
+end
+
+Alors('la liste des pays de la carte affiche {string}') do |country|
+  expect(find_field(I18n.t('components.demo_requirement_card.country_label'))).to have_css('option:checked', text: country)
+end
+
+Alors('la page des justificatifs a été rechargée') do
+  wait_until('La page des justificatifs n\'a pas été rechargée.') { page.evaluate_script('window.pageMark').nil? }
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
 end
 
 # The region a screen reader hears, which no eye sees: read in the page as the
@@ -323,6 +371,11 @@ Alors('les essais qui suivent la soumission sont des interrogations') do
 end
 
 def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
+
+def country_requests = intercepted_requests(pattern: COUNTRY_ADDRESS)
+
+# The card a step names, by its rank among those the page renders.
+def card(rank) = all(CARD, count: REQUIREMENTS.size)[REQUIREMENTS.keys.index(rank)]
 
 # The card a step names, by its rank among those the page offers a button on.
 def card_zone(rank) = all(ZONE, count: REQUIREMENTS.size)[REQUIREMENTS.keys.index(rank)]

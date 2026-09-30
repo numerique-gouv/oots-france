@@ -14,29 +14,49 @@ import { Controller } from "@hotwired/stimulus"
 // What each replaced part of the card says, read out once it has arrived.
 const ANNOUNCED = '[data-demo-country-announced]'
 
+// The state the DSFR gives a list whose group carries an error text.
+const ERROR = 'fr-select-group--error'
+
 export default class extends Controller {
-  static targets = ["select", "resolution", "status"]
+  static targets = ["select", "resolution", "status", "group", "failure"]
+
+  // The country the card stands in, which the list returns to when a choice
+  // gets no answer: the card still names what it named there. A card following
+  // a request renders no list, and so has no country to return to.
+  selectTargetConnected(select) {
+    this.country = select.value
+  }
 
   // Sent as the form was built — the CSRF token and the `_method` are in it —
-  // so that what leaves is what a submission would have sent.
+  // so that what leaves is what a submission would have sent. What the failure
+  // said is no longer what is happening, so it goes before anything is asked.
   choose() {
     const form = this.selectTarget.form
 
+    this.recover()
+
+    // Only a request that never reached the server fails here: `fetch` rejects
+    // on no status of its own, so this is the network itself and not an answer.
+    // An error in handling an answer that did arrive is not an outage.
     fetch(new Request(form.action, { method: 'POST', body: new FormData(form), headers: { 'Accept': 'text/html' } }))
-      .then((response) => this.receive(response))
-      // The network itself: the page is what says the directories are out of
-      // reach, and reloading it is what shows that.
-      .catch(() => window.location.reload())
+      .then((response) => this.receive(response), () => this.fail())
   }
 
   // Only what this application wrote for this address is spliced into the card,
-  // and only a header it sets itself can say so. Anything else — a session gone,
-  // a directory out of reach, a proxy answering for nobody — is the page's to
-  // say, so the page is loaded again.
+  // and only a header it sets itself can say so. A `5xx` without it — the
+  // directories out of reach, an error of the server, a proxy with nothing
+  // behind it — is the card's to say. Anything else is the page's: a session
+  // gone redirects to the login page, a form token refused answers `422`, and
+  // reloading is what shows either.
   receive(response) {
-    if (response.redirected || response.headers.get('Deferred-Fragment') !== '1') return window.location.reload()
+    if (response.redirected) return window.location.reload()
 
-    return response.text().then((html) => this.splice(html))
+    if (response.headers.get('Deferred-Fragment') !== '1') {
+      return response.status >= 500 ? this.fail() : window.location.reload()
+    }
+
+    // A body cut short is the network again, and only that.
+    return response.text().then((html) => this.splice(html), () => this.fail())
   }
 
   splice(html) {
@@ -51,7 +71,30 @@ export default class extends Controller {
 
     this.element.className = card.className
     this.resolutionTargets.forEach((target, index) => { target.innerHTML = arriving[index].innerHTML })
-    this.statusTarget.textContent = [...this.element.querySelectorAll(ANNOUNCED)]
+    this.country = this.selectTarget.value
+    this.announce(this.element.querySelectorAll(ANNOUNCED))
+  }
+
+  // The list back on the country the card stands in, and the sentence the
+  // server rendered shown beside it, in the error state the DSFR gives the
+  // group and announced by the region the card already has.
+  fail() {
+    this.selectTarget.value = this.country
+    this.failureTarget.hidden = false
+    this.groupTarget.classList.add(ERROR)
+    this.selectTarget.setAttribute('aria-describedby', this.failureTarget.id)
+    this.announce([this.failureTarget])
+  }
+
+  recover() {
+    this.failureTarget.hidden = true
+    this.groupTarget.classList.remove(ERROR)
+    this.selectTarget.removeAttribute('aria-describedby')
+    this.statusTarget.textContent = ''
+  }
+
+  announce(parts) {
+    this.statusTarget.textContent = [...parts]
       .map((part) => part.textContent.replace(/\s+/g, ' ').trim())
       .join(' ')
   }
