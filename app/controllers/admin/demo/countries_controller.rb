@@ -8,8 +8,8 @@ module Admin
     # Answered with the card alone, resolved in that country, which
     # `demo_country_controller.js` splices into the page around the list the
     # user is still on: a content update and not a change of context, which a
-    # choice in a list must not cause by itself (RGAA 7.4). The choice is kept
-    # in the session all the same, so that a reload renders the card where it
+    # choice in a list must not cause by itself (RGAA 7.4). The card's row of
+    # `Demo::Card` is written again, so that a reload renders the card where it
     # was left, and what the card now names is what its button will send.
     class CountriesController < Admin::BaseController
       include HoldsDemoNames
@@ -17,10 +17,10 @@ module Admin
 
       UUID = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
 
-      # An outage carries no code, and the page that shows it is the documents
-      # page: the browser reloads it on any answer that is not a fragment. Logged
-      # all the same, the reload finding the directories answering again
-      # otherwise leaving no trace of what failed.
+      # An outage carries no code, and what the card says of it is one sentence
+      # for every cause, which the browser shows on any `5xx` that is not a
+      # fragment. Logged, so that the application log keeps what the card does
+      # not say.
       rescue_from CommonServicesError, with: :report_unreachable_directories
 
       # A code the list does not offer comes from no page this application
@@ -35,7 +35,7 @@ module Admin
 
         return head :unprocessable_content unless wording.requirement_uuid == requirement_uuid
 
-        remember_choice(wording) unless held
+        remember_demo_name(wording) unless held
 
         response.set_header('Deferred-Fragment', '1')
         render requirement_card(wording), layout: false
@@ -51,11 +51,6 @@ module Admin
       end
 
       def offered? = offered_country?(country) && requirement_uuid.match?(UUID)
-
-      def remember_choice(wording)
-        choose_country(requirement_uuid, country)
-        remember_demo_name(wording)
-      end
 
       def report_unreachable_directories(error)
         Rails.logger.warn(I18n.t('controllers.admin.demo.countries.unreachable', error: error.message))

@@ -67,6 +67,7 @@ class FranceConnectController < ApplicationController
 
   def open_journey(identity, specification)
     previous = Demo::Journey.from_session(session[:demo_journey])
+    Demo::Card.forget(previous.id) if previous
 
     session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:).to_session
     session[:demo_identity] = identity.to_session

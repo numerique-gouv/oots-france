@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_09_29_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_30_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_09_29_150000) do
     t.index ["exchange_id"], name: "index_audit_events_on_exchange_id"
     t.index ["occurred_at"], name: "index_audit_events_on_occurred_at"
     t.index ["request_id"], name: "index_audit_events_on_request_id"
+  end
+
+  create_table "demo_cards", force: :cascade do |t|
+    t.string "journey_id", null: false
+    t.string "requirement_uuid", null: false
+    t.string "country_code", null: false
+    t.string "evidence_type_name"
+    t.string "evidence_type_language"
+    t.string "provider_name"
+    t.string "provider_language"
+    t.string "requirement_id"
+    t.string "requirement_name"
+    t.string "requirement_language"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["journey_id", "requirement_uuid"], name: "index_demo_cards_on_journey_id_and_requirement_uuid", unique: true
   end
 
   create_table "demo_requests", force: :cascade do |t|
