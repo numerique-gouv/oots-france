@@ -93,7 +93,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       render_inline(card)
 
       expect(page).to have_text('FR - Test Evidence Provider')
-      expect(page).to have_text('This provider does not support OOTS 1.2')
+      expect(page).to have_css('.fr-alert.fr-alert--warning', text: 'This provider does not support OOTS 1.2')
       expect(page).to have_no_css('.demo-request')
       expect(page).to have_no_button
       expect(page).to have_select('Country to request the document from')

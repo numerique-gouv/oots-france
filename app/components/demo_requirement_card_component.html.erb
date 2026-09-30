@@ -88,9 +88,12 @@
           </p>
 
           <% if unspoken %>
-            <p class="fr-mb-0 fr-mt-2w requirement-card__refusal" lang="en">
-              <%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %>
-            </p>
+            <%# A warning and not a sentence among others: the card names a
+                provider and offers nothing to ask it. The DSFR alert carries
+                its icon besides its colour, which RGAA 3.1 wants. %>
+            <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
+              <p><%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %></p>
+            </div>
           <% elsif askable? %>
             <%# The button that opens the exchange, and everything that becomes of
                 it. This element persists and its contents are what an answer
