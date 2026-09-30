@@ -679,7 +679,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'opens on the departure page until the user comes back' do
       get admin_demo_documents_path(version: 'v2.0')
 
-      expect(response.parsed_body.css('main').text).to include('Preview and approve the document abroad')
+      expect(response.parsed_body.css('main').text).to include('Preview and approve the document')
     end
 
     it 'takes the user back to the waiting of the card whose exchange it names' do

@@ -331,9 +331,8 @@ fr:
       preview_title: Your document is waiting for your approval abroad
       preview_lead: >-
         The administration holding it wants to show it to you before sending it. You will be
-        redirected to its own space to preview the document and decide whether to use it, then
-        brought back here.
-      preview_link: Preview and approve the document abroad
+        redirected to its own space to preview the document and decide whether to use it or not.
+      preview_link: Preview and approve the document
       # Le choix de l'usager sur l'espace de prévisualisation, et non une panne :
       # le chapitre 4.9 §1 fait répondre une liste vide à qui décide de ne pas
       # utiliser le justificatif.

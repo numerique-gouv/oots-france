@@ -144,7 +144,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
       expect(page).to have_text('Your document is waiting for your approval abroad')
       expect(page).to have_text('You will be redirected to its own space')
-      expect(page).to have_link('Preview and approve the document abroad', href: 'https://ap.example/preview?t=1')
+      expect(page).to have_link('Preview and approve the document', href: 'https://ap.example/preview?t=1')
     end
 
     # Chapter 4.9 §5: « Process the language specific information of the
@@ -179,7 +179,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
         expect(form).to have_field('returnurl', type: :hidden, with: 'https://fr.example/retour/x')
         expect(form).to have_field('returnmethod', type: :hidden, with: 'GET')
         expect(form).to have_no_field('authenticity_token', type: :hidden)
-        expect(form).to have_button('Preview and approve the document abroad')
+        expect(form).to have_button('Preview and approve the document')
       end
     end
 
@@ -190,7 +190,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
         render_inline(zone)
 
         expect(page).to have_text('The preview link cannot be presented')
-        expect(page).to have_no_link('Preview and approve the document abroad')
+        expect(page).to have_no_link('Preview and approve the document')
         expect(page).to have_button('Retry to request')
       end
     end
