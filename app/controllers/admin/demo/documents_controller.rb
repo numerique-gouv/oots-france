@@ -29,6 +29,8 @@ module Admin
 
       helper_method :requirement_card
 
+      before_action :record_return, only: :show
+
       # The identity is the one thing on this page no directory has to answer
       # for, and the rescue below renders the same template.
       #
@@ -50,6 +52,21 @@ module Admin
       end
 
       private
+
+      # The user back from the preview space, by the return address France
+      # redirects to with the two identifiers of the exchange. Chapter 4.9 §5:
+      # « Confirm that the user accessing the Online Procedure Portal using the
+      # return URL is the user that is executing the associated procedure » — so
+      # the exchange is looked up under the journey the session holds, and one
+      # of any other walk is ignored, the page rendering as it would without it.
+      # The zone of that card then waits for the outcome again, « from the state
+      # it was in before the use of OOTS ».
+      def record_return
+        exchange_id = params[:echange].to_s
+        returned = ::Demo::Request.find_by(journey_id: journey.id, exchange_id:) if exchange_id.present?
+
+        returned.return! if returned&.preview_link? && returned.answers?(exchange_id, params[:conversation].to_s)
+      end
 
       # The heading the home page stands under, said again here: the two are one
       # journey, and the procedure is what it is about. Built on the requirements

@@ -131,6 +131,104 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     end
   end
 
+  # The departure page of chapter 4.9 §5, built from what the confirmation
+  # handed back and kept on the request.
+  context 'when the user has the preview space to visit' do
+    before do
+      request.assign_attributes(preview_address: 'https://ap.example/preview?t=1', preview_method: 'GET',
+        preview_description: 'Your study grant certificate', preview_description_language: 'EN')
+    end
+
+    it 'says where the user is going, and presents the link' do
+      render_inline(zone)
+
+      expect(page).to have_text('Your document is waiting for your approval abroad')
+      expect(page).to have_text('You will be redirected to its own space')
+      expect(page).to have_link('Preview and approve the document', href: 'https://ap.example/preview?t=1')
+    end
+
+    # Chapter 4.9 §5: « Process the language specific information of the
+    # preview location description metadata ».
+    it 'shows the description the correspondent wrote, in its language' do
+      render_inline(zone)
+
+      expect(page).to have_css('[lang="EN"]', text: 'Your study grant certificate')
+    end
+
+    # The second exchange may settle while the user is away: the zone keeps
+    # asking, and offers no button meanwhile.
+    it 'keeps asking, and offers nothing to click again' do
+      render_inline(zone)
+
+      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="preview"]')
+      expect(page).to have_no_button('Request the document', visible: :all)
+    end
+
+    context 'when the correspondent asked for a POST' do
+      before do
+        request.assign_attributes(preview_method: 'POST',
+          preview_body: 'returnurl=https%3A%2F%2Ffr.example%2Fretour%2Fx&returnmethod=GET')
+      end
+
+      it 'presents a form posting the fields of the body to the address' do
+        render_inline(zone)
+
+        form = page.find('form.demo-request__departure')
+        expect(form['action']).to eq('https://ap.example/preview?t=1')
+        expect(form['method']).to eq('post')
+        expect(form).to have_field('returnurl', type: :hidden, with: 'https://fr.example/retour/x')
+        expect(form).to have_field('returnmethod', type: :hidden, with: 'GET')
+        expect(form).to have_no_field('authenticity_token', type: :hidden)
+        expect(form).to have_button('Preview and approve the document')
+      end
+    end
+
+    context 'when the correspondent asked for a PUT' do
+      before { request.preview_method = 'PUT' }
+
+      it 'says the link cannot be presented, and offers to ask again' do
+        render_inline(zone)
+
+        expect(page).to have_text('The preview link cannot be presented')
+        expect(page).to have_no_link('Preview and approve the document')
+        expect(page).to have_button('Retry to request')
+      end
+    end
+  end
+
+  # Chapter 4.9 §1: the user decided not to use the document. Their choice, and
+  # not a failure — so an informative alert.
+  context 'when the user declined the document' do
+    let(:payload) { { 'statut' => 'declined' } }
+
+    it 'says so, and offers to ask again' do
+      render_inline(zone)
+
+      expect(page).to have_css('.fr-alert--info', text: 'You chose not to use this document')
+      expect(page).to have_button('Retry to request')
+      expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
+    end
+  end
+
+  context 'when the confirmation of the preview failed' do
+    let(:payload) { { 'statut' => 'preview_required' } }
+    let(:outcome) do
+      DemoOutcomeWording.new(answer:, request:, unconfirmed: { key: :demo_preview_unconfirmed, errors: ['refusée'] })
+    end
+
+    # What the contract said is written for the operator, in French: it stays in
+    # the log, and the user reads a sentence of the portal's own.
+    it 'says so in a sentence of its own, never the contract\'s, and offers to ask again' do
+      render_inline(zone)
+
+      expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--error',
+        text: 'The preview has failed')
+      expect(page).to have_text('The preview of your document could not be started')
+      expect(page).to have_no_text('refusée')
+      expect(page).to have_button('Retry to request')
+    end
+  end
+
   # The deadline is the screen's and not the exchange's: the exchange carries on
   # and the register keeps it, so the wording says the request is still on its
   # way rather than that it failed.
@@ -155,11 +253,11 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   context 'when the contract could not be read' do
     subject(:zone) { described_class.new(outcome: DemoOutcomeWording.unanswered(request:, error: 'Panne'), requirement_uuid:) }
 
-    it 'reports the outage where it would report a refusal' do
+    it 'reports the outage where it would report a refusal, and keeps its reason for the log' do
       render_inline(zone)
 
-      expect(page).to have_text('could not be read')
-      expect(page).to have_text('Panne')
+      expect(page).to have_css('.demo-request__failure[lang="en"]', text: 'could not be read')
+      expect(page).to have_no_text('Panne')
     end
   end
 
@@ -190,7 +288,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'names the refusal and what the contract returned' do
       render_inline(zone)
 
-      expect(page).to have_text('refusée')
+      expect(page).to have_css('.demo-request__failure[lang="fr"]', text: 'refusée')
       expect(page).to have_text('EB:ERR:0001')
       expect(page).to have_button('Retry to request')
     end
