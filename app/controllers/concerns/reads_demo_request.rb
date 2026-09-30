@@ -64,7 +64,9 @@ module ReadsDemoRequest
   def read_demo_outcome(request)
     return nil if request.nil?
 
-    DemoOutcomeWording.new(answer: state_client.fetch(request.exchange_id), request:)
+    state = state_client.fetch(request.exchange_id)
+
+    DemoOutcomeWording.new(answer: state, request:, unconfirmed: confirm_preview(request, state))
   rescue DemoContractError => e
     # Logged as much as shown, like the interactors of `Demo::`: the zone tells
     # the user of the outage, and the log is the only place it remains once the
@@ -74,6 +76,26 @@ module ReadsDemoRequest
 
     DemoOutcomeWording.unanswered(request:, error: e.message)
   end
+
+  # The one write a reading leads to: chapter 4.9 §5 has the portal recognise
+  # the preview the first flow asks for and present a link to it, and the
+  # contract hands that link only in its answer to the confirmation. Asked once
+  # per request — the link kept on it says it was — and never again, however
+  # often the zone reads the state. Confirming is not asking again: it is the
+  # second round trip of the same exchange (chapter 4.9 §2 step 12).
+  #
+  # The user comes back to this page, under the line of the journey: an address
+  # without its segment is one the walk no longer serves. What went wrong, if
+  # anything, is returned for the zone to say.
+  def confirm_preview(request, state)
+    return nil unless state.preview_required? && !request.preview_link?
+
+    result = ::Demo::ConfirmPreview.call(request:, state:, identity:, resume_location: demo_resume_location)
+
+    result.error unless result.success?
+  end
+
+  def demo_resume_location = "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment)}"
 
   def state_client = @state_client ||= ::Demo::ExchangeStateClient.new
 end

@@ -98,7 +98,8 @@ Rails.application.routes.draw do
         # from that instant. `show` renders the zone of the documents page that says where
         # the request stands, and is the address that zone re-asks while it waits:
         # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
-        # never asks.
+        # never asks anew — confirming, once, the preview a correspondent asks for
+        # being the second round trip of the same exchange.
         resource :demande, only: %i[show create], controller: 'requests'
         # The member state one card resolves its requirement in, which the user
         # picks there — step 16 of chapter 1 §10.1. Asks the directories only,

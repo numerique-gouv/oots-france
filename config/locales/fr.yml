@@ -322,14 +322,30 @@ fr:
       expired_body: >-
         The administration holding your document has not answered yet. The request is still on its
         way, but this page has stopped waiting for it: ask again to start a new one.
-      # Le premier des quatre points que le `shall` du chapitre 4.9 §5 énumère,
-      # et le seul que la démonstration tienne : reconnaître la réponse. Elle ne
-      # devrait jamais arriver — la démarche demande `previsualisationRequise`
-      # à faux —, et la zone la dit plutôt que d'attendre sans fin.
+      # La page de départ du chapitre 4.9 §5 — « Provide a departure page for
+      # the user to navigate to the Preview Space » —, qui dit d'abord où
+      # l'usager va : le règlement d'exécution 2022/1463, art. 11(2)(b), veut
+      # qu'il sache qu'il sera redirigé vers le fournisseur pour prévisualiser
+      # le justificatif. La description reçue du correspondant suit, puis le
+      # lien.
       preview_title: Your document is waiting for your approval abroad
-      preview_body: >-
-        The administration holding it wants to show you the document on its own space before
-        sending it. The demonstration stops here.
+      preview_lead: >-
+        The administration holding it wants to show it to you before sending it. You will be
+        redirected to its own space to preview the document and decide whether to use it, then
+        brought back here.
+      preview_link: Preview and approve the document abroad
+      # Le choix de l'usager sur l'espace de prévisualisation, et non une panne :
+      # le chapitre 4.9 §1 fait répondre une liste vide à qui décide de ne pas
+      # utiliser le justificatif.
+      declined_title: You chose not to use this document
+      declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      # Un `PUT`, que le chapitre 4.9 v1.2.3 §5 permet au correspondant et
+      # qu'aucun formulaire HTML n'envoie.
+      unpresentable_title: The preview link cannot be presented
+      unpresentable_body: The administration asks to be reached in a way this page cannot offer.
+      # La confirmation elle-même refusée ou sans réponse : le message du
+      # contrat suit le titre.
+      unconfirmed_title: The preview could not be arranged
       unreadable: The state of the request could not be read
       # La seule phrase que le navigateur lève de lui-même : le serveur ne peut
       # pas signaler qu'il est injoignable, et sans elle une panne de réseau
@@ -495,6 +511,8 @@ fr:
         unreadable: "Réponse illisible de %{path} (%{status}) : %{error}"
       exchange_state_client:
         unreachable: "Le contrat n'a pas répondu : %{error}"
+      preview_confirmation_client:
+        unreachable: "Le contrat n'a pas répondu à la confirmation de la prévisualisation : %{error}"
     beneficiary_token:
       gender: "Sexe « %{value} » refusé : le jeton du bénéficiaire n'en porte que %{admitted}."
       invalid: "Jeton bénéficiaire invalide : %{error}"
@@ -1542,6 +1560,7 @@ fr:
       demo_evidence_empty: Le justificatif remis ne portait aucun octet
       demo_unplaceable: Le justificatif remis ne se rattache à aucune demande
       demo_locked: Le requêtage est verrouillé sur ce déploiement
+      demo_preview_unconfirmed: La prévisualisation n'a pas pu être confirmée
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
       demo_unreachable: Le service de requête n'a pas pu être joint
@@ -1571,6 +1590,8 @@ fr:
         undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
       request_evidence:
         unreachable: "Contrat de requête de justificatif injoignable, ou jeu de clés inexploitable : %{error}"
+      confirm_preview:
+        unconfirmed: "La prévisualisation n'a pas pu être confirmée : %{error}"
       # Consignés dans le journal applicatif et jamais à l'écran : le lecteur est
       # OOTS-France, qui reçoit un statut, et l'usager de la démarche n'a rien
       # demandé au moment où ces lignes s'écrivent. Le chapitre 4.10 §4.1,

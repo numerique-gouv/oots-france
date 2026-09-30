@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Documents' do
+  include ActiveSupport::Testing::TimeHelpers
+
   # The one requirement `eb_requirements_fr` holds, and the two of
   # `eb_requirements_t1_fr`, which is the procedure of the demonstration.
   let(:exigence) { '00000000-0000-0000-0000-000000000000' }
@@ -654,6 +656,62 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(response.parsed_body.css('main').text).to include('Document retrieved successfully')
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).to have_been_made.once
+    end
+  end
+
+  # Chapter 4.9 §5: the user comes back by the return address, and the portal
+  # « Confirm[s] that the user accessing the Online Procedure Portal using the
+  # return URL is the user that is executing the associated procedure ».
+  describe 'GET /admin/demo/documents, back from the preview space' do
+    let(:echange) { DemoContractStubs::ACCEPTED_EXCHANGE }
+    let(:conversation) { DemoContractStubs::ACCEPTED_CONVERSATION }
+
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state(statut: 'preview_required')
+      stub_preview_confirmation
+      get admin_demo_documents_path(version: 'v2.0')
+      post demande_path
+      stub_exchange_state(statut: 'pending')
+    end
+
+    it 'opens on the departure page until the user comes back' do
+      get admin_demo_documents_path(version: 'v2.0')
+
+      expect(response.parsed_body.css('main').text).to include('Preview and approve the document abroad')
+    end
+
+    it 'takes the user back to the waiting of the card whose exchange it names' do
+      get admin_demo_documents_path(version: 'v2.0', echange:, conversation:)
+
+      expect(Demo::Request.sole.returned_at).to be_present
+      expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('pending')
+      expect(response.parsed_body.css('main').text).to include('Requesting the document')
+    end
+
+    it 'ignores an exchange of another walk, and renders the page as it stands' do
+      registered_request('aaaaaaaa-0000-4000-8000-000000000009', preview_address: 'https://ap.example/preview')
+
+      get admin_demo_documents_path(version: 'v2.0', echange: 'aaaaaaaa-0000-4000-8000-000000000009', conversation:)
+
+      expect(response).to have_http_status(:ok)
+      expect(Demo::Request.where.not(returned_at: nil)).to be_empty
+    end
+
+    it 'ignores an exchange named under another conversation' do
+      get admin_demo_documents_path(version: 'v2.0', echange:, conversation: 'une-autre')
+
+      expect(Demo::Request.find_by(exchange_id: echange).returned_at).to be_nil
+    end
+
+    it 'counts the return once, whatever the reloads' do
+      get admin_demo_documents_path(version: 'v2.0', echange:, conversation:)
+      first = Demo::Request.find_by(exchange_id: echange).returned_at
+
+      travel(1.minute) { get admin_demo_documents_path(version: 'v2.0', echange:, conversation:) }
+
+      expect(Demo::Request.find_by(exchange_id: echange).returned_at).to eq(first)
     end
   end
 
