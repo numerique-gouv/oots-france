@@ -343,10 +343,19 @@ fr:
       # qu'aucun formulaire HTML n'envoie.
       unpresentable_title: The preview link cannot be presented
       unpresentable_body: The administration asks to be reached in a way this page cannot offer.
-      # La confirmation elle-même refusée ou sans réponse : le message du
-      # contrat suit le titre.
+      # La confirmation elle-même refusée ou sans réponse. Ce que le contrat a
+      # répondu, ou l'exception, est écrit pour l'exploitant et en français :
+      # il reste au journal applicatif, et l'usager lit une phrase du portail.
       unconfirmed_title: The preview could not be arranged
-      unreadable: The state of the request could not be read
+      unconfirmed_body: >-
+        Ask for the document again. If it happens again, the operator will find the reason in the
+        console.
+      # Le contrat injoignable, ou qui refuse de dire l'état : la raison reste
+      # au journal applicatif, comme pour la confirmation.
+      unreadable_title: The state of the request could not be read
+      unreadable_body: >-
+        Reload the page to read it again. If it happens again, the operator will find the reason in
+        the console.
       # La seule phrase que le navigateur lève de lui-même : le serveur ne peut
       # pas signaler qu'il est injoignable, et sans elle une panne de réseau
       # laisserait l'attente tourner sans fin ou se figer sans rien dire.
@@ -582,6 +591,7 @@ fr:
     # son appelant, comme les interacteurs de `Demo::` le font tous.
     reads_demo_request:
       unanswered: "État de la demande de la démarche de démonstration illisible : %{error}"
+      unreadable: "Le contrat n'a pas dit l'état de la demande de la démarche de démonstration (%{status}) : %{error}"
     # Une identification réussie dont le départ n'a retenu aucune version : aucun
     # parcours ne s'ouvre, et l'exploitant repart de l'écran du choix.
     france_connect:

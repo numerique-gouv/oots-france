@@ -94,17 +94,24 @@ class DemoRequestZoneComponent < ViewComponent::Base
   # the contract's refusals it was.
   def failure_title
     return t("interactors.failures.#{failure[:key]}") if refused_the_click?
-    return t('components.demo_request_zone.unreadable') if outcome.unreadable?
 
-    t("components.demo_request_zone.#{FAILURES.fetch(outcome.outcome)}_title")
+    t("components.demo_request_zone.#{failure_name}_title")
   end
 
+  # A sentence of the portal's own, and never what the contract said or what an
+  # exception carried: those are written for whoever runs the deployment, in
+  # French, and stay in the application log, where the reading and the
+  # confirmation already write them. The one exception is the click refused
+  # before any exchange opened, which names the refusal of the contract.
   def failure_body
     return Array(failure[:errors]).join(' ').presence if refused_the_click?
-    return outcome.refusal.presence if said_by_the_contract?
 
-    t("components.demo_request_zone.#{FAILURES.fetch(outcome.outcome)}_body")
+    t("components.demo_request_zone.#{failure_name}_body")
   end
+
+  # The language of the alert: the click refused is said with the console's
+  # French wording, everything else in the English of the procedure (RGAA 8.7).
+  def failure_language = refused_the_click? ? 'fr' : 'en'
 
   # The `EDM:ERR:*` the correspondent returned, where there is one: it is the
   # only thing that says which refusal this was, and the component the journal
@@ -136,7 +143,5 @@ class DemoRequestZoneComponent < ViewComponent::Base
   # of what this zone has to say.
   def refused_the_click? = failure.present?
 
-  # The two failures only the contract's own message can explain: it could not
-  # be read, or it refused the confirmation of the preview.
-  def said_by_the_contract? = outcome.unreadable? || outcome.outcome == :unconfirmed
+  def failure_name = outcome.unreadable? ? 'unreadable' : FAILURES.fetch(outcome.outcome)
 end

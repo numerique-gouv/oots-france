@@ -216,11 +216,15 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       DemoOutcomeWording.new(answer:, request:, unconfirmed: { key: :demo_preview_unconfirmed, errors: ['refusée'] })
     end
 
-    it 'says so with what the contract said, and offers to ask again' do
+    # What the contract said is written for the operator, in French: it stays in
+    # the log, and the user reads a sentence of the portal's own.
+    it 'says so in a sentence of its own, never the contract\'s, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.fr-alert--error', text: 'The preview could not be arranged')
-      expect(page).to have_text('refusée')
+      expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--error',
+        text: 'The preview could not be arranged')
+      expect(page).to have_text('the operator will find the reason in the console')
+      expect(page).to have_no_text('refusée')
       expect(page).to have_button('Retry to request')
     end
   end
@@ -249,11 +253,11 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   context 'when the contract could not be read' do
     subject(:zone) { described_class.new(outcome: DemoOutcomeWording.unanswered(request:, error: 'Panne'), requirement_uuid:) }
 
-    it 'reports the outage where it would report a refusal' do
+    it 'reports the outage where it would report a refusal, and keeps its reason for the log' do
       render_inline(zone)
 
-      expect(page).to have_text('could not be read')
-      expect(page).to have_text('Panne')
+      expect(page).to have_css('.demo-request__failure[lang="en"]', text: 'could not be read')
+      expect(page).to have_no_text('Panne')
     end
   end
 
@@ -284,7 +288,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'names the refusal and what the contract returned' do
       render_inline(zone)
 
-      expect(page).to have_text('refusée')
+      expect(page).to have_css('.demo-request__failure[lang="fr"]', text: 'refusée')
       expect(page).to have_text('EB:ERR:0001')
       expect(page).to have_button('Retry to request')
     end

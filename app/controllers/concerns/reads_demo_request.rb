@@ -65,6 +65,7 @@ module ReadsDemoRequest
     return nil if request.nil?
 
     state = state_client.fetch(request.exchange_id)
+    log_unreadable(state) unless state.readable?
 
     DemoOutcomeWording.new(answer: state, request:, unconfirmed: confirm_preview(request, state))
   rescue DemoContractError => e
@@ -96,6 +97,13 @@ module ReadsDemoRequest
   end
 
   def demo_resume_location = "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment)}"
+
+  # What the contract answered when it would not say the state — an exchange it
+  # does not know, the feature switch closed: the zone says only that it could
+  # not read it, and this line is where the reason remains.
+  def log_unreadable(state)
+    Rails.logger.warn(I18n.t('controllers.reads_demo_request.unreadable', status: state.status, error: state.error))
+  end
 
   def state_client = @state_client ||= ::Demo::ExchangeStateClient.new
 end

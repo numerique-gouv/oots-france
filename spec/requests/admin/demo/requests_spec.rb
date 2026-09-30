@@ -484,6 +484,20 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
       expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).not_to include('execution expired')
+    end
+
+    # The contract refusing to say the state: the zone says it could not read
+    # it, and the reason, written for the operator, stays in the log.
+    it 'keeps the reason a contract gives for not reading the state out of the zone, and in the log' do
+      stub_exchange_state(status: 404, erreur: 'Échange inconnu')
+      allow(Rails.logger).to receive(:warn)
+
+      get demande_path
+
+      expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).not_to include('Échange inconnu')
+      expect(Rails.logger).to have_received(:warn).with(include('Échange inconnu'))
     end
 
     it 'sends an operator holding no identity back to the start' do
@@ -573,12 +587,15 @@ RSpec.describe 'Admin::Demo::Requests' do
       expect(response.parsed_body.text).to include('You chose not to use this document', 'Retry to request')
     end
 
-    it 'says a confirmation the contract refused, and confirms nothing more' do
+    it 'says a confirmation the contract refused, keeps the reason for the log, and confirms nothing more' do
       stub_preview_confirmation(status: 422, erreur: "L'adresse de retour n'est pas une URL absolue.")
+      allow(Rails.logger).to receive(:warn)
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('The preview could not be arranged', "n'est pas une URL absolue")
+      expect(response.parsed_body.text).to include('The preview could not be arranged')
+      expect(response.parsed_body.text).not_to include("n'est pas une URL absolue")
+      expect(Rails.logger).to have_received(:warn).with(include("n'est pas une URL absolue"))
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
     end
   end

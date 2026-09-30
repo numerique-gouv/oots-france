@@ -103,11 +103,11 @@
         the code below says which refusal it was, and the component the journal
         uses glosses it. Hidden the moment the button is clicked again: what it
         reports is no longer what is happening. %>
-    <%# `lang="fr"`: the title comes from `interactors.failures.*`, which the
-        operator console shares with this screen and which is written in French —
-        the one piece of this zone that is not in English. Said rather than left
-        to be pronounced as English (RGAA 8.7). %>
-    <div class="demo-request__failure" data-demo-request-target="failure" lang="fr">
+    <%# The language said rather than left to be guessed (RGAA 8.7): a click the
+        contract refused is titled from `interactors.failures.*`, which the
+        operator console shares with this screen and which is written in French;
+        every other failure is said in English. %>
+    <div class="demo-request__failure" data-demo-request-target="failure" lang="<%= failure_language %>">
       <%= helpers.dsfr_alert(type: failure_type, title: failure_title) do %>
         <%= failure_body %>
         <% if edm_error_code %>

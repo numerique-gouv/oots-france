@@ -88,10 +88,6 @@ class DemoOutcomeWording
   # known of the exchange, which is not the same as knowing it went nowhere.
   def unreadable? = !answer.readable?
 
-  # What the contract said when it would not answer: about the exchange, or
-  # about the confirmation of its preview.
-  def refusal = unconfirmed ? Array(unconfirmed[:errors]).join(' ') : answer.error
-
   def preview_form? = preview_method == 'POST'
 
   # The fields of the form a `POST` sends, which the contract hands as

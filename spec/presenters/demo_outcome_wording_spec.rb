@@ -94,13 +94,12 @@ RSpec.describe DemoOutcomeWording do
       end
     end
 
-    it 'says a confirmation that failed, with what the contract said' do
+    it 'says a confirmation that failed' do
       payload['statut'] = 'preview_required'
       wording = described_class.new(answer:, request:,
         unconfirmed: { key: :demo_preview_unconfirmed, errors: ['adresse refusée'] })
 
       expect(wording.outcome).to eq(:unconfirmed)
-      expect(wording.refusal).to eq('adresse refusée')
     end
 
     # The evidence in hand settles it, whichever process wrote last.
