@@ -9,9 +9,10 @@ module Demo
   # a class that documents an invariant its callers must keep is a class that
   # loses it the day a second caller appears.
   #
-  # Both calls of the contract land here, the one that opens an exchange and the
-  # one that reads its state back, because both answer the same document: the
-  # fields are those `EvidenceRequestsController#state_of` writes.
+  # The three calls of the contract land here — the one that opens an exchange,
+  # the one that reads its state back, the one that confirms a preview — because
+  # all three answer the same document: the fields are those `ExchangeState`
+  # writes.
   class ContractAnswer
     ACCEPTED = 202
 
@@ -78,5 +79,20 @@ module Demo
     def edm_error_code = payload['codeErreur']
 
     def preview_location = payload['adressePrevisualisation']
+
+    # What `ExchangeState#presented_link` adds to the answer of a confirmation:
+    # the verb the link is followed with, and the form a `POST` or a `PUT` sends.
+    def preview_method = payload['methodePrevisualisation']
+
+    def preview_body = payload['corpsPrevisualisation']
+
+    # One `{langue, texte}` per language the correspondent wrote, which the state
+    # carries only while it waits for the confirmation.
+    def preview_descriptions = Array(payload['descriptionPrevisualisation']).grep(Hash)
+
+    def preview_required? = exchange_status == 'preview_required'
+
+    # A confirmation France took: the status, and the link it hands back.
+    def confirmed? = status == ACCEPTED && preview_location.present?
   end
 end

@@ -40,6 +40,34 @@ module Demo
 
     def evidence? = evidence_received_at.present?
 
+    # Chapter 4.9 §5 has the portal present a link, and the answer to the
+    # confirmation is the only place that link is ever given: kept, so that the
+    # departure page says the same thing at every reload, and so that nothing
+    # is confirmed twice.
+    def preview_link? = preview_address.present?
+
+    def returned? = returned_at.present?
+
+    # The departure page stands while the user has somewhere to go and has not
+    # come back from it.
+    def awaiting_return? = preview_link? && !returned?
+
+    # The user back by the return address. Chapter 4.9 §5 has the portal check
+    # that whoever returns is the user of the procedure, so the exchange is
+    # looked up under the journey the session holds: one of any other walk is
+    # ignored. The first return only: a reload of the page it lands on is the
+    # same return.
+    def self.return_from_preview!(journey:, exchange_id:, conversation_id:)
+      returned = find_by(journey_id: journey.id, exchange_id:)
+      return unless returned&.preview_link? && returned.answers?(exchange_id, conversation_id)
+
+      returned.update!(returned_at: Time.current) unless returned.returned?
+    end
+
+    # What the screen's deadline counts from: the click, or the return from the
+    # preview space, the time spent there being the user's and not the answer's.
+    def waiting_since = returned_at || created_at
+
     # Chapter 1 §4.2 has the user unable to « modify its content in any way », so
     # what is filed is what arrived, byte for byte, and the digest is taken of
     # those same bytes rather than recomputed anywhere else.

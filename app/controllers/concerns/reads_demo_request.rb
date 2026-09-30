@@ -64,7 +64,10 @@ module ReadsDemoRequest
   def read_demo_outcome(request)
     return nil if request.nil?
 
-    DemoOutcomeWording.new(answer: state_client.fetch(request.exchange_id), request:)
+    state = state_client.fetch(request.exchange_id)
+    log_unreadable(request, state) unless state.readable?
+
+    DemoOutcomeWording.new(answer: state, request:, unconfirmed: confirm_preview(request, state))
   rescue DemoContractError => e
     # Logged as much as shown, like the interactors of `Demo::`: the zone tells
     # the user of the outage, and the log is the only place it remains once the
@@ -73,6 +76,35 @@ module ReadsDemoRequest
     Rails.logger.warn(I18n.t('controllers.reads_demo_request.unanswered', error: e.message))
 
     DemoOutcomeWording.unanswered(request:, error: e.message)
+  end
+
+  # The one write a reading leads to: chapter 4.9 §5 has the portal recognise
+  # the preview the first flow asks for and present a link to it, and the
+  # contract hands that link only in its answer to the confirmation. Asked until
+  # it succeeds — the link kept on the request says it did — and never again
+  # after that, however often the zone reads the state. Confirming is not asking
+  # again: it is the second round trip of the same exchange (chapter 4.9 §2
+  # step 12).
+  #
+  # The user comes back to this page, under the line of the journey: an address
+  # without its segment is one the walk no longer serves. What went wrong, if
+  # anything, is returned for the zone to say.
+  def confirm_preview(request, state)
+    return nil unless state.preview_required? && !request.preview_link?
+
+    result = ::Demo::ConfirmPreview.call(request:, state:, identity:, resume_location: demo_resume_location)
+
+    result.error unless result.success?
+  end
+
+  def demo_resume_location = "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment)}"
+
+  # What the contract answered when it would not say the state — an exchange it
+  # does not know, the feature switch closed: the zone says only that it could
+  # not read it, and this line is where the reason remains.
+  def log_unreadable(request, state)
+    Rails.logger.warn(I18n.t('controllers.reads_demo_request.unreadable',
+      exchange: request.exchange_id, status: state.status, error: state.error))
   end
 
   def state_client = @state_client ||= ::Demo::ExchangeStateClient.new

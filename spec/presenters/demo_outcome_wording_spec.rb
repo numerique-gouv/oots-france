@@ -28,10 +28,78 @@ RSpec.describe DemoOutcomeWording do
       expect(wording.outcome).to eq(:refused)
     end
 
-    it 'is a preview when the correspondent asked for one' do
-      payload['statut'] = 'preview_required'
+    # Chapter 4.9 §1: a user deciding not to use the evidence is answered an
+    # empty list, which the contract says as `declined`.
+    it 'says the user declined the document on the preview space' do
+      payload['statut'] = 'declined'
 
-      expect(wording.outcome).to eq(:preview)
+      expect(wording.outcome).to eq(:declined)
+    end
+
+    # The departure page of chapter 4.9 §5: the link the confirmation handed
+    # back, and the user not yet back from following it.
+    describe 'the departure page' do
+      before { request.preview_address = 'https://ap.example/preview' }
+
+      it 'stands while the user has not come back' do
+        payload['statut'] = 'pending'
+
+        expect(wording.outcome).to eq(:preview)
+      end
+
+      it 'stands on a confirmation that has just been made, the state still awaiting it' do
+        payload['statut'] = 'preview_required'
+
+        expect(wording.outcome).to eq(:preview)
+      end
+
+      it 'never gives up, the time spent on the preview space being the user\'s' do
+        request.created_at = 1.hour.ago
+
+        expect(wording.outcome).to eq(:preview)
+      end
+
+      # A second exchange may settle without the user coming back.
+      it 'leaves as soon as the second exchange failed' do
+        payload['statut'] = 'failed'
+
+        expect(wording.outcome).to eq(:refused)
+      end
+
+      it 'leaves as soon as the user declined' do
+        payload['statut'] = 'declined'
+
+        expect(wording.outcome).to eq(:declined)
+      end
+
+      it 'waits again once the user is back' do
+        request.returned_at = Time.current
+
+        expect(wording.outcome).to eq(:pending)
+      end
+
+      # Chapter 4.9 v1.2.3 §5 allows a `PUT`, which no HTML form sends.
+      it 'says a link to be followed with a PUT cannot be presented' do
+        request.preview_method = 'PUT'
+
+        expect(wording.outcome).to eq(:unpresentable)
+      end
+
+      it 'decodes the fields of the form a POST sends' do
+        request.preview_method = 'POST'
+        request.preview_body = 'returnurl=https%3A%2F%2Ffr.example%2Fretour&returnmethod=GET'
+
+        expect(wording).to be_preview_form
+        expect(wording.preview_fields).to eq([%w[returnurl https://fr.example/retour], %w[returnmethod GET]])
+      end
+    end
+
+    it 'says a confirmation that failed' do
+      payload['statut'] = 'preview_required'
+      wording = described_class.new(answer:, request:,
+        unconfirmed: { key: :demo_preview_unconfirmed, errors: ['adresse refusée'] })
+
+      expect(wording.outcome).to eq(:unconfirmed)
     end
 
     # The evidence in hand settles it, whichever process wrote last.
@@ -98,26 +166,27 @@ RSpec.describe DemoOutcomeWording do
 
         expect(wording.outcome).to eq(:refused)
       end
-    end
-  end
 
-  describe '#secure_preview?' do
-    # Chapter 4.9 §4: « specify secure HTTP ("https://") as transport. The use
-    # of "http://" URIs is not allowed. »
-    it 'is true of an https address' do
-      payload['adressePrevisualisation'] = 'https://ap.example/preview'
+      # Counted from the return when the user went to preview the document.
+      describe 'after a visit to the preview space' do
+        let(:now) { request.returned_at + described_class::GIVE_UP_AFTER + 1.second }
 
-      expect(wording).to be_secure_preview
-    end
+        before do
+          request.created_at = 1.hour.ago
+          request.preview_address = 'https://ap.example/preview'
+          request.returned_at = Time.current
+        end
 
-    it 'is false of the http the chapter forbids' do
-      payload['adressePrevisualisation'] = 'http://ap.example/preview'
+        it 'gives up two minutes after the return' do
+          expect(wording.outcome).to eq(:expired)
+        end
 
-      expect(wording).not_to be_secure_preview
-    end
+        it 'is still waiting a moment before' do
+          allow(clock).to receive(:now).and_return(request.returned_at + described_class::GIVE_UP_AFTER - 1.second)
 
-    it 'is false of no address at all' do
-      expect(wording).not_to be_secure_preview
+          expect(wording.outcome).to eq(:pending)
+        end
+      end
     end
   end
 
@@ -130,6 +199,12 @@ RSpec.describe DemoOutcomeWording do
 
     it 'holds it once the document is in hand' do
       allow(request).to receive(:evidence?).and_return(true)
+
+      expect(wording).to be_holds_country
+    end
+
+    it 'holds it while the departure page stands' do
+      request.preview_address = 'https://ap.example/preview'
 
       expect(wording).to be_holds_country
     end

@@ -10,11 +10,10 @@ module Demo
   class EvidenceRequestClient
     PATH = '/requete/pieceJustificative'.freeze
 
-    # The demonstration asks for the evidence itself, never for a preview:
-    # France's preview space serves correspondents, and a demonstration going
-    # through it has yet to be designed. Written out rather than omitted —
-    # `EvidenceRequestsController` reads a bare parameter as true.
-    NO_PREVIEW = 'false'.freeze
+    # The SDG regulation, article 14(3)(f), makes previewing the evidence the
+    # user's right, and only « applicable Union or national law » exempts a
+    # procedure from it (article 14(5)): none exempts this one.
+    PREVIEW_POSSIBLE = 'true'.freeze
 
     def initialize(connection: Faraday.new)
       @connection = connection
@@ -37,7 +36,7 @@ module Demo
         codeDemarche: procedure_code,
         codePays: country_code,
         beneficiaire: encrypted_beneficiary,
-        previsualisationRequise: NO_PREVIEW,
+        previsualisationRequise: PREVIEW_POSSIBLE,
         idConversation: conversation_id,
         idExigence: requirement_id,
         specification:,

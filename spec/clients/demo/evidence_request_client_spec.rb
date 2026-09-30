@@ -17,16 +17,16 @@ RSpec.describe Demo::EvidenceRequestClient do
 
     expect(evidence_request_query).to eq(
       'idRequeteur' => '00000000000003', 'codeDemarche' => 'T1', 'codePays' => 'FR',
-      'beneficiaire' => 'un-jeton-chiffré', 'previsualisationRequise' => 'false',
+      'beneficiaire' => 'un-jeton-chiffré', 'previsualisationRequise' => 'true',
     )
   end
 
-  # `EvidenceRequestsController` reads a bare `previsualisationRequise` as true,
-  # so the demonstration writes the value out rather than omitting it.
-  it 'asks for the evidence itself and not for a preview' do
+  # SDG regulation, article 14(3)(f): the possibility to preview is the user's
+  # right, and no law exempts this procedure from it.
+  it 'lets the user preview the evidence' do
     answer
 
-    expect(evidence_request_query['previsualisationRequise']).to eq('false')
+    expect(evidence_request_query['previsualisationRequise']).to eq('true')
   end
 
   it 'names no conversation when it holds none' do
