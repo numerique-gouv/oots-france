@@ -135,7 +135,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 
     let!(:exchange) do
-      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+      create(:exchange, :sent, exchange_id: message.exchange_id)
     end
 
     before { allow(message).to receive(:body).and_raise(UnreadableMessageError, 'corps illisible') }
@@ -166,7 +166,7 @@ RSpec.describe IncomingMessage::Process do
       envelope_with_body('erreurObjetIntrouvable') { |body| body.gsub('query:QueryResponse', 'query:QueryRequest') }
     end
 
-    let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
+    let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
 
     before { allow(gateway).to receive(:retrieve).and_return(message) }
 
@@ -194,7 +194,7 @@ RSpec.describe IncomingMessage::Process do
       envelope_with_body('erreurObjetIntrouvable') { |body| body.sub(%r{<rs:Exception.*?</rs:Exception>}m, '') }
     end
 
-    let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
+    let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
 
     it 'names both rules requiring one on the line of its arrival' do
       process
@@ -239,7 +239,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
 
     let!(:conversation) do
-      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+      create(:exchange, :sent, exchange_id: message.exchange_id)
     end
 
     it 'settles the exchange as a failure, under no code' do
@@ -265,7 +265,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { response_matching_nothing }
 
     let!(:conversation) do
-      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+      create(:exchange, :sent, exchange_id: message.exchange_id)
     end
 
     it 'settles the exchange as unmatched' do
@@ -328,7 +328,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
     let!(:exchange) do
-      create(:exchange, exchange_id: message.exchange_id).tap(&:sent!)
+      create(:exchange, :sent, exchange_id: message.exchange_id)
     end
 
     # Retrying is not an option: the PMode erases a message once retrieved, so a
@@ -448,7 +448,7 @@ RSpec.describe IncomingMessage::Process do
     end
 
     it 'settles the one exchange its conversation still has underway' do
-      exchange = create(:exchange, :legacy_line, conversation_id: message.conversation_id).tap(&:sent!)
+      exchange = create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id)
 
       process
 
@@ -456,7 +456,7 @@ RSpec.describe IncomingMessage::Process do
     end
 
     it 'settles none where the conversation holds two' do
-      waiting = Array.new(2) { create(:exchange, conversation_id: message.conversation_id).tap(&:sent!) }
+      waiting = Array.new(2) { create(:exchange, :sent, conversation_id: message.conversation_id) }
 
       process
 
@@ -474,8 +474,8 @@ RSpec.describe IncomingMessage::Process do
     before { allow(collaborators[:evidence_forwarder]).to receive(:deliver) }
 
     it 'journals R-EDM-RESP-C002 against the literal of the 1.2 line' do
-      create(:exchange, :legacy_line, conversation_id: message.conversation_id,
-        request_id: message.body.request_id).tap(&:sent!)
+      create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+        request_id: message.body.request_id)
 
       process
 
@@ -490,8 +490,8 @@ RSpec.describe IncomingMessage::Process do
       let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
       it 'journals R-EDM-RESP-C002 all the same' do
-        create(:exchange, :legacy_line, exchange_id: message.exchange_id,
-          conversation_id: message.conversation_id, request_id: message.body.request_id).tap(&:sent!)
+        create(:exchange, :sent, :legacy_line, exchange_id: message.exchange_id,
+          conversation_id: message.conversation_id, request_id: message.body.request_id)
 
         process
 

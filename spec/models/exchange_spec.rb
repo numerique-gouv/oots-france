@@ -867,7 +867,7 @@ RSpec.describe Exchange do
       let(:conversation_id) { '5fe50e16-d6b8-4005-b5ec-0ab097f34448' }
 
       it 'takes the one exchange of that conversation still underway' do
-        waiting = create(:exchange, :legacy_line, conversation_id:).tap(&:sent!)
+        waiting = create(:exchange, :sent, :legacy_line, conversation_id:)
         create(:exchange, :legacy_line, conversation_id:).tap(&:delivered!)
 
         expect(found).to eq(waiting)
@@ -877,7 +877,7 @@ RSpec.describe Exchange do
       # session and not to one exchange, so two underway leave undecided which
       # of them a message belongs to.
       it 'takes none where two of that conversation are underway' do
-        2.times { create(:exchange, :legacy_line, conversation_id:).tap(&:sent!) }
+        2.times { create(:exchange, :sent, :legacy_line, conversation_id:) }
 
         expect(found).to be_nil
       end

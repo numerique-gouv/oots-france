@@ -13,7 +13,7 @@ RSpec.describe IncomingMessage::SettleExchange do
     )
   end
   let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
-  let!(:exchange) { create(:exchange, exchange_id: message.exchange_id).tap(&:sent!) }
+  let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
 
   # Chapter 4.4: « An Online Procedure Portal MUST NOT process responses that
   # use request identifiers of previous requests to which it already received a
@@ -385,8 +385,8 @@ RSpec.describe IncomingMessage::SettleExchange do
     context 'when it arrives on the 1.2 line' do
       let(:message) { earlier_line_response_matching_nothing }
       let!(:exchange) do
-        create(:exchange, :legacy_line, conversation_id: message.conversation_id,
-          request_id: message.body.request_id).tap(&:sent!)
+        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+          request_id: message.body.request_id)
       end
 
       it 'settles the exchange as unmatched' do
@@ -577,8 +577,8 @@ RSpec.describe IncomingMessage::SettleExchange do
   describe 'an answer arriving on the 1.2 line' do
     let(:message) { earlier_line_response }
     let!(:exchange) do
-      create(:exchange, :legacy_line, conversation_id: message.conversation_id,
-        request_id: message.body.request_id).tap(&:sent!)
+      create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+        request_id: message.body.request_id)
     end
 
     it 'finds the exchange it settles by the identifier of the request' do

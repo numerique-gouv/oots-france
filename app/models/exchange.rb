@@ -260,7 +260,10 @@ class Exchange < ApplicationRecord
     waiting.first if waiting.one?
   end
 
-  def sent! = fire(:transmit, settled_at: nil)
+  # `message_id` is what the gateway called the request, and what its
+  # notifications on that message name. The second request of a preview
+  # replaces the first's: that one was delivered, since it was answered.
+  def sent!(message_id) = fire(:transmit, settled_at: nil, request_message_id: message_id)
 
   # What the correspondent said of its preview beyond the address — the
   # descriptions a portal builds its launch page from (chapter 4.9 §5), and on

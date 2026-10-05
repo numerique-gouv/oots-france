@@ -24,10 +24,10 @@ module EvidenceRequest
     # back to the `ds:SignedInfo` it signed — the non-repudiation chapter 4.8
     # traces from an evidence identifier. Kept, therefore, and not discarded.
     def submit(exchange)
-      submitted = gateway.submit(envelope.render)
-      exchange.sent!
+      message_id = gateway.submit(envelope.render).message_id
+      exchange.sent!(message_id)
 
-      submitted.message_id
+      message_id
     # The builder validates nothing on construction: the `validate!` calls sit
     # in the private methods `evidence_request.xml.erb` interpolates, so a party
     # no message can carry only raises at `envelope.render` — here, and before
