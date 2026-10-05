@@ -229,16 +229,16 @@ Alors('ce lien contient l\'adresse de retour dans {string} et sa méthode dans {
   expect(query[methode]).to eq('GET')
 end
 
-# The link appears once the second request has reached the space, which runs
-# in parallel with the visit (chapter 4.9 §2 step 12): the page is asked again
-# until it offers it.
-Quand('l\'usager revient à sa démarche par le lien de retour') do
-  patiente_jusqu_a('l\'espace de prévisualisation offre le lien de retour') do
-    @navigateur.follow_address(@lien_de_depart)
-    lien_de_retour.present?
-  end
+# The way back is known once the second request has reached the space, which
+# runs in parallel with the visit (chapter 4.9 §2 step 12): the space is asked
+# again until it sends the user back to the procedure.
+Quand('l\'usager est ramené à sa démarche') do
+  patiente_jusqu_a('l\'espace de prévisualisation ramène l\'usager à sa démarche') do
+    next true if de_retour_sur_la_demarche?
 
-  @navigateur.follow_address(lien_de_retour)
+    @navigateur.follow_address(@lien_de_depart)
+    de_retour_sur_la_demarche?
+  end
 end
 
 Alors('l\'usager arrive sur la page des justificatifs, qui reçoit l\'échange et la conversation') do
@@ -268,9 +268,7 @@ end
 
 def lien_de_depart = @navigateur.links('.demo-request__preview a.fr-btn').first
 
-def lien_de_retour
-  @navigateur.links('a.fr-btn').find { |lien| lien.to_s.start_with?("#{oots_france_url}/retour/") }
-end
+def de_retour_sur_la_demarche? = URI.parse(@navigateur.current_url).path == adresse_de_la_demarche('documents')
 
 # An address of the walk, under the segment of the line the scenario chose.
 def adresse_de_la_demarche(page = nil)

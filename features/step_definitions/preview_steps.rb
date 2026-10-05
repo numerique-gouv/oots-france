@@ -96,14 +96,18 @@ Alors('la France envoie une réponse sans justificatif') do
   expect(second_answer.regrep_body).to include('<rim:RegistryObjectList/>')
 end
 
-Alors('la page de l\'espace affiche le lien de retour vers la démarche') do
-  patiente_jusqu_a('la page offre le lien de retour') do
+# The way back is known with the choice on 1.2, and once the second request
+# has arrived on 2.0: the space is asked again until it sends the user there.
+Alors('l\'espace ramène l\'usager à l\'adresse de retour') do
+  patiente_jusqu_a('l\'espace ramène l\'usager à l\'adresse de retour') do
+    next true if space_browser.current_url == RETURN_ADDRESS
+
     space_browser.follow_address(issued_error.preview_location)
-    space_browser.links('a.fr-btn').include?(RETURN_ADDRESS)
+    space_browser.current_url == RETURN_ADDRESS
   end
 end
 
-Alors('la page affiche que le choix est enregistré, sans rien proposer de choisir') do
+Alors('la page ne propose plus de choisir') do
   expect(space_browser.title).to eq(I18n.t('preview_sessions.show.recorded.title'))
   expect(space_browser.body).not_to include('type="radio"')
 end

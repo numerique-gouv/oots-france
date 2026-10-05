@@ -142,18 +142,31 @@ RSpec.describe 'The preview space' do
 
       expect(response.parsed_body.at_css('a')['href']).to eq('https://portail.example/retour')
     end
+
+    # The choice made and the way back known, the space has nothing more to
+    # say: it sends the user back, from the choice as from a later visit.
+    it 'sends the user straight back to the procedure once the way is known' do
+      session.hold!(raw: '<second/>', sent_at: Time.current,
+        message_id: 'second', answering: nil, return_location: 'https://portail.example/retour')
+
+      choose('accepted')
+      expect(response).to redirect_to('https://portail.example/retour')
+      expect(response).to have_http_status(:see_other)
+
+      visit_space
+      expect(response).to redirect_to('https://portail.example/retour')
+    end
   end
 
   describe 'the 1.2 line' do
     let!(:session) { create(:preview_session, :legacy_line) }
 
     # CA17: the way back comes with the visit, offered as soon as the choice is made.
-    it 'offers the way back the visit brought' do
+    it 'sends the user back by the way the visit brought, as soon as the choice is made' do
       visit_space(params: { returnurl: 'https://portail.example/retour', returnmethod: 'GET' })
       post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
-      follow_redirect!
 
-      expect(response.parsed_body.at_css('a.fr-btn')['href']).to eq('https://portail.example/retour')
+      expect(response).to redirect_to('https://portail.example/retour')
     end
 
     # Chapter 4.9 v1.2.3 §5: another method than GET is followed by a form
@@ -165,6 +178,7 @@ RSpec.describe 'The preview space' do
 
       form = response.parsed_body.at_css("form[action='https://portail.example/retour']")
       expect(form['method']).to eq('post')
+      expect(form['data-preview-return-target']).to eq('way')
       expect(form.css('input')).to be_empty
       expect(AuditEvent.find_by(event_type: 'preview_decided').detail).to eq('refused')
     end

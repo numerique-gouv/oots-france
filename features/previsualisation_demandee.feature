@@ -5,8 +5,8 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
   Le portail demande un justificatif en acceptant que l'usager le voie
   d'abord. Le fournisseur répond l'adresse de son espace de prévisualisation ;
   le portail confirme, la France émet la seconde requête, l'usager consulte le
-  document, choisit, et revient au portail par l'adresse de retour de la
-  France. Le portail reçoit ce que l'usager a accepté, et rien s'il a refusé.
+  document, choisit, et l'espace le ramène au portail par l'adresse de retour
+  de la France. Le portail reçoit ce que l'usager a accepté, et rien s'il a refusé.
 
   La France se répond à elle-même sur l'unique passerelle du PMode d'exemple :
   elle y tient le fournisseur et son espace autant que le requêteur. L'usager
@@ -27,7 +27,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Et l'échange passe à l'état "sent"
     Quand l'usager ouvre l'espace de prévisualisation par le lien que le portail lui présente
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
-    Et que l'usager suit le lien de retour vers sa démarche
+    Et que l'usager est ramené au portail
     Alors l'usager arrive sur la page du portail, qui reçoit l'échange et la conversation
     Et le portail reçoit le justificatif
     Et l'échange passe à l'état "delivered"
@@ -40,7 +40,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Quand le portail confirme la prévisualisation avec son jeton et l'adresse où reprendre la démarche
     Et que l'usager ouvre l'espace de prévisualisation par le lien que le portail lui présente
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
-    Et que l'usager suit le lien de retour vers sa démarche
+    Et que l'usager est ramené au portail
     Alors l'usager arrive sur la page du portail, qui reçoit l'échange et la conversation
     Et l'échange passe à l'état "declined"
     Et le portail ne reçoit aucun justificatif

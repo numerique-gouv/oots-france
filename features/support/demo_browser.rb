@@ -146,10 +146,23 @@ class DemoBrowser
     MAXIMUM_REDIRECTIONS.times do
       return @page = response unless response.status.between?(300, 399)
 
-      response = get(absolute(response.headers.fetch('Location')))
+      location = absolute(response.headers.fetch('Location'))
+      return leave_for(location, response) if nowhere?(location)
+
+      response = get(location)
     end
 
     raise "Plus de #{MAXIMUM_REDIRECTIONS} redirections depuis #{current_url}."
+  end
+
+  # RFC 2606 reserves `.example` for names that resolve nowhere: a scenario
+  # gives one to a portal it does not run. Sent there, the browser stops where
+  # a real one would have left, and says where it was sent.
+  def nowhere?(url) = URI.parse(url).host.to_s.end_with?('.example')
+
+  def leave_for(url, response)
+    @current_url = url
+    @page = response
   end
 
   def get(url) = record(url) { connection.get(url, nil, headers(url)) }

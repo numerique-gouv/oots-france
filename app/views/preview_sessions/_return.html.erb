@@ -1,6 +1,8 @@
 <%# The way back to the procedure, chapter 4.9 §2 step 26. On the 2.0 line it
     is known once the second request has arrived, so the zone asks again until
-    then — announced, and never by a refresh the user does not control. %>
+    then — announced, and never by a refresh the user does not control. Once it
+    is known the controller takes it on its own, the choice being already made;
+    the button stays for a browser that runs no script. %>
 <div aria-live="polite" data-controller="preview-return"
   data-preview-return-url-value="<%= preview_session_return_path(token: preview.token) %>"
   data-preview-return-waiting-value="<%= preview.awaiting_return? %>">
@@ -14,10 +16,11 @@
   <% elsif preview.return_by_form? %>
     <%# Chapter 4.9 v1.2.3 §5: « even with PUT or POST methods the body is
         empty ». An HTML form knows no PUT, so it posts. %>
-    <form action="<%= preview.return_location %>" method="post">
+    <form action="<%= preview.return_location %>" method="post" data-preview-return-target="way">
       <button type="submit" class="fr-btn"><%= t('preview_sessions.return.back') %></button>
     </form>
   <% else %>
-    <%= link_to t('preview_sessions.return.back'), preview.return_location, class: 'fr-btn' %>
+    <%= link_to t('preview_sessions.return.back'), preview.return_location, class: 'fr-btn',
+          data: { preview_return_target: 'way' } %>
   <% end %>
 </div>

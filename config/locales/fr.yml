@@ -1524,9 +1524,11 @@ fr:
         refused: Ne pas l'utiliser
         choice_missing: Choisissez d'utiliser ce document ou non.
         submit: Valider mon choix
+      # Ce que l'usager voit après son choix quand l'espace ne peut pas le
+      # renvoyer tout de suite à sa démarche : la seconde requête n'est pas
+      # encore là, ou le retour se fait par un formulaire.
       recorded:
-        title: Votre choix est enregistré
-        lead: L'administration française transmet votre choix à votre démarche.
+        title: Retour à votre démarche
       expired:
         title: Le délai est écoulé
         lead: Ce lien n'est plus valable, car le délai pour choisir est écoulé. Revenez à votre démarche pour la reprendre.
@@ -1536,7 +1538,7 @@ fr:
     document:
       filename: justificatif.pdf
     return:
-      awaiting: Votre démarche va reprendre la main. Un lien pour y revenir s'affichera ici.
+      awaiting: Votre démarche va reprendre la main, et vous y serez ramené dans un instant.
       refresh: Actualiser la page
       none: Vous pouvez fermer cette page et revenir à votre démarche.
       back: Revenir à ma démarche

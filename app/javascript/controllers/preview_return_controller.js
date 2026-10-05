@@ -4,14 +4,18 @@ import { Controller } from "@hotwired/stimulus"
 // way is only known once the second request has arrived, so the zone asks its
 // own address again until the server stops saying it is waiting. The zone
 // itself carries the `aria-live` region, so only its contents are replaced.
+// The choice being made, the way back is taken as soon as it is there: the
+// user has nothing left to do on this page.
 
 const INTERVAL = 5000
 
 export default class extends Controller {
+  static targets = ["way"]
   static values = { url: String, waiting: Boolean }
 
   connect() {
     this.schedule()
+    this.leave()
   }
 
   disconnect() {
@@ -43,6 +47,15 @@ export default class extends Controller {
 
       this.waitingValue = false
       this.element.innerHTML = arriving.innerHTML
+      this.leave()
     })
+  }
+
+  // A form where the correspondent asked for POST or PUT, a link otherwise.
+  leave() {
+    if (!this.hasWayTarget) return
+
+    if (this.wayTarget instanceof HTMLFormElement) this.wayTarget.requestSubmit()
+    else window.location.assign(this.wayTarget.href)
   }
 }

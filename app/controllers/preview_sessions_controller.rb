@@ -10,6 +10,7 @@ class PreviewSessionsController < ApplicationController
 
     EvidenceProvision::RecordPreviewVisit.call(preview_session: @session, location: request.original_url,
       return_url: params[:returnurl], return_method: params[:returnmethod])
+    leave_for_the_procedure if @preview.leaves_by_redirection?
   end
 
   def document
@@ -35,6 +36,8 @@ class PreviewSessionsController < ApplicationController
     return refuse_empty_choice unless choice.in?(PreviewSession::DECISIONS)
 
     EvidenceProvision::RecordPreviewDecision.call(preview_session: @session, decision: choice)
+    return leave_for_the_procedure if PreviewSessionPresenter.new(@session).leaves_by_redirection?
+
     redirect_to preview_session_path(token: @session.token), status: :see_other
   end
 
@@ -52,6 +55,12 @@ class PreviewSessionsController < ApplicationController
   def read_first_request
     raw = @session&.first_request
     RetrievedMessageParser.new(raw).body if raw
+  end
+
+  # The address was vetted when it arrived — `WebAddress` on the 1.2 line,
+  # R-EDM-REQ-C120 on the 2.0 one —, which is what allows another host.
+  def leave_for_the_procedure
+    redirect_to @session.return_location, allow_other_host: true, status: :see_other
   end
 
   def refuse_empty_choice

@@ -33,18 +33,16 @@ Quand('l\'usager ouvre l\'espace de prévisualisation par le lien que le portail
   space_browser.follow_address(@confirmation.fetch('adressePrevisualisation'))
 end
 
-# The link appears once the second request has reached the space, which runs
-# in parallel with the visit (chapter 4.9 §2 step 12): the page is asked again
-# until it offers it.
-Quand('l\'usager suit le lien de retour vers sa démarche') do
-  relay = "#{oots_france_url}/retour/"
+# The way back is known once the second request has reached the space, which
+# runs in parallel with the visit (chapter 4.9 §2 step 12): the space is asked
+# again until it sends the user, through France's relay, to the portal.
+Quand('l\'usager est ramené au portail') do
+  patiente_jusqu_a('l\'espace ramène l\'usager au portail') do
+    next true if @fake_requester.received_return.present?
 
-  patiente_jusqu_a('la page offre le lien de retour') do
     space_browser.follow_address(@confirmation.fetch('adressePrevisualisation'))
-    space_browser.links('a.fr-btn').any? { |link| link.start_with?(relay) }
+    @fake_requester.received_return.present?
   end
-
-  space_browser.follow_address(space_browser.links('a.fr-btn').find { |link| link.start_with?(relay) })
 end
 
 Alors('l\'usager arrive sur la page du portail, qui reçoit l\'échange et la conversation') do

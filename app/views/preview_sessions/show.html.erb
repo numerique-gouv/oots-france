@@ -51,7 +51,6 @@
               data: { preview_choice_target: 'submit' } %>
       <% end %>
     <% when :recorded %>
-      <p class="fr-text--lead"><%= t('preview_sessions.show.recorded.lead') %></p>
       <%= render 'return', preview: @preview %>
     <% else %>
       <p class="fr-text--lead"><%= t("preview_sessions.show.#{@preview.state}.lead") %></p>

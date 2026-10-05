@@ -35,6 +35,11 @@ class PreviewSessionPresenter
 
   def return_by_form? = session.return_method.in?(%w[POST PUT])
 
+  # Once the choice is made the space has nothing more to show: the user is
+  # sent straight back to the procedure whenever a redirection can carry them.
+  # A form cannot be redirected to, and the page stays only to submit it.
+  def leaves_by_redirection? = state == :recorded && return_location.present? && !return_by_form?
+
   # 2.0 learns the way back from the second request, which may not have come:
   # the page then says the procedure will take over, and asks again.
   def awaiting_return? = state == :recorded && return_location.blank? && !session.specification.preview_method_slot?
