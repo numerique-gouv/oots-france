@@ -26,6 +26,15 @@ class DomibusClient
     RetrievedMessageParser.new(post_soap('retrieveMessage', request))
   end
 
+  # What the gateway recorded of its attempts to deliver a message France
+  # submitted. A message it does not know is answered with a SOAP fault, which
+  # reaches the caller as a `Faraday::Error`.
+  def message_errors(message_id)
+    request = GetMessageErrorsBuilder.new(message_id:).render
+
+    MessageErrorsParser.new(post_soap('getMessageErrors', request))
+  end
+
   private
 
   def post_soap(operation, body)

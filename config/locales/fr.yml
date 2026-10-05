@@ -1454,6 +1454,10 @@ fr:
     associated_document:
       unrequestable: >-
         Documents associés inconnus : %{values}. Seuls %{requestable} peuvent être demandés.
+    # Le code ebMS d'une tentative de remise et ce que la passerelle en a dit,
+    # tels que la raison d'un échec les cite.
+    delivery_error:
+      summary: "%{code} : %{detail}"
     # La raison que `Exchange#expire!` inscrit, et que la console lit sous
     # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
     # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.

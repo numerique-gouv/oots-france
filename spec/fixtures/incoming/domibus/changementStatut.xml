@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><ns2:messageStatusChange xmlns:ns2="eu.domibus"><messageID>8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu</messageID><messageStatus>WAITING_FOR_RETRY</messageStatus></ns2:messageStatusChange></soap:Body></soap:Envelope>

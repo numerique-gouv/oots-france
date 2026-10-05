@@ -33,6 +33,24 @@ RSpec.describe DomibusClient do
     end
   end
 
+  describe '#message_errors' do
+    it 'asks for the errors of one message and reads the last attempt' do
+      stub = stub_request(:post, "#{base_url}/services/wsplugin/getMessageErrors")
+        .with(body: %r{<messageID>8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu</messageID>})
+        .to_return(body: built_envelope('domibus/erreursRemise'))
+
+      expect(client.message_errors('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu').latest.code).to eq('EBMS:0003')
+      expect(stub).to have_been_requested
+    end
+
+    # The plugin answers a message it does not know with a SOAP fault.
+    it 'lets a fault of the gateway through' do
+      stub_request(:post, "#{base_url}/services/wsplugin/getMessageErrors").to_return(status: 500)
+
+      expect { client.message_errors('inconnu') }.to raise_error(Faraday::ServerError)
+    end
+  end
+
   describe '#pending_messages' do
     it 'reports an empty queue' do
       stub_request(:post, "#{base_url}/services/wsplugin/listPendingMessages")

@@ -1,0 +1,1 @@
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope"><soap:Body><ns2:getMessageErrorsResponse xmlns:ns2="http://eu.domibus.wsplugin/"/></soap:Body></soap:Envelope>
