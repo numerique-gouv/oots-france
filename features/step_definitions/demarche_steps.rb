@@ -201,6 +201,75 @@ Alors('la fiche de cet échange affiche la version {string}') do |version|
   expect(@navigateur.rows).to include(I18n.t('admin.journal.exchanges.attributes.specification') => version)
 end
 
+# Chapter 4.9 §5: the zone becomes the departure page once the demonstration
+# has confirmed the preview the correspondent asked for, which it does the first
+# time it reads that state. The correspondent answers on another connection, so
+# the page is asked again until it presents the link.
+#
+# The preview space is France's own, on the same host: the steps of
+# `preview_steps.rb` walk it through the same browser, which keeps the
+# operator's session for the way back.
+Quand('l\'usager suit le lien que la page des justificatifs lui présente vers l\'espace de prévisualisation') do
+  patiente_jusqu_a('la page des justificatifs présente le lien vers l\'espace de prévisualisation') do
+    @navigateur.visit(adresse_de_la_demarche('documents'))
+    lien_de_depart.present?
+  end
+
+  @lien_de_depart = lien_de_depart
+  @space_browser = @navigateur
+  @navigateur.follow_address(@lien_de_depart)
+end
+
+# Chapter 4.9 v1.2.3 §5: « Add the return address, in encoded form, as a value
+# of the "returnurl" query parameter », with `returnmethod`.
+Alors('ce lien contient l\'adresse de retour dans {string} et sa méthode dans {string}') do |adresse, methode|
+  query = Rack::Utils.parse_query(URI.parse(@lien_de_depart).query)
+
+  expect(query[adresse]).to start_with("#{oots_france_url}/retour/")
+  expect(query[methode]).to eq('GET')
+end
+
+# The way back is known once the second request has reached the space, which
+# runs in parallel with the visit (chapter 4.9 §2 step 12): the space is asked
+# again until it sends the user back to the procedure.
+Quand('l\'usager est ramené à sa démarche') do
+  patiente_jusqu_a('l\'espace de prévisualisation ramène l\'usager à sa démarche') do
+    next true if de_retour_sur_la_demarche?
+
+    @navigateur.follow_address(@lien_de_depart)
+    de_retour_sur_la_demarche?
+  end
+end
+
+Alors('l\'usager arrive sur la page des justificatifs, qui reçoit l\'échange et la conversation') do
+  arrivee = URI.parse(@navigateur.current_url)
+
+  expect(arrivee.path).to eq(adresse_de_la_demarche('documents'))
+  expect(Rack::Utils.parse_query(arrivee.query))
+    .to include('echange' => depart_de_la_requete.exchange_id, 'conversation' => be_present)
+end
+
+# The document comes back on another connection: the page is asked again, as
+# the zone asks again, until it says so.
+Alors('la page des justificatifs affiche {string}') do |texte|
+  attend_sur_la_page_des_justificatifs(texte)
+end
+
+Alors('la page des justificatifs affiche que l\'usager a choisi de ne pas utiliser le document') do
+  attend_sur_la_page_des_justificatifs(I18n.t('components.demo_request_zone.declined_title'))
+end
+
+def attend_sur_la_page_des_justificatifs(texte)
+  patiente_jusqu_a("la page des justificatifs affiche « #{texte} »") do
+    @navigateur.visit(adresse_de_la_demarche('documents'))
+    @navigateur.body.include?(texte)
+  end
+end
+
+def lien_de_depart = @navigateur.links('.demo-request__preview a.fr-btn').first
+
+def de_retour_sur_la_demarche? = URI.parse(@navigateur.current_url).path == adresse_de_la_demarche('documents')
+
 # An address of the walk, under the segment of the line the scenario chose.
 def adresse_de_la_demarche(page = nil)
   raise 'Aucune version choisie : le pas « choisit la version » précède celui-ci.' if @ligne.nil?

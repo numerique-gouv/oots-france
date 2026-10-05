@@ -61,6 +61,17 @@ module DemoContractStubs
         headers: { 'Content-Type' => 'application/json' })
   end
 
+  # The contract taking a confirmation, and answering the link to present as
+  # `ExchangeState` writes it.
+  def stub_preview_confirmation(exchange_id = accepted_body.fetch(:echange), status: 202, **link)
+    stub_request(:post, "#{Settings.oots_france_url}/requete/#{exchange_id}/previsualisation")
+      .to_return(status:,
+        body: { echange: exchange_id, conversation: accepted_body.fetch(:conversation), statut: 'pending',
+                adressePrevisualisation: 'https://ap.example/preview', methodePrevisualisation: 'GET' }
+            .merge(link).to_json,
+        headers: { 'Content-Type' => 'application/json' })
+  end
+
   def accepted_body
     { echange: ACCEPTED_EXCHANGE, conversation: ACCEPTED_CONVERSATION, statut: 'pending' }
   end

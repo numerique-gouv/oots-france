@@ -27,11 +27,14 @@ module Admin
     # register, whichever answer returns first.
     #
     # `show` is what the zone re-asks while it waits, and it reads what the
-    # contract says rather than asking anything of anyone. Chapter 4.4 §4.1 —
+    # contract says rather than asking for anything new. Chapter 4.4 §4.1 —
     # « to return more references to the Online Procedure Portal, even if it is
     # for the same user in the same session, for the same evidency type and data
     # service, a new unique request MUST be issued » — so consulting is never
-    # asking, and it may be repeated as often as the zone likes.
+    # asking, and it may be repeated as often as the zone likes. The one write a
+    # reading leads to is the confirmation of a preview the correspondent asked
+    # for, never repeated once it has succeeded — `ReadsDemoRequest#confirm_preview`
+    # says why it is no new request.
     #
     # `::Demo::` and not `Demo::`: this file lives in `Admin::Demo`, which would
     # otherwise answer for the name.

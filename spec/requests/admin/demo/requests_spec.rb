@@ -1,6 +1,8 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Demo::Requests' do
+  include ActiveSupport::Testing::TimeHelpers
+
   # The one requirement `eb_requirements_fr` holds, which every click below is
   # about: a page carries one zone per requirement it can name, and the address
   # of each names its own.
@@ -36,7 +38,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(evidence_request_query).to include(
         'codeDemarche' => 'T1', 'codePays' => 'FR',
-        'previsualisationRequise' => 'false', 'idRequeteur' => '00000000000003',
+        'previsualisationRequise' => 'true', 'idRequeteur' => '00000000000003',
       )
     end
 
@@ -482,6 +484,20 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
       expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).not_to include('execution expired')
+    end
+
+    # The contract refusing to say the state: the zone says it could not read
+    # it, and the reason, written for the operator, stays in the log.
+    it 'keeps the reason a contract gives for not reading the state out of the zone, and in the log' do
+      stub_exchange_state(status: 404, erreur: 'Échange inconnu')
+      allow(Rails.logger).to receive(:warn)
+
+      get demande_path
+
+      expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).not_to include('Échange inconnu')
+      expect(Rails.logger).to have_received(:warn).with(include('Échange inconnu'))
     end
 
     it 'sends an operator holding no identity back to the start' do
@@ -502,6 +518,106 @@ RSpec.describe 'Admin::Demo::Requests' do
       get demande_path
 
       expect(response).to redirect_to(admin_demo_root_path)
+    end
+  end
+
+  # Chapter 4.9 §5: the portal recognises the preview the first flow asks for,
+  # and presents a departure page to it.
+  describe 'GET /admin/demo/demande, the correspondent asking for a preview' do
+    let(:confirmation) { "#{Settings.oots_france_url}/requete/#{DemoContractStubs::ACCEPTED_EXCHANGE}/previsualisation" }
+
+    before do
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+      get admin_demo_documents_path(version: 'v2.0')
+      post demande_path
+      stub_exchange_state(statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview',
+        descriptionPrevisualisation: [{ langue: 'DE', texte: 'Vorschau' }, { langue: 'EN', texte: 'Your grant' }])
+      stub_preview_confirmation(adressePrevisualisation: 'https://ap.example/preview?t=1')
+    end
+
+    # CA2: confirmed once, with a token and the page of the journey's line.
+    it 'confirms the preview with a beneficiary token and the documents page of the journey' do
+      get demande_path
+
+      expect(a_request(:post, confirmation).with do |sent|
+        form = Rack::Utils.parse_nested_query(sent.body)
+        form['beneficiaire'].present? &&
+          form['adresseRetour'] == "#{Settings.oots_france_url}/admin/demo/v2.0/documents"
+      end).to have_been_made.once
+    end
+
+    it 'presents the departure page, the description in English and the link the confirmation answered' do
+      get demande_path
+
+      zone = response.parsed_body
+      expect(zone.at_css('.demo-request__body')['data-outcome']).to eq('preview')
+      expect(zone.at_css('[lang="EN"]').text).to eq('Your grant')
+      expect(zone.at_css('a[href="https://ap.example/preview?t=1"]').text).to include('Preview and approve')
+    end
+
+    # CA3: a reload says the same thing, and confirms nothing again.
+    it 'confirms nothing again when the zone is read again, and still presents the link' do
+      get demande_path
+      stub_exchange_state(statut: 'pending')
+
+      travel(1.hour) { get demande_path }
+
+      expect(a_request(:post, confirmation)).to have_been_made.once
+      expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('preview')
+    end
+
+    it 'leaves the departure page for the refusal once the second exchange failed' do
+      get demande_path
+      stub_exchange_state(statut: 'failed', codeErreur: 'EDM:ERR:0004')
+
+      get demande_path
+
+      expect(response.parsed_body.text).to include('The document cannot be provided', 'EDM:ERR:0004')
+    end
+
+    # CA6.
+    it 'says the user chose not to use the document, and offers to ask again' do
+      get demande_path
+      stub_exchange_state(statut: 'declined')
+
+      get demande_path
+
+      expect(response.parsed_body.text).to include('You chose not to use this document', 'Retry to request')
+    end
+
+    it 'says a confirmation the contract refused, keeps the reason for the log, and confirms nothing more' do
+      stub_preview_confirmation(status: 422, erreur: "L'adresse de retour n'est pas une URL absolue.")
+      allow(Rails.logger).to receive(:warn)
+
+      get demande_path
+
+      expect(response.parsed_body.text).to include('The preview has failed')
+      expect(response.parsed_body.text).not_to include("n'est pas une URL absolue")
+      expect(Rails.logger).to have_received(:warn).with(include("n'est pas une URL absolue"))
+      expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
+    end
+  end
+
+  describe 'GET /admin/v1.2/demande, the correspondent asking for a preview' do
+    before do
+      identify_demo_user(version: 'v1.2')
+      stub_directory_signature
+      stub_directory_body('dsd', 'dataservices-by-evidencetype', provider_announcing('oots-edm:v1.2'))
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state(statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview')
+      stub_preview_confirmation
+      get admin_demo_documents_path(version: 'v1.2')
+      post admin_demo_demande_path(exigence:, version: 'v1.2')
+    end
+
+    it 'has the user brought back under the segment of its line' do
+      expect(a_request(:post, %r{/previsualisation}).with do |sent|
+        Rack::Utils.parse_nested_query(sent.body)['adresseRetour'] ==
+          "#{Settings.oots_france_url}/admin/demo/v1.2/documents"
+      end).to have_been_made.once
     end
   end
 

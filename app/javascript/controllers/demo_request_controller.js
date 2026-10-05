@@ -47,7 +47,12 @@ export default class extends Controller {
   // of anyone: the answer is a round trip away, and a screen that says nothing
   // until it comes back leaves the user clicking again. Both were rendered by
   // the server, so nothing here writes a word.
+  //
+  // Only the button's own form: the departure page may hold another, the one a
+  // correspondent asked a `POST` for, and that one leaves the page as forms do.
   submit(event) {
+    if (!this.buttonTargets.includes(event.target)) return
+
     event.preventDefault()
 
     this.failures = 0

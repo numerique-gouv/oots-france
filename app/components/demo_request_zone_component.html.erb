@@ -10,7 +10,7 @@
     to learn what became of a click it does not hold, and so does the controller,
     which replaces nothing while the answer says what the zone already says: the
     waiting is one waiting, and one announcement. %>
-<div class="demo-request__body" data-polling="<%= pending? %>" data-outcome="<%= state %>">
+<div class="demo-request__body" data-polling="<%= polling? %>" data-outcome="<%= state %>">
   <% if delivered? %>
     <%# Chapter 1 §4.2: the evidence is « made available to the specific
         procedure end-user that issued the query », and the user « cannot modify
@@ -23,6 +23,43 @@
       <span class="fr-icon-check-line demo-request__check" aria-hidden="true"></span>
       <%= t('components.demo_request_zone.delivered') %>
     </p>
+  <% elsif preview? %>
+    <%# The departure page of chapter 4.9 §5 — « Provide a departure page for the
+        user to navigate to the Preview Space » —, which says what the
+        correspondent wrote of its space, in the language it wrote it in.
+        Implementing regulation 2022/1463, article 11(2)(b), has the user told
+        « that they will be redirected to the relevant evidence provider […] to
+        preview the selected evidence »: a sentence of the procedure's own says
+        so where the correspondent wrote nothing.
+
+        The link opens in this window: the user leaves the procedure, and comes
+        back to it by the return address (chapter 4.9 §2 step 29). %>
+    <div class="fr-callout fr-mb-0 demo-request__preview" lang="en">
+      <p class="fr-callout__title"><%= t('components.demo_request_zone.preview_title') %></p>
+      <% if preview_description.present? %>
+        <p class="fr-callout__text demo-request__description"
+          lang="<%= preview_description_language %>"><%= preview_description %></p>
+      <% else %>
+        <p class="fr-callout__text"><%= t('components.demo_request_zone.preview_lead') %></p>
+      <% end %>
+
+      <%# A form and not a link where the correspondent asked for a `POST`
+          (chapter 4.9 v1.2.3 §5): the return address travels in its body. No
+          authenticity token, which would be this application's and nothing the
+          correspondent knows of. %>
+      <% if preview_form? %>
+        <%= tag.form action: preview_address, method: 'post', class: 'demo-request__departure' do %>
+          <% preview_fields.each do |name, value| %>
+            <%= hidden_field_tag name, value, id: nil %>
+          <% end %>
+          <%= tag.button t('components.demo_request_zone.preview_link'), type: 'submit',
+                class: 'fr-btn fr-btn--icon-right fr-icon-arrow-right-line' %>
+        <% end %>
+      <% else %>
+        <%= link_to t('components.demo_request_zone.preview_link'), preview_address,
+              class: 'fr-btn fr-btn--icon-right fr-icon-arrow-right-line' %>
+      <% end %>
+    </div>
   <% else %>
     <%# `button_to` and not a link: chapter 4.5.1 §2.3 allows the `IssueDateTime`
         no material distance from this gesture, and a GET the browser prefetched
@@ -68,12 +105,12 @@
         the code below says which refusal it was, and the component the journal
         uses glosses it. Hidden the moment the button is clicked again: what it
         reports is no longer what is happening. %>
-    <%# `lang="fr"`: the title comes from `interactors.failures.*`, which the
-        operator console shares with this screen and which is written in French —
-        the one piece of this zone that is not in English. Said rather than left
-        to be pronounced as English (RGAA 8.7). %>
-    <div class="demo-request__failure" data-demo-request-target="failure" lang="fr">
-      <%= helpers.dsfr_alert(type: :error, title: failure_title) do %>
+    <%# The language said rather than left to be guessed (RGAA 8.7): a click the
+        contract refused is titled from `interactors.failures.*`, which the
+        operator console shares with this screen and which is written in French;
+        every other failure is said in English. %>
+    <div class="demo-request__failure" data-demo-request-target="failure" lang="<%= failure_language %>">
+      <%= helpers.dsfr_alert(type: failure_type, title: failure_title) do %>
         <%= failure_body %>
         <% if edm_error_code %>
           <%= render EdmErrorCodeComponent.new(code: edm_error_code) %>

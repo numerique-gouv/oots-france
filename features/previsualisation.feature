@@ -24,7 +24,7 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France envoie le document que l'usager a vu
-    Et la page de l'espace affiche le lien de retour vers la démarche
+    Et l'espace ramène l'usager à l'adresse de retour
 
   Scénario: l'usager refuse le document, et la seconde requête reçoit une liste vide
     Quand le requêteur étranger envoie une requête qui exige la prévisualisation
@@ -38,7 +38,7 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace et la méthode "GET"
     Quand l'usager ouvre l'espace de prévisualisation avec une adresse de retour
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
-    Alors la page de l'espace affiche le lien de retour vers la démarche
+    Alors l'espace ramène l'usager à l'adresse de retour
     Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
     Alors la France envoie le document que l'usager a vu
 
@@ -47,4 +47,4 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Et que l'usager ouvre l'espace de prévisualisation
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager rouvre l'espace de prévisualisation
-    Alors la page affiche que le choix est enregistré, sans rien proposer de choisir
+    Alors la page ne propose plus de choisir
