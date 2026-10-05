@@ -19,6 +19,8 @@ Ne pas éteindre `web` en fin de course : le laisser debout coûte un conteneur,
 
 **La branche touche la démarche de démonstration — `app/controllers/admin/demo/`, `app/components/demo_*`, `features/*demarche*`, un ticket du projet « Le portail de démonstration » — : la pile est complète, et l'écran est un parcours.** L'utilisateur joue la démarche de bout en bout à chaque écran, et un « Request the document » qui meurt sur `domibus:8080` lui coûte un aller-retour (demandé trois fois, les 2026-09-28 et 2026-09-29 sur OOTS-72 et OOTS-237). Donc en plus de `web` et `postgres` : `fake-france-connect`, `worker`, `mysql` et `domibus`, la passerelle configurée par `scripts/configure_domibus.sh` (avec `REPERTOIRE_KEYSTORE_TRUSTSTORE=domibus/keystores`, qu'il ne devine pas), puis une demande de la démarche jouée jusqu'au justificatif — l'échange `delivered` dans le journal — avant de rendre l'adresse. Une seule pile Domibus tourne à la fois sur la machine : si une autre est debout (`docker ps`), l'appelant attend ou tranche. Ce parcours vérifié est la seule dérogation à « ne monte pas la pile Domibus » de `ouvrier.md` § 4.
 
+`fake-france-connect` partage le réseau de `web` (`network_mode: "service:web"`) : chaque fois que `web` est recréé — un rebuild, un `.env` changé —, il reste `Up` dans `docker ps` et ne répond plus, et l'usager de la démo ne peut plus s'identifier (`ÉCRAN` d'OOTS-237 renvoyé le 2026-09-29). Après toute recréation de `web`, donc : `docker compose up -d --force-recreate fake-france-connect`, puis `curl -s -o /dev/null -w '%{http_code}' localhost:$PORT_FAUX_FRANCE_CONNECT/.well-known/openid-configuration` doit rendre `200`, port lu dans `.env` comme celui de `web`.
+
 ## 2. Lire le port, jamais le supposer
 
 ```sh

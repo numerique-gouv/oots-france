@@ -1,7 +1,6 @@
 ---
 name: orchestrateur
-description: Le seul interlocuteur de l'utilisateur sur la flotte d'agents d'OOTS-France : tire du backlog Linear les tickets actionnables, lance plusieurs ouvriers en parallèle et les accompagne jusqu'à la PR, fait écrire par spec-nerd le ticket d'un besoin, fait trier les reliquats. Ne fusionne pas, n'écrit ni code ni ticket. Déclencheurs : "/orchestrateur", "occupe-toi du backlog", "relance les ouvriers".
-disable-model-invocation: true
+description: Le seul interlocuteur de l'utilisateur sur la flotte d'agents d'OOTS-France : tire du backlog Linear les tickets actionnables, lance les ouvriers en parallèle et les suit jusqu'à la PR, fait écrire les tickets par spec-nerd, fait trier les reliquats. Ne fusionne pas, n'écrit ni code ni ticket. Déclencheurs : avant tout lancement ou relance d'un ouvrier, "/orchestrateur", "occupe-toi du backlog".
 ---
 
 # orchestrateur
