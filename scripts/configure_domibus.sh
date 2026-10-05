@@ -423,6 +423,16 @@ echo "→ Configuration de la notification vers $URL_NOTIFICATION"
 # requester's on the response that comes back to it — and one rule per value
 # would always forget one.
 #
+# Two types: `RECEIVE_SUCCESS`, a message arriving for us, and
+# `MESSAGE_STATUS_CHANGE`, which the plugin sends at every change of status of
+# every message — among them `WAITING_FOR_RETRY` and `SEND_FAILURE` on a request
+# that did not reach its recipient. Not `SEND_FAILURE` as a type of its own: the
+# plugin emits `sendFailure` only where the PMode's `errorHandling` carries
+# `businessErrorNotifyProducer="true"`, which neither our PMode nor the one the
+# Technical Support Dashboard hands out does, and this channel needs no PMode
+# change. The application acknowledges every other status without doing
+# anything.
+#
 # `alert.active` is `false` by default: without it, exhausting the five attempts
 # is perfectly silent. The alert appears in the administration console with no
 # further configuration; sending it by email would take an SMTP server and the
@@ -439,10 +449,10 @@ wsplugin.push.markAsDownloaded=false
 wsplugin.push.alert.active=true
 wsplugin.push.auth.username=$LOGIN_NOTIFICATION_DOMIBUS
 wsplugin.push.auth.password=$MOT_DE_PASSE_NOTIFICATION_DOMIBUS
-wsplugin.push.rules.oots=Notification de tout message arrivant pour nous
+wsplugin.push.rules.oots=Notification des messages arrivant pour nous et des remises en échec
 wsplugin.push.rules.oots.endpoint=$URL_NOTIFICATION
 wsplugin.push.rules.oots.retry=60;5;CONSTANT
-wsplugin.push.rules.oots.type=RECEIVE_SUCCESS
+wsplugin.push.rules.oots.type=MESSAGE_STATUS_CHANGE,RECEIVE_SUCCESS
 wsplugin.dispatcher.worker.cronExpression=0/5 * * * * ?
 # --- end OOTS-France
 FIN_BLOC
