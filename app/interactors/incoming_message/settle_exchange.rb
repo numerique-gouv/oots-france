@@ -25,9 +25,10 @@ module IncomingMessage
     # a response. » Refused before the branch, so a duplicate is turned away
     # whether it carries evidence or an error.
     #
-    # An exchange the sweep gave up on has received no response at all, so that
-    # rule does not reach it: this answer is the first, however late, and
-    # settling it is what refutes the presumption.
+    # An exchange the sweep gave up on, or closed on its access point's refusal,
+    # has received no response at all, so that rule does not reach it: this
+    # answer is the first, however late, and settling it is what refutes the
+    # presumption.
     #
     # Nothing is answered and nothing is settled: the TDD open no error path
     # from a portal back to a provider, and failing the exchange would rob the

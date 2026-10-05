@@ -74,6 +74,16 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 >
 > La réparation ne change que les déclarations d'espaces de noms et cette ligne blanche : le contenu, lui, est celui que les constructeurs produisaient. Ces fichiers restent un corpus de non-régression, pas un modèle — c'est `incoming/reel/` qui tient ce rôle.
 
+## `incoming/domibus/` — ce que la passerelle dit d'une remise qui échoue
+
+Écrites à la main le 2026-10-05, d'après le schéma du plugin WS de Domibus au tag [`5.2-JEE10`](https://code.europa.eu/edelivery/domibus/-/tree/5.2-JEE10) — `BackendService.xsd` pour la notification, `WebServicePlugin.wsdl` et `webservicePlugin-body.xsd` pour la réponse — et non capturées : la pile locale boucle sur une seule passerelle, qui remet toujours, et ne produit ni `WAITING_FOR_RETRY` ni `SEND_FAILURE`. Elles valent ce que vaut le schéma, et pas davantage : le jour où une passerelle réelle en émet, la capture remplace l'enveloppe écrite.
+
+| Fichier | Contenu |
+| --- | --- |
+| `changementStatut.xml` | `messageStatusChange` en `WAITING_FOR_RETRY`, dans l'espace de noms `eu.domibus` que déclare `BackendService.xsd` |
+| `erreursRemise.xml` | `getMessageErrorsResponse` portant deux tentatives, la dernière en tête — le schéma ne promet aucun ordre : `EBMS_0005` puis `EBMS_0003` « *No matching party found* », le code sous la forme de l'énumération du plugin, un souligné là où la norme ebMS écrit un deux-points |
+| `erreursRemise.vide.xml` | la même réponse, sans aucune erreur consignée |
+
 ## `common_services/` — ce que les annuaires centraux répondent vraiment
 
 Neuf réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.

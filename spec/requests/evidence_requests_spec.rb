@@ -321,6 +321,17 @@ RSpec.describe 'GET /requete/pieceJustificative' do
       expect(response.parsed_body).not_to include('codeErreur', 'dateDisponibilite')
     end
 
+    # The request never reached the correspondent: no code a server generates
+    # describes that, chapter 4.5.3.
+    it 'reports a request the access point refused as a failure with no code' do
+      exchange.refused_by_access_point!(DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found'))
+
+      get "/requete/#{exchange.exchange_id}"
+
+      expect(response.parsed_body).to include('statut' => 'failed')
+      expect(response.parsed_body).not_to include('codeErreur')
+    end
+
     it 'says nothing of a date on an exchange nobody deferred' do
       exchange.delivered!
 

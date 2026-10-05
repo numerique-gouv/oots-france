@@ -40,4 +40,21 @@ RSpec.describe 'Les requêtes du plugin WS' do
       expect(request).not_to include('<injecte/>')
     end
   end
+
+  describe GetMessageErrorsBuilder do
+    it 'names the message whose errors are asked for' do
+      request = described_class.new(message_id: '45fa5345-5a18-4691-945f-531f9568729f@oots.eu').render
+      identifier = Nokogiri::XML(request).at_xpath('//_1:getErrorsRequest/messageID', wsplugin)
+
+      expect(Nokogiri::XML(request).errors).to be_empty
+      expect(identifier.text).to eq('45fa5345-5a18-4691-945f-531f9568729f@oots.eu')
+    end
+
+    it 'escapes an identifier that would otherwise break the envelope' do
+      request = described_class.new(message_id: '</messageID><injecte/>').render
+
+      expect(Nokogiri::XML(request).errors).to be_empty
+      expect(request).not_to include('<injecte/>')
+    end
+  end
 end

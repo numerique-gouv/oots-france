@@ -315,6 +315,14 @@ fr:
       refused_title: The document cannot be provided
       refused_body: >-
         The administration could not send the document. You will have to obtain it another way.
+      # Un échec sans code : aucune administration n'a refusé, la requête n'est
+      # pas partie, n'a pas atteint le correspondant, ou sa réponse n'a pas pu
+      # être lue. Le chapitre 4.10 §4.2, informatif : « In this case the use of
+      # OOTS is impossible ». La cause est pour l'exploitant, dans la console.
+      unavailable_title: OOTS is not available
+      unavailable_body: >-
+        The document cannot be requested right now, for technical reasons. You can ask again later,
+        or obtain it another way.
       # L'échéance est celle de l'écran et non celle de l'échange : celui-ci
       # continue, et le registre le garde. La phrase ne promet donc pas que rien
       # n'arrivera, seulement que cet écran cesse d'attendre.
@@ -1454,18 +1462,32 @@ fr:
     associated_document:
       unrequestable: >-
         Documents associés inconnus : %{values}. Seuls %{requestable} peuvent être demandés.
-    # La raison que `Exchange#expire!` inscrit, et que la console lit sous
-    # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
-    # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.
-    #
-    # L'entrante nomme la cause et non l'acteur : la France n'a pas décidé de se
-    # taire, l'échange est mort en chemin faute de worker, et « n'a pas répondu »
-    # prêterait une décision à une panne devant l'exploitant qui la diagnostique.
+    # Le code ebMS d'une tentative de remise et ce que la passerelle en a dit,
+    # tels que la raison d'un échec les cite.
+    delivery_error:
+      summary: "%{code} : %{detail}"
     exchange:
+      # La raison que `Exchange#expire!` inscrit, et que la console lit sous
+      # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
+      # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.
+      #
+      # L'entrante nomme la cause et non l'acteur : la France n'a pas décidé de
+      # se taire, l'échange est mort en chemin faute de worker, et « n'a pas
+      # répondu » prêterait une décision à une panne devant l'exploitant qui la
+      # diagnostique.
       expired:
         incoming: L'échange n'a pas été traité dans le délai imparti.
         outgoing: Le correspondant n'a pas répondu dans le délai imparti.
         unconfirmed: Le portail n'a pas confirmé la prévisualisation dans le délai imparti.
+      # La requête qui n'a pas atteint le correspondant : son point d'accès l'a
+      # refusée, ou la passerelle a renoncé à la remettre. Aucune ne prête au
+      # correspondant une réponse ou un silence — il n'a rien reçu. Le code ebMS
+      # et le détail sont ceux de la dernière tentative, que l'exploitant lirait
+      # sinon dans l'Error Log de la passerelle.
+      undelivered:
+        refused: Le point d'accès du correspondant a refusé la requête (%{error}).
+        gave_up: La passerelle a renoncé à remettre la requête (%{error}).
+        gave_up_without_detail: La passerelle a renoncé à remettre la requête.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une
@@ -1692,6 +1714,13 @@ fr:
       resolve_evidence_type:
         unknown_requirement: >-
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
+      # Ce que la France ne fait pas d'une notification de la passerelle sur une
+      # requête qui n'a pas atteint le correspondant, consigné au journal
+      # applicatif avec l'identifiant que la passerelle donne au message.
+      record_delivery_failure:
+        unknown: "Notification %{status} ignorée : aucune requête émise ne porte l'identifiant de message %{id}"
+        ignored: "Notification %{status} ignorée pour le message %{id} : l'échange %{exchange} est déjà réglé"
+        unreadable: "Erreurs de remise du message %{id} illisibles auprès de la passerelle : %{error}"
       send_to_gateway:
         # La panne est nommée comme locale : aucune des huit exceptions du
         # chapitre 4.5.3 ne décrit un émetteur incapable de construire son

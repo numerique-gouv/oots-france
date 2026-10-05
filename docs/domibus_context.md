@@ -48,8 +48,9 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 | SOAP `…/services/wsplugin/submitMessage` | `submitMessage` | Soumettre un message ebMS sortant (requête ou réponse de justificatif) |
 | SOAP `…/services/wsplugin/listPendingMessages` | `listPendingMessages` | Lister les messages entrants en attente (filtrables par `conversationId`) |
 | SOAP `…/services/wsplugin/retrieveMessage` | `retrieveMessage` | Récupérer un message entrant par son `messageID` |
+| SOAP `…/services/wsplugin/getMessageErrors` | `getMessageErrors` | Lire les erreurs que la passerelle a consignées en tentant de remettre une requête émise — une par tentative |
 
-**C'est la passerelle qui appelle** : le plugin WS pousse une notification vers `POST /domibus/notifications` dès qu'un message arrive pour nous. La route accuse réception et met le traitement en file ; le travail de fond enchaîne alors `retrieveMessage` et aiguille sur l'action ebMS. Les enveloppes SOAP sortantes sont des gabarits d'`app/templates/` ; les réponses sont lues en XPath par `app/parsers/`.
+**C'est la passerelle qui appelle** : le plugin WS pousse une notification vers `POST /domibus/notifications` dès qu'un message arrive pour nous, et à chaque changement de statut d'un message — ce qui dit, entre autres, qu'une requête émise n'a pas atteint son destinataire (voir [plus bas](#ce-que-la-france-fait-dune-remise-qui-échoue)). La route accuse réception et met le traitement en file ; le travail de fond enchaîne alors `retrieveMessage` et aiguille sur l'action ebMS. Les enveloppes SOAP sortantes sont des gabarits d'`app/templates/` ; les réponses sont lues en XPath par `app/parsers/`.
 
 > [!IMPORTANT]
 > Deux comportements à connaître avant de déboguer :
@@ -57,7 +58,7 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 > - **`retrieveMessage` consomme le message** : une fois récupéré, il n'est plus « pending » et disparaît de la file. Un message ne peut donc être lu qu'une seule fois, et un second appel ne le retrouvera pas.
 > - **Le lien est asynchrone et sans persistance** : l'appli soumet une requête puis attend la réponse corrélée par `conversationId` via des événements internes, avec un garde-fou temporel (`DELAI_MAX_ATTENTE_DOMIBUS`). Un redémarrage de l'appli perd les conversations en cours.
 
-C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` sur une URL de l'application, en SOAP.
+C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#_push_to_backend) du plugin WS, et non un crochet REST : la passerelle appelle `receiveSuccess` ou `messageStatusChange` sur une URL de l'application, en SOAP.
 
 `scripts/configure_domibus.sh` le configure. L'adresse qu'il écrit est `http://web:<PORT_OOTS_FRANCE>/domibus/notifications` — le nom du service sur le réseau docker, et le port que `web` **écoute**, lequel est celui-là même qu'il publie sur l'hôte. Le script le lit dans son environnement, et `scripts/setup.sh` le lui passe depuis `.env`.
 
@@ -75,6 +76,21 @@ Deux choses s'y révèlent par ailleurs à l'usage :
 > **`wsplugin.push.markAsDownloaded` vaut `true` par défaut**, et la notification vaut alors téléchargement. Or le PMode d'exemple porte `retention_downloaded="0"` : le justificatif serait effacé avant que l'application l'ait récupéré. Il est mis à `false` — c'est notre `retrieveMessage` qui marque le message, donc une fois qu'on l'a en main.
 
 Reste le cron du répartiteur, `wsplugin.dispatcher.worker.cronExpression`, qui vaut **une minute** par défaut : la latence perçue n'est donc pas celle du réseau. Le script le resserre à cinq secondes.
+
+### Ce que la France fait d'une remise qui échoue
+
+Une requête que le point d'accès du correspondant refuse — son PMode ne connaît pas la France, il n'accepte pas sa signature — ou qu'il ne reçoit pas — il est injoignable — n'est pas perdue d'un coup. Domibus 5.2 consigne dans son *Error Log* le code ebMS de la tentative, passe le message en `WAITING_FOR_RETRY`, le rejoue autant que le PMode le prévoit, et ne le déclare `SEND_FAILURE` qu'à l'épuisement des reprises : un refus du distant n'écourte rien. À chaque changement, le plugin notifie `messageStatusChange`, qui ne porte que l'identifiant du message et son statut ; la cause se lit à part, par `getMessageErrors`. Lu dans le source au tag [`5.2-JEE10`](https://code.europa.eu/edelivery/domibus/-/tree/5.2-JEE10) — `UpdateRetryLoggingService`, `UserMessageLogDefaultService.updateUserMessageStatus`, `BackendService.xsd` —, le détail est dans [OOTS-247](https://linear.app/pole-api/issue/OOTS-247).
+
+| Notification | Ce que la France en fait |
+| --- | --- |
+| `receiveSuccess` | Récupère le message et le traite (`ProcessIncomingMessageJob`) |
+| `messageStatusChange` en `WAITING_FOR_RETRY`, sur une requête qu'elle a émise | Lit la dernière erreur consignée. Si c'est l'un des quatre codes par lesquels un point d'accès refuse un message pour sa configuration — `EBMS:0001`, `EBMS:0003`, `EBMS:0010`, `EBMS:0101` (`DeliveryError::CONFIGURATION_REFUSALS`) —, l'échange est clos en `failed` à l'instant, **présumé** : une réponse du correspondant qui a corrigé son PMode pendant les reprises le règle encore. Tout autre code, `EBMS:0005` en tête, attend le verdict |
+| `messageStatusChange` en `SEND_FAILURE`, sur une requête qu'elle a émise | Clôt l'échange en `failed`, pour de bon, et remplace la présomption qu'il portait — la sienne, ou celle du balayage d'expiration, dont l'`EDM:ERR:0005` imputait un silence à qui n'a rien reçu |
+| Tout autre statut, et `sendSuccess`, `sendFailure`, `receiveFailure` | Accuse réception, et rien d'autre |
+
+Ni l'un ni l'autre ne porte de code `EDM:ERR:*` : les huit du chapitre 4.5.3 sont ceux d'un serveur qui traite une requête. La raison que la console lit cite le code ebMS et le détail de la dernière tentative, ce que l'exploitant lirait sinon dans l'*Error Log*. L'échange se retrouve par l'identifiant que la passerelle a donné à la requête, que `Exchange#request_message_id` garde ; une notification sur un identifiant que la France ne rattache à aucune requête émise — une réponse qu'elle a elle-même envoyée, notamment — est consignée au journal applicatif, et ignorée.
+
+**Pourquoi `messageStatusChange` et non `sendFailure`.** Le plugin n'émet `sendFailure` que si l'`errorHandling` que le leg du PMode référence porte `businessErrorNotifyProducer="true"` — faux dans le PMode d'exemple, et le PMode d'acceptation est celui de la Commission —, et il ne dit rien des tentatives. `messageStatusChange` part sans condition : la règle `oots` porte donc les deux types `MESSAGE_STATUS_CHANGE,RECEIVE_SUCCESS`, et le PMode n'est pas touché.
 
 ### Ce qui arrive quand la notification n'aboutit pas
 
@@ -100,7 +116,7 @@ Ce que règle le reste du fichier :
 | `<securities>` | Signature **et** chiffrement, décrits par le profil `rsa` — le nom, et rien d'autre : les alias viennent du mode de sécurité, voir « Mode de sécurité et alias » plus haut |
 | `<errorHandlings>` | L'erreur est renvoyée en réponse, sans notification à quiconque d'autre |
 | `<services>` / `<actions>` | Le service `queryManager` et ses actions `executeQueryRequest` / `executeQueryResponse` / `exceptionResponse` (les messages OOTS, cf. [oots_context.md](oots_context.md)), plus un `testService` de connectivité — c'est lui que déclenche le bouton « avion en papier » de la console |
-| `<as4>` | Fiabilité : 12 tentatives de renvoi espacées de 4 min, détection des doublons, accusés de réception signés (non-répudiation) |
+| `<as4>` | Fiabilité : `retry="12;4;CONSTANT"`, qui se lit `retryTimeout;retryCount;stratégie` — quatre reprises dans une fenêtre de douze minutes (`ReceptionAwareness.init`) —, détection des doublons, accusés de réception signés (non-répudiation) |
 | `<splittingConfigurations>` | Découpage des gros messages : fragments de 20 Mo compressés, réassemblage sous 24 h |
 | `<legConfigurations>` | Assemble les profils ci-dessus par type d'échange : `ootsRequestLeg`, `ootsResponseLeg` (sans compression, contrairement à la requête), `ootsErrorLeg`, `testServiceCase` |
 

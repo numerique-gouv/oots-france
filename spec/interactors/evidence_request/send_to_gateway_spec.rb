@@ -59,6 +59,13 @@ RSpec.describe EvidenceRequest::SendToGateway do
     send_to_gateway
   end
 
+  # What the gateway's notifications on that message will name.
+  it 'remembers what the gateway called the request' do
+    send_to_gateway
+
+    expect(exchange.reload.request_message_id).to eq(GatewayStubs::SUBMITTED_MESSAGE_ID)
+  end
+
   # The submission is addressed to the party the PMode declares, while the
   # corners of the four-corner model are the requester and the provider
   # themselves. Confusing the two produces a message the gateway routes nowhere.
