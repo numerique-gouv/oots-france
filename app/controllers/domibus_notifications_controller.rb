@@ -1,6 +1,7 @@
-# The endpoint Domibus calls when a message arrives for us. It acknowledges at
-# once and queues the work: the gateway gives up after a while, so holding its
-# connection open turns a slow correspondent into a lost notification.
+# The endpoint Domibus calls when a message arrives for us, or when one we
+# submitted fails to reach its recipient. It acknowledges at once and queues the
+# work: the gateway gives up after a while, so holding its connection open
+# turns a slow correspondent into a lost notification.
 #
 # Authenticated, because anyone reaching this route can trigger processing.
 # Domibus puts basic credentials on the calls it makes (`wsplugin.push.auth.*`).
@@ -15,7 +16,11 @@ class DomibusNotificationsController < ActionController::API
   def create
     notification = PushNotificationParser.new(request.raw_post)
 
-    ProcessIncomingMessageJob.perform_later(notification.message_id) if notification.message_arrived?
+    if notification.message_arrived?
+      ProcessIncomingMessageJob.perform_later(notification.message_id)
+    elsif notification.delivery_failed?
+      RecordDeliveryFailureJob.perform_later(notification.message_id, notification.message_status)
+    end
 
     head :ok
   rescue UnreadableMessageError => e

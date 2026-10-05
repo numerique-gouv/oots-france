@@ -126,6 +126,33 @@ RSpec.describe IncomingMessage::SettleExchange do
     end
   end
 
+  # The correspondent corrected its access point within the gateway's retries,
+  # received the request, and answered it.
+  describe 'an answer arriving after the access point refused the request' do
+    let(:refusal) { DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found') }
+
+    before { exchange.refused_by_access_point!(refusal) }
+
+    it 'hands the evidence over, overruling the presumption' do
+      settle
+
+      expect(evidence_forwarder).to have_received(:deliver)
+      expect(exchange.reload).to have_attributes(status: 'delivered', error_description: nil, presumed_at: nil)
+    end
+  end
+
+  describe 'an answer arriving after the gateway gave the request up' do
+    before { exchange.undelivered!(nil) }
+
+    it 'is refused as an answer to a settled exchange' do
+      settle
+
+      expect(evidence_forwarder).not_to have_received(:deliver)
+      expect(exchange.reload.status).to eq('failed')
+      expect(AuditEvent.last).to have_attributes(event_type: 'response_refused', detail: 'already_settled')
+    end
+  end
+
   describe 'an answer carrying evidence' do
     # Resolved from the directory, which is what carries the address the
     # forwarder posts to: an identifier alone would deliver the evidence

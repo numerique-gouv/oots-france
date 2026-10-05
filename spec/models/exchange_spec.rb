@@ -886,10 +886,117 @@ RSpec.describe Exchange do
       # one: a request arriving opens an exchange of its own rather than adopting
       # one that merely happens to be underway.
       it 'takes none where the caller withholds the conversation' do
-        create(:exchange, :legacy_line, conversation_id:).tap(&:sent!)
+        create(:exchange, :sent, :legacy_line, conversation_id:)
 
         expect(described_class.correlate(exchange_id: nil, request_id: nil)).to be_nil
       end
+    end
+  end
+
+  describe 'a request that did not reach the correspondent' do
+    let(:exchange) { create(:exchange, :sent) }
+    let(:refusal) { DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found') }
+    let(:outage) { DeliveryError.new(code: 'EBMS_0005', detail: 'Connection refused') }
+
+    # Chapter 4.5.3 gives its eight codes to a server handling a request, and
+    # this request never reached one.
+    it 'closes on a refusal of the access point as a presumption, with no EDM code' do
+      exchange.refused_by_access_point!(refusal)
+
+      expect(exchange.reload).to have_attributes(
+        status: 'failed', edm_error_code: nil,
+        error_description: "Le point d'accès du correspondant a refusé la requête (EBMS:0003 : No matching party found).",
+      )
+      expect(exchange).to be_presumed
+    end
+
+    it 'remembers what the gateway called the request it submitted' do
+      exchange.sent!('message-passerelle')
+
+      expect(exchange.reload.request_message_id).to eq('message-passerelle')
+    end
+
+    # The first request of a preview was answered, so it was delivered: only
+    # the second can still fail to arrive.
+    it 'remembers the second request of a preview in place of the first' do
+      exchange = create(:exchange, request_message_id: 'premiere-requete')
+
+      exchange.sent!('seconde-requete')
+
+      expect(exchange.reload.request_message_id).to eq('seconde-requete')
+    end
+
+    # A correspondent that corrected its PMode within the gateway's retries
+    # receives the request and answers it.
+    it 'lets an answer refute the refusal and settle the exchange' do
+      exchange.refused_by_access_point!(refusal)
+
+      described_class.find(exchange.id).delivered!
+
+      expect(exchange.reload).to have_attributes(status: 'delivered', error_description: nil, presumed_at: nil)
+    end
+
+    it 'turns the refusal into a fact once the gateway gives up' do
+      exchange.refused_by_access_point!(refusal)
+
+      described_class.find(exchange.id).undelivered!(refusal)
+
+      expect(exchange.reload).to have_attributes(
+        status: 'failed', presumed_at: nil,
+        error_description: 'La passerelle a renoncé à remettre la requête (EBMS:0003 : No matching party found).',
+      )
+    end
+
+    it 'lets no answer through once the gateway has given up' do
+      exchange.undelivered!(outage)
+
+      described_class.find(exchange.id).delivered!
+
+      expect(exchange.reload.status).to eq('failed')
+    end
+
+    # The sweep guesses a silence where the gateway knows the request never
+    # left: the fact replaces the guess, and its code with it.
+    it 'replaces the presumption of the sweep' do
+      exchange.expire!
+
+      described_class.find(exchange.id).undelivered!(outage)
+
+      expect(exchange.reload).to have_attributes(
+        status: 'failed', edm_error_code: nil, presumed_at: nil,
+        error_description: 'La passerelle a renoncé à remettre la requête (EBMS:0005 : Connection refused).',
+      )
+    end
+
+    it 'says the gateway gave up even where it could not say why' do
+      exchange.undelivered!(nil)
+
+      expect(exchange.reload.error_description).to eq('La passerelle a renoncé à remettre la requête.')
+    end
+
+    it 'is not requalified by the sweep afterwards' do
+      exchange.refused_by_access_point!(refusal)
+
+      described_class.find(exchange.id).expire!
+
+      expect(exchange.reload).to have_attributes(edm_error_code: nil, error_description: start_with("Le point d'accès"))
+    end
+
+    it 'is not requalified by the sweep once the gateway has given up' do
+      exchange.undelivered!(outage)
+
+      described_class.find(exchange.id).expire!
+
+      expect(exchange.reload).to have_attributes(edm_error_code: nil, presumed_at: nil,
+        error_description: start_with('La passerelle a renoncé'))
+    end
+
+    it 'overrules no answer' do
+      exchange.delivered!
+
+      described_class.find(exchange.id).refused_by_access_point!(refusal)
+
+      expect(exchange.reload.status).to eq('delivered')
     end
   end
 end

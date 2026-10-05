@@ -1458,18 +1458,28 @@ fr:
     # tels que la raison d'un échec les cite.
     delivery_error:
       summary: "%{code} : %{detail}"
-    # La raison que `Exchange#expire!` inscrit, et que la console lit sous
-    # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
-    # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.
-    #
-    # L'entrante nomme la cause et non l'acteur : la France n'a pas décidé de se
-    # taire, l'échange est mort en chemin faute de worker, et « n'a pas répondu »
-    # prêterait une décision à une panne devant l'exploitant qui la diagnostique.
     exchange:
+      # La raison que `Exchange#expire!` inscrit, et que la console lit sous
+      # « Raison de l'échec ». Une par sens, sous la même clé pour qu'on ne
+      # récrive pas l'une sans voir l'autre : `EDM:ERR:0005` couvre les deux.
+      #
+      # L'entrante nomme la cause et non l'acteur : la France n'a pas décidé de
+      # se taire, l'échange est mort en chemin faute de worker, et « n'a pas
+      # répondu » prêterait une décision à une panne devant l'exploitant qui la
+      # diagnostique.
       expired:
         incoming: L'échange n'a pas été traité dans le délai imparti.
         outgoing: Le correspondant n'a pas répondu dans le délai imparti.
         unconfirmed: Le portail n'a pas confirmé la prévisualisation dans le délai imparti.
+      # La requête qui n'a pas atteint le correspondant : son point d'accès l'a
+      # refusée, ou la passerelle a renoncé à la remettre. Aucune ne prête au
+      # correspondant une réponse ou un silence — il n'a rien reçu. Le code ebMS
+      # et le détail sont ceux de la dernière tentative, que l'exploitant lirait
+      # sinon dans l'Error Log de la passerelle.
+      undelivered:
+        refused: Le point d'accès du correspondant a refusé la requête (%{error}).
+        gave_up: La passerelle a renoncé à remettre la requête (%{error}).
+        gave_up_without_detail: La passerelle a renoncé à remettre la requête.
     strict_validation:
       invalid: "%{subject} : %{errors}."
       # Le porteur, que l'objet de valeur ne peut pas connaître : une
@@ -1696,6 +1706,13 @@ fr:
       resolve_evidence_type:
         unknown_requirement: >-
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
+      # Ce que la France ne fait pas d'une notification de la passerelle sur une
+      # requête qui n'a pas atteint le correspondant, consigné au journal
+      # applicatif avec l'identifiant que la passerelle donne au message.
+      record_delivery_failure:
+        unknown: "Notification %{status} ignorée : aucune requête émise ne porte l'identifiant de message %{id}"
+        ignored: "Notification %{status} ignorée pour le message %{id} : l'échange %{exchange} est déjà réglé"
+        unreadable: "Erreurs de remise du message %{id} illisibles auprès de la passerelle : %{error}"
       send_to_gateway:
         # La panne est nommée comme locale : aucune des huit exceptions du
         # chapitre 4.5.3 ne décrit un émetteur incapable de construire son

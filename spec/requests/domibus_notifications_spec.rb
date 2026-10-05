@@ -51,6 +51,50 @@ RSpec.describe 'POST /domibus/notifications' do
     expect(response).to have_http_status(:ok)
   end
 
+  describe 'a request of ours that did not reach its recipient' do
+    let(:status_change) { built_envelope('domibus/changementStatut') }
+
+    it 'queues the reading of an attempt the gateway will retry' do
+      expect { post '/domibus/notifications', params: status_change, headers: }
+        .to have_enqueued_job(RecordDeliveryFailureJob)
+        .with('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu', 'WAITING_FOR_RETRY')
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'queues the verdict of a gateway that gave up' do
+      envelope = status_change.sub('WAITING_FOR_RETRY', 'SEND_FAILURE')
+
+      expect { post '/domibus/notifications', params: envelope, headers: }
+        .to have_enqueued_job(RecordDeliveryFailureJob)
+        .with('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu', 'SEND_FAILURE')
+    end
+
+    # The rule pushes every change of every message, either way round.
+    it 'acknowledges any other status without doing anything' do
+      %w[ACKNOWLEDGED SEND_ENQUEUED].each do |status|
+        envelope = status_change.sub('WAITING_FOR_RETRY', status)
+
+        expect { post '/domibus/notifications', params: envelope, headers: }
+          .not_to have_enqueued_job
+
+        expect(response).to have_http_status(:ok)
+      end
+    end
+
+    # `sendFailure` depends on the PMode, and the rule does not push it.
+    it 'acknowledges the operations the rule does not push without doing anything' do
+      %w[sendFailure receiveFailure].each do |operation|
+        envelope = receive_success.gsub('receiveSuccess', operation)
+
+        expect { post '/domibus/notifications', params: envelope, headers: }
+          .not_to have_enqueued_job
+
+        expect(response).to have_http_status(:ok)
+      end
+    end
+  end
+
   describe 'authentication' do
     # This route triggers processing and is reachable from the network:
     # unauthenticated, anyone could provoke a retrieval from the gateway.
