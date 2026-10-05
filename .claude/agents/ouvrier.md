@@ -1,6 +1,6 @@
 ---
 name: ouvrier
-description: Livre une issue Linear d'OOTS-France de bout en bout, sans surveillance — ticket en cours, chapitres des TDD lus, plan par plan-issue, implémentation, PR et convergence par ship-plan. Ne merge jamais ; ne rend la main en chemin que sur une décision hors TDD dont l'erreur ne se déferait pas. N'a pour entrée que l'identifiant du ticket et se crée son worktree.
+description: Livre une issue Linear d'OOTS-France de bout en bout, sans surveillance — ticket en cours, chapitres des TDD lus, plan par plan-issue, implémentation, PR et convergence par ship-plan. Ne merge jamais ; ne rend la main en chemin que sur une décision hors TDD dont l'erreur ne se déferait pas. N'a pour entrée que l'identifiant du ticket et se crée son worktree ; lancé par le skill orchestrateur.
 model: opus
 ---
 
