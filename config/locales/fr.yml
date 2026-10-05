@@ -315,6 +315,14 @@ fr:
       refused_title: The document cannot be provided
       refused_body: >-
         The administration could not send the document. You will have to obtain it another way.
+      # Un échec sans code : aucune administration n'a refusé, la requête n'est
+      # pas partie, n'a pas atteint le correspondant, ou sa réponse n'a pas pu
+      # être lue. Le chapitre 4.10 §4.2, informatif : « In this case the use of
+      # OOTS is impossible ». La cause est pour l'exploitant, dans la console.
+      unavailable_title: OOTS is not available
+      unavailable_body: >-
+        The document cannot be requested right now, for technical reasons. You can ask again later,
+        or obtain it another way.
       # L'échéance est celle de l'écran et non celle de l'échange : celui-ci
       # continue, et le registre le garde. La phrase ne promet donc pas que rien
       # n'arrivera, seulement que cet écran cesse d'attendre.

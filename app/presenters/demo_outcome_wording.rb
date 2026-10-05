@@ -17,6 +17,14 @@ class DemoOutcomeWording
   # is still under way as far as the user is concerned. A contract `delivered`
   # is deliberately absent: the document in hand is what settles that one, and
   # `outcome` has already answered before reading here.
+  #
+  # A `failed` carrying no code is not a refusal: a correspondent that refuses
+  # returns one, and so does the expiry sweep, which writes the `EDM:ERR:0005`
+  # of a correspondent's timeout. What is left without a code is a failure no
+  # correspondent decided — the request was not emitted, did not reach the
+  # correspondent's access point, or its answer could not be read or handed
+  # over. Chapter 4.10 §4.2, informative, has the
+  # portal say then that « the use of OOTS is impossible ».
   OUTCOMES = {
     'failed' => :refused,
     'unmatched' => :refused,
@@ -70,7 +78,7 @@ class DemoOutcomeWording
   def outcome
     return :delivered if evidence?
 
-    settled = OUTCOMES[answer.exchange_status]
+    settled = settled_outcome
 
     return settled if settled
     return :unconfirmed if unconfirmed
@@ -113,6 +121,12 @@ class DemoOutcomeWording
   def named? = [evidence_type_name, provider_name, procedure_name].all?(&:present?)
 
   private
+
+  def settled_outcome
+    return :unavailable if answer.exchange_status == 'failed' && edm_error_code.blank?
+
+    OUTCOMES[answer.exchange_status]
+  end
 
   # The departure page, with no deadline: the user is away on the preview space
   # for as long as it takes them, and nothing is expected back before they

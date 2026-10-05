@@ -22,9 +22,10 @@ class DemoRequestZoneComponent < ViewComponent::Base
   # What the wording under the button says, per outcome. `expired` is the screen's
   # own deadline rather than anything the exchange did — `DemoOutcomeWording`
   # says why. `unpresentable` and `unconfirmed` are a preview this page cannot
-  # lead the user to, and asking again is all that is left.
+  # lead the user to, and asking again is all that is left. `unavailable` is a
+  # failure no correspondent decided.
   FAILURES = {
-    refused: 'refused', expired: 'expired', declined: 'declined',
+    refused: 'refused', unavailable: 'unavailable', expired: 'expired', declined: 'declined',
     unpresentable: 'unpresentable', unconfirmed: 'unconfirmed',
   }.freeze
 

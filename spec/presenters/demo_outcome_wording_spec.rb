@@ -15,9 +15,17 @@ RSpec.describe DemoOutcomeWording do
     end
 
     it 'is a refusal when the exchange failed' do
-      payload['statut'] = 'failed'
+      payload.merge!('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
 
       expect(wording.outcome).to eq(:refused)
+    end
+
+    # Chapter 4.10 §4.2, informative: no administration refused, the use of
+    # OOTS is impossible.
+    it 'is an unavailability when the exchange failed with no code' do
+      payload['statut'] = 'failed'
+
+      expect(wording.outcome).to eq(:unavailable)
     end
 
     # Chapter 4.10 §2.1: the portal tells the user, and does not wait for the
@@ -61,9 +69,15 @@ RSpec.describe DemoOutcomeWording do
 
       # A second exchange may settle without the user coming back.
       it 'leaves as soon as the second exchange failed' do
-        payload['statut'] = 'failed'
+        payload.merge!('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
 
         expect(wording.outcome).to eq(:refused)
+      end
+
+      it 'leaves as soon as the second request could not be delivered' do
+        payload['statut'] = 'failed'
+
+        expect(wording.outcome).to eq(:unavailable)
       end
 
       it 'leaves as soon as the user declined' do
@@ -156,9 +170,15 @@ RSpec.describe DemoOutcomeWording do
       # A refusal is what happened, and saying the screen ran out of patience
       # instead would send the reader looking for an answer that was given.
       it 'leaves a refusal a refusal' do
-        payload['statut'] = 'failed'
+        payload.merge!('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
 
         expect(wording.outcome).to eq(:refused)
+      end
+
+      it 'leaves a failure of OOTS a failure of OOTS' do
+        payload['statut'] = 'failed'
+
+        expect(wording.outcome).to eq(:unavailable)
       end
 
       it 'leaves an answer that no evidence matches a refusal' do
@@ -210,6 +230,12 @@ RSpec.describe DemoOutcomeWording do
     end
 
     it 'lets it go once the correspondent refused' do
+      payload.merge!('statut' => 'failed', 'codeErreur' => 'EDM:ERR:0004')
+
+      expect(wording).not_to be_holds_country
+    end
+
+    it 'lets it go once OOTS could not deliver the request' do
       payload['statut'] = 'failed'
 
       expect(wording).not_to be_holds_country

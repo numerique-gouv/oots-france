@@ -131,6 +131,21 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     end
   end
 
+  # Chapter 4.10 §4.2, informative: a failure no administration decided is
+  # said as OOTS being unavailable, with no code and the same button.
+  context 'when the request failed for technical reasons' do
+    let(:payload) { { 'statut' => 'failed' } }
+
+    it 'says OOTS is not available, and offers to ask again' do
+      render_inline(zone)
+
+      expect(page).to have_css('.fr-alert--error', text: 'OOTS is not available')
+      expect(page).to have_no_text('EDM:ERR')
+      expect(page).to have_no_text('The document cannot be provided')
+      expect(page).to have_button('Retry to request')
+    end
+  end
+
   # The departure page of chapter 4.9 §5, built from what the confirmation
   # handed back and kept on the request.
   context 'when the user has the preview space to visit' do
