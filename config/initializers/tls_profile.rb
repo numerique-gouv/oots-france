@@ -29,7 +29,7 @@ module TlsProfile
   #
   # Not a hypothetical: `X25519MLKEM768` reached OpenSSL only in 3.5, and the
   # library this process links against is not the Ruby version pinned in six
-  # places — the `ruby:4.0.6-slim` image and a bare CI runner disagree on it.
+  # places — the `ruby:4.0.7-slim` image and a bare CI runner disagree on it.
   def self.settable_groups(names)
     names.select do |name|
       OpenSSL::SSL::SSLContext.new.groups = name

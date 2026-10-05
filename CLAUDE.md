@@ -164,7 +164,7 @@ Running the suite outside Docker needs a reachable database. `docker compose up 
 CI (GitHub Actions) runs RuboCop, RSpec and Cucumber (`tests.yml`), plus CodeQL, the end-to-end suite (`e2e.yml`) and the Schematron validation (`schematron.yml`). The Ruby sources run as they are, with no compilation step; the stylesheets and scripts are the exception — Propshaft serves them from source in development and test and **not at all in production**, where `make assets` must have run first.
 
 > [!IMPORTANT]
-> **Ruby 4.0.6 is required**, and pinned in six places that must stay in step: `.ruby-version`, `ruby '4.0.6'` in the `Gemfile`, `FROM ruby:4.0.6-slim` in the `Dockerfile`, and the `ruby-version` of all three workflows — `tests.yml`, `e2e.yml` and `schematron.yml`. `grep -rn '4\.0\.6' --exclude-dir=vendor --exclude=Gemfile.lock` finds the lot.
+> **Ruby 4.0.7 is required**, and pinned in six places that must stay in step: `.ruby-version`, `ruby '4.0.7'` in the `Gemfile`, `FROM ruby:4.0.7-slim` in the `Dockerfile`, and the `ruby-version` of all three workflows — `tests.yml`, `e2e.yml` and `schematron.yml`. `grep -rn '4\.0\.7' --exclude-dir=vendor --exclude=Gemfile.lock` finds the lot.
 
 > [!WARNING]
 > The `Dockerfile` pins an exact patch on purpose. A floating `FROM ruby:4.0` lets a stale cached image drift far behind CI — the failure mode is a local `make e2e` dying on a Ruby the workflow never exercises. After any bump here, run `docker compose build --pull web`.

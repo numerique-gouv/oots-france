@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         # To keep in step with `.ruby-version` and the `Dockerfile`'s `FROM`.
-        ruby-version: ['4.0.6']
+        ruby-version: ['4.0.7']
 
     # The suite touches the database: the state of the conversations lives there,
     # and so does GoodJob's queue.
