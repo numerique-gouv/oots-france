@@ -294,6 +294,17 @@ if Rails.env.development?
     { status: 'unmatched', country_code: 'HR', procedure_code: ProcedureCode::BIRTH_REGISTRATION,
       specification: EdmSpecification::V2_0,
       events: %w[request_sent response_received] },
+    # Une requête que le point d'accès du correspondant a refusée, son PMode ne
+    # connaissant pas la France : `Exchange#refused_by_access_point!` clôt
+    # l'échange sans code EDM et en présomption, la passerelle rejouant encore.
+    # La raison est composée par le chemin qui l'écrit, et le code ebMS est
+    # celui que la passerelle consigne.
+    { status: 'failed', country_code: 'CZ', procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
+      error_description: I18n.t('models.exchange.undelivered.refused',
+        error: DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found').summary),
+      presumed: true,
+      events: %w[request_sent] },
   ]
 
   # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
@@ -733,6 +744,14 @@ if Rails.env.development?
         **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
         **evidence_identifier.call(event_type, exchange, evidence_id),
       )
+    end
+
+    # Ce que la passerelle a appelé la dernière requête émise, que
+    # `EvidenceRequest::SendToGateway` écrit sur l'échange en même temps qu'au
+    # journal : la seconde d'une prévisualisation remplace la première.
+    unless incoming
+      exchange.update!(request_message_id: AuditEvent.where(exchange_id: exchange.exchange_id,
+        event_type: 'request_sent').order(:occurred_at).last&.message_id)
     end
 
     exchange
