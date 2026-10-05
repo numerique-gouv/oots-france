@@ -40,7 +40,7 @@ jobs:
       # `oots:messages` task: the application must therefore be able to load.
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '4.0.6'
+          ruby-version: '4.0.7'
           bundler-cache: true
 
       # The runner carries a JDK, but which one depends on the image: fixing it
