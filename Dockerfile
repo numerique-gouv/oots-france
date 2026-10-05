@@ -3,7 +3,7 @@
 # `ruby:4.0` would let a cached image drift far behind continuous integration,
 # and the symptom would be a local `make e2e` failing on a Ruby the workflow
 # never exercises. After any bump here: `docker compose build --pull web`.
-FROM ruby:4.0.6-slim
+FROM ruby:4.0.7-slim
 
 # `libpq-dev` for `pg`'s native extension, `libyaml-dev` for Psych,
 # `build-essential` to compile native gems, `git` because Bundler needs it as
