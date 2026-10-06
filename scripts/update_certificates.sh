@@ -147,6 +147,7 @@ PMODE_PASSERELLE="domibus/$(basename "$PMODE")"
 # `&`. The ones the rest needs are taken out of it.
 lisVariable() {
   valeur=$(sed -n "s/^$1=//p" "$2" | head -n 1)
+  valeur="${valeur%% #*}"
   if [ -z "$valeur" ]; then
     echo "❌ $1 est absente de $2 : compléter ce fichier." >&2
     exit 1
@@ -177,15 +178,7 @@ if [ -z "$NOUVEAU_KEYSTORE" ] && [ ! -f "$KEYSTORE" ]; then
   exit 1
 fi
 
-PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
-PORT_OOTS_FRANCE=$(lisVariable PORT_OOTS_FRANCE .env)
 MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=$(lisVariable MOT_DE_PASSE_KEYSTORE_TRUSTSTORE .env)
-LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
-MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
-LOGIN_NOTIFICATION_DOMIBUS=$(lisVariable LOGIN_NOTIFICATION_DOMIBUS .env.oots)
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$(lisVariable MOT_DE_PASSE_NOTIFICATION_DOMIBUS .env.oots)
-export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_KEYSTORE_TRUSTSTORE LOGIN_API_REST MOT_DE_PASSE_API_REST
-export LOGIN_NOTIFICATION_DOMIBUS MOT_DE_PASSE_NOTIFICATION_DOMIBUS DOMIBUS_MOT_DE_PASSE_ADMIN
 
 # keytool is not always installed on the host machine; failing that, it is run
 # from a Docker image carrying a JRE.
@@ -312,7 +305,8 @@ lanceKeytool -list -keystore gateway_truststore.p12 -storepass "$MOT_DE_PASSE_KE
 
 # What is replaced is kept alongside, so that a publication that breaks the
 # gateway can be undone by putting the previous files back and replaying
-# configure_domibus.sh.
+# configure_domibus.sh with the stores directory and the PMode named
+# (docs/deploiement.md): without them, it keeps what the gateway holds.
 echo "→ Dépôt sous domibus/"
 for fichier in "$TRUSTSTORE_PASSERELLE" "$PMODE_PASSERELLE" ${NOUVEAU_KEYSTORE:+"$KEYSTORE"}; do
   if [ -f "$fichier" ]; then
@@ -325,7 +319,8 @@ if [ -n "$NOUVEAU_KEYSTORE" ]; then
 fi
 cp "$PMODE" "$PMODE_PASSERELLE"
 
-REPERTOIRE_KEYSTORE_TRUSTSTORE="$REPERTOIRE_KEYSTORE_TRUSTSTORE" FICHIER_PMODE="$PMODE_PASSERELLE" \
+DOMIBUS_MOT_DE_PASSE_ADMIN="$DOMIBUS_MOT_DE_PASSE_ADMIN" \
+  REPERTOIRE_KEYSTORE_TRUSTSTORE="$REPERTOIRE_KEYSTORE_TRUSTSTORE" FICHIER_PMODE="$PMODE_PASSERELLE" \
   scripts/configure_domibus.sh
 
 # The notification rules configure_domibus.sh writes take effect only on a

@@ -16,17 +16,6 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# The values of a .env* cannot be sourced with `.`: they carry JSON braces and
-# `&`. The ones the rest needs are taken out of it.
-lisVariable() {
-  valeur=$(sed -n "s/^$1=//p" "$2" | head -n 1)
-  if [ -z "$valeur" ]; then
-    echo "❌ $1 est absente de $2 : compléter ce fichier." >&2
-    exit 1
-  fi
-  echo "$valeur"
-}
-
 echo "→ Fichiers d'environnement"
 
 MANQUANTS=""
@@ -47,28 +36,6 @@ else
   # the only way to know: its own refusal cites the files that are present.
   scripts/ci/prepare_environment.sh
 fi
-
-# Exported for scripts/configure_domibus.sh, which requires the credentials
-# rather than deriving them: the account it creates in the gateway must be the
-# one the application will present to it, and the credentials it writes on the
-# gateway's notifications must be the ones the application will accept. Left to
-# the script's own defaults, the second pair matches a .env.oots that carries
-# other values only by chance — and a gateway notifying with the wrong ones is
-# refused without a word, every exchange staying « en cours » for ever.
-#
-# PORT_OOTS_FRANCE goes with them: it is the port `web` listens on, and so the
-# one the gateway must push its notifications at. A worktree shifts it, and the
-# fixed 3000 the script would otherwise have taken would lose every answer of a
-# correspondent without a word.
-PORT_DOMIBUS=$(lisVariable PORT_DOMIBUS .env)
-PORT_OOTS_FRANCE=$(lisVariable PORT_OOTS_FRANCE .env)
-MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=$(lisVariable MOT_DE_PASSE_KEYSTORE_TRUSTSTORE .env)
-LOGIN_API_REST=$(lisVariable LOGIN_API_REST .env.oots)
-MOT_DE_PASSE_API_REST=$(lisVariable MOT_DE_PASSE_API_REST .env.oots)
-LOGIN_NOTIFICATION_DOMIBUS=$(lisVariable LOGIN_NOTIFICATION_DOMIBUS .env.oots)
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS=$(lisVariable MOT_DE_PASSE_NOTIFICATION_DOMIBUS .env.oots)
-export PORT_DOMIBUS PORT_OOTS_FRANCE MOT_DE_PASSE_KEYSTORE_TRUSTSTORE LOGIN_API_REST MOT_DE_PASSE_API_REST
-export LOGIN_NOTIFICATION_DOMIBUS MOT_DE_PASSE_NOTIFICATION_DOMIBUS
 
 # Domibus's database is created on the container's first start, and the gateway
 # fails if it connects before that.
@@ -92,8 +59,9 @@ docker compose build web
 scripts/ci/wait_for_domibus.sh
 
 # The certificates shipped with the image are public and shared by every
-# installation: the script generates others. It ends with a test AS4 message,
-# whose acknowledgement it waits for.
+# installation: the script generates others, and reads its credentials in the
+# .env files prepared above. It ends with a test AS4 message, whose
+# acknowledgement it waits for.
 echo "→ Configuration de la passerelle : keystore, truststore, PMode, compte d'accès"
 scripts/configure_domibus.sh
 

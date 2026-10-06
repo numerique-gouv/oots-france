@@ -93,7 +93,7 @@ else
 
   if [ "$CONFIGUREE" != "$ATTENDUE" ]; then
     echo "  ⚠️  Écart : la passerelle pousse là où l'application n'écoute pas."
-    echo "     Rejouer scripts/configure_domibus.sh, puis docker compose restart domibus."
+    echo "     Rejouer scripts/configure_domibus.sh notification, puis docker compose restart domibus."
   fi
 fi
 

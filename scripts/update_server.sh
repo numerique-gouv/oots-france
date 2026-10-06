@@ -2,9 +2,11 @@
 # Brings a running server up to date: tree pulled, environment checked, image
 # rebuilt, schema migrated, assets compiled, application restarted.
 #
-# What a pull changes in the PMode or the certificates is not its business:
-# scripts/configure_domibus.sh is, and docs/deploiement.md says when to replay
-# it.
+# What a pull changes in the gateway's configuration is not its business:
+# scripts/configure_domibus.sh is — the notification it writes, alone with
+# `notification`; the PMode and the certificates, only when FICHIER_PMODE and
+# REPERTOIRE_KEYSTORE_TRUSTSTORE name them. docs/deploiement.md says when to
+# replay it.
 #
 # Usage: make update   (or scripts/update_server.sh)
 #
@@ -106,6 +108,8 @@ cat <<'FIN'
 
 ✅ Mise à jour terminée.
 
-   Si elle touchait le PMode ou les certificats, rejouer scripts/configure_domibus.sh
-   puis redémarrer la passerelle : docs/deploiement.md, « Mettre à jour ».
+   Si elle touchait la notification de la passerelle, rejouer
+   scripts/configure_domibus.sh notification puis redémarrer la passerelle ;
+   le PMode ou les certificats se rechargent en nommant FICHIER_PMODE et
+   REPERTOIRE_KEYSTORE_TRUSTSTORE : docs/deploiement.md, « Mettre à jour ».
 FIN
