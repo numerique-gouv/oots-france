@@ -110,6 +110,20 @@ jobs:
         # AS4 message, which must come back acknowledged.
         run: scripts/configure_domibus.sh
 
+      - name: Rejoue la configuration sans rien lui passer
+        # The only run, on a real gateway, of the path an operator takes on a
+        # server: the variables read from the .env files, the PMode and the
+        # keystore just loaded kept, the notification block written once.
+        run: |
+          set -o pipefail
+          env -u LOGIN_API_REST -u MOT_DE_PASSE_API_REST -u MOT_DE_PASSE_KEYSTORE_TRUSTSTORE \
+            -u PORT_OOTS_FRANCE -u LOGIN_NOTIFICATION_DOMIBUS -u MOT_DE_PASSE_NOTIFICATION_DOMIBUS \
+            scripts/configure_domibus.sh | tee rejeu.log
+          grep -q 'keystore et truststore conservés, PMode conservé' rejeu.log
+          BLOCS=$(docker compose exec -T domibus \
+            grep -c '^# --- OOTS-France: push to backend' /data/tomcat/conf/domibus/plugins/config/ws-plugin.properties)
+          test "$BLOCS" = 1
+
       - name: Redémarre la passerelle pour appliquer la notification
         # The plugin's switches are set through the API, but not the rules:
         # `wsplugin.push.rules` is marked non-writable and lives only in the

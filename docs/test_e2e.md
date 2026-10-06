@@ -39,6 +39,7 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 | Écrire des `.env*` jetables (clé de déchiffrement générée à la volée) | `scripts/ci/prepare_environment.sh` |
 | Attendre le déploiement de la webapp | `scripts/ci/wait_for_domibus.sh` |
 | Générer les certificats, charger le keystore, le truststore et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configure_domibus.sh`, qui appelle `scripts/generate_certificates.sh` |
+| Le rejouer sans variable, et vérifier qu'il garde le PMode et le keystore qu'il vient de charger et n'écrit qu'un bloc de notification | `scripts/configure_domibus.sh` |
 | Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnose_domibus.sh` |
 
 > [!WARNING]

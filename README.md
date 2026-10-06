@@ -125,19 +125,21 @@ Le workflow `schematron.yml` la rejoue à chaque PR ; c'est le seul garde-fou au
 
 ### Configurer Domibus en une commande
 
-`make setup` appelle ce script, qui sert aussi seul — sur une passerelle repartie de zéro, ou pour rejouer une seule installation. Il pose ce dont une passerelle fraîche a besoin : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, un PMode, et la configuration de la notification vers l'application.
+`make setup` appelle ce script, qui sert aussi seul — sur une passerelle repartie de zéro, ou sur une passerelle en service pour y porter ce que le dépôt a changé. Il pose ce dont une passerelle fraîche a besoin : un compte d'accès pour l'API REST (« Plugin User »), des certificats à elle, un PMode, et la configuration de la notification vers l'application.
 
 ```sh
-$ LOGIN_API_REST=… MOT_DE_PASSE_API_REST=… \
-  LOGIN_NOTIFICATION_DOMIBUS=… MOT_DE_PASSE_NOTIFICATION_DOMIBUS=… \
-  MOT_DE_PASSE_KEYSTORE_TRUSTSTORE=… PORT_OOTS_FRANCE=… \
-    scripts/configure_domibus.sh
+$ scripts/configure_domibus.sh                # tout
+$ scripts/configure_domibus.sh notification   # ws-plugin.properties seul, sans appeler la console
 ```
 
-Il est rejouable : le Plugin User n'est créé que s'il manque, et recharger le même truststore ou le même PMode est sans effet.
+Il se lance depuis la racine de la pile qu'il configure, et lit dans ses `.env` et `.env.oots` les variables qu'on ne lui passe pas : `PORT_OOTS_FRANCE` et `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` dans le premier, `LOGIN_API_REST`, `MOT_DE_PASSE_API_REST`, `LOGIN_NOTIFICATION_DOMIBUS`, `MOT_DE_PASSE_NOTIFICATION_DOMIBUS` et `IDENTIFIANT_EXPEDITEUR_DOMIBUS` dans le second, `PORT_DOMIBUS` dans le premier aussi, `8180` à défaut. Une variable passée à la commande l'emporte sur le fichier ; une variable absente des deux arrête le script avant qu'il ne touche à la passerelle, en nommant le fichier à compléter. Ces valeurs doivent être celles avec lesquelles tourne la pile, et c'est pourquoi il les prend là : le Plugin User est le compte que l'application présentera à la passerelle, les identifiants de la notification sont ceux qu'elle vérifie sur chaque appel — un écart, et chaque échange reste « en cours » sans un mot —, `PORT_OOTS_FRANCE` compose l'adresse de ces appels, et `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` est celui avec lequel la passerelle rouvre ses stores à chaque démarrage. La notification seule n'emploie que les trois variables qui l'écrivent.
 
-> [!IMPORTANT]
-> Les six variables sont exigées, et reprennent celles des fichiers d'environnement avec lesquels tourne la pile — le script ne les lit pas, leurs valeurs n'étant pas sourçables depuis un shell. Les deux identifiants de l'API REST sont le compte que l'application présentera à la passerelle : en créer un autre donnerait un Plugin User ne correspondant à rien, et des `403` sur toutes ses requêtes. Les deux de la notification sont ceux que la passerelle posera sur ses appels et que l'application vérifie : un écart, et chaque échange reste « en cours » sans un mot. `PORT_OOTS_FRANCE` compose l'adresse de ces appels. `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` est celui avec lequel la passerelle rouvre son keystore et son truststore à chaque démarrage.
+Il est rejouable, et garde ce que la passerelle tient déjà :
+
+- **le PMode** : sans `FICHIER_PMODE`, celui de la passerelle est conservé s'il déclare notre point d'accès, `IDENTIFIANT_EXPEDITEUR_DOMIBUS` de `.env.oots`, et le PMode d'exemple `exemples/configuration_PMode_Domibus.xml` ne va qu'à une passerelle qui n'en a pas de tel — l'image démarre avec un PMode à elle, qui ne le déclare pas. Un PMode que la passerelle ne sait pas rendre arrête le script. `FICHIER_PMODE=<fichier>` en charge un, l'exemple compris ;
+- **le keystore et le truststore** : sans `REPERTOIRE_KEYSTORE_TRUSTSTORE`, ils sont conservés dès que le keystore porte la clé de ce point d'accès, et engendrés par `scripts/generate_certificates.sh` sinon — qui ne connaît que `AP_FR_01` : un autre nom demande ses propres stores, voir [docs/domibus_context.md](docs/domibus_context.md#concepts-clés). Un keystore que la passerelle ne sait pas lister arrête le script plutôt que de l'écraser, sauf s'il est certain qu'aucun fichier n'existe là où `docker-compose.yml` la fait le chercher. `REPERTOIRE_KEYSTORE_TRUSTSTORE=<répertoire>` téléverse les deux stores qu'il contient ;
+- **le Plugin User** n'est créé que s'il manque ;
+- **la notification** est réécrite à chaque passage, sans empiler de bloc dans `ws-plugin.properties`.
 
 > [!IMPORTANT]
 > **La passerelle doit être redémarrée après ce script.** Les règles de notification (`wsplugin.push.rules`) ne sont pas modifiables par l'API : elles ne vivent que dans le fichier de propriétés du plugin, que le script écrit, et ne prennent effet qu'au redémarrage.
@@ -148,7 +150,7 @@ Il est rejouable : le Plugin User n'est créé que s'il manque, et recharger le 
 
 Le script s'authentifie sur la console en `admin`/`123456`, identifiants par défaut de l'image. Sur une passerelle dont le mot de passe a déjà été changé — ce que recommande [Sécuriser les comptes d'administration](docs/configurer_domibus_via_l_interface.md#sécuriser-les-comptes-dadministration) —, les lui passer par `DOMIBUS_ADMIN` et `DOMIBUS_MOT_DE_PASSE_ADMIN`.
 
-Les mêmes gestes se font à la main dans la console, ce qui est la voie à prendre pour reprendre une seule des trois étapes : [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md). Ce que devient le répertoire `./domibus`, comment lire les journaux de la passerelle et quels réglages survivent à une table rase sont décrits dans [docs/domibus_context.md](docs/domibus_context.md#spécificités-de-linstallation-locale).
+Les mêmes gestes se font à la main dans la console : [docs/configurer_domibus_via_l_interface.md](docs/configurer_domibus_via_l_interface.md). Ce que devient le répertoire `./domibus`, comment lire les journaux de la passerelle et quels réglages survivent à une table rase sont décrits dans [docs/domibus_context.md](docs/domibus_context.md#spécificités-de-linstallation-locale).
 
 ## Sur un serveur
 
