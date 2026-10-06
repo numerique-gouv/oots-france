@@ -1,96 +1,141 @@
 #!/bin/sh
-# Configures a fresh Domibus instance, without going through the web console.
+# Configures a Domibus gateway without going through the web console, and
+# replays on one already configured.
 #
-# Reproduces the steps described in the README (load the PMode, create the Plugin
-# User) through the administration REST API, so that continuous integration can
-# raise a usable gateway with no human intervention.
+# Reproduces the steps docs/configurer_domibus_via_l_interface.md describes
+# (stores, PMode, Plugin User) through the administration REST API, then writes
+# the notification towards the application into the WS plugin's properties
+# file. What the gateway already holds for our access point is kept: a PMode
+# declaring it, or a keystore with its key, is replaced only when one is given.
 #
-# Usage: scripts/configure_domibus.sh
+# Usage: scripts/configure_domibus.sh                the whole configuration
+#        scripts/configure_domibus.sh notification   ws-plugin.properties alone:
+#                                                    no call to the console
 #
-# Recognised variables (defaults in brackets):
-#   URL_DOMIBUS                 console URL; failing that, PORT_DOMIBUS composes
-#                               http://localhost:${PORT_DOMIBUS:-8180}/domibus
+# Run from the root of the stack it configures: the .env and .env.oots read are
+# those of the current directory, as `docker compose exec` addresses the stack
+# of the current directory.
+#
+# Every variable below is taken from the command line first; failing that, the
+# ones marked with a file are read from it, and the script stops before touching
+# the gateway when one without a default has no value.
+#   URL_DOMIBUS                 console URL; failing that, PORT_DOMIBUS (.env,
+#                               else 8180) composes http://localhost:<port>/domibus
 #   DOMIBUS_ADMIN               console admin account (admin)
-#   DOMIBUS_MOT_DE_PASSE_ADMIN  console password (123456)
-#   LOGIN_API_REST              Plugin User to create — mandatory
-#   MOT_DE_PASSE_API_REST       its password — mandatory, 16 to 32 characters,
+#   DOMIBUS_MOT_DE_PASSE_ADMIN  console password (123456) — in no file
+#   LOGIN_API_REST              Plugin User to create (.env.oots)
+#   MOT_DE_PASSE_API_REST       its password (.env.oots) — 16 to 32 characters,
 #                               with an upper case, a lower case, a digit and a
 #                               special character, failing which Domibus refuses
 #                               it
 #   LOGIN_NOTIFICATION_DOMIBUS  the credentials the gateway puts on the
 #   MOT_DE_PASSE_NOTIFICATION_DOMIBUS
-#                               notifications it pushes at us — mandatory, and
-#                               having to match the ones in .env.oots, which the
-#                               application checks them against
-#
-# Those two credentials must be the ones in the .env.oots the application runs
-# with: this is the account it will present to the gateway. They are required
-# rather than derived, a .env.oots not being sourceable from a shell script — its
-# values contain `&` and JSON braces.
-#   FICHIER_PMODE               PMode to load (exemples/configuration_PMode_Domibus.xml)
-#   REPERTOIRE_KEYSTORE_TRUSTSTORE
-#                               where to read keystore and truststore; failing
-#                               that, they are generated into a temporary
-#                               directory by scripts/generate_certificates.sh
+#                               notifications it pushes at us (.env.oots), which
+#                               the application checks against that same file
+#   IDENTIFIANT_EXPEDITEUR_DOMIBUS
+#                               our access point (.env.oots): the party the PMode
+#                               declares and the alias of our key
 #   MOT_DE_PASSE_KEYSTORE_TRUSTSTORE
-#                               their password — mandatory, and having to match
-#                               the one in the .env the gateway runs with
-#   PORT_OOTS_FRANCE            the port `web` listens on, out of which the
-#                               notification address towards us is composed —
-#                               mandatory, and having to match the one in the
-#                               .env the stack runs with, since a worktree shifts
-#                               it; URL_NOTIFICATION overrides the whole address
+#                               the stores' password (.env), the one the gateway
+#                               reopens them with
+#   PORT_OOTS_FRANCE            the port `web` listens on (.env), out of which the
+#                               notification address towards us is composed — a
+#                               worktree shifts it; URL_NOTIFICATION overrides the
+#                               whole address
+#   FICHIER_PMODE               PMode to load; failing that, the gateway's own is
+#                               kept when it declares our access point, and
+#                               exemples/configuration_PMode_Domibus.xml goes
+#                               only to a gateway that has no such PMode — it
+#                               declares AP_FR_01 alone
+#   REPERTOIRE_KEYSTORE_TRUSTSTORE
+#                               where to read keystore and truststore to upload;
+#                               failing that, the gateway's are kept when its
+#                               keystore holds our access point's key, and
+#                               generated by
+#                               scripts/generate_certificates.sh otherwise
 
 set -e
 
-URL_DOMIBUS="${URL_DOMIBUS:-http://localhost:${PORT_DOMIBUS:-8180}/domibus}"
+ETAPE="${1:-}"
+case "$ETAPE" in
+  "" | notification) ;;
+  *)
+    echo "❌ Étape inconnue : $ETAPE. Usage : scripts/configure_domibus.sh [notification]" >&2
+    exit 1
+    ;;
+esac
+
+# The values of a .env* cannot be sourced with `.`: they carry JSON braces and
+# `&`. An end-of-line comment starts at the first space followed by `#`, as
+# docker compose reads it.
+valeurDe() {
+  eval "valeur=\${$1:-}"
+  if [ -z "$valeur" ] && [ -f "$2" ]; then
+    valeur=$(sed -n "s/^$1=//p" "$2" | head -n 1)
+    valeur="${valeur%% #*}"
+  fi
+  printf '%s' "$valeur"
+}
+
+exige() {
+  valeur=$(valeurDe "$1" "$2")
+  if [ -z "$valeur" ]; then
+    echo "❌ $1 manque : ni passée à la commande, ni dans $2 — compléter ce fichier." >&2
+    exit 1
+  fi
+  eval "$1=\$valeur"
+}
+
+# The address the gateway notifies us at, seen from the Domibus container, hence
+# the service name. The port is the one `web` listens on, and not a fixed 3000:
+# a gateway configured on 3000 in a worktree would push the correspondent's
+# answers at a port nothing listens on — silently, the page that follows the
+# exchange staying on « en cours » for ever.
+if [ -z "${URL_NOTIFICATION:-}" ]; then
+  exige PORT_OOTS_FRANCE .env
+  URL_NOTIFICATION="http://web:$PORT_OOTS_FRANCE/domibus/notifications"
+fi
+exige LOGIN_NOTIFICATION_DOMIBUS .env.oots
+exige MOT_DE_PASSE_NOTIFICATION_DOMIBUS .env.oots
+
+if [ -z "$ETAPE" ]; then
+  exige LOGIN_API_REST .env.oots
+  exige MOT_DE_PASSE_API_REST .env.oots
+  exige MOT_DE_PASSE_KEYSTORE_TRUSTSTORE .env
+  exige IDENTIFIANT_EXPEDITEUR_DOMIBUS .env.oots
+  if [ -z "${URL_DOMIBUS:-}" ]; then
+    PORT_DOMIBUS=$(valeurDe PORT_DOMIBUS .env)
+    URL_DOMIBUS="http://localhost:${PORT_DOMIBUS:-8180}/domibus"
+  fi
+fi
+
 DOMIBUS_ADMIN="${DOMIBUS_ADMIN:-admin}"
 DOMIBUS_MOT_DE_PASSE_ADMIN="${DOMIBUS_MOT_DE_PASSE_ADMIN:-123456}"
-LOGIN_API_REST="${LOGIN_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
-MOT_DE_PASSE_API_REST="${MOT_DE_PASSE_API_REST:?doit être renseigné, et correspondre à celui de .env.oots}"
-FICHIER_PMODE="${FICHIER_PMODE:-exemples/configuration_PMode_Domibus.xml}"
-MOT_DE_PASSE_KEYSTORE_TRUSTSTORE="${MOT_DE_PASSE_KEYSTORE_TRUSTSTORE:?doit être renseigné, et correspondre à celui de .env}"
-PARTIE="AP_FR_01"
+FICHIER_PMODE="${FICHIER_PMODE:-}"
+REPERTOIRE_KEYSTORE_TRUSTSTORE="${REPERTOIRE_KEYSTORE_TRUSTSTORE:-}"
+PMODE_EXEMPLE="$(dirname "$0")/../exemples/configuration_PMode_Domibus.xml"
+PARTIE="${IDENTIFIANT_EXPEDITEUR_DOMIBUS:-}"
 
-# The directory mounted into the gateway, where the plugin's properties live.
-REPERTOIRE_DOMIBUS="${REPERTOIRE_DOMIBUS:-domibus}"
-
-# The address the gateway notifies us at, and the credentials it will put on
-# those calls. Seen from the Domibus container, hence the service name.
-#
-# The port is the one `web` listens on, which is `PORT_OOTS_FRANCE` and not a
-# fixed 3000: a worktree shifts it, and a gateway configured on 3000 would push
-# the correspondent's answers at a port nothing listens on — silently, the page
-# that follows the exchange staying on « en cours » for ever.
-URL_NOTIFICATION="${URL_NOTIFICATION:-http://web:${PORT_OOTS_FRANCE:?doit être renseigné, et correspondre à celui de .env}/domibus/notifications}"
-LOGIN_NOTIFICATION_DOMIBUS="${LOGIN_NOTIFICATION_DOMIBUS:?doit être renseigné, et correspondre à celui de .env.oots}"
-MOT_DE_PASSE_NOTIFICATION_DOMIBUS="${MOT_DE_PASSE_NOTIFICATION_DOMIBUS:?doit être renseigné, et correspondre à celui de .env.oots}"
+# The plugin's properties file, and the keystore docker-compose.yml forces the
+# gateway onto, are reached from inside the container, and not from the host:
+# the gateway stores its configuration in mode 770, owned by its own user. On a
+# machine where that numeric id happens to be the operator's, reading directly
+# works by coincidence; elsewhere — a continuous integration runner — the file is
+# not even readable.
+COMMANDE_DOMIBUS="${COMMANDE_DOMIBUS:-docker compose exec -T domibus}"
+CONFIG_DOMIBUS="${CONFIG_DOMIBUS:-/data/tomcat/conf/domibus}"
+PROPRIETES_PLUGIN="$CONFIG_DOMIBUS/plugins/config/ws-plugin.properties"
+KEYSTORE_PASSERELLE="$CONFIG_DOMIBUS/keystores/gateway_keystore.p12"
 
 BOCAL=$(mktemp)
 REPONSE=$(mktemp)
 PMODE_CHARGE=$(mktemp)
-trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"' EXIT
+STORES_ENGENDRES=""
+trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; [ -z "$STORES_ENGENDRES" ] || rm -rf "$STORES_ENGENDRES"' EXIT
 
 # The API's responses are prefixed with `)]}',` (Angular's protection against
 # JSON hijacking): that prefix must go before any parsing.
 sansPrefixeJSON() { tail -c +7; }
-
-echo "→ Authentification sur $URL_DOMIBUS en tant que $DOMIBUS_ADMIN"
-if ! curl -sS -f -c "$BOCAL" -o /dev/null \
-  -X POST "$URL_DOMIBUS/rest/public/security/authentication" \
-  -H 'Content-Type: application/json' \
-  -d "{\"username\":\"$DOMIBUS_ADMIN\",\"password\":\"$DOMIBUS_MOT_DE_PASSE_ADMIN\"}"; then
-  echo "❌ Authentification refusée sur $URL_DOMIBUS (passerelle joignable ? identifiants ?)." >&2
-  exit 1
-fi
-
-# The anti-CSRF token is dropped as a cookie and must be sent back as a header
-# on every modifying request.
-JETON=$(awk '/XSRF-TOKEN/ { print $7 }' "$BOCAL")
-if [ -z "$JETON" ]; then
-  echo "❌ Aucun jeton XSRF reçu : authentification refusée ?" >&2
-  exit 1
-fi
 
 appelAuthentifie() {
   curl -sS -b "$BOCAL" -H "X-XSRF-TOKEN: $JETON" "$@"
@@ -105,18 +150,100 @@ appelAuthentifie() {
 # the message that explains what happened. curl then writes `000`, which the code
 # comparisons treat like any other refusal.
 appelAvecCode() {
+  : > "$REPONSE"
   appelAuthentifie -o "$REPONSE" -w '%{http_code}' "$@" || true
 }
 
 # The `)]}',` prefix caps the console's JSON responses only: an application
 # server error page has none, and would lose six bytes if it were stripped
 # without looking.
+corpsDomibus() {
+  if head -c 6 "$REPONSE" 2> /dev/null | grep -qF ")]}',"; then
+    tail -c +7 "$REPONSE"
+  else
+    cat "$REPONSE" 2> /dev/null
+  fi
+}
 
 messageDomibus() {
-  if head -c 6 "$REPONSE" 2> /dev/null | grep -qF ")]}',"; then
-    tail -c +7 "$REPONSE" | head -c 500
+  corpsDomibus | head -c 500
+}
+
+authentifie() {
+  echo "→ Authentification sur $URL_DOMIBUS en tant que $DOMIBUS_ADMIN"
+  if ! curl -sS -f -c "$BOCAL" -o /dev/null \
+    -X POST "$URL_DOMIBUS/rest/public/security/authentication" \
+    -H 'Content-Type: application/json' \
+    -d "{\"username\":\"$DOMIBUS_ADMIN\",\"password\":\"$DOMIBUS_MOT_DE_PASSE_ADMIN\"}"; then
+    echo "❌ Authentification refusée sur $URL_DOMIBUS (passerelle joignable ? identifiants ?)." >&2
+    exit 1
+  fi
+
+  # The anti-CSRF token is dropped as a cookie and must be sent back as a header
+  # on every modifying request.
+  JETON=$(awk '/XSRF-TOKEN/ { print $7 }' "$BOCAL")
+  if [ -z "$JETON" ]; then
+    echo "❌ Aucun jeton XSRF reçu : authentification refusée ?" >&2
+    exit 1
+  fi
+}
+
+pmodeIllisible() {
+  echo "❌ PMode de la passerelle illisible ($1) : rien n'est remplacé. $(messageDomibus)" >&2
+  echo "   Pour en charger un quand même : FICHIER_PMODE=<fichier> scripts/configure_domibus.sh" >&2
+  exit 1
+}
+
+# Domibus answers `pmode/current` with the current PMode's archive entry, or with
+# an empty body when it has none, and serves the PMode itself by that entry's id
+# (PModeResource). The image starts with a PMode of its own, which does not
+# declare our access point: only a PMode declaring it is kept. A gateway whose
+# PMode cannot be read is left alone, the example loaded there could replace the
+# Technical Support Dashboard's.
+choisisPMode() {
+  if [ -n "$FICHIER_PMODE" ]; then
+    return
+  fi
+  echo "→ PMode en place sur la passerelle"
+  codePMode=$(appelAvecCode "$URL_DOMIBUS/rest/internal/admin/pmode/current")
+  [ "$codePMode" = "200" ] || pmodeIllisible "$codePMode"
+  idPMode=$(corpsDomibus | python3 -c "
+import json, sys
+corps = sys.stdin.read().strip()
+courant = json.loads(corps) if corps else None
+if courant is not None:
+    print(courant['id'])
+") || pmodeIllisible "$codePMode"
+  if [ -z "$idPMode" ]; then
+    echo "  aucun : le PMode d'exemple sera chargé"
+    FICHIER_PMODE="$PMODE_EXEMPLE"
+    return
+  fi
+
+  codePMode=$(appelAvecCode "$URL_DOMIBUS/rest/internal/admin/pmode/$idPMode?noAudit=true")
+  [ "$codePMode" = "200" ] || pmodeIllisible "$codePMode"
+  if corpsDomibus | python3 -c "
+import sys
+import xml.etree.ElementTree as ET
+partie = sys.argv[1]
+local = lambda element: element.tag.rsplit('}', 1)[-1]
+arbre = ET.parse(sys.stdin)
+declaree = any(
+    element.get('name') == partie and identifiant.get('partyId') == partie
+    for element in arbre.iter() if local(element) == 'party'
+    for identifiant in element if local(identifiant) == 'identifier'
+)
+sys.exit(0 if declaree else 3)
+" "$PARTIE" 2> /dev/null; then
+    echo "  conservé ; FICHIER_PMODE=<fichier> en charge un autre"
   else
-    head -c 500 "$REPONSE" 2> /dev/null
+    case $? in
+      3)
+        echo "  ne déclare pas $PARTIE : le PMode d'exemple sera chargé"
+        FICHIER_PMODE="$PMODE_EXEMPLE"
+        ;;
+      *) pmodeIllisible "$codePMode" ;;
+    esac
   fi
 }
 
@@ -133,8 +260,9 @@ messageDomibus() {
 # as initiator nor as responder (BusinessProcessValidator, DOM_003), so such
 # processes are dropped from what is uploaded. None carries a message ours sends
 # or receives; the file on disk is left as published.
-echo "→ Vérification de la partie $PARTIE dans $FICHIER_PMODE"
-if ! python3 - "$FICHIER_PMODE" "$PARTIE" "$PMODE_CHARGE" <<'PYTHON'
+verifiePMode() {
+  echo "→ Vérification de la partie $PARTIE dans $FICHIER_PMODE"
+  if ! python3 - "$FICHIER_PMODE" "$PARTIE" "$PMODE_CHARGE" <<'PYTHON'
 import shutil
 import sys
 import xml.etree.ElementTree as ET
@@ -208,21 +336,78 @@ if retires or ajoutees:
 else:
     shutil.copyfile(fichier, sortie)
 PYTHON
-then
-  exit 1
-fi
+  then
+    exit 1
+  fi
+}
+
+# The keystore's aliases, as `keystore/list` reads them from the file
+# docker-compose.yml forces the gateway onto. Java store aliases being
+# case-insensitive, so is the comparison.
+aliasDuKeystore() {
+  corpsDomibus | python3 -c "
+import json, sys
+print(' '.join(entree['name'] for entree in json.load(sys.stdin)['trustStoreList'] or []))
+" 2> /dev/null
+}
+
+porteLaCle() {
+  printf '%s\n' $1 | grep -qix "$PARTIE"
+}
 
 # The certificates shipped with the image are public and shared by every
-# installation: ours are imposed instead. Where no stores are supplied they are
-# generated — they need not outlive the script, the gateway keeping them in its
-# database once uploaded.
-if [ -z "$REPERTOIRE_KEYSTORE_TRUSTSTORE" ]; then
-  REPERTOIRE_KEYSTORE_TRUSTSTORE=$(mktemp -d)
-  trap 'rm -f "$BOCAL" "$REPONSE" "$PMODE_CHARGE"; rm -rf "$REPERTOIRE_KEYSTORE_TRUSTSTORE"' EXIT
-  echo "→ Génération du keystore et du truststore dans $REPERTOIRE_KEYSTORE_TRUSTSTORE"
+# installation: ours are imposed instead. A keystore already holding our key is
+# kept — on a server, it is the one the eDelivery PKI certified. Where the
+# keystore cannot be read while a file stands where the gateway reads it,
+# nothing is generated: that file may be the PKI's key, and an upload would
+# overwrite it. Generated stores need not outlive the script, the gateway
+# keeping them once uploaded.
+keystoreIllisible() {
+  echo "❌ Keystore de la passerelle illisible ($1), et rien ne prouve qu'aucun fichier n'est à $KEYSTORE_PASSERELLE : rien n'est remplacé." >&2
+  echo "   $(messageDomibus)" >&2
+  echo "   Pour charger des stores quand même : REPERTOIRE_KEYSTORE_TRUSTSTORE=<répertoire> scripts/configure_domibus.sh" >&2
+  exit 1
+}
+
+choisisStores() {
+  if [ -n "$REPERTOIRE_KEYSTORE_TRUSTSTORE" ]; then
+    return
+  fi
+  echo "→ Keystore en place sur la passerelle"
+  codeKeystore=$(appelAvecCode "$URL_DOMIBUS/rest/internal/admin/keystore/list")
+  if [ "$codeKeystore" = "200" ]; then
+    aliasCles=$(aliasDuKeystore) || keystoreIllisible "$codeKeystore"
+    if porteLaCle "$aliasCles"; then
+      echo "  clé $PARTIE présente : keystore et truststore conservés ;"
+      echo "  REPERTOIRE_KEYSTORE_TRUSTSTORE=<répertoire> en charge d'autres"
+      return
+    fi
+  else
+    # Asked as a word rather than read from an exit code: `docker compose exec`
+    # also fails when the stack is down, and that is no proof of an absent file.
+    presence=$($COMMANDE_DOMIBUS sh -c "if [ -e '$KEYSTORE_PASSERELLE' ]; then echo present; else echo absent; fi" || true)
+    [ "$presence" = "absent" ] || keystoreIllisible "$codeKeystore"
+  fi
+  STORES_ENGENDRES=$(mktemp -d)
+  REPERTOIRE_KEYSTORE_TRUSTSTORE="$STORES_ENGENDRES"
+  echo "  aucune clé $PARTIE : génération du keystore et du truststore dans $REPERTOIRE_KEYSTORE_TRUSTSTORE"
   DESTINATION="$REPERTOIRE_KEYSTORE_TRUSTSTORE" MOT_DE_PASSE_KEYSTORE_TRUSTSTORE="$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" \
     "$(dirname "$0")/generate_certificates.sh" > /dev/null
-fi
+
+  # generate_certificates.sh names its key itself: under another access point
+  # its stores would be uploaded over the gateway's — over the PKI's key, when
+  # only the name changed — before the check that follows the upload refuses them.
+  if ! entrees=$(openssl pkcs12 -in "$REPERTOIRE_KEYSTORE_TRUSTSTORE/gateway_keystore.p12" -nokeys \
+    -passin "pass:$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE"); then
+    echo "❌ openssl ne sait pas lire le keystore engendré : rien n'est téléversé." >&2
+    exit 1
+  fi
+  if ! printf '%s\n' "$entrees" | grep -qix "[[:space:]]*friendlyName: $PARTIE"; then
+    echo "❌ scripts/generate_certificates.sh n'a pas engendré de clé $PARTIE : rien n'est téléversé." >&2
+    echo "   Donner des stores faits pour $PARTIE : REPERTOIRE_KEYSTORE_TRUSTSTORE=<répertoire> scripts/configure_domibus.sh" >&2
+    exit 1
+  fi
+}
 
 # Both stores are laid down through the same API since Domibus 5.1: the detour
 # taking the keystore through the disk, which 5.0.4 imposed, has no place any
@@ -255,127 +440,129 @@ chargeStore() {
   fi
 }
 
-chargeStore truststore
-chargeStore keystore
-
 # Stores generated before the gateway left Domibus's security profiles hold
 # AP_FR_01_rsa_sign and AP_FR_01_rsa_decrypt, and generate_certificates.sh
 # refuses to overwrite them: uploaded again, they leave the gateway without the
-# key docker-compose.yml names. Java store aliases being case-insensitive, so is
-# the comparison.
-echo "→ Vérification de la clé $PARTIE dans le keystore"
-ALIAS_CLES=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/keystore/list" \
-  | sansPrefixeJSON \
-  | python3 -c "
-import json, sys
-print(' '.join(entree.get('name', '') for entree in json.load(sys.stdin).get('trustStoreList') or []))
-" 2> /dev/null || true)
-if ! printf '%s\n' $ALIAS_CLES | grep -qix "$PARTIE"; then
-  echo "❌ Le keystore chargé n'a pas de clé $PARTIE (alias : ${ALIAS_CLES:-aucun})." >&2
-  echo "   Un keystore d'avant le mode legacy ? Supprimer $REPERTOIRE_KEYSTORE_TRUSTSTORE/*.p12," >&2
-  echo "   relancer scripts/generate_certificates.sh, puis ce script." >&2
-  exit 1
-fi
+# key docker-compose.yml names.
+chargeStores() {
+  chargeStore truststore
+  chargeStore keystore
 
-echo "→ Chargement du PMode $FICHIER_PMODE"
-# Domibus answers 200 while reporting the PMode's warnings: those of the example
-# PMode (identical initiator and responder roles) are expected, the gateway
-# talking to itself. The file sent is the temporary copy, whose name curl cannot
-# infer a type from: Domibus refuses anything but XML (DOM_001), hence the type
-# and name given explicitly.
-CODE_PMODE=$(appelAvecCode \
-  -F "file=@$PMODE_CHARGE;filename=$(basename "$FICHIER_PMODE");type=text/xml" \
-  --form-string "description=Configuration automatique" \
-  "$URL_DOMIBUS/rest/internal/admin/pmode")
-if [ "$CODE_PMODE" != "200" ]; then
-  echo "❌ Chargement du PMode refusé ($CODE_PMODE) : $(messageDomibus)" >&2
-  exit 1
-fi
+  echo "→ Vérification de la clé $PARTIE dans le keystore"
+  appelAvecCode "$URL_DOMIBUS/rest/internal/admin/keystore/list" > /dev/null
+  aliasCles=$(aliasDuKeystore || true)
+  if ! porteLaCle "$aliasCles"; then
+    echo "❌ Le keystore chargé n'a pas de clé $PARTIE (alias : ${aliasCles:-aucun})." >&2
+    echo "   Un keystore d'avant le mode legacy ? Supprimer $REPERTOIRE_KEYSTORE_TRUSTSTORE/*.p12," >&2
+    echo "   relancer scripts/generate_certificates.sh, puis ce script." >&2
+    exit 1
+  fi
+}
+
+chargePMode() {
+  echo "→ Chargement du PMode $FICHIER_PMODE"
+  # Domibus answers 200 while reporting the PMode's warnings: those of the example
+  # PMode (identical initiator and responder roles) are expected, the gateway
+  # talking to itself. The file sent is the temporary copy, whose name curl cannot
+  # infer a type from: Domibus refuses anything but XML (DOM_001), hence the type
+  # and name given explicitly.
+  codeChargement=$(appelAvecCode \
+    -F "file=@$PMODE_CHARGE;filename=$(basename "$FICHIER_PMODE");type=text/xml" \
+    --form-string "description=Configuration automatique" \
+    "$URL_DOMIBUS/rest/internal/admin/pmode")
+  if [ "$codeChargement" != "200" ]; then
+    echo "❌ Chargement du PMode refusé ($codeChargement) : $(messageDomibus)" >&2
+    exit 1
+  fi
+}
 
 # Recreating an existing Plugin User fails: one is created only where missing, so
 # that the script can be replayed without error.
-echo "→ Vérification du Plugin User $LOGIN_API_REST"
-EXISTE=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/plugin/users?pageSize=100&page=0&authType=BASIC" \
-  | sansPrefixeJSON \
-  | python3 -c "
+creePluginUser() {
+  echo "→ Vérification du Plugin User $LOGIN_API_REST"
+  existe=$(appelAuthentifie "$URL_DOMIBUS/rest/internal/admin/plugin/users?pageSize=100&page=0&authType=BASIC" \
+    | sansPrefixeJSON \
+    | python3 -c "
 import json, sys
 utilisateurs = json.load(sys.stdin).get('entries') or []
 print('oui' if any(u.get('userName') == sys.argv[1] for u in utilisateurs) else 'non')
 " "$LOGIN_API_REST")
 
-if [ "$EXISTE" = "oui" ]; then
-  echo "  déjà présent, rien à faire"
-else
+  if [ "$existe" = "oui" ]; then
+    echo "  déjà présent, rien à faire"
+    return
+  fi
   echo "  création"
-  CODE_UTILISATEUR=$(appelAvecCode \
+  codeUtilisateur=$(appelAvecCode \
     -X PUT "$URL_DOMIBUS/rest/internal/admin/plugin/users" \
     -H 'Content-Type: application/json' \
     -d "[{\"userName\":\"$LOGIN_API_REST\",\"password\":\"$MOT_DE_PASSE_API_REST\",\"authRoles\":\"ROLE_ADMIN\",\"authenticationType\":\"BASIC\",\"status\":\"NEW\",\"active\":true,\"suspended\":false,\"domain\":\"default\",\"originalUser\":null,\"certificateId\":null}]")
-  if [ "$CODE_UTILISATEUR" != "204" ]; then
-    echo "❌ Création du Plugin User refusée ($CODE_UTILISATEUR) : $(messageDomibus)" >&2
+  if [ "$codeUtilisateur" != "204" ]; then
+    echo "❌ Création du Plugin User refusée ($codeUtilisateur) : $(messageDomibus)" >&2
     echo "   Mot de passe non conforme ? 16 à 32 caractères, majuscule, minuscule, chiffre et spécial." >&2
     exit 1
   fi
-fi
+}
 
-# First guard rail: it is through this account, and on this route, that the
-# application resolves access points. If it fails here, it will fail in the
-# test.
-echo "→ Vérification de l'accès à l'annuaire des parties"
-CODE_PARTIE=$(curl -sS -o /dev/null -w '%{http_code}' \
-  -u "$LOGIN_API_REST:$MOT_DE_PASSE_API_REST" \
-  "$URL_DOMIBUS/ext/party?name=$PARTIE" || true)
-if [ "$CODE_PARTIE" != "200" ]; then
-  echo "❌ L'annuaire des parties répond $CODE_PARTIE au Plugin User $LOGIN_API_REST." >&2
-  exit 1
-fi
+testeLaPasserelle() {
+  # First guard rail: it is through this account, and on this route, that the
+  # application resolves access points. If it fails here, it will fail in the
+  # test.
+  echo "→ Vérification de l'accès à l'annuaire des parties"
+  codePartie=$(curl -sS -o /dev/null -w '%{http_code}' \
+    -u "$LOGIN_API_REST:$MOT_DE_PASSE_API_REST" \
+    "$URL_DOMIBUS/ext/party?name=$PARTIE" || true)
+  if [ "$codePartie" != "200" ]; then
+    echo "❌ L'annuaire des parties répond $codePartie au Plugin User $LOGIN_API_REST." >&2
+    exit 1
+  fi
 
-# Second guard rail, far more telling: the console's connectivity test — the
-# "paper plane". It circulates a real AS4 message in a loop through the gateway,
-# so it exercises signing and encryption, and validates the aliases of both
-# stores along the way. All of it owing nothing to the application: if it passes
-# and the end-to-end test fails, the gateway is out of the picture.
-echo "→ Test de connectivité $PARTIE → $PARTIE"
-CODE_TEST=$(appelAvecCode \
-  -X POST "$URL_DOMIBUS/rest/internal/admin/testing" \
-  -H 'Content-Type: application/json' \
-  -d "{\"sender\":\"$PARTIE\",\"receiver\":\"$PARTIE\"}")
-if [ "$CODE_TEST" != "200" ]; then
-  echo "❌ Test de connectivité refusé ($CODE_TEST) : $(messageDomibus)" >&2
-  exit 1
-fi
+  # Second guard rail, far more telling: the console's connectivity test — the
+  # "paper plane". It circulates a real AS4 message in a loop through the gateway,
+  # so it exercises signing and encryption, and validates the aliases of both
+  # stores along the way. All of it owing nothing to the application: if it passes
+  # and the end-to-end test fails, the gateway is out of the picture.
+  echo "→ Test de connectivité $PARTIE → $PARTIE"
+  codeTest=$(appelAvecCode \
+    -X POST "$URL_DOMIBUS/rest/internal/admin/testing" \
+    -H 'Content-Type: application/json' \
+    -d "{\"sender\":\"$PARTIE\",\"receiver\":\"$PARTIE\"}")
+  if [ "$codeTest" != "200" ]; then
+    echo "❌ Test de connectivité refusé ($codeTest) : $(messageDomibus)" >&2
+    exit 1
+  fi
 
-# The message leaves asynchronously: its acknowledgement is read afterwards.
-#
-# The `|| true` counts here for the same reason as above, and thirty times rather
-# than once: an expired session, an application server error page or any body
-# that is not JSON makes `python3` raise, and `set -e` would interrupt the script
-# on a traceback — instead of the failure message below, which does point
-# somewhere. The `2>/dev/null` masks that traceback alone: curl's own errors stay
-# on screen.
-echo "  message soumis, attente de l'acquittement"
-STATUT=""
-for _ in $(seq 1 30); do
-  sleep 1
-  STATUT=$(appelAuthentifie \
-    "$URL_DOMIBUS/rest/internal/admin/testing/connectionmonitor?senderPartyId=$PARTIE&partyIds=$PARTIE" \
-    | sansPrefixeJSON \
-    | python3 -c "
+  # The message leaves asynchronously: its acknowledgement is read afterwards.
+  #
+  # The `|| true` counts here for the same reason as above, and thirty times rather
+  # than once: an expired session, an application server error page or any body
+  # that is not JSON makes `python3` raise, and `set -e` would interrupt the script
+  # on a traceback — instead of the failure message below, which does point
+  # somewhere. The `2>/dev/null` masks that traceback alone: curl's own errors stay
+  # on screen.
+  echo "  message soumis, attente de l'acquittement"
+  statut=""
+  for _ in $(seq 1 30); do
+    sleep 1
+    statut=$(appelAuthentifie \
+      "$URL_DOMIBUS/rest/internal/admin/testing/connectionmonitor?senderPartyId=$PARTIE&partyIds=$PARTIE" \
+      | sansPrefixeJSON \
+      | python3 -c "
 import json, sys
 partie = json.load(sys.stdin).get(sys.argv[1]) or {}
 print((partie.get('lastSent') or {}).get('messageStatus') or '')
 " "$PARTIE" 2> /dev/null || true)
-  [ "$STATUT" = "ACKNOWLEDGED" ] && break
-  [ "$STATUT" = "SEND_FAILURE" ] && break
-done
+    [ "$statut" = "ACKNOWLEDGED" ] && break
+    [ "$statut" = "SEND_FAILURE" ] && break
+  done
 
-if [ "$STATUT" != "ACKNOWLEDGED" ]; then
-  echo "❌ Le message de test n'a pas été acquitté (statut : ${STATUT:-aucun})." >&2
-  echo "   Certificats ou alias du keystore et du truststore en cause ?" >&2
-  echo "   scripts/ci/diagnose_domibus.sh détaille le keystore, le truststore et les erreurs." >&2
-  exit 1
-fi
-
+  if [ "$statut" != "ACKNOWLEDGED" ]; then
+    echo "❌ Le message de test n'a pas été acquitté (statut : ${statut:-aucun})." >&2
+    echo "   Certificats ou alias du keystore et du truststore en cause ?" >&2
+    echo "   scripts/ci/diagnose_domibus.sh détaille le keystore, le truststore et les erreurs." >&2
+    exit 1
+  fi
+}
 
 # ------------------------------------------------- notification towards us
 #
@@ -383,61 +570,52 @@ fi
 # backend*. The switches are set through the API, but **not the rules**:
 # `wsplugin.push.rules` is marked non-writable, and exists only in the plugin's
 # properties file. They therefore take effect only when the gateway restarts.
-#
-# That file is written **from inside the container**, and not from the host: the
-# gateway stores its configuration in mode 770, owned by its own user. On a
-# machine where that numeric id happens to be the operator's, writing directly
-# works by coincidence; elsewhere — a continuous integration runner — the file is
-# not even readable.
-COMMANDE_DOMIBUS="${COMMANDE_DOMIBUS:-docker compose exec -T domibus}"
-CONFIG_DOMIBUS="${CONFIG_DOMIBUS:-/data/tomcat/conf/domibus}"
-PROPRIETES_PLUGIN="$CONFIG_DOMIBUS/plugins/config/ws-plugin.properties"
+ecrisNotification() {
+  if ! $COMMANDE_DOMIBUS test -f "$PROPRIETES_PLUGIN" 2> /dev/null; then
+    echo "❌ Fichier de propriétés du plugin introuvable : $PROPRIETES_PLUGIN" >&2
+    echo "   Commande employée pour atteindre la passerelle : $COMMANDE_DOMIBUS" >&2
+    echo "   La passerelle a-t-elle démarré au moins une fois ? La régler autrement :" >&2
+    echo "   COMMANDE_DOMIBUS='docker exec -i <conteneur>' scripts/configure_domibus.sh" >&2
+    exit 1
+  fi
 
-if ! $COMMANDE_DOMIBUS test -f "$PROPRIETES_PLUGIN" 2> /dev/null; then
-  echo "❌ Fichier de propriétés du plugin introuvable : $PROPRIETES_PLUGIN" >&2
-  echo "   Commande employée pour atteindre la passerelle : $COMMANDE_DOMIBUS" >&2
-  echo "   La passerelle a-t-elle démarré au moins une fois ? La régler autrement :" >&2
-  echo "   COMMANDE_DOMIBUS='docker exec -i <conteneur>' scripts/configure_domibus.sh" >&2
-  exit 1
-fi
+  echo "→ Configuration de la notification vers $URL_NOTIFICATION"
 
-echo "→ Configuration de la notification vers $URL_NOTIFICATION"
-
-# The block is delimited, so the script replays without stacking its writes.
-# Each range carries the whole start marker of its own generation, the earlier
-# French one included: a file holding one generation's block is then never
-# entered by the other generation's range, which — finding no end marker of its
-# own — would run to the end of the file.
-#
-# The file shipped with the image does not end in a newline: without the sed's
-# `$a\`, the block would stick to its last line and its delimiter would no longer
-# be recognised on the next replay.
-#
-# `markAsDownloaded=false`: at `true`, the notification counts as a download, and
-# the example PMode carries `retention_downloaded="0"` — the evidence would be
-# erased before we had retrieved it. At `false`, it is our own `retrieveMessage`
-# that marks the message, and so only once we hold it.
-#
-# The rule filters **no recipient**: the messages that reach us carry two
-# different ones — the gateway's identifier on an incoming request, the
-# requester's on the response that comes back to it — and one rule per value
-# would always forget one.
-#
-# Two types: `RECEIVE_SUCCESS`, a message arriving for us, and
-# `MESSAGE_STATUS_CHANGE`, which the plugin sends at every change of status of
-# every message — among them `WAITING_FOR_RETRY` and `SEND_FAILURE` on a request
-# that did not reach its recipient. Not `SEND_FAILURE` as a type of its own: the
-# plugin emits `sendFailure` only where the PMode's `errorHandling` carries
-# `businessErrorNotifyProducer="true"`, which neither our PMode nor the one the
-# Technical Support Dashboard hands out does, and this channel needs no PMode
-# change. The application acknowledges every other status without doing
-# anything.
-#
-# `alert.active` is `false` by default: without it, exhausting the five attempts
-# is perfectly silent. The alert appears in the administration console with no
-# further configuration; sending it by email would take an SMTP server and the
-# addresses `domibus.alert.{sender,receiver}.email`.
-$COMMANDE_DOMIBUS sh -s <<FIN_PROPRIETES
+  # The block is delimited, so the script replays without stacking its writes.
+  # Each range carries the whole start marker of its own generation, the earlier
+  # French one included: a file holding one generation's block is then never
+  # entered by the other generation's range, which — finding no end marker of its
+  # own — would run to the end of the file.
+  #
+  # The file shipped with the image does not end in a newline: without the sed's
+  # `$a\`, the block would stick to its last line and its delimiter would no longer
+  # be recognised on the next replay.
+  #
+  # `markAsDownloaded=false`: at `true`, the notification counts as a download, and
+  # the example PMode carries `retention_downloaded="0"` — the evidence would be
+  # erased before we had retrieved it. At `false`, it is our own `retrieveMessage`
+  # that marks the message, and so only once we hold it.
+  #
+  # The rule filters **no recipient**: the messages that reach us carry two
+  # different ones — the gateway's identifier on an incoming request, the
+  # requester's on the response that comes back to it — and one rule per value
+  # would always forget one.
+  #
+  # Two types: `RECEIVE_SUCCESS`, a message arriving for us, and
+  # `MESSAGE_STATUS_CHANGE`, which the plugin sends at every change of status of
+  # every message — among them `WAITING_FOR_RETRY` and `SEND_FAILURE` on a request
+  # that did not reach its recipient. Not `SEND_FAILURE` as a type of its own: the
+  # plugin emits `sendFailure` only where the PMode's `errorHandling` carries
+  # `businessErrorNotifyProducer="true"`, which neither our PMode nor the one the
+  # Technical Support Dashboard hands out does, and this channel needs no PMode
+  # change. The application acknowledges every other status without doing
+  # anything.
+  #
+  # `alert.active` is `false` by default: without it, exhausting the five attempts
+  # is perfectly silent. The alert appears in the administration console with no
+  # further configuration; sending it by email would take an SMTP server and the
+  # addresses `domibus.alert.{sender,receiver}.email`.
+  $COMMANDE_DOMIBUS sh -s <<FIN_PROPRIETES
 set -e
 sed -i -e '/^# --- OOTS-France : notification vers le dorsal/,/^# --- fin OOTS-France\$/d' \
        -e '/^# --- OOTS-France: push to backend/,/^# --- end OOTS-France\$/d' "$PROPRIETES_PLUGIN"
@@ -458,7 +636,42 @@ wsplugin.dispatcher.worker.cronExpression=0/5 * * * * ?
 FIN_BLOC
 FIN_PROPRIETES
 
-echo "  écrit dans $PROPRIETES_PLUGIN — un redémarrage de la passerelle est nécessaire"
+  echo "  écrit dans $PROPRIETES_PLUGIN — un redémarrage de la passerelle est nécessaire"
+}
 
-echo "✅ Domibus configuré : keystore et truststore chargés, PMode chargé, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
+if [ "$ETAPE" = "notification" ]; then
+  ecrisNotification
+  echo "✅ Notification vers le dorsal écrite ; redémarrer la passerelle pour qu'elle s'applique."
+  exit 0
+fi
+
+authentifie
+choisisPMode
+if [ -n "$FICHIER_PMODE" ]; then
+  verifiePMode
+fi
+choisisStores
+if [ -n "$REPERTOIRE_KEYSTORE_TRUSTSTORE" ]; then
+  chargeStores
+fi
+if [ -n "$FICHIER_PMODE" ]; then
+  chargePMode
+fi
+creePluginUser
+testeLaPasserelle
+ecrisNotification
+
+if [ -n "$STORES_ENGENDRES" ]; then
+  STORES="keystore et truststore engendrés et chargés"
+elif [ -n "$REPERTOIRE_KEYSTORE_TRUSTSTORE" ]; then
+  STORES="keystore et truststore chargés depuis $REPERTOIRE_KEYSTORE_TRUSTSTORE"
+else
+  STORES="keystore et truststore conservés"
+fi
+if [ -n "$FICHIER_PMODE" ]; then
+  PMODE="PMode $FICHIER_PMODE chargé"
+else
+  PMODE="PMode conservé"
+fi
+echo "✅ Domibus configuré : $STORES, $PMODE, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
 echo "   Notification vers le dorsal écrite ; redémarrer la passerelle pour qu'elle s'applique."
