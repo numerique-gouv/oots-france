@@ -41,7 +41,7 @@ Version utilisée ici : **5.2-JEE10** (images Docker officielles déclarées dan
 
 ## Comment OOTS-France utilise Domibus
 
-Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin User (`LOGIN_API_REST` / `MOT_DE_PASSE_API_REST`).
+Tout passe par `DomibusClient` — la liste des parties du PMode par `DomibusPartiesClient` —, en HTTP Basic avec les identifiants du Plugin User (`LOGIN_API_REST` / `MOT_DE_PASSE_API_REST`).
 
 | Canal | Opération | Usage |
 | --- | --- | --- |
@@ -49,6 +49,9 @@ Tout passe par `DomibusClient`, en HTTP Basic avec les identifiants du Plugin Us
 | SOAP `…/services/wsplugin/listPendingMessages` | `listPendingMessages` | Lister les messages entrants en attente (filtrables par `conversationId`) |
 | SOAP `…/services/wsplugin/retrieveMessage` | `retrieveMessage` | Récupérer un message entrant par son `messageID` |
 | SOAP `…/services/wsplugin/getMessageErrors` | `getMessageErrors` | Lire les erreurs que la passerelle a consignées en tentant de remettre une requête émise — une par tentative |
+| SOAP `…/services/wsplugin/getStatusWithAccessPointRole` | `getStatusWithAccessPointRole` | Lire le statut d'un message de test que la France a envoyé, rôle `SENDING` |
+| SOAP `…/services/wsplugin/getMessageErrorsWithAccessPointRole` | `getMessageErrorsWithAccessPointRole` | Lire les erreurs d'un message de test vers `AP_FR_01` elle-même, rôle `SENDING` : vers toute autre partie, elles se lisent par `getMessageErrors`, sans rôle, pour garder le refus que le correspondant signale sous `RECEIVING` |
+| REST `GET …/ext/party` | — | Lister les parties du PMode chargé, par pages de cent (`pageStart` est un décalage, `pageSize` vaut dix si on ne dit rien) |
 
 **C'est la passerelle qui appelle** : le plugin WS pousse une notification vers `POST /domibus/notifications` dès qu'un message arrive pour nous, et à chaque changement de statut d'un message — ce qui dit, entre autres, qu'une requête émise n'a pas atteint son destinataire (voir [plus bas](#ce-que-la-france-fait-dune-remise-qui-échoue)). La route accuse réception et met le traitement en file ; le travail de fond enchaîne alors `retrieveMessage` et aiguille sur l'action ebMS. Les enveloppes SOAP sortantes sont des gabarits d'`app/templates/` ; les réponses sont lues en XPath par `app/parsers/`.
 
@@ -95,6 +98,16 @@ La règle ne joue qu'une fois par requête, et cela suffit. `WAITING_FOR_RETRY` 
 Ni l'un ni l'autre ne porte de code `EDM:ERR:*` : les huit du chapitre 4.5.3 sont ceux d'un serveur qui traite une requête. La raison que la console lit cite le code ebMS et le détail de cette cause, ce que l'exploitant lirait sinon dans l'*Error Log*. L'échange se retrouve par l'identifiant que la passerelle a donné à la requête, que `Exchange#request_message_id` garde ; une notification sur un identifiant que la France ne rattache à aucune requête émise — une réponse qu'elle a elle-même envoyée, notamment — est consignée au journal applicatif, et ignorée.
 
 **Pourquoi `messageStatusChange` et non `sendFailure`.** Le plugin n'émet `sendFailure` que si l'`errorHandling` que le leg du PMode référence porte `businessErrorNotifyProducer="true"` — faux dans le PMode d'exemple, et le PMode d'acceptation est celui de la Commission —, et il ne dit rien des tentatives. `messageStatusChange` part sans condition : la règle `oots` porte donc les deux types `MESSAGE_STATUS_CHANGE,RECEIVE_SUCCESS`, et le PMode n'est pas touché.
+
+### Ce que la passerelle fait d'un message de test
+
+Le service de test du [chapitre 4.7 §3.1](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) — service `http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/service`, action `…/200704/test`, leg `testServiceCase` — sert à l'[espace d'administration](espace_administration.md#les-points-daccès) à tester un correspondant. Lu dans le source au tag [`5.2-JEE10`](https://code.europa.eu/edelivery/domibus/-/tree/5.2-JEE10), la passerelle :
+
+- **l'accepte du plugin WS** comme n'importe quel message, sans charge utile, et le soumet aux mêmes contrôles de PMode ; la France lui donne pour `originalSender` et `finalRecipient` les valeurs que la passerelle donne à son propre message de test (`…:unregistered:C1` et `…:C4`, `testservicemessage.json`) ;
+- **ne le rejoue pas** (`UpdateRetryLoggingService`) : son statut est `ACKNOWLEDGED`, `ACKNOWLEDGED_WITH_WARNING` ou `SEND_FAILURE` dès la première tentative ;
+- **ne notifie rien** à son sujet : `messageStatusChange` n'est jamais émis pour un message de test (`UserMessageLogDefaultService.updateUserMessageStatus`), et `domibus.message.test.notification` vaut `false`. Le statut et les erreurs se **lisent** donc. Le statut, avec le rôle : tester `AP_FR_01` depuis la pile locale, où la passerelle est les deux correspondants, met deux fois le même identifiant dans sa base, et les formes sans rôle lèvent `DuplicateMessageException`. Les erreurs, sans rôle, parce qu'un refus du correspondant est consigné sous `RECEIVING` (voir plus haut), et sous `SENDING` seulement quand la forme sans rôle est refusée ;
+- **efface son historique** de tests vers une partie à chaque test lancé depuis sa console vers elle (`TestService.deleteSentHistory`), et `getStatus` répond alors `NOT_FOUND` : la France garde elle-même le dernier test de chaque partie ;
+- **garde sans le remettre** un message de test qu'un correspondant envoie à la France, comme l'[ebMS 3.0 Core §5.2.2.8](http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/core/os/ebms_core-3.0-spec-os.html) le veut.
 
 ### Ce qui arrive quand la notification n'aboutit pas
 
