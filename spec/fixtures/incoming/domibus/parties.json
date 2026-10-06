@@ -1,0 +1,350 @@
+[
+  {
+    "entityId": 1,
+    "name": "AP_FR_01",
+    "userName": null,
+    "endpoint": "https://domibus.oots.example.fr/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 1,
+        "partyId": "AP_FR_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 2,
+    "name": "AP_EL_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.gr/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 2,
+        "partyId": "AP_EL_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:EL"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 3,
+    "name": "ec_support_acc",
+    "userName": null,
+    "endpoint": "https://oots.example.eu/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 3,
+        "partyId": "ec_support_acc",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 4,
+    "name": "AP_NL_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.nl/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 4,
+        "partyId": "00000001805544434000",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:cef.eu:names:identifier:EAS:0190"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 5,
+    "name": "AP_AT_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.at/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 5,
+        "partyId": "AP_AT_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:AT"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 6,
+    "name": "AP_BE_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.be/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 6,
+        "partyId": "AP_BE_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 7,
+    "name": "AP_DE_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.de/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 7,
+        "partyId": "AP_DE_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:DE"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 8,
+    "name": "AP_ES_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.es/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 8,
+        "partyId": "AP_ES_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:ES"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 9,
+    "name": "AP_FI_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.fi/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 9,
+        "partyId": "AP_FI_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:FI"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 10,
+    "name": "AP_IT_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.it/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 10,
+        "partyId": "AP_IT_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:IT"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 11,
+    "name": "AP_PT_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.pt/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 11,
+        "partyId": "AP_PT_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:PT"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  },
+  {
+    "entityId": 12,
+    "name": "AP_SE_01",
+    "userName": null,
+    "endpoint": "https://as4.oots.example.se/domibus/services/msh",
+    "identifiers": [
+      {
+        "entityId": 12,
+        "partyId": "AP_SE_01",
+        "partyIdType": {
+          "name": "partyTypeUrn",
+          "value": "urn:oasis:names:tc:ebcore:partyid-type:unregistered:SE"
+        }
+      }
+    ],
+    "processesWithPartyAsInitiator": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "processesWithPartyAsResponder": [
+      {
+        "entityId": 0,
+        "name": "ootsTestProcess"
+      }
+    ],
+    "certificateContent": null
+  }
+]

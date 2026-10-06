@@ -862,3 +862,42 @@ if Rails.env.development?
   puts "#{AuditEvent.count} événements de journal, dont un refus sans échange " \
        "et trois arrivées ou départs qui ne laissent rien d'autre."
 end
+
+# Un test de connectivité par issue réglée — l'échec deux fois, avec et sans
+# code —, sur des parties dont le nom dit
+# qu'elles sont semées : aucun PMode ne les déclare, et la page les montre donc
+# absentes du PMode chargé. « jamais testé » se lit sur `AP_FR_01` de la pile
+# locale, et « en cours » ne se sème pas, `ReadConnectivityVerdictsJob` le
+# réglant au premier passage. Les identifiants de message sont en zéros, comme
+# ceux des échanges semés : aucun message de test n'est jamais parti.
+#
+# Chaque champ est celui que le chemin de production remplit pour cette issue,
+# et rien de plus : un test non parti n'a pas d'identifiant de message.
+if Rails.env.development?
+  semee = 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'
+  demandee = Time.zone.parse('2026-10-06 09:30')
+  identifiant = '00000000-0000-4000-8000-0000000000%02d@domibus.eu'
+
+  [
+    ['AP_SEMEE_ACQUITTEE', ConnectivityTest::ACKNOWLEDGED, {}],
+    ['AP_SEMEE_REFUSEE', ConnectivityTest::REFUSED_FOR_CONFIGURATION,
+     { error_code: 'EBMS:0003', error_detail: 'No matching party found' }],
+    ['AP_SEMEE_ECHEC_CODE', ConnectivityTest::FAILED, { error_code: 'EBMS:0005', error_detail: 'Connection refused' }],
+    ['AP_SEMEE_ECHEC_SANS_CODE', ConnectivityTest::FAILED, {}],
+    ['AP_SEMEE_SANS_VERDICT', ConnectivityTest::NO_VERDICT, {}],
+    # La faute que la passerelle rend vraiment (`soumissionRefusee.xml`).
+    ['AP_SEMEE_NON_PARTIE', ConnectivityTest::NOT_SUBMITTED,
+     { error_code: 'EBMS:0003', error_detail: 'ValueInconsistent detail: Receiver party could not be found for the value ' \
+                                              'eu.domibus.api.model.PartyId@25429047[value=AP_SEMEE_NON_PARTIE,type=' \
+                                              'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots]' }],
+  ].each.with_index(1) do |(nom, issue, details), rang|
+    depart = issue == ConnectivityTest::NOT_SUBMITTED ? {} : { message_id: format(identifiant, rang) }
+
+    ConnectivityTest.find_or_initialize_by(party_name: nom).update!(
+      party_identifier: nom, party_identifier_type: semee, outcome: issue, requested_at: demandee,
+      verdict_read_at: demandee + 1.minute, **depart, **details
+    )
+  end
+
+  puts "#{ConnectivityTest.count} tests de connectivité, un par issue réglée, l'échec avec et sans code."
+end

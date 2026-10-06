@@ -32,6 +32,14 @@ RSpec.describe 'Admin::CommonServices::Catalogue' do
     expect(response.parsed_body.css("a[href='#{admin_common_services_requirements_path}']")).to be_present
   end
 
+  it 'leads to the access points beside the three listings' do
+    get admin_common_services_root_path
+
+    expect(response.parsed_body.css(".fr-tile a[href='#{admin_common_services_access_points_path}']")).to be_present
+    expect(response.parsed_body.css('.fr-tile').size).to eq(4)
+    expect(response.body).to include('Tester notre connectivité avec les États membres')
+  end
+
   # The Data Service Directory demands both its evidence type and its country:
   # there is no list of providers to offer, and the page says so rather than
   # leaving one to look for it.

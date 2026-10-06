@@ -1,0 +1,7 @@
+<% rows.each do |row| %>
+  <%= render 'admin/common_services/access_points/access_point', row: %>
+<% end %>
+
+<% if rows.empty? %>
+  <p><%= t('admin.common_services.access_points.index.empty') %></p>
+<% end %>

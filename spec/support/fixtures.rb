@@ -12,6 +12,9 @@ module Fixtures
 
   def built_envelope(name) = read_fixture("incoming/#{name}.xml")
 
+  # What `GET /ext/party` lists, written after `PartyDTO`.
+  def gateway_parties = JSON.parse(read_fixture('incoming/domibus/parties.json'))
+
   # The captured response, its evidence part and the declaration of that part
   # removed. The list is left as it was, still naming the object: a response
   # missing its evidence, and not one saying that none matches.

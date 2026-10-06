@@ -28,11 +28,32 @@ class DomibusClient
 
   # What the gateway recorded of its attempts to deliver a message France
   # submitted. A message it does not know is answered with a SOAP fault, which
-  # reaches the caller as a `Faraday::Error`.
-  def message_errors(message_id)
-    request = GetMessageErrorsBuilder.new(message_id:).render
+  # reaches the caller as a `Faraday::Error`. `role` names the side France stood
+  # on, for a message whose identifier the gateway may hold twice.
+  def message_errors(message_id, role: nil)
+    request = GetMessageErrorsBuilder.new(message_id:, access_point_role: role)
 
-    MessageErrorsParser.new(post_soap('getMessageErrors', request))
+    MessageErrorsParser.new(post_soap(request.operation, request.render))
+  end
+
+  # The gateway pushes nothing about a test message, so its verdict is read
+  # here.
+  def message_status(message_id, role:)
+    request = GetStatusBuilder.new(message_id:, access_point_role: role).render
+
+    MessageStatusParser.new(post_soap('getStatusWithAccessPointRole', request))
+  end
+
+  # The plugin's credentials and policy, shared with `DomibusPartiesClient`,
+  # which reads the same gateway through its REST interface.
+  def self.connection
+    Faraday.new(url: Settings.domibus_base_url) do |builder|
+      credentials = Settings.domibus_credentials
+      builder.request :authorization, :basic, credentials[:login], credentials[:password]
+      builder.request :retry, max: 2, interval: 0.5, backoff_factor: 2
+      builder.response :raise_error
+      builder.adapter :net_http
+    end
   end
 
   private
@@ -43,13 +64,5 @@ class DomibusClient
 
   # Lazily, so the base URL is read now and not when the file loads, which
   # would freeze it for the life of the process.
-  def connection
-    @connection ||= Faraday.new(url: Settings.domibus_base_url) do |builder|
-      credentials = Settings.domibus_credentials
-      builder.request :authorization, :basic, credentials[:login], credentials[:password]
-      builder.request :retry, max: 2, interval: 0.5, backoff_factor: 2
-      builder.response :raise_error
-      builder.adapter :net_http
-    end
-  end
+  def connection = @connection ||= self.class.connection
 end

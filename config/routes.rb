@@ -143,6 +143,13 @@ Rails.application.routes.draw do
         get 'requirements', to: 'countries#requirements'
       end
       resource :resolution, only: :show
+      # The parties of the PMode the gateway has loaded, and the connectivity
+      # tests France runs towards them — one party, or all of them at once.
+      # Here, beside the directories, because it is the other thing France
+      # reads of the network it belongs to; it asks the gateway, not the
+      # Commission.
+      resources :access_points, only: :index
+      resources :connectivity_tests, only: :create
       resources :requirements, only: %i[index show] do
         get 'procedures', to: 'requirements#procedures'
         get 'countries/:country_code', to: 'requirements#country', as: :country

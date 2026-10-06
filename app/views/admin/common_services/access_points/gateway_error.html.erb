@@ -1,0 +1,10 @@
+<% content_for :title, t('admin.common_services.access_points.index.title') %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [[t('admin.common_services.access_points.index.title'), nil]]) %>
+
+<h1><%= t('admin.common_services.access_points.index.title') %></h1>
+
+<% title = @error.refused? ? t('admin.common_services.access_points.gateway_error.refused') : t('admin.common_services.access_points.gateway_error.unreachable') %>
+<%= dsfr_alert(type: :error, title:) do %>
+  <%= @error.message %>
+<% end %>

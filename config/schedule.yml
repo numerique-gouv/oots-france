@@ -29,6 +29,10 @@ default: &commun
     cron: '* * * * *'
     class: ExpirePreviewSessionsJob
     description: Clôt les prévisualisations dont T2 ou T3 est écoulé, et efface ce qu'elles gardaient
+  verdicts_tests_de_connectivite:
+    cron: '* * * * *'
+    class: ReadConnectivityVerdictsJob
+    description: Lit dans la passerelle le verdict des tests de connectivité en cours, et clôt ceux restés sans réponse
 
 development: *commun
 test: {}
