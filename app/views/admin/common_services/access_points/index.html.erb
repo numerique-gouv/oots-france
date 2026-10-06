@@ -1,0 +1,28 @@
+<% content_for :title, t('admin.common_services.access_points.index.title') %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [[t('admin.common_services.access_points.index.title'), nil]]) %>
+
+<%# The page asks itself again while a test is pending, and a click answers
+    with the blocks rather than a page — see `access_points_controller.js`.
+    Without JavaScript, the forms post and redirect to this page; the outcome is read by opening it again. %>
+<%= tag.div data: { controller: 'access-points', action: 'submit->access-points#submit',
+      access_points_url_value: admin_common_services_access_points_path(fragment: 1) } do %>
+<div class="fr-grid-row fr-grid-row--top fr-mb-2w">
+  <div class="fr-col-12 fr-col-md-7">
+    <h1><%= t('admin.common_services.access_points.index.title') %></h1>
+  </div>
+  <div class="fr-col-12 fr-col-md-5 fr-mt-md-1w">
+    <ul class="fr-btns-group fr-btns-group--inline-md fr-btns-group--right">
+      <li>
+        <%= button_to t('admin.common_services.access_points.index.test_all'), admin_common_services_connectivity_tests_path, class: 'fr-btn' %>
+      </li>
+    </ul>
+  </div>
+</div>
+
+<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8"><%= t('admin.common_services.access_points.index.lede') %></p>
+
+<div class="access-points" data-access-points-target="list">
+  <%= render 'admin/common_services/access_points/access_points', rows: @rows %>
+</div>
+<% end %>

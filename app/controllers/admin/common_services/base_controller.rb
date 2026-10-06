@@ -12,6 +12,10 @@ module Admin
     # the section's own page, the fragment alone on the two served in two parts,
     # or the page being read where it keeps a rescue of its own. A directory
     # unreachable is a failure, and says so in its status.
+    #
+    # The access points pages sit here too, beside the directories, but read
+    # the gateway and not the Commission: `ReadsPmodeParties` says how they
+    # fail.
     class BaseController < Admin::BaseController
       # This answers for every page of the section. The two served in two parts
       # rescue for themselves, having made room for an answer with no page
@@ -34,10 +38,10 @@ module Admin
       # what tells `deferred_controller.js` that the body is ours to splice into
       # the page: a status cannot say that much, nginx writing a `502` out of
       # its own pocket when nothing answers behind it.
-      def render_fragment(partial, status: :ok)
+      def render_fragment(partial, status: :ok, locals: {})
         response.set_header('Deferred-Fragment', '1')
 
-        render partial:, status:
+        render partial:, status:, locals:
       end
 
       def code_lists = @code_lists ||= CodeListClient.new

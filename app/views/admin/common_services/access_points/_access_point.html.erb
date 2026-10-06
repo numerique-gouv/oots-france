@@ -1,0 +1,46 @@
+<%# The name and the outcome first; underneath, the MSH and, to the right, when
+    the test was asked; then what the gateway said of a failure, in the colour
+    of an error.
+
+    `data-outcome` and `data-requested-at` are what the page's controller
+    compares to tell a new state from the one on screen; `aria-busy` and the
+    `aria-live` region say the wait and its end to a screen reader. The spinner
+    is hidden until the controller shows it: without JavaScript nothing would
+    ever stop it. %>
+<% test = row.test %>
+<%= tag.div class: 'access-point', aria: { live: 'polite', busy: test&.pending? || nil },
+      data: { party: row.name, outcome: row.outcome, requested_at: test&.requested_at&.iso8601(6) } do %>
+  <div class="access-point__head">
+    <% if row.country_code %>
+      <%= render CountryTagComponent.new(code: row.country_code, name: row.country_name) %>
+    <% end %>
+    <span class="access-point__name"><%= row.name %></span>
+    <%= render ConnectivityOutcomeComponent.new(outcome: row.outcome) %>
+    <% if test&.pending? %>
+      <span class="deferred-content__spinner" data-access-points-spinner hidden aria-hidden="true"></span>
+    <% end %>
+    <% unless row.declared? %>
+      <%= render(DsfrComponent::BadgeComponent.new(status: :warning, size: :sm)) { t('admin.common_services.access_points.index.undeclared') } %>
+    <% end %>
+    <% if row.testable? %>
+      <span class="access-point__action">
+        <%= button_to t('admin.common_services.access_points.index.test'), admin_common_services_connectivity_tests_path,
+              params: { party: row.name }, class: 'fr-btn fr-btn--sm fr-btn--secondary',
+              title: t('admin.common_services.access_points.index.test_title', party: row.name) %>
+      </span>
+    <% end %>
+  </div>
+  <div class="access-point__detail">
+    <span><%= safe_join([row.distinct_identifier, row.endpoint].compact_blank, ' · ') %></span>
+    <% if test %>
+      <span class="access-point__dates">
+        <%= t('admin.common_services.access_points.outcome.requested_at', at: l(test.requested_at, format: :short)) %>
+      </span>
+    <% end %>
+  </div>
+  <% if row.error_code || row.error_text %>
+    <p class="access-point__error">
+      <%= safe_join([(tag.code(row.error_code) if row.error_code), row.error_text].compact, ' ') %>
+    </p>
+  <% end %>
+<% end %>

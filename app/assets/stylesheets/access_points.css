@@ -1,0 +1,60 @@
+/*
+ * The access points page: one block per party, a thin rule between two. The
+ * name and the outcome of the last test lead; what identifies the party and
+ * dates the test sits underneath, smaller and greyer.
+ */
+.access-point {
+  padding: 0.75rem 0;
+}
+
+.access-point + .access-point {
+  border-top: 1px solid var(--border-default-grey);
+}
+
+.access-point__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.access-point__name {
+  font-weight: 700;
+}
+
+.access-point__action {
+  margin-left: auto;
+}
+
+.access-point__detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1rem;
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-mention-grey);
+  overflow-wrap: anywhere;
+}
+
+/* What dates the test sits on the identifier's line, flush right under the
+   button. */
+.access-point__dates {
+  margin-left: auto;
+}
+
+/*
+ * What the gateway said of a failure, in the DSFR's error colour: the code and
+ * its detail must not be lost in the grey line above. `--text-default-error`
+ * meets the 4.5:1 of RGAA 3.2 on the default background, in both themes.
+ */
+.access-point__error {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-default-error);
+  overflow-wrap: anywhere;
+}
+
+.access-point__error code {
+  color: inherit;
+  font-weight: 700;
+}

@@ -15,14 +15,14 @@
 <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.common_services.catalogue.show.lead') %></p>
 
 <div class="fr-grid-row fr-grid-row--gutters fr-mb-4w">
-  <div class="fr-col-12 fr-col-md-4">
+  <div class="fr-col-12 fr-col-md-3">
     <%= dsfr_tile(
           title: t('admin.common_services.countries.index.title'),
           url: admin_common_services_countries_path,
           description: t('admin.common_services.catalogue.show.tiles.countries', count: @countries.size),
         ) %>
   </div>
-  <div class="fr-col-12 fr-col-md-4">
+  <div class="fr-col-12 fr-col-md-3">
     <%= dsfr_tile(
           title: t('admin.common_services.procedures.index.title'),
           url: admin_common_services_procedures_path,
@@ -33,11 +33,20 @@
             countries: t('admin.common_services.countries.count', count: @countries.size).downcase),
         ) %>
   </div>
-  <div class="fr-col-12 fr-col-md-4">
+  <div class="fr-col-12 fr-col-md-3">
     <%= dsfr_tile(
           title: t('admin.common_services.requirements.index.title'),
           url: admin_common_services_requirements_path,
           description: t('admin.common_services.catalogue.show.tiles.requirements', count: @requirements.size),
+        ) %>
+  </div>
+  <%# Read in the gateway and not in a directory, and so counted nowhere here:
+      the page lists the parties itself. %>
+  <div class="fr-col-12 fr-col-md-3">
+    <%= dsfr_tile(
+          title: t('admin.common_services.access_points.index.title'),
+          url: admin_common_services_access_points_path,
+          description: t('admin.common_services.catalogue.show.tiles.access_points'),
         ) %>
   </div>
 </div>
