@@ -10,6 +10,15 @@ RSpec.describe 'db/seeds.rb' do
     expect { replay }.not_to raise_error
   end
 
+  # RG10 of OOTS-252: one connectivity test per settled outcome, once each.
+  it 'sows one connectivity test per settled outcome, once' do
+    2.times { replay }
+
+    expect(ConnectivityTest.pluck(:outcome))
+      .to match_array(ConnectivityTest::OUTCOMES - [ConnectivityTest::PENDING] + [ConnectivityTest::FAILED])
+    expect(ConnectivityTest.where(outcome: 'not_submitted').pluck(:message_id)).to eq([nil])
+  end
+
   it 'opens one exchange per status the console can show' do
     replay
 
