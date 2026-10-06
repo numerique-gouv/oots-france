@@ -364,8 +364,8 @@ class Exchange < ApplicationRecord
 
   # The gateway gave the request up: a fact, which replaces a presumption — its
   # own above, or the sweep's, whose `EDM:ERR:0005` would impute a silence to a
-  # correspondent that never received anything. `error` is the last attempt,
-  # absent when the gateway could not be asked for it.
+  # correspondent that never received anything. `error` is what made the
+  # attempts fail, absent when the gateway could not be asked for it.
   def undelivered!(error)
     description =
       if error

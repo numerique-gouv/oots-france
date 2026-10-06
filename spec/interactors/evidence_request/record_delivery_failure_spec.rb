@@ -6,9 +6,9 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
   let(:message_id) { '8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu' }
   let(:status) { 'WAITING_FOR_RETRY' }
   let(:exchange) { create(:exchange, :sent, request_message_id: message_id) }
-  let(:latest) { DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found') }
+  let(:cause) { DeliveryError.new(code: 'EBMS_0003', detail: 'No matching party found') }
   let(:gateway) do
-    instance_double(DomibusClient, message_errors: instance_double(MessageErrorsParser, latest:))
+    instance_double(DomibusClient, message_errors: instance_double(MessageErrorsParser, cause:))
   end
 
   before { exchange }
@@ -24,8 +24,28 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
       expect(exchange).to be_presumed
     end
 
+    # Domibus records the correspondent's refusal under RECEIVING and its own
+    # failure to dispatch under SENDING, later: the refusal decides.
+    context 'when the access point refused it in a fault' do
+      let(:message_id) { 'c2e490e0-9591-47dd-9e16-be9c8ea59daa@oots.eu' }
+      let(:gateway) do
+        instance_double(DomibusClient,
+          message_errors: MessageErrorsParser.new(built_envelope('domibus/erreursRemise.refusDistant')))
+      end
+
+      it 'closes the exchange on the refusal, not on the failure to dispatch' do
+        record
+
+        expect(exchange.reload).to have_attributes(status: 'failed', edm_error_code: nil)
+        expect(exchange.error_description).to start_with(
+          "Le point d'accès du correspondant a refusé la requête (EBMS:0003 : Sender party could not be found",
+        )
+        expect(exchange).to be_presumed
+      end
+    end
+
     context 'when the access point could not be reached' do
-      let(:latest) { DeliveryError.new(code: 'EBMS_0005', detail: 'Connection refused') }
+      let(:cause) { DeliveryError.new(code: 'EBMS_0005', detail: 'Connection refused') }
 
       it 'leaves the exchange to the retries' do
         expect { record }.not_to(change { exchange.reload.attributes })
@@ -73,13 +93,24 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
     let(:status) { 'SEND_FAILURE' }
 
     it 'confirms its own presumption' do
-      exchange.refused_by_access_point!(latest)
+      exchange.refused_by_access_point!(cause)
 
       record
 
       expect(exchange.reload).to have_attributes(
         status: 'failed', presumed_at: nil,
         error_description: 'La passerelle a renoncé à remettre la requête (EBMS:0003 : No matching party found).',
+      )
+    end
+
+    it "quotes the correspondent's refusal rather than the gateway's failure to dispatch" do
+      errors = MessageErrorsParser.new(built_envelope('domibus/erreursRemise.refusDistant'))
+      allow(gateway).to receive(:message_errors).and_return(errors)
+
+      record
+
+      expect(exchange.reload.error_description).to start_with(
+        'La passerelle a renoncé à remettre la requête (EBMS:0003 : Sender party could not be found',
       )
     end
 
@@ -92,7 +123,7 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
     end
 
     context 'when the access point could not be reached' do
-      let(:latest) { DeliveryError.new(code: 'EBMS_0005', detail: 'Connection refused') }
+      let(:cause) { DeliveryError.new(code: 'EBMS_0005', detail: 'Connection refused') }
 
       it 'closes an exchange still in progress all the same' do
         record
@@ -136,7 +167,7 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
       let(:status) { notified }
 
       it 'keeps the verdict, asks nothing, and says so' do
-        exchange.undelivered!(latest)
+        exchange.undelivered!(cause)
         before = exchange.reload.attributes
         allow(Rails.logger).to receive(:warn)
 
