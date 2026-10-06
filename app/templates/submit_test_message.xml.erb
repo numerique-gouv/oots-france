@@ -1,0 +1,29 @@
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
+  <soap:Header>
+    <eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+      <eb:UserMessage>
+        <eb:PartyInfo>
+          <eb:From>
+            <eb:PartyId type="<%= escape(sender.type_id) %>"><%= escape(sender.id) %></eb:PartyId>
+            <eb:Role><%= AccessPoint::ROLE %></eb:Role>
+          </eb:From>
+          <eb:To>
+            <eb:PartyId type="<%= escape(recipient.type_id) %>"><%= escape(recipient.id) %></eb:PartyId>
+            <eb:Role><%= AccessPoint::ROLE %></eb:Role>
+          </eb:To>
+        </eb:PartyInfo>
+        <eb:CollaborationInfo>
+          <eb:Service><%= TestMessageBuilder::SERVICE %></eb:Service>
+          <eb:Action><%= TestMessageBuilder::ACTION %></eb:Action>
+        </eb:CollaborationInfo>
+        <eb:MessageProperties>
+          <eb:Property name="originalSender"><%= TestMessageBuilder::ORIGINAL_SENDER %></eb:Property>
+          <eb:Property name="finalRecipient"><%= TestMessageBuilder::FINAL_RECIPIENT %></eb:Property>
+        </eb:MessageProperties>
+      </eb:UserMessage>
+    </eb:Messaging>
+  </soap:Header>
+  <soap:Body>
+    <_1:submitRequest/>
+  </soap:Body>
+</soap:Envelope>

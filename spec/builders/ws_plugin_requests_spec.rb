@@ -56,5 +56,31 @@ RSpec.describe 'Les requêtes du plugin WS' do
       expect(Nokogiri::XML(request).errors).to be_empty
       expect(request).not_to include('<injecte/>')
     end
+
+    it 'names the side France stood on when asked to' do
+      request = described_class.new(message_id: 'test@domibus.eu', access_point_role: 'SENDING').render
+      asked = Nokogiri::XML(request).at_xpath('//_1:getErrorsRequestWithAccessPointRole', wsplugin)
+
+      expect(asked.at_xpath('messageID').text).to eq('test@domibus.eu')
+      expect(asked.at_xpath('accessPointRole').text).to eq('SENDING')
+    end
+  end
+
+  describe GetStatusBuilder do
+    it 'names the message and the side France stood on' do
+      request = described_class.new(message_id: 'test@domibus.eu', access_point_role: 'SENDING').render
+      asked = Nokogiri::XML(request).at_xpath('//_1:statusRequestWithAccessPointRole', wsplugin)
+
+      expect(Nokogiri::XML(request).errors).to be_empty
+      expect(asked.at_xpath('messageID').text).to eq('test@domibus.eu')
+      expect(asked.at_xpath('accessPointRole').text).to eq('SENDING')
+    end
+
+    it 'escapes an identifier that would otherwise break the envelope' do
+      request = described_class.new(message_id: '</messageID><injecte/>', access_point_role: 'SENDING').render
+
+      expect(Nokogiri::XML(request).errors).to be_empty
+      expect(request).not_to include('<injecte/>')
+    end
   end
 end

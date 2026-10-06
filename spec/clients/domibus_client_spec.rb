@@ -51,6 +51,28 @@ RSpec.describe DomibusClient do
     end
   end
 
+  describe '#message_errors with a role' do
+    it 'asks for the errors of the side France stood on' do
+      stub = stub_request(:post, "#{base_url}/services/wsplugin/getMessageErrorsWithAccessPointRole")
+        .with(body: %r{<accessPointRole>SENDING</accessPointRole>})
+        .to_return(body: built_envelope('domibus/erreursRemise.connexion'))
+
+      expect(client.message_errors('test@domibus.eu', role: 'SENDING').cause.code).to eq('EBMS:0005')
+      expect(stub).to have_been_requested
+    end
+  end
+
+  describe '#message_status' do
+    it 'reads the status of the side France stood on' do
+      stub = stub_request(:post, "#{base_url}/services/wsplugin/getStatusWithAccessPointRole")
+        .with(body: %r{<messageID>test@domibus.eu</messageID>\s*<accessPointRole>SENDING</accessPointRole>})
+        .to_return(body: built_envelope('domibus/statutAcquitte'))
+
+      expect(client.message_status('test@domibus.eu', role: 'SENDING')).to be_acknowledged
+      expect(stub).to have_been_requested
+    end
+  end
+
   describe '#pending_messages' do
     it 'reports an empty queue' do
       stub_request(:post, "#{base_url}/services/wsplugin/listPendingMessages")
