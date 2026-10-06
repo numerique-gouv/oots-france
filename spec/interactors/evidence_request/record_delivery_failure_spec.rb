@@ -25,7 +25,7 @@ RSpec.describe EvidenceRequest::RecordDeliveryFailure do
     end
 
     # Domibus records the correspondent's refusal under RECEIVING and its own
-    # failure to dispatch under SENDING, later: the refusal decides.
+    # failure to dispatch under SENDING: the refusal decides.
     context 'when the access point refused it in a fault' do
       let(:message_id) { 'c2e490e0-9591-47dd-9e16-be9c8ea59daa@oots.eu' }
       let(:gateway) do

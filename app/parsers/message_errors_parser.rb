@@ -24,11 +24,11 @@ class MessageErrorsParser
   end
 
   # What made the attempts fail: the last error the correspondent signalled,
-  # since the gateway's `EBMS:0005` for that attempt is recorded after it and
-  # says only that the dispatch failed; the last error the gateway recorded
-  # where the correspondent signalled none. Each is the last by the instant
-  # its writer recorded, the correspondent's on the correspondent's clock:
-  # nothing in the schema promises the items in order.
+  # since the gateway's `EBMS:0005` for that attempt says only that the
+  # dispatch failed; the last error the gateway recorded where the
+  # correspondent signalled none. Each is the last by the instant its writer
+  # recorded, the correspondent's on the correspondent's clock and the
+  # gateway's on its own, so no instant orders one role against the other.
   def cause
     signalled = items.select { |item| text_at(item, 'mshRole') == SIGNALLED_BY_CORRESPONDENT }
 
@@ -43,7 +43,7 @@ class MessageErrorsParser
 
   def items = all(response, 'item').reject { |item| text_at(item, 'domibusErrorCode').blank? }
 
-  def last(items) = items.map { |item| delivery_error(item) }.max_by { |error| error.timestamp || Time.zone.at(0) }
+  def last(nodes) = nodes.map { |item| delivery_error(item) }.max_by { |error| error.timestamp || Time.zone.at(0) }
 
   def delivery_error(item)
     DeliveryError.new(
