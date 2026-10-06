@@ -225,6 +225,16 @@ fr:
   components:
     admin_breadcrumbs:
       admin: Espace d’administration
+    # L'issue du dernier test de connectivité vers une partie du PMode, au
+    # masculin : les adjectifs s'accordent avec le point d'accès.
+    connectivity_outcome:
+      never_tested: jamais testé
+      pending: en cours
+      acknowledged: connecté
+      refused_for_configuration: refusé pour sa configuration
+      failed: en échec
+      no_verdict: sans verdict
+      not_submitted: non parti
     # La miette de l'écran du choix de la version, sous laquelle pend chaque
     # page du parcours : le mot du menu, en français, la console parlant à
     # l'exploitant. La miette de la version, elle, est son numéro, qui ne se
@@ -494,6 +504,9 @@ fr:
     evidence_subject_builder:
       unknown_subject: "Sujet de justificatif d'un type que la réponse ne sait pas écrire : « %{type} »."
   clients:
+    domibus_parties_client:
+      refused: "La passerelle refuse le Plugin User : %{error}"
+      unreachable: "La passerelle n'a pas rendu la liste de ses parties : %{error}"
     common_services_instance:
       dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."
     common_services_query:
@@ -618,6 +631,9 @@ fr:
       evidence_requesters:
         unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
   jobs:
+    read_connectivity_verdicts_job:
+      overdue: "Test de connectivité vers %{party} sans verdict après quinze minutes (message %{id})"
+      failed: "Lecture du test de connectivité vers %{party} impossible : %{error}"
     expire_exchanges_job:
       failed: "Expiration impossible pour l'échange %{id} : %{error}"
     expire_preview_sessions_job:
@@ -1565,6 +1581,16 @@ fr:
       none: Vous pouvez fermer cette page et revenir à votre démarche.
       back: Revenir à ma démarche
   interactors:
+    # Écrits dans le log, sauf `no_identifier`, que la page affiche comme ce
+    # que la passerelle a répondu.
+    connectivity_testing:
+      submit_test:
+        no_identifier: La passerelle a accepté le message de test sans lui donner d'identifiant.
+        refused: "Test de connectivité vers %{party} non parti : %{error}"
+      read_verdict:
+        unreadable: "Verdict du test de connectivité vers %{party} illisible (message %{id}) : %{error}"
+        not_found: "Test de connectivité vers %{party} sans verdict : la passerelle ne connaît plus le message %{id}"
+        no_error: "Test de connectivité vers %{party} en échec sans erreur consignée par la passerelle (message %{id})"
     # Les échecs que `fail_with_error` nomme, et qu'`ApplicationInteractor`
     # énumère. La console les affiche en titre d'alerte ; le contrôleur JSON, lui,
     # ne rend que les `errors` qui les accompagnent.
@@ -2071,6 +2097,24 @@ fr:
           # Le nom proposé par le navigateur à l'enregistrement.
           filename: document.pdf
     common_services:
+      access_points:
+        index:
+          title: Points d'accès
+          lede: >-
+            Chaque partie du PMode chargé dans la passerelle, et l'issue du dernier test de connectivité
+            que la France a lancé d'ici vers elle : un message AS4 de test, parti d'AP_FR_01, que le point
+            d'accès acquitte si son PMode connaît celui de la France et que son magasin de confiance porte
+            son certificat.
+          test_all: Tester tous les points d'accès
+          test: Tester
+          test_title: Tester %{party}
+          undeclared: absent du PMode chargé
+          empty: La passerelle ne déclare aucune partie.
+        outcome:
+          requested_at: Demandé le %{at}
+        gateway_error:
+          unreachable: La passerelle n'a pas répondu
+          refused: La passerelle a refusé l'accès de la France
       # Le décompte d'une liste que la barre de recherche restreint : ce qu'il
       # compte change à la frappe, et nommer l'objet dirait le total.
       results:
@@ -2104,6 +2148,7 @@ fr:
               zero: Aucun code de démarche déclaré.
               one: Un code de démarche, déclaré par %{countries}.
               other: "%{count} codes de démarche, déclarés par %{countries}."
+            access_points: Tester notre connectivité avec les États membres
             requirements:
               zero: Aucune exigence publiée.
               one: Une exigence, et les types de justificatif qui la satisfont.
