@@ -1,6 +1,7 @@
-# One failed attempt of the gateway to hand a message France submitted to the
-# correspondent's access point, as `getMessageErrors` of the Domibus WS plugin
-# reports it: the ebMS code, the detail, and when the attempt was made.
+# One error recorded on an attempt of the gateway to hand a message France
+# submitted to the correspondent's access point — the gateway's own, or the one
+# the access point signalled —, as `getMessageErrors` of the Domibus WS plugin
+# reports it: the ebMS code, the detail, and when it was recorded.
 #
 # The plugin writes the code as the name of its enumeration, `EBMS_0003`, where
 # ebMS 3.0 Core §6.7 writes `EBMS:0003`. Both are read, and the norm's form is

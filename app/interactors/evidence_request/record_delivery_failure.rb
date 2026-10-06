@@ -20,7 +20,7 @@ module EvidenceRequest
       return note(:unknown) if exchange.nil?
       return note(:ignored, exchange: exchange.exchange_id) if exchange.settled? && !exchange.presumed?
 
-      gave_up? ? exchange.undelivered!(latest_error) : weigh_refusal(exchange)
+      gave_up? ? exchange.undelivered!(cause) : weigh_refusal(exchange)
     end
 
     private
@@ -39,14 +39,14 @@ module EvidenceRequest
     def weigh_refusal(exchange)
       return if exchange.presumed?
 
-      error = latest_error
+      error = cause
       exchange.refused_by_access_point!(error) if error&.configuration_refusal?
     end
 
     # Nil where the gateway could not say: the exchange then waits for the next
     # notification, or is closed with a reason naming no code.
-    def latest_error
-      gateway.message_errors(context.message_id).latest
+    def cause
+      gateway.message_errors(context.message_id).cause
     rescue Faraday::Error, UnreadableMessageError => e
       Rails.logger.error(I18n.t('interactors.evidence_request.record_delivery_failure.unreadable',
         id: context.message_id, error: "#{e.class}: #{e.message}"))

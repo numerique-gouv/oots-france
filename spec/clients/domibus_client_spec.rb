@@ -34,12 +34,12 @@ RSpec.describe DomibusClient do
   end
 
   describe '#message_errors' do
-    it 'asks for the errors of one message and reads the last attempt' do
+    it 'asks for the errors of one message and reads what made the attempts fail' do
       stub = stub_request(:post, "#{base_url}/services/wsplugin/getMessageErrors")
         .with(body: %r{<messageID>8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu</messageID>})
         .to_return(body: built_envelope('domibus/erreursRemise'))
 
-      expect(client.message_errors('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu').latest.code).to eq('EBMS:0003')
+      expect(client.message_errors('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu').cause.code).to eq('EBMS:0003')
       expect(stub).to have_been_requested
     end
 
