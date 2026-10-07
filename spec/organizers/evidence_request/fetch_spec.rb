@@ -197,4 +197,38 @@ RSpec.describe EvidenceRequest::Fetch do
       end
     end
   end
+
+  # CA12 and CA13 of OOTS-253: a requirement asked for outside its procedure is
+  # resolved by the second query of the Evidence Broker alone, and the request
+  # goes out under the procedure named, carrying that requirement as the broker
+  # names it, its first type in the country asked and the service the Data
+  # Service Directory names for that type.
+  describe 'a requirement asked for outside its procedure' do
+    let(:requirement_id) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000' }
+    let(:arguments) do
+      super().merge(procedure_code: ProcedureCode::STUDY_FINANCING, country_code: 'FI', requirement_id:,
+        outside_procedure: true, common_services: Directories::CommonServices.new)
+    end
+
+    before do
+      stub_directory_resolution
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi', country: 'FI')
+      stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
+    end
+
+    it 'submits under the procedure named, the requirement and its type read from the second query alone' do
+      expect(fetch).to be_success
+
+      expect(fetch.exchange.procedure_code).to eq('T1')
+      expect(fetch.requirement).to have_attributes(id: requirement_id,
+        descriptions: include('EN' => '(TEST) Test Requirement'))
+      expect(fetch.evidence_type.id)
+        .to eq('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74')
+      expect(fetch.data_service).to be_present
+      expect(gateway).to have_received(:submit)
+      expect(a_request(:get, %r{/eb/rest/search})
+        .with(query: hash_including('queryId' => a_string_including('requirements-by-procedure'))))
+        .not_to have_been_made
+    end
+  end
 end

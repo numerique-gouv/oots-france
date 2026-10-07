@@ -35,6 +35,7 @@ class EvidenceRequestsController < ApplicationController
   before_action :check_beneficiary, only: :create
   before_action :check_conversation_id, only: :create
   before_action :check_specification, only: :create
+  before_action :check_outside_procedure, only: :create
 
   def create
     result = EvidenceRequest::Fetch.call(**fetch_arguments)
@@ -53,7 +54,7 @@ class EvidenceRequestsController < ApplicationController
   # A query string and not a form: the caller is a server-side integration.
   def query
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
-      :previsualisationRequise, :idConversation, :idExigence, :specification)
+      :previsualisationRequise, :idConversation, :idExigence, :specification, :exigenceHorsDemarche)
   end
 
   # Upcased on the way in: both console filters upcase what they are asked, so
@@ -79,6 +80,7 @@ class EvidenceRequestsController < ApplicationController
       country_code:,
       requested_specification: EdmSpecification.find(query[:specification]),
       preview_possible: preview_possible?,
+      outside_procedure: outside_procedure?,
       audit_trail:,
     }
   end
@@ -88,6 +90,14 @@ class EvidenceRequestsController < ApplicationController
   # A bare `previsualisationRequise` with no value counts as true, which is how
   # a flag appears in a query string.
   def preview_possible? = query[:previsualisationRequise].in?(['true', ''])
+
+  # The requirement named in `idExigence` resolved by the second query of the
+  # Evidence Broker alone, whether or not the broker ties it to `codeDemarche` —
+  # chapter 3.2.4 §4.3 bases that query « on a requirement that is known to the
+  # Procedure Portal ». The screens of the demonstration set it, the way they
+  # set `specification`; a French procedure has no reason to. A flag, read like
+  # the one above.
+  def outside_procedure? = query[:exigenceHorsDemarche].in?(['true', ''])
 
   def check_feature_flag
     return if Settings.evidence_request_enabled?
@@ -120,6 +130,21 @@ class EvidenceRequestsController < ApplicationController
     return if supplied.nil? || EdmSpecification.find(supplied)
 
     refuse_as_unprocessable(t('evidence_requests.specification_invalid', spoken: EdmSpecification.identifiers.join(', ')))
+  end
+
+  # Asked outside its procedure, a requirement is all there is to start from,
+  # and the procedure is no longer vetted by the Evidence Broker's first query:
+  # a code `R-EDM-REQ-C003` (FATAL) refuses would otherwise travel as far as the
+  # `Procedure` slot. Both refused before anything is decrypted, like the two
+  # above.
+  def check_outside_procedure
+    return unless outside_procedure?
+
+    if query[:idExigence].blank?
+      refuse_as_unprocessable(t('evidence_requests.outside_procedure.requirement_required'))
+    elsif !ProcedureCode.admitted?(query[:codeDemarche])
+      refuse_as_unprocessable(t('evidence_requests.outside_procedure.procedure_invalid'))
+    end
   end
 
   def refuse_as_unprocessable(raison)
