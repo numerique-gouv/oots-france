@@ -1094,18 +1094,25 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
-  # `IncomingMessage::OpenExchange` turns these away before any handler runs, so
-  # this interactor never meets one in production. Pinned all the same: it is a
-  # unit of its own, and a reordering of the two guards would otherwise let an
-  # unidentified request through to `wrap` unnoticed.
+  # The first step of the chain: a 2.0 request carrying no `ExchangeId` names
+  # no exchange to answer under, and `IncomingMessage::OpenExchange` has opened
+  # none for it.
   describe 'a request whose ebMS identifiers are missing altogether' do
     let(:message) { envelope_without('requete', IDENTIFIER_PATHS[:exchange_id]) }
 
-    before { create(:exchange, incoming: true, conversation_id: message.conversation_id) }
-
     it 'refuses it rather than answering under an identifier it does not have' do
-      expect { answer }.to raise_error(UnreadableMessageError, /R-EDM-ebMS-037/)
+      expect { answer }.to raise_error(UnreadableMessageError,
+        I18n.t('interactors.evidence_provision.reject_unidentified_request.unidentified'))
       expect(gateway).not_to have_received(:submit)
+    end
+
+    # CA7 of OOTS-254: no exchange, so no identifier to journal the refusal
+    # under.
+    it 'journals the refusal under no exchange' do
+      suppress(UnreadableMessageError) { answer }
+
+      expect(AuditEvent.sole).to have_attributes(event_type: 'request_refused', exchange_id: nil,
+        conversation_id: nil, procedure_code: '00')
     end
   end
 

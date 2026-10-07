@@ -97,9 +97,7 @@ class AuditTrail
   # deals with it: a request too malformed to answer, or a response naming an
   # exchange we never opened, must be logged all the same.
   # `exchange` is the one `IncomingMessage::Process` correlated the message to,
-  # and nil where it could correlate none: an arriving response is judged
-  # against the version its own request was written in, which is the exchange's
-  # and nothing else's.
+  # or opened for it, and nil where there is none.
   def message_received(message:, message_id:, exchange: nil)
     record(RECEIVED_EVENTS.fetch(message.action),
       **JournalledMessage.new(message:, message_id:, exchange:).attributes)
@@ -185,10 +183,13 @@ class AuditTrail
 
   # What the two answers have in common; each names its own event rather than
   # leaving the log to infer it from an argument that happens to be nil.
-  def answered(message:, requester:, provider:, request_id:, response_id:, message_id:, first_part:)
+  #
+  # The exchange is the one the request was answered under, and its identifier
+  # comes before the header's for the reason `JournalledMessage#arrived` gives.
+  def answered(exchange:, message:, requester:, provider:, request_id:, response_id:, message_id:, first_part:)
     {
       conversation_id: message.conversation_id,
-      exchange_id: message.exchange_id,
+      exchange_id: exchange&.exchange_id || message.exchange_id,
       message_id:,
       request_id:,
       response_id:,

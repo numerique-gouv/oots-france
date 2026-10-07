@@ -25,9 +25,8 @@ module EvidenceProvision
 
     def request = context.message.body
 
-    # Hung on the exchange `IncomingMessage::OpenExchange` has already opened,
-    # so the refusal joins the arrival that `IncomingMessage::Process`
-    # journalled before dispatching.
+    # Hung on the exchange `IncomingMessage::Process` correlated or opened, so
+    # the refusal joins the arrival it journalled before dispatching.
     #
     # The exchange first, then what the request declares: `OpenExchange` reads
     # the requester through a `readable` that swallows exactly the failure being
@@ -55,7 +54,7 @@ module EvidenceProvision
     end
 
     def journal(reason)
-      exchange = Exchange.find_by(exchange_id: context.message.exchange_id, incoming: true)
+      exchange = context.exchange
 
       audit_trail.request_refused(
         requester_id: exchange&.evidence_requester_id || readable { request.declared_requester_id },
