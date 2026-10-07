@@ -12,9 +12,9 @@ class DemoOutcomeWording
   # chapter 4.9 §1, « if the user decides not to use any piece of evidence, the
   # evidence response shall contain an empty registry object list » — and is
   # said as such. Anything else — `pending`, `sent`, a `preview_required` the
-  # procedure confirms as it reads it, and the `deferred` this procedure never
-  # meets, asking only for `T1`, which France always serves with a document —
-  # is still under way as far as the user is concerned. A contract `delivered`
+  # procedure confirms as it reads it, and a `deferred` (the announcement of
+  # chapter 4.5.2, which France answers `R1` with) — is still under way as far
+  # as the user is concerned. A contract `delivered`
   # is deliberately absent: the document in hand is what settles that one, and
   # `outcome` has already answered before reading here.
   #

@@ -27,11 +27,35 @@ module Demo
         unique_by: %i[journey_id requirement_uuid], update_only: NAMES)
     end
 
+    # A card the operator added to the page, beyond those the Evidence Broker
+    # lists for the procedure: it carries its requirement, which is all its
+    # resolution starts from, and stands in the country given — the one its
+    # last request went to, when it had one. Named in the first of `languages`
+    # the directory publishes. Inserted rather than upserted: the page offers no
+    # requirement it already carries, and the unique index settles two additions
+    # racing each other.
+    def self.add(journey_id:, requirement:, country_code:, languages:)
+      create!(journey_id:, requirement_uuid: requirement.uuid, requirement_id: requirement.id,
+        requirement_name: requirement.label(languages:), requirement_language: requirement.label_language(languages:),
+        country_code:, added_at: Time.current)
+    end
+
+    # The added cards of the journey, in the order they were added.
+    def self.added(journey_id) = where(journey_id:).where.not(added_at: nil).order(:added_at, :id)
+
     def self.forget(journey_id) = where(journey_id:).delete_all
 
     # The member state each card of the journey stands in, by requirement.
     def self.countries(journey_id) = where(journey_id:).pluck(:requirement_uuid, :country_code).to_h
 
     def named_evidence = Demo::NamedEvidence.new(slice(*NAMES))
+
+    # The requirement as the row keeps it, which is what an added card is
+    # resolved from: no first query lists it, and the second takes nothing more
+    # than its identifier.
+    def requirement
+      Requirement.new(id: requirement_id,
+        descriptions: requirement_language.present? ? { requirement_language => requirement_name } : {})
+    end
   end
 end

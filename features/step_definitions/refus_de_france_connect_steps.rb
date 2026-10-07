@@ -10,6 +10,7 @@ end
 Quand("l'administrateur s'identifie depuis le bouton du faux FranceConnect+") do
   visit admin_demo_root_path
   click_link 'OOTS 2.0'
+  find("a[href='#{admin_demo_home_path(version: 'v2.0', procedure: 'T1')}']").click
   sign_in_with('fake')
 end
 

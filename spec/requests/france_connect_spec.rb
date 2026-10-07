@@ -74,7 +74,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
     it 'holds the identity and hands the operator to the form' do
       identify_demo_user
 
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
       expect(session[:demo_identity].symbolize_keys).to include(family_name: 'Sørensen')
     end
 
@@ -84,7 +84,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
     it 'exchanges the code and reads the UserInfo where the departure was made, and nowhere else' do
       identify_demo_user(instance: real_france_connect)
 
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
       expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).to have_been_made
       expect(a_request(:get, "#{FranceConnectStubs::REAL_ISSUER}/userinfo")).to have_been_made
       expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
@@ -97,7 +97,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       stub_real_france_connect
       identify_demo_user
 
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
       expect(a_request(:post, FranceConnectStubs::TOKEN_ENDPOINT)).to have_been_made
       expect(a_request(:get, FranceConnectStubs::USERINFO_ENDPOINT)).to have_been_made
       expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).not_to have_been_made
@@ -118,7 +118,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       stub_demonstration_requirements
       identify_demo_user(instance: real_france_connect, iss: FranceConnectStubs::ISSUER)
 
-      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
       expect(session[:demo_identity]).to be_nil
     end
 
@@ -129,7 +129,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       stub_real_france_connect
       identify_demo_user(iss: FranceConnectStubs::REAL_ISSUER)
 
-      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
       expect(session[:demo_identity]).to be_nil
     end
 
@@ -144,7 +144,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
 
       get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
 
-      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
       expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).not_to have_been_made
       expect(session[:demo_identity]).to be_nil
     end
@@ -160,14 +160,15 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       expect(response).to redirect_to(admin_demo_root_path)
     end
 
-    # The return addresses name no line: the departure kept the one of the
-    # sign-in page it left from, and the journey plays it.
-    describe 'the line of the journey' do
-      it 'opens the journey in the line the departure left from, and hands over to its documents page' do
-        identify_demo_user(version: 'v1.2')
+    # The return addresses name no line and no procedure: the departure kept
+    # those of the sign-in page it left from, and the journey plays them.
+    describe 'the line and the procedure of the journey' do
+      it 'opens the journey in the line and the procedure the departure left from, and hands over to its documents page' do
+        identify_demo_user(version: 'v1.2', procedure: '00')
 
-        expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2'))
-        expect(Demo::Journey.from_session(session[:demo_journey]).specification).to eq(EdmSpecification::V1_2)
+        expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2', procedure: '00'))
+        expect(Demo::Journey.from_session(session[:demo_journey]))
+          .to have_attributes(specification: EdmSpecification::V1_2, procedure_code: '00')
       end
 
       # A departure written before the line was kept: nothing to open a journey
@@ -183,15 +184,27 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
         expect(alert).to include("L'identification par FranceConnect+ n'a pas abouti", 'aucune version')
       end
 
-      it 'brings a refusal back to the sign-in page of that line, with its reason and its buttons' do
+      it 'opens no journey, and says why, when the departure kept no admitted procedure' do
+        instance = stub_france_connect
+        departure = depart_from_demo_home(instance)
+        stub_france_connect_tokens(granted_id_token(instance, departure, {}), issuer: instance.issuer)
+        stub_const('ProcedureCode::ADMITTED', [])
+
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
+
+        expect(response).to redirect_to(admin_demo_root_path)
+        expect(session[:demo_journey]).to be_nil
+      end
+
+      it 'brings a refusal back to the sign-in page of that line and that procedure, with its reason and its buttons' do
         stub_code_list
         stub_demonstration_requirements
-        departure = depart_from_demo_home(stub_france_connect, version: 'v1.2')
+        departure = depart_from_demo_home(stub_france_connect, version: 'v1.2', procedure: '00')
 
         get '/demo/franceconnect/retour_connexion',
           params: { error: 'access_denied', error_description: 'refusé', state: departure.fetch('state') }
 
-        expect(response).to redirect_to(admin_demo_home_path(version: 'v1.2'))
+        expect(response).to redirect_to(admin_demo_home_path(version: 'v1.2', procedure: '00'))
         follow_redirect!
         expect(alert).to include("L'identification par FranceConnect+ n'a pas abouti", 'access_denied')
         expect(response.parsed_body.css('main button.fr-btn')).not_to be_empty
@@ -311,7 +324,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
 
       get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: departure.fetch('state') }
 
-      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
       follow_redirect!
       expect(alert).to include('502', FranceConnectStubs::TOKEN_ENDPOINT)
     end

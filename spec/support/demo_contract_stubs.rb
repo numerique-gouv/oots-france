@@ -112,6 +112,6 @@ module DemoContractStubs
   def registered_request(exchange_id = ACCEPTED_EXCHANGE, **attributes)
     Demo::Request.create!(exchange_id:, conversation_id: ACCEPTED_CONVERSATION,
       journey_id: REGISTERED_JOURNEY, requirement_uuid: REGISTERED_REQUIREMENT, country_code: 'FR',
-      specification: EdmSpecification::V2_0, **attributes)
+      specification: EdmSpecification::V2_0, procedure_code: 'T1', **attributes)
   end
 end

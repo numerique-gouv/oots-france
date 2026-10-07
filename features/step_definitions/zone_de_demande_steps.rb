@@ -2,10 +2,10 @@
 # Both are intercepted, which is the whole reason the pattern names no method —
 # one scenario is about a click whose own answer is lost being retried as an
 # interrogation, and telling the two apart is what it has to prove.
-ZONE_ADDRESS = '*/admin/demo/v2.0/demande*'.freeze
+ZONE_ADDRESS = '*/admin/demo/v2.0/T1/demande*'.freeze
 
 # The address a card's list posts the chosen country to.
-COUNTRY_ADDRESS = '*/admin/demo/v2.0/pays*'.freeze
+COUNTRY_ADDRESS = '*/admin/demo/v2.0/T1/pays*'.freeze
 
 # The card of one requirement, which the list, the country line and the
 # sentence of a choice left unanswered all belong to.
@@ -54,6 +54,10 @@ EVIDENCE = "%PDF-1.4\ndrapeau".b
 REQUIREMENTS = { 'première' => 'ffffffff-ffff-ffff-ffff-ffffffffffff',
                  'seconde' => '2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }.freeze
 
+# The requirements the catalogue offers to add a card for, by the name the list
+# shows: a card is found on the page by the anchor its requirement gives it.
+CATALOGUE = { '(TEST) Test Requirement 2' => 'ffffffff-ffff-ffff-ffff-ffffffffffff' }.freeze
+
 # The exchange the contract opens for the second requirement, so that two clicks
 # are two exchanges rather than one read twice.
 SECOND_EXCHANGE = 'aaaaaaaa-0000-4000-8000-000000000002'.freeze
@@ -79,6 +83,7 @@ end
 Étantdonné("l'usager identifié sur la page des justificatifs") do
   visit admin_demo_root_path
   click_link 'OOTS 2.0'
+  find("a[href='#{admin_demo_home_path(version: 'v2.0', procedure: 'T1')}']").click
   sign_in_with('fake')
 
   expect(page).to have_button(press_label)
@@ -98,7 +103,7 @@ end
   stub_evidence_request_for(REQUIREMENTS.fetch('seconde'), SECOND_EXCHANGE)
   stub_exchange_state(SECOND_EXCHANGE, statut: 'pending')
 
-  visit admin_demo_documents_path(version: 'v2.0')
+  visit admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
   expect(page).to have_css(ZONE, count: REQUIREMENTS.size)
   mark_the_page
@@ -277,7 +282,7 @@ Alors('la page affiche le lien {string}') do |label|
 end
 
 Alors('la page des justificatifs est toujours affichée') do
-  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
 end
 
 # Chapter-free and structural: the element that holds the announced region is
@@ -288,7 +293,7 @@ Alors("la zone n'a pas été remplacée, seulement son contenu") do
 end
 
 Alors("la page des justificatifs n'a pas été rechargée") do
-  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
   expect(page.evaluate_script('window.pageMark')).to eq(PAGE_MARK)
 end
 
@@ -322,7 +327,7 @@ end
 
 Alors('la page des justificatifs a été rechargée') do
   wait_until('La page des justificatifs n\'a pas été rechargée.') { page.evaluate_script('window.pageMark').nil? }
-  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0'))
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
 end
 
 # The region a screen reader hears, which no eye sees: read in the page as the
@@ -369,6 +374,61 @@ Alors('les essais qui suivent la soumission sont des interrogations') do
   expect(attempts.first).to eq('POST')
   expect(attempts.drop(1).uniq).to eq(%w[GET])
 end
+
+# The whole catalogue of the Evidence Broker, asked with no procedure, beside
+# the one requirement the procedure of the journey rests on — which the double
+# of the context answers to both questions alike.
+Étantdonné("le catalogue de l'Evidence Broker offert sous les cartes de la démarche") do
+  stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_catalogue')
+  body, headers = common_services_answer('eb_requirements_fr')
+  stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+    .with(query: hash_including('queryId' => a_string_including('requirements-by-procedure'), 'procedure-id' => 'T1'))
+    .to_return(body:, headers:)
+
+  visit admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+  mark_the_page
+end
+
+# Adding reloads the page, which the steps after it start from.
+Quand("l'usager ajoute la carte {string}") do |name|
+  select name, from: I18n.t('admin.demo.documents.show.add.label')
+  click_button I18n.t('admin.demo.documents.show.add.submit')
+
+  expect(page).to have_css(added_card_selector(name))
+  mark_the_page
+end
+
+Quand("l'usager choisit {string} dans la liste des pays de la carte {string}") do |country, name|
+  label = I18n.t('components.demo_requirement_card.country_label')
+
+  within(added_card_selector(name)) { find_field(label).find('option', text: country).select_option }
+end
+
+Quand("l'usager clique sur le bouton de la carte {string}") do |name|
+  within(added_card_selector(name)) { click_button press_label }
+end
+
+Quand("l'usager retire la carte {string}") do |name|
+  within(added_card_selector(name)) { click_button I18n.t('components.demo_requirement_card.remove') }
+end
+
+Alors('la carte {string} se tient sous celles de la démarche, avec le bouton {string}') do |name, label|
+  cards = all(CARD, minimum: 2)
+
+  expect(cards.last[:id]).to eq("exigence-#{CATALOGUE.fetch(name)}")
+  expect(cards.last).to have_button(label)
+  expect(cards.first).to have_no_button(label)
+end
+
+Alors('la carte {string} nomme le pays {string}') do |name, country|
+  expect(page).to have_css("#{added_card_selector(name)} .fr-card__desc .country-tag", text: country)
+end
+
+Alors("la page n'affiche pas la carte {string}") do |name|
+  expect(page).to have_no_css(added_card_selector(name))
+end
+
+def added_card_selector(name) = "#exigence-#{CATALOGUE.fetch(name)}"
 
 def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
 

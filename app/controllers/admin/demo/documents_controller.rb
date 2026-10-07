@@ -42,13 +42,21 @@ module Admin
       #
       # Each card is resolved in its own member state, the one the user chose on
       # it or the one its request went to — `HoldsDemoCountries` says which.
+      #
+      # The cards the operator added follow those of the procedure, each
+      # resolved from its own requirement, and the page then offers to add any
+      # other the catalogue holds.
       def show
         resolved = DirectoryLookup::ResolveAll.call(procedure_code: code,
           country_code: Settings.common_services_country_code, countries: card_countries)
         @procedure = procedure_wording(resolved.requirements)
         @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
+        @added = resolved_added_cards(@requirements.map(&:requirement_uuid))
 
-        remember_demo_names(@procedure, @requirements)
+        cards = @requirements + @added
+
+        remember_demo_names(@procedure, cards)
+        @addable = addable_requirements(cards.map(&:requirement_uuid))
       end
 
       private
@@ -75,12 +83,41 @@ module Admin
         )
       end
 
-      def code = ::Demo::RequestEvidence::PROCEDURE_CODE
+      def code = journey.procedure_code
+
+      def resolved_added_cards(listed)
+        added_cards.values.reject { |card| card.requirement_uuid.in?(listed) }.map do |card|
+          DemoResolutionWording.new(resolve_added_card(card, card_country(card.requirement_uuid)))
+        end
+      end
+
+      # Every requirement of the Evidence Broker's catalogue — its first query,
+      # asked with neither of its optional parameters (chapter 3.2.4 §4.2) — less
+      # those the page already carries a card for, named as the directory names
+      # them. A catalogue that cannot be read costs this choice and nothing
+      # else: the cards stand, and the log keeps why.
+      def addable_requirements(carried)
+        Directories::Catalogue.new.requirements
+          .reject { |requirement| requirement.uuid.in?(carried) }.map { |requirement| addable_option(requirement) }
+      rescue CommonServicesError => e
+        Rails.logger.warn(I18n.t('controllers.admin.demo.catalogue_unreachable', error: e.message))
+
+        nil
+      end
+
+      # In English first, like the cards: the page is the portal.
+      def addable_option(requirement)
+        languages = DemoResolutionWording::LANGUAGES
+
+        [requirement.label(languages:) || requirement.uuid, requirement.uuid,
+         { lang: requirement.label_language(languages:) }]
+      end
 
       def report_unreachable_directories(error)
         @unreachable = error.message
         @procedure = procedure_wording(nil)
         @requirements = []
+        @added = []
 
         render :show, status: :bad_gateway
       end

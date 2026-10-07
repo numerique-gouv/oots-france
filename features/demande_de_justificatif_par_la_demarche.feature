@@ -14,6 +14,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   Scénario: l'usager demande son justificatif et la requête part pour de bon
     Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "T1"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Alors la page des justificatifs affiche le fournisseur et le type de justificatif
     Quand l'usager confirme sa demande
@@ -30,6 +31,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   Scénario: l'usager qui a choisi la version 1.2 demande son justificatif en 1.2
     Quand l'administrateur choisit la version "OOTS 1.2"
+    Et que l'administrateur choisit la démarche "T1"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Alors la page des justificatifs affiche le fournisseur et le type de justificatif
     Quand l'usager confirme sa demande
@@ -45,6 +47,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   Scénario: l'usager refuse le document sur l'espace de prévisualisation, et la démarche le dit
     Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "T1"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Et que l'usager confirme sa demande
     Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
@@ -52,3 +55,23 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
     Et la page des justificatifs affiche que l'usager a choisi de ne pas utiliser le document
+
+  Scénario: l'usager qui a choisi la démarche "00" demande son justificatif sous "00"
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement 2"
+    Alors la page des justificatifs affiche que la demande de l'usager est en cours
+    Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
+    Et la fiche de cet échange affiche la démarche "00"
+
+  Scénario: une carte ajoutée sous une démarche qui ne la déclare pas ramène le justificatif
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "T3"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager ajoute la carte "(TEST) Test Requirement" à la page des justificatifs
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
+    Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que l'usager est ramené à sa démarche
+    Alors la page des justificatifs affiche "Document retrieved successfully"

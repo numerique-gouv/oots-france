@@ -44,7 +44,9 @@ class DemoProcedureWording
   end
 
   # Our own words, and the only part of the heading no directory published.
-  def untitled = I18n.t(ProcedureComponent::NO_LABEL)
+  def self.untitled = I18n.t('presenters.demo_procedure_wording.untitled')
+
+  delegate :untitled, to: :class
 
   def requirements_named = @requirements_named ||= named(@requirements)
 

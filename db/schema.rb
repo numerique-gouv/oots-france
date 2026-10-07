@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_07_150000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -87,6 +87,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.string "requirement_language"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.datetime "added_at"
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_cards_on_journey_id_and_requirement_uuid", unique: true
   end
 
@@ -117,6 +118,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_06_120000) do
     t.text "preview_description"
     t.string "preview_description_language"
     t.datetime "returned_at"
+    t.string "procedure_code"
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_requests_on_journey_id_and_requirement_uuid"
   end

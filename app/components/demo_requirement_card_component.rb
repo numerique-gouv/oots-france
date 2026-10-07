@@ -22,18 +22,31 @@
 #
 # `unspoken` is the line of the journey where the provider's gateway announces
 # others and not it: the card says so in place of the button.
+#
+# `removable` is a card the operator added beyond those the Evidence Broker
+# lists for the procedure, which a cross in its corner takes off the page. The
+# others are what the broker publishes for the procedure, and the page shows
+# them for that.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, unspoken: nil)
+  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, unspoken: nil,
+                 removable: false)
     @wording = wording
     @country_code = country_code
     @country_name = country_name
     @zone = zone
     @countries = countries
     @unspoken = unspoken
+    @removable = removable
     super()
   end
 
   attr_reader :zone, :countries, :country_code, :unspoken
+
+  def removable? = @removable
+
+  # Where the cross posts: the card's own requirement, under the journey's
+  # line and procedure.
+  def removal_path = helpers.admin_demo_carte_path(exigence: requirement_uuid)
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.

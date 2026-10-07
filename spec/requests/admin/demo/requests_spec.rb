@@ -28,7 +28,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_exchange_state
       # The page requirement 27 is satisfied on: the button only exists once it
       # has been shown what it would ask for.
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
     end
 
     # CA3: the request goes out through the contract, with the query string a
@@ -40,6 +40,18 @@ RSpec.describe 'Admin::Demo::Requests' do
         'codeDemarche' => 'T1', 'codePays' => 'FR',
         'previsualisationRequise' => 'true', 'idRequeteur' => '00000000000003',
       )
+    end
+
+    # CA4 of OOTS-253: whatever card it comes from, the request names the
+    # procedure of the journey, and asks for the requirement whether or not the
+    # Evidence Broker ties it to that procedure — the request goes to what the
+    # card showed.
+    it 'asks under the procedure of the journey, the requirement outside it, and registers the code' do
+      post demande_path
+
+      expect(evidence_request_query).to include('codeDemarche' => 'T1', 'exigenceHorsDemarche' => 'true',
+        'idExigence' => requirement_uri(exigence), 'specification' => 'oots-edm:v2.0')
+      expect(Demo::Request.last.procedure_code).to eq('T1')
     end
 
     it 'sends a beneficiary token and never the pseudonym FranceConnect+ handed it' do
@@ -101,7 +113,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         autre = "#{'b' * 64}v1"
         identify_demo_user(userinfo: FranceConnectStubs::DANISH_USERINFO.merge('sub' => autre), sub: autre)
         # The new journey starts with no card: the page names them again.
-        get admin_demo_documents_path(version: 'v2.0')
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
         post demande_path
 
         expect(conversations_asked.uniq.size).to eq(2)
@@ -269,8 +281,8 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      patch admin_demo_pays_path(exigence: premiere, version: 'v2.0'), params: { pays: 'FI' }
-      get admin_demo_documents_path(version: 'v2.0')
+      patch admin_demo_pays_path(exigence: premiere, version: 'v2.0', procedure: 'T1'), params: { pays: 'FI' }
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path(premiere)
     end
 
@@ -280,7 +292,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     it 'leaves the other card in its own country' do
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       seconde_carte = response.parsed_body.at_css("#exigence-#{seconde}")
 
@@ -301,7 +313,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
     end
 
     it 'asks the contract nothing, and sends the user back' do
@@ -309,7 +321,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
     end
   end
 
@@ -324,7 +336,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
     end
 
     # Never the first requirement that publishes: falling back would ask for a
@@ -334,16 +346,16 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
       expect(Demo::Request.count).to eq(0)
     end
 
     it 'asks the contract nothing when no requirement is named at all' do
-      post admin_demo_demande_path(version: 'v2.0')
+      post admin_demo_demande_path(version: 'v2.0', procedure: 'T1')
 
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).not_to have_been_made
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
       expect(Demo::Request.count).to eq(0)
     end
   end
@@ -367,7 +379,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     it 'sends the user back to the page that names what would be asked' do
       post demande_path
 
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
     end
   end
 
@@ -379,14 +391,14 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
       Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
     end
 
     it 'offers the button again once the user has identified anew' do
       identify_demo_user
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.at_css('.demo-request__body').text).to include('Request the document')
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
@@ -402,7 +414,7 @@ RSpec.describe 'Admin::Demo::Requests' do
                                     statut: 'pending' }.to_json)
       stub_exchange_state('un-second-echange', statut: 'pending')
 
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
 
       expect(Demo::Request.pluck(:exchange_id))
@@ -416,7 +428,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       identify_demo_user
       stub_exchange_state('un-second-echange', statut: 'pending')
 
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
 
       expect(conversations_asked.uniq.size).to eq(1)
@@ -433,7 +445,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
     end
 
@@ -530,7 +542,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
       stub_exchange_state(statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview',
         descriptionPrevisualisation: [{ langue: 'DE', texte: 'Vorschau' }, { langue: 'EN', texte: 'Your grant' }])
@@ -544,7 +556,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       expect(a_request(:post, confirmation).with do |sent|
         form = Rack::Utils.parse_nested_query(sent.body)
         form['beneficiaire'].present? &&
-          form['adresseRetour'] == "#{Settings.oots_france_url}/admin/demo/v2.0/documents"
+          form['adresseRetour'] == "#{Settings.oots_france_url}/admin/demo/v2.0/T1/documents"
       end).to have_been_made.once
     end
 
@@ -600,23 +612,23 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
   end
 
-  describe 'GET /admin/v1.2/demande, the correspondent asking for a preview' do
+  describe 'GET /admin/v1.2/00/demande, the correspondent asking for a preview' do
     before do
-      identify_demo_user(version: 'v1.2')
+      identify_demo_user(version: 'v1.2', procedure: '00')
       stub_directory_signature
       stub_directory_body('dsd', 'dataservices-by-evidencetype', provider_announcing('oots-edm:v1.2'))
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state(statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview')
       stub_preview_confirmation
-      get admin_demo_documents_path(version: 'v1.2')
-      post admin_demo_demande_path(exigence:, version: 'v1.2')
+      get admin_demo_documents_path(version: 'v1.2', procedure: '00')
+      post admin_demo_demande_path(exigence:, version: 'v1.2', procedure: '00')
     end
 
-    it 'has the user brought back under the segment of its line' do
+    it 'has the user brought back under the segments of its line and its procedure' do
       expect(a_request(:post, %r{/previsualisation}).with do |sent|
         Rack::Utils.parse_nested_query(sent.body)['adresseRetour'] ==
-          "#{Settings.oots_france_url}/admin/demo/v1.2/documents"
+          "#{Settings.oots_france_url}/admin/demo/v1.2/00/documents"
       end).to have_been_made.once
     end
   end
@@ -639,7 +651,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_evidence_request_for(seconde, second_echange)
       stub_exchange_state
       stub_exchange_state(second_echange, statut: 'pending')
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
     end
 
     # CA6. Chapter 4.4 §4.3.2 gives each identifier its own job: the
@@ -688,7 +700,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
 
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -704,7 +716,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       stub_exchange_state(statut: 'failed', codeErreur: 'EDM:ERR:0003')
 
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -722,7 +734,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
       Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-      get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0')
+      get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0', procedure: 'T1')
 
       expect(response.body.b).to eq(autre_document)
     end
@@ -735,8 +747,8 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       identify_demo_user
 
-      get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0')
-      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0'))
+      get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0', procedure: 'T1')
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
 
       get demande_path(premiere)
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
@@ -772,7 +784,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
 
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -789,7 +801,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       post demande_path(seconde)
 
       identify_demo_user
-      get admin_demo_documents_path(version: 'v2.0')
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       zones = response.parsed_body.css('main .demo-request__body')
 
@@ -839,7 +851,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
         [cookies[session_cookie], held].each do |cookie|
           cookies[session_cookie] = cookie
-          get admin_demo_documents_path(version: 'v2.0')
+          get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
           expect(response.parsed_body.css('main .demo-request__body').pluck('data-outcome'))
             .to eq(%w[pending pending])
@@ -860,10 +872,10 @@ RSpec.describe 'Admin::Demo::Requests' do
         Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
         Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-        get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0')
+        get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0', procedure: 'T1')
         expect(response.body.b).to eq(document)
 
-        get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0')
+        get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0', procedure: 'T1')
         expect(response.body.b).to eq(autre_document)
       end
 
@@ -875,7 +887,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         clicking_at_once(premiere, seconde)
 
         identify_demo_user
-        get admin_demo_documents_path(version: 'v2.0')
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
         zones = response.parsed_body.css('main .demo-request__body')
 
@@ -901,7 +913,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       end
 
       def rendered_identifiers
-        get admin_demo_documents_path(version: 'v2.0')
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
         response.parsed_body.at_css('main').text.scan(%r{\h{8}-\h{4}-\h{4}-\h{4}-\h{12}|https://sr\.\S+})
       end
@@ -928,7 +940,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
   # A journey opened from the sign-in page of the other line, which leaves
   # every request of it in that line.
-  describe 'POST /admin/demo/v1.2/demande' do
+  describe 'POST /admin/demo/v1.2/T1/demande' do
     before do
       identify_demo_user(version: 'v1.2')
       stub_directory_signature
@@ -936,11 +948,11 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_oots_france_public_keys
       stub_evidence_request
       stub_exchange_state
-      get admin_demo_documents_path(version: 'v1.2')
+      get admin_demo_documents_path(version: 'v1.2', procedure: 'T1')
     end
 
     it 'asks in 1.2, and files it' do
-      post admin_demo_demande_path(exigence:, version: 'v1.2')
+      post admin_demo_demande_path(exigence:, version: 'v1.2', procedure: 'T1')
 
       expect(evidence_request_query).to include('specification' => 'oots-edm:v1.2', 'codePays' => 'FR')
       expect(Demo::Request.last.specification).to eq(EdmSpecification::V1_2)
@@ -960,5 +972,5 @@ RSpec.describe 'Admin::Demo::Requests' do
   # spec, as `spec/fixtures/README.md` has a body no capture holds made.
   def provider_announcing(line) = common_services_answer('dsd_data_services_fi').first.sub('oots-edm:v2.0', line)
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0')
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
 end

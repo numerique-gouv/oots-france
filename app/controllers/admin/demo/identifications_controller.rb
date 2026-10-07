@@ -9,9 +9,9 @@ module Admin
     # replayed would overwrite those of a flow under way. The name of the
     # FranceConnect+ travels in the body of that same submission.
     #
-    # The line of the page the flow leaves from is kept beside the `state` and
-    # the `nonce`: the return, whose addresses name no line, opens the journey
-    # in it.
+    # The line and the procedure of the page the flow leaves from are kept
+    # beside the `state` and the `nonce`: the return, whose addresses name
+    # neither, opens the journey in them.
     #
     # `::Demo::` and not `Demo::`: this file lives in `Admin::Demo`, which would
     # otherwise answer for the name.
@@ -25,7 +25,7 @@ module Admin
 
         result = ::Demo::StartIdentification.call(instance:)
 
-        return refuse_identification(result, version:) unless result.success?
+        return refuse_identification(result, version:, procedure:) unless result.success?
 
         remember_departure(result, instance)
 
@@ -35,10 +35,13 @@ module Admin
       private
 
       def remember_departure(result, instance)
-        session[:france_connect] = { state: result.state, nonce: result.nonce, name: instance.name, version: }
+        session[:france_connect] = { state: result.state, nonce: result.nonce, name: instance.name, version:,
+                                     procedure: }
       end
 
       def version = params[:version]
+
+      def procedure = params[:procedure]
     end
   end
 end

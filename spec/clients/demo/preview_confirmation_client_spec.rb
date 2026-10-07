@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Demo::PreviewConfirmationClient do
   subject(:answer) do
     described_class.new.confirm(exchange_id:, encrypted_beneficiary: 'un-jeton-chiffré',
-      resume_location: 'http://localhost:3000/admin/demo/v2.0/documents')
+      resume_location: 'http://localhost:3000/admin/demo/v2.0/T1/documents')
   end
 
   let(:exchange_id) { 'aaaaaaaa-0000-4000-8000-000000000001' }
@@ -19,7 +19,7 @@ RSpec.describe Demo::PreviewConfirmationClient do
     answer
 
     expect(WebMock).to have_requested(:post, address).with(body: {
-      'beneficiaire' => 'un-jeton-chiffré', 'adresseRetour' => 'http://localhost:3000/admin/demo/v2.0/documents',
+      'beneficiaire' => 'un-jeton-chiffré', 'adresseRetour' => 'http://localhost:3000/admin/demo/v2.0/T1/documents',
     })
   end
 

@@ -8,7 +8,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       zone: DemoRequestZoneComponent.new(outcome: nil, requirement_uuid: uuid))
   end
 
-  around { |example| with_request_url('/admin/demo/v2.0/documents') { example.run } }
+  around { |example| with_request_url('/admin/demo/v2.0/T1/documents') { example.run } }
 
   let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
   let(:wording) do
@@ -31,7 +31,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     element = page.find('[data-controller="demo-request"]', visible: :all)
 
     expect(element['data-action']).to eq('submit->demo-request#submit')
-    expect(element['data-demo-request-url-value']).to eq("/admin/demo/v2.0/demande?exigence=#{uuid}")
+    expect(element['data-demo-request-url-value']).to eq("/admin/demo/v2.0/T1/demande?exigence=#{uuid}")
   end
 
   # Une région remplacée en même temps que ce qu'elle annonce n'annonce rien :
@@ -46,6 +46,20 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     expect(element).to have_css('.demo-request__body', visible: :all)
   end
 
+  # RG7 of OOTS-253: a card the operator added carries a cross, named in words
+  # for whoever cannot see its icon (RGAA 11.9); the others carry none.
+  it 'carries a named cross only when it is removable' do
+    render_inline(described_class.new(wording:, country_code: 'FR', removable: true))
+
+    form = page.find('form.requirement-card__remove')
+    expect(form['action']).to eq("/admin/demo/v2.0/T1/cartes/#{uuid}")
+    expect(form).to have_css("input[name='_method'][value='delete']", visible: :all)
+    expect(form).to have_button('Remove this document')
+
+    render_inline(card)
+    expect(page).to have_no_css('.requirement-card__remove')
+  end
+
   # Posted apart from the zone: the list is not part of what a change of
   # country replaces, and keeps the focus.
   it 'offers the countries it is given in a form of its own, outside the zone' do
@@ -53,7 +67,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     form = page.find('form.requirement-card__country')
 
-    expect(form['action']).to eq("/admin/demo/v2.0/pays?exigence=#{uuid}")
+    expect(form['action']).to eq("/admin/demo/v2.0/T1/pays?exigence=#{uuid}")
     expect(form).to have_select('Country to request the document from', selected: '🇫🇮 Finland (FI)')
     expect(page).to have_no_css('.demo-request form.requirement-card__country')
   end
@@ -70,7 +84,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     expect(failure[:class]).to eq('fr-error-text')
     expect(failure.text(:all).squish).to eq('The country could not be changed: this page could not reach the ' \
                                             'service. Choose it again, or reload the page.')
-    expect(failure).to have_link('reload the page', href: '/admin/demo/v2.0/documents', visible: :hidden)
+    expect(failure).to have_link('reload the page', href: '/admin/demo/v2.0/T1/documents', visible: :hidden)
     expect(page).to have_no_css('[data-demo-country-target="resolution"] [data-demo-country-target="failure"]',
       visible: :all)
   end
