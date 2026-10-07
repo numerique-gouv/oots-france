@@ -6,8 +6,10 @@
     ) do |header| %>
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: t('layouts.entete.directories'), path: admin_common_services_root_path) %>
-    <% header.with_direct_link_simple(title: t('layouts.entete.journal'), path: admin_journal_root_path) %>
-    <% header.with_direct_link_simple(title: t('layouts.entete.jobs'), path: admin_jobs_path) %>
+    <% if named_administrator? %>
+      <% header.with_direct_link_simple(title: t('layouts.entete.journal'), path: admin_journal_root_path) %>
+      <% header.with_direct_link_simple(title: t('layouts.entete.jobs'), path: admin_jobs_path) %>
+    <% end %>
     <% header.with_direct_link_simple(title: t('layouts.entete.demo'), path: admin_demo_root_path) %>
 
     <%# `button_to`, because the application embarks neither Turbo nor

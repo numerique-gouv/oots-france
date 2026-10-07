@@ -20,7 +20,7 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
   end
 
   describe 'GET /admin/common_services/access_points' do
-    before { sign_in }
+    before { sign_in_as_administrator }
 
     it 'lists every party of the PMode and its MSH' do
       gateway_listing
@@ -181,7 +181,7 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
   end
 
   describe 'POST /admin/common_services/connectivity_tests' do
-    before { sign_in }
+    before { sign_in_as_administrator }
 
     it 'records the test pending and answers before anything is submitted' do
       gateway_listing

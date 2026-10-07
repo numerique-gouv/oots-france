@@ -250,6 +250,7 @@ RSpec.describe 'Admin::Sessions' do
   describe 'the page the guard turned away' do
     it 'is where a successful sign-in lands' do
       exchange = create(:exchange, :failed)
+      Administrator.appoint(ProConnectStubs::AGENT_EMAIL)
 
       get admin_journal_exchange_path(exchange.exchange_id)
       expect(response).to redirect_to(new_admin_session_path)

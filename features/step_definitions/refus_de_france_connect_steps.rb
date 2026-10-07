@@ -7,13 +7,13 @@ UNREQUESTED_RETURN = '/demo/franceconnect/retour_connexion?code=un-code&state=un
     .to_return(status: 400, body: { error: }.to_json)
 end
 
-Quand("l'administrateur s'identifie depuis le bouton du faux FranceConnect+") do
+Quand("l'agent s'identifie depuis le bouton du faux FranceConnect+") do
   visit admin_demo_root_path
   click_link 'OOTS 2.0'
   sign_in_with('fake')
 end
 
-Quand("l'administrateur revient de FranceConnect+ sur une identification que ce navigateur n'a pas demandée") do
+Quand("l'agent revient de FranceConnect+ sur une identification que ce navigateur n'a pas demandée") do
   visit UNREQUESTED_RETURN
 end
 

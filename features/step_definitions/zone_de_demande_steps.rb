@@ -211,7 +211,7 @@ Quand("l'usager recharge la page des justificatifs") do
   mark_the_page
 end
 
-Quand("la session de l'administrateur prend fin") do
+Quand("la session de l'agent prend fin") do
   page.driver.clear_cookies
 end
 

@@ -63,6 +63,9 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
+    # Where an agent nobody named administrator is sent from the journal, the
+    # jobs and the access points.
+    get 'acces_reserve', to: 'restricted_access#show', as: :restricted_access
 
     # The two addresses the deployment declares to ProConnect, which answer
     # without a session: the agent comes back to them from ProConnect.

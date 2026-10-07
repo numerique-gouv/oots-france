@@ -2,6 +2,20 @@
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
+# The agent the « Se connecter sans ProConnect (Dev) » button signs in, named
+# administrator so that the journal and the jobs open on a development machine
+# as soon as `make setup` is done. Nobody is named in production: the first
+# administrator of a deployment is named in a console — docs/espace_administration.md
+# says how. Said rather than passed over in silence: without it, nothing
+# distinguishes a seed that deliberately skipped from one that died before here.
+if Rails.env.production?
+  puts "Aucun administrateur n'est nommé en production : nommez le premier en console, voir docs/espace_administration.md"
+elsif Rails.env.development?
+  administrator = Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+
+  puts "Administrateur nommé : #{administrator.email}"
+end
+
 # One exchange per state of `Exchange::STATUSES`, so that the administration
 # space has its badges, its filters and its detail page to show. Nothing here
 # ever happened: no message was built, no gateway was called, and their

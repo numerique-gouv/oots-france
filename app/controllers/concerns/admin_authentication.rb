@@ -7,7 +7,7 @@ module AdminAuthentication
 
   included do
     before_action :require_administrator
-    helper_method :signed_in_email
+    helper_method :signed_in_email, :named_administrator?
   end
 
   private
@@ -42,6 +42,24 @@ module AdminAuthentication
     email = session[:agent_email]
 
     email.present? && Agent.new(email:).admitted_by?(Settings.proconnect_agent_domains)
+  end
+
+  # Declared by the controllers it closes rather than here: the directories and
+  # the demonstration stay open to every admitted agent. Redirected rather than
+  # rendered in place, for the reason `require_administrator` is — the jobs
+  # dashboard renders under `:en`, which this application does not publish.
+  def require_named_administrator
+    return if named_administrator?
+
+    redirect_to Rails.application.routes.url_helpers.admin_restricted_access_path, status: :see_other
+  end
+
+  # Read in the list at every request, so that naming or dismissing an agent in
+  # a console takes effect at their next page.
+  def named_administrator?
+    return @named_administrator if defined?(@named_administrator)
+
+    @named_administrator = administrator_signed_in? && Administrator.appointed?(signed_in_email)
   end
 
   def requested_path = session[:requested_path]

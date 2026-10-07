@@ -1,8 +1,9 @@
 module Admin
   module Journal
-    # Nothing new about access: `Admin::BaseController` already carries the
-    # guard, and the journal opens to the same account as the rest of the console.
+    # The one part of the console that shows other people's personal data, as
+    # the exchanges recorded it: reserved to the administrators named in the list.
     class BaseController < Admin::BaseController
+      before_action :require_named_administrator
     end
   end
 end

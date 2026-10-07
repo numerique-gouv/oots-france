@@ -15,11 +15,11 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Contexte:
     Étant donné un Evidence Broker qui publie le catalogue des exigences
-    Et un administrateur connecté à l'espace d'administration
+    Et un agent connecté à l'espace d'administration
 
   Scénario: la liste des exigences arrive après la page, sous une zone d'attente
     Étant donné que le contenu de la page des exigences est retenu
-    Quand l'administrateur ouvre la page des exigences
+    Quand l'agent ouvre la page des exigences
     Alors la zone d'attente annonce "Chargement de toutes les exigences publiées, veuillez patienter."
     Et son tourniquet est affiché
     Quand le contenu est servi
@@ -29,27 +29,27 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Scénario: un annuaire injoignable prend la place de la zone d'attente
     Étant donné un Evidence Broker qui ne répond pas
-    Quand l'administrateur ouvre la page des exigences
+    Quand l'agent ouvre la page des exigences
     Alors la page affiche l'alerte "Annuaire injoignable"
     Et la zone d'attente a disparu
     Et la page n'affiche pas "Le contenu de cette page n'a pas pu être chargé."
 
   Scénario: une réponse que l'application n'a pas écrite n'est pas injectée
     Étant donné qu'une réponse sans l'en-tête "Deferred-Fragment" est fabriquée devant le navigateur
-    Quand l'administrateur ouvre la page des exigences
+    Quand l'agent ouvre la page des exigences
     Alors la page n'affiche rien de cette réponse
     Et la zone d'attente annonce "Le contenu de cette page n'a pas pu être chargé. Rechargez la page pour réessayer."
     Et son tourniquet n'est plus affiché
 
   Scénario: une requête du contenu qui n'obtient aucune réponse échoue de même
     Étant donné que la connexion est coupée avant que le contenu soit servi
-    Quand l'administrateur ouvre la page des exigences
+    Quand l'agent ouvre la page des exigences
     Alors la zone d'attente annonce "Le contenu de cette page n'a pas pu être chargé. Rechargez la page pour réessayer."
     Et son tourniquet n'est plus affiché
 
   Scénario: la recherche restreint la liste, quelles que soient la casse et les accents
     Étant donné la liste des exigences affichée
-    Quand l'administrateur cherche "publiés nationalit"
+    Quand l'agent cherche "publiés nationalit"
     Alors seule l'exigence "Proof of nationality" reste affichée
     Et le décompte dit "Un résultat"
     Quand il cherche "PUBLIES NATIONALIT"
@@ -58,7 +58,7 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Scénario: une recherche qui ne correspond à aucune exigence le dit
     Étant donné la liste des exigences affichée
-    Quand l'administrateur cherche "ES"
+    Quand l'agent cherche "ES"
     Alors la page affiche "Aucune exigence ne correspond à cette recherche."
     Et le décompte dit "Aucun résultat"
     Quand il efface sa recherche
@@ -66,7 +66,7 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Scénario: une carte affichée qui ne pèse rien n'est pas un écran vide
     Étant donné une exigence dont le seul pays fournisseur déclare ne délivrer aucun justificatif
-    Quand l'administrateur ouvre la page de cette exigence
+    Quand l'agent ouvre la page de cette exigence
     Alors la carte du pays est affichée
     Et le décompte dit "Aucun résultat"
     Et la page n'affiche pas "Aucun type de justificatif ne correspond à cette recherche."
@@ -79,14 +79,14 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Scénario: chercher le code nu d'un pays ne garde que la carte de ce pays
     Étant donné une exigence que plusieurs pays satisfont, chacun avec plusieurs justificatifs
-    Quand l'administrateur ouvre la page de cette exigence
+    Quand l'agent ouvre la page de cette exigence
     Et qu'il cherche "AT"
     Alors seule la carte du pays "Autriche (AT)" reste affichée
     Et le décompte dit "3 résultats"
 
   Scénario: le décompte est la somme des poids des cartes affichées
     Étant donné une exigence que plusieurs pays satisfont, chacun avec plusieurs justificatifs
-    Quand l'administrateur ouvre la page de cette exigence
+    Quand l'agent ouvre la page de cette exigence
     Alors le décompte dit "9 résultats"
     Et aucune carte ne pèse ce nombre à elle seule
     Quand il cherche "AT"
@@ -94,10 +94,10 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Scénario: une session finie pendant l'attente mène à la connexion, puis à la page entière
     Étant donné que le contenu de la page des exigences est retenu
-    Quand l'administrateur ouvre la page des exigences
+    Quand l'agent ouvre la page des exigences
     Et que sa session prend fin
     Et que le contenu est servi
     Alors la page de connexion s'affiche
     Et la page n'affiche pas "Le contenu de cette page n'a pas pu être chargé."
-    Quand l'administrateur se reconnecte
+    Quand l'agent se reconnecte
     Alors la page des exigences s'affiche entière, avec son titre et sa liste

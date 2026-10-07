@@ -2056,6 +2056,14 @@ fr:
           lead: "En développement : entrer sans ProConnect, comme %{email}."
           button: Se connecter sans ProConnect (Dev)
         refused: "L'espace d'administration est réservé aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
+    # Ce qu'un agent que personne n'a nommé administrateur lit en ouvrant le
+    # journal, les jobs ou les points d'accès.
+    restricted_access:
+      show:
+        title: Accès réservé
+        body: >-
+          Cette page est réservée aux administrateurs nommés par l'équipe qui exploite le service.
+          Demandez-lui d'être nommé administrateur.
     home:
       show:
         heading: Espace d'administration

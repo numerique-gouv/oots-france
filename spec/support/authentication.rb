@@ -12,6 +12,13 @@ module Authentication
 
     email
   end
+
+  # An agent the team running the deployment named, who alone reads the
+  # journal, the jobs and the access points.
+  def sign_in_as_administrator(email: ProConnectStubs::AGENT_EMAIL)
+    Administrator.appoint(email)
+    sign_in(email:)
+  end
 end
 
 RSpec.configure do |config|
