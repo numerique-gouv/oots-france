@@ -57,6 +57,16 @@ RSpec.describe FakeFranceConnect::Identity do
       expect(described_class.of_country('ES')).to eq(described_class.of_country('DK'))
     end
 
+    it 'sert Alicja Roszponka au niveau substantiel' do
+      alicja = described_class.find('pl-substantial')
+
+      expect(alicja.acr).to eq('eidas2')
+      expect(alicja.claims_for(%w[profile])).to eq(
+        'given_name' => 'Alicja', 'family_name' => 'Roszponka', 'birthdate' => '1991-04-06',
+        'preferred_username' => 'Roszponka',
+      )
+    end
+
     it 'ne sert rien pour un pays qu\'il n\'offre pas' do
       expect(described_class.of_country('ZZ')).to be_empty
     end

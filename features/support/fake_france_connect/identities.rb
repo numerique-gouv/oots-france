@@ -79,7 +79,7 @@ module FakeFranceConnect
   end
 
   # The identities the fake serves, and the countries its first page offers:
-  # every member state, and the same two identities behind each of them — what
+  # every member state, and the same three identities behind each of them — what
   # a country button changes is the screen, never who signs in.
   module Identities
     COUNTRY_NAMES = {
@@ -108,6 +108,11 @@ module FakeFranceConnect
         key: 'dk-high', country: 'DK', level: 'high',
         eidas_identifier: 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07',
         given_name: 'Mikkel Anker', family_name: 'Bruun', birthdate: '1998-09-03',
+      ),
+      Identity.new(
+        key: 'pl-substantial', country: 'PL', level: 'substantial',
+        eidas_identifier: 'PL/FR/3e9b47c2-5a1d-4c86-b0f4-7d2e18a9c6b3',
+        given_name: 'Alicja', family_name: 'Roszponka', birthdate: '1991-04-06',
       ),
     ].freeze
 
