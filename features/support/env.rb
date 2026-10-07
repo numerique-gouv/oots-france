@@ -19,6 +19,13 @@ ActionController::Base.allow_rescue = false
 # default would stand in for a `.env.oots` line that is simply absent, and
 # `make e2e` would run against a test value taking it for the real one.
 Before('not @bout_en_bout') do
+  # The ProConnect the console opens through, and the domain it admits: the
+  # login page offers its button only when one is declared, and a scenario
+  # that signs in replaces these with `ProConnectStubs` on `Settings`.
+  ENV['URL_PROCONNECT'] = ENV['URL_PROCONNECT'].presence || ProConnectStubs::ISSUER
+  ENV['IDENTIFIANT_CLIENT_PROCONNECT'] = ENV['IDENTIFIANT_CLIENT_PROCONNECT'].presence || ProConnectStubs::CLIENT_ID
+  ENV['SECRET_CLIENT_PROCONNECT'] = ENV['SECRET_CLIENT_PROCONNECT'].presence || ProConnectStubs::CLIENT_SECRET
+  ENV['DOMAINES_AGENTS_PROCONNECT'] = ENV['DOMAINES_AGENTS_PROCONNECT'].presence || 'numerique.gouv.fr'
   ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
   ENV['DELAI_MAX_SERVICES_COMMUNS'] ||= '10000'
   ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'
