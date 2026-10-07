@@ -8,7 +8,7 @@
 > | ce qu'est Domibus, comment l'application s'en sert, ses journaux | [domibus_context.md](domibus_context.md) |
 > | reprendre à la main une étape de la configuration de la passerelle, sécuriser ses comptes | [configurer_domibus_via_l_interface.md](configurer_domibus_via_l_interface.md) |
 > | l'habilitation FranceConnect+ et les adresses à lui déclarer | [eidas_context.md](eidas_context.md) |
-> | le compte qui ouvre l'espace d'administration | [espace_administration.md](espace_administration.md#qui-peut-y-entrer) |
+> | ProConnect, qui ouvre l'espace d'administration, et ce qu'on lui déclare | [espace_administration.md](espace_administration.md#déclarer-proconnect) |
 > | les clés qui chiffrent le journal des échanges | [journal_des_echanges.md](journal_des_echanges.md#le-chiffrement-au-repos-en-détail) |
 > | le profil TLS des connexions sortantes | [securite_transport.md](securite_transport.md) |
 
@@ -89,7 +89,7 @@ $ git clone https://github.com/numerique-gouv/oots-france.git && cd oots-france
 $ URL_OOTS_FRANCE=https://<domaine> scripts/setup_server.sh
 ```
 
-Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et ne demande rien : il **engendre lui-même chaque secret**, pose `RAILS_ENV=production` avec le `SECRET_KEY_BASE` qui va avec, engendre les trois clés JWK, et prend partout ailleurs la valeur que le template porte. `URL_OOTS_FRANCE` est le seul renseignement qu'il exige, faute de pouvoir le deviner : un `http://localhost:3000` rendrait injoignables les trois adresses que la démarche déclare à FranceConnect+, et rien ne le dirait avant la première authentification d'un usager.
+Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et ne demande rien : il **engendre lui-même chaque secret**, pose `RAILS_ENV=production` avec le `SECRET_KEY_BASE` qui va avec, engendre les trois clés JWK, et prend partout ailleurs la valeur que le template porte — sauf pour les trois variables de ProConnect, qu'il écrit **vides** si la ligne de commande ne les donne pas : le template porte celles du faux ProConnect, qu'un serveur ne désigne jamais. `URL_OOTS_FRANCE` est le seul renseignement qu'il exige, faute de pouvoir le deviner : un `http://localhost:3000` rendrait injoignables les trois adresses que la démarche déclare à FranceConnect+, et rien ne le dirait avant la première authentification d'un usager.
 
 Les secrets qu'il engendre sont ceux que [`scripts/secret_variables`](../scripts/secret_variables) nomme, chacun au format que son destinataire exige — et deux d'entre eux sont refusés si ce format ne l'est pas : le compte d'accès, par Domibus au moment de `make setup`, et les clés du journal, par l'application à son démarrage. Aucun générateur ne produit de guillemet, de `$`, de `#` ni d'espace, que Compose réinterpréterait dans un `env_file` :
 
@@ -115,12 +115,14 @@ Tout ce que le script n'engendre pas prend la valeur que son template porte — 
 | `DONNEES_REQUETEURS`, `IDENTIFIANT_REQUETEUR_DEMARCHE` | l'annuaire des fournisseurs de service requêteurs, et le SIRET sous lequel la démarche de démonstration y est inscrite |
 | `URL_FAUX_FRANCE_CONNECT` — `https://<sous-domaine>/api/v2` derrière le frontal, ou `http://<domaine>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` sans lui | l'émetteur du faux doit être une seule adresse pour le navigateur de l'usager comme pour `web`, et `localhost` ne vaut que sur un poste. Derrière un frontal, le faux écoute `PORT_FAUX_FRANCE_CONNECT` et annonce l'adresse publique : le port reste fermé. Vidée avec ses deux identifiants, l'accueil de la démarche n'offre pas sa carte |
 | `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT`, `SECRET_CLIENT_VRAI_FRANCE_CONNECT` | l'*issuer* et les identifiants que FranceConnect+ a délivrés à ce déploiement, bac à sable ou production. Les trois ou aucune : un jeu à trous refuse le démarrage. `make check-secrets` refuse par ailleurs le vrai déclaré avec le secret que `.env.oots.template` publie pour le faux, celui-là étant public dans le dépôt |
+| `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT`, `SECRET_CLIENT_PROCONNECT` | l'*issuer* et les identifiants que ProConnect a délivrés à ce déploiement, intégration ou production ([espace_administration.md](espace_administration.md#déclarer-proconnect)). Les trois ou aucune ; aucune, l'application démarre et l'espace d'administration reste fermé. `make check-secrets` refuse le secret que `.env.oots.template` publie pour le faux ProConnect |
+| `DOMAINES_AGENTS_PROCONNECT` | les domaines d'adresse des agents admis dans l'espace d'administration, `numerique.gouv.fr` par défaut |
 | `POSTGRES_USER`, `POSTGRES_DB`, `MYSQL_USER`, `MYSQL_DATABASE` | si l'on veut d'autres noms que ceux du dépôt. Leurs mots de passe, eux, sont engendrés |
 
 Les identifiants des bases vivent dans deux fichiers chacun, sous le nom que leur image attend et sous celui que l'application lit : `scripts/ci/prepare_environment.sh` les tient égaux, si bien qu'il n'y a **rien à recopier d'un fichier à l'autre** — c'est là que se jouait le `password authentication failed` que rien ne voit venir.
 
 > [!IMPORTANT]
-> **`RAILS_ENV=production` change ce que `make setup` fait**, et pas seulement ce que le serveur sert : c'est lui qui retient `db/seeds.rb` de poser le compte `admin@example.com` et les quinze échanges de démonstration. Posé après coup, le serveur a déjà le compte public dans sa base — d'où sa place ici, avant `make setup`. Et **ne le déclarez jamais vide** : un `RAILS_ENV=` sans valeur n'est pas absent pour Ruby, et les suites de tests, qui ne posent `test` que si la variable manque, tourneraient alors en `development`. C'est pourquoi `.env.oots.template` ne le déclare pas, et pourquoi `scripts/setup_server.sh` est seul à l'écrire.
+> **`RAILS_ENV=production` change ce que `make setup` fait**, et pas seulement ce que le serveur sert : c'est lui qui retient `db/seeds.rb` de poser les quinze échanges de démonstration. Posé après coup, le serveur les a déjà dans sa base — d'où sa place ici, avant `make setup`. Et **ne le déclarez jamais vide** : un `RAILS_ENV=` sans valeur n'est pas absent pour Ruby, et les suites de tests, qui ne posent `test` que si la variable manque, tourneraient alors en `development`. C'est pourquoi `.env.oots.template` ne le déclare pas, et pourquoi `scripts/setup_server.sh` est seul à l'écrire.
 >
 > Sans `SECRET_KEY_BASE`, Rails refuse de démarrer en production — `Missing secret_key_base for 'production' environment`. L'application ne lit rien dans ses *credentials* : cette variable suffit, et `config/master.key` n'a pas à exister sur le serveur.
 
@@ -151,7 +153,7 @@ $ make assets
 $ docker compose up -d web worker fake-france-connect
 ```
 
-Les trois services de `make up`, mais détachés : celui-là reste au premier plan, pour un poste de développement. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
+Les trois services de `make up` qu'un serveur lance — le faux ProConnect n'en est pas —, mais détachés : celui-là reste au premier plan, pour un poste de développement. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
 
 Seul `nginx` est déclaré `restart: unless-stopped` dans `docker-compose.yml` : après un redémarrage de la machine, le reste ne revient pas de lui-même. Le poser sur les cinq autres services dans le `docker-compose.override.yml`, que Compose charge de lui-même — avec le démon activé par `systemctl enable`, la pile survit alors à un reboot :
 
@@ -165,13 +167,9 @@ services:
   mysql: { restart: unless-stopped }
 ```
 
-### 5. Le compte de l'espace d'administration
+### 5. L'espace d'administration
 
-Rien n'est posé en production. Le compte se crée dans la console Rails, comme [espace_administration.md](espace_administration.md#qui-peut-y-entrer) l'indique :
-
-```sh
-$ make console
-```
+Il s'ouvre par ProConnect, et par lui seul : déclarer ce déploiement sur l'[espace partenaires](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service), avec ses deux adresses de retour et un algorithme asymétrique, puis renseigner les trois variables dans `.env.oots` et redémarrer `web` — [espace_administration.md](espace_administration.md#déclarer-proconnect) dit quoi déclarer. Tant qu'aucun n'est déclaré, la page de connexion le dit et n'offre aucun bouton ; le reste de l'application tourne.
 
 ### 6. Vérifier
 
@@ -181,7 +179,7 @@ $ curl -s "https://<domaine>/requete/pieceJustificative?codeDemarche=00&codePays
 {"erreur":"Le bénéficiaire doit être renseigné"}
 ```
 
-Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans la console Domibus, « Connection Monitoring » doit montrer `AP_FR_01` en vert, et `https://<domaine>/admin` doit s'ouvrir sur le compte créé. Les pages « Common Services » de l'espace confirment que les annuaires répondent depuis ce réseau.
+Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans la console Domibus, « Connection Monitoring » doit montrer `AP_FR_01` en vert, et `https://<domaine>/admin` doit s'ouvrir par ProConnect à une adresse d'un domaine admis — ou dire qu'aucun ProConnect n'est déclaré. Les pages « Common Services » de l'espace confirment que les annuaires répondent depuis ce réseau.
 
 ## Ce qui est exposé, et ce qui ne doit pas l'être
 

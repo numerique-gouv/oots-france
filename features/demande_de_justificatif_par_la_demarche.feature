@@ -6,7 +6,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   Ce que ces scénarios prouvent, et que la suite unitaire ne peut pas montrer : la démarche de démonstration appelle la France par la même adresse publique qu'un portail de démarche français, avec un jeton du bénéficiaire qu'elle signe et que la France ouvre en lisant les clés que la démarche publie. La chaîne entière se voit donc ici, du clic de l'usager jusqu'au message parti par la passerelle, puis jusqu'au retour de l'usager et au justificatif qu'il a accepté. La France se répond à elle-même : l'espace visité est le sien.
 
-  Ils demandent une vraie passerelle Domibus, les vrais annuaires européens, le faux FranceConnect+ que la suite lance à côté d'elle, et le compte d'administration des données de démonstration. docs/test_e2e.md dit comment les jouer.
+  Ils demandent une vraie passerelle Domibus, les vrais annuaires européens, le faux FranceConnect+ et le faux ProConnect que la pile lance à côté d'elle. docs/test_e2e.md dit comment les jouer.
 
   Contexte:
     Étant donné un faux FranceConnect+ lancé à côté du scénario

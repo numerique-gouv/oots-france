@@ -88,7 +88,8 @@ Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`:
   | The French procedure portal that calls it, in every role (requester, OpenID client) | *le portail*, introduced as *un portail de démarche français* or *un portail de test* |
   | A procedure code | *la démarche "00"* |
   | The one portal the console plays | *la démarche de démonstration* |
-  | Whoever opens *l'espace d'administration* | *l'administrateur* — *l'administrateur de démonstration* when it is the seeded account; *un visiteur* when nobody is signed in |
+  | Whoever opens *l'espace d'administration* | *l'administrateur* — *l'administrateur de démonstration* when it is the identity of the fake ProConnect whose address is in the admitted domain; *un visiteur* when nobody is signed in |
+  | Whoever identifies themself through ProConnect, admitted or not | *l'agent*, introduced as *un agent* |
   | The person whose evidence is exchanged, or who identifies themself | *l'usager* |
   | The Evidence Provider, the Evidence Requester of another Member State | *le fournisseur*, *un requêteur étranger* |
   | The FranceConnect+ the suite runs itself | *le faux FranceConnect+*, in full, every time |
@@ -199,7 +200,7 @@ The rules above are the local dialect of a general discipline, described in Vlad
 | --- | --- | --- |
 | Presentation | `app/controllers/`, `app/views/`, `app/helpers/` | same, plus `app/filters/` (what a request derives from `params`), `app/components/` (ViewComponent) and `app/presenters/` (what a screen says of something, asked by a view and holding no request). Deliberately thin: the operator console and one landing page, the rest is machine-to-machine |
 | Application | `app/services/` | `app/interactors/` and `app/organizers/`. **There is no `app/services/` and none is wanted**: the interactor gem's context and `fail_with_error` are the local contract. Do not propose one |
-| Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **four** records: `Exchange`, `AuditEvent` (the exchange log of article 17), `PreviewSession` (what France keeps of one preview of chapter 4.9, for as long as it lasts), and `Administrator`, which exists only to open the operator console. "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
+| Domain | `app/models/`, mostly Active Record | `app/models/`, mostly `ActiveModel` value objects (`NaturalPerson`, `EbmsIdentity`, `EdmException`…) plus **three** records: `Exchange`, `AuditEvent` (the exchange log of article 17), and `PreviewSession` (what France keeps of one preview of chapter 4.9, for as long as it lasts). "Anemic model" and "god object" findings almost never apply; "value object" and "null object" often do |
 | Infrastructure | `app/jobs/`, `app/mailers/` | `app/clients/` (HTTP), `app/gateways/` (what is asked of a directory, and what its refusal becomes — `app/clients/` speaks a protocol where these speak a directory), `app/builders/` + `app/templates/` (message serialisation), `app/parsers/` (deserialisation), `app/jobs/`, `Settings`, `Clock`, `UuidGenerator` |
 
 Two corollaries the skill cannot know: `Current` attributes are unused and must stay so — the one session this application establishes is the operator console's login, which puts an id in `session` and reads it back in the filter that guards the console, so nothing needs a request-wide global and context travels as explicit arguments; and the specification test is the tool that transfers best as-is, since the question it asks ("does this object do something outside its layer's job?") needs no Rails convention to be answered.

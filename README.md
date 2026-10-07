@@ -18,12 +18,12 @@ $ make up      # à chaque fois
 
 | Commande | Ce qu'elle lance |
 | --- | --- |
-| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie, `fake-france-connect` joue FranceConnect+ et la passerelle eIDAS pour la [démarche de démonstration](docs/espace_administration.md#la-démarche-de-démonstration). **Les deux premiers sont nécessaires** — sans le worker, une demande reste indéfiniment en attente. Les bases et la passerelle suivent, `docker compose` les tirant par dépendance. Un déploiement, lui, lance `nginx`, qui ne tire pas le faux |
+| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie, `fake-france-connect` joue FranceConnect+ et la passerelle eIDAS pour la [démarche de démonstration](docs/espace_administration.md#la-démarche-de-démonstration), `fake-proconnect` joue ProConnect pour la connexion à l'[espace d'administration](docs/espace_administration.md#qui-peut-y-entrer). **Les deux premiers sont nécessaires** — sans le worker, une demande reste indéfiniment en attente. Les bases et la passerelle suivent, `docker compose` les tirant par dépendance. Un déploiement, lui, lance `nginx`, qui ne tire aucun des deux faux |
 | `make domibus` | La passerelle seule, puis attend que sa console réponde. De quoi la reconfigurer ou l'observer sans monter l'application |
 
 `make down` arrête tout en conservant les volumes.
 
-Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut), la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`) et le faux FranceConnect+ sur `http://localhost:<PORT_FAUX_FRANCE_CONNECT>/api/v2` (3100 par défaut). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion — le compte que `make setup` pose et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
+Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut), la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`) le faux FranceConnect+ sur `http://localhost:<PORT_FAUX_FRANCE_CONNECT>/api/v2` (3100 par défaut) et le faux ProConnect sur `http://localhost:<PORT_FAUX_PROCONNECT>/api/v2` (3200 par défaut). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion par le faux ProConnect — ses identités de test et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md#y-accéder-en-local). Que le serveur réponde se vérifie ainsi :
 
 ```sh
 $ curl "http://localhost:3000/requete/pieceJustificative?codeDemarche=00&codePays=FR"
@@ -171,5 +171,5 @@ Installer la même composition sur un serveur de test ou de démonstration — l
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
 - [docs/securite_transport.md](docs/securite_transport.md) — le profil TLS employé pour interroger les annuaires centraux, confronté exigence par exigence au chapitre 3.7 des TDD : versions, suites, groupes d'échange de clés, TLS mutuel, charge posée aux annuaires, DNSSEC.
 - [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
-- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le compte qui y donne accès.
+- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et ProConnect, par lequel on y entre.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).
