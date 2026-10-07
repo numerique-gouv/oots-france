@@ -1,7 +1,7 @@
 <% content_for :title, t('admin.demo.documents.show.title') %>
 
 <%= render DemoBreadcrumbsComponent.new(
-      specification: demo_specification,
+      specification: demo_specification, procedure: @procedure.code,
       trail: [[t('admin.demo.documents.show.title'), nil]],
     ) %>
 
@@ -39,4 +39,43 @@
     and/or in parallel ». %>
 <% @requirements.each do |requirement| %>
   <%= render requirement_card(requirement) %>
+<% end %>
+
+<%# The cards the operator added, under those of the procedure and in the
+    order they were added: each is a card like the others, with a cross. %>
+<% @added.each do |requirement| %>
+  <%= render requirement_card(requirement) %>
+<% end %>
+
+<%# Any other requirement the Evidence Broker's catalogue holds, offered as a
+    card to add, whether or not the broker ties it to the procedure. Absent
+    when the catalogue could not be read: the cards above stand without it. %>
+<% if @addable.present? %>
+  <div class="fr-col-12 fr-col-md-8 fr-mt-4w" lang="en">
+    <h2 class="fr-h6"><%= t('admin.demo.documents.show.add.heading') %></h2>
+
+    <%# The list and its button on one line; the label is said off screen
+        only, the heading above already saying what the list is for. %>
+    <%= form_with url: admin_demo_cartes_path, method: :post do |form| %>
+      <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
+        <div class="fr-col">
+          <div class="fr-select-group fr-mb-0">
+            <%= form.label :exigence, t('admin.demo.documents.show.add.label'), class: 'fr-label fr-sr-only',
+                  for: 'exigence-a-ajouter' %>
+            <%# Nothing chosen in advance: the empty first option is the DSFR's,
+                and the list is required. `select_tag` and not the form
+                builder's `select`, which would add a blank option of its own
+                above it. %>
+            <%= select_tag :exigence,
+                  options_for_select([[t('admin.demo.documents.show.add.placeholder'), '',
+                                       { disabled: true, hidden: true }], *@addable], ''),
+                  class: 'fr-select fr-mt-0', id: 'exigence-a-ajouter', required: true %>
+          </div>
+        </div>
+        <div class="fr-col-auto">
+          <%= form.submit t('admin.demo.documents.show.add.submit'), class: 'fr-btn fr-btn--secondary' %>
+        </div>
+      </div>
+    <% end %>
+  </div>
 <% end %>

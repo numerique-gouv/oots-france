@@ -28,6 +28,13 @@ Quand('l\'administrateur choisit la version {string}') do |carte|
   @ligne = EdmSpecification.from_segment("v#{carte.delete_prefix('OOTS ')}")
 end
 
+# The entry of one procedure, chosen from the screen that follows the line:
+# every page of the walk after it lives under its code too.
+Quand('l\'administrateur choisit la démarche {string}') do |code|
+  @navigateur.choose_procedure(code)
+  @demarche = code
+end
+
 Quand('il choisit le bouton du faux FranceConnect+') do
   @navigateur.start_identification('fake')
 end
@@ -60,7 +67,7 @@ end
 # The heading is the procedure's, as on the home page: the two are one journey.
 Alors('l\'administrateur arrive sur la page des justificatifs') do
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
-  expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
+  expect(@navigateur.title).to include(@demarche)
 end
 
 Alors('la page affiche {string} : {string}') do |intitule, valeur|
@@ -143,6 +150,22 @@ Quand('l\'usager confirme sa demande') do
   @navigateur.submit_to(adresse_de_la_demarche('demande'))
 end
 
+# The same click, on the card a scenario names: a procedure resting on several
+# requirements offers one button per card.
+Quand('l\'usager confirme la demande de la carte {string}') do |carte|
+  @journal_avant = ServerAuditEvent.maximum(:id).to_i
+  @navigateur.request_card(carte)
+end
+
+# Added from the list under the cards of the procedure: the page comes back
+# carrying the new card, whether or not the Evidence Broker ties its
+# requirement to the procedure.
+Quand('l\'usager ajoute la carte {string} à la page des justificatifs') do |carte|
+  @navigateur.add_card(adresse_de_la_demarche('cartes'), carte)
+
+  expect(@navigateur.current_url).to include(adresse_de_la_demarche('documents'))
+end
+
 # The click answers with the zone it was made in, saying the request is out. The
 # state is deliberately not asserted beyond that — the exchange is already on
 # its way, and what the correspondent has answered by the time this renders is
@@ -164,7 +187,7 @@ Alors('le journal des échanges contient le départ de la requête, envoyée par
   depart = depart_de_la_requete
 
   expect(depart.evidence_requester_id).to eq(ENV.fetch('IDENTIFIANT_REQUETEUR_DEMARCHE'))
-  expect(depart.procedure_code).to eq('T1')
+  expect(depart.procedure_code).to eq(@demarche)
   expect(depart.country_code).to eq('FR')
 end
 
@@ -198,6 +221,13 @@ end
 # every outcome of these scenarios goes through.
 # The console's page of the exchange the click opened, which says the line it
 # was conducted in.
+Alors('la fiche de cet échange affiche la démarche {string}') do |code|
+  @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
+
+  # Under the flag of the country asked, which the row carries before the code.
+  expect(@navigateur.rows.fetch(I18n.t('admin.journal.exchanges.attributes.procedure')).split.last).to eq(code)
+end
+
 Alors('la fiche de cet échange affiche la version {string}') do |version|
   @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
 
@@ -273,11 +303,13 @@ def lien_de_depart = @navigateur.links('.demo-request__preview a.fr-btn').first
 
 def de_retour_sur_la_demarche? = URI.parse(@navigateur.current_url).path == adresse_de_la_demarche('documents')
 
-# An address of the walk, under the segment of the line the scenario chose.
+# An address of the walk, under the segments of the line and the procedure the
+# scenario chose.
 def adresse_de_la_demarche(page = nil)
   raise 'Aucune version choisie : le pas « choisit la version » précède celui-ci.' if @ligne.nil?
+  raise 'Aucune démarche choisie : le pas « choisit la démarche » précède celui-ci.' if @demarche.nil?
 
-  ['/admin/demo', @ligne.segment, page].compact.join('/')
+  ['/admin/demo', @ligne.segment, @demarche, page].compact.join('/')
 end
 
 # The departure this scenario opened, found by the requester it was sent under

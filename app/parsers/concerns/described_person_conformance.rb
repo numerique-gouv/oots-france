@@ -130,10 +130,6 @@ module DescribedPersonConformance
   # `NaturalPerson::GENDERS`.
   EIDAS_GENDERS = NaturalPerson::GENDERS
 
-  # The scope of a power of representation, said in procedures: `C081` and
-  # `C091` admit a code of the `Procedures` list, or `00` beside it.
-  ADMITTED_PROCEDURES = (ProcedureCode::PUBLISHED + [ProcedureCode::SYSTEM_CHECK]).freeze
-
   # `R-EDM-REQ-C091` splits on this, a regular expression and not a literal:
   # `tokenize($attrval, ',\s*')`.
   PROCEDURE_SEPARATOR = /,\s*/
@@ -320,7 +316,7 @@ module DescribedPersonConformance
   # every sectoral attribute is judged. The assertion, not its message.
   def require_procedures(person, rule)
     all(person, './sdg:SectorSpecificAttribute/sdg:AttributeValue').each do |attribute|
-      unpublished = yield(attribute.text).reject { |value| ADMITTED_PROCEDURES.include?(value) }
+      unpublished = yield(attribute.text).reject { |value| ProcedureCode.admitted?(value) }
       next if unpublished.empty?
 
       refuse(rule, 'parsers.evidence_request.representative_procedure_unpublished',

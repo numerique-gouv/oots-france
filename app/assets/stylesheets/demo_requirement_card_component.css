@@ -63,3 +63,18 @@
 .requirement-card:has(.demo-request__body[data-outcome="delivered"]) {
   border: 1px solid var(--border-plain-success);
 }
+
+/*
+ * The cross of a card the operator added, in its top right corner, above the
+ * card's content rather than in its flow: the title keeps the whole line.
+ */
+.requirement-card {
+  position: relative;
+}
+
+.requirement-card__remove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 1;
+}

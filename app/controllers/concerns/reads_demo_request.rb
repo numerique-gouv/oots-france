@@ -86,9 +86,9 @@ module ReadsDemoRequest
   # again: it is the second round trip of the same exchange (chapter 4.9 §2
   # step 12).
   #
-  # The user comes back to this page, under the line of the journey: an address
-  # without its segment is one the walk no longer serves. What went wrong, if
-  # anything, is returned for the zone to say.
+  # The user comes back to this page, under the line and the procedure of the
+  # journey: an address without their segments is one the walk no longer
+  # serves. What went wrong, if anything, is returned for the zone to say.
   def confirm_preview(request, state)
     return nil unless state.preview_required? && !request.preview_link?
 
@@ -97,7 +97,10 @@ module ReadsDemoRequest
     result.error unless result.success?
   end
 
-  def demo_resume_location = "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment)}"
+  def demo_resume_location
+    "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment,
+      procedure: journey.procedure_code)}"
+  end
 
   # What the contract answered when it would not say the state — an exchange it
   # does not know, the feature switch closed: the zone says only that it could

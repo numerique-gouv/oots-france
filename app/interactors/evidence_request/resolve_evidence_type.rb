@@ -11,10 +11,20 @@ module EvidenceRequest
   #
   # Only the first type is kept. Letting the user choose among several is
   # chapter 4.10.
+  #
+  # `outside_procedure` resolves the requirement named by the second query of
+  # the Evidence Broker alone, whether or not the broker ties it to the
+  # procedure — chapter 3.2.4 §4.3 bases that query « on a requirement that is
+  # known to the Procedure Portal ». The screens of the demonstration ask for
+  # it; a French procedure has no reason to.
   class ResolveEvidenceType < ApplicationInteractor
     def call
-      resolve
-    rescue ProcedureCodeNotFound, EvidenceTypeNotFound => e
+      outside_procedure? ? resolve_outside_procedure : resolve
+    rescue RequirementNotFound => e
+      fail_with_error(:unknown_requirement, errors: [e.message])
+    rescue EvidenceTypeNotFound => e
+      fail_with_error(outside_procedure? ? :no_evidence_type : :unknown_procedure, errors: [e.message])
+    rescue ProcedureCodeNotFound => e
       fail_with_error(:unknown_procedure, errors: [e.message])
     rescue InvalidDirectoryEntry => e
       fail_with_error(:invalid_directory_entry, errors: [e.message])
@@ -30,9 +40,26 @@ module EvidenceRequest
 
       return fail_with_error(:no_evidence_type, errors: [unsatisfied]) if required.nil?
 
+      keep(required)
+    end
+
+    # No fallback on another requirement, as below: the one named is the one
+    # asked for, and a country declaring `NoMatch` for it satisfies nothing.
+    def resolve_outside_procedure
+      required = common_services.required_evidence_for_requirement(requirement_id, context.country_code)
+      context.required_evidence = [required]
+
+      return fail_with_error(:no_evidence_type, errors: [requirement_id]) unless required.published?
+
+      keep(required)
+    end
+
+    def keep(required)
       context.requirement = required.requirement
       context.evidence_type = required.evidence_types.first
     end
+
+    def outside_procedure? = context.outside_procedure.present?
 
     # What the caller named, or what it gets for naming nothing. A requirement
     # named but unheard of is a request nobody can fulfil under another name:

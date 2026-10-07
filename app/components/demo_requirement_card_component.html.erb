@@ -12,6 +12,17 @@
     its own edge past the card's padding, so a rule on it would run wider than
     the wording above it. %>
 <div class="<%= css_classes %>" id="<%= anchor %>" data-controller="demo-country">
+  <%# The cross of an added card, in its top right corner. Its name is said in
+      words to whoever cannot see the icon, which criterion 11.9 of the RGAA
+      asks of a button whose label is one. Outside what an answer replaces, so
+      no country chosen takes it away. %>
+  <% if removable? %>
+    <%= button_to removal_path, method: :delete, form: { class: 'requirement-card__remove', lang: 'en' },
+          class: 'fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-close-line',
+          title: t('components.demo_requirement_card.remove') do %>
+      <%= t('components.demo_requirement_card.remove') %>
+    <% end %>
+  <% end %>
   <div class="fr-card__body">
     <div class="fr-card__content">
       <%# The artwork the DSFR gives a document, at the height of the title and

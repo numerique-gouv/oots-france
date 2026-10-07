@@ -15,8 +15,6 @@ module Admin
       include HoldsDemoNames
       include BuildsDemoCards
 
-      UUID = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
-
       # An outage carries no code, and what the card says of it is one sentence
       # for every cause, which the browser shows on any `5xx` that is not a
       # fragment. Logged, so that the application log keeps what the card does
@@ -43,14 +41,19 @@ module Admin
 
       private
 
+      # An added card from its own requirement, any other under the procedure
+      # of the journey.
       def resolve(country_code)
+        added = added_card(requirement_uuid)
+        return resolve_added_card(added, country_code) if added
+
         DirectoryLookup::Resolve.call(
           evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
-          procedure_code: ::Demo::RequestEvidence::PROCEDURE_CODE, country_code:, requirement_id: requirement_uuid,
+          procedure_code: journey.procedure_code, country_code:, requirement_id: requirement_uuid,
         )
       end
 
-      def offered? = offered_country?(country) && requirement_uuid.match?(UUID)
+      def offered? = offered_country?(country) && requirement_uuid.match?(SemanticRepositoryAsset::UUID)
 
       def report_unreachable_directories(error)
         Rails.logger.warn(I18n.t('controllers.admin.demo.countries.unreachable', error: error.message))

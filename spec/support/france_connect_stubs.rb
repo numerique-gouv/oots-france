@@ -149,11 +149,12 @@ module FranceConnectStubs
   # The whole European flow as a request spec walks it: the departure, whose
   # `state` and `nonce` are read off the address the browser is sent to — never
   # written into the session by hand, which would prove nothing about what ties
-  # the return to the departure — and the return itself. `version` is the line
-  # of the sign-in page the departure is made from, which the journey plays.
-  def identify_demo_user(userinfo: DANISH_USERINFO, instance: nil, version: 'v2.0', **id_token)
+  # the return to the departure — and the return itself. `version` and
+  # `procedure` are the line and the procedure of the sign-in page the departure
+  # is made from, which the journey plays.
+  def identify_demo_user(userinfo: DANISH_USERINFO, instance: nil, version: 'v2.0', procedure: 'T1', **id_token)
     instance = stub_france_connect(userinfo:, instance:)
-    departure = depart_from_demo_home(instance, version:)
+    departure = depart_from_demo_home(instance, version:, procedure:)
 
     stub_france_connect_tokens(granted_id_token(instance, departure, id_token), issuer: instance.issuer)
 
@@ -164,8 +165,8 @@ module FranceConnectStubs
   # name travels in the body, and nothing else says where the flow departs — and
   # what the departure was written with, read off the address the browser is
   # sent to rather than out of the session.
-  def depart_from_demo_home(instance, version: 'v2.0')
-    post admin_demo_identification_path(version:), params: { france_connect: instance.name }
+  def depart_from_demo_home(instance, version: 'v2.0', procedure: 'T1')
+    post admin_demo_identification_path(version:, procedure:), params: { france_connect: instance.name }
 
     URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
   end

@@ -46,8 +46,20 @@ Quand("l'administrateur choisit la carte {string} de l'écran du choix de la ver
   click_link carte
 end
 
+# The screen the procedure is chosen on, every code a request may name, in the
+# order of the list, then the system check.
+Alors("l'écran du choix de la démarche affiche {string} en premier et {string} en dernier") do |premiere, derniere|
+  expect(page).to have_current_path(admin_demo_procedures_path(version: 'v2.0'))
+  codes = page.all('#liste-demarches .fr-card__title').map { |title| title.text.strip.split(' — ').first }
+  expect(codes.values_at(0, -1)).to eq([premiere, derniere])
+end
+
+Quand("l'administrateur choisit {string} sur l'écran du choix de la démarche") do |code|
+  find("a[href='#{admin_demo_home_path(version: 'v2.0', procedure: code)}']").click
+end
+
 Alors("la page d'accueil de la démarche de démonstration s'affiche") do
-  expect(page).to have_current_path(admin_demo_home_path(version: 'v2.0'))
+  expect(page).to have_current_path(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
   expect(page).to have_css('h1', text: "🇫🇷 #{ProcedureCode::STUDY_FINANCING}")
   expect(page).to have_css('h1 .directory-value', text: 'Apply for funding for higher education')
 end
@@ -62,7 +74,7 @@ end
 Alors("la page propose de s'identifier avec une identité d'un autre État membre") do
   expect(page).to have_css('h2', text: I18n.t('admin.demo.home.show.sign_in.heading'))
   expect(page).to have_button(I18n.t('admin.demo.home.show.france_connect.fake.button'), count: 1)
-  expect(page).to have_css("form[action='#{admin_demo_identification_path(version: 'v2.0')}'][method='post']")
+  expect(page).to have_css("form[action='#{admin_demo_identification_path(version: 'v2.0', procedure: 'T1')}'][method='post']")
 end
 
 Quand('un visiteur ouvre le tableau de bord des jobs') do

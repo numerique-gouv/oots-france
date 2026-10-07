@@ -78,36 +78,47 @@ Rails.application.routes.draw do
       # read whole despite its dot, which Rails would otherwise take for a format;
       # any other segment is an address that does not exist.
       scope ':version', constraints: { version: EdmSpecification::SEGMENTS } do
-        get '/', to: 'home#show', as: :home
-        # `create` and not `show`: starting the European flow writes the `state`
-        # and the `nonce` its return is checked against, which a prefetched or
-        # replayed GET would overwrite.
-        resource :identification, only: :create
-        # Where the user comes back to, identified, and the only page an exchange
-        # is asked for from. It carries the identity the authentication attested,
-        # and names the provider and the evidence type the directories resolve,
-        # which requirement 27 of chapter 1 asks for « before any request is
-        # made ».
-        #
-        # `resource` and not `resources`: there is one such page and no identifier
-        # reaches it, the session saying which documents are this user's.
-        resource :documents, only: :show, controller: 'documents'
-        # The request itself, and what became of it. `create` **is** the explicit
-        # request of chapter 1 §3.3, and the request leaves as the button is
-        # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
-        # from that instant. `show` renders the zone of the documents page that says where
-        # the request stands, and is the address that zone re-asks while it waits:
-        # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
-        # never asks anew — confirming, until it succeeds, the preview a correspondent asks for
-        # being the second round trip of the same exchange.
-        resource :demande, only: %i[show create], controller: 'requests'
-        # The member state one card resolves its requirement in, which the user
-        # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
-        # answers with the card alone, and opens nothing.
-        resource :pays, only: :update, controller: 'countries'
-        # The evidence itself. Nothing reaches it without the exchange the session
-        # is following.
-        get 'justificatif', to: 'evidences#show', as: :justificatif
+        # The screen the procedure the walk plays is chosen on.
+        get '/', to: 'procedures#index', as: :procedures
+
+        # Every page of the walk under the procedure it plays, its code right
+        # after the line: what a request may name in `Procedure` and nothing
+        # else, `R-EDM-REQ-C003` being FATAL.
+        scope ':procedure', constraints: { procedure: Regexp.union(ProcedureCode::ADMITTED) } do
+          get '/', to: 'home#show', as: :home
+          # `create` and not `show`: starting the European flow writes the `state`
+          # and the `nonce` its return is checked against, which a prefetched or
+          # replayed GET would overwrite.
+          resource :identification, only: :create
+          # Where the user comes back to, identified, and the only page an exchange
+          # is asked for from. It carries the identity the authentication attested,
+          # and names the provider and the evidence type the directories resolve,
+          # which requirement 27 of chapter 1 asks for « before any request is
+          # made ».
+          #
+          # `resource` and not `resources`: there is one such page and no identifier
+          # reaches it, the session saying which documents are this user's.
+          resource :documents, only: :show, controller: 'documents'
+          # The request itself, and what became of it. `create` **is** the explicit
+          # request of chapter 1 §3.3, and the request leaves as the button is
+          # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
+          # from that instant. `show` renders the zone of the documents page that says where
+          # the request stands, and is the address that zone re-asks while it waits:
+          # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
+          # never asks anew — confirming, until it succeeds, the preview a correspondent asks for
+          # being the second round trip of the same exchange.
+          resource :demande, only: %i[show create], controller: 'requests'
+          # The member state one card resolves its requirement in, which the user
+          # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
+          # answers with the card alone, and opens nothing.
+          resource :pays, only: :update, controller: 'countries'
+          # A card the operator adds to the documents page, beyond those the
+          # Evidence Broker lists for the procedure, and takes off it again.
+          resources :cartes, only: %i[create destroy], param: :exigence, controller: 'cards'
+          # The evidence itself. Nothing reaches it without the exchange the session
+          # is following.
+          get 'justificatif', to: 'evidences#show', as: :justificatif
+        end
       end
     end
 

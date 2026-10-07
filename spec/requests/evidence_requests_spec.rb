@@ -210,6 +210,58 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # RG11 and RG12 of OOTS-253: the parameter the screens of the demonstration
+  # set to ask for a requirement the Evidence Broker does not tie to the
+  # procedure.
+  describe 'a requirement asked for outside its procedure' do
+    let(:exigence) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }
+    let(:outside) { parameters.merge(codeDemarche: 'T1', idExigence: exigence, exigenceHorsDemarche: 'true') }
+
+    it 'passes the flag on, bare as well as true' do
+      get '/requete/pieceJustificative', params: outside.merge(exigenceHorsDemarche: '')
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(outside_procedure: true, requirement_id: exigence, procedure_code: 'T1'))
+    end
+
+    it 'leaves it down when the caller does not set it' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(outside_procedure: false))
+    end
+
+    it 'refuses it without a requirement to start from, before calling anything' do
+      get '/requete/pieceJustificative', params: outside.except(:idExigence)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('idExigence')
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+      expect(AuditEvent.last).to have_attributes(event_type: 'request_refused')
+    end
+
+    # `R-EDM-REQ-C003` (FATAL): nothing vets the code once the first query of the
+    # Evidence Broker is skipped, so the contract does, before anything is
+    # decrypted or asked of a directory.
+    it 'refuses a code neither the list nor the system check is, before calling anything' do
+      get '/requete/pieceJustificative', params: outside.merge(codeDemarche: 'Z9')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('Procedures')
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+      expect(AuditEvent.last).to have_attributes(event_type: 'request_refused', procedure_code: 'Z9')
+    end
+
+    it 'reports the refusals of the Evidence Broker as the caller fault, naming the requirement' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unknown_requirement, "Exigence « #{exigence} » inconnue de l'Evidence Broker"))
+
+      get '/requete/pieceJustificative', params: outside
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include(exigence)
+    end
+  end
+
   # Chapter 4.4 lets the Procedure Portal assign the conversation identifier, so
   # that two requests can be said to be one user's.
   describe 'the conversation the caller may name' do

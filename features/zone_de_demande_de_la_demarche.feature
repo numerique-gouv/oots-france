@@ -11,7 +11,9 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   soit l'ordre dans lequel les réponses reviennent. Le choix du pays
   fournisseur s'y joue aussi : la carte nomme ce que le pays choisi publie, sur
   chaque carte de la page, et la demande part vers lui ; un choix resté sans
-  réponse laisse la carte dans son pays et le dit à côté de la liste. Le
+  réponse laisse la carte dans son pays et le dit à côté de la liste. Une
+  carte ajoutée depuis le catalogue de l'Evidence Broker s'y tient sous celles
+  de la démarche, change de pays, se demande et se retire comme elles. Le
   serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
   reconstruit.
 
@@ -173,3 +175,17 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand le compte de l'administrateur est supprimé
     Et que l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Alors la page de connexion s'affiche
+
+  Scénario: une carte ajoutée se tient sous celles de la démarche, se demande dans son pays, et revient dans ce pays une fois retirée
+    Étant donné le catalogue de l'Evidence Broker offert sous les cartes de la démarche
+    Quand l'usager ajoute la carte "(TEST) Test Requirement 2"
+    Alors la carte "(TEST) Test Requirement 2" se tient sous celles de la démarche, avec le bouton "Remove this document"
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte "(TEST) Test Requirement 2"
+    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finland (FI)"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager clique sur le bouton de la carte "(TEST) Test Requirement 2"
+    Alors le contrat a reçu la demande pour le pays "FI"
+    Quand l'usager retire la carte "(TEST) Test Requirement 2"
+    Alors la page n'affiche pas la carte "(TEST) Test Requirement 2"
+    Quand l'usager ajoute la carte "(TEST) Test Requirement 2"
+    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finland (FI)"

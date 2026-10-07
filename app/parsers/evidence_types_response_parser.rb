@@ -10,9 +10,23 @@
 # `country-code` being optional on this query, the lists of every country come
 # back at once — each naming its own jurisdiction.
 class EvidenceTypesResponseParser < CommonServicesResponseParser
+  include RequirementReading
+
   def evidence_types = @read
 
   def evidence_type_lists = @lists
+
+  # The requirement the answer is about, which chapter 3.2.4 §4.3.1 has it carry
+  # whole — identifier, names, descriptions — around its evidence type lists:
+  # what a request naming a requirement it already knows writes into its
+  # `Requirements` slot, with no first query to read it from. Read on demand,
+  # the readers of the lists having no use for it.
+  def requirement
+    return @requirement if defined?(@requirement)
+
+    declared = records(REQUIREMENT).first
+    @requirement = declared && build_requirement(declared)
+  end
 
   private
 

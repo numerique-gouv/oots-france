@@ -14,10 +14,10 @@
 # blank rows, or seal a beneficiary token naming nobody — neither of which any
 # layer below would notice.
 #
-# A journey plays one line, from its opening to the next identification, and
-# its pages live under that line's segment: one opened under the other segment
-# is not a page of this walk, and is sent back to the screen the line is chosen
-# on.
+# A journey plays one line and one procedure, from its opening to the next
+# identification, and its pages live under their two segments: one opened under
+# another line or another procedure is not a page of this walk, and is sent back
+# to the screen the line is chosen on.
 module HoldsDemoJourney
   extend ActiveSupport::Concern
 
@@ -38,5 +38,7 @@ module HoldsDemoJourney
     redirect_to admin_demo_root_path unless identity&.valid? && journey&.valid? && walked_line?
   end
 
-  def walked_line? = journey.specification.segment == params[:version]
+  def walked_line?
+    journey.specification.segment == params[:version] && journey.procedure_code == params[:procedure]
+  end
 end

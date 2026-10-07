@@ -509,7 +509,9 @@ RSpec.describe IncomingMessage::Process do
     include ActiveSupport::Testing::TimeHelpers
 
     let(:gateway) { gateway_accepting_submissions(retrieve: message) }
-    let(:message) { earlier_line_envelope }
+    # For a type France serves (`ServedEvidenceType`), so that an answer goes
+    # back and is journalled.
+    let(:message) { earlier_line_envelope { |body| asking_for_a_served_type(body) } }
 
     before { travel_to(Time.zone.parse('2026-08-11T09:22:22.000Z')) }
 

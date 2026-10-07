@@ -2,6 +2,13 @@
 # `spec/fixtures/README.md` for what each directory is worth as evidence:
 # `reference/` and `incoming/reel/` are authoritative, `incoming/` is not.
 module Fixtures
+  # A request body asking for « FR - Test Evidence Type », one of the types
+  # France serves as a provider.
+  SERVED_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
+
+  # One of another member state's, which France does not serve.
+  UNSERVED_TYPE = 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e'.freeze
+
   def reference_message(name) = read_fixture("reference/messages/#{name}.xml")
 
   def reference_header(name) = read_fixture("reference/messages/#{name}.entete.xml")
@@ -398,6 +405,10 @@ module Fixtures
     document.xpath("#{list}/rim:RegistryObject", OotsNamespaces::NAMESPACES).each(&:remove)
 
     document.to_xml
+  end
+
+  def asking_for_a_served_type(body)
+    body.gsub(/(<sdg:EvidenceTypeClassification>)[^<]*/, "\\1#{SERVED_TYPE}")
   end
 
   def rewrite_body(document)

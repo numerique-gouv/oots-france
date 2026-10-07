@@ -17,12 +17,14 @@ module Directories
     # because only one of them says anything about the country asked.
     # `EB:ERR:0001` — « The result set is empty » — is the directory holding no
     # information about this requirement there, and is the one a caller may hold
-    # back. `EB:ERR:0002` answers a query that named no requirement: a fault of
-    # ours, never a fact about a country, so it stays loud however many other
+    # back. `EB:ERR:0002` — « The requirement requested, represented by the
+    # requirement id, does not exist » (chapter 3.2.4 §4.4.4) — is never a fact
+    # about a country: on a requirement the first query has just listed it says
+    # the directory contradicts itself, so it stays loud however many other
     # requirements publish. `Directories::Catalogue#published_in` draws the same
     # line for the same reason.
     NO_EVIDENCE_INFORMATION = %w[EB:ERR:0001].freeze
-    MALFORMED_EVIDENCE_QUERY = %w[EB:ERR:0002].freeze
+    UNKNOWN_REQUIREMENT = %w[EB:ERR:0002].freeze
 
     # What a request needs to name what it asks for: the requirement it has to
     # declare (R-EDM-REQ-S011), and the evidence types that satisfy it.
@@ -69,7 +71,7 @@ module Directories
       deferred = nil
       found = requirements(procedure_code)
 
-      resolved = refusing(MALFORMED_EVIDENCE_QUERY, procedure_code, country_code) do
+      resolved = refusing(UNKNOWN_REQUIREMENT, procedure_code, country_code) do
         found.map do |requirement|
           types = types_satisfying(requirement, procedure_code, country_code) { |held| deferred ||= held }
 
@@ -80,6 +82,24 @@ module Directories
       raise deferred if deferred && resolved.none?(&:published?)
 
       resolved
+    end
+
+    # A requirement the caller already knows, asked for by the second query
+    # alone: chapter 3.2.4 §4.3 has it based « on a requirement that is known to
+    # the Procedure Portal or that is determined via the Evidence Broker's first
+    # query », and chapter 1 §6.2 leaves the broker out altogether « in
+    # situations where the evidence requester already has obtained the response
+    # information ». No procedure is asked about, so none has to declare it.
+    #
+    # The requirement is the one that answer carries, vetted like those of the
+    # first query: it goes into the `Requirements` slot all the same.
+    def required_evidence_for_requirement(requirement_id, country_code)
+      answer = requirement_refusing(requirement_id, country_code) do
+        @evidence_broker.requirement_evidence(requirement_id:, country_code:)
+      end
+
+      RequiredEvidence.new(requirement: vetted(answer.requirement, :announced_requirement),
+        evidence_types: answer.evidence_types)
     end
 
     # One service and not the providers it publishes: chapter 4.5.1 has a
@@ -145,6 +165,17 @@ module Directories
       translating(codes, EvidenceTypeNotFound,
         'gateways.directories.common_services.no_evidence_type',
         procedure: procedure_code, country: country_code, &)
+    end
+
+    # The two refusals of the second query, said of the requirement rather than
+    # of a procedure nobody asked about.
+    def requirement_refusing(requirement_id, country_code, &)
+      translating(UNKNOWN_REQUIREMENT, RequirementNotFound,
+        'gateways.directories.common_services.unknown_requirement', requirement: requirement_id) do
+        translating(NO_EVIDENCE_INFORMATION, EvidenceTypeNotFound,
+          'gateways.directories.common_services.no_evidence_for_requirement',
+          requirement: requirement_id, country: country_code, &)
+      end
     end
 
     def unknown_procedure(code)

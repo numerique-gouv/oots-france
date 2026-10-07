@@ -39,8 +39,12 @@ module Demo
     # The line every request of the walk goes out in, chosen before the
     # identification and kept until the next one.
     attribute :specification, EdmSpecification::Type.new
+    # The procedure every request of the walk goes out under, chosen with the
+    # line and kept as long.
+    attribute :procedure_code, :string
 
-    validates :id, :conversation_id, :subject, :specification, presence: true
+    validates :id, :conversation_id, :subject, :specification, :procedure_code, presence: true
+    validates :procedure_code, inclusion: { in: ProcedureCode::ADMITTED }, allow_blank: true
 
     # The journey an identification opens. `previous` is the one it replaces,
     # `nil` on a first sign-in; its conversation is carried over when the same
@@ -49,9 +53,9 @@ module Demo
     # `R-EDM-ebMS-017` (FATAL) — « The eb:ConversationId MUST be expressed as
     # UUID » — which is what `UuidGenerator` mints, injected by keyword like the
     # builders take it so a spec can freeze both identifiers.
-    def self.opened(previous:, subject:, specification:, uuid: UuidGenerator.new)
+    def self.opened(previous:, subject:, specification:, procedure_code:, uuid: UuidGenerator.new)
       new(id: uuid.next, conversation_id: conversation_for(previous, subject) || uuid.next, subject:,
-        specification:).freeze
+        specification:, procedure_code:).freeze
     end
 
     def self.conversation_for(previous, subject)

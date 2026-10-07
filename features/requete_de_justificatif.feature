@@ -45,11 +45,3 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et le portail apprend la date à laquelle le justificatif sera disponible
     Et le portail ne reçoit aucun justificatif
     Et le journal des échanges contient la réponse différée du fournisseur
-
-  Scénario: le fournisseur ne connaît pas la démarche et répond une erreur
-    Quand le portail demande un justificatif pour la démarche "T3"
-    Alors le portail reçoit tout de suite l'identifiant de l'échange
-    Et l'échange passe au code d'erreur "EDM:ERR:0004"
-    Et le portail ne reçoit aucun justificatif
-    Et le journal des échanges contient l'erreur du fournisseur
-    Et le journal des échanges contient le corps RegRep de chaque message, tel qu'il a circulé

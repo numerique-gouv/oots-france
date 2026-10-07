@@ -9,7 +9,7 @@ RSpec.describe Demo::RequestEvidence do
   let(:identity) { Demo::UserIdentity.new(family_name: 'Sørensen') }
   let(:journey) do
     Demo::Journey.new(id: 'un-parcours', conversation_id: 'une-conversation', subject: 'un-pseudonyme',
-      specification: EdmSpecification::V1_2)
+      specification: EdmSpecification::V1_2, procedure_code: 'U1')
   end
   let(:requirement_uuid) { '00000000-0000-0000-0000-000000000000' }
   let(:token_writer) { instance_double(Demo::BeneficiaryTokenWriter, call: 'un-jeton-chiffré') }
@@ -20,12 +20,13 @@ RSpec.describe Demo::RequestEvidence do
 
   # Step 16 of chapter 1 §10.1: the member state is the one the user picked on
   # the card, and nothing here decides it.
-  it 'asks for the study financing in the member state the card named' do
+  it 'asks under the procedure of the journey, in the member state the card named' do
     result
 
     expect(client).to have_received(:fetch).with(
-      hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'T1', country_code: 'FI'),
+      hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'U1', country_code: 'FI'),
     )
+    expect(Demo::Request.sole.procedure_code).to eq('U1')
   end
 
   # The line the journey plays, which a French procedure would not name: the

@@ -10,6 +10,16 @@ RSpec.describe 'The preview France offers as a provider' do
   PREVIEW_CAPTURED_AT = '2026-08-11T09:22:22.000Z'.freeze
   RS = { 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0', **SlotReading::NAMESPACES }.freeze
 
+  # The captured request asks for a type of another member state, which France
+  # does not serve (`ServedEvidenceType`): every envelope of this file asks for
+  # one it declares instead, the procedure it names left as captured.
+  def real_envelope(name)
+    document = Nokogiri::XML(super)
+    rewrite_body(document) { |body| asking_for_a_served_type(body) }
+
+    document.to_xml
+  end
+
   let(:submitted) { [] }
   let(:gateway) { instance_double(DomibusClient) }
   let(:first) { request_asking_preview }
@@ -91,8 +101,13 @@ RSpec.describe 'The preview France offers as a provider' do
       end
     end
 
-    it 'refuses an unknown procedure without preview' do
-      deliver(asking_preview_for('ZZ'), 'm001')
+    it 'refuses a type it does not serve without preview' do
+      unserved = envelope_with_body('requete') do |body|
+        body.dup.force_encoding(Encoding::UTF_8).sub(PreviewRequests::FLAG, '\\1true')
+          .sub(Fixtures::SERVED_TYPE, Fixtures::UNSERVED_TYPE)
+      end
+
+      deliver(unserved, 'm001')
 
       expect(exception_of(body_of(submitted.sole))['code']).to eq('EDM:ERR:0004')
       expect(PreviewSession.count).to eq(0)

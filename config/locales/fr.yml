@@ -240,7 +240,8 @@ fr:
     # l'exploitant. La miette de la version, elle, est son numéro, qui ne se
     # traduit pas.
     demo_breadcrumbs:
-      demo: Démo
+      demo: Demo
+      procedure: "Procedure %{code}"
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     # Le bouton qui déplie le corps RegRep d'un événement : il en annonce la
@@ -272,6 +273,9 @@ fr:
       # Ce que la carte dit à la place du bouton quand le point d'accès du
       # fournisseur n'annonce pas la version du parcours.
       unsupported_version: This provider does not support OOTS %{version}
+      # Le nom de la croix d'une carte ajoutée, que son icône ne dit qu'à l'œil
+      # (critère 11.9 du RGAA).
+      remove: Remove this document
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
@@ -592,6 +596,18 @@ fr:
         # causes, et la trace de celle-ci resterait sinon introuvable.
         countries:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
+        # Écrit dans le log : l'écran du choix de la démarche perd les pieds
+        # des démarches que la France déclare, et rien d'autre.
+        procedures:
+          undeclared: "Démarches déclarées par la France illisibles pour l'écran du choix de la démarche : %{error}"
+        # Écrit dans le log par la page des justificatifs et par l'ajout d'une
+        # carte : l'une perd le choix d'une carte à ajouter, l'autre n'ajoute
+        # rien, quand le catalogue de l'Evidence Broker ne répond pas.
+        catalogue_unreachable: "Catalogue de l'Evidence Broker illisible pour la démarche de démonstration : %{error}"
+        # Écrit dans le log : une carte demandée que le catalogue ne porte plus
+        # n'est pas ajoutée, et la page revient telle quelle.
+        cards:
+          uncatalogued: "Exigence %{requirement} absente du catalogue de l'Evidence Broker : aucune carte ajoutée"
         # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
         # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
@@ -611,12 +627,13 @@ fr:
     reads_demo_request:
       unanswered: "État de la demande de la démarche de démonstration illisible : %{error}"
       unreadable: "Le contrat n'a pas dit l'état de l'échange %{exchange} de la démarche de démonstration (%{status}) : %{error}"
-    # Une identification réussie dont le départ n'a retenu aucune version : aucun
-    # parcours ne s'ouvre, et l'exploitant repart de l'écran du choix.
+    # Une identification réussie dont le départ n'a retenu aucune version ou
+    # aucune démarche : aucun parcours ne s'ouvre, et l'exploitant repart de
+    # l'écran du choix.
     france_connect:
-      lineless_departure: >-
-        Le départ vers FranceConnect+ n'a retenu aucune version de la démarche : choisir une version,
-        puis s'identifier de nouveau.
+      incomplete_departure: >-
+        Le départ vers FranceConnect+ n'a retenu aucune version ou aucune démarche : choisir une version
+        et une démarche, puis s'identifier de nouveau.
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -628,6 +645,10 @@ fr:
         no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
         no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
         unknown_procedure: Code de démarche « %{procedure} » introuvable
+        # Les deux refus d'une exigence demandée sans sa démarche : l'Evidence
+        # Broker ne la connaît pas, ou ne publie rien pour elle dans ce pays.
+        unknown_requirement: Exigence « %{requirement} » inconnue de l'Evidence Broker
+        no_evidence_for_requirement: Aucun type de justificatif pour l'exigence « %{requirement} » dans le pays « %{country} »
       evidence_requesters:
         unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
   jobs:
@@ -1290,7 +1311,7 @@ fr:
       untyped_object: sans type
       absent_value: absent
       absent_date: absente
-    requirements_response:
+    requirement_reading:
       requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
     error_response:
       no_exception: Pas de rs:Exception dans la réponse d'erreur reçue.
@@ -1445,6 +1466,11 @@ fr:
         (%{count} objet(s) dans la réponse).
   # Ce qu'un écran dit d'un objet, quand l'objet ne peut pas le dire lui-même.
   presenters:
+    # L'intitulé d'une démarche que rien ne nomme, en anglais comme tout
+    # l'espace de démonstration : `00`, qu'aucune liste ne porte, ou une
+    # démarche dont ni l'annuaire ni la liste n'ont répondu.
+    demo_procedure_wording:
+      untitled: No label
     country_wording:
       by: par %{country}
       # Chaque morceau porte son espace ou sa virgule d'attache : la phrase
@@ -1532,6 +1558,13 @@ fr:
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
     specification_invalid: "La version demandée doit être %{spoken}"
+    # Une exigence demandée hors de sa démarche (`exigenceHorsDemarche`) : il
+    # n'y a rien d'où partir sans elle, et le code de démarche n'est plus
+    # vérifié par l'Evidence Broker — R-EDM-REQ-C003 le borne à la liste
+    # `Procedures` et à `00`.
+    outside_procedure:
+      requirement_required: Une exigence demandée hors de sa démarche doit être nommée en idExigence
+      procedure_invalid: Le code de démarche doit être un code de la liste Procedures, ou 00
   # La confirmation d'une prévisualisation qu'un correspondant demande, second
   # appel de l'interface requêteur.
   preview_confirmations:
@@ -2020,20 +2053,37 @@ fr:
     # La seule partie de la console qui ne relise rien : `docs/espace_administration.md`
     # dit quel rôle l'exploitant y tient, et pourquoi elle est là.
     demo:
-      # Le premier écran de la démonstration, où l'exploitant choisit la ligne
-      # des TDD que le parcours joue. Il est de la console et parle en
-      # français : aucun usager d'un portail ne choisit une version des TDD.
+      # Les deux premiers écrans de la démonstration, où l'exploitant choisit la
+      # ligne des TDD puis la démarche que le parcours joue. En anglais, comme
+      # tout l'espace de démonstration.
       versions:
         index:
-          title: Choisir la version OOTS
-          lead: >-
-            La démarche de démonstration demande chaque justificatif du parcours dans la version
-            choisie ici, jusqu'à la prochaine identification.
+          title: Choose the OOTS version
+          lead: Every document of the journey is requested in the version chosen here, until the next sign-in.
           card: OOTS %{number}
           # Une phrase par ligne, sous la clé que `EdmSpecification#slug` donne.
           descriptions:
-            v2_0: La version la plus récente mais encore peu implémentée
-            v1_2: La version supportée par la majorité des états membres
+            v2_0: The most recent version, still implemented by few member states
+            v1_2: The version supported by most member states
+      procedures:
+        index:
+          title: Choose the procedure
+          lead: >-
+            The procedures France declares with requirements in the Evidence Broker come first. But you can
+            pick any procedure and request any document for demonstration purposes.
+          search: Search a code or a title
+          empty: No procedure matches this search.
+          # Le décompte que le champ de recherche réécrit.
+          count:
+            zero: No procedure
+            one: 1 procedure
+            other: "%{count} procedures"
+          # Le pied d'une démarche que la France déclare : le pays, drapeau
+          # compris, puis le nombre d'exigences qu'elle y publie, chacune
+          # demandant un document.
+          declared_by_html:
+            one: "%{country} requires %{count} document"
+            other: "%{country} requires %{count} documents"
       home:
         show:
           title: Demonstration procedure
@@ -2092,6 +2142,14 @@ fr:
           # exigence — regarde l'annuaire, et son code reste à la console.
           nothing_listed: The European directories listed no evidence for this procedure.
           unreachable: The European directories could not be reached
+          # Ce qui offre d'ajouter, sous les cartes de la démarche, la carte de
+          # n'importe quelle exigence du catalogue de l'Evidence Broker.
+          add:
+            heading: Add another evidence
+            label: Document to add
+            # La première option, vide, tant que rien n'est choisi.
+            placeholder: Select a document
+            submit: Add
       evidences:
         show:
           # Le nom proposé par le navigateur à l'enregistrement.

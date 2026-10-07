@@ -14,6 +14,7 @@ module Demo
     # user's right, and only « applicable Union or national law » exempts a
     # procedure from it (article 14(5)): none exempts this one.
     PREVIEW_POSSIBLE = 'true'.freeze
+    OUTSIDE_PROCEDURE = 'true'.freeze
 
     def initialize(connection: Faraday.new)
       @connection = connection
@@ -29,8 +30,13 @@ module Demo
     #
     # `specification` is the line of the journey, a parameter no French
     # procedure has to set: each screen of the demonstration plays one line.
+    #
+    # `outside_procedure` asks for the requirement whether or not the Evidence
+    # Broker ties it to the procedure, another parameter no French procedure has
+    # to set: a card says what it resolved, and the request goes to what it
+    # showed.
     def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:,
-              conversation_id: nil, requirement_id: nil, specification: nil)
+              conversation_id: nil, requirement_id: nil, specification: nil, outside_procedure: false)
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
         codeDemarche: procedure_code,
@@ -40,6 +46,7 @@ module Demo
         idConversation: conversation_id,
         idExigence: requirement_id,
         specification:,
+        exigenceHorsDemarche: (OUTSIDE_PROCEDURE if outside_procedure),
       }.compact)
 
       ContractAnswer.from(response, path: PATH)

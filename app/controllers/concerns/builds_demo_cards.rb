@@ -19,7 +19,24 @@ module BuildsDemoCards
     DemoRequirementCardComponent.new(
       wording:, country_code: wording.country_code, country_name: country_name(wording.country_code),
       countries: country_options(wording), zone: (demo_request_zone(wording) if wording.nameable? && spoken),
-      unspoken: (demo_specification unless spoken),
+      unspoken: (demo_specification unless spoken), removable: added_card(wording.requirement_uuid).present?,
+    )
+  end
+
+  # The cards the operator added beyond those the Evidence Broker lists for the
+  # procedure, by requirement, in the order they were added.
+  def added_cards = @added_cards ||= ::Demo::Card.added(journey.id).index_by(&:requirement_uuid)
+
+  def added_card(requirement_uuid) = added_cards[requirement_uuid]
+
+  # An added card resolved from the requirement its row keeps, by the second
+  # query of the Evidence Broker and the Data Service Directory alone: chapter
+  # 3.2.4 §4.3 bases that query « on a requirement that is known to the
+  # Procedure Portal », and the procedure of the journey need not declare it.
+  def resolve_added_card(card, country_code)
+    DirectoryLookup::ResolveRequirement.call(
+      evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
+      requirement: card.requirement, country_code:,
     )
   end
 

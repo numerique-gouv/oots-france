@@ -1,0 +1,2 @@
+class RequirementNotFound < EbmsError
+end

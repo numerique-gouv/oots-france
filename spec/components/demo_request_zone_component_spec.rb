@@ -5,7 +5,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # component writes take it from the page being rendered.
   subject(:zone) { described_class.new(outcome:, requirement_uuid:) }
 
-  around { |example| with_request_url('/admin/demo/v2.0/documents') { example.run } }
+  around { |example| with_request_url('/admin/demo/v2.0/T1/documents') { example.run } }
 
   let(:requirement_uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
 
@@ -69,7 +69,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
       recours = page.find('[data-demo-request-target="disconnected"]', visible: :all)
 
-      expect(recours).to have_link('Reload the page', href: '/admin/demo/v2.0/documents', visible: :all)
+      expect(recours).to have_link('Reload the page', href: '/admin/demo/v2.0/T1/documents', visible: :all)
       expect(recours).to have_no_button('Request the document', visible: :all)
     end
 
@@ -91,7 +91,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_link('Open the document',
-        href: "/admin/demo/v2.0/justificatif?exigence=#{requirement_uuid}")
+        href: "/admin/demo/v2.0/T1/justificatif?exigence=#{requirement_uuid}")
       expect(page).to have_css('.demo-request__body[data-polling="false"]')
       expect(page).to have_no_button('Request the document')
     end
@@ -328,7 +328,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css(
-        "form.demo-request__button[action='/admin/demo/v2.0/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
+        "form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
         visible: :all,
       )
     end

@@ -1,0 +1,50 @@
+<% content_for :title, t('admin.demo.procedures.index.title') %>
+
+<%= render DemoBreadcrumbsComponent.new(specification: @specification) %>
+
+<%# In English, like every page of the demonstration. %>
+<div lang="en">
+  <h1><%= t('admin.demo.procedures.index.title') %></h1>
+
+  <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.procedures.index.lead') %></p>
+
+  <%= render SearchFieldComponent.new(
+        label: t('admin.demo.procedures.index.search'),
+        id: 'recherche-demarche',
+        entries: '#liste-demarches > *',
+        tally: '#decompte-demarches',
+        empty: '#aucune-demarche',
+      ) %>
+
+  <p class="fr-text--sm fr-mb-2w" id="decompte-demarches" aria-live="polite"
+    data-tally="<%= tally_forms('admin.demo.procedures.index.count') %>">
+    <%= t('admin.demo.procedures.index.count', count: @procedures.size) %>
+  </p>
+
+  <%# One card per code, in the order `ProcedureCode.ordered` sets. A code no
+      list titles, `00` among them, stands under the wording of an untitled
+      procedure. A procedure France declares says so in its footer, on one
+      line. %>
+  <div id="liste-demarches">
+    <% @procedures.each do |code| %>
+      <div>
+        <%= render CardComponent.new(
+              title: ProcedureComponent.label(code, @names[code].presence || DemoProcedureWording.untitled),
+              hint: ProcedureComponent.hint(@names[code]),
+              href: admin_demo_home_path(procedure: code),
+              dense: true, clickable: true,
+            ) do |carte| %>
+          <% if (count = @requirements_declared[code]) %>
+            <% carte.with_list do %>
+              <p class="fr-mb-0"><%= t('admin.demo.procedures.index.declared_by_html', count:,
+                    country: render(CountryTagComponent.new(code: Settings.common_services_country_code,
+                      name: @country_name))) %></p>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <p id="aucune-demarche" hidden><%= t('admin.demo.procedures.index.empty') %></p>
+</div>

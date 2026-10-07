@@ -69,6 +69,35 @@ class DemoBrowser
     visit(link['href'])
   end
 
+  # A card of the screen the procedure is chosen on, named by the code its title
+  # opens with, and followed where its link leads.
+  def choose_procedure(code)
+    link = document.css('.fr-card__title a').find { |candidate| candidate.text.strip.split(' — ').first == code }
+    raise ArgumentError, "Aucune démarche « #{code} » sur #{procedure_url}" if link.nil?
+
+    visit(link['href'])
+  end
+
+  # The button of one card of the documents page, the card named by its title
+  # as the operator reads it: several cards submit to the same address, each
+  # naming its own requirement.
+  def request_card(title)
+    form = card_titled(title).at_css('.demo-request form')
+    raise ArgumentError, "Aucun bouton sur la carte « #{title} » : #{body}" if form.nil?
+
+    send_form(form)
+  end
+
+  # A card added from the list the documents page offers, its entry named as
+  # the list shows it.
+  def add_card(path, name)
+    form = form_posting_to(path)
+    option = form.css('select option').find { |candidate| candidate.text.strip == name }
+    raise ArgumentError, "Aucune exigence « #{name} » à ajouter : #{body}" if option.nil?
+
+    send_form(form, option.ancestors('select').first['name'] => option['value'])
+  end
+
   # The three pages of the European path, each submitted where the page itself
   # says to.
   def choose(name, value) = submit(name => value)
@@ -118,6 +147,11 @@ class DemoBrowser
 
   def only_form
     document.at_css('form') || raise("Aucun formulaire dans la page « #{title} » : #{body}")
+  end
+
+  def card_titled(title)
+    document.css('.requirement-card').find { |card| card.at_css('.fr-card__title')&.then { seen(it) } == title } ||
+      raise(ArgumentError, "Aucune carte « #{title} » dans la page « #{self.title} » : #{body}")
   end
 
   def card_of(france_connect)

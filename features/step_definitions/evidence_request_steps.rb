@@ -25,13 +25,14 @@ end
 # portal is the one that knows two requests are the same person's. It says so by
 # naming the same conversation twice.
 #
-# On a procedure no evidence is served for, deliberately: what is asserted here
-# is what the two requests are given at once, and a scenario that also set a
-# delivery going would hand its PDF to the next scenario's requester, the two
-# listening on one port.
+# On the procedure France answers with a deferral, deliberately: what is
+# asserted here is what the two requests are given at once, and a scenario that
+# also set a delivery going would hand its PDF to the next scenario's requester,
+# the two listening on one port. France serves on the type asked for, so no
+# other procedure keeps a document from leaving.
 Quand('le portail demande deux justificatifs pour le même usager') do
-  @premier = etat_de(demande('T3', conversation: SESSION_USAGER))
-  @second = etat_de(demande('T3', conversation: SESSION_USAGER))
+  @premier = etat_de(demande(ProcedureCode::BIRTH_REGISTRATION, conversation: SESSION_USAGER))
+  @second = etat_de(demande(ProcedureCode::BIRTH_REGISTRATION, conversation: SESSION_USAGER))
 end
 
 Alors('les deux requêtes ont la même conversation et deux échanges distincts') do
