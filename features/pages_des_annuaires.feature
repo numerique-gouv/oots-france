@@ -15,7 +15,6 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
 
   Contexte:
     Étant donné un Evidence Broker qui publie le catalogue des exigences
-    Et un compte d'administrateur
     Et un administrateur connecté à l'espace d'administration
 
   Scénario: la liste des exigences arrive après la page, sous une zone d'attente
@@ -96,9 +95,9 @@ Fonctionnalité: Consulter les pages des annuaires centraux dans un navigateur
   Scénario: une session finie pendant l'attente mène à la connexion, puis à la page entière
     Étant donné que le contenu de la page des exigences est retenu
     Quand l'administrateur ouvre la page des exigences
-    Et que son compte est supprimé
+    Et que sa session prend fin
     Et que le contenu est servi
     Alors la page de connexion s'affiche
     Et la page n'affiche pas "Le contenu de cette page n'a pas pu être chargé."
-    Quand un autre administrateur se connecte
+    Quand l'administrateur se reconnecte
     Alors la page des exigences s'affiche entière, avec son titre et sa liste

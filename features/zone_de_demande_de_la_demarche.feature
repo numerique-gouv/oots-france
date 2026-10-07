@@ -21,7 +21,6 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
 
   Contexte:
     Étant donné les annuaires et le contrat de la démarche doublés
-    Et un compte d'administrateur
     Et un administrateur connecté à l'espace d'administration
     Et l'usager identifié sur la page des justificatifs
 
@@ -120,7 +119,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: une session finie pendant l'attente mène à la page de connexion dans la fenêtre
     Étant donné une demande en cours
     Et une interrogation retenue devant le navigateur
-    Quand le compte de l'administrateur est supprimé
+    Quand la session de l'administrateur prend fin
     Et que l'interrogation retenue est libérée
     Alors la page de connexion s'affiche
     Et la page n'affiche pas "This page could not reach the service."
@@ -170,6 +169,6 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Alors la page des justificatifs a été rechargée
     Et la page n'affiche pas "The country could not be changed"
-    Quand le compte de l'administrateur est supprimé
+    Quand la session de l'administrateur prend fin
     Et que l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Alors la page de connexion s'affiche

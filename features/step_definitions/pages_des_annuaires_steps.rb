@@ -98,13 +98,12 @@ Quand('le contenu est servi') do
   listing_request.release
 end
 
-Quand('son compte est supprimé') do
-  @administrator.destroy!
+Quand('sa session prend fin') do
+  page.driver.clear_cookies
 end
 
-Quand('un autre administrateur se connecte') do
-  @administrator = create(:administrator)
-  sign_in(@administrator.password)
+Quand("l'administrateur se reconnecte") do
+  sign_in_through_pro_connect
 end
 
 Quand(/^(?:l'administrateur|il) cherche "([^"]*)"$/) do |terms|

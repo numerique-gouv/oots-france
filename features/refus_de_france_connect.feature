@@ -15,7 +15,6 @@ Fonctionnalité: Lire à l'écran la raison d'un refus de FranceConnect+
 
   Contexte:
     Étant donné les annuaires et le contrat de la démarche doublés
-    Et un compte d'administrateur
     Et un administrateur connecté à l'espace d'administration
 
   Scénario: l'accueil de la démarche nomme le refus que FranceConnect+ a répondu

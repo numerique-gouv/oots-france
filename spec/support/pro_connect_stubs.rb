@@ -106,7 +106,3 @@ module ProConnectStubs
       params: { code: 'un-code', state: state || departure.fetch('state') }
   end
 end
-
-RSpec.configure do |config|
-  config.include ProConnectStubs
-end

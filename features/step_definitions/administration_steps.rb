@@ -5,14 +5,20 @@ COUNTRIES = {
   'allemand' => 'DE',
 }.freeze
 
-# Created in a step and not once for the whole run: `cucumber-rails` cleans the
-# database around every scenario, so an account posted beforehand would be gone.
-Étantdonné("un compte d'administrateur") do
-  @administrator = create(:administrator)
+Étantdonné("un administrateur connecté à l'espace d'administration") do
+  sign_in_through_pro_connect
 end
 
-Étantdonné("un administrateur connecté à l'espace d'administration") do
-  sign_in(@administrator.password)
+Quand("l'administrateur s'identifie par ProConnect") do
+  sign_in_through_pro_connect
+end
+
+Quand("un agent s'identifie par ProConnect avec l'adresse {string}") do |email|
+  sign_in_through_pro_connect(email:)
+end
+
+Étantdonné('ProConnect refuse la prochaine identification') do
+  BROWSER_PRO_CONNECT.refuse_next
 end
 
 Étantdonné('un échange délivré avec la Finlande') do
@@ -69,10 +75,6 @@ Quand('un visiteur ouvre le tableau de bord des jobs') do
   visit admin_jobs_path
 end
 
-Quand('l\'administrateur se connecte avec un mot de passe incorrect') do
-  sign_in('un-autre-mot-de-passe')
-end
-
 Quand('l\'administrateur se déconnecte') do
   click_button 'Se déconnecter'
 end
@@ -111,23 +113,30 @@ end
 
 Alors('la page de connexion s\'affiche') do
   expect(page).to have_current_path(new_admin_session_path)
-  expect(page).to have_button('Se connecter')
+  expect(page).to have_button("S'identifier avec ProConnect")
 end
 
-Alors('la page de connexion dit que les identifiants sont refusés') do
-  expect(page).to have_text('Adresse ou mot de passe incorrect.')
-  expect(page).to have_button('Se connecter')
+# CA1: the button, its link, the callout, and no field to type anything in.
+Alors("la page de connexion propose de s'identifier avec ProConnect aux adresses en {string}") do |domains|
+  expect(page).to have_button("S'identifier avec ProConnect")
+  expect(page).to have_link("Qu'est-ce que ProConnect ?", href: 'https://www.proconnect.gouv.fr/')
+  expect(page).to have_css('.fr-callout',
+    text: "L'espace d'administration est réservé aux agents dont l'adresse est en #{domains}.")
+  expect(page).to have_no_field(type: 'password')
+end
+
+Alors("la page de connexion dit que l'adresse {string} n'est pas admise") do |email|
+  expect(page).to have_current_path(new_admin_session_path)
+  expect(page).to have_css('.fr-alert--error', text: "vous vous êtes identifié avec « #{email} »")
+end
+
+Alors('la page de connexion dit {string}') do |message|
+  expect(page).to have_current_path(new_admin_session_path)
+  expect(page).to have_css('.fr-alert', text: message)
 end
 
 def exchange_named(nationality)
   Exchange.find_by!(country_code: COUNTRIES.fetch(nationality))
-end
-
-def sign_in(password)
-  visit new_admin_session_path
-  fill_in 'Adresse électronique', with: @administrator.email
-  fill_in 'Mot de passe', with: password
-  click_button 'Se connecter'
 end
 
 # The one event no exchange carries: a caller turned away before anything was
