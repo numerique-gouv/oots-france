@@ -42,9 +42,7 @@ RSpec.describe 'Admin::Jobs' do
     it 'is where the login lands once the dashboard turned a visitor away' do
       get admin_jobs_path
 
-      administrator = create(:administrator)
-      post Rails.application.routes.url_helpers.admin_session_path,
-        params: { email: administrator.email, password: administrator.password }
+      return_from_pro_connect
 
       expect(response).to redirect_to("#{admin_jobs_path}/")
 

@@ -585,6 +585,29 @@ fr:
       unreadable: "Jeton FranceConnect+ indéchiffrable : %{error}"
       invalid: "Signature FranceConnect+ invalide : %{error}"
       unexpected_algorithms: Jeton FranceConnect+ chiffré en %{announced}, attendu %{expected}.
+    # ProConnect, que l'espace d'administration appelle pour identifier un
+    # agent. Écrits dans le journal applicatif et jamais à l'écran : l'agent lit
+    # « La connexion par ProConnect n'a pas abouti », l'exploitant lit pourquoi.
+    pro_connect_client:
+      foreign_issuer: "Le document de découverte de ProConnect annonce l'issuer « %{announced} », et non %{expected}."
+      foreign_endpoint: "ProConnect publierait %{name} sur « %{url} », hors de %{expected} : appel refusé."
+      missing_endpoint: "Le document de découverte de ProConnect ne publie aucun %{name}."
+      unreadable_endpoint: "ProConnect publie un %{name} qui n'est pas une adresse : %{error}"
+      unreadable_discovery: "Le document de découverte de ProConnect ne se lit pas comme du JSON : %{error}"
+      unreadable_grant: "Réponse illisible du /token de ProConnect : %{error}"
+      incomplete_grant: "La réponse du /token de ProConnect ne porte pas %{names}."
+    pro_connect_answer:
+      not_an_object: "%{subject} : le corps est un %{type}, là où ProConnect publie un objet."
+      subjects:
+        discovery: Document de découverte de ProConnect
+        grant: Réponse du /token de ProConnect
+        claims: Jeton ProConnect
+        userinfo: Réponse UserInfo de ProConnect
+    pro_connect_token:
+      invalid: "Signature ProConnect invalide : %{error}"
+      unexpected_nonce: Le nonce de l'ID Token de ProConnect n'est pas celui que la session attendait.
+      unexpected_type: "Réponse UserInfo de ProConnect en « %{type} », ni application/json ni application/jwt."
+      unreadable_userinfo: "Réponse UserInfo de ProConnect illisible : %{error}"
   controllers:
     admin:
       demo:
@@ -597,6 +620,11 @@ fr:
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
         home:
           no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
+      # Écrits dans le log : la page de connexion ne dit qu'une phrase pour
+      # toutes les causes d'un retour de ProConnect qui n'aboutit pas.
+      pro_connect:
+        undeclared: Retour de ProConnect sur un déploiement qui n'en déclare aucun.
+        unexpected_logout_state: Le state du retour de déconnexion de ProConnect n'est pas celui que la session attendait.
       # Écrit dans le log et nulle part ailleurs : l'exploitant est déconnecté
       # quoi qu'il arrive, et rien à l'écran ne distinguerait une session
       # FranceConnect+ close d'une session laissée ouverte faute de savoir à qui
@@ -1603,6 +1631,12 @@ fr:
       # littéralement, sur des pages où aucun interacteur ne tourne — sa note
       # dit ce que les récrire séparément coûterait.
       common_services_refused: L'annuaire a refusé
+      # Les deux issues d'un retour de ProConnect qui n'ouvre pas l'espace
+      # d'administration : l'agent identifié hors des domaines admis, et le
+      # retour qui ne vérifie pas. La page de connexion dit les siennes, en
+      # entier, sous `admin.sessions`.
+      agent_refused: L'adresse de l'agent n'est pas dans un domaine admis
+      sign_in_failed: La connexion par ProConnect n'a pas abouti
       # Les quatre refus que la démarche de démonstration reçoit du contrat, et
       # qu'elle rend tels quels à l'usager : ce sont ceux qu'un fournisseur de
       # service reçoit, et la démonstration les montre comme elle montre le
@@ -1638,6 +1672,19 @@ fr:
       unknown_requirement: Exigence inconnue de la démarche
       unannounced_specification: Le point d'accès n'annonce pas la version demandée
       unsupported_specification: Le point d'accès ne parle pas notre version du modèle
+    # La connexion à l'espace d'administration par ProConnect. Écrits dans le
+    # journal applicatif seulement : la page de connexion ne dit qu'une phrase
+    # pour toutes ces causes.
+    admin:
+      start_pro_connect_sign_in:
+        undiscoverable: "ProConnect n'a pas répondu à la découverte de sa configuration : %{error}"
+      complete_pro_connect_sign_in:
+        refused_by_provider: "ProConnect a refusé la connexion : %{error} %{description}"
+        unexpected_state: Le state du retour de ProConnect n'est pas celui que la session attendait.
+        subjects_differ: L'ID Token et la réponse UserInfo de ProConnect ne désignent pas le même agent.
+        no_email: La réponse UserInfo de ProConnect ne porte aucune adresse.
+      end_pro_connect_session:
+        unreachable: "Fin de session ProConnect impossible, l'agent est déconnecté malgré tout : %{error}"
     # Les deux moitiés de la cinématique européenne. Chaque phrase est un refus
     # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
     # a cédé sans qu'il ait à ouvrir les logs.
@@ -1992,16 +2039,17 @@ fr:
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.
-      refused: Adresse ou mot de passe incorrect.
+      pro_connect_failed: La connexion par ProConnect n'a pas abouti. Réessayez.
       signed_out: Vous êtes déconnecté.
       connection_required: Cette page demande une connexion.
       new:
         title: Connexion à l’espace d’administration
         heading: Connexion
-        lead: L'espace d'administration est réservé à l'équipe qui exploite le service.
-        email: Adresse électronique
-        password: Mot de passe
-        submit: Se connecter
+        # `%{domains}` énumère les domaines de DOMAINES_AGENTS_PROCONNECT,
+        # chacun précédé de son « @ » : « @numerique.gouv.fr », « @a et @b ».
+        reserved_html: L'espace d'administration est réservé aux agents dont l'adresse est en %{domains}.
+        undeclared: "Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir."
+        refused: "L'espace d'administration est réservé aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
     home:
       show:
         heading: Espace d'administration

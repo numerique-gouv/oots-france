@@ -64,6 +64,11 @@ Rails.application.routes.draw do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
 
+    # The two addresses the deployment declares to ProConnect, which answer
+    # without a session: the agent comes back to them from ProConnect.
+    get 'proconnect/retour_connexion', to: 'pro_connect#retour_connexion', as: :pro_connect_retour_connexion
+    get 'proconnect/retour_deconnexion', to: 'pro_connect#retour_deconnexion', as: :pro_connect_retour_deconnexion
+
     # The demonstration procedure: the front half of an Online Procedure Portal,
     # played by the operator. It is the one corner of the console that does not
     # observe an exchange — `docs/espace_administration.md` says why it is

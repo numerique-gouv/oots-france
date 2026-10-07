@@ -12,10 +12,10 @@ module AdminAuthentication
   private
 
   def require_administrator
-    return if session[:administrator_id] && Administrator.exists?(id: session[:administrator_id])
+    return if administrator_signed_in?
 
     # Derived from the request and never from a parameter, so that the login
-    # form cannot be turned into an open redirect. Only a GET: replaying the
+    # page cannot be turned into an open redirect. Only a GET: replaying the
     # address of an action as a GET reaches a route that does not exist, and
     # GoodJob's retry and discard buttons are PUT.
     session[:requested_path] = request.fullpath if request.get?
@@ -32,6 +32,17 @@ module AdminAuthentication
     # Turbo ignores a redirect that is not a 303 on anything but a GET.
     redirect_to Rails.application.routes.url_helpers.new_admin_session_path,
       alert: :'admin.sessions.connection_required', status: :see_other
+  end
+
+  # The agent ProConnect identified, admitted again at every request rather
+  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`,
+  # or a ProConnect no longer declared, closes the sessions already open at
+  # their next page.
+  def administrator_signed_in?
+    email = session[:agent_email]
+
+    email.present? && Settings.proconnect_instance.present? &&
+      Agent.new(email:).admitted_by?(Settings.proconnect_agent_domains)
   end
 
   def requested_path = session[:requested_path]

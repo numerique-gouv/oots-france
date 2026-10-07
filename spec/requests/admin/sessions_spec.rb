@@ -1,12 +1,43 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Sessions' do
+  def location_parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+
+  def page_text = response.parsed_body.text.squish
+
   describe 'GET /admin/session/new' do
-    it 'offers the form without asking for a session first' do
+    before { stub_pro_connect }
+
+    # CA1: the button, its link, the callout naming the domains, and no field.
+    it 'offers the ProConnect button, behind a callout naming the admitted domains' do
       get new_admin_session_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.css('input[name="password"]')).not_to be_empty
+      page = response.parsed_body
+      expect(page.css('button.fr-proconnect').text).to include('ProConnect')
+      expect(page.css('a[href="https://www.proconnect.gouv.fr/"]').text).to eq("Qu'est-ce que ProConnect ?")
+      expect(page.css('.fr-callout').text)
+        .to include("L'espace d'administration est réservé aux agents dont l'adresse est en @numerique.gouv.fr.")
+      expect(page.css('input[type="password"], input[type="email"]')).to be_empty
+    end
+
+    # CA5: the callout enumerates every admitted domain.
+    it 'names every admitted domain' do
+      allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[numerique.gouv.fr sous.numerique.gouv.fr])
+
+      get new_admin_session_path
+
+      expect(response.parsed_body.css('.fr-callout').text).to include('@numerique.gouv.fr et @sous.numerique.gouv.fr')
+    end
+
+    # CA12: no ProConnect declared, no button — and a sentence saying why.
+    it 'says no ProConnect is declared, and offers no button, when none is' do
+      undeclare_pro_connect
+
+      get new_admin_session_path
+
+      expect(response.parsed_body.css('button')).to be_empty
+      expect(page_text).to include("Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir.")
     end
 
     # The header's navigation belongs to the space, and none of it can be
@@ -18,187 +49,196 @@ RSpec.describe 'Admin::Sessions' do
     end
   end
 
+  # CA2: the departure, as the button makes it.
   describe 'POST /admin/session' do
-    let(:administrator) { create(:administrator) }
+    before { stub_pro_connect }
 
-    it 'opens the space on the right password' do
-      post admin_session_path, params: { email: administrator.email, password: administrator.password }
+    it 'sends the browser to the authorization endpoint with the six parameters, and no seventh' do
+      post admin_session_path
 
-      expect(response).to redirect_to(admin_root_path)
+      expect(response.headers['Location']).to start_with(ProConnectStubs::AUTHORIZATION_ENDPOINT)
+      parameters = location_parameters
+      expect(parameters.keys).to match_array(%w[response_type client_id redirect_uri scope state nonce])
+      expect(parameters).to include('response_type' => 'code', 'client_id' => ProConnectStubs::CLIENT_ID,
+        'scope' => 'openid email',
+        'redirect_uri' => "#{ProConnectStubs::CONSOLE_URL}/admin/proconnect/retour_connexion")
+    end
+
+    it 'keeps a state and a nonce of at least thirty-two characters in the session' do
+      post admin_session_path
+
+      expect(session[:pro_connect]).to eq(location_parameters.slice('state', 'nonce'))
+      expect(session[:pro_connect].values).to all(have_attributes(size: be >= 32))
+    end
+
+    it 'says the sign-in failed when ProConnect cannot be discovered' do
+      stub_request(:get, "#{ProConnectStubs::ISSUER}#{ProConnectClient::DISCOVERY_PATH}").to_timeout
+
+      post admin_session_path
       follow_redirect!
-      expect(response).to have_http_status(:ok)
+
+      expect(page_text).to include("La connexion par ProConnect n'a pas abouti. Réessayez.")
     end
 
-    it 'refuses a wrong password and leaves the space closed' do
-      post admin_session_path, params: { email: administrator.email, password: 'un-autre-mot-de-passe' }
+    it 'departs nowhere when no ProConnect is declared' do
+      undeclare_pro_connect
 
-      expect(response).to have_http_status(:unprocessable_content)
+      post admin_session_path
 
-      get admin_root_path
       expect(response).to redirect_to(new_admin_session_path)
-    end
-
-    # `expect` would raise `ParameterMissing` here and answer 400, which is why
-    # this controller permits rather than expects.
-    it 'shows its error on an empty form rather than failing' do
-      post admin_session_path, params: { email: '', password: '' }
-
-      expect(response).to have_http_status(:unprocessable_content)
-      expect(response.parsed_body.css('.fr-alert--error')).not_to be_empty
-    end
-
-    # bcrypt handles at most 72 bytes and `authenticate_by` carries no length
-    # check of its own, so this is the shape that would raise rather than refuse
-    # if the gem ever stopped answering `false` past that limit.
-    it 'refuses a password longer than bcrypt accepts rather than failing' do
-      post admin_session_path, params: { email: administrator.email, password: 'a' * 300 }
-
-      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 
   describe 'DELETE /admin/session' do
-    it 'closes the space again' do
+    # CA7: the end of the ProConnect session, then the login page saying so.
+    it 'ends the ProConnect session, with the hint, a state and the declared address' do
       sign_in
 
       delete admin_session_path
 
+      expect(response.headers['Location']).to start_with(ProConnectStubs::END_SESSION_ENDPOINT)
+      parameters = location_parameters
+      expect(parameters.fetch('post_logout_redirect_uri'))
+        .to eq("#{ProConnectStubs::CONSOLE_URL}/admin/proconnect/retour_deconnexion")
+      expect(parameters.fetch('state').size).to be >= 32
+      expect(parameters.fetch('id_token_hint').split('.').size).to eq(3)
+    end
+
+    it 'says so on the login page once ProConnect brings the agent back, and the space is closed' do
+      sign_in
+      delete admin_session_path
+
+      get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
+      follow_redirect!
+      expect(page_text).to include('Vous êtes déconnecté.')
+
+      get admin_journal_root_path
       expect(response).to redirect_to(new_admin_session_path)
+    end
+
+    it 'closes the space at once, before ProConnect brings the agent back' do
+      sign_in
+      delete admin_session_path
 
       get admin_root_path
+
       expect(response).to redirect_to(new_admin_session_path)
     end
 
-    # The flash carries a key, so only a rendered page says whether it resolves.
-    it 'says so on the page it lands on' do
+    # The agent is signed out here whatever ProConnect does: it closes its own
+    # session after twelve hours.
+    it 'signs the agent out plainly when ProConnect cannot be reached' do
       sign_in
+      stub_request(:get, "#{ProConnectStubs::ISSUER}#{ProConnectClient::DISCOVERY_PATH}").to_timeout
 
       delete admin_session_path
+      expect(response).to redirect_to(new_admin_session_path)
       follow_redirect!
-
-      expect(response.body).to include('Vous êtes déconnecté.')
+      expect(page_text).to include('Vous êtes déconnecté.')
     end
 
-    # RG10 and CA11: the demonstration's user session is the operator's, so
-    # ending one ends the FranceConnect+ session that attested the identity.
+    it 'refuses a return whose state is not the one the sign-out drew' do
+      sign_in
+      delete admin_session_path
+
+      get admin_pro_connect_retour_deconnexion_path, params: { state: 'un-autre-state' * 3 }
+      follow_redirect!
+
+      expect(page_text).to include("La connexion par ProConnect n'a pas abouti. Réessayez.")
+    end
+
+    # CA8: ProConnect first, then the FranceConnect+ session that attested the
+    # demonstration identity, which ends on the procedure's own page.
     context 'when the demonstration holds an identity' do
       before do
         sign_in
         identify_demo_user
       end
 
-      it 'ends the FranceConnect+ session, with the hint, a state and the declared address' do
+      def through_pro_connect
         delete admin_session_path
+        get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
+      end
 
-        parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+      it 'goes through ProConnect, then ends the FranceConnect+ session with the hint and the declared address' do
+        through_pro_connect
 
         expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+        parameters = location_parameters
         expect(parameters.fetch('post_logout_redirect_uri'))
           .to eq("#{FranceConnectStubs::PROCEDURE_URL}/demo/franceconnect/retour_deconnexion")
-        expect(parameters.fetch('state')).to be_present
         expect(parameters.fetch('id_token_hint').split('.').size).to eq(3)
       end
 
-      it 'holds neither identity nor operator afterwards' do
-        delete admin_session_path
+      it 'holds neither identity nor agent afterwards' do
+        through_pro_connect
 
         expect(session[:demo_identity]).to be_nil
-
         get admin_root_path
         expect(response).to redirect_to(new_admin_session_path)
       end
 
       # The return is the only thing that says the sign-out was this browser's.
-      it 'recognises the return FranceConnect+ makes with that state' do
-        delete admin_session_path
-        state = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h.fetch('state')
+      it 'recognises the return FranceConnect+ makes with its state' do
+        through_pro_connect
 
-        get '/demo/franceconnect/retour_deconnexion', params: { state: }
+        get '/demo/franceconnect/retour_deconnexion', params: { state: location_parameters.fetch('state') }
 
         expect(response.parsed_body.css('main').text).to include('session FranceConnect+ est close')
       end
 
       # A deployment that no longer declares it has no session of its own to
-      # end, and signing the operator out locally is the whole of what is left
-      # to do — as when the portal cannot be reached.
-      # L'exploitant est déconnecté quoi qu'il arrive, et rien à l'écran ne
-      # distinguerait une session FranceConnect+ close d'une session laissée
-      # ouverte faute de savoir à qui la demander : le log est le seul endroit
-      # où cela se lit.
-      it 'signs the operator out plainly when that FranceConnect+ is no longer declared, and says so' do
+      # end: the log is the only place that says so.
+      it 'ends the ProConnect session alone when that FranceConnect+ is no longer declared, and says so' do
         undeclare_france_connect('fake')
         allow(Rails.logger).to receive(:warn)
 
-        delete admin_session_path
+        through_pro_connect
 
         expect(response).to redirect_to(new_admin_session_path)
-        expect(session[:demo_identity]).to be_nil
         expect(Rails.logger).to have_received(:warn).with(/Session FranceConnect\+ non close.*fake/)
       end
 
-      # The operator is signed out either way: FranceConnect+ closes its own
-      # session on inactivity, and failing here would leave them stuck signed in.
-      it 'signs the operator out even when the portal cannot be reached' do
+      it 'ends the ProConnect session alone when the FranceConnect+ portal cannot be reached' do
         stub_request(:get, FranceConnectStubs::DISCOVERY_URL).to_timeout
 
-        delete admin_session_path
+        through_pro_connect
 
         expect(response).to redirect_to(new_admin_session_path)
       end
     end
 
-    # CA7: the session ended is the one that attested, and no other. The
-    # identity carries which FranceConnect+ that was, the sign-out happening
-    # minutes after the identification and having nothing else to read it from.
+    # The session ended is the one that attested, and no other.
     context 'when the real FranceConnect+ attested the identity' do
       before do
         sign_in
         identify_demo_user(instance: real_france_connect)
       end
 
-      it 'ends its session, on the address its own discovery publishes' do
+      it 'ends its session, on the address its own discovery publishes, and never the other' do
         delete admin_session_path
-
-        parameters = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+        get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
 
         expect(response.headers['Location']).to start_with(FranceConnectStubs::REAL_END_SESSION_ENDPOINT)
-        expect(parameters.fetch('post_logout_redirect_uri'))
-          .to eq("#{FranceConnectStubs::PROCEDURE_URL}/demo/franceconnect/retour_deconnexion")
-        expect(parameters.fetch('id_token_hint').split('.').size).to eq(3)
-      end
-
-      it 'never ends the session of the other, which attested nothing here' do
-        delete admin_session_path
-
         expect(a_request(:get, FranceConnectStubs::DISCOVERY_URL)).not_to have_been_made
-        expect(response.headers['Location']).not_to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
-      end
-    end
-
-    # L'autre sens, les deux déclarés : c'est celui qui a attesté qu'on ferme,
-    # et la présence de l'autre n'y change rien.
-    context 'when the fake attested the identity and the real is declared too' do
-      before do
-        sign_in
-        stub_real_france_connect
-        identify_demo_user
-      end
-
-      it 'ends the fake session, and never the real one' do
-        delete admin_session_path
-
-        expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
-        expect(a_request(:get, FranceConnectStubs::REAL_DISCOVERY_URL)).not_to have_been_made
       end
     end
   end
 
-  # `Administrator.exists?` and not merely a present id in the session: this is
-  # the only case that tells the two apart.
-  describe 'a session whose account no longer exists' do
-    it 'no longer opens the space' do
-      administrator = sign_in
-      administrator.destroy!
+  # Admitted again at every request, rather than once at the sign-in.
+  describe 'a session whose agent is no longer admitted' do
+    it 'no longer opens the space once the domain is taken out of the list' do
+      sign_in
+      allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[autre.gouv.fr])
+
+      get admin_root_path
+
+      expect(response).to redirect_to(new_admin_session_path)
+    end
+
+    it 'no longer opens the space once ProConnect is no longer declared' do
+      sign_in
+      undeclare_pro_connect
 
       get admin_root_path
 
@@ -206,23 +246,16 @@ RSpec.describe 'Admin::Sessions' do
     end
   end
 
-  # These cases post the form themselves rather than calling `sign_in`, whose
-  # assertion on the root is precisely what they contradict.
+  # These cases return from ProConnect themselves rather than calling
+  # `sign_in`, whose assertion on the root is precisely what they contradict.
   describe 'the page the guard turned away' do
-    let(:administrator) { create(:administrator) }
-
-    def sign_in_through_the_form(**smuggled)
-      post admin_session_path,
-        params: { email: administrator.email, password: administrator.password, **smuggled }
-    end
-
-    it 'is where a successful login lands' do
+    it 'is where a successful sign-in lands' do
       exchange = create(:exchange, :failed)
 
       get admin_journal_exchange_path(exchange.exchange_id)
       expect(response).to redirect_to(new_admin_session_path)
 
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_journal_exchange_path(exchange.exchange_id))
       follow_redirect!
@@ -232,28 +265,16 @@ RSpec.describe 'Admin::Sessions' do
     it 'keeps the query string of the page it retains' do
       get admin_journal_root_path(parametre: 'https://exemple.invalid')
 
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_journal_root_path(parametre: 'https://exemple.invalid'))
-    end
-
-    # The destination is derived from the request, so a parameter of the login
-    # form must not steer it — that is what would make this form an open
-    # redirect. `request.fullpath` carries neither scheme nor host, and
-    # `action_on_open_redirect` is `:raise` under `load_defaults 8.1`, so a
-    # destination naming a host would raise rather than travel; both belts only
-    # hold as long as nothing reads a parameter here.
-    it 'ignores a destination smuggled in as a request parameter' do
-      sign_in_through_the_form(destination: 'https://exemple.invalid')
-
-      expect(response).to redirect_to(admin_root_path)
     end
 
     it 'is the last one turned away when several were' do
       get admin_journal_root_path
       get admin_common_services_root_path
 
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_common_services_root_path)
     end
@@ -265,43 +286,32 @@ RSpec.describe 'Admin::Sessions' do
       delete admin_session_path
       expect(response).to redirect_to(new_admin_session_path)
 
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_root_path)
     end
 
-    it 'is the root when the form was opened directly' do
-      get new_admin_session_path
-
-      sign_in_through_the_form
-
-      expect(response).to redirect_to(admin_root_path)
-    end
-
-    # A refused login renders rather than redirecting, and the guard does not
-    # run on `create`: the destination outlives a mistyped password, which is
-    # the scenario the whole thing exists for.
-    it 'survives a wrong password and serves the attempt that succeeds' do
+    # A failed return redirects to the login page, which the guard does not
+    # run on: the destination outlives it, and serves the attempt that works.
+    it 'survives a failed return and serves the attempt that succeeds' do
       get admin_journal_root_path
 
-      post admin_session_path, params: { email: administrator.email, password: 'un-autre-mot-de-passe' }
-      expect(response).to have_http_status(:unprocessable_content)
+      return_from_pro_connect(state: 'un-state-qui-ne-correspond-a-rien')
+      expect(response).to redirect_to(new_admin_session_path)
 
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_journal_root_path)
     end
 
-    # The `reset_session` of the login is what forgets it, and it is enough:
-    # reaching `destroy` needs a session, which the guard never refuses, so no
-    # state holds an authenticated session and a destination at once.
-    it 'serves once, and a second login lands on the root again' do
+    # The `reset_session` of the sign-in is what forgets it.
+    it 'serves once, and a second sign-in lands on the root again' do
       get admin_journal_root_path
-      sign_in_through_the_form
+      return_from_pro_connect
       expect(response).to redirect_to(admin_journal_root_path)
 
       delete admin_session_path
-      sign_in_through_the_form
+      return_from_pro_connect
 
       expect(response).to redirect_to(admin_root_path)
     end
