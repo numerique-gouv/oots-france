@@ -45,7 +45,7 @@ module Admin
 
       reset_session
       session[:agent_email] = result.agent.email
-      session[:pro_connect_id_token] = result.id_token
+      keep_id_token(result.id_token)
 
       redirect_to destination || admin_root_path
     end

@@ -40,7 +40,7 @@ module Admin
     # names the controllers of the demonstration.
     def destroy
       identity = ::Demo::UserIdentity.from_session(session[:demo_identity])
-      id_token = session[:pro_connect_id_token]
+      id_token = take_id_token
 
       reset_session
 

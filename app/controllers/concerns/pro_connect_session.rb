@@ -27,6 +27,20 @@ module ProConnectSession
     result.end_session_url
   end
 
+  # The ID Token the sign-out hands back as `id_token_hint`, kept in a cookie
+  # of its own and not in the session: the cookie store bounds a cookie at four
+  # kibibytes, and the session already carries the FranceConnect+ identity of
+  # the demonstration — with both, a sign-in followed by an identification
+  # measured 4058 bytes against the fake ProConnect, whose ID Token is smaller
+  # than the real one's. Encrypted like the session, and as unreadable to a
+  # script; `reset_session` does not reach it, so it is taken explicitly.
+  # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/implementation_technique
+  def keep_id_token(id_token)
+    cookies.encrypted[:pro_connect_id_token] = { value: id_token, httponly: true, same_site: :lax }
+  end
+
+  def take_id_token = cookies.encrypted[:pro_connect_id_token].tap { cookies.delete(:pro_connect_id_token) }
+
   # What went wrong goes to the log, for the operator alone; the page says one
   # sentence for every cause.
   def pro_connect_failed(reasons)

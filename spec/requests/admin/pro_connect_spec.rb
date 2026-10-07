@@ -20,7 +20,7 @@ RSpec.describe 'Admin::ProConnect' do
       expect(response).to redirect_to(admin_root_path)
       expect(session.id).not_to eq(before)
       expect(session[:agent_email]).to eq(ProConnectStubs::AGENT_EMAIL)
-      expect(session[:pro_connect_id_token].split('.').size).to eq(3)
+      expect(cookies[:pro_connect_id_token]).to be_present
       follow_redirect!
       expect(response).to have_http_status(:ok)
     end

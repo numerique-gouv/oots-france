@@ -116,6 +116,14 @@ RSpec.describe 'Admin::Sessions' do
       expect(response).to redirect_to(new_admin_session_path)
     end
 
+    it 'forgets the ID Token it handed to ProConnect' do
+      sign_in
+
+      delete admin_session_path
+
+      expect(cookies[:pro_connect_id_token]).to be_blank
+    end
+
     it 'closes the space at once, before ProConnect brings the agent back' do
       sign_in
       delete admin_session_path
