@@ -76,6 +76,25 @@ Fonctionnalité: Identifier un usager européen par un faux FranceConnect+
     Quand l'usager consent à la transmission de ses données
     Alors le navigateur est redirigé vers la redirect_uri avec un code et le state de l'appel
 
+  Scénario: l'usager saisit lui-même son identité, que /userinfo restitue
+    Quand le portail appelle /authorize avec ces paramètres:
+      | acr_values | eidas3 |
+    Et que l'usager choisit le pays "DK"
+    Et qu'il saisit le prénom "Łucja", le nom "Nygård" et la date de naissance "1987-02-11"
+    Alors la page de consentement affiche l'identité saisie
+    Quand l'usager consent à la transmission de ses données
+    Et que le portail échange le code contre les jetons
+    Alors l'ID Token contient "acr" égal à "eidas3"
+    Quand il appelle /userinfo
+    Alors le JWT déchiffré contient l'identité saisie
+
+  Scénario: une identité saisie incomplète est refusée
+    Quand le portail appelle /authorize
+    Et que l'usager choisit le pays "DK"
+    Et qu'il saisit le prénom "Ingrid", le nom "" et la date de naissance "1987-02-11"
+    Alors le faux FranceConnect+ répond une page d'erreur 400
+    Et la page d'erreur contient "invalid_identity"
+
   Scénario: un pays ou une identité que le faux FranceConnect+ ne sert pas est refusé
     Quand le portail appelle /authorize
     Et que l'usager choisit un pays que le faux FranceConnect+ ne sert pas

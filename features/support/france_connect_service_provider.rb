@@ -59,6 +59,15 @@ class FranceConnectServiceProvider
 
   def choose_identity(key) = @page = submit('identity', key)
 
+  # The form the identity page hides behind « Input an identity »: the last of
+  # the page, posted with what the operator would have typed.
+  def enter_identity(fields)
+    form = page_forms.last
+    hidden = form.css('input[type=hidden]').to_h { |input| [input['name'], input['value']] }
+
+    @page = post_form(form, hidden.merge(fields))
+  end
+
   def confirm = @page = submit('consent', 'yes')
 
   # The same step submitted a second time, to see an interaction that has been
@@ -124,15 +133,21 @@ class FranceConnectServiceProvider
     }.merge(overrides).compact
   end
 
+  def submit(name, value) = post_form(page_forms.first, name => value)
+
+  def page_forms
+    forms = Nokogiri::HTML(page.body).css('form')
+    raise "Aucun formulaire dans la page « #{title} » : #{page.body}" if forms.empty?
+
+    forms
+  end
+
   # The form's own action, read off the page: the scenario walks where the fake
   # sends it rather than where the test believes it should go.
-  def submit(name, value)
-    form = Nokogiri::HTML(page.body).at_css('form')
-    raise "Aucun formulaire dans la page « #{title} » : #{page.body}" if form.nil?
-
+  def post_form(form, fields)
     @action = absolute(form['action'])
 
-    connection.post(@action, name => value)
+    connection.post(@action, fields)
   end
 
   def absolute(action)

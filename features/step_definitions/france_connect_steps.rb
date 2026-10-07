@@ -90,6 +90,24 @@ Quand('l\'usager choisit l\'identité de test {string}') do |key|
   @reponse = @client.choose_identity(key)
 end
 
+Quand('il saisit le prénom {string}, le nom {string} et la date de naissance {string}') do |given, family, born|
+  @entered = { 'given_name' => given, 'family_name' => family, 'birthdate' => born }
+  @reponse = @client.enter_identity(@entered)
+end
+
+Alors('la page d\'erreur contient {string}') do |error|
+  expect(@reponse.body).to include(error)
+end
+
+Alors('la page de consentement affiche l\'identité saisie') do
+  expect(@client.title).to eq('Authorise the transmission of your data')
+  expect(@reponse.body).to include(*@entered.values)
+end
+
+Alors('le JWT déchiffré contient l\'identité saisie') do
+  expect(@client.unseal(@userinfo.body)).to include(@entered)
+end
+
 Quand('l\'usager choisit un pays que le faux FranceConnect+ ne sert pas') do
   @reponse = @client.choose_country('ZZ')
 end
@@ -109,6 +127,7 @@ end
 
 Quand('l\'usager consent à la transmission de ses données') do
   @reponse = @client.confirm
+  @returned = @client.returned
 end
 
 Alors('le navigateur est redirigé vers la redirect_uri avec un code et le state de l\'appel') do

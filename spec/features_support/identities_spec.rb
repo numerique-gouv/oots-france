@@ -60,5 +60,39 @@ RSpec.describe FakeFranceConnect::Identity do
     it 'ne sert rien pour un pays qu\'il n\'offre pas' do
       expect(described_class.of_country('ZZ')).to be_empty
     end
+
+    describe '.entered' do
+      let(:typed) { { country: 'DK', given_name: ' Ingrid ', family_name: 'Nygaard', birthdate: '1987-02-11' } }
+
+      it 'bâtit une identité de niveau élevé de ce qui a été saisi' do
+        identity = described_class.entered(**typed)
+
+        expect(identity.acr).to eq('eidas3')
+        expect(identity.claims_for(%w[given_name family_name birthdate])).to eq(
+          'given_name' => 'Ingrid', 'family_name' => 'Nygaard', 'birthdate' => '1987-02-11',
+        )
+      end
+
+      it 'ne rend ni gender ni birthplace' do
+        everything = FakeFranceConnect::Identity::CLAIMS_BY_SCOPE.keys
+
+        expect(described_class.entered(**typed).claims_for(everything).keys).to contain_exactly(
+          'given_name', 'family_name', 'birthdate', 'preferred_username',
+        )
+      end
+
+      it 'donne le même identifiant à la même saisie, et un autre à une autre' do
+        identifier = described_class.entered(**typed).eidas_identifier
+
+        expect(described_class.entered(**typed).eidas_identifier).to eq(identifier)
+        expect(described_class.entered(**typed, given_name: 'Inge').eidas_identifier).not_to eq(identifier)
+      end
+
+      it 'refuse un nom vide ou une date de naissance qui n\'en est pas une' do
+        expect(described_class.entered(**typed, family_name: ' ')).to be_nil
+        expect(described_class.entered(**typed, birthdate: '1987-02-30')).to be_nil
+        expect(described_class.entered(**typed, birthdate: '11/02/1987')).to be_nil
+      end
+    end
   end
 end

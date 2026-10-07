@@ -14,6 +14,8 @@ module FakeFranceConnect
     # it and `Server` only routes it: one spelling, one owner.
     INTERACTION = '/interaction/'.freeze
 
+    IDENTITY_FIELDS = %w[identity given_name family_name birthdate].freeze
+
     def initialize(configuration)
       @configuration = configuration
     end
@@ -34,7 +36,7 @@ module FakeFranceConnect
 
       case name
       when 'country' then choose_country(response, uid, request.query['country'].to_s)
-      when 'identity' then choose_identity(response, uid, interaction, request.query['identity'].to_s)
+      when 'identity' then choose_identity(response, uid, interaction, identity_form(request.query))
       when 'consent' then consent(response, uid, interaction)
       else not_found(response)
       end
@@ -58,6 +60,7 @@ module FakeFranceConnect
       identities = Identities.of_country(code)
       return error_page(response, 'invalid_country', "no such country: #{code}") if identities.empty?
 
+      configuration.store.advance_interaction(uid, country: code)
       page(response, Pages.identities(step(uid, 'identity'), identities))
     end
 
@@ -66,14 +69,36 @@ module FakeFranceConnect
     # refuses it too, but by an HTTP 500 whose message says nothing of the
     # cause; `docs/test_e2e.md` says why the fake answers a plain 400 instead.
     # back/libs/core/src/exceptions/core-low-acr.exception.ts
-    def choose_identity(response, uid, interaction, key)
-      identity = Identities.find(key)
-      return error_page(response, 'invalid_identity', "unknown test identity #{key}") if identity.nil?
+    def choose_identity(response, uid, interaction, form)
+      identity = identity_from(interaction, form)
+      return unknown_identity(response, form) if identity.nil?
       return error_page(response, 'invalid_acr', 'the identity level is lower than the one requested') if
         rank(identity.acr) < rank(interaction.fetch(:demand).acr)
 
       configuration.store.advance_interaction(uid, identity: identity)
       page(response, Pages.consent(step(uid, 'consent'), transmitted(interaction, identity)))
+    end
+
+    # WEBrick hands a form's values over as binary, whatever the page's charset:
+    # a « Søren » left so would break the first UTF-8 string it meets.
+    def identity_form(query)
+      IDENTITY_FIELDS.to_h do |name|
+        text = query[name].to_s.dup.force_encoding(Encoding::UTF_8)
+
+        [name, text.valid_encoding? ? text : '']
+      end
+    end
+
+    def unknown_identity(response, form)
+      error_page(response, 'invalid_identity', "unknown or incomplete test identity #{form['identity']}")
+    end
+
+    def identity_from(interaction, form)
+      key = form['identity']
+      return Identities.find(key) unless key == Identities::ENTERED
+
+      Identities.entered(country: interaction.fetch(:country), given_name: form['given_name'],
+        family_name: form['family_name'], birthdate: form['birthdate'])
     end
 
     def consent(response, uid, interaction)
@@ -86,7 +111,7 @@ module FakeFranceConnect
 
     def issued_code(demand, identity)
       configuration.store.issue_code(client_id: demand.client.id, redirect_uri: demand.redirect_uri,
-        identity_key: identity.key, nonce: demand.nonce, acr: identity.acr, scopes: demand.scopes,
+        identity: identity, nonce: demand.nonce, acr: identity.acr, scopes: demand.scopes,
         amr: demand.amr_requested?)
     end
 
