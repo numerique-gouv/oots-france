@@ -123,9 +123,9 @@ end
 # evidence type in the one sentence that stands between the rule and the
 # button, and each value wears the mark of what the directories publish.
 Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
-  nommes = Nokogiri::HTML(@navigateur.body).css('.requirement-card__actions').map do |carte|
+  nommes = Nokogiri::HTML(@navigateur.body).css('.requirement-card__actions').map { |carte|
     carte.css('.directory-value').map { |valeur| valeur.text.strip }
-  end.reject(&:empty?)
+  }.reject(&:empty?)
 
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
   expect(nommes).not_to be_empty
