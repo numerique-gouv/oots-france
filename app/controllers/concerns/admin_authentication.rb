@@ -7,6 +7,7 @@ module AdminAuthentication
 
   included do
     before_action :require_administrator
+    helper_method :signed_in_email
   end
 
   private
@@ -44,4 +45,7 @@ module AdminAuthentication
   end
 
   def requested_path = session[:requested_path]
+
+  # The address of the agent the session admitted, which the header shows.
+  def signed_in_email = session[:agent_email]
 end

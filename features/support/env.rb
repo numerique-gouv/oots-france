@@ -25,7 +25,9 @@ Before('not @bout_en_bout') do
   ENV['URL_PROCONNECT'] = ENV['URL_PROCONNECT'].presence || ProConnectStubs::ISSUER
   ENV['IDENTIFIANT_CLIENT_PROCONNECT'] = ENV['IDENTIFIANT_CLIENT_PROCONNECT'].presence || ProConnectStubs::CLIENT_ID
   ENV['SECRET_CLIENT_PROCONNECT'] = ENV['SECRET_CLIENT_PROCONNECT'].presence || ProConnectStubs::CLIENT_SECRET
-  ENV['DOMAINES_AGENTS_PROCONNECT'] = ENV['DOMAINES_AGENTS_PROCONNECT'].presence || 'numerique.gouv.fr'
+  # Pinned rather than defaulted: the scenarios name the domain on the page,
+  # and a development machine may admit others.
+  ENV['DOMAINES_AGENTS_PROCONNECT'] = 'numerique.gouv.fr'
   ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
   ENV['DELAI_MAX_SERVICES_COMMUNS'] ||= '10000'
   ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'

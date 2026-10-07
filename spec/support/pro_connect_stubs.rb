@@ -23,6 +23,9 @@ module ProConnectStubs
   END_SESSION_ENDPOINT = "#{ISSUER}#{PATHS[:end_session_endpoint]}".freeze
 
   AGENT_EMAIL = 'camille.agent@numerique.gouv.fr'.freeze
+
+  # Pinned like the rest, a development machine's `.env.oots` admitting others.
+  ADMITTED_DOMAINS = %w[numerique.gouv.fr].freeze
   AGENT_SUB = 'un-agent-identifie-par-proconnect'.freeze
 
   def pro_connect_signing_key = @pro_connect_signing_key ||= OpenSSL::PKey::RSA.generate(2048)
@@ -36,7 +39,8 @@ module ProConnectStubs
   # the `nonce` the departure drew.
   def stub_pro_connect(email: AGENT_EMAIL, issuer: ISSUER)
     instance = pro_connect_instance(issuer:)
-    allow(Settings).to receive_messages(proconnect_instance: instance, oots_france_url: CONSOLE_URL)
+    allow(Settings).to receive_messages(proconnect_instance: instance, oots_france_url: CONSOLE_URL,
+      proconnect_agent_domains: ADMITTED_DOMAINS)
 
     stub_request(:get, "#{issuer}#{ProConnectClient::DISCOVERY_PATH}")
       .to_return(body: pro_connect_discovery(issuer).to_json)

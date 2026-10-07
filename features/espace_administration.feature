@@ -12,6 +12,10 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   Contexte:
     Étant donné un administrateur connecté à l'espace d'administration
 
+  Scénario: l'en-tête affiche l'adresse de l'administrateur connecté
+    Quand l'administrateur ouvre le journal des événements
+    Alors l'en-tête affiche l'adresse "administrateur.demonstration@numerique.gouv.fr"
+
   Scénario: filtrer le journal des événements sur un seul échange
     Étant donné un échange délivré avec la Finlande
     Et un échange en échec avec l'Allemagne

@@ -133,6 +133,10 @@ Alors("la page de connexion dit que l'adresse {string} n'est pas admise") do |em
   expect(page).to have_css('.fr-alert--error', text: "vous vous êtes identifié avec « #{email} »")
 end
 
+Alors("l'en-tête affiche l'adresse {string}") do |email|
+  expect(page).to have_css('.fr-header__tools-links', text: email)
+end
+
 Alors('la page de connexion dit {string}') do |message|
   expect(page).to have_current_path(new_admin_session_path)
   expect(page).to have_css('.fr-alert', text: message)

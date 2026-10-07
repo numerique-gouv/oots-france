@@ -217,6 +217,7 @@ fr:
       jobs: Jobs
       journal: Journal
       sign_out: Se déconnecter
+      signed_in_as: Connecté en tant que %{email}
     pied_de_page:
       # L'adresse du lien reste dans le gabarit : `fr.yml` n'a pas à devenir
       # l'endroit où l'on va corriger un lien mort.

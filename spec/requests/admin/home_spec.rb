@@ -14,6 +14,12 @@ RSpec.describe 'Admin::Home' do
       expect(response.parsed_body.css("a[href='#{admin_demo_root_path}']")).not_to be_empty
     end
 
+    it 'shows the address of the signed-in agent in the header' do
+      get admin_root_path
+
+      expect(response.parsed_body.css('.fr-header__tools-links').text).to include(ProConnectStubs::AGENT_EMAIL)
+    end
+
     it 'carries the navigation' do
       get admin_root_path
 

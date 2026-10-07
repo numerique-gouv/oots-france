@@ -14,6 +14,15 @@
         `rails-ujs`: a `method: :delete` on an anchor would do nothing. And a
         custom tool link rather than `with_tool_link`, whose component renders an
         `<a>` and nothing else. %>
+    <%# The agent signed in, as the DSFR header shows an account: an icon and a
+        name among the quick access links. Not a link, there being no account
+        page to lead to. %>
+    <% if signed_in_email %>
+      <% header.with_custom_tool_link do %>
+        <%= tag.p signed_in_email, class: 'fr-btn fr-icon-account-circle-line',
+              title: t('layouts.entete.signed_in_as', email: signed_in_email) %>
+      <% end %>
+    <% end %>
     <% header.with_custom_tool_link do %>
       <%= button_to t('layouts.entete.sign_out'), admin_session_path, method: :delete, class: 'fr-btn' %>
     <% end %>
