@@ -199,6 +199,57 @@ RSpec.describe Settings do
       end
     end
 
+    context 'with development credentials' do
+      let(:credentials) { { URL_PROCONNECT: 'https://fca.test/api/v2', IDENTIFIANT_CLIENT_PROCONNECT: 'client' } }
+
+      before do
+        allow(Rails.application).to receive(:credentials).and_return(credentials)
+      end
+
+      def in_development
+        allow(Rails).to receive(:env).and_return(ActiveSupport::EnvironmentInquirer.new('development'))
+      end
+
+      it 'fills in development what the environment leaves empty' do
+        in_development
+        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+
+        with_environment(filled.merge(no_proconnect)) do
+          expect(described_class.proconnect_instance)
+            .to have_attributes(issuer: 'https://fca.test/api/v2', client_id: 'client', client_secret: 'secret')
+        end
+      end
+
+      it 'lets the environment win over them' do
+        in_development
+        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+
+        with_environment(filled.merge(no_proconnect).merge('URL_PROCONNECT' => 'https://autre.test/api/v2')) do
+          expect(described_class.proconnect_instance.issuer).to eq('https://autre.test/api/v2')
+        end
+      end
+
+      it 'refuses a declaration the credentials leave with holes, naming what is missing' do
+        in_development
+
+        with_environment(filled.merge(no_proconnect)) do
+          expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+            expect(refus.message).to include('SECRET_CLIENT_PROCONNECT')
+            expect(refus.message).not_to include('URL_PROCONNECT')
+          end
+        end
+      end
+
+      it 'reads none of them outside development' do
+        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+
+        with_environment(filled.merge(no_proconnect)) do
+          expect(described_class.proconnect_instance).to be_nil
+          expect { described_class.verify! }.not_to raise_error
+        end
+      end
+    end
+
     it 'refuses an empty list of admitted domains, naming the variable' do
       with_environment(filled.merge(Settings::AGENT_DOMAINS => ' , ')) do
         expect { described_class.verify! }.to raise_error(ConfigurationError, /DOMAINES_AGENTS_PROCONNECT/)

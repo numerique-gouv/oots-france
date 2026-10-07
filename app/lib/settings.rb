@@ -180,10 +180,21 @@ module Settings
     # `nil` when the deployment declares no ProConnect, which leaves the console
     # shut and everything else running.
     def proconnect_instance
-      values = PROCONNECT.transform_values { |variable| optional(variable) }
+      values = PROCONNECT.transform_values { |variable| proconnect_value(variable) }
       return nil if values.each_value.any?(&:nil?)
 
       ProConnectInstance.new(**values)
+    end
+
+    # The environment first, and the development credentials where it is
+    # empty: `config/credentials/development.yml.enc` carries the identifiers
+    # of the integration ProConnect a development machine presents, encrypted
+    # and versioned. Read in `development` alone — in `test`, in continuous
+    # integration and in production only the environment counts, whatever key
+    # the process holds. Without the key the file reads as empty.
+    # https://guides.rubyonrails.org/security.html#custom-credentials
+    def proconnect_value(name)
+      optional(name) || (Rails.application.credentials[name.to_sym].presence if Rails.env.development?)
     end
 
     # Read at every request of the console and not once: a domain taken out of

@@ -57,6 +57,20 @@ Les identifiants de la base vivent dans `.env.postgres` (lu par l'image) et dans
 
 Deux rôles PostgreSQL cohabitent. Le **propriétaire** des tables est celui que l'image crée : il fait le DDL, et les tâches `db:*` comme la console Rails s'en servent. Le **rôle applicatif** (`*_APPLICATIF_BASE_DE_DONNEES`) est celui avec lequel `web` et `worker` se connectent, et `rails db:privileges` lui refuse l'`UPDATE` sur le [journal des échanges](docs/journal_des_echanges.md), que rien ne doit pouvoir réécrire. Les deux variables laissées vides, tout tourne en propriétaire.
 
+### Les identifiants ProConnect du poste
+
+L'espace d'administration s'ouvre par ProConnect ([docs/espace_administration.md](docs/espace_administration.md#qui-peut-y-entrer)), et un poste se présente au **ProConnect d'intégration**. Ses identifiants sont versionnés, chiffrés, dans `config/credentials/development.yml.enc` : les trois variables `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT` et `SECRET_CLIENT_PROCONNECT` sous leur nom, et rien d'autre. `Settings` ne les lit qu'en environnement `development`, et seulement là où `.env.oots` laisse la variable vide — l'environnement l'emporte. Le client d'intégration déclare les adresses de retour des ports 3000 à 3005 : un poste ou un worktree sur l'un d'eux n'a rien à déclarer.
+
+La clé qui les déchiffre ne se versionne pas : elle se pose dans `config/credentials/development.key`, que `.gitignore` exclut, ou dans `RAILS_MASTER_KEY`, et se demande à qui la détient. **Sans elle, le poste est complet** : les trois variables sont vides, la page de connexion dit qu'aucun ProConnect n'est déclaré, et le bouton « *Entrer sans ProConnect* », offert en développement et en test seulement, ouvre l'espace.
+
+```sh
+$ docker compose exec web bin/rails credentials:edit --environment development   # éditer
+$ docker compose exec web bin/rails credentials:show --environment development   # relire
+```
+
+> [!IMPORTANT]
+> **Une clé déchiffre le fichier entier, pour quiconque la détient.** Retirer une personne qui l'a eue, c'est une clé neuve, le fichier rechiffré **et** le `client_secret` renouvelé sur l'[espace partenaires](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service) de ProConnect : l'historique du dépôt garde l'ancien fichier, que l'ancienne clé ouvre toujours.
+
 ### Les annuaires centraux
 
 L'application interroge les **Common Services réels** — l'Evidence Broker et le Data Service Directory — et non une copie locale. Sept variables les désignent, toutes écrites par `make setup` :

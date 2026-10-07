@@ -124,7 +124,7 @@ Les identifiants des bases vivent dans deux fichiers chacun, sous le nom que leu
 > [!IMPORTANT]
 > **`RAILS_ENV=production` change ce que `make setup` fait**, et pas seulement ce que le serveur sert : c'est lui qui retient `db/seeds.rb` de poser les quinze échanges de démonstration. Posé après coup, le serveur les a déjà dans sa base — d'où sa place ici, avant `make setup`. Et **ne le déclarez jamais vide** : un `RAILS_ENV=` sans valeur n'est pas absent pour Ruby, et les suites de tests, qui ne posent `test` que si la variable manque, tourneraient alors en `development`. C'est pourquoi `.env.oots.template` ne le déclare pas, et pourquoi `scripts/setup_server.sh` est seul à l'écrire.
 >
-> Sans `SECRET_KEY_BASE`, Rails refuse de démarrer en production — `Missing secret_key_base for 'production' environment`. L'application ne lit rien dans ses *credentials* : cette variable suffit, et `config/master.key` n'a pas à exister sur le serveur.
+> Sans `SECRET_KEY_BASE`, Rails refuse de démarrer en production — `Missing secret_key_base for 'production' environment`. En production, l'application ne lit rien dans ses *credentials* — seul l'environnement `development` en lit, les identifiants ProConnect d'un poste ([README](../README.md#les-identifiants-proconnect-du-poste)) : cette variable suffit, et `config/master.key` n'a pas à exister sur le serveur.
 
 ### 3. Installer
 

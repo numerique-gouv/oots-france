@@ -130,14 +130,16 @@ module Settings
         names: FRANCE_CONNECT.each_value.flat_map(&:values).join(', ')))
     end
 
-    # The ProConnect of the console, all three or none: none leaves the console
+    # The ProConnect of the console, all three or none — counting what the
+    # development credentials fill in, as `Settings.proconnect_value` reads it:
+    # none leaves the console
     # shut and the exchanges running, which a deployment may want; one begun and
     # left with holes would show a button leading to a refusal known in advance.
     def reject_unless_proconnect_whole
-      return unless partly_declared?(PROCONNECT)
+      declared = PROCONNECT.each_value.group_by { |name| Settings.proconnect_value(name).present? }
+      return unless declared.key?(true) && declared.key?(false)
 
-      refuse(I18n.t('lib.settings.proconnect_incomplete',
-        names: PROCONNECT.each_value.reject { |name| filled?(name) }.join(', ')))
+      refuse(I18n.t('lib.settings.proconnect_incomplete', names: declared.fetch(false).join(', ')))
     end
 
     # Whatever ProConnect is declared, the console must know whom it admits: an
