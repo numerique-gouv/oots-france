@@ -116,18 +116,21 @@ Alors('l\'administrateur arrive sur l\'écran du choix de la version, sans ident
   expect(@navigateur.current_url).to end_with('/admin/demo')
 end
 
-# Requirement 27 of chapter 1 §2. The two values come from the real directories,
-# so the scenario asserts that they are there — not what they say, which Brussels
-# may rewrite without telling us. They are named on the card that carries the
-# button, in the one sentence that stands between the rule and it, and each
-# wears the mark of what the directories publish.
+# Requirement 27 of chapter 1 §2. The values come from the real directories, so
+# the scenario asserts that they are there — not what they say, nor how many
+# requirements the acceptance resolves to a provider, which Brussels may change
+# without telling us. A card that resolves one names its provider and its
+# evidence type in the one sentence that stands between the rule and the
+# button, and each value wears the mark of what the directories publish.
 Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
-  nommes = Nokogiri::HTML(@navigateur.body)
-    .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
+  nommes = Nokogiri::HTML(@navigateur.body).css('.requirement-card__actions').map do |carte|
+    carte.css('.directory-value').map { |valeur| valeur.text.strip }
+  end.reject(&:empty?)
 
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
-  expect(nommes.size).to eq(2)
-  expect(nommes).not_to include('')
+  expect(nommes).not_to be_empty
+  expect(nommes.map(&:size).uniq).to eq([2])
+  expect(nommes.flatten).not_to include('')
 end
 
 # Chapter 1 §3.3: this click is where the user says explicitly that the
