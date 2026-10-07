@@ -11,9 +11,7 @@
 <div class="fr-grid-row">
   <div class="fr-col-12 fr-col-md-8">
     <% if @pro_connect %>
-      <%= dsfr_callout(html_attributes: { class: 'fr-mb-4w' }) do %>
-        <%= t('admin.sessions.new.reserved_html', domains: tag.strong(domains)) %>
-      <% end %>
+      <p><%= t('admin.sessions.new.reserved_html', domains: tag.strong(domains)) %></p>
 
       <%= dsfr_proconnect_button(target: admin_session_path) %>
     <% else %>

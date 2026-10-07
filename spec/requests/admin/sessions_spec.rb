@@ -8,26 +8,26 @@ RSpec.describe 'Admin::Sessions' do
   describe 'GET /admin/session/new' do
     before { stub_pro_connect }
 
-    # CA1: the button, its link, the callout naming the domains, and no field.
-    it 'offers the ProConnect button, behind a callout naming the admitted domains' do
+    # CA1: the button, its link, the sentence naming the domains, and no field.
+    it 'offers the ProConnect button, under a sentence naming the admitted domains' do
       get new_admin_session_path
 
       expect(response).to have_http_status(:ok)
       page = response.parsed_body
       expect(page.css('button.fr-proconnect').text).to include('ProConnect')
       expect(page.css('a[href="https://www.proconnect.gouv.fr/"]').text).to eq("Qu'est-ce que ProConnect ?")
-      expect(page.css('.fr-callout').text)
+      expect(page.css('main p').text)
         .to include("L'espace d'administration est réservé aux agents dont l'adresse est en @numerique.gouv.fr.")
       expect(page.css('input[type="password"], input[type="email"]')).to be_empty
     end
 
-    # CA5: the callout enumerates every admitted domain.
+    # CA5: the sentence enumerates every admitted domain.
     it 'names every admitted domain' do
       allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[numerique.gouv.fr sous.numerique.gouv.fr])
 
       get new_admin_session_path
 
-      expect(response.parsed_body.css('.fr-callout').text).to include('@numerique.gouv.fr et @sous.numerique.gouv.fr')
+      expect(response.parsed_body.css('main p').text).to include('@numerique.gouv.fr et @sous.numerique.gouv.fr')
     end
 
     # CA12: no ProConnect declared, no button — and a sentence saying why.
