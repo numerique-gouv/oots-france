@@ -1,5 +1,4 @@
 require 'jwt'
-require_relative 'identities'
 require_relative 'pages'
 require_relative 'responses'
 require_relative 'store'
@@ -64,9 +63,7 @@ module FakeFranceConnect
     # `sub` and what the requested scopes cover, and nothing else: no
     # identifier, no country, no `birthcountry`, no `email`.
     def userinfo_claims(held)
-      identity = Identities.find(held.fetch(:identity_key))
-
-      { 'sub' => held.fetch(:sub) }.merge(identity.claims_for(held.fetch(:scopes)))
+      { 'sub' => held.fetch(:sub) }.merge(held.fetch(:identity).claims_for(held.fetch(:scopes)))
     end
 
     def refuse(response, error, status: 400)
@@ -95,9 +92,9 @@ module FakeFranceConnect
     end
 
     def issue(client, granted)
-      identity = Identities.find(granted.fetch(:identity_key))
+      identity = granted.fetch(:identity)
       subject = configuration.tokens.subject_for(client.id, identity)
-      access_token = configuration.store.issue_access_token(identity_key: identity.key, sub: subject,
+      access_token = configuration.store.issue_access_token(identity: identity, sub: subject,
         scopes: granted.fetch(:scopes))
 
       { access_token: access_token, token_type: 'Bearer', expires_in: Store::ACCESS_TOKEN_LIFETIME,

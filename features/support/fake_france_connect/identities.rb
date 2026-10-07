@@ -1,3 +1,6 @@
+require 'date'
+require 'digest'
+
 module FakeFranceConnect
   # One test identity of a member state's eIDAS node, as the bridge hands it to
   # FranceConnect+ once translated.
@@ -76,7 +79,7 @@ module FakeFranceConnect
   end
 
   # The identities the fake serves, and the countries its first page offers:
-  # every member state, and the same two identities behind each of them — what
+  # every member state, and the same three identities behind each of them — what
   # a country button changes is the screen, never who signs in.
   module Identities
     COUNTRY_NAMES = {
@@ -106,7 +109,40 @@ module FakeFranceConnect
         eidas_identifier: 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07',
         given_name: 'Mikkel Anker', family_name: 'Bruun', birthdate: '1998-09-03',
       ),
+      Identity.new(
+        key: 'pl-substantial', country: 'PL', level: 'substantial',
+        eidas_identifier: 'PL/FR/3e9b47c2-5a1d-4c86-b0f4-7d2e18a9c6b3',
+        given_name: 'Alicja', family_name: 'Roszponka', birthdate: '1991-04-06',
+      ),
     ].freeze
+
+    ENTERED = 'entered'.freeze
+
+    # The identity the operator types in on the identity page, for a
+    # demonstration that needs a name the fixed identities do not carry. At the
+    # high level, so that no `acr_values` refuses it; its identifier is drawn
+    # from what was typed, so that the same person under the same country gets
+    # the same `sub` twice.
+    def self.entered(country:, given_name:, family_name:, birthdate:)
+      given_name = given_name.strip
+      family_name = family_name.strip
+      return if given_name.empty? || family_name.empty? || !iso_date?(birthdate)
+
+      digest = Digest::SHA256.hexdigest([country, given_name, family_name, birthdate].join("\n"))
+      Identity.new(key: ENTERED, country: country, level: 'high', eidas_identifier: "#{country}/FR/#{digest}",
+        given_name: given_name, family_name: family_name, birthdate: birthdate)
+    end
+
+    def self.iso_date?(value)
+      return false unless value.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+
+      Date.iso8601(value)
+      true
+    rescue Date::Error
+      false
+    end
+
+    private_class_method :iso_date?
 
     def self.countries = COUNTRY_NAMES.keys
 

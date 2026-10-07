@@ -175,14 +175,17 @@ Le lancement tient à deux conditions. `URL_FAUX_FRANCE_CONNECT` doit être rens
 
 Ce sont les identités du faux, pas des personnes : les noms sont des noms d'usage inventés, et « il est interdit d'utiliser de vraies données personnelles » vaut ici comme au bac à sable.
 
-La première page du faux offre **un bouton par État membre**, France comprise, et les deux identités ci-dessous derrière chacun d'eux : le pays choisi ne change que l'écran, jamais qui s'identifie — ce qui est fidèle, la passerelle ne rendant aucun pays à la démarche.
+La première page du faux offre **un bouton par État membre**, France comprise, et les trois identités ci-dessous derrière chacun d'eux : le pays choisi ne change que l'écran, jamais qui s'identifie — ce qui est fidèle, la passerelle ne rendant aucun pays à la démarche.
 
 | Clé | Niveau (`acr`) | Claims |
 | --- | --- | --- |
 | `dk-substantial` | substantiel (`eidas2`) | `given_name` « Freja Marie », `family_name` « Sørensen », `birthdate` `2001-04-17`, `gender` `female`, `birthplace` « Aarhus » |
 | `dk-high` | élevé (`eidas3`) | `given_name` « Mikkel Anker », `family_name` « Bruun », `birthdate` `1998-09-03` — ni `gender`, ni `birthplace`, qui sont facultatifs |
+| `pl-substantial` | substantiel (`eidas2`) | `given_name` « Alicja », `family_name` « Roszponka », `birthdate` `1991-04-06` — ni `gender`, ni `birthplace` |
 
-Un `preferred_username` égal au `family_name` s'ajoute sous le scope `profile` ou sous le sien, et sous aucun autre. Aucune des deux identités ne porte **ni identifiant eIDAS, ni pays, ni `birthcountry`, ni `email`** : le faux reproduit cette lacune de FranceConnect+ plutôt que de la combler, et c'est elle qui laissera `sdg:Identifier` absent de la requête, ce que le [XSD du profil de métadonnées](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/xsd/sdg/SDG-GenericMetadataProfile-v2.0.1.xsd) permet (`minOccurs="0"`). Ce que les deux identités portent toutes, en revanche : `FamilyName`, `GivenName` et `DateOfBirth`, obligatoires au XSD même, et le niveau de garantie, que le XSD laisse facultatif mais que la règle Schematron `R-EDM-REQ-C036` (FATAL) impose.
+Un choix de plus, « *Input an identity* », déplie sur la même page un formulaire où l'exploitant saisit lui-même le prénom, le nom et la date de naissance de l'usager, pour une démonstration qui en veut d'autres que les trois ci-dessus. L'identité saisie est de niveau élevé (`eidas3`), pour qu'aucun `acr_values` ne la refuse. Elle ne porte ni `gender` ni `birthplace`, et son identifiant eIDAS est tiré de ce qui a été saisi : la même saisie, sous le même pays, rend le même `sub`. Un champ vide ou une date qui n'en est pas une est refusé par une page 400 `invalid_identity`.
+
+Un `preferred_username` égal au `family_name` s'ajoute sous le scope `profile` ou sous le sien, et sous aucun autre. Aucune de ces identités ne porte **ni identifiant eIDAS, ni pays, ni `birthcountry`, ni `email`** : le faux reproduit cette lacune de FranceConnect+ plutôt que de la combler, et c'est elle qui laissera `sdg:Identifier` absent de la requête, ce que le [XSD du profil de métadonnées](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/xsd/sdg/SDG-GenericMetadataProfile-v2.0.1.xsd) permet (`minOccurs="0"`). Ce qu'elles portent toutes, en revanche : `FamilyName`, `GivenName` et `DateOfBirth`, obligatoires au XSD même, et le niveau de garantie, que le XSD laisse facultatif mais que la règle Schematron `R-EDM-REQ-C036` (FATAL) impose.
 
 L'identifiant `DK/FR/…` que le nœud rendrait ne sort jamais du faux : il n'entre que dans la dérivation du `sub`, pseudonyme de 64 caractères hexadécimaux suivis de `v1`, propre à chaque fournisseur de service — le faux le dérive de son `client_id`, quand le vrai le dérive de l'`entityId` que son annuaire associe au fournisseur.
 

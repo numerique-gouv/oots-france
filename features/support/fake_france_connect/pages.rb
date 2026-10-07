@@ -21,6 +21,8 @@ module FakeFranceConnect
     # French State's, which costs nothing to borrow and makes a button read as
     # one. The single reader of these pages is the operator driving the
     # demonstration.
+    ENTERED_FORM = 'entered-identity'.freeze
+
     STYLE = <<~CSS.freeze
       :root { color-scheme: light dark; }
       * { box-sizing: border-box; }
@@ -77,8 +79,35 @@ module FakeFranceConnect
       .secondary:hover { background: #f5f5fe; border-color: #000091; }
       button:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
       .card { background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem; padding: 1.5rem; }
+      label { text-align: left; font-weight: 700; }
+      input {
+        font: inherit;
+        min-height: 2.5rem;
+        padding: .5rem .75rem;
+        border: 0;
+        border-bottom: 2px solid #3a3a3a;
+        border-radius: .25rem .25rem 0 0;
+        background: #eee;
+        color: #161616;
+      }
+      input:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
+      .card form { margin: 0; }
+      ##{ENTERED_FORM} { margin-top: 1rem; }
       .quiet { color: #666; font-size: .875rem; }
     CSS
+
+    # The page's one script: without it, the typed-in form stays hidden and the
+    # fixed identities still work.
+    REVEAL_SCRIPT = <<~HTML.freeze
+      <script>
+        document.querySelector('[aria-controls="#{ENTERED_FORM}"]').addEventListener('click', function () {
+          var panel = document.getElementById('#{ENTERED_FORM}');
+          panel.hidden = !panel.hidden;
+          this.setAttribute('aria-expanded', String(!panel.hidden));
+          if (!panel.hidden) panel.querySelector('input:not([type=hidden])').focus();
+        });
+      </script>
+    HTML
 
     def self.countries(action, codes)
       buttons = codes.map do |code|
@@ -90,8 +119,27 @@ module FakeFranceConnect
 
     def self.identities(action, identities)
       buttons = identities.map { |identity| button('identity', identity.key, identity.label) }
+      reveal = '<button type="button" class="secondary" aria-expanded="false" ' \
+               "aria-controls=\"#{ENTERED_FORM}\">Input an identity</button>"
 
-      layout('Choose a test identity', form(action, buttons))
+      layout('Choose a test identity', "#{form(action, buttons + [reveal])}#{entered_form(action)}#{REVEAL_SCRIPT}")
+    end
+
+    def self.entered_form(action)
+      fields = [
+        "<input type=\"hidden\" name=\"identity\" value=\"#{Identities::ENTERED}\">",
+        field('given_name', 'Given name', 'text'),
+        field('family_name', 'Family name', 'text'),
+        field('birthdate', 'Birth date', 'date'),
+        '<button type="submit">Continue with this identity</button>',
+      ]
+
+      "<div class=\"card\" id=\"#{ENTERED_FORM}\" hidden>#{form(action, fields)}</div>"
+    end
+
+    def self.field(name, label, type)
+      "<label for=\"#{name}\">#{label}</label>" \
+        "<input id=\"#{name}\" name=\"#{name}\" type=\"#{type}\" required autocomplete=\"off\">"
     end
 
     # What the consent page of FranceConnect+ does: list the data about to be

@@ -29,16 +29,16 @@ module FakeFranceConnect
     # A copy, so that what the lock protects cannot be edited from outside it.
     def interaction(uid) = mutex.synchronize { interactions[uid]&.dup }
 
-    def advance_interaction(uid, identity:)
-      mutex.synchronize { interactions[uid] = interactions.fetch(uid).merge(identity: identity) }
+    def advance_interaction(uid, **progress)
+      mutex.synchronize { interactions[uid] = interactions.fetch(uid).merge(progress) }
     end
 
     def close_interaction(uid) = mutex.synchronize { interactions.delete(uid) }
 
     # Named one by one rather than taken as a hash: a key mistyped on the way
     # in would otherwise be stored happily and fail at another class's `fetch`.
-    def issue_code(client_id:, redirect_uri:, identity_key:, nonce:, acr:, scopes:, amr:)
-      granted = { client_id: client_id, redirect_uri: redirect_uri, identity_key: identity_key,
+    def issue_code(client_id:, redirect_uri:, identity:, nonce:, acr:, scopes:, amr:)
+      granted = { client_id: client_id, redirect_uri: redirect_uri, identity: identity,
                   nonce: nonce, acr: acr, scopes: scopes, amr: amr, issued_at: now }
 
       SecureRandom.hex(32).tap { |code| mutex.synchronize { codes[code] = granted } }
@@ -61,8 +61,8 @@ module FakeFranceConnect
 
     def age_access_tokens(seconds) = age(access_tokens, seconds)
 
-    def issue_access_token(identity_key:, sub:, scopes:)
-      held = { identity_key: identity_key, sub: sub, scopes: scopes, issued_at: now }
+    def issue_access_token(identity:, sub:, scopes:)
+      held = { identity: identity, sub: sub, scopes: scopes, issued_at: now }
 
       SecureRandom.hex(32).tap { |token| mutex.synchronize { access_tokens[token] = held } }
     end
