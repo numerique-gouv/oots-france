@@ -51,7 +51,8 @@ Un **bouchon** écrit une valeur en dur, ou tient un comportement de façade, fa
 | Le jeton du bénéficiaire, qui atteste l'émetteur mais jamais sa qualité pour agir au nom de la personne déclarée | `BeneficiaryToken` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | L'annuaire des requêteurs français autorisés, tenu en JSON | `Directories::EvidenceRequesters` | [OOTS-58](https://linear.app/pole-api/issue/OOTS-58) |
 | Le justificatif servi : un document de démonstration engendré à chaque réponse, qui n'atteste rien | `EvidenceDocumentBuilder` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
-| Les démarches `T1` et `R1`, servies pour que la démonstration ait un document à faire circuler et une réponse différée à produire | `ProcedureCode` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| Les deux types de justificatif que la France déclare, servis sous n'importe quelle démarche pour que la démonstration ait un document à faire circuler | `ServedEvidenceType` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
+| La démarche `R1`, différée quel que soit le type demandé, pour qu'une réponse différée soit produite quelque part | `ProcedureCode` | [OOTS-82](https://linear.app/pole-api/issue/OOTS-82) |
 | La date annoncée d'une réponse différée, simple décalage plutôt qu'une disponibilité calculée | `DeferredResponseBuilder::DEFERRAL` | [OOTS-91](https://linear.app/pole-api/issue/OOTS-91) |
 | Le filet à erreurs du chemin entrant, trop large pour la seule sous-classe qui l'atteint | `IncomingMessage::Process` | [OOTS-110](https://linear.app/pole-api/issue/OOTS-110) |
 
