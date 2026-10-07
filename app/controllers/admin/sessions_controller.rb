@@ -15,6 +15,7 @@ module Admin
       @pro_connect = Settings.proconnect_instance
       @domains = Settings.proconnect_agent_domains
       @refused_email = session.delete(:pro_connect_refused_email)
+      @development_agent = DevelopmentSessionsController.agent_email if Rails.env.local?
     end
 
     # The POST of the ProConnect button. The `state` and the `nonce` are kept

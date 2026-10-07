@@ -1,15 +1,11 @@
-# The identity of the fake ProConnect whose address is in the domain a
-# development machine admits: the administrator of the demonstration.
-AGENT_DEMO = 'camille.agent@numerique.gouv.fr'.freeze
-
 Étantdonné('l\'administrateur de démonstration connecté à l\'espace d\'administration') do
   @navigateur = DemoBrowser.new(procedure_url)
-  @navigateur.sign_in(AGENT_DEMO)
+  @navigateur.sign_in
 
   # Said here rather than left to fail further on: every following step would
   # otherwise fail on the login page, which names the symptom and not the cause.
   expect(@navigateur.current_url).not_to include('/admin/session/new'),
-    "Connexion refusée pour #{AGENT_DEMO} par le faux ProConnect : #{@navigateur.body}"
+    "Connexion refusée sans ProConnect : #{@navigateur.body}"
 end
 
 Quand('l\'administrateur ouvre la démarche de démonstration') do
@@ -102,7 +98,7 @@ Alors('FranceConnect+ le ramène sur la page de déconnexion de la démarche') d
 end
 
 Quand('il se reconnecte à l\'espace d\'administration') do
-  @navigateur.sign_in(AGENT_DEMO)
+  @navigateur.sign_in
 end
 
 Quand('il ouvre la page des justificatifs de la démarche') do

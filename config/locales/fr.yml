@@ -2049,6 +2049,11 @@ fr:
         # chacun précédé de son « @ » : « @numerique.gouv.fr », « @a et @b ».
         reserved_html: L'espace d'administration est réservé aux agents dont l'adresse est en %{domains}.
         undeclared: "Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir."
+        # Rendu en développement et en test seulement, la route n'existant
+        # nulle part ailleurs.
+        development:
+          lead: "En développement : entrer sans ProConnect, comme %{email}."
+          button: Entrer sans ProConnect
         refused: "L'espace d'administration est réservé aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
     home:
       show:

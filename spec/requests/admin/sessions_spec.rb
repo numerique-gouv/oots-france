@@ -31,12 +31,12 @@ RSpec.describe 'Admin::Sessions' do
     end
 
     # CA12: no ProConnect declared, no button — and a sentence saying why.
-    it 'says no ProConnect is declared, and offers no button, when none is' do
+    it 'says no ProConnect is declared, and offers no ProConnect button, when none is' do
       undeclare_pro_connect
 
       get new_admin_session_path
 
-      expect(response.parsed_body.css('button')).to be_empty
+      expect(response.parsed_body.css('button.fr-proconnect')).to be_empty
       expect(page_text).to include("Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir.")
     end
 
@@ -238,15 +238,6 @@ RSpec.describe 'Admin::Sessions' do
     it 'no longer opens the space once the domain is taken out of the list' do
       sign_in
       allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[autre.gouv.fr])
-
-      get admin_root_path
-
-      expect(response).to redirect_to(new_admin_session_path)
-    end
-
-    it 'no longer opens the space once ProConnect is no longer declared' do
-      sign_in
-      undeclare_pro_connect
 
       get admin_root_path
 

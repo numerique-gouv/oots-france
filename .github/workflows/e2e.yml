@@ -147,15 +147,14 @@ jobs:
           # must stay in step.
           docker compose run --rm --no-deps web bundle exec rails db:seed
 
-      - name: Démarre l'application, son worker, le faux FranceConnect+ et le faux ProConnect
-        # The same four services `make up` starts: the fakes are services of the
-        # stack, and the scenarios drive those rather than starting their own —
-        # see docs/test_e2e.md.
+      - name: Démarre l'application, son worker et le faux FranceConnect+
+        # The same three services `make up` starts: the fake is a service of the
+        # stack, and the scenarios drive that one rather than starting a second
+        # of their own — see docs/test_e2e.md.
         run: |
-          docker compose up --detach --no-build web worker fake-france-connect fake-proconnect
+          docker compose up --detach --no-build web worker fake-france-connect
           timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:'"$PORT_OOTS_FRANCE"'/up; do sleep 2; done'
           timeout 60 sh -c 'until curl -sf -o /dev/null http://localhost:3100/api/v2/.well-known/openid-configuration; do sleep 2; done'
-          timeout 60 sh -c 'until curl -sf -o /dev/null http://localhost:3200/api/v2/.well-known/openid-configuration; do sleep 2; done'
 
       - name: Joue le test e2e
         run: make e2e
@@ -178,7 +177,7 @@ jobs:
 
       - name: Logs de l'application en cas d'échec
         if: failure()
-        run: docker compose logs web fake-france-connect fake-proconnect || true
+        run: docker compose logs web fake-france-connect || true
 
       - name: Arrête la pile
         if: always()

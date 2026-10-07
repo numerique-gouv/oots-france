@@ -88,7 +88,7 @@ Cucumber scenarios stay in French (`# language: fr`), like those of `data_pass`:
   | The French procedure portal that calls it, in every role (requester, OpenID client) | *le portail*, introduced as *un portail de démarche français* or *un portail de test* |
   | A procedure code | *la démarche "00"* |
   | The one portal the console plays | *la démarche de démonstration* |
-  | Whoever opens *l'espace d'administration* | *l'administrateur* — *l'administrateur de démonstration* when it is the identity of the fake ProConnect whose address is in the admitted domain; *un visiteur* when nobody is signed in |
+  | Whoever opens *l'espace d'administration* | *l'administrateur* — *l'administrateur de démonstration* when it enters without ProConnect, through the button development and test alone offer; *un visiteur* when nobody is signed in |
   | Whoever identifies themself through ProConnect, admitted or not | *l'agent*, introduced as *un agent* |
   | The person whose evidence is exchanged, or who identifies themself | *l'usager* |
   | The Evidence Provider, the Evidence Requester of another Member State | *le fournisseur*, *un requêteur étranger* |

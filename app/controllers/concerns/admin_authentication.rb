@@ -34,15 +34,13 @@ module AdminAuthentication
       alert: :'admin.sessions.connection_required', status: :see_other
   end
 
-  # The agent ProConnect identified, admitted again at every request rather
-  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`,
-  # or a ProConnect no longer declared, closes the sessions already open at
-  # their next page.
+  # The agent the sign-in identified, admitted again at every request rather
+  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`
+  # closes the sessions it had opened at their next page.
   def administrator_signed_in?
     email = session[:agent_email]
 
-    email.present? && Settings.proconnect_instance.present? &&
-      Agent.new(email:).admitted_by?(Settings.proconnect_agent_domains)
+    email.present? && Agent.new(email:).admitted_by?(Settings.proconnect_agent_domains)
   end
 
   def requested_path = session[:requested_path]

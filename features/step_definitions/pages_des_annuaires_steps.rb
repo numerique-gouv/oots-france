@@ -103,7 +103,7 @@ Quand('sa session prend fin') do
 end
 
 Quand("l'administrateur se reconnecte") do
-  sign_in_through_pro_connect
+  sign_in_without_pro_connect
 end
 
 Quand(/^(?:l'administrateur|il) cherche "([^"]*)"$/) do |terms|

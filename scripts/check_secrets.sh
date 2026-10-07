@@ -193,14 +193,6 @@ if contient .env.oots "$INSTALLES"; then
     signale "❌ .env.oots : SECRET_CLIENT_VRAI_FRANCE_CONNECT porte le secret que .env.oots.template publie pour le faux FranceConnect+."
   fi
 
-  # The secret the template publishes for the fake ProConnect, whatever the
-  # issuer: unlike the fake FranceConnect+, which a deployment may declare
-  # beside the real one, the fake ProConnect is never a deployment's, and the
-  # real one delivers a secret of its own.
-  if [ "$(valeur SECRET_CLIENT_PROCONNECT .env.oots)" = "$(valeur SECRET_CLIENT_PROCONNECT .env.oots.template)" ]; then
-    signale "❌ .env.oots : SECRET_CLIENT_PROCONNECT porte le secret que .env.oots.template publie pour le faux ProConnect."
-  fi
-
   # No template declares either, for the reason SANS_GABARIT gives. So this is
   # the only place the pair is checked, and Rails would otherwise refuse to
   # start on `Missing secret_key_base`.

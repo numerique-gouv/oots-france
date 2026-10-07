@@ -19,3 +19,11 @@
     <% end %>
   </div>
 </div>
+
+<% if @development_agent %>
+  <div class="fr-mt-6w">
+    <p class="fr-text--sm"><%= t('admin.sessions.new.development.lead', email: @development_agent) %></p>
+    <%= button_to t('admin.sessions.new.development.button'), admin_development_session_path,
+          class: 'fr-btn fr-btn--secondary', data: { turbo: false } %>
+  </div>
+<% end %>

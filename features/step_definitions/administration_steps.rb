@@ -5,8 +5,11 @@ COUNTRIES = {
   'allemand' => 'DE',
 }.freeze
 
+# The way in a development machine and the suites have, which presents no
+# credentials to ProConnect: the button the login page offers in development
+# and test alone.
 Étantdonné("un administrateur connecté à l'espace d'administration") do
-  sign_in_through_pro_connect
+  sign_in_without_pro_connect
 end
 
 Quand("l'administrateur s'identifie par ProConnect") do

@@ -69,6 +69,13 @@ Rails.application.routes.draw do
     get 'proconnect/retour_connexion', to: 'pro_connect#retour_connexion', as: :pro_connect_retour_connexion
     get 'proconnect/retour_deconnexion', to: 'pro_connect#retour_deconnexion', as: :pro_connect_retour_deconnexion
 
+    # The way in without ProConnect, for a development machine and the suites,
+    # which have no credentials to present. Drawn in those two environments
+    # and nowhere else: in production the address does not exist, rather than
+    # existing and refusing. Decided by `Rails.env`, never by a variable a
+    # deployment could set.
+    post 'session/developpement', to: 'development_sessions#create', as: :development_session if Rails.env.local?
+
     # The demonstration procedure: the front half of an Online Procedure Portal,
     # played by the operator. It is the one corner of the console that does not
     # observe an exchange — `docs/espace_administration.md` says why it is

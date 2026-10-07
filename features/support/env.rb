@@ -123,19 +123,6 @@ BeforeAll do
   end
 end
 
-# The fake ProConnect, under the same two conditions and for their reasons:
-# the end-to-end scenarios sign in through it.
-BeforeAll do
-  issuer = ENV.fetch('URL_PROCONNECT', nil)
-
-  unless issuer.blank? || FakeProConnect::Runner.answering?(issuer)
-    FakeProConnect.running = FakeProConnect::Runner.new(
-      issuer: issuer, application_url: ENV.fetch('URL_OOTS_FRANCE'),
-    ).start
-  end
-end
-
 AfterAll do
   FakeFranceConnect.running&.stop
-  FakeProConnect.running&.stop
 end

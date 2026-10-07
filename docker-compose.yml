@@ -76,8 +76,6 @@ services:
       # network namespace, and a service that borrows one may publish no port of
       # its own. Nothing listens behind it where the fake does not run.
       - "${PORT_FAUX_FRANCE_CONNECT}:${PORT_FAUX_FRANCE_CONNECT}"
-      # The fake ProConnect, for the same reason.
-      - "${PORT_FAUX_PROCONNECT}:${PORT_FAUX_PROCONNECT}"
     depends_on:
      - domibus
      - postgres
@@ -107,20 +105,6 @@ services:
     # knock on the docker network.
     environment:
       PORT_FAUX_FRANCE_CONNECT: ${PORT_FAUX_FRANCE_CONNECT}
-    network_mode: "service:web"
-    depends_on:
-      - web
-
-  # ProConnect, as the administration space sees it: the fake `make up` and the
-  # end-to-end suite sign in through, in `web`'s network namespace for the
-  # reason the fake FranceConnect+ is — one issuer for the browser and for
-  # `web`. `features/support/fake_pro_connect/`, and nothing of it in `app/`.
-  # No deployment starts it: a server declares the real ProConnect, or none.
-  fake-proconnect:
-    <<: *configuration-base
-    command: "bundle exec ruby features/support/fake_pro_connect/server.rb"
-    environment:
-      PORT_FAUX_PROCONNECT: ${PORT_FAUX_PROCONNECT}
     network_mode: "service:web"
     depends_on:
       - web

@@ -113,16 +113,6 @@ while read -r nom format; do
   fi
 done < scripts/secret_variables
 
-# The ProConnect of the administration space, written empty unless the command
-# line gives it — the one place this script departs from the template, whose
-# values are those of the fake ProConnect: a server never designates it, and
-# `make check-secrets` refuses its public secret. Empty, the application starts
-# and its console stays shut until the operator declares the real one, as
-# docs/deploiement.md says.
-for nom in URL_PROCONNECT IDENTIFIANT_CLIENT_PROCONNECT SECRET_CLIENT_PROCONNECT; do
-  printenv "$nom" >/dev/null 2>&1 || export "$nom="
-done
-
 # `db/seeds.rb` reads this to withhold the fifteen demonstration exchanges.
 # Set afterwards, the server already has them in its database — which is why it
 # belongs here, before `make setup`, and not to a later edit.

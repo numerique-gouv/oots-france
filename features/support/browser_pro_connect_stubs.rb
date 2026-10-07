@@ -22,6 +22,11 @@ module BrowserProConnectStubs
     end
   end
 
+  def sign_in_without_pro_connect
+    visit new_admin_session_path
+    click_button I18n.t('admin.sessions.new.development.button')
+  end
+
   # The departure as the login page offers it, and everything that follows on
   # its own: ProConnect, the return, the page the space opens on.
   def sign_in_through_pro_connect(email: ProConnectStubs::AGENT_EMAIL)

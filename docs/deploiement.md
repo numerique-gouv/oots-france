@@ -89,7 +89,7 @@ $ git clone https://github.com/numerique-gouv/oots-france.git && cd oots-france
 $ URL_OOTS_FRANCE=https://<domaine> scripts/setup_server.sh
 ```
 
-Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et ne demande rien : il **engendre lui-même chaque secret**, pose `RAILS_ENV=production` avec le `SECRET_KEY_BASE` qui va avec, engendre les trois clés JWK, et prend partout ailleurs la valeur que le template porte — sauf pour les trois variables de ProConnect, qu'il écrit **vides** si la ligne de commande ne les donne pas : le template porte celles du faux ProConnect, qu'un serveur ne désigne jamais. `URL_OOTS_FRANCE` est le seul renseignement qu'il exige, faute de pouvoir le deviner : un `http://localhost:3000` rendrait injoignables les trois adresses que la démarche déclare à FranceConnect+, et rien ne le dirait avant la première authentification d'un usager.
+Le script écrit `.env`, `.env.oots`, `.env.domibus` et `.env.postgres`, et ne demande rien : il **engendre lui-même chaque secret**, pose `RAILS_ENV=production` avec le `SECRET_KEY_BASE` qui va avec, engendre les trois clés JWK, et prend partout ailleurs la valeur que le template porte. `URL_OOTS_FRANCE` est le seul renseignement qu'il exige, faute de pouvoir le deviner : un `http://localhost:3000` rendrait injoignables les trois adresses que la démarche déclare à FranceConnect+, et rien ne le dirait avant la première authentification d'un usager.
 
 Les secrets qu'il engendre sont ceux que [`scripts/secret_variables`](../scripts/secret_variables) nomme, chacun au format que son destinataire exige — et deux d'entre eux sont refusés si ce format ne l'est pas : le compte d'accès, par Domibus au moment de `make setup`, et les clés du journal, par l'application à son démarrage. Aucun générateur ne produit de guillemet, de `$`, de `#` ni d'espace, que Compose réinterpréterait dans un `env_file` :
 
@@ -115,7 +115,7 @@ Tout ce que le script n'engendre pas prend la valeur que son template porte — 
 | `DONNEES_REQUETEURS`, `IDENTIFIANT_REQUETEUR_DEMARCHE` | l'annuaire des fournisseurs de service requêteurs, et le SIRET sous lequel la démarche de démonstration y est inscrite |
 | `URL_FAUX_FRANCE_CONNECT` — `https://<sous-domaine>/api/v2` derrière le frontal, ou `http://<domaine>:<PORT_FAUX_FRANCE_CONNECT>/api/v2` sans lui | l'émetteur du faux doit être une seule adresse pour le navigateur de l'usager comme pour `web`, et `localhost` ne vaut que sur un poste. Derrière un frontal, le faux écoute `PORT_FAUX_FRANCE_CONNECT` et annonce l'adresse publique : le port reste fermé. Vidée avec ses deux identifiants, l'accueil de la démarche n'offre pas sa carte |
 | `URL_VRAI_FRANCE_CONNECT`, `IDENTIFIANT_CLIENT_VRAI_FRANCE_CONNECT`, `SECRET_CLIENT_VRAI_FRANCE_CONNECT` | l'*issuer* et les identifiants que FranceConnect+ a délivrés à ce déploiement, bac à sable ou production. Les trois ou aucune : un jeu à trous refuse le démarrage. `make check-secrets` refuse par ailleurs le vrai déclaré avec le secret que `.env.oots.template` publie pour le faux, celui-là étant public dans le dépôt |
-| `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT`, `SECRET_CLIENT_PROCONNECT` | l'*issuer* et les identifiants que ProConnect a délivrés à ce déploiement, intégration ou production ([espace_administration.md](espace_administration.md#déclarer-proconnect)). Les trois ou aucune ; aucune, l'application démarre et l'espace d'administration reste fermé. `make check-secrets` refuse le secret que `.env.oots.template` publie pour le faux ProConnect |
+| `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT`, `SECRET_CLIENT_PROCONNECT` | l'*issuer* et les identifiants que ProConnect a délivrés à ce déploiement, intégration ou production ([espace_administration.md](espace_administration.md#déclarer-proconnect)). Les trois ou aucune ; aucune, ce que le template porte, l'application démarre et l'espace d'administration reste fermé |
 | `DOMAINES_AGENTS_PROCONNECT` | les domaines d'adresse des agents admis dans l'espace d'administration, `numerique.gouv.fr` par défaut |
 | `POSTGRES_USER`, `POSTGRES_DB`, `MYSQL_USER`, `MYSQL_DATABASE` | si l'on veut d'autres noms que ceux du dépôt. Leurs mots de passe, eux, sont engendrés |
 
@@ -153,7 +153,7 @@ $ make assets
 $ docker compose up -d web worker fake-france-connect
 ```
 
-Les trois services de `make up` qu'un serveur lance — le faux ProConnect n'en est pas —, mais détachés : celui-là reste au premier plan, pour un poste de développement. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
+Les trois services de `make up`, mais détachés : celui-là reste au premier plan, pour un poste de développement. Les bases et la passerelle suivent par dépendance ; `make logs` suit `web` et `worker`, `make down` arrête tout en gardant les volumes.
 
 Seul `nginx` est déclaré `restart: unless-stopped` dans `docker-compose.yml` : après un redémarrage de la machine, le reste ne revient pas de lui-même. Le poser sur les cinq autres services dans le `docker-compose.override.yml`, que Compose charge de lui-même — avec le démon activé par `systemctl enable`, la pile survit alors à un reboot :
 

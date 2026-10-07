@@ -32,8 +32,8 @@ check-env: ## What the templates declare, against what the .env* files carry
 check-secrets: ## What a deployment carries as secrets, against the development values of the templates
 	scripts/check_secrets.sh
 
-up: ## Run the application: server, background worker, fake FranceConnect+, fake ProConnect, database, gateway
-	$(COMPOSE) up web worker fake-france-connect fake-proconnect
+up: ## Run the application: server, background worker, fake FranceConnect+, database, gateway
+	$(COMPOSE) up web worker fake-france-connect
 
 # Same order as scripts/setup.sh, and for the same reasons: `depends_on` only
 # orders container startup, so the gateway would meet a database still creating

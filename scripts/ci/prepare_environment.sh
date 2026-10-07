@@ -86,7 +86,6 @@ valeurEffective() {
 # what a reader needs to know what they look like.
 PORT_OOTS_FRANCE=$(valeurEffective PORT_OOTS_FRANCE .env.template)
 PORT_FAUX_FRANCE_CONNECT=$(valeurEffective PORT_FAUX_FRANCE_CONNECT .env.template)
-PORT_FAUX_PROCONNECT=$(valeurEffective PORT_FAUX_PROCONNECT .env.template)
 
 # Where this deployment answers, for the browser as for the container: `web`
 # listens on the port it publishes, so one `localhost:…` serves the two
@@ -105,11 +104,6 @@ URL_OOTS_FRANCE="${URL_OOTS_FRANCE-http://localhost:$PORT_OOTS_FRANCE}"
 # no fake, and a default must not fill it back in.
 URL_FAUX_FRANCE_CONNECT="${URL_FAUX_FRANCE_CONNECT-http://localhost:$PORT_FAUX_FRANCE_CONNECT/api/v2}"
 
-# The fake ProConnect, sole ProConnect of the local stack, for the reason the
-# fake FranceConnect+ is: one name for the browser and for `web`. Its two
-# credentials are constants of this repository, in .env.oots.template.
-URL_PROCONNECT="${URL_PROCONNECT-http://localhost:$PORT_FAUX_PROCONNECT/api/v2}"
-
 # Where the demonstration procedure receives what is addressed to it, which is
 # **not** a path under URL_OOTS_FRANCE: the evidence is delivered by the
 # background worker, in a container of its own where `localhost` is the worker.
@@ -125,8 +119,8 @@ if ! printenv DONNEES_REQUETEURS >/dev/null 2>&1; then
   DONNEES_REQUETEURS="{\"00000000000002\":{\"nom\":\"Requêteur de test\",\"url\":\"http://web:4000\"},\"00000000000003\":{\"nom\":\"Université de démonstration\",\"url\":\"$URL_DEMARCHE\"}}"
 fi
 
-export PORT_OOTS_FRANCE PORT_FAUX_FRANCE_CONNECT PORT_FAUX_PROCONNECT
-export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT URL_PROCONNECT DONNEES_REQUETEURS
+export PORT_OOTS_FRANCE PORT_FAUX_FRANCE_CONNECT
+export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT DONNEES_REQUETEURS
 
 # The credentials of the two databases live in two files each, under the names
 # their image expects and under the names the application reads. Held in step
