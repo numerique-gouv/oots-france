@@ -5,14 +5,109 @@ COUNTRIES = {
   'allemand' => 'DE',
 }.freeze
 
-# Created in a step and not once for the whole run: `cucumber-rails` cleans the
-# database around every scenario, so an account posted beforehand would be gone.
-Étantdonné("un compte d'administrateur") do
-  @administrator = create(:administrator)
+# The way in a development machine and the suites have, which presents no
+# credentials to ProConnect: the button the login page offers in development
+# and test alone. The suite's database is never seeded, so the step names the
+# agent itself where the seed would have.
+Étantdonné("un administrateur connecté à l'espace d'administration") do
+  Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+  sign_in_without_pro_connect
 end
 
-Étantdonné("un administrateur connecté à l'espace d'administration") do
-  sign_in(@administrator.password)
+Étantdonné("un agent connecté à l'espace d'administration") do
+  sign_in_without_pro_connect
+end
+
+Quand('son adresse est nommée administrateur') do
+  Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+end
+
+Quand("l'agent ouvre l'accueil de l'espace d'administration") do
+  visit admin_root_path
+end
+
+Quand("l'agent ouvre l'accueil des annuaires") do
+  stub_code_list
+  stub_directory_resolution
+  stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_catalogue')
+  visit admin_common_services_root_path
+end
+
+Quand("l'agent ouvre l'écran du choix de la version de la démarche") do
+  visit admin_demo_root_path
+end
+
+# Each a page the agent reaches by its address, none of them being offered.
+RESERVED_PAGES = {
+  'le journal des événements' => -> { admin_journal_root_path },
+  "la fiche de l'échange allemand" => -> { admin_journal_exchange_path(exchange_named('allemand').exchange_id) },
+  'la recherche par personne' => lambda {
+    admin_journal_subjects_path(family_name: 'Dupont', given_name: 'Sophie', date_of_birth: '1965-11-25')
+  },
+  'le tableau de bord des jobs' => -> { admin_jobs_path },
+  "la page des points d'accès" => -> { admin_common_services_access_points_path },
+}.freeze
+
+Quand("l'agent ouvre {string} par son adresse") do |page_name|
+  visit instance_exec(&RESERVED_PAGES.fetch(page_name))
+end
+
+# No form offers it: the request a crafted page, or a stale tab, would send.
+Quand("l'agent demande un test de connectivité par son adresse") do
+  page.driver.submit :post, admin_common_services_connectivity_tests_path, {}
+end
+
+Alors("le journal des événements s'affiche") do
+  expect(page).to have_current_path(admin_journal_root_path)
+  expect(page).to have_css('h1', text: I18n.t('admin.journal.events.index.title'))
+end
+
+Alors("la page dit qu'elle est réservée aux administrateurs nommés") do
+  expect(page).to have_css('h1', text: I18n.t('admin.restricted_access.show.title'))
+  expect(page).to have_text(I18n.t('admin.restricted_access.show.body').squish)
+end
+
+Alors("aucun test de connectivité n'est enregistré") do
+  expect(ConnectivityTest.count).to eq(0)
+end
+
+Alors('la page offre les tuiles {string}') do |tiles|
+  expect(page.all('.fr-tile__title').map { |tile| tile.text.strip }).to eq(tiles.split(' et '))
+end
+
+HEADER_ENTRIES = %w[directories journal jobs demo].map { |entry| I18n.t("layouts.entete.#{entry}") }.freeze
+
+Alors("l'en-tête offre les liens {string} seulement") do |links|
+  offered = links.split(/, | et /)
+
+  HEADER_ENTRIES.each do |entry|
+    if offered.include?(entry)
+      expect(page).to have_css('header a', text: entry)
+    else
+      expect(page).to have_no_css('header a', text: entry)
+    end
+  end
+end
+
+Alors("la page offre la carte des points d'accès") do
+  expect(page).to have_css('.fr-tile__title', text: I18n.t('admin.common_services.access_points.index.title'))
+end
+
+Alors("la page n'offre pas la carte des points d'accès") do
+  expect(page).to have_css('.fr-tile__title', count: 3)
+  expect(page).to have_no_css('.fr-tile__title', text: I18n.t('admin.common_services.access_points.index.title'))
+end
+
+Quand("l'administrateur s'identifie par ProConnect") do
+  sign_in_through_pro_connect
+end
+
+Quand("un agent s'identifie par ProConnect avec l'adresse {string}") do |email|
+  sign_in_through_pro_connect(email:)
+end
+
+Étantdonné('ProConnect refuse la prochaine identification') do
+  BROWSER_PRO_CONNECT.refuse_next
 end
 
 Étantdonné('un échange délivré avec la Finlande') do
@@ -69,10 +164,6 @@ Quand('un visiteur ouvre le tableau de bord des jobs') do
   visit admin_jobs_path
 end
 
-Quand('l\'administrateur se connecte avec un mot de passe incorrect') do
-  sign_in('un-autre-mot-de-passe')
-end
-
 Quand('l\'administrateur se déconnecte') do
   click_button 'Se déconnecter'
 end
@@ -111,23 +202,32 @@ end
 
 Alors('la page de connexion s\'affiche') do
   expect(page).to have_current_path(new_admin_session_path)
-  expect(page).to have_button('Se connecter')
+  expect(page).to have_button("S'identifier avec ProConnect")
 end
 
-Alors('la page de connexion dit que les identifiants sont refusés') do
-  expect(page).to have_text('Adresse ou mot de passe incorrect.')
-  expect(page).to have_button('Se connecter')
+# CA1: the button, its link, and no field to type anything in.
+Alors("la page de connexion propose de s'identifier avec ProConnect") do
+  expect(page).to have_button("S'identifier avec ProConnect")
+  expect(page).to have_link("Qu'est-ce que ProConnect ?", href: 'https://www.proconnect.gouv.fr/')
+  expect(page).to have_no_field(type: 'password')
+end
+
+Alors("la page de connexion dit que l'adresse {string} n'est pas admise") do |email|
+  expect(page).to have_current_path(new_admin_session_path)
+  expect(page).to have_css('.fr-alert--error', text: "vous vous êtes identifié avec « #{email} »")
+end
+
+Alors("l'en-tête affiche l'adresse {string}") do |email|
+  expect(page).to have_css('.fr-header__tools-links', text: email)
+end
+
+Alors('la page de connexion dit {string}') do |message|
+  expect(page).to have_current_path(new_admin_session_path)
+  expect(page).to have_css('.fr-alert', text: message)
 end
 
 def exchange_named(nationality)
   Exchange.find_by!(country_code: COUNTRIES.fetch(nationality))
-end
-
-def sign_in(password)
-  visit new_admin_session_path
-  fill_in 'Adresse électronique', with: @administrator.email
-  fill_in 'Mot de passe', with: password
-  click_button 'Se connecter'
 end
 
 # The one event no exchange carries: a caller turned away before anything was
@@ -150,7 +250,7 @@ end
   create(:audit_event, :about_sophie, exchange_id: @exchange)
 end
 
-Quand(/^(?:un visiteur|l'administrateur|il) ouvre le journal des événements$/) do
+Quand(/^(?:un visiteur|l'administrateur|l'agent|il) ouvre le journal des événements$/) do
   visit admin_journal_root_path
 end
 

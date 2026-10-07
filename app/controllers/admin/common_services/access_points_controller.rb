@@ -9,6 +9,8 @@ module Admin
     class AccessPointsController < BaseController
       include ReadsPmodeParties
 
+      before_action :require_named_administrator
+
       def index
         @rows = access_point_rows
 

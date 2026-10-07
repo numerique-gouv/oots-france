@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Journal::Subjects' do
-  before { sign_in }
+  before { sign_in_as_administrator }
 
   let(:person) { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' } }
 

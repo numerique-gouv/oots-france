@@ -8,7 +8,7 @@ RSpec.describe 'Admin::Journal::Conversations' do
   let(:conversation_id) { '5fe50e16-d6b8-4005-b5ec-0ab097f34448' }
 
   describe 'GET /admin/journal/conversations/:id' do
-    before { sign_in }
+    before { sign_in_as_administrator }
 
     it 'gathers the exchanges of one session, most recently opened last' do
       first = create(:exchange, :delivered, conversation_id:, created_at: 2.days.ago)

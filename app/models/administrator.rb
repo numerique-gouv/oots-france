@@ -1,16 +1,16 @@
-# A member of the team that runs the deployment, and the only one who may open
-# the administration space. Never a user of a procedure: see
-# docs/espace_administration.md for what that space is and is not.
+# An agent the team running the deployment named, in a console on the server,
+# to read the journal, act on the jobs and test the access points — the pages
+# any other agent ProConnect admits does not reach. Known by the address
+# ProConnect returns, and read again at every request: naming or dismissing
+# takes effect at the next page, without signing in again.
 class Administrator < ApplicationRecord
-  has_secure_password
-
-  normalizes :email, with: ->(value) { value.strip.downcase }
+  normalizes :email, with: ->(email) { email.strip.downcase }
 
   validates :email, presence: true, uniqueness: true
 
-  # `allow_nil`, because `has_secure_password` leaves `password` nil on a record
-  # read back from the database: without it, saving one to change anything else
-  # would fail this length check. A new record still needs a password, which the
-  # presence check on `password_digest` already demands.
-  validates :password, length: { minimum: 12 }, allow_nil: true
+  def self.appoint(email) = find_or_create_by!(email:)
+
+  def self.dismiss(email) = where(email:).destroy_all
+
+  def self.appointed?(email) = email.present? && exists?(email:)
 end

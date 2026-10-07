@@ -8,7 +8,6 @@ Fonctionnalité: Suivre sans recharger la page le test de connectivité d'un poi
 
   Contexte:
     Étant donné une passerelle doublée dont le PMode déclare le point d'accès "AP_EL_01"
-    Et un compte d'administrateur
     Et un administrateur connecté à l'espace d'administration
 
   Scénario: le point d'accès passe en cours puis affiche son issue sans que la page se recharge

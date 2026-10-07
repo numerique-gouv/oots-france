@@ -211,8 +211,8 @@ Quand("l'usager recharge la page des justificatifs") do
   mark_the_page
 end
 
-Quand('le compte de l\'administrateur est supprimé') do
-  @administrator.destroy!
+Quand("la session de l'agent prend fin") do
+  page.driver.clear_cookies
 end
 
 # The one thing the server cannot say, so the one the browser says of itself.

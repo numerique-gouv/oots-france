@@ -86,11 +86,11 @@ end
   expect(page).to have_css('#liste-exigences > *', minimum: 2)
 end
 
-Quand("l'administrateur ouvre la page des exigences") do
+Quand("l'agent ouvre la page des exigences") do
   visit admin_common_services_requirements_path
 end
 
-Quand("l'administrateur ouvre la page de cette exigence") do
+Quand("l'agent ouvre la page de cette exigence") do
   visit admin_common_services_requirement_path(TEST_REQUIREMENT)
 end
 
@@ -98,16 +98,15 @@ Quand('le contenu est servi') do
   listing_request.release
 end
 
-Quand('son compte est supprimé') do
-  @administrator.destroy!
+Quand('sa session prend fin') do
+  page.driver.clear_cookies
 end
 
-Quand('un autre administrateur se connecte') do
-  @administrator = create(:administrator)
-  sign_in(@administrator.password)
+Quand("l'agent se reconnecte") do
+  sign_in_without_pro_connect
 end
 
-Quand(/^(?:l'administrateur|il) cherche "([^"]*)"$/) do |terms|
+Quand(/^(?:l'agent|il) cherche "([^"]*)"$/) do |terms|
   filter_field.set(terms)
 end
 

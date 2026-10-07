@@ -2,23 +2,18 @@
 # development, test). The code here should be idempotent so that it can be executed at any point in every environment.
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
-# The account a developer opens the administration space with. Not created in
-# production: this password is in the repository, so seeding it there would open
-# the space to whoever has read the file. A real deployment makes its own
-# account in `rails console` — docs/espace_administration.md says how.
-#
-# Assigned rather than only created, so that replaying the seed restores the
-# advertised password on an account whose own was changed.
+# The agent the « Se connecter sans ProConnect (Dev) » button signs in, named
+# administrator so that the journal and the jobs open on a development machine
+# as soon as `make setup` is done. Nobody is named in production: the first
+# administrator of a deployment is named in a console — docs/espace_administration.md
+# says how. Said rather than passed over in silence: without it, nothing
+# distinguishes a seed that deliberately skipped from one that died before here.
 if Rails.env.production?
-  # Said rather than passed over in silence: without it, nothing distinguishes
-  # a seed that deliberately skipped from one that died before reaching here.
-  puts "Aucun compte d'administration n'est créé en production : voir docs/espace_administration.md"
-else
-  administrator = Administrator.find_or_initialize_by(email: 'admin@example.com')
-  administrator.password = 'Administration-2026'
-  administrator.save!
+  puts "Aucun administrateur n'est nommé en production : nommez le premier en console, voir docs/espace_administration.md"
+elsif Rails.env.development?
+  administrator = Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
 
-  puts "Compte d'administration : #{administrator.email} / Administration-2026"
+  puts "Administrateur nommé : #{administrator.email}"
 end
 
 # One exchange per state of `Exchange::STATUSES`, so that the administration
@@ -28,8 +23,7 @@ end
 # run of zeroes. An operator who meets one of these while looking into an
 # incident must be able to see at a glance that there is nothing to look into.
 #
-# `development?` and not merely "outside production", unlike the account above:
-# a test database is never looked at, and rows in it that no example asked for
+# `development?` and not merely "outside production": a test database is never looked at, and rows in it that no example asked for
 # make the suite red on a developer's machine while the CI, whose database is
 # never seeded, stays green. Five examples fail that way — the filter's paging
 # and its no-criterion case, and the uniqueness matcher on `Exchange`.

@@ -113,10 +113,9 @@ while read -r nom format; do
   fi
 done < scripts/secret_variables
 
-# `db/seeds.rb` reads this to withhold the public `admin@example.com` account
-# and the fifteen demonstration exchanges. Set afterwards, the server already
-# has them in its database — which is why it belongs here, before `make setup`,
-# and not to a later edit.
+# `db/seeds.rb` reads this to withhold the fifteen demonstration exchanges.
+# Set afterwards, the server already has them in its database — which is why it
+# belongs here, before `make setup`, and not to a later edit.
 RAILS_ENV=production
 export RAILS_ENV URL_OOTS_FRANCE
 
@@ -137,5 +136,8 @@ cat <<FIN
 
    make setup    bases, passerelle configurée, schéma, rôle applicatif
    make assets   les feuilles de style, que la production ne compile pas seule
-   make console  pour créer le compte de l'espace d'administration
+
+   L'espace d'administration reste fermé tant que .env.oots ne déclare pas le
+   ProConnect du serveur — URL_PROCONNECT et ses deux identifiants : voir
+   docs/espace_administration.md.
 FIN

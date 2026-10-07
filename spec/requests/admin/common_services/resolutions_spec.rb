@@ -190,6 +190,7 @@ RSpec.describe 'Admin::CommonServices::Resolutions' do
 
   it 'is reached from an exchange, carrying its procedure and its country' do
     exchange = create(:exchange, :failed, procedure_code: '00', country_code: 'FI')
+    Administrator.appoint(ProConnectStubs::AGENT_EMAIL)
 
     get admin_journal_exchange_path(exchange.exchange_id)
 

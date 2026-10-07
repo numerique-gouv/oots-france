@@ -1,50 +1,56 @@
 module Admin
-  # The one page of the space that answers without a session. It inherits the
-  # guard like every other page and then exempts the two actions that need it,
-  # rather than sidestepping `Admin::BaseController` altogether: an action added
-  # here later is guarded unless someone says otherwise, which is the right way
-  # round.
+  # The one page of the space that answers without a session, and the button on
+  # it. It inherits the guard like every other page and then exempts the two
+  # actions that need it, rather than sidestepping `Admin::BaseController`
+  # altogether: an action added here later is guarded unless someone says
+  # otherwise, which is the right way round.
   class SessionsController < BaseController
+    include ProConnectSession
+
     skip_before_action :require_administrator, only: %i[new create]
 
-    def new; end
+    # The address a refused agent identified with, read once: the alert that
+    # names it is said on this page, and only the first time.
+    def new
+      @pro_connect = Settings.proconnect_instance
+      @domains = Settings.proconnect_agent_domains
+      @refused_email = session.delete(:pro_connect_refused_email)
+      @development_agent = DevelopmentSessionsController.agent_email if Rails.env.local?
+    end
 
+    # The POST of the ProConnect button. The `state` and the `nonce` are kept
+    # in the session, which is what ties the return to this departure.
     def create
-      administrator = Administrator.authenticate_by(email: credentials[:email], password: credentials[:password])
+      instance = Settings.proconnect_instance
+      return redirect_to(new_admin_session_path) if instance.nil?
 
-      unless administrator
-        flash.now[:alert] = :'admin.sessions.refused'
+      result = StartProConnectSignIn.call(instance:)
+      return pro_connect_failed(result.error[:errors]) unless result.success?
 
-        return render(:new, status: :unprocessable_content)
-      end
-
-      # Read here and not after: `reset_session` takes the destination with the
-      # rest of the session, which is what makes it serve only once.
-      destination = requested_path
-
-      # A new session identifier, so that one an attacker managed to plant
-      # before the login does not become an authenticated one.
-      reset_session
-      session[:administrator_id] = administrator.id
-
-      redirect_to destination || admin_root_path
+      session[:pro_connect] = { 'state' => result.state, 'nonce' => result.nonce }
+      redirect_to result.authorization_url, allow_other_host: true
     end
 
     # The operator's session is also the demonstration user's, and ending one
-    # ends the other: `reset_session` takes the identity with it, and the
-    # redirection below ends the FranceConnect+ session that attested it —
-    # « pour que FranceConnect+ puisse retrouver la session concernée », the hint being
-    # the ID Token decrypted.
+    # ends both: ProConnect first, then the FranceConnect+ session that attested
+    # the demonstration identity, if there is one — prepared here from what the
+    # session holds before `reset_session` takes it, and chained on by
+    # `Admin::ProConnectController#retour_deconnexion`.
     #
     # `::Demo::` and not `Demo::`: this file lives in `Admin`, where `Demo`
     # names the controllers of the demonstration.
     def destroy
       identity = ::Demo::UserIdentity.from_session(session[:demo_identity])
+      id_token = take_id_token
 
       reset_session
 
-      redirect_to end_of_france_connect_session(identity) || new_admin_session_path,
-        allow_other_host: true, notice: :'admin.sessions.signed_out'
+      france_connect = end_of_france_connect_session(identity)
+      pro_connect = end_of_pro_connect_session(id_token, france_connect:)
+      return redirect_to(pro_connect, allow_other_host: true) if pro_connect
+
+      redirect_to france_connect || new_admin_session_path, allow_other_host: true,
+        notice: :'admin.sessions.signed_out'
     end
 
     # No navigation on the login page: every link it would offer leads somewhere
@@ -87,12 +93,5 @@ module Admin
 
       nil
     end
-
-    # `permit` and not the `expect` used elsewhere: `expect` goes through
-    # `require`, which raises on a blank value, so an empty form would answer
-    # 400 instead of showing its error. `authenticate_by` returns nothing for a
-    # blank password without raising, and equalises the time it takes to answer
-    # on an address nobody registered.
-    def credentials = params.permit(:email, :password)
   end
 end

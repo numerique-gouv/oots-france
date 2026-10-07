@@ -67,7 +67,7 @@ ignore_unused:
   # Composed at run time. One line per set, rather than a
   # `search.strict: false` that would bless whole subtrees in silence.
   - admin.journal.exchanges.statuses.*
-  - admin.sessions.{refused,signed_out,connection_required}
+  - admin.sessions.{pro_connect_failed,signed_out,connection_required}
   - components.directory_query.identifiers.*
   # Looked up by a key composed of the field name read off the subject, falling
   # back on that name when no wording translates it.

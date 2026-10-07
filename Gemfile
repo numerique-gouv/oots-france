@@ -4,7 +4,6 @@ ruby '4.0.7'
 
 gem 'rails', '8.1.4'
 
-gem 'bcrypt'
 gem 'bootsnap', require: false
 
 # json 3.0 dropped the positional options hash from `JSON.parse`, which
@@ -92,8 +91,8 @@ group :test do
   # d'acceptance du document se lisent sur ce texte.
   gem 'pdf-reader'
   gem 'shoulda-matchers'
-  gem 'state_machines-rspec'
   gem 'simplecov', require: false
+  gem 'state_machines-rspec'
   gem 'webmock'
 
   # `features/support/fake_requester.rb` serves the requester's key set from a

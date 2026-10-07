@@ -10,8 +10,11 @@ Fonctionnalité: Suivre les échanges depuis l'espace d'administration
   tient le rôle de l'usager d'un portail de démarche.
 
   Contexte:
-    Étant donné un compte d'administrateur
-    Et un administrateur connecté à l'espace d'administration
+    Étant donné un administrateur connecté à l'espace d'administration
+
+  Scénario: l'en-tête affiche l'adresse de l'administrateur connecté
+    Quand l'administrateur ouvre le journal des événements
+    Alors l'en-tête affiche l'adresse "administrateur.demonstration@numerique.gouv.fr"
 
   Scénario: filtrer le journal des événements sur un seul échange
     Étant donné un échange délivré avec la Finlande

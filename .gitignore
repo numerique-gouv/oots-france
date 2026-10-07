@@ -21,6 +21,7 @@ CLAUDE.local.md
 
 # Rails credentials decryption key: never versioned
 /config/master.key
+/config/credentials/*.key
 
 # Bundler's local configuration
 /.bundle
@@ -41,3 +42,7 @@ CLAUDE.local.md
 
 # SimpleCov coverage report
 /coverage
+
+# Ignore key files for decrypting credentials and more.
+/config/credentials/*.key
+
