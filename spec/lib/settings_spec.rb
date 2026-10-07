@@ -170,6 +170,48 @@ RSpec.describe Settings do
     end
   end
 
+  # The ProConnect of the administration space: three variables, all or none,
+  # and a list of admitted domains that is never empty (CA12).
+  describe 'the ProConnect of the administration space' do
+    def declared = filled.merge(Settings::PROCONNECT.each_value.index_with { 'valeur' })
+
+    it 'starts on a deployment that declares none, and reads none' do
+      with_environment(filled.merge(no_proconnect)) do
+        expect { described_class.verify! }.not_to raise_error
+        expect(described_class.proconnect_instance).to be_nil
+      end
+    end
+
+    it 'refuses an issuer declared alone, naming the two credentials it lacks' do
+      with_environment(filled.merge(no_proconnect).merge('URL_PROCONNECT' => 'https://auth.test/api/v2')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('IDENTIFIANT_CLIENT_PROCONNECT', 'SECRET_CLIENT_PROCONNECT')
+          expect(refus.message).not_to include('URL_PROCONNECT')
+        end
+      end
+    end
+
+    it 'reads a declaration in full, the issuer without its trailing slash' do
+      with_environment(declared.merge('URL_PROCONNECT' => 'https://auth.test/api/v2/')) do
+        expect { described_class.verify! }.not_to raise_error
+        expect(described_class.proconnect_instance)
+          .to have_attributes(issuer: 'https://auth.test/api/v2', client_id: 'valeur', client_secret: 'valeur')
+      end
+    end
+
+    it 'refuses an empty list of admitted domains, naming the variable' do
+      with_environment(filled.merge(Settings::AGENT_DOMAINS => ' , ')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /DOMAINES_AGENTS_PROCONNECT/)
+      end
+    end
+
+    it 'reads the admitted domains cut at the commas, trimmed and in lower case' do
+      with_environment(Settings::AGENT_DOMAINS => ' Numerique.gouv.fr, sous.numerique.gouv.fr ,,') do
+        expect(described_class.proconnect_agent_domains).to eq(%w[numerique.gouv.fr sous.numerique.gouv.fr])
+      end
+    end
+  end
+
   describe 'the two expiry intervals' do
     # The switch is posed rather than left absent: the two answer the same, and a
     # rule that only ever meets the absent one proves half of what it says.

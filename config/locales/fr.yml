@@ -657,6 +657,8 @@ fr:
       # d'après est l'aller-retour que ce contrôle existe pour épargner.
       france_connect_incomplete: "Déclaration de FranceConnect+ à trous : il manque %{names}. Un FranceConnect+ se déclare par son issuer et ses deux identifiants, ou pas du tout."
       france_connect_absent: "Aucun FranceConnect+ déclaré : la démarche de démonstration n'aurait aucune manière de s'identifier. Renseigner les trois variables de l'un au moins parmi %{names}."
+      proconnect_incomplete: "Déclaration de ProConnect à trous : il manque %{names}. ProConnect se déclare par son issuer et ses deux identifiants, ou pas du tout."
+      agent_domains_absent: "%{name} est vide : l'espace d'administration n'admettrait aucun agent. Y lister, séparés par des virgules, les domaines d'adresse admis, ex. numerique.gouv.fr."
       demo_signing_key_unreadable: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 ne se décode pas en une clé JWK : la valeur attendue est un objet JSON encodé en base64."
       # Le jeton du bénéficiaire ne se signe qu'en ES256, et ES256 n'existe que
       # sur P-256 : une clé d'un autre type échouerait à la première signature,

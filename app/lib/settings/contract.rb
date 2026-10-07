@@ -18,6 +18,8 @@ module Settings
       reject_unless_a_france_connect_declared
       reject_unless_france_connect_algorithm
       reject_unless_demo_signing_curve
+      reject_unless_proconnect_whole
+      reject_unless_agent_domains
     end
 
     private
@@ -126,6 +128,24 @@ module Settings
 
       refuse(I18n.t('lib.settings.france_connect_absent',
         names: FRANCE_CONNECT.each_value.flat_map(&:values).join(', ')))
+    end
+
+    # The ProConnect of the console, all three or none: none leaves the console
+    # shut and the exchanges running, which a deployment may want; one begun and
+    # left with holes would show a button leading to a refusal known in advance.
+    def reject_unless_proconnect_whole
+      return unless partly_declared?(PROCONNECT)
+
+      refuse(I18n.t('lib.settings.proconnect_incomplete',
+        names: PROCONNECT.each_value.reject { |name| filled?(name) }.join(', ')))
+    end
+
+    # Whatever ProConnect is declared, the console must know whom it admits: an
+    # empty list would turn every agent away, which no deployment means.
+    def reject_unless_agent_domains
+      return if Settings.proconnect_agent_domains.any?
+
+      refuse(I18n.t('lib.settings.agent_domains_absent', name: AGENT_DOMAINS))
     end
 
     # Some of its three filled and not all: a declaration begun and left
