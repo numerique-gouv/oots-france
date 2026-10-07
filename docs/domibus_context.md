@@ -69,15 +69,23 @@ C'est le [*Push to Backend*](https://docs.edelivery.tech.ec.europa.eu/domibus/5.
 > [!WARNING]
 > **Une passerelle configurée sur un autre port perd les réponses, et l'application n'en sait rien.** Le cas se présente dans un worktree, dont `scripts/worktree.sh` décale les ports : une passerelle configurée avant le décalage pousse ses notifications là où plus personne n'écoute. La requête part, rien ne revient, et la page qui suit l'échange reste indéfiniment « en cours ». La trace existe, mais **d'un seul côté** : les tentatives épuisées lèvent une alerte dans la console d'administration de la passerelle, `wsplugin.push.alert.active` étant activée (voir plus bas) — OOTS-France, lui, ne reçoit aucun appel, n'a donc rien à journaliser, et aucun de ses écrans ne montre cette alerte. Rejouer `scripts/configure_domibus.sh notification` puis `docker compose restart domibus` remet le câblage d'aplomb ; `scripts/ci/diagnose_domibus.sh` compare l'adresse configurée à celle du `.env` et signale l'écart.
 
+**L'application répond dans la forme que le contrat du backend déclare**, lu dans le source au tag [`5.2-JEE10`](https://code.europa.eu/edelivery/domibus/-/tree/5.2-JEE10) :
+
+- **une notification qu'elle sait lire est acquittée** par le statut `200` et, en `application/soap+xml`, une enveloppe SOAP 1.2 au `Body` vide — toutes les opérations de `BackendInterface` sont requête/réponse, et leur message de sortie ne porte aucune part ([`BackendService.wsdl`](https://code.europa.eu/edelivery/domibus/-/blob/5.2-JEE10/Plugin-WS/Domibus-default-ws-plugin-backend-ws-stubs/src/main/resources/schemas/BackendService.wsdl)). La passerelle la marque alors `SENT`, sans reprise ni alerte (`WSPluginMessageSender`) ;
+- **une notification qu'elle ne sait pas lire est refusée** par un `soap:Fault` SOAP 1.2 de code `env:Sender`, avec le statut `400` que le [binding HTTP de SOAP 1.2](https://www.w3.org/TR/soap12-part2/) (§ 7.5.2.2, Table 20) associe à ce code, et rien n'est mis en file ;
+- **ce refus est rejoué quoi qu'on réponde** : toute exception du dispatch, quel qu'en soit le statut, passe par la reprise de la règle puis par `SEND_FAILURE` et l'alerte (`WSPluginMessageSender`, `catch (Throwable)` → `WSPluginBackendReliabilityService`). L'application répond chaque fois de même.
+
+> [!CAUTION]
+> **Une réponse `text/html` fait tenir pour échouée une notification que l'application a traitée.** Le plugin appelle le backend par un `Dispatch.invoke` CXF bidirectionnel (`WSPluginDispatcher`), et CXF refuse une réponse `text/html` sans l'analyser. C'est ce que produit un `head :ok` de Rails — le plugin envoie `Accept: */*`, qu'Action Pack ramène à `:html` : la passerelle rejoue alors la notification, et chaque rejeu d'un `receiveSuccess` rappelle `retrieveMessage` sur un message déjà effacé (`BUS-059`). `e2e.yml` vérifie après le scénario qu'aucune notification n'a échoué.
+
 Deux choses s'y révèlent par ailleurs à l'usage :
 
 > [!IMPORTANT]
-> **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`, `markAsDownloaded`), elles, sont modifiables à chaud.
+> **Les règles ne se posent pas par l'API.** `wsplugin.push.rules` est marquée non modifiable : elle n'existe que dans `plugins/config/ws-plugin.properties`, à l'intérieur du volume monté, et ne prend effet qu'au **redémarrage** de la passerelle. Les bascules (`enabled`, `auth`), elles, sont modifiables à chaud.
 >
 > La règle ne filtre volontairement **aucun destinataire** : les messages qui nous arrivent en portent deux différents — l'identifiant de la passerelle sur une requête entrante, celui du requêteur sur la réponse qui lui revient — et une règle par valeur en oublierait toujours une.
 
-> [!CAUTION]
-> **`wsplugin.push.markAsDownloaded` vaut `true` par défaut**, et la notification vaut alors téléchargement. Or le PMode d'exemple porte `retention_downloaded="0"` : le justificatif serait effacé avant que l'application l'ait récupéré. Il est mis à `false` — c'est notre `retrieveMessage` qui marque le message, donc une fois qu'on l'a en main.
+**Seul `retrieveMessage` marque un message comme téléchargé**, et le PMode d'exemple, qui porte `retention_downloaded="0"`, ne l'efface donc qu'une fois que l'application l'a en main. `wsplugin.push.markAsDownloaded` n'y change rien : le plugin ne le lit que pour une notification `SUBMIT_MESSAGE` (`WSPluginMessageSender`, seule lecture dans `Plugin-WS` au tag `5.2-JEE10`), que la règle `oots` n'émet pas, et le script ne le pose pas.
 
 Reste le cron du répartiteur, `wsplugin.dispatcher.worker.cronExpression`, qui vaut **une minute** par défaut : la latence perçue n'est donc pas celle du réseau. Le script le resserre à cinq secondes.
 
@@ -114,7 +122,7 @@ Le service de test du [chapitre 4.7 §3.1](https://ec.europa.eu/digital-building
 
 La règle porte `retry=60;5;CONSTANT`, dont le format est documenté dans le fichier de propriétés livré : `retryTimeout;retryCount;(CONSTANT - SEND_ONCE)`. Cinq tentatives sur soixante minutes, donc — une application arrêtée moins d'une heure ne perd rien.
 
-Passé ce délai, la passerelle cesse d'essayer. Le message, lui, **reste récupérable** : `markAsDownloaded` valant `false`, seule notre `retrieveMessage` le marque, et le PMode le garde `retention_undownloaded="3600"` minutes, soit deux jours et demi. C'est cette fenêtre — et elle seule — que rattrape `CollectPendingMessagesJob`, en redemandant la liste toutes les deux minutes.
+Passé ce délai, la passerelle cesse d'essayer. Le message, lui, **reste récupérable** : seule notre `retrieveMessage` le marque, et le PMode le garde `retention_undownloaded="3600"` minutes, soit deux jours et demi. C'est cette fenêtre — et elle seule — que rattrape `CollectPendingMessagesJob`, en redemandant la liste toutes les deux minutes.
 
 > [!IMPORTANT]
 > **`wsplugin.push.alert.active` vaut `false` par défaut**, et l'épuisement des tentatives est alors parfaitement silencieux. Le script l'active : l'alerte paraît dans la console d'administration sans configuration supplémentaire. L'envoi par courriel demanderait en plus un SMTP et les adresses `domibus.alert.sender.email` et `domibus.alert.receiver.email`, `domibus.alert.mail.sending.active` étant lui aussi désactivé par défaut.
