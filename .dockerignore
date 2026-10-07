@@ -10,10 +10,12 @@ vendor/bundle
 .bundle
 .env*
 # `COPY . /usr/src/app` in the Dockerfile would otherwise put the credentials
-# key into a layer of the image, where a secret has no reason to be: nothing
-# the application reads is in its credentials, and production takes
-# SECRET_KEY_BASE from the environment.
+# keys into a layer of the image, where a secret has no reason to be: in
+# production nothing the application reads is in its credentials, and it takes
+# SECRET_KEY_BASE from the environment. The development key reaches a local
+# stack through the mounted directory or RAILS_MASTER_KEY, never the image.
 config/master.key
+config/credentials/*.key
 # Exceptions named one by one, and above all without a wildcard: a re-inclusion
 # pattern containing `*` stops BuildKit pruning the excluded directories. It then
 # walks the whole tree, `domibus/` included, whose contents it cannot read while
