@@ -22,15 +22,23 @@ class DomibusNotificationsController < ActionController::API
       RecordDeliveryFailureJob.perform_later(notification.message_id, notification.message_status)
     end
 
-    head :ok
+    answer(PushNotificationAcknowledgementBuilder, :ok)
   rescue UnreadableMessageError => e
-    # 400 and not 500: the gateway retries a 500 with the same body, and a body
-    # we cannot read will not become readable.
+    # The plugin retries a refused notification whatever the answer, then raises
+    # its alert (`WSPluginMessageSender`, Domibus `5.2-JEE10`): the fault only
+    # tells it the call failed, in the form its contract declares.
     Rails.logger.error("Notification Domibus illisible : #{e.message}")
-    head :bad_request
+    answer(PushNotificationFaultBuilder, :bad_request)
   end
 
   private
+
+  # SOAP, and never `head`: the plugin dispatches through CXF, which refuses an
+  # answer typed `text/html` without parsing it — and `head` types its empty
+  # body `text/html` for a caller sending `Accept: */*`, as the plugin does.
+  def answer(builder, status)
+    render body: builder.new.render, content_type: 'application/soap+xml', status:
+  end
 
   def authenticate
     authenticate_or_request_with_http_basic('OOTS-France') do |login, password|

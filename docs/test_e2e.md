@@ -40,6 +40,7 @@ Le workflow [`.github/workflows/e2e.yml`](../.github/workflows/e2e.yml) rejoue c
 | Attendre le déploiement de la webapp | `scripts/ci/wait_for_domibus.sh` |
 | Générer les certificats, charger le keystore, le truststore et le PMode, créer le Plugin User, vérifier par un message AS4 de test | `scripts/configure_domibus.sh`, qui appelle `scripts/generate_certificates.sh` |
 | Le rejouer sans variable, et vérifier qu'il garde le PMode et le keystore qu'il vient de charger et n'écrit qu'un bloc de notification | `scripts/configure_domibus.sh` |
+| Vérifier, après le scénario, que la passerelle a remis chaque notification à l'application : aucune ligne d'échec dans `logs/domibus.log`, aucune ligne de `WS_PLUGIN_TB_BACKEND_MSG_LOG` dont une tentative a échoué, au moins une `SENT` — voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus) | `e2e.yml` |
 | Documenter un échec (journaux des messages et des erreurs) | `scripts/ci/diagnose_domibus.sh` |
 
 > [!WARNING]
