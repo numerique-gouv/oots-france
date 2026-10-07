@@ -163,7 +163,7 @@ ProConnect, que la page de connexion de l'espace d'administration fait joindre a
 
 ## L'espace d'administration, sans ProConnect
 
-Les scénarios qui lisent l'espace d'administration y entrent par le bouton « *Entrer sans ProConnect* », que la page de connexion n'offre qu'en développement et en test, et dont la route n'existe pas ailleurs ([espace_administration.md](espace_administration.md#y-accéder-en-local)) : ni un poste ni l'intégration continue n'ont d'identifiants ProConnect, et `make e2e` comme le profil par défaut s'en passent. La vraie cinématique n'est donc jouée par aucune suite contre ProConnect lui-même : `make test` l'éprouve contre ses doubles, et `features/connexion_espace_administration.feature` dans un navigateur, le point d'autorisation et la fin de session servis par la suite comme décrit ci-dessus.
+Les scénarios qui lisent l'espace d'administration y entrent par le bouton « *Se connecter sans ProConnect (Dev)* », que la page de connexion n'offre qu'en développement et en test, et dont la route n'existe pas ailleurs ([espace_administration.md](espace_administration.md#y-accéder-en-local)) : ni un poste ni l'intégration continue n'ont d'identifiants ProConnect, et `make e2e` comme le profil par défaut s'en passent. La vraie cinématique n'est donc jouée par aucune suite contre ProConnect lui-même : `make test` l'éprouve contre ses doubles, et `features/connexion_espace_administration.feature` dans un navigateur, le point d'autorisation et la fin de session servis par la suite comme décrit ci-dessus.
 
 ## Le faux FranceConnect+
 

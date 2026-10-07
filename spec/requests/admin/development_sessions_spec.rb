@@ -24,7 +24,7 @@ RSpec.describe 'Admin::DevelopmentSessions' do
     get new_admin_session_path
 
     expect(response.parsed_body.css("form[action='/admin/session/developpement'] button").text)
-      .to eq('Entrer sans ProConnect')
+      .to eq('Se connecter sans ProConnect (Dev)')
   end
 
   # The route is drawn by `Rails.env` alone: in production the address does
@@ -63,7 +63,7 @@ RSpec.describe 'Admin::DevelopmentSessions' do
 
       get new_admin_session_path
 
-      expect(response.body).not_to include('Entrer sans ProConnect')
+      expect(response.body).not_to include('Se connecter sans ProConnect (Dev)')
     end
   end
 end
