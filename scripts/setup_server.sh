@@ -113,10 +113,19 @@ while read -r nom format; do
   fi
 done < scripts/secret_variables
 
-# `db/seeds.rb` reads this to withhold the public `admin@example.com` account
-# and the fifteen demonstration exchanges. Set afterwards, the server already
-# has them in its database — which is why it belongs here, before `make setup`,
-# and not to a later edit.
+# The ProConnect of the administration space, written empty unless the command
+# line gives it — the one place this script departs from the template, whose
+# values are those of the fake ProConnect: a server never designates it, and
+# `make check-secrets` refuses its public secret. Empty, the application starts
+# and its console stays shut until the operator declares the real one, as
+# docs/deploiement.md says.
+for nom in URL_PROCONNECT IDENTIFIANT_CLIENT_PROCONNECT SECRET_CLIENT_PROCONNECT; do
+  printenv "$nom" >/dev/null 2>&1 || export "$nom="
+done
+
+# `db/seeds.rb` reads this to withhold the fifteen demonstration exchanges.
+# Set afterwards, the server already has them in its database — which is why it
+# belongs here, before `make setup`, and not to a later edit.
 RAILS_ENV=production
 export RAILS_ENV URL_OOTS_FRANCE
 
@@ -137,5 +146,8 @@ cat <<FIN
 
    make setup    bases, passerelle configurée, schéma, rôle applicatif
    make assets   les feuilles de style, que la production ne compile pas seule
-   make console  pour créer le compte de l'espace d'administration
+
+   L'espace d'administration reste fermé tant que .env.oots ne déclare pas le
+   ProConnect du serveur — URL_PROCONNECT et ses deux identifiants : voir
+   docs/espace_administration.md.
 FIN
