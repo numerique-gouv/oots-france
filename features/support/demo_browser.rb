@@ -36,9 +36,13 @@ class DemoBrowser
     end
   end
 
-  def sign_in(email, password)
+  # The ProConnect button, then the identity the fake ProConnect offers under
+  # this address — its page carries one form per identity, each named by the
+  # address on its button. What follows comes back on its own.
+  def sign_in(email)
     visit('/admin/session/new')
-    submit(email:, password:)
+    submit_to('/admin/session')
+    send_form(identity_form(email))
   end
 
   # The button of the header, whose form carries the `_method` that makes it a
@@ -118,6 +122,11 @@ class DemoBrowser
 
   def only_form
     document.at_css('form') || raise("Aucun formulaire dans la page « #{title} » : #{body}")
+  end
+
+  def identity_form(email)
+    document.css('form').find { |form| form.at_css('button')&.text.to_s.strip == email } ||
+      raise("Aucune identité « #{email} » dans la page « #{title} » : #{body}")
   end
 
   def card_of(france_connect)
