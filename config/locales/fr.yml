@@ -2046,9 +2046,6 @@ fr:
       new:
         title: Connexion à l’espace d’administration
         heading: Connexion
-        # `%{domains}` énumère les domaines de DOMAINES_AGENTS_PROCONNECT,
-        # chacun précédé de son « @ » : « @numerique.gouv.fr », « @a et @b ».
-        reserved_html: L'espace d'administration est réservé aux agents dont l'adresse est en %{domains}.
         undeclared: "Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir."
         # Rendu en développement et en test seulement, la route n'existant
         # nulle part ailleurs.

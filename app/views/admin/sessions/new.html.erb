@@ -1,18 +1,16 @@
 <% content_for :title, t('admin.sessions.new.title') %>
-<% domains = @domains.map { |domain| "@#{domain}" }.to_sentence %>
 
 <h1><%= t('admin.sessions.new.heading') %></h1>
 
 <% if @refused_email %>
-  <%= dsfr_alert(type: :error, title: t('admin.sessions.new.refused', domains:, email: @refused_email),
+  <%= dsfr_alert(type: :error, title: t('admin.sessions.new.refused', domains: @domains.map { |domain| "@#{domain}" }.to_sentence,
+        email: @refused_email),
         size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
 <% end %>
 
 <div class="fr-grid-row">
   <div class="fr-col-12 fr-col-md-8">
     <% if @pro_connect %>
-      <p><%= t('admin.sessions.new.reserved_html', domains: tag.strong(domains)) %></p>
-
       <%= dsfr_proconnect_button(target: admin_session_path) %>
     <% else %>
       <p><%= t('admin.sessions.new.undeclared') %></p>

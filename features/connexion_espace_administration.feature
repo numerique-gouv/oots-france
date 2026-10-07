@@ -6,12 +6,12 @@ Fonctionnalité: Se connecter à l'espace d'administration
   Scénario: sans connexion, le journal des événements n'est pas lisible
     Étant donné un échange en échec avec l'Allemagne
     Quand un visiteur ouvre le journal des événements
-    Alors la page de connexion propose de s'identifier avec ProConnect aux adresses en "@numerique.gouv.fr"
+    Alors la page de connexion propose de s'identifier avec ProConnect
     Et la page n'affiche pas l'échange allemand
 
   Scénario: sans connexion, le tableau de bord des jobs n'est pas lisible
     Quand un visiteur ouvre le tableau de bord des jobs
-    Alors la page de connexion propose de s'identifier avec ProConnect aux adresses en "@numerique.gouv.fr"
+    Alors la page de connexion propose de s'identifier avec ProConnect
 
   Scénario: une adresse hors des domaines admis n'ouvre pas l'espace d'administration
     Quand un agent s'identifie par ProConnect avec l'adresse "agent@exemple.fr"
