@@ -187,14 +187,15 @@ module Settings
     end
 
     # The environment first, and the development credentials where it is
-    # empty: `config/credentials/development.yml.enc` carries the identifiers
-    # of the integration ProConnect a development machine presents, encrypted
-    # and versioned. Read in `development` alone — in `test`, in continuous
+    # empty: `config/credentials/development.yml.enc` carries, under
+    # `proconnect:` and the keys of `PROCONNECT`, the identifiers of the
+    # integration ProConnect a development machine presents, encrypted and
+    # versioned. Read in `development` alone — in `test`, in continuous
     # integration and in production only the environment counts, whatever key
     # the process holds. Without the key the file reads as empty.
     # https://guides.rubyonrails.org/security.html#custom-credentials
     def proconnect_value(name)
-      optional(name) || (Rails.application.credentials[name.to_sym].presence if Rails.env.development?)
+      optional(name) || (Rails.application.credentials.dig(:proconnect, PROCONNECT.key(name)).presence if Rails.env.development?)
     end
 
     # Read at every request of the console and not once: a domain taken out of

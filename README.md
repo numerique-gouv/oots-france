@@ -59,7 +59,16 @@ Deux rôles PostgreSQL cohabitent. Le **propriétaire** des tables est celui que
 
 ### Les identifiants ProConnect du poste
 
-L'espace d'administration s'ouvre par ProConnect ([docs/espace_administration.md](docs/espace_administration.md#qui-peut-y-entrer)), et un poste se présente au **ProConnect d'intégration**. Ses identifiants sont versionnés, chiffrés, dans `config/credentials/development.yml.enc` : les trois variables `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT` et `SECRET_CLIENT_PROCONNECT` sous leur nom, et rien d'autre. `Settings` ne les lit qu'en environnement `development`, et seulement là où `.env.oots` laisse la variable vide — l'environnement l'emporte. Le client d'intégration déclare les adresses de retour des ports 3000 à 3005 : un poste ou un worktree sur l'un d'eux n'a rien à déclarer.
+L'espace d'administration s'ouvre par ProConnect ([docs/espace_administration.md](docs/espace_administration.md#qui-peut-y-entrer)), et un poste se présente au **ProConnect d'intégration**. Ses identifiants sont versionnés, chiffrés, dans `config/credentials/development.yml.enc`, et rien d'autre :
+
+```yaml
+proconnect:
+  issuer: https://fca.integ01.dev-agentconnect.fr/api/v2
+  client_id: …
+  client_secret: …
+```
+
+`Settings` ne les lit qu'en environnement `development`, et chacun seulement là où `.env.oots` laisse vide la variable qui lui répond — `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT`, `SECRET_CLIENT_PROCONNECT` : l'environnement l'emporte. Le client d'intégration déclare les adresses de retour des ports 3000 à 3005 : un poste ou un worktree sur l'un d'eux n'a rien à déclarer.
 
 La clé qui les déchiffre ne se versionne pas : elle se pose dans `config/credentials/development.key`, que `.gitignore` exclut, ou dans `RAILS_MASTER_KEY` de qui lance la pile, que `docker-compose.yml` relaie aux conteneurs, et se demande à qui la détient. Contre l'intégration, la seule saisie à la main est `DOMAINES_AGENTS_PROCONNECT=test.proconnect.gouv.fr` dans `.env.oots`, le domaine des identités de test qu'elle offre. **Sans la clé, le poste est complet** : les trois variables sont vides, la page de connexion dit qu'aucun ProConnect n'est déclaré, et le bouton « *Se connecter sans ProConnect (Dev)* », offert en développement et en test seulement, ouvre l'espace.
 

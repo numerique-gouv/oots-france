@@ -200,7 +200,8 @@ RSpec.describe Settings do
     end
 
     context 'with development credentials' do
-      let(:credentials) { { URL_PROCONNECT: 'https://fca.test/api/v2', IDENTIFIANT_CLIENT_PROCONNECT: 'client' } }
+      let(:proconnect) { { issuer: 'https://fca.test/api/v2', client_id: 'client' } }
+      let(:credentials) { { proconnect: } }
 
       before do
         allow(Rails.application).to receive(:credentials).and_return(credentials)
@@ -212,7 +213,7 @@ RSpec.describe Settings do
 
       it 'fills in development what the environment leaves empty' do
         in_development
-        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+        proconnect[:client_secret] = 'secret'
 
         with_environment(filled.merge(no_proconnect)) do
           expect(described_class.proconnect_instance)
@@ -222,7 +223,7 @@ RSpec.describe Settings do
 
       it 'lets the environment win over them' do
         in_development
-        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+        proconnect[:client_secret] = 'secret'
 
         with_environment(filled.merge(no_proconnect).merge('URL_PROCONNECT' => 'https://autre.test/api/v2')) do
           expect(described_class.proconnect_instance.issuer).to eq('https://autre.test/api/v2')
@@ -241,7 +242,7 @@ RSpec.describe Settings do
       end
 
       it 'reads none of them outside development' do
-        credentials[:SECRET_CLIENT_PROCONNECT] = 'secret'
+        proconnect[:client_secret] = 'secret'
 
         with_environment(filled.merge(no_proconnect)) do
           expect(described_class.proconnect_instance).to be_nil
