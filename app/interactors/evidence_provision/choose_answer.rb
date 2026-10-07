@@ -70,7 +70,7 @@ module EvidenceProvision
     def chosen_answer
       refuse_what_cannot_be_answered_at_all
 
-      return refusal(EdmException::OBJECT_NOT_FOUND) unless ProcedureCode.answered?(procedure_code)
+      return refusal(EdmException::OBJECT_NOT_FOUND) unless answered?
       return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
       return second_exchange if request.preview_location
 
@@ -86,6 +86,10 @@ module EvidenceProvision
     end
 
     def procedure_code = request.procedure_code
+
+    # A type France serves, under any procedure, or the procedure France
+    # defers whatever it is asked for.
+    def answered? = ServedEvidenceType.served?(request.evidence_type) || ProcedureCode.deferred?(procedure_code)
 
     # The refusals pronounced by raising, which `chosen_or_invalid` turns into
     # the exception response. All three precede the choice below and none of

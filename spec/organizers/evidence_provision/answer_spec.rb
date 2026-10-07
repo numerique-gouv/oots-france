@@ -28,6 +28,19 @@ RSpec.describe EvidenceProvision::Answer do
 
   before { travel_to(Time.zone.parse(CAPTURED_AT)) }
 
+  # The captured request asks for a type of another member state, which France
+  # does not serve (`ServedEvidenceType`): every envelope of this file asks for
+  # one it declares instead, the procedure it names left as captured.
+  def real_envelope(name)
+    document = Nokogiri::XML(super)
+    rewrite_body(document) { |body| asking_for_a_served_type(body) }
+
+    document.to_xml
+  end
+
+  # The capture as it came, asking for a type France does not serve.
+  def unserved_request = RetrievedMessageParser.new(read_fixture('incoming/reel/requete.xml'))
+
   def submitted = gateway_body.then { |body| Nokogiri::XML(decoded_payload(body)) }
 
   it 'serves the evidence for the system-check procedure' do
@@ -125,11 +138,12 @@ RSpec.describe EvidenceProvision::Answer do
     expect(text_of(attached_document)).to include(evidence_identifier_of(submitted))
   end
 
-  # The university demonstration exchanges on `T1`, the financing of studies:
-  # France answers it through the very objects that answer the system check, and
-  # with a document produced the same way. Stub, tracked as OOTS-82.
-  describe 'the other procedure it serves with a document' do
-    let(:message) { request_for(ProcedureCode::STUDY_FINANCING) }
+  # France serves on the evidence type asked for, whatever the procedure: a
+  # request naming any procedure of the list is answered through the very
+  # objects that answer the system check, and with a document produced the same
+  # way. Stub, tracked as OOTS-82.
+  describe 'another procedure, asking for a type it serves' do
+    let(:message) { request_for('U1') }
 
     it 'answers a successful response reproducing what the request declared' do
       answer
@@ -158,10 +172,11 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
-  # Any procedure France holds no document for: no provider is connected, and it
-  # says so with the code the TDD prescribe rather than staying silent.
-  describe 'a procedure it does not serve' do
-    let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+  # Any type France holds no document of, whatever the procedure: no provider is
+  # connected for it, and France says so with the code the TDD prescribe —
+  # « Object not found » (chapter 4.5.3) — rather than staying silent.
+  describe 'a type it does not serve' do
+    let(:message) { unserved_request }
 
     it 'answers EDM:ERR:0004' do
       answer
@@ -699,8 +714,8 @@ RSpec.describe EvidenceProvision::Answer do
 
     # « instead of a successful response », and not instead of any response: the
     # two refusals above the guard keep their code however late the request.
-    context 'when the procedure is one France does not serve' do
-      let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+    context 'when the type is one France does not serve' do
+      let(:message) { unserved_request }
 
       it 'refuses it as unknown rather than as expired' do
         answer
@@ -794,7 +809,7 @@ RSpec.describe EvidenceProvision::Answer do
     end
 
     context 'when what France was answering was a refusal' do
-      let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+      let(:message) { unserved_request }
 
       it 'journals the code the refusal carried, under the action of an exception' do
         expect { answer }.to raise_error(Faraday::ConnectionFailed)
@@ -1477,8 +1492,8 @@ RSpec.describe EvidenceProvision::Answer do
     end
 
     # CA8.
-    describe 'for a procedure France does not serve' do
-      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="T3"') } }
+    describe 'for a type France does not serve' do
+      let(:message) { earlier_line_envelope { |body| body.sub(Fixtures::SERVED_TYPE, Fixtures::UNSERVED_TYPE) } }
 
       it 'refuses on that line' do
         answer
@@ -1645,7 +1660,7 @@ RSpec.describe EvidenceProvision::Answer do
     # correspondent is owed has gone out either way, and an exchange left
     # pending would claim a sequel that is never coming.
     context 'when France refuses what was asked' do
-      let(:message) { RetrievedMessageParser.new(real_envelope('requete.demarcheInconnue')) }
+      let(:message) { unserved_request }
 
       it 'fails under the code France answered with' do
         answer
