@@ -123,10 +123,12 @@ module EvidenceProvision
     end
 
     # Chapter 4.4: « A Data Service MUST reject requests that use identifiers
-    # that were used in previously processed requests. » The journal holds the
-    # only memory of it — no `Exchange` on the provider side carries a
-    # request identifier — and the arriving message has a line there already,
-    # `IncomingMessage::Process` journalling before it dispatches.
+    # that were used in previously processed requests. » Asked of the journal,
+    # which remembers every request identifier received: the exchange cannot
+    # tell a repeat from a first arrival, `IncomingMessage::Process` having
+    # correlated the repeat to the row of the first before this step runs. The arriving message has a line there
+    # already — `IncomingMessage::Process` journals before it dispatches —
+    # hence `except:`.
     def reject_if_already_answered
       return unless AuditEvent.request_already_received?(request_id, except: context.message_id)
 

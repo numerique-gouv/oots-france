@@ -23,7 +23,7 @@ RSpec.describe IncomingMessage::OpenExchange do
     let(:message) do
       instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
         exchange_id: FOREIGN_EXCHANGE, conversation_id: FOREIGN_CONVERSATION,
-        specification: EdmSpecification::V2_0, sent_at: STAMPED_AT, body:)
+        specification: EdmSpecification::V2_0, sent_at: STAMPED_AT, body:, identified?: true)
     end
 
     # Answering leaves a row where asking does, so the listing carries both
@@ -110,74 +110,20 @@ RSpec.describe IncomingMessage::OpenExchange do
     end
   end
 
-  # `R-EDM-ebMS-019` makes the `ExchangeId` property mandatory on the 2.0 line,
-  # and the ebMS3 envelope the `eb:ConversationId` element on both, so a request
-  # carrying neither names nothing to open a row under. It must be
-  # refused where `IncomingMessage::Process` can give up on it — the arrival is
-  # journalled by then — and never let the row's own validation raise where
-  # nothing catches it: `retrieveMessage` has already erased the message, so an
-  # uncaught failure loses it for good.
+  # A header naming no exchange leaves nothing to open a row under, and
+  # `EvidenceProvision::RejectUnidentifiedRequest` refuses the request once its
+  # arrival is journalled.
   context 'when the header names no exchange' do
-    it 'refuses a request carrying no exchange identifier' do
-      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
+    let(:message) do
+      instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
         exchange_id: nil, conversation_id: FOREIGN_CONVERSATION,
-        specification: EdmSpecification::V2_0, body:)
-
-      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
-        .to raise_error(UnreadableMessageError)
+        specification: EdmSpecification::V2_0, body:, identified?: false)
     end
 
-    it 'refuses a request carrying no conversation identifier' do
-      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: FOREIGN_EXCHANGE, conversation_id: nil,
-        specification: EdmSpecification::V2_0, body:)
-
-      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
-        .to raise_error(UnreadableMessageError)
-    end
-
-    # The 1.2 line is what makes that refusal indispensable rather than
-    # incidental: `identified?` answers `true` there whatever the header names,
-    # the `ExchangeId` being a property of 2.0 alone, so the blank check is all
-    # that stands between a request naming no conversation and a row `Exchange`
-    # would refuse to validate.
-    it 'refuses a request of the 1.2 line carrying no conversation identifier' do
-      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: nil,
-        specification: EdmSpecification::V1_2, body:)
-
-      expect { described_class.call(message:, audit_trail: AuditTrail.new) }
-        .to raise_error(UnreadableMessageError)
-    end
-
-    it 'opens nothing' do
-      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: nil,
-        specification: EdmSpecification::V2_0, body:)
-
-      suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
-
-      expect(Exchange.count).to eq(0)
-    end
-
-    # Nothing goes back to the correspondent and no exchange row carries the
-    # decision, so the journal is the only place it can be read afterwards —
-    # `docs/journal_des_echanges.md` asks a refusal whose reason is known to
-    # record it.
-    it 'journals why nothing followed the arrival' do
-      message = instance_double(RetrievedMessageParser, action: EbmsAction::EXECUTE_QUERY_REQUEST,
-        exchange_id: nil, conversation_id: FOREIGN_CONVERSATION,
-        specification: EdmSpecification::V2_0, body:)
-
-      suppress(UnreadableMessageError) { described_class.call(message:, audit_trail: AuditTrail.new) }
-
-      expect(AuditEvent.sole).to have_attributes(
-        event_type: 'request_refused',
-        evidence_requester_id: '00000000000009',
-        procedure_code: '00',
-        country_code: 'FI',
-        detail: I18n.t('interactors.incoming_message.open_exchange.unidentified'),
-      )
+    it 'opens nothing, and refuses nothing either' do
+      expect { open_exchange }.not_to change(Exchange, :count)
+      expect(open_exchange).to be_success
+      expect(AuditEvent.count).to eq(0)
     end
   end
 

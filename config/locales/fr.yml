@@ -1712,6 +1712,8 @@ fr:
           %{reason} (%{rule}) : aucune réponse ne peut nommer ce requêteur sans enfreindre à son tour
           les règles de la réponse d'erreur.
         unnamed_rule: sans règle nommée
+      reject_unidentified_request:
+        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
     evidence_request:
       confirm_exchange:
         not_awaited: "L'échange n'attend plus la confirmation d'une prévisualisation : elle a déjà été donnée, ou le délai T2 est écoulé."
@@ -1754,8 +1756,6 @@ fr:
         # description est le seul endroit qui dit à qui la panne appartient.
         invalid_configuration: "La configuration de cette installation ne permet pas de construire la requête : %{error}"
     incoming_message:
-      open_exchange:
-        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
       settle_exchange:
         unknown: "Échange inconnu : %{id}"
         already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"

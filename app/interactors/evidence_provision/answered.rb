@@ -11,6 +11,7 @@ module EvidenceProvision
 
     def answered(message_id)
       {
+        exchange: context.exchange,
         message: context.message,
         requester: context.requester,
         provider: EvidenceProvider.french,

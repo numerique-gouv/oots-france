@@ -500,4 +500,215 @@ RSpec.describe IncomingMessage::Process do
       end
     end
   end
+
+  # OOTS-254. A 1.2 header names no exchange, and France mints an identifier for
+  # the one it holds: every line written of a message correlated to an exchange,
+  # or of a request that opened one, goes under that exchange's identifier, so
+  # that the console joins the line to its exchange and its conversation.
+  describe 'the lines of an exchange conducted on the 1.2 line' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:gateway) { gateway_accepting_submissions(retrieve: message) }
+    let(:message) { earlier_line_envelope }
+
+    before { travel_to(Time.zone.parse('2026-08-11T09:22:22.000Z')) }
+
+    def line(event_type) = AuditEvent.find_by!(event_type:)
+
+    # CA1.
+    it 'journals the request and the answer under the identifier France minted' do
+      process
+
+      exchange = Exchange.sole
+      expect(exchange).to have_attributes(incoming: true, exchange_id: match(Exchange::UUID))
+      %w[request_received response_sent].each do |event_type|
+        expect(line(event_type)).to have_attributes(exchange_id: exchange.exchange_id,
+          conversation_id: message.conversation_id)
+      end
+    end
+
+    # CA2.
+    describe 'a request France refuses with an exception response' do
+      let(:message) { earlier_line_envelope { |body| body.sub('value="00"', 'value="T3"') } }
+
+      it 'journals the refusal under the identifier France minted, and fails the exchange' do
+        process
+
+        expect(line('error_sent').exchange_id).to eq(Exchange.sole.exchange_id)
+        expect(Exchange.sole.status).to eq('failed')
+      end
+    end
+
+    # CA2.
+    describe 'a request whose requester no answer could name' do
+      let(:message) { earlier_line_envelope { |body| body.sub('EAS:0009', 'EAS:9999') } }
+
+      it 'journals the refusal under the identifier France minted' do
+        process
+
+        expect(line('request_refused').exchange_id).to eq(Exchange.sole.exchange_id)
+        expect(AuditEvent.order(:id).pluck(:event_type)).to eq(%w[request_received request_refused])
+        expect(Exchange.sole.status).to eq('failed')
+      end
+    end
+
+    # CA3.
+    describe 'an answer the gateway would not take' do
+      before { allow(gateway).to receive(:submit).and_raise(Faraday::ConnectionFailed, 'connexion refusée') }
+
+      it 'journals it under the identifier France minted' do
+        expect { process }.to raise_error(Faraday::ConnectionFailed)
+
+        expect(line('answer_not_sent').exchange_id).to eq(Exchange.sole.exchange_id)
+      end
+    end
+
+    # CA7: no conversation, nothing to open a row under, and no identifier to
+    # journal either line under — the arrival first, the refusal after it.
+    describe 'a request carrying no conversation' do
+      let(:message) { envelope_without_conversation(earlier_line_envelope) }
+
+      it 'opens nothing and journals both lines under no exchange' do
+        process
+
+        expect(Exchange.count).to eq(0)
+        expect(AuditEvent.order(:id).pluck(:event_type, :exchange_id))
+          .to eq([['request_received', nil], ['request_refused', nil]])
+      end
+    end
+
+    # CA8: the demonstration loops through a single gateway, and the request
+    # France sent comes back to it as a request received.
+    describe 'a request coming back on an exchange France sent' do
+      let!(:sent) do
+        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+          request_id: message.body.request_id)
+      end
+
+      it 'opens no second exchange, and journals under the one it sent' do
+        process
+
+        expect(Exchange.sole).to eq(sent)
+        %w[request_received response_sent].each do |event_type|
+          expect(line(event_type).exchange_id).to eq(sent.exchange_id)
+        end
+      end
+    end
+
+    # CA8.
+    it 'journals a request delivered twice under the exchange of the first' do
+      process
+      described_class.call(message_id: 'un-autre-message', gateway:, **collaborators)
+
+      expect(Exchange.count).to eq(1)
+      expect(AuditEvent.pluck(:exchange_id)).to all(eq(Exchange.sole.exchange_id))
+      expect(AuditEvent.where(event_type: 'request_received').count).to eq(2)
+      # Chapter 4.4: the repeat is refused, and not answered a second time.
+      expect(AuditEvent.where(event_type: 'response_sent').count).to eq(1)
+      expect(AuditEvent.find_by!(event_type: 'error_sent').detail).to eq(EvidenceProvision::ChooseAnswer::REPLAYED_IDENTIFIER)
+    end
+
+    # CA6.
+    describe 'a response correlated by the request it answers' do
+      let(:message) { earlier_line_response }
+      let!(:sent) do
+        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+          request_id: message.body.request_id)
+      end
+
+      before { allow(collaborators[:evidence_forwarder]).to receive(:deliver) }
+
+      it 'journals its arrival under the exchange France sent, as its delivery' do
+        process
+
+        expect(line('response_received').exchange_id).to eq(sent.exchange_id)
+        expect(line('evidence_delivered').exchange_id).to eq(sent.exchange_id)
+      end
+    end
+
+    # CA6: on the loop through a single gateway, France's own answer comes back
+    # to the exchange it received, already settled, and is refused there.
+    describe 'a response coming back on an exchange France received' do
+      let(:message) { earlier_line_response }
+      let!(:received) do
+        create(:exchange, :received, :legacy_line, :delivered, conversation_id: message.conversation_id,
+          request_id: message.body.request_id)
+      end
+
+      it 'journals its arrival and its refusal under the exchange France received' do
+        process
+
+        expect(line('response_received').exchange_id).to eq(received.exchange_id)
+        expect(line('response_refused').exchange_id).to eq(received.exchange_id)
+      end
+    end
+
+    # CA6.
+    describe 'an error correlated by its conversation alone' do
+      let(:message) do
+        earlier_line_envelope('erreurObjetIntrouvable') { |body| body.sub(/ requestId="[^"]*"/, '') }
+      end
+
+      it 'journals its arrival under the one exchange the conversation has underway' do
+        sent = create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id)
+
+        process
+
+        expect(line('error_received').exchange_id).to eq(sent.exchange_id)
+      end
+    end
+
+    # CA6.
+    describe 'a response correlated to no exchange' do
+      let(:message) { earlier_line_response }
+
+      it 'keeps what its header named, which is nothing' do
+        process
+
+        expect(line('response_received').exchange_id).to be_nil
+      end
+    end
+  end
+
+  # CA5 and CA7 of OOTS-254, on the 2.0 line.
+  describe 'the lines of an exchange conducted on the 2.0 line' do
+    it 'journals the arrival under the exchange identifier the header names' do
+      allow(EvidenceProvision::Answer).to receive(:call!)
+
+      process
+
+      expect(AuditEvent.find_by!(event_type: 'request_received').exchange_id)
+        .to eq(message.exchange_id).and eq(Exchange.sole.exchange_id)
+    end
+
+    # The message is erased by the time the exchange is opened, so a failure to
+    # open it must not take the arrival line with it.
+    it 'journals the arrival when the exchange cannot be opened' do
+      allow(Exchange).to receive(:find_or_create_by!).and_raise(ActiveRecord::RecordNotUnique)
+
+      expect { process }.to raise_error(ActiveRecord::RecordNotUnique)
+      expect(AuditEvent.sole).to have_attributes(event_type: 'request_received', exchange_id: message.exchange_id)
+    end
+
+    describe 'a request carrying no exchange identifier' do
+      let(:message) do
+        envelope_without('requete', "//eb:UserMessage/eb:MessageProperties/eb:Property[@name='ExchangeId']")
+      end
+
+      it 'opens nothing and journals both lines under no exchange' do
+        process
+
+        expect(Exchange.count).to eq(0)
+        expect(AuditEvent.order(:id).pluck(:event_type, :exchange_id))
+          .to eq([['request_received', nil], ['request_refused', nil]])
+      end
+    end
+  end
+
+  def envelope_without_conversation(message)
+    document = Nokogiri::XML(message.raw)
+    document.xpath('//eb:UserMessage/eb:CollaborationInfo/eb:ConversationId', OotsNamespaces::NAMESPACES)
+      .each(&:remove)
+    RetrievedMessageParser.new(document.to_xml)
+  end
 end

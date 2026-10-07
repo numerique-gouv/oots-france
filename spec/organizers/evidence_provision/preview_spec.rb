@@ -274,6 +274,35 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(Exchange.find_by(request_id: "urn:uuid:#{second_id}").status).to eq('delivered')
     end
 
+    # CA4 of OOTS-254: the header names no exchange, so every line of the first
+    # request goes under the identifier France minted for it, the user's
+    # decision included.
+    it 'journals the first request, its answer and the decision under the exchange it opened' do
+      first_exchange = Exchange.sole
+      perform_enqueued_jobs do
+        EvidenceProvision::RecordPreviewDecision.call(preview_session: PreviewSession.sole, decision: 'accepted')
+      end
+
+      lines = AuditEvent.where(event_type: %w[request_received error_sent preview_decided])
+      expect(lines.pluck(:event_type)).to contain_exactly('request_received', 'error_sent', 'preview_decided')
+      expect(lines.pluck(:exchange_id)).to all(eq(first_exchange.exchange_id))
+    end
+
+    # CA8 of OOTS-254: the second request opens an exchange of its own, and its
+    # lines go under it.
+    it 'journals the second request under the exchange it opened' do
+      first_exchange = Exchange.sole
+      second_id = SecureRandom.uuid
+      PreviewSession.sole.decide!(accepted: true)
+      deliver(second(line: :v1_2, request_id: second_id), 'm002')
+
+      second_exchange = Exchange.find_by(request_id: "urn:uuid:#{second_id}")
+      lines = AuditEvent.where(message_id: 'm002').or(AuditEvent.where(request_id: "urn:uuid:#{second_id}"))
+      expect(second_exchange).not_to eq(first_exchange)
+      expect(lines.pluck(:event_type)).to include('request_received', 'response_sent')
+      expect(lines.pluck(:exchange_id)).to all(eq(second_exchange.exchange_id))
+    end
+
     it 'refuses a ReturnLocation under R-EDM-REQ-S019' do
       deliver(second(line: :v1_2, slots: preview_slots(location, 'https://portail.example')), 'm002')
 

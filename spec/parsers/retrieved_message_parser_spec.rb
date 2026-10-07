@@ -291,6 +291,32 @@ RSpec.describe RetrievedMessageParser do
     end
   end
 
+  # `R-EDM-ebMS-019` asks the `ExchangeId` of the 2.0 line alone, and the ebMS3
+  # envelope the `eb:ConversationId` of both.
+  describe 'whether the header names an exchange' do
+    let(:conversation) { '//eb:UserMessage/eb:CollaborationInfo/eb:ConversationId' }
+    let(:exchange) { "//eb:UserMessage/eb:MessageProperties/eb:Property[@name='ExchangeId']" }
+
+    it 'names one on the 2.0 line when it carries both identifiers' do
+      expect(described_class.new(real_envelope('requete'))).to be_identified
+    end
+
+    it 'names none on the 2.0 line without its exchange identifier' do
+      expect(envelope_without('requete', exchange)).not_to be_identified
+    end
+
+    it 'names none without a conversation, whatever the line' do
+      expect(envelope_without('requete', conversation)).not_to be_identified
+      expect(earlier_line_envelope.tap { |m| allow(m).to receive(:conversation_id).and_return(nil) })
+        .not_to be_identified
+    end
+
+    # France mints the exchange identifier of the 1.2 line for itself.
+    it 'names one on the 1.2 line from the conversation alone' do
+      expect(earlier_line_envelope).to be_identified
+    end
+  end
+
   # Chapter 4.7 §2.6.2: « In case of inconsistency between the message-level
   # SpecificationId property and the specification identifier expressed in the
   # payload, the message MUST be considered invalid and an appropriate error
