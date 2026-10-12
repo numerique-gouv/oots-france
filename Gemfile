@@ -12,7 +12,7 @@ gem 'bootsnap', require: false
 # and so every session, raises `ArgumentError` on being read. Rails calls it
 # with keywords on `8-1-stable`; lift the pin when that ships.
 gem 'json', '< 3'
-gem 'pg', '~> 1.6'
+gem 'pg', '~> 1.7'
 gem 'propshaft'
 gem 'puma', '>= 5.0'
 gem 'rails-i18n'
