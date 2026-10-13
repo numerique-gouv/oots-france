@@ -30,19 +30,29 @@ for s in $(ls .claude/reviews | sed -E 's/-[0-9]+\.md$/.md/' | sort -u); do
   echo "$(( f > p ? f : p )) $s"
 done | sort -rn | head
 git log --since="$DEPUIS" --name-only --format= -- .claude CLAUDE.md | sort | uniq -c | sort -rn   # ce qu'on retouche sans cesse
-# rendement par relecteur : ses mentions sous une section « Rejeté » contre celles sous « Confirmé / Corrigé » — une heuristique, à ± 10 points, mais l'ordre tient
+# rendement par relecteur : ses mentions sous une section « Rejeté » contre celles sous « Confirmé / Corrigé ».
+# Un rendement ne se cite qu'avec son `n`, et sous une vingtaine de constats il se recompte à la main,
+# parce que deux biais le faussent et qu'aucun ne s'annule :
+#   — un relecteur nommé sans constat (« type-design-analyzer — aucun finding », « non lancé ») compterait comme un rejet ;
+#   — un constat que deux relecteurs ont trouvé tient sur une ligne, et va tout entier au premier nommé de la liste.
+# Le 2026-10-13, `type-design-analyzer` rendait 73 % sur n=15 par la version d'avant, 70 % sur n=10 par celle-ci,
+# et 53 % recompté à la main en créditant chaque relecteur nommé : trois chiffres pour les mêmes revues.
 python3 - <<'EOF'
 import re,glob,collections
-rev=['code-reviewer','comment-analyzer','code-simplifier','silent-failure-hunter','pr-test-analyzer','type-design-analyzer','layered-rails-reviewer']
+rev={'code-reviewer':['code-reviewer'],'comment-analyzer':['comment-analyzer'],'code-simplifier':['code-simplifier'],
+     'silent-failure-hunter':['silent-failure-hunter','silent-failure'],'pr-test-analyzer':['pr-test-analyzer','pr-test'],
+     'type-design-analyzer':['type-design-analyzer','type-design'],'layered-rails-reviewer':['layered-rails-reviewer','layered-rails']}
 c=collections.defaultdict(collections.Counter); sec=None
 for f in glob.glob('.claude/reviews/*.md'):
     for line in open(f):
         m=re.match(r'^##+ (.*)',line)
         if m: t=m.group(1).lower(); sec='rej' if 'rejet' in t else ('conf' if re.search('corrig|confirm|bloquant',t) else None); continue
-        for r in rev:
-            if r in line and sec: c[r][sec]+=1
-for r in rev: n=sum(c[r].values()); print(f"{r:24} confirmés {c[r]['conf']:3}  rejetés {c[r]['rej']:3}  {100*c[r]['rej']//max(n,1):3} % rejet")
+        if not sec or re.search(r'aucun finding|aucun constat|rien\.|non lanc', line): continue
+        for r,noms in rev.items():
+            if any(re.search(rf'{n}(?![\w-])', line) for n in noms): c[r][sec]+=1; break
+for r in rev: n=sum(c[r].values()); print(f"{r:24} confirmés {c[r]['conf']:3}  rejetés {c[r]['rej']:3}  {100*c[r]['rej']//max(n,1):3} % rejet  (n={n})")
 EOF
+
 ```
 
 ## Les jetons par poste
