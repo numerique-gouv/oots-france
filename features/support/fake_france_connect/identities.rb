@@ -39,8 +39,11 @@ module FakeFranceConnect
 
     attr_reader :key, :country, :level, :eidas_identifier, :given_name, :family_name, :birthdate, :person_identifier
 
-    def initialize(key:, country:, level:, eidas_identifier:, given_name:, family_name:, birthdate:,
-                   gender: nil, birthplace: nil, person_identifier: nil)
+    # `eidas_identifier` is what the `sub` derives from: the published
+    # identifier when there is one, an internal one the fake never publishes
+    # otherwise.
+    def initialize(key:, country:, level:, given_name:, family_name:, birthdate:,
+                   person_identifier: nil, eidas_identifier: person_identifier, gender: nil, birthplace: nil)
       @key = key
       @country = country
       @level = level
@@ -61,9 +64,10 @@ module FakeFranceConnect
     # cover, minus those this identity has not got. The bridge renders a
     # European user with **no** identifier and **no** country, and the fake
     # reproduces that gap rather than filling it — which is why neither
-    # `birthcountry` nor `email` appears in the map above. The one exception is
-    # deliberate, and `docs/test_e2e.md` says why: an identifier the operator
-    # typed in is published whatever the scopes, none of them covering it.
+    # `birthcountry` nor `email` appears in the map above. The identifier is the
+    # one deliberate exception, and `docs/test_e2e.md` says why: the fixed
+    # identities and an identity typed in with one publish it whatever the
+    # scopes, none of them covering it.
     # back/libs/eidas-oidc-mapper/src/mappers/eidas-to-oidc.mapper.ts
     def claims_for(scopes)
       covered = scopes.flat_map { |scope| CLAIMS_BY_SCOPE.fetch(scope, []) }.uniq
@@ -107,18 +111,18 @@ module FakeFranceConnect
     ALL = [
       Identity.new(
         key: 'dk-substantial', country: 'DK', level: 'substantial',
-        eidas_identifier: 'DK/FR/61f6a1b0-3d3c-4f24-9a2f-6d1c9f0f2a55',
+        person_identifier: 'DK/FR/61f6a1b0-3d3c-4f24-9a2f-6d1c9f0f2a55',
         given_name: 'Freja Marie', family_name: 'Sørensen', birthdate: '2001-04-17',
         gender: 'female', birthplace: 'Aarhus',
       ),
       Identity.new(
         key: 'dk-high', country: 'DK', level: 'high',
-        eidas_identifier: 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07',
+        person_identifier: 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07',
         given_name: 'Mikkel Anker', family_name: 'Bruun', birthdate: '1998-09-03',
       ),
       Identity.new(
         key: 'pl-substantial', country: 'PL', level: 'substantial',
-        eidas_identifier: 'PL/FR/3e9b47c2-5a1d-4c86-b0f4-7d2e18a9c6b3',
+        person_identifier: 'PL/FR/91040665144',
         given_name: 'Alicja', family_name: 'Roszponka', birthdate: '1991-04-06',
       ),
     ].freeze
@@ -149,7 +153,7 @@ module FakeFranceConnect
       person_identifier = composed(country, national_part)
       digest = Digest::SHA256.hexdigest([country, given_name, family_name, birthdate].join("\n"))
       Identity.new(key: ENTERED, country: country, level: 'high',
-        eidas_identifier: person_identifier || "#{country}/FR/#{digest}", person_identifier: person_identifier,
+        person_identifier: person_identifier, eidas_identifier: person_identifier || "#{country}/FR/#{digest}",
         given_name: given_name, family_name: family_name, birthdate: birthdate)
     end
 

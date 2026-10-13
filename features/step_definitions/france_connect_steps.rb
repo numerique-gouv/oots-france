@@ -1,4 +1,4 @@
-DECLARED_CLAIMS = %w[sub given_name family_name birthdate gender birthplace].freeze
+DECLARED_CLAIMS = %w[sub given_name family_name birthdate gender birthplace person_identifier].freeze
 ID_TOKEN_CLAIMS = %w[iss sub aud exp iat nonce acr].freeze
 
 # The fake is a role of the suite: it is already running when the first step
@@ -300,7 +300,9 @@ Alors('le sub de \\/userinfo fait 64 caractères hexadécimaux suivis de {string
   expect(subject).not_to include(part)
 end
 
-Alors('le JWT déchiffré contient exactement sub, given_name, family_name, birthdate, gender et birthplace') do
+Alors(
+  'le JWT déchiffré contient exactement sub, given_name, family_name, birthdate, gender, birthplace et person_identifier',
+) do
   expect(@client.unseal(@userinfo.body).keys).to contain_exactly(*DECLARED_CLAIMS)
 end
 
