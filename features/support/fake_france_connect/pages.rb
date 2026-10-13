@@ -80,6 +80,7 @@ module FakeFranceConnect
       button:focus-visible { outline: 2px solid #0a76f6; outline-offset: 2px; }
       .card { background: #fff; border: 1px solid #e5e5e5; border-radius: .25rem; padding: 1.5rem; }
       label { text-align: left; font-weight: 700; }
+      .optional { font-weight: 400; }
       input {
         font: inherit;
         min-height: 2.5rem;
@@ -131,15 +132,18 @@ module FakeFranceConnect
         field('given_name', 'Given name', 'text'),
         field('family_name', 'Family name', 'text'),
         field('birthdate', 'Birth date', 'date'),
+        field('national_part', 'eIDAS identifier', 'text', required: false),
+        '<p class="quiet">The nationality and France as the destination are added before it.</p>',
         '<button type="submit">Continue with this identity</button>',
       ]
 
       "<div class=\"card\" id=\"#{ENTERED_FORM}\" hidden>#{form(action, fields)}</div>"
     end
 
-    def self.field(name, label, type)
+    def self.field(name, label, type, required: true)
+      label += ' <span class="optional">(optional)</span>' unless required
       "<label for=\"#{name}\">#{label}</label>" \
-        "<input id=\"#{name}\" name=\"#{name}\" type=\"#{type}\" required autocomplete=\"off\">"
+        "<input id=\"#{name}\" name=\"#{name}\" type=\"#{type}\"#{' required' if required} autocomplete=\"off\">"
     end
 
     # What the consent page of FranceConnect+ does: list the data about to be

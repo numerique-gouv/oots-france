@@ -33,10 +33,14 @@ module FakeFranceConnect
       'profile' => %w[given_name family_name birthdate gender preferred_username],
     }.freeze
 
-    attr_reader :key, :country, :level, :eidas_identifier, :given_name, :family_name, :birthdate
+    # The claim the procedure reads the eIDAS identifier from — a name of this
+    # repository's, which no scope of FranceConnect+ covers.
+    PERSON_IDENTIFIER = 'person_identifier'.freeze
+
+    attr_reader :key, :country, :level, :eidas_identifier, :given_name, :family_name, :birthdate, :person_identifier
 
     def initialize(key:, country:, level:, eidas_identifier:, given_name:, family_name:, birthdate:,
-                   gender: nil, birthplace: nil)
+                   gender: nil, birthplace: nil, person_identifier: nil)
       @key = key
       @country = country
       @level = level
@@ -46,6 +50,7 @@ module FakeFranceConnect
       @birthdate = birthdate
       @gender = gender
       @birthplace = birthplace
+      @person_identifier = person_identifier
     end
 
     def acr = ACR_BY_LEVEL.fetch(level)
@@ -56,12 +61,14 @@ module FakeFranceConnect
     # cover, minus those this identity has not got. The bridge renders a
     # European user with **no** identifier and **no** country, and the fake
     # reproduces that gap rather than filling it — which is why neither
-    # `birthcountry` nor `email` appears in the map above.
+    # `birthcountry` nor `email` appears in the map above. The one exception is
+    # deliberate, and `docs/test_e2e.md` says why: an identifier the operator
+    # typed in is published whatever the scopes, none of them covering it.
     # back/libs/eidas-oidc-mapper/src/mappers/eidas-to-oidc.mapper.ts
     def claims_for(scopes)
       covered = scopes.flat_map { |scope| CLAIMS_BY_SCOPE.fetch(scope, []) }.uniq
 
-      values.slice(*covered)
+      values.slice(*covered).merge({ PERSON_IDENTIFIER => person_identifier }.compact)
     end
 
     private
@@ -118,18 +125,31 @@ module FakeFranceConnect
 
     ENTERED = 'entered'.freeze
 
+    # The third part of an eIDAS identifier, as `R-EDM-REQ-C040` checks it in a
+    # request: between 6 and 256 characters, none of them blank.
+    NATIONAL_PART = /\A\S{6,256}\z/
+
+    # TDD 2.1, §2.3: « In case of Greece, the value of the Nationality Code MUST
+    # be "EL" instead of "GR" », where the country page offers ISO 3166 codes.
+    NATIONALITY_CODES = { 'GR' => 'EL' }.freeze
+
     # The identity the operator types in on the identity page, for a
     # demonstration that needs a name the fixed identities do not carry. At the
-    # high level, so that no `acr_values` refuses it; its identifier is drawn
-    # from what was typed, so that the same person under the same country gets
-    # the same `sub` twice.
-    def self.entered(country:, given_name:, family_name:, birthdate:)
+    # high level, so that no `acr_values` refuses it. A national part typed in
+    # becomes the published eIDAS identifier — nationality, then France as the
+    # destination, per TDD 2.1, §2.3 — and the `sub` derives from it; without
+    # one, the internal identifier is drawn from what was typed, so that the
+    # same person under the same country gets the same `sub` twice.
+    def self.entered(country:, given_name:, family_name:, birthdate:, national_part: '')
       given_name = given_name.strip
       family_name = family_name.strip
-      return if given_name.empty? || family_name.empty? || !iso_date?(birthdate)
+      national_part = national_part.strip
+      return if given_name.empty? || family_name.empty? || !iso_date?(birthdate) || !national_part?(national_part)
 
+      person_identifier = composed(country, national_part)
       digest = Digest::SHA256.hexdigest([country, given_name, family_name, birthdate].join("\n"))
-      Identity.new(key: ENTERED, country: country, level: 'high', eidas_identifier: "#{country}/FR/#{digest}",
+      Identity.new(key: ENTERED, country: country, level: 'high',
+        eidas_identifier: person_identifier || "#{country}/FR/#{digest}", person_identifier: person_identifier,
         given_name: given_name, family_name: family_name, birthdate: birthdate)
     end
 
@@ -142,7 +162,13 @@ module FakeFranceConnect
       false
     end
 
-    private_class_method :iso_date?
+    def self.national_part?(value) = value.empty? || value.match?(NATIONAL_PART)
+
+    def self.composed(country, national_part)
+      "#{NATIONALITY_CODES.fetch(country, country)}/FR/#{national_part}" unless national_part.empty?
+    end
+
+    private_class_method :iso_date?, :national_part?, :composed
 
     def self.countries = COUNTRY_NAMES.keys
 

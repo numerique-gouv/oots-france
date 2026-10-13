@@ -98,6 +98,57 @@ RSpec.describe FakeFranceConnect::Identity do
         expect(described_class.entered(**typed, given_name: 'Inge').eidas_identifier).not_to eq(identifier)
       end
 
+      it 'ne publie aucun identifiant quand la partie nationale est laissée vide' do
+        everything = FakeFranceConnect::Identity::CLAIMS_BY_SCOPE.keys
+
+        expect(described_class.entered(**typed, national_part: '  ').claims_for(everything))
+          .not_to include('person_identifier')
+        expect(described_class.entered(**typed, national_part: '').eidas_identifier)
+          .to eq(described_class.entered(**typed).eidas_identifier)
+      end
+
+      describe 'avec la partie nationale d\'un identifiant eIDAS' do
+        let(:alicja) do
+          { country: 'PL', given_name: 'Alicja', family_name: 'Roszponka', birthdate: '1991-04-06',
+            national_part: '91040665144' }
+        end
+
+        # TDD 2.1, §2.3: nationality, destination, then the national part.
+        it 'publie l\'identifiant composé quels que soient les scopes' do
+          identity = described_class.entered(**alicja)
+
+          expect(identity.claims_for(%w[openid])).to eq('person_identifier' => 'PL/FR/91040665144')
+          expect(identity.claims_for(%w[openid given_name family_name birthdate gender birthplace]))
+            .to include('person_identifier' => 'PL/FR/91040665144')
+        end
+
+        it 'en dérive le sub, à la place de l\'identifiant interne' do
+          identity = described_class.entered(**alicja)
+
+          expect(identity.eidas_identifier).to eq('PL/FR/91040665144')
+          expect(described_class.entered(**alicja, national_part: '91040665145').eidas_identifier)
+            .not_to eq(identity.eidas_identifier)
+        end
+
+        it 'retire les blancs des extrémités' do
+          expect(described_class.entered(**alicja, national_part: '   91040665144   ').person_identifier)
+            .to eq('PL/FR/91040665144')
+        end
+
+        it 'écrit EL pour la Grèce' do
+          expect(described_class.entered(**alicja, country: 'GR', national_part: '123456').person_identifier)
+            .to eq('EL/FR/123456')
+        end
+
+        # R-EDM-REQ-C040: the third part is 6 to 256 non-blank characters.
+        it 'refuse une partie nationale que R-EDM-REQ-C040 refuserait' do
+          expect(described_class.entered(**alicja, national_part: '12345')).to be_nil
+          expect(described_class.entered(**alicja, national_part: '9104 0665 144')).to be_nil
+          expect(described_class.entered(**alicja, national_part: 'x' * 257)).to be_nil
+          expect(described_class.entered(**alicja, national_part: 'x' * 256)).not_to be_nil
+        end
+      end
+
       it 'refuse un nom vide ou une date de naissance qui n\'en est pas une' do
         expect(described_class.entered(**typed, family_name: ' ')).to be_nil
         expect(described_class.entered(**typed, birthdate: '1987-02-30')).to be_nil

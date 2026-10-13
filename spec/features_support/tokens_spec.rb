@@ -33,11 +33,19 @@ RSpec.describe FakeFranceConnect::Tokens do
       expect(tokens.subject_for('une-demarche', identity)).not_to eq(tokens.subject_for('une-demarche', other))
     end
 
-    # The `XX/YY/…` identifier the node yields never leaves the fake: it is
-    # hashed into the pseudonym and appears nowhere in it.
+    # The `XX/YY/…` identifier the node yields is hashed into the pseudonym and
+    # appears nowhere in it.
     it 'ne laisse rien paraître de l\'identifiant eIDAS' do
       expect(tokens.subject_for('une-demarche', identity)).not_to include(identity.eidas_identifier)
       expect(tokens.subject_for('une-demarche', identity)).not_to include('/')
+    end
+
+    it 'ne laisse rien paraître d\'un identifiant saisi' do
+      typed = FakeFranceConnect::Identities.entered(country: 'PL', given_name: 'Alicja', family_name: 'Roszponka',
+        birthdate: '1991-04-06', national_part: '91040665144')
+
+      expect(tokens.subject_for('une-demarche', typed)).to match(/\A\h{64}v1\z/)
+      expect(tokens.subject_for('une-demarche', typed)).not_to include('91040665144')
     end
 
     it 'sépare deux déploiements par leur secret' do

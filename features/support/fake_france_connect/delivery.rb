@@ -60,8 +60,8 @@ module FakeFranceConnect
 
     attr_reader :configuration
 
-    # `sub` and what the requested scopes cover, and nothing else: no
-    # identifier, no country, no `birthcountry`, no `email`.
+    # `sub` and what the requested scopes cover: no country, no `birthcountry`,
+    # no `email`, and no identifier but one the operator typed in.
     def userinfo_claims(held)
       { 'sub' => held.fetch(:sub) }.merge(held.fetch(:identity).claims_for(held.fetch(:scopes)))
     end
