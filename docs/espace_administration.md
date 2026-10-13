@@ -220,7 +220,7 @@ Administrator.create!(email: 'prenom.nom@exemple.gouv.fr', password: 'un mot de 
 
 ## Le design system
 
-L'espace est au [Système de design de l'État](https://www.systeme-de-design.gouv.fr/) (DSFR), par les gems [`dsfr-view-components`](https://github.com/betagouv/dsfr-view-components) et [`dsfr-assets`](https://github.com/betagouv/dsfr-assets), qui embarquent le CSS, le JavaScript, les polices et les icônes : **ni npm ni Node**. Les deux demandent un `require` explicite, posé dans `config/application.rb`.
+L'espace est au [Système de design de l'État](https://www.systeme-de-design.gouv.fr/) (DSFR), par les gems [`dsfr-view-components`](https://github.com/betagouv/dsfr-view-components) et [`dsfr-assets`](https://github.com/betagouv/dsfr-assets), qui embarquent le CSS, le JavaScript, les polices et les icônes : **ni npm ni Node**. Les deux demandent un `require` explicite, posé dans `config/application.rb`, et `dsfr-assets` refuse de démarrer tant que l'application n'a pas nommé la version des [modalités d'utilisation du DSFR](https://github.com/GouvernementFR/dsfr/blob/v1.15.3/doc/legal/cgu.md) qu'elle a lue : `config/initializers/dsfr.rb` la porte.
 
 Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les composants, `utility/dsfr-utility.min` les icônes — sans elle, toute classe `fr-icon-*` est muette. La gem en livre deux autres, `proconnect-button` et `dsfr.print.min`, qui ne sont pas reprises : l'espace se connecte sur un compte local, pas sur un fournisseur d'identité.
 
