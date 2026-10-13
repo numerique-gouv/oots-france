@@ -19,18 +19,21 @@ module DirectoryStubs
   # resting on several requirements is asked about each of them separately, and
   # a double answering all of them alike cannot tell which was asked for.
   # `country:` narrows on the `country-code` in the same way: a card resolved in
-  # another member state is answered what that one publishes.
-  def stub_directory(service, query_fragment, fixture, requirement: nil, country: nil)
+  # another member state is answered what that one publishes. `evidence_type:`
+  # narrows the Data Service Directory query on its `evidence-type-classification`:
+  # a country publishing several types is answered for each separately.
+  def stub_directory(service, query_fragment, fixture, requirement: nil, country: nil, evidence_type: nil)
     body, headers = common_services_answer(fixture)
 
-    stub_directory_body(service, query_fragment, body, headers, requirement:, country:)
+    stub_directory_body(service, query_fragment, body, headers, requirement:, country:, evidence_type:)
   end
 
-  def stub_directory_body(service, query_fragment, body,
-                          headers = { 'content-type' => 'application/x-ebrs+xml' }, requirement: nil, country: nil)
+  def stub_directory_body(service, query_fragment, body, headers = { 'content-type' => 'application/x-ebrs+xml' },
+                          requirement: nil, country: nil, evidence_type: nil)
     asked = { 'queryId' => a_string_including(query_fragment) }
     asked['requirement-id'] = requirement if requirement
     asked['country-code'] = country if country
+    asked['evidence-type-classification'] = evidence_type if evidence_type
 
     stub_request(:get, "#{ACCEPTANCE}/#{service}/rest/search")
       .with(query: hash_including(asked))

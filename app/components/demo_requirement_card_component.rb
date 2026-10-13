@@ -20,6 +20,11 @@
 # step 16 of chapter 1 §10.1 — as `[label, code]` pairs; `nil` where the card
 # stays in the country of the request it follows, which it then only names.
 #
+# `evidence_types` is the evidence types the country publishes for the
+# requirement, where it publishes several — requirement 26 of chapter 1 §2 has
+# the user select one — as `[label, uuid, { lang: }]`; `nil` where there is
+# nothing to choose, or where the card names the type of the request it follows.
+#
 # `unspoken` is the line of the journey where the provider's gateway announces
 # others and not it: the card says so in place of the button.
 #
@@ -28,9 +33,10 @@
 # others are what the broker publishes for the procedure, and the page shows
 # them for that.
 class DemoRequirementCardComponent < ViewComponent::Base
-  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, unspoken: nil,
-                 removable: false)
+  def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, evidence_types: nil,
+                 unspoken: nil, removable: false)
     @wording = wording
+    @evidence_types = evidence_types
     @country_code = country_code
     @country_name = country_name
     @zone = zone
@@ -40,7 +46,7 @@ class DemoRequirementCardComponent < ViewComponent::Base
     super()
   end
 
-  attr_reader :zone, :countries, :country_code, :unspoken
+  attr_reader :zone, :countries, :evidence_types, :country_code, :unspoken
 
   def removable? = @removable
 
@@ -61,8 +67,15 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   # A requirement nothing satisfies is a dead end of the procedure, and the card
   # says so by its ground as well as by its wording — never by the ground alone,
-  # which RGAA 3.1 forbids.
-  def css_classes = class_names(*CLASSES, 'requirement-card--unsatisfiable' => !nameable?)
+  # which RGAA 3.1 forbids. A country publishing several types is no dead end,
+  # whatever the one chosen answers: the others remain.
+  def css_classes = class_names(*CLASSES, 'requirement-card--unsatisfiable' => unsatisfiable?)
+
+  def unsatisfiable? = !nameable? && !choosable?
+
+  # Several types, and none chosen yet: the foot names nothing and offers
+  # nothing, the list above waiting for the user.
+  def unchosen? = choosable? && evidence_type.nil?
 
   # The requirement names the card whatever the directories answered next:
   # one nobody serves is still one the procedure rests on.
@@ -82,6 +95,9 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # button included — and never the list, nor the region announcing the change.
   def country_path = helpers.admin_demo_pays_path(exigence: requirement_uuid)
 
+  # Posted outside the foot, which is all its answer replaces.
+  def evidence_type_path = helpers.admin_demo_type_justificatif_path(exigence: requirement_uuid)
+
   # The card's own address in the page, which a reload of the page can land on.
   def anchor = "exigence-#{requirement_uuid}"
 
@@ -89,7 +105,12 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   def failure_field = "#{country_field}-erreur"
 
-  delegate :nameable?, :published_nothing?, :evidence_type, :evidence_type_language, :provider,
+  def evidence_type_field = "type-#{requirement_uuid}"
+
+  def evidence_type_failure_field = "#{evidence_type_field}-erreur"
+
+  delegate :nameable?, :choosable?, :published_nothing?, :evidence_type, :evidence_type_language,
+    :evidence_type_uuid, :provider,
     :provider_language, :requirement, :requirement_language, :requirement_uuid, to: :wording
 
   private

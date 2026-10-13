@@ -22,13 +22,17 @@ module DirectoryLookup
       context.evidence_type_lists = satisfying_lists
       context.evidence_type = chosen
 
-      fail_with_error(:no_evidence_type, errors: [context.country_code]) if published.empty?
-      fail_with_error(:evidence_type_unchosen, errors: [context.country_code]) if context.evidence_type.nil?
+      stop_unless_chosen
     rescue CommonServicesError => e
       refuse(e)
     end
 
     private
+
+    def stop_unless_chosen
+      fail_with_error(:no_evidence_type, errors: [context.country_code]) if published.empty?
+      fail_with_error(:evidence_type_unchosen, errors: [context.country_code]) if context.evidence_type.nil?
+    end
 
     def satisfying_lists
       context.evidence_broker.evidence_type_lists(

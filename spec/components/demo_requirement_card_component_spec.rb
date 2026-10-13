@@ -12,7 +12,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
   let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
   let(:wording) do
-    instance_double(DemoResolutionWording, nameable?: true, published_nothing?: false,
+    instance_double(DemoResolutionWording, nameable?: true, choosable?: false, published_nothing?: false,
       evidence_type: 'FR - Test Evidence Type', evidence_type_language: 'en',
       provider: 'FR - Test Evidence Provider', provider_language: 'en',
       requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
@@ -78,14 +78,14 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
   it 'renders, hidden beside the list, what it says of a choice that got no answer' do
     render_inline(described_class.new(wording:, country_code: 'FI', countries: [['🇫🇮 Finland (FI)', 'FI']]))
 
-    failure = page.find('.fr-select-group [data-demo-country-target="failure"]', visible: :hidden)
+    failure = page.find('.fr-select-group [data-demo-card-target="countryFailure"]', visible: :hidden)
 
     expect(failure['id']).to eq("pays-#{uuid}-erreur")
     expect(failure[:class]).to eq('fr-error-text')
     expect(failure.text(:all).squish).to eq('The country could not be changed: this page could not reach the ' \
                                             'service. Choose it again, or reload the page.')
     expect(failure).to have_link('reload the page', href: '/admin/demo/v2.0/T1/documents', visible: :hidden)
-    expect(page).to have_no_css('[data-demo-country-target="resolution"] [data-demo-country-target="failure"]',
+    expect(page).to have_no_css('[data-demo-card-target~="top"] [data-demo-card-target="countryFailure"]',
       visible: :all)
   end
 
@@ -111,6 +111,91 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       expect(page).to have_no_css('.demo-request')
       expect(page).to have_no_button
       expect(page).to have_select('Country to request the document from')
+    end
+  end
+
+  # OOTS-263: the list of the evidence types the country publishes, where it
+  # publishes several (requirement 26 of chapter 1 §2), in place of a sentence.
+  describe 'a country publishing several evidence types' do
+    let(:types) { [['Test Evidence Austria (AT)', 'aaaa', { lang: 'EN' }], ['Without Reauthentication', 'bbbb', { lang: 'EN' }]] }
+    let(:countries) { [['🇦🇹 AT', 'AT']] }
+
+    context 'when none is chosen' do
+      let(:wording) do
+        instance_double(DemoResolutionWording, nameable?: false, choosable?: true, published_nothing?: false,
+          evidence_type: nil, evidence_type_uuid: nil, requirement: '(TEST) Test Requirement',
+          requirement_language: 'en', requirement_uuid: uuid)
+      end
+
+      it 'offers them on a prompt, names nothing under the rule, and is no dead end' do
+        render_inline(described_class.new(wording:, country_code: 'AT', countries:, evidence_types: types))
+
+        form = page.find('form.requirement-card__evidence-type')
+        expect(form['action']).to eq("/admin/demo/v2.0/T1/type_justificatif?exigence=#{uuid}")
+        expect(form).to have_select('Document to request',
+          options: ['Select a document', 'Test Evidence Austria (AT)', 'Without Reauthentication'])
+        expect(form.first('option')['value']).to eq('')
+        expect(form).to have_no_css('option[selected]')
+        expect(page.find('.requirement-card__actions').text.squish).to be_empty
+        expect(page).to have_no_css('.requirement-card--unsatisfiable')
+        expect(page).to have_no_text('Satisfied by')
+      end
+
+      it 'renders, hidden beside the list, what it says of a choice that got no answer' do
+        render_inline(described_class.new(wording:, country_code: 'AT', countries:, evidence_types: types))
+
+        failure = page.find('[data-demo-card-target="typeFailure"]', visible: :hidden)
+        expect(failure['id']).to eq("type-#{uuid}-erreur")
+        expect(failure.text(:all).squish).to start_with('The document could not be changed')
+      end
+    end
+
+    context 'when one is chosen and served by nobody' do
+      let(:wording) do
+        instance_double(DemoResolutionWording, nameable?: false, choosable?: true, published_nothing?: true,
+          evidence_type: 'Without Reauthentication', evidence_type_uuid: 'bbbb',
+          requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
+      end
+
+      # RG4: the foot says it, the list stays, and the card is no dead end.
+      it 'says so under the rule, without the prompt, still offering the types' do
+        render_inline(described_class.new(wording:, country_code: 'AT', country_name: 'Austria', countries:,
+          evidence_types: types))
+
+        expect(page).to have_select('Document to request', selected: 'Without Reauthentication',
+          options: ['Test Evidence Austria (AT)', 'Without Reauthentication'])
+        expect(page).to have_text('No provider listed by Austria for this evidence')
+        expect(page).to have_no_text('Evidence impossible to satisfy')
+        expect(page).to have_no_css('.requirement-card--unsatisfiable')
+      end
+    end
+  end
+
+  # CA15 of OOTS-263: what stands above the rule, case by case.
+  describe 'above the rule' do
+    it 'says nothing on a card with its countries and a single type' do
+      render_inline(described_class.new(wording:, country_code: 'FI', countries: [['🇫🇮 Finland (FI)', 'FI']]))
+
+      expect(page.find('.fr-card__desc').text.squish).to be_empty
+    end
+
+    it 'names the country in its box alone on a card that offers no country' do
+      render_inline(card)
+
+      expect(page.find('.fr-card__desc').text.squish).to eq('🇫🇷 France (FR)')
+      expect(page).to have_css('.fr-card__desc .country-tag')
+    end
+
+    it 'says the requirement is impossible to satisfy where the country publishes nothing' do
+      unsatisfied = instance_double(DemoResolutionWording, nameable?: false, choosable?: false,
+        published_nothing?: true, evidence_type: nil, requirement: '(TEST) Test Requirement',
+        requirement_language: 'en', requirement_uuid: uuid)
+
+      render_inline(described_class.new(wording: unsatisfied, country_code: 'FI', country_name: 'Finland',
+        countries: [['🇫🇮 Finland (FI)', 'FI']]))
+
+      expect(page.find('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇮 Finland (FI)')
+      expect(page).to have_css('.requirement-card--unsatisfiable')
     end
   end
 end

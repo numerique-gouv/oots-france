@@ -92,7 +92,7 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 
 ## `common_services/` — ce que les annuaires centraux répondent vraiment
 
-Neuf réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
+Douze réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`). Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
 
 | Fichier | Contenu |
 | --- | --- |
@@ -103,6 +103,8 @@ Neuf réponses capturées sur l'**environnement d'acceptation** des Common Servi
 | `eb_requirements_vides` | la même requête pour `T3`, à laquelle la France ne répond rien : `EB:ERR:0001` |
 | `eb_evidence_types_fr`, `eb_evidence_types_fi` | Evidence Broker, types de justificatif satisfaisant l'exigence de test, pour la France et pour la Finlande |
 | `eb_evidence_types_deux_fr` | les types que `ffffffff-…`, celle des deux exigences ci-dessus qui publie encore, rend pour la France. Sa jumelle `00000000-…` ne rend plus rien : son refus est `eb_requirements_vides`, le même `EB:ERR:0001` |
+| `eb_evidence_types_at` | Evidence Broker, types de justificatif satisfaisant l'exigence de test `00000000-…` pour l'Autriche, capturés le 2026-10-13 : **deux** `sdg:EvidenceTypeList` d'un type chacune, « *Test Evidence Austria (AT)* » (`cb10c17a-…`) puis « *Austrian Test Evidence Type without Reauthentication* » (`198ab7cc-…`), dans cet ordre à la capture — l'acceptation les a rendus dans l'ordre inverse le même jour. C'est la seule capture où un pays offre un choix de type |
+| `dsd_data_services_at_cb10c17a`, `dsd_data_services_at_198ab7cc` | Data Service Directory, le service autrichien de chacun des deux types ci-dessus, capturés le même jour : même fournisseur, « *Test Evidence Provider Austria (AT)* », publié sous `AuthenticationLevelOfAssurance` `High` pour le premier et `Low` pour le second, et un point d'accès qui n'annonce que `oots-edm:v1.0` et `oots-edm:v1.2` |
 | `dsd_data_services_fi` | Data Service Directory, le service finlandais qui déclare `oots-edm:v2.0` |
 | `dsd_aucun_service_fr` | la même requête pour la France, qui n'a aucun service inscrit : `DSD:ERR:0001` |
 

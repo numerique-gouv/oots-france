@@ -6,11 +6,15 @@ module Admin
     # step 25, so nothing is opened here.
     #
     # Answered with the card alone, resolved in that country, which
-    # `demo_country_controller.js` splices into the page around the list the
+    # `demo_card_controller.js` splices into the page around the list the
     # user is still on: a content update and not a change of context, which a
     # choice in a list must not cause by itself (RGAA 7.4). The card's row of
     # `Demo::Card` is written again, so that a reload renders the card where it
     # was left, and what the card now names is what its button will send.
+    #
+    # The evidence types are the country's, so choosing another undoes the type
+    # chosen: the card is resolved in its new country on none, and offers the
+    # choice again where that country publishes several.
     class CountriesController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
@@ -28,28 +32,19 @@ module Admin
       def update
         return head :unprocessable_content unless offered?
 
-        held = held_country(requirement_uuid)
-        wording = DemoResolutionWording.new(resolve(held || country))
+        wording = resolved_card
 
         return head :unprocessable_content unless wording.requirement_uuid == requirement_uuid
 
-        remember_demo_name(wording) unless held
-
-        response.set_header('Deferred-Fragment', '1')
-        render requirement_card(wording), layout: false
+        remember_demo_name(wording) unless held_card?(requirement_uuid)
+        answer_with_card(wording)
       end
 
       private
 
-      # An added card from its own requirement, any other under the procedure
-      # of the journey.
-      def resolve(country_code)
-        added = added_card(requirement_uuid)
-        return resolve_added_card(added, country_code) if added
-
-        DirectoryLookup::Resolve.call(
-          evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
-          procedure_code: journey.procedure_code, country_code:, requirement_id: requirement_uuid,
+      def resolved_card
+        DemoResolutionWording.new(
+          resolve_card(requirement_uuid, held_country(requirement_uuid) || country, held_evidence_type(requirement_uuid)),
         )
       end
 

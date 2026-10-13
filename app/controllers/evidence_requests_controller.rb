@@ -76,8 +76,7 @@ class EvidenceRequestsController < ApplicationController
       conversation_id: query[:idConversation],
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
-      requirement_id: query[:idExigence],
-      evidence_type_id: query[:idTypeJustificatif],
+      **asked_evidence,
       country_code:,
       requested_specification: EdmSpecification.find(query[:specification]),
       preview_possible: preview_possible?,
@@ -85,6 +84,10 @@ class EvidenceRequestsController < ApplicationController
       audit_trail:,
     }
   end
+
+  # The requirement and the evidence type the caller may name, each the whole
+  # identifier the Evidence Broker publishes.
+  def asked_evidence = { requirement_id: query[:idExigence], evidence_type_id: query[:idTypeJustificatif] }
 
   def audit_trail = @audit_trail ||= AuditTrail.new
 

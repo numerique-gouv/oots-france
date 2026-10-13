@@ -41,14 +41,15 @@ module Admin
       # and the request itself goes out through the contract.
       #
       # Each card is resolved in its own member state, the one the user chose on
-      # it or the one its request went to — `HoldsDemoCountries` says which.
+      # it or the one its request went to — `HoldsDemoCountries` says which —
+      # and on the evidence type chosen the same way, `HoldsDemoEvidenceTypes`
+      # saying which.
       #
       # The cards the operator added follow those of the procedure, each
       # resolved from its own requirement, and the page then offers to add any
       # other the catalogue holds.
       def show
-        resolved = DirectoryLookup::ResolveAll.call(procedure_code: code,
-          country_code: Settings.common_services_country_code, countries: card_countries)
+        resolved = resolve_all
         @procedure = procedure_wording(resolved.requirements)
         @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
         @added = resolved_added_cards(@requirements.map(&:requirement_uuid))
@@ -85,9 +86,16 @@ module Admin
 
       def code = journey.procedure_code
 
+      def resolve_all
+        DirectoryLookup::ResolveAll.call(procedure_code: code, country_code: Settings.common_services_country_code,
+          countries: card_countries, evidence_types: card_evidence_types)
+      end
+
       def resolved_added_cards(listed)
         added_cards.values.reject { |card| card.requirement_uuid.in?(listed) }.map do |card|
-          DemoResolutionWording.new(resolve_added_card(card, card_country(card.requirement_uuid)))
+          uuid = card.requirement_uuid
+
+          DemoResolutionWording.new(resolve_added_card(card, card_country(uuid), card_evidence_type(uuid)))
         end
       end
 

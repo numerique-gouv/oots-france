@@ -333,7 +333,7 @@ end
 # The region a screen reader hears, which no eye sees: read in the page as the
 # assistive technologies read it, hidden or not.
 Alors('la carte annonce {string}') do |sentence|
-  expect(page).to have_css('[data-demo-country-target="status"]', text: sentence, visible: :all)
+  expect(page).to have_css('[data-demo-card-target="status"]', text: sentence, visible: :all)
 end
 
 Alors('le contrat a reçu la demande pour le pays {string}') do |code|
