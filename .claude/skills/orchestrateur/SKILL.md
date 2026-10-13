@@ -47,7 +47,7 @@ Agent(subagent_type: "spec-nerd",
 
 **Son rapport commence par `QUESTIONS` quand il lui manque une décision.** Pose-les à l'utilisateur telles quelles, par `AskUserQuestion` — le libellé, les options, sa recommandation en premier —, puis renvoie les réponses **au même `spec-nerd`, par `SendMessage`** : il a le jet et les lectures, un neuf les repaierait. **Son rapport se relaie en entier** — le ticket en lien, le statut posé et pourquoi, ce qu'il a tranché seul, une issue laissée sans projet et le chantier à ouvrir.
 
-**Puis, le ticket en `Todo`, propose de le lancer — et attends.** La demande était un ticket ; l'implémentation est une seconde décision, qui coûte des heures et des millions de jetons. Une ligne suffit : le ticket, ce qu'un ouvrier en ferait, ce qu'il toucherait. Un ticket resté en `À compléter` ou en `Backlog` ne se propose pas.
+**Puis, le ticket en `Todo` et sans question restante, lance son ouvrier (§ 4) sans redemander**, et dis-le en une ligne : le ticket, ce qu'un ouvrier en fera, ce qu'il touchera. L'utilisateur l'a demandé deux fois (« quand il a fini, tu peux enchaîner sur son ouvrier », 2026-10-06 ; « you can start an ouvrier as soon as the ticket is in todo, if no questions left », 2026-10-07). Le § 2 et le § 3 s'appliquent comme à tout lancement. Un ticket resté en `À compléter` ou en `Backlog` ne se lance pas.
 
 ## 2. Regarder ce que les tickets vont toucher
 
@@ -130,6 +130,6 @@ Un ouvrier voit plus qu'il ne livre, et l'écrit dans la section `## Reliquats` 
 
 - **Un ordre de fusion annoncé se respecte.** Deux branches peuvent être vertes chacune et fausses ensemble — OOTS-61 livrait une lecture dont l'écriture n'atterrissait qu'avec OOTS-133. Les gestes d'après-merge sont ceux de `CLAUDE.md` § Git conventions, `merged` dans `.claude/etapes/<ticket>` compris.
 - **N'écris ni code applicatif, ni ticket** — un correctif arrivé dans l'arbre d'un ouvrier lui fait relire un code qu'il n'a pas écrit ; un ticket créé « en passant » est ce qui fait enfler le backlog.
-- **Ne lance ni un ouvrier sur un ticket que tu n'as pas lu en entier, ni l'implémentation d'un ticket que tu viens de faire écrire sans que l'utilisateur l'ait dit.**
+- **Ne lance pas un ouvrier sur un ticket que tu n'as pas lu en entier.**
 - **N'écris pas dans le worktree d'un ouvrier** ni dans le checkout principal — sauf sous l'atelier `.claude/` de celui-ci, git-ignoré : le fichier de plan d'un `PLAN`, `local_tasks/` —, et n'y monte pas de pile : ses ports sont ceux du poste.
 - **Ne relance pas un second ouvrier sur le même ticket** tant que le premier tient un travail en cours : reprends-le par `SendMessage`. Trois exceptions, où le contexte vide est ce qu'on veut : après `PLANIFIÉ` ou `PLAN` résolu, après `INTERROMPU`, et un ouvrier arrêté tard dont ce qui reste tient sans son historique. `ÉCRAN` et un conflit après `LIVRÉ` n'en font pas partie : ils reviennent au même ouvrier.

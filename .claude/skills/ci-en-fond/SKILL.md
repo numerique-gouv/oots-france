@@ -23,12 +23,14 @@ Le code de sortie de `gh pr checks` ne dit pas que les checks existent : il vaut
 « Sans l'attendre » vaut tant qu'il y a autre chose à faire : quand il n'y a plus rien, on attend le verdict dans son propre tour plutôt que de rendre la main.
 
 ```sh
+timeout 120 sh -c 'until ! gh pr checks <n> 2>&1 | grep -q "no checks reported"; do sleep 5; done'
 timeout 240 gh pr checks <n> --watch --interval 30
 #   0 → tout est vert
-#   1 → un check a échoué — ou aucun n'est encore enregistré : lire la sortie,
-#       et sur « no checks reported » les guetter comme en section 1
-# 124 → toujours en cours, relance la même commande
+#   1 → un check a échoué : lire la sortie
+# 124 → toujours en cours, relance la seconde commande seule
 ```
+
+Les deux lignes se copient ensemble, et rien ne les précède : un `sleep 20` devant le `--watch` restait chez 5 ouvriers sur 26 entre le 2026-09-30 et le 2026-10-13, la garde n'étant écrite qu'au § 1.
 
 **Une attente guette une condition ; elle ne compte jamais du temps.** `gh pr checks --watch`, `gh run watch`, ou `until <vérification>; do sleep 2; done` sous `timeout` : la commande rend la main quand la chose attendue arrive, ou quand la borne tombe. Pour la sortie d'une tâche de fond, attendre sa notification, ou guetter le fichier de sortie par `until grep -q <motif> <fichier>`.
 
