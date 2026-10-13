@@ -93,6 +93,71 @@ RSpec.describe DirectoryLookup::Resolve do
     end
   end
 
+  # Requirement 26 of chapter 1 §2: where a screen offers the user the types,
+  # nothing is chosen in their place. Two alternative lists of one type each, as
+  # Austria publishes for « (TEST) Test Requirement ».
+  describe 'when the caller offers the user the alternatives' do
+    subject(:lookup) do
+      described_class.call(
+        evidence_broker:, data_service_directory:, alternatives_offered: true,
+        procedure_code: '00', country_code: 'AT', requirement_id: nil, evidence_type_id:,
+      )
+    end
+
+    let(:evidence_broker) do
+      instance_double(EvidenceBrokerClient, requirements:, evidence_type_lists: published)
+    end
+    let(:published) do
+      [build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/high')]),
+       build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/low')])]
+    end
+
+    context 'when one of several types is named' do
+      let(:evidence_type_id) { 'low' }
+
+      it 'asks the Data Service Directory about that one' do
+        expect(lookup).to be_success
+        expect(data_service_directory).to have_received(:data_services)
+          .with(evidence_type_classification: 'https://sr/AT/low', country_code: 'AT')
+      end
+    end
+
+    context 'when none is named' do
+      let(:evidence_type_id) { nil }
+
+      it 'chooses none, stops before the Data Service Directory and keeps the lists' do
+        expect(lookup).to be_failure
+        expect(lookup.error[:key]).to eq(:evidence_type_unchosen)
+        expect(lookup.evidence_type).to be_nil
+        expect(lookup.evidence_type_lists).to eq(published)
+        expect(data_service_directory).not_to have_received(:data_services)
+      end
+    end
+
+    # The directory changes: a type remembered on a card may no longer be
+    # published, and the card then waits for a choice again.
+    context 'when the one named is no longer published' do
+      let(:evidence_type_id) { 'gone' }
+
+      it 'chooses none' do
+        expect(lookup.error[:key]).to eq(:evidence_type_unchosen)
+      end
+    end
+
+    context 'when the country publishes a single type' do
+      let(:evidence_type_id) { nil }
+      let(:published) do
+        [build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')]),
+         build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')])]
+      end
+
+      it 'keeps it, there being nothing to choose' do
+        expect(lookup).to be_success
+        expect(lookup.evidence_type.id).to eq('https://sr/AT/only')
+      end
+    end
+  end
+
   # Chapter 3.2.4: a country declaring `NoMatch` answered, and the page must
   # keep what it said. The chain stops all the same, the Data Service Directory
   # having no evidence type to be asked about.

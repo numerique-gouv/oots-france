@@ -72,6 +72,25 @@ RSpec.describe DirectoryLookup::ResolveAll do
     end
   end
 
+  # Requirement 26 of chapter 1 §2: each card offers the types its country
+  # publishes, and the one the user chose on it is the one resolved.
+  describe 'with an evidence type named per requirement' do
+    let(:evidence_broker) do
+      instance_double(EvidenceBrokerClient, requirements:, evidence_type_lists: [
+        build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/FI/first')]),
+        build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/FI/second')]),
+      ])
+    end
+
+    it 'resolves that requirement on that type, and leaves the other unchosen' do
+      resolved = described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00',
+        country_code: 'FI', evidence_types: { 'aaa' => 'second' })
+
+      expect(resolved.resolutions.first.evidence_type.id).to eq('https://sr/FI/second')
+      expect(resolved.resolutions.second.error[:key]).to eq(:evidence_type_unchosen)
+    end
+  end
+
   # Chapter 4.4 §4.2.2 has the basic flows run « sequentially and/or in
   # parallel », so a refusal belongs to the card it fell on. The page shows it
   # there, beside the neighbours that answered.

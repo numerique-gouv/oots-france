@@ -1661,6 +1661,10 @@ fr:
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
       demo_unreachable: Le service de requête n'a pas pu être joint
+      # La carte d'une exigence que le pays satisfait de plusieurs types, tant
+      # que l'usager n'en a choisi aucun : rien n'est refusé, rien n'est encore
+      # demandé au Data Service Directory.
+      evidence_type_unchosen: Aucun type de justificatif choisi parmi ceux que le pays publie
       gateway_refused: La passerelle a refusé le message
       identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
