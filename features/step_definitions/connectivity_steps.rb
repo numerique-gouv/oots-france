@@ -20,6 +20,8 @@ end
   }
   stub_request(:get, "#{base}/ext/party").with(query: hash_including({}))
     .to_return(body: [partie_du_pmode].to_json, headers: { 'Content-Type' => 'application/json' })
+  stub_request(:get, "#{base}/ext/truststore/entries")
+    .to_return(body: [].to_json, headers: { 'Content-Type' => 'application/json' })
 end
 
 Quand("l'administrateur ouvre la page des points d'accès") do
