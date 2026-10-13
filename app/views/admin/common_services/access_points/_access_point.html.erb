@@ -12,7 +12,8 @@
       data: { party: row.name, outcome: row.outcome, requested_at: test&.requested_at&.iso8601(6) } do %>
   <div class="access-point__head">
     <% if row.country_code %>
-      <%= render CountryTagComponent.new(code: row.country_code, name: row.country_name) %>
+      <%= render CountryTagComponent.new(code: row.country_code, name: row.country_name,
+            href: admin_common_services_country_path(row.country_code)) %>
     <% end %>
     <span class="access-point__name"><%= row.name %></span>
     <%= render ConnectivityOutcomeComponent.new(outcome: row.outcome) %>

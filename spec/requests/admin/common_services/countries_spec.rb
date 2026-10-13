@@ -42,6 +42,86 @@ RSpec.describe 'Admin::CommonServices::Countries' do
     end
   end
 
+  describe 'GET /admin/common_services/countries/:code' do
+    def page = response.parsed_body
+
+    def tile_to(path) = page.css(".fr-tile a[href='#{path}']")
+
+    def tiles = page.css('.fr-tile').map { |tile| tile.text.squish }
+
+    before { stub_code_list(countries: { 'AT' => 'Autriche (l’)', 'IS' => 'Islande (l’)' }) }
+
+    it 'names the country and says its two roles, with as many procedures as it declares as a requester' do
+      get admin_common_services_country_path('AT')
+
+      expect(response).to have_http_status(:ok)
+      expect(page.at_css('h1').text).to eq('🇦🇹 Autriche (AT)')
+      expect(page.css('.fr-breadcrumb__link').map(&:text))
+        .to eq(['Espace d’administration', 'Annuaires centraux', 'Pays', '🇦🇹 Autriche (AT)'])
+      expect(tiles).to eq(['En requêteur 6 démarches déclarées',
+                           'En fournisseur Les exigences pour lesquelles il publie un justificatif'])
+      expect(tile_to(admin_common_services_country_procedures_path('AT')).text.strip).to eq('En requêteur')
+      expect(tile_to(admin_common_services_country_requirements_path('AT')).text.strip).to eq('En fournisseur')
+    end
+
+    it 'leads nowhere on the requesting side of a country that declares no procedure' do
+      get admin_common_services_country_path('IS')
+
+      expect(response).to have_http_status(:ok)
+      expect(tiles.first).to eq('En requêteur aucune démarche déclarée')
+      expect(page.css('.fr-tile').first.css('a')).to be_empty
+      expect(tile_to(admin_common_services_country_procedures_path('IS'))).to be_empty
+      expect(tile_to(admin_common_services_country_requirements_path('IS'))).to be_present
+    end
+
+    it 'answers for a country the list does not name, by its code' do
+      get admin_common_services_country_path('ZZ')
+
+      expect(response).to have_http_status(:ok)
+      expect(page.at_css('h1').text).to eq(CountryTagComponent.label('ZZ'))
+    end
+
+    it 'renders the refusal of the directory as a page' do
+      stub_directory_body('eb', 'requirements-by-procedure', *common_services_answer('eb_requirements_vides'))
+
+      get admin_common_services_country_path('AT')
+
+      expect(response).to have_http_status(:ok)
+      expect(page.css('.fr-alert').text).to include('EB:ERR:0001')
+    end
+
+    it 'answers 502 when the directory cannot be reached' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search").with(query: hash_including({})).to_timeout
+
+      get admin_common_services_country_path('AT')
+
+      expect(response).to have_http_status(:bad_gateway)
+    end
+
+    # The country is a link on the pages under it, and stays the page itself
+    # where one descended to it from a procedure: the path walked is not rewritten.
+    it 'is reached from the breadcrumb of the pages under it, and only from those' do
+      code = catalogue_procedure_of('AT')
+      [admin_common_services_country_requirements_path('AT'), admin_common_services_country_procedures_path('AT'),
+       admin_common_services_country_procedure_path('AT', code)].each do |path|
+        get path
+
+        expect(page.css(".fr-breadcrumb a[href='#{admin_common_services_country_path('AT')}']").text)
+          .to eq('🇦🇹 Autriche (AT)'), path
+      end
+
+      get admin_common_services_procedure_country_path(code, 'AT')
+
+      expect(page.css(".fr-breadcrumb a[href='#{admin_common_services_country_path('AT')}']")).to be_empty
+      expect(page.css('.fr-breadcrumb__link').last.text).to include('Autriche')
+    end
+
+    def catalogue_procedure_of(country)
+      get admin_common_services_country_procedures_path(country)
+      response.parsed_body.css("a[href^='/admin/common_services/countries/#{country}/procedures/']").first['href'].split('/').last
+    end
+  end
+
   describe 'GET /admin/common_services/countries/:code/requirements' do
     # The sweep costs one directory query per requirement, so the page arrives
     # without it and comes back for the listing at the address it carries. The

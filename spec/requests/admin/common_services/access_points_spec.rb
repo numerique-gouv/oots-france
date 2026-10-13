@@ -239,6 +239,16 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       end
     end
 
+    it 'leads from the country of an access point to the page of that country, and nowhere else' do
+      gateway_listing
+
+      get admin_common_services_access_points_path
+
+      expect(row('AP_EL_01').at_css('a.country-tag')['href']).to eq(admin_common_services_country_path('EL'))
+      expect(row('AP_EL_01').css('.access-point__detail a')).to be_empty
+      expect(row('ec_support_acc').css('a')).to be_empty
+    end
+
     it 'hangs from the directories in the breadcrumb' do
       gateway_listing
 

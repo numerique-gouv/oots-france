@@ -147,8 +147,9 @@ Rails.application.routes.draw do
       resources :procedures, only: %i[index show], param: :code do
         get 'countries/:country_code', to: 'procedures#country', as: :country
       end
-      # A country has no page of its own: it has two roles, and each has one.
-      resources :countries, only: :index, param: :code do
+      # A country is two questions, as a requester and as a provider: its own
+      # page leads to the page of each.
+      resources :countries, only: %i[index show], param: :code do
         get 'procedures', to: 'countries#procedures'
         get 'procedures/:procedure_code', to: 'countries#procedure', as: :procedure
         get 'requirements', to: 'countries#requirements'
