@@ -71,6 +71,22 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(card.css('input, select, textarea')).to be_empty
     end
 
+    it 'shows the eIDAS identifier in grey on the line of the level, when the authentication yielded one' do
+      identify_demo_user(userinfo: FranceConnectStubs::DANISH_USERINFO.merge('person_identifier' => 'DK/FR/123456'))
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+
+      line = response.parsed_body.at_css('main .identity-card .identity-card__level .identity-card__eidas')
+      expect(line['class']).to include('fr-text-mention--grey')
+      expect(line.text.squish).to eq('eIDAS identifier: DK/FR/123456')
+      expect(line.at_css('.fr-sr-only').text).to eq('eIDAS identifier:')
+    end
+
+    it 'shows no eIDAS identifier when the authentication yielded none' do
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+
+      expect(response.parsed_body.at_css('main .identity-card__eidas')).to be_nil
+    end
+
     # CA10: the demonstration is the same from either card — the same identity
     # shown, the same requirements, the same request zones. Which FranceConnect+
     # attested is held in the session and said nowhere on this page.

@@ -84,6 +84,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
       | nom               | Roszponka   |
       | date de naissance | 1991-04-06  |
       | identifiant eIDAS | 91040665144 |
-    Et que l'usager confirme sa demande
+    Alors la carte d'identité de la page des justificatifs affiche l'identifiant eIDAS "PL/FR/91040665144"
+    Quand l'usager confirme sa demande
     Alors le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
     Et la fiche de ce départ au journal des événements affiche l'identifiant eIDAS "PL/FR/91040665144" dans le sujet du justificatif

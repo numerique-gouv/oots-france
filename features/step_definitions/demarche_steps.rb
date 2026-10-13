@@ -247,6 +247,12 @@ Alors('la fiche de cet échange affiche la version {string}') do |version|
   expect(@navigateur.rows).to include(I18n.t('admin.journal.exchanges.attributes.specification') => version)
 end
 
+Alors('la carte d\'identité de la page des justificatifs affiche l\'identifiant eIDAS {string}') do |identifiant|
+  ligne = Nokogiri::HTML(@navigateur.body).css('.identity-card__eidas').text.squish
+
+  expect(ligne).to end_with(identifiant)
+end
+
 # The subject is a definition list nested in the row of the event, which
 # `DemoBrowser#rows` does not descend into.
 Alors(
