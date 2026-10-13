@@ -110,6 +110,18 @@ Alors('le formulaire de saisie d\'une identité n\'exige pas l\'identifiant eIDA
   expect(entered_identity_fields.fetch('national_part')).to be(false)
 end
 
+Alors(
+  'le formulaire de saisie d\'une identité affiche le prénom {string}, le nom {string}, ' \
+  'la date de naissance {string} et l\'identifiant eIDAS {string}, modifiables',
+) do |given, family, born, national_part|
+  inputs = Nokogiri::HTML(@reponse.body).css('form').last.css('input:not([type=hidden])')
+
+  expect(inputs.to_h { |input| [input['name'], input['value']] }).to eq(
+    'given_name' => given, 'family_name' => family, 'birthdate' => born, 'national_part' => national_part,
+  )
+  expect(inputs.select { |input| input.key?('readonly') || input.key?('disabled') }).to be_empty
+end
+
 # Each field of the form behind « Input an identity », and whether the page
 # makes it required: a browser refuses to submit a required field left empty.
 def entered_identity_fields

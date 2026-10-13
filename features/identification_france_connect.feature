@@ -94,6 +94,7 @@ Fonctionnalité: Identifier un usager européen par un faux FranceConnect+
     Et que l'usager choisit le pays "PL"
     Alors le formulaire de saisie d'une identité exige le prénom, le nom et la date de naissance
     Et le formulaire de saisie d'une identité n'exige pas l'identifiant eIDAS
+    Et le formulaire de saisie d'une identité affiche le prénom "Alicja", le nom "Roszponka", la date de naissance "1991-04-06" et l'identifiant eIDAS "91040665144", modifiables
 
   Plan du Scénario: l'identifiant eIDAS saisi est listé au consentement, puis publié par /userinfo
     Quand le portail appelle /authorize

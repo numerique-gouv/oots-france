@@ -126,6 +126,13 @@ module FakeFranceConnect
       layout('Choose a test identity', "#{form(action, buttons + [reveal])}#{entered_form(action)}#{REVEAL_SCRIPT}")
     end
 
+    # Filled in with the Polish test persona a correspondent supplies, whatever
+    # the country: values the operator may change or clear, not placeholders.
+    PREFILLED = {
+      'given_name' => 'Alicja', 'family_name' => 'Roszponka', 'birthdate' => '1991-04-06',
+      'national_part' => '91040665144'
+    }.freeze
+
     def self.entered_form(action)
       fields = [
         "<input type=\"hidden\" name=\"identity\" value=\"#{Identities::ENTERED}\">",
@@ -143,7 +150,8 @@ module FakeFranceConnect
     def self.field(name, label, type, required: true)
       label += ' <span class="optional">(optional)</span>' unless required
       "<label for=\"#{name}\">#{label}</label>" \
-        "<input id=\"#{name}\" name=\"#{name}\" type=\"#{type}\"#{' required' if required} autocomplete=\"off\">"
+        "<input id=\"#{name}\" name=\"#{name}\" type=\"#{type}\" value=\"#{escape(PREFILLED[name])}\"" \
+        "#{' required' if required} autocomplete=\"off\">"
     end
 
     # What the consent page of FranceConnect+ does: list the data about to be
