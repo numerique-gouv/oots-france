@@ -22,6 +22,9 @@ module Fixtures
   # What `GET /ext/party` lists, written after `PartyDTO`.
   def gateway_parties = JSON.parse(read_fixture('incoming/domibus/parties.json'))
 
+  # What `GET /ext/truststore/entries` lists, written after `TrustStoreDTO`.
+  def gateway_truststore = JSON.parse(read_fixture('incoming/domibus/truststore_entries.json'))
+
   # The captured response, its evidence part and the declaration of that part
   # removed. The list is left as it was, still naming the object: a response
   # missing its evidence, and not one saying that none matches.

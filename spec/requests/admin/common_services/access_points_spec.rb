@@ -2,21 +2,33 @@ require 'rails_helper'
 
 RSpec.describe 'Admin::CommonServices::AccessPoints' do
   let(:listing) { 'http://domibus:8080/domibus/ext/party' }
+  let(:truststore) { 'http://domibus:8080/domibus/ext/truststore/entries' }
   let(:page) { response.parsed_body }
 
   def row(name) = page.css('.access-point').find { |block| block.at_css('.access-point__name')&.text == name }
 
-  def gateway_listing(parties = gateway_parties)
+  def gateway_listing(parties = gateway_parties, certificates: gateway_truststore)
     stub_request(:get, listing).with(query: hash_including({}))
       .to_return(body: parties.to_json, headers: { 'Content-Type' => 'application/json' })
+    stub_request(:get, truststore).to_return(body: certificates.to_json, headers: { 'Content-Type' => 'application/json' })
   end
+
+  # A party of the fixture moved under an `EAS` scheme, and the certificate the
+  # truststore holds under its name.
+  def eas_party(name)
+    gateway_parties.first.merge('name' => name, 'identifiers' => [{
+      'partyId' => "id-#{name}", 'partyIdType' => { 'value' => 'urn:cef.eu:names:identifier:EAS:0190' },
+    }])
+  end
+
+  def certificate(name, subject) = { 'name' => name.downcase, 'subject' => subject }
 
   before do
     allow(Settings).to receive_messages(
       domibus_base_url: 'http://domibus:8080/domibus',
       domibus_credentials: { login: 'oots', password: 'secret' },
     )
-    stub_code_list(countries: { 'EL' => 'Grèce (la)', 'FR' => 'France (la)' })
+    stub_code_list(countries: { 'BE' => 'Belgique (la)', 'EL' => 'Grèce (la)', 'FR' => 'France (la)', 'NL' => 'Pays-Bas (les)' })
   end
 
   describe 'GET /admin/common_services/access_points' do
@@ -49,14 +61,57 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       expect(page.text).not_to include('urn:oasis:names:tc:ebcore:partyid-type')
     end
 
-    it 'names the country of a member state\'s access point, and none for the others' do
+    it 'names the country of a member state\'s access point by its scheme, else by its certificate, and none for the platforms' do
       gateway_listing
 
       get admin_common_services_access_points_path
 
       expect(row('AP_EL_01').css('.country-tag').text).to include('Grèce')
+      expect(row('AP_NL_01').css('.country-tag').text).to include('Pays-Bas')
       expect(row('ec_support_acc').css('.country-tag')).to be_empty
+    end
+
+    it 'keeps the country of the scheme when the certificate names another' do
+      gateway_listing
+
+      get admin_common_services_access_points_path
+
+      expect(row('AP_EL_01').css('.country-tag').text).to include('Grèce')
+      expect(row('AP_EL_01').css('.country-tag').text).not_to include('France')
+    end
+
+    it 'names no country for a party under an EAS scheme without a certificate, without a country, or of another one' do
+      gateway_listing(%w[AP_X1_01 AP_X2_01 AP_X3_01].map { |name| eas_party(name) },
+        certificates: [certificate('AP_X2_01', 'CN=AP_X2_01, O=Example'), certificate('AP_X3_01', 'CN=AP_X3_01, C=US')])
+
+      get admin_common_services_access_points_path
+
+      expect(%w[AP_X1_01 AP_X2_01 AP_X3_01].map { |name| row(name).css('.country-tag') }).to all(be_empty)
+    end
+
+    it 'reads Greece from a certificate that writes it GR' do
+      gateway_listing([eas_party('AP_GR_01')], certificates: [certificate('AP_GR_01', 'CN=AP_GR_01, C=GR')])
+
+      get admin_common_services_access_points_path
+
+      expect(row('AP_GR_01').css('.country-tag').text).to include('Grèce')
+    end
+
+    it 'lists the parties when the gateway refuses its truststore, without the countries it gives, and says so' do
+      gateway_listing
+      stub_request(:get, truststore).to_return(status: 403)
+
+      get admin_common_services_access_points_path
+
+      expect(response).to have_http_status(:ok)
+      expect(page.css('.access-point').size).to eq(12)
       expect(row('AP_NL_01').css('.country-tag')).to be_empty
+      expect(row('AP_EL_01').css('.country-tag').text).to include('Grèce')
+      alert = page.at_css('.fr-alert')
+      expect(alert.text).to include("Le truststore de la passerelle n'a pas pu être lu", 'refusé le Plugin User de la France',
+        'La passerelle refuse le Plugin User : the server responded with status 403')
+      expect(alert.ancestors('.access-point')).to be_empty
+      expect(alert.ancestors('[data-access-points-target=list]')).to be_empty
     end
 
     it 'offers one button testing every access point' do
@@ -159,6 +214,30 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       expect(page.css('h1')).to be_empty
       expect(row('AP_EL_01')).to have_attributes(attributes: include('data-outcome', 'aria-busy'))
       expect(row('AP_EL_01')['data-outcome']).to eq('pending')
+      expect(row('AP_NL_01').css('.country-tag').text).to include('Pays-Bas')
+    end
+
+    it 'says what the gateway answered when its truststore cannot be read, and no refusal of the Plugin User' do
+      gateway_listing
+      stub_request(:get, truststore).to_return(status: 500)
+
+      get admin_common_services_access_points_path
+
+      expect(response).to have_http_status(:ok)
+      alert = page.at_css('.fr-alert')
+      expect(alert.text).to include("La passerelle n'a pas rendu son truststore : the server responded with status 500")
+      expect(alert.text).not_to include('Plugin User')
+    end
+
+    it 'answers the blocks alone without an alert when the truststore cannot be read' do
+      gateway_listing
+      stub_request(:get, truststore).to_return(status: 500)
+
+      get admin_common_services_access_points_path(fragment: 1)
+
+      expect(response).to have_http_status(:ok)
+      expect(row('AP_NL_01').css('.country-tag')).to be_empty
+      expect(page.css('.fr-alert')).to be_empty
     end
 
     it 'answers 502 when the gateway does not answer' do
@@ -205,6 +284,7 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       expect(row('AP_EL_01')['data-outcome']).to eq('pending')
       expect(row('AP_EL_01')['aria-busy']).to eq('true')
       expect(row('AP_EL_01').css('form')).to be_empty
+      expect(row('AP_NL_01').css('.country-tag').text).to include('Pays-Bas')
     end
 
     it 'tests every party but the ones pending' do

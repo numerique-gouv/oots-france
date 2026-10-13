@@ -511,6 +511,9 @@ fr:
     domibus_parties_client:
       refused: "La passerelle refuse le Plugin User : %{error}"
       unreachable: "La passerelle n'a pas rendu la liste de ses parties : %{error}"
+    domibus_truststore_client:
+      refused: "La passerelle refuse le Plugin User : %{error}"
+      unreachable: "La passerelle n'a pas rendu son truststore : %{error}"
     common_services_instance:
       dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."
     common_services_query:
@@ -2161,13 +2164,20 @@ fr:
           lede: >-
             Chaque partie du PMode chargé dans la passerelle, et l'issue du dernier test de connectivité
             que la France a lancé d'ici vers elle : un message AS4 de test, parti d'AP_FR_01, que le point
-            d'accès acquitte si son PMode connaît celui de la France et que son magasin de confiance porte
-            son certificat.
+            d'accès acquitte si son PMode connaît celui de la France et que son truststore porte son
+            certificat.
           test_all: Tester tous les points d'accès
           test: Tester
           test_title: Tester %{party}
           undeclared: absent du PMode chargé
           empty: La passerelle ne déclare aucune partie.
+          truststore_error:
+            title: >-
+              Le truststore de la passerelle n'a pas pu être lu : les parties déclarées sous un schéma EAS
+              s'affichent sans pays
+            refused: >-
+              La passerelle a refusé le Plugin User de la France : c'est la configuration de la France
+              qui est à corriger.
         outcome:
           requested_at: Demandé le %{at}
         gateway_error:
