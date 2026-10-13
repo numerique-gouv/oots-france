@@ -8,19 +8,20 @@ class AccessPointRow
 
   delegate :name, :identifier, :endpoint, to: :@party
 
-  # The parties in the order the gateway lists them, then the tests of the
-  # parties it no longer lists, by name. `countries` maps the codes of the
-  # country list to their names; `certificates` are the entries of the
-  # gateway's truststore, stored under the names of the parties — Java keystore
-  # aliases, which ignore case.
+  # Ordered by `rank`. A test kept for a party the PMode no longer lists says
+  # nothing of today's connectivity, whatever its outcome, hence last.
+  # `countries` maps the codes of the country list to their names;
+  # `certificates` are the entries of the gateway's truststore, stored under
+  # the names of the parties — Java keystore aliases, which ignore case.
   def self.all(parties:, tests:, countries:, certificates:)
     tests_by_name = tests.index_by(&:party_name)
     certificates_by_alias = certificates.index_by { |entry| entry.name.to_s.downcase }
     declared = parties.map do |party|
       new(party:, test: tests_by_name.delete(party.name), countries:, certificates_by_alias:, declared: true)
     end
+    undeclared = tests_by_name.values.map { |test| from_test(test, countries, certificates_by_alias) }
 
-    declared + tests_by_name.values.sort_by(&:party_name).map { |test| from_test(test, countries, certificates_by_alias) }
+    (declared + undeclared).sort_by(&:rank)
   end
 
   def self.from_test(test, countries, certificates_by_alias)
@@ -48,6 +49,8 @@ class AccessPointRow
 
   def outcome = test&.outcome || NEVER_TESTED
 
+  def rank = [group, country_name ? 0 : 1, country_name.to_s, name.to_s]
+
   # The identifier only where the name does not already say it: a party
   # declared under an `EAS` scheme is named one way and addressed another.
   def distinct_identifier = (identifier unless identifier == name)
@@ -61,4 +64,12 @@ class AccessPointRow
   # A party the PMode no longer declares cannot be addressed, and one whose
   # test is pending must not be restarted.
   def testable? = declared? && @party.addressable? && !test&.pending?
+
+  private
+
+  def group
+    return 2 unless declared?
+
+    test&.acknowledged? ? 0 : 1
+  end
 end
