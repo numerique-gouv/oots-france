@@ -64,6 +64,19 @@ Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |c
   @navigateur.choose('consent', 'yes')
 end
 
+ENTERED_IDENTITY_FIELDS = {
+  'prénom' => 'given_name', 'nom' => 'family_name', 'date de naissance' => 'birthdate',
+  'identifiant eIDAS' => 'national_part'
+}.freeze
+
+Quand('l\'administrateur s\'identifie en saisissant cette identité sous le pays {string}:') do |code, table|
+  @navigateur.visit(adresse_de_la_demarche)
+  @navigateur.start_identification('fake')
+  @navigateur.choose('country', code)
+  @navigateur.enter_identity(table.rows_hash.transform_keys { |name| ENTERED_IDENTITY_FIELDS.fetch(name) })
+  @navigateur.choose('consent', 'yes')
+end
+
 # The heading is the procedure's, as on the home page: the two are one journey.
 Alors('l\'administrateur arrive sur la page des justificatifs') do
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
@@ -232,6 +245,25 @@ Alors('la fiche de cet échange affiche la version {string}') do |version|
   @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
 
   expect(@navigateur.rows).to include(I18n.t('admin.journal.exchanges.attributes.specification') => version)
+end
+
+Alors('la carte d\'identité de la page des justificatifs affiche l\'identifiant eIDAS {string}') do |identifiant|
+  ligne = Nokogiri::HTML(@navigateur.body).css('.identity-card__eidas').text.squish
+
+  expect(ligne).to end_with(identifiant)
+end
+
+# The subject is a definition list nested in the row of the event, which
+# `DemoBrowser#rows` does not descend into.
+Alors(
+  'la fiche de ce départ au journal des événements affiche l\'identifiant eIDAS {string} dans le sujet du justificatif',
+) do |identifiant|
+  @navigateur.visit("/admin/journal/events/#{depart_de_la_requete.id}")
+  sujet = Nokogiri::HTML(@navigateur.body).css('dl.evidence-subject dt').to_h do |terme|
+    [terme.text.strip, terme.next_element.text.strip]
+  end
+
+  expect(sujet).to include(I18n.t('components.evidence_subject.fields.eidas_identifier') => identifiant)
 end
 
 # Chapter 4.9 §5: the zone becomes the departure page once the demonstration

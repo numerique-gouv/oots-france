@@ -400,6 +400,9 @@ fr:
         # Le deux-points est dans la clé : l'intitulé et le badge sont sur une
         # ligne, et la ponctuation qui les joint appartient à la phrase.
         level_of_assurance: "Level of assurance:"
+      # L'identifiant seul se voit ; son intitulé n'est dit qu'aux lecteurs
+      # d'écran, pour qui une valeur nue ne dirait pas ce qu'elle est.
+      eidas_identifier_html: '<span class="fr-sr-only">eIDAS identifier:</span> %{value}'
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a

@@ -80,8 +80,8 @@ RSpec.describe FranceConnectIdentity do
     end
   end
 
-  # RG5, and chapter 2.1 §2.3.1.2: FranceConnect+ documents no claim carrying it
-  # for a European user, so the nominal path is an identity held without one.
+  # RG5: FranceConnect+ documents no claim carrying it for a European user, so
+  # the nominal path is an identity held without one.
   describe 'the eIDAS identifier' do
     it 'holds none when no claim carries it, and never writes the pseudonym there' do
       expect(identity.eidas_identifier).to be_nil

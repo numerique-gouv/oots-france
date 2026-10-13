@@ -25,18 +25,24 @@
         </dl>
       </div>
 
-      <% if level.present? %>
+      <% if level.present? || eidas_identifier %>
         <hr class="fr-mt-3w">
 
-        <%# One line, the label and the value side by side: the level is the
-            whole of what the authentication adds to the identity above, and a
-            column of its own would announce a list of one. `fr-badge` renders on
+        <%# One line for what the authentication adds to the identity above —
+            the level, label and value side by side, and the eIDAS identifier
+            when there is one —: a column of its own would announce a list of
+            one. `fr-badge` renders on
             a `<p>`, which the DSFR fixes — it is the tag its own examples carry,
             and the styles hang off it — so the line around it is a `<div>` and
             not a `<p>`. %>
         <div class="identity-card__level">
-          <span><%= level_label %></span>
-          <p class="fr-badge fr-badge--sm"><%= level %></p>
+          <% if level.present? %>
+            <span><%= level_label %></span>
+            <p class="fr-badge fr-badge--sm"><%= level %></p>
+          <% end %>
+          <% if eidas_identifier %>
+            <p class="identity-card__eidas fr-text--sm fr-text-mention--grey fr-mb-0"><%= eidas_identifier %></p>
+          <% end %>
         </div>
       <% end %>
     </div>

@@ -52,7 +52,7 @@ module FakeFranceConnect
     # `computeSubV1`: a digest of the service provider's reference, of a digest
     # of the identity and of a secret of the core's own, in hexadecimal, with
     # `v1` appended — 64 characters and two, and no resemblance to the
-    # `XX/YY/…` identifier the node yields, which never leaves the fake.
+    # `XX/YY/…` identifier the node yields.
     # back/libs/cryptography-eidas/src/cryptography-eidas.service.ts
     def subject_for(client_id, identity)
       identity_digest = Digest::SHA256.hexdigest(identity.eidas_identifier)

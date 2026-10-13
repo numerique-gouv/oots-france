@@ -14,7 +14,7 @@ module FakeFranceConnect
     # it and `Server` only routes it: one spelling, one owner.
     INTERACTION = '/interaction/'.freeze
 
-    IDENTITY_FIELDS = %w[identity given_name family_name birthdate].freeze
+    IDENTITY_FIELDS = %w[identity given_name family_name birthdate national_part].freeze
 
     def initialize(configuration)
       @configuration = configuration
@@ -98,7 +98,7 @@ module FakeFranceConnect
       return Identities.find(key) unless key == Identities::ENTERED
 
       Identities.entered(country: interaction.fetch(:country), given_name: form['given_name'],
-        family_name: form['family_name'], birthdate: form['birthdate'])
+        family_name: form['family_name'], birthdate: form['birthdate'], national_part: form['national_part'])
     end
 
     def consent(response, uid, interaction)

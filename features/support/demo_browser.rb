@@ -102,6 +102,9 @@ class DemoBrowser
   # says to.
   def choose(name, value) = submit(name => value)
 
+  # The identity page's last form, the one « Input an identity » reveals.
+  def enter_identity(fields) = send_form(document.css('form').last, fields)
+
   # A page carries several forms — the header always carries the sign-out one —
   # so the form is named by where it posts, and the scenario's values travel with
   # whatever it already held. Public like `choose`: the steps submit it directly.

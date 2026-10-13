@@ -3,8 +3,8 @@ require File.expand_path('../../features/support/fake_france_connect/identities'
 # The fake FranceConnect+ lives under `features/support/`, and the end-to-end
 # scenario shows what it answers as a whole. What is checked here is the one
 # rule the sources dictate claim by claim, and that a green scenario would only
-# show indirectly: which claims a scope covers, and which a European user has
-# not got at all.
+# show indirectly: which claims a scope covers, which a European user has not
+# got at all, and the identifier the fake publishes whatever the scopes.
 RSpec.describe FakeFranceConnect::Identity do
   let(:substantial) { FakeFranceConnect::Identities.find('dk-substantial') }
   let(:high) { FakeFranceConnect::Identities.find('dk-high') }
@@ -15,14 +15,24 @@ RSpec.describe FakeFranceConnect::Identity do
   end
 
   describe '#claims_for' do
-    it 'ne rend que ce que les scopes demandés couvrent' do
+    it 'ne rend que ce que les scopes demandés couvrent, et l\'identifiant' do
       expect(substantial.claims_for(%w[openid given_name family_name])).to eq(
         'given_name' => 'Freja Marie', 'family_name' => 'Sørensen',
+        'person_identifier' => 'DK/FR/61f6a1b0-3d3c-4f24-9a2f-6d1c9f0f2a55',
       )
     end
 
     it 'omet les claims que l\'identité n\'a pas' do
-      expect(high.claims_for(%w[openid gender birthplace])).to be_empty
+      expect(high.claims_for(%w[openid gender birthplace]))
+        .to eq('person_identifier' => 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07')
+    end
+
+    # The `sub` derives from `eidas_identifier`: for a fixed identity, the one
+    # it publishes.
+    it 'dérive le sub de l\'identifiant que chaque identité fixe publie' do
+      FakeFranceConnect::Identities::ALL.each do |identity|
+        expect(identity.eidas_identifier).to eq(identity.person_identifier).and match(%r{\A[A-Z]{2}/FR/\S{6,256}\z})
+      end
     end
 
     # The scope `family_name` yields a family name and nothing else: the core
@@ -30,18 +40,18 @@ RSpec.describe FakeFranceConnect::Identity do
     # own.
     it 'ne rend preferred_username que sous profile ou sous son propre scope' do
       expect(substantial.claims_for(%w[family_name])).not_to include('preferred_username')
-      expect(substantial.claims_for(%w[preferred_username])).to eq('preferred_username' => 'Sørensen')
+      expect(substantial.claims_for(%w[preferred_username])).to include('preferred_username' => 'Sørensen')
       expect(substantial.claims_for(%w[profile])).to include('preferred_username' => 'Sørensen')
     end
 
-    # What the bridge does **not** render of a European user: no eIDAS
-    # identifier, no country, no `birthcountry`, no `email`. The fake
-    # reproduces the gap rather than filling it.
-    it 'ne rend ni identifiant, ni pays, ni birthcountry, ni email' do
+    # What the bridge does **not** render of a European user: no country, no
+    # `birthcountry`, no `email`. The fake reproduces the gap rather than
+    # filling it, the identifier excepted, which `docs/test_e2e.md` explains.
+    it 'rend l\'identifiant, mais ni pays, ni birthcountry, ni email' do
       everything = FakeFranceConnect::Identity::CLAIMS_BY_SCOPE.keys
 
       expect(substantial.claims_for(everything).keys).to contain_exactly(
-        'given_name', 'family_name', 'birthdate', 'gender', 'birthplace', 'preferred_username',
+        'given_name', 'family_name', 'birthdate', 'gender', 'birthplace', 'preferred_username', 'person_identifier',
       )
     end
   end
@@ -63,8 +73,9 @@ RSpec.describe FakeFranceConnect::Identity do
       expect(alicja.acr).to eq('eidas2')
       expect(alicja.claims_for(%w[profile])).to eq(
         'given_name' => 'Alicja', 'family_name' => 'Roszponka', 'birthdate' => '1991-04-06',
-        'preferred_username' => 'Roszponka',
+        'preferred_username' => 'Roszponka', 'person_identifier' => 'PL/FR/91040665144',
       )
+      expect(alicja.eidas_identifier).to eq('PL/FR/91040665144')
     end
 
     it 'ne sert rien pour un pays qu\'il n\'offre pas' do
@@ -96,6 +107,57 @@ RSpec.describe FakeFranceConnect::Identity do
 
         expect(described_class.entered(**typed).eidas_identifier).to eq(identifier)
         expect(described_class.entered(**typed, given_name: 'Inge').eidas_identifier).not_to eq(identifier)
+      end
+
+      it 'ne publie aucun identifiant quand la partie nationale est laissée vide' do
+        everything = FakeFranceConnect::Identity::CLAIMS_BY_SCOPE.keys
+
+        expect(described_class.entered(**typed, national_part: '  ').claims_for(everything))
+          .not_to include('person_identifier')
+        expect(described_class.entered(**typed, national_part: '').eidas_identifier)
+          .to eq(described_class.entered(**typed).eidas_identifier)
+      end
+
+      describe 'avec la partie nationale d\'un identifiant eIDAS' do
+        let(:alicja) do
+          { country: 'PL', given_name: 'Alicja', family_name: 'Roszponka', birthdate: '1991-04-06',
+            national_part: '91040665144' }
+        end
+
+        # TDD 2.1, §2.3: nationality, destination, then the national part.
+        it 'publie l\'identifiant composé quels que soient les scopes' do
+          identity = described_class.entered(**alicja)
+
+          expect(identity.claims_for(%w[openid])).to eq('person_identifier' => 'PL/FR/91040665144')
+          expect(identity.claims_for(%w[openid given_name family_name birthdate gender birthplace]))
+            .to include('person_identifier' => 'PL/FR/91040665144')
+        end
+
+        it 'en dérive le sub, à la place de l\'identifiant interne' do
+          identity = described_class.entered(**alicja)
+
+          expect(identity.eidas_identifier).to eq('PL/FR/91040665144')
+          expect(described_class.entered(**alicja, national_part: '91040665145').eidas_identifier)
+            .not_to eq(identity.eidas_identifier)
+        end
+
+        it 'retire les blancs des extrémités' do
+          expect(described_class.entered(**alicja, national_part: '   91040665144   ').person_identifier)
+            .to eq('PL/FR/91040665144')
+        end
+
+        it 'écrit EL pour la Grèce' do
+          expect(described_class.entered(**alicja, country: 'GR', national_part: '123456').person_identifier)
+            .to eq('EL/FR/123456')
+        end
+
+        # R-EDM-REQ-C040: the third part is 6 to 256 non-blank characters.
+        it 'refuse une partie nationale que R-EDM-REQ-C040 refuserait' do
+          expect(described_class.entered(**alicja, national_part: '12345')).to be_nil
+          expect(described_class.entered(**alicja, national_part: '9104 0665 144')).to be_nil
+          expect(described_class.entered(**alicja, national_part: 'x' * 257)).to be_nil
+          expect(described_class.entered(**alicja, national_part: 'x' * 256)).not_to be_nil
+        end
       end
 
       it 'refuse un nom vide ou une date de naissance qui n\'en est pas une' do
