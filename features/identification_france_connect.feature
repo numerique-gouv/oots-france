@@ -87,6 +87,47 @@ Fonctionnalité: Identifier un usager européen par un faux FranceConnect+
     Alors l'ID Token contient "acr" égal à "eidas3"
     Quand il appelle /userinfo
     Alors le JWT déchiffré contient l'identité saisie
+    Et /userinfo ne contient pas "person_identifier"
+
+  Scénario: la page des identités laisse facultatif l'identifiant eIDAS d'une identité saisie
+    Quand le portail appelle /authorize
+    Et que l'usager choisit le pays "PL"
+    Alors le formulaire de saisie d'une identité exige le prénom, le nom et la date de naissance
+    Et le formulaire de saisie d'une identité n'exige pas l'identifiant eIDAS
+
+  Plan du Scénario: l'identifiant eIDAS saisi est listé au consentement, puis publié par /userinfo
+    Quand le portail appelle /authorize
+    Et que l'usager choisit le pays "<pays>"
+    Et qu'il saisit le prénom "Alicja", le nom "Roszponka", la date de naissance "1991-04-06" et l'identifiant eIDAS "<saisi>"
+    Alors la page de consentement affiche "<transmis>"
+    Quand l'usager consent à la transmission de ses données
+    Et que le portail échange le code contre les jetons
+    Et qu'il appelle /userinfo
+    Alors /userinfo contient "person_identifier" égal à "<transmis>"
+    Et le sub de /userinfo fait 64 caractères hexadécimaux suivis de "v1", sans contenir "<saisi>"
+
+    Exemples:
+      | pays | saisi       | transmis          |
+      | PL   | 91040665144 | PL/FR/91040665144 |
+      | GR   | 123456      | EL/FR/123456      |
+
+  Scénario: les blancs autour de l'identifiant eIDAS saisi sont retirés
+    Quand le portail appelle /authorize
+    Et que l'usager choisit le pays "PL"
+    Et qu'il saisit le prénom "Alicja", le nom "Roszponka", la date de naissance "1991-04-06" et l'identifiant eIDAS "   91040665144   "
+    Alors la page de consentement affiche "PL/FR/91040665144"
+
+  Plan du Scénario: un identifiant eIDAS saisi que R-EDM-REQ-C040 refuserait est refusé
+    Quand le portail appelle /authorize
+    Et que l'usager choisit le pays "PL"
+    Et qu'il saisit le prénom "Alicja", le nom "Roszponka", la date de naissance "1991-04-06" et l'identifiant eIDAS "<saisi>"
+    Alors le faux FranceConnect+ répond une page d'erreur 400
+    Et la page d'erreur contient "invalid_identity"
+
+    Exemples:
+      | saisi         |
+      | 12345         |
+      | 9104 0665 144 |
 
   Scénario: une identité saisie incomplète est refusée
     Quand le portail appelle /authorize

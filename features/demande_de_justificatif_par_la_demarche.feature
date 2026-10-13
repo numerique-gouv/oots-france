@@ -75,3 +75,15 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors la page des justificatifs affiche "Document retrieved successfully"
+
+  Scénario: l'identifiant eIDAS saisi au faux FranceConnect+ part dans la requête
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur s'identifie en saisissant cette identité sous le pays "PL":
+      | prénom            | Alicja      |
+      | nom               | Roszponka   |
+      | date de naissance | 1991-04-06  |
+      | identifiant eIDAS | 91040665144 |
+    Et que l'usager confirme sa demande
+    Alors le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
+    Et la fiche de ce départ au journal des événements affiche l'identifiant eIDAS "PL/FR/91040665144" dans le sujet du justificatif

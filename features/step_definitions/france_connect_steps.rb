@@ -95,6 +95,34 @@ Quand('il saisit le prénom {string}, le nom {string} et la date de naissance {s
   @reponse = @client.enter_identity(@entered)
 end
 
+Quand(
+  'il saisit le prénom {string}, le nom {string}, la date de naissance {string} et l\'identifiant eIDAS {string}',
+) do |given, family, born, national_part|
+  @entered = { 'given_name' => given, 'family_name' => family, 'birthdate' => born }
+  @reponse = @client.enter_identity(@entered.merge('national_part' => national_part))
+end
+
+Alors('le formulaire de saisie d\'une identité exige le prénom, le nom et la date de naissance') do
+  expect(entered_identity_fields.values_at('given_name', 'family_name', 'birthdate')).to eq([true, true, true])
+end
+
+Alors('le formulaire de saisie d\'une identité n\'exige pas l\'identifiant eIDAS') do
+  expect(entered_identity_fields.fetch('national_part')).to be(false)
+end
+
+# Each field of the form behind « Input an identity », and whether the page
+# makes it required: a browser refuses to submit a required field left empty.
+def entered_identity_fields
+  form = Nokogiri::HTML(@reponse.body).css('form').last
+
+  form.css('input:not([type=hidden])').to_h { |input| [input['name'], input.key?('required')] }
+end
+
+Alors('la page de consentement affiche {string}') do |value|
+  expect(@client.title).to eq('Authorise the transmission of your data')
+  expect(@reponse.body).to include(value)
+end
+
 Alors('la page d\'erreur contient {string}') do |error|
   expect(@reponse.body).to include(error)
 end
@@ -243,6 +271,21 @@ end
 
 Alors('la réponse est en {string}') do |type|
   expect(@userinfo.headers['Content-Type']).to include(type)
+end
+
+Alors('\\/userinfo contient {string} égal à {string}') do |claim, value|
+  expect(@client.unseal(@userinfo.body)[claim]).to eq(value)
+end
+
+Alors('\\/userinfo ne contient pas {string}') do |claim|
+  expect(@client.unseal(@userinfo.body)).not_to have_key(claim)
+end
+
+Alors('le sub de \\/userinfo fait 64 caractères hexadécimaux suivis de {string}, sans contenir {string}') do |suffix, part|
+  subject = @client.unseal(@userinfo.body).fetch('sub')
+
+  expect(subject).to match(/\A\h{64}#{suffix}\z/)
+  expect(subject).not_to include(part)
 end
 
 Alors('le JWT déchiffré contient exactement sub, given_name, family_name, birthdate, gender et birthplace') do
