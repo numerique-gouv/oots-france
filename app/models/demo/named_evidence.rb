@@ -23,6 +23,11 @@ module Demo
     include ActiveModel::Attributes
 
     attribute :evidence_type_name, :string
+    # The type itself, as the Evidence Broker identifies it: what the request
+    # sends in `idTypeJustificatif`, so that what leaves is the type the card
+    # named, which the user chose where the country publishes several —
+    # requirement 26 of chapter 1 §2.
+    attribute :evidence_type_id, :string
     # The language each name was published in, which the zone declares again so
     # that a screen reader does not pronounce one language as another (RGAA 8.7).
     attribute :evidence_type_language, :string

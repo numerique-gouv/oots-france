@@ -35,6 +35,12 @@ class DemoResolutionWording
 
   def evidence_type = lookup.evidence_type&.label(languages: LANGUAGES).presence
 
+  # The type the card names, whole — what the request sends — and by its UUID,
+  # which is what the page's own addresses carry.
+  def evidence_type_id = lookup.evidence_type&.id
+
+  def evidence_type_uuid = lookup.evidence_type&.uuid
+
   def evidence_type_language
     lookup.evidence_type&.label_language(languages: LANGUAGES) if evidence_type.present?
   end

@@ -35,7 +35,7 @@ module Demo
     # joins them because a click names the one requirement its own card is
     # about, and a row naming the document without the obligation it was asked
     # under would not say which click it answers.
-    NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
+    NAMED = %i[evidence_type_id evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
                requirement_id requirement_name requirement_language country_code].freeze
 
@@ -79,6 +79,7 @@ module Demo
         country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),
         requirement_id: context.requirement_id,
+        evidence_type_id: context.evidence_type_id,
         outside_procedure: true,
         **journey_arguments,
       )
