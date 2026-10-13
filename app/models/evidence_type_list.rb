@@ -4,9 +4,10 @@
 # The grouping is the answer's meaning, not a detail of its shape: within one
 # list every type is needed, and two lists answering the same requirement are
 # alternatives to one another. `EvidenceTypesResponseParser` flattens them for
-# the request flow, which keeps the first type it finds — choosing among the
-# alternatives is chapter 4.10, and the console is where the choice can at
-# least be seen.
+# the request flow, which keeps the type its caller names and the first it
+# finds otherwise: chapter 3.2.2 §2.3 has the user « select an 'Evidence Type
+# List' amongst the ones proposed by the Evidence Broker », and the screens of
+# the demonstration are where one does.
 #
 # A list may also be empty on purpose: `sdg:MatchType` set to `NoMatch` is how
 # a member state declares it knows no evidence of its own satisfies the

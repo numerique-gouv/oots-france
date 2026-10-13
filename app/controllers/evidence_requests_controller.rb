@@ -54,7 +54,7 @@ class EvidenceRequestsController < ApplicationController
   # A query string and not a form: the caller is a server-side integration.
   def query
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
-      :previsualisationRequise, :idConversation, :idExigence, :specification, :exigenceHorsDemarche)
+      :previsualisationRequise, :idConversation, :idExigence, :idTypeJustificatif, :specification, :exigenceHorsDemarche)
   end
 
   # Upcased on the way in: both console filters upcase what they are asked, so
@@ -77,6 +77,7 @@ class EvidenceRequestsController < ApplicationController
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
       requirement_id: query[:idExigence],
+      evidence_type_id: query[:idTypeJustificatif],
       country_code:,
       requested_specification: EdmSpecification.find(query[:specification]),
       preview_possible: preview_possible?,

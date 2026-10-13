@@ -3,9 +3,9 @@
 #
 # The answer groups the types into `sdg:EvidenceTypeList`s: a list holds the
 # types that together meet the requirement, and several lists are alternatives
-# to one another. Flattening them is what `EvidenceRequest::ResolveEvidenceType`
-# keeping the first type already does, and the console at least shows the
-# grouping.
+# to one another. `EvidenceRequest::ResolveEvidenceType` reads them flattened,
+# keeping the type its caller names and the first otherwise, and the console
+# shows the grouping.
 #
 # `country-code` being optional on this query, the lists of every country come
 # back at once — each naming its own jurisdiction.

@@ -210,6 +210,35 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # RG6 of OOTS-263: the evidence type the screens of the demonstration name,
+  # the whole identifier the Evidence Broker publishes, like `idExigence`.
+  describe 'the evidence type the caller may name' do
+    let(:type) { 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/198ab7cc-0000' }
+
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative', params: parameters.merge(idTypeJustificatif: type)
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(evidence_type_id: type))
+    end
+
+    it 'names none when the caller named none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(evidence_type_id: nil))
+    end
+
+    it 'refuses one the country does not publish as the caller fault, and journals it' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unknown_evidence_type, "Le type de justificatif « #{type} » n'est pas publié"))
+
+      get '/requete/pieceJustificative', params: parameters.merge(idTypeJustificatif: type)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include(type)
+      expect(AuditEvent.find_by(event_type: 'request_refused').detail).to include(type)
+    end
+  end
+
   # RG11 and RG12 of OOTS-253: the parameter the screens of the demonstration
   # set to ask for a requirement the Evidence Broker does not tie to the
   # procedure.

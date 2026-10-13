@@ -5,8 +5,8 @@ module EvidenceRequest
   #
   # The service comes already chosen: the directories façade drops the records
   # that name no access point, which is an integrity matter rather than a
-  # choice. Only the first provider is kept, and that one for the same reason as
-  # the evidence type — chapter 4.10.
+  # choice. Only the first provider is kept: chapter 3.1.4 gives no rule for
+  # choosing among several.
   class ResolveProvider < ApplicationInteractor
     def call
       resolve

@@ -198,6 +198,68 @@ RSpec.describe EvidenceRequest::Fetch do
     end
   end
 
+  # CA6 and CA7 of OOTS-263: the type a caller names in `idTypeJustificatif` is
+  # the one the request asks for, in its `EvidenceTypeClassification` and in the
+  # journal line that says what left — and one the country does not publish for
+  # the requirement is refused before anything is opened.
+  describe 'an evidence type the caller names' do
+    let(:common_services) do
+      instance_double(Directories::CommonServices,
+        required_evidence_for_procedure: [Directories::CommonServices::RequiredEvidence.new(
+          requirement: build(:requirement), evidence_types: [first_type, second_type],
+        )]).tap do |double|
+        # What the Data Service Directory publishes for the type it is asked
+        # about, which is what the request writes in `EvidenceTypeClassification`.
+        allow(double).to receive(:data_service) do |type_id, _country|
+          build(:data_service, evidence_type_classification: type_id,
+            providers: [build(:evidence_provider, access_point:)])
+        end
+      end
+    end
+    let(:first_type) { build(:evidence_type, id: 'https://sr/AT/premier') }
+    let(:second_type) { build(:evidence_type, id: 'https://sr/AT/second') }
+
+    context 'when the country publishes it' do
+      let(:arguments) { super().merge(evidence_type_id: second_type.id) }
+
+      # The request writes in `EvidenceTypeClassification` what the Data
+      # Service Directory publishes for the type it was asked about
+      # (`R-EDM-REQ-C027`), so asking it about this one is what the request
+      # carries.
+      it 'asks the Data Service Directory for that type, and the journal names it' do
+        expect(fetch).to be_success
+
+        expect(common_services).to have_received(:data_service).with('https://sr/AT/second', 'DE')
+        expect(gateway).to have_received(:submit) do |envelope|
+          payload = Nokogiri::XML(envelope).at_xpath('//*[local-name()="payload"]/*[local-name()="value"]').text
+          classifications = Nokogiri::XML(Base64.decode64(payload))
+            .xpath('//*[local-name()="EvidenceTypeClassification"]').map(&:text)
+          expect(classifications).to eq(['https://sr/AT/second'])
+        end
+        expect(AuditEvent.find_by(event_type: 'request_sent').evidence_type_id).to eq('https://sr/AT/second')
+      end
+    end
+
+    context 'when it does not' do
+      let(:arguments) { super().merge(evidence_type_id: 'https://sr/AT/inconnu') }
+
+      it 'refuses under its own key, opening nothing and submitting nothing' do
+        expect(fetch).to be_failure
+        expect(fetch.error).to include(key: :unknown_evidence_type)
+        expect(fetch.error[:errors].first).to include('https://sr/AT/inconnu')
+
+        expect(Exchange.count).to eq(0)
+        expect(gateway).not_to have_received(:submit)
+      end
+    end
+
+    context 'when it names none' do
+      it 'asks for the first the country publishes' do
+        expect(fetch.evidence_type.id).to eq('https://sr/AT/premier')
+      end
+    end
+  end
+
   # CA12 and CA13 of OOTS-253: a requirement asked for outside its procedure is
   # resolved by the second query of the Evidence Broker alone, and the request
   # goes out under the procedure named, carrying that requirement as the broker

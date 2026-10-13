@@ -1670,6 +1670,7 @@ fr:
       no_provider: Aucun fournisseur dans ce pays
       preview_not_awaited: Aucune prévisualisation n'attend de confirmation
       unknown_country: Pays inconnu des annuaires
+      unknown_evidence_type: Type de justificatif non publié pour l'exigence
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
       unknown_requirement: Exigence inconnue de la démarche
@@ -1781,6 +1782,8 @@ fr:
       resolve_evidence_type:
         unknown_requirement: >-
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
+        unknown_evidence_type: >-
+          Le type de justificatif « %{evidence_type} » n'est pas publié pour l'exigence « %{requirement} » dans le pays « %{country} »
       # Ce que la France ne fait pas d'une notification de la passerelle sur une
       # requête qui n'a pas atteint le correspondant, consigné au journal
       # applicatif avec l'identifiant que la passerelle donne au message.
