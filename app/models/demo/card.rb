@@ -12,7 +12,9 @@ module Demo
   # Chapter 1 §4.2 leaves « Procedure and session state management » to the
   # portal without saying where; here it is a table rather than the session,
   # which the cookie store bounds at four kibibytes and the identity already
-  # half fills. Nothing in it identifies the user.
+  # half fills. Nothing in it names the user; the answers to the questions of the
+  # Data Service Directory may describe them, and are kept in clear like the
+  # identities and the documents of the demonstration, all fabricated.
   class Card < ApplicationRecord
     self.table_name = 'demo_cards'
 
@@ -52,6 +54,12 @@ module Demo
     # names one.
     def self.evidence_types(journey_id)
       where(journey_id:).where.not(evidence_type_id: nil).pluck(:requirement_uuid, :evidence_type_id).to_h
+    end
+
+    # The answers each card of the journey was resolved on, by requirement,
+    # where it was asked something.
+    def self.provider_classifications(journey_id)
+      where(journey_id:).where.not(provider_classifications: {}).pluck(:requirement_uuid, :provider_classifications).to_h
     end
 
     def named_evidence = Demo::NamedEvidence.new(slice(*NAMES))

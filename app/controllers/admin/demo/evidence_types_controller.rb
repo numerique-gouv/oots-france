@@ -11,7 +11,8 @@ module Admin
     # user is still on — the discipline of `CountriesController`, for the same
     # reason (RGAA 7.4). The card's row of `Demo::Card` is written again, so that
     # a reload renders the card on the type chosen, and what the card now names
-    # is what its button will send.
+    # is what its button will send. The answers given on the type left are
+    # undone: the card is resolved on none.
     class EvidenceTypesController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
@@ -41,7 +42,7 @@ module Admin
       # or not a request holds it.
       def resolved_card
         DemoResolutionWording.new(resolve_card(requirement_uuid, card_country(requirement_uuid),
-          held_evidence_type(requirement_uuid) || evidence_type))
+          held_evidence_type(requirement_uuid) || evidence_type, held_provider_classifications(requirement_uuid).to_h))
       end
 
       def offered? = [requirement_uuid, evidence_type].all? { |uuid| uuid.match?(SemanticRepositoryAsset::UUID) }

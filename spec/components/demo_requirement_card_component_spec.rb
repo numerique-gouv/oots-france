@@ -12,7 +12,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
   let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
   let(:wording) do
-    instance_double(DemoResolutionWording, nameable?: true, choosable?: false, published_nothing?: false,
+    instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: true, choosable?: false, published_nothing?: false,
       evidence_type: 'FR - Test Evidence Type', evidence_type_language: 'en',
       provider: 'FR - Test Evidence Provider', provider_language: 'en',
       requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
@@ -122,7 +122,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     context 'when none is chosen' do
       let(:wording) do
-        instance_double(DemoResolutionWording, nameable?: false, choosable?: true, published_nothing?: false,
+        instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: true, published_nothing?: false,
           evidence_type: nil, evidence_type_uuid: nil, requirement: '(TEST) Test Requirement',
           requirement_language: 'en', requirement_uuid: uuid)
       end
@@ -152,7 +152,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     context 'when one is chosen and served by nobody' do
       let(:wording) do
-        instance_double(DemoResolutionWording, nameable?: false, choosable?: true, published_nothing?: true,
+        instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: true, published_nothing?: true,
           evidence_type: 'Without Reauthentication', evidence_type_uuid: 'bbbb',
           requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
       end
@@ -187,7 +187,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     end
 
     it 'says the requirement is impossible to satisfy where the country publishes nothing' do
-      unsatisfied = instance_double(DemoResolutionWording, nameable?: false, choosable?: false,
+      unsatisfied = instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: false,
         published_nothing?: true, evidence_type: nil, requirement: '(TEST) Test Requirement',
         requirement_language: 'en', requirement_uuid: uuid)
 
@@ -196,6 +196,67 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
       expect(page.find('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇮 Finland (FI)')
       expect(page).to have_css('.requirement-card--unsatisfiable')
+    end
+  end
+
+  # OOTS-269: the questions the Data Service Directory asks before it can name
+  # the provider, chapter 3.1.4 §4.4.3.3.
+  describe 'questions of the Data Service Directory' do
+    let(:asking) do
+      instance_double(DemoResolutionWording, asking?: true, answered?: false, nameable?: false, choosable?: false,
+        published_nothing?: false, evidence_type: 'Projectathon test evidence', evidence_type_uuid: 'aaaa',
+        requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
+    end
+    let(:questions) do
+      [
+        described_class::Question.new(id: '1254f10f-406e-4f28-b1ba-d107b93fa264', control: :select,
+          label: 'Projectathon test case', language: 'EN', options: [%w[TC03 TC03], %w[TC06 TC06]], value: nil),
+        described_class::Question.new(id: '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a01', control: :radio,
+          label: 'Γεννηθήκατε στο εξωτερικό;', language: 'EL', options: nil, value: nil),
+        described_class::Question.new(id: '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a02', control: :text,
+          label: 'Passport number', language: 'EN', options: nil, value: nil),
+      ]
+    end
+
+    before do
+      render_inline(described_class.new(wording: asking, country_code: 'EL', country_name: 'Greece',
+        countries: [['🇬🇷 Greece (EL)', 'EL']], questions:))
+    end
+
+    # CA2: « codelist, string or boolean and Evidence Requesters MUST support
+    # all three of these », in the order the exception writes them.
+    it 'asks each in the control its type calls for, in the order given' do
+      controls = page.all('form.requirement-card__questions [data-demo-card-question]').map do |group|
+        group.all('select, input', visible: :all).map { |field| field.tag_name == 'select' ? 'select' : field[:type] }.uniq
+      end
+
+      expect(controls).to eq([%w[select], %w[radio], %w[text]])
+      expect(page.all('form.requirement-card__questions input[type=radio] + label').map { |label| label.text.squish })
+        .to eq(%w[Yes No])
+    end
+
+    # RGAA 8.7: a question in another language than the page says so.
+    it 'declares the language of each question' do
+      expect(page.all('form.requirement-card__questions .directory-value').pluck(:lang)).to eq(%w[EN EL EN])
+    end
+
+    # Each answer sends as it is given, as a country or a type chosen does.
+    it 'opens a list on a prompt, sends each answer as it is given, and offers no button to do it' do
+      expect(page.first('form.requirement-card__questions option').text).to eq('Select a value')
+      expect(page.all('form.requirement-card__questions select, form.requirement-card__questions input:not([type=hidden])',
+        visible: :all).pluck('data-action').uniq).to eq(['change->demo-card#answer'])
+      expect(page).to have_no_css('form.requirement-card__questions button')
+    end
+
+    # RG1: nothing named, nothing requested, nothing refused, and no dead end.
+    it 'names nothing under the questions while they wait for their first answers' do
+      expect(page.find('[data-demo-card-target=resolution]', visible: :all).text.squish).to be_empty
+      expect(page).to have_no_css('.requirement-card--unsatisfiable')
+    end
+
+    it 'renders, hidden, what it says of an answer that could not be sent' do
+      expect(page.find('[data-demo-card-target=answerFailure]', visible: :hidden).text.squish)
+        .to start_with('The answer could not be sent: this page could not reach the service.')
     end
   end
 end

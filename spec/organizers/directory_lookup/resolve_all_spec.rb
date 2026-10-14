@@ -135,4 +135,30 @@ RSpec.describe DirectoryLookup::ResolveAll do
 
     expect(described_class.call(procedure_code: '00', country_code: 'FI').resolutions.size).to eq(2)
   end
+
+  # OOTS-269: the answers each card gave to the questions of the Data Service
+  # Directory, by requirement.
+  describe 'with answers given on the first requirement' do
+    subject(:resolved) do
+      described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'FI',
+        provider_classifications: { 'aaa' => { question.id => 'TC03' } })
+    end
+
+    let(:question) { build(:evidence_provider_classification) }
+    let(:data_service_directory) do
+      instance_double(DataServiceDirectoryClient).tap do |double|
+        allow(double).to receive(:data_services)
+          .and_raise(CommonServicesError.new('DSD:ERR:0005', code: 'DSD:ERR:0005', classifications: [question]))
+        allow(double).to receive(:data_services).with(hash_including(classifications: { question.id => 'TC03' }))
+          .and_return([build(:data_service)])
+      end
+    end
+
+    # The first run asked without them: reused, it would leave the card asking.
+    it 'resolves that requirement again with its answers rather than reusing the first run' do
+      expect(resolved.resolutions.first).to be_success
+      expect(evidence_broker).to have_received(:evidence_type_lists)
+        .with(requirement_id: 'https://sr/requirements/aaa', country_code: 'FI').twice
+    end
+  end
 end

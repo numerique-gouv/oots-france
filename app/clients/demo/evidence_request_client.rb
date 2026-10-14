@@ -41,7 +41,7 @@ module Demo
     # the first.
     def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:,
               conversation_id: nil, requirement_id: nil, evidence_type_id: nil, specification: nil,
-              outside_procedure: false)
+              outside_procedure: false, provider_classifications: {})
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
         codeDemarche: procedure_code,
@@ -53,6 +53,7 @@ module Demo
         idTypeJustificatif: evidence_type_id,
         specification:,
         exigenceHorsDemarche: (OUTSIDE_PROCEDURE if outside_procedure),
+        classificationFournisseur: provider_classifications.presence,
       }.compact)
 
       ContractAnswer.from(response, path: PATH)

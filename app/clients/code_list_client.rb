@@ -68,8 +68,7 @@ class CodeListClient
     Rails.logger.warn(I18n.t('clients.code_list.nothing_read', list:)) if names.empty?
 
     names
-  # Large on purpose, and the only place in this application where that is
-  # right: every page reading a name says what it says without one, so no
+  # Large on purpose: every page reading a name says what it says without one, so no
   # failure of this reading — not a timeout, not a redirect, not a file that
   # stopped being genericode — has any business reaching a controller.
   rescue StandardError => e

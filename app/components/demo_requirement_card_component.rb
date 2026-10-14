@@ -28,14 +28,27 @@
 # `unspoken` is the line of the journey where the provider's gateway announces
 # others and not it: the card says so in place of the button.
 #
+# `questions` is what the Data Service Directory asks before it can name the
+# provider — `DSD:ERR:0005`, chapter 3.1.4 §4.4.3.3 — each a `Question` in the
+# control its type calls for, on the answer the card was resolved on; `nil`
+# where it asks nothing, or where the card follows a request.
+#
 # `removable` is a card the operator added beyond those the Evidence Broker
 # lists for the procedure, which a cross in its corner takes off the page. The
 # others are what the broker publishes for the procedure, and the page shows
 # them for that.
 class DemoRequirementCardComponent < ViewComponent::Base
+  # One question of the Data Service Directory as the card asks it: `control` is
+  # `:select` for a `codelist` whose values could be read — `options` being
+  # `[[name, code], …]` —, `:radio` for a `boolean`, `:text` for a `string` and
+  # for a `codelist` whose list could not. `label` is the question as the
+  # directory words it, in `language`.
+  Question = Data.define(:id, :control, :label, :language, :options, :value)
+
   def initialize(wording:, country_code:, country_name: nil, zone: nil, countries: nil, evidence_types: nil,
-                 unspoken: nil, removable: false)
+                 unspoken: nil, removable: false, questions: nil)
     @wording = wording
+    @questions = questions
     @evidence_types = evidence_types
     @country_code = country_code
     @country_name = country_name
@@ -46,7 +59,7 @@ class DemoRequirementCardComponent < ViewComponent::Base
     super()
   end
 
-  attr_reader :zone, :countries, :evidence_types, :country_code, :unspoken
+  attr_reader :zone, :countries, :evidence_types, :country_code, :unspoken, :questions
 
   def removable? = @removable
 
@@ -68,10 +81,16 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # A requirement nothing satisfies is a dead end of the procedure, and the card
   # says so by its ground as well as by its wording — never by the ground alone,
   # which RGAA 3.1 forbids. A country publishing several types is no dead end,
-  # whatever the one chosen answers: the others remain.
+  # whatever the one chosen answers: the others remain. Nor is a card the Data
+  # Service Directory asks a question on, which another answer may resolve.
   def css_classes = class_names(*CLASSES, 'requirement-card--unsatisfiable' => unsatisfiable?)
 
-  def unsatisfiable? = !nameable? && !choosable?
+  def unsatisfiable? = !nameable? && !choosable? && !asking?
+
+  # What the foot says under the questions: the provider the answers designate,
+  # or the refusal the answers met — and nothing while the questions wait for
+  # their first answers, nothing being refused yet.
+  def refused? = !nameable? && !unchosen? && (!asking? || answered?)
 
   # Several types, and none chosen yet: the foot names nothing and offers
   # nothing, the list above waiting for the user.
@@ -98,6 +117,16 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # Posted outside the foot, which is all its answer replaces.
   def evidence_type_path = helpers.admin_demo_type_justificatif_path(exigence: requirement_uuid)
 
+  # Posted outside what its answer replaces, which is the resolution alone: the
+  # questions keep the focus and the values typed.
+  def answer_path = helpers.admin_demo_classification_fournisseur_path(exigence: requirement_uuid)
+
+  def question_field(question) = "question-#{requirement_uuid}-#{question.id}"
+
+  def question_name(question) = "classificationFournisseur[#{question.id}]"
+
+  def answer_failure_field = "reponse-#{requirement_uuid}-erreur"
+
   # The card's own address in the page, which a reload of the page can land on.
   def anchor = "exigence-#{requirement_uuid}"
 
@@ -109,7 +138,7 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   def evidence_type_failure_field = "#{evidence_type_field}-erreur"
 
-  delegate :nameable?, :choosable?, :published_nothing?, :evidence_type, :evidence_type_language,
+  delegate :nameable?, :choosable?, :asking?, :answered?, :published_nothing?, :evidence_type, :evidence_type_language,
     :evidence_type_uuid, :provider,
     :provider_language, :requirement, :requirement_language, :requirement_uuid, to: :wording
 

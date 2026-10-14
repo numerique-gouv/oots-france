@@ -85,6 +85,25 @@ class DemoResolutionWording
 
   def requirement_uuid = lookup.requirement&.uuid
 
+  # The questions the Data Service Directory asked before it could name the
+  # provider — `DSD:ERR:0005`, chapter 3.1.4 §4.2.4: « This error code always
+  # indicates that extra user input is required to complete the query » — in
+  # the order its exception wrote them.
+  def questions = Array(lookup.provider_classification_questions)
+
+  def asking? = questions.any?
+
+  # The user's answers to those questions and to no others, by question UUID:
+  # what the card was resolved on, and what its request sends. Empty where
+  # nothing was asked.
+  def provider_classifications
+    EvidenceProviderClassification.answers_for(questions, lookup.provider_classification_answers)
+  end
+
+  # Asked and answered: every question has its answer, so a refusal is the
+  # directory's verdict on those answers and no longer a request for them.
+  def answered? = asking? && provider_classifications.size == questions.size
+
   # The member state the evidence types and the providers were asked for in,
   # which is what the card names them in: each card is resolved in its own.
   delegate :country_code, to: :lookup

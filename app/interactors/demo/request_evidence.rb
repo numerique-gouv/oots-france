@@ -37,7 +37,7 @@ module Demo
     # under would not say which click it answers.
     NAMED = %i[evidence_type_id evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
-               requirement_id requirement_name requirement_language country_code].freeze
+               requirement_id requirement_name requirement_language country_code provider_classifications].freeze
 
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
@@ -78,11 +78,18 @@ module Demo
         procedure_code: context.journey.procedure_code,
         country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),
-        requirement_id: context.requirement_id,
-        evidence_type_id: context.evidence_type_id,
         outside_procedure: true,
+        **asked_evidence,
         **journey_arguments,
       )
+    end
+
+    # What the card named, and the answers it was resolved on.
+    def asked_evidence
+      asked = context
+
+      { requirement_id: asked.requirement_id, evidence_type_id: asked.evidence_type_id,
+        provider_classifications: asked.provider_classifications }
     end
 
     # The conversation and the line are the journey's, named when the
@@ -120,7 +127,8 @@ module Demo
         specification: journey.specification, procedure_code: journey.procedure_code }
     end
 
-    def what_was_named = NAMED.index_with { |named| context.public_send(named) }
+    # What a card did not name is left to the column's own default.
+    def what_was_named = NAMED.index_with { |named| context.public_send(named) }.compact
 
     # The message the contract returned travels with the refusal: it is the only
     # thing that says which of the refusals of `STATUS_FAILURES` this was, and
