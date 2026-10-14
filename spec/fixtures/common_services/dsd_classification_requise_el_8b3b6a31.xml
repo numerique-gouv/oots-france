@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rs:Exception xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rs:ObjectNotFoundExceptionType" code="DSD:ERR:0005" message="The query requires the included extra attributes to be provided by the user" severity="urn:sr.oots.tech.ec.europa.eu:codes:ErrorSeverity:DSDErrorResponse:AdditionalInput">
+        <rim:Slot name="DataServiceEvidenceType">
+            <rim:SlotValue xsi:type="rim:AnyValueType">
+                <sdg:DataServiceEvidenceType>
+                    <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/EL/8b3b6a31-9b62-48d7-8926-997df4f91bb5</sdg:EvidenceTypeClassification>
+                    <sdg:Title lang="EN">Projectathon test evidence</sdg:Title>
+                    <sdg:Title lang="EL">Δοκιμαστικό τεκμήριο για Projectathon</sdg:Title>
+                    <sdg:Description lang="EN">For evidence retrieval of test cases TC01, TC02, TC03...</sdg:Description>
+                    <sdg:Description lang="EL">Για τη δοκιμή ανάκτησης τεκμηρίων ανάλογα με τις περιπτώσεις TC01, TC02, TC03...</sdg:Description>
+                    <sdg:AuthenticationLevelOfAssurance>Low</sdg:AuthenticationLevelOfAssurance>
+                </sdg:DataServiceEvidenceType>
+            </rim:SlotValue>
+        </rim:Slot>
+        <rim:Slot name="UserRequestedClassificationConcepts">
+            <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+                <rim:Element xsi:type="rim:AnyValueType">
+                    <sdg:EvidenceProviderClassification>
+                        <sdg:Identifier schemeID="https://sr.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases">1254f10f-406e-4f28-b1ba-d107b93fa264</sdg:Identifier>
+                        <sdg:Type>codelist</sdg:Type>
+                        <sdg:ValueExpression>https://query.cs.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases/8b3b6a31-9b62-48d7-8926-997df4f91bb5</sdg:ValueExpression>
+                        <sdg:Description lang="EN">Projectathon test case</sdg:Description>
+                        <sdg:Description lang="EL">Σενάριο Projectathon</sdg:Description>
+                    </sdg:EvidenceProviderClassification>
+                </rim:Element>
+            </rim:SlotValue>
+        </rim:Slot>
+    </rs:Exception>
+</query:QueryResponse>

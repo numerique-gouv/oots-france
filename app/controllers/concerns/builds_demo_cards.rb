@@ -4,9 +4,9 @@
 module BuildsDemoCards
   extend ActiveSupport::Concern
 
-  # The country a card stands in, the evidence type it names, and whether it
-  # may change either, come from there.
-  include HoldsDemoEvidenceTypes
+  # The country a card stands in, the evidence type it names, the answers it was
+  # resolved on, and whether it may change any of them, come from there.
+  include HoldsDemoProviderClassifications
 
   private
 
@@ -22,6 +22,7 @@ module BuildsDemoCards
       countries: country_options(wording), evidence_types: evidence_type_options(wording),
       zone: (demo_request_zone(wording) if wording.nameable? && spoken),
       unspoken: (demo_specification unless spoken), removable: added_card(wording.requirement_uuid).present?,
+      questions: classification_questions(wording),
     )
   end
 
@@ -40,14 +41,17 @@ module BuildsDemoCards
 
   # One card resolved alone, as a choice made on it asks: an added card from its
   # own requirement, any other under the procedure of the journey.
-  def resolve_card(requirement_uuid, country_code, evidence_type_id)
+  #
+  # On the answers given, where the Data Service Directory asks something: it is
+  # asked again with them.
+  def resolve_card(requirement_uuid, country_code, evidence_type_id, provider_classifications)
     added = added_card(requirement_uuid)
-    return resolve_added_card(added, country_code, evidence_type_id) if added
+    return resolve_added_card(added, country_code, evidence_type_id, provider_classifications) if added
 
     DirectoryLookup::Resolve.call(
       evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
       procedure_code: journey.procedure_code, country_code:, requirement_id: requirement_uuid,
-      evidence_type_id:, alternatives_offered: true,
+      evidence_type_id:, alternatives_offered: true, provider_classification_answers: provider_classifications,
     )
   end
 
@@ -58,10 +62,11 @@ module BuildsDemoCards
   #
   # On the type named, and on none where the user has not chosen among several:
   # requirement 26 of chapter 1 §2 leaves that choice to them.
-  def resolve_added_card(card, country_code, evidence_type_id)
+  def resolve_added_card(card, country_code, evidence_type_id, provider_classifications)
     DirectoryLookup::ResolveRequirement.call(
       evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
       requirement: card.requirement, country_code:, evidence_type_id:, alternatives_offered: true,
+      provider_classification_answers: provider_classifications,
     )
   end
 
@@ -106,6 +111,43 @@ module BuildsDemoCards
       [type.label(languages:).presence || type.uuid, type.uuid, { lang: type.label_language(languages:) }]
     end
   end
+
+  # The questions the Data Service Directory asks on the card, each in the
+  # control its type calls for — chapter 3.1.4 §4.4.3.3: « codelist, string or
+  # boolean and Evidence Requesters MUST support all three of these » — and on
+  # the answer the card was resolved on. `nil` on a card asking nothing, and on
+  # one that follows a request, which was sent on its answers.
+  #
+  # A `codelist` offers the values of the list its `sdg:ValueExpression`
+  # addresses, read at this render; one that cannot be read is asked in a text
+  # field, which costs the values and nothing else.
+  def classification_questions(wording)
+    return if !wording.asking? || held_card?(wording.requirement_uuid)
+
+    answers = wording.provider_classifications
+
+    wording.questions.map do |question|
+      options = (question_values(question) if question.code_list?)
+
+      DemoRequirementCardComponent::Question.new(
+        id: question.id, control: question_control(question, options), label: question.question,
+        language: question.question_language, options:, value: answers[question.id],
+      )
+    end
+  end
+
+  def question_values(question)
+    classification_values.values(question.value_expression, language: question.question_language)
+  end
+
+  def question_control(question, options)
+    if question.boolean? then :radio
+    elsif options then :select
+    else :text
+    end
+  end
+
+  def classification_values = @classification_values ||= ClassificationValuesClient.new
 
   def country_names = @country_names ||= code_lists.country_names(lang: :en)
 

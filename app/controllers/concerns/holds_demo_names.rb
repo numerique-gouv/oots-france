@@ -61,6 +61,7 @@ module HoldsDemoNames
       provider_name: wording.provider, provider_language: wording.provider_language,
       requirement_id: wording.requirement_id, requirement_name: wording.requirement,
       requirement_language: wording.requirement_language, country_code: wording.country_code,
+      provider_classifications: wording.provider_classifications,
     )
   end
 

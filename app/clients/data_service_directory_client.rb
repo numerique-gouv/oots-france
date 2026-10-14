@@ -16,18 +16,26 @@ class DataServiceDirectoryClient
   # Everything the directory publishes about the pairing: what a request adopts
   # into its `DataServiceEvidenceType`, the organisations delivering it, and the
   # level of assurance no message carries but an operator reads.
-  def data_services(evidence_type_classification:, country_code:)
-    read(evidence_type_classification:, country_code:).data_services
+  #
+  # `classifications` answers a `DSD:ERR:0005`, by the UUID of each question —
+  # chapter 3.1.4 §4.4.3.3: « MUST add a new query parameter for every
+  # EvidenceProviderClassification element. The name of each parameter is the
+  # identifier of the sdg:EvidenceProviderClassification/sdg:Identifier and the
+  # value is the answer provided by the user ». The query is otherwise the
+  # same, which the same chapter requires of it.
+  def data_services(evidence_type_classification:, country_code:, classifications: {})
+    read(evidence_type_classification:, country_code:, classifications:).data_services
   end
 
   private
 
-  def read(evidence_type_classification:, country_code:)
+  def read(evidence_type_classification:, country_code:, classifications:)
     @query.search(
       {
         queryId: DATA_SERVICES_QUERY,
         'evidence-type-classification': evidence_type_classification,
         'country-code': country_code,
+        **classifications.to_h.transform_keys(&:to_sym),
       },
       parser: DataServicesResponseParser,
     )

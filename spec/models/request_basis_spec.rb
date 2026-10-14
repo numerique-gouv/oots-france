@@ -28,6 +28,25 @@ RSpec.describe RequestBasis do
 
   it 'keeps nothing of the subject' do
     expect(basis.to_h.keys)
-      .to contain_exactly('requirement', 'provider', 'recipient', 'data_service', 'evidence_type_id', 'preview_possible')
+      .to contain_exactly('requirement', 'provider', 'recipient', 'data_service', 'evidence_type_id', 'preview_possible',
+        'provider_classifications')
+  end
+
+  # Chapter 4.9 §2 step 12: « For all rim:Slots except IssueDateTime », the
+  # `EvidenceProviderClassification` slot among them — whose values the portal
+  # gives again, an answer possibly describing the subject.
+  it 'keeps the classifications the user answered, without their values' do
+    answered = build(:evidence_provider_classification).answered('TC03')
+    exchange = create(:exchange, request_basis: described_class.from_h(basis.to_h.merge(
+      'provider_classifications' => [answered.to_h],
+    )))
+
+    expect(Exchange.find(exchange.id).request_basis.provider_classifications).to eq([answered.answered(nil)])
+  end
+
+  # The slot is `0..n`: a basis written without the key names its provider
+  # without having asked anything.
+  it 'reads a basis carrying no classification as one that asked nothing' do
+    expect(described_class.from_h(basis.to_h.except('provider_classifications')).provider_classifications).to eq([])
   end
 end

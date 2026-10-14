@@ -215,7 +215,25 @@ RSpec.describe Directories::CommonServices do
       expect(directory.data_service(type.id, 'FI')).to eq(service)
 
       expect(dsd).to have_received(:data_services)
-        .with(evidence_type_classification: type.id, country_code: 'FI')
+        .with(evidence_type_classification: type.id, country_code: 'FI', classifications: {})
+    end
+
+    # Chapter 3.1.4 §4.2.2: « The user selected parameter and value MUST be used
+    # when responding to a DSD exception DSD:ERR:0005 received ».
+    it 'asks again with the answers the user gave' do
+      directory.data_service(type.id, 'EL', classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+
+      expect(dsd).to have_received(:data_services).with(evidence_type_classification: type.id, country_code: 'EL',
+        classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+    end
+
+    it 'says by name that the directory waits on the user, with the questions it asks' do
+      question = build(:evidence_provider_classification)
+      allow(dsd).to receive(:data_services)
+        .and_raise(CommonServicesError.new('précision', code: 'DSD:ERR:0005', classifications: [question]))
+
+      expect { directory.data_service(type.id, 'EL') }
+        .to raise_error(ProviderClassificationRequired) { |error| expect(error.classifications).to eq([question]) }
     end
 
     # A record published without `sdg:AccessService` breaks R-DSD-RESP-S014;

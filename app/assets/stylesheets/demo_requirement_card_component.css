@@ -7,12 +7,23 @@
  * card is too narrow for both — the sentence keeps its own room rather than
  * squeezing the button out of the card.
  */
-.requirement-card__actions {
+.requirement-card__actions,
+.requirement-card__resolution {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 0.5rem 1rem;
+}
+
+/*
+ * The questions of the Data Service Directory each take a line, and what the
+ * answers resolve stands under them across the whole card, laid out as the
+ * foot of a card that asks nothing.
+ */
+.requirement-card__questions,
+.requirement-card__resolution {
+  flex: 1 1 100%;
 }
 
 /*

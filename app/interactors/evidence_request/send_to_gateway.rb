@@ -76,6 +76,7 @@ module EvidenceRequest
         procedure_code: resolved.procedure_code, preview_possible: resolved.preview_possible,
         preview_location: resolved.preview_location, return_location: resolved.return_location,
         specification: resolved.exchange.specification, uuid:,
+        provider_classifications: resolved.provider_classifications.to_a,
       }
     end
 

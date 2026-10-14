@@ -42,6 +42,37 @@ RSpec.describe 'POST /requete/:exchange_id/previsualisation' do
     ))
   end
 
+  # CA12 of OOTS-269: the first request carried the user's answer, which the
+  # exchange kept without its value.
+  describe 'an exchange whose first request answered a question of the Data Service Directory' do
+    let(:question) { build(:evidence_provider_classification) }
+    let(:exchange) do
+      create(:exchange, :preview_required, :with_request_basis).tap do |opened|
+        basis = opened.request_basis.to_h.merge('provider_classifications' => [question.answered('TC03').to_h])
+        opened.update!(request_basis: RequestBasis.from_h(basis))
+      end
+    end
+
+    it 'keeps the question and not the answer' do
+      expect(exchange.reload.request_basis.provider_classifications.map(&:supported_value)).to eq([nil])
+    end
+
+    it 'hands the chain the answer given again' do
+      confirm(parameters.merge(classificationFournisseur: { question.id => 'TC03' }))
+
+      expect(response).to have_http_status(:accepted)
+      expect(EvidenceRequest::ConfirmPreview).to have_received(:call)
+        .with(hash_including(provider_classification_answers: { question.id => 'TC03' }))
+    end
+
+    it 'refuses a confirmation that does not give it again, before emitting anything' do
+      confirm
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(EvidenceRequest::ConfirmPreview).not_to have_received(:call)
+    end
+  end
+
   # CA3 of OOTS-67.
   describe 'what it refuses before emitting anything' do
     it 'refuses a confirmation without its token' do

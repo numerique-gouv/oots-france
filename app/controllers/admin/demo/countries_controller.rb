@@ -14,7 +14,8 @@ module Admin
     #
     # The evidence types are the country's, so choosing another undoes the type
     # chosen: the card is resolved in its new country on none, and offers the
-    # choice again where that country publishes several.
+    # choice again where that country publishes several. The answers to the
+    # questions of the Data Service Directory go with the type.
     class CountriesController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
@@ -44,7 +45,8 @@ module Admin
 
       def resolved_card
         DemoResolutionWording.new(
-          resolve_card(requirement_uuid, held_country(requirement_uuid) || country, held_evidence_type(requirement_uuid)),
+          resolve_card(requirement_uuid, held_country(requirement_uuid) || country, held_evidence_type(requirement_uuid),
+            held_provider_classifications(requirement_uuid).to_h),
         )
       end
 

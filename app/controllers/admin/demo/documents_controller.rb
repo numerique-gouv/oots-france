@@ -43,7 +43,8 @@ module Admin
       # Each card is resolved in its own member state, the one the user chose on
       # it or the one its request went to — `HoldsDemoCountries` says which —
       # and on the evidence type chosen the same way, `HoldsDemoEvidenceTypes`
-      # saying which.
+      # saying which, and on the answers given to the questions the Data Service
+      # Directory asks on it, `HoldsDemoProviderClassifications` saying which.
       #
       # The cards the operator added follow those of the procedure, each
       # resolved from its own requirement, and the page then offers to add any
@@ -88,14 +89,16 @@ module Admin
 
       def resolve_all
         DirectoryLookup::ResolveAll.call(procedure_code: code, country_code: Settings.common_services_country_code,
-          countries: card_countries, evidence_types: card_evidence_types)
+          countries: card_countries, evidence_types: card_evidence_types,
+          provider_classifications: all_card_provider_classifications)
       end
 
       def resolved_added_cards(listed)
         added_cards.values.reject { |card| card.requirement_uuid.in?(listed) }.map do |card|
           uuid = card.requirement_uuid
 
-          DemoResolutionWording.new(resolve_added_card(card, card_country(uuid), card_evidence_type(uuid)))
+          DemoResolutionWording.new(resolve_added_card(card, card_country(uuid), card_evidence_type(uuid),
+            card_provider_classifications(uuid)))
         end
       end
 

@@ -25,6 +25,11 @@ class EvidenceRequestBuilder < ApplicationBuilder
 
   attr_reader :document_id, :procedure_code, :preview_possible, :requirement, :preview_location
 
+  # The questions the Data Service Directory asked the user before naming the
+  # provider, each carrying the answer given — chapter 4.5.1 §3.4. None where
+  # it asked nothing, and the slot is then left out: it is `0..n`.
+  attr_reader :provider_classifications
+
   # R-EDM-REQ-S004: the `id` of a QueryRequest is a UUID prefixed `urn:uuid:`.
   # This qualified form, and not the bare UUID, is what a correspondent echoes
   # back as `@requestId` — so it is the form the exchange is correlated by.
@@ -37,7 +42,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
   # and what a national parameter would then be worth publishing for.
   def initialize(
     requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:,
-    associated_documents: [], preview_possible: false, preview_location: nil, return_location: nil,
+    associated_documents: [], provider_classifications: [], preview_possible: false, preview_location: nil, return_location: nil,
     specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
@@ -48,6 +53,7 @@ class EvidenceRequestBuilder < ApplicationBuilder
     @data_service = data_service
     @procedure_code = procedure_code
     @associated_documents = associated_documents
+    @provider_classifications = provider_classifications
     @preview_possible = preview_possible
     @preview_location = preview_location
     @return_location = return_location

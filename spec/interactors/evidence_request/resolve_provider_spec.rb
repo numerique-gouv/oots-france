@@ -71,4 +71,40 @@ RSpec.describe EvidenceRequest::ResolveProvider do
       expect(resolve.error).to include(key: :common_services_refused)
     end
   end
+
+  describe 'a question the directory asks about the provider' do
+    subject(:resolve) do
+      described_class.call(evidence_type:, country_code: 'EL', common_services:, provider_classification_answers:)
+    end
+
+    let(:question) { build(:evidence_provider_classification) }
+    let(:provider_classification_answers) { { question.id => 'TC03' } }
+    let(:data_service) { build(:data_service, classifications: [question.answered('TC03')]) }
+
+    # Chapter 3.1.4 §4.2.2: « The user selected parameter and value MUST be used
+    # when responding to a DSD exception DSD:ERR:0005 received ».
+    it 'asks the directory with the answers the caller passed' do
+      resolve
+
+      expect(common_services).to have_received(:data_service)
+        .with(evidence_type.id, 'EL', classifications: provider_classification_answers)
+    end
+
+    # Chapter 4.5.1 §3.4: the structure from the directory's answer, the value
+    # from the user.
+    it 'keeps each classification the user answered, carrying the answer' do
+      expect(resolve.provider_classifications).to eq([question.answered('TC03')])
+    end
+
+    it 'refuses under its own name a question nobody answered' do
+      allow(common_services).to receive(:data_service)
+        .and_raise(ProviderClassificationRequired.new('précision', classifications: [question]))
+
+      expect(resolve.error[:key]).to eq(:provider_classification_required)
+    end
+
+    it 'keeps no classification when nothing was asked' do
+      expect(described_class.call(evidence_type:, country_code: 'EL', common_services:).provider_classifications).to eq([])
+    end
+  end
 end

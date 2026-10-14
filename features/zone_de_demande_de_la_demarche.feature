@@ -18,7 +18,10 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   reconstruit. Le choix du type de justificatif s'y joue de même, quand le pays
   en publie plusieurs pour l'exigence : rien n'est choisi à la place de
   l'usager, la carte se résout sur le type qu'il choisit, et la demande part
-  avec lui.
+  avec lui. La question que le Data Service Directory pose avant de pouvoir
+  désigner le fournisseur s'y pose aussi, sur la carte, dans la forme que son
+  type demande : la réponse de l'usager résout la carte, et la demande part
+  avec elle.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -290,3 +293,103 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
     Alors la liste des types de la carte affiche "Select a document"
     Et la page n'affiche aucun bouton de demande
+
+  Scénario: la carte pose la question du Data Service Directory, se résout sur la réponse de l'usager, et la demande part avec elle
+    Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
+    Et la question "Projectathon test case" offre "TC03 - Evidence request error flow due to Basic Registry error"
+    Et la carte ne nomme aucun fournisseur
+    Et la page n'affiche aucun bouton de demande
+    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la carte n'offre pas de bouton pour répondre
+    Et le Data Service Directory n'a reçu aucune réponse
+    Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+    Et la page affiche le bouton "Request the document"
+    Et la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
+    Et la question "Projectathon test case" n'offre plus "Select a value"
+    Et la carte annonce "Ministry of Digital Governance"
+    Et la page des justificatifs n'a pas été rechargée
+    Et le Data Service Directory a reçu la réponse "TC03" à la question "Projectathon test case"
+    Quand l'usager clique sur "Request the document"
+    Alors le contrat a reçu la demande avec la réponse "TC03" à la question "Projectathon test case"
+
+  Scénario: une liste de valeurs illisible fait poser la question en texte, et un refus de la réponse se dit comme tout refus
+    Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
+    Et la liste des valeurs de la question injoignable
+    Et le Data Service Directory refusant la réponse "TC02" en "DSD:ERR:0001"
+    Et le Data Service Directory refusant la réponse "TC04" en "DSD:ERR:0006"
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Alors la carte pose la question "Projectathon test case" dans un champ texte
+    Quand l'usager répond "TC02" à la question "Projectathon test case"
+    Alors la page affiche "No provider listed by Greece for this evidence"
+    Et la page n'affiche aucun bouton de demande
+    Et la question "Projectathon test case" affiche "TC02"
+    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Quand l'usager répond "TC04" à la question "Projectathon test case"
+    Alors la page affiche "Greece could not answer for this evidence"
+    Et la page n'affiche aucun bouton de demande
+    Quand l'usager répond "TC03" à la question "Projectathon test case"
+    Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+
+  Scénario: la carte pose chaque question dans la forme que son type demande, et une exception sans question se dit comme un refus
+    Étant donné la Grèce posant une question de chaque type sur le fournisseur de "Projectathon test evidence"
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Alors la carte pose, dans l'ordre, les questions :
+      | question               | forme            |
+      | Projectathon test case | liste            |
+      | Were you born abroad?  | "Yes" ou "No"    |
+      | Your passport number   | champ texte      |
+    Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Et que l'usager répond "Yes" à la question "Were you born abroad?"
+    Alors le Data Service Directory n'a reçu aucune réponse
+    Quand l'usager répond "AB123456" à la question "Your passport number"
+    Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+    Et le Data Service Directory a reçu la réponse "true" à la question "Were you born abroad?"
+    Et le Data Service Directory a reçu la réponse "AB123456" à la question "Your passport number"
+    Quand la Grèce ne pose plus que sa question sans classification
+    Et que l'usager recharge la page des justificatifs
+    Alors la page affiche "Greece could not answer for this evidence"
+    Et la carte n'offre aucune question
+
+  Scénario: une réponse restée sans réponse laisse la carte comme elle était et le dit, jusqu'à la réponse suivante qui aboutit
+    Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
+    Et la réponse aux questions répondue en "502" sans l'en-tête "Deferred-Fragment", puis coupée, devant le navigateur
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Alors la carte affiche sous ses questions "The answer could not be sent: this page could not reach the service."
+    Et la carte annonce "The answer could not be sent: this page could not reach the service."
+    Et la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
+    Et la carte ne nomme aucun fournisseur
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager répond "TC06 - Basic evidence request with reauthentication and preview" à la question "Projectathon test case"
+    Alors la carte affiche sous ses questions "The answer could not be sent: this page could not reach the service."
+    Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+    Et la page n'affiche pas "The answer could not be sent"
+    Et la page des justificatifs n'a pas été rechargée
+
+  Scénario: la réponse tient au rechargement, une demande la retient, et un autre pays la défait
+    Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+    Quand l'usager recharge la page des justificatifs
+    Alors la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
+    Et la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+    Et le Data Service Directory a reçu sa requête sans la réponse, puis avec elle
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Et que l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
+    Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
+    Et que l'usager clique sur "Request the document"
+    Et que l'usager recharge la page des justificatifs
+    Alors la carte n'offre aucune question
+    Et la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"

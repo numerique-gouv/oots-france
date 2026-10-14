@@ -239,6 +239,63 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # RG9 of OOTS-269: the user's answers to the questions a `DSD:ERR:0005` asks,
+  # which only the screens of the demonstration set.
+  describe 'the provider classifications the caller may answer' do
+    let(:answer) { { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' } }
+
+    it 'passes on the answers it was given, by classification' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: answer)
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(provider_classification_answers: answer))
+    end
+
+    it 'passes none when the caller answered none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(provider_classification_answers: {}))
+    end
+
+    # An answer may describe the subject, as the token does.
+    it 'filters the answers from the request log' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { answer.keys.first => 'AB123456' })
+
+      expect(request.filtered_path).not_to include('AB123456')
+    end
+
+    # `R-EDM-REQ-C023` (FATAL) refuses an empty value, and an answer that is
+    # no value at all is no answer.
+    it 'refuses a blank answer, or one that is no value, before calling anything' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { answer.keys.first => ' ' })
+      expect(response).to have_http_status(:unprocessable_content)
+
+      get "/requete/pieceJustificative?#{parameters.to_query}&classificationFournisseur=TC03"
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    # `R-EDM-REQ-C019` (FATAL) would refuse the slot further on.
+    it 'refuses an answer not named by a UUID, before calling anything' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { 'test-case' => 'TC03' })
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    # The caller was never asked the question, so it has nothing to correct.
+    it 'reports a question the directory still waits on as 502, under its own name' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:provider_classification_required, "L'annuaire attend une précision"))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(AuditEvent.find_by(event_type: 'request_refused').detail).to include('précision')
+    end
+  end
+
   # RG11 and RG12 of OOTS-253: the parameter the screens of the demonstration
   # set to ask for a requirement the Evidence Broker does not tie to the
   # procedure.

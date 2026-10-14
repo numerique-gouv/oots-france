@@ -43,6 +43,11 @@ module Demo
     # chose on it — step 16 of chapter 1 §10.1 — and the request is addressed
     # to: the two names above are what that country publishes, and nothing else.
     attribute :country_code, :string
+    # The user's answers to the questions the Data Service Directory asked
+    # before naming the provider — chapter 3.1.4 §4.4.3.3 — by question UUID:
+    # the provider above is the one they designate, and the request sends them
+    # in `classificationFournisseur`. Empty where nothing was asked.
+    attribute :provider_classifications, default: -> { {} }
 
     # The two of requirement 27, and the country they were published in, which
     # the request goes to. No more: the requirement is what tells two

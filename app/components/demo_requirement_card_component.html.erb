@@ -120,54 +120,114 @@
       <hr class="fr-mt-3w">
 
       <div class="requirement-card__actions" data-demo-card-target="foot">
-        <% if nameable? %>
-          <p class="fr-mb-0" lang="en" data-demo-card-announced>
-            <%= t('components.demo_requirement_card.from_html',
-                  evidence_type: render(DirectoryValueComponent.new(lang: evidence_type_language)) { evidence_type },
-                  provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
-          </p>
-
-          <% if unspoken %>
-            <%# A warning and not a sentence among others: the card names a
-                provider and offers nothing to ask it. The DSFR alert carries
-                its icon besides its colour, which RGAA 3.1 wants. %>
-            <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
-              <p><%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %></p>
-            </div>
-          <% elsif askable? %>
-            <%# The button that opens the exchange, and everything that becomes of
-                it. This element persists and its contents are what an answer
-                replaces: it holds the announced region, which would announce
-                nothing were it swapped out with what it announces. %>
-            <div class="demo-request fr-mt-2w" aria-live="polite" data-controller="demo-request"
-              data-action="submit->demo-request#submit"
-              data-demo-request-url-value="<%= zone_path %>">
-              <%= render zone %>
-            </div>
+        <%# The questions the Data Service Directory asks before it can name the
+            provider, in the order its exception writes them, each labelled in
+            its own language (RGAA 8.7) and in the control the DSFR gives its
+            type. Answering sends them at once, as choosing a country or a type
+            does, once every question has its answer; only the resolution below
+            is replaced: the questions keep the focus and what was typed, and
+            the region of the country form announces what the resolution now
+            says (RGAA 7.4). %>
+        <% if questions %>
+          <%= form_with url: answer_path, method: :patch, class: 'requirement-card__questions',
+                html: { lang: 'en' }, data: { demo_card_target: 'questions', action: 'submit->demo-card#answer' } do %>
+            <% answering = { action: 'change->demo-card#answer' } %>
+            <% questions.each do |question| %>
+              <% label = render(DirectoryValueComponent.new(lang: question.language)) { question.label } %>
+              <% if question.control == :radio %>
+                <fieldset class="fr-fieldset fr-mb-2w" id="<%= question_field(question) %>" data-demo-card-question>
+                  <legend class="fr-fieldset__legend fr-text--regular"><%= label %></legend>
+                  <% { 'true' => 'yes', 'false' => 'no' }.each do |value, wording| %>
+                    <div class="fr-fieldset__element fr-fieldset__element--inline">
+                      <div class="fr-radio-group">
+                        <%= radio_button_tag question_name(question), value, question.value == value,
+                              id: "#{question_field(question)}-#{value}", data: answering %>
+                        <label class="fr-label" for="<%= question_field(question) %>-<%= value %>">
+                          <%= t("components.demo_requirement_card.questions.#{wording}") %>
+                        </label>
+                      </div>
+                    </div>
+                  <% end %>
+                </fieldset>
+              <% elsif question.control == :select %>
+                <%# The prompt is offered until a value is chosen, as the list of
+                    the types offers its own. %>
+                <div class="fr-select-group fr-mb-2w" data-demo-card-question>
+                  <label class="fr-label" for="<%= question_field(question) %>"><%= label %></label>
+                  <%= select_tag question_name(question), options_for_select(question.options, question.value),
+                        prompt: (t('components.demo_requirement_card.questions.prompt') unless question.value),
+                        class: 'fr-select', id: question_field(question), data: answering %>
+                </div>
+              <% else %>
+                <div class="fr-input-group fr-mb-2w" data-demo-card-question>
+                  <label class="fr-label" for="<%= question_field(question) %>"><%= label %></label>
+                  <%= text_field_tag question_name(question), question.value, class: 'fr-input',
+                        id: question_field(question), data: answering %>
+                </div>
+              <% end %>
+            <% end %>
+            <%# Rendered here and hidden, as the country's: the server cannot say
+                it could not be reached. Outside the resolution, so no answer
+                takes it away but the controller. %>
+            <%= tag.p t('components.demo_requirement_card.questions.unreachable_html',
+                        reload: link_to(t('components.demo_requirement_card.reload'),
+                                        helpers.admin_demo_documents_path)),
+                      class: 'fr-error-text fr-mb-2w', id: answer_failure_field, hidden: true,
+                      data: { demo_card_target: 'answerFailure' } %>
           <% end %>
-        <%# A type still to choose offers no button and no refusal: requirement
-            27 of chapter 1 §2 has the type and the provider named before any
-            request is made, and nothing is refused yet. %>
-        <% elsif !unchosen? %>
-          <%# Nothing to name is nothing to click: requirement 27 makes the two
-              names a condition of the request. What the directories answered is
-              said in the card's own words — the code and the sentence they
-              returned belong to the operator's console, not to a portal — and
-              a directory that declined to answer is not a country publishing
-              nothing, so the card says which of the two happened. %>
-          <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
-            <%# The warning the pale red carries, said again in a sign: colour
-                alone never carries information (RGAA 3.1). Hidden from the
-                rendering the assistive technologies read, which has the
-                sentence. %>
-            <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%=
-              if published_nothing?
-                t('components.demo_requirement_card.no_provider_html', country: country_name)
-              else
-                t('components.demo_requirement_card.no_answer_html', country: country_name)
-              end %>
-          </p>
         <% end %>
+
+        <div class="requirement-card__resolution" data-demo-card-target="resolution">
+          <% if nameable? %>
+            <p class="fr-mb-0" lang="en" data-demo-card-announced>
+              <%= t('components.demo_requirement_card.from_html',
+                    evidence_type: render(DirectoryValueComponent.new(lang: evidence_type_language)) { evidence_type },
+                    provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
+            </p>
+
+            <% if unspoken %>
+              <%# A warning and not a sentence among others: the card names a
+                  provider and offers nothing to ask it. The DSFR alert carries
+                  its icon besides its colour, which RGAA 3.1 wants. %>
+              <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
+                <p><%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %></p>
+              </div>
+            <% elsif askable? %>
+              <%# The button that opens the exchange, and everything that becomes of
+                  it. This element persists and its contents are what an answer
+                  replaces: it holds the announced region, which would announce
+                  nothing were it swapped out with what it announces. %>
+              <div class="demo-request fr-mt-2w" aria-live="polite" data-controller="demo-request"
+                data-action="submit->demo-request#submit"
+                data-demo-request-url-value="<%= zone_path %>">
+                <%= render zone %>
+              </div>
+            <% end %>
+          <%# A type still to choose offers no button and no refusal: requirement
+              27 of chapter 1 §2 has the type and the provider named before any
+              request is made, and nothing is refused yet. Nor do questions
+              still waiting for their first answers. %>
+          <% elsif refused? %>
+            <%# Nothing to name is nothing to click: requirement 27 makes the two
+                names a condition of the request. What the directories answered is
+                said in the card's own words — the code and the sentence they
+                returned belong to the operator's console, not to a portal — and
+                a directory that declined to answer is not a country publishing
+                nothing, so the card says which of the two happened. %>
+            <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
+              <%# The warning the pale red carries, said again in a sign: colour
+                  alone never carries information (RGAA 3.1). Hidden from the
+                  rendering the assistive technologies read, which has the
+                  sentence. %>
+              <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%=
+                if published_nothing?
+                  t('components.demo_requirement_card.no_provider_html', country: country_name)
+                else
+                  t('components.demo_requirement_card.no_answer_html', country: country_name)
+                end %>
+            </p>
+          <% end %>
+        </div>
       </div>
     </div>
   </div>

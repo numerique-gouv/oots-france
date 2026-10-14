@@ -12,11 +12,15 @@ class CommonServicesError < StandardError
   # declining to answer, which settles nothing about what is published.
   NOTHING_PUBLISHED = %w[EB:ERR:0001 DSD:ERR:0001].freeze
 
-  attr_reader :code
+  # `DSD:ERR:0005` asks the user a question per provider classification before
+  # the directory can answer (chapter 3.1.4 §4.4.3.3), and the questions travel
+  # with the refusal. Empty for every other one.
+  attr_reader :code, :classifications
 
-  def initialize(message, code: nil)
+  def initialize(message, code: nil, classifications: [])
     super(message)
     @code = code
+    @classifications = classifications
   end
 
   # No code at all: an invalid signature, an unresolvable NAPTR record, a

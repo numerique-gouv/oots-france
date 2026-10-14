@@ -40,14 +40,14 @@ RSpec.describe EvidenceRequest::ConfirmPreview do
     first
   end
 
-  def confirm(method: nil)
+  def confirm(method: nil, answers: {})
     exchange = Exchange.find(first.exchange.id)
     exchange.preview_required!(preview, method:)
 
     described_class.call(
       exchange:, requester_id: exchange.evidence_requester_id, encrypted_beneficiary: 'un-jeton',
       resume_location: 'https://demarche.example.fr/reprise', requesters:, gateway:, uuid:,
-      audit_trail: AuditTrail.new,
+      provider_classification_answers: answers, audit_trail: AuditTrail.new,
     )
   end
 
@@ -84,6 +84,35 @@ RSpec.describe EvidenceRequest::ConfirmPreview do
     expect(text_at(after, "//rim:Slot[@name='PreviewLocation']//rim:Value")).to eq(preview)
     expect(text_at(after, "//rim:Slot[@name='ReturnLocation']//rim:Value"))
       .to start_with("#{Settings.oots_france_url}/retour/")
+  end
+
+  # CA12 of OOTS-269: the `EvidenceProviderClassification` slot is one of
+  # « all rim:Slots except IssueDateTime ».
+  context 'when the first request carried the user\'s answer to a question of the directory' do
+    let(:question) { build(:evidence_provider_classification) }
+    let(:common_services) do
+      instance_double(Directories::CommonServices,
+        required_evidence_for_procedure: [Directories::CommonServices::RequiredEvidence.new(
+          requirement: build(:requirement), evidence_types: [build(:evidence_type)],
+        )],
+        data_service: build(:data_service, providers: [build(:evidence_provider, access_point:)],
+          classifications: [question.answered('TC03')]))
+    end
+    let(:first) do
+      EvidenceRequest::Fetch.call(
+        requester_id: '00000000000002', conversation_id: nil, requesters:, encrypted_beneficiary: 'un-jeton',
+        procedure_code: ProcedureCode::SYSTEM_CHECK, country_code: 'SI', preview_possible: true,
+        provider_classification_answers: { question.id => 'TC03' },
+        common_services:, gateway:, uuid:, audit_trail: AuditTrail.new,
+      )
+    end
+
+    it 'carries the same slot in the second request' do
+      confirm(answers: { question.id => 'TC03' })
+      before, after = submissions.map { |envelope| slots_of(body_of(envelope))['EvidenceProviderClassification'] }
+
+      expect(after).to include('TC03').and eq(before)
+    end
   end
 
   # CA4 again: chapter 4.4 §4.1 refuses a request identifier used before, and

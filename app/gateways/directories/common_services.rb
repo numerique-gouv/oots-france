@@ -109,20 +109,38 @@ module Directories
     # The first that names a provider, rather than simply the first: a record
     # published without `sdg:AccessService` breaks R-DSD-RESP-S014, and writing
     # its identifier would pair it with a provider another record announced.
-    def data_service(evidence_type_id, country_code)
+    #
+    # `classifications` are the user's answers to the questions of a
+    # `DSD:ERR:0005`, by question UUID. Any `DSD:ERR:0005` the directory returns,
+    # whether the query carried no answer or answers it asks about again, is
+    # raised as `ProviderClassificationRequired`.
+    def data_service(evidence_type_id, country_code, classifications: {})
       published = translating(NO_PROVIDER, CountryCodeNotFound,
         'gateways.directories.common_services.no_provider',
         evidence_type: evidence_type_id, country: country_code) do
-        @data_service_directory.data_services(
-          evidence_type_classification: evidence_type_id,
-          country_code:,
-        )
+        asking_classification(evidence_type_id, country_code) do
+          @data_service_directory.data_services(
+            evidence_type_classification: evidence_type_id, country_code:, classifications:,
+          )
+        end
       end
 
       vetted(published.find { |service| service.providers.any? }, :announced_data_service)
     end
 
     private
+
+    def asking_classification(evidence_type_id, country_code)
+      yield
+    rescue CommonServicesError => e
+      raise unless e.code == ProviderClassificationRequired::CODE
+
+      raise ProviderClassificationRequired.new(
+        "#{I18n.t('gateways.directories.common_services.provider_classification_required',
+          evidence_type: evidence_type_id, country: country_code)} : #{e.message}.",
+        classifications: e.classifications,
+      )
+    end
 
     # Vetted here rather than when the directory was read: what this façade
     # hands back goes into a message, where the console lists what a directory

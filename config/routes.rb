@@ -116,6 +116,11 @@ Rails.application.routes.draw do
           # several for the requirement — requirement 26 of chapter 1 §2. Asks
           # the directories only, answers with the card alone, and opens nothing.
           resource :type_justificatif, only: :update, controller: 'evidence_types'
+          # The answers one card gives to the questions the Data Service
+          # Directory asks before it can name the provider — chapter 3.1.4
+          # §4.4.3.3. Asks the directories only, answers with the card alone, and
+          # opens nothing.
+          resource :classification_fournisseur, only: :update, controller: 'provider_classifications'
           # A card the operator adds to the documents page, beyond those the
           # Evidence Broker lists for the procedure, and takes off it again.
           resources :cartes, only: %i[create destroy], param: :exigence, controller: 'cards'

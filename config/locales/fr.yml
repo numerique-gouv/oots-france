@@ -48,6 +48,11 @@ fr:
         distribution_formats: Les formats de distribution
       requirement:
         id: L'identifiant
+      evidence_provider_classification:
+        id: L'identifiant
+        scheme_id: Le schéma d'identifiant
+        type: Le type
+        value_expression: L'expression de valeur
       data_service:
         id: L'identifiant
         evidence_type_classification: Le type de justificatif
@@ -124,6 +129,15 @@ fr:
               format: doit être une URL du dépôt sémantique terminée par un UUID
           # Invariable, faute de savoir laquelle des formulations est en cause.
           unlabelled_wording: une formulation ne nomme pas sa langue
+        evidence_provider_classification:
+          attributes:
+            id:
+              format: doit être un UUID
+            type:
+              inclusion: "n'est ni « codelist », ni « string », ni « boolean »"
+            value_expression:
+              format: doit être une adresse https
+          unlabelled_wording: une question ne nomme pas sa langue
         data_service:
           attributes:
             id:
@@ -135,6 +149,7 @@ fr:
             distribution_conforms_to:
               format: doit être une URL du dépôt sémantique sous « datamodels/ »
           unlabelled_wording: une formulation ne nomme pas sa langue
+          invalid_classification: "une classification de fournisseur est invalide : %{errors}"
         resolution_filter:
           attributes:
             country_code:
@@ -310,6 +325,16 @@ fr:
       evidence_type_prompt: Select a document
       # Construite comme celle du pays, pour le même cas ; le lien est le même.
       evidence_type_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      # Les questions que le Data Service Directory pose avant de pouvoir
+      # désigner le fournisseur (`DSD:ERR:0005`, chapitre 3.1.4 §4.4.3.3). Leur
+      # libellé et les valeurs d'une liste sont les mots de l'annuaire : aucune
+      # clé pour eux. Les réponses partent ensemble dès que la dernière est
+      # donnée, comme le choix d'un pays : aucun bouton. Le lien de la phrase d'échec est celui du pays.
+      questions:
+        prompt: Select a value
+        "yes": "Yes"
+        "no": "No"
+        unreachable_html: "The answer could not be sent: this page could not reach the service. Answer again, or %{reload}."
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -532,6 +557,12 @@ fr:
       not_cached: "Réponse d'annuaire non mise en cache (%{url}) : %{error}"
     code_list:
       nothing_read: "Liste de codes lue sans y rien trouver (%{list}) : structure inattendue ?"
+    # La liste qu'adresse la `sdg:ValueExpression` d'une question du Data
+    # Service Directory : sans elle, la question se pose dans un champ texte.
+    classification_values:
+      insecure: l'adresse n'est pas en https
+      empty: aucune valeur active n'y est lisible
+      unreadable: "Liste de valeurs d'une classification de fournisseur illisible (%{address}) : %{reason}"
     common_services_signature:
       invalid: Signature invalide sur la réponse de l'annuaire.
       digest_mismatch: L'empreinte annoncée ne couvre pas la réponse de l'annuaire.
@@ -612,6 +643,8 @@ fr:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
         evidence_types:
           unreachable: "Annuaires injoignables au choix d'un type de justificatif de la démarche de démonstration : %{error}"
+        provider_classifications:
+          unreachable: "Annuaires injoignables à la réponse aux questions du Data Service Directory de la démarche de démonstration : %{error}"
         # Écrit dans le log : l'écran du choix de la démarche perd les pieds
         # des démarches que la France déclare, et rien d'autre.
         procedures:
@@ -660,6 +693,7 @@ fr:
       common_services:
         no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
         no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
+        provider_classification_required: Le Data Service Directory attend une précision de l'usager pour désigner le fournisseur du type de justificatif « %{evidence_type} » dans le pays « %{country} »
         unknown_procedure: Code de démarche « %{procedure} » introuvable
         # Les deux refus d'une exigence demandée sans sa démarche : l'Evidence
         # Broker ne la connaît pas, ou ne publie rien pour elle dans ce pays.
@@ -1573,6 +1607,7 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
+    provider_classification_invalid: Chaque classificationFournisseur doit être nommée par l'UUID de sa classification et porter une valeur
     specification_invalid: "La version demandée doit être %{spoken}"
     # Une exigence demandée hors de sa démarche (`exigenceHorsDemarche`) : il
     # n'y a rien d'où partir sans elle, et le code de démarche n'est plus
@@ -1588,6 +1623,7 @@ fr:
       beneficiary_required: Le bénéficiaire doit être renseigné
       not_awaited: Cet échange n'attend pas la confirmation d'une prévisualisation.
       resume_location_invalid: L'adresse de retour doit être une adresse absolue en https:// ou http://
+      provider_classifications_required: Chaque classificationFournisseur de la première requête doit être redonnée
   # Ce que l'adresse de retour répond quand elle ne ramène personne : du texte
   # brut, aucune page n'étant rendue à l'usager.
   returns:
@@ -1632,6 +1668,9 @@ fr:
   interactors:
     # Écrits dans le log, sauf `no_identifier`, que la page affiche comme ce
     # que la passerelle a répondu.
+    directory_lookup:
+      fetch_providers:
+        malformed_question: "Question du Data Service Directory non conforme, pas posée (%{id}) : %{errors}"
     connectivity_testing:
       submit_test:
         no_identifier: La passerelle a accepté le message de test sans lui donner d'identifiant.
@@ -1683,6 +1722,7 @@ fr:
       no_evidence_type: Aucun type de justificatif dans ce pays
       no_provider: Aucun fournisseur dans ce pays
       preview_not_awaited: Aucune prévisualisation n'attend de confirmation
+      provider_classification_required: L'annuaire attend une précision de l'usager pour désigner le fournisseur
       unknown_country: Pays inconnu des annuaires
       unknown_evidence_type: Type de justificatif non publié pour l'exigence
       unknown_procedure: Démarche inconnue des annuaires

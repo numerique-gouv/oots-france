@@ -89,7 +89,8 @@ RSpec.describe DirectoryLookup::Resolve do
       expect(lookup.evidence_type.uuid).to eq('second')
 
       expect(data_service_directory).to have_received(:data_services)
-        .with(evidence_type_classification: 'https://sr/evidencetypeclassifications/FI/second', country_code: 'FI')
+        .with(evidence_type_classification: 'https://sr/evidencetypeclassifications/FI/second', country_code: 'FI',
+          classifications: {})
     end
   end
 
@@ -118,7 +119,7 @@ RSpec.describe DirectoryLookup::Resolve do
       it 'asks the Data Service Directory about that one' do
         expect(lookup).to be_success
         expect(data_service_directory).to have_received(:data_services)
-          .with(evidence_type_classification: 'https://sr/AT/low', country_code: 'AT')
+          .with(evidence_type_classification: 'https://sr/AT/low', country_code: 'AT', classifications: {})
       end
     end
 
@@ -215,6 +216,85 @@ RSpec.describe DirectoryLookup::Resolve do
     it 'fails, naming the country' do
       expect(lookup).to be_failure
       expect(lookup.error).to eq(key: :no_provider, errors: ['FI'])
+    end
+  end
+
+  # OOTS-269: `DSD:ERR:0005`, chapter 3.1.4 §4.4.3.3.
+  describe 'when the Data Service Directory asks the user a question' do
+    subject(:lookup) do
+      described_class.call(
+        evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'EL',
+        requirement_id: nil, evidence_type_id: nil, provider_classification_answers: answers,
+      )
+    end
+
+    let(:question) { build(:evidence_provider_classification) }
+    let(:asked) { CommonServicesError.new('DSD:ERR:0005 : précision', code: 'DSD:ERR:0005', classifications: [question]) }
+    let(:answers) { {} }
+    let(:data_service_directory) do
+      instance_double(DataServiceDirectoryClient).tap do |double|
+        allow(double).to receive(:data_services).and_raise(asked)
+        allow(double).to receive(:data_services).with(hash_including(classifications: { question.id => 'TC03' }))
+          .and_return([build(:data_service)])
+      end
+    end
+
+    it 'puts the questions on the context, and asks nothing more without answers' do
+      expect(lookup).to be_failure
+      expect(lookup.provider_classification_questions).to eq([question])
+      expect(data_service_directory).to have_received(:data_services).once
+    end
+
+    context 'with an answer to each' do
+      let(:answers) { { question.id => 'TC03', 'not-asked' => 'X' } }
+
+      # « MUST use the same evidence-type-classification parameter that was
+      # already used for the initial query », « MUST add a new query parameter
+      # for every EvidenceProviderClassification element ».
+      it 'asks the same query again with an answer per question, and those alone' do
+        expect(lookup).to be_success
+        expect(data_service_directory).to have_received(:data_services)
+          .with(evidence_type_classification: lookup.evidence_type.id, country_code: 'EL',
+            classifications: { question.id => 'TC03' })
+        expect(lookup.provider_classification_questions).to eq([question])
+      end
+    end
+
+    context 'with a blank answer' do
+      let(:answers) { { question.id => ' ' } }
+
+      it 'asks nothing more' do
+        expect(lookup).to be_failure
+        expect(data_service_directory).to have_received(:data_services).once
+      end
+    end
+
+    # Its identifier names a parameter of the query: one that is no UUID is
+    # not asked.
+    context 'when a question does not describe itself as the chapter requires' do
+      let(:question) { build(:evidence_provider_classification, id: 'queryId') }
+      let(:answers) { { 'queryId' => 'TC03' } }
+
+      it 'keeps the refusal, and asks nothing' do
+        expect(lookup.error).to include(key: :common_services_refused)
+        expect(lookup.provider_classification_questions).to be_nil
+        expect(data_service_directory).to have_received(:data_services).once
+      end
+    end
+
+    # RG7: the refusal is said as any other, the questions staying asked.
+    context 'when the answered query is refused' do
+      let(:answers) { { question.id => 'TC99' } }
+
+      before do
+        allow(data_service_directory).to receive(:data_services).with(hash_including(classifications: answers))
+          .and_raise(CommonServicesError.new('DSD:ERR:0001 : rien', code: 'DSD:ERR:0001'))
+      end
+
+      it 'fails on that refusal, keeping the questions' do
+        expect(lookup.error).to include(key: :common_services_refused, nothing_published: true)
+        expect(lookup.provider_classification_questions).to eq([question])
+      end
     end
   end
 end
