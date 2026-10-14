@@ -1,8 +1,9 @@
 # The second call of the requester interface: the French service provider,
 # having read on `GET /requete/:exchange_id` that a correspondent asks for a
 # preview, confirms it — giving again the beneficiary token, which the exchange
-# never kept, and the address of its own page where the user is to be brought
-# back. France then emits the second request of chapter 4.9 §2 step 12 and
+# never kept, the answers to the questions of the Data Service Directory the
+# first request carried, which it kept without their values, and the address of
+# its own page where the user is to be brought back. France then emits the second request of chapter 4.9 §2 step 12 and
 # answers with the link to present to the user, whose visit runs in parallel.
 #
 # `ActionController::API` and not `ApplicationController`: the caller is a
@@ -16,6 +17,7 @@ class PreviewConfirmationsController < ActionController::API
   before_action :check_awaited
   before_action :check_beneficiary
   before_action :check_resume_location
+  before_action :check_provider_classifications
 
   def create
     result = EvidenceRequest::ConfirmPreview.call(
@@ -23,6 +25,7 @@ class PreviewConfirmationsController < ActionController::API
       requester_id: @exchange.evidence_requester_id,
       encrypted_beneficiary: confirmation[:beneficiaire],
       resume_location: confirmation[:adresseRetour],
+      provider_classification_answers: answers,
       audit_trail:,
     )
 
@@ -33,7 +36,9 @@ class PreviewConfirmationsController < ActionController::API
 
   private
 
-  def confirmation = @confirmation ||= params.permit(:beneficiaire, :adresseRetour)
+  def confirmation = @confirmation ||= params.permit(:beneficiaire, :adresseRetour, classificationFournisseur: {})
+
+  def answers = confirmation[:classificationFournisseur].to_h
 
   def audit_trail = @audit_trail ||= AuditTrail.new
 
@@ -60,6 +65,15 @@ class PreviewConfirmationsController < ActionController::API
 
   def check_beneficiary
     refuse(:beneficiary_required) if confirmation[:beneficiaire].blank?
+  end
+
+  # The second request repeats the slot `EvidenceProviderClassification` of the
+  # first — chapter 4.9 §2 step 12 —, whose values the exchange did not keep: an
+  # answer to each question the first one carried, given again like the subject.
+  def check_provider_classifications
+    return if EvidenceProviderClassification.all_answered?(@exchange.request_basis&.provider_classifications.to_a, answers)
+
+    refuse(:provider_classifications_required)
   end
 
   # Where the user is brought back to must be somewhere a browser can go.

@@ -42,6 +42,7 @@ module EvidenceRequest
         requirement: resolved.requirement, provider: resolved.provider, recipient: resolved.recipient,
         data_service: resolved.data_service, evidence_type: resolved.evidence_type,
         preview_possible: resolved.preview_possible,
+        provider_classifications: resolved.provider_classifications.to_a,
       )
     end
   end

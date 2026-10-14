@@ -159,6 +159,13 @@ valide requete EDM-REQ-S
 # sujet, donc rien d'autre ne confronte les règles du slot `LegalPerson`.
 valide requetePersonneMorale EDM-REQ-C
 valide requetePersonneMorale EDM-REQ-S
+# La même requête, portant le slot `EvidenceProviderClassification` que la
+# France écrit quand le Data Service Directory a posé une question à l'usager :
+# une classification `codelist`, puis les trois types que le 3.1.4 publie.
+valide requeteClassification EDM-REQ-C
+valide requeteClassification EDM-REQ-S
+valide requeteTroisClassifications EDM-REQ-C
+valide requeteTroisClassifications EDM-REQ-S
 valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
 # La même réponse, à propos d'une personne morale : `sdg:IsAbout` étant un

@@ -94,6 +94,42 @@
 <%= provider_agent %>
     </rim:SlotValue>
   </rim:Slot>
+<%# Chapter 4.5.1 §3.4: « The SupportedValue class is used for the expression
+    of the user provided value … The remaining structure e.g. Identifier, Type,
+    Value Expression, Description must be adopted from the corresponding DSD
+    QueryResponse ». After `EvidenceProvider`, where the table of slots and the
+    published example put it. -%>
+<%- if provider_classifications.any? -%>
+  <rim:Slot name="EvidenceProviderClassification">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+<%- provider_classifications.each do |classification| -%>
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:EvidenceProviderClassification>
+<%- if classification.scheme_id.present? -%>
+          <sdg:Identifier schemeID="<%= escape(classification.scheme_id) %>"><%= escape(classification.id) %></sdg:Identifier>
+<%- else -%>
+          <sdg:Identifier><%= escape(classification.id) %></sdg:Identifier>
+<%- end -%>
+          <sdg:Type><%= escape(classification.type) %></sdg:Type>
+<%- if classification.value_expression.present? -%>
+          <sdg:ValueExpression><%= escape(classification.value_expression) %></sdg:ValueExpression>
+<%- end -%>
+<%- classification.descriptions.each do |language, question| -%>
+          <sdg:Description lang="<%= escape(language) %>"><%= escape(question) %></sdg:Description>
+<%- end -%>
+          <sdg:SupportedValue>
+<%- if classification.boolean? -%>
+            <sdg:BooleanValue><%= escape(classification.supported_value) %></sdg:BooleanValue>
+<%- else -%>
+            <sdg:StringValue><%= escape(classification.supported_value) %></sdg:StringValue>
+<%- end -%>
+          </sdg:SupportedValue>
+        </sdg:EvidenceProviderClassification>
+      </rim:Element>
+<%- end -%>
+    </rim:SlotValue>
+  </rim:Slot>
+<%- end -%>
   <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
   <query:Query queryDefinition="DocumentQuery">
     <rim:Slot name="<%= subject_slot_name %>">

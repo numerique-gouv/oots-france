@@ -45,6 +45,26 @@ RSpec.describe EvidenceRequest::Fetch do
     end
   end
 
+  # CA10 and CA11 of OOTS-269: what the user answered reaches the request.
+  context 'when the directory named the provider on the user\'s answer' do
+    let(:question) { build(:evidence_provider_classification) }
+    let(:arguments) { super().merge(provider_classification_answers: { question.id => 'TC03' }) }
+
+    before do
+      allow(common_services).to receive(:data_service).and_return(build(:data_service,
+        providers: [build(:evidence_provider, access_point:)], classifications: [question.answered('TC03')]))
+    end
+
+    it 'writes the answer into the request, and keeps the question alone for a second one' do
+      expect(fetch).to be_success
+      expect(fetch.exchange.reload.request_basis.provider_classifications).to eq([question])
+      expect(gateway).to have_received(:submit) do |envelope|
+        payload = Nokogiri::XML(envelope).at_xpath('//*[local-name()="payload"]/*[local-name()="value"]').text
+        expect(Base64.decode64(payload)).to include('<sdg:StringValue>TC03</sdg:StringValue>')
+      end
+    end
+  end
+
   context 'when it announces another one' do
     let(:access_point) { build(:access_point, :foreign, :outdated) }
 
@@ -229,7 +249,7 @@ RSpec.describe EvidenceRequest::Fetch do
       it 'asks the Data Service Directory for that type, and the journal names it' do
         expect(fetch).to be_success
 
-        expect(common_services).to have_received(:data_service).with('https://sr/AT/second', 'DE')
+        expect(common_services).to have_received(:data_service).with('https://sr/AT/second', 'DE', classifications: {})
         expect(gateway).to have_received(:submit) do |envelope|
           payload = Nokogiri::XML(envelope).at_xpath('//*[local-name()="payload"]/*[local-name()="value"]').text
           classifications = Nokogiri::XML(Base64.decode64(payload))
