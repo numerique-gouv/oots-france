@@ -120,6 +120,20 @@ FactoryBot.define do
     initialize_with { new(**attributes) }
   end
 
+  # The question the Greek Data Service Directory asks on the acceptance
+  # environment, as captured in `dsd_classification_requise_el_8b3b6a31`.
+  factory :evidence_provider_classification do
+    id { '1254f10f-406e-4f28-b1ba-d107b93fa264' }
+    scheme_id { 'https://sr.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases' }
+    type { EvidenceProviderClassification::CODE_LIST }
+    value_expression do
+      'https://query.cs.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases/8b3b6a31-9b62-48d7-8926-997df4f91bb5'
+    end
+    descriptions { { 'EN' => 'Projectathon test case', 'EL' => 'Σενάριο Projectathon' } }
+
+    initialize_with { new(**attributes) }
+  end
+
   factory :evidence_requester do
     id { '00000000000002' }
     name { "Ministère de l'enseignement supérieur" }

@@ -13,11 +13,45 @@ class DataServicesResponseParser < CommonServicesResponseParser
     post_code: 'PostCode', post_city_name: 'PostCityName',
   }.freeze
 
+  # Chapter 3.1.4 §4.4.3.3: « For each EvidenceProviderClassification of the
+  # DSD:ERR:0005 a separate answer must be provided by the user ».
+  REQUESTED_CLASSIFICATIONS = "./rim:Slot[@name='UserRequestedClassificationConcepts']/rim:SlotValue/" \
+                              'rim:Element/sdg:EvidenceProviderClassification'.freeze
+
   def providers = @read
 
   attr_reader :data_services
 
   private
+
+  # In the order the exception writes them, which is the order the questions
+  # are asked in: the chapter fixes none. Only `DSD:ERR:0005` asks any.
+  def requested_classifications(exception)
+    return [] unless attribute(exception, 'code') == ProviderClassificationRequired::CODE
+
+    all(exception, REQUESTED_CLASSIFICATIONS).map { |classification| build_classification(classification) }
+  end
+
+  # What a classification says of itself, whether the directory asks it or
+  # publishes it with the value a service matched (chapter 3.1.4 §4.3.2).
+  def build_classification(classification)
+    identifier = at(classification, './sdg:Identifier')
+
+    EvidenceProviderClassification.new(
+      id: identifier&.text&.strip,
+      scheme_id: attribute(identifier, 'schemeID'),
+      type: text(classification, './sdg:Type'),
+      value_expression: text(classification, './sdg:ValueExpression'),
+      descriptions: by_language(all(classification, './sdg:Description')),
+      supported_value: supported_value(classification),
+    )
+  end
+
+  # `sdg:StringValue` or `sdg:BooleanValue`, whichever the directory published.
+  def supported_value(classification)
+    text(classification, './sdg:SupportedValue/sdg:StringValue') ||
+      text(classification, './sdg:SupportedValue/sdg:BooleanValue')
+  end
 
   # The providers are what `@read` holds, so that an answer whose records carry
   # no access service is still rejected as unreadable — `R-DSD-RESP-S014` makes
@@ -36,6 +70,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
       providers: all(declared, './sdg:AccessService').map { |service| build(service) },
+      classifications: all(declared, './sdg:EvidenceProviderClassification').map { |found| build_classification(found) },
     )
   end
 

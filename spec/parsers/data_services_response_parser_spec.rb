@@ -196,4 +196,49 @@ RSpec.describe DataServicesResponseParser do
     expect { described_class.new(stripped) }
       .to raise_error(CommonServicesError, /adresse du fournisseur/)
   end
+
+  # Captured on the acceptance environment for the Greek evidence type the
+  # directory asks a question about: `DSD:ERR:0005`, then the answer to the same
+  # query carrying `TC03`.
+  describe 'a question about the provider' do
+    let(:asked) { common_services_answer('dsd_classification_requise_el_8b3b6a31').first }
+    let(:answered) { common_services_answer('dsd_data_services_el_8b3b6a31_tc03').first }
+
+    def refusal(body)
+      described_class.new(body)
+    rescue CommonServicesError => e
+      e
+    end
+
+    it 'refuses with the question the exception asks, read whole' do
+      expect(refusal(asked)).to have_attributes(code: 'DSD:ERR:0005', classifications: [
+        EvidenceProviderClassification.new(
+          id: '1254f10f-406e-4f28-b1ba-d107b93fa264',
+          scheme_id: 'https://sr.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases',
+          type: 'codelist',
+          value_expression: 'https://query.cs.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases/8b3b6a31-9b62-48d7-8926-997df4f91bb5',
+          descriptions: { 'EN' => 'Projectathon test case', 'EL' => 'Σενάριο Projectathon' },
+        ),
+      ])
+    end
+
+    # `R-DSD-ERR-S022` makes the slot mandatory; a directory leaving it out asks
+    # nothing anybody could answer.
+    it 'asks nothing of a refusal carrying no classification' do
+      stripped = asked.sub(%r{<rim:Slot name="UserRequestedClassificationConcepts">.*?</rim:Slot>}m, '')
+
+      expect(refusal(stripped).classifications).to be_empty
+    end
+
+    it 'reads no question off another refusal' do
+      expect(refusal(asked.sub('DSD:ERR:0005', 'DSD:ERR:0006')).classifications).to be_empty
+    end
+
+    it 'gives the service matched the classification and the value it supports' do
+      service = described_class.new(answered).data_services.first
+
+      expect(service.classifications.map { |found| [found.id, found.supported_value] })
+        .to eq([%w[1254f10f-406e-4f28-b1ba-d107b93fa264 TC03]])
+    end
+  end
 end
