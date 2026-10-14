@@ -15,15 +15,27 @@
         <eb:CollaborationInfo>
           <eb:Service><%= TestMessageBuilder::SERVICE %></eb:Service>
           <eb:Action><%= TestMessageBuilder::ACTION %></eb:Action>
+          <eb:ConversationId><%= TestMessageBuilder::CONVERSATION_ID %></eb:ConversationId>
         </eb:CollaborationInfo>
         <eb:MessageProperties>
           <eb:Property name="originalSender"><%= TestMessageBuilder::ORIGINAL_SENDER %></eb:Property>
           <eb:Property name="finalRecipient"><%= TestMessageBuilder::FINAL_RECIPIENT %></eb:Property>
         </eb:MessageProperties>
+        <eb:PayloadInfo>
+          <eb:PartInfo href="<%= TestMessageBuilder::PAYLOAD_ID %>">
+            <eb:PartProperties>
+              <eb:Property name="MimeType"><%= TestMessageBuilder::PAYLOAD_MIME_TYPE %></eb:Property>
+            </eb:PartProperties>
+          </eb:PartInfo>
+        </eb:PayloadInfo>
       </eb:UserMessage>
     </eb:Messaging>
   </soap:Header>
   <soap:Body>
-    <_1:submitRequest/>
+    <_1:submitRequest>
+      <payload payloadId="<%= TestMessageBuilder::PAYLOAD_ID %>" contentType="<%= TestMessageBuilder::PAYLOAD_MIME_TYPE %>">
+        <value><%= payload_in_base64 %></value>
+      </payload>
+    </_1:submitRequest>
   </soap:Body>
 </soap:Envelope>

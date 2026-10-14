@@ -39,9 +39,33 @@ RSpec.describe TestMessageBuilder do
     expect(properties.pluck('type')).to all(be_nil)
   end
 
-  it 'carries no payload' do
-    expect(document.xpath('//ws:submitRequest/*', namespaces)).to be_empty
-    expect(document.at_xpath('//eb:PayloadInfo', namespaces)).to be_nil
+  it 'carries the payload of the gateway\'s own test message, outside the SOAP body' do
+    submitted = document.xpath('//ws:submitRequest/*', namespaces)
+
+    expect(submitted.map(&:name)).to eq(['payload'])
+    expect(submitted.first['payloadId']).to eq('cid:message')
+    expect(submitted.first['contentType']).to eq('text/xml')
+    expect(Base64.strict_decode64(submitted.first.at_xpath('value').text))
+      .to eq('<?xml version="1.0" encoding="UTF-8"?><hello>world</hello>')
+  end
+
+  it 'submits no bodyload, which the WS plugin would put in the SOAP body' do
+    expect(document.at_xpath('//bodyload')).to be_nil
+  end
+
+  it 'declares that payload in the ebMS header' do
+    parts = document.xpath('//eb:PayloadInfo/eb:PartInfo', namespaces)
+
+    expect(parts.pluck('href')).to eq(['cid:message'])
+    expect(parts.first.at_xpath('eb:PartProperties/eb:Property[@name="MimeType"]', namespaces).text).to eq('text/xml')
+  end
+
+  it 'belongs to the conversation of the gateway\'s own test message' do
+    expect(text('//eb:CollaborationInfo/eb:ConversationId')).to eq('1')
+  end
+
+  it 'names no agreement' do
+    expect(document.at_xpath('//eb:AgreementRef', namespaces)).to be_nil
   end
 
   it 'escapes the identity of the party' do
