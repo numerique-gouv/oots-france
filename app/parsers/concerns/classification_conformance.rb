@@ -27,12 +27,6 @@ module ClassificationConformance
   include OotsNamespaces
   include AgentConformance
 
-  # `R-EDM-REQ-C019`: a bare UUID, with neither the `urn:uuid:` prefix
-  # `R-EDM-REQ-S004` puts on the request's own identifier nor any constraint on
-  # the version nibble and the variant one. Case-insensitive, its assertion
-  # carrying the `i` flag where `C008`'s does not.
-  CLASSIFICATION_IDENTIFIER = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/i
-
   # `R-EDM-REQ-C097`, copied from the Schematron dot for dot. Its assertion
   # escapes the point of the optional environment midfix and no other, so every
   # remaining `.` matches any character at all and
@@ -51,19 +45,6 @@ module ClassificationConformance
   # normalising. What `C097` admits satisfies this too, save on one point: a
   # `schemeID` ending in a blank breaks this rule alone.
   SCHEME_SHORT_NAME = /\A[A-Za-z0-9]{2,50}\z/
-
-  # `R-EDM-REQ-C095`, compared as its assertion compares — raw, with neither
-  # `normalize-space` nor an `i` flag, so ` codelist ` and `Codelist` are
-  # refused.
-  TYPES = %w[string boolean codelist].freeze
-
-  # The type whose three extra rules `require_code_list_expression` reads, and
-  # the one the example published with chapter 4.5.1 carries.
-  CODE_LIST = 'codelist'.freeze
-
-  # The types `R-EDM-REQ-C103` holds to a `sdg:StringValue`, where `C104` holds
-  # `boolean` to a `sdg:BooleanValue`.
-  STRING_TYPES = %w[codelist string].freeze
 
   private
 
@@ -92,7 +73,7 @@ module ClassificationConformance
     require_classification_identifiers(classification)
     types = require_classification_type(classification)
     require_supported_values(classification, types)
-    require_code_list_expression(classification) if types.include?(CODE_LIST)
+    require_code_list_expression(classification) if types.include?(EvidenceProviderClassification::CODE_LIST)
     require_classification_descriptions(classification)
   end
 
@@ -110,7 +91,7 @@ module ClassificationConformance
   # `squish` is `normalize-space`, which the assertion applies before matching.
   def require_classification_uuid(identifier)
     id = identifier.text.squish
-    return if id.match?(CLASSIFICATION_IDENTIFIER)
+    return if id.match?(EvidenceProviderClassification::IDENTIFIER)
 
     refuse('R-EDM-REQ-C019', 'parsers.evidence_request.classification_id_not_a_uuid',
       id: id.presence || I18n.t('parsers.evidence_request.unnamed_classification_id'))
@@ -146,7 +127,7 @@ module ClassificationConformance
     refuse('R-EDM-REQ-C020', 'parsers.evidence_request.classification_without_type') if declared.first&.text.to_s.squish.empty?
 
     types = declared.map(&:text)
-    return types if types.intersect?(TYPES)
+    return types if types.intersect?(EvidenceProviderClassification::TYPES)
 
     refuse('R-EDM-REQ-C095', 'parsers.evidence_request.classification_type_unexpected', type: types.first)
   end
@@ -166,7 +147,7 @@ module ClassificationConformance
     refuse('R-EDM-REQ-C023', 'parsers.evidence_request.classification_supported_value_empty') if values.any? { |value| value.text.squish.empty? }
     refuse('R-EDM-REQ-C105', 'parsers.evidence_request.classification_values_counted', count: values.size) unless values.one?
 
-    require_value_element(values, 'StringValue', 'R-EDM-REQ-C103') if types.intersect?(STRING_TYPES)
+    require_value_element(values, 'StringValue', 'R-EDM-REQ-C103') if types.intersect?(EvidenceProviderClassification::STRING_TYPES)
     require_value_element(values, 'BooleanValue', 'R-EDM-REQ-C104') if types.include?('boolean')
   end
 
