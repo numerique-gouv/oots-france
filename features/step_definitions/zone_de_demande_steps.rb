@@ -29,6 +29,10 @@ DOCUMENTS_PAGE = %r{\A/admin/demo/v\d\.\d/T1/documents\z}
 # request, which offers none.
 NAMED_COUNTRY = 'select[name=pays] option:checked, .fr-card__desc .country-tag'.freeze
 
+# What the foot of a card says under the questions of the Data Service
+# Directory: the document and its provider, or the refusal standing in for them.
+RESOLUTION = '.requirement-card__actions [data-demo-card-target="resolution"]'.freeze
+
 # What an answer replaces, and what says which outcome is on screen.
 BODY = '.demo-request__body'.freeze
 
@@ -391,14 +395,14 @@ end
 # The two names requirement 27 of chapter 1 §2 has shown before any request,
 # each marked as published by the directories.
 Alors('la carte nomme le type {string} et le fournisseur {string}') do |type, provider|
-  named = '.requirement-card__actions .directory-value'
+  named = "#{RESOLUTION} .directory-value"
 
   expect(find(CARD)).to have_css("#{named}:first-of-type", text: /\A#{Regexp.escape(type)}/)
   expect(find(CARD)).to have_css(named, text: /\A#{Regexp.escape(provider)}/)
 end
 
 Alors('la carte ne nomme aucun fournisseur') do
-  expect(find(CARD)).to have_no_css('.requirement-card__actions .directory-value')
+  expect(find(CARD)).to have_no_css("#{RESOLUTION} .directory-value")
 end
 
 Alors('la liste des types de la carte affiche {string}') do |title|
@@ -619,3 +623,247 @@ def wait_until(complaint, seconds: Capybara.default_max_wait_time)
     sleep 0.05
   end
 end
+
+# The address a card posts the answers to the questions of the Data Service
+# Directory to, in either line.
+ANSWER_ADDRESS = '*/T1/classification_fournisseur*'.freeze
+
+# The Greek evidence type the Data Service Directory asks a question about on
+# the acceptance environment, the question it asks, and the list its
+# `sdg:ValueExpression` addresses — `dsd_classification_requise_el_8b3b6a31`.
+GREEK_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/EL/8b3b6a31-9b62-48d7-8926-997df4f91bb5'.freeze
+GREEK_CODE_LIST =
+  'https://query.cs.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases/8b3b6a31-9b62-48d7-8926-997df4f91bb5'.freeze
+
+# Each question by the words the card asks it in: the first is the one the
+# capture carries, the two others are written beside it to make the three types
+# chapter 3.1.4 §4.4.3.3 has a requester support.
+QUESTIONS = {
+  'Projectathon test case' => '1254f10f-406e-4f28-b1ba-d107b93fa264',
+  'Were you born abroad?' => '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a01',
+  'Your passport number' => '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a02',
+}.freeze
+
+# The control each form of question is asked in, as the scenario names it.
+QUESTION_FORMS = { 'liste' => 'select', '"Yes" ou "No"' => 'radio', 'champ texte' => 'text' }.freeze
+
+# The slot that carries the questions of the capture, and the one element it
+# holds.
+REQUESTED_CONCEPTS = %r{<rim:Slot name="UserRequestedClassificationConcepts">.*?</rim:Slot>}m
+QUESTION_ELEMENT = %r{<rim:Element xsi:type="rim:AnyValueType">.*?</rim:Element>}m
+
+# Greece named in the code list as the scenarios name it, its two evidence types
+# published for the requirement of the card, the question of its Data Service
+# Directory on the first, the list of values the question addresses, and the
+# answer to `TC03` naming `AP_EL_02`. Doubled after the `Contexte`, so that
+# WebMock prefers these, and the page asked for again so that its list of
+# countries carries the name.
+Étantdonné('la Grèce posant une question sur le fournisseur de {string}') do |_title|
+  stub_greece
+  stub_dsd_for_greece(common_services_answer('dsd_classification_requise_el_8b3b6a31'))
+  stub_greek_answer({ QUESTIONS.fetch('Projectathon test case') => 'TC03' }, 'dsd_data_services_el_8b3b6a31_tc03')
+  visit current_path
+  mark_the_page
+end
+
+# The capture's question, then a `boolean` and a `string` written after it in
+# the same slot: the acceptance environment asks no such thing, so the answer is
+# fabricated beside the capture and its signature doubled.
+Étantdonné('la Grèce posant une question de chaque type sur le fournisseur de {string}') do |_title|
+  stub_directory_signature
+  stub_greece
+  body = common_services_answer('dsd_classification_requise_el_8b3b6a31').first.sub(QUESTION_ELEMENT) do |codelist|
+    codelist + fabricated_question('boolean', 'Were you born abroad?') + fabricated_question('string', 'Your passport number')
+  end
+  stub_dsd_for_greece([body, { 'content-type' => 'application/x-ebrs+xml' }])
+  stub_greek_answer(
+    { QUESTIONS.fetch('Projectathon test case') => 'TC03', QUESTIONS.fetch('Were you born abroad?') => 'true',
+      QUESTIONS.fetch('Your passport number') => 'AB123456' }, 'dsd_data_services_el_8b3b6a31_tc03'
+  )
+  visit current_path
+  mark_the_page
+end
+
+# `R-DSD-ERR-S022` makes the slot mandatory in a `DSD:ERR:0005`; a directory
+# leaving it out asks nothing anybody could answer.
+Quand('la Grèce ne pose plus que sa question sans classification') do
+  stub_directory_signature
+  body = common_services_answer('dsd_classification_requise_el_8b3b6a31').first.sub(REQUESTED_CONCEPTS, '')
+  stub_dsd_for_greece([body, { 'content-type' => 'application/x-ebrs+xml' }])
+end
+
+Étantdonné('la liste des valeurs de la question injoignable') do
+  stub_request(:get, GREEK_CODE_LIST).to_return(status: 503)
+end
+
+# `DSD:ERR:0001` is the refusal captured for France, whose signature covers the
+# body alone; `DSD:ERR:0006`, which the acceptance environment does not produce,
+# is that same capture under the code the table of chapter 3.1.4 §4.4.2 gives
+# it, its signature doubled.
+Étantdonné('le Data Service Directory refusant la réponse {string} en {string}') do |value, code|
+  body, headers = common_services_answer('dsd_aucun_service_fr')
+  unless code == 'DSD:ERR:0001'
+    stub_directory_signature
+    body = body.sub('DSD:ERR:0001', code)
+  end
+
+  stub_greek_answer({ QUESTIONS.fetch('Projectathon test case') => value }, [body, headers])
+end
+
+Étantdonné('la réponse aux questions répondue en {string} sans l\'en-tête "Deferred-Fragment", puis coupée, devant le navigateur') do |status|
+  answer_requests.answer(status: status.to_i, body: BAD_GATEWAY_PAGE).cut
+end
+
+# Whatever the control: the value a list offers, the label of a radio button,
+# the words typed in a field.
+Quand("l'usager répond {string} à la question {string}") do |value, question|
+  group = question_group(question)
+
+  case question_control(group)
+  when 'select' then group.find('select').find('option', exact_text: value).select_option
+  when 'radio' then group.find('label', exact_text: value).click
+  else group.find('input').tap { |field| field.set(value) }.send_keys(:enter)
+  end
+end
+
+Alors('la carte pose la question {string} dans une liste ouverte sur {string}') do |question, prompt|
+  expect(question_control(question_group(question))).to eq('select')
+  expect(question_group(question).find('select')).to have_css('option:checked', exact_text: prompt)
+end
+
+Alors('la carte pose la question {string} dans un champ texte') do |question|
+  expect(question_control(question_group(question))).to eq('text')
+end
+
+Alors("la carte pose, dans l'ordre, les questions :") do |table|
+  asked = all("#{CARD} [data-demo-card-question]").map do |group|
+    [group.first('label, legend').text.sub(directory_value_meaning, '').squish, question_control(group)]
+  end
+
+  expect(asked).to eq(table.hashes.map { |row| [row['question'], QUESTION_FORMS.fetch(row['forme'])] })
+end
+
+Alors('la question {string} offre {string}') do |question, value|
+  expect(question_group(question).find('select')).to have_css('option', exact_text: value)
+end
+
+Alors("la question {string} n'offre plus {string}") do |question, value|
+  expect(question_group(question).find('select')).to have_no_css('option', exact_text: value)
+end
+
+Alors('la question {string} affiche {string}') do |question, value|
+  group = question_group(question)
+
+  if question_control(group) == 'select'
+    expect(group.find('select')).to have_css('option:checked', exact_text: value)
+  else
+    expect(group.find('input').value).to eq(value)
+  end
+end
+
+# Each answer leaves as it is given, as a country or a type chosen does.
+Alors("la carte n'offre pas de bouton pour répondre") do
+  expect(find(CARD)).to have_no_css('form.requirement-card__questions button')
+end
+
+Alors("la carte n'offre aucune question") do
+  expect(find(CARD)).to have_no_css('[data-demo-card-question]')
+end
+
+Alors('la carte affiche sous ses questions {string}') do |sentence|
+  expect(page).to have_css("#{CARD} [data-demo-card-target='answerFailure']", text: sentence, normalize_ws: true)
+end
+
+Alors("le Data Service Directory n'a reçu aucune réponse") do
+  expect(directory_queries.select { |query| QUESTIONS.values.any? { |id| query.key?(id) } }).to be_empty
+end
+
+# Chapter 3.1.4 §4.4.3.3: the same query, a parameter per question named by
+# its identifier.
+Alors('le Data Service Directory a reçu la réponse {string} à la question {string}') do |value, question|
+  expect(answered_query(QUESTIONS.fetch(question) => value)).to have_been_made.at_least_once
+end
+
+# The rendering of a card that has its answer replays both: the exception of
+# the first is the only source of the questions.
+Alors('le Data Service Directory a reçu sa requête sans la réponse, puis avec elle') do
+  question = QUESTIONS.fetch('Projectathon test case')
+
+  expect(answered_query(question => 'TC03')).to have_been_made.at_least_twice
+  asked = directory_queries.select { |query| query['evidence-type-classification'] == GREEK_TYPE && !query.key?(question) }
+
+  expect(asked.size).to be >= 2
+end
+
+Alors('le contrat a reçu la demande avec la réponse {string} à la question {string}') do |value, question|
+  wait_until("Le contrat n'a reçu aucune demande portant la réponse #{value}.") do
+    contract_demands.any? do |demand|
+      Rack::Utils.parse_nested_query(demand.uri.query.to_s).dig('classificationFournisseur', QUESTIONS.fetch(question)) == value
+    end
+  end
+end
+
+def answer_requests = intercepted_requests(pattern: ANSWER_ADDRESS)
+
+# The queries the Data Service Directory received, each read as the route reads
+# it, counted the way `contract_demands` counts the demands of the contract.
+def directory_queries
+  WebMock::RequestRegistry.instance.requested_signatures.hash.flat_map do |signature, times|
+    next [] unless signature.uri.path == '/dsd/rest/search'
+
+    [Rack::Utils.parse_query(signature.uri.query.to_s)] * times
+  end
+end
+
+def stub_greece
+  stub_code_list(country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('EL' => 'Greece'))
+  stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_el', country: 'EL')
+  stub_request(:get, GREEK_CODE_LIST)
+    .to_return(body: Rails.root.join('spec/fixtures/common_services/liste_classification_el_projectathon.gc').read,
+      headers: { 'Content-Type' => 'text/plain;charset=UTF-8' })
+end
+
+def stub_dsd_for_greece((body, headers))
+  stub_directory_body('dsd', 'dataservices-by-evidencetype', body, headers, evidence_type: GREEK_TYPE)
+end
+
+# Declared after the question, so that WebMock, which takes the last stub
+# matching, serves it to the query carrying these answers alone.
+def stub_greek_answer(answers, answer)
+  body, headers = answer.is_a?(String) ? common_services_answer(answer) : answer
+
+  stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/dsd/rest/search")
+    .with(query: hash_including('evidence-type-classification' => GREEK_TYPE, **answers))
+    .to_return(body:, headers:)
+end
+
+def answered_query(answers)
+  a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/dsd/rest/search")
+    .with(query: hash_including('evidence-type-classification' => GREEK_TYPE, 'country-code' => 'EL', **answers))
+end
+
+def fabricated_question(type, question)
+  <<~XML
+    <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:EvidenceProviderClassification>
+            <sdg:Identifier>#{QUESTIONS.fetch(question)}</sdg:Identifier>
+            <sdg:Type>#{type}</sdg:Type>
+            <sdg:Description lang="EN">#{question}</sdg:Description>
+        </sdg:EvidenceProviderClassification>
+    </rim:Element>
+  XML
+end
+
+# The group of one question, found by the words it is asked in.
+def question_group(question)
+  find("#{CARD} [data-demo-card-question]", text: question)
+end
+
+def question_control(group)
+  return 'select' if group.has_css?('select', wait: false)
+  return 'radio' if group.has_css?('input[type=radio]', visible: :all, wait: false)
+
+  'text'
+end
+
+def directory_value_meaning = I18n.t('components.directory_value.meaning')
