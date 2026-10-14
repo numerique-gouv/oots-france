@@ -9,8 +9,14 @@ module EvidenceRequest
   # `requirement_id` is what says which. A caller naming none is answered the
   # first requirement the country publishes evidence for.
   #
-  # Only the first type is kept. Letting the user choose among several is
-  # chapter 4.10.
+  # The type the caller names in `evidence_type_id` is kept, and the first the
+  # Evidence Broker publishes otherwise. Requirement 26 of chapter 1 §2 —
+  # « Evidence requesters shall give users the possibility to select and
+  # request the types of evidence » — and chapter 3.2.2 §2.3 — « The user can
+  # select an 'Evidence Type List' amongst the ones proposed by the Evidence
+  # Broker » — leave the choice to the user, and the screens of the
+  # demonstration are where one makes it; a French procedure naming none gets
+  # the first.
   #
   # `outside_procedure` resolves the requirement named by the second query of
   # the Evidence Broker alone, whether or not the broker ties it to the
@@ -56,7 +62,16 @@ module EvidenceRequest
 
     def keep(required)
       context.requirement = required.requirement
-      context.evidence_type = required.evidence_types.first
+      context.evidence_type = evidence_type_id.present? ? named_type(required) : required.evidence_types.first
+    end
+
+    # No fallback on the first: the type named is the one the user chose, and
+    # sending another would ask for a document nobody confirmed.
+    def named_type(required)
+      named = required.evidence_types.find { |type| type.id == evidence_type_id }
+      return named if named
+
+      fail_with_error(:unknown_evidence_type, errors: [unknown_evidence_type(required)])
     end
 
     def outside_procedure? = context.outside_procedure.present?
@@ -98,7 +113,14 @@ module EvidenceRequest
         requirement: requirement_id, procedure: context.procedure_code)
     end
 
+    def unknown_evidence_type(required)
+      I18n.t('interactors.evidence_request.resolve_evidence_type.unknown_evidence_type',
+        evidence_type: evidence_type_id, requirement: required.requirement.id, country: context.country_code)
+    end
+
     def requirement_id = context.requirement_id
+
+    def evidence_type_id = context.evidence_type_id
 
     def common_services = context.common_services ||= Directories::CommonServices.new
   end

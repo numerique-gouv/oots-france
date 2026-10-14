@@ -35,8 +35,13 @@ module Demo
     # Broker ties it to the procedure, another parameter no French procedure has
     # to set: a card says what it resolved, and the request goes to what it
     # showed.
+    #
+    # `evidence_type_id` is the type the card named, which the user chose where
+    # the country publishes several: the contract asks for that one rather than
+    # the first.
     def fetch(requester_id:, procedure_code:, country_code:, encrypted_beneficiary:,
-              conversation_id: nil, requirement_id: nil, specification: nil, outside_procedure: false)
+              conversation_id: nil, requirement_id: nil, evidence_type_id: nil, specification: nil,
+              outside_procedure: false)
       response = connection.get("#{Settings.oots_france_url}#{PATH}", {
         idRequeteur: requester_id,
         codeDemarche: procedure_code,
@@ -45,6 +50,7 @@ module Demo
         previsualisationRequise: PREVIEW_POSSIBLE,
         idConversation: conversation_id,
         idExigence: requirement_id,
+        idTypeJustificatif: evidence_type_id,
         specification:,
         exigenceHorsDemarche: (OUTSIDE_PROCEDURE if outside_procedure),
       }.compact)

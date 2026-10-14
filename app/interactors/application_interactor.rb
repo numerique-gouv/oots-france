@@ -25,10 +25,10 @@ class ApplicationInteractor
   # absent from here has no wording, and the console would render an empty
   # alert title.
   FAILURES = %i[common_services_refused demo_evidence_empty demo_locked demo_refused demo_unexpected
-                demo_preview_unconfirmed demo_unplaceable demo_unreachable
+                demo_preview_unconfirmed demo_unplaceable demo_unreachable evidence_type_unchosen
                 gateway_refused identification_refused invalid_configuration
                 invalid_directory_entry invalid_token no_evidence_type no_provider preview_not_awaited unknown_country
-                unknown_procedure unknown_requester unknown_requirement unannounced_specification
+                unknown_evidence_type unknown_procedure unknown_requester unknown_requirement unannounced_specification
                 unsupported_specification].freeze
 
   # A reading of a received message that may itself be unreadable, where that

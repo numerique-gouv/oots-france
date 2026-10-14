@@ -35,6 +35,8 @@ module HoldsDemoCountries
     (chosen_countries.keys | asked).index_with { |uuid| card_country(uuid) }
   end
 
+  def held_card?(requirement_uuid) = held_country(requirement_uuid).present?
+
   # `nil` while the card is free to change country.
   def held_country(requirement_uuid)
     demo_request_for(requirement_uuid)&.country_code if demo_outcome_for(requirement_uuid)&.holds_country?

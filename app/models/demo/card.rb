@@ -48,6 +48,12 @@ module Demo
     # The member state each card of the journey stands in, by requirement.
     def self.countries(journey_id) = where(journey_id:).pluck(:requirement_uuid, :country_code).to_h
 
+    # The evidence type each card of the journey names, by requirement, where it
+    # names one.
+    def self.evidence_types(journey_id)
+      where(journey_id:).where.not(evidence_type_id: nil).pluck(:requirement_uuid, :evidence_type_id).to_h
+    end
+
     def named_evidence = Demo::NamedEvidence.new(slice(*NAMES))
 
     # The requirement as the row keeps it, which is what an added card is

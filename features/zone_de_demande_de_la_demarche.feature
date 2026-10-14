@@ -15,7 +15,10 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   carte ajoutée depuis le catalogue de l'Evidence Broker s'y tient sous celles
   de la démarche, change de pays, se demande et se retire comme elles. Le
   serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
-  reconstruit.
+  reconstruit. Le choix du type de justificatif s'y joue de même, quand le pays
+  en publie plusieurs pour l'exigence : rien n'est choisi à la place de
+  l'usager, la carte se résout sur le type qu'il choisit, et la demande part
+  avec lui.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -130,7 +133,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: la carte nomme ce que publie le pays choisi, et la demande part vers lui
     Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Alors la carte nomme le pays "Finland (FI)"
-    Et la carte annonce "Satisfied by the following documents in 🇫🇮 Finland (FI)"
+    Et la carte annonce "Keha v. 2.0"
     Et la page affiche "Keha v. 2.0"
     Et la page des justificatifs n'a pas été rechargée
     Et le contrat n'a reçu aucune demande
@@ -189,3 +192,101 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la page n'affiche pas la carte "(TEST) Test Requirement 2"
     Quand l'usager ajoute la carte "(TEST) Test Requirement 2"
     Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finland (FI)"
+
+  Scénario: la carte offre les types que le pays publie, se résout sur celui que l'usager choisit, et la demande part avec lui
+    Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
+    Et l'usager identifié sur la page des justificatifs d'un parcours en 1.2
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Alors la liste des types de la carte affiche "Select a document"
+    Et la liste des types de la carte offre "Test Evidence Austria (AT)" puis "Austrian Test Evidence Type without Reauthentication"
+    Et la carte ne nomme aucun fournisseur
+    Et la page n'affiche aucun bouton de demande
+    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
+    Et la page affiche le bouton "Request the document"
+    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Et la liste des types de la carte n'offre plus "Select a document"
+    Et la carte annonce "Test Evidence Provider Austria (AT)"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Alors la carte nomme le type "Austrian Test Evidence Type without Reauthentication" et le fournisseur "Test Evidence Provider Austria (AT)"
+    Et la liste des types de la carte affiche "Austrian Test Evidence Type without Reauthentication"
+    Et la page des justificatifs n'a pas été rechargée
+    Et le contrat n'a reçu aucune demande
+    Quand l'usager clique sur "Request the document"
+    Alors le contrat a reçu la demande pour le type "Austrian Test Evidence Type without Reauthentication"
+    Quand l'usager recharge la page des justificatifs
+    Alors la carte n'offre pas de liste des pays
+    Et la carte n'offre pas de liste des types
+    Et la carte nomme le pays "Austria (AT)"
+    Et la carte nomme le type "Austrian Test Evidence Type without Reauthentication" et le fournisseur "Test Evidence Provider Austria (AT)"
+
+  Scénario: un type que personne ne fournit, ou dont le fournisseur ne parle pas la version du parcours, se choisit sans rendre l'exigence insatisfaisable
+    Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
+    Et aucun fournisseur publié en Autriche pour "Austrian Test Evidence Type without Reauthentication"
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Alors la page affiche "No provider listed by Austria for this evidence"
+    Et la page n'affiche aucun bouton de demande
+    Et la liste des types de la carte affiche "Austrian Test Evidence Type without Reauthentication"
+    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la page affiche "This provider does not support OOTS 2.0"
+    Et la page n'affiche aucun bouton de demande
+    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
+
+  Scénario: un choix de type resté sans réponse laisse la carte sur son type et le dit, jusqu'au choix suivant qui aboutit
+    Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
+    Et le choix du type répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la carte affiche "The document could not be changed: this page could not reach the service."
+    Et la carte annonce "The document could not be changed: this page could not reach the service."
+    Et la liste des types de la carte affiche "Select a document"
+    Et la carte ne nomme aucun fournisseur
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la carte affiche "The document could not be changed: this page could not reach the service."
+    Et la liste des types de la carte affiche "Select a document"
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
+    Et la page n'affiche pas "The document could not be changed"
+    Et la page des justificatifs n'a pas été rechargée
+    Quand le choix suivant du type est coupé devant le navigateur
+    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Alors la carte affiche "The document could not be changed: this page could not reach the service."
+    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Et la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
+
+  Scénario: un choix de type refusé par la page la recharge, et une session finie mène à la page de connexion
+    Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
+    Et le choix du type répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la page des justificatifs a été rechargée
+    Et la page n'affiche pas "The document could not be changed"
+    Quand le compte de l'administrateur est supprimé
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Alors la page de connexion s'affiche
+
+  Scénario: le type choisi tient au rechargement, et un autre pays ou une nouvelle identification le défont
+    Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager recharge la page des justificatifs
+    Alors la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Alors la liste des pays de la carte affiche "Finland (FI)"
+    Et la carte n'offre pas de liste des types
+    Et la page affiche "Keha v. 2.0"
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Alors la liste des types de la carte affiche "Select a document"
+    Et la page n'affiche aucun bouton de demande
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager s'identifie de nouveau, dans un parcours en 1.2
+    Alors la liste des pays de la carte affiche "France (FR)"
+    Et la carte n'offre pas de liste des types
+    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Alors la liste des types de la carte affiche "Select a document"
+    Et la page n'affiche aucun bouton de demande

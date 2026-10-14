@@ -56,6 +56,7 @@ module HoldsDemoNames
   # the register no business knowing how a card words itself.
   def named_evidence_of(wording)
     ::Demo::NamedEvidence.new(
+      evidence_type_id: wording.evidence_type_id,
       evidence_type_name: wording.evidence_type, evidence_type_language: wording.evidence_type_language,
       provider_name: wording.provider, provider_language: wording.provider_language,
       requirement_id: wording.requirement_id, requirement_name: wording.requirement,

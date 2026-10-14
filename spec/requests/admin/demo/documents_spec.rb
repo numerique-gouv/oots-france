@@ -172,16 +172,17 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(titres).to eq(['(TEST) Test Requirement 2', 'Proof of enrolment in academic tertiary education'])
     end
 
-    # The jurisdiction the documents would come from, named on the card as the
-    # directory pages name one: a requirement is satisfied somewhere, and
-    # « somewhere » is a country.
-    it 'names the country the documents would be requested in' do
+    # CA15 of OOTS-263: the list of countries names the country the documents
+    # would be requested in, and a card whose country publishes a single type
+    # says nothing more above the rule — the foot names the type.
+    it 'names the country in its list alone, a single type leaving nothing to choose' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-      contenu = response.parsed_body.at_css('main .requirement-card .fr-card__desc')
+      carte = response.parsed_body.at_css('main .requirement-card')
 
-      expect(contenu.text.squish).to eq('Satisfied by the following documents in 🇫🇷 France (FR)')
-      expect(contenu.at_css('.country-tag')).to be_present
+      expect(carte.at_css('select option[selected]')['value']).to eq('FR')
+      expect(carte.at_css('.fr-card__desc').text.squish).to be_empty
+      expect(carte.text).not_to include('Satisfied by', 'Document to request')
     end
 
     # The code list names the countries, and it is read like every other: a
@@ -366,7 +367,6 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(options.find { |option| option['selected'] }['value']).to eq('FR')
       expect(options.map(&:text).first(3)).to eq(['🇦🇹 AT', '🇧🇪 BE', '🇧🇬 BG'])
       expect(options.map(&:text)).to include('🇫🇮 Finland (FI)', '🇬🇷 EL')
-      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Satisfied by the following documents in 🇫🇷 France (FR)')
     end
 
     # CA2 and RG6: changing the country asks the directories alone.
@@ -379,8 +379,6 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('queryId' => a_string_including('requirements-by-procedure'),
           'country-code' => 'FR'))).to have_been_made.at_least_once
-      expect(carte.at_css('.fr-card__desc').text.squish)
-        .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
       expect(carte.text).to include('Dummy PDF - FI', 'Keha v. 2.0')
       expect(carte.at_css('select option[selected]')['value']).to eq('FI')
       expect(contract_demands).to be_empty
@@ -395,8 +393,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(response.headers['Deferred-Fragment']).to eq('1')
       expect(fragment.css('header, footer, nav')).to be_empty
-      expect(fragment.at_css("#exigence-#{exigence} .fr-card__desc").text.squish)
-        .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+      expect(fragment.at_css("#exigence-#{exigence}").text).to include('Dummy PDF - FI')
       expect(fragment.at_css('select option[selected]')['value']).to eq('FI')
       expect(contract_demands).to be_empty
     end
@@ -500,8 +497,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
         expect(response).to have_http_status(:ok)
         expect(response.headers['Deferred-Fragment']).to eq('1')
-        expect(response.parsed_body.at_css("#exigence-#{seconde} .fr-card__desc").text.squish)
-          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+        expect(response.parsed_body.at_css("#exigence-#{seconde} select option[selected]")['value']).to eq('FI')
       end
 
       it 'keeps neither the names nor the countries in the session, which stays under the bound' do
@@ -578,13 +574,13 @@ RSpec.describe 'Admin::Demo::Documents' do
         post demande_path
       end
 
-      # CA5, first half.
-      it 'names the country of the request and offers no choice' do
+      # CA5, first half; and CA15 of OOTS-263: the country in its box alone.
+      it 'names the country of the request in its box and offers no choice' do
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
         expect(carte.css('select')).to be_empty
-        expect(carte.at_css('.fr-card__desc').text.squish)
-          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+        expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
+        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
       end
 
       it 'names it too once the document is in hand' do
@@ -601,13 +597,11 @@ RSpec.describe 'Admin::Demo::Documents' do
         choose_country('DE')
 
         expect(response.parsed_body.css('select')).to be_empty
-        expect(response.parsed_body.at_css('.fr-card__desc').text.squish)
-          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+        expect(response.parsed_body.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
 
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-        expect(carte.at_css('.fr-card__desc').text.squish)
-          .to eq('Satisfied by the following documents in 🇫🇮 Finland (FI)')
+        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
         expect(eb_asked('evidence-types-by-requirement', 'DE')).not_to have_been_made
       end
 

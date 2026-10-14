@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:6a6b450e-70db-4734-83ba-c52976a3ffbf">
+            <rim:Slot name="DataServiceEvidenceType">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:DataServiceEvidenceType>
+                        <sdg:Identifier>f8ea170d-09fc-4381-88d3-645fa978c132</sdg:Identifier>
+                        <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/cb10c17a-8d2a-40af-bb77-e797182280bf</sdg:EvidenceTypeClassification>
+                        <sdg:Title lang="EN">Test Evidence Austria (AT)</sdg:Title>
+                        <sdg:Title lang="DE">Test Nachweisart Österreich (AT)</sdg:Title>
+                        <sdg:Description lang="EN">Test Evidence Type Austria (AT) Description</sdg:Description>
+                        <sdg:Description lang="DE">Test Nachweisart Österreich (AT) Beschreibung</sdg:Description>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/json</sdg:Format>
+                        </sdg:DistributedAs>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/xml</sdg:Format>
+                        </sdg:DistributedAs>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/pdf</sdg:Format>
+                        </sdg:DistributedAs>
+                        <sdg:AccessService>
+                            <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9915">SDG-OOP-AT-SCONAP-Q</sdg:Identifier>
+                            <sdg:Name lang="EN">SDG-OOP-AT-SCONAP-Q</sdg:Name>
+                            <sdg:ConformsTo>oots-edm:v1.0</sdg:ConformsTo>
+                            <sdg:ConformsTo>oots-edm:v1.2</sdg:ConformsTo>
+                            <sdg:Publisher>
+                                <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9915">BMF-SDG-OOP-AT-TEST-EP-1</sdg:Identifier>
+                                <sdg:Name lang="EN">Test Evidence Provider Austria (AT)</sdg:Name>
+                                <sdg:Name lang="DE">Test Datendienst 1 AT</sdg:Name>
+                                <sdg:Description lang="EN">Test Evidence Provider Austria (AT) Description</sdg:Description>
+                                <sdg:Description lang="DE">Test Datendienst 1 AT Beschreibung</sdg:Description>
+                                <sdg:Address>
+                                    <sdg:FullAddress>zusätzliche Addressinformationen eventuell sinnlos</sdg:FullAddress>
+                                    <sdg:LocatorDesignator>4/4/3 - 23</sdg:LocatorDesignator>
+                                    <sdg:PostCode>1030</sdg:PostCode>
+                                    <sdg:PostCityName>Wien an der vorderen Drau</sdg:PostCityName>
+                                    <sdg:Thoroughfare>Hintere Zollamtsstraße noch ein Innenhof</sdg:Thoroughfare>
+                                    <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                                </sdg:Address>
+                                <sdg:Jurisdiction>
+                                    <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                                </sdg:Jurisdiction>
+                            </sdg:Publisher>
+                        </sdg:AccessService>
+                        <sdg:AuthenticationLevelOfAssurance>High</sdg:AuthenticationLevelOfAssurance>
+                    </sdg:DataServiceEvidenceType>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

@@ -35,6 +35,12 @@ class DemoResolutionWording
 
   def evidence_type = lookup.evidence_type&.label(languages: LANGUAGES).presence
 
+  # The type the card names, whole — what the request sends — and by its UUID,
+  # which is what the page's own addresses carry.
+  def evidence_type_id = lookup.evidence_type&.id
+
+  def evidence_type_uuid = lookup.evidence_type&.uuid
+
   def evidence_type_language
     lookup.evidence_type&.label_language(languages: LANGUAGES) if evidence_type.present?
   end
@@ -58,6 +64,17 @@ class DemoResolutionWording
   end
 
   def nameable? = provider.present? && evidence_type.present?
+
+  # Every evidence type the Evidence Broker publishes for the requirement in
+  # the card's country, each counted once and in the order it publishes them:
+  # chapter 3.2.2 §2.3 has the user « select an 'Evidence Type List' amongst the
+  # ones proposed », and one entry per type amounts to the same while each list
+  # carries one.
+  def evidence_types = EvidenceTypeList.distinct_evidence_types(Array(lookup.evidence_type_lists))
+
+  # Requirement 26 of chapter 1 §2: the user selects the type, where there is
+  # more than one to select from.
+  def choosable? = evidence_types.many?
 
   # The requirement as the Evidence Broker names it, where `requirement` above
   # is what the card stands under. The identifier is what goes out in

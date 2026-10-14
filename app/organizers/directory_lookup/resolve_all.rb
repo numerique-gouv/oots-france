@@ -15,7 +15,12 @@ module DirectoryLookup
   # the user which member state each evidence is to come from (step 16 of
   # chapter 1 §10.1), and chapter 3.2.4 §4.3 has the second query « reflect the
   # country and jurisdiction of the Evidence Provider ». The first run is
-  # reused only for its own requirement in its own country.
+  # reused only for its own requirement in its own country, with no type named.
+  #
+  # Each card offers the user the evidence types its country publishes —
+  # requirement 26 of chapter 1 §2 — so every run is told so, and `evidence_types`
+  # names by requirement UUID the type the user chose on it: `FetchEvidenceTypes`
+  # chooses none in their place.
   #
   # A refusal stays where it fell, on the resolution it belongs to: chapter 4.4
   # §4.2.2 has « different basic flows … executed sequentially and/or in
@@ -37,14 +42,18 @@ module DirectoryLookup
 
     def resolve(requirement_id = nil, country_code = context.country_code)
       Resolve.call(evidence_broker:, data_service_directory:,
-        procedure_code: context.procedure_code, country_code:, requirement_id:)
+        procedure_code: context.procedure_code, country_code:, requirement_id:,
+        evidence_type_id: evidence_type_of(requirement_id), alternatives_offered: true)
     end
 
     def reusable?(leading, requirement, country_code)
-      requirement.uuid == leading.requirement&.uuid && country_code == context.country_code
+      requirement.uuid == leading.requirement&.uuid && country_code == context.country_code &&
+        evidence_type_of(requirement.uuid).nil?
     end
 
     def country_of(uuid) = context.countries.to_h.fetch(uuid, context.country_code)
+
+    def evidence_type_of(uuid) = context.evidence_types.to_h[uuid]
 
     # The directories this sequence gives itself when its caller names none, in
     # the form `ApplicationInteractor` already uses for the gateway: a caller

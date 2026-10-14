@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:6ed6c612-f101-427a-8cd3-929b4882267d">
+            <rim:Slot name="DataServiceEvidenceType">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:DataServiceEvidenceType>
+                        <sdg:Identifier>9a4acab5-00f0-4d4b-9212-c8aaae61161a</sdg:Identifier>
+                        <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/198ab7cc-8571-451d-9727-4be8ed221951</sdg:EvidenceTypeClassification>
+                        <sdg:Title lang="EN">Austrian Test Evidence Type without Reauthentication</sdg:Title>
+                        <sdg:Title lang="DE">Österreichische Test-Nachweisart ohne Reauthentication</sdg:Title>
+                        <sdg:Description lang="EN">The test evidence of Austria without any authentication will be provided.</sdg:Description>
+                        <sdg:Description lang="DE">Österreichische Testnachweise ohne Re-Authentifizierung</sdg:Description>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/pdf</sdg:Format>
+                        </sdg:DistributedAs>
+                        <sdg:AccessService>
+                            <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9915">SDG-OOP-AT-SCONAP-Q</sdg:Identifier>
+                            <sdg:Name lang="EN">SDG-OOP-AT-SCONAP-Q</sdg:Name>
+                            <sdg:ConformsTo>oots-edm:v1.0</sdg:ConformsTo>
+                            <sdg:ConformsTo>oots-edm:v1.2</sdg:ConformsTo>
+                            <sdg:Publisher>
+                                <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9915">BMF-SDG-OOP-AT-TEST-EP-1</sdg:Identifier>
+                                <sdg:Name lang="EN">Test Evidence Provider Austria (AT)</sdg:Name>
+                                <sdg:Name lang="DE">Test Datendienst 1 AT</sdg:Name>
+                                <sdg:Description lang="EN">Test Evidence Provider Austria (AT) Description</sdg:Description>
+                                <sdg:Description lang="DE">Test Datendienst 1 AT Beschreibung</sdg:Description>
+                                <sdg:Address>
+                                    <sdg:FullAddress>zusätzliche Addressinformationen eventuell sinnlos</sdg:FullAddress>
+                                    <sdg:LocatorDesignator>4/4/3 - 23</sdg:LocatorDesignator>
+                                    <sdg:PostCode>1030</sdg:PostCode>
+                                    <sdg:PostCityName>Wien an der vorderen Drau</sdg:PostCityName>
+                                    <sdg:Thoroughfare>Hintere Zollamtsstraße noch ein Innenhof</sdg:Thoroughfare>
+                                    <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                                </sdg:Address>
+                                <sdg:Jurisdiction>
+                                    <sdg:AdminUnitLevel1>AT</sdg:AdminUnitLevel1>
+                                </sdg:Jurisdiction>
+                            </sdg:Publisher>
+                        </sdg:AccessService>
+                        <sdg:AuthenticationLevelOfAssurance>Low</sdg:AuthenticationLevelOfAssurance>
+                    </sdg:DataServiceEvidenceType>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

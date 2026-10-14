@@ -38,6 +38,16 @@ RSpec.describe Demo::RequestEvidence do
     expect(Demo::Request.sole.specification).to eq(EdmSpecification::V1_2)
   end
 
+  # RG5 of OOTS-263: the type the card named, chosen by the user where the
+  # country publishes several, is the one asked for and the one registered.
+  it 'asks for the evidence type the card named, and registers it' do
+    described_class.call(identity:, journey:, requirement_uuid:, country_code: 'AT',
+      evidence_type_id: 'https://sr/AT/198ab7cc', evidence_request_client: client, token_writer:)
+
+    expect(client).to have_received(:fetch).with(hash_including(evidence_type_id: 'https://sr/AT/198ab7cc'))
+    expect(Demo::Request.sole.evidence_type_id).to eq('https://sr/AT/198ab7cc')
+  end
+
   # Chapter 4.7 §2.5.1: « The initial ConversationId for a conversation MAY be
   # assigned by the Online Procedure Portal or its Intermediary Platform. » The
   # journey named it when the authentication opened it, so nothing is minted

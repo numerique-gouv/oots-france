@@ -263,11 +263,10 @@ fr:
       # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
       # de la carte, lui, est l'intitulé de l'exigence et rien d'autre : aucune
       # phrase ne l'entoure, donc aucune clé.
-      # Le pays est dans la boîte où les pages d'annuaires en mettent un, d'où le
-      # balisage dans la traduction.
-      satisfied_by_html: Satisfied by the following documents in %{country}
-      # Ce que dit la même ligne quand aucun fournisseur ne sert l'exigence : la
-      # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
+      # Ce que dit la carte, au-dessus de la règle, quand aucun fournisseur ne
+      # sert l'exigence : la carte reste, l'exigence reste, et c'est la
+      # satisfaction qui manque. Le pays est dans la boîte où les pages
+      # d'annuaires en mettent un, d'où le balisage dans la traduction.
       unsatisfiable_html: Evidence impossible to satisfy by %{country}
       from_html: "%{evidence_type} from %{provider}"
       # Ce que la carte dit à la place du bouton quand le point d'accès du
@@ -284,8 +283,8 @@ fr:
       # interdisant de ne le porter que par la couleur. Il est dans le gabarit
       # et non dans la traduction : c'est un pictogramme, pas un mot. La graisse,
       # elle, est dans la traduction : c'est la phrase qui la porte. Le pays est
-      # ici son seul nom — la ligne au-dessus le montre déjà en boîte, avec son
-      # drapeau et son code.
+      # ici son seul nom — la liste des pays, ou la boîte d'une carte qui suit
+      # une demande, le montre déjà au-dessus, avec son drapeau et son code.
       no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
       # Et ce qu'elle dit quand l'annuaire a refusé de répondre : personne n'a
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
@@ -302,6 +301,15 @@ fr:
       # « choose it again » ; le lien recharge la page des justificatifs.
       unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
       reload: reload the page
+      # Le choix du type de justificatif, quand le pays en publie plusieurs pour
+      # l'exigence — l'exigence 26 du chapitre 1 §2. Les options sont les
+      # intitulés que l'Evidence Broker publie : aucune clé pour elles. L'invite
+      # ne s'offre que tant qu'aucun type n'est choisi : rien n'est choisi à la
+      # place de l'usager.
+      evidence_type_label: Document to request
+      evidence_type_prompt: Select a document
+      # Construite comme celle du pays, pour le même cas ; le lien est le même.
+      evidence_type_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -602,6 +610,8 @@ fr:
         # causes, et la trace de celle-ci resterait sinon introuvable.
         countries:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
+        evidence_types:
+          unreachable: "Annuaires injoignables au choix d'un type de justificatif de la démarche de démonstration : %{error}"
         # Écrit dans le log : l'écran du choix de la démarche perd les pieds
         # des démarches que la France déclare, et rien d'autre.
         procedures:
@@ -1661,6 +1671,10 @@ fr:
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
       demo_unreachable: Le service de requête n'a pas pu être joint
+      # La carte d'une exigence que le pays satisfait de plusieurs types, tant
+      # que l'usager n'en a choisi aucun : rien n'est refusé, rien n'est encore
+      # demandé au Data Service Directory.
+      evidence_type_unchosen: Aucun type de justificatif choisi parmi ceux que le pays publie
       gateway_refused: La passerelle a refusé le message
       identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
@@ -1670,6 +1684,7 @@ fr:
       no_provider: Aucun fournisseur dans ce pays
       preview_not_awaited: Aucune prévisualisation n'attend de confirmation
       unknown_country: Pays inconnu des annuaires
+      unknown_evidence_type: Type de justificatif non publié pour l'exigence
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
       unknown_requirement: Exigence inconnue de la démarche
@@ -1781,6 +1796,8 @@ fr:
       resolve_evidence_type:
         unknown_requirement: >-
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
+        unknown_evidence_type: >-
+          Le type de justificatif « %{evidence_type} » n'est pas publié pour l'exigence « %{requirement} » dans le pays « %{country} »
       # Ce que la France ne fait pas d'une notification de la passerelle sur une
       # requête qui n'a pas atteint le correspondant, consigné au journal
       # applicatif avec l'identifiant que la passerelle donne au message.

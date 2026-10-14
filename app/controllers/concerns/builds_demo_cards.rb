@@ -4,8 +4,9 @@
 module BuildsDemoCards
   extend ActiveSupport::Concern
 
-  # The country a card stands in, and whether it may change it, come from there.
-  include HoldsDemoCountries
+  # The country a card stands in, the evidence type it names, and whether it
+  # may change either, come from there.
+  include HoldsDemoEvidenceTypes
 
   private
 
@@ -18,9 +19,17 @@ module BuildsDemoCards
 
     DemoRequirementCardComponent.new(
       wording:, country_code: wording.country_code, country_name: country_name(wording.country_code),
-      countries: country_options(wording), zone: (demo_request_zone(wording) if wording.nameable? && spoken),
+      countries: country_options(wording), evidence_types: evidence_type_options(wording),
+      zone: (demo_request_zone(wording) if wording.nameable? && spoken),
       unspoken: (demo_specification unless spoken), removable: added_card(wording.requirement_uuid).present?,
     )
+  end
+
+  # The card alone, which the browser splices into the page around the list the
+  # user is still on, and a header it can tell this application's answer by.
+  def answer_with_card(wording)
+    response.set_header('Deferred-Fragment', '1')
+    render requirement_card(wording), layout: false
   end
 
   # The cards the operator added beyond those the Evidence Broker lists for the
@@ -29,14 +38,30 @@ module BuildsDemoCards
 
   def added_card(requirement_uuid) = added_cards[requirement_uuid]
 
+  # One card resolved alone, as a choice made on it asks: an added card from its
+  # own requirement, any other under the procedure of the journey.
+  def resolve_card(requirement_uuid, country_code, evidence_type_id)
+    added = added_card(requirement_uuid)
+    return resolve_added_card(added, country_code, evidence_type_id) if added
+
+    DirectoryLookup::Resolve.call(
+      evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
+      procedure_code: journey.procedure_code, country_code:, requirement_id: requirement_uuid,
+      evidence_type_id:, alternatives_offered: true,
+    )
+  end
+
   # An added card resolved from the requirement its row keeps, by the second
   # query of the Evidence Broker and the Data Service Directory alone: chapter
   # 3.2.4 §4.3 bases that query « on a requirement that is known to the
   # Procedure Portal », and the procedure of the journey need not declare it.
-  def resolve_added_card(card, country_code)
+  #
+  # On the type named, and on none where the user has not chosen among several:
+  # requirement 26 of chapter 1 §2 leaves that choice to them.
+  def resolve_added_card(card, country_code, evidence_type_id)
     DirectoryLookup::ResolveRequirement.call(
       evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
-      requirement: card.requirement, country_code:,
+      requirement: card.requirement, country_code:, evidence_type_id:, alternatives_offered: true,
     )
   end
 
@@ -65,6 +90,21 @@ module BuildsDemoCards
     @country_options ||= HoldsDemoCountries::OFFERED
       .map { |code| [CountryTagComponent.label(code, country_name(code)), code] }
       .sort_by { |(_, code)| country_name(code).presence || code }
+  end
+
+  # The evidence types the country of the card publishes for its requirement,
+  # where it publishes more than one, as `[label, uuid, { lang: }]`: named as the
+  # directory names them, in English first like the page. `nil` on a card with
+  # a single type, which leaves nothing to choose, and on one that follows a
+  # request, which names the type it asked for.
+  def evidence_type_options(wording)
+    return if !wording.choosable? || held_card?(wording.requirement_uuid)
+
+    languages = DemoResolutionWording::LANGUAGES
+
+    wording.evidence_types.map do |type|
+      [type.label(languages:).presence || type.uuid, type.uuid, { lang: type.label_language(languages:) }]
+    end
   end
 
   def country_names = @country_names ||= code_lists.country_names(lang: :en)

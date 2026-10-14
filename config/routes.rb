@@ -112,6 +112,10 @@ Rails.application.routes.draw do
           # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
           # answers with the card alone, and opens nothing.
           resource :pays, only: :update, controller: 'countries'
+          # The evidence type one card names, where its country publishes
+          # several for the requirement — requirement 26 of chapter 1 §2. Asks
+          # the directories only, answers with the card alone, and opens nothing.
+          resource :type_justificatif, only: :update, controller: 'evidence_types'
           # A card the operator adds to the documents page, beyond those the
           # Evidence Broker lists for the procedure, and takes off it again.
           resources :cartes, only: %i[create destroy], param: :exigence, controller: 'cards'

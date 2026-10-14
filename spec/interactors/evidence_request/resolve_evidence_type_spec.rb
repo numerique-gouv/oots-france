@@ -15,11 +15,38 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   let(:requirement) { build(:requirement) }
   let(:types) { [build(:evidence_type, id: 'https://sr/premier'), build(:evidence_type, id: 'https://sr/second')] }
 
-  # Letting the user choose among several is chapter 4.10: until then the first
-  # is asked for, and which one that is has to be the directory's order rather
-  # than an accident.
+  # A caller naming no type gets the first the directory publishes, in its
+  # order rather than by accident.
   it 'keeps the first type the procedure calls for' do
     expect(resolve.evidence_type.id).to eq('https://sr/premier')
+  end
+
+  # Requirement 26 of chapter 1 §2 leaves the choice of the type to the user,
+  # and `idTypeJustificatif` is how the screen that asked carries it.
+  describe 'a caller naming the type it asks for' do
+    subject(:resolve) do
+      described_class.call(procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, country_code: 'FI',
+        evidence_type_id:, common_services:)
+    end
+
+    context 'when the country publishes it' do
+      let(:evidence_type_id) { 'https://sr/second' }
+
+      it 'keeps that one' do
+        expect(resolve.evidence_type.id).to eq('https://sr/second')
+      end
+    end
+
+    # No fallback: the first type is a document nobody confirmed.
+    context 'when it does not' do
+      let(:evidence_type_id) { 'https://sr/inconnu' }
+
+      it 'fails under its own key, naming the type, the requirement and the country' do
+        expect(resolve).to be_failure
+        expect(resolve.error).to include(key: :unknown_evidence_type)
+        expect(resolve.error[:errors].first).to include('https://sr/inconnu', requirement.id, 'FI')
+      end
+    end
   end
 
   # A request writes it into its `Requirements` slot, and the Evidence Broker

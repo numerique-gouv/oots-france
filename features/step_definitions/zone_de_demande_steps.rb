@@ -7,9 +7,27 @@ ZONE_ADDRESS = '*/admin/demo/v2.0/T1/demande*'.freeze
 # The address a card's list posts the chosen country to.
 COUNTRY_ADDRESS = '*/admin/demo/v2.0/T1/pays*'.freeze
 
+# The address a card's list posts the chosen evidence type to, in either line.
+EVIDENCE_TYPE_ADDRESS = '*/T1/type_justificatif*'.freeze
+
+# The two evidence types Austria publishes for « (TEST) Test Requirement », in
+# `eb_evidence_types_at`, by the title the list shows: what the contract
+# receives is the identifier, and a scenario names the document.
+AUSTRIAN_TYPES = {
+  'Test Evidence Austria (AT)' => 'cb10c17a-8d2a-40af-bb77-e797182280bf',
+  'Austrian Test Evidence Type without Reauthentication' => '198ab7cc-8571-451d-9727-4be8ed221951',
+}.freeze
+
 # The card of one requirement, which the list, the country line and the
 # sentence of a choice left unanswered all belong to.
 CARD = '.requirement-card'.freeze
+
+# The documents page, in either line of the walk.
+DOCUMENTS_PAGE = %r{\A/admin/demo/v\d\.\d/T1/documents\z}
+
+# Where a card names its country: its list, or the box of a card following a
+# request, which offers none.
+NAMED_COUNTRY = 'select[name=pays] option:checked, .fr-card__desc .country-tag'.freeze
 
 # What an answer replaces, and what says which outcome is on screen.
 BODY = '.demo-request__body'.freeze
@@ -88,6 +106,51 @@ end
 
   expect(page).to have_button(press_label)
   mark_the_page
+end
+
+# A new identification, in a journey opened under the other line: the Austrian
+# access point announces `oots-edm:v1.2` and not `v2.0`.
+Étantdonné("l'usager identifié sur la page des justificatifs d'un parcours en 1.2") do
+  identify_in_line_1_2
+end
+
+Quand("l'usager s'identifie de nouveau, dans un parcours en 1.2") do
+  identify_in_line_1_2
+end
+
+# Doubled after the `Contexte`, so that WebMock prefers these for Austria, and
+# with Austria named in the code list as the scenarios name it — the page is
+# asked for again, so that its list of countries carries that name.
+Étantdonné("l'Autriche publiant deux types de justificatif pour l'exigence de la carte") do
+  stub_code_list(country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('AT' => 'Austria'))
+  stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_at', country: 'AT')
+  AUSTRIAN_TYPES.each_value do |uuid|
+    stub_directory('dsd', 'dataservices-by-evidencetype', "dsd_data_services_at_#{uuid[0, 8]}",
+      evidence_type: austrian_type_id(uuid))
+  end
+
+  visit current_path
+  mark_the_page
+end
+
+# What the Data Service Directory answers a country with no service for that
+# type: the `DSD:ERR:0001` captured for France, whose signature covers the body
+# alone and so holds for any query.
+Étantdonné('aucun fournisseur publié en Autriche pour {string}') do |title|
+  stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr',
+    evidence_type: austrian_type_id(AUSTRIAN_TYPES.fetch(title)))
+end
+
+Étantdonné('le choix du type répondu en {string} sans l\'en-tête "Deferred-Fragment", puis coupé, devant le navigateur') do |status|
+  evidence_type_requests.answer(status: status.to_i, body: BAD_GATEWAY_PAGE).cut
+end
+
+Quand('le choix suivant du type est coupé devant le navigateur') do
+  evidence_type_requests.cut
+end
+
+Étantdonné('le choix du type répondu en {string} sans l\'en-tête "Deferred-Fragment" devant le navigateur') do |status|
+  evidence_type_requests.answer(status: status.to_i, body: '')
 end
 
 Étantdonné('la soumission de la demande retenue devant le navigateur') do
@@ -181,6 +244,10 @@ Quand("l'usager choisit {string} dans la liste des pays de la {word} carte") do 
   label = I18n.t('components.demo_requirement_card.country_label')
 
   within(card(rank)) { find_field(label).find('option', text: country).select_option }
+end
+
+Quand("l'usager choisit {string} dans la liste des types de la carte") do |title|
+  find_field(evidence_type_label).find('option', exact_text: title).select_option
 end
 
 Quand('la soumission retenue est libérée') do
@@ -293,7 +360,7 @@ Alors("la zone n'a pas été remplacée, seulement son contenu") do
 end
 
 Alors("la page des justificatifs n'a pas été rechargée") do
-  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
+  expect(page).to have_current_path(DOCUMENTS_PAGE)
   expect(page.evaluate_script('window.pageMark')).to eq(PAGE_MARK)
 end
 
@@ -307,12 +374,57 @@ Alors('le contrat a reçu la demande') do
   wait_until('Le contrat n\'a reçu aucune demande.') { contract_demands.any? }
 end
 
+# In its list of countries, or, on a card that follows a request and offers
+# none, in the box that stands in its place.
 Alors('la carte nomme le pays {string}') do |country|
-  expect(page).to have_css("#{CARD} .fr-card__desc .country-tag", text: country)
+  expect(find(CARD)).to have_css(NAMED_COUNTRY, text: country)
 end
 
 Alors('la {word} carte nomme le pays {string}') do |rank, country|
-  expect(card(rank)).to have_css('.fr-card__desc .country-tag', text: country)
+  expect(card(rank)).to have_css(NAMED_COUNTRY, text: country)
+end
+
+Alors("la carte n'offre pas de liste des pays") do
+  expect(find(CARD)).to have_no_field(I18n.t('components.demo_requirement_card.country_label'))
+end
+
+# The two names requirement 27 of chapter 1 §2 has shown before any request,
+# each marked as published by the directories.
+Alors('la carte nomme le type {string} et le fournisseur {string}') do |type, provider|
+  named = '.requirement-card__actions .directory-value'
+
+  expect(find(CARD)).to have_css("#{named}:first-of-type", text: /\A#{Regexp.escape(type)}/)
+  expect(find(CARD)).to have_css(named, text: /\A#{Regexp.escape(provider)}/)
+end
+
+Alors('la carte ne nomme aucun fournisseur') do
+  expect(find(CARD)).to have_no_css('.requirement-card__actions .directory-value')
+end
+
+Alors('la liste des types de la carte affiche {string}') do |title|
+  expect(find_field(evidence_type_label)).to have_css('option:checked', exact_text: title)
+end
+
+Alors('la liste des types de la carte offre {string} puis {string}') do |first, second|
+  offered = find_field(evidence_type_label).all('option').map(&:text).reject { |text| text == evidence_type_prompt }
+
+  expect(offered).to eq([first, second])
+end
+
+Alors("la liste des types de la carte n'offre plus {string}") do |title|
+  expect(find_field(evidence_type_label)).to have_no_css('option', exact_text: title)
+end
+
+Alors("la carte n'offre pas de liste des types") do
+  expect(find(CARD)).to have_no_field(evidence_type_label)
+end
+
+Alors('le contrat a reçu la demande pour le type {string}') do |title|
+  asked = austrian_type_id(AUSTRIAN_TYPES.fetch(title))
+
+  wait_until("Le contrat n'a reçu aucune demande pour le type #{title}.") do
+    contract_demands.any? { |demand| Rack::Utils.parse_nested_query(demand.uri.query.to_s)['idTypeJustificatif'] == asked }
+  end
 end
 
 # The sentence stands beside the list, in the group the DSFR puts in its error
@@ -327,13 +439,13 @@ end
 
 Alors('la page des justificatifs a été rechargée') do
   wait_until('La page des justificatifs n\'a pas été rechargée.') { page.evaluate_script('window.pageMark').nil? }
-  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
+  expect(page).to have_current_path(DOCUMENTS_PAGE)
 end
 
 # The region a screen reader hears, which no eye sees: read in the page as the
 # assistive technologies read it, hidden or not.
 Alors('la carte annonce {string}') do |sentence|
-  expect(page).to have_css('[data-demo-country-target="status"]', text: sentence, visible: :all)
+  expect(page).to have_css('[data-demo-card-target="status"]', text: sentence, visible: :all)
 end
 
 Alors('le contrat a reçu la demande pour le pays {string}') do |code|
@@ -421,7 +533,7 @@ Alors('la carte {string} se tient sous celles de la démarche, avec le bouton {s
 end
 
 Alors('la carte {string} nomme le pays {string}') do |name, country|
-  expect(page).to have_css("#{added_card_selector(name)} .fr-card__desc .country-tag", text: country)
+  expect(find(added_card_selector(name))).to have_css(NAMED_COUNTRY, text: country)
 end
 
 Alors("la page n'affiche pas la carte {string}") do |name|
@@ -433,6 +545,24 @@ def added_card_selector(name) = "#exigence-#{CATALOGUE.fetch(name)}"
 def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
 
 def country_requests = intercepted_requests(pattern: COUNTRY_ADDRESS)
+
+def identify_in_line_1_2
+  visit admin_demo_root_path
+  click_link 'OOTS 1.2'
+  find("a[href='#{admin_demo_home_path(version: 'v1.2', procedure: 'T1')}']").click
+  sign_in_with('fake')
+
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
+  mark_the_page
+end
+
+def evidence_type_requests = intercepted_requests(pattern: EVIDENCE_TYPE_ADDRESS)
+
+def evidence_type_label = I18n.t('components.demo_requirement_card.evidence_type_label')
+
+def evidence_type_prompt = I18n.t('components.demo_requirement_card.evidence_type_prompt')
+
+def austrian_type_id(uuid) = "https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/#{uuid}"
 
 # The card a step names, by its rank among those the page renders.
 def card(rank) = all(CARD, count: REQUIREMENTS.size)[REQUIREMENTS.keys.index(rank)]
@@ -457,7 +587,7 @@ end
 # into: a reload loses the first, and a replacement of the element the second.
 def mark_the_page
   page.execute_script("window.pageMark = '#{PAGE_MARK}'")
-  page.execute_script("document.querySelector('#{ZONE}').dataset.scenarioZone = '#{ZONE_MARK}'")
+  page.execute_script("const zone = document.querySelector('#{ZONE}'); if (zone) zone.dataset.scenarioZone = '#{ZONE_MARK}'")
 end
 
 # The click is answered once the register carries the request: from then on,
