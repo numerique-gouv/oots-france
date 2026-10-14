@@ -195,6 +195,60 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       expect(row('AP_ZZ_01').css('form')).to be_empty
     end
 
+    describe 'the order of the blocks' do
+      let(:every_country) do
+        { 'AT' => 'Autriche (l\')', 'BE' => 'Belgique (la)', 'DE' => 'Allemagne (l\')', 'EL' => 'Grèce (la)',
+          'ES' => 'Espagne (l\')', 'FI' => 'Finlande (la)', 'FR' => 'France (la)', 'IT' => 'Italie (l\')',
+          'NL' => 'Pays-Bas (les)', 'PT' => 'Portugal (le)', 'SE' => 'Suède (la)' }
+      end
+
+      def names_on_page = page.css('.access-point__name').map(&:text)
+
+      before { stub_code_list(countries: every_country) }
+
+      it 'reads the connected parties first, then the others, each by country, the platforms last' do
+        gateway_listing
+        create(:connectivity_test, :acknowledged, party_name: 'AP_SE_01')
+        create(:connectivity_test, :acknowledged, party_name: 'AP_AT_01')
+        create(:connectivity_test, :submitted, party_name: 'AP_EL_01', outcome: 'refused_for_configuration')
+
+        get admin_common_services_access_points_path
+
+        expect(names_on_page).to eq(%w[AP_AT_01 AP_SE_01 AP_DE_01 AP_BE_01 AP_ES_01 AP_FI_01 AP_FR_01 AP_EL_01
+                                       AP_IT_01 AP_NL_01 AP_PT_01 ec_support_acc])
+      end
+
+      it 'reads two parties of one country by name, before the next country' do
+        austrian = gateway_parties.find { |party| party['name'] == 'AP_AT_01' }
+        gateway_listing([gateway_parties.find { |party| party['name'] == 'AP_BE_01' },
+                         austrian.merge('name' => 'SDG-OOP-AT-SCONAP-Q'), austrian])
+
+        get admin_common_services_access_points_path
+
+        expect(names_on_page).to eq(%w[AP_AT_01 SDG-OOP-AT-SCONAP-Q AP_BE_01])
+      end
+
+      it 'leaves a connected party the PMode no longer declares at the bottom, marked' do
+        gateway_listing
+        create(:connectivity_test, :acknowledged, party_name: 'AP_ZZ_01')
+
+        get admin_common_services_access_points_path
+
+        expect(names_on_page.last(2)).to eq(%w[ec_support_acc AP_ZZ_01])
+        expect(row('AP_ZZ_01').text).to include('absent du PMode chargé')
+      end
+    end
+
+    it 'leads from the country of an access point to the page of that country, and nowhere else' do
+      gateway_listing
+
+      get admin_common_services_access_points_path
+
+      expect(row('AP_EL_01').at_css('a.country-tag')['href']).to eq(admin_common_services_country_path('EL'))
+      expect(row('AP_EL_01').css('.access-point__detail a')).to be_empty
+      expect(row('ec_support_acc').css('a')).to be_empty
+    end
+
     it 'hangs from the directories in the breadcrumb' do
       gateway_listing
 

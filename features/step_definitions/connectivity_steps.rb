@@ -9,19 +9,30 @@ def bloc_du_point_d_acces(partie)
     .find { |candidate| candidate.at_css('.access-point__name')&.text == partie }
 end
 
-Étantdonné("une passerelle doublée dont le PMode déclare le point d'accès {string}") do |partie|
+# The country of each party is the code its name carries, under the scheme
+# that says it: `AP_EL_01` is Greek.
+def passerelle_doublee(*parties)
   base = 'http://domibus:8080/domibus'
   allow(Settings).to receive_messages(domibus_base_url: base, domibus_credentials: { login: 'oots', password: 'secret' })
-  stub_code_list(countries: { 'EL' => 'Grèce (la)' })
+  stub_code_list(countries: { 'AT' => 'Autriche (l’)', 'EL' => 'Grèce (la)' })
 
-  partie_du_pmode = {
-    name: partie, endpoint: 'https://as4.oots.example.gr/domibus/services/msh',
-    identifiers: [{ partyId: partie, partyIdType: { value: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:EL' } }]
-  }
+  parties_du_pmode = parties.map do |partie|
+    { name: partie, endpoint: 'https://as4.oots.example.eu/domibus/services/msh',
+      identifiers: [{ partyId: partie,
+                      partyIdType: { value: "urn:oasis:names:tc:ebcore:partyid-type:unregistered:#{partie[3, 2]}" } }] }
+  end
   stub_request(:get, "#{base}/ext/party").with(query: hash_including({}))
-    .to_return(body: [partie_du_pmode].to_json, headers: { 'Content-Type' => 'application/json' })
+    .to_return(body: parties_du_pmode.to_json, headers: { 'Content-Type' => 'application/json' })
   stub_request(:get, "#{base}/ext/truststore/entries")
     .to_return(body: [].to_json, headers: { 'Content-Type' => 'application/json' })
+end
+
+Étantdonné("une passerelle doublée dont le PMode déclare le point d'accès {string}") do |partie|
+  passerelle_doublee(partie)
+end
+
+Étantdonné("une passerelle doublée dont le PMode déclare les points d'accès {string} et {string}") do |premiere, seconde|
+  passerelle_doublee(premiere, seconde)
 end
 
 Quand("l'administrateur ouvre la page des points d'accès") do
@@ -31,6 +42,10 @@ Quand("l'administrateur ouvre la page des points d'accès") do
   # A mark on the window, which a reload would wipe: what lets a later step say
   # the page did not reload.
   page.execute_script('window.pageNonRechargee = true')
+end
+
+Quand("l'administrateur rouvre la page des points d'accès") do
+  visit POINTS_D_ACCES
 end
 
 Quand("il teste le point d'accès {string}") do |partie|
@@ -67,4 +82,10 @@ Alors("la page des points d'accès affiche {string} pour {string}") do |issue, p
 
     bloc_du_point_d_acces(partie)&.at_css('.fr-badge')&.text.to_s.strip == issue
   end
+end
+
+Alors("le point d'accès {string} précède {string}") do |premiere, seconde|
+  noms = page.all('.access-point__name').map(&:text)
+
+  expect(noms.index(premiere)).to be < noms.index(seconde)
 end

@@ -3,7 +3,7 @@
 
 <%= render DirectoryBreadcrumbsComponent.new(trail: [
       [t('admin.common_services.countries.index.title'), admin_common_services_countries_path],
-      [wording.named_country(@country), nil],
+      [wording.named_country(@country), admin_common_services_country_path(@country)],
       [t('admin.common_services.procedures.index.title'), nil],
     ]) %>
 

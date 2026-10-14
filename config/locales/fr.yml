@@ -2355,6 +2355,12 @@ fr:
           zero: Aucun pays
           one: Un pays
           other: "%{count} pays"
+        # Un fragment traduit ne se concatène pas : la phrase entière, accord
+        # compris, tient dans la clé.
+        declared_procedures:
+          zero: aucune démarche déclarée
+          one: une démarche déclarée
+          other: "%{count} démarches déclarées"
         index:
           title: Pays
           lead: >-
@@ -2371,16 +2377,14 @@ fr:
               exigence — la sienne ou celle d'un autre —, et cela se lit sous l'exigence.
             requester_html: En <strong>requêteur</strong> — %{procedures}
             provider_html: En <strong>fournisseur</strong>
-          # Un fragment traduit ne se concatène pas : la phrase entière, accord
-          # compris, tient dans la clé.
-          declared_procedures:
-            zero: aucune démarche déclarée
-            one: une démarche déclarée
-            other: "%{count} démarches déclarées"
           search: Rechercher un pays, son code
           see_procedures: Voir ses démarches
           see_evidence: Voir ses justificatifs
           empty: Aucun pays ne correspond à cette recherche.
+        show:
+          requester: En requêteur
+          provider: En fournisseur
+          provider_description: Les exigences pour lesquelles il publie un justificatif
         procedures:
           title: Démarches de %{country}
           lead_html: >-
