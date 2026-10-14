@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<gc:CodeList xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:gc="http://docs.oasis-open.org/codelist/ns/genericode/1.0/" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+    <Annotation>
+        <Description>
+            <sdg:ConformsTo>https://sr.oots.tech.ec.europa.eu/schematrons/MS-CLASS/2.0.0</sdg:ConformsTo>
+        </Description>
+    </Annotation>
+    <Identification>
+        <ShortName>ProjectathonTestCases</ShortName>
+        <LongName xml:lang="EN">Projectathon Test Cases</LongName>
+        <Version>1.0</Version>
+        <CanonicalUri>urn:sr.oots.tech.ec.europa.eu:codelists:EL:ProjectathonTestCases</CanonicalUri>
+        <CanonicalVersionUri>urn:sr.oots.tech.ec.europa.eu:codelists:EL:ProjectathonTestCases-1.0</CanonicalVersionUri>
+        <LocationUri>https://sr.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases?redirect=yes</LocationUri>
+        <AlternateFormatLocationUri>https://sr.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases</AlternateFormatLocationUri>
+        <Agency>
+            <LongName xml:lang="EN">General Secretariat of Information Systems</LongName>
+            <Identifier>GSIS</Identifier>
+        </Agency>
+    </Identification>
+    <ColumnSet>
+        <Column Use="required" Id="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+            <ShortName>code</ShortName>
+            <Data Type="normalizedString"/>
+        </Column>
+        <Column Use="required" Id="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+            <ShortName>name-Value</ShortName>
+            <Data Type="string"/>
+        </Column>
+        <Column Use="required" Id="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+            <ShortName>deprecated</ShortName>
+            <Data Type="boolean"/>
+        </Column>
+        <Column Use="optional" Id="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+            <ShortName>name-EL</ShortName>
+            <Data Type="string" Lang="EL"/>
+        </Column>
+        <Key Id="uuid_617a3ac2-7450-44b3-b3ca-a1a0b5cb95bd">
+            <ShortName>codeKey</ShortName>
+            <ColumnRef Ref="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2"/>
+        </Key>
+    </ColumnSet>
+    <SimpleCodeList>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC03</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC03 - Evidence request error flow due to Basic Registry error</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC03 - Ανεπιτυχής ανάκτηση τεκμηρίων λόγω προβλήματος κατά την επικοινωνία με το Μητρώο του Παρόχου</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC06</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC06 - Basic evidence request with reauthentication and preview</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC06 - Ανάκτηση τεκμηρίων με επαναυθεντικοποίηση και προεπισκόπηση</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC09</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC09 - Evidence request with reauthentication and preview error (closure or timeout)</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC09 - Μη-ανάκτηση τεκμηρίων λόγω εξάντλησης του χρόνου παραμονής στο περιβάλλον προεπισκόπησης</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC01</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC01 - Basic evidence request without preview</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC01 - Επιτυχής ανάκτηση τεκμηρίων χωρίς προεπισκόπηση</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC10</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC10 - Evidence request with reauthentication and preview (including human readable transformation)</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC10 - Ανάκτηση τεκμηρίων με επαναυθεντικοποίηση και προεπισκόπηση δομημένων δεδομένων σε αναγνώσιμη μορφή</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC02</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC02 - Basic evidence request without evidence match</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC02 - Ανεπιτυχής ανάκτηση τεκμηρίων λόγω μη-ικανοποίησης των κριτηρίων αναζήτησης</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC04</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC04 - Evidence request error flow due to Access Point error</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC04 - Ανεπιτυχής ανάκτηση τεκμηρίων λόγω προβλήματος κατά την επικοινωνία με το Σημείο Πρόσβασης</SimpleValue>
+            </Value>
+        </Row>
+        <Row>
+            <Value ColumnRef="uuid_2100d07c-1e7f-45bb-a3ef-a5484fbaf6f2">
+                <SimpleValue>TC08</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_acdba8e7-8376-4eb4-9a56-c7724b2ba8bf">
+                <SimpleValue>TC08 - Evidence request with reauthentication and preview rejection by user</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_943a42d6-5d39-4e4c-a942-11bb28b24ad0">
+                <SimpleValue>false</SimpleValue>
+            </Value>
+            <Value ColumnRef="uuid_a9005ff4-7b8d-41d9-bd80-0daf34d97b3f">
+                <SimpleValue>TC08 - Μη-ανάκτηση τεκμηρίων μετά από απόρριψή τους από τον χρήστη κατά την προεπισκόπηση</SimpleValue>
+            </Value>
+        </Row>
+    </SimpleCodeList>
+</gc:CodeList>
