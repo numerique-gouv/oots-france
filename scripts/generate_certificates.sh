@@ -70,7 +70,7 @@ lanceKeytool() {
 # incorrect".
 genereCle() {
   lanceKeytool -genkeypair -alias "$PARTIE" -dname "CN=$PARTIE" \
-    -keyalg RSA -keysize 2048 -sigalg SHA256withRSA -validity "$VALIDITE" \
+    -keyalg RSA -keysize 3072 -sigalg SHA256withRSA -validity "$VALIDITE" \
     -keystore "$KEYSTORE" -storetype PKCS12 \
     -storepass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE" -keypass "$MOT_DE_PASSE_KEYSTORE_TRUSTSTORE"
 }
