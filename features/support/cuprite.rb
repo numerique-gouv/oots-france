@@ -26,6 +26,9 @@ Capybara.register_driver(:cuprite) do |app|
     # `Capybara.default_max_wait_time` below is the other one, and bounds the
     # wait for an element rather than a command.
     timeout: 30,
+    # What the browser may take to start. Ferrum's default is ten seconds, and
+    # Chrome on a shared runner of `tests.yml` can take longer.
+    process_timeout: 30,
   )
 end
 
