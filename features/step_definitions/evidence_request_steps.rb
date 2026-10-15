@@ -111,6 +111,7 @@ Alors('le journal des échanges contient tout l\'échange, de l\'envoi de la req
 
   depart = journal.find_by!(event_type: 'request_sent')
   expect(depart.message_id).to be_present
+  expect(depart.evidence_type_id).to eq(REQUESTED_EVIDENCE_TYPE)
   expect(depart.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
 
   # The two halves must name the request identically, or nothing correlates a
@@ -172,12 +173,20 @@ def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
 # requests one conversation.
 SESSION_USAGER = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'.freeze
 
+# Chapter 3.2.3 makes the requirements of a procedure conjunctive and fixes no
+# order among them: naming this one makes the type asked for the same on every
+# run. docs/test_e2e.md records what the acceptance publishes under `00`.
+REQUESTED_REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff'.freeze
+REQUESTED_EVIDENCE_TYPE =
+  'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
+
 def demande(procedure, conversation: nil, preview: false)
   token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
 
   Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
     codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
     idConversation: conversation, previsualisationRequise: (true if preview),
+    idExigence: (REQUESTED_REQUIREMENT if procedure == ProcedureCode::SYSTEM_CHECK),
   }.compact)
 end
 

@@ -18,7 +18,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Et que ce portail publie ses clés de signature
 
   Scénario: l'usager accepte le document, et le portail le reçoit
-    Quand le portail demande un justificatif pour la démarche "T1" en acceptant que l'usager le voie d'abord
+    Quand le portail demande un justificatif pour la démarche "00" en acceptant que l'usager le voie d'abord
     Alors le portail reçoit tout de suite l'identifiant de l'échange
     Et l'échange passe à l'état "preview_required"
     Et le portail lit l'adresse de l'espace de prévisualisation et sa description
@@ -34,7 +34,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Et le journal des échanges contient la seconde requête et le retour de l'usager
 
   Scénario: l'usager refuse le document, et le portail ne reçoit rien
-    Quand le portail demande un justificatif pour la démarche "T1" en acceptant que l'usager le voie d'abord
+    Quand le portail demande un justificatif pour la démarche "00" en acceptant que l'usager le voie d'abord
     Alors le portail reçoit tout de suite l'identifiant de l'échange
     Et l'échange passe à l'état "preview_required"
     Quand le portail confirme la prévisualisation avec son jeton et l'adresse où reprendre la démarche
@@ -44,3 +44,4 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Alors l'usager arrive sur la page du portail, qui reçoit l'échange et la conversation
     Et l'échange passe à l'état "declined"
     Et le portail ne reçoit aucun justificatif
+    Et le journal des échanges contient la seconde requête et le retour de l'usager
