@@ -137,34 +137,28 @@ Alors('l\'administrateur arrive sur l\'écran du choix de la version, sans ident
 end
 
 # Requirement 27 of chapter 1 §2. The values come from the real directories, so
-# the scenario asserts that they are there — not what they say, nor how many
-# requirements the acceptance resolves to a provider, which Brussels may change
-# without telling us. A card that resolves one names its provider and its
-# evidence type in the one sentence that stands between the rule and the
-# button, and each value wears the mark of what the directories publish.
-Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
-  nommes = Nokogiri::HTML(@navigateur.body).css('.requirement-card__actions').map { |carte|
-    carte.css('.directory-value').map { |valeur| valeur.text.strip }
-  }.reject(&:empty?)
+# the scenario asserts that they are there — not what they say, which Brussels
+# may change without telling us. The card the scenario names, the one it is
+# about to ask, names its provider and its evidence type in the one sentence
+# that stands between the rule and the button, and each value wears the mark of
+# what the directories publish.
+Alors('la page des justificatifs affiche le fournisseur et le type de justificatif de la carte {string}') do |carte|
+  trouvee = Nokogiri::HTML(@navigateur.body).css('.requirement-card')
+    .find { |card| card.at_css('.fr-card__title')&.then { seen(it) } == carte } ||
+            raise(ArgumentError, "Aucune carte « #{carte} » dans la page des justificatifs : #{@navigateur.body}")
+  nommes = trouvee.css('.requirement-card__actions .directory-value').map { |valeur| seen(valeur) }
 
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
-  expect(nommes).not_to be_empty
-  expect(nommes.map(&:size).uniq).to eq([2])
-  expect(nommes.flatten).not_to include('')
+  expect(nommes.size).to eq(2)
+  expect(nommes).not_to include('')
 end
 
 # Chapter 1 §3.3: this click is where the user says explicitly that the
-# Once-Only Technical System is to be used, and nothing leaves without it.
-# The mark is taken before the click and not after: the log is the server's and
-# a previous run leaves its own events in it, so what this scenario opened is
-# what was written past this point.
-Quand('l\'usager confirme sa demande') do
-  @journal_avant = ServerAuditEvent.maximum(:id).to_i
-  @navigateur.submit_to(adresse_de_la_demarche('demande'))
-end
-
-# The same click, on the card a scenario names: a procedure resting on several
-# requirements offers one button per card.
+# Once-Only Technical System is to be used, and nothing leaves without it. A
+# procedure resting on several requirements offers one button per card. The
+# mark is taken before the click and not after: the log is the server's and a
+# previous run leaves its own events in it, so what this scenario opened is what
+# was written past this point.
 Quand('l\'usager confirme la demande de la carte {string}') do |carte|
   @journal_avant = ServerAuditEvent.maximum(:id).to_i
   @navigateur.request_card(carte)

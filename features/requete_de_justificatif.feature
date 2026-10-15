@@ -27,13 +27,6 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et le journal des échanges contient tout l'échange, de l'envoi de la requête à la remise du justificatif
     Et le journal des échanges contient le corps RegRep de chaque message, tel qu'il a circulé
 
-  Scénario: le justificatif de la démarche "T1" revient jusqu'au portail
-    Quand le portail demande un justificatif pour la démarche "T1"
-    Alors le portail reçoit tout de suite l'identifiant de l'échange
-    Et le portail reçoit le justificatif
-    Et le justificatif reçu est celui que le journal des échanges a consigné
-    Et le justificatif reçu porte l'échange et la conversation que le 202 avait rendus
-
   Scénario: deux demandes d'un même usager forment une seule conversation
     Quand le portail demande deux justificatifs pour le même usager
     Alors les deux requêtes ont la même conversation et deux échanges distincts

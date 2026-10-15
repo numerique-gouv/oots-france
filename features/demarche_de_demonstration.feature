@@ -2,8 +2,8 @@
 @bout_en_bout
 Fonctionnalité: Identifier l'usager de la démarche de démonstration par la cinématique européenne
 
-  L'administrateur tient ici le rôle d'un étudiant danois qui fait une demande
-  de bourse : il choisit la version OOTS de la démarche de démonstration,
+  L'administrateur tient ici le rôle d'un usager danois qui ouvre la démarche
+  "00" : il choisit la version OOTS de la démarche de démonstration,
   part de sa page d'accueil, passe par FranceConnect+ et la passerelle eIDAS, choisit son pays et une
   identité de test, consent à la transmission de ses données, puis revient sur
   la page des justificatifs, identifié.
@@ -18,10 +18,10 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Étant donné un faux FranceConnect+ lancé à côté du scénario
     Et l'administrateur de démonstration connecté à l'espace d'administration
 
-  Scénario: un étudiant danois s'identifie et retrouve son identité sur la page des justificatifs
+  Scénario: un usager danois s'identifie et retrouve son identité sur la page des justificatifs
     Quand l'administrateur ouvre la démarche de démonstration
     Et que l'administrateur choisit la version "OOTS 2.0"
-    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur choisit la démarche "00"
     Et qu'il choisit le bouton du faux FranceConnect+
     Alors l'administrateur arrive sur la page de choix du pays
     Quand l'administrateur choisit le pays "DK"
@@ -39,7 +39,7 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
 
   Scénario: le niveau de garantie affiché est celui que l'usager a atteint
     Quand l'administrateur choisit la version "OOTS 2.0"
-    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur choisit la démarche "00"
     Et que l'administrateur s'identifie avec l'identité de test "dk-high"
     Alors la page affiche le niveau de garantie "High"
     Et la page n'affiche ni le sexe ni le lieu de naissance
@@ -47,14 +47,14 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
   Scénario: une rotation des clés de signature de FranceConnect+ n'empêche pas l'identification
     Quand le faux FranceConnect+ change de clé de signature
     Et que l'administrateur choisit la version "OOTS 2.0"
-    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur choisit la démarche "00"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Alors l'administrateur arrive sur la page des justificatifs
     Et la page affiche "Family name" : "Sørensen"
 
   Scénario: se déconnecter ferme aussi la session FranceConnect+
     Quand l'administrateur choisit la version "OOTS 2.0"
-    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur choisit la démarche "00"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Et qu'il se déconnecte de l'espace d'administration
     Alors FranceConnect+ le ramène sur la page de déconnexion de la démarche
