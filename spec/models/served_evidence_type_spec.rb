@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe ServedEvidenceType do
   def type(id) = build(:evidence_type, id:)
 
-  it 'serves the two types France declares, under either host of the Semantic Repository' do
+  it 'serves the two types France declares to serve, under either host of the Semantic Repository' do
     expect(described_class).to be_served(type(Fixtures::SERVED_TYPE))
     expect(described_class)
       .to be_served(type('https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/9bc466ca-d785-4b20-a5e2-0da1c0b9e931'))
