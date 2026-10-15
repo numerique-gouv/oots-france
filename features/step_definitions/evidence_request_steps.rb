@@ -160,10 +160,12 @@ Alors('le journal des échanges contient la réponse différée du fournisseur')
   expect(journal.pluck(:evidence_digest).compact).to be_empty
 end
 
-Alors('le journal des échanges contient l\'erreur du fournisseur') do
-  patiente_jusqu_a('le journal porte le refus') { journal.exists?(event_type: 'error_received') }
+# Exactly one error, and that one: a refusal that came after a preview request
+# would also carry the `EDM:ERR:0002` that asked for it.
+Alors('le journal des échanges contient la réception de l\'erreur {string}, et d\'aucune autre') do |code|
+  patiente_jusqu_a("le journal porte la réception de #{code}") { journal.exists?(event_type: 'error_received') }
 
-  expect(journal.find_by!(event_type: 'error_received').edm_error_code).to eq('EDM:ERR:0004')
+  expect(journal.where(event_type: 'error_received').pluck(:edm_error_code)).to eq([code])
 end
 
 def journal = ServerAuditEvent.where(exchange_id: @exchange_id)

@@ -70,6 +70,20 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager est ramené à sa démarche
     Alors la page des justificatifs affiche "Document retrieved successfully"
 
+  Scénario: l'usager demande un type que la France déclare sans le servir, et la démarche dit le refus
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "FR - Test Evidence Type not held" sur la carte "(TEST) Test Requirement"
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
+    Alors la page des justificatifs affiche que la demande de l'usager est en cours
+    Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
+    Et cette requête demande le type de justificatif "FR - Test Evidence Type not held"
+    Et la page des justificatifs affiche "The document cannot be provided"
+    Et la page des justificatifs affiche "EDM:ERR:0004"
+    Et la page des justificatifs ne présente aucun lien vers l'espace de prévisualisation
+    Et le journal des échanges contient la réception de l'erreur "EDM:ERR:0004", et d'aucune autre
+
   Scénario: l'identifiant eIDAS saisi au faux FranceConnect+ part dans la requête
     Quand l'administrateur choisit la version "OOTS 2.0"
     Et que l'administrateur choisit la démarche "00"
