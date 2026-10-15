@@ -77,7 +77,7 @@ RSpec.describe IncomingMessage::Process do
     it 'journals the arrival and the refusal, and settles the exchange unanswered' do
       process
 
-      expect(AuditEvent.pluck(:event_type)).to eq(%w[request_received request_refused])
+      expect(AuditEvent.order(:id).pluck(:event_type)).to eq(%w[request_received request_refused])
       expect(AuditEvent.last.detail).to include('R-EDM-ebMS-037')
       expect(Exchange.sole).to have_attributes(exchange_id: 'pas-un-uuid', incoming: true, status: 'failed')
     end
