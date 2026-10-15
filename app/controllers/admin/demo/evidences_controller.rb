@@ -14,9 +14,10 @@ module Admin
     # otherwise: the chapter has the user read the evidence and decide, which a
     # forced download makes a step longer than it is.
     #
-    # `exigence` says which of this journey's own requests is meant, the page
-    # offering one document per requirement it asked for. It names a zone, never
-    # an exchange: what may be served is still what this journey asked for.
+    # `exigence` and `type` say which of this journey's own requests is meant,
+    # the page offering one document per evidence type it asked for. They name a
+    # block of a zone, never an exchange: what may be served is still what this
+    # journey asked for.
     class EvidencesController < Admin::BaseController
       include ReadsDemoRequest
 
@@ -36,7 +37,7 @@ module Admin
         redirect_to admin_demo_documents_path unless demo_request&.evidence?
       end
 
-      def demo_request = demo_request_for(params[:exigence].to_s)
+      def demo_request = demo_request_for(params[:exigence].to_s, params[:type].to_s)
     end
   end
 end

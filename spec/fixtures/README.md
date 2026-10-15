@@ -92,7 +92,7 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 
 ## `common_services/` — ce que les annuaires centraux répondent vraiment
 
-Quinze réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`), et une liste de codes que l'une d'elles adresse. Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
+Dix-sept réponses capturées sur l'**environnement d'acceptation** des Common Services, qui est public, chacune accompagnée d'un fichier `.headers` portant ses deux en-têtes de signature (`digest` et `oots-response-sig`), et une liste de codes que l'une d'elles adresse. Elles font foi au même titre qu'`incoming/reel/` : c'est sur elles que se lisent la forme réelle des réponses RegRep des annuaires et le mécanisme de signature du chapitre 3.6.2.
 
 | Fichier | Contenu |
 | --- | --- |
@@ -107,9 +107,10 @@ Quinze réponses capturées sur l'**environnement d'acceptation** des Common Ser
 | `dsd_data_services_at_cb10c17a`, `dsd_data_services_at_198ab7cc` | Data Service Directory, le service autrichien de chacun des deux types ci-dessus, capturés le même jour : même fournisseur, « *Test Evidence Provider Austria (AT)* », publié sous `AuthenticationLevelOfAssurance` `High` pour le premier et `Low` pour le second, et un point d'accès qui n'annonce que `oots-edm:v1.0` et `oots-edm:v1.2` |
 | `dsd_data_services_fi` | Data Service Directory, le service finlandais qui déclare `oots-edm:v2.0` |
 | `dsd_aucun_service_fr` | la même requête pour la France, qui n'a aucun service inscrit : `DSD:ERR:0001` |
-| `eb_evidence_types_el` | Evidence Broker, types de justificatif satisfaisant l'exigence de test `00000000-…` pour la Grèce, capturés le 2026-10-14 : deux types, dont `8b3b6a31-…`, « *Projectathon test evidence* » |
+| `eb_evidence_types_el` | Evidence Broker, types de justificatif satisfaisant l'exigence de test `00000000-…` pour la Grèce, capturés le 2026-10-14 : deux types, `8b3b6a31-…`, « *Projectathon test evidence* », et `8b0aeabd-…`, « *Simple test evidence* », en **trois** `sdg:EvidenceTypeList` — une par type, puis « *Compound test evidence* » qui réunit les deux sous son `sdg:Name`. C'est la seule capture d'une combinaison de plusieurs types ([3.2.2 §2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932944)) |
 | `dsd_classification_requise_el_8b3b6a31` | Data Service Directory, le même jour, pour ce type en Grèce : `DSD:ERR:0005`, la seule capture d'une question posée à l'usager — un concept `1254f10f-…` de type `codelist`, « *Projectathon test case* », dont la `sdg:ValueExpression` adresse la liste ci-dessous |
 | `dsd_data_services_el_8b3b6a31_tc03` | la même requête augmentée de `1254f10f-406e-4f28-b1ba-d107b93fa264=TC03` ([3.1.4 §4.4.3.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)) : un service, `AP_EL_02`, dont le `sdg:DataServiceEvidenceType` porte la classification et la valeur `TC03` |
+| `dsd_data_services_el_8b0aeabd` | Data Service Directory, le même jour, pour « *Simple test evidence* » en Grèce : un service, `AP_EL_02`, de « *Ministry of Digital Governance* », sans question — l'autre type de « *Compound test evidence* » |
 | `liste_classification_el_projectathon.gc` | la liste de codes à l'adresse de cette `sdg:ValueExpression`, servie en `text/plain` et non signée : huit codes, aucun déprécié, colonnes `code`, `name-Value`, `deprecated` et `name-EL`, que ses valeurs désignent par leur `Id` (`uuid_…`) et non par leur `ShortName` |
 
 > [!IMPORTANT]

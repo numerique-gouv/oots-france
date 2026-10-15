@@ -75,35 +75,35 @@
           <% end %>
 
           <%# What the country answers above the rule, which a country chosen
-              replaces: the list of the evidence types it publishes, where it
-              publishes several — requirement 26 of chapter 1 §2 has the user
-              select the type —; the country alone, in its box, on a card that
-              follows a request and offers no list of countries; the sentence
-              saying nothing satisfies the requirement there; or nothing. %>
+              replaces: the list of the combinations it publishes, where it
+              publishes several — chapter 3.2.2 §2.3 has the user select one —;
+              the country alone, in its box, on a card that follows a request
+              and offers no list of countries; the sentence saying nothing
+              satisfies the requirement there; or nothing. %>
           <div class="fr-card__desc" data-demo-card-target="top">
-            <% if evidence_types %>
+            <% if combinations %>
               <%# Choosing sends it at once, and only the foot of the card is
                   replaced: the list keeps the focus, and the region of the
                   form of countries — rendered whenever this list is —
-                  announces what the foot now says. No type is chosen in the
-                  user's place, so the list opens on a prompt until one is. %>
-              <%= form_with url: evidence_type_path, method: :patch, class: 'requirement-card__evidence-type',
+                  announces what the foot now says. No combination is chosen in
+                  the user's place, so the list opens on a prompt until one is. %>
+              <%= form_with url: combination_path, method: :patch, class: 'requirement-card__evidence-type',
                     html: { lang: 'en' } do |form| %>
-                <div class="fr-select-group fr-mb-0" data-demo-card-target="typeGroup">
-                  <%= form.label :type, t('components.demo_requirement_card.evidence_type_label'),
-                        class: 'fr-label', for: evidence_type_field, data: { demo_card_announced: true } %>
-                  <%= form.select :type, options_for_select(evidence_types, evidence_type_uuid),
-                        { prompt: (t('components.demo_requirement_card.evidence_type_prompt') unless evidence_type_uuid) },
-                        class: 'fr-select', id: evidence_type_field,
-                        data: { demo_card_target: 'typeSelect', action: 'change->demo-card#choose',
-                                demo_card_list_param: 'type' } %>
+                <div class="fr-select-group fr-mb-0" data-demo-card-target="combinationGroup">
+                  <%= form.label :combinaison, t('components.demo_requirement_card.combination_label'),
+                        class: 'fr-label', for: combination_field, data: { demo_card_announced: true } %>
+                  <%= form.select :combinaison, options_for_select(combinations, combination_id),
+                        { prompt: (t('components.demo_requirement_card.combination_prompt') unless combination_id) },
+                        class: 'fr-select', id: combination_field,
+                        data: { demo_card_target: 'combinationSelect', action: 'change->demo-card#choose',
+                                demo_card_list_param: 'combination' } %>
                   <%# Rendered here and hidden, as the country's: the server
                       cannot say it could not be reached. %>
-                  <%= tag.p t('components.demo_requirement_card.evidence_type_unreachable_html',
+                  <%= tag.p t('components.demo_requirement_card.combination_unreachable_html',
                               reload: link_to(t('components.demo_requirement_card.reload'),
                                               helpers.admin_demo_documents_path)),
-                            class: 'fr-error-text', id: evidence_type_failure_field, hidden: true,
-                            data: { demo_card_target: 'typeFailure' } %>
+                            class: 'fr-error-text', id: combination_failure_field, hidden: true,
+                            data: { demo_card_target: 'combinationFailure' } %>
                 </div>
               <% end %>
             <% elsif !countries %>
@@ -120,112 +120,133 @@
       <hr class="fr-mt-3w">
 
       <div class="requirement-card__actions" data-demo-card-target="foot">
-        <%# The questions the Data Service Directory asks before it can name the
-            provider, in the order its exception writes them, each labelled in
-            its own language (RGAA 8.7) and in the control the DSFR gives its
-            type. Answering sends them at once, as choosing a country or a type
-            does, once every question has its answer; only the resolution below
-            is replaced: the questions keep the focus and what was typed, and
-            the region of the country form announces what the resolution now
-            says (RGAA 7.4). %>
-        <% if questions %>
-          <%= form_with url: answer_path, method: :patch, class: 'requirement-card__questions',
-                html: { lang: 'en' }, data: { demo_card_target: 'questions', action: 'submit->demo-card#answer' } do %>
-            <% answering = { action: 'change->demo-card#answer' } %>
-            <% questions.each do |question| %>
-              <% label = render(DirectoryValueComponent.new(lang: question.language)) { question.label } %>
-              <% if question.control == :radio %>
-                <fieldset class="fr-fieldset fr-mb-2w" id="<%= question_field(question) %>" data-demo-card-question>
-                  <legend class="fr-fieldset__legend fr-text--regular"><%= label %></legend>
-                  <% { 'true' => 'yes', 'false' => 'no' }.each do |value, wording| %>
-                    <div class="fr-fieldset__element fr-fieldset__element--inline">
-                      <div class="fr-radio-group">
-                        <%= radio_button_tag question_name(question), value, question.value == value,
-                              id: "#{question_field(question)}-#{value}", data: answering %>
-                        <label class="fr-label" for="<%= question_field(question) %>-<%= value %>">
-                          <%= t("components.demo_requirement_card.questions.#{wording}") %>
-                        </label>
-                      </div>
+        <%# One line per evidence type of the combination, in the order of the
+            list: chapter 3.2.2 §2.3 has « at least one Evidence for each
+            Evidence Type » provided, so each names its own provider, or says
+            why it cannot. `data-demo-card-line` is what the answer to a line's
+            questions finds that line by. %>
+        <% lines.each do |line| %>
+          <div class="requirement-card__line" data-demo-card-line="<%= line.evidence_type_uuid %>">
+            <%# The questions the Data Service Directory asks on this line
+                before it can name the provider, in the order its exception
+                writes them, each labelled in its own language (RGAA 8.7) and in
+                the control the DSFR gives its type. Answering sends them at
+                once, as choosing a country or a combination does, once every
+                question of the line has its answer; only the resolution of the
+                line and the zone are replaced: the questions keep the focus
+                and what was typed, and the region of the country form
+                announces what the resolution now says (RGAA 7.4). %>
+            <% if (asked = questions(line)) %>
+              <%= form_with url: answer_path(line), method: :patch, class: 'requirement-card__questions',
+                    html: { lang: 'en' }, data: { demo_card_target: 'questions', action: 'submit->demo-card#answer' } do %>
+                <% answering = { action: 'change->demo-card#answer' } %>
+                <% asked.each do |question| %>
+                  <% label = render(DirectoryValueComponent.new(lang: question.language)) { question.label } %>
+                  <% if question.control == :radio %>
+                    <fieldset class="fr-fieldset fr-mb-2w" id="<%= question_field(line, question) %>" data-demo-card-question>
+                      <legend class="fr-fieldset__legend fr-text--regular"><%= label %></legend>
+                      <% { 'true' => 'yes', 'false' => 'no' }.each do |value, wording| %>
+                        <div class="fr-fieldset__element fr-fieldset__element--inline">
+                          <div class="fr-radio-group">
+                            <%= radio_button_tag question_name(question), value, question.value == value,
+                                  id: "#{question_field(line, question)}-#{value}", data: answering %>
+                            <label class="fr-label" for="<%= question_field(line, question) %>-<%= value %>">
+                              <%= t("components.demo_requirement_card.questions.#{wording}") %>
+                            </label>
+                          </div>
+                        </div>
+                      <% end %>
+                    </fieldset>
+                  <% elsif question.control == :select %>
+                    <%# The prompt is offered until a value is chosen, as the
+                        list of the combinations offers its own. %>
+                    <div class="fr-select-group fr-mb-2w" data-demo-card-question>
+                      <label class="fr-label" for="<%= question_field(line, question) %>"><%= label %></label>
+                      <%= select_tag question_name(question), options_for_select(question.options, question.value),
+                            prompt: (t('components.demo_requirement_card.questions.prompt') unless question.value),
+                            class: 'fr-select', id: question_field(line, question), data: answering %>
+                    </div>
+                  <% else %>
+                    <div class="fr-input-group fr-mb-2w" data-demo-card-question>
+                      <label class="fr-label" for="<%= question_field(line, question) %>"><%= label %></label>
+                      <%= text_field_tag question_name(question), question.value, class: 'fr-input',
+                            id: question_field(line, question), data: answering %>
                     </div>
                   <% end %>
-                </fieldset>
-              <% elsif question.control == :select %>
-                <%# The prompt is offered until a value is chosen, as the list of
-                    the types offers its own. %>
-                <div class="fr-select-group fr-mb-2w" data-demo-card-question>
-                  <label class="fr-label" for="<%= question_field(question) %>"><%= label %></label>
-                  <%= select_tag question_name(question), options_for_select(question.options, question.value),
-                        prompt: (t('components.demo_requirement_card.questions.prompt') unless question.value),
-                        class: 'fr-select', id: question_field(question), data: answering %>
-                </div>
-              <% else %>
-                <div class="fr-input-group fr-mb-2w" data-demo-card-question>
-                  <label class="fr-label" for="<%= question_field(question) %>"><%= label %></label>
-                  <%= text_field_tag question_name(question), question.value, class: 'fr-input',
-                        id: question_field(question), data: answering %>
-                </div>
+                <% end %>
+                <%# Rendered here and hidden, as the country's: the server
+                    cannot say it could not be reached. Outside the resolution,
+                    so no answer takes it away but the controller. %>
+                <%= tag.p t('components.demo_requirement_card.questions.unreachable_html',
+                            reload: link_to(t('components.demo_requirement_card.reload'),
+                                            helpers.admin_demo_documents_path)),
+                          class: 'fr-error-text fr-mb-2w', id: answer_failure_field(line), hidden: true,
+                          data: { demo_card_target: 'answerFailure' } %>
               <% end %>
             <% end %>
-            <%# Rendered here and hidden, as the country's: the server cannot say
-                it could not be reached. Outside the resolution, so no answer
-                takes it away but the controller. %>
-            <%= tag.p t('components.demo_requirement_card.questions.unreachable_html',
-                        reload: link_to(t('components.demo_requirement_card.reload'),
-                                        helpers.admin_demo_documents_path)),
-                      class: 'fr-error-text fr-mb-2w', id: answer_failure_field, hidden: true,
-                      data: { demo_card_target: 'answerFailure' } %>
-          <% end %>
+
+            <div class="requirement-card__resolution" data-demo-card-target="resolution">
+              <% if line.nameable? %>
+                <p class="fr-mb-0" lang="en" data-demo-card-announced>
+                  <%= t('components.demo_requirement_card.from_html',
+                        evidence_type: render(DirectoryValueComponent.new(lang: line.evidence_type_language)) { line.evidence_type },
+                        provider: render(DirectoryValueComponent.new(lang: line.provider_language)) { line.provider }) %>
+                </p>
+
+                <% if (version = unspoken(line)) %>
+                  <%# A warning and not a sentence among others: the line names
+                      a provider and the card offers nothing to ask it. The DSFR
+                      alert carries its icon besides its colour, which RGAA 3.1
+                      wants. %>
+                  <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
+                    <p><%= t('components.demo_requirement_card.unsupported_version', version: version.number) %></p>
+                  </div>
+                <% end %>
+              <%# Questions still waiting for their first answers offer no
+                  refusal: nothing is refused yet. %>
+              <% elsif refused?(line) %>
+                <%# Nothing to name is nothing to click: requirement 27 makes
+                    the two names a condition of the request. What the
+                    directories answered is said in the card's own words — the
+                    code and the sentence they returned belong to the
+                    operator's console, not to a portal — and a directory that
+                    declined to answer is not a country publishing nothing, so
+                    the line says which of the two happened. The sign says
+                    again the warning the colour carries (RGAA 3.1), hidden
+                    from the assistive technologies, which have the sentence. %>
+                <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
+                  <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%= refusal(line) %>
+                </p>
+              <% end %>
+            </div>
+          </div>
         <% end %>
 
-        <div class="requirement-card__resolution" data-demo-card-target="resolution">
-          <% if nameable? %>
-            <p class="fr-mb-0" lang="en" data-demo-card-announced>
-              <%= t('components.demo_requirement_card.from_html',
-                    evidence_type: render(DirectoryValueComponent.new(lang: evidence_type_language)) { evidence_type },
-                    provider: render(DirectoryValueComponent.new(lang: provider_language)) { provider }) %>
-            </p>
-
-            <% if unspoken %>
-              <%# A warning and not a sentence among others: the card names a
-                  provider and offers nothing to ask it. The DSFR alert carries
-                  its icon besides its colour, which RGAA 3.1 wants. %>
-              <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
-                <p><%= t('components.demo_requirement_card.unsupported_version', version: unspoken.number) %></p>
-              </div>
-            <% elsif askable? %>
-              <%# The button that opens the exchange, and everything that becomes of
-                  it. This element persists and its contents are what an answer
-                  replaces: it holds the announced region, which would announce
-                  nothing were it swapped out with what it announces. %>
-              <div class="demo-request fr-mt-2w" aria-live="polite" data-controller="demo-request"
-                data-action="submit->demo-request#submit"
-                data-demo-request-url-value="<%= zone_path %>">
-                <%= render zone %>
-              </div>
-            <% end %>
-          <%# A type still to choose offers no button and no refusal: requirement
-              27 of chapter 1 §2 has the type and the provider named before any
-              request is made, and nothing is refused yet. Nor do questions
-              still waiting for their first answers. %>
-          <% elsif refused? %>
-            <%# Nothing to name is nothing to click: requirement 27 makes the two
-                names a condition of the request. What the directories answered is
-                said in the card's own words — the code and the sentence they
-                returned belong to the operator's console, not to a portal — and
-                a directory that declined to answer is not a country publishing
-                nothing, so the card says which of the two happened. %>
+        <%# A combination still to choose offers no button and no refusal:
+            requirement 27 of chapter 1 §2 has the type and the provider named
+            before any request is made, and nothing is refused yet. %>
+        <% if refused_whole? %>
+          <div class="requirement-card__resolution">
             <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
-              <%# The warning the pale red carries, said again in a sign: colour
-                  alone never carries information (RGAA 3.1). Hidden from the
-                  rendering the assistive technologies read, which has the
-                  sentence. %>
-              <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%=
-                if published_nothing?
-                  t('components.demo_requirement_card.no_provider_html', country: country_name)
-                else
-                  t('components.demo_requirement_card.no_answer_html', country: country_name)
-                end %>
+              <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%= refusal(wording) %>
             </p>
+          </div>
+        <% end %>
+
+        <%# The buttons that open the exchanges, and everything that becomes of
+            them, once every line names its provider: a combination is asked for
+            whole. This element persists and its contents are what an answer
+            replaces: it holds the announced region, which would announce
+            nothing were it swapped out with what it announces. Its own
+            wrapper is what an answer to a line's questions replaces, the zone
+            appearing once the last line is resolved. %>
+        <div class="requirement-card__request" data-demo-card-target="request">
+          <% if askable? %>
+            <div class="demo-request fr-mt-2w" aria-live="polite" data-controller="demo-request"
+              data-action="submit->demo-request#submit"
+              data-demo-request-url-value="<%= zone_path %>">
+              <%= render zone %>
+            </div>
           <% end %>
         </div>
       </div>

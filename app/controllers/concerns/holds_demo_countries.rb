@@ -1,5 +1,5 @@
 # The member state each card of the documents page resolves its requirement in,
-# and the request of that card is addressed to — step 16 of chapter 1 §10.1:
+# and the requests of that card are addressed to — step 16 of chapter 1 §10.1:
 # « The sample Portal asks the user to specify from which Member State the
 # evidence is to be requested. »
 #
@@ -35,12 +35,10 @@ module HoldsDemoCountries
     (chosen_countries.keys | asked).index_with { |uuid| card_country(uuid) }
   end
 
-  def held_card?(requirement_uuid) = held_country(requirement_uuid).present?
+  def held_card?(requirement_uuid) = holding_request(requirement_uuid).present?
 
   # `nil` while the card is free to change country.
-  def held_country(requirement_uuid)
-    demo_request_for(requirement_uuid)&.country_code if demo_outcome_for(requirement_uuid)&.holds_country?
-  end
+  def held_country(requirement_uuid) = holding_request(requirement_uuid)&.country_code
 
   def chosen_countries = @chosen_countries ||= ::Demo::Card.countries(journey.id)
 end

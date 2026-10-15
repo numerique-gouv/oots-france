@@ -1,6 +1,31 @@
 require 'rails_helper'
 
 RSpec.describe EvidenceTypeList do
+  # Chapter 3.2.2 §2.3: « The user can select an 'Evidence Type List' amongst
+  # the ones proposed by the Evidence Broker ».
+  describe '.combinations' do
+    def list(id, *types, **attributes)
+      build(:evidence_type_list, id:, evidence_types: types.map { |type| build(:evidence_type, id: "https://sr/EL/#{type}") },
+        **attributes)
+    end
+
+    it 'keeps the lists in the order the directory wrote them' do
+      expect(described_class.combinations([list('a', 'a'), list('bc', 'b', 'c')]).map(&:id)).to eq(%w[a bc])
+    end
+
+    it 'leaves out a list that publishes no type, declared or not' do
+      lists = [list('a', 'a'), build(:evidence_type_list, :no_match, id: 'rien'), list('vide')]
+
+      expect(described_class.combinations(lists).map(&:id)).to eq(%w[a])
+    end
+
+    # The jurisdiction that tells two such lists apart is not shown, chapter
+    # 3.2.4 §4.3.5 evaluating each independently.
+    it 'makes one combination of two lists calling on the same types, the first' do
+      expect(described_class.combinations([list('bc', 'b', 'c'), list('ailleurs', 'c', 'b')]).map(&:id)).to eq(%w[bc])
+    end
+  end
+
   describe '.distinct_evidence_types' do
     it 'counts a type once however many alternatives call on it' do
       shared = build(:evidence_type, id: 'https://sr/evidencetypeclassifications/FR/shared')

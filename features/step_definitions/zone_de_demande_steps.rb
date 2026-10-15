@@ -8,7 +8,7 @@ ZONE_ADDRESS = '*/admin/demo/v2.0/T1/demande*'.freeze
 COUNTRY_ADDRESS = '*/admin/demo/v2.0/T1/pays*'.freeze
 
 # The address a card's list posts the chosen evidence type to, in either line.
-EVIDENCE_TYPE_ADDRESS = '*/T1/type_justificatif*'.freeze
+EVIDENCE_TYPE_LIST_ADDRESS = '*/T1/combinaison*'.freeze
 
 # The two evidence types Austria publishes for « (TEST) Test Requirement », in
 # `eb_evidence_types_at`, by the title the list shows: what the contract
@@ -145,16 +145,16 @@ end
     evidence_type: austrian_type_id(AUSTRIAN_TYPES.fetch(title)))
 end
 
-Étantdonné('le choix du type répondu en {string} sans l\'en-tête "Deferred-Fragment", puis coupé, devant le navigateur') do |status|
-  evidence_type_requests.answer(status: status.to_i, body: BAD_GATEWAY_PAGE).cut
+Étantdonné('le choix de la combinaison répondu en {string} sans l\'en-tête "Deferred-Fragment", puis coupé, devant le navigateur') do |status|
+  combination_requests.answer(status: status.to_i, body: BAD_GATEWAY_PAGE).cut
 end
 
-Quand('le choix suivant du type est coupé devant le navigateur') do
-  evidence_type_requests.cut
+Quand('le choix suivant de la combinaison est coupé devant le navigateur') do
+  combination_requests.cut
 end
 
-Étantdonné('le choix du type répondu en {string} sans l\'en-tête "Deferred-Fragment" devant le navigateur') do |status|
-  evidence_type_requests.answer(status: status.to_i, body: '')
+Étantdonné('le choix de la combinaison répondu en {string} sans l\'en-tête "Deferred-Fragment" devant le navigateur') do |status|
+  combination_requests.answer(status: status.to_i, body: '')
 end
 
 Étantdonné('la soumission de la demande retenue devant le navigateur') do
@@ -250,8 +250,8 @@ Quand("l'usager choisit {string} dans la liste des pays de la {word} carte") do 
   within(card(rank)) { find_field(label).find('option', text: country).select_option }
 end
 
-Quand("l'usager choisit {string} dans la liste des types de la carte") do |title|
-  awaiting_the_card_answer(find_field(evidence_type_label)) { |field| field.find('option', exact_text: title).select_option }
+Quand("l'usager choisit {string} dans la liste des combinaisons de la carte") do |title|
+  awaiting_the_card_answer(find_field(combination_label)) { |field| field.find('option', exact_text: title).select_option }
 end
 
 Quand('la soumission retenue est libérée') do
@@ -341,11 +341,13 @@ end
 # under another word, and giving up offers neither.
 Alors('la page n\'affiche aucun bouton de demande') do
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit'))
+  expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit_all'))
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.retry'))
 end
 
+# Exactly: « Request the document » is a part of « Request the documents ».
 Alors('la page affiche le bouton {string}') do |label|
-  expect(page).to have_button(label)
+  expect(page).to have_button(label, exact: true)
 end
 
 Alors('la page affiche le lien {string}') do |label|
@@ -405,22 +407,22 @@ Alors('la carte ne nomme aucun fournisseur') do
   expect(find(CARD)).to have_no_css("#{RESOLUTION} .directory-value")
 end
 
-Alors('la liste des types de la carte affiche {string}') do |title|
-  expect(find_field(evidence_type_label)).to have_css('option:checked', exact_text: title)
+Alors('la liste des combinaisons de la carte affiche {string}') do |title|
+  expect(find_field(combination_label)).to have_css('option:checked', exact_text: title)
 end
 
-Alors('la liste des types de la carte offre {string} puis {string}') do |first, second|
-  offered = find_field(evidence_type_label).all('option').map(&:text).reject { |text| text == evidence_type_prompt }
+Alors('la liste des combinaisons de la carte offre {string} puis {string}') do |first, second|
+  offered = find_field(combination_label).all('option').map(&:text).reject { |text| text == combination_prompt }
 
   expect(offered).to eq([first, second])
 end
 
-Alors("la liste des types de la carte n'offre plus {string}") do |title|
-  expect(find_field(evidence_type_label)).to have_no_css('option', exact_text: title)
+Alors("la liste des combinaisons de la carte n'offre plus {string}") do |title|
+  expect(find_field(combination_label)).to have_no_css('option', exact_text: title)
 end
 
-Alors("la carte n'offre pas de liste des types") do
-  expect(find(CARD)).to have_no_field(evidence_type_label)
+Alors("la carte n'offre pas de liste des combinaisons") do
+  expect(find(CARD)).to have_no_field(combination_label)
 end
 
 Alors('le contrat a reçu la demande pour le type {string}') do |title|
@@ -560,11 +562,11 @@ def identify_in_line_1_2
   mark_the_page
 end
 
-def evidence_type_requests = intercepted_requests(pattern: EVIDENCE_TYPE_ADDRESS)
+def combination_requests = intercepted_requests(pattern: EVIDENCE_TYPE_LIST_ADDRESS)
 
-def evidence_type_label = I18n.t('components.demo_requirement_card.evidence_type_label')
+def combination_label = I18n.t('components.demo_requirement_card.combination_label')
 
-def evidence_type_prompt = I18n.t('components.demo_requirement_card.evidence_type_prompt')
+def combination_prompt = I18n.t('components.demo_requirement_card.combination_prompt')
 
 def austrian_type_id(uuid) = "https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/#{uuid}"
 

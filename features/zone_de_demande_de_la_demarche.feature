@@ -200,28 +200,28 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et l'usager identifié sur la page des justificatifs d'un parcours en 1.2
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des types de la carte affiche "Select a document"
-    Et la liste des types de la carte offre "Test Evidence Austria (AT)" puis "Austrian Test Evidence Type without Reauthentication"
+    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Et la liste des combinaisons de la carte offre "Test Evidence Austria (AT)" puis "Austrian Test Evidence Type without Reauthentication"
     Et la carte ne nomme aucun fournisseur
     Et la page n'affiche aucun bouton de demande
     Et la page n'affiche pas "Evidence impossible to satisfy"
-    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
     Et la page affiche le bouton "Request the document"
-    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
-    Et la liste des types de la carte n'offre plus "Select a document"
+    Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
+    Et la liste des combinaisons de la carte n'offre plus "Select a document"
     Et la carte annonce "Test Evidence Provider Austria (AT)"
     Et la page des justificatifs n'a pas été rechargée
-    Quand l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Quand l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
     Alors la carte nomme le type "Austrian Test Evidence Type without Reauthentication" et le fournisseur "Test Evidence Provider Austria (AT)"
-    Et la liste des types de la carte affiche "Austrian Test Evidence Type without Reauthentication"
+    Et la liste des combinaisons de la carte affiche "Austrian Test Evidence Type without Reauthentication"
     Et la page des justificatifs n'a pas été rechargée
     Et le contrat n'a reçu aucune demande
     Quand l'usager clique sur "Request the document"
     Alors le contrat a reçu la demande pour le type "Austrian Test Evidence Type without Reauthentication"
     Quand l'usager recharge la page des justificatifs
     Alors la carte n'offre pas de liste des pays
-    Et la carte n'offre pas de liste des types
+    Et la carte n'offre pas de liste des combinaisons
     Et la carte nomme le pays "Austria (AT)"
     Et la carte nomme le type "Austrian Test Evidence Type without Reauthentication" et le fournisseur "Test Evidence Provider Austria (AT)"
 
@@ -229,75 +229,75 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et aucun fournisseur publié en Autriche pour "Austrian Test Evidence Type without Reauthentication"
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
     Alors la page affiche "No provider listed by Austria for this evidence"
     Et la page n'affiche aucun bouton de demande
-    Et la liste des types de la carte affiche "Austrian Test Evidence Type without Reauthentication"
+    Et la liste des combinaisons de la carte affiche "Austrian Test Evidence Type without Reauthentication"
     Et la page n'affiche pas "Evidence impossible to satisfy"
-    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page affiche "This provider does not support OOTS 2.0"
     Et la page n'affiche aucun bouton de demande
-    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
 
   Scénario: un choix de type resté sans réponse laisse la carte sur son type et le dit, jusqu'au choix suivant qui aboutit
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
-    Et le choix du type répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
+    Et le choix de la combinaison répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte affiche "The document could not be changed: this page could not reach the service."
     Et la carte annonce "The document could not be changed: this page could not reach the service."
-    Et la liste des types de la carte affiche "Select a document"
+    Et la liste des combinaisons de la carte affiche "Select a document"
     Et la carte ne nomme aucun fournisseur
     Et la page des justificatifs n'a pas été rechargée
-    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte affiche "The document could not be changed: this page could not reach the service."
-    Et la liste des types de la carte affiche "Select a document"
-    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
     Et la page n'affiche pas "The document could not be changed"
     Et la page des justificatifs n'a pas été rechargée
-    Quand le choix suivant du type est coupé devant le navigateur
-    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des types de la carte
+    Quand le choix suivant de la combinaison est coupé devant le navigateur
+    Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
     Alors la carte affiche "The document could not be changed: this page could not reach the service."
-    Et la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
     Et la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
 
   Scénario: un choix de type refusé par la page la recharge, et une session finie mène à la page de connexion
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
-    Et le choix du type répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
+    Et le choix de la combinaison répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page des justificatifs a été rechargée
     Et la page n'affiche pas "The document could not be changed"
     Quand le compte de l'administrateur est supprimé
-    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page de connexion s'affiche
 
   Scénario: le type choisi tient au rechargement, et un autre pays ou une nouvelle identification le défont
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Et que l'usager recharge la page des justificatifs
-    Alors la liste des types de la carte affiche "Test Evidence Austria (AT)"
+    Alors la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
     Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Alors la liste des pays de la carte affiche "Finland (FI)"
-    Et la carte n'offre pas de liste des types
+    Et la carte n'offre pas de liste des combinaisons
     Et la page affiche "Keha v. 2.0"
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des types de la carte affiche "Select a document"
+    Alors la liste des combinaisons de la carte affiche "Select a document"
     Et la page n'affiche aucun bouton de demande
-    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des types de la carte
+    Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Et que l'usager s'identifie de nouveau, dans un parcours en 1.2
     Alors la liste des pays de la carte affiche "France (FR)"
-    Et la carte n'offre pas de liste des types
+    Et la carte n'offre pas de liste des combinaisons
     Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des types de la carte affiche "Select a document"
+    Alors la liste des combinaisons de la carte affiche "Select a document"
     Et la page n'affiche aucun bouton de demande
 
   Scénario: la carte pose la question du Data Service Directory, se résout sur la réponse de l'usager, et la demande part avec elle
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
     Et la question "Projectathon test case" offre "TC03 - Evidence request error flow due to Basic Registry error"
     Et la carte ne nomme aucun fournisseur
@@ -322,7 +322,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et le Data Service Directory refusant la réponse "TC02" en "DSD:ERR:0001"
     Et le Data Service Directory refusant la réponse "TC04" en "DSD:ERR:0006"
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose la question "Projectathon test case" dans un champ texte
     Quand l'usager répond "TC02" à la question "Projectathon test case"
     Alors la page affiche "No provider listed by Greece for this evidence"
@@ -338,7 +338,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: la carte pose chaque question dans la forme que son type demande, et une exception sans question se dit comme un refus
     Étant donné la Grèce posant une question de chaque type sur le fournisseur de "Projectathon test evidence"
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose, dans l'ordre, les questions :
       | question               | forme            |
       | Projectathon test case | liste            |
@@ -360,7 +360,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
     Et la réponse aux questions répondue en "502" sans l'en-tête "Deferred-Fragment", puis coupée, devant le navigateur
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Alors la carte affiche sous ses questions "The answer could not be sent: this page could not reach the service."
     Et la carte annonce "The answer could not be sent: this page could not reach the service."
@@ -377,7 +377,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: la réponse tient au rechargement, une demande la retient, et un autre pays la défait
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
     Quand l'usager recharge la page des justificatifs
@@ -386,7 +386,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et le Data Service Directory a reçu sa requête sans la réponse, puis avec elle
     Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
     Et que l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Et que l'usager choisit "Projectathon test evidence" dans la liste des types de la carte
+    Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Et que l'usager clique sur "Request the document"

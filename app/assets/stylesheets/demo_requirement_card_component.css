@@ -17,12 +17,15 @@
 }
 
 /*
- * The questions of the Data Service Directory each take a line, and what the
+ * One line per evidence type of the combination, one under the other. The
+ * questions of the Data Service Directory each take a line, and what the
  * answers resolve stands under them across the whole card, laid out as the
  * foot of a card that asks nothing.
  */
+.requirement-card__line,
 .requirement-card__questions,
-.requirement-card__resolution {
+.requirement-card__resolution,
+.requirement-card__request {
   flex: 1 1 100%;
 }
 
@@ -59,19 +62,20 @@
 }
 
 /*
- * The card of a requirement the document has come back for. The user is looking
+ * The card of a requirement every document has come back for. The user is looking
  * for what their procedure still needs, and a card they can stop thinking about
  * says so at a glance, before the sentence inside it is read.
  *
- * Read from the zone rather than set on the card: what became of a click is
- * known where the button is, and the zone is replaced under a card that is not —
- * so `:has` is what lets the card follow an answer it never receives itself.
+ * Read from the blocks of the zone rather than set on the card: what became of
+ * a click is known where the button is, and the zone is replaced under a card
+ * that is not — so `:has` is what lets the card follow an answer it never
+ * receives itself.
  *
  * The colour is never the whole of what says so: the zone states it in words
  * and marks it with a check (RGAA 3.1). The border reinforces, it does not
  * inform.
  */
-.requirement-card:has(.demo-request__body[data-outcome="delivered"]) {
+.requirement-card:has(.demo-request__block[data-state="delivered"]):not(:has(.demo-request__block:not([data-state="delivered"]))) {
   border: 1px solid var(--border-plain-success);
 }
 

@@ -94,14 +94,14 @@ RSpec.describe DirectoryLookup::Resolve do
     end
   end
 
-  # Requirement 26 of chapter 1 §2: where a screen offers the user the types,
-  # nothing is chosen in their place. Two alternative lists of one type each, as
-  # Austria publishes for « (TEST) Test Requirement ».
+  # Requirement 26 of chapter 1 §2: where a screen offers the user the
+  # combinations, nothing is chosen in their place. Two alternative lists of one
+  # type each, as Austria publishes for « (TEST) Test Requirement ».
   describe 'when the caller offers the user the alternatives' do
     subject(:lookup) do
       described_class.call(
         evidence_broker:, data_service_directory:, alternatives_offered: true,
-        procedure_code: '00', country_code: 'AT', requirement_id: nil, evidence_type_id:,
+        procedure_code: '00', country_code: 'AT', requirement_id: nil, evidence_type_list_id:, evidence_type_id: nil,
       )
     end
 
@@ -109,22 +109,25 @@ RSpec.describe DirectoryLookup::Resolve do
       instance_double(EvidenceBrokerClient, requirements:, evidence_type_lists: published)
     end
     let(:published) do
-      [build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/high')]),
-       build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/low')])]
+      [build(:evidence_type_list, id: 'haute', evidence_types: [build(:evidence_type, id: 'https://sr/AT/high')]),
+       build(:evidence_type_list, id: 'basse', evidence_types: [build(:evidence_type, id: 'https://sr/AT/low')])]
     end
 
-    context 'when one of several types is named' do
-      let(:evidence_type_id) { 'low' }
+    # Chapter 3.2.2 §2.3: « The user can select an 'Evidence Type List'
+    # amongst the ones proposed by the Evidence Broker ».
+    context 'when one of several combinations is named' do
+      let(:evidence_type_list_id) { 'basse' }
 
-      it 'asks the Data Service Directory about that one' do
+      it 'asks the Data Service Directory about its type' do
         expect(lookup).to be_success
+        expect(lookup.evidence_type_list.id).to eq('basse')
         expect(data_service_directory).to have_received(:data_services)
           .with(evidence_type_classification: 'https://sr/AT/low', country_code: 'AT', classifications: {})
       end
     end
 
     context 'when none is named' do
-      let(:evidence_type_id) { nil }
+      let(:evidence_type_list_id) { nil }
 
       it 'chooses none, stops before the Data Service Directory and keeps the lists' do
         expect(lookup).to be_failure
@@ -135,26 +138,49 @@ RSpec.describe DirectoryLookup::Resolve do
       end
     end
 
-    # The directory changes: a type remembered on a card may no longer be
-    # published, and the card then waits for a choice again.
+    # The directory changes: a combination remembered on a card may no longer
+    # be published, and the card then waits for a choice again.
     context 'when the one named is no longer published' do
-      let(:evidence_type_id) { 'gone' }
+      let(:evidence_type_list_id) { 'gone' }
 
       it 'chooses none' do
         expect(lookup.error[:key]).to eq(:evidence_type_unchosen)
       end
     end
 
-    context 'when the country publishes a single type' do
-      let(:evidence_type_id) { nil }
+    # Two lists calling on the same types are one combination, whatever
+    # jurisdiction tells them apart.
+    context 'when the country publishes a single combination' do
+      let(:evidence_type_list_id) { nil }
       let(:published) do
-        [build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')]),
-         build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')])]
+        [build(:evidence_type_list, id: 'une', evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')]),
+         build(:evidence_type_list, id: 'deux', evidence_types: [build(:evidence_type, id: 'https://sr/AT/only')])]
       end
 
-      it 'keeps it, there being nothing to choose' do
+      it 'keeps the first, there being nothing to choose' do
         expect(lookup).to be_success
+        expect(lookup.evidence_type_list.id).to eq('une')
         expect(lookup.evidence_type.id).to eq('https://sr/AT/only')
+      end
+    end
+
+    context 'when the combination calls on several types' do
+      let(:evidence_type_list_id) { 'ensemble' }
+      let(:published) do
+        [build(:evidence_type_list, id: 'ensemble', evidence_types: [
+          build(:evidence_type, id: 'https://sr/AT/high'), build(:evidence_type, id: 'https://sr/AT/low'),
+        ])]
+      end
+
+      it 'stands on its first type' do
+        expect(lookup.evidence_type.id).to eq('https://sr/AT/high')
+      end
+
+      it 'stands on the type named, where it is one of them' do
+        named = described_class.call(evidence_broker:, data_service_directory:, alternatives_offered: true,
+          procedure_code: '00', country_code: 'AT', evidence_type_list_id:, evidence_type_id: 'low')
+
+        expect(named.evidence_type.id).to eq('https://sr/AT/low')
       end
     end
   end

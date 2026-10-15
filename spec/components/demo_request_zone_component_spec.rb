@@ -3,21 +3,28 @@ require 'rails_helper'
 RSpec.describe DemoRequestZoneComponent, type: :component do
   # The pages of the walk live under the line they play, and the addresses a
   # component writes take it from the page being rendered.
-  subject(:zone) { described_class.new(outcome:, requirement_uuid:) }
+  subject(:zone) { zone_of(outcome) }
 
   around { |example| with_request_url('/admin/demo/v2.0/T1/documents') { example.run } }
 
   let(:requirement_uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
-
+  let(:type) { DemoRequestZoneComponent::Type.new(uuid: 'aaaa', name: 'Simple test evidence', language: 'EN') }
   let(:outcome) { DemoOutcomeWording.new(answer:, request:) }
   let(:request) { Demo::Request.new(exchange_id: 'echange-1', conversation_id: 'conversation-1') }
   let(:answer) { Demo::ContractAnswer.new(status: 200, payload:) }
   let(:payload) { { 'statut' => 'sent' } }
 
+  # The zone of a combination of one type: a single block, which says what
+  # each block says and no more.
+  def zone_of(outcome, failure: nil, requirement_uuid: self.requirement_uuid)
+    described_class.new(requirement_uuid:,
+      blocks: [DemoRequestComponent.new(outcome:, requirement_uuid:, evidence_type: type, failure:)])
+  end
+
   # Nothing has been clicked yet: the zone is the button and nothing else, and
   # it asks nobody anything until it is.
   context 'without a click behind it' do
-    subject(:zone) { described_class.new(outcome: nil, requirement_uuid:) }
+    subject(:zone) { zone_of(nil) }
 
     it 'offers the button, and declares nothing to wait on' do
       render_inline(zone)
@@ -91,7 +98,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_link('Open the document',
-        href: "/admin/demo/v2.0/T1/justificatif?exigence=#{requirement_uuid}")
+        href: "/admin/demo/v2.0/T1/justificatif?exigence=#{requirement_uuid}&type=aaaa")
       expect(page).to have_css('.demo-request__body[data-polling="false"]')
       expect(page).to have_no_button('Request the document')
     end
@@ -110,8 +117,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'puts the button before what it says of itself' do
       render_inline(zone)
 
-      expect(page.find('.demo-request__body > *:first-child')).to have_text('Open the document')
-      expect(page.find('.demo-request__body > *:nth-child(2)')).to have_text('Document retrieved successfully')
+      expect(page.find('.demo-request__block > *:first-child')).to have_text('Open the document')
+      expect(page.find('.demo-request__block > *:nth-child(2)')).to have_text('Document retrieved successfully')
     end
   end
 
@@ -275,7 +282,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # The contract unreachable says nothing of the exchange: the zone reports the
   # outage rather than presenting it as an answer.
   context 'when the contract could not be read' do
-    subject(:zone) { described_class.new(outcome: DemoOutcomeWording.unanswered(request:, error: 'Panne'), requirement_uuid:) }
+    subject(:zone) { zone_of(DemoOutcomeWording.unanswered(request:, error: 'Panne')) }
 
     it 'reports the outage where it would report a refusal, and keeps its reason for the log' do
       render_inline(zone)
@@ -289,7 +296,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # of the journey before, whose code says nothing of what just happened.
   context 'when the click was refused while an earlier exchange is still followed' do
     subject(:zone) do
-      described_class.new(outcome:, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
+      zone_of(outcome, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
 
     let(:payload) { { 'statut' => 'failed', 'codeErreur' => 'EDM:ERR:0003' } }
@@ -306,7 +313,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # and the zone names which of the contract's refusals it was.
   context 'when the click itself was refused' do
     subject(:zone) do
-      described_class.new(outcome: nil, requirement_uuid:, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
+      zone_of(nil, failure: { key: :demo_refused, errors: ['EB:ERR:0001'] })
     end
 
     it 'names the refusal and what the contract returned' do
@@ -322,15 +329,76 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   # address tells them apart: a click that named no requirement would ask the
   # contract for whichever one it publishes first, under another card's name.
   describe 'the requirement each zone is about' do
-    subject(:zone) { described_class.new(outcome: nil, requirement_uuid: '2d21a531-d30e-4e30-9e5e-b53d6aedb30b') }
+    subject(:zone) { zone_of(nil, requirement_uuid: '2d21a531-d30e-4e30-9e5e-b53d6aedb30b') }
 
-    it 'names it on the address the button posts to' do
+    it 'names it, and the type of the block, on the address the button posts to' do
       render_inline(zone)
 
       expect(page).to have_css(
-        "form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b']",
+        "form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=2d21a531-d30e-4e30-9e5e-b53d6aedb30b&type=aaaa']",
         visible: :all,
       )
+    end
+
+    it 'names no type in a block alone' do
+      render_inline(zone)
+
+      expect(page).to have_no_css('.demo-request__type')
+    end
+  end
+
+  # OOTS-270: a combination of several types, a block per type.
+  describe 'a combination of several types' do
+    let(:types) do
+      [DemoRequestZoneComponent::Type.new(uuid: 'bbbb', name: 'Projectathon test evidence', language: 'EN'),
+       DemoRequestZoneComponent::Type.new(uuid: 'cccc', name: 'Simple test evidence', language: 'EN')]
+    end
+
+    def blocks(outcomes, failures: {})
+      types.zip(outcomes).map do |each, outcome|
+        DemoRequestComponent.new(outcome:, requirement_uuid:, evidence_type: each, headed: true, failure: failures[each.uuid])
+      end
+    end
+
+    # CA2 and CA3: one button, which asks for them all.
+    it 'offers one button for them all while none has been asked for' do
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil])))
+
+      expect(page).to have_button('Request the documents')
+      expect(page).to have_css("form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=#{requirement_uuid}']")
+      expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="idle"]')
+      expect(page).to have_css('[data-demo-request-target="loading"]', visible: :hidden, text: 'Requesting the documents')
+    end
+
+    # CA5: a click the contract refused leaves each type its own button.
+    it 'offers each block its own button once the combination was asked for' do
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil]), requested: true))
+
+      expect(page.all('[data-demo-request-block] button').map(&:text)).to eq(['Request the document'] * 2)
+    end
+
+    # CA6: a block per demand, each under the name of its type, and the zone
+    # waiting while any of them does.
+    it 'says each request in its own block, under the name of its type' do
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([outcome, nil])))
+
+      expect(page.all('.demo-request__type').map { |name| name.text.squish })
+        .to eq(['Projectathon test evidence, retrieved from the common services',
+                'Simple test evidence, retrieved from the common services'])
+      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending idle"]')
+      expect(page).to have_css('[data-demo-request-block][data-state="idle"]', text: 'Request the document')
+    end
+
+    # CA5: a click the contract refused is said in the block of its type, and
+    # the other keeps its own button.
+    it 'says a refused click in the block of its type alone' do
+      render_inline(described_class.new(requirement_uuid:,
+        blocks: blocks([nil, nil], failures: { 'bbbb' => { key: :demo_refused, errors: ['refus'] } })))
+
+      first, second = page.all('[data-demo-request-block]').to_a
+      expect(first).to have_css('.demo-request__failure', text: 'refus')
+      expect(second).to have_no_css('.demo-request__failure')
+      expect(second).to have_css("form[action='/admin/demo/v2.0/T1/demande?exigence=#{requirement_uuid}&type=cccc']")
     end
   end
 end

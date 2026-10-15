@@ -4,18 +4,34 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
   # The pages of the walk live under the line they play, and the addresses a
   # component writes take it from the page being rendered.
   subject(:card) do
-    described_class.new(wording:, country_code: 'FR', country_name: 'France',
-      zone: DemoRequestZoneComponent.new(outcome: nil, requirement_uuid: uuid))
+    described_class.new(wording:, country_code: 'FR', country_name: 'France', zone:)
   end
 
   around { |example| with_request_url('/admin/demo/v2.0/T1/documents') { example.run } }
 
   let(:uuid) { 'ffffffff-ffff-ffff-ffff-ffffffffffff' }
-  let(:wording) do
-    instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: true, choosable?: false, published_nothing?: false,
-      evidence_type: 'FR - Test Evidence Type', evidence_type_language: 'en',
-      provider: 'FR - Test Evidence Provider', provider_language: 'en',
-      requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
+  let(:zone) do
+    type = DemoRequestZoneComponent::Type.new(uuid: 'aaaa', name: 'FR - Test Evidence Type', language: 'en')
+
+    DemoRequestZoneComponent.new(requirement_uuid: uuid,
+      blocks: [DemoRequestComponent.new(outcome: nil, requirement_uuid: uuid, evidence_type: type)])
+  end
+  let(:wording) { card_wording(lines: [line]) }
+
+  def line(**attributes)
+    instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: true, published_nothing?: false,
+      evidence_type: 'FR - Test Evidence Type', evidence_type_language: 'en', evidence_type_uuid: 'aaaa',
+      provider: 'FR - Test Evidence Provider', provider_language: 'en', **attributes)
+  end
+
+  # What a line says, less what `DirectoryValueComponent` adds for a screen
+  # reader after each value the directories publish.
+  def said(element) = element.text.squish.gsub(', retrieved from the common services', '')
+
+  def card_wording(lines:, **attributes)
+    instance_double(DemoCardWording, lines:, nameable?: lines.any? && lines.all?(&:nameable?), choosable?: false,
+      combination_id: 'liste', published_nothing?: false, requirement: '(TEST) Test Requirement',
+      requirement_language: 'en', requirement_uuid: uuid, **attributes)
   end
 
   # Ce que le contrôleur Stimulus attend de la carte, et que rien d'autre ne
@@ -100,7 +116,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
   describe 'a provider that does not support the line of the journey' do
     subject(:card) do
       described_class.new(wording:, country_code: 'FI', country_name: 'Finland', countries: [['🇫🇮 Finland (FI)', 'FI']],
-        unspoken: EdmSpecification::V1_2)
+        unspoken: { 'aaaa' => EdmSpecification::V1_2 })
     end
 
     it 'says so under the provider, offers neither button nor zone, and still offers the country' do
@@ -114,60 +130,106 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     end
   end
 
-  # OOTS-263: the list of the evidence types the country publishes, where it
-  # publishes several (requirement 26 of chapter 1 §2), in place of a sentence.
-  describe 'a country publishing several evidence types' do
-    let(:types) { [['Test Evidence Austria (AT)', 'aaaa', { lang: 'EN' }], ['Without Reauthentication', 'bbbb', { lang: 'EN' }]] }
-    let(:countries) { [['🇦🇹 AT', 'AT']] }
+  # OOTS-270: the list of the combinations the country publishes, where it
+  # publishes several (chapter 3.2.2 §2.3), in place of a sentence.
+  describe 'a country publishing several combinations' do
+    let(:combinations) do
+      [['Simple test evidence', 'simple', { lang: 'EN' }], ['Compound test evidence', 'compound', { lang: 'EN' }]]
+    end
+    let(:countries) { [['🇬🇷 EL', 'EL']] }
 
     context 'when none is chosen' do
-      let(:wording) do
-        instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: true, published_nothing?: false,
-          evidence_type: nil, evidence_type_uuid: nil, requirement: '(TEST) Test Requirement',
-          requirement_language: 'en', requirement_uuid: uuid)
-      end
+      let(:wording) { card_wording(lines: [], choosable?: true, combination_id: nil) }
 
       it 'offers them on a prompt, names nothing under the rule, and is no dead end' do
-        render_inline(described_class.new(wording:, country_code: 'AT', countries:, evidence_types: types))
+        render_inline(described_class.new(wording:, country_code: 'EL', countries:, combinations:))
 
         form = page.find('form.requirement-card__evidence-type')
-        expect(form['action']).to eq("/admin/demo/v2.0/T1/type_justificatif?exigence=#{uuid}")
+        expect(form['action']).to eq("/admin/demo/v2.0/T1/combinaison?exigence=#{uuid}")
         expect(form).to have_select('Document to request',
-          options: ['Select a document', 'Test Evidence Austria (AT)', 'Without Reauthentication'])
+          options: ['Select a document', 'Simple test evidence', 'Compound test evidence'])
         expect(form.first('option')['value']).to eq('')
         expect(form).to have_no_css('option[selected]')
         expect(page.find('.requirement-card__actions').text.squish).to be_empty
         expect(page).to have_no_css('.requirement-card--unsatisfiable')
-        expect(page).to have_no_text('Satisfied by')
       end
 
       it 'renders, hidden beside the list, what it says of a choice that got no answer' do
-        render_inline(described_class.new(wording:, country_code: 'AT', countries:, evidence_types: types))
+        render_inline(described_class.new(wording:, country_code: 'EL', countries:, combinations:))
 
-        failure = page.find('[data-demo-card-target="typeFailure"]', visible: :hidden)
-        expect(failure['id']).to eq("type-#{uuid}-erreur")
+        failure = page.find('[data-demo-card-target="combinationFailure"]', visible: :hidden)
+        expect(failure['id']).to eq("combinaison-#{uuid}-erreur")
         expect(failure.text(:all).squish).to start_with('The document could not be changed')
       end
     end
 
-    context 'when one is chosen and served by nobody' do
+    # CA4: a line with no provider says so on its line, the others keep
+    # theirs, and the card offers no button and is no dead end.
+    context 'when one is chosen and one of its types is served by nobody' do
       let(:wording) do
-        instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: true, published_nothing?: true,
-          evidence_type: 'Without Reauthentication', evidence_type_uuid: 'bbbb',
-          requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
+        card_wording(choosable?: true, combination_id: 'compound', lines: [
+          line(evidence_type: 'Projectathon test evidence', evidence_type_uuid: 'bbbb',
+            provider: 'Ministry of Education'),
+          line(nameable?: false, published_nothing?: true, evidence_type: 'Simple test evidence',
+            evidence_type_uuid: 'cccc', provider: nil),
+        ])
       end
 
-      # RG4: the foot says it, the list stays, and the card is no dead end.
-      it 'says so under the rule, without the prompt, still offering the types' do
-        render_inline(described_class.new(wording:, country_code: 'AT', country_name: 'Austria', countries:,
-          evidence_types: types))
+      it 'names the provider of each line it can, says the other has none, and offers no button' do
+        render_inline(described_class.new(wording:, country_code: 'EL', country_name: 'Greece', countries:,
+          combinations:))
 
-        expect(page).to have_select('Document to request', selected: 'Without Reauthentication',
-          options: ['Test Evidence Austria (AT)', 'Without Reauthentication'])
-        expect(page).to have_text('No provider listed by Austria for this evidence')
+        expect(page).to have_select('Document to request', selected: 'Compound test evidence',
+          options: ['Simple test evidence', 'Compound test evidence'])
+        expect(page.all('[data-demo-card-line]').map { |found| said(found) }).to eq(
+          ['Projectathon test evidence from Ministry of Education', '⚠️No provider listed by Greece for this evidence'],
+        )
+        expect(page).to have_no_button
         expect(page).to have_no_text('Evidence impossible to satisfy')
         expect(page).to have_no_css('.requirement-card--unsatisfiable')
       end
+    end
+  end
+
+  # CA2 of OOTS-270: a single combination of several types offers no list, and
+  # names a provider on a line per type, in the order of the list.
+  describe 'a single combination of several types' do
+    let(:wording) do
+      card_wording(lines: [
+        line(evidence_type: 'Projectathon test evidence', evidence_type_uuid: 'bbbb', provider: 'Ministry of Education'),
+        line(evidence_type: 'Simple test evidence', evidence_type_uuid: 'cccc', provider: 'Ministry of Digital Governance'),
+      ])
+    end
+
+    it 'offers no list, and names each type with its provider, on a line of its own' do
+      render_inline(described_class.new(wording:, country_code: 'EL', countries: [['🇬🇷 EL', 'EL']], zone:))
+
+      expect(page).to have_no_select('Document to request')
+      expect(page.all('[data-demo-card-line]').map { |found| [found['data-demo-card-line'], said(found)] }).to eq([
+        ['bbbb', 'Projectathon test evidence from Ministry of Education'],
+        ['cccc', 'Simple test evidence from Ministry of Digital Governance'],
+      ])
+      expect(page).to have_css('[data-demo-card-target="request"] .demo-request', visible: :all)
+    end
+
+    # RG3: a combination is satisfied only by each of its types, and the
+    # country publishes no other.
+    it 'is a dead end where one type has no provider' do
+      wording = card_wording(lines: [line, line(nameable?: false, published_nothing?: true, evidence_type_uuid: 'cccc')])
+
+      render_inline(described_class.new(wording:, country_code: 'EL', country_name: 'Greece', countries: [['🇬🇷 EL', 'EL']]))
+
+      expect(page).to have_css('.requirement-card--unsatisfiable')
+      expect(page).to have_text('Evidence impossible to satisfy')
+    end
+
+    # RG3: a line asking a question may yet be resolved.
+    it 'is no dead end where one type asks a question' do
+      wording = card_wording(lines: [line, line(nameable?: false, asking?: true, evidence_type_uuid: 'cccc')])
+
+      render_inline(described_class.new(wording:, country_code: 'EL', countries: [['🇬🇷 EL', 'EL']]))
+
+      expect(page).to have_no_css('.requirement-card--unsatisfiable')
     end
   end
 
@@ -187,15 +249,14 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     end
 
     it 'says the requirement is impossible to satisfy where the country publishes nothing' do
-      unsatisfied = instance_double(DemoResolutionWording, asking?: false, answered?: false, nameable?: false, choosable?: false,
-        published_nothing?: true, evidence_type: nil, requirement: '(TEST) Test Requirement',
-        requirement_language: 'en', requirement_uuid: uuid)
+      unsatisfied = card_wording(lines: [], published_nothing?: true, combination_id: nil)
 
       render_inline(described_class.new(wording: unsatisfied, country_code: 'FI', country_name: 'Finland',
         countries: [['🇫🇮 Finland (FI)', 'FI']]))
 
       expect(page.find('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇮 Finland (FI)')
       expect(page).to have_css('.requirement-card--unsatisfiable')
+      expect(page.find('.requirement-card__actions').text.squish).to eq('⚠️No provider listed by Finland for this evidence')
     end
   end
 
@@ -203,9 +264,10 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
   # the provider, chapter 3.1.4 §4.4.3.3.
   describe 'questions of the Data Service Directory' do
     let(:asking) do
-      instance_double(DemoResolutionWording, asking?: true, answered?: false, nameable?: false, choosable?: false,
-        published_nothing?: false, evidence_type: 'Projectathon test evidence', evidence_type_uuid: 'aaaa',
-        requirement: '(TEST) Test Requirement', requirement_language: 'en', requirement_uuid: uuid)
+      card_wording(lines: [
+        line(asking?: true, nameable?: false, evidence_type: 'Projectathon test evidence', evidence_type_uuid: 'bbbb'),
+        line(evidence_type: 'Simple test evidence', evidence_type_uuid: 'cccc', provider: 'Ministry of Digital Governance'),
+      ])
     end
     let(:questions) do
       [
@@ -220,7 +282,18 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     before do
       render_inline(described_class.new(wording: asking, country_code: 'EL', country_name: 'Greece',
-        countries: [['🇬🇷 Greece (EL)', 'EL']], questions:))
+        countries: [['🇬🇷 Greece (EL)', 'EL']], questions: { 'bbbb' => questions }))
+    end
+
+    # RG3 of OOTS-270: the questions are a line's, posted with its type, and
+    # their answer replaces that line's resolution.
+    it 'asks them on the line of their type alone, and posts them with it' do
+      form = page.find('[data-demo-card-line="bbbb"] form.requirement-card__questions')
+
+      expect(form['action']).to eq("/admin/demo/v2.0/T1/classification_fournisseur?exigence=#{uuid}&type=bbbb")
+      expect(form).to have_css("#question-#{uuid}-bbbb-1254f10f-406e-4f28-b1ba-d107b93fa264")
+      expect(page).to have_no_css('[data-demo-card-line="cccc"] form')
+      expect(said(page.find('[data-demo-card-line="cccc"]'))).to eq('Simple test evidence from Ministry of Digital Governance')
     end
 
     # CA2: « codelist, string or boolean and Evidence Requesters MUST support
@@ -250,7 +323,8 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     # RG1: nothing named, nothing requested, nothing refused, and no dead end.
     it 'names nothing under the questions while they wait for their first answers' do
-      expect(page.find('[data-demo-card-target=resolution]', visible: :all).text.squish).to be_empty
+      expect(page.find('[data-demo-card-line="bbbb"] [data-demo-card-target=resolution]', visible: :all).text.squish)
+        .to be_empty
       expect(page).to have_no_css('.requirement-card--unsatisfiable')
     end
 

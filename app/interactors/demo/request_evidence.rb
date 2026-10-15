@@ -35,7 +35,7 @@ module Demo
     # joins them because a click names the one requirement its own card is
     # about, and a row naming the document without the obligation it was asked
     # under would not say which click it answers.
-    NAMED = %i[evidence_type_id evidence_type_name evidence_type_language provider_name provider_language
+    NAMED = %i[evidence_type_list_id evidence_type_id evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
                requirement_id requirement_name requirement_language country_code provider_classifications].freeze
 

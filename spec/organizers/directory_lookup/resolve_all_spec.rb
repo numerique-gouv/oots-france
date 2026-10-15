@@ -23,9 +23,10 @@ RSpec.describe DirectoryLookup::ResolveAll do
     expect(resolved.requirements).to eq(requirements)
   end
 
-  # The opening run read the whole list, so asking the Evidence Broker for the
-  # first requirement again would be a query for an answer already in hand.
-  it 'reuses the first run instead of walking it a second time' do
+  # The requirements were read once, and each run starts from the one it is
+  # handed: chapter 3.2.4 §4.3 bases the second query « on a requirement that
+  # is known to the Procedure Portal ».
+  it 'asks for each requirement once, starting from the requirement itself' do
     expect(resolved.resolutions.first.requirement.id).to eq('https://sr/requirements/aaa')
 
     expect(evidence_broker).to have_received(:evidence_type_lists)
@@ -72,21 +73,21 @@ RSpec.describe DirectoryLookup::ResolveAll do
     end
   end
 
-  # Requirement 26 of chapter 1 §2: each card offers the types its country
+  # Chapter 3.2.2 §2.3: each card offers the combinations its country
   # publishes, and the one the user chose on it is the one resolved.
-  describe 'with an evidence type named per requirement' do
+  describe 'with a combination named per requirement' do
     let(:evidence_broker) do
       instance_double(EvidenceBrokerClient, requirements:, evidence_type_lists: [
-        build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/FI/first')]),
-        build(:evidence_type_list, evidence_types: [build(:evidence_type, id: 'https://sr/FI/second')]),
+        build(:evidence_type_list, id: 'premiere', evidence_types: [build(:evidence_type, id: 'https://sr/FI/first')]),
+        build(:evidence_type_list, id: 'seconde', evidence_types: [build(:evidence_type, id: 'https://sr/FI/second')]),
       ])
     end
 
-    it 'resolves that requirement on that type, and leaves the other unchosen' do
+    it 'resolves that requirement on that combination, and leaves the other unchosen' do
       resolved = described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00',
-        country_code: 'FI', evidence_types: { 'aaa' => 'second' })
+        country_code: 'FI', evidence_type_lists: { 'aaa' => 'seconde' })
 
-      expect(resolved.resolutions.first.evidence_type.id).to eq('https://sr/FI/second')
+      expect(resolved.resolutions.first.lines.map { |line| line.evidence_type.id }).to eq(['https://sr/FI/second'])
       expect(resolved.resolutions.second.error[:key]).to eq(:evidence_type_unchosen)
     end
   end
@@ -104,8 +105,8 @@ RSpec.describe DirectoryLookup::ResolveAll do
       end
     end
 
-    it 'leaves the refusal on its own resolution and keeps the others' do
-      expect(resolved.resolutions.map(&:failure?)).to eq([false, true])
+    it 'leaves the refusal on its own line and keeps the others' do
+      expect(resolved.resolutions.map { |resolution| resolution.lines.map(&:failure?) }).to eq([[false], [true]])
     end
 
     it 'still resolves every requirement' do
@@ -136,12 +137,12 @@ RSpec.describe DirectoryLookup::ResolveAll do
     expect(described_class.call(procedure_code: '00', country_code: 'FI').resolutions.size).to eq(2)
   end
 
-  # OOTS-269: the answers each card gave to the questions of the Data Service
-  # Directory, by requirement.
+  # The answers each card gave to the questions of the Data Service Directory,
+  # by requirement, then by evidence type.
   describe 'with answers given on the first requirement' do
     subject(:resolved) do
       described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'FI',
-        provider_classifications: { 'aaa' => { question.id => 'TC03' } })
+        provider_classifications: { 'aaa' => { build(:evidence_type).uuid => { question.id => 'TC03' } } })
     end
 
     let(:question) { build(:evidence_provider_classification) }
@@ -154,11 +155,8 @@ RSpec.describe DirectoryLookup::ResolveAll do
       end
     end
 
-    # The first run asked without them: reused, it would leave the card asking.
-    it 'resolves that requirement again with its answers rather than reusing the first run' do
-      expect(resolved.resolutions.first).to be_success
-      expect(evidence_broker).to have_received(:evidence_type_lists)
-        .with(requirement_id: 'https://sr/requirements/aaa', country_code: 'FI').twice
+    it 'resolves that requirement with its answers, and the other without' do
+      expect(resolved.resolutions.map { |resolution| resolution.lines.map(&:success?) }).to eq([[true], [false]])
     end
   end
 end

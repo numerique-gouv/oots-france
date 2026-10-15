@@ -1,6 +1,6 @@
-# What the documents page of the demonstration says of one requirement of the
-# procedure: what it is, who would provide the evidence satisfying it, and of
-# which type.
+# What the documents page of the demonstration says of one evidence type a card
+# asks for: who would provide it, and under which requirement. A card names one
+# per type of the combination it chose, `DemoCardWording` holding them.
 #
 # Requirement 27 of chapter 1 §2 asks for exactly those two, and for them
 # « before any request is made » — hence a page of its own, and hence
@@ -64,17 +64,6 @@ class DemoResolutionWording
   end
 
   def nameable? = provider.present? && evidence_type.present?
-
-  # Every evidence type the Evidence Broker publishes for the requirement in
-  # the card's country, each counted once and in the order it publishes them:
-  # chapter 3.2.2 §2.3 has the user « select an 'Evidence Type List' amongst the
-  # ones proposed », and one entry per type amounts to the same while each list
-  # carries one.
-  def evidence_types = EvidenceTypeList.distinct_evidence_types(Array(lookup.evidence_type_lists))
-
-  # Requirement 26 of chapter 1 §2: the user selects the type, where there is
-  # more than one to select from.
-  def choosable? = evidence_types.many?
 
   # The requirement as the Evidence Broker names it, where `requirement` above
   # is what the card stands under. The identifier is what goes out in
