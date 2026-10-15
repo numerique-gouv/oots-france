@@ -7,12 +7,16 @@ module Admin
     # to the second query ». Answering asks only the directories, and opens
     # nothing: the request leaves on the button.
     #
+    # The answers are one line's, `type` naming its evidence type by UUID: the
+    # directory is asked once per type, and the other lines keep theirs.
+    #
     # Answered with the card alone, resolved on those answers, of which
-    # `demo_card_controller.js` splices only what the resolution says — the
-    # questions keep the focus and the values typed, the discipline of
-    # `CountriesController` (RGAA 7.4). The card's row of `Demo::Card` is
-    # written again, so that a reload renders the card on its answers, and what
-    # the card now names is what its button will send.
+    # `demo_card_controller.js` splices only what that line's resolution says —
+    # the questions keep the focus and the values typed, the discipline of
+    # `CountriesController` (RGAA 7.4) — and the zone, which appears once every
+    # line names its provider. The card's row of `Demo::Card` is written again,
+    # so that a reload renders the card on its answers, and what the card now
+    # names is what its button will send.
     class ProviderClassificationsController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
@@ -39,17 +43,21 @@ module Admin
       private
 
       def resolved_card
-        DemoResolutionWording.new(resolve_card(requirement_uuid, card_country(requirement_uuid),
-          card_evidence_type(requirement_uuid), answers))
+        DemoCardWording.new(resolve_card(requirement_uuid, card_country(requirement_uuid),
+          card_evidence_type_list(requirement_uuid),
+          card_provider_classifications(requirement_uuid).merge(evidence_type_uuid => answers)))
       end
 
       def offered?
-        requirement_uuid.match?(SemanticRepositoryAsset::UUID) && !held_card?(requirement_uuid) && answers.any?
+        [requirement_uuid, evidence_type_uuid].all? { |uuid| uuid.match?(SemanticRepositoryAsset::UUID) } &&
+          !held_card?(requirement_uuid) && answers.any?
       end
 
       def answers?(wording)
-        wording.requirement_uuid == requirement_uuid && wording.asking? && answers.size == wording.questions.size &&
-          EvidenceProviderClassification.all_answered?(wording.questions, answers)
+        line = wording.line(evidence_type_uuid)
+
+        wording.requirement_uuid == requirement_uuid && line&.asking? && answers.size == line.questions.size &&
+          EvidenceProviderClassification.all_answered?(line.questions, answers)
       end
 
       def report_unreachable_directories(error)
@@ -63,6 +71,8 @@ module Admin
       end
 
       def requirement_uuid = params[:exigence].to_s
+
+      def evidence_type_uuid = params[:type].to_s
     end
   end
 end

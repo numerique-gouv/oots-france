@@ -316,15 +316,16 @@ fr:
       # « choose it again » ; le lien recharge la page des justificatifs.
       unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
       reload: reload the page
-      # Le choix du type de justificatif, quand le pays en publie plusieurs pour
-      # l'exigence — l'exigence 26 du chapitre 1 §2. Les options sont les
-      # intitulés que l'Evidence Broker publie : aucune clé pour elles. L'invite
-      # ne s'offre que tant qu'aucun type n'est choisi : rien n'est choisi à la
-      # place de l'usager.
-      evidence_type_label: Document to request
-      evidence_type_prompt: Select a document
+      # Le choix de la combinaison de types de justificatif, quand le pays en
+      # publie plusieurs pour l'exigence — le chapitre 3.2.2 §2.3. Les options
+      # sont nommées d'après les intitulés que l'Evidence Broker publie : aucune clé
+      # pour elles, hors la glu de `presenters.demo_card_wording`. L'invite ne
+      # s'offre que tant qu'aucune combinaison n'est choisie : rien n'est choisi
+      # à la place de l'usager.
+      combination_label: Document to request
+      combination_prompt: Select a document
       # Construite comme celle du pays, pour le même cas ; le lien est le même.
-      evidence_type_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      combination_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
       # Les questions que le Data Service Directory pose avant de pouvoir
       # désigner le fournisseur (`DSD:ERR:0005`, chapitre 3.1.4 §4.4.3.3). Leur
       # libellé et les valeurs d'une liste sont les mots de l'annuaire : aucune
@@ -348,9 +349,13 @@ fr:
       # chapitre 4.4 §4.1 impose — « a new unique request MUST be issued ».
       submit: Request the document
       retry: Retry to request
+      # Le bouton unique d'une combinaison de plusieurs types qu'aucune demande
+      # n'a encore touchée : il les demande tous, une requête chacun.
+      submit_all: Request the documents
       # L'attente, annoncée et pas seulement montrée : qui ne voit pas le bouton
       # changer n'apprendrait rien autrement.
       loading: Requesting the document…
+      loading_all: Requesting the documents…
       delivered: Document retrieved successfully
       open: Open the document
       # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If the
@@ -641,8 +646,8 @@ fr:
         # causes, et la trace de celle-ci resterait sinon introuvable.
         countries:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
-        evidence_types:
-          unreachable: "Annuaires injoignables au choix d'un type de justificatif de la démarche de démonstration : %{error}"
+        evidence_type_lists:
+          unreachable: "Annuaires injoignables au choix d'une combinaison de la démarche de démonstration : %{error}"
         provider_classifications:
           unreachable: "Annuaires injoignables à la réponse aux questions du Data Service Directory de la démarche de démonstration : %{error}"
         # Écrit dans le log : l'écran du choix de la démarche perd les pieds
@@ -1521,6 +1526,13 @@ fr:
     # démarche dont ni l'annuaire ni la liste n'ont répondu.
     demo_procedure_wording:
       untitled: No label
+    # Le nom d'une combinaison de plusieurs types que l'Evidence Broker ne
+    # nomme pas : les intitulés de ses types, joints. En anglais comme tout
+    # l'espace de démonstration ; la glu est ici, les intitulés étant les mots
+    # de l'annuaire.
+    demo_card_wording:
+      and: "%{first} and %{last}"
+      separator: ", "
     country_wording:
       by: par %{country}
       # Chaque morceau porte son espace ou sa virgule d'attache : la phrase

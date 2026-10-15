@@ -18,8 +18,9 @@ module Admin
     # Both actions take the requirement they are about in `exigence`, the UUID
     # the documents page addresses its cards by: chapter 4.4 §4.2.2 has several
     # flows run « sequentially and/or in parallel », so a page carries one zone
-    # per requirement and each answers for its own. The parameter names which
-    # zone; what that zone may report on is the session's business alone.
+    # per requirement and each answers for its own, a block per evidence type of
+    # its combination. The parameter names which zone; what that zone may
+    # report on is the session's business alone.
     #
     # Nothing here writes to the session: a click reads the journey and writes a
     # row of `demo_requests`. Two clicks made in the same instant therefore each
@@ -46,21 +47,34 @@ module Admin
 
       # Requirement 27 of chapter 1 §2 makes the two names a condition of the
       # request, and the documents page is where they are said. A click
-      # carrying neither was made without them — a session that expired between
+      # carrying none was made without them — a session that expired between
       # the two requests, a POST that never went through the page — so nothing
       # leaves and the user is sent back to be shown what they would be asking
-      # for.
+      # for. A combination is asked for whole, so every line must name both.
+      #
+      # `type` names the one evidence type asked for; without it, every type of
+      # the combination is, as `Demo::RequestCombination` says. A refusal of the
+      # contract opens no exchange: the block of its type says why and offers
+      # its button again rather than waiting on an answer nobody will send.
       def create
-        return redirect_to admin_demo_documents_path unless named_evidence(requirement_uuid).valid?
+        return redirect_to admin_demo_documents_path unless askable?
 
-        result = ::Demo::RequestEvidence.call(identity:, journey:, requirement_uuid:, **demo_names(requirement_uuid))
-
-        return refuse(result) unless result.success?
-
-        render_zone
+        render_zone(failures: request_combination.failures)
       end
 
       private
+
+      def askable? = asked.any? && named_evidences(requirement_uuid).all?(&:valid?)
+
+      def request_combination
+        ::Demo::RequestCombination.call(identity:, journey:, requirement_uuid:, named_evidences: asked,
+          procedure: named_procedure.attributes.symbolize_keys, whole: evidence_type_uuid.blank?)
+      end
+
+      def asked
+        @asked ||= named_evidences(requirement_uuid)
+          .select { |named| evidence_type_uuid.blank? || named.evidence_type_uuid == evidence_type_uuid }
+      end
 
       # The header is what tells `demo_request_controller.js` that the body is
       # ours to splice into the page: a status cannot say that much, nginx
@@ -69,19 +83,23 @@ module Admin
       # `layout: false` because this answers a fragment and not a page: the
       # layout would land a second banner, menu and footer inside the card the
       # zone is spliced back into.
-      def render_zone(failure: nil)
+      def render_zone(failures: {})
         response.set_header('Deferred-Fragment', '1')
 
-        render DemoRequestZoneComponent.new(outcome: demo_outcome_for(requirement_uuid), requirement_uuid:, failure:),
+        render demo_request_zone(requirement_uuid, zone_types, requested: demo_card(requirement_uuid)&.requested?, failures:),
           layout: false
+      end
+
+      def zone_types
+        named_evidences(requirement_uuid).map do |named|
+          DemoRequestZoneComponent::Type.new(uuid: named.evidence_type_uuid, name: named.evidence_type_name,
+            language: named.evidence_type_language)
+        end
       end
 
       def requirement_uuid = params[:exigence].to_s
 
-      # A refusal that never opened an exchange: there is nothing to follow, and
-      # the zone says why and offers the button again rather than waiting on an
-      # answer nobody is going to send.
-      def refuse(result) = render_zone(failure: result.error)
+      def evidence_type_uuid = params[:type].to_s
     end
   end
 end

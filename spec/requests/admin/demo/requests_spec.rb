@@ -734,7 +734,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
       Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-      get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0', procedure: 'T1')
+      get justificatif_path(seconde)
 
       expect(response.body.b).to eq(autre_document)
     end
@@ -747,11 +747,11 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       identify_demo_user
 
-      get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0', procedure: 'T1')
+      get justificatif_path(premiere)
       expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
 
       get demande_path(premiere)
-      expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
+      expect(response.parsed_body.css('[data-demo-request-block]')).to be_empty
     end
 
     # CA13. A requirement has one request under way at a time — the zone simply
@@ -872,10 +872,10 @@ RSpec.describe 'Admin::Demo::Requests' do
         Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
         Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
 
-        get admin_demo_justificatif_path(exigence: premiere, version: 'v2.0', procedure: 'T1')
+        get justificatif_path(premiere)
         expect(response.body.b).to eq(document)
 
-        get admin_demo_justificatif_path(exigence: seconde, version: 'v2.0', procedure: 'T1')
+        get justificatif_path(seconde)
         expect(response.body.b).to eq(autre_document)
       end
 
@@ -973,4 +973,10 @@ RSpec.describe 'Admin::Demo::Requests' do
   def provider_announcing(line) = common_services_answer('dsd_data_services_fi').first.sub('oots-edm:v2.0', line)
 
   def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
+
+  # The document of the one evidence type each card of these cases names.
+  def justificatif_path(uuid)
+    admin_demo_justificatif_path(exigence: uuid, type: EvidenceType.new(id: Demo::Request.first.evidence_type_id).uuid,
+      version: 'v2.0', procedure: 'T1')
+  end
 end

@@ -1,16 +1,20 @@
 module DirectoryLookup
   # The evidence types satisfying the requirement, in the country being asked.
   #
-  # `evidence_type_id` names one of them by UUID. A caller that offers the
-  # user the alternatives — `alternatives_offered`, which only the screens of
-  # the demonstration set — takes no type it was not given but the only one
-  # published: requirement 26 of
-  # chapter 1 §2 has the user « select and request the types of evidence », so
-  # where the country publishes several and none is named, nothing is chosen
-  # and the chain stops before the Data Service Directory, the lists staying on
-  # the context. A single type leaves nothing to choose. Without the flag, the
-  # first type published stands in for one not named, which is what the
+  # `evidence_type_id` names one of them by UUID. Without `alternatives_offered`,
+  # the first type published stands in for one not named, which is what the
   # console's resolution page shows.
+  #
+  # A caller that offers the user the alternatives — `alternatives_offered`,
+  # which only the screens of the demonstration set — chooses a combination
+  # rather than a type: chapter 3.2.2 §2.3 has the user « select an 'Evidence
+  # Type List' amongst the ones proposed by the Evidence Broker », and « at
+  # least one Evidence for each Evidence Type specified in one Evidence Type
+  # List MUST be provided ». `evidence_type_list_id` names it; the only one
+  # published needs no naming; where the country publishes several and none is
+  # named, nothing is chosen and the chain stops before the Data Service
+  # Directory, the lists staying on the context. `evidence_type` is then the
+  # type of that combination `evidence_type_id` names, or its first.
   class FetchEvidenceTypes < ApplicationInteractor
     include Refusing
 
@@ -20,6 +24,7 @@ module DirectoryLookup
     # type, and there is none to name.
     def call
       context.evidence_type_lists = satisfying_lists
+      context.evidence_type_list = chosen_combination if context.alternatives_offered
       context.evidence_type = chosen
 
       stop_unless_chosen
@@ -43,10 +48,18 @@ module DirectoryLookup
     def published = @published ||= EvidenceTypeList.distinct_evidence_types(context.evidence_type_lists)
 
     def chosen
-      named = published.find { |found| found.uuid == context.evidence_type_id }
-      return named || published.first unless context.alternatives_offered
+      return named_in(published) || published.first unless context.alternatives_offered
 
-      named || (published.first if published.one?)
+      types = context.evidence_type_list&.evidence_types.to_a
+      named_in(types) || types.first
+    end
+
+    def named_in(types) = types.find { |found| found.uuid == context.evidence_type_id }
+
+    def chosen_combination
+      combinations = EvidenceTypeList.combinations(context.evidence_type_lists)
+
+      combinations.find { |found| found.id == context.evidence_type_list_id } || (combinations.first if combinations.one?)
     end
   end
 end

@@ -112,10 +112,10 @@ Rails.application.routes.draw do
           # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
           # answers with the card alone, and opens nothing.
           resource :pays, only: :update, controller: 'countries'
-          # The evidence type one card names, where its country publishes
-          # several for the requirement — requirement 26 of chapter 1 §2. Asks
-          # the directories only, answers with the card alone, and opens nothing.
-          resource :type_justificatif, only: :update, controller: 'evidence_types'
+          # The combination of evidence types one card names, where its country
+          # publishes several for the requirement — chapter 3.2.2 §2.3. Asks the
+          # directories only, answers with the card alone, and opens nothing.
+          resource :combinaison, only: :update, controller: 'evidence_type_lists'
           # The answers one card gives to the questions the Data Service
           # Directory asks before it can name the provider — chapter 3.1.4
           # §4.4.3.3. Asks the directories only, answers with the card alone, and

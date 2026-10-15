@@ -8,6 +8,10 @@ require 'rails_helper'
 RSpec.describe 'Admin::Demo::ProviderClassifications' do
   let(:exigence) { '00000000-0000-0000-0000-000000000000' }
   let(:projectathon) { '8b3b6a31-9b62-48d7-8926-997df4f91bb5' }
+  # The lists of one type each that Greece publishes for it, and for « Simple
+  # test evidence ».
+  let(:projectathon_list) { 'f9e8ba9d-b82b-4ced-b697-ebd153262a6d' }
+  let(:simple_list) { '41486aa9-ecc4-48ea-b097-4f7329e21218' }
   let(:question) { '1254f10f-406e-4f28-b1ba-d107b93fa264' }
   let(:code_list) do
     'https://query.cs.acc.oots.tech.ec.europa.eu/codelists/EL/ProjectathonTestCases/8b3b6a31-9b62-48d7-8926-997df4f91bb5'
@@ -87,14 +91,14 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
 
     expect(seen(resolution.at_css('.directory-value'))).to eq('Projectathon test evidence')
     expect(questions.at_css('option[selected]')['value']).to eq('TC03')
-    expect(Demo::Card.find_by(requirement_uuid: exigence).provider_classifications).to eq(question => 'TC03')
+    expect(Demo::Card.find_by(requirement_uuid: exigence).provider_classifications)
+      .to eq(projectathon => { question => 'TC03' })
   end
 
-  # CA8: choosing another type or country undoes the answers.
-  it 'forgets the answer when another evidence type is chosen' do
+  # CA8: choosing another combination or country undoes the answers.
+  it 'forgets the answer when another combination is chosen' do
     answer('TC03')
-    patch(admin_demo_type_justificatif_path(exigence:, version: 'v1.2', procedure: 'T1'),
-      params: { type: '8b0aeabd-a0fd-4c62-bb15-71282fbf5992' })
+    patch(admin_demo_combinaison_path(exigence:, version: 'v1.2', procedure: 'T1'), params: { combinaison: simple_list })
 
     expect(Demo::Card.find_by(requirement_uuid: exigence).provider_classifications).to eq({})
   end
@@ -125,8 +129,12 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
   end
 
   # RG4, server side: what no form of the page sends reloads it.
-  it 'refuses an answer missing, or one to a question nobody asked' do
+  it 'refuses an answer missing, one to a question nobody asked, or one to a type the card does not name' do
     answer('')
+    expect(response).to have_http_status(:unprocessable_content)
+
+    patch admin_demo_classification_fournisseur_path(exigence:, type: '8b0aeabd-a0fd-4c62-bb15-71282fbf5992',
+      version: 'v1.2', procedure: 'T1'), params: { classificationFournisseur: { question => 'TC03' } }
     expect(response).to have_http_status(:unprocessable_content)
 
     patch path, params: { classificationFournisseur: { question => 'TC03', 'aaaaaaaa-0000-4000-8000-000000000000' => 'X' } }
@@ -187,11 +195,12 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
         requirement: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}")
       Demo::Card.add(journey_id: Demo::Card.sole.journey_id, country_code: 'EL', languages: %w[EN],
         requirement: build(:requirement, id: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}"))
-      patch(admin_demo_type_justificatif_path(exigence: added, version: 'v1.2', procedure: 'T1'), params: { type: projectathon })
+      patch(admin_demo_combinaison_path(exigence: added, version: 'v1.2', procedure: 'T1'),
+        params: { combinaison: projectathon_list })
     end
 
     it 'is resolved on its answer, and asks again on it at the next render' do
-      patch admin_demo_classification_fournisseur_path(exigence: added, version: 'v1.2', procedure: 'T1'),
+      patch admin_demo_classification_fournisseur_path(exigence: added, type: projectathon, version: 'v1.2', procedure: 'T1'),
         params: { classificationFournisseur: { question => 'TC03' } }
       expect(response.headers['Deferred-Fragment']).to eq('1')
 
@@ -204,7 +213,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
 
   def page = get(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
 
-  def path = admin_demo_classification_fournisseur_path(exigence:, version: 'v1.2', procedure: 'T1')
+  def path = admin_demo_classification_fournisseur_path(exigence:, type: projectathon, version: 'v1.2', procedure: 'T1')
 
   def carte = response.parsed_body.at_css("main #exigence-#{exigence}")
 
@@ -221,7 +230,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
   def choose_country(code) = patch(admin_demo_pays_path(exigence:, version: 'v1.2', procedure: 'T1'), params: { pays: code })
 
   def choose_type
-    patch(admin_demo_type_justificatif_path(exigence:, version: 'v1.2', procedure: 'T1'), params: { type: projectathon })
+    patch(admin_demo_combinaison_path(exigence:, version: 'v1.2', procedure: 'T1'), params: { combinaison: projectathon_list })
   end
 
   # Declared after the question it answers, so that WebMock, which takes the

@@ -9,9 +9,10 @@ module Demo
   # request rather than a check on a form: a click carrying neither name was made
   # without them, and nothing may leave.
   #
-  # One instance per card that can be clicked. Chapter 4.4 §4.2.2 has « different
-  # basic flows … executed sequentially and/or in parallel », so a click files
-  # what its own card named and never a neighbour's.
+  # One instance per evidence type a card names, which is one request. Chapter
+  # 4.4 §4.2.2 has « different basic flows … executed sequentially and/or in
+  # parallel », so a click files what its own card named and never a
+  # neighbour's.
   #
   # The vocabulary is the one the request carries and `demo_requests` records:
   # `Demo::RequestEvidence::NAMED` reads each of these off its context under this
@@ -25,12 +26,16 @@ module Demo
     attribute :evidence_type_name, :string
     # The type itself, as the Evidence Broker identifies it: what the request
     # sends in `idTypeJustificatif`, so that what leaves is the type the card
-    # named, which the user chose where the country publishes several —
-    # requirement 26 of chapter 1 §2.
+    # named for this line of the combination the user chose — chapter 3.2.2
+    # §2.3.
     attribute :evidence_type_id, :string
     # The language each name was published in, which the zone declares again so
     # that a screen reader does not pronounce one language as another (RGAA 8.7).
     attribute :evidence_type_language, :string
+    # The combination the type belongs to — the `sdg:EvidenceTypeList` chapter
+    # 3.2.2 §2.3 has the user select —, which the request keeps: a combination of
+    # several types leaves in as many requests, one per type.
+    attribute :evidence_type_list_id, :string
     attribute :provider_name, :string
     attribute :provider_language, :string
     # The requirement as the Evidence Broker names it, which joins the two above:
@@ -54,5 +59,9 @@ module Demo
     # cards apart, not what the user is asked to confirm, and a directory naming
     # it in no language leaves the card standing under its evidence type.
     validates :evidence_type_name, :provider_name, :country_code, presence: true
+
+    # By UUID, which is what the page's own addresses carry; the identifier
+    # whole is what the request sends.
+    def evidence_type_uuid = (EvidenceType.new(id: evidence_type_id).uuid if evidence_type_id)
   end
 end

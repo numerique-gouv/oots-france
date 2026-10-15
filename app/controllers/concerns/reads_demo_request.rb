@@ -1,14 +1,15 @@
-# The requests the demonstration's journey has made, one per requirement of the
-# procedure it has asked for, and what the contract says of each — what the zone
-# of a card on the documents page is built on.
+# The requests the demonstration's journey has made, one per evidence type of
+# each requirement of the procedure it has asked for, and what the contract says
+# of each — what the zone of a card on the documents page is built on.
 #
 # Chapter 1 §4.2: « Any evidences that are returned in response are made
 # available to the specific procedure end-user that issued the query for those
 # evidences. » The journey held in the session is what says which user issued
 # which query, so a request is looked up under it and never named by the
 # incoming one — a zone taking an exchange identifier from a parameter would
-# report on whoever guessed a UUID. The requirement, which does travel in a
-# parameter, only says which of this journey's own requests is meant.
+# report on whoever guessed a UUID. The requirement and the evidence type, which
+# do travel in parameters, only say which of this journey's own requests is
+# meant.
 #
 # Nothing here redirects: a session following no request for a requirement is
 # the ordinary state of its card before any click, and the zone then offers the
@@ -24,41 +25,76 @@ module ReadsDemoRequest
 
   private
 
-  # Read from the register, under the journey and the requirement: a click writes
-  # a row naming this journey, so two clicks made in the same instant each file
-  # their own and neither can lose the other.
+  # Read from the register, under the journey and the requirement, and by
+  # evidence type: a click writes a row naming this journey, so two clicks made
+  # in the same instant each file their own and neither can lose the other.
   #
   # The requirement is the UUID the page's addresses carry, and the journey is
   # never one of them. Chapter 4.4 §4.2.2 has « different basic flows … executed
   # sequentially and/or in parallel », so a request under way on one requirement
-  # says nothing about its neighbours.
+  # says nothing about its neighbours, nor one type about the other types of the
+  # same combination.
   #
-  # The latest and not the only one: asking again is « a new unique request »
-  # (chapter 4.4 §4.1), so a requirement clicked twice has two rows, and the
-  # zone reports on the one its last click opened. Two rows of the same instant
-  # are told apart by the order they were written in, which is what `id` says.
-  def demo_request_for(requirement_uuid)
+  # The latest of each type and not the only one: asking again is « a new
+  # unique request » (chapter 4.4 §4.1), so a type clicked twice has two rows,
+  # and the zone reports on the one its last click opened. Two rows of the same
+  # instant are told apart by the order they were written in, which is what
+  # `id` says.
+  def demo_requests_for(requirement_uuid)
     asked_once(:@demo_requests, requirement_uuid) do
-      ::Demo::Request.where(journey_id: journey.id, requirement_uuid:).order(:created_at, :id).last
+      ::Demo::Request.where(journey_id: journey.id, requirement_uuid:).order(:created_at, :id)
+        .index_by { |request| EvidenceType.new(id: request.evidence_type_id).uuid }
     end
   end
+
+  def demo_request_for(requirement_uuid, evidence_type_uuid) = demo_requests_for(requirement_uuid)[evidence_type_uuid]
 
   # `nil` where nothing has been asked yet, which is the one state the contract
   # is not consulted for. An outage is not that state — the request exists, and
   # the zone says the outage where it would say a refusal.
-  def demo_outcome_for(requirement_uuid)
-    asked_once(:@demo_outcomes, requirement_uuid) { read_demo_outcome(demo_request_for(requirement_uuid)) }
+  def demo_outcome_for(requirement_uuid, evidence_type_uuid)
+    asked_once(:@demo_outcomes, [requirement_uuid, evidence_type_uuid]) do
+      read_demo_outcome(demo_request_for(requirement_uuid, evidence_type_uuid))
+    end
   end
 
-  # One answer per requirement, and `key?` rather than a truthiness test: a
-  # requirement whose answer is `nil` — a session following an exchange the
-  # register no longer carries, or one that has asked for nothing — must be
-  # asked once and answered `nil` once, not asked again at every card.
-  def asked_once(store, requirement_uuid)
-    answered = instance_variable_get(store) || instance_variable_set(store, {})
-    return answered[requirement_uuid] if answered.key?(requirement_uuid)
+  # The request a card follows, of all its types: the latest still under way
+  # or whose document is in hand. The card then stays in its country and on its
+  # combination — `HoldsDemoCountries` and `HoldsDemoEvidenceTypeLists` read it.
+  def holding_request(requirement_uuid)
+    asked_once(:@holding_requests, requirement_uuid) do
+      holding_requests(requirement_uuid).values.max_by { |request| [request.created_at, request.id] }
+    end
+  end
 
-    answered[requirement_uuid] = yield
+  # Every request of the card under way or whose document is in hand, by
+  # evidence type UUID.
+  def holding_requests(requirement_uuid)
+    demo_requests_for(requirement_uuid).select { |type_uuid, _| demo_outcome_for(requirement_uuid, type_uuid)&.holds_country? }
+  end
+
+  # One answer per key, and `key?` rather than a truthiness test: a key whose
+  # answer is `nil` — a session following an exchange the register no longer
+  # carries, or one that has asked for nothing — must be asked once and
+  # answered `nil` once, not asked again at every card.
+  def asked_once(store, key)
+    answered = instance_variable_get(store) || instance_variable_set(store, {})
+    return answered[key] if answered.key?(key)
+
+    answered[key] = yield
+  end
+
+  # The zone of one card: a block per evidence type of its combination, each on
+  # the latest request of its type — `DemoRequestZoneComponent` says when its
+  # one button stands instead. `failures` is a refusal of the contract to the
+  # click being answered, by evidence type UUID.
+  def demo_request_zone(requirement_uuid, types, requested:, failures: {})
+    blocks = types.map do |type|
+      DemoRequestComponent.new(outcome: demo_outcome_for(requirement_uuid, type.uuid), requirement_uuid:,
+        evidence_type: type, headed: types.many?, failure: failures[type.uuid])
+    end
+
+    DemoRequestZoneComponent.new(requirement_uuid:, blocks:, requested:)
   end
 
   def read_demo_outcome(request)

@@ -1,6 +1,7 @@
 /*
- * The zone of the requirement card where the document is asked for: the button,
- * what the asking is doing, and the refusal where there is one.
+ * The zone of the requirement card where the documents are asked for: a block
+ * per evidence type of the combination, one under the other, each with its
+ * button, what the asking is doing, and the refusal where there is one.
  *
  * The zone takes a line of its own under the sentence naming the document and
  * its provider, at every width: that sentence says what is being asked for, and
@@ -10,10 +11,10 @@
  * on this card, and there is nothing to set it against. The waiting that stands
  * in its place does the same, so that nothing shifts when one becomes the other.
  *
- * Once the document is there the line carries two things — the way to it at the
+ * Once a document is there its line carries two things — the way to it at the
  * left edge, and what happened at the right — wrapping under one another where
  * the card is too narrow for both. A refusal takes a line of its own: it is the
- * whole of what the zone has left to say.
+ * whole of what the block has left to say.
  *
  * Colours come from the DSFR's own tokens and never from a literal — the layout
  * sets `data-fr-scheme="system"`, so the dark theme is reachable.
@@ -23,6 +24,12 @@
 }
 
 .demo-request__body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.demo-request__block {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

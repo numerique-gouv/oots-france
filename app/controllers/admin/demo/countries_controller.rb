@@ -12,10 +12,10 @@ module Admin
     # `Demo::Card` is written again, so that a reload renders the card where it
     # was left, and what the card now names is what its button will send.
     #
-    # The evidence types are the country's, so choosing another undoes the type
-    # chosen: the card is resolved in its new country on none, and offers the
-    # choice again where that country publishes several. The answers to the
-    # questions of the Data Service Directory go with the type.
+    # The combinations are the country's, so choosing another undoes the
+    # combination chosen: the card is resolved in its new country on none, and
+    # offers the choice again where that country publishes several. The
+    # answers to the questions of the Data Service Directory go with it.
     class CountriesController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
@@ -44,9 +44,9 @@ module Admin
       private
 
       def resolved_card
-        DemoResolutionWording.new(
-          resolve_card(requirement_uuid, held_country(requirement_uuid) || country, held_evidence_type(requirement_uuid),
-            held_provider_classifications(requirement_uuid).to_h),
+        DemoCardWording.new(
+          resolve_card(requirement_uuid, held_country(requirement_uuid) || country,
+            held_evidence_type_list(requirement_uuid), held_provider_classifications(requirement_uuid)),
         )
       end
 

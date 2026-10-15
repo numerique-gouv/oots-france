@@ -106,6 +106,13 @@ RSpec.describe 'Admin::Demo::Evidences' do
 
       expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
     end
+
+    it 'serves nothing for an evidence type the session never asked for' do
+      get admin_demo_justificatif_path(exigence:, type: '11111111-2222-3333-4444-555555555555', version: 'v2.0',
+        procedure: 'T1')
+
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
+    end
   end
 
   it 'sends the operator back to the page the document is offered from while nothing has been delivered' do
@@ -122,5 +129,10 @@ RSpec.describe 'Admin::Demo::Evidences' do
 
   def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
 
-  def justificatif_path(uuid = exigence) = admin_demo_justificatif_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
+  # The type the card asked for, which names the block of the zone along with
+  # the requirement.
+  def justificatif_path(uuid = exigence)
+    admin_demo_justificatif_path(exigence: uuid, type: Demo::Card.sole.named_evidences.sole.evidence_type_uuid,
+      version: 'v2.0', procedure: 'T1')
+  end
 end

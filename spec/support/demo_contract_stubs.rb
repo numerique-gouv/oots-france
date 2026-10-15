@@ -50,6 +50,18 @@ module DemoContractStubs
         body: { echange: exchange_id, conversation: ACCEPTED_CONVERSATION, statut: 'pending' }.to_json)
   end
 
+  # The contract answering one evidence type in particular, the way the one
+  # above answers one requirement: the types of a combination leave in a
+  # request each, and each opens its own exchange — or is refused, with the
+  # status and the message given.
+  def stub_evidence_request_for_type(evidence_type_id, exchange_id, status: 202, error: nil)
+    body = status == 202 ? { echange: exchange_id, conversation: ACCEPTED_CONVERSATION, statut: 'pending' } : { erreur: error }
+
+    stub_request(:get, "#{Settings.oots_france_url}#{PATH}")
+      .with(query: hash_including('idTypeJustificatif' => evidence_type_id))
+      .to_return(status:, headers: { 'Content-Type' => 'application/json' }, body: body.to_json)
+  end
+
   # The other half of the same contract: `GET /requete/:exchange_id`, which the
   # zone of the documents page reads the state of its exchange from. Stubbed at the HTTP
   # boundary for the reason above — the point is that the procedure asks the

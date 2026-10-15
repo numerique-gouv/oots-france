@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<query:QueryResponse xmlns:lcm="urn:oasis:names:tc:ebxml-regrep:xsd:lcm:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:spi="urn:oasis:names:tc:ebxml-regrep:xsd:spi:4.0" xmlns:ns7="http://www.w3.org/1999/xhtml" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:ws-addr="http://www.w3.org/2005/08/addressing" status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:StringValueType">
+            <rim:Value>oots-cs:v2.0</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject id="urn:uuid:6d4b427b-8323-4e47-b2cf-f27ae7c9f717">
+            <rim:Slot name="DataServiceEvidenceType">
+                <rim:SlotValue xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="rim:AnyValueType">
+                    <sdg:DataServiceEvidenceType>
+                        <sdg:Identifier>00000000-0000-0000-0000-997001671001</sdg:Identifier>
+                        <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/EL/8b0aeabd-a0fd-4c62-bb15-71282fbf5992</sdg:EvidenceTypeClassification>
+                        <sdg:Title lang="EN">Simple test evidence</sdg:Title>
+                        <sdg:Title lang="EL">Απλό δοκιμαστικό τεκμήριο</sdg:Title>
+                        <sdg:DistributedAs>
+                            <sdg:Format>application/pdf</sdg:Format>
+                            <sdg:Language>EL</sdg:Language>
+                        </sdg:DistributedAs>
+                        <sdg:AccessService>
+                            <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:EL">AP_EL_02</sdg:Identifier>
+                            <sdg:Name lang="EN">Greek Access Service</sdg:Name>
+                            <sdg:ConformsTo>oots-edm:v1.0</sdg:ConformsTo>
+                            <sdg:ConformsTo>oots-edm:v1.2</sdg:ConformsTo>
+                            <sdg:ConformsTo>oots-edm:v2.0</sdg:ConformsTo>
+                            <sdg:Publisher>
+                                <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9933">GR997001671</sdg:Identifier>
+                                <sdg:Name lang="EN">Ministry of Digital Governance</sdg:Name>
+                                <sdg:Name lang="EL">Υπουργείο Ψηφιακής Διακυβέρνησης</sdg:Name>
+                                <sdg:Address>
+                                    <sdg:LocatorDesignator>11</sdg:LocatorDesignator>
+                                    <sdg:PostCode>17671</sdg:PostCode>
+                                    <sdg:PostCityName>Kallithea</sdg:PostCityName>
+                                    <sdg:Thoroughfare>Fragkoudi Georgiou Street</sdg:Thoroughfare>
+                                    <sdg:AdminUnitLevel1>EL</sdg:AdminUnitLevel1>
+                                </sdg:Address>
+                                <sdg:Jurisdiction>
+                                    <sdg:AdminUnitLevel1>EL</sdg:AdminUnitLevel1>
+                                </sdg:Jurisdiction>
+                            </sdg:Publisher>
+                        </sdg:AccessService>
+                        <sdg:AuthenticationLevelOfAssurance>Low</sdg:AuthenticationLevelOfAssurance>
+                    </sdg:DataServiceEvidenceType>
+                </rim:SlotValue>
+            </rim:Slot>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>
