@@ -88,14 +88,20 @@ class DemoBrowser
     send_form(form)
   end
 
+  # A refused choice stops here, where it happened, rather than resurfacing as
+  # a card without a button.
+  def choose_evidence_type(title, option_title)
+    form = card_titled(title).at_css('form.requirement-card__evidence-type') ||
+           raise(ArgumentError, "Aucune liste de types sur la carte « #{title} » : #{body}")
+    send_option(form, option_title) ||
+      raise(ArgumentError, "Aucun type « #{option_title} » sur la carte « #{title} » : #{body}")
+    raise "Le choix « #{option_title} » sur la carte « #{title} » est refusé (#{page.status}) : #{body}" unless page.success?
+  end
+
   # A card added from the list the documents page offers, its entry named as
   # the list shows it.
   def add_card(path, name)
-    form = form_posting_to(path)
-    option = form.css('select option').find { |candidate| candidate.text.strip == name }
-    raise ArgumentError, "Aucune exigence « #{name} » à ajouter : #{body}" if option.nil?
-
-    send_form(form, option.ancestors('select').first['name'] => option['value'])
+    send_option(form_posting_to(path), name) || raise(ArgumentError, "Aucune exigence « #{name} » à ajouter : #{body}")
   end
 
   # The three pages of the European path, each submitted where the page itself
@@ -165,6 +171,14 @@ class DemoBrowser
   def form_posting_to(path)
     document.css('form').find { |form| URI.parse(form['action'].to_s).path == path } ||
       raise("Aucun formulaire vers #{path} dans la page « #{title} » : #{body}")
+  end
+
+  # The option named as the list shows it, sent under the name the page gives
+  # the list; `nil` when the list offers no such option.
+  def send_option(form, option_title)
+    option = form.css('select option').find { |candidate| candidate.text.strip == option_title }
+
+    option && send_form(form, option.ancestors('select').first['name'] => option['value'])
   end
 
   # The hidden fields first, the scenario's own values second: what a form

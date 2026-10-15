@@ -70,6 +70,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'administrateur choisit la démarche "T3"
     Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
     Et que l'usager ajoute la carte "(TEST) Test Requirement" à la page des justificatifs
+    Et que l'usager choisit "FR - Test Evidence Type for abroad" sur la carte "(TEST) Test Requirement"
     Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
     Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
