@@ -177,3 +177,19 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
     Alors la carte n'offre pas de liste des combinaisons
     Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
     Alors la liste des combinaisons de la carte affiche "Select a document"
+
+  Scénario: un type qui reçoit une réponse différée la dit dans son bloc pendant que l'autre attend, et la carte offre ses listes une fois chacun différé
+    Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
+    Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
+    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
+    Et que l'usager clique sur "Request the documents"
+    Et que le fournisseur répond à la demande de "Projectathon test evidence" par une réponse différée
+    Alors le bloc de "Projectathon test evidence" affiche "Document announced for later"
+    Quand la zone a interrogé deux fois de plus son adresse
+    Alors le bloc de "Projectathon test evidence" affiche "Document announced for later"
+    Et le bloc de "Simple test evidence" affiche "Requesting the document"
+    Quand le fournisseur répond à la demande de "Simple test evidence" par une réponse différée
+    Et que l'usager recharge la page des justificatifs
+    Alors la liste des combinaisons de la carte affiche "Compound test evidence"
+    Et la page affiche le bouton "Retry to request"
