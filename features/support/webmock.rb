@@ -16,3 +16,10 @@ end
 Before('@bout_en_bout') do
   WebMock.disable!
 end
+
+# A browser scenario can end while the application still serves one of its
+# requests, which would then fail on doubles already taken off. `After` hooks
+# run in reverse order of declaration: this one, declared after
+# `webmock/cucumber`, runs before `WebMock.reset!`, the teardown of the `allow`
+# doubles and the cleaning of the database.
+After('@javascript') { Capybara.reset_sessions! }
