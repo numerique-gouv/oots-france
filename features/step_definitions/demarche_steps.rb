@@ -267,6 +267,24 @@ Alors(
   expect(sujet).to include(I18n.t('components.evidence_subject.fields.eidas_identifier') => identifiant)
 end
 
+# As the acceptance publishes it under `00`: docs/test_e2e.md records where.
+EVIDENCE_TYPE_CLASSIFICATIONS = {
+  'FR - Test Evidence Type not held' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/0a4cf159-133d-4ca7-91a7-749f9a1cc3e3',
+}.freeze
+
+Alors('cette requête demande le type de justificatif {string}') do |titre|
+  expect(depart_de_la_requete.evidence_type_id).to eq(EVIDENCE_TYPE_CLASSIFICATIONS.fetch(titre))
+end
+
+# The callout and not its link: where the correspondent asked for a `POST`, the
+# way to the preview space is a form.
+Alors('la page des justificatifs ne présente aucun lien vers l\'espace de prévisualisation') do
+  @navigateur.visit(adresse_de_la_demarche('documents'))
+
+  expect(Nokogiri::HTML(@navigateur.body).at_css('.demo-request__preview')).to be_nil
+end
+
 # Chapter 4.9 §5: the zone becomes the departure page once the demonstration
 # has confirmed the preview the correspondent asked for, which it does the first
 # time it reads that state. The correspondent answers on another connection, so

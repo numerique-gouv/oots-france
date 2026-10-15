@@ -1,10 +1,11 @@
-# The evidence types France answers for as an Evidence Provider: the two it
-# declares at the Evidence Broker of the acceptance environment, « FR - Test
-# Evidence Type » and « FR - Test Evidence Type for abroad ». A request is
-# served on its evidence type, whatever procedure it names — `R1` aside, which
-# is deferred whatever the type (`ProcedureCode.deferred?`): a provider holds
-# evidence of a type, and `EDM:ERR:0004` — « Object not found » (chapter 4.5.3)
-# — is what any other type gets. Stub, tracked as OOTS-82.
+# The evidence types France answers for as an Evidence Provider: two of the
+# three it declares at the Evidence Broker of the acceptance environment,
+# « FR - Test Evidence Type » and « FR - Test Evidence Type for abroad »; the
+# third, « FR - Test Evidence Type not held », is declared without being served.
+# A request is served on its evidence type, whatever procedure it names — `R1`
+# aside, which is deferred whatever the type (`ProcedureCode.deferred?`): a
+# provider holds evidence of a type, and `EDM:ERR:0004` — « Object not found »
+# (chapter 4.5.3) — is what any other type gets. Stub, tracked as OOTS-82.
 #
 # Compared on the country and the UUID that end the classification, the
 # Semantic Repository publishing it under `sr.acc.oots.tech.ec.europa.eu` in
