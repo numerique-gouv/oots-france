@@ -81,6 +81,10 @@ Quand('chaque demande de la combinaison est refusée') do
   GREEK_EXCHANGES.each_value { |exchange| stub_exchange_state(exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003') }
 end
 
+Quand('le fournisseur répond à la demande de {string} par une réponse différée') do |title|
+  stub_exchange_state(GREEK_EXCHANGES.fetch(title), statut: 'deferred', dateDisponibilite: '2026-10-23T14:05:00+02:00')
+end
+
 Alors("la liste des combinaisons de la carte offre, dans l'ordre :") do |table|
   offered = find_field(combination_label).all('option').map(&:text).reject { |text| text == combination_prompt }
 

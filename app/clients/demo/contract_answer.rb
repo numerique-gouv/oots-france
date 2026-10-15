@@ -78,6 +78,24 @@ module Demo
 
     def edm_error_code = payload['codeErreur']
 
+    # The instant a `deferred` exchange announced the evidence for, as
+    # `ExchangeState` writes it: ISO 8601, in the deployment's time zone, the
+    # date received from the provider having been converted when it was read.
+    # Chapter 4.4 §3.3.2 has the Data Service give it « optionally », so none
+    # is no fault; one this contract cannot have written is read as none, and
+    # logged.
+    def available_at
+      announced = payload['dateDisponibilite']
+      return if announced.blank?
+
+      Time.iso8601(announced)
+    rescue ArgumentError => e
+      Rails.logger.warn(I18n.t('clients.demo.contract_answer.unreadable_date',
+        exchange_id:, date: announced, error: e.message))
+
+      nil
+    end
+
     def preview_location = payload['adressePrevisualisation']
 
     # What `ExchangeState#presented_link` adds to the answer of a confirmation:

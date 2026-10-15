@@ -398,6 +398,23 @@ fr:
       # utiliser le justificatif.
       declined_title: You chose not to use this document
       declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      # La réponse différée du chapitre 4.4 §3.3.2 — « the Online Procedure
+      # Portal has an obligation to inform the user accordingly » —, qui n'est
+      # le refus de personne. La date est donnée « optionally » par le
+      # fournisseur : sans elle, le texte le dit. Redemander est une requête
+      # neuve (chapitre 4.5.2 : « At the time of availability a new Evidence
+      # Request must be made »), que seul l'usager décide.
+      deferred_title: Document announced for later
+      deferred_body: >-
+        The administration has not sent the document: it announced it for %{date}. Ask again from that
+        date to start a new request.
+      deferred_undated_body: >-
+        The administration has not sent the document: it announced it for later, without saying when.
+        Ask again later to start a new request.
+      # Un format `strftime`, dont `%B` écrit le mois en anglais, dans le
+      # décalage horaire que le contrat publie — celui du déploiement —, sans
+      # autre conversion.
+      deferred_date: "%-d %B %Y at %H:%M (UTC%:z)"
       # Un `PUT`, que le chapitre 4.9 v1.2.3 §5 permet au correspondant et
       # qu'aucun formulaire HTML n'envoie.
       unpresentable_title: The preview link cannot be presented
@@ -591,6 +608,9 @@ fr:
       # non-réponse pour l'un comme pour l'autre.
       contract_answer:
         unreadable: "Réponse illisible de %{path} (%{status}) : %{error}"
+        # Une date illisible, que le contrat n'écrit jamais : la démarche la dit
+        # à l'écran comme une annonce sans date, et le signale ici.
+        unreadable_date: "Date annoncée illisible pour l'échange %{exchange_id} (%{date}) : %{error}"
       exchange_state_client:
         unreachable: "Le contrat n'a pas répondu : %{error}"
       preview_confirmation_client:

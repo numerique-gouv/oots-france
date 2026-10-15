@@ -22,8 +22,14 @@ class DemoRequestComponent < ViewComponent::Base
   # failure no correspondent decided.
   FAILURES = {
     refused: 'refused', unavailable: 'unavailable', expired: 'expired', declined: 'declined',
-    unpresentable: 'unpresentable', unconfirmed: 'unconfirmed',
+    deferred: 'deferred', unpresentable: 'unpresentable', unconfirmed: 'unconfirmed',
   }.freeze
+
+  # The endings that are nobody's failure, said in the place of a failure since
+  # they too settle the request without a document: the user chose, on the
+  # preview space, not to use the document, or the provider announced it for
+  # later.
+  INFORMATIVE = %i[declined deferred].freeze
 
   # The outcomes the zone says as something other than a failure.
   STANDING = %i[delivered pending preview].freeze
@@ -74,7 +80,8 @@ class DemoRequestComponent < ViewComponent::Base
   # the user has the preview space to visit, `delivered` once the document is in
   # hand, `failed` for everything else — a refusal the contract returned, an
   # exchange that never opened, a wait this screen gave up on, a contract that
-  # could not be read, a document the user chose not to use.
+  # could not be read, a document the user chose not to use, a document
+  # announced for later.
   def state
     return :failed if refused_click?
     return :idle if outcome.nil?
@@ -116,6 +123,7 @@ class DemoRequestComponent < ViewComponent::Base
   # before any exchange opened, which names the refusal of the contract.
   def failure_body
     return Array(failure[:errors]).join(' ').presence if refused_click?
+    return announcement if settled_outcome == :deferred
 
     t("components.demo_request_zone.#{failure_name}_body")
   end
@@ -131,18 +139,16 @@ class DemoRequestComponent < ViewComponent::Base
   # Nothing when the click itself was refused: no exchange was opened, so no
   # correspondent answered, and the outcome still standing beside it belongs to
   # the request before. Showing its code under another refusal's title would
-  # name the wrong refusal.
+  # name the wrong refusal. Nothing for an announcement either: chapter 4.5.2
+  # §2.1 makes it a response carrying `ResponseAvailableDateTime`, and none of
+  # the codes of chapter 4.5.3 names a deferral.
   def edm_error_code
-    return nil if refused_click?
+    return nil if refused_click? || settled_outcome == :deferred
 
     outcome&.edm_error_code.presence
   end
 
-  def failure_type = declined? ? :info : :error
-
-  # The one ending that is nobody's failure: the user chose, on the preview
-  # space, not to use the document.
-  def declined? = !refused_click? && !outcome.unreadable? && outcome.outcome == :declined
+  def failure_type = INFORMATIVE.include?(settled_outcome) ? :info : :error
 
   # What the departure page presents, read off the request the confirmation
   # filled. Public for the template, like the accessors above.
@@ -150,6 +156,20 @@ class DemoRequestComponent < ViewComponent::Base
     :preview_fields, to: :outcome
 
   private
+
+  # What the contract says became of the request, when that is what the block
+  # reports: neither a refused click nor a contract that could not be read.
+  def settled_outcome = (outcome.outcome unless refused_click? || outcome.unreadable?)
+
+  # Chapter 4.5.2 §2.5: the portal « may use this information to inform the
+  # user to pause the procedure and to return at a later point ».
+  def announcement
+    date = outcome.announced_for
+    return t('components.demo_request_zone.deferred_undated_body') if date.nil?
+
+    t('components.demo_request_zone.deferred_body',
+      date: date.strftime(t('components.demo_request_zone.deferred_date')))
+  end
 
   def failure_name = outcome.unreadable? ? 'unreadable' : FAILURES.fetch(outcome.outcome)
 end

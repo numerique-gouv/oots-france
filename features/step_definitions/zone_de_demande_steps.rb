@@ -548,6 +548,50 @@ end
 
 def added_card_selector(name) = "#exigence-#{CATALOGUE.fetch(name)}"
 
+# Chapter 4.4 §3.3.2, the Unavailable Response: the contract publishes the
+# exchange `deferred`, with the date the provider gave, or none.
+Quand('le fournisseur répond par une réponse différée au {string}') do |date|
+  announce(dateDisponibilite: date)
+end
+
+Quand('le fournisseur répond par une réponse différée sans date') do
+  announce
+end
+
+# The screen's deadline counts from the click, which the register records.
+Étantdonné('la carte demandée il y a plus de deux minutes') do
+  Demo::Request.sole.update!(created_at: (DemoOutcomeWording::GIVE_UP_AFTER + 1.minute).ago)
+end
+
+Alors("la carte n'a ni le contour du justificatif arrivé ni celui de l'exigence insatisfaisable") do
+  expect(page).to have_css("#{CARD}:not(.requirement-card--unsatisfiable)")
+  expect(page).to have_no_css("#{CARD} [data-demo-request-block][data-state='delivered']", visible: :all)
+end
+
+Alors('le contrat a reçu une seule demande') do
+  expect(every_demand.size).to eq(1)
+end
+
+Alors('la carte offre de nouveau la liste des pays') do
+  expect(find(CARD)).to have_field(I18n.t('components.demo_requirement_card.country_label'))
+end
+
+Alors('le contrat a reçu deux demandes, chacune sous son propre échange') do
+  wait_until_registered(2)
+
+  expect(every_demand.size).to eq(2)
+  expect(Demo::Request.distinct.count(:exchange_id)).to eq(2)
+end
+
+# The contract then opens another exchange for whatever is asked next, so that
+# asking again is told apart from reading the first exchange twice.
+def announce(**date)
+  stub_exchange_state(statut: 'deferred', **date)
+  stub_evidence_request(body: { echange: SECOND_EXCHANGE, conversation: DemoContractStubs::ACCEPTED_CONVERSATION,
+                                statut: 'pending' }.to_json)
+  stub_exchange_state(SECOND_EXCHANGE)
+end
+
 def zone_requests = intercepted_requests(pattern: ZONE_ADDRESS)
 
 def country_requests = intercepted_requests(pattern: COUNTRY_ADDRESS)

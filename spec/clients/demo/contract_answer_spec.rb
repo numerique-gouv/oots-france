@@ -9,6 +9,27 @@ RSpec.describe Demo::ContractAnswer do
     expect(answer).to have_attributes(exchange_id: 'un-échange', conversation_id: 'une-conversation')
   end
 
+  # Chapter 4.5.2: `ResponseAvailableDateTime`, published as `dateDisponibilite`.
+  describe '#available_at' do
+    it 'reads the date in the offset it is published with' do
+      payload['dateDisponibilite'] = '2026-10-23T14:05:00+02:00'
+
+      expect(answer.available_at).to have_attributes(utc_offset: 7200, hour: 14, min: 5)
+    end
+
+    it 'is nothing when no date was announced' do
+      expect(answer.available_at).to be_nil
+    end
+
+    it 'is nothing when the date cannot be read, and says so in the log' do
+      payload['dateDisponibilite'] = 'demain'
+      allow(Rails.logger).to receive(:warn)
+
+      expect(answer.available_at).to be_nil
+      expect(Rails.logger).to have_received(:warn).with(include('demain'))
+    end
+  end
+
   describe 'what counts as an acceptance' do
     it 'is a 202 naming its exchange' do
       expect(answer).to be_accepted

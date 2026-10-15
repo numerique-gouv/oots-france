@@ -21,7 +21,8 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   avec lui. La question que le Data Service Directory pose avant de pouvoir
   désigner le fournisseur s'y pose aussi, sur la carte, dans la forme que son
   type demande : la réponse de l'usager résout la carte, et la demande part
-  avec elle.
+  avec elle. Une réponse différée du fournisseur s'y dit avec sa date, comme une
+  demande réglée, et le justificatif ne se redemande que sur un clic.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
   passerelle, ni annuaire réel, ni FranceConnect+ réel. docs/test_e2e.md les
@@ -393,3 +394,40 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et que l'usager recharge la page des justificatifs
     Alors la carte n'offre aucune question
     Et la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
+
+  Scénario: une réponse différée se dit avec sa date, sans rechargement, et la zone cesse d'interroger
+    Étant donné une demande en cours
+    Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
+    Alors la page affiche "Document announced for later"
+    Et la page affiche "The administration has not sent the document: it announced it for 23 October 2026 at 14:05 (UTC+02:00). Ask again from that date to start a new request."
+    Et la page affiche le bouton "Retry to request"
+    Et la page n'affiche pas "Requesting the document…"
+    Et la page n'affiche pas "EDM:ERR"
+    Et la carte n'a ni le contour du justificatif arrivé ni celui de l'exigence insatisfaisable
+    Et la page des justificatifs n'a pas été rechargée
+    Et aucune autre interrogation ne part
+    Et le contrat a reçu une seule demande
+
+  Scénario: une réponse différée sans date se dit sans date
+    Étant donné une demande en cours
+    Quand le fournisseur répond par une réponse différée sans date
+    Alors la page affiche "The administration has not sent the document: it announced it for later, without saying when. Ask again later to start a new request."
+    Et la page affiche le bouton "Retry to request"
+
+  Scénario: une réponse différée reste dite à la page relue après l'échéance de l'écran, et la carte offre de nouveau ses listes
+    Étant donné une demande en cours
+    Et la carte demandée il y a plus de deux minutes
+    Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
+    Et que l'usager recharge la page des justificatifs
+    Alors la page affiche "Document announced for later"
+    Et la page n'affiche pas "No answer yet"
+    Et la carte offre de nouveau la liste des pays
+    Et la carte nomme le pays "France (FR)"
+    Et aucune autre interrogation ne part
+
+  Scénario: redemander après une réponse différée ouvre un échange neuf, et la zone attend sa réponse
+    Étant donné une demande en cours
+    Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
+    Et que l'usager clique sur "Retry to request"
+    Alors la zone annonce qu'elle attend
+    Et le contrat a reçu deux demandes, chacune sous son propre échange
