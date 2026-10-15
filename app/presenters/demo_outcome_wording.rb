@@ -11,10 +11,11 @@ class DemoOutcomeWording
   # every failure. A `declined` is the user's own choice on the preview space —
   # chapter 4.9 §1, « if the user decides not to use any piece of evidence, the
   # evidence response shall contain an empty registry object list » — and is
-  # said as such. Anything else — `pending`, `sent`, a `preview_required` the
-  # procedure confirms as it reads it, and a `deferred` (the announcement of
-  # chapter 4.5.2, which France answers `R1` with) — is still under way as far
-  # as the user is concerned. A contract `delivered`
+  # said as such. A `deferred` is the Unavailable Response of chapter 4.4
+  # §3.3.2, which settles the exchange: « the Online Procedure Portal has an
+  # obligation to inform the user accordingly ». Anything else — `pending`,
+  # `sent`, a `preview_required` the procedure confirms as it reads it — is
+  # still under way as far as the user is concerned. A contract `delivered`
   # is deliberately absent: the document in hand is what settles that one, and
   # `outcome` has already answered before reading here.
   #
@@ -29,6 +30,7 @@ class DemoOutcomeWording
     'failed' => :refused,
     'unmatched' => :refused,
     'declined' => :declined,
+    'deferred' => :deferred,
   }.freeze
 
   # The verbs a departure page can follow the link with: a link, or a form. A
@@ -101,6 +103,10 @@ class DemoOutcomeWording
   # The fields of the form a `POST` sends, which the contract hands as
   # `application/x-www-form-urlencoded` — `PreviewLink#body`.
   def preview_fields = URI.decode_www_form(request.preview_body.to_s)
+
+  # The instant the provider announced the evidence for, which an announcement
+  # without one says without a date.
+  def announced_for = answer.available_at
 
   # A request still under way, or one whose document is in hand: the card then
   # stays in the country that request went to, since a card naming another over

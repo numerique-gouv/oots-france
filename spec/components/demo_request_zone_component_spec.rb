@@ -241,6 +241,46 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     end
   end
 
+  # Chapter 4.4 §3.3.2: the Unavailable Response, which the portal must tell
+  # the user of. Nobody's failure, so an informative alert.
+  context 'when the provider announced the document for later' do
+    let(:payload) { { 'statut' => 'deferred', 'dateDisponibilite' => '2026-10-23T14:05:00+02:00' } }
+
+    it 'says so with the date announced, and offers to ask again' do
+      render_inline(zone)
+
+      expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--info', text: 'Document announced for later')
+      expect(page).to have_text('it announced it for 23 October 2026 at 14:05 (UTC+02:00). Ask again from that date')
+      expect(page).to have_button('Retry to request')
+      expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
+      expect(page).to have_css('[data-demo-request-target="loading"][hidden]', visible: :hidden)
+    end
+
+    # Chapter 4.5.2 §2.1: a response, never an `rs:Exception`.
+    it 'names no error code, whatever the state carries' do
+      payload['codeErreur'] = 'EDM:ERR:0003'
+      render_inline(zone)
+
+      expect(page).to have_no_text('EDM:ERR')
+    end
+
+    it 'says it without a date when none was announced' do
+      payload.delete('dateDisponibilite')
+      render_inline(zone)
+
+      expect(page).to have_text('it announced it for later, without saying when')
+    end
+
+    # The screen's deadline is for a wait, and this is an answer.
+    it 'says the same an hour later' do
+      request.created_at = Time.current
+      render_inline(zone_of(DemoOutcomeWording.new(answer:, request:, clock: instance_double(Clock, now: 1.hour.from_now))))
+
+      expect(page).to have_text('Document announced for later')
+      expect(page).to have_no_text('No answer yet')
+    end
+  end
+
   context 'when the confirmation of the preview failed' do
     let(:payload) { { 'statut' => 'preview_required' } }
     let(:outcome) do
@@ -306,6 +346,19 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
       expect(page).to have_text('EB:ERR:0001')
       expect(page).to have_no_text('EDM:ERR:0003')
+    end
+
+    # Asking again is what an announcement invites: a refusal of that click is
+    # said as a refusal, never under the announcement it replaces.
+    context 'when the earlier exchange was announced for later' do
+      let(:payload) { { 'statut' => 'deferred', 'dateDisponibilite' => '2026-10-23T14:05:00+02:00' } }
+
+      it 'says the refusal, as an error' do
+        render_inline(zone)
+
+        expect(page).to have_css('.fr-alert--error', text: 'EB:ERR:0001')
+        expect(page).to have_no_text('Document announced for later')
+      end
     end
   end
 
@@ -387,6 +440,16 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
                 'Simple test evidence, retrieved from the common services'])
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending idle"]')
       expect(page).to have_css('[data-demo-request-block][data-state="idle"]', text: 'Request the document')
+    end
+
+    # OOTS-257 CA2: an announced block is settled, and the zone waits on the other.
+    it 'keeps waiting on a block still out beside an announced one' do
+      deferred = DemoOutcomeWording.new(answer: Demo::ContractAnswer.new(status: 200, payload: { 'statut' => 'deferred' }),
+        request:)
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([deferred, outcome])))
+
+      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="failed pending"]')
+      expect(page).to have_css('[data-demo-request-block="bbbb"] .fr-alert--info', text: 'Document announced for later')
     end
 
     # CA5: a click the contract refused is said in the block of its type, and

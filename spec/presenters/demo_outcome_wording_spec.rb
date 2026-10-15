@@ -129,11 +129,16 @@ RSpec.describe DemoOutcomeWording do
       expect(wording.outcome).to eq(:pending)
     end
 
-    # The demonstration asks only for `T1`, which France always serves with a
-    # document, so `deferred` never reaches this page; it reads as waiting
-    # rather than as a case of its own — the ticket puts it out of scope.
-    it 'reads a state it has nothing to say about as waiting' do
+    # Chapter 4.4 §3.3.2: the Unavailable Response settles the exchange, and the
+    # portal « has an obligation to inform the user accordingly ».
+    it 'is an announcement when the provider deferred the evidence' do
       payload['statut'] = 'deferred'
+
+      expect(wording.outcome).to eq(:deferred)
+    end
+
+    it 'reads a state it has nothing to say about as waiting' do
+      payload['statut'] = 'sent'
 
       expect(wording.outcome).to eq(:pending)
     end
@@ -187,6 +192,13 @@ RSpec.describe DemoOutcomeWording do
         expect(wording.outcome).to eq(:refused)
       end
 
+      # The provider answered: the screen has nothing left to wait for.
+      it 'leaves an announcement an announcement' do
+        payload['statut'] = 'deferred'
+
+        expect(wording.outcome).to eq(:deferred)
+      end
+
       # Counted from the return when the user went to preview the document.
       describe 'after a visit to the preview space' do
         let(:now) { request.returned_at + described_class::GIVE_UP_AFTER + 1.second }
@@ -199,6 +211,12 @@ RSpec.describe DemoOutcomeWording do
 
         it 'gives up two minutes after the return' do
           expect(wording.outcome).to eq(:expired)
+        end
+
+        it 'says an announcement received after the return' do
+          payload['statut'] = 'deferred'
+
+          expect(wording.outcome).to eq(:deferred)
         end
 
         it 'is still waiting a moment before' do
@@ -241,6 +259,12 @@ RSpec.describe DemoOutcomeWording do
       expect(wording).not_to be_holds_country
     end
 
+    it 'lets it go once the provider announced the evidence for later' do
+      payload['statut'] = 'deferred'
+
+      expect(wording).not_to be_holds_country
+    end
+
     it 'lets it go once the screen gave up waiting' do
       request.created_at = 1.hour.ago
 
@@ -251,6 +275,35 @@ RSpec.describe DemoOutcomeWording do
       allow(answer).to receive(:status).and_return(404)
 
       expect(wording).not_to be_holds_country
+    end
+  end
+
+  # Chapter 4.5.2: `ResponseAvailableDateTime`, which the contract publishes
+  # as `dateDisponibilite`.
+  describe '#announced_for' do
+    before { payload['statut'] = 'deferred' }
+
+    it 'keeps the offset the date was published with' do
+      payload['dateDisponibilite'] = '2026-10-23T14:05:00+02:00'
+
+      expect(wording.announced_for).to have_attributes(utc_offset: 7200, hour: 14, min: 5)
+    end
+
+    it 'reads a date in UTC as such' do
+      payload['dateDisponibilite'] = '2026-10-23T12:05:00Z'
+
+      expect(wording.announced_for.strftime('%H:%M %:z')).to eq('12:05 +00:00')
+    end
+
+    # Chapter 4.4 §3.3.2: the Data Service gives it « optionally ».
+    it 'is nothing when no date was announced' do
+      expect(wording.announced_for).to be_nil
+    end
+
+    it 'is nothing when the date cannot be read' do
+      payload['dateDisponibilite'] = 'demain'
+
+      expect(wording.announced_for).to be_nil
     end
   end
 
