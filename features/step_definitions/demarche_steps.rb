@@ -179,6 +179,13 @@ Quand('l\'usager ajoute la carte {string} à la page des justificatifs') do |car
   expect(@navigateur.current_url).to include(adresse_de_la_demarche('documents'))
 end
 
+# The list answers with the card alone; the documents page is read again, the
+# chosen type retained on it, for the steps that follow.
+Quand('l\'usager choisit {string} sur la carte {string}') do |type, carte|
+  @navigateur.choose_evidence_type(carte, type)
+  @navigateur.visit(adresse_de_la_demarche('documents'))
+end
+
 # The click answers with the zone it was made in, saying the request is out. The
 # state is deliberately not asserted beyond that — the exchange is already on
 # its way, and what the correspondent has answered by the time this renders is
