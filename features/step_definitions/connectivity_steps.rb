@@ -64,8 +64,12 @@ Alors("le point d'accès {string} affiche {string}, sans bouton de test") do |pa
 end
 
 # The verdict as `ConnectivityTesting::ReadVerdict` records it: what follows is
-# the page noticing, which is the subject here.
+# the page noticing, which is the subject here. The click that records the
+# `ConnectivityTest` is served a moment after the step that made it.
 Quand("la France lit dans la passerelle que le point d'accès {string} a acquitté le test") do |partie|
+  wait_until("Aucun test de connectivité enregistré pour #{partie} : le clic n'a pas été servi.") do
+    ConnectivityTest.exists?(party_name: partie)
+  end
   ConnectivityTest.find_by!(party_name: partie).acknowledged!
 end
 
