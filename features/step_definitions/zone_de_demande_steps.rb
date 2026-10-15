@@ -251,7 +251,7 @@ Quand("l'usager choisit {string} dans la liste des pays de la {word} carte") do 
 end
 
 Quand("l'usager choisit {string} dans la liste des types de la carte") do |title|
-  find_field(evidence_type_label).find('option', exact_text: title).select_option
+  awaiting_the_card_answer(find_field(evidence_type_label)) { |field| field.find('option', exact_text: title).select_option }
 end
 
 Quand('la soumission retenue est libérée') do
@@ -608,6 +608,36 @@ end
 def wait_until_seen(count)
   wait_until(-> { "La zone n'a fait que #{zone_requests.seen.size} requête(s) sur #{count} attendue(s)." },
     seconds: INTERVAL * (count + 2)) { zone_requests.seen.size >= count }
+end
+
+# A choice in a list of the card is sent in the background, so the step that
+# made it returns before the card has the answer: a reload that follows would
+# read the card as it stood.
+def awaiting_the_card_answer(field)
+  page.execute_script(<<~JS, field)
+    const card = arguments[0].closest('[data-controller~="demo-card"]')
+    const mark = document.createElement('template')
+    mark.className = 'scenario-pending'
+    card.querySelector('[data-demo-card-target~="foot"]').append(mark)
+    window.scenarioCard = card
+  JS
+  yield field
+  wait_until("La carte n'a pas traité la réponse au choix fait dans sa liste.") { card_answered? }
+end
+
+# Answered once the page has reloaded, the answer spliced into the foot, which
+# takes the mark with it, or a failure announced in the status region the choice
+# emptied. Asked while the page reloads, the question finds no context to run in.
+def card_answered?
+  page.evaluate_script(<<~JS)
+    (() => {
+      const card = window.scenarioCard
+      return !card || card.querySelector('[data-demo-card-target~="status"]').textContent !== '' ||
+        !card.querySelector('[data-demo-card-target~="foot"] > template.scenario-pending')
+    })()
+  JS
+rescue Ferrum::NoExecutionContextError, Ferrum::NodeNotFoundError
+  false
 end
 
 # What Capybara does for an element, for everything else this suite waits on: a
