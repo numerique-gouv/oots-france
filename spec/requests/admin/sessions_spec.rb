@@ -14,8 +14,8 @@ RSpec.describe 'Admin::Sessions' do
 
       expect(response).to have_http_status(:ok)
       page = response.parsed_body
-      expect(page.css('button.fr-proconnect').text).to include('ProConnect')
-      expect(page.css('a[href="https://www.proconnect.gouv.fr/"]').text).to eq("Qu'est-ce que ProConnect ?")
+      expect(page.css('button.fr-connect--pro').text).to include('ProConnect')
+      expect(page.css('a[href="https://www.proconnect.gouv.fr/"]').text).to eq('Qu’est-ce que ProConnect ?')
       expect(page.css('input[type="password"], input[type="email"]')).to be_empty
     end
 
@@ -25,7 +25,7 @@ RSpec.describe 'Admin::Sessions' do
 
       get new_admin_session_path
 
-      expect(response.parsed_body.css('button.fr-proconnect')).to be_empty
+      expect(response.parsed_body.css('button.fr-connect--pro')).to be_empty
       expect(page_text).to include("Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir.")
     end
 

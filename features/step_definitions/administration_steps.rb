@@ -220,7 +220,7 @@ end
 # CA1: the button, its link, and no field to type anything in.
 Alors("la page de connexion propose de s'identifier avec ProConnect") do
   expect(page).to have_button("S'identifier avec ProConnect")
-  expect(page).to have_link("Qu'est-ce que ProConnect ?", href: 'https://www.proconnect.gouv.fr/')
+  expect(page).to have_link('Qu’est-ce que ProConnect ?', href: 'https://www.proconnect.gouv.fr/')
   expect(page).to have_no_field(type: 'password')
 end
 

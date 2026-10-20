@@ -262,7 +262,7 @@ Ce qu'on déclare à ProConnect pour ce déploiement :
 
 L'espace est au [Système de design de l'État](https://www.systeme-de-design.gouv.fr/) (DSFR), par les gems [`dsfr-view-components`](https://github.com/betagouv/dsfr-view-components) et [`dsfr-assets`](https://github.com/betagouv/dsfr-assets), qui embarquent le CSS, le JavaScript, les polices et les icônes : **ni npm ni Node**. Les deux demandent un `require` explicite, posé dans `config/application.rb`, et `dsfr-assets` refuse de démarrer tant que l'application n'a pas nommé la version des [modalités d'utilisation du DSFR](https://github.com/GouvernementFR/dsfr/blob/v1.15.3/doc/legal/cgu.md) qu'elle a lue : `config/initializers/dsfr.rb` la porte.
 
-Trois feuilles de style, et les trois comptent : `dsfr.min` porte le noyau et les composants, `utility/dsfr-utility.min` les icônes — sans elle, toute classe `fr-icon-*` est muette —, et `proconnect-button` le bouton de la page de connexion, que le noyau ne dessine pas. La gem en livre une quatrième, `dsfr.print.min`, qui n'est pas reprise.
+Deux feuilles de style, et les deux comptent : `dsfr.min` porte le noyau et les composants — le bouton ProConnect de la page de connexion compris —, `utility/dsfr-utility.min` les icônes — sans elle, toute classe `fr-icon-*` est muette. La gem en livre une troisième, `dsfr.print.min`, qui n'est pas reprise.
 
 Le sélecteur de thème n'est pas repris : `data-fr-scheme="system"` sur `<html>` suit le thème du système sans JavaScript. C'est ce qui permet de se passer du script anti-clignotement que le DSFR place sinon en ligne dans le `<head>`.
 

@@ -32,7 +32,7 @@ module BrowserProConnectStubs
   def sign_in_through_pro_connect(email: ProConnectStubs::AGENT_EMAIL)
     stub_browser_pro_connect(email:)
     visit new_admin_session_path
-    find('button.fr-proconnect').click
+    find('button.fr-connect--pro').click
   end
 end
 
