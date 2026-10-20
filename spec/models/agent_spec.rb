@@ -30,4 +30,10 @@ RSpec.describe Agent do
     expect(agent('numerique.gouv.fr')).not_to be_admitted_by(%w[numerique.gouv.fr])
     expect(agent(nil)).not_to be_admitted_by(%w[numerique.gouv.fr])
   end
+
+  it 'names the demonstration agent in the first admitted domain' do
+    allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[exemple.fr numerique.gouv.fr])
+
+    expect(described_class.demonstration.email).to eq('administrateur.demonstration@exemple.fr')
+  end
 end

@@ -10,7 +10,7 @@ COUNTRIES = {
 # and test alone. The suite's database is never seeded, so the step names the
 # agent itself where the seed would have.
 Étantdonné("un administrateur connecté à l'espace d'administration") do
-  Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+  Administrator.appoint(Agent.demonstration.email)
   sign_in_without_pro_connect
 end
 
@@ -19,7 +19,7 @@ end
 end
 
 Quand('son adresse est nommée administrateur') do
-  Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+  Administrator.appoint(Agent.demonstration.email)
 end
 
 Quand("l'agent ouvre l'accueil de l'espace d'administration") do

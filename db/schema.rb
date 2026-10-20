@@ -15,8 +15,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_150000) do
   enable_extension "pg_catalog.plpgsql"
 
   create_table "administrators", force: :cascade do |t|
-    t.string "email", null: false
     t.datetime "created_at", null: false
+    t.string "email", null: false
     t.datetime "updated_at", null: false
     t.index ["email"], name: "index_administrators_on_email", unique: true
   end

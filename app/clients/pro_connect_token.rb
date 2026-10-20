@@ -49,8 +49,6 @@ class ProConnectToken
     payload, = JWT.decode(signed_token.to_s, nil, true, **verification, algorithms: SIGNATURE, jwks: key_set)
 
     ProConnectAnswer.object(payload, :claims)
-  rescue ProConnectError
-    raise
   # Exhaustive for the reason `FranceConnectToken#claims` gives: the key set is
   # read inside this call, and the gem lets what the loader raises travel out
   # untranslated, as it lets a claims set that is not an object crash while it

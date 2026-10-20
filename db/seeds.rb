@@ -11,7 +11,7 @@
 if Rails.env.production?
   puts "Aucun administrateur n'est nommé en production : nommez le premier en console, voir docs/espace_administration.md"
 elsif Rails.env.development?
-  administrator = Administrator.appoint(Admin::DevelopmentSessionsController.agent_email)
+  administrator = Administrator.appoint(Agent.demonstration.email)
 
   puts "Administrateur nommé : #{administrator.email}"
 end
