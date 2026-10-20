@@ -1,6 +1,6 @@
-# What the documents page of the demonstration says of one requirement of the
-# procedure: what it is, who would provide the evidence satisfying it, and of
-# which type.
+# What the documents page of the demonstration says of one evidence type a card
+# asks for: who would provide it, and under which requirement. A card names one
+# per type of the combination it chose, `DemoCardWording` holding them.
 #
 # Requirement 27 of chapter 1 §2 asks for exactly those two, and for them
 # « before any request is made » — hence a page of its own, and hence
@@ -35,6 +35,12 @@ class DemoResolutionWording
 
   def evidence_type = lookup.evidence_type&.label(languages: LANGUAGES).presence
 
+  # The type the card names, whole — what the request sends — and by its UUID,
+  # which is what the page's own addresses carry.
+  def evidence_type_id = lookup.evidence_type&.id
+
+  def evidence_type_uuid = lookup.evidence_type&.uuid
+
   def evidence_type_language
     lookup.evidence_type&.label_language(languages: LANGUAGES) if evidence_type.present?
   end
@@ -67,6 +73,25 @@ class DemoResolutionWording
   def requirement_id = lookup.requirement&.id
 
   def requirement_uuid = lookup.requirement&.uuid
+
+  # The questions the Data Service Directory asked before it could name the
+  # provider — `DSD:ERR:0005`, chapter 3.1.4 §4.2.4: « This error code always
+  # indicates that extra user input is required to complete the query » — in
+  # the order its exception wrote them.
+  def questions = Array(lookup.provider_classification_questions)
+
+  def asking? = questions.any?
+
+  # The user's answers to those questions and to no others, by question UUID:
+  # what the card was resolved on, and what its request sends. Empty where
+  # nothing was asked.
+  def provider_classifications
+    EvidenceProviderClassification.answers_for(questions, lookup.provider_classification_answers)
+  end
+
+  # Asked and answered: every question has its answer, so a refusal is the
+  # directory's verdict on those answers and no longer a request for them.
+  def answered? = asking? && provider_classifications.size == questions.size
 
   # The member state the evidence types and the providers were asked for in,
   # which is what the card names them in: each card is resolved in its own.

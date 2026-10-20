@@ -1,8 +1,9 @@
 module Admin
   module CommonServices
     # The parties of the PMode the gateway has loaded, and the last connectivity
-    # test France ran towards each. Read in the gateway for the parties, in the
-    # local database for the tests: the page itself asks the gateway nothing else.
+    # test France ran towards each. Read in the gateway for the parties and for
+    # the certificates of its truststore, which give a country to the parties
+    # declared under an `EAS` scheme; in the local database for the tests.
     #
     # With `fragment`, the blocks alone: what the page's controller asks again
     # while a test is pending.

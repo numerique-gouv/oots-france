@@ -24,11 +24,17 @@ class EvidenceBrokerClient
     ).requirements
   end
 
-  def evidence_types(requirement_id:, country_code:)
+  def evidence_types(requirement_id:, country_code:) = requirement_evidence(requirement_id:, country_code:).evidence_types
+
+  # The same query, read for both of the things it answers: the requirement it
+  # is about, which chapter 3.2.4 §4.3.1 has it carry whole, and the evidence
+  # types satisfying it in that country. What a request starting from a
+  # requirement it already knows needs, with no first query to read it from.
+  def requirement_evidence(requirement_id:, country_code:)
     @query.search(
       { queryId: EVIDENCE_TYPES_QUERY, 'requirement-id': requirement_id, 'country-code': country_code },
       parser: EvidenceTypesResponseParser,
-    ).evidence_types
+    )
   end
 
   # Grouped as the directory groups them, and for every country at once:

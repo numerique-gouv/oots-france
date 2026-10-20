@@ -28,12 +28,22 @@ module Demo
     # The line the journey plays, which the click asked the contract for.
     attribute :specification, EdmSpecification::Type.new
     validates :specification, presence: true
+    # The procedure the journey plays, which the click asked under.
+    validates :procedure_code, presence: true
+
+    # The member state of the journey's last request for a requirement,
+    # whatever became of it: a card of that requirement added again stands
+    # there, its zone saying what the register says.
+    def self.last_country(journey_id:, requirement_uuid:)
+      where(journey_id:, requirement_uuid:).order(:created_at, :id).last&.country_code
+    end
 
     # Chapter 4.4 §4.3.2 gives each identifier its own job — the `ExchangeId`
     # ties together the messages of one exchange, the `ConversationId` ties them
     # to one authenticated user — so a delivery is asked for both: one naming
     # this exchange under another conversation is as unplaceable as one naming
     # no exchange at all.
+
     def answers?(exchange_id, conversation_id)
       self.exchange_id == exchange_id && self.conversation_id == conversation_id
     end

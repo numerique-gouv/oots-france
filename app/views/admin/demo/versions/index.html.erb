@@ -2,22 +2,25 @@
 
 <%= render DemoBreadcrumbsComponent.new %>
 
-<h1><%= t('admin.demo.versions.index.title') %></h1>
+<%# In English, like every page of the demonstration. %>
+<div lang="en">
+  <h1><%= t('admin.demo.versions.index.title') %></h1>
 
-<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.versions.index.lead') %></p>
+  <p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.versions.index.lead') %></p>
 
-<%# In the order France prefers them, none picked in advance: the first plays
-    what a French procedure naming no line gets. %>
-<div class="fr-grid-row fr-grid-row--gutters">
-  <% @specifications.each do |specification| %>
-    <div class="fr-col-12 fr-col-md-6">
-      <%= render CardComponent.new(
-            title: t('admin.demo.versions.index.card', number: specification.number),
-            href: admin_demo_home_path(version: specification.segment),
-            clickable: true,
-          ) do %>
-        <%= t("admin.demo.versions.index.descriptions.#{specification.slug}") %>
-      <% end %>
-    </div>
-  <% end %>
+  <%# In the order France prefers them, none picked in advance: the first plays
+      what a French procedure naming no line gets. %>
+  <div class="fr-grid-row fr-grid-row--gutters">
+    <% @specifications.each do |specification| %>
+      <div class="fr-col-12 fr-col-md-6">
+        <%= render CardComponent.new(
+              title: t('admin.demo.versions.index.card', number: specification.number),
+              href: admin_demo_procedures_path(version: specification.segment),
+              clickable: true,
+            ) do %>
+          <%= t("admin.demo.versions.index.descriptions.#{specification.slug}") %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
 </div>

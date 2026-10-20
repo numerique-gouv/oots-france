@@ -33,6 +33,17 @@ RSpec.describe EvidenceTypesResponseParser do
       .to eq(['https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74'])
   end
 
+  # Chapter 3.2.4 §4.3.1: the answer carries the requirement whole, which is
+  # what a request starting from a requirement it already knows declares.
+  it 'reads the requirement it is about, as the Evidence Broker names it' do
+    requirement = described_class.new(common_services_answer('eb_evidence_types_fi').first).requirement
+
+    expect(requirement).to have_attributes(
+      id: 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000',
+      descriptions: include('EN' => '(TEST) Test Requirement'),
+    )
+  end
+
   it 'refuses a requirement carrying no evidence type' do
     stripped = body.gsub(%r{<sdg:EvidenceTypeList>.*</sdg:EvidenceTypeList>}m, '')
 

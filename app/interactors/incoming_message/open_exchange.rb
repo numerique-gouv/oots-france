@@ -10,11 +10,13 @@ module IncomingMessage
   # Adopting an existing one writes nothing to it, and
   # `EvidenceProvision::JournalAnswer` settles an exchange France received and no
   # other.
+  #
+  # A request whose header names no exchange opens nothing, and
+  # `EvidenceProvision::RejectUnidentifiedRequest` refuses it once its arrival
+  # is journalled.
   class OpenExchange < ApplicationInteractor
     def call
-      return unless request?
-
-      refuse_unless_identified
+      return unless request? && context.message.identified?
 
       context.exchange ||= open
       reopen_previewed(context.exchange)
@@ -50,51 +52,6 @@ module IncomingMessage
     # name it by that. Minted here and emitted nowhere: `R-EDM-ebMS-018` counts
     # two properties on that line, and a third would break it.
     def identifier = context.message.exchange_id.presence || uuid.next
-
-    # `R-EDM-ebMS-019` requires the `ExchangeId` property — `-018` only counts
-    # them — and the ebMS3 envelope requires the `eb:ConversationId` element,
-    # `R-EDM-ebMS-017` fixing its shape alone. A request carrying neither names
-    # nothing to open a row under.
-    #
-    # The property is asked of the 2.0 line and of it alone: `R-EDM-ebMS-037` and
-    # `-038` are rules 2.0.1 carries and 1.2.5 does not, so a conformant 1.2
-    # request has no `ExchangeId` to give and refusing it for that would turn
-    # away every correspondent of that line. The conversation is required either
-    # way, the ebMS3 envelope carrying it in both.
-    #
-    # Refused the way an action we cannot name is refused,
-    # so that `IncomingMessage::Process` gives up on its own terms — the arrival
-    # is already journalled by then — rather than letting the row's own
-    # validation raise where nothing catches it.
-    #
-    # No answer goes back: chapter 4.7 has a response reuse the `ExchangeId` of
-    # its request, so there is none to build a conformant one with. The journal
-    # is therefore the only place the decision can be read afterwards, and the
-    # arrival alone would not say why nothing followed it — the sweep that
-    # settles an exchange finds none to settle, this one having no identifier.
-    def refuse_unless_identified
-      return if identified?
-
-      reason = I18n.t('interactors.incoming_message.open_exchange.unidentified')
-      journal_refusal(reason)
-
-      raise UnreadableMessageError, reason
-    end
-
-    def journal_refusal(reason)
-      audit_trail.request_refused(
-        requester_id: readable { request.requester.id },
-        procedure_code: readable { request.procedure_code },
-        country_code: readable { request.requester.address.country },
-        reason:,
-      )
-    end
-
-    def identified?
-      return false if context.message.conversation_id.blank?
-
-      context.message.exchange_id.present? || !context.message.specification.exchange_named_in_header?
-    end
 
     def request? = context.message.action == EbmsAction::EXECUTE_QUERY_REQUEST
 

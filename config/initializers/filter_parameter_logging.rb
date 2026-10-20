@@ -9,6 +9,9 @@ Rails.application.config.filter_parameters += [
   # of /requete/pieceJustificative, and an unfiltered query string is written to
   # the request log in clear.
   :beneficiaire,
+  # The user's answers to the questions of the Data Service Directory, which may
+  # describe the subject as the token does.
+  :classificationFournisseur,
   # The authorization code FranceConnect+ returns the user with, which the
   # request log would otherwise write in clear on the return address. Anchored,
   # where every entry above matches a substring: a bare `:code` would take

@@ -4,7 +4,7 @@ RSpec.describe Demo::Request do
   subject(:request) do
     described_class.new(exchange_id: 'echange-1', conversation_id: 'conversation-1',
       journey_id: 'parcours-1', requirement_uuid: '00000000-0000-0000-0000-000000000000', country_code: 'FI',
-      specification: EdmSpecification::V1_2)
+      specification: EdmSpecification::V1_2, procedure_code: 'T1')
   end
 
   it { is_expected.to validate_presence_of(:exchange_id) }
@@ -18,6 +18,8 @@ RSpec.describe Demo::Request do
   it { is_expected.to validate_presence_of(:country_code) }
   # The line the journey asked it in.
   it { is_expected.to validate_presence_of(:specification) }
+  # The procedure the journey plays.
+  it { is_expected.to validate_presence_of(:procedure_code) }
 
   describe '#answers?' do
     # Chapter 4.4 §4.3.2 gives each identifier its own job, so both are asked of

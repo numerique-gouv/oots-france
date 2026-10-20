@@ -294,3 +294,12 @@ RSpec/RepeatedDescription:
 
 RSpec/SpecFilePathFormat:
   Enabled: false
+
+# `Fixtures#read_fixture` is the one place that resolves a path into
+# `spec/fixtures/`, and it serves RSpec and Cucumber alike. `file_fixture`
+# would read a different directory in each: `file_fixture_path` is RSpec's own
+# setting, where Cucumber's world falls back to the `test/fixtures/files` Rails
+# gives `ActiveSupport::TestCase`. The cop says as much under `@safety`.
+RSpecRails/FileFixture:
+  Exclude:
+    - "spec/support/fixtures.rb"

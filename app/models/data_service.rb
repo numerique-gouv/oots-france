@@ -89,6 +89,10 @@ class DataService
 
   attr_reader :descriptions, :details, :providers
 
+  # The classifications the service was matched on, each with the value it
+  # supports, when the query carried the user's answers to a `DSD:ERR:0005`.
+  attr_reader :classifications
+
   validates :id, format: { with: IDENTIFIER, message: :format }
   validates :evidence_type_classification, format: { with: CLASSIFICATION, message: :format }
   # R-EDM-REQ-C032 makes `DistributedAs` mandatory, and a distribution without
@@ -105,11 +109,13 @@ class DataService
   # R-EDM-REQ-C029 and C031, the counterparts of C010 and C094 on this slot:
   # `lang` is mandatory on `sdg:Title` and `sdg:Description` alike.
   validate :wordings_name_their_language
+  validate :classifications_conform
 
   def initialize(attributes = {})
     @descriptions = attributes.delete(:descriptions) || {}
     @details = attributes.delete(:details) || {}
     @providers = attributes.delete(:providers) || []
+    @classifications = attributes.delete(:classifications) || []
     super
   end
 
@@ -130,6 +136,13 @@ class DataService
   def data_model_rule = DATA_MODEL_RULES[distribution_format]
 
   private
+
+  def classifications_conform
+    invalid = classifications.reject(&:valid?)
+    return if invalid.empty?
+
+    errors.add(:base, :invalid_classification, errors: invalid.flat_map { |found| found.errors.full_messages }.join(', '))
+  end
 
   def wordings_name_their_language
     return if descriptions.keys.all?(&:present?) && details.keys.all?(&:present?)

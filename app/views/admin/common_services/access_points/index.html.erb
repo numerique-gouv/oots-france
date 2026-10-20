@@ -22,6 +22,16 @@
 
 <p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8"><%= t('admin.common_services.access_points.index.lede') %></p>
 
+<% if @truststore_error %>
+  <%= dsfr_alert(type: :warning, title: t('admin.common_services.access_points.index.truststore_error.title'),
+        html_attributes: { class: 'fr-mb-4w' }) do %>
+    <% if @truststore_error.refused? %>
+      <p><%= t('admin.common_services.access_points.index.truststore_error.refused') %></p>
+    <% end %>
+    <p><%= @truststore_error.message %></p>
+  <% end %>
+<% end %>
+
 <div class="access-points" data-access-points-target="list">
   <%= render 'admin/common_services/access_points/access_points', rows: @rows %>
 </div>

@@ -6,6 +6,8 @@ module Admin
     # user, not the evidence — `docs/eidas_context.md` says why the demonstration
     # keeps requester and provider both French.
     #
+    # The procedure is the one the address names, chosen on the screen before.
+    #
     # Nothing here touches an exchange.
     class HomeController < Admin::BaseController
       # A directory that cannot be reached costs the page the title France
@@ -24,7 +26,7 @@ module Admin
 
       private
 
-      def code = ::Demo::RequestEvidence::PROCEDURE_CODE
+      def code = params[:procedure]
 
       # The first of the Evidence Broker's two queries (chapter 3.2.4), and it
       # alone: what France, as the requester's jurisdiction, must see satisfied

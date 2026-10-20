@@ -591,11 +591,6 @@ ecrisNotification() {
   # `$a\`, the block would stick to its last line and its delimiter would no longer
   # be recognised on the next replay.
   #
-  # `markAsDownloaded=false`: at `true`, the notification counts as a download, and
-  # the example PMode carries `retention_downloaded="0"` — the evidence would be
-  # erased before we had retrieved it. At `false`, it is our own `retrieveMessage`
-  # that marks the message, and so only once we hold it.
-  #
   # The rule filters **no recipient**: the messages that reach us carry two
   # different ones — the gateway's identifier on an incoming request, the
   # requester's on the response that comes back to it — and one rule per value
@@ -623,7 +618,6 @@ sed -i -e '\$a\' "$PROPRIETES_PLUGIN"
 cat >> "$PROPRIETES_PLUGIN" <<'FIN_BLOC'
 # --- OOTS-France: push to backend (written by configure_domibus.sh)
 wsplugin.push.enabled=true
-wsplugin.push.markAsDownloaded=false
 wsplugin.push.alert.active=true
 wsplugin.push.auth.username=$LOGIN_NOTIFICATION_DOMIBUS
 wsplugin.push.auth.password=$MOT_DE_PASSE_NOTIFICATION_DOMIBUS

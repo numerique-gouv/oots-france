@@ -4,9 +4,10 @@
 # The grouping is the answer's meaning, not a detail of its shape: within one
 # list every type is needed, and two lists answering the same requirement are
 # alternatives to one another. `EvidenceTypesResponseParser` flattens them for
-# the request flow, which keeps the first type it finds — choosing among the
-# alternatives is chapter 4.10, and the console is where the choice can at
-# least be seen.
+# the request flow, which keeps the type its caller names and the first it
+# finds otherwise: chapter 3.2.2 §2.3 has the user « select an 'Evidence Type
+# List' amongst the ones proposed by the Evidence Broker », and the screens of
+# the demonstration are where one does — `combinations` is what they offer.
 #
 # A list may also be empty on purpose: `sdg:MatchType` set to `NoMatch` is how
 # a member state declares it knows no evidence of its own satisfies the
@@ -44,6 +45,14 @@ class EvidenceTypeList
   # By `id` and not by the object: `EvidenceType` carries no value equality, so
   # `uniq` alone would deduplicate by object identity — that is, never.
   def self.distinct_evidence_types(lists) = lists.flat_map(&:evidence_types).uniq(&:id)
+
+  # The lists a user may choose among, in the order the directory wrote them:
+  # those that publish a type, and one of any two that call on the same types —
+  # the jurisdiction that tells them apart is not shown, and chapter 3.2.4
+  # §4.3.5 evaluates « each of these lists … independently ». The first is kept,
+  # whatever order the other writes its types in: a list is satisfied by all of
+  # them (§4.3.2), not by a sequence.
+  def self.combinations(lists) = lists.select(&:published?).uniq { |list| list.evidence_types.map(&:id).sort }
 
   # The chapter states the equivalence in both directions: `R-EB-EVI-S015`
   # excuses an empty list only under `NoMatch`, and `NoMatch` in turn requires

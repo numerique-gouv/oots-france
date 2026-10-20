@@ -572,4 +572,84 @@ RSpec.describe EvidenceRequestBuilder do
       expect(slots(request).keys).not_to include('PreviewLocation', 'ReturnLocation')
     end
   end
+
+  # RG11 of OOTS-269, chapter 4.5.1 §3.4.
+  describe 'the provider classifications the user answered' do
+    subject(:declared) { Nokogiri::XML(described_class.new(**attributes, provider_classifications:).render) }
+
+    let(:question) { build(:evidence_provider_classification) }
+    let(:provider_classifications) { [question.answered('TC03')] }
+    let(:namespaces) do
+      { 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0', 'sdg' => 'http://data.europa.eu/p4s',
+        'query' => 'urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0' }
+    end
+
+    def classifications
+      declared.xpath("/query:QueryRequest/rim:Slot[@name='EvidenceProviderClassification']" \
+                     '/rim:SlotValue/rim:Element/sdg:EvidenceProviderClassification', namespaces)
+    end
+
+    it 'writes one slot, after the provider and before the response option' do
+      names = declared.xpath('/query:QueryRequest/*', namespaces).map { |node| node['name'] || node.name }
+
+      expect(names.last(4)).to eq(%w[EvidenceProvider EvidenceProviderClassification ResponseOption Query])
+    end
+
+    it 'adopts the structure from the directory and the value from the user' do
+      expect(classifications.sole.to_xml.gsub(/\s+/, ' ')).to include(
+        %(<sdg:Identifier schemeID="#{question.scheme_id}">#{question.id}</sdg:Identifier>),
+        '<sdg:Type>codelist</sdg:Type>', "<sdg:ValueExpression>#{question.value_expression}</sdg:ValueExpression>",
+        '<sdg:Description lang="EN">Projectathon test case</sdg:Description>',
+        '<sdg:SupportedValue> <sdg:StringValue>TC03</sdg:StringValue> </sdg:SupportedValue>',
+      )
+    end
+
+    context 'when the directory asked three questions' do
+      let(:provider_classifications) do
+        [question.answered('TC03'),
+         build(:evidence_provider_classification, id: '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a01', type: 'boolean',
+           scheme_id: nil, value_expression: nil, descriptions: { 'EN' => 'Born abroad?' }).answered('true'),
+         build(:evidence_provider_classification, id: '6e0c0b8a-8c1c-4a8f-9b0e-2f1f6d0f1a02', type: 'string',
+           scheme_id: nil, value_expression: nil, descriptions: { 'EN' => 'Passport number' }).answered('AB123456')]
+      end
+
+      it 'writes one element each, a boolean in a boolean value' do
+        values = classifications.map { |found| found.at_xpath('./sdg:SupportedValue/*', namespaces).then { [it.name, it.text] } }
+
+        expect(values).to eq([%w[StringValue TC03], %w[BooleanValue true], %w[StringValue AB123456]])
+      end
+    end
+
+    # A `string` answer is typed by the user, and travels to a correspondent.
+    context 'when the answer carries markup' do
+      let(:provider_classifications) do
+        [build(:evidence_provider_classification, type: 'string').answered('A&B </sdg:StringValue><x/>')]
+      end
+
+      it 'escapes it, the value read back whole' do
+        expect(classifications.sole.at_xpath('./sdg:SupportedValue/sdg:StringValue', namespaces).text)
+          .to eq('A&B </sdg:StringValue><x/>')
+      end
+    end
+
+    # `R-EDM-REQ-S045`: the classification the directory placed there stays out.
+    it 'leaves the evidence type asked for without a classification' do
+      expect(declared.xpath('//sdg:DataServiceEvidenceType/sdg:EvidenceProviderClassification', namespaces)).to be_empty
+    end
+
+    context 'when the directory asked nothing' do
+      let(:provider_classifications) { [] }
+
+      it 'writes no slot' do
+        expect(classifications).to be_empty
+        expect(declared.to_xml).not_to include('EvidenceProviderClassification')
+      end
+    end
+
+    # France reads its own request as a correspondent would, under the
+    # seventeen FATAL rules of chapter 4.6 over the slot.
+    it 'is a request France would accept as a provider' do
+      expect { EvidenceRequestParser.new(declared).validate! }.not_to raise_error
+    end
+  end
 end

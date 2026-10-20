@@ -46,7 +46,8 @@ module Demo
 
     def confirm(request)
       client.confirm(exchange_id: request.exchange_id,
-        encrypted_beneficiary: token_writer.call(context.identity), resume_location: context.resume_location)
+        encrypted_beneficiary: token_writer.call(context.identity), resume_location: context.resume_location,
+        provider_classifications: request.provider_classifications)
     end
 
     def keep(request, answer)

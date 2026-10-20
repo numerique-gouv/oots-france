@@ -45,6 +45,29 @@ RSpec.describe Demo::EvidenceRequestClient do
     end
   end
 
+  it 'names no evidence type when the card named none' do
+    answer
+
+    expect(evidence_request_query).not_to have_key('idTypeJustificatif')
+  end
+
+  it 'sends the answers the card was resolved on, one per question, and none where it asked nothing' do
+    described_class.new.fetch(requester_id: '00000000000003', procedure_code: 'T1', country_code: 'EL',
+      encrypted_beneficiary: 'un-jeton-chiffré', provider_classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+
+    expect(evidence_request_query['classificationFournisseur']).to eq('1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03')
+
+    answer
+    expect(evidence_request_query).not_to have_key('classificationFournisseur')
+  end
+
+  it 'names the evidence type the card named, whole' do
+    described_class.new.fetch(requester_id: '00000000000003', procedure_code: 'T1', country_code: 'AT',
+      encrypted_beneficiary: 'un-jeton-chiffré', evidence_type_id: 'https://sr/AT/198ab7cc')
+
+    expect(evidence_request_query['idTypeJustificatif']).to eq('https://sr/AT/198ab7cc')
+  end
+
   it 'reads the two identifiers the acceptance returns' do
     expect(answer).to have_attributes(
       accepted?: true,

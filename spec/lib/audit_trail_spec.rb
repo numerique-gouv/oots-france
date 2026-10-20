@@ -758,8 +758,9 @@ RSpec.describe AuditTrail do
         content: '<query:QueryRequest/>')
     end
     let(:answered) do
-      { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
-        request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle', first_part: }
+      { exchange: nil, message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil,
+        provider: nil, request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle',
+        first_part: }
     end
 
     it 'keeps the request it submitted' do
@@ -788,6 +789,29 @@ RSpec.describe AuditTrail do
       audit_trail.return_to_procedure(exchange:, location: exchange.return_location)
       expect(journalled).to have_attributes(event_type: 'return_to_procedure', exchange_id: exchange.exchange_id,
         conversation_id: exchange.conversation_id, preview_location: exchange.return_location)
+    end
+
+    # CA1 to CA3 of OOTS-254: on the 1.2 line the header names no exchange, and
+    # the answer goes under the one France minted for the request.
+    it 'names the exchange the request was answered under, before the header' do
+      exchange = create(:exchange, :received, :legacy_line)
+      legacy = answered.merge(exchange:, message: earlier_line_envelope)
+
+      audit_trail.response_sent(**legacy, evidence: nil)
+      expect(journalled).to have_attributes(exchange_id: exchange.exchange_id,
+        conversation_id: legacy[:message].conversation_id)
+
+      audit_trail.error_sent(**legacy, exception: EdmException::OBJECT_NOT_FOUND)
+      expect(journalled.exchange_id).to eq(exchange.exchange_id)
+
+      audit_trail.answer_not_sent(**legacy, reason: 'connexion refusée')
+      expect(journalled.exchange_id).to eq(exchange.exchange_id)
+    end
+
+    it 'keeps what the header named where the request was answered under no exchange' do
+      audit_trail.response_sent(**answered, evidence: nil)
+
+      expect(journalled.exchange_id).to eq(answered[:message].exchange_id)
     end
 
     it 'keeps the answer and the refusal alike' do
@@ -827,8 +851,7 @@ RSpec.describe AuditTrail do
     # interactor, where the choice of answer and the failure to send it are
     # entangled.
     it 'keeps the answer the gateway would not take, refusal and document alike' do
-      unsent = { message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil, provider: nil,
-                 request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: nil, first_part: }
+      unsent = answered.merge(message_id: nil)
 
       audit_trail.answer_not_sent(**unsent, reason: 'connexion refusée')
       expect(journalled).to have_attributes(

@@ -9,6 +9,10 @@
 module SemanticRepositoryAsset
   extend ActiveSupport::Concern
 
+  # What that last segment looks like, which the pages taking one from a
+  # parameter check before asking any directory about it.
+  UUID = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
+
   def uuid = id&.split('/')&.last
 
   # What a page calls it. Every entry of the catalogue carries an English name,

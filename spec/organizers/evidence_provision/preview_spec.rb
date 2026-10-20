@@ -10,6 +10,16 @@ RSpec.describe 'The preview France offers as a provider' do
   PREVIEW_CAPTURED_AT = '2026-08-11T09:22:22.000Z'.freeze
   RS = { 'rs' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0', **SlotReading::NAMESPACES }.freeze
 
+  # The captured request asks for a type of another member state, which France
+  # does not serve (`ServedEvidenceType`): every envelope of this file asks for
+  # one it declares instead, the procedure it names left as captured.
+  def real_envelope(name)
+    document = Nokogiri::XML(super)
+    rewrite_body(document) { |body| asking_for_a_served_type(body) }
+
+    document.to_xml
+  end
+
   let(:submitted) { [] }
   let(:gateway) { instance_double(DomibusClient) }
   let(:first) { request_asking_preview }
@@ -91,8 +101,13 @@ RSpec.describe 'The preview France offers as a provider' do
       end
     end
 
-    it 'refuses an unknown procedure without preview' do
-      deliver(asking_preview_for('ZZ'), 'm001')
+    it 'refuses a type it does not serve without preview' do
+      unserved = envelope_with_body('requete') do |body|
+        body.dup.force_encoding(Encoding::UTF_8).sub(PreviewRequests::FLAG, '\\1true')
+          .sub(Fixtures::SERVED_TYPE, Fixtures::UNSERVED_TYPE)
+      end
+
+      deliver(unserved, 'm001')
 
       expect(exception_of(body_of(submitted.sole))['code']).to eq('EDM:ERR:0004')
       expect(PreviewSession.count).to eq(0)
@@ -272,6 +287,35 @@ RSpec.describe 'The preview France offers as a provider' do
 
       expect(body_of(submitted.last).root['requestId']).to eq("urn:uuid:#{second_id}")
       expect(Exchange.find_by(request_id: "urn:uuid:#{second_id}").status).to eq('delivered')
+    end
+
+    # CA4 of OOTS-254: the header names no exchange, so every line of the first
+    # request goes under the identifier France minted for it, the user's
+    # decision included.
+    it 'journals the first request, its answer and the decision under the exchange it opened' do
+      first_exchange = Exchange.sole
+      perform_enqueued_jobs do
+        EvidenceProvision::RecordPreviewDecision.call(preview_session: PreviewSession.sole, decision: 'accepted')
+      end
+
+      lines = AuditEvent.where(event_type: %w[request_received error_sent preview_decided])
+      expect(lines.pluck(:event_type)).to contain_exactly('request_received', 'error_sent', 'preview_decided')
+      expect(lines.pluck(:exchange_id)).to all(eq(first_exchange.exchange_id))
+    end
+
+    # CA8 of OOTS-254: the second request opens an exchange of its own, and its
+    # lines go under it.
+    it 'journals the second request under the exchange it opened' do
+      first_exchange = Exchange.sole
+      second_id = SecureRandom.uuid
+      PreviewSession.sole.decide!(accepted: true)
+      deliver(second(line: :v1_2, request_id: second_id), 'm002')
+
+      second_exchange = Exchange.find_by(request_id: "urn:uuid:#{second_id}")
+      lines = AuditEvent.where(message_id: 'm002').or(AuditEvent.where(request_id: "urn:uuid:#{second_id}"))
+      expect(second_exchange).not_to eq(first_exchange)
+      expect(lines.pluck(:event_type)).to include('request_received', 'response_sent')
+      expect(lines.pluck(:exchange_id)).to all(eq(second_exchange.exchange_id))
     end
 
     it 'refuses a ReturnLocation under R-EDM-REQ-S019' do

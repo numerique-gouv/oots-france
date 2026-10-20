@@ -50,6 +50,17 @@ Quand("le requêteur étranger envoie une requête dont l'entête dit {string} e
   @exchange_id = @correspondent.submit(body, specification: EdmSpecification.find(header_version))
 end
 
+# A type of another member state, which France does not hold: the procedure is
+# one France answers under for its own types, so the refusal says the type
+# decided it.
+Quand('le requêteur étranger envoie une requête sous la démarche {string} pour un type que la France ne détient pas') do |code|
+  body = @correspondent.request(procedure_code: code) do |xml|
+    xml.sub(FakeCorrespondent::EVIDENCE_TYPE, Fixtures::UNSERVED_TYPE)
+  end
+
+  @exchange_id = @correspondent.submit(body)
+end
+
 Alors('la France sert le justificatif dans une réponse en {string}') do |version|
   patiente_jusqu_a('la France ait répondu') do
     ServerAuditEvent.exists?(request_id: @request_id, event_type: 'response_sent')
@@ -59,6 +70,10 @@ Alors('la France sert le justificatif dans une réponse en {string}') do |versio
 
   expect(answer.evidence_digest).to be_present
   expect(answer.regrep_body).to include(version)
+end
+
+Alors('la France refuse la requête avec le code {string}') do |code|
+  expect(refusal).to have_attributes(edm_error_code: code)
 end
 
 Alors('la France refuse la requête avec le code {string} et la règle {string}') do |code, rule|

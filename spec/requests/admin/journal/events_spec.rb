@@ -528,6 +528,35 @@ RSpec.describe 'Admin::Journal::Events' do
     end
   end
 
+  # CA9 of OOTS-254, on the lines the receiving path really writes: a request of
+  # the 1.2 line, answered, leads from each of its lines to the exchange France
+  # minted for it and to its conversation.
+  describe 'the lines of a request received on the 1.2 line' do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let(:message) { earlier_line_envelope }
+
+    before do
+      travel_to(Time.zone.parse('2026-08-11T09:22:22.000Z'))
+      IncomingMessage::Process.call(message_id: 'un-message',
+        gateway: gateway_accepting_submissions(retrieve: message), audit_trail: AuditTrail.new)
+    end
+
+    it 'links each one to its exchange, marked, and to its conversation' do
+      exchange = Exchange.sole
+
+      get admin_journal_root_path
+
+      rows = response.parsed_body.css('tbody tr')
+      expect(rows.size).to eq(2)
+      rows.each do |row|
+        expect(row.at_css("a[href='#{admin_journal_exchange_path(exchange.exchange_id)}']")).to be_present
+        expect(row.at_css("a[href='#{admin_journal_conversation_path(message.conversation_id)}']")).to be_present
+        expect(row.text).to include(I18n.t('components.minted_identifier.label'))
+      end
+    end
+  end
+
   def marked_rows(response)
     response.parsed_body.css('tbody tr').select { |row| row.at_css('.decrypted-value') }
   end

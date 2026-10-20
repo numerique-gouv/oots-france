@@ -210,6 +210,144 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # RG6 of OOTS-263: the evidence type the screens of the demonstration name,
+  # the whole identifier the Evidence Broker publishes, like `idExigence`.
+  describe 'the evidence type the caller may name' do
+    let(:type) { 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/AT/198ab7cc-0000' }
+
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative', params: parameters.merge(idTypeJustificatif: type)
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(evidence_type_id: type))
+    end
+
+    it 'names none when the caller named none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(evidence_type_id: nil))
+    end
+
+    it 'refuses one the country does not publish as the caller fault, and journals it' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unknown_evidence_type, "Le type de justificatif « #{type} » n'est pas publié"))
+
+      get '/requete/pieceJustificative', params: parameters.merge(idTypeJustificatif: type)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include(type)
+      expect(AuditEvent.find_by(event_type: 'request_refused').detail).to include(type)
+    end
+  end
+
+  # RG9 of OOTS-269: the user's answers to the questions a `DSD:ERR:0005` asks,
+  # which only the screens of the demonstration set.
+  describe 'the provider classifications the caller may answer' do
+    let(:answer) { { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' } }
+
+    it 'passes on the answers it was given, by classification' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: answer)
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(provider_classification_answers: answer))
+    end
+
+    it 'passes none when the caller answered none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(provider_classification_answers: {}))
+    end
+
+    # An answer may describe the subject, as the token does.
+    it 'filters the answers from the request log' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { answer.keys.first => 'AB123456' })
+
+      expect(request.filtered_path).not_to include('AB123456')
+    end
+
+    # `R-EDM-REQ-C023` (FATAL) refuses an empty value, and an answer that is
+    # no value at all is no answer.
+    it 'refuses a blank answer, or one that is no value, before calling anything' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { answer.keys.first => ' ' })
+      expect(response).to have_http_status(:unprocessable_content)
+
+      get "/requete/pieceJustificative?#{parameters.to_query}&classificationFournisseur=TC03"
+      expect(response).to have_http_status(:unprocessable_content)
+
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    # `R-EDM-REQ-C019` (FATAL) would refuse the slot further on.
+    it 'refuses an answer not named by a UUID, before calling anything' do
+      get '/requete/pieceJustificative', params: parameters.merge(classificationFournisseur: { 'test-case' => 'TC03' })
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    # The caller was never asked the question, so it has nothing to correct.
+    it 'reports a question the directory still waits on as 502, under its own name' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:provider_classification_required, "L'annuaire attend une précision"))
+
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(AuditEvent.find_by(event_type: 'request_refused').detail).to include('précision')
+    end
+  end
+
+  # RG11 and RG12 of OOTS-253: the parameter the screens of the demonstration
+  # set to ask for a requirement the Evidence Broker does not tie to the
+  # procedure.
+  describe 'a requirement asked for outside its procedure' do
+    let(:exigence) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/2d21a531-d30e-4e30-9e5e-b53d6aedb30b' }
+    let(:outside) { parameters.merge(codeDemarche: 'T1', idExigence: exigence, exigenceHorsDemarche: 'true') }
+
+    it 'passes the flag on, bare as well as true' do
+      get '/requete/pieceJustificative', params: outside.merge(exigenceHorsDemarche: '')
+
+      expect(EvidenceRequest::Fetch).to have_received(:call)
+        .with(hash_including(outside_procedure: true, requirement_id: exigence, procedure_code: 'T1'))
+    end
+
+    it 'leaves it down when the caller does not set it' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(outside_procedure: false))
+    end
+
+    it 'refuses it without a requirement to start from, before calling anything' do
+      get '/requete/pieceJustificative', params: outside.except(:idExigence)
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('idExigence')
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+      expect(AuditEvent.last).to have_attributes(event_type: 'request_refused')
+    end
+
+    # `R-EDM-REQ-C003` (FATAL): nothing vets the code once the first query of the
+    # Evidence Broker is skipped, so the contract does, before anything is
+    # decrypted or asked of a directory.
+    it 'refuses a code neither the list nor the system check is, before calling anything' do
+      get '/requete/pieceJustificative', params: outside.merge(codeDemarche: 'Z9')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('Procedures')
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+      expect(AuditEvent.last).to have_attributes(event_type: 'request_refused', procedure_code: 'Z9')
+    end
+
+    it 'reports the refusals of the Evidence Broker as the caller fault, naming the requirement' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:unknown_requirement, "Exigence « #{exigence} » inconnue de l'Evidence Broker"))
+
+      get '/requete/pieceJustificative', params: outside
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include(exigence)
+    end
+  end
+
   # Chapter 4.4 lets the Procedure Portal assign the conversation identifier, so
   # that two requests can be said to be one user's.
   describe 'the conversation the caller may name' do

@@ -9,9 +9,10 @@ module Demo
   # request rather than a check on a form: a click carrying neither name was made
   # without them, and nothing may leave.
   #
-  # One instance per card that can be clicked. Chapter 4.4 §4.2.2 has « different
-  # basic flows … executed sequentially and/or in parallel », so a click files
-  # what its own card named and never a neighbour's.
+  # One instance per evidence type a card names, which is one request. Chapter
+  # 4.4 §4.2.2 has « different basic flows … executed sequentially and/or in
+  # parallel », so a click files what its own card named and never a
+  # neighbour's.
   #
   # The vocabulary is the one the request carries and `demo_requests` records:
   # `Demo::RequestEvidence::NAMED` reads each of these off its context under this
@@ -23,9 +24,18 @@ module Demo
     include ActiveModel::Attributes
 
     attribute :evidence_type_name, :string
+    # The type itself, as the Evidence Broker identifies it: what the request
+    # sends in `idTypeJustificatif`, so that what leaves is the type the card
+    # named for this line of the combination the user chose — chapter 3.2.2
+    # §2.3.
+    attribute :evidence_type_id, :string
     # The language each name was published in, which the zone declares again so
     # that a screen reader does not pronounce one language as another (RGAA 8.7).
     attribute :evidence_type_language, :string
+    # The combination the type belongs to — the `sdg:EvidenceTypeList` chapter
+    # 3.2.2 §2.3 has the user select —, which the request keeps: a combination of
+    # several types leaves in as many requests, one per type.
+    attribute :evidence_type_list_id, :string
     attribute :provider_name, :string
     attribute :provider_language, :string
     # The requirement as the Evidence Broker names it, which joins the two above:
@@ -38,11 +48,20 @@ module Demo
     # chose on it — step 16 of chapter 1 §10.1 — and the request is addressed
     # to: the two names above are what that country publishes, and nothing else.
     attribute :country_code, :string
+    # The user's answers to the questions the Data Service Directory asked
+    # before naming the provider — chapter 3.1.4 §4.4.3.3 — by question UUID:
+    # the provider above is the one they designate, and the request sends them
+    # in `classificationFournisseur`. Empty where nothing was asked.
+    attribute :provider_classifications, default: -> { {} }
 
     # The two of requirement 27, and the country they were published in, which
     # the request goes to. No more: the requirement is what tells two
     # cards apart, not what the user is asked to confirm, and a directory naming
     # it in no language leaves the card standing under its evidence type.
     validates :evidence_type_name, :provider_name, :country_code, presence: true
+
+    # By UUID, which is what the page's own addresses carry; the identifier
+    # whole is what the request sends.
+    def evidence_type_uuid = (EvidenceType.new(id: evidence_type_id).uuid if evidence_type_id)
   end
 end

@@ -5,17 +5,23 @@
 # Kept on the exchange from the first emission rather than asked of the
 # directories again: « the same content » is what they answered then, and a
 # directory may have changed, or its cache expired, between the two round
-# trips. Nothing here is personal — the subject is the portal's to give again.
+# trips. Nothing here is personal: the subject is the portal's to give again,
+# and so are the user's answers to the questions of the Data Service Directory,
+# which may describe the subject — a provider classification is kept here
+# without its value.
 class RequestBasis
-  attr_reader :requirement, :provider, :recipient, :data_service, :evidence_type, :preview_possible
+  attr_reader :requirement, :provider, :recipient, :data_service, :evidence_type, :preview_possible,
+    :provider_classifications
 
-  def initialize(requirement:, provider:, recipient:, data_service:, evidence_type:, preview_possible:)
+  def initialize(requirement:, provider:, recipient:, data_service:, evidence_type:, preview_possible:,
+                 provider_classifications: [])
     @requirement = requirement
     @provider = provider
     @recipient = recipient
     @data_service = data_service
     @evidence_type = evidence_type
     @preview_possible = preview_possible
+    @provider_classifications = provider_classifications
   end
 
   def self.from_h(stored)
@@ -28,7 +34,14 @@ class RequestBasis
       data_service: DataService.new(**stored.fetch('data_service').symbolize_keys),
       evidence_type: EvidenceType.new(id: stored.fetch('evidence_type_id')),
       preview_possible: stored.fetch('preview_possible'),
+      provider_classifications: provider_classifications(stored),
     )
+  end
+
+  # Absent is none: the slot is `0..n`, and a request whose provider was named
+  # without a question carries no classification.
+  def self.provider_classifications(stored)
+    stored.fetch('provider_classifications', []).map { |classification| EvidenceProviderClassification.from_h(classification) }
   end
 
   def self.provider(stored, access_point)
@@ -42,7 +55,7 @@ class RequestBasis
 
   def self.access_point(stored) = AccessPoint.new(**stored.symbolize_keys)
 
-  private_class_method :provider, :access_point
+  private_class_method :provider, :access_point, :provider_classifications
 
   # By value: Active Record compares what it loaded to what it holds to know
   # whether the column changed, and two readings of one row are two objects.
@@ -59,6 +72,7 @@ class RequestBasis
       'data_service' => data_service_h,
       'evidence_type_id' => evidence_type.id,
       'preview_possible' => preview_possible,
+      'provider_classifications' => provider_classifications.map { |classification| classification.to_h.except('supported_value') },
     }
   end
 

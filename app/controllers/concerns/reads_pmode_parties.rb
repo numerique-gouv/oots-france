@@ -3,6 +3,10 @@
 # `502`, whether the gateway is down or refuses the Plugin User — unlike a directory, whose
 # refusal is an answer to show: a Plugin User refused is France's own
 # configuration to correct.
+#
+# The certificates of the gateway's truststore only give a country to the parties
+# declared under an `EAS` scheme: a gateway that does not list them leaves the
+# page to show its parties, without those countries, and says why.
 module ReadsPmodeParties
   extend ActiveSupport::Concern
 
@@ -16,9 +20,17 @@ module ReadsPmodeParties
   # to answer with their blocks.
   def pmode_parties = @pmode_parties ||= DomibusPartiesClient.new.parties
 
+  # Read after the parties, whose failure alone answers `502`.
+  def truststore_entries
+    @truststore_entries ||= DomibusTruststoreClient.new.entries
+  rescue GatewayError => e
+    @truststore_error = e
+    @truststore_entries = []
+  end
+
   def access_point_rows
-    AccessPointRow.all(parties: pmode_parties, tests: ConnectivityTest.all,
-      countries: country_names)
+    AccessPointRow.all(parties: pmode_parties, tests: ConnectivityTest.all, countries: country_names,
+      certificates: truststore_entries)
   end
 
   # What the page's controller asks for, and splices block by block.

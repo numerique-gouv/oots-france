@@ -26,20 +26,21 @@ class FranceConnectController < ApplicationController
   # uniquely authenticated user » (chapter 4.4 §4.3.2), which nothing posted
   # before the authentication could claim to do. A click writes nothing further.
   #
-  # The journey plays the line of the sign-in page the flow left from, which
-  # the departure kept with the `state`: these addresses are declared to
-  # FranceConnect+ once and for all, and name none.
+  # The journey plays the line and the procedure of the sign-in page the flow
+  # left from, which the departure kept with the `state`: these addresses are
+  # declared to FranceConnect+ once and for all, and name neither.
   def retour_connexion
     expected = session.delete(:france_connect)
     specification = departed_line(expected)
+    procedure = departed_procedure(expected)
     result = completed_identification(expected)
 
-    return refuse_identification(result, version: specification&.segment) unless result.success?
-    return refuse_lineless_departure if specification.nil?
+    return refuse_identification(result, version: specification&.segment, procedure:) unless result.success?
+    return refuse_incomplete_departure if specification.nil? || procedure.nil?
 
-    open_journey(result.identity, specification)
+    open_journey(result.identity, specification, procedure)
 
-    redirect_to admin_demo_documents_path(version: specification.segment)
+    redirect_to admin_demo_documents_path(version: specification.segment, procedure:)
   end
 
   # A page, where the other return is a redirection: FranceConnect+ brings back
@@ -55,21 +56,26 @@ class FranceConnectController < ApplicationController
 
   def departed_line(expected) = EdmSpecification.from_segment(expected.to_h.symbolize_keys[:version])
 
-  # An identification that succeeded from a departure naming no line — a
-  # session written before the line was kept — opens no journey: none of its
-  # pages would have an address. Said and logged like the other refusals.
-  def refuse_lineless_departure
-    reason = t('controllers.france_connect.lineless_departure')
+  def departed_procedure(expected)
+    expected.to_h.symbolize_keys[:procedure].presence_in(ProcedureCode::ADMITTED)
+  end
+
+  # An identification that succeeded from a departure that kept no line or no
+  # admitted procedure opens no journey: none of its pages would have an
+  # address. Said and logged like the other refusals.
+  def refuse_incomplete_departure
+    reason = t('controllers.france_connect.incomplete_departure')
     Rails.logger.warn(reason)
 
     redirect_to admin_demo_root_path, flash: { alert: :'interactors.failures.identification_refused', details: [reason] }
   end
 
-  def open_journey(identity, specification)
+  def open_journey(identity, specification, procedure_code)
     previous = Demo::Journey.from_session(session[:demo_journey])
     Demo::Card.forget(previous.id) if previous
 
-    session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:).to_session
+    session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:,
+      procedure_code:).to_session
     session[:demo_identity] = identity.to_session
   end
 

@@ -23,9 +23,10 @@ RSpec.describe DirectoryLookup::ResolveAll do
     expect(resolved.requirements).to eq(requirements)
   end
 
-  # The opening run read the whole list, so asking the Evidence Broker for the
-  # first requirement again would be a query for an answer already in hand.
-  it 'reuses the first run instead of walking it a second time' do
+  # The requirements were read once, and each run starts from the one it is
+  # handed: chapter 3.2.4 §4.3 bases the second query « on a requirement that
+  # is known to the Procedure Portal ».
+  it 'asks for each requirement once, starting from the requirement itself' do
     expect(resolved.resolutions.first.requirement.id).to eq('https://sr/requirements/aaa')
 
     expect(evidence_broker).to have_received(:evidence_type_lists)
@@ -72,6 +73,25 @@ RSpec.describe DirectoryLookup::ResolveAll do
     end
   end
 
+  # Chapter 3.2.2 §2.3: each card offers the combinations its country
+  # publishes, and the one the user chose on it is the one resolved.
+  describe 'with a combination named per requirement' do
+    let(:evidence_broker) do
+      instance_double(EvidenceBrokerClient, requirements:, evidence_type_lists: [
+        build(:evidence_type_list, id: 'premiere', evidence_types: [build(:evidence_type, id: 'https://sr/FI/first')]),
+        build(:evidence_type_list, id: 'seconde', evidence_types: [build(:evidence_type, id: 'https://sr/FI/second')]),
+      ])
+    end
+
+    it 'resolves that requirement on that combination, and leaves the other unchosen' do
+      resolved = described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00',
+        country_code: 'FI', evidence_type_lists: { 'aaa' => 'seconde' })
+
+      expect(resolved.resolutions.first.lines.map { |line| line.evidence_type.id }).to eq(['https://sr/FI/second'])
+      expect(resolved.resolutions.second.error[:key]).to eq(:evidence_type_unchosen)
+    end
+  end
+
   # Chapter 4.4 §4.2.2 has the basic flows run « sequentially and/or in
   # parallel », so a refusal belongs to the card it fell on. The page shows it
   # there, beside the neighbours that answered.
@@ -85,8 +105,8 @@ RSpec.describe DirectoryLookup::ResolveAll do
       end
     end
 
-    it 'leaves the refusal on its own resolution and keeps the others' do
-      expect(resolved.resolutions.map(&:failure?)).to eq([false, true])
+    it 'leaves the refusal on its own line and keeps the others' do
+      expect(resolved.resolutions.map { |resolution| resolution.lines.map(&:failure?) }).to eq([[false], [true]])
     end
 
     it 'still resolves every requirement' do
@@ -115,5 +135,28 @@ RSpec.describe DirectoryLookup::ResolveAll do
     allow(DataServiceDirectoryClient).to receive(:new).and_return(data_service_directory)
 
     expect(described_class.call(procedure_code: '00', country_code: 'FI').resolutions.size).to eq(2)
+  end
+
+  # The answers each card gave to the questions of the Data Service Directory,
+  # by requirement, then by evidence type.
+  describe 'with answers given on the first requirement' do
+    subject(:resolved) do
+      described_class.call(evidence_broker:, data_service_directory:, procedure_code: '00', country_code: 'FI',
+        provider_classifications: { 'aaa' => { build(:evidence_type).uuid => { question.id => 'TC03' } } })
+    end
+
+    let(:question) { build(:evidence_provider_classification) }
+    let(:data_service_directory) do
+      instance_double(DataServiceDirectoryClient).tap do |double|
+        allow(double).to receive(:data_services)
+          .and_raise(CommonServicesError.new('DSD:ERR:0005', code: 'DSD:ERR:0005', classifications: [question]))
+        allow(double).to receive(:data_services).with(hash_including(classifications: { question.id => 'TC03' }))
+          .and_return([build(:data_service)])
+      end
+    end
+
+    it 'resolves that requirement with its answers, and the other without' do
+      expect(resolved.resolutions.map { |resolution| resolution.lines.map(&:success?) }).to eq([[true], [false]])
+    end
   end
 end

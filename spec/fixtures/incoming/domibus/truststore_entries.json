@@ -1,0 +1,34 @@
+[
+  {
+    "name": "ap_fr_01",
+    "subject": "CN=AP_FR_01",
+    "issuer": "CN=AP_FR_01",
+    "validFrom": "2026-01-01 00:00:00",
+    "validUntil": "2036-01-01 00:00:00",
+    "fingerprints": "3a:1f:5c:7e:92:0b:44:d1:8f:6a:21:c3:7d:e0:5b:99:12:ab:cd:ef"
+  },
+  {
+    "name": "ap_el_01",
+    "subject": "CN=AP_EL_01, O=Hellenic Ministry of Digital Governance, C=FR",
+    "issuer": "CN=OOTS Test CA, O=European Commission, C=BE",
+    "validFrom": "2025-06-01 00:00:00",
+    "validUntil": "2027-06-01 00:00:00",
+    "fingerprints": "b4:22:09:e7:6c:31:af:58:0d:93:7e:41:c8:2a:f6:10:5e:77:3b:d2"
+  },
+  {
+    "name": "ec_support_acc",
+    "subject": "CN=ec_support_acc, O=European Commission, C=BE",
+    "issuer": "CN=OOTS Test CA, O=European Commission, C=BE",
+    "validFrom": "2025-03-01 00:00:00",
+    "validUntil": "2027-03-01 00:00:00",
+    "fingerprints": "0c:7a:e2:55:19:d8:3b:f4:a0:6e:92:17:c5:4d:81:3f:b9:e6:20:5a"
+  },
+  {
+    "name": "ap_nl_01",
+    "subject": "CN=AP_NL_01, OU=OOTS, O=Logius, C=NL",
+    "issuer": "CN=OOTS Test CA, O=European Commission, C=BE",
+    "validFrom": "2025-09-15 00:00:00",
+    "validUntil": "2027-09-15 00:00:00",
+    "fingerprints": "6f:e1:0a:3c:58:b2:94:7d:c0:21:e8:4f:13:a6:9b:2d:70:c5:88:01"
+  }
+]

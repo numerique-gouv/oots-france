@@ -44,6 +44,7 @@ ignore_unused:
   - activemodel.attributes.evidence_type.{id,distribution_formats}
   - activemodel.attributes.requirement.id
   - activemodel.attributes.data_service.{id,evidence_type_classification,distribution_format,distribution_language,distribution_conforms_to}
+  - activemodel.attributes.evidence_provider_classification.{id,scheme_id,type,value_expression}
   - activemodel.attributes.evidence_requester.id
   - activemodel.attributes.evidence_provider.access_point
   - activemodel.attributes.resolution_filter.{procedure_code,country_code,requirement_id,evidence_type_id}
@@ -57,6 +58,10 @@ ignore_unused:
   - activemodel.errors.models.legal_person.{attributes.eidas_identifier.format,unpublished_identifier_scheme,valueless_identifier}
   - activemodel.errors.models.requirement.{attributes.id.format,unlabelled_wording}
   - activemodel.errors.models.data_service.attributes.{id,evidence_type_classification,distribution_language,distribution_conforms_to}.format
+  - activemodel.errors.models.data_service.invalid_classification
+  - activemodel.errors.models.evidence_provider_classification.attributes.{id,value_expression}.format
+  - activemodel.errors.models.evidence_provider_classification.attributes.type.inclusion
+  - activemodel.errors.models.evidence_provider_classification.unlabelled_wording
   - activemodel.errors.models.data_service.unlabelled_wording
   - activemodel.errors.models.resolution_filter.{attributes.country_code.format,unreadable}
   - activemodel.errors.models.audit_event_filter.attributes.{event_type.inclusion,country_code.format,jusqu_a.before_start}
@@ -96,7 +101,7 @@ ignore_unused:
   - models.strict_validation.subjects.*
   # The refusals `translating` receives as a key, and composes only once a
   # directory has refused.
-  - gateways.directories.common_services.{no_evidence_type,no_provider}
+  - gateways.directories.common_services.{no_evidence_type,no_provider,unknown_requirement,no_evidence_for_requirement}
   # The descriptions `require_content` receives as a key, and composes with
   # `parsers.slot_reading.in_received_message`.
   - parsers.slot_reading.{empty,without}

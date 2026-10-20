@@ -70,7 +70,7 @@ module EvidenceProvision
     def chosen_answer
       refuse_what_cannot_be_answered_at_all
 
-      return refusal(EdmException::OBJECT_NOT_FOUND) unless ProcedureCode.answered?(procedure_code)
+      return refusal(EdmException::OBJECT_NOT_FOUND) unless answered?
       return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
       return second_exchange if request.preview_location
 
@@ -86,6 +86,10 @@ module EvidenceProvision
     end
 
     def procedure_code = request.procedure_code
+
+    # A type France serves, under any procedure, or the procedure France
+    # defers whatever it is asked for.
+    def answered? = ServedEvidenceType.served?(request.evidence_type) || ProcedureCode.deferred?(procedure_code)
 
     # The refusals pronounced by raising, which `chosen_or_invalid` turns into
     # the exception response. All three precede the choice below and none of
@@ -123,10 +127,12 @@ module EvidenceProvision
     end
 
     # Chapter 4.4: « A Data Service MUST reject requests that use identifiers
-    # that were used in previously processed requests. » The journal holds the
-    # only memory of it — no `Exchange` on the provider side carries a
-    # request identifier — and the arriving message has a line there already,
-    # `IncomingMessage::Process` journalling before it dispatches.
+    # that were used in previously processed requests. » Asked of the journal,
+    # which remembers every request identifier received: the exchange cannot
+    # tell a repeat from a first arrival, `IncomingMessage::Process` having
+    # correlated the repeat to the row of the first before this step runs. The arriving message has a line there
+    # already — `IncomingMessage::Process` journals before it dispatches —
+    # hence `except:`.
     def reject_if_already_answered
       return unless AuditEvent.request_already_received?(request_id, except: context.message_id)
 

@@ -22,13 +22,30 @@ RSpec.describe 'POST /domibus/notifications' do
     XML
   end
 
+  let(:soap) { { 'soap' => 'http://www.w3.org/2003/05/soap-envelope' } }
+
   before { allow(Settings).to receive(:gateway_notification_credentials).and_return(credentials) }
+
+  def answered_node(path) = Nokogiri::XML(response.body).at_xpath(path, soap)
+
+  def expect_soap_answer(status)
+    expect(response).to have_http_status(status)
+    expect(response.media_type).to eq('application/soap+xml')
+  end
+
+  # What `BackendService.wsdl` declares for the output of every operation: a
+  # SOAP 1.2 envelope whose `Body` carries no part.
+  def expect_acknowledgement
+    expect_soap_answer(:ok)
+    expect(answered_node('/soap:Envelope/soap:Body').element_children).to be_empty
+  end
 
   it 'acknowledges at once and queues the work' do
     expect { post '/domibus/notifications', params: receive_success, headers: }
       .to have_enqueued_job(ProcessIncomingMessageJob).with('45fa5345-5a18-4691-945f-531f9568729f@oots.eu')
+      .exactly(:once)
 
-    expect(response).to have_http_status(:ok)
+    expect_acknowledgement
   end
 
   # The gateway is entitled to a prompt answer: holding its connection while a
@@ -48,7 +65,7 @@ RSpec.describe 'POST /domibus/notifications' do
     expect { post '/domibus/notifications', params: envelope, headers: headers }
       .not_to have_enqueued_job(ProcessIncomingMessageJob)
 
-    expect(response).to have_http_status(:ok)
+    expect_acknowledgement
   end
 
   describe 'a request of ours that did not reach its recipient' do
@@ -59,7 +76,7 @@ RSpec.describe 'POST /domibus/notifications' do
         .to have_enqueued_job(RecordDeliveryFailureJob)
         .with('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu', 'WAITING_FOR_RETRY')
 
-      expect(response).to have_http_status(:ok)
+      expect_acknowledgement
     end
 
     it 'queues the verdict of a gateway that gave up' do
@@ -68,6 +85,8 @@ RSpec.describe 'POST /domibus/notifications' do
       expect { post '/domibus/notifications', params: envelope, headers: }
         .to have_enqueued_job(RecordDeliveryFailureJob)
         .with('8a1c0e3f-7b2d-4c6e-9f10-2d3e4f5a6b7c@oots.eu', 'SEND_FAILURE')
+
+      expect_acknowledgement
     end
 
     # The rule pushes every change of every message, either way round.
@@ -78,7 +97,7 @@ RSpec.describe 'POST /domibus/notifications' do
         expect { post '/domibus/notifications', params: envelope, headers: }
           .not_to have_enqueued_job
 
-        expect(response).to have_http_status(:ok)
+        expect_acknowledgement
       end
     end
 
@@ -90,7 +109,7 @@ RSpec.describe 'POST /domibus/notifications' do
         expect { post '/domibus/notifications', params: envelope, headers: }
           .not_to have_enqueued_job
 
-        expect(response).to have_http_status(:ok)
+        expect_acknowledgement
       end
     end
   end
@@ -114,11 +133,33 @@ RSpec.describe 'POST /domibus/notifications' do
     end
   end
 
-  # 400 rather than 500: the gateway retries a 500 with the same body, and a
-  # body we cannot read will not become readable.
-  it 'refuses a body it cannot read, without inviting a retry' do
-    post '/domibus/notifications', params: 'pas du xml <', headers: headers
+  describe 'a body it cannot read' do
+    def push_unreadable
+      expect { post '/domibus/notifications', params: 'pas du xml <', headers: }
+        .not_to have_enqueued_job
+    end
 
-    expect(response).to have_http_status(:bad_request)
+    # SOAP 1.2 Part 2 § 7.5.2.2 binds `env:Sender` to 400. The code is a QName,
+    # resolved here against the namespaces in scope rather than read as text.
+    def expect_sender_fault
+      value = answered_node('/soap:Envelope/soap:Body/soap:Fault/soap:Code/soap:Value')
+      prefix, local_name = value.text.split(':')
+
+      expect_soap_answer(:bad_request)
+      expect([value.namespaces["xmlns:#{prefix}"], local_name]).to eq([soap['soap'], 'Sender'])
+    end
+
+    it 'refuses it with a sender fault, and queues nothing' do
+      push_unreadable
+
+      expect_sender_fault
+    end
+
+    # The plugin retries a refused notification whatever the answer.
+    it 'refuses it alike when the gateway pushes it again' do
+      2.times { push_unreadable }
+
+      expect_sender_fault
+    end
   end
 end

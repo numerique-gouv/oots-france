@@ -15,11 +15,38 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
   let(:requirement) { build(:requirement) }
   let(:types) { [build(:evidence_type, id: 'https://sr/premier'), build(:evidence_type, id: 'https://sr/second')] }
 
-  # Letting the user choose among several is chapter 4.10: until then the first
-  # is asked for, and which one that is has to be the directory's order rather
-  # than an accident.
+  # A caller naming no type gets the first the directory publishes, in its
+  # order rather than by accident.
   it 'keeps the first type the procedure calls for' do
     expect(resolve.evidence_type.id).to eq('https://sr/premier')
+  end
+
+  # Requirement 26 of chapter 1 §2 leaves the choice of the type to the user,
+  # and `idTypeJustificatif` is how the screen that asked carries it.
+  describe 'a caller naming the type it asks for' do
+    subject(:resolve) do
+      described_class.call(procedure_code: ProcedureCode::DIPLOMA_RECOGNITION, country_code: 'FI',
+        evidence_type_id:, common_services:)
+    end
+
+    context 'when the country publishes it' do
+      let(:evidence_type_id) { 'https://sr/second' }
+
+      it 'keeps that one' do
+        expect(resolve.evidence_type.id).to eq('https://sr/second')
+      end
+    end
+
+    # No fallback: the first type is a document nobody confirmed.
+    context 'when it does not' do
+      let(:evidence_type_id) { 'https://sr/inconnu' }
+
+      it 'fails under its own key, naming the type, the requirement and the country' do
+        expect(resolve).to be_failure
+        expect(resolve.error).to include(key: :unknown_evidence_type)
+        expect(resolve.error[:errors].first).to include('https://sr/inconnu', requirement.id, 'FI')
+      end
+    end
   end
 
   # A request writes it into its `Requirements` slot, and the Evidence Broker
@@ -191,6 +218,60 @@ RSpec.describe EvidenceRequest::ResolveEvidenceType do
 
       expect(resolve).to be_failure
       expect(resolve.error).to include(key: :common_services_refused)
+    end
+  end
+
+  # RG11 and RG12 of OOTS-253: the requirement named is resolved by the second
+  # query of the Evidence Broker alone, whether or not it is tied to the
+  # procedure, and refused for itself rather than for the procedure.
+  describe 'a requirement asked for outside its procedure' do
+    subject(:resolved) do
+      described_class.call(procedure_code: ProcedureCode::STUDY_FINANCING, country_code: 'FI',
+        requirement_id: named, outside_procedure: true, common_services: Directories::CommonServices.new)
+    end
+
+    let(:named) { 'https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000' }
+
+    before do
+      stub_directory_resolution
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi', country: 'FI')
+    end
+
+    it 'keeps the requirement the answer carries and its first type, asking nothing of the procedure' do
+      expect(resolved).to be_success
+      expect(resolved.requirement).to have_attributes(id: named,
+        descriptions: include('EN' => '(TEST) Test Requirement'))
+      expect(resolved.evidence_type.id)
+        .to eq('https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FI/19f0783e-7cdc-4146-9ff9-e331514ffb74')
+      expect(a_request(:get, %r{/eb/rest/search}).with(query: hash_including('queryId' => a_string_including('requirements-by-procedure'))))
+        .not_to have_been_made
+    end
+
+    it 'refuses a requirement the Evidence Broker does not know, naming it' do
+      stub_directory_body('eb', 'evidence-types-by-requirement',
+        common_services_answer('eb_requirements_vides').first.sub('EB:ERR:0001', 'EB:ERR:0002'))
+      stub_directory_signature
+
+      expect(resolved).to be_failure
+      expect(resolved.error).to include(key: :unknown_requirement)
+      expect(resolved.error[:errors].join).to include(named)
+      expect(resolved.error[:errors].join).not_to include('« T1 »')
+    end
+
+    it 'refuses a requirement with no evidence type in the country asked, naming it' do
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides')
+
+      expect(resolved).to be_failure
+      expect(resolved.error).to include(key: :no_evidence_type)
+      expect(resolved.error[:errors].join).to include(named, 'FI')
+    end
+
+    it 'refuses a requirement the country declares NoMatch for, with no repli on another' do
+      stub_directory_signature
+      stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
+
+      expect(resolved).to be_failure
+      expect(resolved.error).to include(key: :no_evidence_type, errors: [named])
     end
   end
 end

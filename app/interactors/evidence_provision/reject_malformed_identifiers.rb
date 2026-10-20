@@ -47,9 +47,8 @@ module EvidenceProvision
       UUID_RULES.except(:exchange_id)
     end
 
-    # Hung on the exchange `IncomingMessage::OpenExchange` has already opened, so
-    # the refusal joins the arrival that `IncomingMessage::Process` journalled
-    # before dispatching. The reason names the rule, as `error_sent` does for the
+    # Hung on the exchange `IncomingMessage::Process` correlated or opened, so
+    # the refusal joins the arrival it journalled before dispatching. The reason names the rule, as `error_sent` does for the
     # refusals that do go back.
     def refuse(rule, value)
       reason = I18n.t('interactors.evidence_provision.reject_malformed_identifiers.malformed_identifier',

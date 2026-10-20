@@ -38,4 +38,21 @@ RSpec.describe DataServiceDirectoryClient do
       parser: DataServicesResponseParser,
     )
   end
+
+  # Chapter 3.1.4 §4.4.3.3: the same query, « a new query parameter for every
+  # EvidenceProviderClassification element » named by its identifier.
+  it 'adds a parameter per answered classification to the same query' do
+    directory.data_services(evidence_type_classification: classification, country_code: 'EL',
+      classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+
+    expect(query).to have_received(:search).with(
+      {
+        queryId: described_class::DATA_SERVICES_QUERY,
+        'evidence-type-classification': classification,
+        'country-code': 'EL',
+        '1254f10f-406e-4f28-b1ba-d107b93fa264': 'TC03',
+      },
+      parser: DataServicesResponseParser,
+    )
+  end
 end

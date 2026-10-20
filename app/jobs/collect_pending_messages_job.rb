@@ -3,8 +3,8 @@
 # Not a safety net against a lost notification — the push rule already retries
 # five times over an hour (`wsplugin.push.rules.oots.retry`). What it catches is
 # the window *after* those retries are spent: the gateway then stops trying, and
-# since `markAsDownloaded` is false the message is still sitting there,
-# retrievable, for the two and a half days `retention_undownloaded` allows.
+# since only `retrieveMessage` marks a message downloaded, it is still sitting
+# there, retrievable, for the two and a half days `retention_undownloaded` allows.
 # Without this sweep nothing would ever go and get it.
 #
 # Idempotent by construction: the PMode erases a message once downloaded, so a

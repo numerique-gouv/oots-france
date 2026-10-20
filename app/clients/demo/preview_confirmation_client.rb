@@ -16,10 +16,11 @@ module Demo
       @connection = connection
     end
 
-    def confirm(exchange_id:, encrypted_beneficiary:, resume_location:)
+    def confirm(exchange_id:, encrypted_beneficiary:, resume_location:, provider_classifications: {})
       path = format(PATH, exchange_id: CGI.escape(exchange_id.to_s))
       response = connection.post("#{Settings.oots_france_url}#{path}",
-        URI.encode_www_form(beneficiaire: encrypted_beneficiary, adresseRetour: resume_location),
+        { beneficiaire: encrypted_beneficiary, adresseRetour: resume_location,
+          classificationFournisseur: provider_classifications.presence }.compact.to_query,
         'Content-Type' => 'application/x-www-form-urlencoded')
 
       ContractAnswer.from(response, path:)

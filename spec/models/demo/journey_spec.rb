@@ -1,7 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe Demo::Journey do
-  subject(:journey) { described_class.opened(previous:, subject: 'un-pseudonyme', specification: EdmSpecification::V1_2, uuid:) }
+  subject(:journey) do
+    described_class.opened(previous:, subject: 'un-pseudonyme', specification: EdmSpecification::V1_2,
+      procedure_code: '00', uuid:)
+  end
 
   let(:previous) { nil }
   # Frozen, so that what is minted can be told from what is carried over.
@@ -18,6 +21,7 @@ RSpec.describe Demo::Journey do
         conversation_id: '22222222-0000-4000-8000-000000000002',
         subject: 'un-pseudonyme',
         specification: EdmSpecification::V1_2,
+        procedure_code: '00',
       )
     end
 
@@ -100,17 +104,23 @@ RSpec.describe Demo::Journey do
   end
 
   # The one condition `HoldsDemoJourney` renders on: a journey missing any of
-  # the four could neither name a conversation to ask under, nor say whose
-  # requests it is following, nor in which line they go out.
+  # the five could neither name a conversation to ask under, nor say whose
+  # requests it is following, nor in which line and under which procedure they
+  # go out.
   describe 'validity' do
     it 'is valid once opened' do
       expect(journey).to be_valid
     end
 
-    %i[id conversation_id subject specification].each do |attribute|
+    %i[id conversation_id subject specification procedure_code].each do |attribute|
       it "is invalid without #{attribute}" do
         expect(described_class.new(journey.to_session.except(attribute.to_s))).not_to be_valid
       end
+    end
+
+    # `R-EDM-REQ-C003` (FATAL): no request may go out under it.
+    it 'is invalid under a code neither the list nor the system check is' do
+      expect(described_class.new(journey.to_session.merge('procedure_code' => 'Z9'))).not_to be_valid
     end
   end
 end

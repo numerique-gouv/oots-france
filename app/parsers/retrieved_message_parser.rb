@@ -45,6 +45,21 @@ class RetrievedMessageParser
     @specification ||= EdmSpecification.resolve(announced_specification)
   end
 
+  # Whether the header names an exchange to open a row under. `R-EDM-ebMS-019`
+  # requires the `ExchangeId` property — `-018` only counts them — and the
+  # ebMS3 envelope requires the `eb:ConversationId` element, `R-EDM-ebMS-017`
+  # fixing its shape alone.
+  #
+  # The property is asked of the 2.0 line and of it alone: `R-EDM-ebMS-037` and
+  # `-038` are rules 2.0.1 carries and 1.2.5 does not, so a conformant 1.2
+  # request has no `ExchangeId` to give, and France mints one for it. The
+  # conversation is required either way, the ebMS3 envelope carrying it in both.
+  def identified?
+    return false if conversation_id.blank?
+
+    exchange_id.present? || !specification.exchange_named_in_header?
+  end
+
   # What the message contradicts in itself: the two version announcements read
   # against each other, here because this is the one place both are readable —
   # `specification` has already picked the header's, and the readers of the body

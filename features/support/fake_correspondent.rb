@@ -25,10 +25,8 @@ class FakeCorrespondent
 
   # What a real correspondent would have read from the central directories for a
   # French procedure: the requirement the Evidence Broker returns for FR, and the
-  # evidence type classification it leads to. Nothing on the receiving side reads
-  # either — `EvidenceProvision::ChooseAnswer` decides on the procedure code and
-  # on `evidence_type.pdf?` — so they are here for the request to look like one
-  # that was actually discovered.
+  # evidence type classification it leads to — one France serves, which is what
+  # `EvidenceProvision::ChooseAnswer` decides on, with `evidence_type.pdf?`.
   REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff'.freeze
   EVIDENCE_TYPE =
     'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze

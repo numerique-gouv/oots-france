@@ -169,6 +169,44 @@ RSpec.describe Directories::CommonServices do
     end
   end
 
+  # Chapter 3.2.4 §4.3: the second query « is based on a requirement that is
+  # known to the Procedure Portal or that is determined via the Evidence
+  # Broker's first query ». Asked alone, it carries the requirement itself.
+  describe '#required_evidence_for_requirement' do
+    let(:answer) { instance_double(EvidenceTypesResponseParser, requirement:, evidence_types: [type]) }
+
+    before { allow(broker).to receive(:requirement_evidence).and_return(answer) }
+
+    it 'reads the requirement and its types from the second query alone' do
+      expect(directory.required_evidence_for_requirement(requirement.id, 'FI'))
+        .to eq(described_class::RequiredEvidence.new(requirement:, evidence_types: [type]))
+
+      expect(broker).to have_received(:requirement_evidence).with(requirement_id: requirement.id, country_code: 'FI')
+      expect(broker).not_to have_received(:requirements)
+    end
+
+    it 'turns EB:ERR:0002 into a requirement nobody knows, naming it' do
+      allow(broker).to receive(:requirement_evidence).and_raise(CommonServicesError.new('inconnue', code: 'EB:ERR:0002'))
+
+      expect { directory.required_evidence_for_requirement(requirement.id, 'FI') }
+        .to raise_error(RequirementNotFound, /#{Regexp.escape(requirement.id)}/)
+    end
+
+    it 'turns EB:ERR:0001 into no evidence type for that requirement in that country' do
+      allow(broker).to receive(:requirement_evidence).and_raise(CommonServicesError.new('vide', code: 'EB:ERR:0001'))
+
+      expect { directory.required_evidence_for_requirement(requirement.id, 'FI') }
+        .to raise_error(EvidenceTypeNotFound, /#{Regexp.escape(requirement.id)}.*FI/)
+    end
+
+    it 'refuses a requirement whose identifier no message could carry' do
+      allow(answer).to receive(:requirement).and_return(build(:requirement, id: 'https://sr/exigence/1'))
+
+      expect { directory.required_evidence_for_requirement('https://sr/exigence/1', 'FI') }
+        .to raise_error(InvalidDirectoryEntry)
+    end
+  end
+
   describe '#data_service' do
     # The service and not the provider alone: a request adopts the record, its
     # identifier and its distribution included, and the provider is one of the
@@ -177,7 +215,25 @@ RSpec.describe Directories::CommonServices do
       expect(directory.data_service(type.id, 'FI')).to eq(service)
 
       expect(dsd).to have_received(:data_services)
-        .with(evidence_type_classification: type.id, country_code: 'FI')
+        .with(evidence_type_classification: type.id, country_code: 'FI', classifications: {})
+    end
+
+    # Chapter 3.1.4 §4.2.2: « The user selected parameter and value MUST be used
+    # when responding to a DSD exception DSD:ERR:0005 received ».
+    it 'asks again with the answers the user gave' do
+      directory.data_service(type.id, 'EL', classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+
+      expect(dsd).to have_received(:data_services).with(evidence_type_classification: type.id, country_code: 'EL',
+        classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+    end
+
+    it 'says by name that the directory waits on the user, with the questions it asks' do
+      question = build(:evidence_provider_classification)
+      allow(dsd).to receive(:data_services)
+        .and_raise(CommonServicesError.new('précision', code: 'DSD:ERR:0005', classifications: [question]))
+
+      expect { directory.data_service(type.id, 'EL') }
+        .to raise_error(ProviderClassificationRequired) { |error| expect(error.classifications).to eq([question]) }
     end
 
     # A record published without `sdg:AccessService` breaks R-DSD-RESP-S014;

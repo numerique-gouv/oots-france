@@ -1,0 +1,38 @@
+<% country = wording.named_country(@country) %>
+<% content_for :title, country %>
+
+<%= render DirectoryBreadcrumbsComponent.new(trail: [
+      [t('admin.common_services.countries.index.title'), admin_common_services_countries_path],
+      [country, nil],
+    ]) %>
+
+<h1 class="fr-h3"><%= country %></h1>
+
+<%# The tally exists on the requesting side alone, as on the list of
+    countries. A country that declares no procedure has no page of procedures
+    to lead to, so its tile is the DSFR's markup without the link. %>
+<% declared = t('admin.common_services.countries.declared_procedures', count: @procedures.size) %>
+<div class="fr-grid-row fr-grid-row--gutters fr-mb-4w">
+  <div class="fr-col-12 fr-col-md-6">
+    <% if @procedures.any? %>
+      <%= dsfr_tile(title: t('admin.common_services.countries.show.requester'),
+            url: admin_common_services_country_procedures_path(@country), description: declared) %>
+    <% else %>
+      <div class="fr-tile">
+        <div class="fr-tile__body">
+          <div class="fr-tile__content">
+            <h4 class="fr-tile__title"><%= t('admin.common_services.countries.show.requester') %></h4>
+            <p class="fr-tile__desc"><%= declared %></p>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+  <div class="fr-col-12 fr-col-md-6">
+    <%= dsfr_tile(title: t('admin.common_services.countries.show.provider'),
+          url: admin_common_services_country_requirements_path(@country),
+          description: t('admin.common_services.countries.show.provider_description')) %>
+  </div>
+</div>
+
+<%= render DirectoryQueryComponent.new(query: :requirements) %>

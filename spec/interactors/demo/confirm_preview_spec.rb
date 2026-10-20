@@ -7,7 +7,7 @@ RSpec.describe Demo::ConfirmPreview do
 
   let(:request) { registered_request }
   let(:identity) { Demo::UserIdentity.new(family_name: 'Sørensen') }
-  let(:resume_location) { 'http://localhost:3000/admin/demo/v2.0/documents' }
+  let(:resume_location) { 'http://localhost:3000/admin/demo/v2.0/T1/documents' }
   let(:token_writer) { instance_double(Demo::BeneficiaryTokenWriter, call: 'un-jeton-chiffré') }
   let(:client) { instance_double(Demo::PreviewConfirmationClient, confirm: confirmation) }
   let(:descriptions) { [{ 'langue' => 'DE', 'texte' => 'Vorschau' }, { 'langue' => 'EN', 'texte' => 'Preview' }] }
@@ -27,7 +27,18 @@ RSpec.describe Demo::ConfirmPreview do
 
     expect(token_writer).to have_received(:call).with(identity)
     expect(client).to have_received(:confirm).with(exchange_id: request.exchange_id,
-      encrypted_beneficiary: 'un-jeton-chiffré', resume_location:)
+      encrypted_beneficiary: 'un-jeton-chiffré', resume_location:, provider_classifications: {})
+  end
+
+  context 'when the request answered questions of the Data Service Directory' do
+    let(:request) { registered_request(provider_classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' }) }
+
+    it 'gives the answers again' do
+      result
+
+      expect(client).to have_received(:confirm)
+        .with(hash_including(provider_classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' }))
+    end
   end
 
   it 'keeps the link the confirmation answered' do

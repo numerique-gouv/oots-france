@@ -3,7 +3,7 @@ module Admin
     # The page an exchange is asked for from: it carries the identity the
     # authentication attested — shown and never typed, chapter 2.2 §2 making the
     # portal answerable for the identity in the request matching the one the eID
-    # means yielded — and names the evidence provider and the evidence type,
+    # means yielded — and names the evidence provider of each evidence type,
     # which requirement 27 of chapter 1 §2 asks for word for word — « The user is
     # provided with information about name of evidence provider and evidence type
     # for confirmation, before any request is made. » Unable to name them, it
@@ -12,10 +12,10 @@ module Admin
     #
     # The button itself, and what becomes of a click on it, belong to
     # `RequestsController`. This page renders one zone per requirement it can
-    # name, each in whatever state the register of its journey puts it:
-    # chapter 4.4 §4.2.2 has
-    # « different basic flows … executed sequentially and/or in parallel », so
-    # no card waits on its neighbour.
+    # name, a block per evidence type in whatever state the register of its
+    # journey puts that type's request: chapter 4.4 §4.2.2 has « different basic
+    # flows … executed sequentially and/or in parallel », so no card waits on
+    # its neighbour.
     class DocumentsController < Admin::BaseController
       include ReadsDemoRequest
       include HoldsDemoNames
@@ -41,14 +41,25 @@ module Admin
       # and the request itself goes out through the contract.
       #
       # Each card is resolved in its own member state, the one the user chose on
-      # it or the one its request went to — `HoldsDemoCountries` says which.
+      # it or the one its request went to — `HoldsDemoCountries` says which —
+      # and on the combination chosen the same way, `HoldsDemoEvidenceTypeLists`
+      # saying which, and on the answers given to the questions the Data Service
+      # Directory asks on each of its lines, `HoldsDemoProviderClassifications`
+      # saying which.
+      #
+      # The cards the operator added follow those of the procedure, each
+      # resolved from its own requirement, and the page then offers to add any
+      # other the catalogue holds.
       def show
-        resolved = DirectoryLookup::ResolveAll.call(procedure_code: code,
-          country_code: Settings.common_services_country_code, countries: card_countries)
+        resolved = resolve_all
         @procedure = procedure_wording(resolved.requirements)
-        @requirements = resolved.resolutions.map { |lookup| DemoResolutionWording.new(lookup) }
+        @requirements = resolved.resolutions.map { |lookup| DemoCardWording.new(lookup) }
+        @added = resolved_added_cards(@requirements.map(&:requirement_uuid))
 
-        remember_demo_names(@procedure, @requirements)
+        cards = @requirements + @added
+
+        remember_demo_names(@procedure, cards)
+        @addable = addable_requirements(cards.map(&:requirement_uuid))
       end
 
       private
@@ -75,12 +86,50 @@ module Admin
         )
       end
 
-      def code = ::Demo::RequestEvidence::PROCEDURE_CODE
+      def code = journey.procedure_code
+
+      def resolve_all
+        DirectoryLookup::ResolveAll.call(procedure_code: code, country_code: Settings.common_services_country_code,
+          countries: card_countries, evidence_type_lists: card_evidence_type_lists,
+          provider_classifications: all_card_provider_classifications)
+      end
+
+      def resolved_added_cards(listed)
+        added_cards.values.reject { |card| card.requirement_uuid.in?(listed) }.map do |card|
+          uuid = card.requirement_uuid
+
+          DemoCardWording.new(resolve_added_card(card, card_country(uuid), card_evidence_type_list(uuid),
+            card_provider_classifications(uuid)))
+        end
+      end
+
+      # Every requirement of the Evidence Broker's catalogue — its first query,
+      # asked with neither of its optional parameters (chapter 3.2.4 §4.2) — less
+      # those the page already carries a card for, named as the directory names
+      # them. A catalogue that cannot be read costs this choice and nothing
+      # else: the cards stand, and the log keeps why.
+      def addable_requirements(carried)
+        Directories::Catalogue.new.requirements
+          .reject { |requirement| requirement.uuid.in?(carried) }.map { |requirement| addable_option(requirement) }
+      rescue CommonServicesError => e
+        Rails.logger.warn(I18n.t('controllers.admin.demo.catalogue_unreachable', error: e.message))
+
+        nil
+      end
+
+      # In English first, like the cards: the page is the portal.
+      def addable_option(requirement)
+        languages = DemoResolutionWording::LANGUAGES
+
+        [requirement.label(languages:) || requirement.uuid, requirement.uuid,
+         { lang: requirement.label_language(languages:) }]
+      end
 
       def report_unreachable_directories(error)
         @unreachable = error.message
         @procedure = procedure_wording(nil)
         @requirements = []
+        @added = []
 
         render :show, status: :bad_gateway
       end

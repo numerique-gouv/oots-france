@@ -209,6 +209,8 @@ Le `422` prouve que le serveur écoute ; il ne dit rien de la passerelle. Dans l
 
 La passerelle, elle, a une adresse publique par nature : `/domibus/services/msh`, où un correspondant envoie ses messages. Le frontal mandate ce chemin **et lui seul** : sous le même `/domibus/` vivent la console d'administration, son API `/domibus/rest/` et le plugin WS `/domibus/services/wsplugin` par lequel `web` soumet ses messages, qu'un mot de passe serait alors seul à garder. L'exploitant atteint la console par un tunnel SSH sur `PORT_DOMIBUS`, `web` le plugin par le réseau docker.
 
+Les annuaires centraux sont interrogés en direct, sans cache mandataire. Le [chapitre 3.4 § 4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932916) en recommande fortement un, pour la charge, la latence et la tenue pendant une panne de l'annuaire ; le cache de l'application (`DUREE_CACHE_SERVICES_COMMUNS`) répond aux deux premières, et servir du périmé pendant une panne de l'annuaire d'acceptation n'a pas de valeur sur ce serveur. Un mandataire se brancherait sans code, par `URL_BASE_EVIDENCE_BROKER` et `URL_BASE_DATA_SERVICE_DIRECTORY` ; la question se repose pour la production.
+
 Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotation posée [à l'installation](#installer-les-outils-sur-une-machine-nue). Ceux de Domibus restent dans son conteneur, où `make logs-domibus` les suit.
 
 ## Ce qu'il faut sauvegarder
@@ -216,7 +218,7 @@ Les journaux de `web` et `worker` vont dans `docker logs`, bornés par la rotati
 Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la machine :
 
 - les fichiers `.env*`, qui portent tous les secrets, et le `docker-compose.override.yml` s'il existe ;
-- le keystore de notre clé privée, `oots_acceptance_keystore.jks`, là où [`scripts/pki/`](../scripts/pki/) l'a créé, et ses deux mots de passe : sans eux, le certificat de la PKI ne sert plus à rien ;
+- le keystore de nos clés privées, `oots_acceptance_keystore.jks`, là où [`scripts/pki/`](../scripts/pki/) l'a créé, son *keystore password* et le *keypair password* de chaque clé : sans eux, le certificat de la PKI ne sert plus à rien ;
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
 - le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, le keystore et le truststore téléversés, et le compte d'accès ;
 - le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
@@ -257,13 +259,13 @@ Notre certificat se demande d'abord, sur le serveur et hors du dépôt, avec les
 ```sh
 $ cd <répertoire hors du dépôt>
 $ <dépôt>/scripts/pki/generate_keystore.sh   # demande le keystore password, puis le keypair password
-$ <dépôt>/scripts/pki/generate_csr.sh        # écrit OOTS_AP_ACC_FR_001.csr
+$ <dépôt>/scripts/pki/generate_csr.sh        # demande le keystore password, écrit OOTS_AP_ACC_FR_001.csr
 ```
 
-Le premier crée `oots_acceptance_keystore.jks`, qui porte notre clé privée ; le second en tire le CSR, qui part à la PKI eDelivery. Elle rend, dans S-CIRCABC, `OOTS_AP_ACC_FR_001.pem`, notre certificat, `OOTS_AP_ACC_FR_001-bundle.pem`, sa chaîne, et `OOTS_AP_ACC_FR_001.p7b`, les mêmes au format PKCS#7, qui ne sert pas ici.
+Le premier crée `oots_acceptance_keystore.jks` et y engendre notre clé privée, une clé RSA de 3072 bits — le [chapitre 4.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931#id-4.7eDeliveryProfilingandConfigurationv2.0.1%28July2026%29-4.2SecurityprofilingforuseofeDeliveryAS41.16) recommande plus de 3000 bits au § 4.2 —, sous le sujet `CN=OOTS_AP_ACC_FR_001, OU=OOTS, O=DINUM, C=FR`, les trois derniers champs étant ceux que le [§ 4.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931#id-4.7eDeliveryProfilingandConfigurationv2.0.1%28July2026%29-4.3SecurityprofilingforuseofeDeliveryAS42.0) demande au certificat d'un point d'accès ; le second en tire le CSR, qui part à la PKI eDelivery. Pour un renouvellement, les deux se rejouent dans le même répertoire : le premier ajoute au keystore une clé sous un alias neuf, `OOTS_AP_ACC_FR_001-2`, puis `-3`…, sans toucher les précédentes — celle du certificat déployé sert jusqu'à ce que le nouveau soit installé —, et le second tire le CSR de la dernière ajoutée, celle dont l'alias porte le plus haut numéro, dans `<alias>.csr`, sans jamais écraser un CSR déjà écrit. La PKI rend, dans S-CIRCABC, `OOTS_AP_ACC_FR_001.pem`, notre certificat, `OOTS_AP_ACC_FR_001-bundle.pem`, sa chaîne, et `OOTS_AP_ACC_FR_001.p7b`, les mêmes au format PKCS#7, qui ne sert pas ici.
 
 > [!IMPORTANT]
-> `oots_acceptance_keystore.jks` et ses deux mots de passe sont la seule copie de notre clé privée : la PKI ne la rend jamais, et sans elle le certificat ne sert à rien. Les deux scripts refusent de tourner dans un dépôt git, pour que ce fichier n'y entre jamais ; [la sauvegarde](#ce-quil-faut-sauvegarder) l'emporte.
+> `oots_acceptance_keystore.jks` et ses mots de passe sont la seule copie de nos clés privées : la PKI ne les rend jamais, et sans elles le certificat ne sert à rien. Les deux scripts refusent de tourner dans un dépôt git, pour que ce fichier n'y entre jamais ; [la sauvegarde](#ce-quil-faut-sauvegarder) l'emporte.
 
 Le point d'accès se déclare sur le [Technical Support Dashboard](https://tsd-acc.oots.tech.ec.europa.eu) de la Commission, que le coordinateur national ouvre à un *Technical Contact Point* — la démarche est celle du [Service Desk OOTS](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). La déclaration porte la partie `AP_FR_01` sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR` — celle que le DSD publie —, l'URL `https://<domaine>/domibus/services/msh`, l'adresse IP publique du serveur, et le certificat que la PKI eDelivery a rendu sur un CSR engendré ici, dont la clé privée n'a jamais quitté le serveur. Validée par un second TCP puis activée, elle fait publier par le Technical Support Dashboard un **PMode** (`AP_FR_01.xml`) et un **truststore** (`gateway_truststore.jks`, mot de passe `test123`), l'un et l'autre regénérés à chaque changement d'un point d'accès, quel que soit l'État membre : le Technical Support Dashboard le notifie, et il faut alors les recharger.
 

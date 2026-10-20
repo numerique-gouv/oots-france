@@ -16,9 +16,9 @@ class JournalledMessage
   }.freeze
 
   # `exchange` is the one `IncomingMessage::Process` correlated the message to,
-  # and nil where it could correlate none: an arriving response is judged
-  # against the version its own request was written in, which is the exchange's
-  # and nothing else's.
+  # or opened for it, and nil where there is none: an arriving response is
+  # judged against the version its own request was written in, which is the
+  # exchange's and nothing else's.
   def initialize(message:, message_id:, exchange: nil)
     @message = message
     @message_id = message_id
@@ -32,6 +32,10 @@ class JournalledMessage
   # part — the last read by position, so an action no handler claims carries one
   # just as a request does.
   #
+  # The exchange's identifier before the header's: on the 1.2 line the header
+  # names none, and the one France minted is what joins the line to its
+  # exchange. On the 2.0 line the two are the same.
+  #
   # The part gets its own reading, and not one of the body's fields: a body
   # Nokogiri refuses is exactly the one whose bytes an auditor needs, and the
   # chapter asks for them whether or not anything could be made of them.
@@ -39,7 +43,7 @@ class JournalledMessage
     {
       ebms_action: message.action,
       conversation_id: message.conversation_id,
-      exchange_id: message.exchange_id,
+      exchange_id: exchange&.exchange_id || message.exchange_id,
       message_id:,
       **AuditEvent.circulated(readable(:regrep_body) { message.first_part }),
     }

@@ -1,6 +1,6 @@
 <% content_for :title, t('admin.demo.home.show.title') %>
 
-<%= render DemoBreadcrumbsComponent.new(specification: @specification) %>
+<%= render DemoBreadcrumbsComponent.new(specification: @specification, procedure: @wording.code) %>
 
 <%= render 'admin/demo/titre', wording: @wording %>
 

@@ -22,10 +22,11 @@ class FranceConnectIdentity
   # with the FranceConnect team along with the rest of the manual verification
   # on the sandbox — `docs/eidas_context.md` carries that check.
   #
-  # Nothing sends it today, so the nominal path is an identity held without an
-  # identifier, which chapter 2.1 §2.3.1.2 provides for. The reader exists so
-  # that what does arrive is validated rather than carried into a request
-  # `R-EDM-REQ-C040` (FATAL) would refuse. The `sub` never stands in for it: it
+  # No real FranceConnect+ sends it today, so the nominal path is an identity
+  # held without an identifier, which does not meet chapter 2.1 §2.3.1.1: it
+  # wants the received identifier in the request. The reader exists so that what does
+  # arrive is validated rather than carried into a request `R-EDM-REQ-C040`
+  # (FATAL) would refuse. The `sub` never stands in for it: it
   # is a pseudonym of the portal, per service provider.
   PERSON_IDENTIFIER = 'person_identifier'.freeze
 

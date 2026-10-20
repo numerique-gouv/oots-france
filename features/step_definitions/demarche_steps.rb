@@ -21,6 +21,13 @@ Quand('l\'administrateur choisit la version {string}') do |carte|
   @ligne = EdmSpecification.from_segment("v#{carte.delete_prefix('OOTS ')}")
 end
 
+# The entry of one procedure, chosen from the screen that follows the line:
+# every page of the walk after it lives under its code too.
+Quand('l\'administrateur choisit la démarche {string}') do |code|
+  @navigateur.choose_procedure(code)
+  @demarche = code
+end
+
 Quand('il choisit le bouton du faux FranceConnect+') do
   @navigateur.start_identification('fake')
 end
@@ -50,10 +57,23 @@ Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |c
   @navigateur.choose('consent', 'yes')
 end
 
+ENTERED_IDENTITY_FIELDS = {
+  'prénom' => 'given_name', 'nom' => 'family_name', 'date de naissance' => 'birthdate',
+  'identifiant eIDAS' => 'national_part'
+}.freeze
+
+Quand('l\'administrateur s\'identifie en saisissant cette identité sous le pays {string}:') do |code, table|
+  @navigateur.visit(adresse_de_la_demarche)
+  @navigateur.start_identification('fake')
+  @navigateur.choose('country', code)
+  @navigateur.enter_identity(table.rows_hash.transform_keys { |name| ENTERED_IDENTITY_FIELDS.fetch(name) })
+  @navigateur.choose('consent', 'yes')
+end
+
 # The heading is the procedure's, as on the home page: the two are one journey.
 Alors('l\'administrateur arrive sur la page des justificatifs') do
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
-  expect(@navigateur.title).to include(ProcedureCode::STUDY_FINANCING)
+  expect(@navigateur.title).to include(@demarche)
 end
 
 Alors('la page affiche {string} : {string}') do |intitule, valeur|
@@ -109,14 +129,17 @@ Alors('l\'administrateur arrive sur l\'écran du choix de la version, sans ident
   expect(@navigateur.current_url).to end_with('/admin/demo')
 end
 
-# Requirement 27 of chapter 1 §2. The two values come from the real directories,
-# so the scenario asserts that they are there — not what they say, which Brussels
-# may rewrite without telling us. They are named on the card that carries the
-# button, in the one sentence that stands between the rule and it, and each
-# wears the mark of what the directories publish.
-Alors('la page des justificatifs affiche le fournisseur et le type de justificatif') do
-  nommes = Nokogiri::HTML(@navigateur.body)
-    .css('.requirement-card__actions .directory-value').map { |valeur| valeur.text.strip }
+# Requirement 27 of chapter 1 §2. The values come from the real directories, so
+# the scenario asserts that they are there — not what they say, which Brussels
+# may change without telling us. The card the scenario names, the one it is
+# about to ask, names its provider and its evidence type in the one sentence
+# that stands between the rule and the button, and each value wears the mark of
+# what the directories publish.
+Alors('la page des justificatifs affiche le fournisseur et le type de justificatif de la carte {string}') do |carte|
+  trouvee = Nokogiri::HTML(@navigateur.body).css('.requirement-card')
+    .find { |card| card.at_css('.fr-card__title')&.then { seen(it) } == carte } ||
+            raise(ArgumentError, "Aucune carte « #{carte} » dans la page des justificatifs : #{@navigateur.body}")
+  nommes = trouvee.css('.requirement-card__actions .directory-value').map { |valeur| seen(valeur) }
 
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
   expect(nommes.size).to eq(2)
@@ -124,13 +147,30 @@ Alors('la page des justificatifs affiche le fournisseur et le type de justificat
 end
 
 # Chapter 1 §3.3: this click is where the user says explicitly that the
-# Once-Only Technical System is to be used, and nothing leaves without it.
-# The mark is taken before the click and not after: the log is the server's and
-# a previous run leaves its own events in it, so what this scenario opened is
-# what was written past this point.
-Quand('l\'usager confirme sa demande') do
+# Once-Only Technical System is to be used, and nothing leaves without it. A
+# procedure resting on several requirements offers one button per card. The
+# mark is taken before the click and not after: the log is the server's and a
+# previous run leaves its own events in it, so what this scenario opened is what
+# was written past this point.
+Quand('l\'usager confirme la demande de la carte {string}') do |carte|
   @journal_avant = ServerAuditEvent.maximum(:id).to_i
-  @navigateur.submit_to(adresse_de_la_demarche('demande'))
+  @navigateur.request_card(carte)
+end
+
+# Added from the list under the cards of the procedure: the page comes back
+# carrying the new card, whether or not the Evidence Broker ties its
+# requirement to the procedure.
+Quand('l\'usager ajoute la carte {string} à la page des justificatifs') do |carte|
+  @navigateur.add_card(adresse_de_la_demarche('cartes'), carte)
+
+  expect(@navigateur.current_url).to include(adresse_de_la_demarche('documents'))
+end
+
+# The list answers with the card alone; the documents page is read again, the
+# chosen type retained on it, for the steps that follow.
+Quand('l\'usager choisit {string} sur la carte {string}') do |type, carte|
+  @navigateur.choose_evidence_type(carte, type)
+  @navigateur.visit(adresse_de_la_demarche('documents'))
 end
 
 # The click answers with the zone it was made in, saying the request is out. The
@@ -154,7 +194,7 @@ Alors('le journal des échanges contient le départ de la requête, envoyée par
   depart = depart_de_la_requete
 
   expect(depart.evidence_requester_id).to eq(ENV.fetch('IDENTIFIANT_REQUETEUR_DEMARCHE'))
-  expect(depart.procedure_code).to eq('T1')
+  expect(depart.procedure_code).to eq(@demarche)
   expect(depart.country_code).to eq('FR')
 end
 
@@ -188,10 +228,54 @@ end
 # every outcome of these scenarios goes through.
 # The console's page of the exchange the click opened, which says the line it
 # was conducted in.
+Alors('la fiche de cet échange affiche la démarche {string}') do |code|
+  @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
+
+  # Under the flag of the country asked, which the row carries before the code.
+  expect(@navigateur.rows.fetch(I18n.t('admin.journal.exchanges.attributes.procedure')).split.last).to eq(code)
+end
+
 Alors('la fiche de cet échange affiche la version {string}') do |version|
   @navigateur.visit("/admin/journal/exchanges/#{depart_de_la_requete.exchange_id}")
 
   expect(@navigateur.rows).to include(I18n.t('admin.journal.exchanges.attributes.specification') => version)
+end
+
+Alors('la carte d\'identité de la page des justificatifs affiche l\'identifiant eIDAS {string}') do |identifiant|
+  ligne = Nokogiri::HTML(@navigateur.body).css('.identity-card__eidas').text.squish
+
+  expect(ligne).to end_with(identifiant)
+end
+
+# The subject is a definition list nested in the row of the event, which
+# `DemoBrowser#rows` does not descend into.
+Alors(
+  'la fiche de ce départ au journal des événements affiche l\'identifiant eIDAS {string} dans le sujet du justificatif',
+) do |identifiant|
+  @navigateur.visit("/admin/journal/events/#{depart_de_la_requete.id}")
+  sujet = Nokogiri::HTML(@navigateur.body).css('dl.evidence-subject dt').to_h do |terme|
+    [terme.text.strip, terme.next_element.text.strip]
+  end
+
+  expect(sujet).to include(I18n.t('components.evidence_subject.fields.eidas_identifier') => identifiant)
+end
+
+# As the acceptance publishes it under `00`: docs/test_e2e.md records where.
+EVIDENCE_TYPE_CLASSIFICATIONS = {
+  'FR - Test Evidence Type not held' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/0a4cf159-133d-4ca7-91a7-749f9a1cc3e3',
+}.freeze
+
+Alors('cette requête demande le type de justificatif {string}') do |titre|
+  expect(depart_de_la_requete.evidence_type_id).to eq(EVIDENCE_TYPE_CLASSIFICATIONS.fetch(titre))
+end
+
+# The callout and not its link: where the correspondent asked for a `POST`, the
+# way to the preview space is a form.
+Alors('la page des justificatifs ne présente aucun lien vers l\'espace de prévisualisation') do
+  @navigateur.visit(adresse_de_la_demarche('documents'))
+
+  expect(Nokogiri::HTML(@navigateur.body).at_css('.demo-request__preview')).to be_nil
 end
 
 # Chapter 4.9 §5: the zone becomes the departure page once the demonstration
@@ -263,11 +347,13 @@ def lien_de_depart = @navigateur.links('.demo-request__preview a.fr-btn').first
 
 def de_retour_sur_la_demarche? = URI.parse(@navigateur.current_url).path == adresse_de_la_demarche('documents')
 
-# An address of the walk, under the segment of the line the scenario chose.
+# An address of the walk, under the segments of the line and the procedure the
+# scenario chose.
 def adresse_de_la_demarche(page = nil)
   raise 'Aucune version choisie : le pas « choisit la version » précède celui-ci.' if @ligne.nil?
+  raise 'Aucune démarche choisie : le pas « choisit la démarche » précède celui-ci.' if @demarche.nil?
 
-  ['/admin/demo', @ligne.segment, page].compact.join('/')
+  ['/admin/demo', @ligne.segment, @demarche, page].compact.join('/')
 end
 
 # The departure this scenario opened, found by the requester it was sent under

@@ -9,6 +9,14 @@ RSpec.describe DataService do
       expect(build(:data_service).validate!(:announced_data_service)).to be_a(described_class)
     end
 
+    # What a request adopts of a classification the service was matched on
+    # (chapter 4.5.1 §3.4) answers to `R-EDM-REQ-C019` like the rest.
+    it 'refuses a classification no message could carry' do
+      matched = build(:data_service, classifications: [build(:evidence_provider_classification, id: 'test-case')])
+
+      expect { matched.validate!(:announced_data_service) }.to raise_error(ConfigurationError, /classification/)
+    end
+
     # R-EDM-REQ-C026: the identifier the directory assigns to the pairing.
     it 'refuses an identifier that is not a UUID' do
       expect { build(:data_service, id: 'service-de-test').validate!(:announced_data_service) }

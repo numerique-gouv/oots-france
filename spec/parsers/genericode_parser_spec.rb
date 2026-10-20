@@ -45,4 +45,21 @@ RSpec.describe GenericodeParser do
   it 'reads nothing from a document that is not a code list' do
     expect(described_class.new('<html><body>404</body></html>').names(code_column: 'code', name_column: 'x')).to be_empty
   end
+
+  describe '#rows' do
+    # Captured at the address the `sdg:ValueExpression` of a `DSD:ERR:0005` named:
+    # its values point at their columns by `Id`, a UUID, and not by `ShortName`.
+    subject(:rows) { described_class.new(body).rows('code', 'name-Value', 'deprecated', 'name-EN') }
+
+    let(:body) { Rails.root.join('spec/fixtures/common_services/liste_classification_el_projectathon.gc').read }
+
+    it 'finds each column through the identifier the column set gives it' do
+      expect(rows.first).to eq('code' => 'TC03', 'name-Value' => 'TC03 - Evidence request error flow due to Basic Registry error',
+        'deprecated' => 'false', 'name-EN' => nil)
+    end
+
+    it 'reads every row, in the order the list publishes them' do
+      expect(rows.pluck('code')).to eq(%w[TC03 TC06 TC09 TC01 TC10 TC02 TC04 TC08])
+    end
+  end
 end

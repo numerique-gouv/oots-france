@@ -24,6 +24,9 @@ class EvidenceRequestsController < ApplicationController
     gateway_refused: :bad_gateway,
     invalid_configuration: :internal_server_error,
     invalid_directory_entry: :bad_gateway,
+    # The directory waits on the user's answer to a question this contract does
+    # not hand the caller, so nothing in the request is the caller's to correct.
+    provider_classification_required: :bad_gateway,
     unsupported_specification: :bad_gateway,
   }.freeze
 
@@ -34,7 +37,9 @@ class EvidenceRequestsController < ApplicationController
   before_action :check_feature_flag
   before_action :check_beneficiary, only: :create
   before_action :check_conversation_id, only: :create
+  before_action :check_provider_classifications, only: :create
   before_action :check_specification, only: :create
+  before_action :check_outside_procedure, only: :create
 
   def create
     result = EvidenceRequest::Fetch.call(**fetch_arguments)
@@ -53,7 +58,8 @@ class EvidenceRequestsController < ApplicationController
   # A query string and not a form: the caller is a server-side integration.
   def query
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
-      :previsualisationRequise, :idConversation, :idExigence, :specification)
+      :previsualisationRequise, :idConversation, :idExigence, :idTypeJustificatif, :specification, :exigenceHorsDemarche,
+      classificationFournisseur: {})
   end
 
   # Upcased on the way in: both console filters upcase what they are asked, so
@@ -75,19 +81,38 @@ class EvidenceRequestsController < ApplicationController
       conversation_id: query[:idConversation],
       encrypted_beneficiary: query[:beneficiaire],
       procedure_code: query[:codeDemarche],
-      requirement_id: query[:idExigence],
+      **asked_evidence,
       country_code:,
+      provider_classification_answers:,
       requested_specification: EdmSpecification.find(query[:specification]),
       preview_possible: preview_possible?,
+      outside_procedure: outside_procedure?,
       audit_trail:,
     }
   end
+
+  # The requirement and the evidence type the caller may name, each the whole
+  # identifier the Evidence Broker publishes.
+  def asked_evidence = { requirement_id: query[:idExigence], evidence_type_id: query[:idTypeJustificatif] }
+
+  # The user's answers to the questions a `DSD:ERR:0005` asks, by the UUID of
+  # each, which only the screens of the demonstration set — chapter 3.1.4
+  # §4.4.3.3.
+  def provider_classification_answers = query[:classificationFournisseur].to_h
 
   def audit_trail = @audit_trail ||= AuditTrail.new
 
   # A bare `previsualisationRequise` with no value counts as true, which is how
   # a flag appears in a query string.
   def preview_possible? = query[:previsualisationRequise].in?(['true', ''])
+
+  # The requirement named in `idExigence` resolved by the second query of the
+  # Evidence Broker alone, whether or not the broker ties it to `codeDemarche` —
+  # chapter 3.2.4 §4.3 bases that query « on a requirement that is known to the
+  # Procedure Portal ». The screens of the demonstration set it, the way they
+  # set `specification`; a French procedure has no reason to. A flag, read like
+  # the one above.
+  def outside_procedure? = query[:exigenceHorsDemarche].in?(['true', ''])
 
   def check_feature_flag
     return if Settings.evidence_request_enabled?
@@ -112,6 +137,22 @@ class EvidenceRequestsController < ApplicationController
     refuse_as_unprocessable(t('evidence_requests.conversation_invalid'))
   end
 
+  # `R-EDM-REQ-C019` (FATAL) makes the identifier of a classification a UUID,
+  # and each answer is named by one: refused here, like the conversation above,
+  # rather than written into a slot the correspondent would refuse.
+  #
+  # Each answer is a value, and one that is not blank: `R-EDM-REQ-C023` (FATAL)
+  # refuses an empty `sdg:SupportedValue`.
+  def check_provider_classifications
+    asked = params[:classificationFournisseur]
+    return if asked.nil?
+    return if asked.is_a?(ActionController::Parameters) && provider_classification_answers.all? do |id, value|
+      id.match?(EvidenceProviderClassification::IDENTIFIER) && value.is_a?(String) && value.present?
+    end
+
+    refuse_as_unprocessable(t('evidence_requests.provider_classification_invalid'))
+  end
+
   # The line a caller may ask for, with the values chapter 3.1.4 §4.2.2 gives
   # the `specification` parameter of the DSD query, and only those France
   # speaks. Refused before anything is decrypted, like the conversation above.
@@ -120,6 +161,21 @@ class EvidenceRequestsController < ApplicationController
     return if supplied.nil? || EdmSpecification.find(supplied)
 
     refuse_as_unprocessable(t('evidence_requests.specification_invalid', spoken: EdmSpecification.identifiers.join(', ')))
+  end
+
+  # Asked outside its procedure, a requirement is all there is to start from,
+  # and the procedure is no longer vetted by the Evidence Broker's first query:
+  # a code `R-EDM-REQ-C003` (FATAL) refuses would otherwise travel as far as the
+  # `Procedure` slot. Both refused before anything is decrypted, like the two
+  # above.
+  def check_outside_procedure
+    return unless outside_procedure?
+
+    if query[:idExigence].blank?
+      refuse_as_unprocessable(t('evidence_requests.outside_procedure.requirement_required'))
+    elsif !ProcedureCode.admitted?(query[:codeDemarche])
+      refuse_as_unprocessable(t('evidence_requests.outside_procedure.procedure_invalid'))
+    end
   end
 
   def refuse_as_unprocessable(raison)

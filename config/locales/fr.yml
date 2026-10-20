@@ -48,6 +48,11 @@ fr:
         distribution_formats: Les formats de distribution
       requirement:
         id: L'identifiant
+      evidence_provider_classification:
+        id: L'identifiant
+        scheme_id: Le schéma d'identifiant
+        type: Le type
+        value_expression: L'expression de valeur
       data_service:
         id: L'identifiant
         evidence_type_classification: Le type de justificatif
@@ -124,6 +129,15 @@ fr:
               format: doit être une URL du dépôt sémantique terminée par un UUID
           # Invariable, faute de savoir laquelle des formulations est en cause.
           unlabelled_wording: une formulation ne nomme pas sa langue
+        evidence_provider_classification:
+          attributes:
+            id:
+              format: doit être un UUID
+            type:
+              inclusion: "n'est ni « codelist », ni « string », ni « boolean »"
+            value_expression:
+              format: doit être une adresse https
+          unlabelled_wording: une question ne nomme pas sa langue
         data_service:
           attributes:
             id:
@@ -135,6 +149,7 @@ fr:
             distribution_conforms_to:
               format: doit être une URL du dépôt sémantique sous « datamodels/ »
           unlabelled_wording: une formulation ne nomme pas sa langue
+          invalid_classification: "une classification de fournisseur est invalide : %{errors}"
         resolution_filter:
           attributes:
             country_code:
@@ -241,7 +256,8 @@ fr:
     # l'exploitant. La miette de la version, elle, est son numéro, qui ne se
     # traduit pas.
     demo_breadcrumbs:
-      demo: Démo
+      demo: Demo
+      procedure: "Procedure %{code}"
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     # Le bouton qui déplie le corps RegRep d'un événement : il en annonce la
@@ -263,16 +279,18 @@ fr:
       # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
       # de la carte, lui, est l'intitulé de l'exigence et rien d'autre : aucune
       # phrase ne l'entoure, donc aucune clé.
-      # Le pays est dans la boîte où les pages d'annuaires en mettent un, d'où le
-      # balisage dans la traduction.
-      satisfied_by_html: Satisfied by the following documents in %{country}
-      # Ce que dit la même ligne quand aucun fournisseur ne sert l'exigence : la
-      # carte reste, l'exigence reste, et c'est la satisfaction qui manque.
+      # Ce que dit la carte, au-dessus de la règle, quand aucun fournisseur ne
+      # sert l'exigence : la carte reste, l'exigence reste, et c'est la
+      # satisfaction qui manque. Le pays est dans la boîte où les pages
+      # d'annuaires en mettent un, d'où le balisage dans la traduction.
       unsatisfiable_html: Evidence impossible to satisfy by %{country}
       from_html: "%{evidence_type} from %{provider}"
       # Ce que la carte dit à la place du bouton quand le point d'accès du
       # fournisseur n'annonce pas la version du parcours.
       unsupported_version: This provider does not support OOTS %{version}
+      # Le nom de la croix d'une carte ajoutée, que son icône ne dit qu'à l'œil
+      # (critère 11.9 du RGAA).
+      remove: Remove this document
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
@@ -281,8 +299,8 @@ fr:
       # interdisant de ne le porter que par la couleur. Il est dans le gabarit
       # et non dans la traduction : c'est un pictogramme, pas un mot. La graisse,
       # elle, est dans la traduction : c'est la phrase qui la porte. Le pays est
-      # ici son seul nom — la ligne au-dessus le montre déjà en boîte, avec son
-      # drapeau et son code.
+      # ici son seul nom — la liste des pays, ou la boîte d'une carte qui suit
+      # une demande, le montre déjà au-dessus, avec son drapeau et son code.
       no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
       # Et ce qu'elle dit quand l'annuaire a refusé de répondre : personne n'a
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
@@ -299,6 +317,26 @@ fr:
       # « choose it again » ; le lien recharge la page des justificatifs.
       unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
       reload: reload the page
+      # Le choix de la combinaison de types de justificatif, quand le pays en
+      # publie plusieurs pour l'exigence — le chapitre 3.2.2 §2.3. Les options
+      # sont nommées d'après les intitulés que l'Evidence Broker publie : aucune clé
+      # pour elles, hors la glu de `presenters.demo_card_wording`. L'invite ne
+      # s'offre que tant qu'aucune combinaison n'est choisie : rien n'est choisi
+      # à la place de l'usager.
+      combination_label: Document to request
+      combination_prompt: Select a document
+      # Construite comme celle du pays, pour le même cas ; le lien est le même.
+      combination_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      # Les questions que le Data Service Directory pose avant de pouvoir
+      # désigner le fournisseur (`DSD:ERR:0005`, chapitre 3.1.4 §4.4.3.3). Leur
+      # libellé et les valeurs d'une liste sont les mots de l'annuaire : aucune
+      # clé pour eux. Les réponses partent ensemble dès que la dernière est
+      # donnée, comme le choix d'un pays : aucun bouton. Le lien de la phrase d'échec est celui du pays.
+      questions:
+        prompt: Select a value
+        "yes": "Yes"
+        "no": "No"
+        unreachable_html: "The answer could not be sent: this page could not reach the service. Answer again, or %{reload}."
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
@@ -312,9 +350,13 @@ fr:
       # chapitre 4.4 §4.1 impose — « a new unique request MUST be issued ».
       submit: Request the document
       retry: Retry to request
+      # Le bouton unique d'une combinaison de plusieurs types qu'aucune demande
+      # n'a encore touchée : il les demande tous, une requête chacun.
+      submit_all: Request the documents
       # L'attente, annoncée et pas seulement montrée : qui ne voit pas le bouton
       # changer n'apprendrait rien autrement.
       loading: Requesting the document…
+      loading_all: Requesting the documents…
       delivered: Document retrieved successfully
       open: Open the document
       # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If the
@@ -357,6 +399,23 @@ fr:
       # utiliser le justificatif.
       declined_title: You chose not to use this document
       declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      # La réponse différée du chapitre 4.4 §3.3.2 — « the Online Procedure
+      # Portal has an obligation to inform the user accordingly » —, qui n'est
+      # le refus de personne. La date est donnée « optionally » par le
+      # fournisseur : sans elle, le texte le dit. Redemander est une requête
+      # neuve (chapitre 4.5.2 : « At the time of availability a new Evidence
+      # Request must be made »), que seul l'usager décide.
+      deferred_title: Document announced for later
+      deferred_body: >-
+        The administration has not sent the document: it announced it for %{date}. Ask again from that
+        date to start a new request.
+      deferred_undated_body: >-
+        The administration has not sent the document: it announced it for later, without saying when.
+        Ask again later to start a new request.
+      # Un format `strftime`, dont `%B` écrit le mois en anglais, dans le
+      # décalage horaire que le contrat publie — celui du déploiement —, sans
+      # autre conversion.
+      deferred_date: "%-d %B %Y at %H:%M (UTC%:z)"
       # Un `PUT`, que le chapitre 4.9 v1.2.3 §5 permet au correspondant et
       # qu'aucun formulaire HTML n'envoie.
       unpresentable_title: The preview link cannot be presented
@@ -397,6 +456,9 @@ fr:
         # Le deux-points est dans la clé : l'intitulé et le badge sont sur une
         # ligne, et la ponctuation qui les joint appartient à la phrase.
         level_of_assurance: "Level of assurance:"
+      # L'identifiant seul se voit ; son intitulé n'est dit qu'aux lecteurs
+      # d'écran, pour qui une valeur nue ne dirait pas ce qu'elle est.
+      eidas_identifier_html: '<span class="fr-sr-only">eIDAS identifier:</span> %{value}'
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a
@@ -508,6 +570,9 @@ fr:
     domibus_parties_client:
       refused: "La passerelle refuse le Plugin User : %{error}"
       unreachable: "La passerelle n'a pas rendu la liste de ses parties : %{error}"
+    domibus_truststore_client:
+      refused: "La passerelle refuse le Plugin User : %{error}"
+      unreachable: "La passerelle n'a pas rendu son truststore : %{error}"
     common_services_instance:
       dns_failure: "Résolution DNS impossible pour « %{name} » : %{error}."
     common_services_query:
@@ -515,6 +580,12 @@ fr:
       not_cached: "Réponse d'annuaire non mise en cache (%{url}) : %{error}"
     code_list:
       nothing_read: "Liste de codes lue sans y rien trouver (%{list}) : structure inattendue ?"
+    # La liste qu'adresse la `sdg:ValueExpression` d'une question du Data
+    # Service Directory : sans elle, la question se pose dans un champ texte.
+    classification_values:
+      insecure: l'adresse n'est pas en https
+      empty: aucune valeur active n'y est lisible
+      unreadable: "Liste de valeurs d'une classification de fournisseur illisible (%{address}) : %{reason}"
     common_services_signature:
       invalid: Signature invalide sur la réponse de l'annuaire.
       digest_mismatch: L'empreinte annoncée ne couvre pas la réponse de l'annuaire.
@@ -538,6 +609,9 @@ fr:
       # non-réponse pour l'un comme pour l'autre.
       contract_answer:
         unreadable: "Réponse illisible de %{path} (%{status}) : %{error}"
+        # Une date illisible, que le contrat n'écrit jamais : la démarche la dit
+        # à l'écran comme une annonce sans date, et le signale ici.
+        unreadable_date: "Date annoncée illisible pour l'échange %{exchange_id} (%{date}) : %{error}"
       exchange_state_client:
         unreachable: "Le contrat n'a pas répondu : %{error}"
       preview_confirmation_client:
@@ -616,6 +690,22 @@ fr:
         # causes, et la trace de celle-ci resterait sinon introuvable.
         countries:
           unreachable: "Annuaires injoignables au choix d'un pays de la démarche de démonstration : %{error}"
+        evidence_type_lists:
+          unreachable: "Annuaires injoignables au choix d'une combinaison de la démarche de démonstration : %{error}"
+        provider_classifications:
+          unreachable: "Annuaires injoignables à la réponse aux questions du Data Service Directory de la démarche de démonstration : %{error}"
+        # Écrit dans le log : l'écran du choix de la démarche perd les pieds
+        # des démarches que la France déclare, et rien d'autre.
+        procedures:
+          undeclared: "Démarches déclarées par la France illisibles pour l'écran du choix de la démarche : %{error}"
+        # Écrit dans le log par la page des justificatifs et par l'ajout d'une
+        # carte : l'une perd le choix d'une carte à ajouter, l'autre n'ajoute
+        # rien, quand le catalogue de l'Evidence Broker ne répond pas.
+        catalogue_unreachable: "Catalogue de l'Evidence Broker illisible pour la démarche de démonstration : %{error}"
+        # Écrit dans le log : une carte demandée que le catalogue ne porte plus
+        # n'est pas ajoutée, et la page revient telle quelle.
+        cards:
+          uncatalogued: "Exigence %{requirement} absente du catalogue de l'Evidence Broker : aucune carte ajoutée"
         # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
         # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
@@ -640,12 +730,13 @@ fr:
     reads_demo_request:
       unanswered: "État de la demande de la démarche de démonstration illisible : %{error}"
       unreadable: "Le contrat n'a pas dit l'état de l'échange %{exchange} de la démarche de démonstration (%{status}) : %{error}"
-    # Une identification réussie dont le départ n'a retenu aucune version : aucun
-    # parcours ne s'ouvre, et l'exploitant repart de l'écran du choix.
+    # Une identification réussie dont le départ n'a retenu aucune version ou
+    # aucune démarche : aucun parcours ne s'ouvre, et l'exploitant repart de
+    # l'écran du choix.
     france_connect:
-      lineless_departure: >-
-        Le départ vers FranceConnect+ n'a retenu aucune version de la démarche : choisir une version,
-        puis s'identifier de nouveau.
+      incomplete_departure: >-
+        Le départ vers FranceConnect+ n'a retenu aucune version ou aucune démarche : choisir une version
+        et une démarche, puis s'identifier de nouveau.
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -656,7 +747,12 @@ fr:
       common_services:
         no_evidence_type: Aucun type de justificatif pour la démarche « %{procedure} » dans le pays « %{country} »
         no_provider: Aucun fournisseur pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
+        provider_classification_required: Le Data Service Directory attend une précision de l'usager pour désigner le fournisseur du type de justificatif « %{evidence_type} » dans le pays « %{country} »
         unknown_procedure: Code de démarche « %{procedure} » introuvable
+        # Les deux refus d'une exigence demandée sans sa démarche : l'Evidence
+        # Broker ne la connaît pas, ou ne publie rien pour elle dans ce pays.
+        unknown_requirement: Exigence « %{requirement} » inconnue de l'Evidence Broker
+        no_evidence_for_requirement: Aucun type de justificatif pour l'exigence « %{requirement} » dans le pays « %{country} »
       evidence_requesters:
         unknown: Le requêteur avec comme identifiant « %{id} » est inexistant.
   jobs:
@@ -1321,7 +1417,7 @@ fr:
       untyped_object: sans type
       absent_value: absent
       absent_date: absente
-    requirements_response:
+    requirement_reading:
       requirement_without_id: L'annuaire a rendu une exigence sans identifiant.
     error_response:
       no_exception: Pas de rs:Exception dans la réponse d'erreur reçue.
@@ -1476,6 +1572,18 @@ fr:
         (%{count} objet(s) dans la réponse).
   # Ce qu'un écran dit d'un objet, quand l'objet ne peut pas le dire lui-même.
   presenters:
+    # L'intitulé d'une démarche que rien ne nomme, en anglais comme tout
+    # l'espace de démonstration : `00`, qu'aucune liste ne porte, ou une
+    # démarche dont ni l'annuaire ni la liste n'ont répondu.
+    demo_procedure_wording:
+      untitled: No label
+    # Le nom d'une combinaison de plusieurs types que l'Evidence Broker ne
+    # nomme pas : les intitulés de ses types, joints. En anglais comme tout
+    # l'espace de démonstration ; la glu est ici, les intitulés étant les mots
+    # de l'annuaire.
+    demo_card_wording:
+      and: "%{first} and %{last}"
+      separator: ", "
     country_wording:
       by: par %{country}
       # Chaque morceau porte son espace ou sa virgule d'attache : la phrase
@@ -1562,7 +1670,15 @@ fr:
     unknown: Cette demande est inconnue.
     beneficiary_required: Le bénéficiaire doit être renseigné
     conversation_invalid: L'identifiant de conversation doit être un UUID
+    provider_classification_invalid: Chaque classificationFournisseur doit être nommée par l'UUID de sa classification et porter une valeur
     specification_invalid: "La version demandée doit être %{spoken}"
+    # Une exigence demandée hors de sa démarche (`exigenceHorsDemarche`) : il
+    # n'y a rien d'où partir sans elle, et le code de démarche n'est plus
+    # vérifié par l'Evidence Broker — R-EDM-REQ-C003 le borne à la liste
+    # `Procedures` et à `00`.
+    outside_procedure:
+      requirement_required: Une exigence demandée hors de sa démarche doit être nommée en idExigence
+      procedure_invalid: Le code de démarche doit être un code de la liste Procedures, ou 00
   # La confirmation d'une prévisualisation qu'un correspondant demande, second
   # appel de l'interface requêteur.
   preview_confirmations:
@@ -1570,6 +1686,7 @@ fr:
       beneficiary_required: Le bénéficiaire doit être renseigné
       not_awaited: Cet échange n'attend pas la confirmation d'une prévisualisation.
       resume_location_invalid: L'adresse de retour doit être une adresse absolue en https:// ou http://
+      provider_classifications_required: Chaque classificationFournisseur de la première requête doit être redonnée
   # Ce que l'adresse de retour répond quand elle ne ramène personne : du texte
   # brut, aucune page n'étant rendue à l'usager.
   returns:
@@ -1614,6 +1731,9 @@ fr:
   interactors:
     # Écrits dans le log, sauf `no_identifier`, que la page affiche comme ce
     # que la passerelle a répondu.
+    directory_lookup:
+      fetch_providers:
+        malformed_question: "Question du Data Service Directory non conforme, pas posée (%{id}) : %{errors}"
     connectivity_testing:
       submit_test:
         no_identifier: La passerelle a accepté le message de test sans lui donner d'identifiant.
@@ -1659,6 +1779,10 @@ fr:
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
       demo_unreachable: Le service de requête n'a pas pu être joint
+      # La carte d'une exigence que le pays satisfait de plusieurs types, tant
+      # que l'usager n'en a choisi aucun : rien n'est refusé, rien n'est encore
+      # demandé au Data Service Directory.
+      evidence_type_unchosen: Aucun type de justificatif choisi parmi ceux que le pays publie
       gateway_refused: La passerelle a refusé le message
       identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
@@ -1667,7 +1791,9 @@ fr:
       no_evidence_type: Aucun type de justificatif dans ce pays
       no_provider: Aucun fournisseur dans ce pays
       preview_not_awaited: Aucune prévisualisation n'attend de confirmation
+      provider_classification_required: L'annuaire attend une précision de l'usager pour désigner le fournisseur
       unknown_country: Pays inconnu des annuaires
+      unknown_evidence_type: Type de justificatif non publié pour l'exigence
       unknown_procedure: Démarche inconnue des annuaires
       unknown_requester: Requêteur inconnu
       unknown_requirement: Exigence inconnue de la démarche
@@ -1762,6 +1888,8 @@ fr:
           %{reason} (%{rule}) : aucune réponse ne peut nommer ce requêteur sans enfreindre à son tour
           les règles de la réponse d'erreur.
         unnamed_rule: sans règle nommée
+      reject_unidentified_request:
+        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
     evidence_request:
       confirm_exchange:
         not_awaited: "L'échange n'attend plus la confirmation d'une prévisualisation : elle a déjà été donnée, ou le délai T2 est écoulé."
@@ -1790,6 +1918,8 @@ fr:
       resolve_evidence_type:
         unknown_requirement: >-
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
+        unknown_evidence_type: >-
+          Le type de justificatif « %{evidence_type} » n'est pas publié pour l'exigence « %{requirement} » dans le pays « %{country} »
       # Ce que la France ne fait pas d'une notification de la passerelle sur une
       # requête qui n'a pas atteint le correspondant, consigné au journal
       # applicatif avec l'identifiant que la passerelle donne au message.
@@ -1804,8 +1934,6 @@ fr:
         # description est le seul endroit qui dit à qui la panne appartient.
         invalid_configuration: "La configuration de cette installation ne permet pas de construire la requête : %{error}"
     incoming_message:
-      open_exchange:
-        unidentified: L'entête ne porte pas les deux identifiants de corrélation exigés.
       settle_exchange:
         unknown: "Échange inconnu : %{id}"
         already_settled: "Réponse ignorée, l'échange %{id} est déjà réglé"
@@ -2081,20 +2209,37 @@ fr:
     # La seule partie de la console qui ne relise rien : `docs/espace_administration.md`
     # dit quel rôle l'exploitant y tient, et pourquoi elle est là.
     demo:
-      # Le premier écran de la démonstration, où l'exploitant choisit la ligne
-      # des TDD que le parcours joue. Il est de la console et parle en
-      # français : aucun usager d'un portail ne choisit une version des TDD.
+      # Les deux premiers écrans de la démonstration, où l'exploitant choisit la
+      # ligne des TDD puis la démarche que le parcours joue. En anglais, comme
+      # tout l'espace de démonstration.
       versions:
         index:
-          title: Choisir la version OOTS
-          lead: >-
-            La démarche de démonstration demande chaque justificatif du parcours dans la version
-            choisie ici, jusqu'à la prochaine identification.
+          title: Choose the OOTS version
+          lead: Every document of the journey is requested in the version chosen here, until the next sign-in.
           card: OOTS %{number}
           # Une phrase par ligne, sous la clé que `EdmSpecification#slug` donne.
           descriptions:
-            v2_0: La version la plus récente mais encore peu implémentée
-            v1_2: La version supportée par la majorité des états membres
+            v2_0: The most recent version, still implemented by few member states
+            v1_2: The version supported by most member states
+      procedures:
+        index:
+          title: Choose the procedure
+          lead: >-
+            The procedures France declares with requirements in the Evidence Broker come first. But you can
+            pick any procedure and request any document for demonstration purposes.
+          search: Search a code or a title
+          empty: No procedure matches this search.
+          # Le décompte que le champ de recherche réécrit.
+          count:
+            zero: No procedure
+            one: 1 procedure
+            other: "%{count} procedures"
+          # Le pied d'une démarche que la France déclare : le pays, drapeau
+          # compris, puis le nombre d'exigences qu'elle y publie, chacune
+          # demandant un document.
+          declared_by_html:
+            one: "%{country} requires %{count} document"
+            other: "%{country} requires %{count} documents"
       home:
         show:
           title: Demonstration procedure
@@ -2153,6 +2298,14 @@ fr:
           # exigence — regarde l'annuaire, et son code reste à la console.
           nothing_listed: The European directories listed no evidence for this procedure.
           unreachable: The European directories could not be reached
+          # Ce qui offre d'ajouter, sous les cartes de la démarche, la carte de
+          # n'importe quelle exigence du catalogue de l'Evidence Broker.
+          add:
+            heading: Add another evidence
+            label: Document to add
+            # La première option, vide, tant que rien n'est choisi.
+            placeholder: Select a document
+            submit: Add
       evidences:
         show:
           # Le nom proposé par le navigateur à l'enregistrement.
@@ -2164,13 +2317,20 @@ fr:
           lede: >-
             Chaque partie du PMode chargé dans la passerelle, et l'issue du dernier test de connectivité
             que la France a lancé d'ici vers elle : un message AS4 de test, parti d'AP_FR_01, que le point
-            d'accès acquitte si son PMode connaît celui de la France et que son magasin de confiance porte
-            son certificat.
+            d'accès acquitte si son PMode connaît celui de la France et que son truststore porte son
+            certificat.
           test_all: Tester tous les points d'accès
           test: Tester
           test_title: Tester %{party}
           undeclared: absent du PMode chargé
           empty: La passerelle ne déclare aucune partie.
+          truststore_error:
+            title: >-
+              Le truststore de la passerelle n'a pas pu être lu : les parties déclarées sous un schéma EAS
+              s'affichent sans pays
+            refused: >-
+              La passerelle a refusé le Plugin User de la France : c'est la configuration de la France
+              qui est à corriger.
         outcome:
           requested_at: Demandé le %{at}
         gateway_error:
@@ -2345,6 +2505,12 @@ fr:
           zero: Aucun pays
           one: Un pays
           other: "%{count} pays"
+        # Un fragment traduit ne se concatène pas : la phrase entière, accord
+        # compris, tient dans la clé.
+        declared_procedures:
+          zero: aucune démarche déclarée
+          one: une démarche déclarée
+          other: "%{count} démarches déclarées"
         index:
           title: Pays
           lead: >-
@@ -2361,16 +2527,14 @@ fr:
               exigence — la sienne ou celle d'un autre —, et cela se lit sous l'exigence.
             requester_html: En <strong>requêteur</strong> — %{procedures}
             provider_html: En <strong>fournisseur</strong>
-          # Un fragment traduit ne se concatène pas : la phrase entière, accord
-          # compris, tient dans la clé.
-          declared_procedures:
-            zero: aucune démarche déclarée
-            one: une démarche déclarée
-            other: "%{count} démarches déclarées"
           search: Rechercher un pays, son code
           see_procedures: Voir ses démarches
           see_evidence: Voir ses justificatifs
           empty: Aucun pays ne correspond à cette recherche.
+        show:
+          requester: En requêteur
+          provider: En fournisseur
+          provider_description: Les exigences pour lesquelles il publie un justificatif
         procedures:
           title: Démarches de %{country}
           lead_html: >-

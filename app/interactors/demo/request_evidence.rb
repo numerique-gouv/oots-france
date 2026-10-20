@@ -9,9 +9,12 @@ module Demo
   # slot true on every request, so the condition always holds and the request is
   # issued here, on the click, rather than prepared ahead.
   #
-  # `T1` is fixed rather than asked: the demonstration plays one procedure. The
+  # The procedure is the journey's, chosen before the identification. The
   # member state is the one the user picked on the card — step 16 of chapter 1
-  # §10.1 — and travels with the other names it showed.
+  # §10.1 — and travels with the other names it showed. The requirement is asked
+  # for whether or not the Evidence Broker ties it to the procedure, whichever
+  # card it comes from: a card says what it resolved, and the request goes to
+  # what it showed.
   #
   # The conversation is not minted here: the journey already carries one, named
   # when the authentication opened it. Chapter 4.7 §2.5.1 allows exactly that —
@@ -26,17 +29,15 @@ module Demo
   # sending would put themselves between the two. What is filed is what was
   # shown.
   class RequestEvidence < ApplicationInteractor
-    PROCEDURE_CODE = ProcedureCode::STUDY_FINANCING
-
     # What the documents page showed, each name with the language the
     # directory published it in: the zone says them again, and it is
     # written in English whatever the directories answered. The requirement
     # joins them because a click names the one requirement its own card is
     # about, and a row naming the document without the obligation it was asked
     # under would not say which click it answers.
-    NAMED = %i[evidence_type_name evidence_type_language provider_name provider_language
+    NAMED = %i[evidence_type_list_id evidence_type_id evidence_type_name evidence_type_language provider_name provider_language
                procedure_name procedure_language
-               requirement_id requirement_name requirement_language country_code].freeze
+               requirement_id requirement_name requirement_language country_code provider_classifications].freeze
 
     # The three refusals that never open an exchange, told apart by status
     # because that is all a service provider's server has to go on. Anything
@@ -74,12 +75,21 @@ module Demo
     def ask_the_contract
       client.fetch(
         requester_id: Settings.demo_requester_id,
-        procedure_code: PROCEDURE_CODE,
+        procedure_code: context.journey.procedure_code,
         country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),
-        requirement_id: context.requirement_id,
+        outside_procedure: true,
+        **asked_evidence,
         **journey_arguments,
       )
+    end
+
+    # What the card named, and the answers it was resolved on.
+    def asked_evidence
+      asked = context
+
+      { requirement_id: asked.requirement_id, evidence_type_id: asked.evidence_type_id,
+        provider_classifications: asked.provider_classifications }
     end
 
     # The conversation and the line are the journey's, named when the
@@ -108,13 +118,17 @@ module Demo
     # the specific procedure end-user that issued the query », and the journey is
     # who that is.
     #
-    # The line goes with them: it is the journey's, and what the click asked for.
+    # The line and the procedure go with them: they are the journey's, and what
+    # the click asked for.
     def whose_click
-      { journey_id: context.journey.id, requirement_uuid: context.requirement_uuid,
-        specification: context.journey.specification }
+      journey = context.journey
+
+      { journey_id: journey.id, requirement_uuid: context.requirement_uuid,
+        specification: journey.specification, procedure_code: journey.procedure_code }
     end
 
-    def what_was_named = NAMED.index_with { |named| context.public_send(named) }
+    # What a card did not name is left to the column's own default.
+    def what_was_named = NAMED.index_with { |named| context.public_send(named) }.compact
 
     # The message the contract returned travels with the refusal: it is the only
     # thing that says which of the refusals of `STATUS_FAILURES` this was, and

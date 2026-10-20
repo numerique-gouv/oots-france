@@ -63,3 +63,11 @@
   font-size: 0.875rem;
   line-height: 1.5rem;
 }
+
+/*
+ * The eIDAS identifier, on the line of the level and pushed to its far end: the
+ * value the request carries, kept apart from the identity the user reads.
+ */
+.identity-card__eidas {
+  margin-inline-start: auto;
+}

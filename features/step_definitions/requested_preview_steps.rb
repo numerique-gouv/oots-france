@@ -54,6 +54,7 @@ Alors('le journal des échanges contient la seconde requête et le retour de l\'
   sent = journal.where(event_type: 'request_sent').order(:occurred_at)
 
   expect(sent.count).to eq(2)
+  expect(sent.pluck(:evidence_type_id).uniq).to eq([REQUESTED_EVIDENCE_TYPE])
   expect(sent.last.preview_location).to eq(@confirmation.fetch('adressePrevisualisation'))
   expect(journal.find_by!(event_type: 'return_to_procedure').preview_location).to start_with("#{oots_france_url}/retour/")
 end

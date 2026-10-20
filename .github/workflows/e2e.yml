@@ -159,6 +159,26 @@ jobs:
       - name: Joue le test e2e
         run: make e2e
 
+      - name: Vérifie que la passerelle a remis chaque notification
+        # A notification the plugin holds for failed is retried even though the
+        # application handled it, and the scenario passes all the same: only the
+        # gateway's own log and table show it. `SEND_ATTEMPTS` is incremented on
+        # failure alone (`WSPluginBackendReliabilityService`, Domibus
+        # `5.2-JEE10`), whereas `WAITING_FOR_RETRY` is also the status of a
+        # notification merely queued — so the check is on attempts, not on
+        # every row being `SENT`. See docs/domibus_context.md.
+        run: |
+          echecs=$(docker compose exec -T domibus sh -c 'test -f logs/domibus.log || exit 2; grep -c -e "Error dispatching message" -e "Error occurred when sending backend message" logs/domibus.log || true')
+          echo "Lignes d'échec de notification dans domibus.log : $echecs"
+          requete() {
+            docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_PASSWORD" mysql -N -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "$1"' sh "$1"
+          }
+          tentatives=$(requete 'select count(*) from WS_PLUGIN_TB_BACKEND_MSG_LOG where SEND_ATTEMPTS > 0')
+          remises=$(requete "select count(*) from WS_PLUGIN_TB_BACKEND_MSG_LOG where BACKEND_MESSAGE_STATUS = 'SENT'")
+          echo "Notifications ayant échoué au moins une fois : $tentatives ; remises : $remises"
+          requete 'select BACKEND_MESSAGE_TYPE, BACKEND_MESSAGE_STATUS, SEND_ATTEMPTS, count(*) from WS_PLUGIN_TB_BACKEND_MSG_LOG group by 1, 2, 3'
+          [ "$echecs" -eq 0 ] && [ "$tentatives" -eq 0 ] && [ "$remises" -gt 0 ]
+
       - name: Diagnostic Domibus en cas d'échec
         if: failure()
         run: scripts/ci/diagnose_domibus.sh

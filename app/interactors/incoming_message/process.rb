@@ -53,8 +53,10 @@ module IncomingMessage
 
     # The handler is resolved before the message is journalled, and not after:
     # the two are different events, and it is the resolution that tells them
-    # apart. The exchange comes before both, so that the arrival is journalled
-    # on the one it belongs to.
+    # apart. The exchange comes before the arrival — correlated, or opened for a
+    # request — so that the arrival is journalled under the exchange it belongs
+    # to: a line is never rewritten, and on the 1.2 line the identifier France
+    # mints for a request exists only once that exchange is open.
     #
     # Apart from `call`, which is nothing but the five failures below: what each
     # of them settles is what this method got as far as.
@@ -62,9 +64,21 @@ module IncomingMessage
       context.message = fetched
       chosen = handler
       context.exchange = correlated
+      open_exchange
       record
 
       chosen.call!(context)
+    end
+
+    # The message is erased by now, so an exchange that cannot be opened — two
+    # deliveries of one request racing on the unique index, a database fault —
+    # must not take the arrival line with it: journalled under the exchange
+    # correlated, or none, before the failure goes up.
+    def open_exchange
+      OpenExchange.call!(context)
+    rescue ActiveRecord::ActiveRecordError
+      record
+      raise
     end
 
     # Journalled here rather than in `give_up`, which catches the same exception
@@ -89,15 +103,14 @@ module IncomingMessage
     def record
       audit_trail.message_received(message: context.message, message_id: context.message_id,
         exchange: context.exchange)
-      OpenExchange.call!(context)
     end
 
     # Resolved once, here, and read from the context by everything downstream:
-    # `OpenExchange` asks whether this request has opened a row already,
-    # `SettleExchange` and `EvidenceProvision::RejectMalformedIdentifiers` act on
-    # the one they found, and `EvidenceProvision::JournalAnswer` settles it. Four
-    # readings where there was one lookup written out four times — and, on the
-    # 1.2 line, four chances to disagree about a correlation the `ExchangeId` no
+    # `OpenExchange` asks whether this request has opened a row already, the
+    # journal writes its lines under it, `SettleExchange` and the refusals of
+    # `EvidenceProvision` act on the one found, and
+    # `EvidenceProvision::JournalAnswer` settles it. One lookup, so that on the
+    # 1.2 line they cannot disagree about a correlation the `ExchangeId` no
     # longer settles on its own.
     #
     # The conversation is offered only to a message that settles an exchange:

@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe Demo::PreviewConfirmationClient do
   subject(:answer) do
     described_class.new.confirm(exchange_id:, encrypted_beneficiary: 'un-jeton-chiffré',
-      resume_location: 'http://localhost:3000/admin/demo/v2.0/documents')
+      resume_location: 'http://localhost:3000/admin/demo/v2.0/T1/documents')
   end
 
   let(:exchange_id) { 'aaaaaaaa-0000-4000-8000-000000000001' }
@@ -19,8 +19,23 @@ RSpec.describe Demo::PreviewConfirmationClient do
     answer
 
     expect(WebMock).to have_requested(:post, address).with(body: {
-      'beneficiaire' => 'un-jeton-chiffré', 'adresseRetour' => 'http://localhost:3000/admin/demo/v2.0/documents',
+      'beneficiaire' => 'un-jeton-chiffré', 'adresseRetour' => 'http://localhost:3000/admin/demo/v2.0/T1/documents',
     })
+  end
+
+  # The exchange kept the questions without their values: the answers are given
+  # again, nested as the contract reads them.
+  it 'gives the answers again, where the first request carried some' do
+    stub_request(:post, address).to_return(status: 202, body: {}.to_json)
+
+    described_class.new.confirm(exchange_id:, encrypted_beneficiary: 'un-jeton-chiffré',
+      resume_location: 'http://localhost:3000/admin/demo/v2.0/T1/documents',
+      provider_classifications: { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' })
+
+    expect(WebMock).to(have_requested(:post, address).with do |request|
+      Rack::Utils.parse_nested_query(request.body)['classificationFournisseur'] ==
+        { '1254f10f-406e-4f28-b1ba-d107b93fa264' => 'TC03' }
+    end)
   end
 
   it 'reads the link the confirmation answers' do

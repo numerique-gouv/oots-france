@@ -127,6 +127,8 @@ module Oots
     def write_requests
       write('requete', *request)
       write('requetePersonneMorale', *request(subject: legal_person))
+      write('requeteClassification', *request(provider_classifications: [code_list_classification]))
+      write('requeteTroisClassifications', *request(provider_classifications: three_classifications))
     end
 
     # One specimen per kind of subject, for the reason the requests have one:
@@ -147,11 +149,11 @@ module Oots
 
     # A preview location makes it the second request of chapter 4.9 §2 step 12,
     # which only a request that offered the preview can be.
-    def request(subject: beneficiary, preview_location: nil, return_location: nil)
+    def request(subject: beneficiary, preview_location: nil, return_location: nil, provider_classifications: [])
       body = EvidenceRequestBuilder.new(
         requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
-        associated_documents: [AssociatedDocument::TRANSLATION],
+        associated_documents: [AssociatedDocument::TRANSLATION], provider_classifications:,
         preview_possible: preview_location.present?, preview_location:, return_location:,
         specification:, clock:, uuid:,
       )
@@ -362,6 +364,28 @@ module Oots
         descriptions: { 'EN' => 'Certificate of Birth' },
         distribution_formats: [EvidenceType::PDF],
       )
+    end
+
+    # The classification of the example chapter 4.5.1 §3.4 publishes, answered.
+    def code_list_classification
+      EvidenceProviderClassification.new(
+        id: '5ce148b9-5578-4049-aecf-af7bb55714b5',
+        scheme_id: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022', type: 'codelist',
+        value_expression: 'https://query.cs.oots.tech.ec.europa.eu/dsd/rest/codelists/DE/Lau2022/a591a6d4',
+        descriptions: { 'EN' => 'Select the city in which you were born.' }, supported_value: '11000000',
+      )
+    end
+
+    # The three types chapter 3.1.4 §4.4.3.3 has a requester support, each in
+    # the value element `R-EDM-REQ-C103` or `C104` holds it to.
+    def three_classifications
+      [
+        code_list_classification,
+        EvidenceProviderClassification.new(id: '0f6f7a3e-7c55-4c2b-8f8e-6a9a3b9a1c01', type: 'boolean',
+          descriptions: { 'EN' => 'Were you born abroad?' }, supported_value: 'true'),
+        EvidenceProviderClassification.new(id: '0f6f7a3e-7c55-4c2b-8f8e-6a9a3b9a1c02', type: 'string',
+          descriptions: { 'EN' => 'Your passport number' }, supported_value: 'AB123456'),
+      ]
     end
 
     def requirement

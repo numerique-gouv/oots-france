@@ -64,8 +64,12 @@ class CommonServicesResponseParser
 
     code = attribute(exception, 'code').presence
 
-    raise CommonServicesError.new(refusal(exception, code), code:)
+    raise CommonServicesError.new(refusal(exception, code), code:, classifications: requested_classifications(exception))
   end
+
+  # What a refusal asks of the user before the query can be answered, which only
+  # the Data Service Directory does.
+  def requested_classifications(_exception) = []
 
   # Both chapters make `message` mandatory (R-DSD-ERR-C020, R-EB-ERR-013) and
   # only the Evidence Broker makes `code` optional. The fallback is therefore

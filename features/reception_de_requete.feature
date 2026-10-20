@@ -30,6 +30,11 @@ Fonctionnalité: Recevoir la requête d'un autre État membre
     Alors la France sert la première requête
     Et la France refuse la seconde requête avec le code "EDM:ERR:0003", au motif du chapitre 4.4
 
+  Scénario: une requête d'un type que la France ne détient pas est refusée, quelle que soit la démarche
+    Quand le requêteur étranger envoie une requête sous la démarche "T1" pour un type que la France ne détient pas
+    Alors la France refuse la requête avec le code "EDM:ERR:0004"
+    Et la France n'envoie aucun justificatif
+
   Scénario: une requête en "oots-edm:v1.2" est servie dans sa propre version
     Quand le requêteur étranger envoie une requête en "oots-edm:v1.2"
     Alors la France sert le justificatif dans une réponse en "oots-edm:v1.2"

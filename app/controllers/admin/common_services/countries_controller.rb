@@ -10,6 +10,11 @@ module Admin
           .sort_by { |code, _| wording.named_or_code(code) }
       end
 
+      def show
+        @country = params[:code]
+        @procedures = catalogue.procedures_in(@country)
+      end
+
       # This country as a requester.
       def procedures
         @country = params[:country_code]

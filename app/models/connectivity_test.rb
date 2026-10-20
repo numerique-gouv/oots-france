@@ -62,6 +62,8 @@ class ConnectivityTest < ApplicationRecord
 
   def pending? = outcome == PENDING
 
+  def acknowledged? = outcome == ACKNOWLEDGED
+
   def recipient = EbmsIdentity.new(id: party_identifier, type_id: party_identifier_type)
 
   def submitted!(message_id) = update!(message_id:)

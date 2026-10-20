@@ -25,13 +25,14 @@ end
 # portal is the one that knows two requests are the same person's. It says so by
 # naming the same conversation twice.
 #
-# On a procedure no evidence is served for, deliberately: what is asserted here
-# is what the two requests are given at once, and a scenario that also set a
-# delivery going would hand its PDF to the next scenario's requester, the two
-# listening on one port.
+# On the procedure France answers with a deferral, deliberately: what is
+# asserted here is what the two requests are given at once, and a scenario that
+# also set a delivery going would hand its PDF to the next scenario's requester,
+# the two listening on one port. France serves on the type asked for, so no
+# other procedure keeps a document from leaving.
 Quand('le portail demande deux justificatifs pour le même usager') do
-  @premier = etat_de(demande('T3', conversation: SESSION_USAGER))
-  @second = etat_de(demande('T3', conversation: SESSION_USAGER))
+  @premier = etat_de(demande(ProcedureCode::BIRTH_REGISTRATION, conversation: SESSION_USAGER))
+  @second = etat_de(demande(ProcedureCode::BIRTH_REGISTRATION, conversation: SESSION_USAGER))
 end
 
 Alors('les deux requêtes ont la même conversation et deux échanges distincts') do
@@ -110,6 +111,7 @@ Alors('le journal des échanges contient tout l\'échange, de l\'envoi de la req
 
   depart = journal.find_by!(event_type: 'request_sent')
   expect(depart.message_id).to be_present
+  expect(depart.evidence_type_id).to eq(REQUESTED_EVIDENCE_TYPE)
   expect(depart.evidence_subject_key).to eq('dupont|sophie|1965-11-25')
 
   # The two halves must name the request identically, or nothing correlates a
@@ -158,10 +160,12 @@ Alors('le journal des échanges contient la réponse différée du fournisseur')
   expect(journal.pluck(:evidence_digest).compact).to be_empty
 end
 
-Alors('le journal des échanges contient l\'erreur du fournisseur') do
-  patiente_jusqu_a('le journal porte le refus') { journal.exists?(event_type: 'error_received') }
+# Exactly one error, and that one: a refusal that came after a preview request
+# would also carry the `EDM:ERR:0002` that asked for it.
+Alors('le journal des échanges contient la réception de l\'erreur {string}, et d\'aucune autre') do |code|
+  patiente_jusqu_a("le journal porte la réception de #{code}") { journal.exists?(event_type: 'error_received') }
 
-  expect(journal.find_by!(event_type: 'error_received').edm_error_code).to eq('EDM:ERR:0004')
+  expect(journal.where(event_type: 'error_received').pluck(:edm_error_code)).to eq([code])
 end
 
 def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
@@ -171,12 +175,20 @@ def journal = ServerAuditEvent.where(exchange_id: @exchange_id)
 # requests one conversation.
 SESSION_USAGER = '5fe50e16-d6b8-4005-b5ec-0ab097f34448'.freeze
 
+# Chapter 3.2.3 makes the requirements of a procedure conjunctive and fixes no
+# order among them: naming this one makes the type asked for the same on every
+# run. docs/test_e2e.md records what the acceptance publishes under `00`.
+REQUESTED_REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffffffff-ffff-ffff-ffff-ffffffffffff'.freeze
+REQUESTED_EVIDENCE_TYPE =
+  'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
+
 def demande(procedure, conversation: nil, preview: false)
   token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
 
   Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
     codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
     idConversation: conversation, previsualisationRequise: (true if preview),
+    idExigence: (REQUESTED_REQUIREMENT if procedure == ProcedureCode::SYSTEM_CHECK),
   }.compact)
 end
 

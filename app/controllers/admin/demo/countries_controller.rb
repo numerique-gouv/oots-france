@@ -6,16 +6,19 @@ module Admin
     # step 25, so nothing is opened here.
     #
     # Answered with the card alone, resolved in that country, which
-    # `demo_country_controller.js` splices into the page around the list the
+    # `demo_card_controller.js` splices into the page around the list the
     # user is still on: a content update and not a change of context, which a
     # choice in a list must not cause by itself (RGAA 7.4). The card's row of
     # `Demo::Card` is written again, so that a reload renders the card where it
     # was left, and what the card now names is what its button will send.
+    #
+    # The combinations are the country's, so choosing another undoes the
+    # combination chosen: the card is resolved in its new country on none, and
+    # offers the choice again where that country publishes several. The
+    # answers to the questions of the Data Service Directory go with it.
     class CountriesController < Admin::BaseController
       include HoldsDemoNames
       include BuildsDemoCards
-
-      UUID = /\A\h{8}-\h{4}-\h{4}-\h{4}-\h{12}\z/
 
       # An outage carries no code, and what the card says of it is one sentence
       # for every cause, which the browser shows on any `5xx` that is not a
@@ -30,27 +33,24 @@ module Admin
       def update
         return head :unprocessable_content unless offered?
 
-        held = held_country(requirement_uuid)
-        wording = DemoResolutionWording.new(resolve(held || country))
+        wording = resolved_card
 
         return head :unprocessable_content unless wording.requirement_uuid == requirement_uuid
 
-        remember_demo_name(wording) unless held
-
-        response.set_header('Deferred-Fragment', '1')
-        render requirement_card(wording), layout: false
+        remember_demo_name(wording) unless held_card?(requirement_uuid)
+        answer_with_card(wording)
       end
 
       private
 
-      def resolve(country_code)
-        DirectoryLookup::Resolve.call(
-          evidence_broker: EvidenceBrokerClient.new, data_service_directory: DataServiceDirectoryClient.new,
-          procedure_code: ::Demo::RequestEvidence::PROCEDURE_CODE, country_code:, requirement_id: requirement_uuid,
+      def resolved_card
+        DemoCardWording.new(
+          resolve_card(requirement_uuid, held_country(requirement_uuid) || country,
+            held_evidence_type_list(requirement_uuid), held_provider_classifications(requirement_uuid)),
         )
       end
 
-      def offered? = offered_country?(country) && requirement_uuid.match?(UUID)
+      def offered? = offered_country?(country) && requirement_uuid.match?(SemanticRepositoryAsset::UUID)
 
       def report_unreachable_directories(error)
         Rails.logger.warn(I18n.t('controllers.admin.demo.countries.unreachable', error: error.message))
