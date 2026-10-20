@@ -29,8 +29,8 @@ class ProConnectClient
     url_for(Rails.application.routes.url_helpers.admin_pro_connect_retour_deconnexion_path)
   end
 
-  # The six parameters and no seventh: « tout paramètre supplémentaire dans
-  # l'URL génèrera une erreur Y000400 ».
+  # The required parameters and nothing else: « tout paramètre supplémentaire
+  # dans l'URL génèrera une erreur Y000400 ».
   def authorization_url(state:, nonce:)
     with_query(endpoint('authorization_endpoint'), {
       response_type: 'code', client_id:, redirect_uri:, scope: SCOPES, state:, nonce:,

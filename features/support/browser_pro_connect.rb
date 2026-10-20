@@ -5,9 +5,9 @@ require Rails.root.join('spec/support/pro_connect_stubs')
 # `BrowserFranceConnect` serves the one of FranceConnect+, and for its reason:
 # `OpenidDiscovery` rebuilds every endpoint on the issuer's origin, so the
 # issuer has to be an address of the server Capybara runs. Everything the
-# application asks for itself — the discovery document, the JWKS, `/token`,
-# `/userinfo` — is answered by `spec/support/pro_connect_stubs.rb`, and no call
-# leaves the machine.
+# application asks for itself is doubled — the discovery document, the JWKS and
+# `/userinfo` by `spec/support/pro_connect_stubs.rb`, `/token` by
+# `browser_pro_connect_stubs.rb` — and no call leaves the machine.
 class BrowserProConnect
   MOUNT = '/faux-proconnect'.freeze
   AUTHORIZE = "#{MOUNT}/authorize".freeze

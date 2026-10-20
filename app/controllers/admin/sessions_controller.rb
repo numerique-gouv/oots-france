@@ -1,6 +1,6 @@
 module Admin
-  # The one page of the space that answers without a session, and the button on
-  # it. It inherits the guard like every other page and then exempts the two
+  # The sign-in page, and the button on it: with the two ProConnect returns and
+  # the development entry, what answers without a session. It inherits the guard like every other page and then exempts the two
   # actions that need it, rather than sidestepping `Admin::BaseController`
   # altogether: an action added here later is guarded unless someone says
   # otherwise, which is the right way round.
@@ -9,11 +9,11 @@ module Admin
 
     skip_before_action :require_administrator, only: %i[new create]
 
-    # The address a refused agent identified with, read once: the alert that
-    # names it is said on this page, and only the first time.
     def new
       @pro_connect = Settings.proconnect_instance
       @domains = Settings.proconnect_agent_domains
+      # Read once: the alert that names a refused agent is said on this page,
+      # and only the first time.
       @refused_email = session.delete(:pro_connect_refused_email)
       @development_agent = Agent.demonstration.email if Rails.env.local?
     end

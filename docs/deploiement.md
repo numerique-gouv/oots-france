@@ -171,7 +171,7 @@ services:
 
 Il s'ouvre par ProConnect, et par lui seul : déclarer ce déploiement sur l'[espace partenaires](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service), avec ses deux adresses de retour et un algorithme asymétrique, puis renseigner les trois variables dans `.env.oots` et redémarrer `web` — [espace_administration.md](espace_administration.md#déclarer-proconnect) dit quoi déclarer. Tant qu'aucun n'est déclaré, la page de connexion le dit et n'offre aucun bouton ; le reste de l'application tourne.
 
-Tout agent admis lit alors les annuaires ; le journal et les jobs attendent qu'on **nomme le premier administrateur**, en console — le seed ne nomme personne en production :
+Tout agent admis lit alors les annuaires ; le journal, les jobs et les points d'accès attendent qu'on **nomme le premier administrateur**, en console — le seed ne nomme personne en production :
 
 ```sh
 make console
