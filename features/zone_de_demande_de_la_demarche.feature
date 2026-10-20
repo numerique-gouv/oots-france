@@ -269,7 +269,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page des justificatifs a été rechargée
     Et la page n'affiche pas "The document could not be changed"
-    Quand le compte de l'administrateur est supprimé
+    Quand la session de l'agent prend fin
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page de connexion s'affiche
 
