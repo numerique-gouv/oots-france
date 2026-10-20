@@ -71,10 +71,12 @@ RSpec.describe 'Admin::ProConnect' do
       end
     end
 
-    it 'refuses a subdomain the list does not name' do
+    it 'refuses a subdomain the list does not name, and logs the address' do
+      allow(Rails.logger).to receive(:warn)
       return_from_pro_connect(email: 'agent@sous.numerique.gouv.fr')
 
       expect(response.headers['Location']).to start_with(ProConnectStubs::END_SESSION_ENDPOINT)
+      expect(Rails.logger).to have_received(:warn).with(/agent@sous\.numerique\.gouv\.fr/)
     end
 
     # CA6: every return that does not verify opens nothing, says one sentence,
@@ -132,6 +134,25 @@ RSpec.describe 'Admin::ProConnect' do
           params: { error: 'access_denied', error_description: 'refus', state: departure.fetch('state') }
 
         expect_refused(/access_denied/)
+      end
+
+      it 'reads no announced error before the state is checked' do
+        stub_pro_connect
+        depart_for_pro_connect
+
+        get admin_pro_connect_retour_connexion_path, params: { error: 'access_denied', state: 'x' * 32 }
+
+        expect_refused(/state du retour de ProConnect/)
+        expect(Rails.logger).not_to have_received(:warn).with(/access_denied/)
+      end
+
+      it 'refuses a return that carries no state, before presenting its code' do
+        stub_pro_connect
+
+        get admin_pro_connect_retour_connexion_path, params: { code: 'un-code' }
+
+        expect_refused(/state du retour de ProConnect/)
+        expect(a_request(:post, ProConnectStubs::TOKEN_ENDPOINT)).not_to have_been_made
       end
 
       it 'refuses a UserInfo that speaks of another agent' do

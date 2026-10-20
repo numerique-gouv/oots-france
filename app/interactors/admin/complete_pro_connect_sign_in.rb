@@ -9,8 +9,8 @@ module Admin
   # that their ProConnect session can be ended with it.
   class CompleteProConnectSignIn < ApplicationInteractor
     def call
-      refuse_announced_refusal
       check_state
+      refuse_announced_refusal
 
       admit(identified_agent(client.exchange(context.code)))
     rescue ProConnectError, Faraday::Error => e
@@ -47,7 +47,9 @@ module Admin
     def expected = context.expected.to_h.symbolize_keys
 
     # ProConnect sends the browser back with `error` in place of `code` when it
-    # declines: the reason is its own, and goes to the log as it stands.
+    # declines, with the departure's `state`: the reason is read only once that
+    # `state` is checked, and goes to the log as it stands.
+    # https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1
     def refuse_announced_refusal
       return if context.announced_error.blank?
 

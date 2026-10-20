@@ -134,14 +134,17 @@ RSpec.describe 'Admin::Sessions' do
       expect(page_text).to include('Vous êtes déconnecté.')
     end
 
-    it 'refuses a return whose state is not the one the sign-out drew' do
+    it 'logs a return whose state is not the one the sign-out drew, and says the sign-out' do
+      allow(Rails.logger).to receive(:warn)
       sign_in
       delete admin_session_path
 
       get admin_pro_connect_retour_deconnexion_path, params: { state: 'un-autre-state' * 3 }
       follow_redirect!
 
-      expect(page_text).to include("La connexion par ProConnect n'a pas abouti. Réessayez.")
+      expect(Rails.logger).to have_received(:warn).with(/state du retour de déconnexion/)
+      expect(page_text).to include('Vous êtes déconnecté.')
+      expect(page_text).not_to include("La connexion par ProConnect n'a pas abouti.")
     end
 
     # CA8: ProConnect first, then the FranceConnect+ session that attested the

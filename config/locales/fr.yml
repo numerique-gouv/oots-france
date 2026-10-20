@@ -712,10 +712,12 @@ fr:
         home:
           no_requirements: "Exigences de la démarche de démonstration illisibles : %{error}"
       # Écrits dans le log : la page de connexion ne dit qu'une phrase pour
-      # toutes les causes d'un retour de ProConnect qui n'aboutit pas.
+      # toutes les causes d'un retour de ProConnect qui n'aboutit pas, et
+      # nomme l'agent refusé sans que l'exploitant le lise ailleurs.
       pro_connect:
         undeclared: Retour de ProConnect sur un déploiement qui n'en déclare aucun.
         unexpected_logout_state: Le state du retour de déconnexion de ProConnect n'est pas celui que la session attendait.
+        agent_refused: "Agent refusé, hors des domaines admis : %{email}"
       # Écrit dans le log et nulle part ailleurs : l'exploitant est déconnecté
       # quoi qu'il arrive, et rien à l'écran ne distinguerait une session
       # FranceConnect+ close d'une session laissée ouverte faute de savoir à qui

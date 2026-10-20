@@ -24,7 +24,7 @@ module Admin
     # to decide is the page it lands on.
     def retour_deconnexion
       expected = session.delete(:pro_connect_logout).to_h
-      return pro_connect_failed([t('controllers.admin.pro_connect.unexpected_logout_state')]) unless logout_state?(expected)
+      return signed_out_unacknowledged unless logout_state?(expected)
       return redirect_to(expected['france_connect'], allow_other_host: true) if expected['france_connect']
 
       return show_refusal(expected['refused_email']) if expected['refused_email']
@@ -53,6 +53,7 @@ module Admin
     # An address outside the admitted domains opens nothing, and its ProConnect
     # session is ended so that the agent can come back with another one.
     def turn_away(error)
+      Rails.logger.warn(t('controllers.admin.pro_connect.agent_refused', email: error[:email]))
       reset_session
 
       pro_connect = end_of_pro_connect_session(error[:id_token], refused_email: error[:email])
@@ -72,6 +73,12 @@ module Admin
     def returned
       { expected: session.delete(:pro_connect), code: params[:code], state: params[:state],
         announced_error: params[:error], error_description: params[:error_description] }
+    end
+
+    def signed_out_unacknowledged
+      Rails.logger.warn(t('controllers.admin.pro_connect.unexpected_logout_state'))
+
+      redirect_to new_admin_session_path, notice: :'admin.sessions.signed_out'
     end
 
     def logout_state?(expected)
