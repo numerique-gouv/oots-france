@@ -11,6 +11,12 @@ x-oots: &configuration-base
   image: oots-france-app
   env_file:
     - ./.env.oots
+  # The key of the development credentials, when whoever starts the stack holds
+  # it in their environment rather than in config/credentials/development.key:
+  # `env_file` reads a file and relays nothing of the caller's environment. Set
+  # only if set, so an absent key stays absent.
+  environment:
+    - RAILS_MASTER_KEY
   # The gems live in `/usr/local/bundle`, outside the mounted directory: this
   # mount therefore does not mask them, and no named volume is needed.
   volumes:

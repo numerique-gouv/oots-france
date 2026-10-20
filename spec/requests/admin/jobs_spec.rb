@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe 'Admin::Jobs' do
   describe 'GET /admin/jobs' do
     it 'serves the GoodJob dashboard' do
-      sign_in
+      sign_in_as_administrator
 
       get admin_jobs_path
       follow_redirect! while response.redirect?
@@ -40,11 +40,10 @@ RSpec.describe 'Admin::Jobs' do
     # leaves out. Followed to the end rather than merely compared, since the
     # point is that the address still opens the dashboard.
     it 'is where the login lands once the dashboard turned a visitor away' do
+      Administrator.appoint(ProConnectStubs::AGENT_EMAIL)
       get admin_jobs_path
 
-      administrator = create(:administrator)
-      post Rails.application.routes.url_helpers.admin_session_path,
-        params: { email: administrator.email, password: administrator.password }
+      return_from_pro_connect
 
       expect(response).to redirect_to("#{admin_jobs_path}/")
 

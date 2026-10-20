@@ -23,7 +23,7 @@ $ make up      # à chaque fois
 
 `make down` arrête tout en conservant les volumes.
 
-Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut), la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`) et le faux FranceConnect+ sur `http://localhost:<PORT_FAUX_FRANCE_CONNECT>/api/v2` (3100 par défaut). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion — le compte que `make setup` pose et le reste sont dans [docs/espace_administration.md](docs/espace_administration.md). Que le serveur réponde se vérifie ainsi :
+Une fois `make up` lancé, l'application écoute sur `http://localhost:<PORT_OOTS_FRANCE>` (3000 par défaut), la console Domibus sur `http://localhost:<PORT_DOMIBUS>/domibus` (8180 par défaut, en `admin` / `123456`) et le faux FranceConnect+ sur `http://localhost:<PORT_FAUX_FRANCE_CONNECT>/api/v2` (3100 par défaut). L'espace d'administration, qui suit l'état des échanges et les jobs de fond, est sur `/admin`, derrière une connexion par ProConnect, qu'un poste contourne par « *Se connecter sans ProConnect (Dev)* » — le reste est dans [docs/espace_administration.md](docs/espace_administration.md#y-accéder-en-local). Que le serveur réponde se vérifie ainsi :
 
 ```sh
 $ curl "http://localhost:3000/requete/pieceJustificative?codeDemarche=00&codePays=FR"
@@ -56,6 +56,29 @@ Ce que le relancer ne fait **pas**, c'est compléter un `.env*` déjà là : ces
 Les identifiants de la base vivent dans `.env.postgres` (lu par l'image) et dans `.env.oots` (lu par l'application, sous les noms `*_BASE_DE_DONNEES`) : les deux doivent rester en phase, comme `.env.domibus` l'impose déjà entre `MYSQL_USER` et `DB_USER`.
 
 Deux rôles PostgreSQL cohabitent. Le **propriétaire** des tables est celui que l'image crée : il fait le DDL, et les tâches `db:*` comme la console Rails s'en servent. Le **rôle applicatif** (`*_APPLICATIF_BASE_DE_DONNEES`) est celui avec lequel `web` et `worker` se connectent, et `rails db:privileges` lui refuse l'`UPDATE` sur le [journal des échanges](docs/journal_des_echanges.md), que rien ne doit pouvoir réécrire. Les deux variables laissées vides, tout tourne en propriétaire.
+
+### Les identifiants ProConnect du poste
+
+L'espace d'administration s'ouvre par ProConnect ([docs/espace_administration.md](docs/espace_administration.md#qui-peut-y-entrer)), et un poste se présente au **ProConnect d'intégration**. Ses identifiants sont versionnés, chiffrés, dans `config/credentials/development.yml.enc`, et rien d'autre :
+
+```yaml
+proconnect:
+  issuer: https://fca.integ01.dev-agentconnect.fr/api/v2
+  client_id: …
+  client_secret: …
+```
+
+`Settings` ne les lit qu'en environnement `development`, et chacun seulement là où `.env.oots` laisse vide la variable qui lui répond — `URL_PROCONNECT`, `IDENTIFIANT_CLIENT_PROCONNECT`, `SECRET_CLIENT_PROCONNECT` : l'environnement l'emporte. Le client d'intégration déclare les adresses de retour des ports 3000 à 3005 : un poste ou un worktree sur l'un d'eux n'a rien à déclarer.
+
+La clé qui les déchiffre ne se versionne pas : elle se pose dans `config/credentials/development.key`, que `.gitignore` exclut, ou dans `RAILS_MASTER_KEY` de qui lance la pile, que `docker-compose.yml` relaie aux conteneurs, et se demande à qui la détient. Contre l'intégration, la seule saisie à la main est `DOMAINES_AGENTS_PROCONNECT=test.proconnect.gouv.fr` dans `.env.oots`, le domaine des identités de test qu'elle offre. **Sans la clé, le poste est complet** : les trois variables sont vides, la page de connexion dit qu'aucun ProConnect n'est déclaré, et le bouton « *Se connecter sans ProConnect (Dev)* », offert en développement et en test seulement, ouvre l'espace.
+
+```sh
+$ docker compose exec web bin/rails credentials:edit --environment development   # éditer
+$ docker compose exec web bin/rails credentials:show --environment development   # relire
+```
+
+> [!IMPORTANT]
+> **Une clé déchiffre le fichier entier, pour quiconque la détient.** Retirer une personne qui l'a eue, c'est une clé neuve, le fichier rechiffré **et** le `client_secret` renouvelé sur l'[espace partenaires](https://partenaires.proconnect.gouv.fr/docs/fournisseur-service) de ProConnect : l'historique du dépôt garde l'ancien fichier, que l'ancienne clé ouvre toujours.
 
 ### Les annuaires centraux
 
@@ -171,5 +194,5 @@ Installer la même composition sur un serveur de test ou de démonstration — l
 - [docs/versions_tdd.md](docs/versions_tdd.md) — versionnement des spécifications OOTS (TDD), négociation de version entre États membres et version à viser pour la reprise du développement.
 - [docs/securite_transport.md](docs/securite_transport.md) — le profil TLS employé pour interroger les annuaires centraux, confronté exigence par exigence au chapitre 3.7 des TDD : versions, suites, groupes d'échange de clés, TLS mutuel, charge posée aux annuaires, DNSSEC.
 - [docs/carte_des_tdd.md](docs/carte_des_tdd.md) — carte de navigation dans les TDD : quel chapitre répond à quelle question, où sont les schémas et listes de codes, quelles valeurs sont figées.
-- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et le compte qui y donne accès.
+- [docs/espace_administration.md](docs/espace_administration.md) — l'espace `/admin` : ce qu'il montre du suivi des échanges et des jobs, ce qu'il ne montre délibérément pas, et ProConnect, par lequel on y entre.
 - [CLAUDE.md](CLAUDE.md) — consignes spécifiques aux agents LLM (conventions, commandes, travail en parallèle par worktrees).

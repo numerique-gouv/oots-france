@@ -8,6 +8,11 @@
 # ActionController::Base directly, so the CSS, JavaScript and icons the gem
 # serves under /admin/jobs/frontend stay reachable without a session. They carry
 # no data of ours.
+#
+# Of the agents the guard admits, only the administrators named in the list
+# reach it: its buttons act on the running of the deployment.
 ActiveSupport.on_load(:good_job_application_controller) do
   include AdminAuthentication
+
+  before_action :require_named_administrator
 end

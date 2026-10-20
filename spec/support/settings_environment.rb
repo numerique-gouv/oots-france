@@ -11,6 +11,7 @@ module SettingsEnvironment
     Settings::REQUIRED
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
       .merge(france_connect_environment)
+      .merge(Settings::AGENT_DOMAINS => 'numerique.gouv.fr')
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
       .merge('DELAI_REDIRECTION_REQUETEUR_MINUTES' => '15', 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '16')
       .merge('DELAI_PREVISUALISATION_REQUETEUR_MINUTES' => '41', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40')
@@ -31,6 +32,9 @@ module SettingsEnvironment
   def no_france_connect
     Settings::FRANCE_CONNECT.each_value.flat_map(&:values).index_with { '' }
   end
+
+  # Every ProConnect variable emptied: a deployment that declares none.
+  def no_proconnect = Settings::PROCONNECT.each_value.index_with { '' }
 
   # The contract reads this one rather than merely finding it filled: it must
   # decode to a JWK, and declare an algorithm FranceConnect+ accepts.

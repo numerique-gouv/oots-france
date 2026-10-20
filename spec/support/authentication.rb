@@ -1,18 +1,23 @@
 # Every page of the administration space is behind a session, and a request spec
-# has no way to write one directly: it goes through the form, like a browser.
-#
-# `has_secure_password` keeps the plaintext it was given on the record, so the
-# password the factory chose is read back here rather than repeated.
+# has no way to write one directly: it goes through ProConnect, like a browser —
+# the button, then the return, against the doubles of `ProConnectStubs`.
 module Authentication
-  def sign_in(administrator = create(:administrator))
-    post admin_session_path, params: { email: administrator.email, password: administrator.password }
+  def sign_in(email: ProConnectStubs::AGENT_EMAIL)
+    return_from_pro_connect(email:)
 
-    # Asserted here rather than left to fail downstream: a login that stopped
+    # Asserted here rather than left to fail downstream: a sign-in that stopped
     # working would otherwise show up as every guarded spec expecting a page and
-    # getting the form, which names the symptom and not the cause.
+    # getting the login page, which names the symptom and not the cause.
     expect(response).to redirect_to(admin_root_path)
 
-    administrator
+    email
+  end
+
+  # An agent the team running the deployment named, who alone reads the
+  # journal, the jobs and the access points.
+  def sign_in_as_administrator(email: ProConnectStubs::AGENT_EMAIL)
+    Administrator.appoint(email)
+    sign_in(email:)
   end
 end
 

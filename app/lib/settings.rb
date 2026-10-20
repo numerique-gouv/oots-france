@@ -111,6 +111,24 @@ module Settings
                 client_secret: 'SECRET_CLIENT_FAUX_FRANCE_CONNECT' },
   }.freeze
 
+  # The ProConnect the administration space opens through: an issuer and the
+  # two credentials it knows this console by. Outside REQUIRED, because a
+  # deployment that declares none still answers the exchanges it exists for —
+  # only its console stays shut — and `Settings::Contract` refuses a
+  # declaration begun and left unfinished.
+  # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/implementation_technique
+  PROCONNECT = {
+    issuer: 'URL_PROCONNECT',
+    client_id: 'IDENTIFIANT_CLIENT_PROCONNECT',
+    client_secret: 'SECRET_CLIENT_PROCONNECT',
+  }.freeze
+
+  # The email domains whose agents the console admits, separated by commas.
+  # ProConnect filters nothing on a service provider's behalf: « c'est à vous de
+  # vérifier si l'utilisateur authentifié a le droit d'accéder à votre service ».
+  # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/restriction_acces
+  AGENT_DOMAINS = 'DOMAINES_AGENTS_PROCONNECT'.freeze
+
   # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.
   COMMON_SERVICES_BASE_URLS = {
     'eb' => 'URL_BASE_EVIDENCE_BROKER',
@@ -157,6 +175,33 @@ module Settings
       return nil if values.each_value.any?(&:nil?)
 
       FranceConnectInstance.new(name:, **values)
+    end
+
+    # `nil` when the deployment declares no ProConnect, which leaves the console
+    # shut and everything else running.
+    def proconnect_instance
+      values = PROCONNECT.transform_values { |variable| proconnect_value(variable) }
+      return nil if values.each_value.any?(&:nil?)
+
+      ProConnectInstance.new(**values)
+    end
+
+    # The environment first, and the development credentials where it is
+    # empty: `config/credentials/development.yml.enc` carries, under
+    # `proconnect:` and the keys of `PROCONNECT`, the identifiers of the
+    # integration ProConnect a development machine presents, encrypted and
+    # versioned. Read in `development` alone — in `test`, in continuous
+    # integration and in production only the environment counts, whatever key
+    # the process holds. Without the key the file reads as empty.
+    # https://guides.rubyonrails.org/security.html#custom-credentials
+    def proconnect_value(name)
+      optional(name) || (Rails.application.credentials.dig(:proconnect, PROCONNECT.key(name)).presence if Rails.env.development?)
+    end
+
+    # Read at every request of the console and not once: a domain taken out of
+    # the list closes the sessions it had opened at their next page.
+    def proconnect_agent_domains
+      ENV.fetch(AGENT_DOMAINS, '').split(',').map { |domain| domain.strip.downcase }.reject(&:empty?)
     end
 
     def private_key_jwk = decode_jwk('CLE_PRIVEE_JWK_EN_BASE64')

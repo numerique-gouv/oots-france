@@ -22,6 +22,9 @@ ENV['URL_OOTS_FRANCE'] ||= 'http://localhost:3000'
 ENV['URL_FAUX_FRANCE_CONNECT'] ||= 'http://franceconnect.test/api/v2'
 ENV['IDENTIFIANT_CLIENT_FAUX_FRANCE_CONNECT'] ||= 'oots-france-demarche'
 ENV['SECRET_CLIENT_FAUX_FRANCE_CONNECT'] ||= 'secret-de-la-demarche'
+# The domain a development machine admits. Which ProConnect is declared, the
+# examples say for themselves through `ProConnectStubs`.
+ENV['DOMAINES_AGENTS_PROCONNECT'] ||= 'numerique.gouv.fr'
 ENV['ENVIRONNEMENT_SERVICES_COMMUNS'] ||= 'acc'
 ENV['PAYS_SERVICES_COMMUNS'] ||= 'FR'
 ENV['DUREE_CACHE_SERVICES_COMMUNS'] ||= '3600'

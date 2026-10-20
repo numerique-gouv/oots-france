@@ -36,9 +36,11 @@ class DemoBrowser
     end
   end
 
-  def sign_in(email, password)
+  # The way in without ProConnect, which the login page offers in development
+  # and test: the end-to-end suite has no credentials to present to it.
+  def sign_in
     visit('/admin/session/new')
-    submit(email:, password:)
+    submit_to('/admin/session/developpement')
   end
 
   # The button of the header, whose form carries the `_method` that makes it a

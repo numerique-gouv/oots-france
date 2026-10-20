@@ -7,8 +7,7 @@ Fonctionnalité: Suivre sans recharger la page le test de connectivité d'un poi
   Ce scénario demande un navigateur sans tête, et rien de plus : la passerelle est doublée. docs/test_e2e.md le situe parmi les configurations de la suite.
 
   Contexte:
-    Étant donné un compte d'administrateur
-    Et un administrateur connecté à l'espace d'administration
+    Étant donné un administrateur connecté à l'espace d'administration
 
   Scénario: le point d'accès passe en cours puis affiche son issue sans que la page se recharge
     Étant donné une passerelle doublée dont le PMode déclare le point d'accès "AP_EL_01"

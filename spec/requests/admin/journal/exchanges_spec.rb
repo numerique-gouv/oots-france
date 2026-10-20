@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe 'Admin::Exchanges' do
   describe 'both halves of the four-corner model' do
-    before { sign_in }
+    before { sign_in_as_administrator }
 
     # Both halves of the four-corner model, on one listing: what France asks,
     # and what is asked of it.
@@ -97,7 +97,7 @@ RSpec.describe 'Admin::Exchanges' do
   end
 
   describe 'GET /admin/journal/exchanges/:id' do
-    before { sign_in }
+    before { sign_in_as_administrator }
 
     it 'shows why an exchange failed, which nothing else exposes' do
       exchange = create(:exchange, :failed)

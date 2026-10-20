@@ -63,6 +63,21 @@ Rails.application.routes.draw do
   namespace :admin do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
+    # Where an agent nobody named administrator is sent from the journal, the
+    # jobs and the access points.
+    get 'acces_reserve', to: 'restricted_access#show', as: :restricted_access
+
+    # The two addresses the deployment declares to ProConnect, which answer
+    # without a session: the agent comes back to them from ProConnect.
+    get 'proconnect/retour_connexion', to: 'pro_connect#retour_connexion', as: :pro_connect_retour_connexion
+    get 'proconnect/retour_deconnexion', to: 'pro_connect#retour_deconnexion', as: :pro_connect_retour_deconnexion
+
+    # The way in without ProConnect, for a development machine and the suites,
+    # which have no credentials to present. Drawn in those two environments
+    # and nowhere else: in production the address does not exist, rather than
+    # existing and refusing. Decided by `Rails.env`, never by a variable a
+    # deployment could set.
+    post 'session/developpement', to: 'development_sessions#create', as: :development_session if Rails.env.local?
 
     # The demonstration procedure: the front half of an Online Procedure Portal,
     # played by the operator. It is the one corner of the console that does not

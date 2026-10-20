@@ -17,7 +17,6 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
 
   Contexte:
     Étant donné les annuaires et le contrat de la démarche doublés
-    Et un compte d'administrateur
     Et un administrateur connecté à l'espace d'administration
     Et l'usager identifié sur la page des justificatifs
 

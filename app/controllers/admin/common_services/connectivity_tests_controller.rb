@@ -10,6 +10,8 @@ module Admin
     class ConnectivityTestsController < BaseController
       include ReadsPmodeParties
 
+      before_action :require_named_administrator
+
       def create
         ConnectivityTesting::RequestTests.call(parties: pmode_parties, party: params[:party])
 

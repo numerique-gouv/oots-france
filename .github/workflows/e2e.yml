@@ -142,9 +142,9 @@ jobs:
           # The restricted role and its privileges, replayed after `db:prepare` for the
           # reason `lib/database_privileges.rb` gives.
           docker compose run --rm --no-deps web bundle exec rails db:privileges
-          # `db:prepare` loads the seeds only when it creates the database, and
-          # the administrator account comes from them: see scripts/setup.sh, with
-          # which this sequence of steps must stay in step.
+          # The database `make setup` leaves on a development machine, seeds
+          # included: see scripts/setup.sh, with which this sequence of steps
+          # must stay in step.
           docker compose run --rm --no-deps web bundle exec rails db:seed
 
       - name: Démarre l'application, son worker et le faux FranceConnect+

@@ -2,22 +2,26 @@
 
 <h1><%= t('admin.sessions.new.heading') %></h1>
 
-<p class="fr-text--sm fr-mb-4w fr-col-12 fr-col-md-8"><%= t('admin.sessions.new.lead') %></p>
+<% if @refused_email %>
+  <%= dsfr_alert(type: :error, title: t('admin.sessions.new.refused', domains: @domains.map { |domain| "@#{domain}" }.to_sentence,
+        email: @refused_email),
+        size: :md, html_attributes: { class: 'fr-mb-4w' }) %>
+<% end %>
 
 <div class="fr-grid-row">
-  <div class="fr-col-12 fr-col-md-6">
-    <%= form_with url: admin_session_path, method: :post do |form| %>
-      <div class="fr-input-group">
-        <%= form.label :email, t('admin.sessions.new.email'), class: 'fr-label' %>
-        <%= form.email_field :email, class: 'fr-input', autocomplete: 'username', autofocus: true, required: true %>
-      </div>
-
-      <div class="fr-input-group">
-        <%= form.label :password, t('admin.sessions.new.password'), class: 'fr-label' %>
-        <%= form.password_field :password, class: 'fr-input', autocomplete: 'current-password', required: true %>
-      </div>
-
-      <button type="submit" class="fr-btn fr-mt-2w"><%= t('admin.sessions.new.submit') %></button>
+  <div class="fr-col-12 fr-col-md-8">
+    <% if @pro_connect %>
+      <%= dsfr_proconnect_button(target: admin_session_path) %>
+    <% else %>
+      <p><%= t('admin.sessions.new.undeclared') %></p>
     <% end %>
   </div>
 </div>
+
+<% if @development_agent %>
+  <div class="fr-mt-6w">
+    <p class="fr-text--sm"><%= t('admin.sessions.new.development.lead', email: @development_agent) %></p>
+    <%= button_to t('admin.sessions.new.development.button'), admin_development_session_path,
+          class: 'fr-btn fr-btn--secondary', data: { turbo: false } %>
+  </div>
+<% end %>

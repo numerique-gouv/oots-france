@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 RSpec.describe 'Admin::Journal::Events' do
-  before { sign_in }
+  before { sign_in_as_administrator }
 
   describe 'GET /admin/journal' do
     # An equality and not a presence: the DSFR marks as current whatever crumb
