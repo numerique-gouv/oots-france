@@ -1,9 +1,114 @@
 <% content_for :title, t('layouts.application.name') %>
+<% content_for :full_width, true %>
 
-<h1><%= t('layouts.application.name') %></h1>
+<div class="accueil-hero fr-background-alt--blue-france fr-py-8w">
+  <div class="fr-container">
+    <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
+      <div class="fr-col-12 fr-col-md-9">
+        <h1><%= t('layouts.application.name') %></h1>
+        <p class="fr-text--lead fr-mb-0"><%= t('accueil.index.lead') %></p>
+      </div>
+      <div class="fr-hidden fr-unhidden-md fr-col-md-3">
+        <%= render PictogramComponent.new(name: 'environment/human-cooperation') %>
+      </div>
+    </div>
+  </div>
+</div>
 
-<p class="fr-text--lead fr-col-12 fr-col-md-8">
-  <%= t('accueil.index.lead') %>
-</p>
+<section class="fr-py-8w" aria-labelledby="what-is-oots">
+  <div class="fr-container">
+    <div class="pictogram-row fr-col-12 fr-col-md-9">
+      <%= render PictogramComponent.new(name: 'digital/internet') %>
+      <div class="pictogram-row__wording">
+        <h2 id="what-is-oots"><%= t('accueil.index.what_is_oots.title') %></h2>
+        <p>
+          <%= t('accueil.index.what_is_oots.body_html',
+                regulation: link_to(t('accueil.index.what_is_oots.regulation'),
+                  'https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32018R1724',
+                  target: '_blank', rel: 'noopener',
+              title: t('accueil.index.new_window', link: t('accueil.index.what_is_oots.regulation')))) %>
+        </p>
+        <p class="fr-mb-0">
+          <%= t('accueil.index.what_is_oots.tdd_html',
+                tdd: link_to(t('accueil.index.what_is_oots.tdd'),
+                  'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview',
+                  target: '_blank', rel: 'noopener',
+              title: t('accueil.index.new_window', link: t('accueil.index.what_is_oots.tdd')))) %>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
-<%= link_to t('accueil.index.open_admin'), admin_root_path, class: 'fr-btn' %>
+<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="roles">
+  <div class="fr-container">
+    <h2 id="roles"><%= t('accueil.index.roles.title') %></h2>
+    <p class="fr-mb-4w"><%= t('accueil.index.roles.intro') %></p>
+    <div class="fr-grid-row fr-grid-row--gutters">
+      <% { requester: 'document/document-search', provider: 'digital/mail-send' }.each do |role, pictogram| %>
+        <div class="fr-col-12 fr-col-md-6">
+          <div class="accueil-block fr-background-default--grey fr-p-4w">
+            <%= render PictogramComponent.new(name: pictogram) %>
+            <h3 class="fr-h5 fr-mt-2w"><%= t("accueil.index.roles.#{role}.title") %></h3>
+            <p class="fr-mb-0"><%= t("accueil.index.roles.#{role}.body") %></p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<section class="fr-py-8w" aria-labelledby="connection">
+  <div class="fr-container">
+    <h2 id="connection"><%= t('accueil.index.connection.title') %></h2>
+    <p class="fr-text--lg fr-col-12 fr-col-md-9"><%= t('accueil.index.connection.benefit') %></p>
+    <p class="fr-mb-4w"><%= t('accueil.index.connection.requirements_intro') %></p>
+    <ol class="fr-grid-row fr-grid-row--gutters fr-raw-list">
+      <% { declared: 'document/contract', keys: 'system/padlock', call: 'digital/coding',
+           delivery: 'document/document-download' }.each do |requirement, pictogram| %>
+        <li class="fr-col-12 fr-col-sm-6 fr-col-lg-3">
+          <%= render PictogramComponent.new(name: pictogram) %>
+          <h3 class="fr-h6 fr-mt-2w fr-mb-1w"><%= t("accueil.index.connection.requirements.#{requirement}.title") %></h3>
+          <p class="fr-text--sm fr-mb-0"><%= t("accueil.index.connection.requirements.#{requirement}.body") %></p>
+        </li>
+      <% end %>
+    </ol>
+    <p class="fr-mt-4w fr-mb-0">
+      <%= t('accueil.index.connection.contract_html',
+            documentation: link_to(t('accueil.index.connection.documentation'),
+              'https://github.com/numerique-gouv/oots-france/blob/main/docs/oots_context.md#c%C3%B4t%C3%A9-evidence-requester-la-france-demande-un-justificatif',
+              target: '_blank', rel: 'noopener',
+              title: t('accueil.index.new_window', link: t('accueil.index.connection.documentation'))),
+            repository: link_to(t('accueil.index.connection.repository'),
+              'https://github.com/numerique-gouv/oots-france',
+              target: '_blank', rel: 'noopener',
+              title: t('accueil.index.new_window', link: t('accueil.index.connection.repository')))) %>
+    </p>
+  </div>
+</section>
+
+<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="status">
+  <div class="fr-container">
+    <div class="fr-callout fr-mb-0">
+      <div class="pictogram-row">
+        <%= render PictogramComponent.new(name: 'digital/in-progress') %>
+        <div class="pictogram-row__wording">
+          <h2 id="status" class="fr-callout__title"><%= t('accueil.index.status.title') %></h2>
+          <p class="fr-callout__text"><%= t('accueil.index.status.body') %></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="fr-py-8w" aria-labelledby="users">
+  <div class="fr-container">
+    <div class="pictogram-row fr-col-12 fr-col-md-9">
+      <%= render PictogramComponent.new(name: 'digital/avatar') %>
+      <div class="pictogram-row__wording">
+        <h2 id="users"><%= t('accueil.index.users.title') %></h2>
+        <p class="fr-mb-0"><%= t('accueil.index.users.body') %></p>
+      </div>
+    </div>
+  </div>
+</section>

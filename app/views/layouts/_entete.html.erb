@@ -4,6 +4,9 @@
       tagline: t('layouts.entete.tagline'),
       href: root_path,
     ) do |header| %>
+  <% if admin_space_link? %>
+    <% header.with_tool_link(title: t('layouts.entete.admin_space'), path: admin_root_path) %>
+  <% end %>
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: t('layouts.entete.directories'), path: admin_common_services_root_path) %>
     <% if named_administrator? %>

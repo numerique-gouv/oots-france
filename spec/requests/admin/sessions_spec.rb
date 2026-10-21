@@ -36,6 +36,20 @@ RSpec.describe 'Admin::Sessions' do
 
       expect(response.parsed_body.css('.fr-nav')).to be_empty
     end
+
+    it 'does not lead to the space from its header, nor offer the header menu' do
+      get new_admin_session_path
+
+      header = response.parsed_body.at_css('header')
+      expect(header.text).not_to include('Espace d’administration')
+      expect(header.css('#button-header-menu')).to be_empty
+    end
+
+    it 'keeps its content within the container every page outside the front page has' do
+      get new_admin_session_path
+
+      expect(response.parsed_body.at_css('.fr-container > main#contenu')).to be_present
+    end
   end
 
   # CA2: the departure, as the button makes it.

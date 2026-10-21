@@ -193,12 +193,68 @@ fr:
               inclusion: "vaut « %{value} », alors que FranceConnect+ n'en publie que %{admitted}"
   accueil:
     index:
+      new_window: "%{link} - nouvelle fenêtre"
       lead: >-
-        Ce service échange des justificatifs avec les autres États membres de l'Union européenne,
-        pour le compte des démarches administratives françaises. Il s'adresse à des systèmes,
-        non à des usagers : une personne qui cherche à faire venir un justificatif passe par le
-        portail de la démarche.
-      open_admin: Ouvrir l’espace d’administration
+        Le service par lequel la France échange des justificatifs avec les autres États membres
+        de l'Union européenne, pour le compte des démarches administratives françaises.
+      what_is_oots:
+        title: Ce qu'est OOTS
+        body_html: >-
+          Le système technique « une fois pour toutes » (OOTS, <i lang="en">Once-Only Technical
+          System</i>) est l'échange automatisé et transfrontalier de justificatifs entre les
+          administrations des États membres, prévu par le %{regulation}. Un usager qui accomplit
+          une démarche dans un État membre n'a plus à fournir lui-même un justificatif qu'une
+          administration d'un autre État membre détient : la démarche le demande pour lui.
+        regulation: règlement (UE) 2018/1724
+        tdd_html: OOTS-France met en œuvre ce système tel que le décrivent les %{tdd} publiés par la Commission européenne.
+        tdd: documents de conception technique
+      roles:
+        title: Ce que fait OOTS-France
+        intro: OOTS-France tient pour la France les deux rôles de l'échange.
+        requester:
+          title: Il demande pour les démarches françaises
+          body: >-
+            Il demande les justificatifs aux autres États membres, pour le compte des démarches
+            administratives françaises.
+        provider:
+          title: Il répond aux autres États membres
+          body: >-
+            Il répond aux demandes qu'il reçoit des autres États membres — aujourd'hui avec des
+            justificatifs de test seulement, aucun fournisseur de données français n'y étant
+            raccordé.
+      connection:
+        title: Raccorder une démarche
+        benefit: >-
+          Une démarche française raccordée à OOTS-France obtient pour ses usagers un justificatif
+          détenu par une administration d'un autre État membre, sans qu'ils aient à le fournir
+          eux-mêmes.
+        requirements_intro: 'Le raccordement demande au fournisseur de service :'
+        requirements:
+          declared:
+            title: Être déclaré
+            body: Le fournisseur de service est déclaré auprès d'OOTS-France.
+          keys:
+            title: Publier ses clés
+            body: Il publie ses clés de signature.
+          call:
+            title: Appeler le contrat
+            body: Il appelle un contrat HTTP en y portant l'identité de l'usager, signée et chiffrée.
+          delivery:
+            title: Recevoir le justificatif
+            body: Il reçoit le justificatif sur une adresse à lui.
+        contract_html: Le contrat est décrit dans la %{documentation} du %{repository}.
+        documentation: documentation
+        repository: dépôt d'OOTS-France
+      status:
+        title: L'état du service
+        body: >-
+          Le service n'est pas homologué : la demande de justificatifs n'y est ouverte que sur un
+          serveur de test, jamais sur des données réelles.
+      users:
+        title: Vous êtes usager d'une démarche ?
+        body: >-
+          Ce service s'adresse aux administrations, non aux usagers : une personne qui cherche à
+          faire venir un justificatif passe par le portail de sa démarche.
   # Les deux pages où FranceConnect+ renvoie l'usager de la démarche de
   # démonstration. Elles répondent sans session : `docs/eidas_context.md` dit
   # pourquoi ces adresses existent avant la cinématique qui y mène.
@@ -227,6 +283,7 @@ fr:
     logo_html: République<br>Française
     entete:
       tagline: Échange transfrontalier de justificatifs
+      admin_space: Espace d’administration
       demo: Démo
       directories: Annuaires
       jobs: Jobs
