@@ -26,7 +26,7 @@
           'search_field', 'entry_list', 'decrypted_value_component', 'regrep_body_component',
           'evidence_subject_component', 'deferred_content_component', 'directory_value_component',
           'demo_identity_card_component', 'demo_requirement_card_component', 'demo_request_zone_component',
-          'pictogram_component', 'access_points' %>
+          'pictogram_component', 'access_points', 'accueil' %>
     <%# The import map, and with it the Stimulus controllers of
         `app/javascript/controllers/`. It goes in the head, and before any
         module: a bare specifier — `@hotwired/stimulus` — resolves against a map
@@ -45,12 +45,21 @@
       links: [link_to(t('layouts.application.skiplink_content'), '#contenu')]) %>
     <%= render 'layouts/entete' %>
 
-    <div class="fr-container fr-my-4w">
+    <%# A page that sets `:full_width` lays out its own containers, so that its
+        sections can carry a background from one edge of the window to the other. %>
+    <% if content_for?(:full_width) %>
       <main id="contenu">
-        <%= render 'layouts/messages' %>
+        <div class="fr-container"><%= render 'layouts/messages' %></div>
         <%= yield %>
       </main>
-    </div>
+    <% else %>
+      <div class="fr-container fr-my-4w">
+        <main id="contenu">
+          <%= render 'layouts/messages' %>
+          <%= yield %>
+        </main>
+      </div>
+    <% end %>
 
     <%= render 'layouts/pied_de_page' %>
 

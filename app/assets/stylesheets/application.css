@@ -20,7 +20,8 @@ html, body {
   flex-direction: column;
 }
 
-body > .fr-container {
+body > .fr-container,
+body > main {
   flex-grow: 1;
 }
 

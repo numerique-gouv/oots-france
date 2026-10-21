@@ -1,0 +1,12 @@
+/*
+ * The front page's opening pictogram, larger than the ones that mark a heading:
+ * it illustrates the page rather than one line of it.
+ */
+.accueil-hero .pictogram {
+  height: 8rem;
+  width: 8rem;
+}
+
+.accueil-block {
+  height: 100%;
+}
