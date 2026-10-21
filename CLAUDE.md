@@ -42,6 +42,7 @@ Each piece of information has a single owning document; everything else links to
 | Domibus versioning: which tag actually works, how to read its admin routes from source, what comes next | `docs/versions_domibus.md` |
 | The end-to-end scenario through Domibus (how to run it, what it exercises, troubleshooting) | `docs/test_e2e.md` |
 | The Commission's Testing Services: the ITB test platform, the online validator, the mocked directories, the AS4 and LCM test components, and what can (and cannot) be submitted to them | `docs/testing_services.md` |
+| The test identities other Member States provide, to sign in on their side when the demonstration procedure requests evidence from them in acceptance | `docs/testing_identities.md` |
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
 | Deploying on a server: machine sizing, the order of operations and what each one freezes, the HTTPS front, what to firewall and back up, how to update | `docs/deploiement.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
