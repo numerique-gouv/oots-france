@@ -14,7 +14,7 @@ Ce n'est **pas** une fonctionnalité des TDD, et c'est la seule partie du dépô
 
 | Page | Contenu |
 | --- | --- |
-| `/` | La page d'accueil du service, et le lien vers l'espace. |
+| `/` | La page de présentation du service, adressée aux fournisseurs de service français : ce qu'est OOTS, les deux rôles de la France, ce que demande le raccordement, l'état du service. Le lien vers l'espace est dans son en-tête, à droite, et sur petit écran dans le menu de l'en-tête. |
 | `/admin/session/new` | La page de connexion, qui offre le bouton ProConnect ; avec les deux retours de ProConnect et l'entrée de développement, ce qui répond sans session. |
 | `/admin` | Les quatre entrées ci-dessous pour un administrateur ; pour un autre agent, les deux qui lui sont ouvertes, les annuaires et la démarche. |
 | `/admin/acces_reserve` | Le refus, en `403`, vers lequel une page réservée renvoie un agent que personne n'a nommé administrateur : il dit à qui s'adresser. Voir [Qui peut y entrer](#qui-peut-y-entrer). |
