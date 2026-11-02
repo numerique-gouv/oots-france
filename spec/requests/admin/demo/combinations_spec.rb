@@ -45,7 +45,7 @@ RSpec.describe 'Admin::Demo::Combinations' do
     page
 
     expect(carte.css('select[name=combinaison] option').map { |option| option.text.squish }).to eq(
-      ['Select a document', 'Simple test evidence', 'Projectathon test evidence', 'Compound test evidence'],
+      ['Sélectionnez un document', 'Simple test evidence', 'Projectathon test evidence', 'Compound test evidence'],
     )
   end
 
@@ -71,7 +71,7 @@ RSpec.describe 'Admin::Demo::Combinations' do
     fragment = response.parsed_body
     expect(lines_said(fragment)).to eq([['Projectathon test evidence', 'Ministry of Digital Governance'],
                                         ['Simple test evidence', 'Ministry of Digital Governance']])
-    expect(fragment.css('.demo-request button').map { |button| button.text.squish }).to eq(['Request the documents'])
+    expect(fragment.css('.demo-request button').map { |button| button.text.squish }).to eq(['Demander les documents'])
   end
 
   describe 'the button of the combination' do
@@ -118,14 +118,14 @@ RSpec.describe 'Admin::Demo::Combinations' do
 
         first, second = blocks(response.parsed_body)
         expect(first.at_css('.demo-request__failure').text).to include('EB:ERR:0001')
-        expect(second.at_css('button').text.squish).to eq('Request the document')
+        expect(second.at_css('button').text.squish).to eq('Demander le document')
       end
 
       it 'offers each block its own button once the page is reloaded' do
         page
 
         expect(blocks(carte).map { |block| block.at_css('button').text.squish })
-          .to eq(['Request the document', 'Request the document'])
+          .to eq(['Demander le document', 'Demander le document'])
       end
 
       it 'asks for the type of the block clicked, and for it alone' do
@@ -187,9 +187,9 @@ RSpec.describe 'Admin::Demo::Combinations' do
         page
 
         first, second = blocks(carte)
-        expect(first.text).to include('Document retrieved successfully')
+        expect(first.text).to include('Document récupéré avec succès')
         expect(first.at_css('a')['href']).to include("type=#{projectathon}")
-        expect(second.text).to include('The document cannot be provided', 'Retry to request')
+        expect(second.text).to include('Le document ne peut pas être fourni', 'Redemander le document')
       end
 
       it 'asks for the refused type alone again, under a new exchange' do

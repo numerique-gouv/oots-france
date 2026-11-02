@@ -16,7 +16,7 @@ module EvidenceProvision
     # A session concluded or destroyed since the job was filed: nothing is left
     # to answer, and the log says so rather than the job ending in silence.
     def unrecalled
-      Rails.logger.warn(I18n.t('interactors.evidence_provision.recall_second_request.nothing_held',
+      Rails.logger.warn(LogLine.t('interactors.evidence_provision.recall_second_request.nothing_held',
         id: context.preview_session_id))
       context.fail!
     end

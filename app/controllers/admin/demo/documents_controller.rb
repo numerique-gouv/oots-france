@@ -81,8 +81,8 @@ module Admin
       # the home page asks — so the page learns it without a query of its own.
       def procedure_wording(requirements)
         DemoProcedureWording.new(
-          code:, requirements:, published_name: code_lists.procedure_names(lang: :en)[code],
-          published_name_language: 'en',
+          code:, requirements:, published_name: code_lists.procedure_names(lang: I18n.locale)[code],
+          published_name_language: I18n.locale.to_s,
         )
       end
 
@@ -112,17 +112,14 @@ module Admin
         Directories::Catalogue.new.requirements
           .reject { |requirement| requirement.uuid.in?(carried) }.map { |requirement| addable_option(requirement) }
       rescue CommonServicesError => e
-        Rails.logger.warn(I18n.t('controllers.admin.demo.catalogue_unreachable', error: e.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.catalogue_unreachable', error: e.message))
 
         nil
       end
 
-      # In English first, like the cards: the page is the portal.
+      # In the language the page is read in first, like the cards.
       def addable_option(requirement)
-        languages = DemoResolutionWording::LANGUAGES
-
-        [requirement.label(languages:) || requirement.uuid, requirement.uuid,
-         { lang: requirement.label_language(languages:) }]
+        [requirement.label || requirement.uuid, requirement.uuid, { lang: requirement.label_language }]
       end
 
       def report_unreachable_directories(error)

@@ -29,7 +29,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'offers the button, and declares nothing to wait on' do
       render_inline(zone)
 
-      expect(page).to have_button('Request the document')
+      expect(page).to have_button('Demander le document')
       expect(page).to have_css(".demo-request__body[data-polling='false']")
     end
 
@@ -40,7 +40,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('[data-demo-request-target="loading"][hidden]', visible: :hidden,
-        text: 'Requesting the document')
+        text: 'Demande du document en cours')
     end
   end
 
@@ -49,8 +49,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending"]')
-      expect(page).to have_no_button('Request the document')
-      expect(page).to have_text('Requesting the document')
+      expect(page).to have_no_button('Demander le document')
+      expect(page).to have_text('Demande du document en cours')
     end
 
     # Rendu tout de même, et seulement caché : le bouton reparaît dès que le
@@ -60,7 +60,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__button[hidden]', visible: :hidden)
-      expect(page).to have_button('Request the document', visible: :hidden)
+      expect(page).to have_button('Demander le document', visible: :hidden)
     end
 
     # Le contrôleur Stimulus déclare quatre cibles et les montre ou les cache
@@ -76,8 +76,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
 
       recours = page.find('[data-demo-request-target="disconnected"]', visible: :all)
 
-      expect(recours).to have_link('Reload the page', href: '/admin/demo/v2.0/T1/documents', visible: :all)
-      expect(recours).to have_no_button('Request the document', visible: :all)
+      expect(recours).to have_link('Rechargez la page', href: '/admin/demo/v2.0/T1/documents', visible: :all)
+      expect(recours).to have_no_button('Demander le document', visible: :all)
     end
 
     it 'renders every target the controller will reach for while it waits' do
@@ -97,10 +97,10 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'offers the document and stops waiting' do
       render_inline(zone)
 
-      expect(page).to have_link('Open the document',
+      expect(page).to have_link('Ouvrir le document',
         href: "/admin/demo/v2.0/T1/justificatif?exigence=#{requirement_uuid}&type=aaaa")
       expect(page).to have_css('.demo-request__body[data-polling="false"]')
-      expect(page).to have_no_button('Request the document')
+      expect(page).to have_no_button('Demander le document')
     end
 
     # The card above has no other way to learn what became of a click it does
@@ -117,8 +117,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'puts the button before what it says of itself' do
       render_inline(zone)
 
-      expect(page.find('.demo-request__block > *:first-child')).to have_text('Open the document')
-      expect(page.find('.demo-request__block > *:nth-child(2)')).to have_text('Document retrieved successfully')
+      expect(page.find('.demo-request__block > *:first-child')).to have_text('Ouvrir le document')
+      expect(page.find('.demo-request__block > *:nth-child(2)')).to have_text('Document récupéré avec succès')
     end
   end
 
@@ -131,9 +131,9 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says so with the code received, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_text('The document cannot be provided')
+      expect(page).to have_text('Le document ne peut pas être fourni')
       expect(page).to have_text('EDM:ERR:0003')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_button('Redemander le document')
       expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
     end
   end
@@ -146,10 +146,10 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says OOTS is not available, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.fr-alert--error', text: 'OOTS is not available')
+      expect(page).to have_css('.fr-alert--error', text: "OOTS n'est pas disponible")
       expect(page).to have_no_text('EDM:ERR')
-      expect(page).to have_no_text('The document cannot be provided')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_no_text('Le document ne peut pas être fourni')
+      expect(page).to have_button('Redemander le document')
     end
   end
 
@@ -158,14 +158,14 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
   context 'when the user has the preview space to visit' do
     before do
       request.assign_attributes(preview_address: 'https://ap.example/preview?t=1', preview_method: 'GET',
-        preview_description: 'Your study grant certificate', preview_description_language: 'EN')
+        preview_descriptions: [{ 'language' => 'EN', 'text' => 'Your study grant certificate' }])
     end
 
     it 'presents the link' do
       render_inline(zone)
 
-      expect(page).to have_text('Your document is waiting for your approval abroad')
-      expect(page).to have_link('Preview and approve the document', href: 'https://ap.example/preview?t=1')
+      expect(page).to have_text("Votre document attend votre accord à l'étranger")
+      expect(page).to have_link('Prévisualiser et approuver le document', href: 'https://ap.example/preview?t=1')
     end
 
     # Chapter 4.9 §5: « Process the language specific information of the
@@ -174,16 +174,46 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('[lang="EN"]', text: 'Your study grant certificate')
-      expect(page).to have_no_text('You will be redirected to its own space')
+      expect(page).to have_no_text('Vous serez redirigé vers son propre espace')
+    end
+
+    # Chapter 4.9 §5: the launch page « customized to the user's language
+    # choice (if known) ».
+    context 'when the correspondent described it in English and in French' do
+      before do
+        request.preview_descriptions = [{ 'language' => 'EN', 'text' => 'Your study grant certificate' },
+                                        { 'language' => 'FR', 'text' => 'Votre attestation de bourse' }]
+      end
+
+      it 'shows the variant in the language of the page' do
+        render_inline(zone)
+
+        expect(page).to have_css('[lang="FR"]', text: 'Votre attestation de bourse')
+        expect(page).to have_no_text('Your study grant certificate')
+      end
+
+      it 'shows the English variant on a page read in English' do
+        I18n.with_locale(:en) { render_inline(zone) }
+
+        expect(page).to have_css('[lang="EN"]', text: 'Your study grant certificate')
+        expect(page).to have_no_text('Votre attestation de bourse')
+      end
+    end
+
+    it 'shows the only variant published, under its language, when neither the page\'s nor English is' do
+      request.preview_descriptions = [{ 'language' => 'DE', 'text' => 'Ihre Bescheinigung' }]
+      render_inline(zone)
+
+      expect(page).to have_css('[lang="DE"]', text: 'Ihre Bescheinigung')
     end
 
     # Implementing regulation 2022/1463, article 11(2)(b): the user is told
     # they will be redirected, by the procedure where the correspondent said nothing.
     it 'says where the user is going when the correspondent wrote no description' do
-      request.assign_attributes(preview_description: nil, preview_description_language: nil)
+      request.preview_descriptions = []
       render_inline(zone)
 
-      expect(page).to have_text('You will be redirected to its own space')
+      expect(page).to have_text('Vous serez redirigé vers son propre espace')
     end
 
     # The second exchange may settle while the user is away: the zone keeps
@@ -192,7 +222,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(zone)
 
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="preview"]')
-      expect(page).to have_no_button('Request the document', visible: :all)
+      expect(page).to have_no_button('Demander le document', visible: :all)
     end
 
     context 'when the correspondent asked for a POST' do
@@ -210,7 +240,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
         expect(form).to have_field('returnurl', type: :hidden, with: 'https://fr.example/retour/x')
         expect(form).to have_field('returnmethod', type: :hidden, with: 'GET')
         expect(form).to have_no_field('authenticity_token', type: :hidden)
-        expect(form).to have_button('Preview and approve the document')
+        expect(form).to have_button('Prévisualiser et approuver le document')
       end
     end
 
@@ -220,9 +250,9 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       it 'says the link cannot be presented, and offers to ask again' do
         render_inline(zone)
 
-        expect(page).to have_text('The preview link cannot be presented')
-        expect(page).to have_no_link('Preview and approve the document')
-        expect(page).to have_button('Retry to request')
+        expect(page).to have_text('Le lien de prévisualisation ne peut pas être présenté')
+        expect(page).to have_no_link('Prévisualiser et approuver le document')
+        expect(page).to have_button('Redemander le document')
       end
     end
   end
@@ -235,8 +265,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says so, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.fr-alert--info', text: 'You chose not to use this document')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_css('.fr-alert--info', text: 'Vous avez choisi de ne pas utiliser ce document')
+      expect(page).to have_button('Redemander le document')
       expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
     end
   end
@@ -249,11 +279,17 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says so with the date announced, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--info', text: 'Document announced for later')
-      expect(page).to have_text('it announced it for 23 October 2026 at 14:05 (UTC+02:00). Ask again from that date')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_css('.demo-request__failure .fr-alert--info', text: 'Document annoncé pour plus tard')
+      expect(page).to have_text("elle l'a annoncé pour le 23 octobre 2026 à 14:05 (UTC+02:00). Redemandez à partir de cette date")
+      expect(page).to have_button('Redemander le document')
       expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
       expect(page).to have_css('[data-demo-request-target="loading"][hidden]', visible: :hidden)
+    end
+
+    it 'writes the month of the date in the language of the page' do
+      I18n.with_locale(:en) { render_inline(zone) }
+
+      expect(page).to have_text('it announced it for October 23, 2026 at 14:05 (UTC+02:00)')
     end
 
     # Chapter 4.5.2 §2.1: a response, never an `rs:Exception`.
@@ -268,7 +304,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       payload.delete('dateDisponibilite')
       render_inline(zone)
 
-      expect(page).to have_text('it announced it for later, without saying when')
+      expect(page).to have_text("elle l'a annoncé pour plus tard, sans dire quand")
     end
 
     # The screen's deadline is for a wait, and this is an answer.
@@ -276,8 +312,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       request.created_at = Time.current
       render_inline(zone_of(DemoOutcomeWording.new(answer:, request:, clock: instance_double(Clock, now: 1.hour.from_now))))
 
-      expect(page).to have_text('Document announced for later')
-      expect(page).to have_no_text('No answer yet')
+      expect(page).to have_text('Document annoncé pour plus tard')
+      expect(page).to have_no_text('Pas encore de réponse')
     end
   end
 
@@ -292,11 +328,11 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says so in a sentence of its own, never the contract\'s, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.demo-request__failure[lang="en"] .fr-alert--error',
-        text: 'The preview has failed')
-      expect(page).to have_text('The preview of your document could not be started')
+      expect(page).to have_css('.demo-request__failure .fr-alert--error',
+        text: 'La prévisualisation a échoué')
+      expect(page).to have_text("La prévisualisation de votre document n'a pas pu démarrer")
       expect(page).to have_no_text('refusée')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_button('Redemander le document')
     end
   end
 
@@ -313,8 +349,8 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'stops waiting and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_text('has not answered yet')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_text("n'a pas encore répondu")
+      expect(page).to have_button('Redemander le document')
       expect(page).to have_css('.demo-request__body[data-polling="false"]')
     end
   end
@@ -327,7 +363,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'reports the outage where it would report a refusal, and keeps its reason for the log' do
       render_inline(zone)
 
-      expect(page).to have_css('.demo-request__failure[lang="en"]', text: 'could not be read')
+      expect(page).to have_css('.demo-request__failure', text: "L'état de la demande n'a pas pu être lu")
       expect(page).to have_no_text('Panne')
     end
   end
@@ -357,7 +393,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
         render_inline(zone)
 
         expect(page).to have_css('.fr-alert--error', text: 'EB:ERR:0001')
-        expect(page).to have_no_text('Document announced for later')
+        expect(page).to have_no_text('Document annoncé pour plus tard')
       end
     end
   end
@@ -372,9 +408,19 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'names the refusal and what the contract returned' do
       render_inline(zone)
 
-      expect(page).to have_css('.demo-request__failure[lang="fr"]', text: 'refusée')
+      expect(page).to have_css('.demo-request__failure', text: 'refusée')
+      expect(page).to have_no_css('.demo-request__failure[lang]')
       expect(page).to have_text('EB:ERR:0001')
-      expect(page).to have_button('Retry to request')
+      expect(page).to have_button('Redemander le document')
+    end
+
+    # CA6: the title follows the page, the contract's words stay as received.
+    it 'titles the refusal in English on a page read in English, the message untouched' do
+      I18n.with_locale(:en) { render_inline(zone) }
+
+      expect(page).to have_css('.demo-request__failure', text: I18n.t('interactors.failures.demo_refused', locale: :en))
+      expect(page).to have_no_css('.demo-request__failure[lang]')
+      expect(page).to have_text('EB:ERR:0001')
     end
   end
 
@@ -417,17 +463,17 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'offers one button for them all while none has been asked for' do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil])))
 
-      expect(page).to have_button('Request the documents')
+      expect(page).to have_button('Demander les documents')
       expect(page).to have_css("form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=#{requirement_uuid}']")
       expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="idle"]')
-      expect(page).to have_css('[data-demo-request-target="loading"]', visible: :hidden, text: 'Requesting the documents')
+      expect(page).to have_css('[data-demo-request-target="loading"]', visible: :hidden, text: 'Demande des documents en cours')
     end
 
     # CA5: a click the contract refused leaves each type its own button.
     it 'offers each block its own button once the combination was asked for' do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil]), requested: true))
 
-      expect(page.all('[data-demo-request-block] button').map(&:text)).to eq(['Request the document'] * 2)
+      expect(page.all('[data-demo-request-block] button').map(&:text)).to eq(['Demander le document'] * 2)
     end
 
     # CA6: a block per demand, each under the name of its type, and the zone
@@ -436,10 +482,10 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([outcome, nil])))
 
       expect(page.all('.demo-request__type').map { |name| name.text.squish })
-        .to eq(['Projectathon test evidence, retrieved from the common services',
-                'Simple test evidence, retrieved from the common services'])
+        .to eq(['Projectathon test evidence, récupéré auprès des services communs',
+                'Simple test evidence, récupéré auprès des services communs'])
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending idle"]')
-      expect(page).to have_css('[data-demo-request-block][data-state="idle"]', text: 'Request the document')
+      expect(page).to have_css('[data-demo-request-block][data-state="idle"]', text: 'Demander le document')
     end
 
     # OOTS-257 CA2: an announced block is settled, and the zone waits on the other.
@@ -449,7 +495,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([deferred, outcome])))
 
       expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="failed pending"]')
-      expect(page).to have_css('[data-demo-request-block="bbbb"] .fr-alert--info', text: 'Document announced for later')
+      expect(page).to have_css('[data-demo-request-block="bbbb"] .fr-alert--info', text: 'Document annoncé pour plus tard')
     end
 
     # CA5: a click the contract refused is said in the block of its type, and

@@ -116,7 +116,7 @@ class Exchange < ApplicationRecord
 
   # Read off the machine rather than declared beside it, so that the two cannot
   # drift. It carries no further: `ExchangeStatusComponent::BADGES` and the
-  # `admin.journal.exchanges.statuses` of `fr.yml` spell the eight out again,
+  # `admin.journal.exchanges.statuses` of the locale files spell the eight out again,
   # and a state added here would fall back to their defaults until someone wrote
   # it there too.
   STATUSES = state_machines[:status].states.map { |state| state.name.to_s }.freeze

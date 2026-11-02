@@ -28,7 +28,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
-    Et la page des justificatifs affiche "Document retrieved successfully"
+    Et la page des justificatifs affiche "Document récupéré avec succès"
 
   Scénario: l'usager qui a choisi la version 1.2 demande son justificatif en 1.2
     Quand l'administrateur choisit la version "OOTS 1.2"
@@ -44,7 +44,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
-    Et la page des justificatifs affiche "Document retrieved successfully"
+    Et la page des justificatifs affiche "Document récupéré avec succès"
 
   Scénario: l'usager refuse le document sur l'espace de prévisualisation, et la démarche le dit
     Quand l'administrateur choisit la version "OOTS 2.0"
@@ -68,7 +68,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
-    Alors la page des justificatifs affiche "Document retrieved successfully"
+    Alors la page des justificatifs affiche "Document récupéré avec succès"
 
   Scénario: l'usager demande un type que la France déclare sans le servir, et la démarche dit le refus
     Quand l'administrateur choisit la version "OOTS 2.0"
@@ -79,7 +79,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Alors la page des justificatifs affiche que la demande de l'usager est en cours
     Et le journal des échanges contient le départ de la requête, envoyée par la démarche de démonstration
     Et cette requête demande le type de justificatif "FR - Test Evidence Type not held"
-    Et la page des justificatifs affiche "The document cannot be provided"
+    Et la page des justificatifs affiche "Le document ne peut pas être fourni"
     Et la page des justificatifs affiche "EDM:ERR:0004"
     Et la page des justificatifs ne présente aucun lien vers l'espace de prévisualisation
     Et le journal des échanges contient la réception de l'erreur "EDM:ERR:0004", et d'aucune autre

@@ -57,7 +57,7 @@ RSpec.describe 'Admin::CommonServices::Countries' do
       expect(response).to have_http_status(:ok)
       expect(page.at_css('h1').text).to eq('🇦🇹 Autriche (AT)')
       expect(page.css('.fr-breadcrumb__link').map(&:text))
-        .to eq(['Espace d’administration', 'Annuaires centraux', 'Pays', '🇦🇹 Autriche (AT)'])
+        .to eq(['Administration', 'Annuaires centraux', 'Pays', '🇦🇹 Autriche (AT)'])
       expect(tiles).to eq(['En requêteur 6 démarches déclarées',
                            'En fournisseur Les exigences pour lesquelles il publie un justificatif'])
       expect(tile_to(admin_common_services_country_procedures_path('AT')).text.strip).to eq('En requêteur')
@@ -291,7 +291,7 @@ RSpec.describe 'Admin::CommonServices::Countries' do
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('.fr-breadcrumb__link').map(&:text))
-        .to eq(['Espace d’administration', 'Annuaires centraux', 'Pays', '🇫🇷 France (FR)', 'Démarches', 'V1'])
+        .to eq(['Administration', 'Annuaires centraux', 'Pays', '🇫🇷 France (FR)', 'Démarches', 'V1'])
     end
 
     it 'shows the same declarations as the descent from the procedure' do

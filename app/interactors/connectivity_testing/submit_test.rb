@@ -31,7 +31,7 @@ module ConnectivityTesting
     end
 
     def log(error)
-      Rails.logger.warn(I18n.t('interactors.connectivity_testing.submit_test.refused',
+      Rails.logger.warn(LogLine.t('interactors.connectivity_testing.submit_test.refused',
         party: test.party_name, error: "#{error.class}: #{error.message}"))
     end
 

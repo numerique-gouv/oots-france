@@ -69,7 +69,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       expect(response.headers['Deferred-Fragment']).to eq('1')
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
-      expect(response.parsed_body.text).to include('Requesting the document')
+      expect(response.parsed_body.text).to include('Demande du document en cours')
     end
 
     # A fragment and not a page: spliced back into the card, a layout would land
@@ -262,7 +262,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         post demande_path
 
         expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
-        expect(response.parsed_body.text).to include('Retry to request')
+        expect(response.parsed_body.text).to include('Redemander le document')
       end
     end
   end
@@ -400,7 +400,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       identify_demo_user
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-      expect(response.parsed_body.at_css('.demo-request__body').text).to include('Request the document')
+      expect(response.parsed_body.at_css('.demo-request__body').text).to include('Demander le document')
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('idle')
       expect(response.parsed_body.css('.demo-request__body a[target="_blank"]')).to be_empty
     end
@@ -463,7 +463,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       get demande_path
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
-      expect(response.parsed_body.text).to include('Requesting the document')
+      expect(response.parsed_body.text).to include('Demande du document en cours')
     end
 
     # Le document remis par le worker règle l'état, quoi que dise le contrat.
@@ -473,7 +473,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       get demande_path
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('delivered')
-      expect(response.parsed_body.text).to include('Document retrieved successfully')
+      expect(response.parsed_body.text).to include('Document récupéré avec succès')
     end
 
     # Chapitre 2.1 §3.3 : le refus du correspondant est dit à l'usager, avec le
@@ -484,7 +484,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       get demande_path
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('failed')
-      expect(response.parsed_body.text).to include('EDM:ERR:0003', 'Retry to request')
+      expect(response.parsed_body.text).to include('EDM:ERR:0003', 'Redemander le document')
     end
 
     # Le contrat injoignable ne dit rien de l'échange : la zone rapporte la panne
@@ -495,7 +495,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       get demande_path
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
-      expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).to include("L'état de la demande n'a pas pu être lu")
       expect(response.parsed_body.text).not_to include('execution expired')
     end
 
@@ -507,7 +507,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('could not be read')
+      expect(response.parsed_body.text).to include("L'état de la demande n'a pas pu être lu")
       expect(response.parsed_body.text).not_to include('Échange inconnu')
       expect(Rails.logger).to have_received(:warn).with(include('Échange inconnu'))
     end
@@ -560,13 +560,13 @@ RSpec.describe 'Admin::Demo::Requests' do
       end).to have_been_made.once
     end
 
-    it 'presents the departure page, the description in English and the link the confirmation answered' do
+    it 'presents the departure page, the description in English where none is in the language of the page, and the link the confirmation answered' do
       get demande_path
 
       zone = response.parsed_body
       expect(zone.at_css('.demo-request__body')['data-outcome']).to eq('preview')
       expect(zone.at_css('[lang="EN"]').text).to eq('Your grant')
-      expect(zone.at_css('a[href="https://ap.example/preview?t=1"]').text).to include('Preview and approve')
+      expect(zone.at_css('a[href="https://ap.example/preview?t=1"]').text).to include('Prévisualiser et approuver')
     end
 
     # CA3: a reload says the same thing, and confirms nothing again.
@@ -586,7 +586,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('The document cannot be provided', 'EDM:ERR:0004')
+      expect(response.parsed_body.text).to include('Le document ne peut pas être fourni', 'EDM:ERR:0004')
     end
 
     # CA6.
@@ -596,7 +596,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('You chose not to use this document', 'Retry to request')
+      expect(response.parsed_body.text).to include('Vous avez choisi de ne pas utiliser ce document', 'Redemander le document')
     end
 
     it 'says a confirmation the contract refused, keeps the reason for the log, and confirms nothing more' do
@@ -605,7 +605,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('The preview has failed')
+      expect(response.parsed_body.text).to include('La prévisualisation a échoué')
       expect(response.parsed_body.text).not_to include("n'est pas une URL absolue")
       expect(Rails.logger).to have_received(:warn).with(include("n'est pas une URL absolue"))
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('false')
@@ -704,9 +704,9 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       zones = response.parsed_body.css('main .demo-request__body')
 
-      expect(zones.first.text).to include('Document retrieved successfully', 'Open the document')
-      expect(zones.last.text).to include('Requesting the document')
-      expect(zones.last.text).not_to include('Document retrieved successfully')
+      expect(zones.first.text).to include('Document récupéré avec succès', 'Ouvrir le document')
+      expect(zones.last.text).to include('Demande du document en cours')
+      expect(zones.last.text).not_to include('Document récupéré avec succès')
     end
 
     # CA11. A refusal is the correspondent's answer to one exchange, and the
@@ -720,7 +720,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
       zones = response.parsed_body.css('main .demo-request__body')
 
-      expect(zones.first.text).to include('EDM:ERR:0003', 'Retry to request')
+      expect(zones.first.text).to include('EDM:ERR:0003', 'Redemander le document')
       expect(zones.last['data-outcome']).to eq('pending')
       expect(zones.last.text).not_to include('EDM:ERR:0003')
     end
@@ -806,7 +806,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       zones = response.parsed_body.css('main .demo-request__body')
 
       expect(zones.pluck('data-outcome')).to eq(%w[idle idle])
-      expect(zones.map(&:text).join).to include('Request the document')
+      expect(zones.map(&:text).join).to include('Demander le document')
 
       stub_evidence_request_for(premiere, 'aaaaaaaa-0000-4000-8000-000000000004')
       stub_exchange_state('aaaaaaaa-0000-4000-8000-000000000004', statut: 'pending')
@@ -892,7 +892,7 @@ RSpec.describe 'Admin::Demo::Requests' do
         zones = response.parsed_body.css('main .demo-request__body')
 
         expect(zones.pluck('data-outcome')).to eq(%w[idle idle])
-        expect(zones.map(&:text).join).to include('Request the document')
+        expect(zones.map(&:text).join).to include('Demander le document')
 
         stub_evidence_request_for(premiere, 'aaaaaaaa-0000-4000-8000-000000000005')
         stub_exchange_state('aaaaaaaa-0000-4000-8000-000000000005', statut: 'pending')

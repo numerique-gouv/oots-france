@@ -1,0 +1,109 @@
+<%= tag.header(**html_attributes) do %>
+  <div class="fr-header__body">
+    <div class="fr-container">
+      <div class="fr-header__body-row">
+        <div class="fr-header__brand fr-enlarge-link">
+          <div class="fr-header__brand-top">
+            <div class="fr-header__logo">
+              <p class="fr-logo"><%= logo_text %></p>
+            </div>
+
+            <% if operator_image? %>
+              <%= operator_image %>
+            <% end %>
+
+            <% if with_navbar? %>
+              <div class="fr-header__navbar">
+                <% if search? %>
+                  <button class="fr-btn--search fr-btn" data-fr-opened="false" aria-controls="modal-header-search" id="button-header-search" title="<%= t('components.site_header.search') %>">
+                    <%= t('components.site_header.search') %>
+                  </button>
+                <% end %>
+
+                <% if with_menu? %>
+                  <button class="fr-btn--menu fr-btn" data-fr-opened="false" aria-controls="modal-header-menu" aria-haspopup="menu" id="button-header-menu" title="<%= t('components.site_header.menu') %>">
+                    <%= t('components.site_header.menu') %>
+                  </button>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+
+          <% if title %>
+            <div class="fr-header__service">
+              <% if href %>
+                <a href="<%= href %>" title="<%= t('components.site_header.home', title:) %>">
+                  <p class="fr-header__service-title"><%= title %></p>
+                </a>
+              <% else %>
+                <p class="fr-header__service-title"><%= title %></p>
+              <% end %>
+              <% if tagline %>
+                <p class="fr-header__service-tagline"><%= tagline %></p>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <% if with_tools? %>
+          <div class="fr-header__tools">
+            <div class="fr-header__tools-links">
+              <% if tool_links? || custom_tool_links? %>
+                <ul class="fr-btns-group">
+                  <% tool_links.each do |tool_link| %>
+                    <li>
+                      <%= tool_link %>
+                    </li>
+                  <% end %>
+                  <% custom_tool_links.each do |custom_tool_link| %>
+                    <li>
+                      <%= custom_tool_link %>
+                    </li>
+                  <% end %>
+                </ul>
+              <% end %>
+              <%= render LanguageSelectorComponent.new %>
+            </div>
+
+            <% if search? %>
+              <div class="fr-header__search fr-modal" id="modal-header-search">
+                <div class="fr-container fr-container-lg--fluid">
+                  <button class="fr-btn--close fr-btn" aria-controls="modal-header-search" title="<%= t('components.site_header.close') %>">
+                    <%= t('components.site_header.close') %>
+                  </button>
+                  <div role="search" id="header-search">
+                    <%= search %>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <% if with_menu? %>
+    <div class="fr-header__menu fr-modal" id="modal-header-menu" aria-labelledby="button-header-menu" role="navigation">
+      <div class="fr-container">
+        <button class="fr-btn--close fr-btn" aria-controls="modal-header-menu" title="<%= t('components.site_header.close') %>">
+          <%= t('components.site_header.close') %>
+        </button>
+        <div class="fr-header__menu-links">
+        </div>
+
+        <% if direct_links? %>
+          <nav class="fr-nav" id="navigation-direct-links" role="navigation" aria-label="<%= t('components.site_header.main_menu') %>">
+            <ul class="fr-nav__list">
+              <% direct_links.each do |direct_link| %>
+                <li class="fr-nav__item">
+                  <%= direct_link %>
+                </li>
+              <% end %>
+            </ul>
+          </nav>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+<% end %>

@@ -42,7 +42,7 @@ module Demo
 
       parsed.is_a?(Hash) ? parsed : {}
     rescue JSON::ParserError => e
-      Rails.logger.warn(I18n.t('clients.demo.contract_answer.unreadable',
+      Rails.logger.warn(LogLine.t('clients.demo.contract_answer.unreadable',
         path:, status: response.status, error: e.message))
 
       {}
@@ -90,7 +90,7 @@ module Demo
 
       Time.iso8601(announced)
     rescue ArgumentError => e
-      Rails.logger.warn(I18n.t('clients.demo.contract_answer.unreadable_date',
+      Rails.logger.warn(LogLine.t('clients.demo.contract_answer.unreadable_date',
         exchange_id:, date: announced, error: e.message))
 
       nil

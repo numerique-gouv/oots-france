@@ -6,9 +6,9 @@
 #
 # `detail` names the rule, and travels to the `detail` attribute of the
 # `rs:Exception` the correspondent receives: without it they read « invalid
-# request » and nothing else. English and outside `fr.yml`, like every other
-# value the TDD fix, because it is read by a foreign machine and not by a
-# French screen.
+# request » and nothing else. English and outside the locale files, like every
+# other value the TDD fix, because it is read by a foreign machine and not by a
+# screen.
 #
 # Flat, and not an EbmsError, on purpose: EbmsError drives the 422 we return to
 # the French service provider, and a malformed foreign message is not their

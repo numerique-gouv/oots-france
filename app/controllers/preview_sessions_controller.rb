@@ -3,6 +3,8 @@
 # the unpredictable address is what opens it, which §1 admits until the space
 # asks the user to authenticate again (OOTS-76).
 class PreviewSessionsController < ApplicationController
+  include ChosenLanguage
+
   before_action :find_session
 
   def show

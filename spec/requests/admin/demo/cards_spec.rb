@@ -29,15 +29,15 @@ RSpec.describe 'Admin::Demo::Cards' do
     it 'offers the catalogue less the cards of the procedure, under them' do
       get documents_path
 
-      expect(response.parsed_body.css('main h2').map { |heading| heading.text.squish }).to include('Add another evidence')
+      expect(response.parsed_body.css('main h2').map { |heading| heading.text.squish }).to include('Ajouter un autre justificatif')
       # Said off screen only: the heading already says what the list offers.
-      expect(added_label.text.squish).to eq('Document to add')
+      expect(added_label.text.squish).to eq('Justificatif à ajouter')
       expect(added_label['class']).to include('fr-sr-only')
       offered = options.pluck('value')
       expect(offered).to include(ajoutee)
       expect(offered).not_to include(premiere, seconde)
       expect(options.find { |option| option['value'] == ajoutee }.text).to eq('(TEST) Test Requirement')
-      expect(response.parsed_body.at_css("main form[action='#{cartes_path}'] [type=submit]")['value']).to eq('Add')
+      expect(response.parsed_body.at_css("main form[action='#{cartes_path}'] [type=submit]")['value']).to eq('Ajouter')
     end
 
     context 'when the Evidence Broker lists nothing for the procedure' do
@@ -46,7 +46,7 @@ RSpec.describe 'Admin::Demo::Cards' do
       it 'says so, and offers the whole catalogue' do
         get documents_path
 
-        expect(response.parsed_body.css('main').text).to include('The European directories listed no evidence')
+        expect(response.parsed_body.css('main').text).to include("Les annuaires européens n'ont listé aucun justificatif")
         expect(options.size).to eq(Directories::Catalogue.new.requirements.size + 1)
       end
     end
@@ -66,6 +66,22 @@ RSpec.describe 'Admin::Demo::Cards' do
       expect(added_label).to be_nil
       expect(Rails.logger).to have_received(:warn).with(/Catalogue de l'Evidence Broker illisible/)
     end
+
+    # CA11: the log is read by whoever runs the deployment, whatever language
+    # the page that wrote it was read in.
+    it 'logs in French a failure met on a page read in English' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_excluding('procedure-id' => 'T1')).to_timeout
+      stub_procedure_requirements('T1', 'eb_requirements_t1_fr')
+      stub_directory('eb', 'evidence-types-by-requirement', 'eb_requirements_vides')
+      allow(Rails.logger).to receive(:warn).and_call_original
+
+      get documents_path(locale: 'en')
+      follow_redirect!
+
+      expect(response.parsed_body.at_css('html')['lang']).to eq('en')
+      expect(Rails.logger).to have_received(:warn).with(/Catalogue de l'Evidence Broker illisible/)
+    end
   end
 
   # CA7: a card like the others, under those of the procedure, with a cross.
@@ -80,9 +96,9 @@ RSpec.describe 'Admin::Demo::Cards' do
       expect(cartes.pluck('id')).to eq(["exigence-#{premiere}", "exigence-#{seconde}", "exigence-#{ajoutee}"])
       expect(seen(cartes.last.at_css('.fr-card__title'))).to eq('(TEST) Test Requirement')
       expect(cartes.last.at_css('.fr-card__desc .country-tag').text.squish).to include('France')
-      expect(cartes.last.text).to include('No provider')
+      expect(cartes.last.text).to include('ne déclare aucun fournisseur')
       expect(cartes.map { |carte| carte.css('.requirement-card__remove button').map { |b| b['title'] } })
-        .to eq([[], [], ['Remove this document']])
+        .to eq([[], [], ['Retirer ce document']])
       expect(options.pluck('value')).not_to include(ajoutee)
     end
 
@@ -117,7 +133,7 @@ RSpec.describe 'Admin::Demo::Cards' do
     it 'opens the list on nothing chosen, and adds nothing when nothing is chosen' do
       get documents_path
 
-      expect(options.first).to have_attributes(text: 'Select a document')
+      expect(options.first).to have_attributes(text: 'Choisir un justificatif')
       expect(options.first.to_h).to include('value' => '', 'disabled' => 'disabled', 'selected' => 'selected')
       expect(response.parsed_body.at_css('main select#exigence-a-ajouter')['required']).to be_present
 
@@ -176,7 +192,7 @@ RSpec.describe 'Admin::Demo::Cards' do
       patch pays_path(ajoutee), params: { pays: 'FI' }
 
       expect(response.parsed_body.text).to include('Keha v. 2.0', 'Dummy PDF - FI')
-      expect(response.parsed_body.at_css('.requirement-card__remove button')['title']).to eq('Remove this document')
+      expect(response.parsed_body.at_css('.requirement-card__remove button')['title']).to eq('Retirer ce document')
     end
 
     context 'when the Evidence Broker lists nothing for the procedure' do
@@ -208,7 +224,7 @@ RSpec.describe 'Admin::Demo::Cards' do
         'idExigence' => requirement_uri(ajoutee), 'exigenceHorsDemarche' => 'true',
         'codePays' => 'FI', 'codeDemarche' => 'T1',
       )
-      expect(response.parsed_body.text).to include('Requesting the document')
+      expect(response.parsed_body.text).to include('Demande du document en cours')
     end
   end
 
@@ -247,9 +263,9 @@ RSpec.describe 'Admin::Demo::Cards' do
       get documents_path
 
       carte = response.parsed_body.at_css("main #exigence-#{ajoutee}")
-      expect(carte.at_css('.fr-card__desc .country-tag').text.squish).to include('Finland')
+      expect(carte.at_css('.fr-card__desc .country-tag').text.squish).to include('Finlande')
       expect(carte.css('select')).to be_empty
-      expect(carte.text).to include('Requesting the document')
+      expect(carte.text).to include('Demande du document en cours')
     end
 
     it 'brings a refused one back in its country, offering to ask again and the list' do
@@ -262,7 +278,7 @@ RSpec.describe 'Admin::Demo::Cards' do
 
       carte = response.parsed_body.at_css("main #exigence-#{ajoutee}")
       expect(carte.at_css('select option[selected]')['value']).to eq('FI')
-      expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
+      expect(carte.at_css('.demo-request button').text.squish).to eq('Redemander le document')
     end
 
     it 'leaves the cards of the procedure where they are' do

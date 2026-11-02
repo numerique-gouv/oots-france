@@ -8,8 +8,6 @@
 # at all: requirement 27 of chapter 1 §2 has the type and the provider named
 # « before any request is made », and a combination is asked for whole.
 class DemoCardWording
-  LANGUAGES = DemoResolutionWording::LANGUAGES
-
   # What a card says of the combination itself, whatever its lines say.
   delegate :requirement, :requirement_language, :requirement_id, :requirement_uuid, :country_code, :failure,
     :published_nothing?, to: :head
@@ -38,31 +36,33 @@ class DemoCardWording
   def nameable? = lines.any? && lines.all?(&:nameable?)
 
   # A combination of one type is named by that type; one of several by the
-  # `sdg:Name` the Evidence Broker gives the list, in English or else in
-  # French, and failing that by the titles of its types, in the order of the
-  # list.
+  # `sdg:Name` the Evidence Broker gives the list, in the language the page is
+  # read in or else in the other, and failing that by the titles of its types,
+  # in the order of the list.
   def self.label(list)
     types = list.evidence_types
-    return types.first.label(languages: LANGUAGES) if types.one?
-    return list.label(languages: LANGUAGES) if named?(list)
+    return types.first.label if types.one?
+    return list.label if named?(list)
 
-    I18n.t('presenters.demo_card_wording.and', first: titles(types[..-2]), last: types.last.label(languages: LANGUAGES))
+    I18n.t('presenters.demo_card_wording.and', first: titles(types[..-2]), last: types.last.label)
   end
 
   # The language of that name, where one language says it whole (RGAA 8.7):
-  # titles joined by the English « and » are English only if every title is.
+  # titles joined by the page's « and » are in the page's language only if
+  # every title is.
   def self.label_language(list)
     types = list.evidence_types
-    return types.first.label_language(languages: LANGUAGES) if types.one?
-    return list.label_language(languages: LANGUAGES) if named?(list)
+    return types.first.label_language if types.one?
+    return list.label_language if named?(list)
 
-    'EN' if types.all? { |type| type.label_language(languages: LANGUAGES) == 'EN' }
+    page = I18n.locale.to_s.upcase
+    page if types.all? { |type| type.label_language == page }
   end
 
-  def self.named?(list) = LANGUAGES.intersect?(list.descriptions.keys)
+  def self.named?(list) = Described.preferred_languages.intersect?(list.descriptions.keys)
 
   def self.titles(types)
-    types.map { |type| type.label(languages: LANGUAGES) }.join(I18n.t('presenters.demo_card_wording.separator'))
+    types.map(&:label).join(I18n.t('presenters.demo_card_wording.separator'))
   end
 
   private_class_method :named?, :titles

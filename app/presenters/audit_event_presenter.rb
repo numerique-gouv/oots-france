@@ -1,7 +1,7 @@
 # What the detail page of a journalled event shows: its columns, in order, each
 # with the wording it carries and the reading its value asks for.
 #
-# The order lives here and not in `config/locales/fr.yml`. A wording is
+# The order lives here and not in the locale files. A wording is
 # rewritten and a key is renamed — neither is a change to what the page shows,
 # and one of them used to move a column or call a method the record does not
 # have.

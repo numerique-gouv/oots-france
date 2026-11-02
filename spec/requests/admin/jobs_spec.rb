@@ -14,6 +14,18 @@ RSpec.describe 'Admin::Jobs' do
       expect(response.body).to include('GoodJob')
     end
 
+    # RG11: GoodJob renders under `:en` whatever language the reader chose.
+    it 'serves the dashboard in its own English under French chosen' do
+      cookies[:locale] = 'fr'
+      sign_in_as_administrator
+
+      get admin_jobs_path
+      follow_redirect! while response.redirect?
+
+      expect(response.parsed_body.at_css('html')['lang']).to eq('en')
+      expect(response.body).to include('Jobs')
+    end
+
     # The engine carries no filter of ours: the guard reaches it only through the
     # load hook of `config/initializers/good_job.rb`, and nothing else in the
     # suite would notice that hook gone. The 303 is asserted because GoodJob's

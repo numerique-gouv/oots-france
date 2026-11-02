@@ -48,7 +48,7 @@ module DirectoryLookup
     def malformed?(questions)
       invalid = questions.reject(&:valid?)
       invalid.each do |question|
-        Rails.logger.warn(I18n.t('interactors.directory_lookup.fetch_providers.malformed_question',
+        Rails.logger.warn(LogLine.t('interactors.directory_lookup.fetch_providers.malformed_question',
           id: question.id, errors: question.errors.full_messages.join(', ')))
       end
 

@@ -29,7 +29,7 @@ module EvidenceProvision
     # contradict. Said aloud, as `SettleExchange` says it.
     def unknown_exchange
       Rails.logger.warn(
-        I18n.t('interactors.evidence_provision.journal_answer.unknown_exchange',
+        LogLine.t('interactors.evidence_provision.journal_answer.unknown_exchange',
           id: context.message.conversation_id),
       )
     end

@@ -17,27 +17,46 @@ RSpec.describe DemoCardWording do
         .to eq(['Simple test evidence', 'EN'])
     end
 
-    it 'names a combination of several by the name the Evidence Broker gives it, in English first' do
+    it 'names a combination of several by the name the Evidence Broker gives it, in the language of the page first' do
       combination = list(type('Projectathon test evidence'), type('Simple test evidence'),
         names: { 'FR' => 'Justificatif composé', 'EN' => 'Compound test evidence' })
 
       expect([described_class.label(combination), described_class.label_language(combination)])
-        .to eq(['Compound test evidence', 'EN'])
+        .to eq(['Justificatif composé', 'FR'])
+    end
+
+    it 'names it by its English name on a page read in English' do
+      combination = list(type('Projectathon test evidence'), type('Simple test evidence'),
+        names: { 'FR' => 'Justificatif composé', 'EN' => 'Compound test evidence' })
+
+      I18n.with_locale(:en) do
+        expect([described_class.label(combination), described_class.label_language(combination)])
+          .to eq(['Compound test evidence', 'EN'])
+      end
     end
 
     it 'joins the titles of its types, in the order of the list, where it has no name in English or French' do
       combination = list(type('A'), type('B'), type('C'), names: { 'EL' => 'Σύνθετο' })
 
-      expect([described_class.label(combination), described_class.label_language(combination)]).to eq(['A, B and C', 'EN'])
+      expect(described_class.label(combination)).to eq('A, B et C')
     end
 
-    it 'names a combination of several by its French name where it has no English one' do
-      expect(described_class.label(list(type('B'), type('C'), names: { 'FR' => 'Composé' }))).to eq('Composé')
+    it 'names a combination of several by its English name where it has no French one' do
+      expect(described_class.label(list(type('B'), type('C'), names: { 'EN' => 'Compound' }))).to eq('Compound')
     end
 
-    # RGAA 8.7: the « and » that joins them is English.
-    it 'declares no language for titles joined from another language than English' do
-      expect(described_class.label_language(list(type('B'), type('Γ', 'EL')))).to be_nil
+    # RGAA 8.7: the « and » that joins them is in the language of the page.
+    it 'declares the language of the page for titles joined from that language alone' do
+      expect(described_class.label_language(list(type('A', 'FR'), type('B', 'FR')))).to eq('FR')
+
+      I18n.with_locale(:en) do
+        expect(described_class.label_language(list(type('A'), type('B')))).to eq('EN')
+      end
+    end
+
+    it 'declares no language for titles joined from another language than the page\'s' do
+      expect(described_class.label_language(list(type('A'), type('B')))).to be_nil
+      expect(described_class.label_language(list(type('B', 'FR'), type('Γ', 'EL')))).to be_nil
       expect(described_class.label_language(list(type('Β', 'EL'), type('Γ', 'EL')))).to be_nil
     end
   end

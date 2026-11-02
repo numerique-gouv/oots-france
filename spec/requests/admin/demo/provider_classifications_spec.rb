@@ -41,7 +41,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
     expect(seen(questions.at_css('label'))).to eq('Projectathon test case')
     expect(questions.at_css('label .directory-value')['lang']).to eq('EN')
     expect(questions.css('option').map { |option| [option.text.squish, option['value']] }.first(3)).to eq(
-      [['Select a value', ''], ['TC03 - Evidence request error flow due to Basic Registry error', 'TC03'],
+      [['Sélectionnez une valeur', ''], ['TC03 - Evidence request error flow due to Basic Registry error', 'TC03'],
        ['TC06 - Basic evidence request with reauthentication and preview', 'TC06']],
     )
     expect(questions.css('option').size).to eq(9)
@@ -76,7 +76,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
     expect(response.headers['Deferred-Fragment']).to eq('1')
     expect(fragment.css('.requirement-card__actions [data-demo-card-target=resolution] .directory-value')
       .map { |value| seen(value) }).to eq(['Projectathon test evidence', 'Ministry of Digital Governance'])
-    expect(fragment.at_css('.demo-request button').text.squish).to eq('Request the document')
+    expect(fragment.at_css('.demo-request button').text.squish).to eq('Demander le document')
     expect(fragment.at_css("select[name='classificationFournisseur[#{question}]'] option[selected]")['value'])
       .to eq('TC03')
     expect(fragment.css("select[name='classificationFournisseur[#{question}]'] option").pluck('value')).not_to include('')
@@ -122,7 +122,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
     answer('TC02')
 
     fragment = response.parsed_body
-    expect(fragment.at_css('.requirement-card__refusal').text.squish).to include('No provider listed by EL for this evidence')
+    expect(fragment.at_css('.requirement-card__refusal').text.squish).to include('EL ne déclare aucun fournisseur pour ce justificatif')
     expect(fragment.at_css('.demo-request')).to be_nil
     expect(fragment.at_css('form.requirement-card__questions')).to be_present
     expect(fragment.at_css('.requirement-card')['class']).not_to include('requirement-card--unsatisfiable')
@@ -181,7 +181,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
       stub_exchange_state(statut: 'failed')
       page
       expect(questions.at_css('option[selected]')['value']).to eq('TC03')
-      expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
+      expect(carte.at_css('.demo-request button').text.squish).to eq('Redemander le document')
     end
   end
 
@@ -193,7 +193,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
     before do
       stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_el', country: 'EL',
         requirement: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}")
-      Demo::Card.add(journey_id: Demo::Card.sole.journey_id, country_code: 'EL', languages: %w[EN],
+      Demo::Card.add(journey_id: Demo::Card.sole.journey_id, country_code: 'EL',
         requirement: build(:requirement, id: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}"))
       patch(admin_demo_combinaison_path(exigence: added, version: 'v1.2', procedure: 'T1'),
         params: { combinaison: projectathon_list })

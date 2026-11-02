@@ -39,7 +39,7 @@ class ExpireExchangesJob < ApplicationJob
   # apart.
   rescue StandardError => e
     Rails.logger.error(
-      I18n.t('jobs.expire_exchanges_job.failed',
+      LogLine.t('jobs.expire_exchanges_job.failed',
         id: exchange.exchange_id, error: "#{e.class}: #{e.message}"),
     )
   end

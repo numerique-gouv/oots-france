@@ -19,7 +19,7 @@ module ProConnectSession
     instance = Settings.proconnect_instance
     return nil if instance.nil? || id_token.blank?
 
-    result = Admin::EndProConnectSession.call(instance:, id_token:)
+    result = LogLine.speaking { Admin::EndProConnectSession.call(instance:, id_token:) }
     return log_unended(result) unless result.success?
 
     session[:pro_connect_logout] = { 'state' => result.state, 'france_connect' => france_connect,

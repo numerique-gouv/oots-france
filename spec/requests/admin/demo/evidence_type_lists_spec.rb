@@ -33,9 +33,9 @@ RSpec.describe 'Admin::Demo::EvidenceTypeLists' do
     page
 
     expect(type_list.at_css("label[for='#{type_list.at_css('select')['id']}']").text.squish)
-      .to eq('Document to request')
+      .to eq('Document à demander')
     expect(type_list.css('option').map { |option| [option.text.squish, option['value']] }).to eq(
-      [['Select a document', ''], ['Test Evidence Austria (AT)', high_list],
+      [['Sélectionnez un document', ''], ['Test Evidence Austria (AT)', high_list],
        ['Austrian Test Evidence Type without Reauthentication', low_list]],
     )
     expect(carte.at_css('.requirement-card__actions').text.squish).to be_empty
@@ -53,7 +53,7 @@ RSpec.describe 'Admin::Demo::EvidenceTypeLists' do
     expect(response.headers['Deferred-Fragment']).to eq('1')
     expect(named(fragment)).to eq(['Austrian Test Evidence Type without Reauthentication',
                                    'Test Evidence Provider Austria (AT)'])
-    expect(fragment.at_css('.demo-request button').text.squish).to eq('Request the document')
+    expect(fragment.at_css('.demo-request button').text.squish).to eq('Demander le document')
     expect(fragment.at_css('select[name=combinaison] option[selected]')['value']).to eq(low_list)
     expect(fragment.css('select[name=combinaison] option').pluck('value')).not_to include('')
     expect(contract_demands).to be_empty
@@ -78,7 +78,7 @@ RSpec.describe 'Admin::Demo::EvidenceTypeLists' do
     page
 
     expect(type_list.at_css('option[selected]')).to be_nil
-    expect(type_list.at_css('option').text.squish).to eq('Select a document')
+    expect(type_list.at_css('option').text.squish).to eq('Sélectionnez un document')
   end
 
   # The request leaves with the type of the combination the card named, and
@@ -120,7 +120,7 @@ RSpec.describe 'Admin::Demo::EvidenceTypeLists' do
     before do
       stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_at', country: 'AT',
         requirement: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}")
-      Demo::Card.add(journey_id: Demo::Card.sole.journey_id, country_code: 'AT', languages: %w[EN],
+      Demo::Card.add(journey_id: Demo::Card.sole.journey_id, country_code: 'AT',
         requirement: build(:requirement, id: "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{added}"))
     end
 
@@ -178,7 +178,7 @@ RSpec.describe 'Admin::Demo::EvidenceTypeLists' do
 
       expect(carte.at_css('select[name=pays] option[selected]')['value']).to eq('AT')
       expect(type_list.at_css('option[selected]')['value']).to eq(low_list)
-      expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
+      expect(carte.at_css('.demo-request button').text.squish).to eq('Redemander le document')
     end
   end
 

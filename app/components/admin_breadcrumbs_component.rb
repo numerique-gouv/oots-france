@@ -4,8 +4,9 @@
 # one is where the reader stands: it carries no link, which is what tells the
 # DSFR to mark it as current.
 #
-# The DSFR component is rendered directly: the `dsfr_breadcrumbs` helper is put
-# on ActionView, and a ViewComponent does not inherit from it.
+# `BreadcrumbsComponent` is rendered directly: the `dsfr_breadcrumbs` helper is
+# put on ActionView, a ViewComponent does not inherit from it, and the gem's
+# component writes its labels in French.
 class AdminBreadcrumbsComponent < ViewComponent::Base
   def initialize(trail: [])
     @trail = trail
@@ -13,7 +14,7 @@ class AdminBreadcrumbsComponent < ViewComponent::Base
   end
 
   def call
-    render(DsfrComponent::BreadcrumbsComponent.new) do |trail|
+    render(BreadcrumbsComponent.new) do |trail|
       crumbs.each { |label, href| trail.with_breadcrumb(label:, href:) }
     end
   end

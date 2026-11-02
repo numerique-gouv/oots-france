@@ -30,6 +30,19 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(response.parsed_body.css('main').text).to include('Keha v. 2.0', 'Dummy PDF - FI')
     end
 
+    # CA5: the page declares its language once, on `<html>`; only what a
+    # directory published — a value, an option of a list — carries a `lang`.
+    it 'marks no sentence of its own with a language, in French as in English' do
+      ['', 'en'].each do |language|
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1', locale: language.presence)
+        follow_redirect! if response.redirect?
+
+        page = response.parsed_body
+        expect(page.at_css('html')['lang']).to eq(language.presence || 'fr')
+        expect(page.css('main [lang]').reject { it.matches?('.directory-value, option') }).to be_empty
+      end
+    end
+
     # A portal's own sentences and the words Brussels publishes read alike on a
     # screen: these two are the directories', and the page says so.
     it 'marks those two as published by the directories, and the identity not' do
@@ -66,8 +79,8 @@ RSpec.describe 'Admin::Demo::Documents' do
       card = response.parsed_body.at_css('main .identity-card')
       rows = card.css('dl > div').to_h { |pair| [pair.at_css('dt').text.squish, pair.at_css('dd').text.squish] }
 
-      expect(rows).to include('Family name' => 'Sørensen', 'Given name(s)' => 'Freja Marie')
-      expect(card.css('.identity-card__level').text.squish).to eq('Level of assurance: Substantial')
+      expect(rows).to include('Nom' => 'Sørensen', 'Prénom(s)' => 'Freja Marie')
+      expect(card.css('.identity-card__level').text.squish).to eq('Niveau de garantie : Substantial')
       expect(card.css('input, select, textarea')).to be_empty
     end
 
@@ -77,8 +90,8 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       line = response.parsed_body.at_css('main .identity-card .identity-card__level .identity-card__eidas')
       expect(line['class']).to include('fr-text-mention--grey')
-      expect(line.text.squish).to eq('eIDAS identifier: DK/FR/123456')
-      expect(line.at_css('.fr-sr-only').text).to eq('eIDAS identifier:')
+      expect(line.text.squish).to eq('Identifiant eIDAS : DK/FR/123456')
+      expect(line.at_css('.fr-sr-only').text).to eq('Identifiant eIDAS :')
     end
 
     it 'shows no eIDAS identifier when the authentication yielded none' do
@@ -122,9 +135,9 @@ RSpec.describe 'Admin::Demo::Documents' do
       carte = response.parsed_body.at_css('main .requirement-card')
 
       expect(seen(carte.at_css('h3'))).to eq('(TEST) Test Requirement')
-      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇷 France (FR)')
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Justificatif impossible à fournir par 🇫🇷 France (FR)')
       expect(carte.at_css('.requirement-card__actions').text.squish)
-        .to eq('⚠️No provider listed by France for this evidence')
+        .to eq('⚠️France ne déclare aucun fournisseur pour ce justificatif')
       expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
       expect(carte.classes).to include('requirement-card--unsatisfiable')
       expect(response.parsed_body.css("form[action='#{admin_demo_demande_path(version: 'v2.0', procedure: 'T1')}']")).to be_empty
@@ -140,7 +153,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.css('main .requirement-card')).to be_empty
-      expect(response.parsed_body.css('main').text).to include('listed no evidence for this procedure')
+      expect(response.parsed_body.css('main').text).to include("n'ont listé aucun justificatif pour cette démarche")
     end
 
     # « No provider listed » is what `DSD:ERR:0001` — `DS_NOT_FOUND` — says; any
@@ -157,7 +170,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.at_css('main .requirement-card__actions').text.squish)
-        .to eq('⚠️France could not answer for this evidence')
+        .to eq("⚠️France n'a pas pu répondre pour ce justificatif")
     end
 
     # One card per requirement the procedure rests on, each naming its own
@@ -182,7 +195,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(carte.at_css('select option[selected]')['value']).to eq('FR')
       expect(carte.at_css('.fr-card__desc').text.squish).to be_empty
-      expect(carte.text).not_to include('Satisfied by', 'Document to request')
+      expect(carte.text).not_to include('Satisfied by', 'Document à demander')
     end
 
     # The code list names the countries, and it is read like every other: a
@@ -190,7 +203,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     # the card that has no provider to name, the one place the country is said
     # in words rather than shown in its box.
     it 'stands on the code alone when the code list names no country' do
-      stub_code_list(country_names: {})
+      stub_code_list(countries: {}, country_names: {})
       stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_aucun_service_fr')
 
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
@@ -199,7 +212,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(carte.at_css('.fr-card__desc .country-tag').text.squish).to eq('🇫🇷 FR')
       expect(carte.at_css('.requirement-card__actions').text.squish)
-        .to eq('⚠️No provider listed by FR for this evidence')
+        .to eq('⚠️FR ne déclare aucun fournisseur pour ce justificatif')
     end
 
     # CA9. Each card carries its own button and its own zone, and the address
@@ -214,7 +227,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       cartes = response.parsed_body.css('main .requirement-card')
 
       expect(cartes.css('.demo-request__body').size).to eq(2)
-      expect(cartes.css('button').map { |bouton| bouton.text.squish }).to eq(['Request the document'] * 2)
+      expect(cartes.css('button').map { |bouton| bouton.text.squish }).to eq(['Demander le document'] * 2)
       expect(cartes.css('[data-controller="demo-request"]').pluck('data-demo-request-url-value'))
         .to eq([admin_demo_demande_path(exigence: premiere, version: 'v2.0', procedure: 'T1'), admin_demo_demande_path(exigence: seconde, version: 'v2.0', procedure: 'T1')])
     end
@@ -233,7 +246,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(cartes.size).to eq(2)
       expect(cartes.first.css('.demo-request__body')).to be_present
       expect(cartes.last.css('.demo-request__body')).to be_empty
-      expect(cartes.last.text).to include('No provider listed by France for this evidence')
+      expect(cartes.last.text).to include('France ne déclare aucun fournisseur pour ce justificatif')
     end
 
     # Une panne d'annuaire n'est pas un refus : elle ne porte aucun code, et
@@ -246,7 +259,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(response).to have_http_status(:bad_gateway)
-      expect(response.parsed_body.css('main').text).to include('could not be reached')
+      expect(response.parsed_body.css('main').text).to include("Les annuaires européens n'ont pas pu être joints")
       expect(response.parsed_body.css("form[action='#{admin_demo_demande_path(version: 'v2.0', procedure: 'T1')}']")).to be_empty
     end
 
@@ -282,7 +295,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v1.2', procedure: 'T1')
 
       carte = response.parsed_body.at_css('main .requirement-card')
-      expect(carte.text).to include('Keha v. 2.0', 'This provider does not support OOTS 1.2')
+      expect(carte.text).to include('Keha v. 2.0', 'Ce fournisseur ne prend pas en charge OOTS 1.2')
       expect(carte.css('button, .demo-request')).to be_empty
       expect(carte.at_css('select')).to be_present
     end
@@ -292,7 +305,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
-        .to eq(['Espace d’administration', 'Demo', '2.0', 'Procedure T1', 'Your documents'])
+        .to eq(['Administration', 'Démo', '2.0', 'Démarche T1', 'Vos justificatifs'])
     end
 
     it 'offers the button on the same card in 2.0' do
@@ -361,12 +374,22 @@ RSpec.describe 'Admin::Demo::Documents' do
       choix = carte.at_css('select')
       options = choix.css('option')
 
-      expect(carte.at_css("label[for='#{choix['id']}']").text.squish).to eq('Country to request the document from')
+      expect(carte.at_css("label[for='#{choix['id']}']").text.squish).to eq('Pays auquel demander le document')
       expect(options.size).to eq(30)
       expect(options.pluck('value')).not_to include('EU')
       expect(options.find { |option| option['selected'] }['value']).to eq('FR')
-      expect(options.map(&:text).first(3)).to eq(['🇦🇹 AT', '🇧🇪 BE', '🇧🇬 BG'])
-      expect(options.map(&:text)).to include('🇫🇮 Finland (FI)', '🇬🇷 EL')
+      expect(options.map(&:text).first(3)).to eq(['🇦🇹 AT', '🇩🇪 Allemagne (DE)', '🇧🇪 BE'])
+      expect(options.map(&:text)).to include('🇫🇮 Finlande (FI)', '🇬🇷 EL')
+    end
+
+    # CA13: the code list names a country in the column of the page's language.
+    it 'names the countries in English on a page read in English, and none in French' do
+      get admin_demo_documents_path(version: 'v2.0', procedure: 'T1', locale: 'en')
+      follow_redirect!
+
+      options = carte.at_css('select').css('option').map(&:text)
+      expect(options).to include('🇩🇪 Germany (DE)', '🇫🇮 Finland (FI)')
+      expect(options.join).not_to include('Allemagne', 'Finlande')
     end
 
     # CA2 and RG6: changing the country asks the directories alone.
@@ -436,9 +459,9 @@ RSpec.describe 'Admin::Demo::Documents' do
       choose_country('DE')
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇩🇪 Germany (DE)')
+      expect(carte.at_css('.fr-card__desc').text.squish).to eq('Justificatif impossible à fournir par 🇩🇪 Allemagne (DE)')
       expect(carte.at_css('.requirement-card__actions').text.squish)
-        .to eq('⚠️No provider listed by Germany for this evidence')
+        .to eq('⚠️Allemagne ne déclare aucun fournisseur pour ce justificatif')
       expect(carte.css('.demo-request')).to be_empty
       expect(carte.at_css('select option[selected]')['value']).to eq('DE')
     end
@@ -448,7 +471,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(carte.at_css('.requirement-card__actions').text.squish)
-        .to eq('⚠️No provider listed by AT for this evidence')
+        .to eq('⚠️AT ne déclare aucun fournisseur pour ce justificatif')
       expect(carte.css('.demo-request')).to be_empty
       expect(carte.at_css('select option[selected]')['value']).to eq('AT')
     end
@@ -580,7 +603,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
         expect(carte.css('select')).to be_empty
         expect(carte.at_css('.fr-card__desc .country-tag')).to be_present
-        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
+        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finlande (FI)')
       end
 
       it 'names it too once the document is in hand' do
@@ -589,7 +612,7 @@ RSpec.describe 'Admin::Demo::Documents' do
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
         expect(carte.css('select')).to be_empty
-        expect(carte.text).to include('Finland', 'Document retrieved successfully')
+        expect(carte.text).to include('Finlande', 'Document récupéré avec succès')
       end
 
       # CA5, second half: a change submitted meanwhile is without effect.
@@ -597,11 +620,11 @@ RSpec.describe 'Admin::Demo::Documents' do
         choose_country('DE')
 
         expect(response.parsed_body.css('select')).to be_empty
-        expect(response.parsed_body.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
+        expect(response.parsed_body.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finlande (FI)')
 
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finland (FI)')
+        expect(carte.at_css('.fr-card__desc').text.squish).to eq('🇫🇮 Finlande (FI)')
         expect(eb_asked('evidence-types-by-requirement', 'DE')).not_to have_been_made
       end
 
@@ -612,7 +635,7 @@ RSpec.describe 'Admin::Demo::Documents' do
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
         expect(carte.at_css('select option[selected]')['value']).to eq('FI')
-        expect(carte.at_css('.demo-request button').text.squish).to eq('Retry to request')
+        expect(carte.at_css('.demo-request button').text.squish).to eq('Redemander le document')
       end
     end
 
@@ -633,7 +656,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       cartes = response.parsed_body.css('main .requirement-card')
 
       expect(cartes.map { |une| une.at_css('.fr-card__desc .country-tag').text.squish })
-        .to eq(['🇫🇮 Finland (FI)', '🇩🇪 Germany (DE)'])
+        .to eq(['🇫🇮 Finlande (FI)', '🇩🇪 Allemagne (DE)'])
       expect(cartes.first.css('select')).to be_empty
       expect(contract_demands.size).to eq(1)
     end
@@ -669,7 +692,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.at_css('.demo-request__body')['data-polling']).to eq('true')
-      expect(response.parsed_body.css('main').text).to include('Requesting the document')
+      expect(response.parsed_body.css('main').text).to include('Demande du document en cours')
     end
 
     it 'opens on the document once it has been filed, and asks the contract nothing more' do
@@ -677,7 +700,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-      expect(response.parsed_body.css('main').text).to include('Document retrieved successfully')
+      expect(response.parsed_body.css('main').text).to include('Document récupéré avec succès')
       expect(a_request(:get, "#{Settings.oots_france_url}/requete/pieceJustificative")
         .with(query: hash_including({}))).to have_been_made.once
     end
@@ -703,7 +726,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     it 'opens on the departure page until the user comes back' do
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
-      expect(response.parsed_body.css('main').text).to include('Preview and approve the document')
+      expect(response.parsed_body.css('main').text).to include('Prévisualiser et approuver le document')
     end
 
     it 'takes the user back to the waiting of the card whose exchange it names' do
@@ -711,7 +734,7 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(Demo::Request.sole.returned_at).to be_present
       expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('pending')
-      expect(response.parsed_body.css('main').text).to include('Requesting the document')
+      expect(response.parsed_body.css('main').text).to include('Demande du document en cours')
     end
 
     it 'ignores an exchange of another walk, and renders the page as it stands' do

@@ -7,9 +7,9 @@
 
 <%= render 'admin/demo/titre', wording: @procedure %>
 
-<h2 class="fr-h5 fr-mt-6w fr-mb-1v" lang="en"><%= t('admin.demo.documents.show.identity_heading') %></h2>
+<h2 class="fr-h5 fr-mt-6w fr-mb-1v"><%= t('admin.demo.documents.show.identity_heading') %></h2>
 
-<p class="fr-col-12 fr-col-md-8 fr-mb-3w" lang="en"><%= t('admin.demo.documents.show.identity') %></p>
+<p class="fr-col-12 fr-col-md-8 fr-mb-3w"><%= t('admin.demo.documents.show.identity') %></p>
 
 <%= render DemoIdentityCardComponent.new(identity: @identity) %>
 
@@ -19,9 +19,9 @@
   <% end %>
 <% end %>
 
-<h2 class="fr-h5 fr-mt-6w fr-mb-1v" lang="en"><%= t('admin.demo.documents.show.caption') %></h2>
+<h2 class="fr-h5 fr-mt-6w fr-mb-1v"><%= t('admin.demo.documents.show.caption') %></h2>
 
-<p class="fr-col-12 fr-col-md-8 fr-mb-3w" lang="en"><%= t('admin.demo.documents.show.evidences') %></p>
+<p class="fr-col-12 fr-col-md-8 fr-mb-3w"><%= t('admin.demo.documents.show.evidences') %></p>
 
 <%# A directory that refuses carries a code and raises nothing, so the page
     stands with no card at all — and a heading followed by nothing reads as a
@@ -29,7 +29,7 @@
     listed. Why is the directory's business, and its code belongs to the
     console. %>
 <% if @requirements.empty? && @unreachable.blank? %>
-  <p class="fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.documents.show.nothing_listed') %></p>
+  <p class="fr-col-12 fr-col-md-8"><%= t('admin.demo.documents.show.nothing_listed') %></p>
 <% end %>
 
 <%# One card per requirement the procedure rests on, in the order the Evidence
@@ -51,7 +51,7 @@
     card to add, whether or not the broker ties it to the procedure. Absent
     when the catalogue could not be read: the cards above stand without it. %>
 <% if @addable.present? %>
-  <div class="fr-col-12 fr-col-md-8 fr-mt-4w" lang="en">
+  <div class="fr-col-12 fr-col-md-8 fr-mt-4w">
     <h2 class="fr-h6"><%= t('admin.demo.documents.show.add.heading') %></h2>
 
     <%# The list and its button on one line; the label is said off screen

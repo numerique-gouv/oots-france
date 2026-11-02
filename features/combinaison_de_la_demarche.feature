@@ -22,8 +22,8 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
 
   Scénario: la carte offre chaque combinaison que le pays publie, dans l'ordre où il les écrit, nommée comme il la nomme
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
+    Alors la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Et la liste des combinaisons de la carte offre, dans l'ordre :
       | combinaison                |
       | Simple test evidence       |
@@ -37,11 +37,11 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
       | Compound test evidence, sans nom                   |
       | une liste "NoMatch"                                |
       | Compound test evidence, sous une autre juridiction |
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Alors la liste des combinaisons de la carte offre, dans l'ordre :
       | combinaison                                         |
       | Simple test evidence                                |
-      | Projectathon test evidence and Simple test evidence |
+      | Projectathon test evidence et Simple test evidence |
 
   Scénario: une combinaison seule n'offre pas de liste, et la carte nomme le fournisseur de chacun de ses types
     Étant donné la Grèce publiant pour l'exigence de la carte les listes :
@@ -49,33 +49,33 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
       | Compound test evidence |
       | une liste "NoMatch"    |
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Alors la carte nomme, ligne par ligne :
       | type                       | fournisseur                    |
       | Projectathon test evidence | Ministry of Digital Governance |
       | Simple test evidence       | Ministry of Digital Governance |
     Et la carte n'offre pas de liste des combinaisons
-    Et la page affiche le bouton "Request the documents"
+    Et la page affiche le bouton "Demander les documents"
 
   Scénario: choisir une combinaison nomme chacun de ses types, et le bouton les demande tous, un par un, sous la même conversation
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
     Alors la carte nomme, ligne par ligne :
       | type                       | fournisseur                    |
       | Projectathon test evidence | Ministry of Digital Governance |
       | Simple test evidence       | Ministry of Digital Governance |
-    Et la page affiche le bouton "Request the documents"
+    Et la page affiche le bouton "Demander les documents"
     Et la page des justificatifs n'a pas été rechargée
     Et le contrat n'a reçu aucune demande
     Quand l'usager choisit "Simple test evidence" dans la liste des combinaisons de la carte
     Alors la carte nomme, ligne par ligne :
       | type                 | fournisseur                    |
       | Simple test evidence | Ministry of Digital Governance |
-    Et la page affiche le bouton "Request the document"
+    Et la page affiche le bouton "Demander le document"
     Quand l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Et que l'usager clique sur "Request the documents"
+    Et que l'usager clique sur "Demander les documents"
     Alors le contrat a reçu, dans l'ordre et sous la même conversation, les demandes :
       | type                       |
       | Projectathon test evidence |
@@ -87,46 +87,46 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
 
   Scénario: un type qui pose une question la pose sur sa ligne, et rien ne part avant sa réponse
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
     Alors la ligne de "Projectathon test evidence" pose la question "Projectathon test case"
-    Et la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
-    Et la ligne de "Simple test evidence" affiche "Simple test evidence from Ministry of Digital Governance"
+    Et la carte pose la question "Projectathon test case" dans une liste ouverte sur "Sélectionnez une valeur"
+    Et la ligne de "Simple test evidence" affiche "Simple test evidence auprès de Ministry of Digital Governance"
     Et la page n'affiche aucun bouton de demande
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
-    Alors la ligne de "Projectathon test evidence" affiche "Projectathon test evidence from Ministry of Digital Governance"
-    Et la page affiche le bouton "Request the documents"
+    Alors la ligne de "Projectathon test evidence" affiche "Projectathon test evidence auprès de Ministry of Digital Governance"
+    Et la page affiche le bouton "Demander les documents"
     Et la page des justificatifs n'a pas été rechargée
 
   Scénario: un type sans fournisseur le dit sur sa ligne, et la carte n'offre aucun bouton sans être insatisfaisable
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
     Et aucun fournisseur publié en Grèce pour "Simple test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Alors la ligne de "Projectathon test evidence" affiche "Projectathon test evidence from Ministry of Digital Governance"
-    Et la ligne de "Simple test evidence" affiche "No provider listed by Greece for this evidence"
+    Alors la ligne de "Projectathon test evidence" affiche "Projectathon test evidence auprès de Ministry of Digital Governance"
+    Et la ligne de "Simple test evidence" affiche "Grèce ne déclare aucun fournisseur pour ce justificatif"
     Et la page n'affiche aucun bouton de demande
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
 
   Scénario: une demande refusée par le contrat arrête les suivantes, et chaque type garde son propre bouton
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
     Et le contrat refusant la demande de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Et que l'usager clique sur "Request the documents"
+    Et que l'usager clique sur "Demander les documents"
     Alors le bloc de "Projectathon test evidence" affiche "EB:ERR:0001"
-    Et le bloc de "Simple test evidence" affiche "Request the document"
+    Et le bloc de "Simple test evidence" affiche "Demander le document"
     Et le contrat n'a reçu de demande que pour "Projectathon test evidence"
-    Quand l'usager clique sur "Retry to request" dans le bloc de "Projectathon test evidence"
+    Quand l'usager clique sur "Redemander le document" dans le bloc de "Projectathon test evidence"
     Alors le bloc de "Projectathon test evidence" affiche "EB:ERR:0001"
-    Et le bloc de "Projectathon test evidence" n'affiche pas "Requesting the document"
+    Et le bloc de "Projectathon test evidence" n'affiche pas "Demande du document en cours"
     Quand l'usager recharge la page des justificatifs
-    Alors le bloc de "Projectathon test evidence" affiche "Request the document"
-    Et le bloc de "Simple test evidence" affiche "Request the document"
-    Quand l'usager clique sur "Request the document" dans le bloc de "Simple test evidence"
+    Alors le bloc de "Projectathon test evidence" affiche "Demander le document"
+    Et le bloc de "Simple test evidence" affiche "Demander le document"
+    Quand l'usager clique sur "Demander le document" dans le bloc de "Simple test evidence"
     Alors le contrat a reçu, dans l'ordre et sous la même conversation, les demandes :
       | type                       |
       | Projectathon test evidence |
@@ -137,27 +137,27 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
     Et le contrat refusant la demande de "Simple test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Et que l'usager clique sur "Request the documents"
+    Et que l'usager clique sur "Demander les documents"
     Alors le bloc de "Simple test evidence" affiche "EB:ERR:0001"
     Quand la zone a interrogé deux fois de plus son adresse
     Alors le bloc de "Simple test evidence" affiche "EB:ERR:0001"
-    Et le bloc de "Projectathon test evidence" affiche "Requesting the document"
+    Et le bloc de "Projectathon test evidence" affiche "Demande du document en cours"
 
   Scénario: la combinaison tient au rechargement, une demande la retient, et un autre pays la défait
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Alors la page affiche le bouton "Request the documents"
+    Alors la page affiche le bouton "Demander les documents"
     Quand l'usager recharge la page des justificatifs
     Alors la liste des combinaisons de la carte affiche "Compound test evidence"
     Et la carte nomme, ligne par ligne :
       | type                       | fournisseur                    |
       | Projectathon test evidence | Ministry of Digital Governance |
       | Simple test evidence       | Ministry of Digital Governance |
-    Quand l'usager clique sur "Request the documents"
+    Quand l'usager clique sur "Demander les documents"
     Alors la zone affiche un bloc par type, dans l'ordre :
       | type                       |
       | Projectathon test evidence |
@@ -172,23 +172,23 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
     Quand chaque demande de la combinaison est refusée
     Et que l'usager recharge la page des justificatifs
     Alors la liste des combinaisons de la carte affiche "Compound test evidence"
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
     Alors la carte n'offre pas de liste des combinaisons
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
-    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
+    Alors la liste des combinaisons de la carte affiche "Sélectionnez un document"
 
   Scénario: un type qui reçoit une réponse différée la dit dans son bloc pendant que l'autre attend, et la carte offre ses listes une fois chacun différé
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
     Et la Grèce désignant sans question le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Compound test evidence" dans la liste des combinaisons de la carte
-    Et que l'usager clique sur "Request the documents"
+    Et que l'usager clique sur "Demander les documents"
     Et que le fournisseur répond à la demande de "Projectathon test evidence" par une réponse différée
-    Alors le bloc de "Projectathon test evidence" affiche "Document announced for later"
+    Alors le bloc de "Projectathon test evidence" affiche "Document annoncé pour plus tard"
     Quand la zone a interrogé deux fois de plus son adresse
-    Alors le bloc de "Projectathon test evidence" affiche "Document announced for later"
-    Et le bloc de "Simple test evidence" affiche "Requesting the document"
+    Alors le bloc de "Projectathon test evidence" affiche "Document annoncé pour plus tard"
+    Et le bloc de "Simple test evidence" affiche "Demande du document en cours"
     Quand le fournisseur répond à la demande de "Simple test evidence" par une réponse différée
     Et que l'usager recharge la page des justificatifs
     Alors la liste des combinaisons de la carte affiche "Compound test evidence"
-    Et la page affiche le bouton "Retry to request"
+    Et la page affiche le bouton "Redemander le document"

@@ -26,7 +26,7 @@ RSpec.describe 'Admin::Sessions' do
       get new_admin_session_path
 
       expect(response.parsed_body.css('button.fr-connect--pro')).to be_empty
-      expect(page_text).to include("Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir.")
+      expect(page_text).to include("Aucun ProConnect n'est déclaré : l'administration ne peut pas s'ouvrir.")
     end
 
     # The header's navigation belongs to the space, and none of it can be
@@ -34,15 +34,16 @@ RSpec.describe 'Admin::Sessions' do
     it 'carries no navigation' do
       get new_admin_session_path
 
-      expect(response.parsed_body.css('.fr-nav')).to be_empty
+      expect(response.parsed_body.css('nav.fr-nav')).to be_empty
     end
 
-    it 'does not lead to the space from its header, nor offer the header menu' do
+    # The menu stays, carrying the language selector on a small screen.
+    it 'does not lead to the space from its header' do
       get new_admin_session_path
 
       header = response.parsed_body.at_css('header')
-      expect(header.text).not_to include('Espace d’administration')
-      expect(header.css('#button-header-menu')).to be_empty
+      expect(header.text).not_to include('Administration')
+      expect(header.css('.fr-btns-group')).to be_empty
     end
 
     it 'keeps its content within the container every page outside the front page has' do

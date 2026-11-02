@@ -4,13 +4,13 @@
 
 <%= render 'admin/demo/titre', wording: @wording %>
 
-<p class="fr-text--lead fr-col-12 fr-col-md-8" lang="en"><%= t('admin.demo.home.show.lead') %></p>
+<p class="fr-text--lead fr-col-12 fr-col-md-8"><%= t('admin.demo.home.show.lead') %></p>
 
 <%# What the Evidence Broker publishes for the procedure, named as it names it.
     The sentence introduces the list and is worth nothing without one, so both
     go or neither does. %>
 <% if @wording.requirements_named.any? %>
-  <div class="fr-col-12 fr-col-md-8 fr-my-4w" lang="en">
+  <div class="fr-col-12 fr-col-md-8 fr-my-4w">
     <p class="fr-mb-1w"><%= t('admin.demo.home.show.requirements') %></p>
 
     <ul>
@@ -24,7 +24,7 @@
 <%# `button_to` and not a link: starting the European flow writes the `state`
     and the `nonce` its return is checked against, and a GET the browser
     prefetched or replayed would overwrite those of a flow under way. %>
-<div class="fr-col-12 fr-col-md-8 fr-mt-4w" lang="en">
+<div class="fr-col-12 fr-col-md-8 fr-mt-4w">
   <h2 class="fr-h3"><%= t('admin.demo.home.show.sign_in.heading') %></h2>
   <p><%= t('admin.demo.home.show.sign_in.lead') %></p>
 

@@ -117,20 +117,16 @@ class DemoRequestComponent < ViewComponent::Base
   end
 
   # A sentence of the portal's own, and never what the contract said or what an
-  # exception carried: those are written for whoever runs the deployment, in
-  # French, and stay in the application log, where the reading and the
-  # confirmation already write them. The one exception is the click refused
-  # before any exchange opened, which names the refusal of the contract.
+  # exception carried: those are written for whoever runs the deployment, and
+  # stay in the application log, where the reading and the confirmation already
+  # write them. The one exception is the click refused before any exchange
+  # opened, which names the refusal of the contract, shown as it was received.
   def failure_body
     return Array(failure[:errors]).join(' ').presence if refused_click?
     return announcement if settled_outcome == :deferred
 
     t("components.demo_request_zone.#{failure_name}_body")
   end
-
-  # The language of the alert: the click refused is said with the console's
-  # French wording, everything else in the English of the procedure (RGAA 8.7).
-  def failure_language = refused_click? ? 'fr' : 'en'
 
   # The `EDM:ERR:*` the correspondent returned, where there is one: it is the
   # only thing that says which refusal this was, and the component the journal
@@ -168,7 +164,7 @@ class DemoRequestComponent < ViewComponent::Base
     return t('components.demo_request_zone.deferred_undated_body') if date.nil?
 
     t('components.demo_request_zone.deferred_body',
-      date: date.strftime(t('components.demo_request_zone.deferred_date')))
+      date: l(date, format: t('components.demo_request_zone.deferred_date')))
   end
 
   def failure_name = outcome.unreadable? ? 'unreadable' : FAILURES.fetch(outcome.outcome)

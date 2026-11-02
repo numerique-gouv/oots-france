@@ -33,6 +33,16 @@ RSpec.describe 'Admin::Demo::Home' do
 
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
+      expect(seen_in('h1')).to eq("🇫🇷 T1 #{CodeListStubs::STUDY_FINANCING_LABEL}")
+      expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('fr')
+    end
+
+    it 'reads the title of the code list in English on a page read in English' do
+      stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
+
+      get admin_demo_home_path(version: 'v2.0', procedure: 'T1', locale: 'en')
+      follow_redirect!
+
       expect(seen_in('h1')).to eq("🇫🇷 T1 #{name}")
       expect(response.parsed_body.at_css('h1 .directory-value')['lang']).to eq('en')
     end
@@ -41,7 +51,7 @@ RSpec.describe 'Admin::Demo::Home' do
     # France's own jurisdiction: the procedure is ours, the evidence types
     # satisfying it belong to whoever is asked for them, and this page asks for
     # none.
-    it 'lists what the Evidence Broker publishes for the procedure, in English' do
+    it 'lists what the Evidence Broker publishes for the procedure, in the language it publishes it in' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.css('main li .directory-value').map { |value| seen(value) })
@@ -57,7 +67,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
       expect(response.parsed_body.css('main').text)
-        .to include('directly from the administration', 'without your explicit agreement')
+        .to include("directement auprès de l'administration", 'sans votre accord explicite')
     end
 
     it 'asks the Evidence Broker for nothing else: no evidence type, no provider' do
@@ -81,6 +91,19 @@ RSpec.describe 'Admin::Demo::Home' do
       expect(response.parsed_body.css('main button.fr-btn')).to be_present
     end
 
+    # Rendered by a `rescue_from` handler, after the action's callbacks have
+    # unwound: the chosen language holds there too.
+    it 'stands in the chosen language when the Evidence Broker cannot be reached' do
+      stub_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
+        .with(query: hash_including({})).to_timeout
+
+      get admin_demo_home_path(version: 'v2.0', procedure: 'T1', locale: 'en')
+      follow_redirect!
+
+      expect(response.parsed_body.at_css('html')['lang']).to eq('en')
+      expect(response.parsed_body.css('main').text).to include(I18n.t('admin.demo.home.show.sign_in.heading', locale: :en))
+    end
+
     # A refusal is not an outage: chapter 3.2.4 has a directory with nothing to
     # give refuse rather than answer empty, and that refusal carries a code, so
     # it never becomes the `CommonServicesError` the rescue above catches. The
@@ -91,7 +114,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
       expect(response).to have_http_status(:ok)
-      expect(seen(response.parsed_body.at_css('main h1'))).to include(CodeListStubs::STUDY_FINANCING_NAME)
+      expect(seen(response.parsed_body.at_css('main h1'))).to include(CodeListStubs::STUDY_FINANCING_LABEL)
       expect(response.parsed_body.css('main li .directory-value')).to be_empty
       expect(response.parsed_body.css('main button.fr-btn')).to be_present
     end
@@ -102,20 +125,19 @@ RSpec.describe 'Admin::Demo::Home' do
     it 'offers one button per FranceConnect+ declared, and none for one that is not' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
-      expect(seen_all('main button.fr-btn')).to eq(['🇪🇺 Choose a country to sign-in (mocked)'])
+      expect(seen_all('main button.fr-btn')).to eq(['🇪🇺 Choisir un pays pour se connecter (simulé)'])
       expect(response.parsed_body.css('main form').pluck('action'))
         .to include(admin_demo_identification_path(version: 'v2.0', procedure: 'T1'))
     end
 
-    # The way in is introduced by a heading and a sentence, in English, since
-    # the reader is a user of another Member State.
+    # The way in is introduced by a heading and a sentence.
     it 'invites the user to sign in to start the procedure' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
-      expect(seen_all('main h2')).to include('Sign-in to start the procedure')
+      expect(seen_all('main h2')).to include('Se connecter pour démarrer la démarche')
       expect(response.parsed_body.css('main').text)
-        .to include('Use your European identity to sign-in.',
-          'even different states than the one you chose to sign-in with.')
+        .to include('Utilisez votre identité européenne pour vous connecter.',
+          "y compris d'autres États que celui avec lequel vous avez choisi de vous connecter.")
     end
 
     # CA1: the two buttons, the real FranceConnect+ first, the fake saying it is
@@ -127,7 +149,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
       expect(seen_all('main button.fr-btn'))
-        .to eq(['🇪🇺 Choose a country to sign-in', '🇪🇺 Choose a country to sign-in (mocked)'])
+        .to eq(['🇪🇺 Choisir un pays pour se connecter', '🇪🇺 Choisir un pays pour se connecter (simulé)'])
     end
 
     # Neither is the page's main action — that is the request, two pages on —
@@ -170,17 +192,18 @@ RSpec.describe 'Admin::Demo::Home' do
     # Evidence Broker publishes nothing for stands under its SDG title, with no
     # list and no alert, its way in intact.
     it 'plays the procedure its address names, even one the Evidence Broker publishes nothing for' do
-      stub_code_list(procedure_names: { 'U1' => 'Registering a change of address' })
+      stub_code_list(procedures: { 'U1' => 'Faire enregistrer un changement d’adresse' },
+        procedure_names: { 'U1' => 'Registering a change of address' })
       stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_vides')
 
       get admin_demo_home_path(version: 'v2.0', procedure: 'U1')
 
       expect(response).to have_http_status(:ok)
-      expect(seen_in('h1')).to eq('🇫🇷 U1 Registering a change of address')
+      expect(seen_in('h1')).to eq('🇫🇷 U1 Faire enregistrer un changement d’adresse')
       expect(response.parsed_body.css('main li .directory-value, main .fr-alert')).to be_empty
       expect(response.parsed_body.at_css('main form')['action']).to eq('/admin/demo/v2.0/U1/identification')
       expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
-        .to eq(['Espace d’administration', 'Demo', '2.0', 'Procedure U1'])
+        .to eq(['Administration', 'Démo', '2.0', 'Démarche U1'])
       expect(a_request(:get, "#{DirectoryStubs::ACCEPTANCE}/eb/rest/search")
         .with(query: hash_including('procedure-id' => 'U1'))).to have_been_made
     end
@@ -195,7 +218,7 @@ RSpec.describe 'Admin::Demo::Home' do
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
 
       expect(response).to have_http_status(:ok)
-      expect(seen_in('h1')).to eq('🇫🇷 T1 No label')
+      expect(seen_in('h1')).to eq('🇫🇷 T1 Sans intitulé')
       expect(response.parsed_body.css('h1 .directory-value')).to be_empty
     end
   end

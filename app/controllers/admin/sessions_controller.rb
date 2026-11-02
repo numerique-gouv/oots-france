@@ -24,7 +24,7 @@ module Admin
       instance = Settings.proconnect_instance
       return redirect_to(new_admin_session_path) if instance.nil?
 
-      result = StartProConnectSignIn.call(instance:)
+      result = LogLine.speaking { StartProConnectSignIn.call(instance:) }
       return pro_connect_failed(result.error[:errors]) unless result.success?
 
       session[:pro_connect] = { 'state' => result.state, 'nonce' => result.nonce }
@@ -88,7 +88,7 @@ module Admin
     end
 
     def undeclared_france_connect(identity)
-      Rails.logger.warn(I18n.t('controllers.admin.sessions.france_connect_undeclared',
+      Rails.logger.warn(LogLine.t('controllers.admin.sessions.france_connect_undeclared',
         name: identity.france_connect))
 
       nil

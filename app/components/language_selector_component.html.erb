@@ -1,0 +1,19 @@
+<div class="fr-translate fr-nav">
+  <div class="fr-nav__item">
+    <button class="fr-translate__btn fr-btn fr-btn--tertiary" aria-controls="translate-menu" aria-expanded="false"
+            title="<%= t('components.language_selector.title') %>">
+      <%= code(current) %><span class="fr-hidden-lg">&nbsp;- <%= NAMES.fetch(current) %></span>
+    </button>
+    <div class="fr-collapse fr-translate__menu fr-menu" id="translate-menu">
+      <ul class="fr-menu__list">
+        <% languages.each do |language| %>
+          <li>
+            <%= link_to label(language), helpers.language_switch_path(language),
+                  class: 'fr-translate__language fr-nav__link', hreflang: language, lang: language,
+                  aria: { current: (true if language == current) } %>
+          </li>
+        <% end %>
+      </ul>
+    </div>
+  </div>
+</div>

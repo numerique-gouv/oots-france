@@ -109,7 +109,7 @@ module ReadsDemoRequest
     # the user of the outage, and the log is the only place it remains once the
     # screen is closed. The client that raises does not log, the trace belonging
     # to whoever knows which reading it fell in.
-    Rails.logger.warn(I18n.t('controllers.reads_demo_request.unanswered', error: e.message))
+    Rails.logger.warn(LogLine.t('controllers.reads_demo_request.unanswered', error: e.message))
 
     DemoOutcomeWording.unanswered(request:, error: e.message)
   end
@@ -142,7 +142,7 @@ module ReadsDemoRequest
   # does not know, the feature switch closed: the zone says only that it could
   # not read it, and this line is where the reason remains.
   def log_unreadable(request, state)
-    Rails.logger.warn(I18n.t('controllers.reads_demo_request.unreadable',
+    Rails.logger.warn(LogLine.t('controllers.reads_demo_request.unreadable',
       exchange: request.exchange_id, status: state.status, error: state.error))
   end
 

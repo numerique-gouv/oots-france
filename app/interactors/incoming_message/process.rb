@@ -139,7 +139,7 @@ module IncomingMessage
 
     def give_up(error)
       Rails.logger.error(
-        I18n.t('interactors.incoming_message.process.unreadable_logged', id: context.message_id, error: error.message),
+        LogLine.t('interactors.incoming_message.process.unreadable_logged', id: context.message_id, error: error.message),
       )
 
       abandon_exchange(error, :unreadable)

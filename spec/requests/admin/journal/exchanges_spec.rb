@@ -109,6 +109,20 @@ RSpec.describe 'Admin::Exchanges' do
       expect(response.body).to include(CGI.escapeHTML(exchange.error_description))
     end
 
+    # CA6: what an exchange recorded as the reason of its refusal is shown as it
+    # was received, its language never recorded and so never declared.
+    it 'shows the reason as recorded, without a language, on a page read in English' do
+      exchange = create(:exchange, :failed)
+
+      get admin_journal_exchange_path(exchange.exchange_id, locale: 'en')
+      follow_redirect!
+
+      page = response.parsed_body
+      expect(page.at_css('html')['lang']).to eq('en')
+      reason = page.css('main *').find { it.children.any? { |child| child.text? && child.text.include?(exchange.error_description) } }
+      expect(reason.ancestors.pluck('lang').compact).to eq(['en'])
+    end
+
     # An identifier shown with no way to follow it says nothing: the row leads
     # to the other exchanges of the same user's session, which is what chapter
     # 4.7 gives the conversation identifier for.

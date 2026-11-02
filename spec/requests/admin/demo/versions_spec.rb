@@ -15,15 +15,15 @@ RSpec.describe 'Admin::Demo::Versions' do
       expect(cartes.map { |carte| carte.at_css('.fr-card__title').text.squish }).to eq(['OOTS 2.0', 'OOTS 1.2'])
       expect(cartes.map { |carte| carte.at_css('a')['href'] }).to eq(['/admin/demo/v2.0', '/admin/demo/v1.2'])
       expect(cartes.map { |carte| carte.at_css('.fr-card__desc').text.squish })
-        .to eq(['The most recent version, still implemented by few member states',
-                'The version supported by most member states'])
+        .to eq(["La version la plus récente, encore mise en œuvre par peu d'États membres",
+                'La version prise en charge par la plupart des États membres'])
     end
 
     it 'stands under the trail of the console' do
       get admin_demo_root_path
 
       expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
-        .to eq(['Espace d’administration', 'Demo'])
+        .to eq(%w[Administration Démo])
     end
   end
 
@@ -43,7 +43,7 @@ RSpec.describe 'Admin::Demo::Versions' do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body.at_css('main form')['action']).to eq('/admin/demo/v1.2/T1/identification')
       expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
-        .to eq(['Espace d’administration', 'Demo', '1.2', 'Procedure T1'])
+        .to eq(['Administration', 'Démo', '1.2', 'Démarche T1'])
       expect(response.parsed_body.at_css('.fr-breadcrumb').css('a[href]').pluck('href'))
         .to eq(['/admin', '/admin/demo', '/admin/demo/v1.2'])
       expect(session[:france_connect]).to be_nil

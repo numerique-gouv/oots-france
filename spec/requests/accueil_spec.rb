@@ -57,8 +57,8 @@ RSpec.describe 'Accueil' do
     end
 
     it 'leads to the administration space from its header alone' do
-      tool_links = page.css('.fr-header__tools-links a')
-      expect(tool_links.map { [it['href'], it.text.squish] }).to eq([[admin_root_path, 'Espace d’administration']])
+      tool_links = page.css('.fr-header__tools-links .fr-btns-group a')
+      expect(tool_links.map { [it['href'], it.text.squish] }).to eq([[admin_root_path, 'Administration']])
       expect(page.css('main a[href^="/admin"]')).to be_empty
     end
 
@@ -74,7 +74,7 @@ RSpec.describe 'Accueil' do
     end
 
     it 'carries none of the entries of the space in its header' do
-      expect(page.css('.fr-nav')).to be_empty
+      expect(page.css('nav.fr-nav')).to be_empty
       expect(page.at_css('header').text).not_to include('Annuaires', 'Journal', 'Jobs', 'Démo', 'Se déconnecter')
     end
   end

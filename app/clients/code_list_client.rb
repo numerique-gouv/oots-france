@@ -65,7 +65,7 @@ class CodeListClient
     # nothing: without this line, a code list the Commission has moved or
     # restructured would empty every name from the console without leaving a
     # trace, where a network failure leaves one.
-    Rails.logger.warn(I18n.t('clients.code_list.nothing_read', list:)) if names.empty?
+    Rails.logger.warn(LogLine.t('clients.code_list.nothing_read', list:)) if names.empty?
 
     names
   # Large on purpose: every page reading a name says what it says without one, so no

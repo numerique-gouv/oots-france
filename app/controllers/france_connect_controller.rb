@@ -2,6 +2,7 @@
 # and the only part of this application it reads or sends a user to.
 # `docs/eidas_context.md` says why they answer to a caller holding no session.
 class FranceConnectController < ApplicationController
+  include ChosenLanguage
   include RefusesIdentification
 
   # The « Client keys url » of the demonstration procedure. Distinct from the
@@ -64,8 +65,8 @@ class FranceConnectController < ApplicationController
   # admitted procedure opens no journey: none of its pages would have an
   # address. Said and logged like the other refusals.
   def refuse_incomplete_departure
+    Rails.logger.warn(LogLine.t('controllers.france_connect.incomplete_departure'))
     reason = t('controllers.france_connect.incomplete_departure')
-    Rails.logger.warn(reason)
 
     redirect_to admin_demo_root_path, flash: { alert: :'interactors.failures.identification_refused', details: [reason] }
   end

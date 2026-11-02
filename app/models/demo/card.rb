@@ -50,13 +50,14 @@ module Demo
     # A card the operator added to the page, beyond those the Evidence Broker
     # lists for the procedure: it carries its requirement, which is all its
     # resolution starts from, and stands in the country given — the one its
-    # last request went to, when it had one. Named in the first of `languages`
-    # the directory publishes. Inserted rather than upserted: the page offers no
-    # requirement it already carries, and the unique index settles two additions
-    # racing each other.
-    def self.add(journey_id:, requirement:, country_code:, languages:)
+    # last request went to, when it had one. Named in the language the page is
+    # read in when it is added, and kept so whatever language the page is read
+    # in later, as a request keeps the names of its click. Inserted rather than
+    # upserted: the page offers no requirement it already carries, and the
+    # unique index settles two additions racing each other.
+    def self.add(journey_id:, requirement:, country_code:)
       create!(journey_id:, requirement_uuid: requirement.uuid, requirement_id: requirement.id,
-        requirement_name: requirement.label(languages:), requirement_language: requirement.label_language(languages:),
+        requirement_name: requirement.label, requirement_language: requirement.label_language,
         country_code:, added_at: Time.current)
     end
 
