@@ -833,7 +833,7 @@ Alors('la question {string} affiche {string}') do |question, value|
   if question_control(group) == 'select'
     expect(group.find('select')).to have_css('option:checked', exact_text: value)
   else
-    expect(group.find('input').value).to eq(value)
+    expect(group).to have_field(with: value)
   end
 end
 
