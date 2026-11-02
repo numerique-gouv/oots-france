@@ -4,7 +4,7 @@ Lu à la rédaction du jet (CRÉER, étape 3).
 
 **Une seule nature : la `US`**, un sujet qu'on relit comme un tout, pour un acteur nommé — et **pas de hiérarchie** : ni parent, ni sous-issue. Un sujet trop gros se découpe en plusieurs `US` de plain-pied, reliées par `blockedBy` quand l'ordre compte. Il n'y a pas de ticket technique : les questions techniques que soulève une `US` sont levées par l'ouvrier en planifiant, et réglées en implémentant. L'outillage, la dette et l'exploitation s'écrivent aussi en `US`, avec l'exploitant ou le développeur pour acteur — ce qu'ils veulent voir vrai, pas ce qu'il faut coder.
 
-Titre en français, verbe à l'infinitif : `US - Rejeter une requête dont l'identifiant a déjà été traité`.
+Titre en français, verbe à l'infinitif : `US - Rejeter une requête dont l'identifiant a déjà été traité`. Un ticket dont seul l'utilisateur peut faire le livrable — un geste sur le serveur, une saisie dans une console de la Commission — se préfixe `[Human] US - …` **et** porte le label `Human` : les deux ensemble, c'est ce qui le sort de la file des ouvriers (nommé ainsi par l'utilisateur le 2026-10-15).
 
 ### L'en-tête
 
