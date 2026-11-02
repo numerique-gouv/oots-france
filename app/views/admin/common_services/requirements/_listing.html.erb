@@ -12,22 +12,24 @@
   <% @requirements.each do |requirement| %>
     <div>
       <% publishing = @publishing[requirement] %>
-      <%= render CardComponent.new(title: requirement.display_name, dense: publishing.any?, clickable: true,
+      <%= render CardComponent.new(title: requirement.display_name, dense: true, clickable: true,
             href: admin_common_services_requirement_path(requirement.uuid)) do |carte| %>
-        <%# Nobody publishing is an answer, and one this page pays fifty-three
-            queries to get: left to the absent row, it would read as a section
-            that failed to render. %>
-        <%= t('admin.common_services.requirements.index.nobody') if publishing.empty? %>
-
         <% carte.with_list do %>
-          <%# These countries satisfy it, they do not impose it: they lead to
-              the evidence they publish for it, and not to the procedures they
-              declared it under. %>
-          <%= render CountryTagListComponent.new(
-                caption: t('admin.common_services.requirements.index.published_by'),
-                codes: publishing, names: country_names,
-                link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
-              ) %>
+          <% if publishing.empty? %>
+            <%# Nobody publishing is an answer, and one this page pays fifty-three
+                queries to get: left to an absent footer, it would read as a
+                section that failed to render. %>
+            <p class="fr-mb-0"><%= t('admin.common_services.requirements.index.nobody') %></p>
+          <% else %>
+            <%# These countries satisfy it, they do not impose it: they lead to
+                the evidence they publish for it, and not to the procedures they
+                declared it under. %>
+            <%= render CountryTagListComponent.new(
+                  caption: t('admin.common_services.requirements.index.published_by'),
+                  codes: publishing, names: country_names,
+                  link: ->(code) { admin_common_services_requirement_country_path(requirement.uuid, code) },
+                ) %>
+          <% end %>
         <% end %>
       <% end %>
     </div>
