@@ -42,7 +42,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     end
 
     it 'sends an operator holding no identity back to the start' do
-      allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
+      allow(Demo::UserIdentity).to receive(:from_cookie).and_return(nil)
 
       get justificatif_path
 

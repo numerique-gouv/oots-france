@@ -33,8 +33,9 @@ module Demo
     attribute :id, :string
     attribute :conversation_id, :string
     # The pseudonym FranceConnect+ hands this service provider, which is what
-    # tells one identity from another. Personal data, like the identity beside
-    # it in the session, and persisted no further than the encrypted cookie.
+    # tells one identity from another. Personal data, like the identity in the
+    # cookies beside the session, and persisted no further than the encrypted
+    # session cookie.
     attribute :subject, :string
     # The line every request of the walk goes out in, chosen before the
     # identification and kept until the next one.

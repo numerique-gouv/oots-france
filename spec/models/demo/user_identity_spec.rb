@@ -56,27 +56,27 @@ RSpec.describe Demo::UserIdentity do
     expect(described_class.new(**attributes, gender: 'female')).to be_valid
   end
 
-  # The session cookie holds JSON and gives back string keys.
-  describe 'the round trip through the session' do
+  # The cookie holds JSON and gives back string keys.
+  describe 'the round trip through the cookie' do
     it 'keeps every attribute it held' do
-      stored = described_class.new(**attributes, gender: 'female').to_session
+      stored = described_class.new(**attributes, gender: 'female').to_cookie
 
-      expect(described_class.from_session(stored.stringify_keys))
+      expect(described_class.from_cookie(stored.stringify_keys))
         .to have_attributes(family_name: 'Sørensen', gender: 'female', id_token: 'le-jeton-signe')
     end
 
     it 'holds nothing where nothing was given' do
-      expect(identity.to_session.keys).not_to include('gender', 'eidas_identifier')
+      expect(identity.to_cookie.keys).not_to include('gender', 'eidas_identifier')
     end
 
-    it 'gives back nothing when the session holds nothing' do
-      expect(described_class.from_session(nil)).to be_nil
+    it 'gives back nothing when the cookie holds nothing' do
+      expect(described_class.from_cookie(nil)).to be_nil
     end
 
     # A cookie outlives the shape this class had when it was written. Raising
     # here would break the sign-out, which is the one page that must work.
-    it 'gives back nothing when the session was written under another shape' do
-      expect(described_class.from_session(attributes.merge(un_attribut_retire: 'x'))).to be_nil
+    it 'gives back nothing when the cookie was written under another shape' do
+      expect(described_class.from_cookie(attributes.merge(un_attribut_retire: 'x'))).to be_nil
     end
   end
 end

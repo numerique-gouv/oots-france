@@ -33,14 +33,12 @@ module Admin
 
     # The operator's session is also the demonstration user's, and ending one
     # ends both: ProConnect first, then the FranceConnect+ session that attested
-    # the demonstration identity, if there is one — prepared here from what the
-    # session holds before `reset_session` takes it, and chained on by
+    # the demonstration identity, if there is one — prepared here from the
+    # identity the browser holds, read before `reset_session` empties the
+    # session and the identity cookies, and chained on by
     # `Admin::ProConnectController#retour_deconnexion`.
-    #
-    # `::Demo::` and not `Demo::`: this file lives in `Admin`, where `Demo`
-    # names the controllers of the demonstration.
     def destroy
-      identity = ::Demo::UserIdentity.from_session(session[:demo_identity])
+      identity = demo_identity
       id_token = take_id_token
 
       reset_session
@@ -73,6 +71,9 @@ module Admin
     # leaves the same kind of trace as a portal that cannot be reached, which
     # `Demo::EndIdentification` writes for itself — and the operator is signed
     # out either way, so the log is the only place it can be read.
+    #
+    # `::Demo::` and not `Demo::`: this file lives in `Admin`, where `Demo`
+    # names the controllers of the demonstration.
     def end_of_france_connect_session(identity)
       return nil if identity.nil?
 

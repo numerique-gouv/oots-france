@@ -8,6 +8,7 @@ module Admin
   class BaseController < ApplicationController
     include ChosenLanguage
     include AdminAuthentication
+    include DemoIdentityCookie
 
     def admin_section? = true
   end

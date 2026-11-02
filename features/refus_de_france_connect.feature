@@ -23,7 +23,10 @@ Fonctionnalité: Lire à l'écran la raison d'un refus de FranceConnect+
     Alors la page affiche "invalid_grant"
     Et la page affiche le refus sans libellé vide ni point doublé
 
-  Scénario: un retour qu'aucune identification n'a demandé est refusé d'une seule phrase
+  Scénario: un retour qu'aucune identification n'a demandé est refusé d'une seule phrase, et l'identité de l'usager reste
+    Étant donné l'usager identifié sur la page des justificatifs
     Quand l'agent revient de FranceConnect+ sur une identification que ce navigateur n'a pas demandée
     Alors la page affiche "Ce retour ne correspond à aucune identification demandée depuis ce navigateur."
     Et la page affiche le refus sans libellé vide ni point doublé
+    Quand l'agent rouvre la page des justificatifs
+    Alors la page des justificatifs affiche l'identité de l'usager

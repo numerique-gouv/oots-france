@@ -7,16 +7,16 @@ require Rails.root.join('spec/support/rendered_text')
 #
 # An HTTP client and not a browser proper: these scenarios carry no
 # `@javascript`, nothing of the journey waiting on a script. What it does do is
-# what a browser
-# does — it keeps the session cookie, follows redirections one at a time,
-# including the ones that leave for the portal and come back, and **submits the
-# forms it is shown**, hidden fields included. Posting to an address without
-# reading the form first would sidestep the CSRF token, which is precisely one
-# of the things the journey has to carry.
+# what a browser does — it keeps the cookies this application writes, follows
+# redirections one at a time, including the ones that leave for the portal and
+# come back, and **submits the forms it is shown**, hidden fields included.
+# Posting to an address without reading the form first would sidestep the CSRF
+# token, which is precisely one of the things the journey has to carry.
 #
-# The cookie is sent to this application and to it alone: a session cookie that
-# followed a redirection to another host would be exactly the leak the same-site
-# rules exist to prevent, and the scenario must not do what a browser refuses to.
+# The cookies are sent to this application and to it alone: a session cookie
+# that followed a redirection to another host would be exactly the leak the
+# same-site rules exist to prevent, and the scenario must not do what a browser
+# refuses to.
 class DemoBrowser
   # What a sighted reader sees of a node, written once for the two suites: the
   # marks of this console say their meaning off screen, and an assertion on what
@@ -29,7 +29,7 @@ class DemoBrowser
 
   def initialize(procedure_url)
     @procedure_url = procedure_url
-    @cookie = nil
+    @cookies = {}
     @connection = Faraday.new do |builder|
       builder.request(:url_encoded)
       builder.adapter(Faraday.default_adapter)
@@ -230,13 +230,26 @@ class DemoBrowser
     response
   end
 
-  def headers(url) = ours?(url) && @cookie ? { 'Cookie' => @cookie } : {}
+  def headers(url)
+    return {} unless ours?(url) && @cookies.any?
 
+    { 'Cookie' => @cookies.map { |name, value| "#{name}=#{value}" }.join('; ') }
+  end
+
+  # Several cookies, one per name, and a deleted one forgotten — the identity
+  # of the demonstration lives in cookies of its own, beside the session.
   def remember(url, response)
     return unless ours?(url)
 
-    Array(response.headers['set-cookie']).flat_map { |header| header.split(/,\s*(?=[^;]+=)/) }
-      .each { |cookie| @cookie = cookie.split(';').first }
+    Array(response.headers['set-cookie']).flat_map { |header| header.split(/\n|,\s*(?=[^;]+=)/) }
+      .each { |cookie| keep(cookie) }
+  end
+
+  def keep(cookie)
+    name, value = cookie.split(';').first.split('=', 2)
+    return @cookies.delete(name) if value.to_s.empty? || cookie.match?(/max-age=0\b/i)
+
+    @cookies[name] = value
   end
 
   def ours?(url) = url.start_with?(procedure_url)
