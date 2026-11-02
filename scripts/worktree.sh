@@ -277,6 +277,20 @@ for source in "$RACINE"/.env* "$RACINE/docker-compose.override.yml"; do
   printf '%s\n' "$LIGNES" | sed "$REECRITURE_URLS" > "$CHEMIN/$(basename "$source")"
 done
 
+# The keys of config/credentials/ are git-ignored like the .env*, and without
+# them the worktree cannot decrypt the identifiers the integration ProConnect
+# delivered. Copied rather than linked: a key created or replaced in a worktree
+# must then be copied back by hand before `git worktree remove`, which would
+# otherwise delete the only copy.
+for cle in "$RACINE"/config/credentials/*.key; do
+  [ -f "$cle" ] || continue
+  if ! cp -p "$cle" "$CHEMIN/config/credentials/"; then
+    echo "❌ Copie de $cle impossible." >&2
+    echo "   Le worktree est créé mais inutilisable : git worktree remove $CHEMIN" >&2
+    exit 1
+  fi
+done
+
 echo
 echo "Worktree créé : $CHEMIN (branche $NOM)"
 echo "Ports décalés de +$DECALAGE :"

@@ -5,6 +5,8 @@
 > [!IMPORTANT]
 > **Le travail se suit dans [Linear](https://linear.app/pole-api/team/OOTS/all), pas ici.** Ce document ne décrit ni les tâches, ni leur ordre, ni le statut des tickets. Un chantier `Completed` ou `Canceled` est dit tel quel : ce qu'il n'a pas livré reste un manque, que plus aucun ticket ne porte.
 
+**Mettre ce document à jour, c'est relire Linear autant que `git`** : les tickets fermés depuis la dernière révision, et les chantiers qui ont changé d'état. **Une exigence que tient le portail de démonstration compte comme tenue** — le choix du type de justificatif, l'authentification de l'usager : on ne compte comme manque que ce qu'aucune partie du dépôt ne fait, démonstration comprise (`app/controllers/admin/demo/`).
+
 ## Où en est le dépôt aujourd'hui
 
 Le protocole fonctionne dans les deux sens, contre une passerelle eDelivery réelle, en 2.0 comme en 1.2 ; les trois annuaires centraux sont interrogés pour de vrai et la France y est inscrite sous `AP_FR_01` ; chaque échange laisse la trace de l'article 17 ; la prévisualisation est jouée des deux côtés.
