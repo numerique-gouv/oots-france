@@ -82,10 +82,31 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
       card = response.parsed_body.css('.fr-card').first
       uuid = card.css('.fr-card__title a').attr('href').value.split('/').last
 
-      expect(card.text).to include('Justificatifs publiés par')
+      footer = card.css('.fr-card__footer')
+
+      expect(footer.text).to include('Justificatifs publiés par')
       expect(card.text).not_to include('Exigé par des démarches de')
-      expect(card.css("a[href='#{admin_common_services_requirement_country_path(uuid, 'FR')}']")).to be_present
+      expect(footer.css("a[href='#{admin_common_services_requirement_country_path(uuid, 'FR')}']")).to be_present
       expect(card.css("a[href*='/countries/LT']")).to be_empty
+      expect(card.css('.fr-card__desc')).to be_empty
+    end
+
+    it 'names every country satisfying a requirement in its footer, each leading to what it publishes' do
+      evidence_broker = EvidenceBrokerClient.new
+      allow(evidence_broker).to receive(:evidence_type_lists)
+        .and_return([build(:evidence_type_list, country: 'AT'), build(:evidence_type_list, country: 'FR')])
+      allow(EvidenceBrokerClient).to receive(:new).and_return(evidence_broker)
+
+      get admin_common_services_requirements_path(listing: 1)
+      card = response.parsed_body.css('.fr-card').first
+      uuid = card.css('.fr-card__title a').attr('href').value.split('/').last
+      footer = card.css('.fr-card__footer')
+
+      expect(footer.text).to include('Justificatifs publiés par')
+      expect(footer.css('.country-tag-list a').pluck('href')).to eq(
+        %w[AT FR].map { |code| admin_common_services_requirement_country_path(uuid, code) },
+      )
+      expect(card.css('.fr-card__desc')).to be_empty
     end
 
     # A card whose row is missing reads as a section that failed to render,
@@ -96,12 +117,24 @@ RSpec.describe 'Admin::CommonServices::Requirements' do
         stub_directory_body('eb', 'evidence-types-by-requirement', evidence_types_declaring_no_match)
       end
 
-      it 'says so on the card rather than leaving it bare' do
+      it 'says so in the footer, where the countries would be' do
         get admin_common_services_requirements_path(listing: 1)
         card = response.parsed_body.css('.fr-card').first
+        footer = card.css('.fr-card__footer')
 
-        expect(card.text).to include('Aucun pays ne publie de justificatif')
-        expect(card.css('.country-tag-list')).to be_empty
+        expect(footer.text).to include('Aucun pays ne publie de justificatif pour cette exigence.')
+        expect(footer.text).not_to include('Justificatifs publiés par')
+        expect(footer.css('.country-tag-list')).to be_empty
+        expect(card.css('.fr-card__desc')).to be_empty
+      end
+
+      it 'still leads to the requirement, its title opening straight onto the footer' do
+        get admin_common_services_requirements_path(listing: 1)
+        card = response.parsed_body.css('.fr-card').first
+        href = card.css('.fr-card__title a').attr('href').value
+
+        expect(href).to match(%r{\A#{admin_common_services_requirements_path}/[^/?]+\z})
+        expect(card['class']).to include('fr-enlarge-link', 'card--dense')
       end
     end
 

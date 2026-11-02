@@ -5,10 +5,10 @@
 # one card — a requirement, a procedure, a country —, so the `fr-card` markup
 # is written out here, as the tables and the form already are.
 #
-# What a card carries beside its title comes as content; what it *lists* comes
-# as the `list` slot, rendered in the DSFR footer under a rule of its own. The
-# two are not the same thing to read: the first describes the entry, the second
-# enumerates what hangs off it.
+# What a card carries beside its title comes as content; the `list` slot is
+# rendered in the DSFR footer, under a rule of its own. The two are not the same
+# thing to read: the first describes the entry, the second says what hangs off
+# it.
 class CardComponent < ViewComponent::Base
   renders_one :list
 
@@ -22,13 +22,13 @@ class CardComponent < ViewComponent::Base
     super()
   end
 
-  # `dense` for a card with nothing to describe between its title and what it
-  # lists: the room the DSFR leaves under the content reads as a hole.
+  # `dense` for a card with nothing to describe between its title and its
+  # footer: the room the DSFR leaves under the content reads as a hole.
   #
   # `clickable` stretches the title's link over the body of the card and gives
-  # it the DSFR arrow. What the card lists must then live in the footer, the one
-  # place left outside that reach: a link in the body would fall under it and
-  # stop being reachable.
+  # it the DSFR arrow. Whatever else leads elsewhere must then live in the
+  # footer, the one place left outside that reach: a link in the body would fall
+  # under it and stop being reachable.
   def classes
     ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense),
      (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow')]

@@ -1,5 +1,5 @@
 /*
- * What a card lists reads as a table, and parts from what describes the card.
+ * A card's footer parts from what describes the card.
  * The DSFR footer carries all the rest — its place in the card, the negative
  * margins that take it edge to edge — only the rule is missing.
  */
@@ -9,8 +9,8 @@
 
 /*
  * A clickable card has two halves that do not lead to the same place: its body
- * — title, description, arrow — leads where the title leads; its footer lists,
- * and each of its entries leads elsewhere.
+ * — title, description, arrow — leads where the title leads; each entry of its
+ * footer leads elsewhere.
  *
  * The reach of the link therefore stops at the body, which this
  * `position: relative` is enough to obtain: the pseudo-element `fr-enlarge-link`
@@ -113,7 +113,7 @@
 }
 
 /*
- * A card whose title opens straight onto what it lists: the two rem the DSFR
+ * A card whose title opens straight onto its footer: the two rem the DSFR
  * leaves under the content make a hole there, there being nothing to describe
  * in between. After the block above, at equal specificity.
  */
