@@ -23,24 +23,73 @@
         <h2 id="what-is-oots"><%= t('accueil.index.what_is_oots.title') %></h2>
         <p>
           <%= t('accueil.index.what_is_oots.body_html',
-                regulation: link_to(t('accueil.index.what_is_oots.regulation'),
-                  'https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32018R1724',
-                  target: '_blank', rel: 'noopener',
-              title: t('accueil.index.new_window', link: t('accueil.index.what_is_oots.regulation')))) %>
+                regulation: new_window_link(t('accueil.index.what_is_oots.regulation'),
+                  'https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:32018R1724'),
+                single_digital_gateway: new_window_link(t('accueil.index.what_is_oots.single_digital_gateway'),
+                  'https://design.numerique.gouv.fr/pnu/')) %>
         </p>
+        <p>
+          <%= t('accueil.index.what_is_oots.since_html',
+                implementing_regulation: new_window_link(t('accueil.index.what_is_oots.implementing_regulation'),
+                  'https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj')) %>
+        </p>
+        <p><%= t('accueil.index.what_is_oots.evidence') %></p>
         <p class="fr-mb-0">
           <%= t('accueil.index.what_is_oots.tdd_html',
-                tdd: link_to(t('accueil.index.what_is_oots.tdd'),
-                  'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview',
-                  target: '_blank', rel: 'noopener',
-              title: t('accueil.index.new_window', link: t('accueil.index.what_is_oots.tdd')))) %>
+                tdd: new_window_link(t('accueil.index.what_is_oots.tdd'),
+                  'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview'),
+                hub: new_window_link(t('accueil.index.what_is_oots.hub'),
+                  'https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/OOTSHUB+Home')) %>
         </p>
       </div>
     </div>
   </div>
 </section>
 
-<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="roles">
+<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="procedures">
+  <div class="fr-container">
+    <div class="pictogram-row fr-col-12 fr-col-md-9">
+      <%= render PictogramComponent.new(name: 'document/document') %>
+      <div class="pictogram-row__wording">
+        <h2 id="procedures"><%= t('accueil.index.procedures.title') %></h2>
+        <p><%= t('accueil.index.procedures.requirement') %></p>
+        <p>
+          <%= t('accueil.index.procedures.list_html',
+                consolidated: new_window_link(t('accueil.index.procedures.consolidated'),
+                  consolidated_regulation_address)) %>
+        </p>
+      </div>
+    </div>
+    <div class="fr-accordions-group fr-mb-4w">
+      <% %i[birth residence studying working moving retiring business critical_raw_materials net_zero].each do |event| %>
+        <section class="fr-accordion">
+          <h3 class="fr-accordion__title">
+            <button type="button" class="fr-accordion__btn" aria-expanded="false" aria-controls="procedures-<%= event %>">
+              <%= t("accueil.index.procedures.events.#{event}.title") %>
+            </button>
+          </h3>
+          <div class="fr-collapse" id="procedures-<%= event %>">
+            <ul class="fr-mb-0">
+              <% t("accueil.index.procedures.events.#{event}.procedures").each do |procedure| %>
+                <li><%= procedure %></li>
+              <% end %>
+              <% if event == :moving %>
+                <li>
+                  <%= t('accueil.index.procedures.driving_licence_html',
+                        directive: new_window_link(t('accueil.index.procedures.driving_licence_directive'),
+                          'https://eur-lex.europa.eu/eli/dir/2025/2205/oj')) %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </section>
+      <% end %>
+    </div>
+    <p class="fr-col-12 fr-col-md-9 fr-mb-0"><%= t('accueil.index.procedures.directives_html', **directive_links) %></p>
+  </div>
+</section>
+
+<section class="fr-py-8w" aria-labelledby="roles">
   <div class="fr-container">
     <h2 id="roles"><%= t('accueil.index.roles.title') %></h2>
     <p class="fr-mb-4w"><%= t('accueil.index.roles.intro') %></p>
@@ -58,7 +107,7 @@
   </div>
 </section>
 
-<section class="fr-py-8w" aria-labelledby="connection">
+<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="connection">
   <div class="fr-container">
     <h2 id="connection"><%= t('accueil.index.connection.title') %></h2>
     <p class="fr-text--lg fr-col-12 fr-col-md-9"><%= t('accueil.index.connection.benefit') %></p>
@@ -75,19 +124,15 @@
     </ol>
     <p class="fr-mt-4w fr-mb-0">
       <%= t('accueil.index.connection.contract_html',
-            documentation: link_to(t('accueil.index.connection.documentation'),
-              'https://github.com/numerique-gouv/oots-france/blob/main/docs/oots_context.md#c%C3%B4t%C3%A9-evidence-requester-la-france-demande-un-justificatif',
-              target: '_blank', rel: 'noopener',
-              title: t('accueil.index.new_window', link: t('accueil.index.connection.documentation'))),
-            repository: link_to(t('accueil.index.connection.repository'),
-              'https://github.com/numerique-gouv/oots-france',
-              target: '_blank', rel: 'noopener',
-              title: t('accueil.index.new_window', link: t('accueil.index.connection.repository')))) %>
+            documentation: new_window_link(t('accueil.index.connection.documentation'),
+              'https://github.com/numerique-gouv/oots-france/blob/main/docs/oots_context.md#c%C3%B4t%C3%A9-evidence-requester-la-france-demande-un-justificatif'),
+            repository: new_window_link(t('accueil.index.connection.repository'),
+              'https://github.com/numerique-gouv/oots-france')) %>
     </p>
   </div>
 </section>
 
-<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="status">
+<section class="fr-py-8w" aria-labelledby="status">
   <div class="fr-container">
     <div class="fr-callout fr-mb-0">
       <div class="pictogram-row">
@@ -101,7 +146,7 @@
   </div>
 </section>
 
-<section class="fr-py-8w" aria-labelledby="users">
+<section class="fr-py-8w fr-background-alt--grey" aria-labelledby="users">
   <div class="fr-container">
     <div class="pictogram-row fr-col-12 fr-col-md-9">
       <%= render PictogramComponent.new(name: 'digital/avatar') %>

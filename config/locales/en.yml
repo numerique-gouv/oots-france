@@ -174,18 +174,148 @@ en:
       new_window: "%{link} - new window"
       lead: >-
         The service through which France exchanges evidence with the other Member States
-        of the European Union, on behalf of French administrative procedures.
+        of the European Union, on behalf of French administrative procedures. This page is
+        intended for the administration or the operator that runs a French online procedure
+        and is not yet connected to OOTS-France.
       what_is_oots:
         title: What OOTS is
         body_html: >-
-          The Once-Only Technical System (OOTS) is the automated, cross-border exchange of
-          evidence between the administrations of the Member States, provided for by
-          %{regulation}. A user who completes a procedure in one Member State no longer has
-          to supply themselves an evidence that an administration of another Member State
-          holds: the procedure requests it on their behalf.
+          %{regulation} establishes the European %{single_digital_gateway}. Its Article 14 sets
+          up the Once-Only Technical System (OOTS): the automated, cross-border exchange of
+          evidence between the administrations of the Member States. A user who completes a
+          procedure in one Member State no longer has to supply themselves an evidence that an
+          administration of another Member State holds: the procedure requests it on their
+          behalf.
         regulation: Regulation (EU) 2018/1724
-        tdd_html: OOTS-France implements this system as described in the %{tdd} published by the European Commission.
+        single_digital_gateway: Single Digital Gateway (SDG)
+        since_html: >-
+          Article 14 and %{implementing_regulation}, which lays down its arrangements, have
+          applied since 12 December 2023.
+        implementing_regulation: Implementing Regulation (EU) 2022/1463
+        evidence: >-
+          An evidence exchanged comes directly from the administration that issues it, and is
+          deemed authentic by the administration that receives it. The user requests the
+          exchange, previews the evidence and decides whether or not to proceed with the
+          exchange.
+        tdd_html: >-
+          OOTS-France implements this system as described in the %{tdd} published by the
+          European Commission, which presents it on the %{hub}.
         tdd: Technical Design Documents
+        hub: OOTS hub
+      # The life events and procedures are worded as in the English text of
+      # Annex II to Regulation (EU) 2018/1724, consolidated on 20 May 2026.
+      procedures:
+        title: The procedures concerned
+        requirement: >-
+          The Single Digital Gateway requires that a procedure concerned can be completed fully
+          online by a user from another Member State, and that the evidence it requires from an
+          administration of another Member State reaches it through the technical system, at
+          the user's request.
+        list_html: 'The procedures concerned are those of Annex II to %{consolidated}, grouped by life event:'
+        consolidated: Regulation (EU) 2018/1724, as consolidated on 20 May 2026
+        events:
+          birth:
+            title: Birth
+            procedures:
+              - Requesting proof of registration of birth
+          residence:
+            title: Residence
+            procedures:
+              - Requesting proof of residence
+          studying:
+            title: Studying
+            procedures:
+              - >-
+                Applying for a tertiary education study financing, such as study grants and loans
+                from a public body or institution
+              - Submitting an initial application for admission to public tertiary education institution
+              - >-
+                Requesting academic recognition of diplomas, certificates or other proof of studies
+                or courses
+          working:
+            title: Working
+            procedures:
+              - >-
+                Request for determination of applicable legislation in accordance with Title II of
+                Regulation (EC) No 883/2004
+              - >-
+                Notifying changes in the personal or professional circumstances of the person
+                receiving social security benefits, relevant for such benefits
+              - Application for a European Health Insurance Card (EHIC)
+              - Submitting an income tax declaration
+          moving:
+            title: Moving
+            procedures:
+              - Registering a change of address
+              - >-
+                Registering a motor vehicle originating from or already registered in a Member
+                State, in standard procedures
+              - >-
+                Obtaining stickers for the use of the national road infrastructure: time-based
+                charges (vignette), distance-based charges (toll), issued by a public body or
+                institution
+              - Obtaining emission stickers issued by a public body or institution
+          retiring:
+            title: Retiring
+            procedures:
+              - Claiming pension and pre-retirement benefits from compulsory schemes
+              - Requesting information on the data related to pension from compulsory schemes
+          business:
+            title: Starting, running and closing a business
+            procedures:
+              - >-
+                Notification of business activity, permission for exercising a business activity,
+                changes of business activity and the termination of a business activity not
+                involving insolvency or liquidation procedures, excluding the initial registration
+                of a business activity with the business register and excluding procedures
+                concerning the constitution of or any subsequent filing by companies or firms
+                within the meaning of the second paragraph of Article 54 TFEU
+              - >-
+                Declarations by hosts for registration procedures in relation to short-term
+                accommodation rental services
+              - Registration of an employer (a natural person) with compulsory pension and insurance schemes
+              - Registration of employees with compulsory pension and insurance schemes
+              - Submitting a corporate tax declaration
+              - >-
+                Notification to the social security schemes of the end of contract with an
+                employee, excluding procedures for the collective termination of employee
+                contracts
+              - Payment of social contributions for employees
+              - Notification of a data intermediation services provider
+              - Registration as a data altruism organisation recognised in the Union
+          critical_raw_materials:
+            title: Critical raw materials projects
+            procedures:
+              - >-
+                Procedure related to all relevant permits to build and operate critical raw
+                materials projects, including building, chemical and grid connection permits and
+                environmental assessments and authorisations where these are required, and
+                encompassing all applications and procedures from the acknowledgment that the
+                application is complete to the notification of the comprehensive decision on the
+                outcome of the procedure by the single point of contact concerned pursuant to
+                Article 9 of Regulation (EU) 2024/1252.
+          net_zero:
+            title: Net-zero technology manufacturing projects
+            procedures:
+              - >-
+                Procedures for all relevant permits to build, expand, convert and operate net-zero
+                technology manufacturing projects, and net-zero strategic projects, including
+                building, chemical and grid connection permits, environmental assessments and
+                authorisations where required, and encompassing all applications and procedures.
+        driving_licence_html: >-
+          Acquiring and renewing a driving licence (added by %{directive}, applicable from
+          26 November 2029)
+        driving_licence_directive: Directive (EU) 2025/2205
+        directives_html: >-
+          Article 14 also opens the technical system to the procedures provided for by
+          %{professional_qualifications}, %{services}, %{public_procurement} and %{utilities}.
+        directives:
+          professional_qualifications: Directive 2005/36/EC on the recognition of professional qualifications
+          services: Directive 2006/123/EC on services in the internal market
+          public_procurement: Directive 2014/24/EU on public procurement
+          utilities: >-
+            Directive 2014/25/EU on procurement by entities operating in the water, energy,
+            transport and postal services sectors
       roles:
         title: What OOTS-France does
         intro: OOTS-France plays both roles of the exchange for France.
@@ -228,7 +358,7 @@ en:
           The service is not accredited: requesting evidence is open only on a test server,
           never on real data.
       users:
-        title: Are you a user of a procedure?
+        title: The user of a procedure
         body: >-
           This service is intended for administrations, not for users: a person looking to
           have an evidence delivered goes through the Online Procedure Portal of their procedure.
