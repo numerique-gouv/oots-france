@@ -48,22 +48,15 @@ RSpec.describe Demo::ConfirmPreview do
       preview_method: 'GET', preview_body: nil)
   end
 
-  # Chapter 4.9 §2 steps 10-11: « The Online Procedure Portal can filter the
-  # natural language alternatives to match its presentation language ».
-  it 'keeps the description in English, the language of the procedure' do
+  # Chapter 4.9 §5: the launch page is « customized to the user's language
+  # choice », which may change after the confirmation — and the contract no
+  # longer publishes the descriptions once it is made.
+  it 'keeps every description the correspondent wrote, in the order it wrote them' do
     result
 
-    expect(request.reload).to have_attributes(preview_description: 'Preview', preview_description_language: 'EN')
-  end
-
-  context 'when the correspondent wrote no English' do
-    let(:descriptions) { [{ 'langue' => 'DE', 'texte' => 'Vorschau' }, { 'langue' => 'FI', 'texte' => 'Esikatselu' }] }
-
-    it 'keeps the first language it wrote' do
-      result
-
-      expect(request.reload).to have_attributes(preview_description: 'Vorschau', preview_description_language: 'DE')
-    end
+    expect(request.reload.preview_descriptions).to eq(
+      [{ 'language' => 'DE', 'text' => 'Vorschau' }, { 'language' => 'EN', 'text' => 'Preview' }],
+    )
   end
 
   # A second confirmation receives `409`: the link kept says one was made.

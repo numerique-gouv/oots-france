@@ -202,7 +202,7 @@ class JournalledMessage
   def readable(field)
     yield
   rescue UnreadableMessageError => e
-    Rails.logger.warn(I18n.t('lib.audit_trail.unreadable_field', field:, error: e.message))
+    Rails.logger.warn(LogLine.t('lib.audit_trail.unreadable_field', field:, error: e.message))
     nil
   end
 

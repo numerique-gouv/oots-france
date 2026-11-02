@@ -10,9 +10,9 @@ module Admin
 
     def retour_connexion
       instance = Settings.proconnect_instance
-      return pro_connect_failed([t('controllers.admin.pro_connect.undeclared')]) if instance.nil?
+      return pro_connect_failed([LogLine.t('controllers.admin.pro_connect.undeclared')]) if instance.nil?
 
-      result = CompleteProConnectSignIn.call(instance:, **returned)
+      result = LogLine.speaking { CompleteProConnectSignIn.call(instance:, **returned) }
       return admit(result) if result.success?
       return turn_away(result.error) if result.error[:key] == :agent_refused
 
@@ -53,7 +53,7 @@ module Admin
     # An address outside the admitted domains opens nothing, and its ProConnect
     # session is ended so that the agent can come back with another one.
     def turn_away(error)
-      Rails.logger.warn(t('controllers.admin.pro_connect.agent_refused', email: error[:email]))
+      Rails.logger.warn(LogLine.t('controllers.admin.pro_connect.agent_refused', email: error[:email]))
       reset_session
 
       pro_connect = end_of_pro_connect_session(error[:id_token], refused_email: error[:email])
@@ -76,7 +76,7 @@ module Admin
     end
 
     def signed_out_unacknowledged
-      Rails.logger.warn(t('controllers.admin.pro_connect.unexpected_logout_state'))
+      Rails.logger.warn(LogLine.t('controllers.admin.pro_connect.unexpected_logout_state'))
 
       redirect_to new_admin_session_path, notice: :'admin.sessions.signed_out'
     end

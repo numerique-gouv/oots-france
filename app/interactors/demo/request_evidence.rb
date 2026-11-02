@@ -30,8 +30,8 @@ module Demo
   # shown.
   class RequestEvidence < ApplicationInteractor
     # What the documents page showed, each name with the language the
-    # directory published it in: the zone says them again, and it is
-    # written in English whatever the directories answered. The requirement
+    # directory published it in: the zone says them again, in the language of
+    # the click whatever language the page is later read in. The requirement
     # joins them because a click names the one requirement its own card is
     # about, and a row naming the document without the obligation it was asked
     # under would not say which click it answers.
@@ -62,7 +62,7 @@ module Demo
     # `Demo::` — no `Exchange` exists at this point, so nothing else would keep
     # a trace of an outage, and the alert the user is shown does not read back.
     rescue Faraday::Error, UnusableKeySetError => e
-      Rails.logger.warn(I18n.t('interactors.demo.request_evidence.unreachable', error: e.message))
+      Rails.logger.warn(LogLine.t('interactors.demo.request_evidence.unreachable', error: e.message))
 
       fail_with_error(:demo_unreachable, errors: [e.message])
     end

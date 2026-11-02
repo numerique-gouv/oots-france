@@ -83,14 +83,10 @@ class EvidenceProviderClassification
 
   def boolean? = type == BOOLEAN
 
-  # English before French, where the rest of what a directory publishes is shown
-  # French first: the demonstration speaks English, and a question is a
-  # sentence the user must answer, not a name in a table cell.
-  QUESTION_LANGUAGES = %w[EN FR].freeze
+  # In the language the page is read in, like everything a directory publishes.
+  def question = label
 
-  def question = label(languages: QUESTION_LANGUAGES)
-
-  def question_language = label_language(languages: QUESTION_LANGUAGES)
+  def question_language = label_language
 
   # The same classification carrying the user's answer as its supported value.
   def answered(value) = self.class.new(**to_h.symbolize_keys, supported_value: value)

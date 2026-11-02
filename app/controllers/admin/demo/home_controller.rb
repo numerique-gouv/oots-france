@@ -41,21 +41,18 @@ module Admin
         ).requirements
       end
 
-      # The SDG title, read in English where the rest of the console reads the
-      # French column: this page is the portal and not the console, and its
-      # reader is a user of another Member State — the same reason the sign-in
-      # button carries the label FranceConnect+ gives its European flow. The
-      # language travels with the name, the wording having no way to guess which
-      # column was read.
+      # The SDG title, read in the column of the language the page is read in.
+      # The language travels with the name, the wording having no way to guess
+      # which column was read.
       def wording(requirements)
         DemoProcedureWording.new(
-          code:, requirements:, published_name: CodeListClient.new.procedure_names(lang: :en)[code],
-          published_name_language: 'en',
+          code:, requirements:, published_name: CodeListClient.new.procedure_names(lang: I18n.locale)[code],
+          published_name_language: I18n.locale.to_s,
         )
       end
 
       def stand_without_the_directories(error)
-        Rails.logger.warn(I18n.t('controllers.admin.demo.home.no_requirements', error: error.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.home.no_requirements', error: error.message))
 
         @specification = EdmSpecification.from_segment(params[:version])
         @wording = wording(nil)

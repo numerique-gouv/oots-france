@@ -53,7 +53,7 @@ module Admin
       def offered? = offered_country?(country) && requirement_uuid.match?(SemanticRepositoryAsset::UUID)
 
       def report_unreachable_directories(error)
-        Rails.logger.warn(I18n.t('controllers.admin.demo.countries.unreachable', error: error.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.countries.unreachable', error: error.message))
 
         head :bad_gateway
       end

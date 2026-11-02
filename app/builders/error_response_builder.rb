@@ -12,8 +12,8 @@ class ErrorResponseBuilder < ApplicationBuilder
   PREVIEW_METHOD = 'GET'.freeze
 
   # `R-EDM-ERR-C020` takes the languages from the `LanguageCode` list. Chapter
-  # 4.9 §4 asks for one broadly understood language at least: English, and the
-  # French of the space itself.
+  # 4.9 §4 asks for one broadly understood language at least: English, and
+  # French beside it.
   PREVIEW_LANGUAGES = %w[EN FR].freeze
 
   attr_reader :request_id, :document_id, :exception, :preview_location
@@ -35,9 +35,13 @@ class ErrorResponseBuilder < ApplicationBuilder
   # `R-EDM-ERR-S031` asks for it on the 1.2 line, and 2.0 removed the slot.
   def preview_method? = preview_location.present? && specification.preview_method_slot?
 
+  # Message values, each in its own language: read under the default locale,
+  # since `en.yml` does not carry them and the page that triggered the message
+  # may be read in English.
   def preview_descriptions
     PREVIEW_LANGUAGES.index_with do |language|
-      I18n.t("builders.error_response_builder.preview_description.#{language.downcase}")
+      I18n.t("builders.error_response_builder.preview_description.#{language.downcase}",
+        locale: I18n.default_locale)
     end
   end
 

@@ -21,7 +21,7 @@ class ReadConnectivityVerdictsJob < ApplicationJob
   private
 
   def expire(test)
-    Rails.logger.warn(I18n.t('jobs.read_connectivity_verdicts_job.overdue',
+    Rails.logger.warn(LogLine.t('jobs.read_connectivity_verdicts_job.overdue',
       party: test.party_name, id: test.message_id || '—'))
     test.no_verdict!
   end
@@ -29,7 +29,7 @@ class ReadConnectivityVerdictsJob < ApplicationJob
   def guarded(test)
     yield
   rescue StandardError => e
-    Rails.logger.error(I18n.t('jobs.read_connectivity_verdicts_job.failed',
+    Rails.logger.error(LogLine.t('jobs.read_connectivity_verdicts_job.failed',
       party: test.party_name, error: "#{e.class}: #{e.message}"))
   end
 end

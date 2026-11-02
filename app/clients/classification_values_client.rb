@@ -55,7 +55,7 @@ class ClassificationValuesClient
   def language_column(language) = "name-#{language.to_s.upcase}"
 
   def unreadable(address, reason)
-    Rails.logger.warn(I18n.t('clients.classification_values.unreadable', address:, reason:))
+    Rails.logger.warn(LogLine.t('clients.classification_values.unreadable', address:, reason:))
 
     nil
   end

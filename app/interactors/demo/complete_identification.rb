@@ -125,7 +125,7 @@ module Demo
     # speak of the same person — and the operator's flash cannot be read back
     # after the fact.
     def refuse(reason)
-      Rails.logger.warn(I18n.t('interactors.demo.complete_identification.refused', reason:))
+      Rails.logger.warn(LogLine.t('interactors.demo.complete_identification.refused', reason:))
 
       fail_with_error(:identification_refused, errors: [reason])
     end

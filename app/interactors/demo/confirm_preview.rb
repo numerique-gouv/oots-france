@@ -19,14 +19,12 @@ module Demo
   # The beneficiary token is sealed at this instant from the identity the
   # session holds, like the one the click sent: the exchange never kept it.
   #
-  # The description is chosen here, in English — the language this procedure is
-  # written in — or in the first language the correspondent wrote otherwise:
-  # chapter 4.9 §2 steps 10-11, « The Online Procedure Portal can filter the
-  # natural language alternatives to match its presentation language ». Only the
-  # state awaiting the confirmation carries it, so it is kept with the link.
+  # Every variant of the description is kept with the link: only the state
+  # awaiting the confirmation carries them, and the departure page chooses one
+  # at each display, in the language the reader chose then — chapter 4.9 §5,
+  # « to allow the launch page to be customized to the user's language choice
+  # (if known) ».
   class ConfirmPreview < ApplicationInteractor
-    LANGUAGE = 'EN'.freeze
-
     def call
       request = context.request
 
@@ -51,18 +49,18 @@ module Demo
     end
 
     def keep(request, answer)
-      text, language = description&.values_at('texte', 'langue')
-
       request.update!(
         preview_address: answer.preview_location, preview_method: answer.preview_method,
-        preview_body: answer.preview_body, preview_description: text, preview_description_language: language,
+        preview_body: answer.preview_body, preview_descriptions:,
       )
     end
 
-    def description
-      descriptions = context.state.preview_descriptions
-
-      descriptions.find { |described| described['langue'].to_s.casecmp?(LANGUAGE) } || descriptions.first
+    # In the shape `Exchange#preview_descriptions` has, rather than the
+    # contract's French field names.
+    def preview_descriptions
+      context.state.preview_descriptions.map do |described|
+        { 'language' => described['langue'], 'text' => described['texte'] }
+      end
     end
 
     # The message the contract returned is the only thing that says why: the
@@ -72,7 +70,7 @@ module Demo
     # Logged as much as shown, like the other interactors of `Demo::`: the zone
     # says it, and the log is what remains once the screen is closed.
     def unconfirmed(reason)
-      Rails.logger.warn(I18n.t('interactors.demo.confirm_preview.unconfirmed',
+      Rails.logger.warn(LogLine.t('interactors.demo.confirm_preview.unconfirmed',
         exchange: context.request.exchange_id, error: reason))
 
       fail_with_error(:demo_preview_unconfirmed, errors: [reason])

@@ -46,7 +46,7 @@ module Admin
 
       def code_lists = @code_lists ||= CodeListClient.new
 
-      def country_names = @country_names ||= code_lists.country_names
+      def country_names = @country_names ||= code_lists.country_names(lang: I18n.locale)
 
       # Every word this section puts on a screen, in one object the views ask
       # rather than in as many `helper_method`s.
@@ -61,7 +61,7 @@ module Admin
 
       def data_service_directory = @data_service_directory ||= DataServiceDirectoryClient.new
 
-      def procedure_names = @procedure_names ||= code_lists.procedure_names
+      def procedure_names = @procedure_names ||= code_lists.procedure_names(lang: I18n.locale)
 
       # Both ways down to this page — by procedure, by country — put the same
       # question to it; only the breadcrumb tells them apart.

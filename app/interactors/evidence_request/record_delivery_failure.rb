@@ -48,13 +48,13 @@ module EvidenceRequest
     def cause
       gateway.message_errors(context.message_id).cause
     rescue Faraday::Error, UnreadableMessageError => e
-      Rails.logger.error(I18n.t('interactors.evidence_request.record_delivery_failure.unreadable',
+      Rails.logger.error(LogLine.t('interactors.evidence_request.record_delivery_failure.unreadable',
         id: context.message_id, error: "#{e.class}: #{e.message}"))
       nil
     end
 
     def note(key, **details)
-      Rails.logger.warn(I18n.t("interactors.evidence_request.record_delivery_failure.#{key}",
+      Rails.logger.warn(LogLine.t("interactors.evidence_request.record_delivery_failure.#{key}",
         id: context.message_id, status: context.status, **details))
     end
   end

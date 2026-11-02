@@ -61,7 +61,7 @@ module Admin
       end
 
       def report_unreachable_directories(error)
-        Rails.logger.warn(I18n.t('controllers.admin.demo.provider_classifications.unreachable', error: error.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.provider_classifications.unreachable', error: error.message))
 
         head :bad_gateway
       end

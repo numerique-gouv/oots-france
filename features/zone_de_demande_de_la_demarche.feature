@@ -35,7 +35,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
 
   Scénario: l'attente prend la place du bouton avant qu'aucune réponse ne soit revenue
     Étant donné la soumission de la demande retenue devant le navigateur
-    Quand l'usager clique sur "Request the document"
+    Quand l'usager clique sur "Demander le document"
     Alors la zone annonce qu'elle attend
     Et la page n'affiche aucun bouton de demande
     Et la page des justificatifs est toujours affichée
@@ -53,8 +53,8 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et aucune autre interrogation ne part
     Quand le justificatif est remis
     Et que l'interrogation retenue est libérée
-    Alors la page affiche "Document retrieved successfully"
-    Et la page affiche "Open the document"
+    Alors la page affiche "Document récupéré avec succès"
+    Et la page affiche "Ouvrir le document"
     Et la page des justificatifs n'a pas été rechargée
     Et la zone n'a pas été remplacée, seulement son contenu
     Et aucune autre interrogation ne part
@@ -65,7 +65,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la zone annonce qu'elle attend
     Et la page n'affiche aucun bouton de demande
     Quand le justificatif est remis
-    Alors la page affiche "Document retrieved successfully"
+    Alors la page affiche "Document récupéré avec succès"
     Et la page des justificatifs n'a pas été rechargée
     Et la zone n'a pas été remplacée, seulement son contenu
 
@@ -74,34 +74,34 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la première interrogation coupée, la deuxième répondue sans l'en-tête "Deferred-Fragment" devant le navigateur
     Quand deux interrogations de suite n'obtiennent aucune réponse exploitable
     Alors la zone annonce toujours la même attente
-    Et la page n'affiche pas "This page could not reach the service."
+    Et la page n'affiche pas "Cette page n'a pas pu joindre le service."
     Quand le justificatif est remis
-    Alors la page affiche "Document retrieved successfully"
+    Alors la page affiche "Document récupéré avec succès"
 
   Scénario: trois interrogations sans réponse font renoncer la zone, qui offre le retour à la page
     Étant donné une demande en cours
     Et les trois interrogations suivantes coupées devant le navigateur
     Quand la zone renonce à joindre le service
-    Alors la page affiche "This page could not reach the service."
-    Et la page affiche le lien "Reload the page"
-    Et la page n'affiche pas "Requesting the document…"
+    Alors la page affiche "Cette page n'a pas pu joindre le service."
+    Et la page affiche le lien "Rechargez la page"
+    Et la page n'affiche pas "Demande du document en cours…"
     Et la page n'affiche aucun bouton de demande
-    Quand l'usager suit le lien "Reload the page"
+    Quand l'usager suit le lien "Rechargez la page"
     Alors la zone annonce qu'elle attend
 
   Scénario: une demande dont la réponse se perd est retentée par l'interrogation, jamais renvoyée
     Étant donné la soumission de la demande et les deux requêtes suivantes coupées devant le navigateur
-    Quand l'usager clique sur "Request the document"
+    Quand l'usager clique sur "Demander le document"
     Alors la zone annonce qu'elle attend
     Et les essais qui suivent la soumission sont des interrogations
     Et le contrat n'a reçu aucune demande
     Quand la zone renonce à joindre le service
-    Alors la page affiche "This page could not reach the service."
-    Et la page affiche le lien "Reload the page"
-    Et la page n'affiche pas "Requesting the document…"
+    Alors la page affiche "Cette page n'a pas pu joindre le service."
+    Et la page affiche le lien "Rechargez la page"
+    Et la page n'affiche pas "Demande du document en cours…"
     Et la page n'affiche aucun bouton de demande
-    Quand l'usager suit le lien "Reload the page"
-    Alors la page affiche le bouton "Request the document"
+    Quand l'usager suit le lien "Rechargez la page"
+    Alors la page affiche le bouton "Demander le document"
 
   Scénario: la demande retenue n'est pas perdue par la réponse qui revient avant la sienne
     Étant donné les deux exigences de la démarche affichées
@@ -131,22 +131,22 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand la session de l'agent prend fin
     Et que l'interrogation retenue est libérée
     Alors la page de connexion s'affiche
-    Et la page n'affiche pas "This page could not reach the service."
+    Et la page n'affiche pas "Cette page n'a pas pu joindre le service."
 
   Scénario: la carte nomme ce que publie le pays choisi, et la demande part vers lui
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Alors la carte nomme le pays "Finland (FI)"
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la carte nomme le pays "Finlande (FI)"
     Et la carte annonce "Keha v. 2.0"
     Et la page affiche "Keha v. 2.0"
     Et la page des justificatifs n'a pas été rechargée
     Et le contrat n'a reçu aucune demande
-    Quand l'usager clique sur "Request the document"
+    Quand l'usager clique sur "Demander le document"
     Alors le contrat a reçu la demande pour le pays "FI"
 
   Scénario: le pays choisi sur une deuxième carte nommée la résout sans recharger la page, et la demande part vers lui
     Étant donné les deux exigences de la démarche affichées
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la seconde carte
-    Alors la seconde carte nomme le pays "Finland (FI)"
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la seconde carte
+    Alors la seconde carte nomme le pays "Finlande (FI)"
     Et la première carte nomme le pays "France (FR)"
     Et la page des justificatifs n'a pas été rechargée
     Quand l'usager clique sur le bouton de la seconde carte
@@ -154,62 +154,62 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
 
   Scénario: un choix de pays resté sans réponse laisse la carte dans son pays et le dit, jusqu'au choix suivant qui aboutit
     Étant donné le choix du pays répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Alors la carte affiche "The country could not be changed: this page could not reach the service."
-    Et la carte annonce "The country could not be changed: this page could not reach the service."
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la carte affiche "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service."
+    Et la carte annonce "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service."
     Et la liste des pays de la carte affiche "France (FR)"
     Et la carte nomme le pays "France (FR)"
     Et la page des justificatifs n'a pas été rechargée
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Alors la carte affiche "The country could not be changed: this page could not reach the service."
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la carte affiche "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service."
     Et la liste des pays de la carte affiche "France (FR)"
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Alors la carte nomme le pays "Finland (FI)"
-    Et la page n'affiche pas "The country could not be changed"
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la carte nomme le pays "Finlande (FI)"
+    Et la page n'affiche pas "Le pays n'a pas pu être changé"
     Et la page des justificatifs n'a pas été rechargée
     Quand le choix suivant du pays est coupé devant le navigateur
-    Et que l'usager choisit "Germany (DE)" dans la liste des pays de la carte
-    Alors la carte affiche "The country could not be changed: this page could not reach the service."
-    Et la liste des pays de la carte affiche "Finland (FI)"
-    Et la carte nomme le pays "Finland (FI)"
+    Et que l'usager choisit "Allemagne (DE)" dans la liste des pays de la carte
+    Alors la carte affiche "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service."
+    Et la liste des pays de la carte affiche "Finlande (FI)"
+    Et la carte nomme le pays "Finlande (FI)"
 
   Scénario: un choix de pays refusé par la page la recharge, et une session finie mène à la page de connexion
     Étant donné le choix du pays répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
     Alors la page des justificatifs a été rechargée
-    Et la page n'affiche pas "The country could not be changed"
+    Et la page n'affiche pas "Le pays n'a pas pu être changé"
     Quand la session de l'agent prend fin
-    Et que l'usager choisit "Finland (FI)" dans la liste des pays de la carte
+    Et que l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
     Alors la page de connexion s'affiche
 
   Scénario: une carte ajoutée se tient sous celles de la démarche, se demande dans son pays, et revient dans ce pays une fois retirée
     Étant donné le catalogue de l'Evidence Broker offert sous les cartes de la démarche
     Quand l'usager ajoute la carte "(TEST) Test Requirement 2"
-    Alors la carte "(TEST) Test Requirement 2" se tient sous celles de la démarche, avec le bouton "Remove this document"
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte "(TEST) Test Requirement 2"
-    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finland (FI)"
+    Alors la carte "(TEST) Test Requirement 2" se tient sous celles de la démarche, avec le bouton "Retirer ce document"
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte "(TEST) Test Requirement 2"
+    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finlande (FI)"
     Et la page des justificatifs n'a pas été rechargée
     Quand l'usager clique sur le bouton de la carte "(TEST) Test Requirement 2"
     Alors le contrat a reçu la demande pour le pays "FI"
     Quand l'usager retire la carte "(TEST) Test Requirement 2"
     Alors la page n'affiche pas la carte "(TEST) Test Requirement 2"
     Quand l'usager ajoute la carte "(TEST) Test Requirement 2"
-    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finland (FI)"
+    Alors la carte "(TEST) Test Requirement 2" nomme le pays "Finlande (FI)"
 
   Scénario: la carte offre les types que le pays publie, se résout sur celui que l'usager choisit, et la demande part avec lui
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et l'usager identifié sur la page des justificatifs d'un parcours en 1.2
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
+    Alors la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Et la liste des combinaisons de la carte offre "Test Evidence Austria (AT)" puis "Austrian Test Evidence Type without Reauthentication"
     Et la carte ne nomme aucun fournisseur
     Et la page n'affiche aucun bouton de demande
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
     Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
-    Et la page affiche le bouton "Request the document"
+    Et la page affiche le bouton "Demander le document"
     Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
-    Et la liste des combinaisons de la carte n'offre plus "Select a document"
+    Et la liste des combinaisons de la carte n'offre plus "Sélectionnez un document"
     Et la carte annonce "Test Evidence Provider Austria (AT)"
     Et la page des justificatifs n'a pas été rechargée
     Quand l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
@@ -217,103 +217,103 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la liste des combinaisons de la carte affiche "Austrian Test Evidence Type without Reauthentication"
     Et la page des justificatifs n'a pas été rechargée
     Et le contrat n'a reçu aucune demande
-    Quand l'usager clique sur "Request the document"
+    Quand l'usager clique sur "Demander le document"
     Alors le contrat a reçu la demande pour le type "Austrian Test Evidence Type without Reauthentication"
     Quand l'usager recharge la page des justificatifs
     Alors la carte n'offre pas de liste des pays
     Et la carte n'offre pas de liste des combinaisons
-    Et la carte nomme le pays "Austria (AT)"
+    Et la carte nomme le pays "Autriche (AT)"
     Et la carte nomme le type "Austrian Test Evidence Type without Reauthentication" et le fournisseur "Test Evidence Provider Austria (AT)"
 
   Scénario: un type que personne ne fournit, ou dont le fournisseur ne parle pas la version du parcours, se choisit sans rendre l'exigence insatisfaisable
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et aucun fournisseur publié en Autriche pour "Austrian Test Evidence Type without Reauthentication"
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
     Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
-    Alors la page affiche "No provider listed by Austria for this evidence"
+    Alors la page affiche "Autriche ne déclare aucun fournisseur pour ce justificatif"
     Et la page n'affiche aucun bouton de demande
     Et la liste des combinaisons de la carte affiche "Austrian Test Evidence Type without Reauthentication"
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
     Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
-    Alors la page affiche "This provider does not support OOTS 2.0"
+    Alors la page affiche "Ce fournisseur ne prend pas en charge OOTS 2.0"
     Et la page n'affiche aucun bouton de demande
     Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
 
   Scénario: un choix de type resté sans réponse laisse la carte sur son type et le dit, jusqu'au choix suivant qui aboutit
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et le choix de la combinaison répondu en "502" sans l'en-tête "Deferred-Fragment", puis coupé, devant le navigateur
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
-    Alors la carte affiche "The document could not be changed: this page could not reach the service."
-    Et la carte annonce "The document could not be changed: this page could not reach the service."
-    Et la liste des combinaisons de la carte affiche "Select a document"
+    Alors la carte affiche "Le document n'a pas pu être changé : cette page n'a pas pu joindre le service."
+    Et la carte annonce "Le document n'a pas pu être changé : cette page n'a pas pu joindre le service."
+    Et la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Et la carte ne nomme aucun fournisseur
     Et la page des justificatifs n'a pas été rechargée
     Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
-    Alors la carte affiche "The document could not be changed: this page could not reach the service."
-    Et la liste des combinaisons de la carte affiche "Select a document"
+    Alors la carte affiche "Le document n'a pas pu être changé : cette page n'a pas pu joindre le service."
+    Et la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
-    Et la page n'affiche pas "The document could not be changed"
+    Et la page n'affiche pas "Le document n'a pas pu être changé"
     Et la page des justificatifs n'a pas été rechargée
     Quand le choix suivant de la combinaison est coupé devant le navigateur
     Et que l'usager choisit "Austrian Test Evidence Type without Reauthentication" dans la liste des combinaisons de la carte
-    Alors la carte affiche "The document could not be changed: this page could not reach the service."
+    Alors la carte affiche "Le document n'a pas pu être changé : cette page n'a pas pu joindre le service."
     Et la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
     Et la carte nomme le type "Test Evidence Austria (AT)" et le fournisseur "Test Evidence Provider Austria (AT)"
 
   Scénario: un choix de type refusé par la page la recharge, et une session finie mène à la page de connexion
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
     Et le choix de la combinaison répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page des justificatifs a été rechargée
-    Et la page n'affiche pas "The document could not be changed"
+    Et la page n'affiche pas "Le document n'a pas pu être changé"
     Quand la session de l'agent prend fin
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Alors la page de connexion s'affiche
 
   Scénario: le type choisi tient au rechargement, et un autre pays ou une nouvelle identification le défont
     Étant donné l'Autriche publiant deux types de justificatif pour l'exigence de la carte
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
     Et que l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Et que l'usager recharge la page des justificatifs
     Alors la liste des combinaisons de la carte affiche "Test Evidence Austria (AT)"
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Alors la liste des pays de la carte affiche "Finland (FI)"
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la liste des pays de la carte affiche "Finlande (FI)"
     Et la carte n'offre pas de liste des combinaisons
     Et la page affiche "Keha v. 2.0"
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
+    Alors la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Et la page n'affiche aucun bouton de demande
     Quand l'usager choisit "Test Evidence Austria (AT)" dans la liste des combinaisons de la carte
     Et que l'usager s'identifie de nouveau, dans un parcours en 1.2
     Alors la liste des pays de la carte affiche "France (FR)"
     Et la carte n'offre pas de liste des combinaisons
-    Quand l'usager choisit "Austria (AT)" dans la liste des pays de la carte
-    Alors la liste des combinaisons de la carte affiche "Select a document"
+    Quand l'usager choisit "Autriche (AT)" dans la liste des pays de la carte
+    Alors la liste des combinaisons de la carte affiche "Sélectionnez un document"
     Et la page n'affiche aucun bouton de demande
 
   Scénario: la carte pose la question du Data Service Directory, se résout sur la réponse de l'usager, et la demande part avec elle
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
-    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
+    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Sélectionnez une valeur"
     Et la question "Projectathon test case" offre "TC03 - Evidence request error flow due to Basic Registry error"
     Et la carte ne nomme aucun fournisseur
     Et la page n'affiche aucun bouton de demande
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
     Et la carte n'offre pas de bouton pour répondre
     Et le Data Service Directory n'a reçu aucune réponse
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
-    Et la page affiche le bouton "Request the document"
+    Et la page affiche le bouton "Demander le document"
     Et la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
-    Et la question "Projectathon test case" n'offre plus "Select a value"
+    Et la question "Projectathon test case" n'offre plus "Sélectionnez une valeur"
     Et la carte annonce "Ministry of Digital Governance"
     Et la page des justificatifs n'a pas été rechargée
     Et le Data Service Directory a reçu la réponse "TC03" à la question "Projectathon test case"
-    Quand l'usager clique sur "Request the document"
+    Quand l'usager clique sur "Demander le document"
     Alors le contrat a reçu la demande avec la réponse "TC03" à la question "Projectathon test case"
 
   Scénario: une liste de valeurs illisible fait poser la question en texte, et un refus de la réponse se dit comme tout refus
@@ -321,31 +321,31 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la liste des valeurs de la question injoignable
     Et le Data Service Directory refusant la réponse "TC02" en "DSD:ERR:0001"
     Et le Data Service Directory refusant la réponse "TC04" en "DSD:ERR:0006"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose la question "Projectathon test case" dans un champ texte
     Quand l'usager répond "TC02" à la question "Projectathon test case"
-    Alors la page affiche "No provider listed by Greece for this evidence"
+    Alors la page affiche "Grèce ne déclare aucun fournisseur pour ce justificatif"
     Et la page n'affiche aucun bouton de demande
     Et la question "Projectathon test case" affiche "TC02"
-    Et la page n'affiche pas "Evidence impossible to satisfy"
+    Et la page n'affiche pas "Justificatif impossible à fournir"
     Quand l'usager répond "TC04" à la question "Projectathon test case"
-    Alors la page affiche "Greece could not answer for this evidence"
+    Alors la page affiche "Grèce n'a pas pu répondre pour ce justificatif"
     Et la page n'affiche aucun bouton de demande
     Quand l'usager répond "TC03" à la question "Projectathon test case"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
 
   Scénario: la carte pose chaque question dans la forme que son type demande, et une exception sans question se dit comme un refus
     Étant donné la Grèce posant une question de chaque type sur le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Alors la carte pose, dans l'ordre, les questions :
       | question               | forme            |
       | Projectathon test case | liste            |
-      | Were you born abroad?  | "Yes" ou "No"    |
+      | Were you born abroad?  | "Oui" ou "No"    |
       | Your passport number   | champ texte      |
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
-    Et que l'usager répond "Yes" à la question "Were you born abroad?"
+    Et que l'usager répond "Oui" à la question "Were you born abroad?"
     Alors le Data Service Directory n'a reçu aucune réponse
     Quand l'usager répond "AB123456" à la question "Your passport number"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
@@ -353,30 +353,30 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et le Data Service Directory a reçu la réponse "AB123456" à la question "Your passport number"
     Quand la Grèce ne pose plus que sa question sans classification
     Et que l'usager recharge la page des justificatifs
-    Alors la page affiche "Greece could not answer for this evidence"
+    Alors la page affiche "Grèce n'a pas pu répondre pour ce justificatif"
     Et la carte n'offre aucune question
 
   Scénario: une réponse restée sans réponse laisse la carte comme elle était et le dit, jusqu'à la réponse suivante qui aboutit
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
     Et la réponse aux questions répondue en "502" sans l'en-tête "Deferred-Fragment", puis coupée, devant le navigateur
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
-    Alors la carte affiche sous ses questions "The answer could not be sent: this page could not reach the service."
-    Et la carte annonce "The answer could not be sent: this page could not reach the service."
+    Alors la carte affiche sous ses questions "La réponse n'a pas pu être envoyée : cette page n'a pas pu joindre le service."
+    Et la carte annonce "La réponse n'a pas pu être envoyée : cette page n'a pas pu joindre le service."
     Et la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
     Et la carte ne nomme aucun fournisseur
     Et la page des justificatifs n'a pas été rechargée
     Quand l'usager répond "TC06 - Basic evidence request with reauthentication and preview" à la question "Projectathon test case"
-    Alors la carte affiche sous ses questions "The answer could not be sent: this page could not reach the service."
+    Alors la carte affiche sous ses questions "La réponse n'a pas pu être envoyée : cette page n'a pas pu joindre le service."
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
-    Et la page n'affiche pas "The answer could not be sent"
+    Et la page n'affiche pas "La réponse n'a pas pu être envoyée"
     Et la page des justificatifs n'a pas été rechargée
 
   Scénario: la réponse tient au rechargement, une demande la retient, et un autre pays la défait
     Étant donné la Grèce posant une question sur le fournisseur de "Projectathon test evidence"
-    Quand l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
     Et que l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
     Alors la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
@@ -384,12 +384,12 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la question "Projectathon test case" affiche "TC03 - Evidence request error flow due to Basic Registry error"
     Et la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
     Et le Data Service Directory a reçu sa requête sans la réponse, puis avec elle
-    Quand l'usager choisit "Finland (FI)" dans la liste des pays de la carte
-    Et que l'usager choisit "Greece (EL)" dans la liste des pays de la carte
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Et que l'usager choisit "Grèce (EL)" dans la liste des pays de la carte
     Et que l'usager choisit "Projectathon test evidence" dans la liste des combinaisons de la carte
-    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Select a value"
+    Alors la carte pose la question "Projectathon test case" dans une liste ouverte sur "Sélectionnez une valeur"
     Quand l'usager répond "TC03 - Evidence request error flow due to Basic Registry error" à la question "Projectathon test case"
-    Et que l'usager clique sur "Request the document"
+    Et que l'usager clique sur "Demander le document"
     Et que l'usager recharge la page des justificatifs
     Alors la carte n'offre aucune question
     Et la carte nomme le type "Projectathon test evidence" et le fournisseur "Ministry of Digital Governance"
@@ -397,10 +397,10 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: une réponse différée se dit avec sa date, sans rechargement, et la zone cesse d'interroger
     Étant donné une demande en cours
     Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
-    Alors la page affiche "Document announced for later"
-    Et la page affiche "The administration has not sent the document: it announced it for 23 October 2026 at 14:05 (UTC+02:00). Ask again from that date to start a new request."
-    Et la page affiche le bouton "Retry to request"
-    Et la page n'affiche pas "Requesting the document…"
+    Alors la page affiche "Document annoncé pour plus tard"
+    Et la page affiche "L'administration n'a pas envoyé le document : elle l'a annoncé pour le 23 octobre 2026 à 14:05 (UTC+02:00). Redemandez à partir de cette date pour lancer une nouvelle demande."
+    Et la page affiche le bouton "Redemander le document"
+    Et la page n'affiche pas "Demande du document en cours…"
     Et la page n'affiche pas "EDM:ERR"
     Et la carte n'a ni le contour du justificatif arrivé ni celui de l'exigence insatisfaisable
     Et la page des justificatifs n'a pas été rechargée
@@ -410,16 +410,16 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: une réponse différée sans date se dit sans date
     Étant donné une demande en cours
     Quand le fournisseur répond par une réponse différée sans date
-    Alors la page affiche "The administration has not sent the document: it announced it for later, without saying when. Ask again later to start a new request."
-    Et la page affiche le bouton "Retry to request"
+    Alors la page affiche "L'administration n'a pas envoyé le document : elle l'a annoncé pour plus tard, sans dire quand. Redemandez plus tard pour lancer une nouvelle demande."
+    Et la page affiche le bouton "Redemander le document"
 
   Scénario: une réponse différée reste dite à la page relue après l'échéance de l'écran, et la carte offre de nouveau ses listes
     Étant donné une demande en cours
     Et la carte demandée il y a plus de deux minutes
     Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
     Et que l'usager recharge la page des justificatifs
-    Alors la page affiche "Document announced for later"
-    Et la page n'affiche pas "No answer yet"
+    Alors la page affiche "Document annoncé pour plus tard"
+    Et la page n'affiche pas "Pas encore de réponse"
     Et la carte offre de nouveau la liste des pays
     Et la carte nomme le pays "France (FR)"
     Et aucune autre interrogation ne part
@@ -427,6 +427,6 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   Scénario: redemander après une réponse différée ouvre un échange neuf, et la zone attend sa réponse
     Étant donné une demande en cours
     Quand le fournisseur répond par une réponse différée au "2026-10-23T14:05:00+02:00"
-    Et que l'usager clique sur "Retry to request"
+    Et que l'usager clique sur "Redemander le document"
     Alors la zone annonce qu'elle attend
     Et le contrat a reçu deux demandes, chacune sous son propre échange

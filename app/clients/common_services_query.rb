@@ -55,7 +55,7 @@ class CommonServicesQuery
   def remember(url, key, body)
     Rails.cache.write(key, body, expires_in: Settings.common_services_cache_duration)
   rescue StandardError => e
-    Rails.logger.warn(I18n.t('clients.common_services_query.not_cached', url:, error: e.message))
+    Rails.logger.warn(LogLine.t('clients.common_services_query.not_cached', url:, error: e.message))
   end
 
   # The parser belongs to the key because nothing in this signature stops a

@@ -85,7 +85,7 @@ RSpec.describe 'Admin::Demo::Identifications' do
         expect(response.parsed_body.css('.fr-alert').text)
           .to include("L'identification par FranceConnect+ n'a pas abouti")
         expect(response.parsed_body.css('main button.fr-btn').map { |button| button.text.strip })
-          .to eq(['🇪🇺 Choose a country to sign-in', '🇪🇺 Choose a country to sign-in (mocked)'])
+          .to eq(['🇪🇺 Choisir un pays pour se connecter', '🇪🇺 Choisir un pays pour se connecter (simulé)'])
 
         post admin_demo_identification_path(version: 'v2.0', procedure: 'T1'), params: { france_connect: 'fake' }
         expect(response.headers['Location']).to start_with("#{FranceConnectStubs::AUTHORIZATION_ENDPOINT}?")

@@ -5,8 +5,12 @@
 # right user and resuming the procedure are the portal's duties, the portal
 # holding the session.
 #
-# `ActionController::API`: there is no page, so no layout, session or CSRF.
+# `ActionController::API`: there is no page, so no layout, session or CSRF —
+# the cookie alone, for the language the refusal is written in.
 class ReturnsController < ActionController::API
+  include ActionController::Cookies
+  include ChosenLanguage
+
   def show
     exchange = Exchange.find_by(return_token: params.expect(:token), incoming: false)
 

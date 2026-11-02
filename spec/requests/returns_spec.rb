@@ -37,6 +37,15 @@ RSpec.describe 'GET /retour/:token' do
     expect(response.body).to eq(I18n.t('returns.show.unknown'))
   end
 
+  # RG2: the refusal is read in the language the user chose, the cookie alone
+  # carrying it to an address with no session.
+  it 'refuses in the language the user chose' do
+    cookies[:locale] = 'en'
+    get '/retour/3f2c1a4e-5b6d-4e7f-8a9b-0c1d2e3f4a5b'
+
+    expect(response.body).to eq(I18n.t('returns.show.unknown', locale: :en))
+  end
+
   # Chapter 4.9 §5: « shall not be accessible before the second request is
   # issued ».
   it 'is not open before the second request has gone' do

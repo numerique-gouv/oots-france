@@ -17,7 +17,7 @@ class ExpirePreviewSessionsJob < ApplicationJob
     EvidenceProvision::ExpirePreview.call(preview_session: session)
   rescue StandardError => e
     Rails.logger.error(
-      I18n.t('jobs.expire_preview_sessions_job.failed', id: session.id, error: "#{e.class}: #{e.message}"),
+      LogLine.t('jobs.expire_preview_sessions_job.failed', id: session.id, error: "#{e.class}: #{e.message}"),
     )
   end
 end

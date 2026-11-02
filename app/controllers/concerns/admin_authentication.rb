@@ -22,10 +22,9 @@ module AdminAuthentication
     session[:requested_path] = request.fullpath if request.get?
 
     # A key and not a message: GoodJob's dashboard renders under `:en`, which it
-    # forces for the length of its actions, and this application publishes no
-    # English translation — a key of ours resolved there would render as missing.
-    # The login page this redirects to is an ordinary request, served under
-    # `:fr`, and `layouts/_messages` translates it there.
+    # forces for the length of its actions whatever language the reader chose.
+    # The login page this redirects to is an ordinary request, served in the
+    # chosen language, and `layouts/_messages` translates it there.
     #
     # Named through the application's own helpers, because an isolated engine's
     # controller is not given them. `:see_other`, because GoodJob's dashboard
@@ -47,7 +46,7 @@ module AdminAuthentication
   # Declared by the controllers it closes rather than here: the directories and
   # the demonstration stay open to every admitted agent. Redirected rather than
   # rendered in place, for the reason `require_administrator` is — the jobs
-  # dashboard renders under `:en`, which this application does not publish.
+  # dashboard renders under `:en`, whatever language the reader chose.
   def require_named_administrator
     return if named_administrator?
 

@@ -43,8 +43,7 @@ RSpec.describe DemoResolutionWording do
   end
 
   # The card stands under the requirement, and it is the requirement the
-  # directories named — in English first, where the console reads French first:
-  # this page is the portal, and its reader is a user of another Member State.
+  # directories named — in the language the page is read in first.
   describe 'what the card stands under' do
     subject(:wording) { described_class.new(lookup) }
 
@@ -56,8 +55,14 @@ RSpec.describe DemoResolutionWording do
       )
     end
 
-    it 'is the requirement, in English where the directory published both' do
-      expect(wording).to have_attributes(requirement: 'Proof of enrolment', requirement_language: 'EN')
+    it 'is the requirement, in the language of the page where the directory published both' do
+      expect(wording).to have_attributes(requirement: 'Preuve de scolarité', requirement_language: 'FR')
+    end
+
+    it 'is the requirement in English on a page read in English' do
+      I18n.with_locale(:en) do
+        expect(wording).to have_attributes(requirement: 'Proof of enrolment', requirement_language: 'EN')
+      end
     end
 
     context 'when the directory published French alone' do

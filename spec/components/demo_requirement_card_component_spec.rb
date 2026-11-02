@@ -26,7 +26,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
   # What a line says, less what `DirectoryValueComponent` adds for a screen
   # reader after each value the directories publish.
-  def said(element) = element.text.squish.gsub(', retrieved from the common services', '')
+  def said(element) = element.text.squish.gsub(', récupéré auprès des services communs', '')
 
   def card_wording(lines:, **attributes)
     instance_double(DemoCardWording, lines:, nameable?: lines.any? && lines.all?(&:nameable?), choosable?: false,
@@ -70,7 +70,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     form = page.find('form.requirement-card__remove')
     expect(form['action']).to eq("/admin/demo/v2.0/T1/cartes/#{uuid}")
     expect(form).to have_css("input[name='_method'][value='delete']", visible: :all)
-    expect(form).to have_button('Remove this document')
+    expect(form).to have_button('Retirer ce document')
 
     render_inline(card)
     expect(page).to have_no_css('.requirement-card__remove')
@@ -84,7 +84,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     form = page.find('form.requirement-card__country')
 
     expect(form['action']).to eq("/admin/demo/v2.0/T1/pays?exigence=#{uuid}")
-    expect(form).to have_select('Country to request the document from', selected: '🇫🇮 Finland (FI)')
+    expect(form).to have_select('Pays auquel demander le document', selected: '🇫🇮 Finland (FI)')
     expect(page).to have_no_css('.demo-request form.requirement-card__country')
   end
 
@@ -98,9 +98,9 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     expect(failure['id']).to eq("pays-#{uuid}-erreur")
     expect(failure[:class]).to eq('fr-error-text')
-    expect(failure.text(:all).squish).to eq('The country could not be changed: this page could not reach the ' \
-                                            'service. Choose it again, or reload the page.')
-    expect(failure).to have_link('reload the page', href: '/admin/demo/v2.0/T1/documents', visible: :hidden)
+    expect(failure.text(:all).squish).to eq("Le pays n'a pas pu être changé : cette page n'a pas pu joindre le " \
+                                            'service. Choisissez-le de nouveau, ou rechargez la page.')
+    expect(failure).to have_link('rechargez la page', href: '/admin/demo/v2.0/T1/documents', visible: :hidden)
     expect(page).to have_no_css('[data-demo-card-target~="top"] [data-demo-card-target="countryFailure"]',
       visible: :all)
   end
@@ -123,10 +123,10 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       render_inline(card)
 
       expect(page).to have_text('FR - Test Evidence Provider')
-      expect(page).to have_css('.fr-alert.fr-alert--warning', text: 'This provider does not support OOTS 1.2')
+      expect(page).to have_css('.fr-alert.fr-alert--warning', text: 'Ce fournisseur ne prend pas en charge OOTS 1.2')
       expect(page).to have_no_css('.demo-request')
       expect(page).to have_no_button
-      expect(page).to have_select('Country to request the document from')
+      expect(page).to have_select('Pays auquel demander le document')
     end
   end
 
@@ -146,8 +146,8 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
         form = page.find('form.requirement-card__evidence-type')
         expect(form['action']).to eq("/admin/demo/v2.0/T1/combinaison?exigence=#{uuid}")
-        expect(form).to have_select('Document to request',
-          options: ['Select a document', 'Simple test evidence', 'Compound test evidence'])
+        expect(form).to have_select('Document à demander',
+          options: ['Sélectionnez un document', 'Simple test evidence', 'Compound test evidence'])
         expect(form.first('option')['value']).to eq('')
         expect(form).to have_no_css('option[selected]')
         expect(page.find('.requirement-card__actions').text.squish).to be_empty
@@ -159,7 +159,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
         failure = page.find('[data-demo-card-target="combinationFailure"]', visible: :hidden)
         expect(failure['id']).to eq("combinaison-#{uuid}-erreur")
-        expect(failure.text(:all).squish).to start_with('The document could not be changed')
+        expect(failure.text(:all).squish).to start_with("Le document n'a pas pu être changé")
       end
     end
 
@@ -179,13 +179,13 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
         render_inline(described_class.new(wording:, country_code: 'EL', country_name: 'Greece', countries:,
           combinations:))
 
-        expect(page).to have_select('Document to request', selected: 'Compound test evidence',
+        expect(page).to have_select('Document à demander', selected: 'Compound test evidence',
           options: ['Simple test evidence', 'Compound test evidence'])
         expect(page.all('[data-demo-card-line]').map { |found| said(found) }).to eq(
-          ['Projectathon test evidence from Ministry of Education', '⚠️No provider listed by Greece for this evidence'],
+          ['Projectathon test evidence auprès de Ministry of Education', '⚠️Greece ne déclare aucun fournisseur pour ce justificatif'],
         )
         expect(page).to have_no_button
-        expect(page).to have_no_text('Evidence impossible to satisfy')
+        expect(page).to have_no_text('Justificatif impossible à fournir')
         expect(page).to have_no_css('.requirement-card--unsatisfiable')
       end
     end
@@ -204,10 +204,10 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
     it 'offers no list, and names each type with its provider, on a line of its own' do
       render_inline(described_class.new(wording:, country_code: 'EL', countries: [['🇬🇷 EL', 'EL']], zone:))
 
-      expect(page).to have_no_select('Document to request')
+      expect(page).to have_no_select('Document à demander')
       expect(page.all('[data-demo-card-line]').map { |found| [found['data-demo-card-line'], said(found)] }).to eq([
-        ['bbbb', 'Projectathon test evidence from Ministry of Education'],
-        ['cccc', 'Simple test evidence from Ministry of Digital Governance'],
+        ['bbbb', 'Projectathon test evidence auprès de Ministry of Education'],
+        ['cccc', 'Simple test evidence auprès de Ministry of Digital Governance'],
       ])
       expect(page).to have_css('[data-demo-card-target="request"] .demo-request', visible: :all)
     end
@@ -220,7 +220,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       render_inline(described_class.new(wording:, country_code: 'EL', country_name: 'Greece', countries: [['🇬🇷 EL', 'EL']]))
 
       expect(page).to have_css('.requirement-card--unsatisfiable')
-      expect(page).to have_text('Evidence impossible to satisfy')
+      expect(page).to have_text('Justificatif impossible à fournir')
     end
 
     # RG3: a line asking a question may yet be resolved.
@@ -254,9 +254,9 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       render_inline(described_class.new(wording: unsatisfied, country_code: 'FI', country_name: 'Finland',
         countries: [['🇫🇮 Finland (FI)', 'FI']]))
 
-      expect(page.find('.fr-card__desc').text.squish).to eq('Evidence impossible to satisfy by 🇫🇮 Finland (FI)')
+      expect(page.find('.fr-card__desc').text.squish).to eq('Justificatif impossible à fournir par 🇫🇮 Finland (FI)')
       expect(page).to have_css('.requirement-card--unsatisfiable')
-      expect(page.find('.requirement-card__actions').text.squish).to eq('⚠️No provider listed by Finland for this evidence')
+      expect(page.find('.requirement-card__actions').text.squish).to eq('⚠️Finland ne déclare aucun fournisseur pour ce justificatif')
     end
   end
 
@@ -293,7 +293,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
       expect(form['action']).to eq("/admin/demo/v2.0/T1/classification_fournisseur?exigence=#{uuid}&type=bbbb")
       expect(form).to have_css("#question-#{uuid}-bbbb-1254f10f-406e-4f28-b1ba-d107b93fa264")
       expect(page).to have_no_css('[data-demo-card-line="cccc"] form')
-      expect(said(page.find('[data-demo-card-line="cccc"]'))).to eq('Simple test evidence from Ministry of Digital Governance')
+      expect(said(page.find('[data-demo-card-line="cccc"]'))).to eq('Simple test evidence auprès de Ministry of Digital Governance')
     end
 
     # CA2: « codelist, string or boolean and Evidence Requesters MUST support
@@ -305,7 +305,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
       expect(controls).to eq([%w[select], %w[radio], %w[text]])
       expect(page.all('form.requirement-card__questions input[type=radio] + label').map { |label| label.text.squish })
-        .to eq(%w[Yes No])
+        .to eq(%w[Oui Non])
     end
 
     # RGAA 8.7: a question in another language than the page says so.
@@ -315,7 +315,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     # Each answer sends as it is given, as a country or a type chosen does.
     it 'opens a list on a prompt, sends each answer as it is given, and offers no button to do it' do
-      expect(page.first('form.requirement-card__questions option').text).to eq('Select a value')
+      expect(page.first('form.requirement-card__questions option').text).to eq('Sélectionnez une valeur')
       expect(page.all('form.requirement-card__questions select, form.requirement-card__questions input:not([type=hidden])',
         visible: :all).pluck('data-action').uniq).to eq(['change->demo-card#answer'])
       expect(page).to have_no_css('form.requirement-card__questions button')
@@ -330,7 +330,7 @@ RSpec.describe DemoRequirementCardComponent, type: :component do
 
     it 'renders, hidden, what it says of an answer that could not be sent' do
       expect(page.find('[data-demo-card-target=answerFailure]', visible: :hidden).text.squish)
-        .to start_with('The answer could not be sent: this page could not reach the service.')
+        .to start_with("La réponse n'a pas pu être envoyée : cette page n'a pas pu joindre le service.")
     end
   end
 end

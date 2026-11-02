@@ -2,6 +2,8 @@
 # service does and what joining it asks. Its header leads to the
 # administration space.
 class AccueilController < ApplicationController
+  include ChosenLanguage
+
   def index; end
 
   private

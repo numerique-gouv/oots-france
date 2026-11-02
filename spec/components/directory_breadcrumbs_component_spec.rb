@@ -6,7 +6,7 @@ RSpec.describe DirectoryBreadcrumbsComponent, type: :component do
     render_inline(described_class.new(trail: [['Démarches', '/admin/common_services/procedures'], ['R1', nil]]))
 
     expect(page.all('.fr-breadcrumb__link').map(&:text))
-      .to eq(['Espace d’administration', 'Annuaires centraux', 'Démarches', 'R1'])
+      .to eq(['Administration', 'Annuaires centraux', 'Démarches', 'R1'])
   end
 
   # The last crumb is where the reader stands: no link, which is what marks it

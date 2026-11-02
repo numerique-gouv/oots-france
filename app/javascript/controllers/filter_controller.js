@@ -7,8 +7,8 @@ import { Controller } from "@hotwired/stimulus"
 // these listings hold a few dozen entries already loaded.
 //
 // The tally is rewritten from the forms the server rendered into `data-tally`:
-// the French plurals live in `config/locales/fr.yml` and nowhere else, `COUNT`
-// standing there for the number.
+// the plurals live in `config/locales/fr.yml` and `config/locales/en.yml` and
+// nowhere else, `COUNT` standing there for the number.
 //
 // What is narrowed is named by CSS selector rather than by target: what is
 // narrowed, what tallies it and what is said when nothing is left are three

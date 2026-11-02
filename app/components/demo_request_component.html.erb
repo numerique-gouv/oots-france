@@ -18,9 +18,9 @@
         its content in any way » — so it is offered exactly as it arrived. %>
     <%= link_to t('components.demo_request_zone.open'), evidence_path,
           class: 'fr-btn fr-btn--secondary fr-btn--icon-left fr-icon-attachment-line',
-          target: '_blank', rel: 'noopener', lang: 'en' %>
+          target: '_blank', rel: 'noopener' %>
 
-    <p class="fr-mb-0 demo-request__state" lang="en">
+    <p class="fr-mb-0 demo-request__state">
       <span class="fr-icon-check-line demo-request__check" aria-hidden="true"></span>
       <%= t('components.demo_request_zone.delivered') %>
     </p>
@@ -35,7 +35,7 @@
 
         The link opens in this window: the user leaves the procedure, and comes
         back to it by the return address (chapter 4.9 §2 step 29). %>
-    <div class="fr-callout fr-mb-0 demo-request__preview" lang="en">
+    <div class="fr-callout fr-mb-0 demo-request__preview">
       <p class="fr-callout__title"><%= t('components.demo_request_zone.preview_title') %></p>
       <% if preview_description.present? %>
         <p class="fr-callout__text demo-request__description"
@@ -72,7 +72,7 @@
         it back — giving up offers a way back to the page instead, clicking
         again being a second exchange (chapter 4.4 §4.1). %>
     <%= button_to submit_label, button_path,
-          class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line', lang: 'en',
+          class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line',
           form: { class: 'demo-request__button', hidden: pending?,
                   data: { demo_request_target: 'button' } } %>
 
@@ -81,9 +81,9 @@
         answer comes back leaves the user clicking again. The controller shows
         this and hides the button. The waiting the server then sends is this same
         one — the controller leaves it standing rather than building it again —
-        and the wording is the server's throughout: no English lives in the
+        and the wording is the server's throughout: no sentence lives in the
         Stimulus controller. %>
-    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
           hidden: !pending?, data: { demo_request_target: 'loading' } do %>
       <span class="demo-request__spinner" aria-hidden="true"></span>
       <%= t('components.demo_request_zone.loading') %>
@@ -93,7 +93,7 @@
         network that dropped, or something that answered without the header this
         application sets. The server cannot say that it cannot be reached, so the
         sentence is rendered here, hidden, and the controller shows it. %>
-    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+    <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
           hidden: true, data: { demo_request_target: 'disconnected' } do %>
       <span class="fr-icon-error-warning-line demo-request__failed" aria-hidden="true"></span>
       <%= t('components.demo_request_zone.disconnected_html',
@@ -106,11 +106,11 @@
         the code below says which refusal it was, and the component the journal
         uses glosses it. Hidden the moment the button is clicked again: what it
         reports is no longer what is happening. %>
-    <%# The language said rather than left to be guessed (RGAA 8.7): a click the
-        contract refused is titled from `interactors.failures.*`, which the
-        operator console shares with this screen and which is written in French;
-        every other failure is said in English. %>
-    <div class="demo-request__failure" data-demo-request-target="failure" lang="<%= failure_language %>">
+    <%# No `lang`: the title is the page's, and the body of a click the contract
+        refused is what the contract said — a sentence of the default locale, a
+        directory's English, an HTTP client's error —, whose language nobody
+        recorded. %>
+    <div class="demo-request__failure" data-demo-request-target="failure">
       <%= helpers.dsfr_alert(type: failure_type, title: failure_title) do %>
         <%= failure_body %>
         <% if edm_error_code %>

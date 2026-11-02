@@ -16,16 +16,16 @@
         reach the service are those of a block, written once more here. %>
     <div class="demo-request__block" data-demo-request-block data-state="idle">
       <%= button_to t('components.demo_request_zone.submit_all'), button_path,
-            class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line', lang: 'en',
+            class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line',
             form: { class: 'demo-request__button', data: { demo_request_target: 'button' } } %>
 
-      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
             hidden: true, data: { demo_request_target: 'loading' } do %>
         <span class="demo-request__spinner" aria-hidden="true"></span>
         <%= t('components.demo_request_zone.loading_all') %>
       <% end %>
 
-      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting', lang: 'en',
+      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
             hidden: true, data: { demo_request_target: 'disconnected' } do %>
         <span class="fr-icon-error-warning-line demo-request__failed" aria-hidden="true"></span>
         <%= t('components.demo_request_zone.disconnected_html',

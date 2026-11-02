@@ -36,14 +36,14 @@ module Demo
     def evidence = context.evidence
 
     def unplaceable
-      Rails.logger.warn(I18n.t('interactors.demo.receive_evidence.unplaceable',
+      Rails.logger.warn(LogLine.t('interactors.demo.receive_evidence.unplaceable',
         exchange: named(exchange_id), conversation: named(conversation_id)))
 
       fail_with_error(:demo_unplaceable)
     end
 
     def empty
-      Rails.logger.warn(I18n.t('interactors.demo.receive_evidence.empty', exchange: named(exchange_id)))
+      Rails.logger.warn(LogLine.t('interactors.demo.receive_evidence.empty', exchange: named(exchange_id)))
 
       fail_with_error(:demo_evidence_empty)
     end

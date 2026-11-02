@@ -55,7 +55,7 @@ RSpec.describe 'Admin::ProConnect' do
         get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
 
         expect(response).to redirect_to(new_admin_session_path)
-        expect(failed_page).to include("L'espace d'administration est réservé aux adresses en @numerique.gouv.fr : " \
+        expect(failed_page).to include("L'administration est réservée aux adresses en @numerique.gouv.fr : " \
                                        'vous vous êtes identifié avec « agent@exemple.fr ».')
         expect(response.body).not_to include('Vous êtes déconnecté.')
       end

@@ -255,7 +255,7 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
       get admin_common_services_access_points_path
 
       expect(page.css('.fr-breadcrumb__link').map { |link| link.text.strip })
-        .to eq(['Espace d’administration', 'Annuaires centraux', "Points d'accès"])
+        .to eq(['Administration', 'Annuaires centraux', "Points d'accès"])
     end
 
     it 'answers the blocks alone when the page asks for them again' do

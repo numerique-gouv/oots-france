@@ -10,7 +10,7 @@ module IncomingMessage
       # nobody to report it to. Named by the conversation, which every message
       # carries on both lines, where the `ExchangeId` belongs to one of them.
       if exchange.nil?
-        Rails.logger.warn(I18n.t('interactors.incoming_message.settle_exchange.unknown',
+        Rails.logger.warn(LogLine.t('interactors.incoming_message.settle_exchange.unknown',
           id: context.message.conversation_id))
         return
       end
@@ -45,7 +45,7 @@ module IncomingMessage
     # cannot be answered for afterwards, and nothing else holds this one.
     def refuse(exchange, reason)
       Rails.logger.warn(
-        I18n.t("interactors.incoming_message.settle_exchange.#{reason}",
+        LogLine.t("interactors.incoming_message.settle_exchange.#{reason}",
           id: exchange.exchange_id),
       )
       audit_trail.response_refused(exchange:, reason: reason.to_s)

@@ -6,6 +6,7 @@ module Admin
   # `Admin::CommonServices::ConnectivityTestsController`, which send a test message and open no
   # exchange — `docs/espace_administration.md` says why both sit here.
   class BaseController < ApplicationController
+    include ChosenLanguage
     include AdminAuthentication
 
     def admin_section? = true

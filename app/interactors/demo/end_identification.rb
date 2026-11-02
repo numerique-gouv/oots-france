@@ -19,7 +19,7 @@ module Demo
       context.end_session_url = client.end_session_url(id_token_hint: context.identity.id_token, state:)
       context.state = state
     rescue FranceConnectError, Faraday::Error => e
-      Rails.logger.warn(I18n.t('interactors.demo.end_identification.unreachable', error: e.message))
+      Rails.logger.warn(LogLine.t('interactors.demo.end_identification.unreachable', error: e.message))
 
       fail_with_error(:identification_refused, errors: [e.message])
     end

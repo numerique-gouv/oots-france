@@ -66,7 +66,7 @@ lint: ## RuboCop alone
 lint-fix: ## RuboCop, autocorrecting what is safe to autocorrect
 	$(IN_WEB) rubocop -a
 
-i18n: ## Le fr.yml, contre ce que le code réclame (ni `normalize` ni `health` : voir config/i18n-tasks.yml)
+i18n: ## Le fr.yml et le en.yml, contre ce que le code réclame (ni `normalize` ni `health` : voir config/i18n-tasks.yml)
 	$(IN_WEB) i18n-tasks missing
 	$(IN_WEB) i18n-tasks unused
 

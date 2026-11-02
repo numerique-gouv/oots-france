@@ -12,7 +12,7 @@ module ConnectivityTesting
     def call
       settle(gateway.message_status(test.message_id, role: SENDING))
     rescue Faraday::Error, UnreadableMessageError => e
-      Rails.logger.error(I18n.t('interactors.connectivity_testing.read_verdict.unreadable',
+      Rails.logger.error(LogLine.t('interactors.connectivity_testing.read_verdict.unreadable',
         party: test.party_name, id: test.message_id, error: "#{e.class}: #{e.message}"))
     end
 
@@ -33,7 +33,7 @@ module ConnectivityTesting
     def failed
       error = cause
       if error.nil?
-        Rails.logger.warn(I18n.t('interactors.connectivity_testing.read_verdict.no_error',
+        Rails.logger.warn(LogLine.t('interactors.connectivity_testing.read_verdict.no_error',
           party: test.party_name, id: test.message_id))
       end
       test.failed!(error)
@@ -55,7 +55,7 @@ module ConnectivityTesting
     # The gateway erases its test messages towards a party whenever its own
     # console tests that party (`TestService.deleteSentHistory`).
     def forgotten
-      Rails.logger.warn(I18n.t('interactors.connectivity_testing.read_verdict.not_found',
+      Rails.logger.warn(LogLine.t('interactors.connectivity_testing.read_verdict.not_found',
         party: test.party_name, id: test.message_id))
       test.no_verdict!
     end

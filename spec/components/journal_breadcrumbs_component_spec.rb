@@ -6,7 +6,7 @@ RSpec.describe JournalBreadcrumbsComponent, type: :component do
     render_inline(described_class.new(trail: [['Exchanges', '/admin/journal/exchanges'], ['abc-123', nil]]))
 
     expect(page.all('.fr-breadcrumb__link').map(&:text))
-      .to eq(['Espace d’administration', 'Journal des événements', 'Exchanges', 'abc-123'])
+      .to eq(['Administration', 'Journal des événements', 'Exchanges', 'abc-123'])
   end
 
   # The last crumb is where the reader stands: no link, which is what marks it

@@ -126,7 +126,8 @@ end
 # with Austria named in the code list as the scenarios name it — the page is
 # asked for again, so that its list of countries carries that name.
 Étantdonné("l'Autriche publiant deux types de justificatif pour l'exigence de la carte") do
-  stub_code_list(country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('AT' => 'Austria'))
+  stub_code_list(countries: CodeListStubs::DEFAULT_COUNTRIES.merge('AT' => 'Autriche (l’)'),
+    country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('AT' => 'Austria'))
   stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_at', country: 'AT')
   AUSTRIAN_TYPES.each_value do |uuid|
     stub_directory('dsd', 'dataservices-by-evidencetype', "dsd_data_services_at_#{uuid[0, 8]}",
@@ -721,7 +722,7 @@ QUESTIONS = {
 }.freeze
 
 # The control each form of question is asked in, as the scenario names it.
-QUESTION_FORMS = { 'liste' => 'select', '"Yes" ou "No"' => 'radio', 'champ texte' => 'text' }.freeze
+QUESTION_FORMS = { 'liste' => 'select', '"Oui" ou "No"' => 'radio', 'champ texte' => 'text' }.freeze
 
 # The slot that carries the questions of the capture, and the one element it
 # holds.
@@ -892,7 +893,8 @@ def directory_queries
 end
 
 def stub_greece
-  stub_code_list(country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('EL' => 'Greece'))
+  stub_code_list(countries: CodeListStubs::DEFAULT_COUNTRIES.merge('EL' => 'Grèce (la)'),
+    country_names: CodeListStubs::DEFAULT_COUNTRY_NAMES.merge('EL' => 'Greece'))
   stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_el', country: 'EL')
   stub_request(:get, GREEK_CODE_LIST)
     .to_return(body: Rails.root.join('spec/fixtures/common_services/liste_classification_el_projectathon.gc').read,

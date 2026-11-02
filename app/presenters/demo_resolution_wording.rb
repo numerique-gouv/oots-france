@@ -11,15 +11,11 @@
 # publish them in: substituting a wording of our own would make the
 # demonstration show something no exchange rests on.
 class DemoResolutionWording
-  # English first, where the console reads French first: these pages are the
-  # portal, and their reader is a user of another Member State.
-  LANGUAGES = %w[EN FR].freeze
-
   def initialize(lookup)
     @lookup = lookup
   end
 
-  def provider = provider_entry&.label(languages: LANGUAGES).presence
+  def provider = provider_entry&.label.presence
 
   # The gateway of the provider this card names: what it announces is whether
   # the line of the journey can reach it.
@@ -30,10 +26,10 @@ class DemoResolutionWording
   # which a screen reader pronounces French as English (RGAA 8.7). Nothing when
   # the value itself is nothing.
   def provider_language
-    provider_entry&.label_language(languages: LANGUAGES) if provider.present?
+    provider_entry&.label_language if provider.present?
   end
 
-  def evidence_type = lookup.evidence_type&.label(languages: LANGUAGES).presence
+  def evidence_type = lookup.evidence_type&.label.presence
 
   # The type the card names, whole — what the request sends — and by its UUID,
   # which is what the page's own addresses carry.
@@ -42,7 +38,7 @@ class DemoResolutionWording
   def evidence_type_uuid = lookup.evidence_type&.uuid
 
   def evidence_type_language
-    lookup.evidence_type&.label_language(languages: LANGUAGES) if evidence_type.present?
+    lookup.evidence_type&.label_language if evidence_type.present?
   end
 
   # What the procedure has to satisfy, which is what a card stands under. Read
@@ -60,7 +56,7 @@ class DemoResolutionWording
   def requirement_language
     return evidence_type_language if requirement_label.blank?
 
-    lookup.requirement.label_language(languages: LANGUAGES)
+    lookup.requirement.label_language
   end
 
   def nameable? = provider.present? && evidence_type.present?
@@ -125,7 +121,7 @@ class DemoResolutionWording
   def requirement_label
     return @requirement_label if defined?(@requirement_label)
 
-    @requirement_label = lookup.requirement&.label(languages: LANGUAGES)
+    @requirement_label = lookup.requirement&.label
   end
 
   # `sdg:Publisher` names the organisation, which is what requirement 27 calls

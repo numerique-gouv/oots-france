@@ -8,12 +8,7 @@
 # title the code list publishes: a member state names its own procedure, and
 # that name is what its portal would show. The code list is the fallback, for a
 # directory that says nothing.
-#
-# English first, where the console reads French first: this page is the portal,
-# and its reader is a user of another Member State.
 class DemoProcedureWording
-  LANGUAGES = %w[EN FR].freeze
-
   # `published_name_language` because the code list publishes one column per
   # language and the caller chooses which: a name read in French, declared as
   # English, is what RGAA 8.7 exists to prevent.
@@ -38,7 +33,7 @@ class DemoProcedureWording
   # The language the title is written in, which the page declares so that a
   # screen reader does not pronounce English as French (RGAA 8.7).
   def title_language
-    return declaration.label_language(languages: LANGUAGES) if declared_title.present?
+    return declaration.label_language if declared_title.present?
 
     @published_name_language if @published_name.present?
   end
@@ -55,7 +50,7 @@ class DemoProcedureWording
   def declared_title
     return @declared_title if defined?(@declared_title)
 
-    @declared_title = declaration&.label(languages: LANGUAGES)
+    @declared_title = declaration&.label
   end
 
   # France declares the same code more than once, under titles of its own; the
@@ -72,9 +67,9 @@ class DemoProcedureWording
   # bullet with no text reads as a line the page failed to render.
   def named(requirements)
     requirements.filter_map do |requirement|
-      label = requirement.label(languages: LANGUAGES)
+      label = requirement.label
 
-      [label, requirement.label_language(languages: LANGUAGES)] if label.present?
+      [label, requirement.label_language] if label.present?
     end
   end
 end

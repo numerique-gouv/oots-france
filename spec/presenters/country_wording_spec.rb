@@ -17,6 +17,13 @@ RSpec.describe CountryWording do
               'en Autriche (l’)', 'à Chypre'])
   end
 
+  # English has no use for the table, nor for the French articles.
+  it 'places a country in English without a preposition of the table' do
+    english = described_class.new(names: { 'DE' => 'Germany' }, articles: { 'DE' => 'l’' })
+
+    expect(I18n.with_locale(:en) { [english.in('DE'), english.by('DE')] }).to eq(['in Germany', 'by Germany'])
+  end
+
   it 'attributes a declaration the way its article demands' do
     expect(%w[BE LU NL AT CY].map { |code| wording.by(code) })
       .to eq(['par la Belgique (la)', 'par le Luxembourg (le)', 'par les Pays-Bas (les)',

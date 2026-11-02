@@ -51,13 +51,12 @@ module Admin
       # and the log says why.
       def add(requirement)
         if requirement.nil?
-          Rails.logger.warn(I18n.t('controllers.admin.demo.cards.uncatalogued', requirement: requirement_uuid))
+          Rails.logger.warn(LogLine.t('controllers.admin.demo.cards.uncatalogued', requirement: requirement_uuid))
 
           return redirect_to(admin_demo_documents_path)
         end
 
-        ::Demo::Card.add(journey_id: journey.id, requirement:, country_code: card_country,
-          languages: DemoResolutionWording::LANGUAGES)
+        ::Demo::Card.add(journey_id: journey.id, requirement:, country_code: card_country)
         back_to_the_card
       end
 
@@ -70,7 +69,7 @@ module Admin
       end
 
       def report_unreachable_catalogue(error)
-        Rails.logger.warn(I18n.t('controllers.admin.demo.catalogue_unreachable', error: error.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.catalogue_unreachable', error: error.message))
 
         redirect_to admin_demo_documents_path
       end

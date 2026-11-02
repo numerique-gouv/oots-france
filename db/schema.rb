@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_14_150000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_02_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -113,13 +113,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_14_150000) do
     t.text "preview_address"
     t.string "preview_method"
     t.text "preview_body"
-    t.text "preview_description"
-    t.string "preview_description_language"
     t.datetime "returned_at"
     t.string "procedure_code"
     t.string "evidence_type_id"
     t.jsonb "provider_classifications", default: {}, null: false
     t.string "evidence_type_list_id"
+    t.jsonb "preview_descriptions", default: [], null: false
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_requests_on_journey_id_and_requirement_uuid"
   end

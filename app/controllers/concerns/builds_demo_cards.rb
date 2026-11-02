@@ -91,7 +91,7 @@ module BuildsDemoCards
     demo_request_zone(wording.requirement_uuid, types, requested: demo_card(wording.requirement_uuid)&.requested?)
   end
 
-  # In English, like the page. A code list that says nothing leaves the name
+  # In the language the page is read in. A code list that says nothing leaves the name
   # blank, and the box then shows the code alone. The code and the name travel
   # apart, and not the box around them: a ViewComponent instance is single-use,
   # and a card names the country more than once.
@@ -110,7 +110,7 @@ module BuildsDemoCards
 
   # The combinations the country of the card publishes for its requirement,
   # where it publishes several, as `[label, identifier, { lang: }]`: named as
-  # `DemoCardWording.label` says, in English first like the page. `nil` on a
+  # `DemoCardWording.label` says, in the language of the page first. `nil` on a
   # card with a single one, which leaves nothing to choose, and on one that
   # follows a request, which names the combination it asked for.
   def combination_options(wording)
@@ -161,7 +161,7 @@ module BuildsDemoCards
 
   def classification_values = @classification_values ||= ClassificationValuesClient.new
 
-  def country_names = @country_names ||= code_lists.country_names(lang: :en)
+  def country_names = @country_names ||= code_lists.country_names(lang: I18n.locale)
 
   # One client per request, as `Admin::CommonServices::BaseController` keeps one
   # for its section: the lists it answers are the same on every call, and a

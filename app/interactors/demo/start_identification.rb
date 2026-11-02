@@ -20,13 +20,18 @@ module Demo
       context.state = state
       context.nonce = nonce
     rescue FranceConnectError, Faraday::Error => e
-      reason = I18n.t('interactors.demo.start_identification.undiscoverable', error: e.message)
-      Rails.logger.warn(reason)
-
-      fail_with_error(:identification_refused, errors: [reason])
+      undiscoverable(e.message)
     end
 
     private
+
+    # Said in the page's language, and logged in the log's.
+    def undiscoverable(error)
+      Rails.logger.warn(LogLine.t('interactors.demo.start_identification.undiscoverable', error:))
+
+      fail_with_error(:identification_refused,
+        errors: [I18n.t('interactors.demo.start_identification.undiscoverable', error:)])
+    end
 
     def client = context.client ||= FranceConnectClient.new(instance: context.instance)
   end

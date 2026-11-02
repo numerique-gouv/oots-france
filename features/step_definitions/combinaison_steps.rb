@@ -94,7 +94,7 @@ end
 # The two names requirement 27 of chapter 1 §2 has shown before any request,
 # for each type of the combination.
 Alors('la carte nomme, ligne par ligne :') do |table|
-  expected = table.hashes.map { |row| "#{row.fetch('type')} from #{row.fetch('fournisseur')}" }
+  expected = table.hashes.map { |row| "#{row.fetch('type')} auprès de #{row.fetch('fournisseur')}" }
 
   expect(page).to have_css(CARD_LINE, count: expected.size)
   wait_until(-> { "La carte nomme #{all(CARD_LINE).map { |line| said_by(line) }}." }) do

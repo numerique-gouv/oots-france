@@ -1,0 +1,11 @@
+<%= content_tag(:div, class: "fr-connect-group", **html_attributes) do %>
+  <%= button_to(target, button_attributes) do %>
+    <span class="fr-connect__login"><%= t('components.pro_connect_button.sign_in_with') %></span>
+    <span class="fr-connect__brand">ProConnect</span>
+  <% end %>
+
+  <p>
+    <%= link_to t('components.pro_connect_button.what_is'), 'https://www.proconnect.gouv.fr/', target: '_blank',
+          rel: 'noopener', title: t('components.pro_connect_button.what_is_new_window') %>
+  </p>
+<% end %>

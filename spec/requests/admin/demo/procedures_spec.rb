@@ -16,7 +16,7 @@ RSpec.describe 'Admin::Demo::Procedures' do
       get admin_demo_procedures_path(version: 'v2.0')
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.at_css('main h1').text.squish).to eq('Choose the procedure')
+      expect(response.parsed_body.at_css('main h1').text.squish).to eq('Choisir la démarche')
       cards = response.parsed_body.css('#liste-demarches .fr-card')
       expect(cards.size).to eq(30)
       expect(cards.map { |card| card.at_css('a')['href'] }.sort)
@@ -24,11 +24,26 @@ RSpec.describe 'Admin::Demo::Procedures' do
       expect(session[:france_connect]).to be_nil
     end
 
+    # CA8: the plurals the filter rewrites the tally from follow the page.
+    it 'hands the filter the plurals of the language the page is read in' do
+      get admin_demo_procedures_path(version: 'v2.0', locale: 'en')
+      follow_redirect!
+
+      forms = JSON.parse(response.parsed_body.at_css('[data-tally]')['data-tally'])
+      expect(forms.values_at('1', 'other')).to eq(['1 procedure', 'COUNT procedures'])
+
+      get admin_demo_procedures_path(version: 'v2.0', locale: 'fr')
+      follow_redirect!
+
+      forms = JSON.parse(response.parsed_body.at_css('[data-tally]')['data-tally'])
+      expect(forms.values_at('1', 'other')).to eq(['1 démarche', 'COUNT démarches'])
+    end
+
     it 'offers to search the cards' do
       get admin_demo_procedures_path(version: 'v2.0')
 
       expect(response.parsed_body.at_css("main label[for='recherche-demarche']").text.squish)
-        .to eq('Search a code or a title')
+        .to eq('Rechercher un code ou un intitulé')
     end
 
     # RG1 as amended on the screen: the procedures France declares say so in
@@ -37,7 +52,7 @@ RSpec.describe 'Admin::Demo::Procedures' do
       get admin_demo_procedures_path(version: 'v2.0')
 
       expect(card('T1').at_css('.fr-card__footer').text.squish)
-        .to match(/\A.*France \(FR\) requires \d+ documents?\z/)
+        .to match(/\A.*France \(FR\) exige \d+ documents?\z/)
       expect(card('U4').at_css('.fr-card__footer')).to be_nil
     end
 
@@ -53,8 +68,8 @@ RSpec.describe 'Admin::Demo::Procedures' do
       expect(declared).to eq(natural(declared))
       expect(codes.drop(1 + declared.size)).to eq(natural(ProcedureCode::PUBLISHED - declared))
       expect(natural(%w[X10 X9])).to eq(%w[X9 X10])
-      expect(card('R1').at_css('.fr-card__title').text.squish).to eq('R1 — Requesting a birth registration certificate')
-      expect(card('00').at_css('.fr-card__title').text.squish).to eq('00 — No label')
+      expect(card('R1').at_css('.fr-card__title').text.squish).to eq('R1 — Demander une attestation d’enregistrement d’une naissance')
+      expect(card('00').at_css('.fr-card__title').text.squish).to eq('00 — Sans intitulé')
     end
 
     it 'stands without the footers, and with no alert, when the Evidence Broker cannot be reached' do
@@ -83,7 +98,7 @@ RSpec.describe 'Admin::Demo::Procedures' do
       get admin_demo_procedures_path(version: 'v2.0')
 
       expect(response.parsed_body.css('.fr-breadcrumb__link').map { |crumb| crumb.text.squish })
-        .to eq(['Espace d’administration', 'Demo', '2.0'])
+        .to eq(['Administration', 'Démo', '2.0'])
     end
   end
 end

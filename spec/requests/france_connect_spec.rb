@@ -373,6 +373,16 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       expect(response.body).to include(I18n.t('france_connect.retour_deconnexion.title'))
     end
 
+    # CA4: where the sign-out of a demonstration identity lands, in the
+    # language chosen before it.
+    it 'is read in the language the user chose' do
+      cookies[:locale] = 'en'
+      get '/demo/franceconnect/retour_deconnexion'
+
+      expect(response.parsed_body.at_css('html')['lang']).to eq('en')
+      expect(response.body).to include(I18n.t('france_connect.retour_deconnexion.title', locale: :en))
+    end
+
     # RG10: the `state` is what says this arrival answers a sign-out this
     # browser asked for. Without it the page still answers — FranceConnect+
     # requires a declared address to — but it attests nothing.

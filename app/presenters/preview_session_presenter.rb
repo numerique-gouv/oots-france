@@ -28,7 +28,7 @@ class PreviewSessionPresenter
     titles['FR'] || titles['EN'] || titles.values.first
   end
 
-  def document_size = ActiveSupport::NumberHelper.number_to_human_size(session.document_bytes.bytesize, locale: :fr)
+  def document_size = ActiveSupport::NumberHelper.number_to_human_size(session.document_bytes.bytesize)
 
   # Chapter 4.9 v1.2.3 §2, step 13: a 1.2 visit that brought no safe way back.
   def return_warning? = session.specification.preview_method_slot? && return_location.blank?

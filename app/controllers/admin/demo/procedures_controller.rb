@@ -19,8 +19,8 @@ module Admin
         @specification = EdmSpecification.from_segment(params[:version])
         @requirements_declared = declared_by_france
         @procedures = ProcedureCode.ordered(declared: @requirements_declared.keys)
-        @names = code_lists.procedure_names(lang: :en)
-        @country_name = code_lists.country_names(lang: :en)[country]
+        @names = code_lists.procedure_names(lang: I18n.locale)
+        @country_name = code_lists.country_names(lang: I18n.locale)[country]
       end
 
       private
@@ -29,7 +29,7 @@ module Admin
       def declared_by_france
         Directories::Catalogue.new.procedures_in(country).to_h { |procedure| [procedure.code, procedure.requirements.size] }
       rescue CommonServicesError => e
-        Rails.logger.warn(I18n.t('controllers.admin.demo.procedures.undeclared', error: e.message))
+        Rails.logger.warn(LogLine.t('controllers.admin.demo.procedures.undeclared', error: e.message))
 
         {}
       end

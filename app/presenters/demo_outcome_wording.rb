@@ -60,8 +60,7 @@ class DemoOutcomeWording
   delegate :edm_error_code, to: :answer
   delegate :evidence?, :evidence_digest, :exchange_id, :conversation_id,
     :evidence_type_name, :evidence_type_language, :provider_name, :provider_language,
-    :procedure_name, :procedure_language,
-    :preview_address, :preview_description, :preview_description_language, to: :request
+    :procedure_name, :procedure_language, :preview_address, to: :request
 
   # `unconfirmed`: the failure of the confirmation this reading led to, if it
   # failed — `ReadsDemoRequest#confirm_preview` says when one is made.
@@ -126,7 +125,23 @@ class DemoOutcomeWording
   # two without it.
   def named? = [evidence_type_name, provider_name, procedure_name].all?(&:present?)
 
+  # The variant of the correspondent's description the departure page shows,
+  # chosen at each display: the reader's language, English failing it, the
+  # first published failing both — chapter 4.9 §5, « to allow the launch page to
+  # be customized to the user's language choice (if known) ».
+  def preview_description = chosen_preview_description&.fetch('text', nil)
+
+  def preview_description_language = chosen_preview_description&.fetch('language', nil)
+
   private
+
+  def chosen_preview_description
+    published = Array(request.preview_descriptions)
+    wanted = [I18n.locale.to_s, 'EN']
+
+    wanted.lazy.filter_map { |language| published.find { it['language'].to_s.casecmp?(language) } }.first ||
+      published.first
+  end
 
   def settled_outcome
     return :unavailable if answer.exchange_status == 'failed' && edm_error_code.blank?

@@ -17,7 +17,7 @@
       asks of a button whose label is one. Outside what an answer replaces, so
       no country chosen takes it away. %>
   <% if removable? %>
-    <%= button_to removal_path, method: :delete, form: { class: 'requirement-card__remove', lang: 'en' },
+    <%= button_to removal_path, method: :delete, form: { class: 'requirement-card__remove' },
           class: 'fr-btn fr-btn--tertiary-no-outline fr-btn--sm fr-icon-close-line',
           title: t('components.demo_requirement_card.remove') do %>
       <%= t('components.demo_requirement_card.remove') %>
@@ -48,8 +48,7 @@
               satisfies too, which would otherwise have no way out of the
               country that serves nothing. %>
           <% if countries %>
-            <%= form_with url: country_path, method: :patch, class: 'requirement-card__country fr-my-2w',
-                  html: { lang: 'en' } do |form| %>
+            <%= form_with url: country_path, method: :patch, class: 'requirement-card__country fr-my-2w' do |form| %>
               <div class="fr-select-group fr-mb-0" data-demo-card-target="countryGroup">
                 <%= form.label :pays, t('components.demo_requirement_card.country_label'),
                       class: 'fr-label', for: country_field %>
@@ -87,8 +86,7 @@
                   form of countries — rendered whenever this list is —
                   announces what the foot now says. No combination is chosen in
                   the user's place, so the list opens on a prompt until one is. %>
-              <%= form_with url: combination_path, method: :patch, class: 'requirement-card__evidence-type',
-                    html: { lang: 'en' } do |form| %>
+              <%= form_with url: combination_path, method: :patch, class: 'requirement-card__evidence-type' do |form| %>
                 <div class="fr-select-group fr-mb-0" data-demo-card-target="combinationGroup">
                   <%= form.label :combinaison, t('components.demo_requirement_card.combination_label'),
                         class: 'fr-label', for: combination_field, data: { demo_card_announced: true } %>
@@ -107,9 +105,9 @@
                 </div>
               <% end %>
             <% elsif !countries %>
-              <p class="fr-mb-0" lang="en" data-demo-card-announced><%= render country_tag %></p>
+              <p class="fr-mb-0" data-demo-card-announced><%= render country_tag %></p>
             <% elsif unsatisfiable? %>
-              <p class="fr-mb-0" lang="en" data-demo-card-announced>
+              <p class="fr-mb-0" data-demo-card-announced>
                 <%= t('components.demo_requirement_card.unsatisfiable_html', country: render(country_tag)) %>
               </p>
             <% end %>
@@ -138,7 +136,7 @@
                 announces what the resolution now says (RGAA 7.4). %>
             <% if (asked = questions(line)) %>
               <%= form_with url: answer_path(line), method: :patch, class: 'requirement-card__questions',
-                    html: { lang: 'en' }, data: { demo_card_target: 'questions', action: 'submit->demo-card#answer' } do %>
+                    data: { demo_card_target: 'questions', action: 'submit->demo-card#answer' } do %>
                 <% answering = { action: 'change->demo-card#answer' } %>
                 <% asked.each do |question| %>
                   <% label = render(DirectoryValueComponent.new(lang: question.language)) { question.label } %>
@@ -187,7 +185,7 @@
 
             <div class="requirement-card__resolution" data-demo-card-target="resolution">
               <% if line.nameable? %>
-                <p class="fr-mb-0" lang="en" data-demo-card-announced>
+                <p class="fr-mb-0" data-demo-card-announced>
                   <%= t('components.demo_requirement_card.from_html',
                         evidence_type: render(DirectoryValueComponent.new(lang: line.evidence_type_language)) { line.evidence_type },
                         provider: render(DirectoryValueComponent.new(lang: line.provider_language)) { line.provider }) %>
@@ -198,7 +196,7 @@
                       a provider and the card offers nothing to ask it. The DSFR
                       alert carries its icon besides its colour, which RGAA 3.1
                       wants. %>
-                  <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal" lang="en">
+                  <div class="fr-alert fr-alert--warning fr-alert--sm fr-mt-2w requirement-card__refusal">
                     <p><%= t('components.demo_requirement_card.unsupported_version', version: version.number) %></p>
                   </div>
                 <% end %>
@@ -214,7 +212,7 @@
                     the line says which of the two happened. The sign says
                     again the warning the colour carries (RGAA 3.1), hidden
                     from the assistive technologies, which have the sentence. %>
-                <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
+                <p class="fr-mb-0 requirement-card__refusal" data-demo-card-announced>
                   <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%= refusal(line) %>
                 </p>
               <% end %>
@@ -227,7 +225,7 @@
             before any request is made, and nothing is refused yet. %>
         <% if refused_whole? %>
           <div class="requirement-card__resolution">
-            <p class="fr-mb-0 requirement-card__refusal" lang="en" data-demo-card-announced>
+            <p class="fr-mb-0 requirement-card__refusal" data-demo-card-announced>
               <span class="fr-mr-1v" aria-hidden="true">⚠️</span><%= refusal(wording) %>
             </p>
           </div>

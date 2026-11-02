@@ -147,6 +147,15 @@ RSpec.describe ErrorResponseBuilder do
       expect(languages).to eq(%w[EN FR])
     end
 
+    # Message values, each in its own language, whatever language the page
+    # that triggered the message is read in.
+    it 'writes each variant in its own language under English too' do
+      descriptions = ->(document) { document.xpath("//rim:Slot[@name='PreviewDescription']//rim:LocalizedString/@value", namespaces).map(&:value) }
+
+      expect(I18n.with_locale(:en) { descriptions.call(previewed) }).to eq(descriptions.call(previewed))
+        .and eq(%w[en fr].map { I18n.t("builders.error_response_builder.preview_description.#{it}", locale: :fr) })
+    end
+
     # RG6: `R-EDM-ERR-S027` closes the list on 2.0, which removed `PreviewMethod`.
     it 'carries no PreviewMethod on the 2.0 line' do
       expect(slot_names(previewed)).to eq(%w[Timestamp PreviewLocation PreviewDescription])

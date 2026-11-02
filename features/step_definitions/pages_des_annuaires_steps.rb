@@ -50,8 +50,8 @@ TYPES_BY_COUNTRY = { 'AT' => 3, 'FR' => 2, 'FI' => 4 }.freeze
 # Austria beside the countries the other scenarios need — the argument replaces
 # the default list rather than adding to it. A card whose country the list does
 # not name writes the bare code, without brackets, and there would be nothing
-# left to tell apart. Named in both columns, as the published list names it: the
-# console reads the French one, the demonstration's own page the English one.
+# left to tell apart. Named in both columns, as the published list names it: a
+# page reads the column of the language it is read in.
 #
 # « AT » is the code retained because it begins no word the card carries:
 # « Autriche » begins « au », « satisfait » holds « at » without starting on it,
