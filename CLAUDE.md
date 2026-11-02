@@ -223,7 +223,8 @@ To let several agents (or an agent and a human) work simultaneously without step
 
 ```sh
 scripts/worktree.sh ma-branche   # creates .worktrees/ma-branche + branch ma-branche,
-                                 # copies the git-ignored .env* files into it and
+                                 # copies the git-ignored .env* files and the
+                                 # config/credentials keys into it, and
                                  # shifts the ports its stack publishes
 ```
 
