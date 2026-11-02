@@ -53,6 +53,24 @@ module FranceConnectStubs
     'birthdate' => '2001-04-17', 'gender' => 'female', 'birthplace' => 'Aarhus'
   }.freeze
 
+  # An identity longer than any the fake FranceConnect+ hands back: every text
+  # attribute at a hundred characters, the identifier among them. The eIDAS node
+  # behind the real FranceConnect+ was never measured, and this margin stands in
+  # for it.
+  LONG_USERINFO = DANISH_USERINFO.merge(
+    'given_name' => 'F' * 100, 'family_name' => 'S' * 100, 'birthplace' => 'A' * 100,
+    'person_identifier' => "DK/FR/#{'1' * 94}",
+  ).freeze
+
+  # With an ID Token of at least 1200 bytes, about twice the 570 the real
+  # FranceConnect+ hands back. The padding is a claim, so it weighs a third
+  # more once the token encodes it.
+  LONG_ID_TOKEN_BYTES = 1200
+
+  def identify_long_demo_user(**)
+    identify_demo_user(userinfo: LONG_USERINFO, padding: 'x' * (LONG_ID_TOKEN_BYTES / 2), **)
+  end
+
   # What FranceConnect+ signs its tokens with, and the key it encrypts them for.
   def france_connect_signing_key = @france_connect_signing_key ||= OpenSSL::PKey::EC.generate('prime256v1')
 

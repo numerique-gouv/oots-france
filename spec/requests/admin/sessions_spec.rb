@@ -188,9 +188,28 @@ RSpec.describe 'Admin::Sessions' do
       it 'holds neither identity nor agent afterwards' do
         through_pro_connect
 
-        expect(session[:demo_identity]).to be_nil
+        expect(demo_identity_cookies).to be_empty
         get admin_root_path
         expect(response).to redirect_to(new_admin_session_path)
+      end
+
+      # The two cookies are written together; a browser that dropped one holds
+      # no identity, and the sign-out ends ProConnect alone.
+      it 'ends the ProConnect session alone when the browser kept the identity without its ID Token' do
+        cookies.delete('demo_id_token')
+
+        delete admin_session_path
+
+        expect(response.headers['Location']).to start_with(ProConnectStubs::END_SESSION_ENDPOINT)
+        expect(session[:pro_connect_logout]).not_to include('france_connect')
+        expect(demo_identity_cookies).to be_empty
+      end
+
+      it 'forgets the identity at once, keeping only the end of the FranceConnect+ session it prepared' do
+        delete admin_session_path
+
+        expect(demo_identity_cookies).to be_empty
+        expect(session[:pro_connect_logout]).to include('france_connect')
       end
 
       # The return is the only thing that says the sign-out was this browser's.
@@ -220,6 +239,50 @@ RSpec.describe 'Admin::Sessions' do
         through_pro_connect
 
         expect(response).to redirect_to(new_admin_session_path)
+      end
+    end
+
+    # The fresh session the way to ProConnect writes carries the end of the
+    # FranceConnect+ session, its ID Token in the address: measured with the
+    # longest identity the specs play.
+    context 'when the demonstration holds a long identity' do
+      before do
+        sign_in
+        identify_long_demo_user
+      end
+
+      # Everything the browser sends back fits the request header buffer a
+      # front leaves by default, eight kibibytes.
+      it 'sends back all its cookies within eight kibibytes' do
+        names = %i[_oots_france_session pro_connect_id_token demo_identity demo_id_token]
+
+        expect(names.sum { |name| held_cookie_size(name) }).to be < 8192
+      end
+
+      it 'keeps the session under the bound on the way to ProConnect, and forgets the identity' do
+        delete admin_session_path
+
+        expect(response.headers['Location']).to start_with(ProConnectStubs::END_SESSION_ENDPOINT)
+        expect(written_cookie_sizes.fetch('_oots_france_session')).to be < 4096
+        expect(demo_identity_cookies).to be_empty
+      end
+
+      it 'hands FranceConnect+ the long ID Token once ProConnect brings the agent back' do
+        delete admin_session_path
+        get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
+
+        expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+        expect(location_parameters.fetch('id_token_hint').bytesize).to be >= FranceConnectStubs::LONG_ID_TOKEN_BYTES
+      end
+
+      it 'sends the browser to FranceConnect+ directly with the hint when no ProConnect session is to end' do
+        undeclare_pro_connect
+
+        delete admin_session_path
+
+        expect(response.headers['Location']).to start_with(FranceConnectStubs::END_SESSION_ENDPOINT)
+        expect(location_parameters.fetch('id_token_hint').bytesize).to be >= FranceConnectStubs::LONG_ID_TOKEN_BYTES
+        expect(demo_identity_cookies).to be_empty
       end
     end
 

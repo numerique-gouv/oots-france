@@ -24,3 +24,12 @@ end
 Alors('la page affiche le refus sans libellé vide ni point doublé') do
   expect(page.find('.fr-alert').text.squish).not_to include('—', 'voir', '..')
 end
+
+Quand("l'agent rouvre la page des justificatifs") do
+  visit admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+end
+
+Alors("la page des justificatifs affiche l'identité de l'usager") do
+  expect(page).to have_current_path(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
+  expect(page).to have_text(FranceConnectStubs::DANISH_USERINFO.fetch('family_name'))
+end

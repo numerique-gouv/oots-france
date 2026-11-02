@@ -75,7 +75,17 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       identify_demo_user
 
       expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
-      expect(session[:demo_identity].symbolize_keys).to include(family_name: 'Sørensen')
+      expect(held_demo_identity).to include(family_name: 'Sørensen')
+    end
+
+    # Personal data and a signed token: neither readable by a script, nor sent
+    # along by a request another site makes.
+    it 'writes both cookies of the identity unreadable to a script and held back from other sites' do
+      identify_demo_user
+
+      %w[demo_identity demo_id_token].each do |name|
+        expect(written_cookie(name)).to match(/; httponly/i).and match(/; samesite=lax/i)
+      end
     end
 
     # CA5: the return is addressed to the FranceConnect+ the departure was made
@@ -107,7 +117,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
     it 'holds which FranceConnect+ attested the identity, so the sign-out knows whose session to end' do
       identify_demo_user(instance: real_france_connect)
 
-      expect(session[:demo_identity].symbolize_keys).to include(france_connect: 'real')
+      expect(held_demo_identity).to include(france_connect: 'real')
     end
 
     # The issuer is compared to the one this departure was made on, never to
@@ -119,7 +129,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       identify_demo_user(instance: real_france_connect, iss: FranceConnectStubs::ISSUER)
 
       expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
-      expect(session[:demo_identity]).to be_nil
+      expect(held_demo_identity).to be_nil
     end
 
     # Et symétriquement : l'issuer attendu est celui du départ, quel qu'il soit.
@@ -130,7 +140,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       identify_demo_user(iss: FranceConnectStubs::REAL_ISSUER)
 
       expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
-      expect(session[:demo_identity]).to be_nil
+      expect(held_demo_identity).to be_nil
     end
 
     # A session written when the deployment still declared that FranceConnect+,
@@ -146,7 +156,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
 
       expect(response).to redirect_to(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
       expect(a_request(:post, "#{FranceConnectStubs::REAL_ISSUER}/token")).not_to have_been_made
-      expect(session[:demo_identity]).to be_nil
+      expect(held_demo_identity).to be_nil
     end
 
     # An authorization code is single use: leaving in the history a page that
@@ -221,7 +231,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       follow_redirect!
 
       expect(response.parsed_body.css('.fr-alert').text).to include('invalid_acr', 'acr_value is not valid')
-      expect(session[:demo_identity]).to be_nil
+      expect(held_demo_identity).to be_nil
     end
 
     # The alert adds no punctuation of its own, so a sentence of this repository
@@ -285,7 +295,7 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
         expect(alert).to include('400', 'invalid_client_metadata',
           'client JSON Web Key Set failed to be refreshed (fetch failed)',
           'Y044D511', '4074082d-7095-4067-99d7-ebb795041b72')
-        expect(session[:demo_identity]).to be_nil
+        expect(held_demo_identity).to be_nil
       end
 
       it 'ends on the address FranceConnect+ gave, with no full stop added behind it' do
@@ -353,7 +363,57 @@ RSpec.describe 'The addresses the demonstration procedure declares to FranceConn
       get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: 'un-etat-invente' }
 
       expect(response).to redirect_to(admin_demo_root_path)
-      expect(session[:demo_identity]).to be_nil
+      expect(held_demo_identity).to be_nil
+    end
+
+    # A code replayed once the identification it served has succeeded, on a
+    # session holding the identity and its journey: the refusal is said, and
+    # what the browser held is left as it was.
+    describe 'a return replayed after an identification that succeeded' do
+      before do
+        stub_code_list
+        stub_demonstration_requirements
+        stub_directory('eb', 'evidence-types-by-requirement', 'eb_evidence_types_fi')
+        stub_directory('dsd', 'dataservices-by-evidencetype', 'dsd_data_services_fi')
+        identify_long_demo_user
+      end
+
+      def documents_path = admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+
+      def expect_refused_and_intact(landing)
+        journey = session[:demo_journey]
+
+        expect_refused_on(landing)
+        expect_still_walking(journey)
+      end
+
+      def expect_still_walking(journey)
+        expect(held_demo_identity).to include(family_name: FranceConnectStubs::LONG_USERINFO.fetch('family_name'))
+        expect(session[:demo_journey]).to eq(journey)
+        get documents_path
+        expect(response).to have_http_status(:ok)
+      end
+
+      def expect_refused_on(landing)
+        expect(response).to redirect_to(landing)
+        follow_redirect!
+        expect(alert).to include("L'identification par FranceConnect+ n'a pas abouti",
+          'Ce retour ne correspond à aucune identification demandée depuis ce navigateur.')
+      end
+
+      it 'refuses it on the home page of the demonstration when no departure is left' do
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: 'un-etat-invente' }
+
+        expect_refused_and_intact(admin_demo_root_path)
+      end
+
+      it 'refuses it on the sign-in page the departure left from when one is still held' do
+        depart_from_demo_home(stub_france_connect)
+
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: 'un-autre-etat' }
+
+        expect_refused_and_intact(admin_demo_home_path(version: 'v2.0', procedure: 'T1'))
+      end
     end
   end
 

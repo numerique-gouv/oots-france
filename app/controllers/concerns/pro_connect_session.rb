@@ -28,11 +28,8 @@ module ProConnectSession
   end
 
   # The ID Token the sign-out hands back as `id_token_hint`, kept in a cookie
-  # of its own and not in the session: the cookie store bounds a cookie at four
-  # kibibytes, and the session already carries the FranceConnect+ identity of
-  # the demonstration — with both, a sign-in followed by an identification
-  # measured 4058 bytes against the fake ProConnect, whose ID Token is smaller
-  # than the real one's. Encrypted like the session, and as unreadable to a
+  # of its own and not in the session, the cookie store bounding each cookie at
+  # four kibibytes, as `DemoIdentityCookie` says. Encrypted like the session, and as unreadable to a
   # script; `reset_session` does not reach it, so it is taken explicitly.
   # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/implementation_technique
   def keep_id_token(id_token)

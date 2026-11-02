@@ -2,11 +2,12 @@
 # identity the authentication attested, and the walk it opened — and the one
 # condition they all refuse to render without.
 #
-# The two are written of a single gesture, in `FranceConnectController`, and
-# neither means anything without the other: the journey names the conversation
-# the requests of this walk go out under, and the identity is what each of them
-# carries. A session holding one alone was written under a shape this code no
-# longer reads, and it is sent back to identify itself rather than rendered.
+# The two are written of a single gesture, in `FranceConnectController` — the
+# journey in the session, the identity in the cookies of `DemoIdentityCookie` —
+# and neither means anything without the other: the journey names the
+# conversation the requests of this walk go out under, and the identity is what
+# each of them carries. A browser holding one alone is sent back to identify
+# itself rather than rendered.
 #
 # The same validity on the way out as on the way in: what
 # `Demo::CompleteIdentification` refused to hold, these pages refuse to show. A
@@ -20,6 +21,7 @@
 # to the screen the line is chosen on.
 module HoldsDemoJourney
   extend ActiveSupport::Concern
+  include DemoIdentityCookie
 
   included do
     before_action :require_journey
@@ -28,7 +30,7 @@ module HoldsDemoJourney
 
   private
 
-  def identity = @identity ||= ::Demo::UserIdentity.from_session(session[:demo_identity])
+  def identity = @identity ||= demo_identity
 
   def journey = @journey ||= ::Demo::Journey.from_session(session[:demo_journey])
 

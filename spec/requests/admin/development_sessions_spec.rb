@@ -20,6 +20,15 @@ RSpec.describe 'Admin::DevelopmentSessions' do
     expect(response).to redirect_to(admin_journal_root_path)
   end
 
+  it 'forgets the demonstration identity the browser held' do
+    sign_in
+    identify_demo_user
+
+    post admin_development_session_path
+
+    expect(demo_identity_cookies).to be_empty
+  end
+
   it 'is offered on the login page' do
     get new_admin_session_path
 

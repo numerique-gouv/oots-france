@@ -12,10 +12,11 @@ module Demo
   #
   # Chapter 1 §4.2 leaves « Procedure and session state management » to the
   # portal without saying where; here it is a table rather than the session,
-  # which the cookie store bounds at four kibibytes and the identity already
-  # half fills. Nothing in it names the user; the answers to the questions of the
-  # Data Service Directory may describe them, and are kept in clear like the
-  # identities and the documents of the demonstration, all fabricated.
+  # which the cookie store bounds at four kibibytes, and which a name and a
+  # country per card would fill. Nothing in it names the user; the answers to
+  # the questions of the Data Service Directory may describe them, and are kept
+  # in clear like the identities and the documents of the demonstration, all
+  # fabricated.
   class Card < ApplicationRecord
     self.table_name = 'demo_cards'
 

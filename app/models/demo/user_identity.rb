@@ -11,8 +11,9 @@ module Demo
   # publishes it in; translating it is the requester's job, at the other end of
   # the beneficiary token.
   #
-  # Personal data, and it is never persisted: it lives in the session alone,
-  # encrypted in the cookie, and goes with it when the operator signs out.
+  # Personal data, and it is never persisted: it lives in the browser alone,
+  # encrypted in cookies of its own beside the session (`DemoIdentityCookie`),
+  # and goes with the session when the operator signs out.
   class UserIdentity
     include ActiveModel::Model
     include ActiveModel::Attributes
@@ -36,8 +37,8 @@ module Demo
     attribute :id_token, :string
     # Which FranceConnect+ attested this identity, by the name
     # `Settings::FRANCE_CONNECT` declares it under. Mandatory like the ID Token
-    # and for its reason: the sign-out happens minutes later, and the session is
-    # all that is left to say whose session to end.
+    # and for its reason: the sign-out happens minutes later, and the identity
+    # the browser kept is all that is left to say whose session to end.
     attribute :france_connect, :string
 
     validates :given_name, :family_name, :birthdate, :level_of_assurance, :subject, :id_token,
@@ -59,18 +60,18 @@ module Demo
       inclusion: { in: BeneficiaryToken::GENDERS.keys, admitted: BeneficiaryToken::GENDERS.keys.join(', ') },
       allow_blank: true
 
-    # The session cookie holds a plain hash and gives back string keys — and it
+    # The cookie holds a plain hash and gives back string keys — and it
     # outlives the shape this class had when it was written. An attribute since
     # removed or renamed would make `new` raise, on the sign-out path as much as
-    # on the form: a session this class can no longer read is no session, which
+    # on the form: a cookie this class can no longer read holds no identity, which
     # is what both callers already do with `nil`.
-    def self.from_session(stored)
+    def self.from_cookie(stored)
       stored.nil? ? nil : new(stored.symbolize_keys)
     rescue ActiveModel::UnknownAttributeError
       nil
     end
 
-    def to_session = attributes.compact
+    def to_cookie = attributes.compact
 
     def identified? = eidas_identifier.present?
   end

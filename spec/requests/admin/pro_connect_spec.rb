@@ -10,6 +10,28 @@ RSpec.describe 'Admin::ProConnect' do
   end
 
   describe 'GET /admin/proconnect/retour_connexion' do
+    # The `reset_session` of a sign-in takes the demonstration identity with the
+    # session: an identity outliving it would carry one agent's walk over.
+    describe 'the demonstration identity the browser held' do
+      before do
+        sign_in
+        identify_demo_user
+      end
+
+      it 'is forgotten by a sign-in admitted' do
+        return_from_pro_connect
+
+        expect(response).to redirect_to(admin_root_path)
+        expect(demo_identity_cookies).to be_empty
+      end
+
+      it 'is forgotten by a sign-in refused' do
+        return_from_pro_connect(email: 'agent@exemple.fr')
+
+        expect(demo_identity_cookies).to be_empty
+      end
+    end
+
     # CA3: the space opens, in a session whose identifier changed.
     it 'opens the space to an agent of an admitted domain, in a renewed session' do
       get new_admin_session_path

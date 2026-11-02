@@ -263,6 +263,16 @@ RSpec.describe 'Admin::Demo::Documents' do
       expect(response.parsed_body.css("form[action='#{admin_demo_demande_path(version: 'v2.0', procedure: 'T1')}']")).to be_empty
     end
 
+    %w[demo_identity demo_id_token].each do |kept_alone|
+      it "sends back to the start a browser that kept #{kept_alone} alone" do
+        cookies.delete((%w[demo_identity demo_id_token] - [kept_alone]).sole)
+
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+
+        expect(response).to redirect_to(admin_demo_root_path)
+      end
+    end
+
     it 'sends an operator holding no identity back to the start' do
       reset_session_identity
 
@@ -508,10 +518,9 @@ RSpec.describe 'Admin::Demo::Documents' do
     describe 'on a page of two named cards' do
       before do
         stub_directory('eb', 'requirements-by-procedure', 'eb_requirements_t1_fr')
-        # An ID Token as long as the one FranceConnect+ hands back — about 570
-        # bytes when measured on 2026-09-29 — without which the cookie would
-        # stay under the bound whatever the page wrote in it.
-        identify_demo_user(padding: 'x' * 10)
+        # An identity longer than the fake FranceConnect+'s, without which every
+        # cookie would stay under the bound whatever the page wrote in it.
+        identify_long_demo_user
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       end
 
@@ -524,14 +533,49 @@ RSpec.describe 'Admin::Demo::Documents' do
       end
 
       it 'keeps neither the names nor the countries in the session, which stays under the bound' do
-        expect(session[:demo_identity]['id_token'].bytesize).to be >= 570
-
         choose_country('FI', premiere)
         choose_country('FI', seconde)
 
         expect(session.to_h.keys).not_to include('demo_named', 'demo_countries')
-        expect(response.headers['Set-Cookie'].to_s[/_oots_france_session=[^;]*/].bytesize).to be < 4096
+        expect(written_cookie_sizes.fetch('_oots_france_session')).to be < 4096
         expect(Demo::Card.countries(session[:demo_journey]['id'])).to eq(premiere => 'FI', seconde => 'FI')
+      end
+
+      # A refusal's flash is written on top of everything a journey holds: the
+      # session stays under the bound with it, the identity in cookies of its
+      # own.
+      it 'keeps each cookie under the bound, the identity in its own, through a refused return' do
+        expect(held_demo_identity[:id_token].bytesize).to be >= FranceConnectStubs::LONG_ID_TOKEN_BYTES
+        expect([held_cookie_size(:demo_identity), held_cookie_size(:demo_id_token)]).to all(be < 4096)
+
+        choose_country('FI', premiere)
+        choose_country('DE', seconde)
+        get '/demo/franceconnect/retour_connexion', params: { code: 'un-code', state: 'un-etat-invente' }
+
+        expect(response).to redirect_to(admin_demo_root_path)
+        expect(written_cookie_sizes.fetch('_oots_france_session')).to be < 4096
+        expect(session.to_h.keys).not_to include('demo_identity')
+        expect(held_demo_identity).to be_present
+      end
+
+      it 'gives way to the next identity, every card back to where a journey starts' do
+        choose_country('FI', premiere)
+
+        identify_demo_user
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
+
+        expect(held_demo_identity).to include(family_name: 'Sørensen')
+        expect(response.parsed_body.css('main').text).to include('Sørensen')
+        expect(response.parsed_body.css('main').text).not_to include(FranceConnectStubs::LONG_USERINFO.fetch('family_name'))
+        expect(Demo::Card.countries(session[:demo_journey]['id']).values).to all(eq('FR'))
+      end
+
+      it 'writes no attribute of the identity in clear in any cookie, nor in any table' do
+        family_name = FranceConnectStubs::LONG_USERINFO.fetch('family_name')
+
+        expect(cookies.to_hash.values.join).not_to include(family_name)
+        expect(Demo::Card.all.map(&:attributes).to_s).not_to include(family_name)
+        expect(Demo::Request.all.map(&:attributes).to_s).not_to include(family_name)
       end
 
       # Requirement 27 of chapter 1 §2: what the card showed is what leaves, read
@@ -762,10 +806,10 @@ RSpec.describe 'Admin::Demo::Documents' do
     end
   end
 
-  # The session is the operator's, and `Demo::UserIdentity.from_session` answers
+  # The identity is the operator's, and `Demo::UserIdentity.from_cookie` answers
   # `nil` to anything it can no longer read.
   def reset_session_identity
-    allow(Demo::UserIdentity).to receive(:from_session).and_return(nil)
+    allow(Demo::UserIdentity).to receive(:from_cookie).and_return(nil)
   end
 
   def seconde_id = "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{seconde}"

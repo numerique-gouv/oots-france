@@ -3,6 +3,7 @@
 # `docs/eidas_context.md` says why they answer to a caller holding no session.
 class FranceConnectController < ApplicationController
   include ChosenLanguage
+  include DemoIdentityCookie
   include RefusesIdentification
 
   # The « Client keys url » of the demonstration procedure. Distinct from the
@@ -77,7 +78,7 @@ class FranceConnectController < ApplicationController
 
     session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:,
       procedure_code:).to_session
-    session[:demo_identity] = identity.to_session
+    keep_demo_identity(identity)
   end
 
   def completed_identification(expected)
