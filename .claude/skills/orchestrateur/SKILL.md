@@ -29,6 +29,7 @@ Le travail appartient à l'[ouvrier](../../agents/ouvrier.md), dont le contrat �
 | Le titre commence par « Trancher… », ou l'énoncé achoppe sur un choix que personne n'a fait — un nom à publier, une politique nationale, un périmètre | Il attend une décision, pas du code ; il ne passe pas « après », il ne se prend pas |
 | Son parent ou une dépendance n'est pas implémenté | Construire sur du vide ; la PR ne se relit contre rien |
 | Le livrable n'est pas du code | Rien de cela n'entre dans une PR |
+| Le titre commence par `[Human]`, ou le ticket porte le label `Human` | Il appartient à l'utilisateur : ni sélection, ni relance, ni question sur lui, même quand un ticket en dépend — un `blockedBy` vers lui se dit en une ligne s'il vide la file |
 
 **Ces contrôles sont une relecture de porte, pas un tri.** `spec-nerd` les a déjà joués, plus sévèrement, avant de monter le ticket en `Todo` — sa [grille](../../agents/spec-nerd/grille-completude.md) les contient tous. Un ticket que tu écartes ici est donc une **fuite** : passe au voisin, nomme le ticket et le contrôle qui a mordu dans l'annonce de sélection, signale-la dans ton compte rendu — un écart qui se répète est un contrôle de `spec-nerd` à renforcer. Et n'étends pas la grille pour compenser : rejouer les contrôles de contenu au lancement d'un lot, c'est refaire une revue de spécifications avec le contexte le plus cher et au plus mauvais moment.
 
