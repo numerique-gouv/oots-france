@@ -64,7 +64,10 @@ Le skill [`mesurer-les-jetons`](../mesurer-les-jetons/SKILL.md) rend le coût d'
 Les sept mesures du plan du 2026-09-14, à rejouer aux dates que les tâches `impact-*` de `.claude/local_tasks/` portent. Toutes partent de `P=~/.claude/projects/<slug>` et d'une fenêtre `DEPUIS`.
 
 ```sh
-# M1 — jetons du premier tour de chaque sous-agent, médiane par agentType ; et descriptions chargées à chaque tour (forme.py, dernière ligne)
+# M1 — jetons du premier tour de chaque sous-agent, médiane par agentType et par modèle ; et descriptions chargées à chaque tour (forme.py, dernière ligne).
+# L'écart d'un rôle se lit contre un rôle sans frère du MÊME modèle (contradicteur ou tdd-nerd pour Opus), jamais à travers deux modèles :
+# le même premier tour ne se compte pas pareil d'un modèle à l'autre (general-purpose : 59,9 k sous Opus 5.5, 59,0 k sous Sonnet 5.5, 2026-11-02),
+# et un changement de modèle déplace toute la colonne : une hausse qui coïncide avec lui rebase la mesure, elle ne fait pas un constat.
 python3 - "$P" "$DEPUIS" <<'EOF'
 import json,glob,os,sys,statistics,collections,datetime
 P,D=sys.argv[1],sys.argv[2]; first=collections.defaultdict(list)
@@ -76,8 +79,8 @@ for meta in glob.glob(f'{P}/*/subagents/*.meta.json'):
         try: m=json.loads(line)
         except: continue
         u=(m.get('message') or {}).get('usage') if m.get('type')=='assistant' else None
-        if u: first[at].append(u.get('input_tokens',0)+u.get('cache_creation_input_tokens',0)+u.get('cache_read_input_tokens',0)); break
-for k,v in sorted(first.items(),key=lambda x:-len(x[1])): print(f'{k:40} {int(statistics.median(v)):>8} n={len(v)}')
+        if u: first[(at,m['message'].get('model','?'))].append(u.get('input_tokens',0)+u.get('cache_creation_input_tokens',0)+u.get('cache_read_input_tokens',0)); break
+for (k,mod),v in sorted(first.items(),key=lambda x:(x[0][1],-len(x[1]))): print(f'{k:40} {mod:20} {int(statistics.median(v)):>8} n={len(v)}')
 EOF
 
 # M2 — les frères lus, par sous-agent : lequel, à quel tour ; puis les frères jamais lus
