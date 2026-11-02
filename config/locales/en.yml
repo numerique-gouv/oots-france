@@ -1,0 +1,1841 @@
+# The same keys as `fr.yml`, in English. `fr.yml` is the reference file and alone
+# carries the comments saying why each key exists.
+en:
+  activerecord:
+    attributes:
+      exchange:
+        exchange_id: Exchange identifier
+        conversation_id: Conversation identifier
+        preview_location: Preview address
+    errors:
+      models:
+        exchange:
+          attributes:
+            exchange_id:
+              format: must be a UUID
+            conversation_id:
+              format: must be a UUID
+            preview_location:
+              format: must be an http or https address
+  activemodel:
+    attributes:
+      address:
+        country: Country
+      ebms_identity:
+        id: Identifier
+        type_id: Identifier scheme
+      access_point:
+        id: Identifier
+        type_id: Identifier scheme
+      natural_person:
+        level_of_assurance: Level of assurance
+        family_name: Family name
+        given_name: Given name
+        date_of_birth: Date of birth
+        place_of_birth: Place of birth
+        gender: Sex
+      legal_person:
+        legal_name: Legal name
+        eidas_identifier: eIDAS identifier
+      evidence_type:
+        id: Identifier
+        distribution_formats: Distribution formats
+      requirement:
+        id: Identifier
+      evidence_provider_classification:
+        id: Identifier
+        scheme_id: Identifier scheme
+        type: Type
+        value_expression: Value expression
+      data_service:
+        id: Identifier
+        evidence_type_classification: Evidence type
+        distribution_format: Distribution format
+        distribution_language: Distribution language
+        distribution_conforms_to: Distribution data model
+      evidence_requester:
+        id: Identifier
+      evidence_provider:
+        access_point: Access point
+      resolution_filter:
+        procedure_code: Procedure
+        country_code: Country
+        requirement_id: Requirement
+        evidence_type_id: Evidence type
+      audit_event_filter:
+        event_type: Event type
+        exchange_id: Exchange identifier
+        conversation_id: Conversation identifier
+        country_code: Country
+        evidence_requester_id: Evidence Requester
+        procedure_code: Procedure
+        depuis: Start date
+        jusqu_a: End date
+      subject_search:
+        family_name: Family name
+        given_name: Given name
+        date_of_birth: Date of birth
+        legal_person_identifier: Legal person eIDAS identifier
+      demo/user_identity:
+        given_name: Given name
+        family_name: Family name
+        birthdate: Date of birth
+        eidas_identifier: eIDAS identifier
+        level_of_assurance: Level of assurance
+        gender: Sex
+        place_of_birth: Place of birth
+        subject: FranceConnect+ identifier
+        id_token: ID Token
+        france_connect: FranceConnect+ that attested the identity
+    errors:
+      models:
+        address:
+          attributes:
+            country:
+              format: must be a two-letter country code
+        natural_person:
+          attributes:
+            date_of_birth:
+              format: must be an ISO 8601 date (YYYY-MM-DD)
+            eidas_identifier:
+              format: must have the form COUNTRY/COUNTRY/IDENTIFIER
+            level_of_assurance:
+              inclusion: "is “%{value}”, whereas the TDD only admit %{admitted}"
+            gender:
+              inclusion: "is “%{value}”, whereas the TDD only admit %{admitted}"
+            place_of_birth:
+              too_short: must be at least two characters long once whitespace is collapsed
+        legal_person:
+          attributes:
+            eidas_identifier:
+              format: must have the form COUNTRY/COUNTRY/IDENTIFIER
+          unpublished_identifier_scheme: "an identifier belongs to a scheme the TDD do not publish: %{schemes}"
+          valueless_identifier: "an identifier is declared without a value: %{schemes}"
+        requirement:
+          attributes:
+            id:
+              format: must be a Semantic Repository URL ending with a UUID
+          unlabelled_wording: a wording does not name its language
+        evidence_provider_classification:
+          attributes:
+            id:
+              format: must be a UUID
+            type:
+              inclusion: is neither “codelist”, nor “string”, nor “boolean”
+            value_expression:
+              format: must be an https address
+          unlabelled_wording: a question does not name its language
+        data_service:
+          attributes:
+            id:
+              format: must be a UUID
+            evidence_type_classification:
+              format: must be a Semantic Repository URL ending with a UUID
+            distribution_language:
+              format: must be a two-letter uppercase language code
+            distribution_conforms_to:
+              format: must be a Semantic Repository URL under “datamodels/”
+          unlabelled_wording: a wording does not name its language
+          invalid_classification: "a provider classification is invalid: %{errors}"
+        resolution_filter:
+          attributes:
+            country_code:
+              format: must be a two-letter country code
+          unreadable: is unreadable
+        audit_event_filter:
+          attributes:
+            event_type:
+              inclusion: is not a known event type
+            country_code:
+              format: must be a two-letter country code
+            jusqu_a:
+              before_start: is earlier than the start date
+          unreadable: is unreadable
+        subject_search:
+          attributes:
+            date_of_birth:
+              format: must be an ISO 8601 date (YYYY-MM-DD)
+          unreadable: is unreadable
+          both_identities: >-
+            A search concerns either a natural person or a legal person,
+            never both at once
+        demo/user_identity:
+          attributes:
+            birthdate:
+              format: must be an ISO 8601 date (YYYY-MM-DD)
+            eidas_identifier:
+              format: must have the form COUNTRY/COUNTRY/IDENTIFIER
+            level_of_assurance:
+              inclusion: "is “%{value}”, whereas the TDD only admit %{admitted}"
+            gender:
+              inclusion: "is “%{value}”, whereas FranceConnect+ only publishes %{admitted}"
+  accueil:
+    index:
+      new_window: "%{link} - new window"
+      lead: >-
+        The service through which France exchanges evidence with the other Member States
+        of the European Union, on behalf of French administrative procedures.
+      what_is_oots:
+        title: What OOTS is
+        body_html: >-
+          The Once-Only Technical System (OOTS) is the automated, cross-border exchange of
+          evidence between the administrations of the Member States, provided for by
+          %{regulation}. A user who completes a procedure in one Member State no longer has
+          to supply themselves an evidence that an administration of another Member State
+          holds: the procedure requests it on their behalf.
+        regulation: Regulation (EU) 2018/1724
+        tdd_html: OOTS-France implements this system as described in the %{tdd} published by the European Commission.
+        tdd: Technical Design Documents
+      roles:
+        title: What OOTS-France does
+        intro: OOTS-France plays both roles of the exchange for France.
+        requester:
+          title: It requests for French procedures
+          body: >-
+            It requests evidence from the other Member States, on behalf of French
+            administrative procedures.
+        provider:
+          title: It answers the other Member States
+          body: >-
+            It answers the requests it receives from the other Member States — for now with
+            test evidence only, no French data provider being connected to it.
+      connection:
+        title: Connecting a procedure
+        benefit: >-
+          A French procedure connected to OOTS-France obtains for its users an evidence held
+          by an administration of another Member State, without their having to supply it
+          themselves.
+        requirements_intro: 'Connecting requires the service provider to:'
+        requirements:
+          declared:
+            title: Be declared
+            body: The service provider is declared to OOTS-France.
+          keys:
+            title: Publish its keys
+            body: It publishes its signing keys.
+          call:
+            title: Call the contract
+            body: It calls an HTTP contract, carrying the user's identity, signed and encrypted.
+          delivery:
+            title: Receive the evidence
+            body: It receives the evidence at an address of its own.
+        contract_html: The contract is described in the %{documentation} of the %{repository}.
+        documentation: documentation
+        repository: OOTS-France repository
+      status:
+        title: Service status
+        body: >-
+          The service is not accredited: requesting evidence is open only on a test server,
+          never on real data.
+      users:
+        title: Are you a user of a procedure?
+        body: >-
+          This service is intended for administrations, not for users: a person looking to
+          have an evidence delivered goes through the Online Procedure Portal of their procedure.
+  france_connect:
+    retour_deconnexion:
+      title: You are signed out
+      lead: >-
+        Your FranceConnect+ session is closed, and the demonstration procedure no longer holds
+        any identity. Starting again requires signing in anew.
+      unexpected: >-
+        This page is where FranceConnect+ brings the user back after a sign-out, and this
+        arrival matches no sign-out requested from this browser: it therefore attests
+        nothing.
+      back: Back to the demonstration procedure
+  layouts:
+    application:
+      name: OOTS-France
+      skiplink: Quick access
+      skiplink_content: Content
+    logo_html: République<br>Française
+    entete:
+      tagline: Cross-border exchange of evidence
+      admin_space: Administration
+      demo: Demo
+      directories: Common Services
+      jobs: Jobs
+      journal: Event log
+      sign_out: Sign out
+      signed_in_as: Signed in as %{email}
+    pied_de_page:
+      about_html: OOTS-France implements the %{tdd} of the European regulation on the single digital gateway.
+      tdd: Once-Only Technical System
+  components:
+    site_header:
+      search: Search
+      menu: Menu
+      close: Close
+      home: "Home - %{title}"
+      main_menu: Main menu
+    breadcrumbs:
+      label: "you are here:"
+      show: Show the breadcrumb
+    pro_connect_button:
+      sign_in_with: Sign in with
+      what_is: What is ProConnect?
+      what_is_new_window: What is ProConnect? - new window
+    language_selector:
+      title: Select a language
+    admin_breadcrumbs:
+      admin: Administration
+    connectivity_outcome:
+      never_tested: never tested
+      pending: in progress
+      acknowledged: connected
+      refused_for_configuration: refused for its configuration
+      failed: failed
+      no_verdict: no verdict
+      not_submitted: not sent
+    demo_breadcrumbs:
+      demo: Demo
+      procedure: "Procedure %{code}"
+    regrep_body:
+      summary: Show the body (%{size})
+    decrypted_value:
+      label: Decrypted personal data
+    directory_value:
+      label: Name retrieved from the Common Services
+      meaning: ", retrieved from the Common Services"
+    demo_requirement_card:
+      unsatisfiable_html: Evidence impossible to satisfy by %{country}
+      from_html: "%{evidence_type} from %{provider}"
+      unsupported_version: This provider does not support OOTS %{version}
+      remove: Remove this document
+      no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
+      no_answer_html: <strong>%{country} could not answer for this evidence</strong>
+      country_label: Country to request the document from
+      unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      reload: reload the page
+      combination_label: Document to request
+      combination_prompt: Select a document
+      combination_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      questions:
+        prompt: Select a value
+        "yes": "Yes"
+        "no": "No"
+        unreachable_html: "The answer could not be sent: this page could not reach the service. Answer again, or %{reload}."
+    demo_request_zone:
+      submit: Request the document
+      retry: Retry to request
+      submit_all: Request the documents
+      loading: Requesting the document…
+      loading_all: Requesting the documents…
+      delivered: Document retrieved successfully
+      open: Open the document
+      refused_title: The document cannot be provided
+      refused_body: >-
+        The administration could not send the document. You will have to obtain it another way.
+      unavailable_title: OOTS is not available
+      unavailable_body: >-
+        The document cannot be requested right now, for technical reasons. You can ask again later,
+        or obtain it another way.
+      expired_title: No answer yet
+      expired_body: >-
+        The administration holding your document has not answered yet. The request is still on its
+        way, but this page has stopped waiting for it: ask again to start a new one.
+      preview_title: Your document is waiting for your approval abroad
+      preview_lead: >-
+        The administration holding it wants to show it to you before sending it. You will be
+        redirected to its own space to preview the document and decide whether to use it or not.
+      preview_link: Preview and approve the document
+      declined_title: You chose not to use this document
+      declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      deferred_title: Document announced for later
+      deferred_body: >-
+        The administration has not sent the document: it announced it for %{date}. Ask again from that
+        date to start a new request.
+      deferred_undated_body: >-
+        The administration has not sent the document: it announced it for later, without saying when.
+        Ask again later to start a new request.
+      deferred_date: "%B %-d, %Y at %H:%M (UTC%:z)"
+      unpresentable_title: The preview link cannot be presented
+      unpresentable_body: The administration asks to be reached in a way this page cannot offer.
+      unconfirmed_title: The preview has failed
+      unconfirmed_body: >-
+        The preview of your document could not be started. You can try to request the document again.
+      unreadable_title: The state of the request could not be read
+      unreadable_body: >-
+        Reload the page to read it again. If it happens again, the operator will find the reason in
+        the console.
+      disconnected_html: This page could not reach the service. %{reload} to see where your request stands.
+      reload: Reload the page
+    demo_identity_card:
+      attributes:
+        family_name: Family name
+        given_name: Given name(s)
+        birthdate: Date of birth
+        gender: Sex
+        place_of_birth: Place of birth
+        level_of_assurance: "Level of assurance:"
+      eidas_identifier_html: '<span class="fr-sr-only">eIDAS identifier:</span> %{value}'
+    minted_identifier:
+      label: Dummy
+      meaning: "Assigned by France for an exchange in 1.2: it appears in no message."
+    deferred_content:
+      no_script: This page loads its content with JavaScript, and JavaScript is disabled.
+      failed: The content of this page could not be loaded. Reload the page to try again.
+    directory_breadcrumbs:
+      directories: Common Services
+    directory_query:
+      section: Query performed
+      identifiers_title: Identifiers
+      identifiers:
+        requirement: Requirement
+        evidence_type: Evidence type
+    edm_error_code:
+      chapter: TDD chapter 4.5.3, which defines the eight codes (new window)
+      codes:
+        "EDM:ERR:0001": Authentication failed
+        "EDM:ERR:0002": Missing authorization
+        "EDM:ERR:0003": Syntactically or semantically invalid request
+        "EDM:ERR:0004": Object not found
+        "EDM:ERR:0005": Timeout exceeded
+        "EDM:ERR:0006": Referenced object cannot be resolved
+        "EDM:ERR:0007": Optional function or capability not supported
+        "EDM:ERR:0008": Request whose syntax or semantics must be corrected
+    tdd_rule:
+      schematron: This TDD rule, as the Schematron writes it (new window)
+    pagination:
+      previous: Previous page
+      next: Next page
+      page: Page %{number}
+    evidence_subject:
+      fields:
+        level_of_assurance: Level of assurance
+        eidas_identifier: eIDAS identifier
+        family_name: Name
+        given_name: Given name
+        date_of_birth: Date of birth
+        place_of_birth: Place of birth
+        gender: Sex
+        legal_name: Legal name
+        identifiers: Identifiers
+  builders:
+    evidence_document_builder:
+      title: Demonstration evidence
+      issued_at: "Issued on %{date} at %{time}, Paris time."
+      date_format: "%Y-%m-%d"
+      time_format: "%H:%M:%S"
+      sections:
+        evidence_type: Requested evidence type
+        subject: User concerned
+      classification: "Classification identifier: %{value}"
+      type_title: "Title (%{language}): %{value}"
+      fields:
+        family_name: "Family name: %{value}"
+        given_name: "Given name: %{value}"
+        date_of_birth: "Date of birth: %{value}"
+        legal_name: "Legal name: %{value}"
+      identifier: "Evidence identifier: %{id}"
+      unknown_subject: "Evidence subject of a type the document cannot describe: \"%{type}\"."
+    evidence_request_builder:
+      return_location_too_long: "The return URL is %{length} characters long, whereas the ReturnLocation slot allows %{limit} (TDD chapter 4.5.1): URL_OOTS_FRANCE is too long."
+      unknown_subject: "Evidence subject of a type the request cannot write: \"%{type}\"."
+    evidence_subject_builder:
+      unknown_subject: "Evidence subject of a type the response cannot write: \"%{type}\"."
+  clients:
+    domibus_parties_client:
+      refused: "The gateway refuses the Plugin User: %{error}"
+      unreachable: "The gateway did not return its list of parties: %{error}"
+    domibus_truststore_client:
+      refused: "The gateway refuses the Plugin User: %{error}"
+      unreachable: "The gateway did not return its truststore: %{error}"
+    common_services_instance:
+      dns_failure: "DNS resolution failed for \"%{name}\": %{error}."
+    common_services_query:
+      unreachable: "Directory unreachable (%{url}): %{error}."
+      not_cached: "Directory response not cached (%{url}): %{error}"
+    code_list:
+      nothing_read: "Code list read without finding anything (%{list}): unexpected structure?"
+    classification_values:
+      insecure: the address is not https
+      empty: no active value can be read in it
+      unreadable: "Provider classification value list unreadable (%{address}): %{reason}"
+    common_services_signature:
+      invalid: Invalid signature on the directory response.
+      digest_mismatch: The announced digest does not cover the directory response.
+      not_http_headers: Directory signature does not conform to the HttpHeaders mechanism.
+      no_certificate: The directory response carries no certificate.
+      certificate_rejected: "Directory certificate rejected by the truststore: %{error}."
+      header_unreadable: Unreadable signature header on the directory response.
+      header_unreadable_detail: "Unreadable signature header on the directory response: %{error}."
+      certificate_unreadable: "Unreadable certificate in the directory response: %{error}."
+    demo:
+      beneficiary_token_writer:
+        no_key: "The key set published at %{url} carries no key: the beneficiary token cannot be encrypted for anyone."
+        unreadable: "Unreadable key set at %{url}: %{error}"
+      contract_answer:
+        unreadable: "Unreadable response from %{path} (%{status}): %{error}"
+        unreadable_date: "Unreadable announced date for exchange %{exchange_id} (%{date}): %{error}"
+      exchange_state_client:
+        unreachable: "The contract did not answer: %{error}"
+      preview_confirmation_client:
+        unreachable: "The contract did not answer the preview confirmation: %{error}"
+    beneficiary_token:
+      gender: "Gender \"%{value}\" refused: the beneficiary token only carries %{admitted}."
+      invalid: "Invalid beneficiary token: %{error}"
+      unexpected_algorithms: Beneficiary token encrypted with %{announced}, expected %{expected}.
+    france_connect_client:
+      foreign_issuer: "The discovery document announces the issuer \"%{announced}\", not %{expected}."
+      foreign_endpoint: "FranceConnect+ would publish %{name} at \"%{url}\", outside %{expected}: call refused."
+      missing_endpoint: "The FranceConnect+ discovery document publishes no %{name}."
+      unreadable_endpoint: "FranceConnect+ publishes a %{name} that is not an address: %{error}"
+      unreadable_discovery: "The FranceConnect+ discovery document does not read as JSON: %{error}"
+      unreadable_grant: "Unreadable response from /token: %{error}"
+      incomplete_grant: "The /token response does not carry %{names}."
+    france_connect_refusal:
+      refused: "%{url} answered %{status}: %{error}"
+      refused_described: "%{url} answered %{status}: %{error} — %{description}"
+      refused_documented: "%{url} answered %{status}: %{error} — see %{uri}"
+      refused_fully: "%{url} answered %{status}: %{error} — %{description} — see %{uri}"
+    france_connect_answer:
+      not_an_object: "%{subject}: the body is a %{type}, whereas FranceConnect+ publishes an object."
+      subjects:
+        discovery: FranceConnect+ discovery document
+        grant: /token response
+        claims: FranceConnect+ token
+        sealed_header: Sealed token header
+    france_connect_token:
+      unreadable: "FranceConnect+ token cannot be decrypted: %{error}"
+      invalid: "Invalid FranceConnect+ signature: %{error}"
+      unexpected_algorithms: FranceConnect+ token encrypted with %{announced}, expected %{expected}.
+    pro_connect_client:
+      foreign_issuer: "The ProConnect discovery document announces the issuer \"%{announced}\", not %{expected}."
+      foreign_endpoint: "ProConnect would publish %{name} at \"%{url}\", outside %{expected}: call refused."
+      missing_endpoint: "The ProConnect discovery document publishes no %{name}."
+      unreadable_endpoint: "ProConnect publishes a %{name} that is not an address: %{error}"
+      unreadable_discovery: "The ProConnect discovery document does not read as JSON: %{error}"
+      unreadable_grant: "Unreadable response from the ProConnect /token: %{error}"
+      incomplete_grant: "The ProConnect /token response does not carry %{names}."
+    pro_connect_answer:
+      not_an_object: "%{subject}: the body is a %{type}, whereas ProConnect publishes an object."
+      subjects:
+        discovery: ProConnect discovery document
+        grant: ProConnect /token response
+        claims: ProConnect token
+        userinfo: ProConnect UserInfo response
+    pro_connect_token:
+      invalid: "Invalid ProConnect signature: %{error}"
+      unexpected_nonce: The nonce of the ProConnect ID Token is not the one the session expected.
+      unexpected_type: "ProConnect UserInfo response in \"%{type}\", neither application/json nor application/jwt."
+      unreadable_userinfo: "Unreadable ProConnect UserInfo response: %{error}"
+  controllers:
+    admin:
+      demo:
+        countries:
+          unreachable: "Common Services unreachable when choosing a country for the demonstration procedure: %{error}"
+        evidence_type_lists:
+          unreachable: "Common Services unreachable when choosing a combination for the demonstration procedure: %{error}"
+        provider_classifications:
+          unreachable: "Common Services unreachable when answering the Data Service Directory questions of the demonstration procedure: %{error}"
+        procedures:
+          undeclared: "Procedures declared by France unreadable for the procedure choice screen: %{error}"
+        catalogue_unreachable: "Evidence Broker catalogue unreadable for the demonstration procedure: %{error}"
+        cards:
+          uncatalogued: "Requirement %{requirement} absent from the Evidence Broker catalogue: no card added"
+        home:
+          no_requirements: "Requirements of the demonstration procedure unreadable: %{error}"
+      pro_connect:
+        undeclared: ProConnect return on a deployment that declares none.
+        unexpected_logout_state: The state of the ProConnect logout return is not the one the session expected.
+        agent_refused: "Agent refused, outside the admitted domains: %{email}"
+      sessions:
+        france_connect_undeclared: "FranceConnect+ session not closed: the identity had been attested by \"%{name}\", which this deployment no longer declares."
+    reads_demo_request:
+      unanswered: "State of the demonstration procedure request unreadable: %{error}"
+      unreadable: "The contract did not give the state of exchange %{exchange} of the demonstration procedure (%{status}): %{error}"
+    france_connect:
+      incomplete_departure: >-
+        The departure to FranceConnect+ retained no version or no procedure: choose a version
+        and a procedure, then identify again.
+  gateways:
+    directories:
+      catalogue:
+        swept: "%{error} (requirement %{requirement})"
+      common_services:
+        no_evidence_type: No evidence type for the procedure "%{procedure}" in the country "%{country}"
+        no_provider: No provider for the evidence type "%{evidence_type}" in the country "%{country}"
+        provider_classification_required: The Data Service Directory expects a precision from the user to designate the provider of the evidence type "%{evidence_type}" in the country "%{country}"
+        unknown_procedure: Procedure code "%{procedure}" not found
+        unknown_requirement: Requirement "%{requirement}" unknown to the Evidence Broker
+        no_evidence_for_requirement: No evidence type for the requirement "%{requirement}" in the country "%{country}"
+      evidence_requesters:
+        unknown: The requester with the identifier "%{id}" does not exist.
+  jobs:
+    read_connectivity_verdicts_job:
+      overdue: "Connectivity test towards %{party} without a verdict after fifteen minutes (message %{id})"
+      failed: "Cannot read the connectivity test towards %{party}: %{error}"
+    expire_exchanges_job:
+      failed: "Cannot expire exchange %{id}: %{error}"
+    expire_preview_sessions_job:
+      failed: "Cannot expire preview %{id}: %{error}"
+  lib:
+    audit_trail:
+      unreadable_field: "Field \"%{field}\" unreadable, absent from the log line: %{error}"
+      unhandled_action: "No handling for the ebMS action \"%{action}\""
+    public_key_set:
+      unknown_key_type: "Unknown key type: \"%{type}\"."
+    settings:
+      france_connect_algorithm: "The procedure's key declares the algorithm \"%{algorithm}\": FranceConnect+ only accepts %{expected}."
+      france_connect_algorithm_absent: "The procedure's key declares no algorithm: FranceConnect+ only accepts %{expected}, and a JWK key carries one only if it is written into it."
+      france_connect_key_unreadable: "CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64 does not decode to a JWK key: the expected value is a JSON object encoded in base64."
+      france_connect_incomplete: "FranceConnect+ declaration with gaps: %{names} missing. A FranceConnect+ is declared by its issuer and its two identifiers, or not at all."
+      france_connect_absent: "No FranceConnect+ declared: the demonstration procedure would have no way to identify. Fill in the three variables of at least one among %{names}."
+      proconnect_incomplete: "ProConnect declaration with gaps: %{names} missing. ProConnect is declared by its issuer and its two identifiers, or not at all."
+      agent_domains_absent: "%{name} is empty: Administration would admit no agent. List the admitted address domains in it, separated by commas, e.g. numerique.gouv.fr."
+      demo_signing_key_unreadable: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 does not decode to a JWK key: the expected value is a JSON object encoded in base64."
+      demo_signing_curve: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 declares a %{kty} key on %{crv}: the beneficiary token is signed with ES256, which requires an EC key on P-256."
+      unnamed_member: without value
+      missing: "Mandatory environment variables absent or empty: %{names}."
+      not_boolean: "%{name} is \"%{value}\": this variable controls a feature, it can only be true, false, or nothing at all."
+      not_whole: "Environment variables that must be positive whole numbers: %{names}."
+      not_whole_entry: "%{name} (\"%{value}\")"
+      required: The environment variable %{name} is mandatory and cannot be empty.
+      retention_below_floor: "DUREE_RETENTION_JOURNAL_MOIS is %{months}: article 17(4) of implementing regulation (EU) 2022/1463 requires keeping at least %{floor}."
+      timeouts_out_of_order: "%{longer} is %{longer_value} and %{shorter} is %{shorter_value}: TDD chapter 4.4 requires the waiting side to allow more than the other side allows itself to act, transport included."
+  parsers:
+    not_a_query_response: The received message is not a QueryResponse.
+    plugin_unreadable: Unreadable plugin response.
+    slot_reading:
+      in_received_message: "%{description} in the received message."
+      missing: Slot "%{name}" missing from the received message.
+      empty: The slot "%{name}" is empty
+      without: The slot "%{name}" does not carry %{path}
+    evidence_request:
+      not_a_query_request: "The received message is not a QueryRequest but a %{root}."
+      unnamed_root: document without a root element
+      request_namespace_unexpected: >-
+        The QueryRequest root of the received message is in the namespace %{namespace},
+        not %{expected}.
+      unnamed_namespace: no namespace
+      issue_date_time_malformed: >-
+        The date carried by the received request (%{date}) does not have the form of an
+        xsd:dateTime timestamp.
+      unnamed_date: empty
+      return_type_unexpected: >-
+        The query:ResponseOption of the received request asks for %{declared}, not %{expected}.
+      query_definition_unexpected: >-
+        The query:Query of the received request names %{declared}, not %{expected}.
+      unnamed_value: a missing value
+      request_language_forbidden: >-
+        The received request carries an xml:lang attribute, which its version forbids.
+      slot_name_unexpected: >-
+        The received request carries a slot "%{name}", which is not one that its
+        version admits here (%{admitted}).
+      unnamed_slot: unnamed
+      evidence_type_child_unexpected: >-
+        The requested evidence type carries elements (%{children}) beyond
+        those the request admits (%{admitted}).
+      slot_value_not_alone: >-
+        The slot "%{name}" of the received request must carry exactly one
+        rim:SlotValue (%{count} declared).
+      slot_value_empty: >-
+        The rim:SlotValue of the slot "%{name}" of the received request carries no element.
+      slot_value_without_element: >-
+        The rim:SlotValue of the slot "%{name}" of the received request does not carry a %{element}.
+      evidence_type_without_identifier: >-
+        The requested evidence type does not carry an sdg:Identifier.
+      evidence_type_format_unpublished: >-
+        The requested evidence type names a format (%{declared}) that is not in the
+        OOTSMediaTypes list (%{admitted}).
+      unnamed_format: empty
+      wordings_share_a_language: >-
+        The received request carries %{count} "%{name}" elements of language "%{language}"
+        in the same place, where only one is admitted.
+      unnamed_language: without a language
+      evidence_type_description_without_language: >-
+        A description of the requested evidence type does not name its language.
+      evidence_type_description_language_unknown: >-
+        A description of the requested evidence type names a language (%{language})
+        that is not in the LanguageCode list.
+      person_identifier_without_scheme: >-
+        An identifier that the received request describes does not name its scheme.
+      person_scheme_unexpected: >-
+        An identifier that the received request describes names the scheme %{scheme}, not %{expected}.
+      person_identifier_country_unknown: >-
+        An eIDAS identifier that the received request describes (%{identifier}) does not have the form
+        XX/YY/Z…Z on country codes from the OOTS_Country list.
+      unnamed_person_identifier: empty
+      person_without_level_of_assurance: >-
+        A person that the received request describes does not carry a level of assurance.
+      person_level_of_assurance_unknown: >-
+        A person that the received request describes carries a level of assurance (%{level})
+        that is not in the LoA list (%{admitted}).
+      person_country_unknown: >-
+        A person that the received request describes names a country (%{country}) that is not
+        in the CountryIdentificationCode list.
+      unnamed_country: empty
+      representative_date_of_birth_malformed: >-
+        The representative's date of birth (%{date}) does not have the form YYYY-MM-DD.
+      representative_gender_unknown: >-
+        The representative's gender (%{gender}) is not in the Gender list (%{admitted}).
+      unnamed_gender: empty
+      representative_gender_outside_eidas: >-
+        The representative is identified under eidas: their gender must be present and be
+        one of the three values of the eIDAS profile (%{admitted}).
+      representative_without_identifier: >-
+        The organization representing the subject does not carry an sdg:LegalPersonIdentifier.
+      representative_identifier_without_scheme: >-
+        An identifier of the organization representing the subject does not name its scheme.
+      representative_scheme_unpublished: >-
+        An identifier of the organization representing the subject names a scheme (%{scheme})
+        that is not in the IdentifierSchemes list (%{admitted}).
+      representative_procedure_unpublished: >-
+        The representative's mandate names procedures (%{procedures}) that are not in the
+        Procedures list.
+      slot_required: The received request must carry exactly one slot "%{name}".
+      possibility_for_preview_not_boolean: The slot "PossibilityForPreview" must be an XML boolean (true, false, 1 or 0), not "%{value}".
+      preview_locations_unpaired: The request must carry the slots "PreviewLocation" and "ReturnLocation" together, or neither.
+      location_not_secure: The slot "%{name}" must carry an https:// address, not "%{location}".
+      unexpected_specification: The received request announces %{announced}, not %{expected}.
+      unnamed_specification: an unnamed version
+      evidence_subject_not_alone: >-
+        The received request must describe either a natural person or a legal
+        person, and only one (%{count} declared).
+      request_id_not_a_uuid: >-
+        The identifier of the received request (%{id}) is not a UUID prefixed
+        "urn:uuid:".
+      unnamed_request_id: missing
+      no_query: No query:Query in the received message.
+      collection_without_agent: >-
+        The "EvidenceRequester" collection of the received request carries no agent.
+      requester_agent_not_alone: >-
+        The received request must carry exactly one agent classified ER (%{count} declared).
+      agent_without_identifier: The agent classified ER has no identifier.
+      agent_without_id: The identifier of the agent classified ER is empty
+      evidence_type_without_id: The evidence type has no identifier
+      evidence_type_without_distribution: >-
+        The received request must ask for at least one distribution of the
+        evidence type.
+      evidence_type_with_several_distributions: >-
+        A request of the 1.2 line can ask for only one distribution of the
+        evidence type (%{count} requested).
+      legal_identifier_without_scheme: An identifier of the legal person has no scheme
+      agent_without_scheme: >-
+        The identifier of the agent classified ER does not carry a "schemeID" attribute.
+      agent_scheme_unknown: >-
+        The identifier scheme of the agent classified ER ("%{scheme}") is neither a code from the
+        EAS list nor an OOTS country code.
+      agent_id_too_long: >-
+        The identifier of the agent classified ER is %{length} characters long, beyond the %{maximum} admitted.
+      agent_without_name: The agent classified ER has no name
+      agent_name_too_short: The name of the agent classified ER ("%{name}") is shorter than two characters
+      agent_without_language: The name of the agent classified ER does not carry a "lang" attribute
+      agent_language_unknown: >-
+        The language of the name of the agent classified ER ("%{language}") is not a code from the
+        LanguageCode list.
+      agent_without_country: >-
+        The agent classified ER must declare exactly one country in sdg:Address/sdg:AdminUnitLevel1.
+      agent_country_unknown: >-
+        The country of the agent classified ER ("%{country}") is not a code from the
+        CountryIdentificationCode list.
+      agent_territory_unknown: >-
+        The territory of the agent classified ER ("%{territory}") is not a code from the NUTS list.
+      platform_without_classification: >-
+        The agent accompanying the requester does not carry a classification.
+      platform_classification_unexpected: >-
+        The agent accompanying the requester is classified "%{classification}", not ER or IP.
+      platform_without_identifier: The intermediary platform has no identifier.
+      platform_without_scheme: >-
+        The identifier of the intermediary platform does not carry a "schemeID" attribute.
+      platform_scheme_unknown: >-
+        The identifier scheme of the intermediary platform ("%{scheme}") is neither a code from the
+        EAS list nor an OOTS country code.
+      platform_id_too_long: >-
+        The identifier of the intermediary platform is %{length} characters long, beyond the
+        %{maximum} admitted.
+      platform_without_name: The intermediary platform has no name.
+      platform_name_too_short: >-
+        The name of the intermediary platform ("%{name}") is shorter than two characters.
+      platform_without_language: >-
+        A name of the intermediary platform does not carry a "lang" attribute.
+      platform_language_unknown: >-
+        The language of a name of the intermediary platform ("%{language}") is not a code from the
+        LanguageCode list.
+      platform_country_unknown: >-
+        The country of the intermediary platform ("%{country}") is not a code from the
+        CountryIdentificationCode list.
+      platform_territory_unknown: >-
+        The territory of the intermediary platform ("%{territory}") is not a code from the
+        NUTS list.
+      collection_agent_unexpected_children: >-
+        An agent of the "EvidenceRequester" collection can carry only sdg:Identifier,
+        sdg:Name, sdg:Address and sdg:Classification (additionally received: %{children}).
+      provider_without_agent: >-
+        The "EvidenceProvider" slot of the received request does not carry an agent.
+      provider_without_identifier: The designated provider has no identifier.
+      provider_without_scheme: >-
+        The identifier of the designated provider does not carry a "schemeID" attribute.
+      provider_scheme_unknown: >-
+        The identifier scheme of the designated provider ("%{scheme}") is neither a code from the
+        EAS list nor an OOTS country code.
+      provider_id_too_long: >-
+        The identifier of the designated provider is %{length} characters long, beyond the
+        %{maximum} admitted.
+      provider_without_name: The designated provider has no name.
+      provider_name_too_short: >-
+        The name of the designated provider ("%{name}") is shorter than two characters.
+      provider_without_language: >-
+        A name of the designated provider does not carry a "lang" attribute.
+      provider_language_unknown: >-
+        The language of a name of the designated provider ("%{language}") is not a code from the
+        LanguageCode list.
+      provider_unexpected_children: >-
+        The designated provider can carry only sdg:Identifier and sdg:Name (additionally received:
+        %{children}).
+      accompanying_provider_without_scheme: >-
+        The identifier of a provider that the request does not designate does not carry a "schemeID"
+        attribute.
+      accompanying_provider_scheme_unknown: >-
+        The identifier scheme of a provider that the request does not designate ("%{scheme}")
+        is neither a code from the EAS list nor an OOTS country code.
+      accompanying_provider_id_too_long: >-
+        The identifier of a provider that the request does not designate is %{length} characters long,
+        beyond the %{maximum} admitted.
+      accompanying_provider_without_language: >-
+        A name of a provider that the request does not designate does not carry a "lang" attribute.
+      accompanying_provider_language_unknown: >-
+        The language of a name of a provider that the request does not designate ("%{language}") is
+        not a code from the LanguageCode list.
+      beneficiary_identifier_without_scheme: >-
+        The identifier of the beneficiary has no "schemeID" attribute.
+      beneficiary_scheme_unexpected: >-
+        The identifier of the beneficiary is under the scheme "%{scheme}", not "%{expected}".
+      evidence_type_classification_unexpected: >-
+        The classification of the requested evidence type ("%{classification}") is not a Semantic
+        Repository URL naming an OOTS country and a UUID.
+      unnamed_classification: empty
+      evidence_type_without_title: >-
+        The requested evidence type carries no title.
+      evidence_type_title_without_language: >-
+        A title of the requested evidence type does not carry a "lang" attribute.
+      evidence_type_title_language_unknown: >-
+        The language of a title of the requested evidence type ("%{language}") is not a code from
+        the LanguageCode list.
+      subject_identifier_country_unknown: >-
+        The country codes of the eIDAS identifier of the subject of the received request
+        ("%{identifier}") are not codes from the OOTS_Country list.
+      unnamed_subject_identifier: empty
+      element_without_requirement: >-
+        An element of the "Requirements" slot of the received request does not carry an sdg:Requirement.
+      requirement_id_unexpected: >-
+        The identifier of a requirement of the received request ("%{id}") is not a Semantic
+        Repository URL ending with a UUID.
+      unnamed_requirement_id: empty
+      requirement_name_without_language: >-
+        The name of a requirement of the received request does not carry a "lang" attribute.
+      requirement_name_language_unknown: >-
+        The language of the name of a requirement of the received request ("%{language}") is not a code from
+        the LanguageCode list.
+      requirement_description_without_language: >-
+        The description of a requirement of the received request does not carry a "lang" attribute.
+      requirement_description_language_unknown: >-
+        The language of the description of a requirement of the received request ("%{language}") is not
+        a code from the LanguageCode list.
+      requirement_unexpected_children: >-
+        A requirement of the received request can carry only sdg:Identifier, sdg:Name and
+        sdg:Description (additionally received: %{children}).
+      element_without_classification: >-
+        An element of the "EvidenceProviderClassification" slot of the received request does not carry an
+        sdg:EvidenceProviderClassification.
+      classification_id_not_a_uuid: >-
+        The identifier of a provider classification ("%{id}") is not a UUID.
+      unnamed_classification_id: empty
+      classification_scheme_unexpected: >-
+        The identifier scheme of a provider classification ("%{scheme}") is not a Semantic
+        Repository code list URL.
+      classification_country_unknown: >-
+        The identifier scheme of a provider classification ("%{scheme}") does not name a country
+        participating in OOTS.
+      classification_scheme_name_unexpected: >-
+        The short name of the identifier scheme of a provider classification ("%{scheme}")
+        carries something other than letters and digits.
+      classification_without_type: A provider classification does not declare its type.
+      classification_type_unexpected: >-
+        The type of a provider classification ("%{type}") is neither "string", nor
+        "boolean", nor "codelist".
+      classification_without_supported_value: >-
+        A provider classification does not carry an sdg:SupportedValue.
+      classification_supported_value_empty: >-
+        A supported value of a provider classification is empty.
+      classification_values_counted: >-
+        A provider classification must carry exactly one supported value (%{count}
+        declared).
+      classification_value_without_string_value: >-
+        The supported value of a provider classification of type "string" or "codelist"
+        must be an sdg:StringValue.
+      classification_value_without_boolean_value: >-
+        The supported value of a provider classification of type "boolean" must be an
+        sdg:BooleanValue.
+      classification_without_scheme: >-
+        The identifier of a provider classification of type "codelist" does not carry
+        a "schemeID" attribute.
+      classification_without_value_expression: >-
+        A provider classification of type "codelist" does not carry an
+        sdg:ValueExpression.
+      classification_expression_not_https: >-
+        The value expression of a provider classification ("%{expression}") does not start
+        with "https://".
+      classification_description_without_language: >-
+        The description of a provider classification does not carry a "lang" attribute.
+      classification_description_language_unknown: >-
+        The language of the description of a provider classification ("%{language}") is not
+        a code from the LanguageCode list.
+      slot_type_unexpected: >-
+        The slot "%{name}" of the received request must carry a rim:SlotValue of type %{expected}
+        (received: %{declared}).
+      element_type_unexpected: >-
+        A rim:Element of the slot "%{name}" of the received request must be of type %{expected}
+        (received: %{declared}).
+      unnamed_slot_type: missing attribute
+      collection_without_element: A RegRep collection of the received request carries no rim:Element.
+      collection_type_unexpected: >-
+        A RegRep collection of the received request must carry collectionType="%{expected}"
+        (received: %{declared}).
+      wording_too_short: >-
+        The wording %{path} of the received request ("%{value}") is shorter than two characters.
+      wording_empty: >-
+        The wording %{path} of the received request is empty, where the rule requires one character.
+      procedure_language_unknown: >-
+        The language of the procedure code of the received request ("%{language}") is not a code from the
+        LanguageCode list.
+      request_language_unknown: >-
+        The language of the received request ("%{language}") is not a code from the LanguageCode list.
+      transformation_unexpected: >-
+        The transformation requested by the received request ("%{transformation}") is not a Semantic
+        Repository URL.
+      unnamed_transformation: empty
+      transformation_without_conformance: >-
+        A distribution that requests a transformation must name exactly one data model.
+    evidence_response:
+      requester_without_id: The requester agent has no identifier
+      requester_without_scheme: The requester agent has no identifier scheme
+      slot_required: The received response must carry exactly one "%{name}" slot.
+      unexpected_specification: The received response announces %{announced}, not %{expected}.
+      absent_status: The received response declares no status.
+      unexpected_status: >-
+        The status of the received response (%{announced}) is neither Success nor Unavailable.
+      deferral_without_date: >-
+        A response with the Unavailable status must carry exactly one "%{name}" slot.
+      date_without_deferral: The "%{name}" slot belongs only in a response with the Unavailable status.
+      absent_request_id: The received response declares no request identifier.
+      request_id_not_a_uuid: >-
+        The identifier of the request being answered (%{id}) is not a UUID prefixed
+        with "urn:uuid:".
+      response_id_not_a_uuid: The response identifier (%{id}) is not a UUID.
+      issue_date_not_a_date_time: The issue date (%{value}) is not a date-time.
+      available_date_not_a_date_time: >-
+        The availability date (%{value}) is not a date-time.
+      provider_identifier_without_scheme: >-
+        The provider's identifier "%{id}" does not name its scheme.
+      no_object_list: The received response carries no rim:RegistryObjectList.
+      no_single_ep_agent: The "EvidenceProvider" slot must carry exactly one agent classified EP.
+      exception_in_a_success: A successful response cannot carry an rs:Exception.
+      unexpected_child: The "%{name}" element does not belong in a response.
+      object_not_a_package: >-
+        The top-level object (%{id}) is not of type rim:RegistryPackageType.
+      package_without_one_list: >-
+        The package (%{id}) must carry exactly one rim:RegistryObjectList.
+      list_without_main_evidence: >-
+        The package's list (%{id}) carries no object classified MainEvidence.
+      object_without_classification: >-
+        The object (%{id}) must carry exactly one rim:Classification under the
+        urn:fdc:oots:classification:edm scheme.
+      unknown_classification_node: >-
+        The classification %{node} of the object (%{id}) is none of MainEvidence,
+        Annex, HumanReadableVersion or Translation.
+      classification_id_not_a_uuid: >-
+        The identifier "%{id}" of a rim:Classification is not a UUID prefixed
+        with "urn:uuid:".
+      object_without_reference: The object (%{id}) carries no rim:RepositoryItemRef.
+      reference_without_href: >-
+        The rim:RepositoryItemRef of the object (%{id}) designates no payload
+        (xlink:href).
+      reference_without_title: >-
+        The rim:RepositoryItemRef of the object (%{id}) carries no xlink:title
+        attribute.
+      object_without_id: A rim:RegistryObject (%{type}) carries no id attribute.
+      object_id_not_a_uuid: >-
+        The identifier "%{id}" of a rim:RegistryObject is not a UUID prefixed
+        with "urn:uuid:".
+      main_evidence_incomplete: >-
+        The object classified MainEvidence (%{id}) does not carry all six elements
+        Identifier, IssuingDate, IsAbout, IssuingAuthority, IsConformantTo and
+        Distribution.
+      supplementary_with_main_elements: >-
+        The supplementary object (%{id}) carries elements that the TDD reserve
+        for MainEvidence: %{elements}.
+      subject_unexpected_children: >-
+        The evidence subject (%{person}) carries elements that the TDD do not
+        allow there: %{elements}.
+      supplementary_without_association: >-
+        The object classified %{node} (%{id}) is not the source of any association
+        in its list.
+      association_without_source: The association (%{id}) carries no sourceObject attribute.
+      association_without_target: The association (%{id}) carries no targetObject attribute.
+      association_source_misclassified: >-
+        The sourceObject of the association (%{id}) designates no object classified
+        %{node} under the urn:fdc:oots:classification:edm scheme.
+      association_target_misclassified: >-
+        The targetObject of the association (%{id}) designates no object classified
+        MainEvidence under the urn:fdc:oots:classification:edm scheme.
+      association_mistyped: >-
+        The association (%{id}) links an object classified %{node} to the
+        MainEvidence: its type must be %{type}.
+      absent_specification: an unnamed version
+      unidentified_object: without an identifier
+      untyped_object: without a type
+      absent_value: absent
+      absent_date: absent
+    requirement_reading:
+      requirement_without_id: The directory returned a requirement without an identifier.
+    error_response:
+      no_exception: No rs:Exception in the received error response.
+      root_not_a_query_response: >-
+        The received error response opens with "%{root}", not with a query:QueryResponse.
+      root_namespace_unexpected: >-
+        The root of the received error response is in the namespace %{namespace},
+        not %{expected}.
+      unnamed_root: an unnamed element
+      unnamed_namespace: no namespace
+      slot_required: The received error response must carry exactly one "%{name}" slot.
+      slot_doubled: The received error response carries several "%{name}" slots, where only one is allowed.
+      unexpected_specification: The received error response announces %{announced}, not %{expected}.
+      absent_specification: an unnamed version
+      unexpected_status: The status of the received error response (%{announced}) is not Failure.
+      object_list_in_a_failure: An error response cannot carry a rim:RegistryObjectList.
+      response_without_exception: The received error response carries no rs:Exception.
+      failure_without_exception: >-
+        A response with the Failure status must carry at least one rs:Exception.
+      unexpected_slot: The "%{name}" slot does not belong in an error response.
+      request_id_not_a_uuid: >-
+        The identifier of the request being answered (%{id}) is not a UUID prefixed with "urn:uuid:".
+      response_id_not_a_uuid: The identifier of the error response (%{id}) is not a UUID.
+      uncorrelated_without_invalid_request: >-
+        An error response without a requestId must carry an exception of type %{type}.
+      requester_slot_missing: >-
+        The "EvidenceRequester" slot is missing, where the exception is not an
+        rs:InvalidRequestExceptionType.
+      exception_attribute_required: The "%{name}" attribute of the rs:Exception is missing.
+      exception_type_unexpected: >-
+        The exception type ("%{type}") is not in the EDMErrorCodes list.
+      exception_code_unexpected: >-
+        The exception code ("%{code}") is not in the EDMErrorCodes list.
+      exception_severity_unexpected: >-
+        The exception severity ("%{severity}") is not a severity an error response
+        may carry.
+      exception_severity_not_ordinary: >-
+        The exception severity (%{severity}) is not %{expected}, where its code
+        is not EDM:ERR:0002.
+      slot_required_in_exception: The rs:Exception must carry exactly one "%{name}" slot.
+      timestamp_not_a_date_time: The exception timestamp (%{value}) is not a date-time.
+      absent_date: absent
+      unexpected_exception_slot: The "%{name}" slot does not belong in an rs:Exception.
+      preview_location_not_secure: >-
+        The preview address (%{location}) does not start with %{expected}.
+      preview_without_authorisation: >-
+        An exception that carries a "PreviewLocation" slot must have severity
+        %{severity} and type %{type}.
+      preview_language_unknown: >-
+        The language of a preview description ("%{language}") is not a code in the
+        LanguageCode list.
+      preview_method_unexpected: >-
+        The preview method (%{method}) is not one of the HTTP verbs the TDD
+        allow (%{expected}).
+      preview_location_without_method: >-
+        An exception that carries a "PreviewLocation" slot must carry a
+        "PreviewMethod" slot alongside it.
+      slot_without_one_agent: The "%{slot}" slot must carry exactly one sdg:Agent.
+      agent_without_identifier: The agent of the "%{slot}" slot carries no sdg:Identifier.
+      agent_identifier_without_scheme: >-
+        The identifier of the agent of the "%{slot}" slot does not name its scheme.
+      agent_scheme_unknown: >-
+        The identifier scheme of the agent of the "%{slot}" slot ("%{scheme}") is
+        neither of the two forms the TDD allow.
+      agent_id_too_long: >-
+        The identifier of the agent of the "%{slot}" slot is %{length} characters long, where
+        the TDD allow fewer than %{maximum}.
+      agent_without_name: The agent of the "%{slot}" slot carries no sdg:Name.
+      agent_name_without_language: >-
+        A name of the agent of the "%{slot}" slot does not declare its language.
+      agent_language_unknown: >-
+        The language of a name of the agent of the "%{slot}" slot ("%{language}") is not a
+        code in the LanguageCode list.
+      provider_without_classification: The agent of the "ErrorProvider" slot declares no classification.
+      provider_classification_unexpected: >-
+        The classification of the agent of the "ErrorProvider" slot (%{classification}) is not
+        one an error response allows (%{expected}).
+      provider_without_one_address: >-
+        The agent of the "ErrorProvider" slot must carry exactly one sdg:Address.
+      address_without_one_country: >-
+        The sdg:Address of the agent of the "ErrorProvider" slot must carry exactly one
+        sdg:AdminUnitLevel1.
+      provider_country_unknown: >-
+        The country of the agent of the "ErrorProvider" slot ("%{country}") is not a code in
+        the CountryIdentificationCode list.
+      provider_territory_unknown: >-
+        The territory of the agent of the "ErrorProvider" slot ("%{territory}") is not a
+        code in the NUTS list.
+      slot_value_mistyped: >-
+        The rim:SlotValue of the "%{name}" slot is of type %{declared}, not %{expected}.
+      slot_without_one_value: The "%{name}" slot must carry exactly one rim:SlotValue.
+      slot_value_without_content: The rim:SlotValue of the "%{name}" slot carries no element.
+      unnamed_slot: unnamed
+      wording_too_short: >-
+        The wording %{path} of the received error response ("%{value}") is shorter than two
+        characters.
+      wording_empty: >-
+        The wording %{path} of the received error response is empty, where the rule requires one
+        character.
+      wordings_share_a_language: >-
+        The received error response carries %{count} "%{name}" elements in the language
+        "%{language}" at the same place, where only one is allowed.
+      unnamed_language: without a language
+      absent_value: absent
+    retrieved_message:
+      unreadable_envelope: Unreadable SOAP envelope.
+      unknown_action: "Unknown ebMS action: \"%{action}\"."
+      unreadable_body: Unreadable RegRep body.
+      inconsistent_specification: >-
+        The SpecificationId property of the header announces %{header}, and the
+        SpecificationIdentifier slot of the body %{body}.
+      no_payload: No "%{type}" payload in the received message.
+      no_part: The received message declares no MIME part.
+      part_without_href: The first MIME part of the received message designates no payload.
+      payload_missing: Payload "%{id}" announced but absent.
+    ebms_header:
+      no_header: No ebMS header in the received message.
+      no_sender: No sender in the header of the received message.
+      timestamp_unreadable: "Unreadable timestamp in the header of the received message: \"%{value}\"."
+    common_services_response:
+      not_a_query_response: The directory's response is not a QueryResponse.
+      unexpected_version: The directory answered in %{announced}, not in %{expected}.
+      unnamed_version: an unnamed version
+      refused_without_reason: The directory refused without saying why.
+      refused: "The directory refused: %{detail}"
+      nothing_readable: >-
+        The directory answered with success, but nothing in it was readable
+        (%{count} object(s) in the response).
+  presenters:
+    demo_procedure_wording:
+      untitled: No label
+    demo_card_wording:
+      and: "%{first} and %{last}"
+      separator: ", "
+    country_wording:
+      in: in %{country}
+      quoted: "“%{label}”"
+      by: by %{country}
+      declaration: Procedure declared%{under} %{by}%{requiring}
+      under:
+        one: " under the label %{labels}"
+        other: " under the labels %{labels}"
+      requiring:
+        none: ", with no published requirement"
+        some: ", with %{requirements}"
+    demo_identity:
+      genders:
+        male: Male
+        female: Female
+        unspecified: Not specified
+  models:
+    business_rule_violation:
+      sentence: "%{rule}: %{description}"
+    associated_document:
+      unrequestable: >-
+        Unknown associated documents: %{values}. Only %{requestable} can be requested.
+    delivery_error:
+      summary: "%{code}: %{detail}"
+    exchange:
+      expired:
+        incoming: The exchange was not processed within the allotted time.
+        outgoing: The correspondent did not answer within the allotted time.
+        unconfirmed: The Online Procedure Portal did not confirm the preview within the allotted time.
+      undelivered:
+        refused: The correspondent's access point refused the request (%{error}).
+        gave_up: The gateway gave up delivering the request (%{error}).
+        gave_up_without_detail: The gateway gave up delivering the request.
+    strict_validation:
+      invalid: "%{subject}: %{errors}."
+      subjects:
+        announced_access_point: The access point announced by the directory
+        announced_data_service: The data service announced by the directory
+        announced_evidence_type: The evidence type announced by the directory
+        announced_provider: The provider announced by the directory
+        announced_provider_address: The address of the provider announced by the directory
+        announced_provider_identity: The identity of the provider announced by the directory
+        announced_requirement: The requirement announced by the directory
+        final_recipient: The final recipient (C4)
+        french_provider: The French provider
+        message_sender: The sender of the received message
+        original_sender: The original sender (C1)
+        provider: The provider
+        recipient_access_point: The recipient access point (C3)
+        request_beneficiary: The beneficiary of the received request
+        request_legal_person: The legal person who is the subject of the received request
+        requester: The requester
+        token_beneficiary: The beneficiary of the token
+  evidence_requests:
+    unknown: This request is unknown.
+    beneficiary_required: The beneficiary must be provided
+    conversation_invalid: The conversation identifier must be a UUID
+    provider_classification_invalid: Each classificationFournisseur must be named by the UUID of its classification and carry a value
+    specification_invalid: "The requested version must be %{spoken}"
+    outside_procedure:
+      requirement_required: A requirement requested outside its procedure must be named in idExigence
+      procedure_invalid: The procedure code must be a code from the Procedures list, or 00
+  preview_confirmations:
+    create:
+      beneficiary_required: The beneficiary must be provided
+      not_awaited: This exchange is not awaiting the confirmation of a preview.
+      resume_location_invalid: The return URL must be an absolute URL in https:// or http://
+      provider_classifications_required: Each classificationFournisseur of the first request must be provided again
+  returns:
+    show:
+      unknown: This return URL is unknown.
+      expired: This return URL is no longer valid; go back to your procedure to resume it.
+  preview_sessions:
+    show:
+      open:
+        title: Your document before it is sent
+        lead_html: "%{requester} is requesting this document from the French administration that holds it: %{evidence}."
+        return_warning: Your procedure did not provide a safe address to return to. You can view the document and make your choice, but you may have to return to your procedure by your own means.
+        optional: You can view it before choosing, but you are not required to.
+        consult: "View the document (PDF – %{size})"
+        consult_title: "View the document (PDF – %{size}) - new window"
+        legend: Do you want to use this document in your procedure?
+        accepted: Use this document in my procedure
+        refused: Do not use it
+        choice_missing: Choose whether or not to use this document.
+        submit: Confirm my choice
+      recorded:
+        title: Back to your procedure
+      expired:
+        title: The time limit has passed
+        lead: This link is no longer valid, because the time limit to choose has passed. Go back to your procedure to resume it.
+      invalid:
+        title: This link is no longer valid
+        lead: Go back to your procedure to resume it.
+    document:
+      filename: evidence.pdf
+    return:
+      awaiting: Your procedure is about to resume, and you will be taken back to it in a moment.
+      refresh: Refresh the page
+      none: You can close this page and go back to your procedure.
+      back: Back to my procedure
+  interactors:
+    directory_lookup:
+      fetch_providers:
+        malformed_question: "Non-compliant Data Service Directory question, not asked (%{id}): %{errors}"
+    connectivity_testing:
+      submit_test:
+        no_identifier: The gateway accepted the test message without giving it an identifier.
+        refused: "Connectivity test to %{party} not sent: %{error}"
+      read_verdict:
+        unreadable: "Verdict of the connectivity test to %{party} unreadable (message %{id}): %{error}"
+        not_found: "Connectivity test to %{party} has no verdict: the gateway no longer knows message %{id}"
+        no_error: "Connectivity test to %{party} failed with no error recorded by the gateway (message %{id})"
+    failures:
+      common_services_refused: The directory refused
+      agent_refused: The agent's address is not in an admitted domain
+      sign_in_failed: Signing in with ProConnect did not succeed
+      demo_evidence_empty: The evidence delivered contained no bytes
+      demo_unplaceable: The evidence delivered matches no request
+      demo_locked: Querying is locked on this deployment
+      demo_preview_unconfirmed: The preview could not be confirmed
+      demo_refused: The evidence request was refused
+      demo_unexpected: Unexpected response from the query service
+      demo_unreachable: The query service could not be reached
+      evidence_type_unchosen: No evidence type chosen among those the country publishes
+      gateway_refused: The gateway refused the message
+      identification_refused: Identification with FranceConnect+ did not succeed
+      invalid_configuration: This installation cannot build the message
+      invalid_directory_entry: The directory published an entry that a message cannot carry
+      invalid_token: Invalid beneficiary token
+      no_evidence_type: No evidence type in this country
+      no_provider: No provider in this country
+      preview_not_awaited: No preview is awaiting confirmation
+      provider_classification_required: The directory expects the user to give more detail to designate the provider
+      unknown_country: Country unknown to the Common Services
+      unknown_evidence_type: Evidence type not published for the requirement
+      unknown_procedure: Procedure unknown to the Common Services
+      unknown_requester: Unknown requester
+      unknown_requirement: Requirement unknown to the procedure
+      unannounced_specification: The access point does not announce the requested version
+      unsupported_specification: The access point does not speak our version of the model
+    admin:
+      start_pro_connect_sign_in:
+        undiscoverable: "ProConnect did not answer the discovery of its configuration: %{error}"
+      complete_pro_connect_sign_in:
+        refused_by_provider: "ProConnect refused the sign-in: %{error} %{description}"
+        unexpected_state: The state of the ProConnect return is not the one the session expected.
+        subjects_differ: The ID Token and the ProConnect UserInfo response do not designate the same agent.
+        no_email: The ProConnect UserInfo response carries no address.
+      end_pro_connect_session:
+        unreachable: "Ending the ProConnect session was impossible, the agent is signed out anyway: %{error}"
+    demo:
+      end_identification:
+        unreachable: "Ending the FranceConnect+ session was impossible, the operator is signed out anyway: %{error}"
+      start_identification:
+        undiscoverable: "FranceConnect+ did not answer the discovery of its configuration: %{error}"
+      request_evidence:
+        unreachable: "Evidence request contract unreachable, or key set unusable: %{error}"
+      confirm_preview:
+        unconfirmed: "The preview of exchange %{exchange} could not be confirmed: %{error}"
+      receive_evidence:
+        unplaceable: >-
+          Evidence delivered for exchange %{exchange} and conversation %{conversation}:
+          the demonstration procedure opened no request under these identifiers, delivery refused.
+        empty: "Evidence delivered with no bytes for exchange %{exchange}: delivery refused."
+        unnamed: not provided
+      complete_identification:
+        refused_by_portal: "FranceConnect+ refused the identification (%{error}): %{description}"
+        no_description: with no further explanation.
+        unexpected_state: >-
+          This return matches no identification requested from this browser.
+        undeclared_france_connect: >-
+          This return comes from a FranceConnect+ that this deployment does not declare (%{name}).
+        unnamed_france_connect: unnamed
+        unexpected_nonce: >-
+          The ID Token does not carry the nonce of the call: it does not answer this identification.
+        level_too_low: "The level of assurance reached (%{reached}) is lower than the one requested (%{requested})."
+        no_level: none
+        subjects_differ: >-
+          The ID Token and the UserInfo response do not designate the same person.
+        refused: "FranceConnect+ identification refused: %{reason}"
+    evidence_provision:
+      recall_second_request:
+        nothing_held: "Preview %{id} no longer holds a second request: nothing to answer."
+      choose_answer:
+        request_replayed: "Request identifier already processed: %{id}"
+        unexpected_version: The header of the received message announces %{announced}, not %{expected}.
+        unnamed_version: an unnamed version
+      journal_answer:
+        unknown_exchange: "Unknown exchange at the time of answering: %{id}"
+      reject_malformed_identifiers:
+        malformed_identifier: >-
+          The %{element} identifier "%{value}" is not a UUID, which %{rule} requires: no answer
+          can be signed on this exchange.
+      reject_unanswerable_requester:
+        unanswerable: >-
+          %{reason} (%{rule}): no answer can name this requester without in turn breaking
+          the rules of the error response.
+        unnamed_rule: no named rule
+      reject_unidentified_request:
+        unidentified: The header does not carry the two required correlation identifiers.
+    evidence_request:
+      confirm_exchange:
+        not_awaited: "The exchange no longer awaits the confirmation of a preview: it has already been given, or the T2 delay has elapsed."
+      choose_specification:
+        unsupported: >-
+          Access point %{access_point} announces %{announced}; France speaks %{spoken}: the
+          request is not sent.
+        unannounced: >-
+          Access point %{access_point} announces %{announced}; the requested version, %{requested},
+          is not among them: the request is not sent.
+      resolve_evidence_type:
+        unknown_requirement: >-
+          The requirement "%{requirement}" is not a requirement of the procedure "%{procedure}"
+        unknown_evidence_type: >-
+          The evidence type "%{evidence_type}" is not published for the requirement "%{requirement}" in the country "%{country}"
+      record_delivery_failure:
+        unknown: "Notification %{status} ignored: no sent request carries message identifier %{id}"
+        ignored: "Notification %{status} ignored for message %{id}: exchange %{exchange} is already settled"
+        unreadable: "Delivery errors of message %{id} unreadable at the gateway: %{error}"
+      send_to_gateway:
+        invalid_configuration: "The configuration of this installation does not allow building the request: %{error}"
+    incoming_message:
+      settle_exchange:
+        unknown: "Unknown exchange: %{id}"
+        already_settled: "Response ignored, exchange %{id} is already settled"
+        already_delivering: "Response ignored, another process is already handing over the evidence of exchange %{id}"
+        foreign_request: "Response ignored, it does not carry the request identifier of exchange %{id}"
+      process:
+        exchange_failed: The exchange failed
+        exchange_impossible: Exchange impossible to carry through
+        invalid_configuration: The configuration of this installation does not allow processing this message
+        unreadable: Unreadable message
+        unreadable_logged: "Unreadable message (%{id}): %{error}"
+        unknown_action: "Unknown ebMS action: \"%{action}\"."
+        abandoned: "%{reason}: %{error}"
+  admin:
+    unreadable: Some criteria could not be read
+    solicited_country: Solicited country
+    filtre:
+      country_hint: Two-letter code, for example FI
+    journal:
+      number: Event
+      attributes:
+        occurred_at: Occurred on
+        event_type: Type
+        ebms_action: ebMS action
+        conversation_id: Conversation
+        exchange_id: Exchange
+        message_id: Message
+        request_id: Request
+        response_id: Response
+        requesting_authority_id: Requesting authority
+        requesting_authority_scheme: Requesting authority scheme
+        providing_authority_id: Providing authority
+        providing_authority_scheme: Providing authority scheme
+        evidence_requester_id: Evidence Requester
+        procedure_code: Procedure
+        country_code: Country
+        evidence_type_id: Evidence type
+        evidence_subject: Evidence subject
+        evidence_subject_key: Subject key
+        evidence_identifier: Evidence identifier
+        evidence_digest: Evidence digest
+        evidence_mime_type: Evidence MIME type
+        evidence_content_id: Evidence MIME content identifier
+        regrep_mime_type: RegRep body MIME type
+        edm_error_code: EDM error code
+        preview_location: Preview Space
+        detail: Detail
+        regrep_body: RegRep body
+      event_types:
+        request_sent: Request sent
+        request_refused: Request refused
+        response_received: Response received
+        error_received: Error received
+        evidence_delivered: Evidence delivered
+        request_received: Request received
+        response_sent: Response sent
+        error_sent: Error sent
+        response_refused: Response discarded
+        message_unreadable: Unreadable message
+        message_unhandled: Unhandled message
+        answer_not_sent: Answer not delivered
+        preview_visited: Preview opened
+        preview_decided: Preview completed
+        return_to_procedure: Return to the procedure
+      filtre:
+        legend: Filter the log
+        all: All
+        since: From
+        until: To
+        submit: Filter
+        reset: Show all
+      events:
+        count:
+          zero: No events
+          one: One event
+          other: "%{count} events"
+        index:
+          title: Event log
+          lede_html: >-
+            Every request, response and refusal, kept for twelve months as
+            required by %{article}.
+          article: article 17
+          caption: Log events, from most recent to oldest
+          empty: No events match.
+        show:
+          title: "Event #%{id}"
+          caption: Everything the log holds about this event
+          same_subject: All events concerning this subject
+      subjects:
+        attributes:
+          family_name: Family name
+          given_name: Given name
+          date_of_birth: Date of birth
+          legal_person_identifier: eIDAS identifier
+        show:
+          title: Search for a person
+          person_legend: The natural person searched for
+          organisation_legend: The legal person searched for
+          exact_only: >-
+            Each form must be filled in completely and is compared exactly. The subject key
+            is encrypted deterministically: this makes equality searchable, and nothing
+            else, with no partial names or approximate matching.
+          person_submit: Search for a natural person
+          organisation_submit: Search for a legal person
+          refused: The search was not performed
+          caption:
+            person: Events concerning this natural person
+            organisation: Events concerning this legal person
+          empty:
+            person: No events concern this natural person.
+            organisation: No events concern this legal person.
+      exchanges:
+        section: Exchanges
+        count:
+          zero: No exchanges
+          one: One exchange
+          other: "%{count} exchanges"
+        directions:
+          incoming: Received
+          outgoing: Sent
+        statuses:
+          pending: Pending
+          sent: Sent
+          preview_required: Preview required
+          deferred: Deferred
+          delivered: Delivered
+          declined: Declined by the user
+          unmatched: No evidence
+          failed: Failed
+        attributes:
+          direction: Direction
+          specification: Version
+          procedure: Procedure
+          requester: Evidence Requester
+          opened_at: Opened on
+          conversation: Conversation
+        show:
+          title: Exchange %{id}
+          caption: Exchange details
+          rows:
+            settled_at: Settled on
+            response_available_at: Response expected on
+            edm_error_code: EDM error code
+            preview_location: Preview Space
+          same_conversation: All exchanges of this conversation
+          simulate: Simulate this chain of requests
+          journal:
+            caption: Log of this exchange
+            empty: No events carry this exchange.
+          failure_reason: Failure reason
+      conversations:
+        section: Conversations
+        show:
+          title: Conversation %{id}
+          lede: >-
+            Everything a user's session left behind: each exchange it covers, and under
+            each one the events it left in the log.
+          journal: "Log of exchange %{id}"
+          empty: No events carry this exchange.
+    sessions:
+      pro_connect_failed: Signing in with ProConnect did not succeed. Try again.
+      signed_out: You are signed out.
+      connection_required: This page requires you to sign in.
+      new:
+        title: Sign in to Administration
+        heading: Sign in
+        undeclared: "No ProConnect is declared: Administration cannot open."
+        development:
+          lead: "In development: sign in without ProConnect, as %{email}."
+          button: Sign in without ProConnect (Dev)
+        refused: "Administration is reserved for addresses ending in %{domains}: you identified yourself with “%{email}”. Identify yourself again with an admitted address."
+    restricted_access:
+      show:
+        title: Restricted access
+        body: >-
+          This page is reserved for administrators appointed by the team that runs the service.
+          Ask it to appoint you as an administrator.
+    home:
+      show:
+        heading: Administration
+        tiles:
+          journal: >-
+            The trace of every request, response and refusal, kept for twelve months. Carries
+            personal data.
+          common_services: >-
+            What the Evidence Broker and the Data Service Directory publish: procedures,
+            requirements, evidence types, providers.
+          jobs: "Background jobs: what remains queued, what has failed, and the trace of each error."
+          demo_title: Demonstration procedure
+          demo: >-
+            A fictional university's scholarship application, where the operator plays the user
+            of an Online Procedure Portal and triggers an exchange themselves.
+    demo:
+      versions:
+        index:
+          title: Choose the OOTS version
+          lead: Every document of the journey is requested in the version chosen here, until the next sign-in.
+          card: OOTS %{number}
+          descriptions:
+            v2_0: The most recent version, still implemented by few member states
+            v1_2: The version supported by most member states
+      procedures:
+        index:
+          title: Choose the procedure
+          lead: >-
+            The procedures France declares with requirements in the Evidence Broker come first. But you can
+            pick any procedure and request any document for demonstration purposes.
+          search: Search a code or a title
+          empty: No procedure matches this search.
+          count:
+            zero: No procedure
+            one: 1 procedure
+            other: "%{count} procedures"
+          declared_by_html:
+            one: "%{country} requires %{count} document"
+            other: "%{country} requires %{count} documents"
+      home:
+        show:
+          title: Demonstration procedure
+          lead: >-
+            This procedure can obtain the documents it needs directly from the administration of
+            another EU country that holds them, so you do not have to gather them yourself. Nothing
+            is requested without your explicit agreement.
+          requirements: "Documents to be retrieved from another EU Member State:"
+          sign_in:
+            heading: Sign-in to start the procedure
+            lead: >-
+              Use your European identity to sign-in. Your documents can be automatically retrieved from
+              other EU Member States, even different states than the one you chose to sign-in with.
+          france_connect:
+            real:
+              button: 🇪🇺 Choose a country to sign-in
+            fake:
+              button: 🇪🇺 Choose a country to sign-in (mocked)
+      documents:
+        show:
+          title: Your documents
+          identity_heading: Your identity
+          identity: The identity received from your connection
+          caption: Evidences needed for this procedure
+          evidences: >-
+            Each of them is requested directly from the administration that holds it, so you do not
+            have to obtain it yourself.
+          nothing_listed: The Common Services listed no evidence for this procedure.
+          unreachable: The Common Services could not be reached
+          add:
+            heading: Add another evidence
+            label: Document to add
+            placeholder: Select a document
+            submit: Add
+      evidences:
+        show:
+          filename: document.pdf
+    common_services:
+      access_points:
+        index:
+          title: Access points
+          lede: >-
+            Every party of the PMode loaded in the gateway, and the outcome of the last connectivity test
+            France ran from here towards it: a test AS4 message, sent from AP_FR_01, which the access point
+            acknowledges if its PMode knows France's and its truststore holds its certificate.
+          test_all: Test all access points
+          test: Test
+          test_title: Test %{party}
+          undeclared: absent from the loaded PMode
+          empty: The gateway declares no party.
+          truststore_error:
+            title: >-
+              The gateway truststore could not be read: parties declared under an EAS scheme
+              are shown without a country
+            refused: >-
+              The gateway refused France's Plugin User: France's own configuration
+              needs to be fixed.
+        outcome:
+          requested_at: Requested on %{at}
+        gateway_error:
+          unreachable: The gateway did not answer
+          refused: The gateway refused France's access
+      results:
+        count:
+          zero: No results
+          one: One result
+          other: "%{count} results"
+      refused: The directory refused
+      refus:
+        unreachable: Directory unreachable
+      catalogue:
+        show:
+          lead: >-
+            What the Evidence Broker and the Data Service Directory publish, as they
+            answer this application.
+          tiles:
+            countries:
+              zero: No country has published a declaration.
+              one: One country, and the procedures it declares.
+              other: "%{count} countries, and the procedures each one declares."
+            procedures:
+              zero: No procedure code declared.
+              one: One procedure code, declared by %{countries}.
+              other: "%{count} procedure codes, declared by %{countries}."
+            access_points: Test our connectivity with the Member States
+            requirements:
+              zero: No requirement published.
+              one: One requirement, and the evidence types that satisfy it.
+              other: "%{count} requirements, and the evidence types that satisfy them."
+          providers:
+            title: What about the providers?
+            body: >-
+              The Data Service Directory only answers on a pair of evidence type and
+              country: there is no list of its providers. You reach them from a
+              requirement, then an evidence type.
+      resolutions:
+        show:
+          title: Simulate a chain of requests
+          lead: >-
+            The three questions a real request asks the Common Services before it is sent,
+            in order, with the same clients.
+          legend: Query the Common Services
+          procedure: Procedure
+          country: Evidence Provider country
+          submit: Resolve
+          requirements:
+            title: 1. What the procedure requires
+            lead_html: >-
+              Evidence Broker, in the <strong>requester</strong> country — ours, %{country},
+              since procedure %{procedure} is ours.
+            chosen: Selected
+            choose: Continue with this one
+          evidence_types:
+            title: 2. What satisfies this requirement
+            lead_html: >-
+              Evidence Broker, in the <strong>provider</strong> country — %{country},
+              the one that will issue the evidence.
+            chosen: Selected
+            choose: Continue with this one
+          providers:
+            title: 3. Who issues it, and through which access point
+            lead_html: >-
+              Data Service Directory, in the <strong>provider</strong> country — %{country}.
+              The real request addresses the access point of this answer.
+            detail: access point %{access_point} · final recipient %{recipient}
+      procedures:
+        no_label: No label
+        count:
+          zero: No procedure
+          one: One procedure
+          other: "%{count} procedures"
+        index:
+          title: Procedures
+          lead: The same procedure is declared by several countries, each with its own title.
+          search: Search a code, a title, a country
+          declared_by: Procedure declared by
+          empty: No procedure matches this search.
+        show:
+          title: Procedure %{code}
+          declared_by:
+            zero: No country has declared a procedure under this code.
+            one: One country has declared a procedure under this code.
+            other: "%{count} countries have declared a procedure under this code."
+        country:
+          title: "%{procedure} — %{country}"
+      requirements:
+        count:
+          zero: No requirement
+          one: One requirement
+          other: "%{count} requirements"
+        empty: No requirement matches this search.
+        index:
+          title: Requirements
+          lead_html: >-
+            What a procedure requires to be proven. The same requirement serves procedures of
+            several <strong>requester</strong> countries, and each card leads to the
+            <strong>provider</strong> countries that satisfy it — those that publish an evidence
+            type for it, and whose list differs from one to the next.
+          search: Search a requirement, a provider country, its code
+          published_by: Evidence published by
+          nobody: No country publishes evidence for this requirement.
+          loading: Loading all published requirements, please wait.
+        see_procedures: See the procedures that require it
+        card_html: What satisfies the requirement “<em>%{requirement}</em>” %{country}.
+        show:
+          title: Requirement
+          by_country: Evidence satisfying this requirement, by country
+          lead_html: >-
+            List of the evidence that each <strong>provider</strong> country publishes
+            for this requirement. The country that requires it is not the one that satisfies it: the
+            evidence is requested from the one that holds it.
+          search: Search a provider country, its code, an evidence type
+          empty: No evidence type matches this search.
+        country:
+          title: "%{country} — %{requirement}"
+        procedures:
+          title: Procedures — %{requirement}
+          crumb: Procedures that require it
+          declared_by: Requirement declared by
+          heading: Procedures that require “%{requirement}”
+          lead_html: >-
+            The procedures that rely on this requirement, and the <strong>requester</strong> countries that declare them.
+          no_country: No country published for this declaration.
+      evidence_type_lists:
+        combination_html: Evidence Type List <strong>%{label}</strong>, required as a whole
+        see_providers: See the providers
+      no_match:
+        declared: This country declares that it issues no evidence for this requirement.
+      swept:
+        zero: no requirement of the catalog
+        one: the only requirement of the catalog
+        other: each of the %{count} requirements of the catalog
+      countries:
+        count:
+          zero: No country
+          one: One country
+          other: "%{count} countries"
+        declared_procedures:
+          zero: no procedure declared
+          one: one procedure declared
+          other: "%{count} procedures declared"
+        index:
+          title: Countries
+          lead: >-
+            The Member States that have published at least one declaration to the Evidence
+            Broker. A country missing here has declared nothing, which is not the same
+            as not being registered in the Data Service Directory.
+          roles:
+            title: Evidence Requester or Evidence Provider?
+            body_html: >-
+              A country plays two roles, and the directory does not answer the same thing depending on
+              which one is asked. As a <strong>requester</strong>, it declares its procedures
+              and what they require to be proven: this is what these pages show.
+              As a <strong>provider</strong>, it issues the evidence that satisfies a
+              requirement — its own or another country's —, and this is read under the requirement.
+            requester_html: As a <strong>requester</strong> — %{procedures}
+            provider_html: As a <strong>provider</strong>
+          search: Search a country, its code
+          see_procedures: See its procedures
+          see_evidence: See its evidence
+          empty: No country matches this search.
+        show:
+          requester: As a requester
+          provider: As a provider
+          provider_description: The requirements for which it publishes evidence
+        procedures:
+          title: Procedures of %{country}
+          lead_html: >-
+            This country as a <strong>requester</strong>: the procedures under which it has published a declaration, and what
+            each one makes it require. What it issues is read under each requirement.
+        procedure:
+          title: "%{country} — %{procedure}"
+        requirements:
+          title: Evidence of %{country}
+          crumb: Evidence
+          lead_html: >-
+            This country as a <strong>provider</strong>: the requirements for which it publishes an evidence type, whichever
+            country imposes them. This is what a correspondent obtains by sending it a request.
+          search: Search a requirement, an evidence type
+          card: What satisfies this requirement %{country}.
+          loading: Loading all the evidence published by this country, please wait.
+      declarations:
+        role_html: "%{country}, as a <strong>requester</strong>"
+        lead_html: >-
+          What this country requires to be proven for this procedure. Each requirement leads to what satisfies it, in
+          <strong>all</strong> the provider countries: the user carrying out this procedure can get their evidence
+          from any of them.
+        no_requirement: Declaration with no published requirement
+        no_detail: No description published.
+        empty: No declaration of this procedure in this country.
+      providers:
+        index:
+          title: Who issues “%{evidence_type}”?
+          heading: Who issues “%{evidence_type}” %{country}
+          lead: >-
+            The organization that holds this evidence, and the access point through which a real
+            request reaches it.
+          data_service: Data service
+          level_of_assurance_html: Level of assurance <strong>%{level}</strong>
+          service_id_html: Service identifier <code>%{id}</code>
+          no_distribution: No distribution published
+          no_distribution_detail_html: >-
+            The Data Service Directory published no <code>sdg:DistributedAs</code> —
+            <code>%{rule}</code> makes it mandatory.
+          data_model_html: Data model <code>%{model}</code>
+          data_model_missing: Data model missing
+          data_model_missing_detail_html: >-
+            This evidence is not distributed in any unstructured format:
+            <code>%{rule}</code> then requires a <code>sdg:ConformsTo</code>.
+          data_model_waived_html: >-
+            Data model not required: this evidence is also distributed in an unstructured format,
+            which lifts <code>%{rule}</code>.
+          access_point_html: >-
+            Access point <strong>%{label}</strong>
+            — <code>%{id}</code>,
+            declared versions <code>%{versions}</code>
+          empty: No data service for this pair.

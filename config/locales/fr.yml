@@ -283,7 +283,7 @@ fr:
     logo_html: République<br>Française
     entete:
       tagline: Échange transfrontalier de justificatifs
-      admin_space: Espace d’administration
+      admin_space: Administration
       demo: Démo
       directories: Annuaires
       jobs: Jobs
@@ -296,8 +296,25 @@ fr:
       about_html: OOTS-France met en œuvre le %{tdd} du règlement européen sur le portail numérique unique.
       tdd: système technique « une fois pour toutes »
   components:
+    # Les libellés que la gem DSFR écrit en dur, en français, dans ses
+    # gabarits, et que les sous-classes de ses composants traduisent.
+    site_header:
+      search: Rechercher
+      menu: Menu
+      close: Fermer
+      home: "Accueil - %{title}"
+      main_menu: Menu principal
+    breadcrumbs:
+      label: "vous êtes ici :"
+      show: Voir le fil d’Ariane
+    pro_connect_button:
+      sign_in_with: S'identifier avec
+      what_is: Qu’est-ce que ProConnect ?
+      what_is_new_window: Qu’est-ce que ProConnect ? - nouvelle fenêtre
+    language_selector:
+      title: Sélectionner une langue
     admin_breadcrumbs:
-      admin: Espace d’administration
+      admin: Administration
     # L'issue du dernier test de connectivité vers une partie du PMode, au
     # masculin : les adjectifs s'accordent avec le point d'accès.
     connectivity_outcome:
@@ -309,12 +326,11 @@ fr:
       no_verdict: sans verdict
       not_submitted: non parti
     # La miette de l'écran du choix de la version, sous laquelle pend chaque
-    # page du parcours : le mot du menu, en français, la console parlant à
-    # l'exploitant. La miette de la version, elle, est son numéro, qui ne se
-    # traduit pas.
+    # page du parcours : le mot du menu. La miette de la version, elle, est son
+    # numéro, qui ne se traduit pas.
     demo_breadcrumbs:
-      demo: Demo
-      procedure: "Procedure %{code}"
+      demo: Démo
+      procedure: "Démarche %{code}"
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     # Le bouton qui déplie le corps RegRep d'un événement : il en annonce la
@@ -327,10 +343,9 @@ fr:
     # seule ne le dit qu'à l'œil (RGAA 3.1), et repris en infobulle pour qui la
     # survole.
     directory_value:
-      label: Name retrieved from the common services
-      meaning: ", retrieved from the common services"
-    # Une carte par exigence de la démarche, sur la page des justificatifs. Tout y
-    # est en anglais comme le reste du parcours.
+      label: Nom récupéré auprès des services communs
+      meaning: ", récupéré auprès des services communs"
+    # Une carte par exigence de la démarche, sur la page des justificatifs.
     demo_requirement_card:
       # Le type de justificatif et le fournisseur sont des mots des annuaires,
       # d'où le balisage dans la traduction plutôt que dans le gabarit. Le titre
@@ -340,14 +355,14 @@ fr:
       # sert l'exigence : la carte reste, l'exigence reste, et c'est la
       # satisfaction qui manque. Le pays est dans la boîte où les pages
       # d'annuaires en mettent un, d'où le balisage dans la traduction.
-      unsatisfiable_html: Evidence impossible to satisfy by %{country}
-      from_html: "%{evidence_type} from %{provider}"
+      unsatisfiable_html: Justificatif impossible à fournir par %{country}
+      from_html: "%{evidence_type} auprès de %{provider}"
       # Ce que la carte dit à la place du bouton quand le point d'accès du
       # fournisseur n'annonce pas la version du parcours.
-      unsupported_version: This provider does not support OOTS %{version}
+      unsupported_version: Ce fournisseur ne prend pas en charge OOTS %{version}
       # Le nom de la croix d'une carte ajoutée, que son icône ne dit qu'à l'œil
       # (critère 11.9 du RGAA).
-      remove: Remove this document
+      remove: Retirer ce document
       # Ce que la carte dit quand la résolution n'a rien rendu. Le code et la
       # phrase des annuaires, eux, restent à la console : un portail ne les
       # montre pas à son usager. Le pays est dans la boîte où les pages
@@ -358,137 +373,134 @@ fr:
       # elle, est dans la traduction : c'est la phrase qui la porte. Le pays est
       # ici son seul nom — la liste des pays, ou la boîte d'une carte qui suit
       # une demande, le montre déjà au-dessus, avec son drapeau et son code.
-      no_provider_html: <strong>No provider listed by %{country} for this evidence</strong>
+      no_provider_html: <strong>%{country} ne déclare aucun fournisseur pour ce justificatif</strong>
       # Et ce qu'elle dit quand l'annuaire a refusé de répondre : personne n'a
       # établi qu'il n'y a pas de fournisseur, seulement qu'on n'a pas pu le
       # savoir. Le code du refus reste à la console, pas au portail.
-      no_answer_html: <strong>%{country} could not answer for this evidence</strong>
+      no_answer_html: <strong>%{country} n'a pas pu répondre pour ce justificatif</strong>
       # Le choix de l'État membre auquel le justificatif est demandé, carte par
       # carte — l'étape 16 du chapitre 1 §10.1. Les options sont des pays, lus
       # comme partout dans la console : aucune clé pour elles.
-      country_label: Country to request the document from
+      country_label: Pays auquel demander le document
       # Ce que la carte dit, à côté de la liste, quand le choix d'un pays n'a
       # reçu aucune réponse que cette application a écrite : une erreur du
       # serveur, des annuaires injoignables, un frontal sans serveur derrière,
       # le réseau tombé. Une seule phrase pour toutes ces causes. La liste est revenue sur le pays de la carte, d'où
-      # « choose it again » ; le lien recharge la page des justificatifs.
-      unreachable_html: "The country could not be changed: this page could not reach the service. Choose it again, or %{reload}."
-      reload: reload the page
+      # « choisissez-le de nouveau » ; le lien recharge la page des justificatifs.
+      unreachable_html: "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service. Choisissez-le de nouveau, ou %{reload}."
+      reload: rechargez la page
       # Le choix de la combinaison de types de justificatif, quand le pays en
       # publie plusieurs pour l'exigence — le chapitre 3.2.2 §2.3. Les options
       # sont nommées d'après les intitulés que l'Evidence Broker publie : aucune clé
       # pour elles, hors la glu de `presenters.demo_card_wording`. L'invite ne
       # s'offre que tant qu'aucune combinaison n'est choisie : rien n'est choisi
       # à la place de l'usager.
-      combination_label: Document to request
-      combination_prompt: Select a document
+      combination_label: Document à demander
+      combination_prompt: Sélectionnez un document
       # Construite comme celle du pays, pour le même cas ; le lien est le même.
-      combination_unreachable_html: "The document could not be changed: this page could not reach the service. Choose it again, or %{reload}."
+      combination_unreachable_html: "Le document n'a pas pu être changé : cette page n'a pas pu joindre le service. Choisissez-le de nouveau, ou %{reload}."
       # Les questions que le Data Service Directory pose avant de pouvoir
       # désigner le fournisseur (`DSD:ERR:0005`, chapitre 3.1.4 §4.4.3.3). Leur
       # libellé et les valeurs d'une liste sont les mots de l'annuaire : aucune
       # clé pour eux. Les réponses partent ensemble dès que la dernière est
       # donnée, comme le choix d'un pays : aucun bouton. Le lien de la phrase d'échec est celui du pays.
       questions:
-        prompt: Select a value
-        "yes": "Yes"
-        "no": "No"
-        unreachable_html: "The answer could not be sent: this page could not reach the service. Answer again, or %{reload}."
+        prompt: Sélectionnez une valeur
+        "yes": "Oui"
+        "no": "Non"
+        unreachable_html: "La réponse n'a pas pu être envoyée : cette page n'a pas pu joindre le service. Répondez de nouveau, ou %{reload}."
     # La zone de la carte où le justificatif se demande, et où ce que la demande
     # est devenue se dit. Elle répond à sa propre adresse et se remplace, donc
     # tout ce qui est ici est écrit pour être lu deux fois : à l'arrivée de la
     # page, puis à chaque réponse.
-    #
-    # En anglais comme le reste du parcours : l'usager joué vient d'un autre
-    # État membre.
     demo_request_zone:
       # Le même geste du début à la fin, sous deux libellés : redemander après un
       # refus est une requête neuve et non une reprise de l'ancienne, ce que le
       # chapitre 4.4 §4.1 impose — « a new unique request MUST be issued ».
-      submit: Request the document
-      retry: Retry to request
+      submit: Demander le document
+      retry: Redemander le document
       # Le bouton unique d'une combinaison de plusieurs types qu'aucune demande
       # n'a encore touchée : il les demande tous, une requête chacun.
-      submit_all: Request the documents
+      submit_all: Demander les documents
       # L'attente, annoncée et pas seulement montrée : qui ne voit pas le bouton
       # changer n'apprendrait rien autrement.
-      loading: Requesting the document…
-      loading_all: Requesting the documents…
-      delivered: Document retrieved successfully
-      open: Open the document
+      loading: Demande du document en cours…
+      loading_all: Demande des documents en cours…
+      delivered: Document récupéré avec succès
+      open: Ouvrir le document
       # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If the
       # process of identity and evidence matching does not result in a match or
       # the identity matching generates two or more results » —, et le chapitre
       # 4.10 §2.1, informatif, le recommande pour tout refus. La démarche le dit
       # pour tous, ce qui va au-delà du `MUST`. Un échange `unmatched` — le
       # fournisseur n'a trouvé aucun justificatif — le reçoit comme tout refus.
-      refused_title: The document cannot be provided
+      refused_title: Le document ne peut pas être fourni
       refused_body: >-
-        The administration could not send the document. You will have to obtain it another way.
+        L'administration n'a pas pu envoyer le document. Vous devrez l'obtenir autrement.
       # Un échec sans code : aucune administration n'a refusé, la requête n'est
       # pas partie, n'a pas atteint le correspondant, ou sa réponse n'a pas pu
       # être lue. Le chapitre 4.10 §4.2, informatif : « In this case the use of
       # OOTS is impossible ». La cause est pour l'exploitant, dans la console.
-      unavailable_title: OOTS is not available
+      unavailable_title: OOTS n'est pas disponible
       unavailable_body: >-
-        The document cannot be requested right now, for technical reasons. You can ask again later,
-        or obtain it another way.
+        Le document ne peut pas être demandé pour le moment, pour des raisons techniques. Vous
+        pouvez le redemander plus tard, ou l'obtenir autrement.
       # L'échéance est celle de l'écran et non celle de l'échange : celui-ci
       # continue, et le registre le garde. La phrase ne promet donc pas que rien
       # n'arrivera, seulement que cet écran cesse d'attendre.
-      expired_title: No answer yet
+      expired_title: Pas encore de réponse
       expired_body: >-
-        The administration holding your document has not answered yet. The request is still on its
-        way, but this page has stopped waiting for it: ask again to start a new one.
+        L'administration qui détient votre document n'a pas encore répondu. La demande est toujours
+        en route, mais cette page a cessé de l'attendre : redemandez pour en lancer une nouvelle.
       # La page de départ du chapitre 4.9 §5 — « Provide a departure page for
       # the user to navigate to the Preview Space » —, qui montre la
       # description reçue du correspondant, puis le lien. `preview_lead` ne la
       # remplace que si le correspondant n'en a écrit aucune : le règlement
       # d'exécution 2022/1463, art. 11(2)(b), veut que l'usager sache qu'il
       # sera redirigé vers le fournisseur pour prévisualiser le justificatif.
-      preview_title: Your document is waiting for your approval abroad
+      preview_title: Votre document attend votre accord à l'étranger
       preview_lead: >-
-        The administration holding it wants to show it to you before sending it. You will be
-        redirected to its own space to preview the document and decide whether to use it or not.
-      preview_link: Preview and approve the document
+        L'administration qui le détient veut vous le montrer avant de l'envoyer. Vous serez
+        redirigé vers son propre espace pour prévisualiser le document et décider de l'utiliser ou non.
+      preview_link: Prévisualiser et approuver le document
       # Le choix de l'usager sur l'espace de prévisualisation, et non une panne :
       # le chapitre 4.9 §1 fait répondre une liste vide à qui décide de ne pas
       # utiliser le justificatif.
-      declined_title: You chose not to use this document
-      declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      declined_title: Vous avez choisi de ne pas utiliser ce document
+      declined_body: Rien n'a été envoyé à cette démarche. Vous pouvez redemander le document.
       # La réponse différée du chapitre 4.4 §3.3.2 — « the Online Procedure
       # Portal has an obligation to inform the user accordingly » —, qui n'est
       # le refus de personne. La date est donnée « optionally » par le
       # fournisseur : sans elle, le texte le dit. Redemander est une requête
       # neuve (chapitre 4.5.2 : « At the time of availability a new Evidence
       # Request must be made »), que seul l'usager décide.
-      deferred_title: Document announced for later
+      deferred_title: Document annoncé pour plus tard
       deferred_body: >-
-        The administration has not sent the document: it announced it for %{date}. Ask again from that
-        date to start a new request.
+        L'administration n'a pas envoyé le document : elle l'a annoncé pour le %{date}. Redemandez à
+        partir de cette date pour lancer une nouvelle demande.
       deferred_undated_body: >-
-        The administration has not sent the document: it announced it for later, without saying when.
-        Ask again later to start a new request.
-      # Un format `strftime`, dont `%B` écrit le mois en anglais, dans le
+        L'administration n'a pas envoyé le document : elle l'a annoncé pour plus tard, sans dire
+        quand. Redemandez plus tard pour lancer une nouvelle demande.
+      # Un format que `l` lit, dont `%B` écrit le mois dans la langue de la page, dans le
       # décalage horaire que le contrat publie — celui du déploiement —, sans
       # autre conversion.
-      deferred_date: "%-d %B %Y at %H:%M (UTC%:z)"
+      deferred_date: "%-d %B %Y à %H:%M (UTC%:z)"
       # Un `PUT`, que le chapitre 4.9 v1.2.3 §5 permet au correspondant et
       # qu'aucun formulaire HTML n'envoie.
-      unpresentable_title: The preview link cannot be presented
-      unpresentable_body: The administration asks to be reached in a way this page cannot offer.
+      unpresentable_title: Le lien de prévisualisation ne peut pas être présenté
+      unpresentable_body: L'administration demande à être jointe d'une manière que cette page ne peut pas offrir.
       # La confirmation elle-même refusée ou sans réponse. Ce que le contrat a
       # répondu, ou l'exception, est écrit pour l'exploitant et en français :
       # il reste au journal applicatif, et l'usager lit une phrase du portail.
-      unconfirmed_title: The preview has failed
+      unconfirmed_title: La prévisualisation a échoué
       unconfirmed_body: >-
-        The preview of your document could not be started. You can try to request the document again.
+        La prévisualisation de votre document n'a pas pu démarrer. Vous pouvez essayer de redemander le document.
       # Le contrat injoignable, ou qui refuse de dire l'état : la raison reste
       # au journal applicatif, comme pour la confirmation.
-      unreadable_title: The state of the request could not be read
+      unreadable_title: L'état de la demande n'a pas pu être lu
       unreadable_body: >-
-        Reload the page to read it again. If it happens again, the operator will find the reason in
-        the console.
+        Rechargez la page pour la relire. Si cela se reproduit, l'exploitant en trouvera la raison
+        dans la console.
       # La seule phrase que le navigateur lève de lui-même : le serveur ne peut
       # pas signaler qu'il est injoignable, et sans elle une panne de réseau
       # laisserait l'attente tourner sans fin ou se figer sans rien dire.
@@ -496,8 +508,8 @@ fr:
       # Le recours est un lien vers la page et non le bouton : cliquer ouvrirait
       # un second échange, quand celui qui est en cours continue et que le
       # registre le garde. Recharger reprend à ce que le serveur en dit.
-      disconnected_html: This page could not reach the service. %{reload} to see where your request stands.
-      reload: Reload the page
+      disconnected_html: Cette page n'a pas pu joindre le service. %{reload} pour voir où en est votre demande.
+      reload: Rechargez la page
     # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
     # l'état civil et ce dont l'authentification a répondu, que rien ne
     # sous-titre — la règle et le registre de mention le disent à sa place.
@@ -505,17 +517,17 @@ fr:
     # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.
     demo_identity_card:
       attributes:
-        family_name: Family name
-        given_name: Given name(s)
-        birthdate: Date of birth
-        gender: Sex
-        place_of_birth: Place of birth
+        family_name: Nom
+        given_name: Prénom(s)
+        birthdate: Date de naissance
+        gender: Sexe
+        place_of_birth: Lieu de naissance
         # Le deux-points est dans la clé : l'intitulé et le badge sont sur une
         # ligne, et la ponctuation qui les joint appartient à la phrase.
-        level_of_assurance: "Level of assurance:"
+        level_of_assurance: "Niveau de garantie :"
       # L'identifiant seul se voit ; son intitulé n'est dit qu'aux lecteurs
       # d'écran, pour qui une valeur nue ne dirait pas ce qu'elle est.
-      eidas_identifier_html: '<span class="fr-sr-only">eIDAS identifier:</span> %{value}'
+      eidas_identifier_html: '<span class="fr-sr-only">Identifiant eIDAS :</span> %{value}'
     # La pastille que porte l'identifiant d'un échange conduit en 1.2 : la
     # France se l'est attribué à l'ouverture et ne l'a émis dans aucun message.
     # Le sens dit ce que « Factice » seul laisserait croire — l'échange, lui, a
@@ -584,9 +596,9 @@ fr:
         identifiers: Identifiants
   builders:
     # La description de l'espace de prévisualisation que l'exception
-    # EDM:ERR:0002 porte (chapitre 4.9 §4). L'anglais est là pour l'usager qui
-    # ne lit pas le français : le chapitre demande au moins une langue largement
-    # comprise, et l'espace lui-même est en français.
+    # EDM:ERR:0002 porte (chapitre 4.9 §4), en anglais, la langue largement
+    # comprise que le chapitre demande au moins, et en français. Des valeurs de
+    # message, que `en.yml` ne porte pas.
     error_response_builder:
       preview_description:
         en: The French administration holding your document will show it to you before sending it, and let you decide whether to use it.
@@ -1631,19 +1643,21 @@ fr:
         (%{count} objet(s) dans la réponse).
   # Ce qu'un écran dit d'un objet, quand l'objet ne peut pas le dire lui-même.
   presenters:
-    # L'intitulé d'une démarche que rien ne nomme, en anglais comme tout
-    # l'espace de démonstration : `00`, qu'aucune liste ne porte, ou une
-    # démarche dont ni l'annuaire ni la liste n'ont répondu.
+    # L'intitulé d'une démarche que rien ne nomme : `00`, qu'aucune liste ne
+    # porte, ou une démarche dont ni l'annuaire ni la liste n'ont répondu.
     demo_procedure_wording:
-      untitled: No label
+      untitled: Sans intitulé
     # Le nom d'une combinaison de plusieurs types que l'Evidence Broker ne
-    # nomme pas : les intitulés de ses types, joints. En anglais comme tout
-    # l'espace de démonstration ; la glu est ici, les intitulés étant les mots
-    # de l'annuaire.
+    # nomme pas : les intitulés de ses types, joints. La glu est ici, les
+    # intitulés étant les mots de l'annuaire.
     demo_card_wording:
-      and: "%{first} and %{last}"
+      and: "%{first} et %{last}"
       separator: ", "
     country_wording:
+      # La préposition vient de la table de `CountryWording`, que l'anglais
+      # n'emploie pas.
+      in: "%{preposition} %{country}"
+      quoted: "« %{label} »"
       by: par %{country}
       # Chaque morceau porte son espace ou sa virgule d'attache : la phrase
       # entière se relit ici, jamais dans le code qui l'assemble.
@@ -1662,9 +1676,9 @@ fr:
       # n'est pas un mot, et le traduire côté requête est l'affaire du jeton du
       # bénéficiaire.
       genders:
-        male: Male
-        female: Female
-        unspecified: Not specified
+        male: Homme
+        female: Femme
+        unspecified: Non précisé
   models:
     # La règle `R-EDM-*` enfreinte et ce qu'elle dit, composées en une phrase :
     # c'est sous cette forme que le journal la consigne.
@@ -2231,15 +2245,15 @@ fr:
       signed_out: Vous êtes déconnecté.
       connection_required: Cette page demande une connexion.
       new:
-        title: Connexion à l’espace d’administration
+        title: Connexion à l’administration
         heading: Connexion
-        undeclared: "Aucun ProConnect n'est déclaré : l'espace d'administration ne peut pas s'ouvrir."
+        undeclared: "Aucun ProConnect n'est déclaré : l'administration ne peut pas s'ouvrir."
         # Rendu en développement et en test seulement, la route n'existant
         # nulle part ailleurs.
         development:
           lead: "En développement : entrer sans ProConnect, comme %{email}."
           button: Se connecter sans ProConnect (Dev)
-        refused: "L'espace d'administration est réservé aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
+        refused: "L'administration est réservée aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
     # Ce qu'un agent que personne n'a nommé administrateur lit en ouvrant le
     # journal, les jobs ou les points d'accès.
     restricted_access:
@@ -2250,7 +2264,7 @@ fr:
           Demandez-lui d'être nommé administrateur.
     home:
       show:
-        heading: Espace d'administration
+        heading: Administration
         tiles:
           journal: >-
             La trace de chaque requête, réponse et refus, conservée douze mois. Porte des
@@ -2259,8 +2273,8 @@ fr:
             Ce que l'Evidence Broker et le Data Service Directory publient : démarches, exigences,
             types de justificatif, fournisseurs.
           jobs: "Les jobs de fond : ce qui reste en file, ce qui a échoué, et la trace de chaque erreur."
-          # La console nomme elle-même la destination : la démarche, elle, se
-          # nomme en anglais, étant le portail.
+          # La console nomme elle-même la destination : la démarche, elle,
+          # se nomme dans la langue choisie, étant le portail.
           demo_title: Démarche de démonstration
           demo: >-
             La demande de bourse d'une université fictive, où l'exploitant joue l'usager d'un portail
@@ -2269,102 +2283,104 @@ fr:
     # dit quel rôle l'exploitant y tient, et pourquoi elle est là.
     demo:
       # Les deux premiers écrans de la démonstration, où l'exploitant choisit la
-      # ligne des TDD puis la démarche que le parcours joue. En anglais, comme
-      # tout l'espace de démonstration.
+      # ligne des TDD puis la démarche que le parcours joue. Ils se lisent dans
+      # la langue choisie, comme tout l'espace de démonstration.
       versions:
         index:
-          title: Choose the OOTS version
-          lead: Every document of the journey is requested in the version chosen here, until the next sign-in.
+          title: Choisir la version d'OOTS
+          lead: Chaque justificatif du parcours est demandé dans la version choisie ici, jusqu'à la prochaine connexion.
           card: OOTS %{number}
           # Une phrase par ligne, sous la clé que `EdmSpecification#slug` donne.
           descriptions:
-            v2_0: The most recent version, still implemented by few member states
-            v1_2: The version supported by most member states
+            v2_0: La version la plus récente, encore mise en œuvre par peu d'États membres
+            v1_2: La version prise en charge par la plupart des États membres
       procedures:
         index:
-          title: Choose the procedure
+          title: Choisir la démarche
           lead: >-
-            The procedures France declares with requirements in the Evidence Broker come first. But you can
-            pick any procedure and request any document for demonstration purposes.
-          search: Search a code or a title
-          empty: No procedure matches this search.
+            Les démarches que la France déclare avec des exigences dans l'Evidence Broker viennent en
+            premier. Mais vous pouvez choisir n'importe quelle démarche et demander n'importe quel
+            justificatif à des fins de démonstration.
+          search: Rechercher un code ou un intitulé
+          empty: Aucune démarche ne correspond à cette recherche.
           # Le décompte que le champ de recherche réécrit.
           count:
-            zero: No procedure
-            one: 1 procedure
-            other: "%{count} procedures"
+            zero: Aucune démarche
+            one: 1 démarche
+            other: "%{count} démarches"
           # Le pied d'une démarche que la France déclare : le pays, drapeau
           # compris, puis le nombre d'exigences qu'elle y publie, chacune
           # demandant un document.
           declared_by_html:
-            one: "%{country} requires %{count} document"
-            other: "%{country} requires %{count} documents"
+            one: "%{country} exige %{count} document"
+            other: "%{country} exige %{count} documents"
       home:
         show:
-          title: Demonstration procedure
-          # Toute la page est en anglais, comme le bouton plus bas et comme
-          # l'intitulé de la démarche : elle s'adresse à un usager d'un autre
-          # État membre, qui ne lit pas le français.
+          title: Démarche de démonstration
+          # Toute la page se lit dans la langue choisie, comme le bouton plus
+          # bas et l'intitulé de la démarche : elle s'adresse à un usager d'un
+          # autre État membre.
           #
           # Ce que la phrase promet est exactement ce que le parcours tient :
           # le chapitre 1 §3.3 veut que l'usager demande explicitement l'usage
           # du système, et c'est le bouton de la confirmation qui le porte.
           lead: >-
-            This procedure can obtain the documents it needs directly from the administration of
-            another EU country that holds them, so you do not have to gather them yourself. Nothing
-            is requested without your explicit agreement.
+            Cette démarche peut obtenir les justificatifs dont elle a besoin directement auprès de
+            l'administration d'un autre pays de l'UE qui les détient, sans que vous ayez à les
+            rassembler vous-même. Rien n'est demandé sans votre accord explicite.
           # La phrase qui annonce la liste des exigences que l'Evidence Broker
           # publie pour la démarche.
-          requirements: "Documents to be retrieved from another EU Member State:"
+          requirements: "Justificatifs à récupérer auprès d'un autre État membre de l'UE :"
           sign_in:
-            heading: Sign-in to start the procedure
+            heading: Se connecter pour démarrer la démarche
             lead: >-
-              Use your European identity to sign-in. Your documents can be automatically retrieved from
-              other EU Member States, even different states than the one you chose to sign-in with.
+              Utilisez votre identité européenne pour vous connecter. Vos justificatifs peuvent être
+              récupérés automatiquement auprès d'autres États membres de l'UE, y compris d'autres
+              États que celui avec lequel vous avez choisi de vous connecter.
           # Un bouton par FranceConnect+ que le déploiement peut déclarer, sous
           # le nom que `Settings::FRANCE_CONNECT` lui donne : la vue en dérive la
           # clé, d'où leur présence dans `ignore_unused` de config/i18n-tasks.yml.
           france_connect:
             real:
-              button: 🇪🇺 Choose a country to sign-in
+              button: 🇪🇺 Choisir un pays pour se connecter
             fake:
-              button: 🇪🇺 Choose a country to sign-in (mocked)
+              button: 🇪🇺 Choisir un pays pour se connecter (simulé)
       # La deuxième page du parcours : l'identité que l'authentification a
       # donnée, ce que l'exigence 27 du chapitre 1 §2 des TDD demande de montrer
       # « before any request is made » — le nom du fournisseur et le type de
       # justificatif —, puis le résultat du geste qui fait partir la requête.
       documents:
         # La page est le portail, et son lecteur est un usager d'un autre État
-        # membre : tout ce qu'elle dit est en anglais, comme l'accueil, et son
-        # intitulé sert aussi de miette au fil d'Ariane.
+        # membre : tout ce qu'elle dit se lit dans la langue choisie, comme
+        # l'accueil, et son intitulé sert aussi de miette au fil d'Ariane.
         show:
-          title: Your documents
+          title: Vos justificatifs
           # Ce que la carte d'identité montre : l'identité vient de
           # l'authentification et non d'une saisie, ce que le chapitre 2.2 §2
           # rend le portail comptable de tenir. Le titre est dit par la page et
           # non par la carte, qui répéterait sinon le titre au-dessus d'elle.
-          identity_heading: Your identity
-          identity: The identity received from your connection
-          caption: Evidences needed for this procedure
+          identity_heading: Votre identité
+          identity: L'identité reçue de votre connexion
+          caption: Justificatifs nécessaires à cette démarche
           # Ce que les cartes en dessous offrent : chacune nomme un document et
           # l'administration qui le détient, et c'est le système « une fois pour
           # toutes » qui va le chercher.
           evidences: >-
-            Each of them is requested directly from the administration that holds it, so you do not
-            have to obtain it yourself.
+            Chacun est demandé directement à l'administration qui le détient, sans que vous ayez à
+            l'obtenir vous-même.
           # Ce que la page dit quand elle n'a aucune carte à montrer : les
           # annuaires n'ont rien listé. Pourquoi — refus codé, démarche sans
           # exigence — regarde l'annuaire, et son code reste à la console.
-          nothing_listed: The European directories listed no evidence for this procedure.
-          unreachable: The European directories could not be reached
+          nothing_listed: Les annuaires européens n'ont listé aucun justificatif pour cette démarche.
+          unreachable: Les annuaires européens n'ont pas pu être joints
           # Ce qui offre d'ajouter, sous les cartes de la démarche, la carte de
           # n'importe quelle exigence du catalogue de l'Evidence Broker.
           add:
-            heading: Add another evidence
-            label: Document to add
+            heading: Ajouter un autre justificatif
+            label: Justificatif à ajouter
             # La première option, vide, tant que rien n'est choisi.
-            placeholder: Select a document
-            submit: Add
+            placeholder: Choisir un justificatif
+            submit: Ajouter
       evidences:
         show:
           # Le nom proposé par le navigateur à l'enregistrement.
