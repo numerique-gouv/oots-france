@@ -196,18 +196,158 @@ fr:
       new_window: "%{link} - nouvelle fenêtre"
       lead: >-
         Le service par lequel la France échange des justificatifs avec les autres États membres
-        de l'Union européenne, pour le compte des démarches administratives françaises.
+        de l'Union européenne, pour le compte des démarches administratives françaises. Cette
+        page s'adresse à l'administration ou à l'opérateur qui expose une démarche en ligne
+        française et n'est pas encore raccordé à OOTS-France.
       what_is_oots:
         title: Ce qu'est OOTS
         body_html: >-
-          Le système technique « une fois pour toutes » (OOTS, <i lang="en">Once-Only Technical
-          System</i>) est l'échange automatisé et transfrontalier de justificatifs entre les
-          administrations des États membres, prévu par le %{regulation}. Un usager qui accomplit
-          une démarche dans un État membre n'a plus à fournir lui-même un justificatif qu'une
-          administration d'un autre État membre détient : la démarche le demande pour lui.
+          Le %{regulation} établit le %{single_digital_gateway} européen. Son article 14 institue
+          le système technique « une fois pour toutes » (OOTS, <i lang="en">Once-Only Technical
+          System</i>) : l'échange automatisé et transfrontalier de justificatifs entre les
+          administrations des États membres. Un usager qui accomplit une démarche dans un État
+          membre n'a plus à fournir lui-même un justificatif qu'une administration d'un autre
+          État membre détient : la démarche le demande pour lui.
         regulation: règlement (UE) 2018/1724
-        tdd_html: OOTS-France met en œuvre ce système tel que le décrivent les %{tdd} publiés par la Commission européenne.
+        single_digital_gateway: portail numérique unique (PNU)
+        since_html: >-
+          L'article 14 et le %{implementing_regulation}, qui en fixe les modalités, s'appliquent
+          depuis le 12 décembre 2023.
+        implementing_regulation: règlement d'exécution (UE) 2022/1463
+        evidence: >-
+          Un justificatif échangé vient directement de l'administration qui le délivre, et il est
+          réputé authentique pour l'administration qui le reçoit. L'usager demande l'échange,
+          prévisualise le justificatif et décide de poursuivre l'échange ou non.
+        tdd_html: >-
+          OOTS-France met en œuvre ce système tel que le décrivent les %{tdd} publiés par la
+          Commission européenne, qui le présente sur le %{hub}.
         tdd: documents de conception technique
+        hub: hub OOTS
+      # Les intitulés des événements et des démarches sont ceux de l'annexe II du
+      # règlement (UE) 2018/1724 consolidé au 20 mai 2026, colonnes « Événements »
+      # et « Procédures », dans l'ordre de l'annexe, l'apostrophe exceptée.
+      procedures:
+        title: Les démarches concernées
+        requirement: >-
+          Le portail numérique unique demande qu'une démarche concernée puisse être accomplie
+          entièrement en ligne par un usager d'un autre État membre, et que les justificatifs
+          qu'elle exige d'une administration d'un autre État membre lui viennent par le système
+          technique, à la demande de l'usager.
+        list_html: 'Sont concernées les démarches de l''annexe II du %{consolidated}, groupées par événement :'
+        consolidated: règlement (UE) 2018/1724, dans sa version consolidée du 20 mai 2026
+        events:
+          birth:
+            title: Naissance
+            procedures:
+              - Demander une attestation d'enregistrement d'une naissance
+          residence:
+            title: Résidence
+            procedures:
+              - Demander une preuve de résidence
+          studying:
+            title: Études
+            procedures:
+              - >-
+                Demander à un organisme public ou une institution publique le financement
+                d'études supérieures, par exemple par des bourses et des prêts
+              - Présentation d'une première demande d'admission dans un établissement d'enseignement supérieur
+              - >-
+                Demander la reconnaissance académique de diplômes, certificats ou autres preuves
+                que des études ou des cours ont été suivis
+          working:
+            title: Vie professionnelle
+            procedures:
+              - >-
+                Demander à établir quelle est la législation applicable conformément au titre II
+                du règlement (CE) no 883/2004 du Parlement européen et du Conseil
+              - >-
+                Notifier des changements de la situation personnelle ou professionnelle d'une
+                personne recevant des prestations de sécurité sociale pertinents aux fins de ces
+                prestations
+              - Demander une carte européenne d'assurance maladie (CEAM)
+              - Soumettre une déclaration d'impôt sur le revenu
+          moving:
+            title: Déménagement
+            procedures:
+              - Faire enregistrer un changement d'adresse
+              - >-
+                Immatriculation d'un véhicule provenant d'un État membre ou déjà immatriculé dans
+                un État membre de l'Union européenne, par la procédure normale
+              - >-
+                Obtenir une vignette pour l'utilisation des infrastructures routières nationales:
+                redevances fondées sur la durée (vignette), redevances fondées sur la distance
+                (péages) délivrées par un organisme public ou une institution publique
+              - >-
+                Obtenir des vignettes indiquant le niveau d'émissions délivrées par un organisme
+                public ou une institution publique
+          retiring:
+            title: Retraite
+            procedures:
+              - Demander une pension ou des prestations de préretraite à un régime obligatoire
+              - Demander des informations sur les données relatives aux pensions des régimes obligatoires
+          business:
+            title: Démarrage et gestion d'une entreprise, et cessation d'activité
+            procedures:
+              - >-
+                Notification de l'activité économique, autorisation d'exercer une activité
+                économique, modifications de l'activité économique et cessation de l'activité
+                économique sans procédure d'insolvabilité ou de liquidation, à l'exclusion de
+                l'enregistrement initial d'une activité économique au registre du commerce et hors
+                procédures relatives à la constitution de sociétés ou à tout dépôt de pièces
+                ultérieur par des sociétés au sens de l'article 54, deuxième alinéa, du traité sur
+                le fonctionnement de l'Union européenne
+              - >-
+                Déclarations effectuées par les hôtes pour les procédures d'enregistrement en ce
+                qui concerne les services de location de logements de courte durée
+              - Enregistrement d'un employeur (personne physique) auprès d'un régime obligatoire de pension et d'assurance
+              - Enregistrement de salariés auprès de régimes obligatoires de pension et d'assurance
+              - Soumettre une déclaration d'impôt sur les sociétés
+              - >-
+                Notification de la fin du contrat de travail d'un salarié au régime de sécurité
+                sociale, à l'exclusion des procédures de licenciement collectif
+              - Paiement des cotisations sociales pour les salariés
+              - Notification d'un prestataire de services d'intermédiation de données
+              - Enregistrement en tant qu'organisation altruiste en matière de données reconnue dans l'Union
+          critical_raw_materials:
+            title: Projets dans le secteur des matières premières critiques
+            procedures:
+              - >-
+                Procédure concernant l'ensemble des autorisations pour construire et exploiter des
+                projets dans le secteur des matières premières critiques, dont les permis de
+                construction, les autorisations d'utilisation de produits chimiques et les
+                autorisations de raccordement au réseau, ainsi que les évaluations et autorisations
+                environnementales lorsqu'elles sont requises, et englobant toutes les demandes et
+                procédures, depuis la reconnaissance du fait que la demande est complète jusqu'à la
+                notification, par le point unique de contact concerné, de la décision globale sur
+                l'issue de la procédure; conformément à l'article 9 du règlement (UE) 2024/1252.
+          net_zero:
+            title: Projets de production de technologies «zéro net»
+            procedures:
+              - >-
+                Procédures pour tous les permis pertinents pour construire, étendre, convertir et
+                exploiter des projets de production de technologies «zéro net», et des projets
+                stratégiques «zéro net», y compris les permis de construction, les autorisations
+                d'utilisation de produits chimiques et les permis de raccordement au réseau, les
+                évaluations et autorisations environnementales lorsqu'elles sont requises, et
+                englobant toutes les demandes et procédures.
+        # L'article 28 de la directive (UE) 2025/2205 ajoute cette ligne à
+        # l'événement « Déménagement » ; son article 29, paragraphe 1, la rend
+        # applicable au 26 novembre 2029.
+        driving_licence_html: >-
+          Obtention ou renouvellement du permis de conduire (ajoutée par la %{directive},
+          applicable au 26 novembre 2029)
+        driving_licence_directive: directive (UE) 2025/2205
+        directives_html: >-
+          L'article 14 ouvre aussi le système technique aux procédures prévues par la
+          %{professional_qualifications}, la %{services}, la %{public_procurement} et la
+          %{utilities}.
+        directives:
+          professional_qualifications: directive 2005/36/CE relative à la reconnaissance des qualifications professionnelles
+          services: directive 2006/123/CE relative aux services dans le marché intérieur
+          public_procurement: directive 2014/24/UE sur la passation des marchés publics
+          utilities: >-
+            directive 2014/25/UE relative à la passation de marchés par des entités opérant dans
+            les secteurs de l'eau, de l'énergie, des transports et des services postaux
       roles:
         title: Ce que fait OOTS-France
         intro: OOTS-France tient pour la France les deux rôles de l'échange.
@@ -251,7 +391,7 @@ fr:
           Le service n'est pas homologué : la demande de justificatifs n'y est ouverte que sur un
           serveur de test, jamais sur des données réelles.
       users:
-        title: Vous êtes usager d'une démarche ?
+        title: L'usager d'une démarche
         body: >-
           Ce service s'adresse aux administrations, non aux usagers : une personne qui cherche à
           faire venir un justificatif passe par le portail de sa démarche.
