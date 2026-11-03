@@ -1,7 +1,6 @@
 ---
 name: harness-engineer
 description: Fait évoluer le harnais d'OOTS-France (CLAUDE.md, skills, agents, statusline, réglages, mémoires) à partir de ce que les derniers runs ont montré, mesure la forme des fichiers et planifie la mesure de chaque changement. Écrit un audit, applique sur une branche, ouvre la PR, ne merge pas. Déclencheurs : "/harness-engineer", "améliore le harnais", "range les mémoires dans les skills".
-disable-model-invocation: true
 ---
 
 # harness-engineer
