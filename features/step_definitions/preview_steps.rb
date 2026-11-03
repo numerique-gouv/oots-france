@@ -28,12 +28,16 @@ end
 
 def space_browser = @space_browser ||= DemoBrowser.new(procedure_url)
 
+# The person France's preview space confirms: the test identity
+# `dk-substantial` of the fake FranceConnect+.
+def previewed_request(**, &) = @correspondent.request(subject: FakeCorrespondent::PREVIEWED_BENEFICIARY, **, &)
+
 Quand('le requêteur étranger envoie une requête qui exige la prévisualisation') do
-  @exchange_id = @correspondent.submit(@correspondent.request { |xml| preview_flag(xml) })
+  @exchange_id = @correspondent.submit(previewed_request { |xml| preview_flag(xml) })
 end
 
 Quand('le requêteur étranger envoie en {string} une requête qui exige la prévisualisation') do |version|
-  body = @correspondent.request(specification: EdmSpecification.find(version)) { |xml| preview_flag(xml) }
+  body = previewed_request(specification: EdmSpecification.find(version)) { |xml| preview_flag(xml) }
 
   @request_id = @correspondent.submit_on_the_earlier_line(body)
 end
@@ -57,6 +61,26 @@ Quand('l\'usager ouvre l\'espace de prévisualisation avec une adresse de retour
   )
 end
 
+# The three pages of the European path of the fake FranceConnect+, which the
+# space sent the browser to, and the way back to the space they lead to.
+Quand('l\'usager s\'identifie sur l\'espace de prévisualisation avec l\'identité de test {string}') do |key|
+  space_browser.choose('country', 'DK')
+  space_browser.choose('identity', key)
+  space_browser.choose('consent', 'yes')
+end
+
+Alors('la page dit que le document ne peut pas être fourni') do
+  expect(space_browser.title).to eq(I18n.t('preview_sessions.show.refused.title'))
+  expect(space_browser.links("a[href$='/document']")).to be_empty
+end
+
+Alors('la France répond {string} à la seconde requête, sans adresse de prévisualisation') do |code|
+  refused = journalled('la France ait répondu la seconde requête', event_type: 'error_sent',
+    request_id: @second.request_id)
+
+  expect(refused).to have_attributes(edm_error_code: code, preview_location: nil)
+end
+
 Alors('la page affiche le lien vers le document') do
   expect(space_browser.links("a[href$='/document']").size).to eq(1)
   @seen_document = space_browser.fetch(space_browser.links("a[href$='/document']").first)
@@ -70,14 +94,14 @@ end
 
 Quand('le requêteur étranger envoie la seconde requête avec l\'adresse de l\'espace et une adresse de retour') do
   slots = string_slot('PreviewLocation', issued_error.preview_location) + string_slot('ReturnLocation', RETURN_ADDRESS)
-  @second = @correspondent.request { |xml| with_slots(xml, slots) }
+  @second = previewed_request { |xml| with_slots(xml, slots) }
 
   @correspondent.submit(@second, exchange_id: @exchange_id)
 end
 
 Quand('le requêteur étranger envoie en {string} la seconde requête avec l\'adresse de l\'espace') do |version|
   slots = string_slot('PreviewLocation', issued_error.preview_location)
-  @second = @correspondent.request(specification: EdmSpecification.find(version)) { |xml| with_slots(xml, slots) }
+  @second = previewed_request(specification: EdmSpecification.find(version)) { |xml| with_slots(xml, slots) }
 
   @correspondent.submit_on_the_earlier_line(@second)
 end

@@ -2,7 +2,7 @@
 @bout_en_bout
 Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
-  L'administrateur tient ici le rôle d'un usager danois qui ouvre la démarche "00" dans la version OOTS qu'il a choisie : la requête part dans cette version. Une fois identifié, l'usager voit qui fournira le justificatif de chaque exigence et de quel type, puis confirme — et c'est cette confirmation qui demande le justificatif et envoie la requête. La démarche accepte que l'usager voie d'abord le document : il suit le lien que la démarche lui présente vers l'espace de prévisualisation du fournisseur, y choisit de l'utiliser ou non, et l'espace le ramène aussitôt à sa démarche par l'adresse de retour.
+  L'administrateur tient ici le rôle d'un usager danois qui ouvre la démarche "00" dans la version OOTS qu'il a choisie : la requête part dans cette version. Une fois identifié, l'usager voit qui fournira le justificatif de chaque exigence et de quel type, puis confirme — et c'est cette confirmation qui demande le justificatif et envoie la requête. La démarche accepte que l'usager voie d'abord le document : il suit le lien que la démarche lui présente vers l'espace de prévisualisation du fournisseur, s'y identifie de nouveau, y choisit de l'utiliser ou non, et l'espace le ramène aussitôt à sa démarche par l'adresse de retour.
 
   Ce que ces scénarios prouvent, et que la suite unitaire ne peut pas montrer : la démarche de démonstration appelle la France par la même adresse publique qu'un portail de démarche français, avec un jeton du bénéficiaire qu'elle signe et que la France ouvre en lisant les clés que la démarche publie. La chaîne entière se voit donc ici, du clic de l'usager jusqu'au message parti par la passerelle, puis jusqu'au retour de l'usager et au justificatif qu'il a accepté. La France se répond à elle-même : l'espace visité est le sien.
 
@@ -25,6 +25,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et la fiche de cet échange affiche la version "oots-edm:v2.0"
     Et la fiche de cet échange affiche la démarche "00"
     Quand l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
@@ -41,7 +42,8 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et la fiche de cet échange affiche la version "oots-edm:v1.2"
     Quand l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
     Alors ce lien contient l'adresse de retour dans "returnurl" et sa méthode dans "returnmethod"
-    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Quand l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
     Et la page des justificatifs affiche "Document récupéré avec succès"
@@ -53,6 +55,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Alors la page des justificatifs affiche le fournisseur et le type de justificatif de la carte "(TEST) Test Requirement 2"
     Quand l'usager confirme la demande de la carte "(TEST) Test Requirement 2"
     Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
@@ -66,6 +69,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager choisit "FR - Test Evidence Type for abroad" sur la carte "(TEST) Test Requirement"
     Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
     Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors la page des justificatifs affiche "Document récupéré avec succès"

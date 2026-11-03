@@ -4,22 +4,27 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
 
   Un requêteur étranger demande un justificatif en exigeant que l'usager le
   voie d'abord. La France lui répond l'adresse de son espace de
-  prévisualisation, l'usager y consulte le document et choisit de l'utiliser
-  ou non, puis la seconde requête du requêteur étranger reçoit exactement ce
-  que l'usager a accepté.
+  prévisualisation, où l'usager s'identifie de nouveau avant d'y consulter le
+  document et de choisir de l'utiliser ou non ; la seconde requête du
+  requêteur étranger reçoit exactement ce que l'usager a accepté. Un usager
+  qui s'identifie sous une autre identité que celle de la requête ne voit
+  rien, et la seconde requête reçoit l'erreur d'authentification.
 
-  Le requêteur étranger forge ses requêtes et l'usager suit l'adresse dans un
-  navigateur ; ce que la France répond se lit dans le journal des échanges.
-  docs/test_e2e.md dit ce que ces scénarios demandent pour tourner.
+  Le requêteur étranger forge ses requêtes au nom d'une identité de test du
+  faux FranceConnect+, et l'usager suit l'adresse dans un navigateur ; ce que
+  la France répond se lit dans le journal des échanges. docs/test_e2e.md dit
+  ce que ces scénarios demandent pour tourner.
 
   Contexte:
-    Étant donné un portail de démarche français déclaré dans l'annuaire des requêteurs
+    Étant donné un faux FranceConnect+ lancé à côté du scénario
+    Et un portail de démarche français déclaré dans l'annuaire des requêteurs
     Et un requêteur étranger qui forge ses requêtes
 
   Scénario: l'usager accepte le document, et la seconde requête le reçoit
     Quand le requêteur étranger envoie une requête qui exige la prévisualisation
     Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
     Quand l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Alors la page affiche le lien vers le document
     Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
@@ -29,6 +34,7 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
   Scénario: l'usager refuse le document, et la seconde requête reçoit une liste vide
     Quand le requêteur étranger envoie une requête qui exige la prévisualisation
     Et que l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
     Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France envoie une réponse sans justificatif
@@ -37,6 +43,7 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Quand le requêteur étranger envoie en "oots-edm:v1.2" une requête qui exige la prévisualisation
     Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace et la méthode "GET"
     Quand l'usager ouvre l'espace de prévisualisation avec une adresse de retour
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Alors l'espace ramène l'usager à l'adresse de retour
     Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
@@ -45,6 +52,15 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
   Scénario: l'espace rouvert après le choix n'offre plus de choix
     Quand le requêteur étranger envoie une requête qui exige la prévisualisation
     Et que l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager rouvre l'espace de prévisualisation
     Alors la page ne propose plus de choisir
+
+  Scénario: l'usager qui s'identifie sous une autre identité ne voit rien, et la seconde requête reçoit "EDM:ERR:0001"
+    Quand le requêteur étranger envoie une requête qui exige la prévisualisation
+    Et que l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-high"
+    Alors la page dit que le document ne peut pas être fourni
+    Quand le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France répond "EDM:ERR:0001" à la seconde requête, sans adresse de prévisualisation
