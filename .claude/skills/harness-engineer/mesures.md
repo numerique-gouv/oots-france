@@ -57,7 +57,7 @@ EOF
 
 ## Les jetons par poste
 
-Le skill [`mesurer-les-jetons`](../mesurer-les-jetons/SKILL.md) rend le coût d'un arbre d'agents et de la fenêtre. Pour l'audit, sa commande `neufs` s'applique à tous les transcripts de sous-agents de la fenêtre, groupés par `agentType` de leur `.meta.json` : ouvriers, relecteurs (`pr-review-toolkit:*` et `layered-rails:*`), spécification (`spec-nerd`, `tdd-nerd`, `contradicteur`), et les sessions dont une invite invoque `/harness-engineer`. Toute mesure est **dédoublonnée par `message.id`**, sinon elle compte chaque tour autant de fois qu'il est relu.
+Le skill [`mesurer-les-jetons`](../mesurer-les-jetons/SKILL.md) rend le coût d'un arbre d'agents et ce qu'il reste de la semaine. Pour l'audit, sa commande `neufs` s'applique à tous les transcripts de sous-agents de la fenêtre, groupés par `agentType` de leur `.meta.json` : ouvriers, relecteurs (`pr-review-toolkit:*` et `layered-rails:*`), spécification (`spec-nerd`, `tdd-nerd`, `contradicteur`), et les sessions dont une invite invoque `/harness-engineer`. Toute mesure est **dédoublonnée par `message.id`**, sinon elle compte chaque tour autant de fois qu'il est relu.
 
 ## M1 à M7 — l'impact d'une découpe
 

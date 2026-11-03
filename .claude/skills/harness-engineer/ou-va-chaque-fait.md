@@ -14,7 +14,7 @@ Lu à l'étape 4 de la passe, et à l'étape 6 par `decouper-un-fichier.md`, pou
 | ce que l'utilisateur attend de la conversation elle-même | reste une mémoire | « agir sans demander confirmation », « ne pas rapporter une attente » |
 | un incident machine et son diagnostic | `~/.claude/post-mortems/` | le son Bluetooth, la saturation des VM |
 | un fait sur le monde extérieur qui périme | une mémoire, datée, ou le document propriétaire de `docs/` s'il est durable | l'état du DSD pour la France, l'accès au registre européen |
-| un chiffre mesuré | l'audit qui l'a mesuré, et `orchestrateur/couts.md` s'il sert à dimensionner ; un skill y renvoie | 1,6 M par ticket, 25 M par fenêtre |
+| un chiffre mesuré | l'audit qui l'a mesuré, et `orchestrateur/couts.md` s'il sert à dimensionner ; un skill y renvoie | 1,6 M par ticket, 114 M par semaine |
 | une consigne sur la rédaction du harnais lui-même | `harness-engineer/comment-on-ecrit.md`, seul rôle qui édite ces fichiers | « pas de seuil en pourcentage dans un skill », « ne repose pas `cacheTtl` » |
 
 Deux tests qui départagent vite :
