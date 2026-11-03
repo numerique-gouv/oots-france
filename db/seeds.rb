@@ -249,7 +249,8 @@ if Rails.env.development?
       presumed: true,
       events: %w[request_received] },
     # Une requête qui demande la prévisualisation (chapitre 4.9) : la France
-    # répond `EDM:ERR:0002` avec l'adresse de son espace, l'usager l'ouvre et
+    # répond `EDM:ERR:0002` avec l'adresse de son espace, l'usager l'ouvre,
+    # s'y identifie de nouveau sous l'identité de la requête, la rouvre et
     # accepte, et la seconde requête reçoit le justificatif. L'échange garde
     # l'adresse que `preview_required!` y a inscrite. Aucune `PreviewSession`
     # n'est semée : elle vit au plus T2 + T3, et une graine serait morte avant
@@ -260,7 +261,8 @@ if Rails.env.development?
       message_error_code: EdmException::AUTHORIZATION.code,
       preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c', EdmSpecification::V2_0),
       decision: PreviewSession::ACCEPTED,
-      events: %w[request_received error_sent preview_visited preview_decided response_sent] },
+      events: %w[request_received error_sent preview_visited preview_identified preview_visited preview_decided
+                 response_sent] },
     # Le chapitre 4.9 du côté qui demande : le correspondant envoie l'usager à
     # son espace, le portail confirme, la seconde requête part sous l'adresse de
     # retour de la France, l'usager revient par elle, et la réponse remet le
@@ -395,6 +397,7 @@ if Rails.env.development?
   demonstration_detail = lambda do |event_type, scenario, exchange|
     return scenario[:error_detail] || exchange.error_description if event_type.start_with?('error')
     return scenario[:decision] if event_type == 'preview_decided'
+    return PreviewSession::CONFIRMED if event_type == 'preview_identified'
 
     scenario[:response_detail] if event_type == 'response_received'
   end
