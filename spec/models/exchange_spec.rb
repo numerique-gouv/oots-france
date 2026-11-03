@@ -255,6 +255,19 @@ RSpec.describe Exchange do
       expect(described_class.expired).not_to include(held)
     end
 
+    # The identity check failed with the second request held: its refusal is
+    # still to be sent, and the row stays out of the sweep until it is.
+    it 'leaves a received exchange whose failed preview still owes its answer' do
+      held, overdue = Array.new(2) do
+        create(:exchange, :received, ebms_sent_at: Settings.requester_timeout.ago - 1.minute)
+      end
+      preview = create(:preview_session, answering_exchange_id: held.exchange_id, second_request: '<second/>')
+      preview.fail_identification!(PreviewSession::MISMATCHED)
+
+      expect(described_class.expired).to include(overdue)
+      expect(described_class.expired).not_to include(held)
+    end
+
     it 'leaves a received exchange the correspondent stamped a moment ago' do
       recent = create(:exchange, :received, ebms_sent_at: 1.minute.ago,
         created_at: Settings.requester_timeout.ago - 1.day)

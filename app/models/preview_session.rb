@@ -16,9 +16,23 @@ class PreviewSession < ApplicationRecord
   DECISIONS = [ACCEPTED, REFUSED].freeze
 
   # `pending` until the user decides, `decided` until the answer has gone,
-  # then `answered`; `expired` where T2 or T3 ran out first.
-  STATUSES = %w[pending decided answered expired].freeze
+  # then `answered`; `expired` where T2 or T3 ran out first. `failed` where the
+  # identity check of chapter 4.9 §2 failed instead, until its exception has
+  # gone: neither T2 nor T3 sweeps it, there being nothing left to wait for.
+  STATUSES = %w[pending decided failed answered expired].freeze
   HOLDING = %w[pending decided].freeze
+  RETURN_METHODS = %w[GET POST PUT].freeze
+  # Where an answer to the second request is still due, which the T1 sweep
+  # must leave be: the user deciding, or the check that failed answering.
+  ANSWER_DUE = [*HOLDING, 'failed'].freeze
+
+  # The three outcomes of that check, as the journal records them. The column
+  # keeps only the two that conclude the address (§2, steps 19-20); a
+  # confirmed identity belongs to the browser that obtained it.
+  CONFIRMED = 'confirmed'.freeze
+  MISMATCHED = 'mismatched'.freeze
+  UNAUTHENTICATED = 'unauthenticated'.freeze
+  FAILED_IDENTIFICATIONS = [MISMATCHED, UNAUTHENTICATED].freeze
 
   SUBJECT = %i[first_request second_request second_message_id document evidence_id evidence_issued_at decision].freeze
 
@@ -29,6 +43,7 @@ class PreviewSession < ApplicationRecord
   validates :token, :location, :exchange_id, :conversation_id, :specification, :issued_at, presence: true
   validates :status, inclusion: { in: STATUSES }
   validates :decision, inclusion: { in: DECISIONS }, allow_nil: true
+  validates :identification, inclusion: { in: FAILED_IDENTIFICATIONS }, allow_nil: true
 
   # T2 of chapter 4.4 §4.4.3, counted from the issue: neither visited in time
   # nor joined by a second request.
@@ -43,7 +58,7 @@ class PreviewSession < ApplicationRecord
   scope :past_retention, -> { where(issued_at: ...retention.ago) }
 
   # The row an answer is held on, which the expiry sweep of T1 must leave be.
-  scope :holding, -> { where(status: HOLDING).where.not(answering_exchange_id: nil) }
+  scope :holding, -> { where(status: ANSWER_DUE).where.not(answering_exchange_id: nil) }
 
   def self.retention = Settings.preview_redirection_timeout + Settings.preview_decision_timeout
 
@@ -65,6 +80,11 @@ class PreviewSession < ApplicationRecord
     )
   end
 
+  def self.issued(token:, version:)
+    found = find_by(token: token.to_s)
+    found if found&.issued_under?(version)
+  end
+
   # Chapter 4.9 §3: « shall only allow access for preview URLs that it
   # issued », and France issued this one under the segment of its line alone.
   def issued_under?(segment) = specification&.segment == segment
@@ -78,6 +98,13 @@ class PreviewSession < ApplicationRecord
   def decided? = status == 'decided'
 
   def answered? = status == 'answered'
+
+  def failed? = status == 'failed'
+
+  # Concluded by a failed identity check, and still so once its exception has
+  # gone: a revisit says the evidence cannot be provided (chapter 4.9 §2, steps
+  # 19-20).
+  def identification_failed? = identification.present?
 
   # Chapter 4.9 §2, step 14: the link expires with T2 where no second request
   # came, with T3 where the user has not decided since it did.
@@ -109,9 +136,15 @@ class PreviewSession < ApplicationRecord
     update!(first_visited_at: Time.current) if first_visited_at.nil?
   end
 
+  # Under the lock `fail_identification!` takes: a way back is kept only while
+  # the choice is still to make, whichever browser comes back first.
   def remember_return!(location, method)
-    update!(return_location: location, return_method: method)
+    with_lock { update!(return_location: location, return_method: method) if pending? }
   end
+
+  # Chapter 4.9 v1.2.3 §5 names the three methods a `returnmethod` may carry;
+  # nil for any other.
+  def self.return_method(value) = value.to_s.upcase.presence_in(RETURN_METHODS)
 
   # The second request is kept, and the decision read, under the lock
   # `decide!` takes: whichever comes second answers, and only one does.
@@ -134,6 +167,28 @@ class PreviewSession < ApplicationRecord
 
       update!(decision: accepted ? ACCEPTED : REFUSED, status: 'decided')
       second_request.present?
+    end
+  end
+
+  # Chapter 4.9 §2, steps 15-20: the identity check failed on an address still
+  # open, which concludes it — no document will be shown, and the second
+  # request is answered `EDM:ERR:0001`. The subject goes, except what
+  # answering a held second request needs, as `expire!` keeps it. Nil
+  # when the address was no longer open; otherwise whether the second request
+  # is waiting on it, under the lock `hold!` takes, so that exactly one of the
+  # two answers.
+  #
+  # The block runs under that lock, on the row as it stands, before the
+  # address is concluded.
+  def fail_identification!(outcome)
+    with_lock do
+      return nil unless openable?
+
+      yield self if block_given?
+      waiting = second_request.present?
+      kept = waiting ? %i[second_request second_message_id] : []
+      update!(status: 'failed', identification: outcome, **(SUBJECT - kept).index_with(nil))
+      waiting
     end
   end
 

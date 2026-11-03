@@ -139,6 +139,13 @@ class AuditTrail
     record('return_to_procedure', **borne_by(exchange), preview_location: location)
   end
 
+  # The identity check of chapter 4.9 §2, step 18: its outcome alone, never
+  # the attributes it compared — article 17(1) asks for what happened, and the
+  # subject the request carried is logged already.
+  def preview_identified(session:, outcome:)
+    record('preview_identified', **previewed(session), detail: outcome)
+  end
+
   def preview_decided(session:, decision:)
     record('preview_decided', **previewed(session), detail: decision || AuditEvent::UNDECIDED)
   end

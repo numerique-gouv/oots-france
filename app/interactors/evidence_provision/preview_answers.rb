@@ -55,7 +55,18 @@ module EvidenceProvision
       return refusal(EdmException::TIMEOUT) if session.expired?
 
       context.preview_session = session
-      decided(session, hold(session))
+      held(session)
+    end
+
+    # An address the identity check concluded is answered steps 19-20's
+    # `AuthenticationExceptionType`, `EDM:ERR:0001`, without `PreviewLocation`.
+    # Read after `hold!`, whose lock reloads the row: a check failing between
+    # the two would otherwise leave the request held with nobody to answer it.
+    def held(session)
+      decision = hold(session)
+      return refusal(EdmException::AUTHENTICATION) if session.failed?
+
+      decided(session, decision)
     end
 
     def issued_session
