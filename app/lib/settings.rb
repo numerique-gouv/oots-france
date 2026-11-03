@@ -161,6 +161,11 @@ module Settings
     # writes them: what the home page of the demonstration offers a card for.
     def france_connect_instances = FRANCE_CONNECT.keys.filter_map { |name| france_connect_instance(name) }
 
+    # The one France's preview space sends a user to, offering no choice: the
+    # real FranceConnect+ wherever it is declared, the fake otherwise — the
+    # fake being what the suite and a development machine play.
+    def preview_france_connect_instance = france_connect_instance('real') || france_connect_instance('fake')
+
     # One of them by name, or `nil` for a name this deployment does not declare
     # — which is what the submission of the home page is checked against, and
     # what a session written when the other one was still declared meets. `nil`

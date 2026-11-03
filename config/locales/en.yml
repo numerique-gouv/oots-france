@@ -679,6 +679,13 @@ en:
       incomplete_departure: >-
         The departure to FranceConnect+ retained no version or no procedure: choose a version
         and a procedure, then identify again.
+    preview_identifications:
+      unknown_departure: This identification return matches no preview under way. Go back to your procedure to resume it.
+      unknown_preview: "FranceConnect+ return to the preview space with no departure, or towards an unknown address (departure: %{token})"
+      another_state: "FranceConnect+ return to the preview space with another state than the departure's (departure: %{token})"
+    preview_sessions:
+      no_france_connect: No FranceConnect+ declared for the preview space
+      identification_not_started: "The preview space cannot send anyone to identify: %{reason}"
   gateways:
     directories:
       catalogue:
@@ -1347,6 +1354,13 @@ en:
       invalid:
         title: This link is no longer valid
         lead: Go back to your procedure to resume it.
+      refused:
+        title: The document cannot be provided
+        lead: The identity you have just established does not match the one of the request, or your identification did not complete. No document will be shown to you, and your procedure will be informed.
+      unavailable:
+        title: Identification temporarily impossible
+        lead: The service that lets you identify does not answer. Try again in a few moments.
+        retry: Try to identify again
     document:
       filename: evidence.pdf
     return:
@@ -1424,6 +1438,7 @@ en:
         no_description: with no further explanation.
         unexpected_state: >-
           This return matches no identification requested from this browser.
+        unreachable: "FranceConnect+ unreachable or failing on the identification return: %{reason}"
         undeclared_france_connect: >-
           This return comes from a FranceConnect+ that this deployment does not declare (%{name}).
         unnamed_france_connect: unnamed
@@ -1538,6 +1553,7 @@ en:
         message_unhandled: Unhandled message
         answer_not_sent: Answer not delivered
         preview_visited: Preview opened
+        preview_identified: Identity checked
         preview_decided: Preview completed
         return_to_procedure: Return to the procedure
       filtre:

@@ -33,6 +33,6 @@ module Demo
         errors: [I18n.t('interactors.demo.start_identification.undiscoverable', error:)])
     end
 
-    def client = context.client ||= FranceConnectClient.new(instance: context.instance)
+    def client = context.client ||= FranceConnectClient.new(instance: context.instance, return_path: context.return_path)
   end
 end

@@ -7,6 +7,10 @@ module Demo
   # than dropping what fails: a portal answers for the identity its request
   # carries (chapter 2.2 §2), and half an attested identity is not one.
   class CompleteIdentification < ApplicationInteractor
+    # FranceConnect+ not reached, or failing on its side — a 5xx even when
+    # `FranceConnectClient` relays its motivation as a `FranceConnectError`.
+    UNREACHABLE = [Faraday::ConnectionFailed, Faraday::SSLError, Faraday::TimeoutError, Faraday::ServerError].freeze
+
     def call
       refuse_announced_refusal
       check_state
@@ -14,7 +18,7 @@ module Demo
 
       context.identity = identity_behind(client.exchange(context.code))
     rescue FranceConnectError, Faraday::Error => e
-      refuse(e.message)
+      down?(e) ? unreachable(e.message) : refuse(e.message)
     end
 
     private
@@ -28,7 +32,7 @@ module Demo
       accepted(claims, userinfo, signed_id_token)
     end
 
-    def client = context.client ||= FranceConnectClient.new(instance:)
+    def client = context.client ||= FranceConnectClient.new(instance:, return_path: context.return_path)
 
     # The FranceConnect+ this return departed on, named by the session and
     # looked up among those the deployment declares — never taken from what
@@ -129,5 +133,17 @@ module Demo
 
       fail_with_error(:identification_refused, errors: [reason])
     end
+
+    # No one failed to identify, and the caller may say so rather than count it
+    # as a refusal. An answer FranceConnect+ gave — a 4xx, motivated or not — is
+    # a refusal.
+    def unreachable(reason)
+      Rails.logger.error(LogLine.t('interactors.demo.complete_identification.unreachable', reason:))
+      context.unreachable = true
+
+      fail_with_error(:identification_refused, errors: [reason])
+    end
+
+    def down?(error) = UNREACHABLE.any? { |family| error.is_a?(family) || error.cause.is_a?(family) }
   end
 end

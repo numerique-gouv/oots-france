@@ -154,6 +154,31 @@ module FranceConnectStubs
     )
   end
 
+  # The subject of the captured request every preview of the suite is issued
+  # for, as FranceConnect+ would attest it: who identifies with it in France's
+  # preview space is the person the request names.
+  REQUESTED_USERINFO = DANISH_USERINFO.merge(
+    'given_name' => 'Sophie', 'family_name' => 'Dupont', 'birthdate' => '1965-11-25',
+  ).freeze
+
+  # The European flow of France's preview space as a request spec walks it:
+  # the visit that sends the browser to FranceConnect+, whose `state` and
+  # `nonce` are read off that address, and the return to the space's own.
+  # Answers the departure's query, which says what the space asked for.
+  def identify_in_preview_space(path, userinfo: REQUESTED_USERINFO, **id_token)
+    instance = stub_france_connect(userinfo:)
+    get path
+    departure = departure_query
+
+    stub_france_connect_tokens(granted_id_token(instance, departure, id_token), issuer: instance.issuer)
+      .with(body: hash_including('redirect_uri' => departure.fetch('redirect_uri')))
+    get preview_franceconnect_retour_connexion_path, params: { code: 'un-code', state: departure.fetch('state') }
+
+    departure
+  end
+
+  def departure_query = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
+
   # The claims of an ID Token the procedure would accept, which each example
   # then spoils in the one way it is about.
   def france_connect_id_token_claims(**overrides)
