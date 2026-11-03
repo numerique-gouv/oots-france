@@ -59,7 +59,7 @@ Les worktrees isolés empêchent deux ouvriers de se corrompre l'arbre ; **ils n
 `Skill(skill: "mesurer-les-jetons")` avant chaque lot, et `nproc`, `free -h`, `docker stats --no-stream`, `df -h /`, `cat /proc/pressure/memory` — un `avg60` qui décolle est le seul signe qui arrive avant la lenteur. Les ordres de grandeur sont dans [`couts.md`](couts.md), et se remesurent avant de servir. Puis :
 
 - **trois** en régime ordinaire, quand le reste de la semaine couvre le lot, reliquats compris — compte ~2 M devant toi par ouvrier, plus le `spec-nerd` du lot, qui vaut autant qu'un ticket ;
-- **deux** quand la semaine se dépense plus vite qu'elle ne s'écoule — la ligne `rythme` de `mesurer-les-jetons` § 2 : un lot ne vide pas une semaine, c'est l'allure qui la finit à sec avant la remise —, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code : regarde le nombre d'ouvriers **en phase de revue** ;
+- **deux** quand, passé le premier jour, la semaine se dépense plus vite qu'elle ne s'écoule — la ligne `rythme` de `mesurer-les-jetons` § 2 : un lot ne vide pas une semaine, c'est l'allure qui la finit à sec avant la remise —, ou quand les tickets promettent plusieurs passes de revue — c'est la revue qui coûte, pas le code : regarde le nombre d'ouvriers **en phase de revue** ;
 - **quatre** jamais : les deux cœurs ne les portent pas, quoi qu'en dise le budget ;
 - **un seul** si l'autre joue `make e2e` en local ou tient la pile complète d'un écran de la démarche de démonstration (`adresse-ecran` § 1) — deux piles Domibus sur deux cœurs se battent jusqu'au timeout, et l'échec ressemble à un défaut du code.
 
