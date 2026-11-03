@@ -266,7 +266,7 @@ Rules:
 | [`ci-en-fond`](.claude/skills/ci-en-fond/SKILL.md) | Watches a PR's CI in the background and reads its verdict; shared by `review-loop` and `ouvrier` |
 | [`refondre-historique`](.claude/skills/refondre-historique/SKILL.md) | Rewrites a branch's history safely: backup tag, identical tree, `--force-with-lease` |
 | [`adresse-ecran`](.claude/skills/adresse-ecran/SKILL.md) | Brings the worktree's web stack up and returns one verified URL per page where the work shows |
-| [`mesurer-les-jetons`](.claude/skills/mesurer-les-jetons/SKILL.md) | Measures what an agent tree cost and what is left in the five-hour window, at the source |
+| [`mesurer-les-jetons`](.claude/skills/mesurer-les-jetons/SKILL.md) | Measures what an agent tree cost and what is left of the weekly budget, at the source |
 | [`orchestrateur`](.claude/skills/orchestrateur/SKILL.md) | The user's single point of contact with the fleet: picks the actionable issues, runs several `ouvrier` agents in parallel, sees each through to its PR, has the leftovers sorted |
 | [`stop-et-consigne`](.claude/skills/stop-et-consigne/SKILL.md) | Arrête toute la flotte d'une session d'orchestration et consigne sur disque de quoi reprendre à neuf |
 | [`harness-engineer`](.claude/skills/harness-engineer/SKILL.md) | Rereads the harness against the latest runs, measures its shape, fixes it where the rule will be read, and plans the measurement of each change. Writes an audit, opens the PR, never merges |
