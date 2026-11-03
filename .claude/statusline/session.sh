@@ -36,8 +36,8 @@ MODELE=$(lire '.model.display_name')
 CONTEXTE=$(lire_pourcent '.context_window.used_percentage')
 TRANSCRIPT=$(lire '.transcript_path')
 RACINE=$(lire '.workspace.current_dir')
-SESSION=$(lire_pourcent '.rate_limits.five_hour.used_percentage')
-REMISE_A=$(lire '.rate_limits.five_hour.resets_at')
+SEMAINE=$(lire_pourcent '.rate_limits.seven_day.used_percentage')
+REMISE_A=$(lire '.rate_limits.seven_day.resets_at')
 
 BRANCHE=$(git -C "${RACINE:-.}" branch --show-current 2>/dev/null)
 
@@ -46,34 +46,29 @@ LIGNE1="${MODELE:-?}"
 [ -n "$BRANCHE" ] && LIGNE1="$LIGNE1 · $BRANCHE"
 [ -n "$CONTEXTE" ] && LIGNE1="$LIGNE1 · ${CONTEXTE}% context"
 
-# La limite de session : la fenêtre de cinq heures de `rate_limits`, celle qui
-# arrête le travail en cours de route — elle seule, et rien d'autre de ce que
-# `rate_limits` porte. La couleur porte l'alerte, pour n'avoir pas à lire le
-# nombre.
-if [ -n "$SESSION" ]; then
-  if [ "$SESSION" -ge 90 ]; then TEINTE=$(printf '\033[31m')
-  elif [ "$SESSION" -ge 75 ]; then TEINTE=$(printf '\033[33m')
+# The weekly window is the only usage limit the Max plan has: the harness
+# passes no `five_hour` entry. The colour carries the alert, so the number
+# need not be read.
+if [ -n "$SEMAINE" ]; then
+  if [ "$SEMAINE" -ge 90 ]; then TEINTE=$(printf '\033[31m')
+  elif [ "$SEMAINE" -ge 75 ]; then TEINTE=$(printf '\033[33m')
   else TEINTE=''; fi
   [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
 
-  # `resets_at` est l'instant, en secondes Unix, où la fenêtre repart à zéro —
-  # ce qu'on veut lire, c'est le délai qui reste, heures *et* minutes. Une heure
-  # arrondie seule ment là où le nombre commence à servir : « dans 3h » couvre
-  # aussi bien 2 h 31 que 3 h 29, et c'est cette heure-là qu'on cherche pour
-  # décider si un ticket tient encore dans la fenêtre.
+  # Rounded up to the minute: "0 min" during the last fifty seconds would
+  # announce a reset that has already happened.
   RESTE=''
   if [ -n "$REMISE_A" ]; then
     SECONDES=$(( REMISE_A - $(date +%s) ))
-    # Arrondi à la minute supérieure : afficher « 0 min » pendant les cinquante
-    # dernières secondes annoncerait une coupure déjà faite.
     MINUTES=$(( (SECONDES + 59) / 60 ))
     if [ "$SECONDES" -le 0 ]; then RESTE=''
     elif [ "$MINUTES" -lt 60 ]; then RESTE=", resets in ${MINUTES} min"
-    else RESTE=", resets in $(( MINUTES / 60 ))h $(( MINUTES % 60 ))min"
+    elif [ "$MINUTES" -lt 1440 ]; then RESTE=", resets in $(( MINUTES / 60 ))h $(( MINUTES % 60 ))min"
+    else RESTE=", resets in $(( MINUTES / 1440 ))d $(( MINUTES % 1440 / 60 ))h"
     fi
   fi
 
-  LIGNE1="$LIGNE1 · ${TEINTE}${SESSION}% session${RESTE}${NEUTRE}"
+  LIGNE1="$LIGNE1 · ${TEINTE}${SEMAINE}% week${RESTE}${NEUTRE}"
 fi
 
 # Les indices ferment la ligne, en gris : ils sont toujours vrais, donc ne
