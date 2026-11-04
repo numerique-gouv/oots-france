@@ -3,229 +3,272 @@ require 'rails_helper'
 RSpec.describe 'Accueil' do
   def page = response.parsed_body
 
-  def section(id) = page.at_css("section[aria-labelledby='#{id}']")
+  def section(id) = page.at_css("section##{id}")
 
-  # Annex II to Regulation (EU) 2018/1724, consolidated on 20 May 2026, column by
-  # column, and the row Directive (EU) 2025/2205 adds to « Déménagement ».
-  def annex_ii
-    [
-      ['Naissance', ["Demander une attestation d'enregistrement d'une naissance"]],
-      ['Résidence', ['Demander une preuve de résidence']],
-      ['Études', [
-        "Demander à un organisme public ou une institution publique le financement d'études supérieures, " \
-        'par exemple par des bourses et des prêts',
-        "Présentation d'une première demande d'admission dans un établissement d'enseignement supérieur",
-        'Demander la reconnaissance académique de diplômes, certificats ou autres preuves que des études ou ' \
-        'des cours ont été suivis',
-      ]],
-      ['Vie professionnelle', [
-        'Demander à établir quelle est la législation applicable conformément au titre II du règlement (CE) ' \
-        'no 883/2004 du Parlement européen et du Conseil',
-        "Notifier des changements de la situation personnelle ou professionnelle d'une personne recevant des " \
-        'prestations de sécurité sociale pertinents aux fins de ces prestations',
-        "Demander une carte européenne d'assurance maladie (CEAM)",
-        "Soumettre une déclaration d'impôt sur le revenu",
-      ]],
-      ['Déménagement', [
-        "Faire enregistrer un changement d'adresse",
-        "Immatriculation d'un véhicule provenant d'un État membre ou déjà immatriculé dans un État membre de " \
-        "l'Union européenne, par la procédure normale",
-        "Obtenir une vignette pour l'utilisation des infrastructures routières nationales: redevances fondées " \
-        'sur la durée (vignette), redevances fondées sur la distance (péages) délivrées par un organisme public ' \
-        'ou une institution publique',
-        "Obtenir des vignettes indiquant le niveau d'émissions délivrées par un organisme public ou une " \
-        'institution publique',
-        'Obtention ou renouvellement du permis de conduire (ajoutée par la directive (UE) 2025/2205, ' \
-        'applicable au 26 novembre 2029)',
-      ]],
-      ['Retraite', [
-        'Demander une pension ou des prestations de préretraite à un régime obligatoire',
-        'Demander des informations sur les données relatives aux pensions des régimes obligatoires',
-      ]],
-      ["Démarrage et gestion d'une entreprise, et cessation d'activité", [
-        "Notification de l'activité économique, autorisation d'exercer une activité économique, modifications " \
-        "de l'activité économique et cessation de l'activité économique sans procédure d'insolvabilité ou de " \
-        "liquidation, à l'exclusion de l'enregistrement initial d'une activité économique au registre du " \
-        'commerce et hors procédures relatives à la constitution de sociétés ou à tout dépôt de pièces ' \
-        "ultérieur par des sociétés au sens de l'article 54, deuxième alinéa, du traité sur le fonctionnement " \
-        "de l'Union européenne",
-        "Déclarations effectuées par les hôtes pour les procédures d'enregistrement en ce qui concerne les " \
-        'services de location de logements de courte durée',
-        "Enregistrement d'un employeur (personne physique) auprès d'un régime obligatoire de pension et " \
-        "d'assurance",
-        "Enregistrement de salariés auprès de régimes obligatoires de pension et d'assurance",
-        "Soumettre une déclaration d'impôt sur les sociétés",
-        "Notification de la fin du contrat de travail d'un salarié au régime de sécurité sociale, à " \
-        "l'exclusion des procédures de licenciement collectif",
-        'Paiement des cotisations sociales pour les salariés',
-        "Notification d'un prestataire de services d'intermédiation de données",
-        "Enregistrement en tant qu'organisation altruiste en matière de données reconnue dans l'Union",
-      ]],
-      ['Projets dans le secteur des matières premières critiques', [
-        "Procédure concernant l'ensemble des autorisations pour construire et exploiter des projets dans le " \
-        'secteur des matières premières critiques, dont les permis de construction, les autorisations ' \
-        "d'utilisation de produits chimiques et les autorisations de raccordement au réseau, ainsi que les " \
-        "évaluations et autorisations environnementales lorsqu'elles sont requises, et englobant toutes les " \
-        "demandes et procédures, depuis la reconnaissance du fait que la demande est complète jusqu'à la " \
-        'notification, par le point unique de contact concerné, de la décision globale sur ' \
-        "l'issue de la procédure; conformément à l'article 9 du règlement (UE) 2024/1252.",
-      ]],
-      ['Projets de production de technologies «zéro net»', [
-        'Procédures pour tous les permis pertinents pour construire, étendre, convertir et exploiter des ' \
-        'projets de production de technologies «zéro net», et des projets stratégiques «zéro net», y compris ' \
-        "les permis de construction, les autorisations d'utilisation de produits chimiques et les permis de " \
-        'raccordement au réseau, les évaluations et autorisations environnementales lorsqu\'elles sont ' \
-        'requises, et englobant toutes les demandes et procédures.',
-      ]],
-    ].freeze
+  def text_of(selector) = page.at_css(selector).text.squish
+
+  def accordions(container)
+    container.css('.fr-accordion').map do |accordion|
+      [accordion.at_css('.fr-accordion__btn').text.squish, accordion.css('li').map { it.text.squish }]
+    end
   end
+
+  # Every link of the page and its footer that leaves the site: the main
+  # content's and the footer's, the header's being the language selector's own.
+  def external_links = page.css('main a[href^="http"], footer a[href^="http"]')
 
   describe 'GET /' do
     before { get '/' }
+
+    it 'captions its opening illustration with the agreement of the user' do
+      expect(page.at_css('.accueil-hero figure > figcaption').text.squish)
+        .to eq("Le justificatif circule entre administrations, avec l'accord de l'usager.")
+    end
 
     it 'renders an HTML page in French, carrying the DSFR, without a session' do
       expect(response).to have_http_status(:ok)
       expect(response.media_type).to eq('text/html')
       expect(page.at_css('html')['lang']).to eq('fr')
-      expect(page.css('.fr-header')).to be_present
       expect(page.at_css('main#contenu')).to be_present
     end
 
-    it 'addresses the service provider that runs an online procedure and is not yet connected' do
-      expect(page.at_css('.accueil-hero .fr-text--lead').text.squish).to include(
-        "l'administration ou à l'opérateur qui expose une démarche en ligne française et n'est pas encore raccordé"
-      )
-      expect(section('connection').text).to include('Le raccordement demande au fournisseur de service')
+    # CA1
+    it 'lays out the sections of the mock-up in its order, under their anchors and titles' do
+      sections = page.css('main section[id]').map { [it['id'], it.at_css('h2, h3').text.squish] }
+
+      expect(sections).to eq([
+        ['comprendre', 'OOTS en bref'],
+        ['fonctionnement', 'Comment ça marche ?'],
+        ['interet', 'Ce que votre administration y gagne'],
+        ['concerne', 'Votre administration est-elle concernée ?'],
+        ['demarches', 'Les démarches concernées'],
+        ['raccorder', 'Se raccorder à OOTS-France'],
+        ['etat', 'Où en est OOTS-France ?'],
+        ['faq', 'Questions fréquentes'],
+        ['contact', 'Votre administration est concernée, ou vous avez un doute ?'],
+      ])
+      expect(page.css('#what-is-oots, #procedures, #roles, #connection, #status, #users')).to be_empty
     end
 
-    it 'names the Single Digital Gateway, the regulation that establishes it and its article 14' do
-      text = section('what-is-oots').text.squish
-
-      expect(text).to include('portail numérique unique (PNU)', 'règlement (UE) 2018/1724', 'Son article 14 institue')
-      expect(section('what-is-oots').at_css('a[href="https://design.numerique.gouv.fr/pnu/"]').text)
-        .to eq('portail numérique unique (PNU)')
+    # CA2
+    it 'leads from its header to its sections, its contact and the administration space' do
+      expect(page.css('nav.fr-nav a').map { [it['href'], it.text.squish] }).to eq([
+        ['#comprendre', 'OOTS en bref'], ['#fonctionnement', 'Comment ça marche'],
+        ['#concerne', 'Êtes-vous concerné ?'], ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'],
+      ])
+      expect(page.css('.fr-header__tools-links .fr-btns-group a').map { [it['href'], it.text.squish] })
+        .to eq([['mailto:oots@data.gouv.fr', 'Contact'], [admin_root_path, 'Administration']])
+      expect(page.at_css('.fr-header__tools-links .fr-translate')).to be_present
+      expect(page.css('#button-header-menu, .fr-header__menu-links').size).to eq(2)
+      expect(page.at_css('header').text).not_to include('Justificatifs disponibles', 'Annuaires', 'Se déconnecter')
     end
 
-    it 'says since when the exchange applies, where the evidence comes from, and what the user decides' do
-      text = section('what-is-oots').text.squish
+    # CA4
+    it 'names the service with its hyphen, and the service provider in the singular' do
+      text = page.css('header, main, footer').map(&:text).join(' ').squish
 
-      expect(text).to include(
-        "s'appliquent depuis le 12 décembre 2023",
-        "vient directement de l'administration qui le délivre", 'réputé authentique',
-        "L'usager demande l'échange, prévisualise le justificatif et décide"
-      )
-      expect(section('what-is-oots').at_css('a[href="https://eur-lex.europa.eu/eli/reg_impl/2022/1463/oj"]'))
-        .to be_present
-      expect(section('what-is-oots').at_css('a[href$="/OOTS/OOTSHUB+Home"]').text).to eq('hub OOTS')
+      expect(text).not_to include('OOTS France')
+      expect(text).not_to match(/fournisseurs? de services/i)
     end
 
-    it 'says what the Single Digital Gateway asks of a procedure concerned' do
-      expect(section('procedures').text.squish).to include(
-        'accomplie entièrement en ligne par un usager d\'un autre État membre',
-        'lui viennent par le système technique, à la demande de l\'usager'
-      )
-    end
-
-    it 'lists the procedures of Annex II under their life events, in the order of the Annex' do
-      events = section('procedures').css('.fr-accordion').map do |accordion|
-        [accordion.at_css('.fr-accordion__btn').text.squish, accordion.css('li').map { it.text.squish }]
+    # CA5
+    it 'attributes to each Common Service what it holds, and presents three of them' do
+      cards = section('fonctionnement').css('.accueil-box--card').map do |card|
+        [card.at_css('.accueil-title').text.squish, card.at_css('[lang="en"]').text]
       end
 
-      expect(events).to eq(annex_ii)
-      expect(section('procedures').at_css('a[href="https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:02018R1724-20260520"]'))
-        .to be_present
-      expect(section('procedures').at_css('a[href="https://eur-lex.europa.eu/eli/dir/2025/2205/oj"]')).to be_present
+      expect(cards).to eq([
+        ["Ce qu'il faut prouver, et quels justificatifs le prouvent", 'Evidence Broker'],
+        ['Qui les délivre', 'Data Service Directory'],
+        ['Le vocabulaire commun', 'Semantic Repository'],
+      ])
+      expect(section('fonctionnement').css('.accueil-box--card').last.text)
+        .to include('listes de codes', 'à la conception', 'non pendant un échange')
+      expect(section('fonctionnement').text).not_to include('Ils sont trois')
+      expect(section('fonctionnement').text).to include("L'annuaire européen : les annuaires centraux")
+      expect(section('fonctionnement').text).not_to include('Common Services')
     end
 
-    it 'names the four directives article 14 also serves, without listing their procedures' do
-      directives = section('procedures').css('.fr-accordions-group ~ p a')
+    # CA6
+    it 'says what OOTS-France reads in the directories for each request, not that every country does' do
+      text = section('fonctionnement').text.squish
 
-      expect(directives.pluck('href')).to eq(
-        %w[2005/36 2006/123 2014/24 2014/25].map { "https://eur-lex.europa.eu/eli/dir/#{it}/oj" }
+      expect(text).to include(
+        "Pour chaque demande d'une démarche française, OOTS-France lit dans ces annuaires quel type de " \
+        "justificatif prouve l'exigence, et qui le délivre."
       )
-      expect(directives.map(&:text)).to all(match(%r{\Adirective 20\d\d/\d+/(CE|UE) }))
+      expect(text).not_to include('avant chaque demande')
     end
 
-    it 'writes neither a count of procedures, nor a counter of the hub, nor a first or second person' do
+    # CA7
+    it 'says the preview is a right, exercised at the provider of each piece of evidence' do
+      preview = section('fonctionnement').css('ol > li')[3].text.squish
+      form = section('raccorder').css('ol')[0].css('li')[2].text.squish
+
+      expect(preview).to include('peut', 'Pour chaque justificatif', 'chez le fournisseur qui le délivre')
+      expect(form).to include('doit pouvoir prévisualiser chaque justificatif', 'chez le fournisseur qui le délivre')
+      expect(page.at_css('main').text).not_to include('du pays qui le délivre')
+      expect(section('fonctionnement').css('ol > li')[0].text).to include('via FranceConnect+', '(eIDAS)')
+    end
+
+    # CA8
+    it 'keeps the facts of the regulation, and writes no count' do
       text = page.at_css('main').text.squish
 
-      expect(text).not_to match(/\b21\b|%|\d+ (démarches|procédures|justificatifs|autorités)/)
-      expect(text).not_to match(/\b(vous|nous)\b/i)
-    end
-
-    it 'says what OOTS is, and links to the regulation that provides for it' do
-      expect(section('what-is-oots').text).to include('Ce qu\'est OOTS', 'échange automatisé et transfrontalier')
-      expect(section('what-is-oots').at_css('a[href*="CELEX:32018R1724"]').text).to eq('règlement (UE) 2018/1724')
-      expect(section('what-is-oots').at_css('a[href*="/TDD/"]').text).to eq('documents de conception technique')
-    end
-
-    it 'says the two roles France holds, and that it answers with test evidence alone' do
-      expect(section('roles').css('h3 + p').map { it.text.squish }).to contain_exactly(
-        a_string_including('Il demande les justificatifs aux autres États membres'),
-        a_string_including('justificatifs de test seulement, aucun fournisseur de données français'),
+      expect(text).to include(
+        "s'applique depuis le 12 décembre 2023", "vient directement de l'administration qui le délivre",
+        'réputé authentique', "qu'à la demande explicite de l'usager", 'Il peut toujours le fournir lui-même'
       )
+      expect(text).not_to match(/%|\d+ (démarches|procédures|justificatifs|autorités)/)
     end
 
-    it 'says what joining asks, and links to the contract without writing any of its addresses' do
-      expect(section('connection').text.squish).to include(
-        "sans qu'ils aient à le fournir eux-mêmes", "déclaré auprès d'OOTS-France", 'clés de signature',
-        "l'identité de l'usager, signée et chiffrée", 'adresse à lui'
+    # CA9
+    it 'lists the procedures under the life events of Annex II, then the directives' do
+      events = accordions(section('demarches'))
+
+      expect(events.map(&:first)).to eq([
+        'Naissance', 'Résidence', 'Études', 'Vie professionnelle', 'Déménagement', 'Retraite',
+        "Démarrage, gestion et cessation d'une entreprise", 'Matières premières critiques',
+        'Technologies « zéro net »', 'Qualifications, services et marchés publics',
+      ])
+      expect(events.map { it.last.size }).to eq([1, 1, 3, 4, 4, 2, 6, 1, 1, 3])
+      expect(events.flat_map(&:last))
+        .to include('Obtenir ou renouveler son permis de conduire (à partir du 26 novembre 2029)')
+      expect(section('demarches').css('#procedures-directives a').pluck('href')).to eq(
+        %w[2005/36 2006/123 2014/24 2014/25].map { "https://eur-lex.europa.eu/eli/dir/#{it}/oj" }
       )
-      expect(section('connection').at_css('a[href="https://github.com/numerique-gouv/oots-france"]').text)
-        .to eq("dépôt d'OOTS-France")
-      expect(section('connection').at_css('a[href$="#c%C3%B4t%C3%A9-evidence-requester-la-france-demande-un-justificatif"]'))
-        .to be_present
+      expect(section('demarches').at_css('a[href="https://eur-lex.europa.eu/legal-content/FR/TXT/HTML/?uri=CELEX:02018R1724-20260520"]').text)
+        .to eq('annexe II du règlement (UE) 2018/1724')
+    end
+
+    # CA10
+    it 'leads to no page of available evidence' do
+      expect(page.css('a').pluck('href')).not_to include(a_string_matching(/justificatifs/i))
+      expect(page.at_css('main').text).not_to include('Vérifiez s', 'Vérifier qu’un justificatif', "Vérifier qu'un justificatif")
+      expect(section('raccorder').css('ol')[0].css('li')[0].css('a')).to be_empty
+    end
+
+    # CA11
+    it 'describes the call as the repository serves it, and points to the repository without writing it' do
+      steps = section('raccorder').css('ol')[0].css('li').map { it.text.squish }
+
+      expect(steps[3]).to include(
+        'le code de la démarche, le pays', 'signée avec les clés de votre démarche',
+        "chiffrée pour la clé publique d'OOTS-France", "l'adresse que votre démarche lui a déclarée"
+      )
+      expect(steps[3]).not_to include('chiffrée et signée avec vos clés', 'retour')
+      expect(steps[1]).to include('FranceConnect+', 'eIDAS')
+      documentation = page.css('main a').select { it.text.squish == 'Documentation technique' }
+      expect(documentation.pluck('href')).to eq(['https://github.com/numerique-gouv/oots-france'] * 2)
       expect(response.body).not_to include('/requete/', '/auth/cles_publiques')
     end
 
-    it 'says the service is not accredited, and open to requests on a test server alone' do
-      expect(section('status').text.squish).to include(
-        "n'est pas homologué", 'serveur de test', 'jamais sur des données réelles'
+    # CA12
+    it 'says where the service stands, and who operates it' do
+      text = section('etat').text.squish
+
+      expect(text).to include(
+        'en préproduction', 'que sur des données de test', 'après son homologation de sécurité',
+        "Aucun fournisseur de données français n'y est raccordé aujourd'hui"
       )
+      expect(section('etat').css('.accueil-milestone').map { it.css('p, h3').first(3).map { it.text.squish } })
+        .to eq([
+          ['Fait', 'Décembre 2023', "OOTS s'applique dans toute l'Union"],
+          ['En cours', '2026', 'OOTS-France en préproduction'],
+          ['À venir', '2027', 'Ouverture aux données réelles'],
+        ])
+      operated = [page.at_css('.accueil-diagram'), section('faq'), section('contact'), page.at_css('footer')]
+      expect(operated.map(&:text)).to all(include('DINUM'))
     end
 
-    it 'sends the user of a procedure to its portal, and offers them nothing to do' do
-      expect(page.at_css('#users').text).to eq("L'usager d'une démarche")
-      expect(section('users').text).to include('passe par le portail de sa démarche')
+    it 'leads each of its in-page links to a section it carries' do
+      targets = page.css('a[href^="#"]').pluck('href').uniq.map { it.delete_prefix('#') }
+
+      expect(targets).to include('concerne', 'fonctionnement', 'demarches')
+      expect(targets.reject { page.at_css("[id='#{it}']") }).to be_empty
+    end
+
+    # CA14
+    it 'warns that each link leaving the site opens a new window' do
+      expect(external_links.size).to be >= 19
+      expect(external_links.map { [it['target'], it['title']] })
+        .to all(match(['_blank', end_with(' - nouvelle fenêtre')]))
+    end
+
+    # CA15
+    it 'closes on the footer of the mock-up' do
+      footer = page.at_css('footer')
+
+      expect(footer.text.squish).to include(
+        'Service opéré par la direction interministérielle du numérique (DINUM)', 'Accessibilité : non conforme',
+        'proposés sous licence etalab-2.0'
+      )
+      expect(footer.css('.fr-footer__content-link').map { [it.text, it['href']] }).to eq([
+        ['numerique.gouv.fr', 'https://www.numerique.gouv.fr'], ['info.gouv.fr', 'https://info.gouv.fr'],
+        ['service-public.gouv.fr', 'https://service-public.gouv.fr'],
+        ['legifrance.gouv.fr', 'https://legifrance.gouv.fr'], ['data.gouv.fr', 'https://data.gouv.fr'],
+      ])
+      expect(footer.css('a').map { [it.text.squish, it['href']] }).to include(
+        ['Code source', 'https://github.com/numerique-gouv/oots-france'],
+        ['licence etalab-2.0', 'https://github.com/etalab/licence-ouverte/blob/master/LO.md']
+      )
+      expect(footer.css('a').map(&:text).join).not_to match(/Accessibilité|Mentions légales|Données personnelles|cookies/)
+    end
+
+    # CA16
+    it 'offers no form, and reads nothing over the network to render' do
       expect(page.css('form, input, button[type="submit"]')).to be_empty
-    end
-
-    it 'reads nothing over the network to render' do
       expect(a_request(:any, /./)).not_to have_been_made
     end
 
-    it 'keeps its sections, the procedures between what OOTS is and its roles' do
-      expect(page.css('main section[aria-labelledby]').pluck('aria-labelledby'))
-        .to eq(%w[what-is-oots procedures roles connection status users])
+    # CA18
+    it 'shows the pre-production badge beside the name of the service' do
+      expect(text_of('.fr-header__service-title')).to eq('OOTS-France Préproduction')
+      expect(page.at_css('.fr-header__service-title .fr-badge').text).to eq('Préproduction')
+      expect(text_of('.fr-header__service-tagline')).to eq('Échange de justificatifs entre administrations européennes')
     end
 
-    it 'warns that its links open a new window' do
-      links = page.css('main a[target="_blank"]')
+    # CA19
+    it 'offers to write to the team, and names the national coordinator' do
+      expect(page.css('main a[href="mailto:oots@data.gouv.fr"]').map { it.text.squish })
+        .to eq(["Écrire à l'équipe", "Écrire à l'équipe OOTS-France"])
+      expect(section('faq').text).to include('Le coordinateur national du portail numérique unique, à la DINUM')
+    end
+  end
 
-      expect(links.size).to eq(page.css('main a').size)
-      links.each { expect(it['title']).to end_with(' - nouvelle fenêtre') }
+  # CA13
+  describe 'the retention of the exchange log' do
+    def answer = section('faq').at_css('#faq-data').text.squish
+
+    it 'states the duration the deployment applies' do
+      allow(Settings).to receive(:audit_trail_retention).and_return(18.months)
+      get '/'
+
+      expect(answer).to end_with('conservé 18 mois.')
     end
 
-    it 'leads to the administration space from its header alone' do
-      tool_links = page.css('.fr-header__tools-links .fr-btns-group a')
-      expect(tool_links.map { [it['href'], it.text.squish] }).to eq([[admin_root_path, 'Administration']])
-      expect(page.css('main a[href^="/admin"]')).to be_empty
+    it 'states twelve months on the installation of the repository' do
+      allow(Settings).to receive(:audit_trail_retention).and_return(12.months)
+      get '/'
+
+      expect(answer).to end_with('conservé 12 mois.')
+    end
+  end
+
+  # CA2, CA15, CA18: what the other pages share of the header and the footer.
+  describe 'the sign-in page' do
+    before { get new_admin_session_path }
+
+    it 'carries neither the anchors nor the contact of the presentation page' do
+      expect(page.css('nav.fr-nav a').pluck('href')).not_to include('#comprendre', '#faq')
+      expect(page.at_css('header').text).not_to include('Contact')
     end
 
-    it 'offers the header menu, where the DSFR copies the link on a small screen' do
-      expect(page.css('#button-header-menu')).to be_present
-      expect(page.css('.fr-header__menu-links')).to be_present
-    end
-
-    it 'marks each section with a decorative pictogram of the DSFR' do
-      pictograms = page.css('main img.pictogram')
-      expect(pictograms).to be_present
-      expect(pictograms.map { [it['alt'], it['aria-hidden']] }.uniq).to eq([['', 'true']])
-    end
-
-    it 'carries none of the entries of the space in its header' do
-      expect(page.css('nav.fr-nav')).to be_empty
-      expect(page.at_css('header').text).not_to include('Annuaires', 'Journal', 'Jobs', 'Démo', 'Se déconnecter')
+    it 'carries the badge, the tagline and the footer of the site' do
+      expect(text_of('.fr-header__service-title')).to eq('OOTS-France Préproduction')
+      expect(text_of('.fr-header__service-tagline')).to eq('Échange de justificatifs entre administrations européennes')
+      expect(page.at_css('footer').text.squish).to include('Accessibilité : non conforme', 'Code source')
+      expect(page.css('footer .fr-footer__content-link').size).to eq(5)
     end
   end
 
@@ -235,51 +278,23 @@ RSpec.describe 'Accueil' do
       follow_redirect!
     end
 
-    it 'says the same things as the French page, in English' do
-      expect(page.at_css('.accueil-hero .fr-text--lead').text.squish)
-        .to include('the administration or the operator that runs a French online procedure and is not yet connected')
-      expect(section('what-is-oots').text.squish).to include(
-        'Regulation (EU) 2018/1724 establishes the European Single Digital Gateway (SDG)', 'Its Article 14',
-        'have applied since 12 December 2023', 'deemed authentic',
-        'The user requests the exchange, previews the evidence and decides'
+    # CA3
+    it 'says the same things in English, navigation included' do
+      expect(page.at_css('html')['lang']).to eq('en')
+      expect(page.css('nav.fr-nav a').map { it.text.squish })
+        .to eq(['OOTS in brief', 'How it works', 'Are you concerned?', 'Connecting', 'FAQ'])
+      expect(text_of('.fr-header__service-title')).to eq('OOTS-France Pre-production')
+      expect(section('fonctionnement').text.squish).to include(
+        'at the provider that issues it', 'For each request of a French procedure, OOTS-France reads'
       )
-      expect(section('procedures').text.squish).to include(
-        'completed fully online by a user from another Member State', "at the user's request",
-        'applicable from 26 November 2029'
-      )
+      expect(accordions(section('demarches')).map(&:first).last).to eq('Qualifications, services and public procurement')
+      expect(section('demarches').at_css('a[href*="/EN/TXT/HTML/?uri=CELEX:02018R1724-20260520"]')).to be_present
     end
 
-    it 'lists the procedures in the words of the English text of Annex II' do
-      events = section('procedures').css('.fr-accordion').map do |accordion|
-        [accordion.at_css('.fr-accordion__btn').text.squish, accordion.css('li').map { it.text.squish }]
-      end
-
-      expect(events.map(&:first)).to eq(
-        ['Birth', 'Residence', 'Studying', 'Working', 'Moving', 'Retiring', 'Starting, running and closing a business',
-         'Critical raw materials projects', 'Net-zero technology manufacturing projects']
-      )
-      expect(events.map { it.last.size }).to eq(annex_ii.map { it.last.size })
-      expect(events.flat_map(&:last)).to include(
-        'Requesting proof of registration of birth',
-        'Declarations by hosts for registration procedures in relation to short-term accommodation rental services',
-        a_string_starting_with('Acquiring and renewing a driving licence (added by Directive (EU) 2025/2205')
-      )
-      expect(section('procedures').at_css('a[href*="/EN/TXT/HTML/?uri=CELEX:02018R1724-20260520"]')).to be_present
-    end
-
-    it 'names the four directives in English, each linked to its text' do
-      expect(section('procedures').css('.fr-accordions-group ~ p a').map(&:text))
-        .to all(match(%r{\ADirective 20\d\d/\d+/(EC|EU) }))
-      expect(section('procedures').css('.fr-accordions-group ~ p a').size).to eq(4)
-    end
-
-    it 'warns that its links open a new window, and writes neither a count nor a first or second person' do
-      links = page.css('main a[target="_blank"]')
-      text = page.at_css('main').text.squish
-
-      expect(links.size).to eq(page.css('main a').size)
-      links.each { expect(it['title']).to end_with(' - new window') }
-      expect(text).not_to match(/\b(you|we|21)\b|%|\d+ (procedures|pieces of evidence|authorities)/i)
+    it 'warns in English that each link leaving the site opens a new window' do
+      expect(external_links.size).to be >= 19
+      expect(external_links.pluck('title')).to all(end_with(' - new window'))
+      expect(page.at_css('footer').text).to include('Accessibility: not compliant')
     end
   end
 
