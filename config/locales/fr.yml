@@ -191,210 +191,456 @@ fr:
               inclusion: "vaut « %{value} », alors que les TDD n'admettent que %{admitted}"
             gender:
               inclusion: "vaut « %{value} », alors que FranceConnect+ n'en publie que %{admitted}"
+  # La page de présentation. Ce qu'elle dit des Common Services suit les
+  # chapitres 1, 3.2 et 3.3, ce qu'elle dit de la prévisualisation le
+  # chapitre 4.9.
   accueil:
     index:
-      new_window: "%{link} - nouvelle fenêtre"
-      lead: >-
-        Le service par lequel la France échange des justificatifs avec les autres États membres
-        de l'Union européenne, pour le compte des démarches administratives françaises. Cette
-        page s'adresse à l'administration ou à l'opérateur qui expose une démarche en ligne
-        française et n'est pas encore raccordé à OOTS-France.
-      what_is_oots:
-        title: Ce qu'est OOTS
-        body_html: >-
-          Le %{regulation} établit le %{single_digital_gateway} européen. Son article 14 institue
-          le système technique « une fois pour toutes » (OOTS, <i lang="en">Once-Only Technical
-          System</i>) : l'échange automatisé et transfrontalier de justificatifs entre les
-          administrations des États membres. Un usager qui accomplit une démarche dans un État
-          membre n'a plus à fournir lui-même un justificatif qu'une administration d'un autre
-          État membre détient : la démarche le demande pour lui.
-        regulation: règlement (UE) 2018/1724
-        single_digital_gateway: portail numérique unique (PNU)
-        since_html: >-
-          L'article 14 et le %{implementing_regulation}, qui en fixe les modalités, s'appliquent
-          depuis le 12 décembre 2023.
-        implementing_regulation: règlement d'exécution (UE) 2022/1463
-        evidence: >-
-          Un justificatif échangé vient directement de l'administration qui le délivre, et il est
-          réputé authentique pour l'administration qui le reçoit. L'usager demande l'échange,
-          prévisualise le justificatif et décide de poursuivre l'échange ou non.
-        tdd_html: >-
-          OOTS-France met en œuvre ce système tel que le décrivent les %{tdd} publiés par la
-          Commission européenne, qui le présente sur le %{hub}.
-        tdd: documents de conception technique
-        hub: hub OOTS
-      # Les intitulés des événements et des démarches sont ceux de l'annexe II du
-      # règlement (UE) 2018/1724 consolidé au 20 mai 2026, colonnes « Événements »
-      # et « Procédures », dans l'ordre de l'annexe, l'apostrophe exceptée.
-      procedures:
-        title: Les démarches concernées
-        requirement: >-
-          Le portail numérique unique demande qu'une démarche concernée puisse être accomplie
-          entièrement en ligne par un usager d'un autre État membre, et que les justificatifs
-          qu'elle exige d'une administration d'un autre État membre lui viennent par le système
-          technique, à la demande de l'usager.
-        list_html: 'Sont concernées les démarches de l''annexe II du %{consolidated}, groupées par événement :'
-        consolidated: règlement (UE) 2018/1724, dans sa version consolidée du 20 mai 2026
-        events:
-          birth:
-            title: Naissance
-            procedures:
-              - Demander une attestation d'enregistrement d'une naissance
-          residence:
-            title: Résidence
-            procedures:
-              - Demander une preuve de résidence
-          studying:
-            title: Études
-            procedures:
-              - >-
-                Demander à un organisme public ou une institution publique le financement
-                d'études supérieures, par exemple par des bourses et des prêts
-              - Présentation d'une première demande d'admission dans un établissement d'enseignement supérieur
-              - >-
-                Demander la reconnaissance académique de diplômes, certificats ou autres preuves
-                que des études ou des cours ont été suivis
-          working:
-            title: Vie professionnelle
-            procedures:
-              - >-
-                Demander à établir quelle est la législation applicable conformément au titre II
-                du règlement (CE) no 883/2004 du Parlement européen et du Conseil
-              - >-
-                Notifier des changements de la situation personnelle ou professionnelle d'une
-                personne recevant des prestations de sécurité sociale pertinents aux fins de ces
-                prestations
-              - Demander une carte européenne d'assurance maladie (CEAM)
-              - Soumettre une déclaration d'impôt sur le revenu
-          moving:
-            title: Déménagement
-            procedures:
-              - Faire enregistrer un changement d'adresse
-              - >-
-                Immatriculation d'un véhicule provenant d'un État membre ou déjà immatriculé dans
-                un État membre de l'Union européenne, par la procédure normale
-              - >-
-                Obtenir une vignette pour l'utilisation des infrastructures routières nationales:
-                redevances fondées sur la durée (vignette), redevances fondées sur la distance
-                (péages) délivrées par un organisme public ou une institution publique
-              - >-
-                Obtenir des vignettes indiquant le niveau d'émissions délivrées par un organisme
-                public ou une institution publique
-          retiring:
-            title: Retraite
-            procedures:
-              - Demander une pension ou des prestations de préretraite à un régime obligatoire
-              - Demander des informations sur les données relatives aux pensions des régimes obligatoires
-          business:
-            title: Démarrage et gestion d'une entreprise, et cessation d'activité
-            procedures:
-              - >-
-                Notification de l'activité économique, autorisation d'exercer une activité
-                économique, modifications de l'activité économique et cessation de l'activité
-                économique sans procédure d'insolvabilité ou de liquidation, à l'exclusion de
-                l'enregistrement initial d'une activité économique au registre du commerce et hors
-                procédures relatives à la constitution de sociétés ou à tout dépôt de pièces
-                ultérieur par des sociétés au sens de l'article 54, deuxième alinéa, du traité sur
-                le fonctionnement de l'Union européenne
-              - >-
-                Déclarations effectuées par les hôtes pour les procédures d'enregistrement en ce
-                qui concerne les services de location de logements de courte durée
-              - Enregistrement d'un employeur (personne physique) auprès d'un régime obligatoire de pension et d'assurance
-              - Enregistrement de salariés auprès de régimes obligatoires de pension et d'assurance
-              - Soumettre une déclaration d'impôt sur les sociétés
-              - >-
-                Notification de la fin du contrat de travail d'un salarié au régime de sécurité
-                sociale, à l'exclusion des procédures de licenciement collectif
-              - Paiement des cotisations sociales pour les salariés
-              - Notification d'un prestataire de services d'intermédiation de données
-              - Enregistrement en tant qu'organisation altruiste en matière de données reconnue dans l'Union
-          critical_raw_materials:
-            title: Projets dans le secteur des matières premières critiques
-            procedures:
-              - >-
-                Procédure concernant l'ensemble des autorisations pour construire et exploiter des
-                projets dans le secteur des matières premières critiques, dont les permis de
-                construction, les autorisations d'utilisation de produits chimiques et les
-                autorisations de raccordement au réseau, ainsi que les évaluations et autorisations
-                environnementales lorsqu'elles sont requises, et englobant toutes les demandes et
-                procédures, depuis la reconnaissance du fait que la demande est complète jusqu'à la
-                notification, par le point unique de contact concerné, de la décision globale sur
-                l'issue de la procédure; conformément à l'article 9 du règlement (UE) 2024/1252.
-          net_zero:
-            title: Projets de production de technologies «zéro net»
-            procedures:
-              - >-
-                Procédures pour tous les permis pertinents pour construire, étendre, convertir et
-                exploiter des projets de production de technologies «zéro net», et des projets
-                stratégiques «zéro net», y compris les permis de construction, les autorisations
-                d'utilisation de produits chimiques et les permis de raccordement au réseau, les
-                évaluations et autorisations environnementales lorsqu'elles sont requises, et
-                englobant toutes les demandes et procédures.
-        # L'article 28 de la directive (UE) 2025/2205 ajoute cette ligne à
-        # l'événement « Déménagement » ; son article 29, paragraphe 1, la rend
-        # applicable au 26 novembre 2029.
-        driving_licence_html: >-
-          Obtention ou renouvellement du permis de conduire (ajoutée par la %{directive},
-          applicable au 26 novembre 2029)
-        driving_licence_directive: directive (UE) 2025/2205
-        directives_html: >-
-          L'article 14 ouvre aussi le système technique aux procédures prévues par la
-          %{professional_qualifications}, la %{services}, la %{public_procurement} et la
-          %{utilities}.
-        directives:
-          professional_qualifications: directive 2005/36/CE relative à la reconnaissance des qualifications professionnelles
-          services: directive 2006/123/CE relative aux services dans le marché intérieur
-          public_procurement: directive 2014/24/UE sur la passation des marchés publics
-          utilities: >-
-            directive 2014/25/UE relative à la passation de marchés par des entités opérant dans
-            les secteurs de l'eau, de l'énergie, des transports et des services postaux
-      roles:
-        title: Ce que fait OOTS-France
-        intro: OOTS-France tient pour la France les deux rôles de l'échange.
-        requester:
-          title: Il demande pour les démarches françaises
-          body: >-
-            Il demande les justificatifs aux autres États membres, pour le compte des démarches
-            administratives françaises.
-        provider:
-          title: Il répond aux autres États membres
-          body: >-
-            Il répond aux demandes qu'il reçoit des autres États membres — aujourd'hui avec des
-            justificatifs de test seulement, aucun fournisseur de données français n'y étant
-            raccordé.
-      connection:
-        title: Raccorder une démarche
-        benefit: >-
-          Une démarche française raccordée à OOTS-France obtient pour ses usagers un justificatif
-          détenu par une administration d'un autre État membre, sans qu'ils aient à le fournir
-          eux-mêmes.
-        requirements_intro: 'Le raccordement demande au fournisseur de service :'
-        requirements:
-          declared:
-            title: Être déclaré
-            body: Le fournisseur de service est déclaré auprès d'OOTS-France.
-          keys:
-            title: Publier ses clés
-            body: Il publie ses clés de signature.
-          call:
-            title: Appeler le contrat
-            body: Il appelle un contrat HTTP en y portant l'identité de l'usager, signée et chiffrée.
+      hero:
+        title: Échangez des justificatifs avec les administrations de toute l'Europe
+        lead_html: >-
+          Avec OOTS (<span lang="en">Once-Only Technical System</span>), le « dites-le-nous une
+          fois » européen, l'usager n'a plus à fournir lui-même un justificatif détenu par
+          l'administration d'un autre pays de l'Union : à sa demande, la démarche l'obtient
+          directement. OOTS-France relie les administrations françaises à ce réseau.
+        concerned: Êtes-vous concerné ?
+        how_it_works: Comprendre le fonctionnement
+        french_administrations: Administrations françaises
+        other_administrations: Administrations des autres États membres
+        caption: Le justificatif circule entre administrations, avec l'accord de l'usager.
+      in_brief:
+        title: OOTS en bref
+        intro_html: >-
+          OOTS est l'un des éléments constitutifs du portail numérique unique (<span
+          lang="en">Single Digital Gateway</span>, SDG). Créé par le règlement (UE) 2018/1724, le
+          SDG aide les citoyens et les entreprises à accomplir leurs démarches partout dans
+          l'Union. Il repose sur trois piliers :
+        pillars:
+          information:
+            title: 1. Information
+            body_html: >-
+              Des informations fiables sur les règles et les démarches de chaque pays, réunies sur
+              le portail %{your_europe}.
+            your_europe: L'Europe est à vous
+          procedures:
+            title: 2. Démarches en ligne
+            badge: OOTS
+            body: >-
+              Les principales démarches doivent être accessibles entièrement en ligne aux usagers
+              des autres pays. OOTS en est le volet technique : il permet d'obtenir directement les
+              justificatifs détenus dans un autre pays.
+          assistance:
+            title: 3. Assistance
+            body: >-
+              Des services d'aide et de résolution de problèmes, comme SOLVIT, pour les usagers en
+              difficulté avec une administration d'un autre pays.
+        principles:
+          obligation:
+            title: Une obligation européenne
+            body_html: >-
+              L'article 14 du %{regulation} sur le portail numérique unique s'applique depuis le
+              12 décembre 2023.
+            regulation: règlement (UE) 2018/1724
+          user_request:
+            title: Toujours à la demande de l'usager
+            body: >-
+              L'usager choisit d'utiliser OOTS et peut prévisualiser le justificatif avant qu'il
+              soit transmis. Il peut toujours le fournir lui-même.
+          reliable:
+            title: Des justificatifs fiables
+            body: >-
+              Le justificatif vient directement de l'administration qui le délivre, par un réseau
+              sécurisé. Il est réputé authentique.
+          cross_border:
+            title: Seulement entre pays européens
+            body: OOTS sert aux démarches transfrontalières, pas aux échanges entre administrations françaises.
+      how_it_works:
+        title: Comment ça marche ?
+        example: >-
+          Un exemple : Lucas, étudiant français, demande une bourse pour poursuivre ses études en
+          Belgique. L'organisme qui attribue la bourse lui demande des justificatifs délivrés en
+          France.
+        # L'usager de l'exemple est français : il s'identifie par FranceConnect+,
+        # seul chemin vers le nœud eIDAS français (chapitre 1, §4.4). La
+        # prévisualisation est un droit de l'usager, exercé chez le fournisseur
+        # de chaque justificatif (chapitre 4.9).
+        steps:
+          sign_in:
+            title: Lucas se connecte au site de l'organisme belge
+            body: >-
+              Il s'identifie avec son identité numérique française, via FranceConnect+, reconnue dans
+              toute l'Union (eIDAS).
+          request:
+            title: Il demande à récupérer ses justificatifs via OOTS
+            body: >-
+              Plutôt que de les téléverser lui-même, il demande à l'organisme belge de les récupérer
+              directement en France via OOTS.
+          lookup:
+            title: OOTS trouve l'administration qui délivre ses justificatifs
+            body: >-
+              L'annuaire européen indique quelle administration française délivre chaque
+              justificatif demandé. La demande lui parvient par un réseau sécurisé, via OOTS-France.
+          preview:
+            title: Lucas peut vérifier ses justificatifs avant leur envoi
+            body: >-
+              Pour chaque justificatif, il peut le prévisualiser chez le fournisseur qui le délivre,
+              puis accepter qu'il soit transmis à l'organisme belge.
           delivery:
-            title: Recevoir le justificatif
-            body: Il reçoit le justificatif sur une adresse à lui.
-        contract_html: Le contrat est décrit dans la %{documentation} du %{repository}.
-        documentation: documentation
-        repository: dépôt d'OOTS-France
+            title: L'organisme belge reçoit les justificatifs de Lucas
+            body: Ils arrivent directement de l'administration française et sont réputés authentiques.
+        roles:
+          title: Deux rôles, un seul point de raccordement
+          intro: >-
+            Le parcours fonctionne dans les deux sens : votre administration peut demander des
+            justificatifs, en fournir, ou les deux. Dans tous les cas, elle ne se raccorde qu'à
+            OOTS-France, qui gère le reste :
+          handled:
+            - le réseau sécurisé qui transporte les demandes et les justificatifs entre les pays ;
+            - la consultation de l'annuaire européen, pour savoir quelle administration délivre quel justificatif ;
+            - >-
+              la prévisualisation par l'usager des justificatifs français, avant leur envoi à
+              l'administration d'un autre État membre.
+          diagram:
+            in_france: En France
+            other_member_states: Autres États membres
+            your_procedure: Votre démarche
+            your_administration: Votre administration
+            requests_evidence: Demande un justificatif
+            issues_evidence: Délivre un justificatif
+            issues_the_evidence: Délivre le justificatif
+            national_point: Point national opéré par la DINUM
+            network: Réseau OOTS européen
+            network_detail: Réseau sécurisé eDelivery et annuaire européen
+            an_administration: Une administration
+            an_online_procedure: Une démarche en ligne
+            description: >-
+              Schéma : votre démarche et votre administration se raccordent à OOTS-France.
+              OOTS-France les relie, par le réseau OOTS européen, aux administrations et aux
+              démarches en ligne des autres États membres.
+            service_provider: Fournisseur de service
+            data_provider: Fournisseur de données
+        # Une carte par annuaire : l'Evidence Broker tient les exigences et les
+        # types de justificatif qui les prouvent (chapitre 3.2.2 §2.2–2.3), le
+        # DSD les fournisseurs et leur adresse eDelivery (chapitre 1 §6.3), le
+        # Semantic Repository ne sert pas pendant un échange (chapitre 1 §6.4).
+        # La version 2.0 ajoute un quatrième Common Service, l'Access Service
+        # Discovery Service (chapitre 1 §6.1), d'où « trois d'entre eux ».
+        common_services:
+          title: "L'annuaire européen : les annuaires centraux"
+          intro_html: >-
+            Pour savoir quel justificatif demander, à qui, et sous quelle forme il arrivera, tous
+            les pays s'appuient sur les mêmes annuaires centraux.
+            La Commission européenne les gère, chaque pays les alimente, et ils sont publics. Trois
+            d'entre eux décrivent les justificatifs et ceux qui les délivrent :
+          evidence_broker:
+            name: Evidence Broker
+            title: Ce qu'il faut prouver, et quels justificatifs le prouvent
+            body: >-
+              Les exigences de chaque démarche, par exemple « preuve d'un diplôme de l'enseignement
+              supérieur », et pour chacune les types de justificatif qui la prouvent dans chaque
+              pays : un diplôme finlandais, un extrait du registre de l'éducation estonien…
+          data_service_directory:
+            name: Data Service Directory
+            title: Qui les délivre
+            body: >-
+              Le fournisseur qui délivre chaque type de justificatif, dans chaque pays, et son
+              adresse sur le réseau sécurisé eDelivery.
+          semantic_repository:
+            name: Semantic Repository
+            title: Le vocabulaire commun
+            body: >-
+              Le catalogue des descriptions partagées — exigences, types de justificatif, listes de
+              codes —, consulté à la conception des démarches et non pendant un échange.
+          use: >-
+            Pour chaque demande d'une démarche française, OOTS-France lit dans ces annuaires quel
+            type de justificatif prouve l'exigence, et qui le délivre.
+      benefits:
+        title: Ce que votre administration y gagne
+        reliable:
+          title: Des justificatifs fiables
+          body: >-
+            Ils viennent de l'administration qui les délivre et sont réputés authentiques : moins
+            de fraude, moins de documents étrangers à vérifier.
+        open_to_europe:
+          title: Une démarche ouverte à l'Europe
+          body: >-
+            Citoyens et entreprises des autres États membres accomplissent votre démarche
+            entièrement en ligne, comme le prévoit le portail numérique unique.
+        single_connection:
+          title: Un seul raccordement
+          body: >-
+            Vous vous raccordez une fois à OOTS-France, qui gère les échanges avec tous les autres
+            États membres.
+        obligations:
+          title: Vos obligations remplies
+          body: >-
+            Vous répondez à l'article 14 du règlement, dont la Commission européenne suit la mise en
+            œuvre dans chaque pays.
+      concerned:
+        title: Votre administration est-elle concernée ?
+        intro: >-
+          OOTS concerne deux types d'administrations. Une même administration peut tenir les deux
+          rôles : une université, par exemple, demande des diplômes étrangers et en délivre.
+        conditions_intro: "Vous êtes concerné si :"
+        service_provider:
+          badge: Fournisseur de service
+          title: Votre démarche demande des justificatifs
+          body: Votre administration instruit une démarche en ligne et demande des pièces aux usagers.
+          annex_html: votre démarche figure à l'%{annex} ;
+          annex: annexe II du règlement (UE) 2018/1724
+          directives_html: >-
+            ou elle relève de l'une des directives visées à son article 14 :
+            %{professional_qualifications} (reconnaissance des qualifications professionnelles),
+            %{services} (services dans le marché intérieur), %{public_procurement} (marchés
+            publics) ou %{utilities} (marchés des secteurs de l'eau, de l'énergie, des transports et
+            des services postaux).
+          examples: >-
+            Exemples : admission dans l'enseignement supérieur, demande de bourse, déclaration
+            d'activité, candidature à un marché public.
+        data_provider:
+          badge: Fournisseur de données
+          title: Vous délivrez des justificatifs
+          body: >-
+            Votre administration délivre des pièces que les usagers présentent ensuite dans leurs
+            démarches.
+          conditions:
+            - vous délivrez ces justificatifs sous forme électronique (base de données, API, service en ligne) ;
+            - ils sont demandés par une démarche concernée, dans un autre État membre.
+          examples: >-
+            Exemples : diplômes, actes d'état civil, extraits du registre des entreprises,
+            attestations fiscales ou sociales.
+        # Les événements et les démarches de l'annexe II du règlement (UE)
+        # 2018/1724 consolidé au 20 mai 2026, dans l'ordre de l'annexe, sous les
+        # intitulés abrégés ; une ligne peut en couvrir deux de
+        # l'annexe. Le permis de conduire est ajouté par les articles 28 et 29 de
+        # la directive (UE) 2025/2205.
+        procedures:
+          title: Les démarches concernées
+          intro: >-
+            Ce sont les démarches de l'annexe II du règlement, regroupées par événement de vie, et
+            les procédures des directives visées à son article 14.
+          events:
+            birth:
+              title: Naissance
+              procedures:
+                - Demander une attestation d'enregistrement d'une naissance
+            residence:
+              title: Résidence
+              procedures:
+                - Demander une preuve de résidence
+            studying:
+              title: Études
+              procedures:
+                - Demander le financement d'études supérieures (bourse, prêt) à un organisme public
+                - Présenter une première demande d'admission dans l'enseignement supérieur
+                - Demander la reconnaissance académique d'un diplôme ou d'une formation
+            working:
+              title: Vie professionnelle
+              procedures:
+                - Faire établir la législation de sécurité sociale applicable
+                - Signaler un changement de situation à un organisme de sécurité sociale
+                - Demander une carte européenne d'assurance maladie
+                - Déclarer ses revenus
+            moving:
+              title: Déménagement
+              procedures:
+                - Signaler un changement d'adresse
+                - Immatriculer un véhicule venant d'un autre État membre
+                - Obtenir une vignette routière ou une vignette d'émissions
+                - Obtenir ou renouveler son permis de conduire (à partir du 26 novembre 2029)
+            retiring:
+              title: Retraite
+              procedures:
+                - Demander une pension de retraite ou de préretraite
+                - Demander des informations sur ses droits à la retraite
+            business:
+              title: Démarrage, gestion et cessation d'une entreprise
+              procedures:
+                - >-
+                  Déclarer, modifier ou cesser une activité, ou obtenir l'autorisation de l'exercer
+                  (hors immatriculation initiale et constitution de sociétés)
+                - Enregistrer un employeur et ses salariés auprès des régimes de retraite et d'assurance
+                - Payer les cotisations sociales, déclarer la fin d'un contrat de travail
+                - Déclarer l'impôt sur les sociétés
+                - Déclarer une location de logement de courte durée
+                - >-
+                  Notifier un service d'intermédiation de données, s'enregistrer comme organisation
+                  altruiste en matière de données
+            critical_raw_materials:
+              title: Matières premières critiques
+              procedures:
+                - Autorisations pour construire et exploiter un projet dans le secteur des matières premières critiques
+            net_zero:
+              title: Technologies « zéro net »
+              procedures:
+                - >-
+                  Permis pour construire, étendre ou exploiter un projet de production de
+                  technologies « zéro net »
+          directives:
+            title: Qualifications, services et marchés publics
+            professional_qualifications_html: Reconnaissance des qualifications professionnelles (%{directive})
+            services_html: Services dans le marché intérieur (%{directive})
+            public_procurement_html: Marchés publics (directives %{public_procurement} et %{utilities})
+            public_procurement: 2014/24/UE
+            utilities: 2014/25/UE
+          reference_html: "Texte de référence : %{annex}, version consolidée."
+          annex: annexe II du règlement (UE) 2018/1724
+      # Les intitulés des quatre directives que l'article 14, paragraphe 1, du
+      # règlement (UE) 2018/1724 nomme à côté de son annexe II.
+      directives:
+        professional_qualifications: directive 2005/36/CE
+        services: directive 2006/123/CE
+        public_procurement: directive 2014/24/UE
+        utilities: directive 2014/25/UE
+      connecting:
+        title: Se raccorder à OOTS-France
+        intro: >-
+          Vous ne vous raccordez qu'à OOTS-France, qui se charge des échanges avec les autres États
+          membres. Les grandes étapes, selon votre rôle :
+        # L'étape 4 décrit le contrat tel que `docs/oots_context.md` le donne :
+        # l'identité signée avec les clés de la démarche et chiffrée pour celle
+        # d'OOTS-France, le justificatif remis à l'adresse que la démarche a
+        # déclarée — qui n'est pas son adresse de retour.
+        service_provider:
+          badge: Fournisseur de service
+          title: Raccorder une démarche
+          steps:
+            list:
+              title: Lister les justificatifs de votre démarche
+              body: >-
+                Avec l'équipe OOTS-France, vous identifiez les justificatifs que votre démarche
+                demande et les pays qui les délivrent. Votre démarche est ensuite inscrite dans
+                l'annuaire européen, avec ces justificatifs.
+            sign_in:
+              title: Ouvrir la connexion aux usagers européens
+              body: >-
+                Ajoutez le bouton eIDAS de FranceConnect+ à votre page de connexion : l'usager d'un
+                autre État membre s'identifie avec le moyen d'identification de son pays, par le
+                nœud eIDAS français.
+            form:
+              title: Proposer OOTS dans votre formulaire
+              body: >-
+                À l'étape des pièces justificatives, l'usager choisit : téléverser son document ou
+                le faire venir via OOTS. Il doit pouvoir prévisualiser chaque justificatif avant son
+                envoi, s'il le souhaite : votre démarche le redirige alors chez le fournisseur qui
+                le délivre, puis il revient la terminer.
+            request:
+              title: Envoyer la demande à OOTS-France
+              body: >-
+                Votre démarche appelle l'API d'OOTS-France avec le code de la démarche, le pays et
+                l'identité de l'usager, signée avec les clés de votre démarche et chiffrée pour la
+                clé publique d'OOTS-France. OOTS-France remet ensuite le justificatif à l'adresse
+                que votre démarche lui a déclarée.
+            test:
+              title: Tester, puis ouvrir aux usagers
+              body: >-
+                D'abord en préproduction, avec les services de test de la Commission européenne puis
+                avec un autre État membre.
+        data_provider:
+          badge: Fournisseur de données
+          title: Fournir des justificatifs
+          steps:
+            identify:
+              title: Identifier vos justificatifs
+              body: "Lesquels servent aux démarches concernées, et pour quels usagers : particuliers ou entreprises."
+            register:
+              title: Les faire référencer
+              body: >-
+                Ils sont inscrits dans l'annuaire européen, pour que les autres États membres
+                sachent à qui les demander.
+            api:
+              title: Ouvrir votre API à OOTS-France
+              body: >-
+                Vous donnez à OOTS-France l'accès à l'API qui délivre vos justificatifs, pour qu'elle
+                y soit intégrée. OOTS-France l'interroge ensuite à chaque demande d'un autre État
+                membre.
+            test:
+              title: Tester, puis ouvrir
+              body: >-
+                En préproduction avec d'autres États membres. OOTS-France gère pour vous la
+                prévisualisation et le consentement de l'usager.
+        handled:
+          title: Ce qu'OOTS-France prend en charge pour vous
+          items:
+            - La connexion au réseau européen sécurisé (eDelivery)
+            - L'interrogation de l'annuaire européen
+            - La conformité aux spécifications techniques européennes
+            - La prévisualisation des justificatifs français par l'usager
+            - La traçabilité de chaque échange
+            - La sécurité et l'homologation du service national
+        write: Écrire à l'équipe
+      documentation: Documentation technique
       status:
-        title: L'état du service
+        title: Où en est OOTS-France ?
+        lead: >-
+          Le service est en préproduction : les échanges n'y portent que sur des données de test. Il
+          s'ouvrira aux données réelles après son homologation de sécurité. Aucun fournisseur de
+          données français n'y est raccordé aujourd'hui : la France répond aux autres États membres
+          avec des justificatifs de test seulement. Vous pouvez dès maintenant préparer votre
+          raccordement.
+        milestones:
+          done:
+            badge: Fait
+            date: Décembre 2023
+            title: OOTS s'applique dans toute l'Union
+            body: Les obligations de l'article 14 s'appliquent, et l'annuaire européen est en service.
+          ongoing:
+            badge: En cours
+            date: '2026'
+            title: OOTS-France en préproduction
+            body: >-
+              Tests d'échanges en préproduction, et participation à l'événement de test européen de
+              novembre 2026, à Bruxelles.
+          upcoming:
+            badge: À venir
+            date: '2027'
+            title: Ouverture aux données réelles
+            body: >-
+              Homologation de sécurité, mise en production, puis premiers raccordements
+              d'administrations françaises.
+      faq:
+        title: Questions fréquentes
+        mandatory:
+          question: L'usager est-il obligé de passer par OOTS ?
+          answer: >-
+            Non. OOTS n'est utilisé qu'à la demande explicite de l'usager. Il peut toujours fournir
+            ses justificatifs lui-même, comme aujourd'hui.
+        domestic:
+          question: OOTS sert-il aux échanges entre administrations françaises ?
+          answer: Non, il est réservé aux échanges entre États membres.
+        # La durée est celle que le déploiement applique au journal des
+        # échanges, `DUREE_RETENTION_JOURNAL_MOIS`.
+        data:
+          question: Quelles données sont échangées ?
+          answer:
+            one: >-
+              Uniquement le justificatif demandé, pour la démarche en cours, et l'administration qui
+              le reçoit ne l'utilise que pour cette démarche. Les échanges sont chiffrés et chacun
+              est tracé dans un journal conservé %{count} mois.
+            other: >-
+              Uniquement le justificatif demandé, pour la démarche en cours, et l'administration qui
+              le reçoit ne l'utilise que pour cette démarche. Les échanges sont chiffrés et chacun
+              est tracé dans un journal conservé %{count} mois.
+        paper:
+          question: Et si le justificatif n'existe pas sous forme électronique ?
+          answer: "Il ne peut pas être échangé par OOTS : l'usager le fournit lui-même, comme aujourd'hui."
+        governance:
+          question: Qui pilote OOTS en France ?
+          answer: >-
+            OOTS-France est opéré par la direction interministérielle du numérique (DINUM). Le
+            coordinateur national du portail numérique unique, à la DINUM, est votre interlocuteur
+            pour vérifier votre périmètre et préparer votre raccordement.
+        users:
+          question: "Je suis un particulier ou une entreprise : comment faire venir un justificatif ?"
+          answer: >-
+            Ce site s'adresse aux administrations. Passez par le site de votre démarche : s'il est
+            raccordé à OOTS, il vous proposera de récupérer votre justificatif directement.
+      contact:
+        title: Votre administration est concernée, ou vous avez un doute ?
         body: >-
-          Le service n'est pas homologué : la demande de justificatifs n'y est ouverte que sur un
-          serveur de test, jamais sur des données réelles.
-      users:
-        title: L'usager d'une démarche
-        body: >-
-          Ce service s'adresse aux administrations, non aux usagers : une personne qui cherche à
-          faire venir un justificatif passe par le portail de sa démarche.
+          L'équipe OOTS-France, à la DINUM, vous aide à vérifier votre périmètre et à préparer votre
+          raccordement.
+        write: Écrire à l'équipe OOTS-France
   # Les deux pages où FranceConnect+ renvoie l'usager de la démarche de
   # démonstration. Elles répondent sans session : `docs/eidas_context.md` dit
   # pourquoi ces adresses existent avant la cinématique qui y mène.
@@ -411,6 +657,10 @@ fr:
         arrivée-ci ne correspond à aucune déconnexion demandée depuis ce navigateur : elle
         n'atteste donc rien.
       back: Revenir à la démarche de démonstration
+  # Le titre d'un lien qui ouvre une nouvelle fenêtre, qui l'annonce (RGAA 13.2).
+  helpers:
+    application_helper:
+      new_window: "%{link} - nouvelle fenêtre"
   layouts:
     application:
       # Le nom du service, que le titre de l'onglet, le bloc service de l'entête
@@ -422,7 +672,17 @@ fr:
     # L'entête et le pied de page le disent tous les deux.
     logo_html: République<br>Française
     entete:
-      tagline: Échange transfrontalier de justificatifs
+      tagline: Échange de justificatifs entre administrations européennes
+      # Le service n'est pas homologué : toutes les pages le disent.
+      badge: Préproduction
+      contact: Contact
+      # Les ancres de la page de présentation, que son seul entête porte.
+      navigation:
+        in_brief: OOTS en bref
+        how_it_works: Comment ça marche
+        concerned: Êtes-vous concerné ?
+        connecting: Se raccorder
+        faq: Questions fréquentes
       admin_space: Administration
       demo: Démo
       directories: Annuaires
@@ -431,10 +691,19 @@ fr:
       sign_out: Se déconnecter
       signed_in_as: Connecté en tant que %{email}
     pied_de_page:
-      # L'adresse du lien reste dans le gabarit : `fr.yml` n'a pas à devenir
-      # l'endroit où l'on va corriger un lien mort.
-      about_html: OOTS-France met en œuvre le %{tdd} du règlement européen sur le portail numérique unique.
-      tdd: système technique « une fois pour toutes »
+      home: Retour à l'accueil du site - %{title}
+      about: >-
+        OOTS-France met en œuvre le « dites-le-nous une fois » européen (OOTS) prévu par le
+        règlement (UE) 2018/1724 sur le portail numérique unique. Service opéré par la direction
+        interministérielle du numérique (DINUM).
+      # Tant qu'aucune déclaration d'accessibilité n'est publiée, la mention dit
+      # l'état, sans lien ; la publier ajoute le lien.
+      accessibility: "Accessibilité : non conforme"
+      source_code: Code source
+      licence_html: >-
+        Sauf mention explicite de propriété intellectuelle détenue par des tiers, les contenus de ce
+        site sont proposés sous %{licence}
+      licence: licence etalab-2.0
   components:
     # Les libellés que la gem DSFR écrit en dur, en français, dans ses
     # gabarits, et que les sous-classes de ses composants traduisent.

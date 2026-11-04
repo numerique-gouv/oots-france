@@ -1,6 +1,6 @@
-# The service's front page, presenting to a French service provider what the
-# service does and what joining it asks. Its header leads to the
-# administration space.
+# The service's front page, presenting to a French administration what the
+# service does and what joining it asks. Its header leads to its sections, to
+# its contact and to the administration space.
 class AccueilController < ApplicationController
   include ChosenLanguage
 
@@ -8,5 +8,5 @@ class AccueilController < ApplicationController
 
   private
 
-  def admin_space_link? = true
+  def presentation_page? = true
 end

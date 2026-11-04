@@ -1,11 +1,19 @@
 <%= render SiteHeaderComponent.new(
       logo_text: t('layouts.logo_html'),
       title: t('layouts.application.name'),
+      badge: t('layouts.entete.badge'),
       tagline: t('layouts.entete.tagline'),
       href: root_path,
     ) do |header| %>
-  <% if admin_space_link? %>
-    <% header.with_tool_link(title: t('layouts.entete.admin_space'), path: admin_root_path) %>
+  <% if presentation_page? %>
+    <% { in_brief: '#comprendre', how_it_works: '#fonctionnement', concerned: '#concerne', connecting: '#raccorder',
+         faq: '#faq' }.each do |section, anchor| %>
+      <% header.with_direct_link_simple(title: t("layouts.entete.navigation.#{section}"), path: anchor) %>
+    <% end %>
+    <% header.with_tool_link(title: t('layouts.entete.contact'), path: team_mail_address,
+         html_attributes: { class: 'fr-icon-mail-line' }) %>
+    <% header.with_tool_link(title: t('layouts.entete.admin_space'), path: admin_root_path,
+         html_attributes: { class: 'fr-btn--account' }) %>
   <% end %>
   <% if admin_section? %>
     <% header.with_direct_link_simple(title: t('layouts.entete.directories'), path: admin_common_services_root_path) %>

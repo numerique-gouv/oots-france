@@ -34,6 +34,12 @@ RSpec.describe 'The preview space' do
       expect(link['title']).to end_with('nouvelle fenêtre')
     end
 
+    it 'shows the pre-production badge of the site in its header' do
+      expect(page.at_css('.fr-header__service-title .fr-badge').text).to eq('Préproduction')
+      expect(page.at_css('.fr-header__service-tagline').text.squish)
+        .to eq('Échange de justificatifs entre administrations européennes')
+    end
+
     # CA7 and CA8: two radio buttons and nothing to type.
     it 'asks for a decision and nothing else' do
       expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)

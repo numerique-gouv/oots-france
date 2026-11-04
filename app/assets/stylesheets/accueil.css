@@ -1,12 +1,272 @@
 /*
- * The front page's opening pictogram, larger than the ones that mark a heading:
- * it illustrates the page rather than one line of it.
+ * The front page, laid out on the DSFR's grid and tokens. What the grid cannot
+ * say — framed boxes, numbered steps, the diagram of the two roles — is here,
+ * so that the template carries no `style` attribute.
  */
-.accueil-hero .pictogram {
-  height: 8rem;
-  width: 8rem;
+.accueil-measure {
+  max-width: 52rem;
 }
 
-.accueil-block {
+.accueil-title {
+  color: var(--text-title-grey);
+}
+
+.accueil-title--blue {
+  color: var(--text-title-blue-france);
+}
+
+.accueil-mention {
+  color: var(--text-mention-grey);
+}
+
+.accueil-icon {
+  color: var(--text-action-high-blue-france);
+}
+
+/* The opening illustration: two parties, the evidence between them. */
+.accueil-hero__exchange {
+  align-items: center;
+  background-color: var(--background-default-grey);
+  border: 1px solid var(--border-default-grey);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.accueil-hero__party {
+  align-items: center;
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.accueil-hero__party .pictogram {
+  height: 6rem;
+  width: 6rem;
+}
+
+.accueil-hero__arrows {
+  align-items: center;
+  color: var(--text-action-high-blue-france);
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.accueil-hero .accueil-mention {
+  text-align: center;
+}
+
+.accueil-principle .pictogram {
+  height: 5rem;
+  width: 5rem;
+}
+
+.accueil-box {
+  border: 1px solid var(--border-default-grey);
   height: 100%;
+  padding: 1.5rem;
+}
+
+.accueil-box--highlighted {
+  background-color: var(--background-alt-blue-france);
+  border: 2px solid var(--border-plain-blue-france);
+}
+
+.accueil-box--card {
+  background-color: var(--background-default-grey);
+  padding: 1.25rem;
+}
+
+.accueil-box--role {
+  background-color: var(--background-default-grey);
+  padding: 2rem;
+}
+
+/* A step's number, in a disc. */
+.accueil-number {
+  align-items: center;
+  background-color: var(--background-action-high-blue-france);
+  border-radius: 50%;
+  color: var(--text-inverted-blue-france);
+  display: flex;
+  flex: none;
+  font-weight: 700;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.accueil-number--large {
+  font-size: 1.125rem;
+  height: 2.5rem;
+  width: 2.5rem;
+}
+
+.accueil-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.accueil-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.accueil-steps > li {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+}
+
+.accueil-handled {
+  padding: 2rem;
+}
+
+.accueil-check {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.accueil-milestone {
+  border-top: 4px solid var(--border-plain-blue-france);
+  padding-top: 1rem;
+}
+
+.accueil-milestone__date {
+  color: var(--text-title-blue-france);
+}
+
+.accueil-milestone--upcoming {
+  border-top-color: var(--border-default-grey);
+}
+
+.accueil-milestone--upcoming .accueil-milestone__date {
+  color: var(--text-mention-grey);
+}
+
+.accueil-faq {
+  max-width: 56rem;
+}
+
+/*
+ * The diagram of the two roles: a column below the DSFR's large breakpoint, in
+ * the order of the markup; seven columns above it, France on the left, the
+ * other Member States on the right.
+ */
+.accueil-diagram {
+  background-color: var(--background-default-grey);
+  border: 1px solid var(--border-default-grey);
+}
+
+.accueil-diagram__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.accueil-diagram__label {
+  color: var(--text-mention-grey);
+}
+
+.accueil-diagram__party,
+.accueil-diagram__hub {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.accueil-diagram__party {
+  min-height: 6rem;
+  padding: 1rem 1.25rem;
+}
+
+.accueil-diagram__party--requester {
+  background-color: var(--background-contrast-blue-ecume);
+  border: 1px solid var(--border-default-blue-ecume);
+  color: var(--text-label-blue-ecume);
+}
+
+.accueil-diagram__party--provider {
+  background-color: var(--background-contrast-green-emeraude);
+  border: 1px solid var(--border-default-green-emeraude);
+  color: var(--text-label-green-emeraude);
+}
+
+.accueil-diagram__hub {
+  gap: 0.5rem;
+  padding: 1.5rem 1rem;
+}
+
+.accueil-diagram__hub--france {
+  background-color: var(--background-contrast-beige-gris-galet);
+  border: 2px solid var(--border-plain-beige-gris-galet);
+}
+
+.accueil-diagram__hub--network {
+  background-color: var(--background-default-grey);
+  border: 1px dashed var(--border-contrast-grey);
+  color: var(--text-mention-grey);
+}
+
+.accueil-diagram__arrow {
+  align-self: center;
+  color: var(--text-mention-grey);
+  transform: rotate(90deg);
+}
+
+.accueil-diagram__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+}
+
+.accueil-diagram__key {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.accueil-diagram__swatch {
+  flex: none;
+  height: 1rem;
+  width: 1rem;
+}
+
+@media (min-width: 62em) {
+  .accueil-diagram__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) 3.5rem minmax(0, 2.4fr) 3.5rem minmax(0, 2.4fr) 3.5rem minmax(0, 3fr);
+    row-gap: 1rem;
+  }
+
+  .accueil-diagram__arrow {
+    justify-self: center;
+    transform: none;
+  }
+
+  .accueil-diagram__label--france { grid-area: 1 / 1; }
+  .accueil-diagram__party--france-top { grid-area: 2 / 1; }
+  .accueil-diagram__party--france-bottom { grid-area: 3 / 1; }
+  .accueil-diagram__arrow--france-top { grid-area: 2 / 2; }
+  .accueil-diagram__arrow--france-bottom { grid-area: 3 / 2; }
+  .accueil-diagram__hub--france { grid-area: 2 / 3 / span 2; }
+  .accueil-diagram__arrow--between { grid-area: 2 / 4 / span 2; }
+  .accueil-diagram__hub--network { grid-area: 2 / 5 / span 2; }
+  .accueil-diagram__arrow--abroad-top { grid-area: 2 / 6; }
+  .accueil-diagram__arrow--abroad-bottom { grid-area: 3 / 6; }
+  .accueil-diagram__label--abroad { grid-area: 1 / 7; }
+  .accueil-diagram__party--abroad-top { grid-area: 2 / 7; }
+  .accueil-diagram__party--abroad-bottom { grid-area: 3 / 7; }
 }

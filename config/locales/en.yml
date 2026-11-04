@@ -171,197 +171,414 @@ en:
               inclusion: "is “%{value}”, whereas FranceConnect+ only publishes %{admitted}"
   accueil:
     index:
-      new_window: "%{link} - new window"
-      lead: >-
-        The service through which France exchanges evidence with the other Member States
-        of the European Union, on behalf of French administrative procedures. This page is
-        intended for the administration or the operator that runs a French online procedure
-        and is not yet connected to OOTS-France.
-      what_is_oots:
-        title: What OOTS is
-        body_html: >-
-          %{regulation} establishes the European %{single_digital_gateway}. Its Article 14 sets
-          up the Once-Only Technical System (OOTS): the automated, cross-border exchange of
-          evidence between the administrations of the Member States. A user who completes a
-          procedure in one Member State no longer has to supply themselves an evidence that an
-          administration of another Member State holds: the procedure requests it on their
-          behalf.
-        regulation: Regulation (EU) 2018/1724
-        single_digital_gateway: Single Digital Gateway (SDG)
-        since_html: >-
-          Article 14 and %{implementing_regulation}, which lays down its arrangements, have
-          applied since 12 December 2023.
-        implementing_regulation: Implementing Regulation (EU) 2022/1463
-        evidence: >-
-          An evidence exchanged comes directly from the administration that issues it, and is
-          deemed authentic by the administration that receives it. The user requests the
-          exchange, previews the evidence and decides whether or not to proceed with the
-          exchange.
-        tdd_html: >-
-          OOTS-France implements this system as described in the %{tdd} published by the
-          European Commission, which presents it on the %{hub}.
-        tdd: Technical Design Documents
-        hub: OOTS hub
-      # The life events and procedures are worded as in the English text of
-      # Annex II to Regulation (EU) 2018/1724, consolidated on 20 May 2026.
-      procedures:
-        title: The procedures concerned
-        requirement: >-
-          The Single Digital Gateway requires that a procedure concerned can be completed fully
-          online by a user from another Member State, and that the evidence it requires from an
-          administration of another Member State reaches it through the technical system, at
-          the user's request.
-        list_html: 'The procedures concerned are those of Annex II to %{consolidated}, grouped by life event:'
-        consolidated: Regulation (EU) 2018/1724, as consolidated on 20 May 2026
-        events:
-          birth:
-            title: Birth
-            procedures:
-              - Requesting proof of registration of birth
-          residence:
-            title: Residence
-            procedures:
-              - Requesting proof of residence
-          studying:
-            title: Studying
-            procedures:
-              - >-
-                Applying for a tertiary education study financing, such as study grants and loans
-                from a public body or institution
-              - Submitting an initial application for admission to public tertiary education institution
-              - >-
-                Requesting academic recognition of diplomas, certificates or other proof of studies
-                or courses
-          working:
-            title: Working
-            procedures:
-              - >-
-                Request for determination of applicable legislation in accordance with Title II of
-                Regulation (EC) No 883/2004
-              - >-
-                Notifying changes in the personal or professional circumstances of the person
-                receiving social security benefits, relevant for such benefits
-              - Application for a European Health Insurance Card (EHIC)
-              - Submitting an income tax declaration
-          moving:
-            title: Moving
-            procedures:
-              - Registering a change of address
-              - >-
-                Registering a motor vehicle originating from or already registered in a Member
-                State, in standard procedures
-              - >-
-                Obtaining stickers for the use of the national road infrastructure: time-based
-                charges (vignette), distance-based charges (toll), issued by a public body or
-                institution
-              - Obtaining emission stickers issued by a public body or institution
-          retiring:
-            title: Retiring
-            procedures:
-              - Claiming pension and pre-retirement benefits from compulsory schemes
-              - Requesting information on the data related to pension from compulsory schemes
-          business:
-            title: Starting, running and closing a business
-            procedures:
-              - >-
-                Notification of business activity, permission for exercising a business activity,
-                changes of business activity and the termination of a business activity not
-                involving insolvency or liquidation procedures, excluding the initial registration
-                of a business activity with the business register and excluding procedures
-                concerning the constitution of or any subsequent filing by companies or firms
-                within the meaning of the second paragraph of Article 54 TFEU
-              - >-
-                Declarations by hosts for registration procedures in relation to short-term
-                accommodation rental services
-              - Registration of an employer (a natural person) with compulsory pension and insurance schemes
-              - Registration of employees with compulsory pension and insurance schemes
-              - Submitting a corporate tax declaration
-              - >-
-                Notification to the social security schemes of the end of contract with an
-                employee, excluding procedures for the collective termination of employee
-                contracts
-              - Payment of social contributions for employees
-              - Notification of a data intermediation services provider
-              - Registration as a data altruism organisation recognised in the Union
-          critical_raw_materials:
-            title: Critical raw materials projects
-            procedures:
-              - >-
-                Procedure related to all relevant permits to build and operate critical raw
-                materials projects, including building, chemical and grid connection permits and
-                environmental assessments and authorisations where these are required, and
-                encompassing all applications and procedures from the acknowledgment that the
-                application is complete to the notification of the comprehensive decision on the
-                outcome of the procedure by the single point of contact concerned pursuant to
-                Article 9 of Regulation (EU) 2024/1252.
-          net_zero:
-            title: Net-zero technology manufacturing projects
-            procedures:
-              - >-
-                Procedures for all relevant permits to build, expand, convert and operate net-zero
-                technology manufacturing projects, and net-zero strategic projects, including
-                building, chemical and grid connection permits, environmental assessments and
-                authorisations where required, and encompassing all applications and procedures.
-        driving_licence_html: >-
-          Acquiring and renewing a driving licence (added by %{directive}, applicable from
-          26 November 2029)
-        driving_licence_directive: Directive (EU) 2025/2205
-        directives_html: >-
-          Article 14 also opens the technical system to the procedures provided for by
-          %{professional_qualifications}, %{services}, %{public_procurement} and %{utilities}.
-        directives:
-          professional_qualifications: Directive 2005/36/EC on the recognition of professional qualifications
-          services: Directive 2006/123/EC on services in the internal market
-          public_procurement: Directive 2014/24/EU on public procurement
-          utilities: >-
-            Directive 2014/25/EU on procurement by entities operating in the water, energy,
-            transport and postal services sectors
-      roles:
-        title: What OOTS-France does
-        intro: OOTS-France plays both roles of the exchange for France.
-        requester:
-          title: It requests for French procedures
-          body: >-
-            It requests evidence from the other Member States, on behalf of French
-            administrative procedures.
-        provider:
-          title: It answers the other Member States
-          body: >-
-            It answers the requests it receives from the other Member States — for now with
-            test evidence only, no French data provider being connected to it.
-      connection:
-        title: Connecting a procedure
-        benefit: >-
-          A French procedure connected to OOTS-France obtains for its users an evidence held
-          by an administration of another Member State, without their having to supply it
-          themselves.
-        requirements_intro: 'Connecting requires the service provider to:'
-        requirements:
-          declared:
-            title: Be declared
-            body: The service provider is declared to OOTS-France.
-          keys:
-            title: Publish its keys
-            body: It publishes its signing keys.
-          call:
-            title: Call the contract
-            body: It calls an HTTP contract, carrying the user's identity, signed and encrypted.
+      hero:
+        title: Exchange evidence with administrations across Europe
+        lead_html: >-
+          With OOTS (<span lang="en">Once-Only Technical System</span>), the European "once-only"
+          principle, users no longer have to provide evidence held by an administration of another
+          EU country themselves: at their request, the procedure obtains it directly. OOTS-France
+          connects French administrations to this network.
+        concerned: Are you concerned?
+        how_it_works: Understand how it works
+        french_administrations: French administrations
+        other_administrations: Administrations of the other Member States
+        caption: Evidence travels between administrations, with the user's agreement.
+      in_brief:
+        title: OOTS in brief
+        intro_html: >-
+          OOTS is one of the building blocks of the Single Digital Gateway (SDG). Established by
+          Regulation (EU) 2018/1724, the SDG helps citizens and businesses complete their
+          procedures anywhere in the Union. It rests on three pillars:
+        pillars:
+          information:
+            title: 1. Information
+            body_html: >-
+              Reliable information on the rules and procedures of each country, gathered on the
+              %{your_europe} portal.
+            your_europe: Your Europe
+          procedures:
+            title: 2. Online procedures
+            badge: OOTS
+            body: >-
+              The main procedures must be fully accessible online to users from other countries.
+              OOTS is its technical part: it obtains evidence held in another country directly.
+          assistance:
+            title: 3. Assistance
+            body: >-
+              Help and problem-solving services, such as SOLVIT, for users in difficulty with an
+              administration of another country.
+        principles:
+          obligation:
+            title: A European obligation
+            body_html: >-
+              Article 14 of %{regulation} on the Single Digital Gateway has applied since
+              12 December 2023.
+            regulation: Regulation (EU) 2018/1724
+          user_request:
+            title: Always at the user's request
+            body: >-
+              The user chooses to use OOTS and can preview the evidence before it is transmitted.
+              They can always provide it themselves.
+          reliable:
+            title: Reliable evidence
+            body: >-
+              The evidence comes directly from the administration that issues it, over a secure
+              network. It is deemed authentic.
+          cross_border:
+            title: Only between European countries
+            body: OOTS serves cross-border procedures, not exchanges between French administrations.
+      how_it_works:
+        title: How does it work?
+        example: >-
+          An example: Lucas, a French student, applies for a grant to continue his studies in
+          Belgium. The body awarding the grant asks him for evidence issued in France.
+        steps:
+          sign_in:
+            title: Lucas signs in to the Belgian body's website
+            body: >-
+              He identifies himself with his French digital identity, through FranceConnect+,
+              recognised across the Union (eIDAS).
+          request:
+            title: He asks for his evidence to be retrieved through OOTS
+            body: >-
+              Rather than uploading it himself, he asks the Belgian body to retrieve it directly
+              from France through OOTS.
+          lookup:
+            title: OOTS finds the administration that issues his evidence
+            body: >-
+              The European directory says which French administration issues each piece of evidence
+              requested. The request reaches it over a secure network, through OOTS-France.
+          preview:
+            title: Lucas can check his evidence before it is sent
+            body: >-
+              For each piece of evidence, he can preview it at the provider that issues it, then
+              agree to its transmission to the Belgian body.
           delivery:
-            title: Receive the evidence
-            body: It receives the evidence at an address of its own.
-        contract_html: The contract is described in the %{documentation} of the %{repository}.
-        documentation: documentation
-        repository: OOTS-France repository
+            title: The Belgian body receives Lucas's evidence
+            body: It comes directly from the French administration and is deemed authentic.
+        roles:
+          title: Two roles, a single connection point
+          intro: >-
+            The journey works both ways: your administration can request evidence, provide it, or
+            both. Either way, it connects to OOTS-France alone, which handles the rest:
+          handled:
+            - the secure network that carries requests and evidence between countries;
+            - the lookup in the European directory, to know which administration issues which evidence;
+            - >-
+              the user's preview of French evidence, before it is sent to the administration of
+              another Member State.
+          diagram:
+            in_france: In France
+            other_member_states: Other Member States
+            your_procedure: Your procedure
+            your_administration: Your administration
+            requests_evidence: Requests evidence
+            issues_evidence: Issues evidence
+            issues_the_evidence: Issues the evidence
+            national_point: National point operated by DINUM
+            network: European OOTS network
+            network_detail: Secure eDelivery network and European directory
+            an_administration: An administration
+            an_online_procedure: An online procedure
+            description: >-
+              Diagram: your procedure and your administration connect to OOTS-France. OOTS-France
+              links them, through the European OOTS network, to the administrations and online
+              procedures of the other Member States.
+            service_provider: Service provider
+            data_provider: Data provider
+        common_services:
+          title: "The European directory: the Common Services"
+          intro_html: >-
+            To know which evidence to request, from whom, and in what form it will arrive, all
+            countries rely on the same directories, the Common Services. The European Commission
+            runs them, each country feeds them, and they are public. Three of them describe evidence
+            and those who issue it:
+          evidence_broker:
+            name: Evidence Broker
+            title: What must be proven, and which evidence proves it
+            body: >-
+              The requirements of each procedure, for instance "proof of a higher education
+              diploma", and for each the evidence types that prove it in each country: a Finnish
+              diploma, an extract from the Estonian education register…
+          data_service_directory:
+            name: Data Service Directory
+            title: Who issues it
+            body: >-
+              The provider that issues each evidence type, in each country, and its address on the
+              secure eDelivery network.
+          semantic_repository:
+            name: Semantic Repository
+            title: The common vocabulary
+            body: >-
+              The catalogue of shared descriptions — requirements, evidence types, code lists —,
+              consulted when procedures are designed and not during an exchange.
+          use: >-
+            For each request of a French procedure, OOTS-France reads in these directories which
+            evidence type proves the requirement, and who issues it.
+      benefits:
+        title: What your administration gains
+        reliable:
+          title: Reliable evidence
+          body: >-
+            It comes from the administration that issues it and is deemed authentic: less fraud,
+            fewer foreign documents to check.
+        open_to_europe:
+          title: A procedure open to Europe
+          body: >-
+            Citizens and businesses of the other Member States complete your procedure fully
+            online, as the Single Digital Gateway provides.
+        single_connection:
+          title: A single connection
+          body: >-
+            You connect once to OOTS-France, which handles the exchanges with all the other Member
+            States.
+        obligations:
+          title: Your obligations met
+          body: >-
+            You comply with Article 14 of the regulation, whose implementation the European
+            Commission monitors in each country.
+      concerned:
+        title: Is your administration concerned?
+        intro: >-
+          OOTS concerns two kinds of administrations. One administration can hold both roles: a
+          university, for instance, requests foreign diplomas and issues its own.
+        conditions_intro: "You are concerned if:"
+        service_provider:
+          badge: Service provider
+          title: Your procedure requests evidence
+          body: Your administration runs an online procedure and asks users for documents.
+          annex_html: your procedure appears in %{annex};
+          annex: Annex II to Regulation (EU) 2018/1724
+          directives_html: >-
+            or it falls under one of the directives referred to in its Article 14:
+            %{professional_qualifications} (recognition of professional qualifications),
+            %{services} (services in the internal market), %{public_procurement} (public
+            procurement) or %{utilities} (procurement in the water, energy, transport and postal
+            services sectors).
+          examples: >-
+            Examples: admission to higher education, grant application, declaration of activity,
+            bid for a public contract.
+        data_provider:
+          badge: Data provider
+          title: You issue evidence
+          body: Your administration issues documents that users then present in their procedures.
+          conditions:
+            - you issue this evidence in electronic form (database, API, online service);
+            - it is requested by a procedure concerned, in another Member State.
+          examples: >-
+            Examples: diplomas, civil status certificates, extracts from the business register, tax
+            or social security certificates.
+        procedures:
+          title: The procedures concerned
+          intro: >-
+            They are the procedures of Annex II to the regulation, grouped by life event, and the
+            procedures of the directives referred to in its Article 14.
+          events:
+            birth:
+              title: Birth
+              procedures:
+                - Requesting proof of registration of birth
+            residence:
+              title: Residence
+              procedures:
+                - Requesting proof of residence
+            studying:
+              title: Studying
+              procedures:
+                - Applying for tertiary education study financing (grant, loan) from a public body
+                - Submitting an initial application for admission to higher education
+                - Requesting academic recognition of a diploma or of studies
+            working:
+              title: Working
+              procedures:
+                - Requesting a determination of the applicable social security legislation
+                - Notifying a social security body of a change in circumstances
+                - Applying for a European Health Insurance Card
+                - Submitting an income tax declaration
+            moving:
+              title: Moving
+              procedures:
+                - Registering a change of address
+                - Registering a motor vehicle from another Member State
+                - Obtaining a road usage sticker or an emission sticker
+                - Acquiring or renewing a driving licence (from 26 November 2029)
+            retiring:
+              title: Retiring
+              procedures:
+                - Claiming retirement or pre-retirement benefits
+                - Requesting information on one's pension rights
+            business:
+              title: Starting, running and closing a business
+              procedures:
+                - >-
+                  Notifying, changing or ceasing a business activity, or obtaining authorisation to
+                  carry it out (excluding initial registration and company formation)
+                - Registering an employer and employees with pension and insurance schemes
+                - Paying social contributions, notifying the end of an employment contract
+                - Submitting a corporate tax declaration
+                - Declaring a short-term accommodation rental
+                - Notifying a data intermediation service, registering as a data altruism organisation
+            critical_raw_materials:
+              title: Critical raw materials
+              procedures:
+                - Permits to build and operate a critical raw materials project
+            net_zero:
+              title: Net-zero technologies
+              procedures:
+                - Permits to build, expand or operate a net-zero technology manufacturing project
+          directives:
+            title: Qualifications, services and public procurement
+            professional_qualifications_html: Recognition of professional qualifications (%{directive})
+            services_html: Services in the internal market (%{directive})
+            public_procurement_html: Public procurement (Directives %{public_procurement} and %{utilities})
+            public_procurement: 2014/24/EU
+            utilities: 2014/25/EU
+          reference_html: "Reference text: %{annex}, consolidated version."
+          annex: Annex II to Regulation (EU) 2018/1724
+      directives:
+        professional_qualifications: Directive 2005/36/EC
+        services: Directive 2006/123/EC
+        public_procurement: Directive 2014/24/EU
+        utilities: Directive 2014/25/EU
+      connecting:
+        title: Connecting to OOTS-France
+        intro: >-
+          You connect to OOTS-France alone, which handles the exchanges with the other Member
+          States. The main steps, depending on your role:
+        service_provider:
+          badge: Service provider
+          title: Connecting a procedure
+          steps:
+            list:
+              title: List the evidence your procedure requires
+              body: >-
+                With the OOTS-France team, you identify the evidence your procedure requires and the
+                countries that issue it. Your procedure is then registered in the European
+                directory, with this evidence.
+            sign_in:
+              title: Open sign-in to European users
+              body: >-
+                Add FranceConnect+'s eIDAS button to your sign-in page: a user from another Member
+                State identifies with their country's means of identification, through the French
+                eIDAS node.
+            form:
+              title: Offer OOTS in your form
+              body: >-
+                At the supporting documents step, the user chooses: upload their document or have it
+                come through OOTS. They must be able to preview each piece of evidence before it is
+                sent, if they wish: your procedure then redirects them to the provider that issues
+                it, and they come back to finish.
+            request:
+              title: Send the request to OOTS-France
+              body: >-
+                Your procedure calls the OOTS-France API with the procedure code, the country and
+                the user's identity, signed with your procedure's keys and encrypted for the
+                OOTS-France public key. OOTS-France then delivers the evidence to the address your
+                procedure declared to it.
+            test:
+              title: Test, then open to users
+              body: >-
+                First in pre-production, with the European Commission's testing services, then with
+                another Member State.
+        data_provider:
+          badge: Data provider
+          title: Providing evidence
+          steps:
+            identify:
+              title: Identify your evidence
+              body: "Which of it serves the procedures concerned, and for which users: individuals or businesses."
+            register:
+              title: Have it referenced
+              body: >-
+                It is registered in the European directory, so that the other Member States know
+                whom to request it from.
+            api:
+              title: Open your API to OOTS-France
+              body: >-
+                You give OOTS-France access to the API that issues your evidence, so that it can be
+                integrated. OOTS-France then queries it for each request from another Member State.
+            test:
+              title: Test, then open
+              body: >-
+                In pre-production with other Member States. OOTS-France handles the user's preview
+                and consent for you.
+        handled:
+          title: What OOTS-France takes care of for you
+          items:
+            - The connection to the secure European network (eDelivery)
+            - The lookup in the European directory
+            - Compliance with the European technical specifications
+            - The user's preview of French evidence
+            - The traceability of each exchange
+            - The security and accreditation of the national service
+        write: Write to the team
+      documentation: Technical documentation
       status:
-        title: Service status
+        title: Where does OOTS-France stand?
+        lead: >-
+          The service is in pre-production: exchanges there involve test data only. It will open to
+          real data after its security accreditation. No French data provider is connected to it
+          today: France answers the other Member States with test evidence only. You can start
+          preparing your connection now.
+        milestones:
+          done:
+            badge: Done
+            date: December 2023
+            title: OOTS applies across the Union
+            body: The obligations of Article 14 apply, and the European directory is in service.
+          ongoing:
+            badge: In progress
+            date: '2026'
+            title: OOTS-France in pre-production
+            body: >-
+              Exchange tests in pre-production, and participation in the European test event of
+              November 2026, in Brussels.
+          upcoming:
+            badge: Upcoming
+            date: '2027'
+            title: Opening to real data
+            body: >-
+              Security accreditation, go-live, then the first connections of French administrations.
+      faq:
+        title: Frequently asked questions
+        mandatory:
+          question: Does the user have to go through OOTS?
+          answer: >-
+            No. OOTS is only used at the user's explicit request. They can always provide their
+            evidence themselves, as today.
+        domestic:
+          question: Does OOTS serve exchanges between French administrations?
+          answer: No, it is reserved for exchanges between Member States.
+        data:
+          question: What data is exchanged?
+          answer:
+            one: >-
+              Only the evidence requested, for the procedure under way, and the administration that
+              receives it uses it for that procedure alone. Exchanges are encrypted and each is
+              recorded in a log kept for %{count} month.
+            other: >-
+              Only the evidence requested, for the procedure under way, and the administration that
+              receives it uses it for that procedure alone. Exchanges are encrypted and each is
+              recorded in a log kept for %{count} months.
+        paper:
+          question: What if the evidence does not exist in electronic form?
+          answer: "It cannot be exchanged through OOTS: the user provides it themselves, as today."
+        governance:
+          question: Who steers OOTS in France?
+          answer: >-
+            OOTS-France is operated by the interministerial digital directorate (DINUM). The
+            national coordinator of the Single Digital Gateway, at DINUM, is your contact to check
+            your scope and prepare your connection.
+        users:
+          question: "I am an individual or a business: how do I have evidence sent?"
+          answer: >-
+            This site is intended for administrations. Go through the website of your procedure: if
+            it is connected to OOTS, it will offer to retrieve your evidence directly.
+      contact:
+        title: Your administration is concerned, or you are unsure?
         body: >-
-          The service is not accredited: requesting evidence is open only on a test server,
-          never on real data.
-      users:
-        title: The user of a procedure
-        body: >-
-          This service is intended for administrations, not for users: a person looking to
-          have an evidence delivered goes through the Online Procedure Portal of their procedure.
+          The OOTS-France team, at DINUM, helps you check your scope and prepare your connection.
+        write: Write to the OOTS-France team
   france_connect:
     retour_deconnexion:
       title: You are signed out
@@ -373,6 +590,9 @@ en:
         arrival matches no sign-out requested from this browser: it therefore attests
         nothing.
       back: Back to the demonstration procedure
+  helpers:
+    application_helper:
+      new_window: "%{link} - new window"
   layouts:
     application:
       name: OOTS-France
@@ -380,7 +600,15 @@ en:
       skiplink_content: Content
     logo_html: République<br>Française
     entete:
-      tagline: Cross-border exchange of evidence
+      tagline: Exchange of evidence between European administrations
+      badge: Pre-production
+      contact: Contact
+      navigation:
+        in_brief: OOTS in brief
+        how_it_works: How it works
+        concerned: Are you concerned?
+        connecting: Connecting
+        faq: FAQ
       admin_space: Administration
       demo: Demo
       directories: Common Services
@@ -389,8 +617,17 @@ en:
       sign_out: Sign out
       signed_in_as: Signed in as %{email}
     pied_de_page:
-      about_html: OOTS-France implements the %{tdd} of the European regulation on the single digital gateway.
-      tdd: Once-Only Technical System
+      home: Back to the site's home page - %{title}
+      about: >-
+        OOTS-France implements the European "once-only" principle (OOTS) provided for by
+        Regulation (EU) 2018/1724 on the Single Digital Gateway. Service operated by the
+        interministerial digital directorate (DINUM).
+      accessibility: "Accessibility: not compliant"
+      source_code: Source code
+      licence_html: >-
+        Unless explicitly stated otherwise regarding intellectual property held by third parties,
+        the contents of this site are offered under %{licence}
+      licence: licence etalab-2.0
   components:
     site_header:
       search: Search

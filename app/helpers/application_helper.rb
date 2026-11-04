@@ -8,6 +8,17 @@ module ApplicationHelper
 
   def abbreviated_identifier(identifier) = "…#{identifier.to_s.last(ABBREVIATED_IDENTIFIER_LENGTH)}"
 
+  def repository_address = 'https://github.com/numerique-gouv/oots-france'
+
+  # The one way to reach the team: an address, and no form.
+  def team_mail_address = 'mailto:oots@data.gouv.fr'
+
+  # An external link opened in a new window, announced in its title (RGAA 13.2).
+  def new_window_link(text, address, **)
+    link_to text, address, target: '_blank', rel: 'noopener',
+      title: t('helpers.application_helper.new_window', link: text), **
+  end
+
   # An address the console holds and an operator will want to open — the
   # Semantic Repository's name for an evidence type, the preview space a
   # correspondent points at — rather than thirty characters to copy by hand.

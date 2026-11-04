@@ -30,13 +30,16 @@
           </div>
 
           <% if title %>
+            <% service_title = capture do %>
+              <p class="fr-header__service-title"><%= title %><% if badge %> <span class="fr-badge fr-badge--sm fr-badge--yellow-tournesol"><%= badge %></span><% end %></p>
+            <% end %>
             <div class="fr-header__service">
               <% if href %>
                 <a href="<%= href %>" title="<%= t('components.site_header.home', title:) %>">
-                  <p class="fr-header__service-title"><%= title %></p>
+                  <%= service_title %>
                 </a>
               <% else %>
-                <p class="fr-header__service-title"><%= title %></p>
+                <%= service_title %>
               <% end %>
               <% if tagline %>
                 <p class="fr-header__service-tagline"><%= tagline %></p>

@@ -2,20 +2,37 @@
   <div class="fr-container">
     <div class="fr-footer__body">
       <div class="fr-footer__brand fr-enlarge-link">
-        <p class="fr-logo"><%= t('layouts.logo_html') %></p>
+        <a href="<%= root_path %>" title="<%= t('layouts.pied_de_page.home', title: t('layouts.application.name')) %>">
+          <p class="fr-logo"><%= t('layouts.logo_html') %></p>
+        </a>
       </div>
       <div class="fr-footer__content">
-        <p class="fr-footer__content-desc">
-          <%= t('layouts.pied_de_page.about_html',
-                tdd: link_to(t('layouts.pied_de_page.tdd'),
-                  'https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/overview',
-                  target: '_blank', rel: 'noopener')) %>
-        </p>
+        <p class="fr-footer__content-desc"><%= t('layouts.pied_de_page.about') %></p>
         <ul class="fr-footer__content-list">
-          <li class="fr-footer__content-item">
-            <a class="fr-footer__content-link" href="https://www.numerique.gouv.fr" target="_blank" rel="noopener">numerique.gouv.fr</a>
-          </li>
+          <% %w[www.numerique.gouv.fr info.gouv.fr service-public.gouv.fr legifrance.gouv.fr data.gouv.fr].each do |site| %>
+            <li class="fr-footer__content-item">
+              <%= new_window_link(site.delete_prefix('www.'), "https://#{site}", class: 'fr-footer__content-link') %>
+            </li>
+          <% end %>
         </ul>
+      </div>
+    </div>
+    <div class="fr-footer__bottom">
+      <ul class="fr-footer__bottom-list">
+        <li class="fr-footer__bottom-item">
+          <span class="fr-footer__bottom-link"><%= t('layouts.pied_de_page.accessibility') %></span>
+        </li>
+        <li class="fr-footer__bottom-item">
+          <%= new_window_link(t('layouts.pied_de_page.source_code'), repository_address,
+                class: 'fr-footer__bottom-link') %>
+        </li>
+      </ul>
+      <div class="fr-footer__bottom-copy">
+        <p>
+          <%= t('layouts.pied_de_page.licence_html',
+                licence: new_window_link(t('layouts.pied_de_page.licence'),
+                  'https://github.com/etalab/licence-ouverte/blob/master/LO.md')) %>
+        </p>
       </div>
     </div>
   </div>
