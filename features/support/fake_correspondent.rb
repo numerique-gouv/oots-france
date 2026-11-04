@@ -23,6 +23,12 @@ class FakeCorrespondent
   BENEFICIARY = { level_of_assurance: 'Substantial', family_name: 'Dupont', given_name: 'Sophie',
                   date_of_birth: '1965-11-25' }.freeze
 
+  # The test identity `dk-substantial` of the fake FranceConnect+, as a
+  # request names it: the person France's preview space confirms when the user
+  # identifies again with that identity, and no other.
+  PREVIEWED_BENEFICIARY = { level_of_assurance: 'Substantial', family_name: 'Sørensen',
+                            given_name: 'Freja Marie', date_of_birth: '2001-04-17' }.freeze
+
   # What a real correspondent would have read from the central directories for a
   # French procedure: the requirement the Evidence Broker returns for FR, and the
   # evidence type classification it leads to — one France serves, which is what
@@ -40,9 +46,10 @@ class FakeCorrespondent
 
   # Rendered once and returned, so that submitting the same body twice replays
   # the very request identifier chapter 4.4 forbids reusing.
-  def request(procedure_code: ProcedureCode::SYSTEM_CHECK, specification: EdmSpecification.preferred)
+  def request(procedure_code: ProcedureCode::SYSTEM_CHECK, specification: EdmSpecification.preferred,
+              subject: BENEFICIARY)
     body = EvidenceRequestBuilder.new(
-      requester:, provider:, beneficiary:, requirement:, data_service:, procedure_code:, specification:, uuid:,
+      requester:, provider:, beneficiary: NaturalPerson.new(**subject), requirement:, data_service:, procedure_code:, specification:, uuid:,
     )
     rendered = body.render
 
@@ -92,8 +99,6 @@ class FakeCorrespondent
       uuid:,
     ).render
   end
-
-  def beneficiary = NaturalPerson.new(**BENEFICIARY)
 
   def requirement
     Requirement.new(id: REQUIREMENT, descriptions: { 'EN' => 'Test requirement' })

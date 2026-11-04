@@ -1,11 +1,13 @@
 <%# The way back to the procedure, chapter 4.9 §2 step 26. On the 2.0 line it
     is known once the second request has arrived, so the zone asks again until
     then — announced, and never by a refresh the user does not control. Once it
-    is known the controller takes it on its own, the choice being already made;
-    the button stays for a browser that runs no script. %>
+    is known the controller takes it on its own when the choice is made — not
+    after a refusal, which the user must read first; the button stays for a
+    browser that runs no script. %>
 <div aria-live="polite" data-controller="preview-return"
   data-preview-return-url-value="<%= preview_session_return_path(token: preview.token) %>"
-  data-preview-return-waiting-value="<%= preview.awaiting_return? %>">
+  data-preview-return-waiting-value="<%= preview.awaiting_return? %>"
+  data-preview-return-follow-value="<%= preview.follows_return? %>">
   <% if preview.awaiting_return? %>
     <p><%= t('preview_sessions.return.awaiting') %></p>
     <%# Shown whatever the browser: without JavaScript it is the only way to

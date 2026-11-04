@@ -277,7 +277,9 @@ RSpec.describe 'db/seeds.rb' do
     previewed = Exchange.find_by(incoming: true, country_code: 'SE')
     events = AuditEvent.where(exchange_id: previewed.exchange_id).order(:occurred_at)
 
-    expect(events.pluck(:event_type)).to eq(%w[request_received error_sent preview_visited preview_decided response_sent])
+    expect(events.pluck(:event_type))
+      .to eq(%w[request_received error_sent preview_visited preview_identified preview_visited preview_decided response_sent])
+    expect(events.find_by(event_type: 'preview_identified').detail).to eq(PreviewSession::CONFIRMED)
     expect(events.find_by(event_type: 'error_sent').preview_location).to eq(previewed.preview_location)
     expect(events.find_by(event_type: 'preview_decided').detail).to eq(PreviewSession::ACCEPTED)
   end

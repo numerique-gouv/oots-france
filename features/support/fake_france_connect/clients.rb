@@ -28,13 +28,16 @@ module FakeFranceConnect
       SECONDARY_ID => 'faux-france-connect-secret-du-second-client',
     }.freeze
 
-    # The three addresses `config/routes.rb` already declares for FranceConnect+.
+    # The addresses `config/routes.rb` declares for FranceConnect+: the
+    # demonstration procedure's, and the return of France's preview space,
+    # the same service provider under a second address.
     # Reading them off the procedure's own base URL is what makes swapping the
     # fake for the sandbox a change of environment and of nothing else.
     def self.all(procedure_url)
       SECRETS.map do |id, secret|
         Client.new(id: id, secret: secret, scopes: SCOPES,
-          redirect_uris: ["#{procedure_url}/demo/franceconnect/retour_connexion"],
+          redirect_uris: ["#{procedure_url}/demo/franceconnect/retour_connexion",
+                          "#{procedure_url}/previsualisation_franceconnect/retour_connexion"],
           post_logout_redirect_uris: ["#{procedure_url}/demo/franceconnect/retour_deconnexion"])
       end
     end

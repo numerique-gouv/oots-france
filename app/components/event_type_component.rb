@@ -13,6 +13,7 @@ class EventTypeComponent < ViewComponent::Base
     'message_unhandled' => :error,
     'answer_not_sent' => :error,
     'preview_visited' => :info,
+    'preview_identified' => :info,
     'preview_decided' => :info,
     'return_to_procedure' => :info,
   }.freeze

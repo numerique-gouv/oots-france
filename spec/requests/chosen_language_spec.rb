@@ -88,6 +88,9 @@ RSpec.describe 'The chosen language' do
     let(:preview) { create(:preview_session) }
     let(:space) { preview_session_path(preview.specification.segment, preview.token) }
 
+    # The form is offered to the person of the request alone (chapter 4.9 §2).
+    before { identify_in_preview_space(space) }
+
     def answer_the_form(referer:)
       post preview_session_choice_path(preview.specification.segment, preview.token), headers: { 'Referer' => referer }.compact
     end

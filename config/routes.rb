@@ -56,6 +56,13 @@ Rails.application.routes.draw do
     post ':token/choix', to: 'preview_sessions#decide', as: :preview_session_choice
   end
 
+  # Where FranceConnect+ brings back the user the preview space sent to
+  # identify again (chapter 4.9 §2, steps 15-17). One address, outside every
+  # segment, for it is declared to FranceConnect+ once and for all, and each
+  # declared path costs a round of its form.
+  get 'previsualisation_franceconnect/retour_connexion', to: 'preview_identifications#retour_connexion',
+    as: :preview_franceconnect_retour_connexion
+
   # Domibus is the caller, and it calls from the network: the route is
   # authenticated.
   post '/domibus/notifications', to: 'domibus_notifications#create'

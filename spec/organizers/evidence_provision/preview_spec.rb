@@ -251,6 +251,69 @@ RSpec.describe 'The preview France offers as a provider' do
     end
   end
 
+  # The identity check of chapter 4.9 §2 failed: steps 19-20 answer the
+  # second request `rs:AuthenticationExceptionType`, `EDM:ERR:0001`.
+  describe 'the second request of an address the identity check concluded' do
+    before { deliver(first, 'm001') }
+
+    let(:following) { second(exchange_id: first.exchange_id) }
+
+    def failed_identification = PreviewSession.sole.fail_identification!(PreviewSession::MISMATCHED)
+
+    def answered_exception = exception_of(body_of(submitted.last))
+
+    # Failed before the second request came: answered EDM:ERR:0001, without
+    # PreviewLocation, instead of being held.
+    it 'is answered the authentication failure when it arrives after the check' do
+      failed_identification
+      deliver(following, 'm002')
+
+      expect(answered_exception.attributes.transform_values(&:value))
+        .to include('type' => 'rs:AuthenticationExceptionType', 'code' => 'EDM:ERR:0001')
+      expect(slot(body_of(submitted.last), 'PreviewLocation')).to be_nil
+      expect(PreviewSession.sole).to have_attributes(status: 'answered', identification: 'mismatched',
+        first_request: nil, document: nil)
+    end
+
+    # Held first, answered by the job the failed check files.
+    it 'is answered the authentication failure when it was already held' do
+      deliver(following, 'm002')
+      perform_enqueued_jobs { failed_identification && AnswerPreviewedRequestJob.perform_later(PreviewSession.sole.id) }
+
+      expect(answered_exception['code']).to eq('EDM:ERR:0001')
+      expect(Exchange.sole.status).to eq('failed')
+    end
+
+    # Still answered EDM:ERR:0001 past T2: nothing is left to wait for.
+    it 'is answered the authentication failure even past T2' do
+      failed_identification
+      travel(17.minutes) { deliver(following, 'm002') }
+
+      expect(answered_exception['code']).to eq('EDM:ERR:0001')
+    end
+
+    # The check failing between the lookup of the address and `hold!`: the
+    # lock reloads the row, and the request is answered there and then.
+    it 'is answered the authentication failure when the check fails while it is held' do
+      stale = PreviewSession.sole
+      PreviewSession.find(stale.id).fail_identification!(PreviewSession::MISMATCHED)
+      allow(PreviewSession).to receive(:find_by).and_wrap_original do |original, *criteria, **named|
+        named.key?(:location) || criteria.first.try(:key?, :location) ? stale : original.call(*criteria, **named)
+      end
+      deliver(following, 'm002')
+
+      expect(answered_exception['code']).to eq('EDM:ERR:0001')
+      expect(PreviewSession.sole.status).to eq('answered')
+    end
+
+    it 'is swept by neither T2 nor T3' do
+      failed_identification
+
+      travel(41.minutes) { ExpirePreviewSessionsJob.perform_now }
+      expect(PreviewSession.sole.status).to eq('failed')
+    end
+  end
+
   # CA2, CA21 and CA22.
   describe 'the 1.2 line' do
     let(:first) { request_asking_preview(line: :v1_2) }

@@ -4,17 +4,20 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
 
   Le portail demande un justificatif en acceptant que l'usager le voie
   d'abord. Le fournisseur répond l'adresse de son espace de prévisualisation ;
-  le portail confirme, la France émet la seconde requête, l'usager consulte le
-  document, choisit, et l'espace le ramène au portail par l'adresse de retour
-  de la France. Le portail reçoit ce que l'usager a accepté, et rien s'il a refusé.
+  le portail confirme, la France émet la seconde requête, l'usager s'identifie
+  de nouveau sur l'espace, consulte le document, choisit, et l'espace le
+  ramène au portail par l'adresse de retour de la France. Le portail reçoit
+  ce que l'usager a accepté, et rien s'il a refusé.
 
   La France se répond à elle-même sur l'unique passerelle du PMode d'exemple :
-  elle y tient le fournisseur et son espace autant que le requêteur. L'usager
-  suit les liens dans un navigateur. docs/test_e2e.md dit ce que ces scénarios
+  elle y tient le fournisseur et son espace autant que le requêteur. Le
+  portail demande au nom d'une identité de test du faux FranceConnect+, et
+  l'usager suit les liens dans un navigateur. docs/test_e2e.md dit ce que ces scénarios
   demandent pour tourner.
 
   Contexte:
-    Étant donné un portail de démarche français déclaré dans l'annuaire des requêteurs
+    Étant donné un faux FranceConnect+ lancé à côté du scénario
+    Et un portail de démarche français déclaré dans l'annuaire des requêteurs
     Et que ce portail publie ses clés de signature
 
   Scénario: l'usager accepte le document, et le portail le reçoit
@@ -26,6 +29,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Alors le portail reçoit le lien à présenter à l'usager
     Et l'échange passe à l'état "sent"
     Quand l'usager ouvre l'espace de prévisualisation par le lien que le portail lui présente
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené au portail
     Alors l'usager arrive sur la page du portail, qui reçoit l'échange et la conversation
@@ -39,6 +43,7 @@ Fonctionnalité: Demander un justificatif que l'usager voit d'abord chez le four
     Et l'échange passe à l'état "preview_required"
     Quand le portail confirme la prévisualisation avec son jeton et l'adresse où reprendre la démarche
     Et que l'usager ouvre l'espace de prévisualisation par le lien que le portail lui présente
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
     Et que l'usager est ramené au portail
     Alors l'usager arrive sur la page du portail, qui reçoit l'échange et la conversation

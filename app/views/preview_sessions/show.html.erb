@@ -1,11 +1,12 @@
-<% title = t("preview_sessions.show.#{@preview.state}.title") %>
+<% state = @preview.state %>
+<% title = t("preview_sessions.show.#{state}.title") %>
 <% content_for :title, title %>
 
 <div class="fr-grid-row">
   <div class="fr-col-12 fr-col-md-8">
     <h1><%= title %></h1>
 
-    <% case @preview.state %>
+    <% case state %>
     <% when :open %>
       <p class="fr-text--lead">
         <%= t('preview_sessions.show.open.lead_html', requester: tag.strong(@preview.requester_name),
@@ -51,9 +52,21 @@
               data: { preview_choice_target: 'submit' } %>
       <% end %>
     <% when :recorded %>
-      <%= render 'return', preview: @preview %>
+      <% if @preview.offers_return? %>
+        <%= render 'return', preview: @preview %>
+      <% else %>
+        <p><%= t('preview_sessions.return.none') %></p>
+      <% end %>
+    <% when :unavailable %>
+      <p class="fr-text--lead"><%= t('preview_sessions.show.unavailable.lead') %></p>
+      <%# The address itself, which departs again. %>
+      <p><%= link_to t('preview_sessions.show.unavailable.retry'), preview_session_path(version: @preview.segment, token: @preview.token),
+            class: 'fr-btn' %></p>
+    <% when :refused %>
+      <p class="fr-text--lead"><%= t('preview_sessions.show.refused.lead') %></p>
+      <%= render 'return', preview: @preview if @preview.offers_return? %>
     <% else %>
-      <p class="fr-text--lead"><%= t("preview_sessions.show.#{@preview.state}.lead") %></p>
+      <p class="fr-text--lead"><%= t("preview_sessions.show.#{state}.lead") %></p>
     <% end %>
   </div>
 </div>

@@ -44,16 +44,21 @@ class FranceConnectClient
   # enabled. It is what says a European identity came through the bridge.
   ESSENTIAL_CLAIMS = { id_token: { amr: { essential: true } } }.to_json.freeze
 
-  def initialize(instance:, connection: nil)
+  # `return_path`: where the user comes back to, one of the addresses
+  # `config/routes.rb` publishes for FranceConnect+ — the demonstration
+  # procedure's unless the caller names another. France's preview space is the
+  # same service provider, and names its own.
+  def initialize(instance:, connection: nil, return_path: nil)
     @instance = instance
     @connection = connection
+    @return_path = return_path || Rails.application.routes.url_helpers.demo_franceconnect_retour_connexion_path
   end
 
   delegate :client_id, to: :instance
 
   # Never derived from the request: FranceConnect+ refuses an address it was not
-  # declared, and the path is the one `config/routes.rb` publishes.
-  def redirect_uri = url_for(Rails.application.routes.url_helpers.demo_franceconnect_retour_connexion_path)
+  # declared.
+  def redirect_uri = url_for(@return_path)
 
   def post_logout_redirect_uri
     url_for(Rails.application.routes.url_helpers.demo_franceconnect_retour_deconnexion_path)

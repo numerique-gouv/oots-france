@@ -4,7 +4,7 @@
 # France's own.
 
 Quand('le portail demande un justificatif pour la démarche {string} en acceptant que l\'usager le voie d\'abord') do |procedure|
-  @response = demande(procedure, preview: true)
+  @response = demande(procedure, preview: true, beneficiaire: BENEFICIAIRE_PREVISUALISE)
 end
 
 # Chapter 4.9 §5: the portal builds its launch page from the description.
@@ -17,7 +17,7 @@ end
 
 Quand('le portail confirme la prévisualisation avec son jeton et l\'adresse où reprendre la démarche') do
   response = Faraday.post("#{oots_france_url}/requete/#{@exchange_id}/previsualisation",
-    beneficiaire: @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE),
+    beneficiaire: @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE_PREVISUALISE),
     adresseRetour: "#{@requester.url}/oots/callback")
 
   expect(response.status).to eq(202)

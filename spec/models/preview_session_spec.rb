@@ -57,6 +57,52 @@ RSpec.describe PreviewSession do
     end
   end
 
+  # Chapter 4.9 §2, steps 19-20: a failed identity check concludes an
+  # address still open.
+  describe 'a failed identity check' do
+    it 'concludes an open address, and says whether a second request waits' do
+      expect(session.fail_identification!(PreviewSession::MISMATCHED)).to be(false)
+      expect(session.reload).to have_attributes(status: 'failed', identification: 'mismatched')
+      expect(session).not_to be_openable
+      expect(session).to be_identification_failed
+    end
+
+    it 'says a held second request now asks for an answer, and keeps it' do
+      hold
+
+      expect(session.fail_identification!(PreviewSession::UNAUTHENTICATED)).to be(true)
+      expect(session.reload).to have_attributes(second_request: '<second/>', first_request: nil, document: nil)
+    end
+
+    it 'erases the subject at once' do
+      session.fail_identification!(PreviewSession::MISMATCHED)
+
+      expect(session.reload).to have_attributes(first_request: nil, document: nil, evidence_id: nil)
+    end
+
+    it 'leaves a decided address be' do
+      session.decide!(accepted: true)
+
+      expect(session.fail_identification!(PreviewSession::MISMATCHED)).to be_nil
+      expect(session.reload).to have_attributes(status: 'decided', identification: nil)
+    end
+
+    # The answer gone, the address still says why.
+    it 'keeps the outcome once concluded, and erases the subject' do
+      session.fail_identification!(PreviewSession::MISMATCHED)
+      session.conclude!
+
+      expect(session.reload).to have_attributes(status: 'answered', identification: 'mismatched', first_request: nil)
+    end
+
+    it 'never expires, nothing being left to wait for' do
+      session.fail_identification!(PreviewSession::MISMATCHED)
+
+      travel(41.minutes) { expect(session.reload).not_to be_expired }
+      expect(described_class.past_redirection).to be_empty
+    end
+  end
+
   # Chapter 4.9 §2, step 14: once the link has run out, no choice reaches it.
   it 'refuses a decision past T2' do
     travel(17.minutes) { expect(session.decide!(accepted: true)).to be_nil }

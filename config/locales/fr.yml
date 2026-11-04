@@ -948,6 +948,17 @@ fr:
       incomplete_departure: >-
         Le départ vers FranceConnect+ n'a retenu aucune version ou aucune démarche : choisir une version
         et une démarche, puis s'identifier de nouveau.
+    # Un retour de FranceConnect+ vers l'espace de prévisualisation qu'aucun
+    # départ de ce navigateur n'explique, ou dont le `state` n'est pas celui
+    # du départ : répondu en texte, et écrit au log — l'une ou l'autre cause,
+    # avec le jeton du départ quand il y en a un.
+    preview_identifications:
+      unknown_departure: Ce retour d'identification ne correspond à aucune prévisualisation en cours. Revenez à votre démarche pour la reprendre.
+      unknown_preview: "Retour de FranceConnect+ vers l'espace de prévisualisation sans départ, ou vers une adresse inconnue (départ : %{token})"
+      another_state: "Retour de FranceConnect+ vers l'espace de prévisualisation avec un autre state que celui du départ (départ : %{token})"
+    preview_sessions:
+      no_france_connect: Aucun FranceConnect+ déclaré pour l'espace de prévisualisation
+      identification_not_started: "L'espace de prévisualisation ne peut envoyer personne s'identifier : %{reason}"
   gateways:
     directories:
       # Le refus relayé par le balayage du catalogue, qui pose la même question
@@ -1934,6 +1945,19 @@ fr:
       invalid:
         title: Ce lien n'est plus valable
         lead: Revenez à votre démarche pour la reprendre.
+      # Le message automatique de l'article 16(3) du règlement 2022/1463 :
+      # l'identité établie de nouveau n'est pas celle de la requête, ou
+      # l'identification n'a pas abouti (chapitre 4.9 §2, étapes 15-20).
+      refused:
+        title: Le document ne peut pas être fourni
+        lead: L'identité que vous venez d'établir ne correspond pas à celle de la demande, ou votre identification n'a pas abouti. Aucun document ne vous sera montré, et votre démarche en sera informée.
+      # FranceConnect+ ne peut pas être joint, au départ comme au retour :
+      # l'usager ne peut pas s'identifier, rien de la demande ne lui est
+      # montré, et l'adresse reste ouverte.
+      unavailable:
+        title: Identification momentanément impossible
+        lead: Le service qui vous permet de vous identifier ne répond pas. Réessayez dans quelques instants.
+        retry: Réessayer de m'identifier
     document:
       filename: justificatif.pdf
     return:
@@ -2060,6 +2084,9 @@ fr:
         no_description: sans autre explication.
         unexpected_state: >-
           Ce retour ne correspond à aucune identification demandée depuis ce navigateur.
+        # Écrit au log, en erreur : une panne de FranceConnect+, que personne
+        # n'a échoué à franchir.
+        unreachable: "FranceConnect+ injoignable ou en panne au retour de l'identification : %{reason}"
         # Le départ nommait un FranceConnect+ que le déploiement ne déclare
         # plus : une session écrite quand il l'était encore, ou un départ forgé.
         # Refusé avant tout échange du code — il n'y a personne à qui le
@@ -2252,9 +2279,12 @@ fr:
         message_unreadable: Message illisible
         message_unhandled: Message non traité
         answer_not_sent: Réponse non remise
-        # Les deux pas de l'usager dans l'espace de prévisualisation de la
-        # France (chapitre 4.8 §3.2, article 17(2) du règlement 2022/1463).
+        # Les trois pas de l'usager dans l'espace de prévisualisation de la
+        # France (chapitre 4.8 §3.2, article 17 du règlement 2022/1463) : la
+        # visite, l'identité qu'il y établit (chapitre 4.9 §2, étape 18) et son
+        # choix.
         preview_visited: Prévisualisation ouverte
+        preview_identified: Identité contrôlée
         preview_decided: Prévisualisation terminée
         # Et, côté requêteur, l'usager qui revient d'un espace étranger par
         # l'adresse de retour de la France (chapitre 4.9 §5).

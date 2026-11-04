@@ -5,13 +5,14 @@ import { Controller } from "@hotwired/stimulus"
 // own address again until the server stops saying it is waiting. The zone
 // itself carries the `aria-live` region, so only its contents are replaced.
 // The choice being made, the way back is taken as soon as it is there: the
-// user has nothing left to do on this page.
+// user has nothing left to do on this page. Not after a refusal, whose reason
+// the user reads before leaving by the button.
 
 const INTERVAL = 5000
 
 export default class extends Controller {
   static targets = ["way"]
-  static values = { url: String, waiting: Boolean }
+  static values = { url: String, waiting: Boolean, follow: Boolean }
 
   connect() {
     this.schedule()
@@ -53,7 +54,7 @@ export default class extends Controller {
 
   // A form where the correspondent asked for POST or PUT, a link otherwise.
   leave() {
-    if (!this.hasWayTarget) return
+    if (!this.followValue || !this.hasWayTarget) return
 
     if (this.wayTarget instanceof HTMLFormElement) this.wayTarget.requestSubmit()
     else window.location.assign(this.wayTarget.href)

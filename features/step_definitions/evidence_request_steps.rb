@@ -182,8 +182,8 @@ REQUESTED_REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffff
 REQUESTED_EVIDENCE_TYPE =
   'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
 
-def demande(procedure, conversation: nil, preview: false)
-  token = @fake_requester.beneficiary_token(oots_france_url, BENEFICIAIRE)
+def demande(procedure, conversation: nil, preview: false, beneficiaire: BENEFICIAIRE)
+  token = @fake_requester.beneficiary_token(oots_france_url, beneficiaire)
 
   Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
     codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
@@ -206,6 +206,11 @@ def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')
 
 BENEFICIAIRE = { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Dupont', 'prenom' => 'Sophie',
                  'dateNaissance' => '1965-11-25', 'lieuNaissance' => 'Nantes', 'sexe' => 'female' }.freeze
+
+# The test identity `dk-substantial` of the fake FranceConnect+, whom France's
+# preview space confirms when the user identifies again with it.
+BENEFICIAIRE_PREVISUALISE = { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Sørensen', 'prenom' => 'Freja Marie',
+                              'dateNaissance' => '2001-04-17', 'lieuNaissance' => 'Aarhus', 'sexe' => 'female' }.freeze
 
 def patiente_jusqu_a(description)
   limite = Time.current + DELAI_MAX
