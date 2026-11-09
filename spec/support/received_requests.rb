@@ -10,12 +10,13 @@ module ReceivedRequests
 
   # The family the spec describes, built on the `query:QueryRequest` the
   # message carries and the version `RetrievedMessageParser` settles for it —
-  # the two things `EvidenceRequestParser` hands each family.
+  # the two things `EvidenceRequestParser` hands each family. A family handed
+  # more reads it from the request through the block.
   def judged(message)
     payload = Nokogiri::XML(message.raw).at_xpath('//payload/value')
     request = Nokogiri::XML(Base64.decode64(payload.text)).at_xpath('/query:QueryRequest', OotsNamespaces::NAMESPACES)
 
-    described_class.new(request, specification: message.specification)
+    described_class.new(request, specification: message.specification, **(block_given? ? yield(request) : {}))
   end
 
   # A `query:QueryRequest` written by hand and holding only what it is given:

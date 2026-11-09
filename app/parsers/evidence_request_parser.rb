@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include WordingConformance
   include EarlierLineConformance
   include EchoedValueConformance
   include RequestedEvidenceTypeConformance
@@ -253,8 +252,10 @@ class EvidenceRequestParser
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
 
-  # Built at its rank and never before: a family reads nothing at construction,
-  # so the order of the refusals is the order of `validate!`.
+  # Built at its rank and never before: what a family is handed is read where it
+  # is judged — the requester, for `WordingConformance`, whose `C074` must not
+  # fall before the envelope's refusals — so the order of the refusals stays the
+  # order of `validate!`.
   def judge(family, **) = family.new(request, specification:, **).validate!
 
   def require_counted_slots
@@ -339,7 +340,7 @@ class EvidenceRequestParser
   # than under `S034`.
   def require_conformant_document
     judge(RegRepShapeConformance)
-    require_conformant_wordings
+    judge(WordingConformance, requester_agent:)
   end
 
   # Validated here rather than trusted: an incomplete person would otherwise
