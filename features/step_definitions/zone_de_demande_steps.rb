@@ -625,9 +625,9 @@ def press_label = I18n.t('components.demo_request_zone.submit')
 
 # The sentence alone, the wording carrying a link the translation places.
 def disconnected_sentence
-  ActionController::Base.helpers.strip_tags(
+  Nokogiri::HTML5.fragment(
     I18n.t('components.demo_request_zone.disconnected_html', reload: I18n.t('components.demo_request_zone.reload')),
-  )
+  ).text
 end
 
 def mark_the_waiting
