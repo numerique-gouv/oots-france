@@ -11,6 +11,7 @@ module Settings
     IDENTIFIANT_FOURNISSEUR_FRANCAIS
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
+    ADRESSE_CONTACT_EQUIPE
     IDENTIFIANT_REQUETEUR_DEMARCHE
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
@@ -156,6 +157,8 @@ module Settings
     # portal refuses a `redirect_uri` it was not given, so one derived from a
     # `Host` header would fail on the header an attacker sets, and only there.
     def oots_france_url = required('URL_OOTS_FRANCE').delete_suffix('/')
+
+    def team_mail_address = required('ADRESSE_CONTACT_EQUIPE')
 
     # The FranceConnect+ this deployment declares, in the order `FRANCE_CONNECT`
     # writes them: what the home page of the demonstration offers a card for.

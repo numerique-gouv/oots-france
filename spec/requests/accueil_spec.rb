@@ -57,7 +57,7 @@ RSpec.describe 'Accueil' do
         ['#concerne', 'Êtes-vous concerné ?'], ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'],
       ])
       expect(page.css('.fr-header__tools-links .fr-btns-group a').map { [it['href'], it.text.squish] })
-        .to eq([['mailto:oots@data.gouv.fr', 'Contact'], [admin_root_path, 'Administration']])
+        .to eq([["mailto:#{Settings.team_mail_address}", 'Contact'], [admin_root_path, 'Administration']])
       expect(page.at_css('.fr-header__tools-links .fr-translate')).to be_present
       expect(page.css('#button-header-menu, .fr-header__menu-links').size).to eq(2)
       expect(page.at_css('header').text).not_to include('Justificatifs disponibles', 'Annuaires', 'Se déconnecter')
@@ -230,7 +230,7 @@ RSpec.describe 'Accueil' do
 
     # CA19
     it 'offers to write to the team, and names the national coordinator' do
-      expect(page.css('main a[href="mailto:oots@data.gouv.fr"]').map { it.text.squish })
+      expect(page.css(%(main a[href="mailto:#{Settings.team_mail_address}"])).map { it.text.squish })
         .to eq(["Écrire à l'équipe", "Écrire à l'équipe OOTS-France"])
       expect(section('faq').text).to include('Le coordinateur national du portail numérique unique, à la DINUM')
     end
