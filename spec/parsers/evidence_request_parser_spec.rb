@@ -3632,4 +3632,29 @@ RSpec.describe EvidenceRequestParser do
       expect(dated.specification).to eq(EdmSpecification.preferred)
     end
   end
+
+  # Each family of rules is judged by its own spec; what is judged here is that
+  # `validate!` applies it — one refusal of the family coming out of the parser.
+  describe 'the families of rules validate! applies' do
+    it 'applies PreviewConformance' do
+      expect { received(request_asking_preview('peut-être')).validate! }.to refusing(PreviewConformance::BOOLEAN_SCHEMA)
+    end
+  end
+
+  # RG26: `R-EDM-REQ-S019` closes the list of slots on the 1.2 line.
+  describe 'the preview slots on the 1.2 line' do
+    it 'refuses a ReturnLocation, under R-EDM-REQ-S019' do
+      request = received(second_request(location: nil, line: :v1_2,
+        slots: preview_slots('https://oots.example/p', 'https://portail.example')))
+
+      expect { request.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+
+    it 'refuses a PreviewMethod, under R-EDM-REQ-S019' do
+      request = received(second_request(location: nil, line: :v1_2,
+        slots: preview_slots('https://oots.example/p') + string_slot('PreviewMethod', 'GET')))
+
+      expect { request.validate! }.to refusing('R-EDM-REQ-S019')
+    end
+  end
 end

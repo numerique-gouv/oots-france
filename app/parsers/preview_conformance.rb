@@ -1,8 +1,10 @@
 # What chapter 4.9 asks of a received request: the flag that says whether the
 # evidence must be previewed, and the two addresses a second request carries.
 #
-# Refusals go through `refuse`, which the parser including this defines.
-module PreviewConformance
+# The three readings are public: `EvidenceRequestParser` delegates them, the
+# answer reading the flag and the addresses where the request is read, and the
+# flag refusing its schema there.
+class PreviewConformance < RequestConformance
   # `rim.xsd` types the value of a `rim:BooleanValueType` as `xsd:boolean`,
   # whose lexical space is these four literals once whitespace is collapsed.
   # No Schematron rule judges the value — `R-EDM-REQ-S024` judges the type
@@ -28,12 +30,14 @@ module PreviewConformance
   # preview space through the user's visit.
   def return_location = optional_slot_text('ReturnLocation', request)&.strip
 
-  private
-
-  def require_conformant_preview
+  def validate!
     possibility_for_preview?
     require_paired_locations if specification.return_location_slot?
+
+    self
   end
+
+  private
 
   # `R-EDM-REQ-S062`, `C005` and `C120`, all three of 2.0.1. `http://` passes
   # where this deployment itself runs without TLS: the address France issued is

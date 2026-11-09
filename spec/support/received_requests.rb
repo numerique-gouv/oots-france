@@ -18,6 +18,15 @@ module ReceivedRequests
     described_class.new(request, specification: message.specification)
   end
 
+  # A `query:QueryRequest` written by hand and holding only what it is given:
+  # what proves a family is judged without the request around it. Every
+  # namespace the messages use is bound, so a fragment needs declare none.
+  def query_request(content)
+    bound = OotsNamespaces::NAMESPACES.except('xml').map { |prefix, uri| %( xmlns:#{prefix}="#{uri}") }.join
+
+    Nokogiri::XML("<query:QueryRequest#{bound}>#{content}</query:QueryRequest>").root
+  end
+
   # The body travels base64-encoded inside the envelope, so a fixture cannot be
   # edited in place: it has to be decoded, altered, and encoded back. Editing
   # the envelope string directly changes nothing at all — silently.

@@ -18,7 +18,6 @@ class EvidenceRequestParser
   include RequestEnvelopeConformance
   include RequestedEvidenceTypeConformance
   include DescribedPersonConformance
-  include PreviewConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -52,6 +51,8 @@ class EvidenceRequestParser
   # correspondents of the other.
   attr_reader :specification
 
+  delegate :possibility_for_preview?, :preview_location, :return_location, to: :preview
+
   def initialize(document, specification: EdmSpecification.preferred)
     @specification = specification
     @request = at(document, '/query:QueryRequest')
@@ -68,8 +69,7 @@ class EvidenceRequestParser
   # instances correct, which is what they still do on the messages this
   # repository produces.
   def validate!
-    REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
-    require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
+    require_counted_slots
     require_conformant_envelope
     require_one_evidence_subject
     require_requester_country
@@ -81,7 +81,7 @@ class EvidenceRequestParser
     require_conformant_requested_evidence_types
     require_conformant_described_persons
     require_conformant_document
-    require_conformant_preview
+    preview.validate!
 
     self
   end
@@ -171,6 +171,8 @@ class EvidenceRequestParser
 
   attr_reader :request
 
+  def preview = @preview ||= PreviewConformance.new(request, specification:)
+
   # A collection that does not yield exactly one requester leaves nothing to
   # declare: `R-EDM-REQ-S012` and `C074` are what `requester_agent` itself
   # raises, and neither leaves an agent whose identifier or country could be
@@ -253,6 +255,11 @@ class EvidenceRequestParser
     return if all(scope, "./rim:Slot[@name='#{name}']").one?
 
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
+  end
+
+  def require_counted_slots
+    REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
+    require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
   end
 
   # The two collections of agents a request names, judged together because the
