@@ -27,6 +27,13 @@ RSpec.describe Admin::CompleteProConnectSignIn do
     expect(result.error[:id_token].split('.').size).to eq(3)
   end
 
+  it 'admits an invited agent outside the admitted domains' do
+    Guest.invite('partenaire@exemple.fr')
+    stub_pro_connect_userinfo({ 'sub' => ProConnectStubs::AGENT_SUB, 'email' => 'partenaire@exemple.fr' })
+
+    expect(complete).to be_success
+  end
+
   it 'refuses a UserInfo without an address' do
     stub_pro_connect_userinfo({ 'sub' => ProConnectStubs::AGENT_SUB }, form: :json)
 

@@ -906,7 +906,7 @@ en:
       pro_connect:
         undeclared: ProConnect return on a deployment that declares none.
         unexpected_logout_state: The state of the ProConnect logout return is not the one the session expected.
-        agent_refused: "Agent refused, outside the admitted domains: %{email}"
+        agent_refused: "Agent refused, neither in an admitted domain nor invited: %{email}"
       sessions:
         france_connect_undeclared: "FranceConnect+ session not closed: the identity had been attested by \"%{name}\", which this deployment no longer declares."
     reads_demo_request:
@@ -1619,7 +1619,7 @@ en:
         no_error: "Connectivity test to %{party} failed with no error recorded by the gateway (message %{id})"
     failures:
       common_services_refused: The directory refused
-      agent_refused: The agent's address is not in an admitted domain
+      agent_refused: The agent's address is neither in an admitted domain nor invited
       sign_in_failed: Signing in with ProConnect did not succeed
       demo_evidence_empty: The evidence delivered contained no bytes
       demo_unplaceable: The evidence delivered matches no request
@@ -1899,7 +1899,7 @@ en:
         development:
           lead: "In development: sign in without ProConnect, as %{email}."
           button: Sign in without ProConnect (Dev)
-        refused: "Administration is reserved for addresses ending in %{domains}: you identified yourself with “%{email}”. Identify yourself again with an admitted address."
+        refused: "Administration is reserved for addresses ending in %{domains} and for addresses the team running the service has invited: you identified yourself with “%{email}”. Identify yourself again with an admitted address, or ask the team to invite you."
     restricted_access:
       show:
         title: Restricted access

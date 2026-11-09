@@ -18,4 +18,6 @@ Agent = Data.define(:email) do
   def admitted_by?(domains)
     email.to_s.include?('@') && domains.map(&:downcase).include?(domain)
   end
+
+  def admitted? = admitted_by?(Settings.proconnect_agent_domains) || Guest.invited?(email)
 end
