@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include EarlierLineConformance
   include EchoedValueConformance
   include RequestedEvidenceTypeConformance
   include DescribedPersonConformance
@@ -71,7 +70,7 @@ class EvidenceRequestParser
     require_conformant_agents
     judge(RequirementConformance)
     judge(ClassificationConformance)
-    require_earlier_line_rules
+    judge(EarlierLineConformance)
     require_conformant_echoed_values
     require_conformant_requested_evidence_types
     require_conformant_described_persons
@@ -323,7 +322,7 @@ class EvidenceRequestParser
   # reads, and nothing is produced between the two.
   def requested_formats(described)
     distributions = all(described, './sdg:DistributedAs')
-    require_counted_distributions(distributions)
+    EarlierLineConformance.new(request, specification:).require_counted_distributions(distributions)
 
     distributions.map { |distribution| text_at(distribution, './sdg:Format') }
   end
