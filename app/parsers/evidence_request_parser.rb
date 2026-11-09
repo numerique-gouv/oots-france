@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include RequirementConformance
   include ClassificationConformance
   include RegRepShapeConformance
   include WordingConformance
@@ -69,11 +68,11 @@ class EvidenceRequestParser
   # repository produces.
   def validate!
     require_counted_slots
-    RequestEnvelopeConformance.new(request, specification:).validate!
+    judge(RequestEnvelopeConformance)
     require_one_evidence_subject
     require_requester_country
     require_conformant_agents
-    require_conformant_requirements
+    judge(RequirementConformance)
     require_conformant_classifications
     require_earlier_line_rules
     require_conformant_echoed_values
@@ -255,6 +254,10 @@ class EvidenceRequestParser
 
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
+
+  # Built at its rank and never before: a family reads nothing at construction,
+  # so the order of the refusals is the order of `validate!`.
+  def judge(family, **) = family.new(request, specification:, **).validate!
 
   def require_counted_slots
     REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
