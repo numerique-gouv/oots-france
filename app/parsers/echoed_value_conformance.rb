@@ -26,8 +26,8 @@
 # echoed — the response templates write `eidas` themselves. They belong with
 # `C040` because that rule narrows its own context to `sdg:Identifier[@schemeID
 # ='eidas']`: the scheme is what decides which rule judges the value, so the
-# four read as one chain over one element, and splitting them between a class
-# and a module would make a reader hunt for half of it.
+# four read as one chain over one element, and splitting them between two families
+# would make a reader hunt for half of it.
 #
 # What those four *compare to* is not here, and deliberately: the scheme's one
 # admitted value and the form of an eIDAS identifier are facts about identifier
@@ -40,17 +40,12 @@
 # `validate!`, and what the response announces is the format France served, not
 # the one asked for — `EvidenceResponseBuilder#served_format`.
 #
-# Apart from the parser, as the six conformance modules beside it are, and for
-# the reason `RequirementConformance` states: the class does not fit the rules
-# of an eighth subject. `AgentConformance` is included for `require_language`
-# alone, which holds any element the chapter obliges to name its language:
-# `C029` and `C028` over a title are, word for word, the pair of assertions it
-# already reads for an agent's name, a requirement's wordings and a provider
-# classification's description.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module EchoedValueConformance
-  include OotsNamespaces
+# `AgentConformance` is included for `require_language` alone, which holds any
+# element the chapter obliges to name its language: `C029` and `C028` over a
+# title are, word for word, the pair of assertions it already reads for an
+# agent's name, a requirement's wordings and a provider classification's
+# description.
+class EchoedValueConformance < RequestConformance
   include AgentConformance
 
   # The chapter alone, no assertion counting the titles of an evidence type:
@@ -94,7 +89,7 @@ module EchoedValueConformance
                                     [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z}x
 
   # Where each of the two subjects sits comes from `DescribedPersonConformance`,
-  # which is the module that says where the four people a request describes are
+  # which is the family that says where the four people a request describes are
   # to be found — the same one-owner rule that put `EVIDENCE_TYPES` in
   # `RegRepShapeConformance` once three readers walked that subtree.
   #
@@ -118,21 +113,22 @@ module EchoedValueConformance
     }.freeze,
   }.freeze
 
-  private
-
-  # One entry point among the checks of `validate!`, and the scheme first of the
-  # three: that refusal names `C041` or `C042`, more precise than what follows,
+  # The scheme first of the three: that refusal names `C041` or `C042`, more precise than what follows,
   # and running it first is what honours the `[@schemeID='eidas']` of `C040`'s
   # context — every identifier reaching the next reader carries that scheme or
   # has already been refused.
   #
-  # No rule of the chapter fixes this order, nor where the three sit among the
-  # checks of `validate!`.
-  def require_conformant_echoed_values
+  # No rule of the chapter fixes this order, nor where the family sits among
+  # the checks of `EvidenceRequestParser#validate!`.
+  def validate!
     require_beneficiary_identifier_scheme
     require_conformant_subject_identifiers
     require_conformant_evidence_types
+
+    self
   end
+
+  private
 
   # `R-EDM-REQ-C041` and `C042`, whose context is the identifier of the person a
   # `NaturalPerson` slot names: they fire on the element and not on the slot, so
@@ -158,7 +154,7 @@ module EchoedValueConformance
     end
   end
 
-  # The path comes from `RegRepShapeConformance`, which is the module that says
+  # The path comes from `RegRepShapeConformance`, which is the family that says
   # what sits under which slot of `query:Query`: three readers now walk this same
   # subtree, and a literal copied into each would be free to drift.
   #

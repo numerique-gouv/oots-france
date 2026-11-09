@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include EchoedValueConformance
   include RequestedEvidenceTypeConformance
   include DescribedPersonConformance
 
@@ -71,7 +70,7 @@ class EvidenceRequestParser
     judge(RequirementConformance)
     judge(ClassificationConformance)
     judge(EarlierLineConformance)
-    require_conformant_echoed_values
+    judge(EchoedValueConformance)
     require_conformant_requested_evidence_types
     require_conformant_described_persons
     require_conformant_document
