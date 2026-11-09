@@ -1008,39 +1008,6 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
-  # `R-EDM-REQ-C002`, `C024` and `C025`: three literals the chapter fixes in the
-  # envelope, read to be judged and for nothing else.
-  describe 'the fixed values the envelope of a request carries' do
-    def with_issue_date_time(value)
-      with_body { |body| body.sub(/(<rim:Slot name="IssueDateTime">.*?<rim:Value>)[^<]*/m, "\\1#{value}") }
-    end
-
-    it 'refuses a date that is not a timestamp at all, under R-EDM-REQ-C002' do
-      expect { with_issue_date_time('hier').validate! }.to refusing('R-EDM-REQ-C002')
-    end
-
-    it 'accepts a timestamp carrying a zone and no fraction of a second' do
-      expect(with_issue_date_time('2026-09-14T10:00:00Z').validate!).to be_a(described_class)
-    end
-
-    # The assertion is anchored at neither end and stops at the seconds, so it
-    # measures the shape of a timestamp and not the whole of `xsd:dateTime`:
-    # a reader asking for that in full would refuse what the rule admits.
-    it 'accepts one carrying neither fraction nor zone' do
-      expect(with_issue_date_time('2026-09-14T10:00:00').validate!).to be_a(described_class)
-    end
-
-    it 'refuses a return type other than the fixed one, under R-EDM-REQ-C024' do
-      expect { with_body { |body| body.sub('LeafClassWithRepositoryItem', 'LeafClass') }.validate! }
-        .to refusing('R-EDM-REQ-C024')
-    end
-
-    it 'refuses a query definition other than the fixed one, under R-EDM-REQ-C025' do
-      expect { with_body { |body| body.sub('queryDefinition="DocumentQuery"', 'queryDefinition="Foo"') }.validate! }
-        .to refusing('R-EDM-REQ-C025')
-    end
-  end
-
   # Chapter 4.6, on a request that is well formed and still not one France may
   # answer. Each refusal names the rule it applied, which is the whole of what
   # the correspondent will learn.
@@ -1075,24 +1042,6 @@ RSpec.describe EvidenceRequestParser do
     it 'refuses one carrying it twice, under the same rule' do
       expect { with_doubled_evidence_request.validate! }
         .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-S015')))
-    end
-
-    it 'refuses a request announcing another version of the data model' do
-      dated = with_body { |body| body.sub(EdmSpecification.preferred.identifier, 'oots-edm:v1.0') }
-
-      expect { dated.validate! }
-        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
-    end
-
-    # The slot is there, so R-EDM-REQ-S005 is satisfied and it is the value that
-    # fails. What the message says of it has to hold without one to name.
-    it 'refuses a request whose version slot is present but empty' do
-      emptied = with_body do |body|
-        body.sub(/(<rim:Slot name="SpecificationIdentifier">.*?<rim:Value>)[^<]*/m, '\\1')
-      end
-
-      expect { emptied.validate! }
-        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
     end
 
     # R-EDM-REQ-S016: either one or the other, and never both. France models no
@@ -3606,31 +3555,6 @@ RSpec.describe EvidenceRequestParser do
 
       expect { unnamed.body.procedure_code }.to raise_error(UnreadableMessageError)
     end
-
-    # CA11: the header announced 2.0 and the body says 1.2. Refused under the
-    # rule of the line the header named, which is also the line the exception
-    # response goes back in.
-    it 'refuses a request whose header announces 2.0 and whose slot says 1.2' do
-      contradicting = envelope_with_body('requete') do |body|
-        body.sub(EdmSpecification::V2_0.identifier, EdmSpecification::V1_2.identifier)
-      end
-
-      expect { contradicting.body.validate! }
-        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
-    end
-
-    # A message with no property announces itself in its slot alone, so a slot
-    # France cannot read is what makes the two disagree there: the version falls
-    # back on the preferred one, and the refusal is worded in it.
-    it 'refuses a request announcing, in its slot alone, a version France does not speak' do
-      dated = earlier_line_envelope do |body|
-        body.sub(EdmSpecification::V1_2.identifier, 'oots-edm:v1.0')
-      end
-
-      expect { dated.body.validate! }
-        .to raise_error(an_instance_of(UnreadableMessageError).and(having_attributes(detail: 'R-EDM-REQ-C001')))
-      expect(dated.specification).to eq(EdmSpecification.preferred)
-    end
   end
 
   # Each family of rules is judged by its own spec; what is judged here is that
@@ -3638,6 +3562,11 @@ RSpec.describe EvidenceRequestParser do
   describe 'the families of rules validate! applies' do
     it 'applies PreviewConformance' do
       expect { received(request_asking_preview('peut-être')).validate! }.to refusing(PreviewConformance::BOOLEAN_SCHEMA)
+    end
+
+    it 'applies RequestEnvelopeConformance' do
+      expect { with_body { |body| body.sub('LeafClassWithRepositoryItem', 'LeafClass') }.validate! }
+        .to refusing('R-EDM-REQ-C024')
     end
   end
 

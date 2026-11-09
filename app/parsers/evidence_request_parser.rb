@@ -15,7 +15,6 @@ class EvidenceRequestParser
   include WordingConformance
   include EarlierLineConformance
   include EchoedValueConformance
-  include RequestEnvelopeConformance
   include RequestedEvidenceTypeConformance
   include DescribedPersonConformance
 
@@ -56,7 +55,7 @@ class EvidenceRequestParser
   def initialize(document, specification: EdmSpecification.preferred)
     @specification = specification
     @request = at(document, '/query:QueryRequest')
-    require_query_request(at(document, '/*')) if @request.nil?
+    RequestEnvelopeConformance.new(@request, specification:).require_query_request(at(document, '/*')) if @request.nil?
   end
 
   # The business rules of chapter 4.6 France settles before answering at all —
@@ -70,7 +69,7 @@ class EvidenceRequestParser
   # repository produces.
   def validate!
     require_counted_slots
-    require_conformant_envelope
+    RequestEnvelopeConformance.new(request, specification:).validate!
     require_one_evidence_subject
     require_requester_country
     require_conformant_agents
