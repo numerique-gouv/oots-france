@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include DescribedPersonConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -71,7 +70,7 @@ class EvidenceRequestParser
     judge(EarlierLineConformance)
     judge(EchoedValueConformance)
     judge(RequestedEvidenceTypeConformance)
-    require_conformant_described_persons
+    judge(DescribedPersonConformance)
     require_conformant_document
     preview.validate!
 
