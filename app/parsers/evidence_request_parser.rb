@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include RequestedEvidenceTypeConformance
   include DescribedPersonConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
@@ -71,7 +70,7 @@ class EvidenceRequestParser
     judge(ClassificationConformance)
     judge(EarlierLineConformance)
     judge(EchoedValueConformance)
-    require_conformant_requested_evidence_types
+    judge(RequestedEvidenceTypeConformance)
     require_conformant_described_persons
     require_conformant_document
     preview.validate!
