@@ -10,15 +10,7 @@
 # the answer copies out. These rules would refuse a document whose every value
 # was conformant and whose structure was not, and they are the ones that can be
 # applied without knowing what any of it means.
-#
-# Apart from the parser, as `AgentConformance`, `RequirementConformance` and
-# `ClassificationConformance` are, and for the reason the second states: the
-# class does not fit the rules of a sixth subject.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module RegRepShapeConformance
-  include OotsNamespaces
-
+class RegRepShapeConformance < RequestConformance
   # The slots of `query:QueryRequest`, each under the local name the rule that
   # types it asks for, and that rule. A local name and never a qualified one:
   # the nineteen assertions all read `substring-after(@xsi:type, ':')` and
@@ -80,7 +72,7 @@ module RegRepShapeConformance
   }.freeze
 
   # `R-EDM-REQ-S052` and `S053` read the attribute whole, prefix included — see
-  # `require_conformant_collections`, which is the only place in this module
+  # `require_conformant_collections`, which is the only place in this family
   # that compares anything but a local name.
   COLLECTION_VALUE_TYPE = 'rim:CollectionValueType'.freeze
 
@@ -133,11 +125,29 @@ module RegRepShapeConformance
 
   # Where the rules on the evidence type asked for find their context nodes,
   # written from `query:Query` down. Held here, where `QUERY_SLOT_CONTENTS` says
-  # what sits under which slot, and read from here by the two modules that judge
+  # what sits under which slot, and read from here by the two families that judge
   # what the type carries — `RequestedEvidenceTypeConformance` and
   # `EchoedValueConformance`. One literal for three walks over one subtree: three
   # copies would be free to drift.
   EVIDENCE_TYPES = "./rim:Slot[@name='EvidenceRequest']/rim:SlotValue/sdg:DataServiceEvidenceType".freeze
+
+  # The precise refusals first and the generic net last, which is the order
+  # `EvidenceRequestParser#require_conformant_document` gives its own families
+  # and for the same reason: a slot value declaring itself a collection and
+  # carrying nothing breaks `R-EDM-REQ-S052`, which says what a collection must
+  # carry, and `S051`, which says that no slot value at all may be empty — and
+  # the first names its subject where the second only names a shape. So
+  # `require_counted_slot_values` is the floor under everywhere the four readers
+  # above do not reach. No rule of the chapter fixes that order.
+  def validate!
+    require_admitted_names
+    require_conformant_slot_types
+    require_conformant_collections
+    require_slot_contents
+    require_counted_slot_values
+
+    self
+  end
 
   private
 
@@ -145,22 +155,6 @@ module RegRepShapeConformance
   # those of its own version, as `R-EDM-REQ-C001` is.
   def slot_types
     specification.return_location_slot? ? QUERY_REQUEST_SLOT_TYPES : EARLIER_LINE_SLOT_TYPES
-  end
-
-  # The precise refusals first and the generic net last, which is the order
-  # `EvidenceRequestParser#require_conformant_document` gives its own three
-  # walks and for the same reason: a slot value declaring itself a collection
-  # and carrying nothing breaks `R-EDM-REQ-S052`, which says what a collection
-  # must carry, and `S051`, which says that no slot value at all may be empty —
-  # and the first names its subject where the second only names a shape. So
-  # `require_counted_slot_values` is the floor under everywhere the four readers
-  # above do not reach. No rule of the chapter fixes that order.
-  def require_conformant_shape
-    require_admitted_names
-    require_conformant_slot_types
-    require_conformant_collections
-    require_slot_contents
-    require_counted_slot_values
   end
 
   # `R-EDM-REQ-S019` and `S049` close the list of slots each level admits, and
@@ -305,7 +299,7 @@ module RegRepShapeConformance
   end
 
   # What the sentence says of an attribute that is not there, in one place: the
-  # two refusals of this module both name a value they may not have.
+  # two refusals of this family both name a value they may not have.
   def announced(declared) = declared.presence || I18n.t('parsers.evidence_request.unnamed_slot_type')
 
   # `substring-after(@xsi:type, ':')`, exactly: `rim:AnyValueType` yields
@@ -326,7 +320,7 @@ module RegRepShapeConformance
   #
   # That comparison is literal, prefix included, where the nineteen rules above
   # compare the local name alone — the two readings of `@xsi:type` in this
-  # module are deliberately different, and unifying them breaks one of the two:
+  # family are deliberately different, and unifying them breaks one of the two:
   # made local, these would reach a slot value typed `x:CollectionValueType`
   # that their context does not select; made qualified, the others would refuse
   # a prefix the specification admits.
