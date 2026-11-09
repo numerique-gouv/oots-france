@@ -11,7 +11,7 @@ module ApplicationHelper
   def repository_address = 'https://github.com/numerique-gouv/oots-france'
 
   # The one way to reach the team: an address, and no form.
-  def team_mail_address = 'mailto:oots@numerique.gouv.fr'
+  def team_mail_address = "mailto:#{Settings.team_mail_address}"
 
   # An external link opened in a new window, announced in its title (RGAA 13.2).
   def new_window_link(text, address, **)
