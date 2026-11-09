@@ -9,7 +9,6 @@ class EvidenceRequestParser
   include SlotReading
   include QueryRequestReading
   include AgentConformance
-  include ClassificationConformance
   include RegRepShapeConformance
   include WordingConformance
   include EarlierLineConformance
@@ -73,7 +72,7 @@ class EvidenceRequestParser
     require_requester_country
     require_conformant_agents
     judge(RequirementConformance)
-    require_conformant_classifications
+    judge(ClassificationConformance)
     require_earlier_line_rules
     require_conformant_echoed_values
     require_conformant_requested_evidence_types

@@ -245,4 +245,59 @@ module ReceivedRequests
   def replace_language(agent, value)
     agent.sub(/<sdg:Name lang="[^"]*">/, value.nil? ? '<sdg:Name>' : %(<sdg:Name lang="#{value}">))
   end
+
+  # The real request carries no such slot, so the specs write one. Its shape
+  # is that of the example published with chapter 4.5.1 — « 3.4 Evidence
+  # Provider Classification slot and example » — rather than one invented
+  # here: a version 4 UUID under a Semantic Repository scheme, the type
+  # `codelist`, an `https://` value expression, a description naming its
+  # language, and one supported value carrying a `sdg:StringValue`, in the
+  # order `InformationConceptType` sequences them.
+  #
+  # `nil` takes an element or an attribute away where an empty string writes
+  # it blank: several of the rules below tell the two apart.
+  def classification(scheme: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022',
+                     id: '5ce148b9-5578-4049-aecf-af7bb55714b5', type: 'codelist',
+                     expression: value_expression,
+                     descriptions: '<sdg:Description lang="EN">Select the city in which you were born.</sdg:Description>',
+                     values: '<sdg:SupportedValue><sdg:StringValue>11000000</sdg:StringValue></sdg:SupportedValue>')
+    <<~XML
+      <sdg:EvidenceProviderClassification>
+        <sdg:Identifier#{scheme && %( schemeID="#{scheme}")}>#{id}</sdg:Identifier>
+        #{type && "<sdg:Type>#{type}</sdg:Type>"}
+        #{expression && "<sdg:ValueExpression>#{expression}</sdg:ValueExpression>"}
+        #{descriptions}
+        #{values}
+      </sdg:EvidenceProviderClassification>
+    XML
+  end
+
+  # The URL of the published example, its hash cut short: what
+  # `R-EDM-REQ-C101` reads is the scheme it starts with and nothing else.
+  def value_expression = 'https://query.cs.uat.oots.tech.ec.europa.eu/dsd/rest/codelists/DE/Lau2022/a591a6d4'
+
+  # Les deux types sont paramétrables parce que `R-EDM-REQ-S031` et `S032` les
+  # fixent : le slot est une collection, chacun de ses `rim:Element` une valeur
+  # quelconque. Les valeurs par défaut sont celles que les règles demandent, et
+  # tous les exemples de ce bloc les prennent — les deux qui en changent
+  # prouvent que la règle refuse le reste.
+  def classification_slot(*elements, type: 'rim:CollectionValueType', element_type: 'rim:AnyValueType')
+    collection = elements.map { |element| %(<rim:Element xsi:type="#{element_type}">#{element}</rim:Element>) }
+
+    <<~XML
+      <rim:Slot name="EvidenceProviderClassification">
+        <rim:SlotValue xsi:type="#{type}"
+                       collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+          #{collection.join}
+        </rim:SlotValue>
+      </rim:Slot>
+      <rim:Slot name="EvidenceRequester">
+    XML
+  end
+
+  # Through a block: in a replacement string `sub` reads `\1` and `\&` as
+  # backreferences, and the slot comes from the caller.
+  def with_classifications(*elements, **)
+    with_body { |body| body.sub('<rim:Slot name="EvidenceRequester">') { classification_slot(*elements, **) } }
+  end
 end
