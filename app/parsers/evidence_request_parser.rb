@@ -7,6 +7,7 @@
 # nothing about what was wrong with what they sent.
 class EvidenceRequestParser
   include SlotReading
+  include QueryRequestReading
   include AgentConformance
   include RequirementConformance
   include ClassificationConformance
@@ -332,15 +333,6 @@ class EvidenceRequestParser
   def require_conformant_document
     require_conformant_shape
     require_conformant_wordings
-  end
-
-  def refuse(rule, key, **)
-    raise UnreadableMessageError.new(I18n.t(key, **), detail: rule)
-  end
-
-  def query
-    @query ||= at(request, './query:Query') ||
-               raise(UnreadableMessageError, I18n.t('parsers.evidence_request.no_query'))
   end
 
   # Validated here rather than trusted: an incomplete person would otherwise

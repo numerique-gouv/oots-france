@@ -26,6 +26,7 @@ RSpec.configure do |config|
   config.include StateMachinesRspec::Matchers
   config.include Fixtures
   config.include PreviewRequests
+  config.include ReceivedRequests
   config.include Correlation
   config.include GatewayStubs
   config.include CodeListStubs
