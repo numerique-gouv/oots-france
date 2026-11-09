@@ -178,7 +178,7 @@ make console
 > Administrator.appoint('prenom.nom@numerique.gouv.fr')
 ```
 
-[espace_administration.md](espace_administration.md#nommer-les-administrateurs) dit comment en nommer d'autres et les retirer.
+[espace_administration.md](espace_administration.md#nommer-les-administrateurs) dit comment en nommer d'autres et les retirer, et [comment inviter](espace_administration.md#inviter-une-adresse-hors-domaine) une adresse hors des domaines admis.
 
 ### 6. Vérifier
 

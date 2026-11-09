@@ -1,7 +1,7 @@
 # language: fr
 Fonctionnalité: Se connecter à l'espace d'administration
 
-  L'espace d'administration est réservé aux agents dont l'adresse est dans un domaine admis, qui s'identifient par ProConnect. Chacune de ses pages demande à l'agent de se connecter, y compris le tableau de bord des jobs. Tout agent connecté lit les annuaires et joue la démarche de démonstration ; le journal des événements, le tableau de bord des jobs et les points d'accès sont réservés aux administrateurs que l'équipe qui exploite le service a nommés. Les scénarios jouent ProConnect eux-mêmes et ne sortent pas vers le réseau : docs/test_e2e.md dit comment.
+  L'espace d'administration est réservé aux agents qui s'identifient par ProConnect avec une adresse d'un domaine admis, ou une adresse que l'équipe qui exploite le service a invitée. Chacune de ses pages demande à l'agent de se connecter, y compris le tableau de bord des jobs. Tout agent connecté lit les annuaires et joue la démarche de démonstration ; le journal des événements, le tableau de bord des jobs et les points d'accès sont réservés aux administrateurs que l'équipe qui exploite le service a nommés. Les scénarios jouent ProConnect eux-mêmes et ne sortent pas vers le réseau : docs/test_e2e.md dit comment.
 
   Scénario: sans connexion, le journal des événements n'est pas lisible
     Étant donné un échange en échec avec l'Allemagne
@@ -18,6 +18,33 @@ Fonctionnalité: Se connecter à l'espace d'administration
     Alors la page de connexion dit que l'adresse "agent@exemple.fr" n'est pas admise
     Quand il ouvre le journal des événements
     Alors la page de connexion s'affiche
+
+  Scénario: une adresse invitée n'ouvre que les annuaires et la démarche
+    Étant donné l'adresse "partenaire@exemple.fr" invitée
+    Quand l'invité s'identifie par ProConnect avec l'adresse "partenaire@exemple.fr"
+    Alors la page offre les tuiles "Annuaires centraux et Démarche de démonstration"
+    Quand l'agent ouvre l'accueil des annuaires
+    Alors la page n'offre pas la carte des points d'accès
+    Quand l'agent ouvre "le journal des événements" par son adresse
+    Alors la page dit qu'elle est réservée aux administrateurs nommés
+
+  Scénario: une adresse invitée deux fois, dans deux casses, n'est invitée qu'une fois
+    Étant donné l'adresse "Partenaire@Exemple.fr" invitée
+    Et l'adresse "Partenaire@Exemple.fr" invitée
+    Quand l'invité s'identifie par ProConnect avec l'adresse "partenaire@exemple.fr"
+    Alors la page offre les tuiles "Annuaires centraux et Démarche de démonstration"
+    Et l'adresse "partenaire@exemple.fr" n'est invitée qu'une fois
+
+  Scénario: un invité dont l'invitation est retirée est renvoyé à la connexion, puis refusé
+    Étant donné l'adresse "partenaire@exemple.fr" invitée
+    Et que l'invité s'identifie par ProConnect avec l'adresse "partenaire@exemple.fr"
+    Quand l'invitation de l'adresse "partenaire@exemple.fr" est retirée
+    Et que l'agent ouvre l'accueil de l'espace d'administration
+    Alors la page de connexion dit "Cette page demande une connexion."
+    Et le navigateur n'est pas passé par la fin de session de ProConnect
+    Quand l'invité s'identifie par ProConnect avec l'adresse "partenaire@exemple.fr"
+    Alors le navigateur est passé par la fin de session de ProConnect
+    Et la page de connexion dit que l'adresse "partenaire@exemple.fr" n'est pas admise
 
   Scénario: une identification que ProConnect refuse n'ouvre pas l'espace d'administration
     Étant donné que ProConnect refuse la prochaine identification

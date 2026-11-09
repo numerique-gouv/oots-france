@@ -1195,7 +1195,7 @@ fr:
       pro_connect:
         undeclared: Retour de ProConnect sur un déploiement qui n'en déclare aucun.
         unexpected_logout_state: Le state du retour de déconnexion de ProConnect n'est pas celui que la session attendait.
-        agent_refused: "Agent refusé, hors des domaines admis : %{email}"
+        agent_refused: "Agent refusé, ni dans un domaine admis ni invité : %{email}"
       # Écrit dans le log et nulle part ailleurs : l'exploitant est déconnecté
       # quoi qu'il arrive, et rien à l'écran ne distinguerait une session
       # FranceConnect+ close d'une session laissée ouverte faute de savoir à qui
@@ -2259,10 +2259,10 @@ fr:
       # dit ce que les récrire séparément coûterait.
       common_services_refused: L'annuaire a refusé
       # Les deux issues d'un retour de ProConnect qui n'ouvre pas l'espace
-      # d'administration : l'agent identifié hors des domaines admis, et le
-      # retour qui ne vérifie pas. La page de connexion dit les siennes, en
-      # entier, sous `admin.sessions`.
-      agent_refused: L'adresse de l'agent n'est pas dans un domaine admis
+      # d'administration : l'agent identifié ni dans un domaine admis ni
+      # invité, et le retour qui ne vérifie pas. La page de connexion dit les
+      # siennes, en entier, sous `admin.sessions`.
+      agent_refused: L'adresse de l'agent n'est ni dans un domaine admis ni invitée
       sign_in_failed: La connexion par ProConnect n'a pas abouti
       # Les quatre refus que la démarche de démonstration reçoit du contrat, et
       # qu'elle rend tels quels à l'usager : ce sont ceux qu'un fournisseur de
@@ -2692,7 +2692,7 @@ fr:
         development:
           lead: "En développement : entrer sans ProConnect, comme %{email}."
           button: Se connecter sans ProConnect (Dev)
-        refused: "L'administration est réservée aux adresses en %{domains} : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise."
+        refused: "L'administration est réservée aux adresses en %{domains} et aux adresses que l'équipe qui exploite le service a invitées : vous vous êtes identifié avec « %{email} ». Identifiez-vous de nouveau avec une adresse admise, ou demandez à l'équipe d'être invité."
     # Ce qu'un agent que personne n'a nommé administrateur lit en ouvrant le
     # journal, les jobs ou les points d'accès.
     restricted_access:

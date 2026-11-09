@@ -22,6 +22,15 @@ Quand('son adresse est nommée administrateur') do
   Administrator.appoint(Agent.demonstration.email)
 end
 
+# Written in the base, as the team invites a guest in a console on the server.
+Étantdonné("l'adresse {string} invitée") do |email|
+  Guest.invite(email)
+end
+
+Quand("l'invitation de l'adresse {string} est retirée") do |email|
+  Guest.withdraw(email)
+end
+
 Quand("l'agent ouvre l'accueil de l'espace d'administration") do
   visit admin_root_path
 end
@@ -102,8 +111,20 @@ Quand("l'administrateur s'identifie par ProConnect") do
   sign_in_through_pro_connect
 end
 
-Quand("un agent s'identifie par ProConnect avec l'adresse {string}") do |email|
+Quand(/^(?:un agent|l'invité) s'identifie par ProConnect avec l'adresse "([^"]*)"$/) do |email|
   sign_in_through_pro_connect(email:)
+end
+
+Alors('le navigateur est passé par la fin de session de ProConnect') do
+  expect(BROWSER_PRO_CONNECT.session_ends).to eq(1)
+end
+
+Alors("le navigateur n'est pas passé par la fin de session de ProConnect") do
+  expect(BROWSER_PRO_CONNECT.session_ends).to eq(0)
+end
+
+Alors("l'adresse {string} n'est invitée qu'une fois") do |email|
+  expect(Guest.where(email: email.downcase).count).to eq(1)
 end
 
 Étantdonné('ProConnect refuse la prochaine identification') do
@@ -224,9 +245,19 @@ Alors("la page de connexion propose de s'identifier avec ProConnect") do
   expect(page).to have_no_field(type: 'password')
 end
 
+# The two ways in, said to the refused agent alone: outside the alert, nothing
+# the page says names the admitted domains or the invitation — the entry without
+# ProConnect, which development and test alone offer, aside.
 Alors("la page de connexion dit que l'adresse {string} n'est pas admise") do |email|
   expect(page).to have_current_path(new_admin_session_path)
-  expect(page).to have_css('.fr-alert--error', text: "vous vous êtes identifié avec « #{email} »")
+  domains = Settings.proconnect_agent_domains
+  expect(page).to have_css('.fr-alert--error',
+    text: I18n.t('admin.sessions.new.refused', domains: domains.map { |domain| "@#{domain}" }.to_sentence, email:))
+
+  main = Nokogiri::HTML(page.html).at_css('main')
+  main.css('.fr-alert--error').each(&:remove)
+  main.xpath(".//p[contains(., '#{Agent.demonstration.email}')]").each(&:remove)
+  expect(main.text).not_to match(Regexp.union(*domains, 'invit'))
 end
 
 Alors("l'en-tête affiche l'adresse {string}") do |email|

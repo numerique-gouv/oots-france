@@ -50,8 +50,8 @@ module Admin
       redirect_to destination || admin_root_path
     end
 
-    # An address outside the admitted domains opens nothing, and its ProConnect
-    # session is ended so that the agent can come back with another one.
+    # An address neither in an admitted domain nor invited opens nothing, and
+    # its ProConnect session is ended so that the agent can come back with another one.
     def turn_away(error)
       Rails.logger.warn(LogLine.t('controllers.admin.pro_connect.agent_refused', email: error[:email]))
       reset_session

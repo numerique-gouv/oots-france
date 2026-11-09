@@ -77,8 +77,11 @@ RSpec.describe 'Admin::ProConnect' do
         get admin_pro_connect_retour_deconnexion_path, params: { state: location_parameters.fetch('state') }
 
         expect(response).to redirect_to(new_admin_session_path)
-        expect(failed_page).to include("L'administration est réservée aux adresses en @numerique.gouv.fr : " \
-                                       'vous vous êtes identifié avec « agent@exemple.fr ».')
+        expect(failed_page).to include(
+          "L'administration est réservée aux adresses en @numerique.gouv.fr et aux adresses que l'équipe " \
+          'qui exploite le service a invitées : vous vous êtes identifié avec « agent@exemple.fr ». ' \
+          "Identifiez-vous de nouveau avec une adresse admise, ou demandez à l'équipe d'être invité.",
+        )
         expect(response.body).not_to include('Vous êtes déconnecté.')
       end
 
@@ -90,6 +93,44 @@ RSpec.describe 'Admin::ProConnect' do
         expect(response.body).not_to include('agent@exemple.fr')
         get admin_root_path
         expect(response).to redirect_to(new_admin_session_path)
+      end
+    end
+
+    context 'when the agent is invited' do
+      before { Guest.invite('partenaire@exemple.fr') }
+
+      it 'opens the space, and not the journal' do
+        return_from_pro_connect(email: 'partenaire@exemple.fr')
+
+        expect(response).to redirect_to(admin_root_path)
+        get admin_journal_root_path
+        expect(response).to redirect_to(admin_restricted_access_path)
+      end
+
+      it 'opens the journal once the address is also appointed' do
+        Administrator.appoint('partenaire@exemple.fr')
+        return_from_pro_connect(email: 'partenaire@exemple.fr')
+
+        get admin_journal_root_path
+        expect(response).to have_http_status(:ok)
+      end
+
+      it 'sends a withdrawn guest to the login page at the next page, without ending the ProConnect session' do
+        return_from_pro_connect(email: 'partenaire@exemple.fr')
+        Guest.withdraw('partenaire@exemple.fr')
+
+        get admin_root_path
+
+        expect(response).to redirect_to(new_admin_session_path)
+        follow_redirect!
+        expect(response.body).to include('Cette page demande une connexion.')
+      end
+
+      it 'turns a withdrawn guest away when they identify again' do
+        Guest.withdraw('partenaire@exemple.fr')
+        return_from_pro_connect(email: 'partenaire@exemple.fr')
+
+        expect(response.headers['Location']).to start_with(ProConnectStubs::END_SESSION_ENDPOINT)
       end
     end
 

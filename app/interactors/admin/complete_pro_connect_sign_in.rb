@@ -3,10 +3,10 @@ module Admin
   # identifies, and whether the console admits them.
   #
   # Every check refuses the whole sign-in: a return that does not verify opens
-  # nothing. The refusal of an agent whose address is outside the admitted
-  # domains is a failure of its own — the sign-in did verify, and the agent is
-  # told nominally why they are turned away — which carries the ID Token, so
-  # that their ProConnect session can be ended with it.
+  # nothing. The refusal of an agent whose address is neither in an admitted
+  # domain nor invited is a failure of its own — the sign-in did verify, and
+  # the agent is told nominally why they are turned away — which carries the
+  # ID Token, so that their ProConnect session can be ended with it.
   class CompleteProConnectSignIn < ApplicationInteractor
     def call
       check_state
@@ -35,7 +35,7 @@ module Admin
     # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/restriction_acces
     def admit(agent)
       context.agent = agent
-      return if agent.admitted_by?(Settings.proconnect_agent_domains)
+      return if agent.admitted?
 
       fail_with_error(:agent_refused, errors: [agent.email], email: agent.email, id_token: context.id_token)
     end

@@ -35,12 +35,13 @@ module AdminAuthentication
   end
 
   # The agent the sign-in identified, admitted again at every request rather
-  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`
-  # closes the sessions it had opened at their next page.
+  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`,
+  # or an invitation withdrawn, closes the sessions it had opened at their next
+  # page.
   def administrator_signed_in?
     email = session[:agent_email]
 
-    email.present? && Agent.new(email:).admitted_by?(Settings.proconnect_agent_domains)
+    email.present? && Agent.new(email:).admitted?
   end
 
   # Declared by the controllers it closes rather than here: the directories and

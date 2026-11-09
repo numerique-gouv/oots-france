@@ -25,7 +25,7 @@ class BrowserProConnect
 
     case env['PATH_INFO']
     when AUTHORIZE then authorize(asked)
-    when SESSION_END then back(asked.fetch('post_logout_redirect_uri'), state: asked.fetch('state'))
+    when SESSION_END then end_session(asked)
     else @app.call(env)
     end
   end
@@ -38,7 +38,16 @@ class BrowserProConnect
   # `error` in place of `code`. For the next departure only.
   def refuse_next = @lock.synchronize { @refusing = true }
 
-  def reset = @lock.synchronize { @refusing = false }
+  # How many times the browser was sent to the end of session since the
+  # scenario began.
+  def session_ends = @lock.synchronize { @session_ends }
+
+  def reset
+    @lock.synchronize do
+      @refusing = false
+      @session_ends = 0
+    end
+  end
 
   private
 
@@ -50,6 +59,12 @@ class BrowserProConnect
     outcome = refusing ? { error: 'access_denied', error_description: 'refus du faux' } : { code: CODE }
 
     back(asked.fetch('redirect_uri'), **outcome, state: asked.fetch('state'))
+  end
+
+  def end_session(asked)
+    @lock.synchronize { @session_ends += 1 }
+
+    back(asked.fetch('post_logout_redirect_uri'), state: asked.fetch('state'))
   end
 
   # Only the path of the declared address is kept: it is built on

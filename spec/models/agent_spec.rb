@@ -31,6 +31,22 @@ RSpec.describe Agent do
     expect(agent(nil)).not_to be_admitted_by(%w[numerique.gouv.fr])
   end
 
+  describe '#admitted?' do
+    it 'admits an address of a domain `DOMAINES_AGENTS_PROCONNECT` lists' do
+      expect(agent('agent@numerique.gouv.fr')).to be_admitted
+    end
+
+    it 'admits an invited address outside the admitted domains' do
+      Guest.invite('partenaire@exemple.fr')
+
+      expect(agent('Partenaire@exemple.fr')).to be_admitted
+    end
+
+    it 'refuses an address outside the admitted domains nobody invited' do
+      expect(agent('partenaire@exemple.fr')).not_to be_admitted
+    end
+  end
+
   it 'names the demonstration agent in the first admitted domain' do
     allow(Settings).to receive(:proconnect_agent_domains).and_return(%w[exemple.fr numerique.gouv.fr])
 
