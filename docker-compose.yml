@@ -5,10 +5,15 @@ x-domibus: &env-domibus
 x-oots: &configuration-base
   build:
     context: .
-  # One image for `web`, `worker` and `test`: without this explicit name,
-  # Compose derives one per service and `docker compose build web` would build
-  # only one of the three.
-  image: oots-france-app
+  # One image for `web`, `worker`, `test` and `fake-france-connect`: without
+  # this explicit name, Compose derives one per service and `docker compose
+  # build web` would build only one of the four. Compose always interpolates
+  # COMPOSE_PROJECT_NAME, the normalised name of the directory, so each
+  # worktree builds an image no other one replaces.
+  image: oots-france-app-${COMPOSE_PROJECT_NAME}
+  # Compose builds the missing image of a service with a `build:` section; left
+  # unset, it first tries to pull it from Docker Hub, which never has it.
+  pull_policy: never
   env_file:
     - ./.env.oots
   # The key of the development credentials, when whoever starts the stack holds
