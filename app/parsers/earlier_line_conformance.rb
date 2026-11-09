@@ -20,18 +20,10 @@
 # and the line only chooses which table that walk filters by.
 #
 # Two entry points, because the refusals do not all fall at the same moment:
-# `require_earlier_line_rules` is called among the checks of `validate!`, and
-# `require_counted_distributions` at the read of the formats, which is the count
-# it commands.
-#
-# Apart from the parser, as the six conformance modules beside it are, and for
-# the reason `RequirementConformance` states: the class does not fit the rules
-# of a seventh subject.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module EarlierLineConformance
-  include OotsNamespaces
-
+# `validate!` is judged among the checks of `EvidenceRequestParser#validate!`,
+# and `require_counted_distributions` from the parser's read of the formats,
+# which is the count it commands.
+class EarlierLineConformance < RequestConformance
   # No assertion of the 1.2.5 line refuses a request asking for no distribution
   # at all: `R-EDM-REQ-C032` counts `= 1 or = 0` there, and none satisfies it.
   # `DataServiceEvidenceTypeType` makes `sdg:DistributedAs` `minOccurs="1"` in
@@ -55,8 +47,6 @@ module EarlierLineConformance
   TRANSFORMATIONS =
     "./rim:Slot[@name='EvidenceRequest']/rim:SlotValue/sdg:DataServiceEvidenceType/sdg:DistributedAs/sdg:Transformation".freeze
 
-  private
-
   # `R-EDM-REQ-C032` counts `sdg:DistributedAs` `> 0` at the 2.0.1 tag and
   # `= 1 or = 0` at the 1.2.5 one — « must occur not more than once », and the
   # 4.6 published at that tag says as much, `Role FATAL`. So the very request
@@ -70,6 +60,15 @@ module EarlierLineConformance
     refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_without_distribution')
   end
 
+  def validate!
+    require_conformant_languages
+    require_conformant_transformations
+
+    self
+  end
+
+  private
+
   # The 1.2 line, where one and only one is asked for: none is refused under the
   # chapter, which is what asks for a distribution, and more than one under the
   # rule, which is what forbids the second. One French sentence serves both
@@ -81,11 +80,6 @@ module EarlierLineConformance
       refuse('R-EDM-REQ-C032', 'parsers.evidence_request.evidence_type_with_several_distributions',
         count: distributions.size)
     end
-  end
-
-  def require_earlier_line_rules
-    require_conformant_languages
-    require_conformant_transformations
   end
 
   # The context of `C004` and of `C069` *is* the attribute, so neither ever asks
@@ -110,7 +104,7 @@ module EarlierLineConformance
   # where 1.2.5 publishes no such rule and has `C069` judge the value instead.
   # One attribute, two lines, two opposite duties — the shape
   # `require_counted_distributions` already holds for `C032`, and the reason
-  # this rule is in a module about the earlier line despite being published on
+  # this rule is in a family about the earlier line despite being published on
   # the later one alone.
   #
   # `nil?` and not `blank?`: the assertion is `not(@xml:lang)`, which the mere

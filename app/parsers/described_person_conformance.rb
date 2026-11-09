@@ -17,21 +17,13 @@
 # **Judged, and read for nothing else.** France does not model the
 # representative, nor the address, nationality or level of assurance of an
 # organisation: it refuses what breaks a rule and ignores the rest. That is what
-# separates this module from the twins it does not hold — `C036`, `C037` and
+# separates this family from the twins it does not hold — `C036`, `C037` and
 # `C043` live in `NaturalPerson`, `C049`, `C054` and `C055` in `LegalPerson`,
 # and `C040`, `C041`, `C042` and `C051` in `EchoedValueConformance`, because
 # each of those values is read into something France keeps or copies out. The
 # rule is the same; what differs is whether anything but the refusal depends on
 # it.
-#
-# Apart from the parser, as the nine conformance modules beside it are, and for
-# the reason `RequirementConformance` states: the class does not fit the rules
-# of an eleventh subject.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module DescribedPersonConformance
-  include OotsNamespaces
-
+class DescribedPersonConformance < RequestConformance
   # Where each of the four sits, written from `query:Query` down. The subject's
   # two are read elsewhere as well; the representative's two are read nowhere
   # else at all.
@@ -111,7 +103,7 @@ module DescribedPersonConformance
   # `C061` and `C085`, the representative's halves of the assertion `C040` and
   # `C051` make of the subject's identifier — `IdentifierScheme::EIDAS_IDENTIFIER`
   # is that assertion, transcribed once beside the code list it is built from,
-  # and read from there by this module and by `EchoedValueConformance` alike.
+  # and read from there by this family and by `EchoedValueConformance` alike.
   #
   # The 1.2 line writes both differently and neither difference can change an
   # outcome, which is why no predicate of `EdmSpecification` guards them:
@@ -134,22 +126,23 @@ module DescribedPersonConformance
   # `tokenize($attrval, ',\s*')`.
   PROCEDURE_SEPARATOR = /,\s*/
 
-  private
-
-  # One entry point among the checks of `validate!`, and the scheme of the
-  # identifiers first of all: `C063` is what empties the `eidas2` branch, and
+  # The scheme of the identifiers first of all: `C063` is what empties the `eidas2` branch, and
   # `C061`'s context is narrowed by the very scheme it refuses. Everything after
   # it judges an identifier that names `eidas` or no identifier at all. No rule
-  # of the chapter fixes the rest of the order, nor where this sits among the
-  # checks of `validate!`.
-  def require_conformant_described_persons
+  # of the chapter fixes the rest of the order, nor where the family sits among
+  # the checks of `EvidenceRequestParser#validate!`.
+  def validate!
     require_eidas_schemes
     require_eidas_identifiers
     require_declared_levels_of_assurance
     require_country_codes
     require_representative_identity
     require_representative_organisation
+
+    self
   end
+
+  private
 
   def require_eidas_schemes
     EIDAS_SCHEMES.each do |path, rules|
@@ -304,7 +297,7 @@ module DescribedPersonConformance
   # the value is `00` » — so `T1,T3` breaks it, whatever its message says about
   # comma-separated values. `C091` does split, on `,\s*`.
   #
-  # `C091` is also the one rule of this module that is not executable as
+  # `C091` is also the one rule of this family that is not executable as
   # published: its `sch:let` binds `$attrval` to *every* `sdg:AttributeValue` of
   # the slot, and `tokenize()` takes a single string, so an organisation naming
   # two sectoral attributes is a type error rather than a verdict. France judges

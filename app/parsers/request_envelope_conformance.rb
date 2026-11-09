@@ -16,23 +16,17 @@
 # and not among the readers of `EvidenceRequestParser`.
 #
 # Two entry points, because the refusals do not fall at the same moment.
-# `require_query_request` is called from the constructor, the reading of
+# `require_query_request` is called from the constructor of the parser, its reading of
 # `/query:QueryRequest` having come back empty, and its refusal carries no
 # answer: a document that is not a query request names no requester to address,
 # no identifier to echo and no version to answer in, so the journal is its only
 # trace — which is why it names its rule there, `docs/journal_des_echanges.md`
 # holding that a refusal whose reason is known and unrecorded cannot be
-# justified afterwards. `require_conformant_envelope` is called among the checks
-# of `validate!`, and everything it refuses does go back in an `EDM:ERR:0003`.
-#
-# Apart from the parser, as the seven conformance modules beside it are, and for
-# the reason `RequirementConformance` states: the class does not fit the rules
-# of a ninth subject.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module RequestEnvelopeConformance
-  include OotsNamespaces
-
+# justified afterwards. `require_query_request` reads no request — there is
+# none to read. `validate!` is judged among the checks of
+# `EvidenceRequestParser#validate!`, and everything it refuses does go back in
+# an `EDM:ERR:0003`.
+class RequestEnvelopeConformance < RequestConformance
   # `R-EDM-REQ-C002`, transcribed whole rather than tightened — the convention
   # `RequirementConformance::REQUIREMENT_IDENTIFIER` states. It carries neither
   # `^` nor `$`, so anything may surround the timestamp, and it stops at the
@@ -64,8 +58,6 @@ module RequestEnvelopeConformance
     }.freeze,
   }.freeze
 
-  private
-
   # The local name first and the namespace second, the order the two patterns
   # are published in. `name` is the local name in Nokogiri, where the assertion
   # says `local-name()` explicitly; and the root is fetched by `/*` rather than
@@ -87,11 +79,15 @@ module RequestEnvelopeConformance
   # line the message announces, so a request whose announced version is not the
   # one it is being read in is refused before anything is judged by the wrong
   # line's table. No rule of the chapter fixes that order.
-  def require_conformant_envelope
+  def validate!
     require_expected_specification
     require_issue_date_time
     require_fixed_attributes
+
+    self
   end
+
+  private
 
   # Against the version the message was read in, which is the ebMS property when
   # the header carries one: a slot contradicting it is the inconsistency chapter

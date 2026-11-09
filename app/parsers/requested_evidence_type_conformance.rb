@@ -25,20 +25,12 @@
 # reading — `EarlierLineConformance#require_counted_distributions` holds both
 # lines of it.
 #
-# Apart from the parser, as the eight conformance modules beside it are, and for
-# the reason `RequirementConformance` states: the class does not fit the rules
-# of a tenth subject. `AgentConformance` is included for `require_language`
-# alone, which holds any element the chapter obliges to name its language:
-# `C031` and `C030` over a description are, word for word, the pair of
-# assertions it already reads for an agent's name, a requirement's wordings and
-# the titles of this very element.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module RequestedEvidenceTypeConformance
-  include OotsNamespaces
+# `AgentConformance` is included for `require_language` alone, which holds any
+# element the chapter obliges to name its language: `C031` and `C030` over a
+# description are, word for word, the pair of assertions it already reads for an
+# agent's name, a requirement's wordings and the titles of this very element.
+class RequestedEvidenceTypeConformance < RequestConformance
   include AgentConformance
-
-  private
 
   # Every type the `EvidenceRequest` slot carries, no rule counting them, and
   # silence on a request carrying none: the contexts are the elements
@@ -49,13 +41,17 @@ module RequestedEvidenceTypeConformance
   # Walked from `query` rather than through `slot_content`, for the reason
   # `EarlierLineConformance#require_conformant_transformations` gives of the
   # same subtree.
-  def require_conformant_requested_evidence_types
+  def validate!
     all(query, RegRepShapeConformance::EVIDENCE_TYPES).each do |described|
       require_evidence_type_identifier(described)
       all(described, './sdg:Description').each { |description| require_language(description, :evidence_type_description) }
       require_published_formats(described)
     end
+
+    self
   end
+
+  private
 
   # `R-EDM-REQ-C106`, whose context is the evidence type and whose test is
   # `not(normalize-space(sdg:Identifier)='')`: an element written blank breaks

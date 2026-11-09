@@ -4,7 +4,7 @@
 #
 # Two rules, two walks, and that is the family: neither has an ancestor in its
 # context, so neither can be hung off the reader of any one element — where
-# every other module here judges a subtree it can name. They are the net under
+# every other family here judges a subtree it can name. They are the net under
 # everywhere those readers do not go.
 #
 # The assertion's context lists twenty-one element names in
@@ -16,13 +16,9 @@
 # those elements keep their own, more precise sentence: they run first, and this
 # is the net under everywhere they do not go.
 #
-# Apart from the parser, as the six conformance modules beside it are, and for
-# the reason `RequirementConformance` states.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module WordingConformance
-  include OotsNamespaces
-
+# This family alone is handed more than the request: the agent classified `ER`,
+# whose names it must not refuse — see `unanswerable_wording_paths`.
+class WordingConformance < RequestConformance
   # The twenty-one names the 2.0.1 context lists, verbatim and in its order,
   # each under the length the test asks of it: `$text_length > 1` for nineteen
   # of them, and `> 0` for the two the disjunction names besides. One table and
@@ -60,7 +56,10 @@ module WordingConformance
     .merge('JurisdictionContext' => 2, 'JurisditionLevel' => 2)
     .freeze
 
-  private
+  def initialize(request, specification:, requester_agent:)
+    super(request, specification:)
+    @requester_agent = requester_agent
+  end
 
   # Every `sdg:*` element of the request, filtered by the table: walking the
   # document once is what the rule's context does, where twenty-one XPath
@@ -68,10 +67,16 @@ module WordingConformance
   #
   # `squish` is `normalize-space`, which the assertion applies before measuring:
   # ` A ` is one character to the rule, and so is a name split over two lines.
-  def require_conformant_wordings
+  def validate!
     require_long_enough_wordings
     require_one_wording_per_language
+
+    self
   end
+
+  private
+
+  attr_reader :requester_agent
 
   def require_long_enough_wordings
     unanswerable = unanswerable_wording_paths
@@ -147,16 +152,11 @@ module WordingConformance
   # `EvidenceProvision::RejectUnanswerableRequester` is where that silence is
   # journalled — the reading being ordered so that the requester is refused
   # before anything answers. The exception is here all the same, so that
-  # `validate!` called on its own cannot turn that silent refusal into a signed
-  # answer.
+  # `EvidenceRequestParser#validate!` called on its own cannot turn that silent
+  # refusal into a signed answer.
   #
   # Told apart by their path, which is unique in the document and does not
   # depend on how the node was reached, where object identity would depend on
   # Nokogiri handing back the same instance twice.
-  #
-  # Read once into a local rather than memoised on the reader: every module
-  # beside this one leaves the instance variables of `EvidenceRequestParser` to
-  # `EvidenceRequestParser`, and a name claimed on someone else's instance is
-  # the one collision that would corrupt silently.
   def unanswerable_wording_paths = all(requester_agent, './sdg:Name').map(&:path)
 end

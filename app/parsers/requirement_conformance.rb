@@ -3,23 +3,12 @@
 # that each identifier is a Semantic Repository URL, and that each wording names
 # a language of the code list.
 #
-# Apart from the parser, as `AgentConformance` is: `EvidenceRequestParser` would
-# otherwise carry the rules of four slots at once, and does not fit — the class
-# tripped `Metrics/ClassLength` the day the `EvidenceProvider` rules landed
-# beside these.
-#
 # `AgentConformance` is included for two methods it holds and no agent needs.
 # `require_language`: four pairs of rules make its two assertions, and two of
 # them judge the wordings below, which are not agents. `refuse_unexpected_children`:
 # `R-EDM-REQ-S038` closes the list of a requirement's children exactly as `S043`
-# closes the provider's, so the reading is written once. It is declared here
-# rather than left to the parser, in which both modules happen to meet — that
-# coincidence would resolve the calls just as well, and would break silently the
-# day this module is included anywhere else.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module RequirementConformance
-  include OotsNamespaces
+# closes the provider's, so the reading is written once.
+class RequirementConformance < RequestConformance
   include AgentConformance
 
   # `R-EDM-REQ-C008`, copied from the Schematron dot for dot. Its assertion
@@ -54,8 +43,6 @@ module RequirementConformance
   # requests of the suite carry. The test is what plays.
   REQUIREMENT_CHILDREN = %w[Name Identifier Description].freeze
 
-  private
-
   # Every requirement the slot carries, and no count of them: `R-EDM-REQ-S011`
   # numbers the slot, and nothing numbers its elements, so a request naming
   # three obligations is as conformant as one naming a single one.
@@ -67,10 +54,11 @@ module RequirementConformance
   # judge. An element carrying no `sdg:Requirement` is therefore a request the
   # rule refuses, not a nothing there is nothing to say about.
   #
-  # Reached only once the slot is known to be there, `validate!` running the
-  # `REQUIRED_SLOTS` loop first — `slot_elements` raises on an absent slot
-  # under a sentence that names no rule, where `S011` is what refuses it.
-  def require_conformant_requirements
+  # Reached by the parser only once the slot is known to be there, its
+  # `validate!` counting `REQUIRED_SLOTS` first — `slot_elements` raises on an
+  # absent slot under a sentence that names no rule, where `S011` is what
+  # refuses it.
+  def validate!
     slot_elements('Requirements', request).each do |element|
       required = all(element, './sdg:Requirement')
       refuse('R-EDM-REQ-S037', 'parsers.evidence_request.element_without_requirement') if required.empty?
@@ -81,7 +69,11 @@ module RequirementConformance
         require_requirement_children(requirement)
       end
     end
+
+    self
   end
+
+  private
 
   # Each `sdg:Identifier` that is there, and silence on a requirement carrying
   # none: the context of `R-EDM-REQ-C008` is the identifier itself, so its

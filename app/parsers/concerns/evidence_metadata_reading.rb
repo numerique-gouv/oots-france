@@ -3,10 +3,9 @@
 # matched. Both live in the `EvidenceMetadata` slot, and where that slot sits
 # depends on the line the response is written on.
 #
-# Apart from the parser, as `AgentConformance` and `RequirementConformance` are
-# apart from the request's: `EvidenceResponseParser` carries the rules of
-# chapter 4.6 for a whole response, and tripped `Metrics/ClassLength` the day
-# the second place to look for the metadata landed beside them.
+# Apart from the parser: `EvidenceResponseParser` carries the rules of chapter
+# 4.6 for a whole response, and tripped `Metrics/ClassLength` the day the second
+# place to look for the metadata landed beside them.
 #
 # Everything read here is nil-tolerant and never validated: no error path runs
 # from a portal back to a provider, so refusing an otherwise deliverable

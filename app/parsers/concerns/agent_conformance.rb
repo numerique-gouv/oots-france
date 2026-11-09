@@ -28,10 +28,10 @@
 # `EvidenceRequestParser#build_requester`, which refuses without answering for
 # what an error response would copy back.
 #
-# Refusals go through `refuse`, which the parser including this defines: naming
-# the broken rule and turning it into an `UnreadableMessageError` is one act for
-# every rule of the chapter, agent or not, and belongs where the rest of them
-# are refused.
+# Refusals go through `refuse`, which `QueryRequestReading` gives the parser and
+# every family including this: naming the broken rule and turning it into an
+# `UnreadableMessageError` is one act for every rule of the chapter, agent or
+# not, and is written once.
 module AgentConformance
   include OotsNamespaces
 

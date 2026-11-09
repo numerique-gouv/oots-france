@@ -7,17 +7,8 @@
 # nothing about what was wrong with what they sent.
 class EvidenceRequestParser
   include SlotReading
+  include QueryRequestReading
   include AgentConformance
-  include RequirementConformance
-  include ClassificationConformance
-  include RegRepShapeConformance
-  include WordingConformance
-  include EarlierLineConformance
-  include EchoedValueConformance
-  include RequestEnvelopeConformance
-  include RequestedEvidenceTypeConformance
-  include DescribedPersonConformance
-  include PreviewConformance
 
   # The slots chapter 4.6 counts under `query:QueryRequest`, each under the rule
   # that counts it. `= 1` is what the readers below cannot say: they fetch the
@@ -51,10 +42,12 @@ class EvidenceRequestParser
   # correspondents of the other.
   attr_reader :specification
 
+  delegate :possibility_for_preview?, :preview_location, :return_location, to: :preview
+
   def initialize(document, specification: EdmSpecification.preferred)
     @specification = specification
     @request = at(document, '/query:QueryRequest')
-    require_query_request(at(document, '/*')) if @request.nil?
+    RequestEnvelopeConformance.new(@request, specification:).require_query_request(at(document, '/*')) if @request.nil?
   end
 
   # The business rules of chapter 4.6 France settles before answering at all —
@@ -67,20 +60,19 @@ class EvidenceRequestParser
   # instances correct, which is what they still do on the messages this
   # repository produces.
   def validate!
-    REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
-    require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
-    require_conformant_envelope
+    require_counted_slots
+    judge(RequestEnvelopeConformance)
     require_one_evidence_subject
     require_requester_country
     require_conformant_agents
-    require_conformant_requirements
-    require_conformant_classifications
-    require_earlier_line_rules
-    require_conformant_echoed_values
-    require_conformant_requested_evidence_types
-    require_conformant_described_persons
+    judge(RequirementConformance)
+    judge(ClassificationConformance)
+    judge(EarlierLineConformance)
+    judge(EchoedValueConformance)
+    judge(RequestedEvidenceTypeConformance)
+    judge(DescribedPersonConformance)
     require_conformant_document
-    require_conformant_preview
+    preview.validate!
 
     self
   end
@@ -170,6 +162,8 @@ class EvidenceRequestParser
 
   attr_reader :request
 
+  def preview = @preview ||= PreviewConformance.new(request, specification:)
+
   # A collection that does not yield exactly one requester leaves nothing to
   # declare: `R-EDM-REQ-S012` and `C074` are what `requester_agent` itself
   # raises, and neither leaves an agent whose identifier or country could be
@@ -254,6 +248,17 @@ class EvidenceRequestParser
     refuse(rule, 'parsers.evidence_request.slot_required', name:)
   end
 
+  # Built at its rank and never before: what a family is handed is read where it
+  # is judged — the requester, for `WordingConformance`, whose `C074` must not
+  # fall before the envelope's refusals — so the order of the refusals stays the
+  # order of `validate!`.
+  def judge(family, **) = family.new(request, specification:, **).validate!
+
+  def require_counted_slots
+    REQUIRED_SLOTS.each { |name, rule| require_slot(name, rule) }
+    require_slot('EvidenceRequest', 'R-EDM-REQ-S015', query)
+  end
+
   # The two collections of agents a request names, judged together because the
   # rules that judge them are the same assertions published under two sets of
   # identifiers — the slot fixing those, never the classification.
@@ -314,7 +319,7 @@ class EvidenceRequestParser
   # reads, and nothing is produced between the two.
   def requested_formats(described)
     distributions = all(described, './sdg:DistributedAs')
-    require_counted_distributions(distributions)
+    EarlierLineConformance.new(request, specification:).require_counted_distributions(distributions)
 
     distributions.map { |distribution| text_at(distribution, './sdg:Format') }
   end
@@ -330,17 +335,8 @@ class EvidenceRequestParser
   # declaring no type at all, is therefore refused under `R-EDM-REQ-S016` rather
   # than under `S034`.
   def require_conformant_document
-    require_conformant_shape
-    require_conformant_wordings
-  end
-
-  def refuse(rule, key, **)
-    raise UnreadableMessageError.new(I18n.t(key, **), detail: rule)
-  end
-
-  def query
-    @query ||= at(request, './query:Query') ||
-               raise(UnreadableMessageError, I18n.t('parsers.evidence_request.no_query'))
+    judge(RegRepShapeConformance)
+    judge(WordingConformance, requester_agent:)
   end
 
   # Validated here rather than trusted: an incomplete person would otherwise

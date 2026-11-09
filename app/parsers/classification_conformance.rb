@@ -10,21 +10,16 @@
 # read through `optional_slot_elements` for that reason, and stays out of
 # `EvidenceRequestParser::REQUIRED_SLOTS`.
 #
-# Apart from the parser, as `AgentConformance` and `RequirementConformance` are,
-# and for the reason the second states: the class does not fit the rules of a
-# fifth slot. `AgentConformance` is included for `require_language` alone, which
-# holds any element the chapter obliges to name its language: `C022` and `C021`
-# over a description are, word for word, the pair of assertions it already reads
-# for an agent's name and for a requirement's wordings.
+# `AgentConformance` is included for `require_language` alone, which holds any
+# element the chapter obliges to name its language: `C022` and `C021` over a
+# description are, word for word, the pair of assertions it already reads for an
+# agent's name and for a requirement's wordings.
 #
 # The readings are grouped by subject and not by identifier — the identifier,
 # the type, the values, what the type `codelist` adds, the descriptions — since
 # the chapter publishes several identifiers over one subject and, twice, one
 # assertion under two of them.
-#
-# Refusals go through `refuse`, which the parser including this defines.
-module ClassificationConformance
-  include OotsNamespaces
+class ClassificationConformance < RequestConformance
   include AgentConformance
 
   # `R-EDM-REQ-C097`, copied from the Schematron dot for dot. Its assertion
@@ -46,8 +41,6 @@ module ClassificationConformance
   # `schemeID` ending in a blank breaks this rule alone.
   SCHEME_SHORT_NAME = /\A[A-Za-z0-9]{2,50}\z/
 
-  private
-
   # `R-EDM-REQ-S041` is what each element of the collection owes, and it is
   # refused here rather than passed over: its context is the `rim:Element`,
   # which exists — it came out of the collection — so the assertion does fire on
@@ -56,14 +49,18 @@ module ClassificationConformance
   #
   # Every classification of every element, `InformationConceptType` naming no
   # upper bound the slot would have to respect.
-  def require_conformant_classifications
+  def validate!
     optional_slot_elements('EvidenceProviderClassification', request).each do |element|
       classifications = all(element, './sdg:EvidenceProviderClassification')
       refuse('R-EDM-REQ-S041', 'parsers.evidence_request.element_without_classification') if classifications.empty?
 
       classifications.each { |classification| require_conformant_classification(classification) }
     end
+
+    self
   end
+
+  private
 
   # By subject, and in this order because refusing on the first breach imposes
   # one and no rule of the chapter fixes it: what the classification is called,
