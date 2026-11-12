@@ -51,7 +51,17 @@
         <%= submit_tag t('preview_sessions.show.open.submit'), class: 'fr-btn', name: nil,
               data: { preview_choice_target: 'submit' } %>
       <% end %>
-    <% when :recorded %>
+    <% when :recorded, :unmatched %>
+      <% if state == :unmatched %>
+        <p class="fr-text--lead">
+          <% if @preview.names_request? %>
+            <%= t('preview_sessions.show.unmatched.lead_html', requester: tag.strong(@preview.requester_name),
+                  evidence: tag.strong(@preview.evidence_title)) %>
+          <% else %>
+            <%= t('preview_sessions.show.unmatched.concluded') %>
+          <% end %>
+        </p>
+      <% end %>
       <% if @preview.offers_return? %>
         <%= render 'return', preview: @preview %>
       <% else %>

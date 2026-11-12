@@ -11,16 +11,23 @@ module EvidenceProvision
 
     # Step 9. The document is produced now, so that what the user previews is
     # byte for byte what the answer will carry (§3), and kept with the
-    # identifier and instant that describe it.
+    # identifier and instant that describe it — unless none matches the user,
+    # who is then told so on the space (§1).
     def preview_required
-      evidence_id = uuid.next
-      instant = clock.now
       message = context.message
       session = PreviewSession.issue(token: uuid.next, conversation_id: message.conversation_id,
-        specification: message.specification, first_request: message.raw, evidence_id:,
-        exchange_id: previewed_exchange_id, evidence_issued_at: instant, document: preview_document(evidence_id, instant))
+        specification: message.specification, first_request: message.raw, exchange_id: previewed_exchange_id,
+        **previewed_evidence)
 
       preview_refusal(session.location)
+    end
+
+    def previewed_evidence
+      return {} if ServedEvidenceType.unmatched?(request.evidence_type)
+
+      evidence_id = uuid.next
+      instant = clock.now
+      { evidence_id:, evidence_issued_at: instant, document: preview_document(evidence_id, instant) }
     end
 
     # The row the request opened, whose identifier France minted on the 1.2 line.
@@ -63,10 +70,10 @@ module EvidenceProvision
     # Read after `hold!`, whose lock reloads the row: a check failing between
     # the two would otherwise leave the request held with nobody to answer it.
     def held(session)
-      decision = hold(session)
+      outcome = hold(session)
       return refusal(EdmException::AUTHENTICATION) if session.failed?
 
-      decided(session, decision)
+      decided(session, outcome)
     end
 
     def issued_session
@@ -83,11 +90,11 @@ module EvidenceProvision
         return_location: request.return_location)
     end
 
-    def decided(session, decision)
-      case decision
+    def decided(session, outcome)
+      case outcome
       when nil then Answers::Withheld.new
       when PreviewSession::ACCEPTED then previewed(session)
-      else declined
+      else empty_list
       end
     end
 
@@ -113,10 +120,10 @@ module EvidenceProvision
       )
     end
 
-    def declined
+    def empty_list
       body = EvidenceResponseBuilder.new(requester:, request_id:, specification:, uuid:)
 
-      Answers::Declined.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id)
+      Answers::EmptyList.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id)
     end
   end
 end

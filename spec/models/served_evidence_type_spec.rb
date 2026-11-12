@@ -14,4 +14,12 @@ RSpec.describe ServedEvidenceType do
   it 'serves no type of another member state' do
     expect(described_class).not_to be_served(type(Fixtures::UNSERVED_TYPE))
   end
+
+  it 'serves the type no document matches, and tells it apart' do
+    unmatched = type(Fixtures::UNMATCHED_TYPE)
+
+    expect(described_class).to be_served(unmatched)
+    expect(described_class).to be_unmatched(unmatched)
+    expect(described_class).not_to be_unmatched(type(Fixtures::SERVED_TYPE))
+  end
 end

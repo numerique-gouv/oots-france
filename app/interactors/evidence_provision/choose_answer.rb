@@ -9,8 +9,11 @@ module EvidenceProvision
   #
   # A second request of chapter 4.9 escapes T1: T3 of `PreviewSession` bounds
   # it, counted from its own arrival (chapter 4.10 §6.1). And the preview is
-  # asked where a document would otherwise go, never before a refusal or a
-  # deferral — step 4 of §2 needs no preview where there is no evidence.
+  # asked where an answer would otherwise go, never before a refusal or a
+  # deferral. Where no document matches the user, step 4 of §2 allows the
+  # empty list at once, « independent of the value of the
+  # "PossibilityForPreview" flag »: France still asks for the preview a request
+  # allows, so that the user reads why on the space (§1).
   class ChooseAnswer < ApplicationInteractor
     include PreviewAnswers
 
@@ -81,6 +84,7 @@ module EvidenceProvision
       return refusal(EdmException::TIMEOUT) if expired?
       return deferral if ProcedureCode.deferred?(procedure_code)
       return preview_required if request.possibility_for_preview?
+      return empty_list if ServedEvidenceType.unmatched?(request.evidence_type)
 
       served
     end

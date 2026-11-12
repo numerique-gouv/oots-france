@@ -44,6 +44,23 @@ RSpec.describe PreviewSessionPresenter do
       expect(described_class.new(session, verdict: :rejected)).to have_attributes(offers_return?: false)
     end
 
+    # OOTS-287: no document matches the user, who reads so only once
+    # recognised, and is never sent back on their own.
+    it 'tells a recognised browser that no document matches, and asks any other to identify first' do
+      session.assign_attributes(unmatched: true, document: nil, status: 'decided',
+        return_location: 'https://portail.example/retour')
+
+      expect(described_class.new(session)).to have_attributes(state: :unmatched, identification_required?: true)
+      expect(described_class.new(session, verdict: :confirmed)).to have_attributes(state: :unmatched,
+        identification_required?: false, offers_return?: true, leaves_by_redirection?: false)
+    end
+
+    it 'keeps an unmatched address open until the recognised browser reads it' do
+      session.assign_attributes(unmatched: true, document: nil)
+
+      expect(described_class.new(session)).to have_attributes(state: :open, identification_required?: true)
+    end
+
     # The answer gone, nothing is left to check against: no second
     # identification, and the way back stays the deciding browser's.
     it 'asks nobody to identify once answered, and offers an unknown browser no way back' do

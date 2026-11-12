@@ -590,13 +590,13 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     # CA6.
-    it 'says the user chose not to use the document, and offers to ask again' do
+    it 'says no document was sent, either outcome being possible, and offers to ask again' do
       get demande_path
       stub_exchange_state(statut: 'declined')
 
       get demande_path
 
-      expect(response.parsed_body.text).to include('Vous avez choisi de ne pas utiliser ce document', 'Redemander le document')
+      expect(response.parsed_body.text).to include("Aucun document n'a été envoyé à cette démarche", 'Redemander le document')
     end
 
     it 'says a confirmation the contract refused, keeps the reason for the log, and confirms nothing more' do

@@ -179,6 +179,81 @@ RSpec.describe 'The preview space' do
     end
   end
 
+  # OOTS-287 RG3 and RG5: no document matches the user, who reads so once
+  # recognised, and is offered nothing to choose.
+  describe 'an address no document matches' do
+    let!(:session) { create(:preview_session, :unmatched) }
+
+    def heading = page.at_css('h1').text
+
+    it 'says to the recognised user that no document matches them, naming who asks and for what' do
+      identify
+      visit_space
+
+      expect(response).to have_http_status(:ok)
+      expect(heading).to eq('Aucun document ne vous correspond')
+      expect(page.text).to include('Requêteur de test')
+      expect(page.css('input[type=radio], a[href$="/document"]')).to be_empty
+      expect(page.text).to include(I18n.t('preview_sessions.return.awaiting'))
+      expect(session.reload.status).to eq('decided')
+    end
+
+    it 'speaks the language the header chose' do
+      identify
+      get preview_session_path(segment, session.token, locale: 'en')
+      follow_redirect! if response.redirect?
+
+      expect(heading).to eq('No document matches you')
+      expect(page.text).not_to include('Confirm my choice')
+    end
+
+    it 'offers the way back as a button, without taking it' do
+      session.hold!(raw: '<second/>', sent_at: Time.current, message_id: 'second', answering: nil,
+        return_location: 'https://portail.example/retour')
+      identify
+
+      expect { visit_space }.to have_enqueued_job(AnswerPreviewedRequestJob).with(session.id)
+      expect(response).to have_http_status(:ok)
+      zone = page.at_css('[data-controller=preview-return]')
+      expect(zone.at_css('a.fr-btn')['href']).to eq('https://portail.example/retour')
+      expect(zone['data-preview-return-follow-value']).to eq('false')
+    end
+
+    it 'keeps saying so once answered, without naming who asked' do
+      identify
+      visit_space
+      session.reload.update!(return_location: 'https://portail.example/retour')
+      session.conclude!
+      expect { visit_space }.not_to have_enqueued_job(AnswerPreviewedRequestJob)
+
+      expect(heading).to eq('Aucun document ne vous correspond')
+      expect(page.text).to include(I18n.t('preview_sessions.show.unmatched.concluded'))
+      expect(page.text).not_to include('Requêteur de test')
+      expect(page.at_css('a.fr-btn')['href']).to eq('https://portail.example/retour')
+    end
+
+    it 'serves no document, and takes no decision' do
+      identify
+      get preview_session_document_path(segment, session.token)
+      expect(response).to have_http_status(:not_found)
+
+      post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
+      expect(session.reload.decision).to be_nil
+      expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
+    end
+
+    describe 'on the 1.2 line' do
+      let!(:session) { create(:preview_session, :unmatched, :legacy_line) }
+
+      it 'offers the way back the visit brought' do
+        identify({ returnurl: 'https://portail.example/retour' })
+        visit_space
+
+        expect(page.at_css('a.fr-btn')['href']).to eq('https://portail.example/retour')
+      end
+    end
+  end
+
   describe 'the 1.2 line' do
     let!(:session) { create(:preview_session, :legacy_line) }
 

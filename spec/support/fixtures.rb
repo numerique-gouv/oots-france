@@ -6,6 +6,9 @@ module Fixtures
   # France serves as a provider.
   SERVED_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
 
+  # « FR - Test without evidence match (TC18) », served without any document.
+  UNMATCHED_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/11cb64a4-6134-4b0e-aa6b-4a90250924ab'.freeze
+
   # One of another member state's, which France does not serve.
   UNSERVED_TYPE = 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e'.freeze
 
@@ -410,8 +413,10 @@ module Fixtures
     document.to_xml
   end
 
-  def asking_for_a_served_type(body)
-    body.gsub(/(<sdg:EvidenceTypeClassification>)[^<]*/, "\\1#{SERVED_TYPE}")
+  def asking_for_a_served_type(body) = asking_for_type(body, SERVED_TYPE)
+
+  def asking_for_type(body, evidence_type)
+    body.gsub(/(<sdg:EvidenceTypeClassification>)[^<]*/, "\\1#{evidence_type}")
   end
 
   def rewrite_body(document)

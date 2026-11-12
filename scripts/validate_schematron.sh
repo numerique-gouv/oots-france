@@ -190,7 +190,9 @@ valide erreurSansIdentifiantDeRequete EDM-ERR-S
 # Les deux messages du chapitre 4.9 que la France émet en fournisseur :
 # l'exception qui envoie l'usager vers son espace de prévisualisation, avec
 # `PreviewDescription` et, en 1.2, `PreviewMethod` ; et la réponse de succès à
-# liste vide de l'usager qui n'a rien accepté.
+# liste vide, de l'usager qui n'a rien accepté comme de celui à qui aucun
+# document ne correspond, au premier échange ou au second — un seul message,
+# que le même constructeur rend sans justificatif.
 valide erreurPrevisualisationRequise EDM-ERR-C
 valide erreurPrevisualisationRequise EDM-ERR-S
 valide reponseVide EDM-RESP-C

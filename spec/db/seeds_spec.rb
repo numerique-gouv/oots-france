@@ -284,6 +284,20 @@ RSpec.describe 'db/seeds.rb' do
     expect(events.find_by(event_type: 'preview_decided').detail).to eq(PreviewSession::ACCEPTED)
   end
 
+  # CA5 of OOTS-287: no document matched the user, so nothing was decided,
+  # and the answer carried none.
+  it 'shows an exchange through the preview space where no document matched, with no decision' do
+    replay
+
+    unmatched = Exchange.find_by(incoming: true, country_code: 'MT')
+    events = AuditEvent.where(exchange_id: unmatched.exchange_id).order(:occurred_at)
+
+    expect(events.pluck(:event_type))
+      .to eq(%w[request_received error_sent preview_visited preview_identified preview_visited response_sent])
+    expect(events.find_by(event_type: 'response_sent'))
+      .to have_attributes(evidence_digest: nil, evidence_identifier: nil, evidence_content_id: nil)
+  end
+
   # CA19 of OOTS-67: the two ends a preview France asked for can reach, each
   # with the second request, the return and — for the one delivered — the
   # evidence handed over.

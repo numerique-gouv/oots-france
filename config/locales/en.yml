@@ -712,8 +712,8 @@ en:
         The administration holding it wants to show it to you before sending it. You will be
         redirected to its own space to preview the document and decide whether to use it or not.
       preview_link: Preview and approve the document
-      declined_title: You chose not to use this document
-      declined_body: Nothing was sent to this procedure. You can ask for the document again.
+      declined_title: No document was sent to this procedure
+      declined_body: You chose not to use it on the preview space, or no document matched you there. You can ask for the document again.
       deferred_title: Document announced for later
       deferred_body: >-
         The administration has not sent the document: it announced it for %{date}. Ask again from that
@@ -1591,6 +1591,10 @@ en:
         submit: Confirm my choice
       recorded:
         title: Back to your procedure
+      unmatched:
+        title: No document matches you
+        lead_html: "%{requester} asked the French administration for this document: %{evidence}. It holds none that matches you."
+        concluded: The French administration held no document matching you.
       expired:
         title: The time limit has passed
         lead: This link is no longer valid, because the time limit to choose has passed. Go back to your procedure to resume it.

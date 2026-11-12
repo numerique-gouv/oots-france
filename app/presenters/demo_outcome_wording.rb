@@ -8,10 +8,11 @@ class DemoOutcomeWording
   # The states the page has something of its own to say about on the word of
   # the contract alone. An `unmatched` is said as a failure: chapter 4.10 §2.1
   # has the portal tell the user, and the page says the one refusal it has for
-  # every failure. A `declined` is the user's own choice on the preview space —
-  # chapter 4.9 §1, « if the user decides not to use any piece of evidence, the
-  # evidence response shall contain an empty registry object list » — and is
-  # said as such. A `deferred` is the Unavailable Response of chapter 4.4
+  # every failure. A `declined` is the empty list after a preview — chapter 4.9
+  # §1, « If there are no pieces of evidence to preview or if the user decides
+  # not to use any piece of evidence, the evidence response shall contain an
+  # empty registry object list » — and is said as either, nothing in the
+  # message telling the two apart. A `deferred` is the Unavailable Response of chapter 4.4
   # §3.3.2, which settles the exchange: « the Online Procedure Portal has an
   # obligation to inform the user accordingly ». Anything else — `pending`,
   # `sent`, a `preview_required` the procedure confirms as it reads it — is
