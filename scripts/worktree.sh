@@ -184,9 +184,27 @@ while ! pile_libre "$DECALAGE"; do
 done
 
 if git show-ref --verify --quiet "refs/heads/$NOM"; then
-  git worktree add "$CHEMIN" "$NOM"
+  set -- "$CHEMIN" "$NOM"
 else
-  git worktree add -b "$NOM" "$CHEMIN"
+  set -- -b "$NOM" "$CHEMIN"
+fi
+
+# The sshfs share of an agent-vm refuses to create any directory named `.claude`,
+# and a full checkout dies half-way on it. The worktree then leaves `.claude/` out
+# by a sparse checkout of its own: agents read their skills from the main checkout
+# and write their workshop files there anyway.
+SONDE="$RACINE/.worktrees/.sonde-$$"
+mkdir -p "$SONDE"
+if mkdir "$SONDE/.claude" 2>/dev/null; then
+  rm -rf "$SONDE"
+  git worktree add "$@"
+else
+  rm -rf "$SONDE"
+  echo "ℹ️  .claude/ ne peut pas être créé ici : le worktree est extrait sans lui." >&2
+  git config extensions.worktreeConfig true
+  git worktree add --no-checkout "$@"
+  git -C "$CHEMIN" sparse-checkout set --no-cone '/*' '!/.claude/'
+  git -C "$CHEMIN" checkout
 fi
 
 # The value stops at the first non-numeric character, which preserves an
