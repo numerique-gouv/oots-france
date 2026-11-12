@@ -1,0 +1,9 @@
+<%= render BreadcrumbsComponent.new do |trail| %>
+  <% trail.with_breadcrumb(label: t('available_evidence.breadcrumbs.home'), href: root_path) %>
+  <% if local_assigns[:requirement] %>
+    <% trail.with_breadcrumb(label: t('available_evidence.breadcrumbs.index'), href: available_evidence_index_path) %>
+    <% trail.with_breadcrumb(label: requirement.display_name, href: nil) %>
+  <% else %>
+    <% trail.with_breadcrumb(label: t('available_evidence.breadcrumbs.index'), href: nil) %>
+  <% end %>
+<% end %>

@@ -1,0 +1,50 @@
+<% content_for :title, t('available_evidence.title') %>
+
+<%= render 'available_evidence/breadcrumbs' %>
+
+<div class="fr-grid-row">
+  <div class="fr-col-12 fr-col-lg-8">
+    <h1><%= t('available_evidence.title') %></h1>
+    <p class="fr-text--lead fr-mb-3w"><%= t('available_evidence.lead') %></p>
+  </div>
+</div>
+
+<%= render 'available_evidence/snapshot' %>
+
+<% if snapshot %>
+  <%= render SearchFieldComponent.new(
+        label: t('available_evidence.index.search'),
+        id: 'recherche-exigence',
+        entries: '#liste-exigences > *',
+        tally: '#decompte-exigences',
+        empty: '#aucune-exigence',
+        choice: { id: 'filtre-pays', label: t('available_evidence.index.country'),
+                  all: t('available_evidence.index.all_countries'),
+                  options: @country_choices },
+      ) %>
+
+  <%= render 'admin/common_services/results_count', id: 'decompte-exigences', count: @requirements.size %>
+
+  <div id="liste-exigences">
+    <% @requirements.each do |requirement| %>
+      <% publishing = @publishing[requirement] %>
+      <div data-filter-keys="<%= publishing.join(' ') %>">
+        <%= render CardComponent.new(title: requirement.display_name, dense: true, clickable: true, whole: true,
+              href: available_evidence_path(requirement.uuid)) do |carte| %>
+          <% carte.with_list do %>
+            <% if publishing.empty? %>
+              <p class="fr-mb-0"><%= t('available_evidence.index.nobody') %></p>
+            <% else %>
+              <%= render CountryTagListComponent.new(caption: t('available_evidence.index.published_by'),
+                    codes: publishing, names: @country_names) %>
+            <% end %>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <p id="aucune-exigence" <%= 'hidden' if @requirements.any? %>><%= t('available_evidence.index.empty') %></p>
+<% else %>
+  <%= dsfr_alert(type: :info, title: t('available_evidence.index.unavailable'), size: :md) %>
+<% end %>

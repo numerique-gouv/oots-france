@@ -1,0 +1,25 @@
+<h3 class="fr-h5"><%= t('available_evidence.detail.title') %></h3>
+
+<div class="fr-table fr-table--multiline fr-table--no-caption" id="detail-par-pays">
+  <div class="fr-table__wrapper">
+    <div class="fr-table__container">
+      <div class="fr-table__content">
+        <table>
+          <caption><%= t('available_evidence.detail.caption', requirement: requirement.display_name) %></caption>
+          <thead>
+            <tr>
+              <th scope="col"><%= t('available_evidence.detail.country') %></th>
+              <th scope="col"><%= t('available_evidence.detail.evidence_type') %></th>
+              <th scope="col"><%= t('available_evidence.detail.publishers') %></th>
+              <th scope="col"><%= t('available_evidence.detail.formats') %></th>
+              <th scope="col"><%= t('available_evidence.detail.status') %></th>
+            </tr>
+          </thead>
+          <% availability.jurisdictions.each do |jurisdiction| %>
+            <%= render 'available_evidence/jurisdiction', jurisdiction: %>
+          <% end %>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

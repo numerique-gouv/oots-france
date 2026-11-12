@@ -1,0 +1,29 @@
+<div class="snapshot-line fr-mb-2w" id="mise-a-jour">
+  <p class="fr-text--sm fr-mb-0 fr-text-mention--grey">
+    <% if snapshot %>
+      <%= t('available_evidence.snapshot.taken_at', date: l(snapshot.taken_at.to_date, format: :long)) %>
+    <% elsif named_administrator? %>
+      <%= t('available_evidence.snapshot.never_taken') %>
+    <% end %>
+  </p>
+  <% if named_administrator? %>
+    <div>
+      <%= button_to t('available_evidence.snapshot.refresh'), available_evidence_refresh_path,
+            class: 'fr-btn fr-btn--secondary fr-btn--sm fr-btn--icon-left fr-icon-refresh-line' %>
+    </div>
+  <% end %>
+</div>
+
+<% if last_failure %>
+  <%= dsfr_alert(type: :warning, size: :sm, html_attributes: { class: 'fr-mb-4w', id: 'echec-mise-a-jour' }) do %>
+    <p>
+      <% failed_on = l(last_failure.failed_at.to_date, format: :long) %>
+      <% if last_failure.failure_code.present? %>
+        <%= t('available_evidence.snapshot.refused_html', date: failed_on, code: tag.code(last_failure.failure_code)) %>
+      <% else %>
+        <%= t('available_evidence.snapshot.failed', date: failed_on) %>
+      <% end %>
+      <br><span class="fr-text--xs"><%= last_failure.failure_detail %></span>
+    </p>
+  <% end %>
+<% end %>

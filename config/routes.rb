@@ -7,6 +7,13 @@ Rails.application.routes.draw do
 
   get '/auth/cles_publiques', to: 'auth#cles_publiques'
 
+  # The public page of available evidence, read from a copy of the production
+  # directories.
+  post 'justificatifs_disponibles/mise_a_jour', to: 'available_evidence/refreshes#create',
+    as: :available_evidence_refresh
+  get 'justificatifs_disponibles', to: 'available_evidence#index', as: :available_evidence_index
+  get 'justificatifs_disponibles/:requirement_id', to: 'available_evidence#show', as: :available_evidence
+
   # The addresses of the demonstration procedure, outside `/admin` and so
   # outside what `AdminAuthentication` closes. `docs/eidas_context.md` says why
   # the three FranceConnect+ ones answer publicly.

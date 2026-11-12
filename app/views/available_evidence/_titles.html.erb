@@ -1,0 +1,8 @@
+<%# Every title the jurisdiction published, the one in the page's language
+    first: a type is usually titled in its own language alone, and the reader
+    needs the original to recognise it. %>
+<% chosen = evidence_type.label_language %>
+<p class="fr-mb-0" lang="<%= chosen&.downcase %>"><%= evidence_type.label || evidence_type.id %></p>
+<% evidence_type.descriptions.except(chosen).each do |language, title| %>
+  <p class="fr-text--xs fr-mb-0 fr-text-mention--grey"><%= language %> · <%= tag.span(title, lang: language.to_s.downcase) %></p>
+<% end %>

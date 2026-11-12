@@ -1,0 +1,25 @@
+<%# What the copy holds for the requirement, counted from the lines of the
+    detail below. « In service » is the one status the directories let us
+    assert: a data service registered in the Data Service Directory, or a
+    `DSD:ERR:0005`, which it answers only for registered providers. %>
+<p><%= t('available_evidence.summary.counts',
+      evidence_types: t('available_evidence.summary.evidence_types', count: availability.evidence_type_count),
+      countries: t('available_evidence.summary.countries', count: availability.country_count)) %></p>
+<ul class="fr-raw-list fr-mb-6w">
+  <li class="fr-grid-row fr-grid-row--top fr-py-2w">
+    <div class="fr-col-12 fr-col-md-3">
+      <p class="fr-badge fr-badge--success fr-mb-1w"><%= t('available_evidence.in_service') %></p>
+    </div>
+    <p class="fr-col-12 fr-col-md-9 fr-mb-0">
+      <% registered = availability.registered %>
+      <% if registered.any? %>
+        <span class="fr-text--bold"><%= t('available_evidence.summary.registered',
+              evidence_types: t('available_evidence.summary.evidence_types', count: availability.registered_evidence_type_count),
+              countries: t('available_evidence.summary.countries', count: registered.size)) %></span>
+        <%= registered.map(&:name).to_sentence %>.
+      <% else %>
+        <%= t('available_evidence.summary.none_registered') %>
+      <% end %>
+    </p>
+  </li>
+</ul>

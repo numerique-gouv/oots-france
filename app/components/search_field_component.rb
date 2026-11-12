@@ -9,22 +9,32 @@
 # parts of a page, and a component that reached into them would have to know
 # how that page is built.
 class SearchFieldComponent < ViewComponent::Base
-  def initialize(label:, id:, entries:, tally: nil, empty: nil)
+  # `choice` adds a list beside the field, which keeps only the entries whose
+  # `data-filter-keys` name the value chosen: `{ id:, label:, all:, options: }`,
+  # the options as `[text, value]` pairs. The two narrow together.
+  def initialize(label:, id:, entries:, tally: nil, empty: nil, choice: nil)
     @label = label
     @id = id
     @entries = entries
     @tally = tally
     @empty = empty
+    @choice = choice
     super()
   end
 
-  attr_reader :label, :id
+  attr_reader :label, :id, :choice
 
   # The label doubles as the placeholder: a field whose only label is that
   # placeholder has none left the moment someone types into it.
   def field
     tag.input(class: 'fr-input', type: 'search', id:, autocomplete: 'off', placeholder: label,
       data: { controller: 'filter', action: 'input->filter#apply', filter_entries_value: @entries,
-              filter_tally_value: @tally, filter_empty_value: @empty })
+              filter_tally_value: @tally, filter_empty_value: @empty, filter_choice_value: choice && "##{choice[:id]}" })
+  end
+
+  def choice_field
+    tag.select(class: 'fr-select', id: choice[:id]) do
+      options_for_select([[choice[:all], '']] + choice[:options])
+    end
   end
 end

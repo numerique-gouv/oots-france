@@ -1,0 +1,13 @@
+/*
+ * The date of the copy and, for the administrator, the button that takes a
+ * new one: on one line, the button against the right edge, which goes under
+ * the date when the line is too narrow for both. The DSFR grid has no column
+ * sized to its content.
+ */
+.snapshot-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}

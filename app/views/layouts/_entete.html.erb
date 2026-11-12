@@ -6,9 +6,13 @@
       href: root_path,
     ) do |header| %>
   <% if presentation_page? %>
-    <% { in_brief: '#comprendre', how_it_works: '#fonctionnement', concerned: '#concerne', connecting: '#raccorder',
-         faq: '#faq' }.each do |section, anchor| %>
-      <% header.with_direct_link_simple(title: t("layouts.entete.navigation.#{section}"), path: anchor) %>
+    <%# The anchors lead back to the front page from the page of available
+        evidence, which carries the same menu. %>
+    <% anchor_base = current_page?(root_path) ? '' : root_path %>
+    <% { in_brief: "#{anchor_base}#comprendre", how_it_works: "#{anchor_base}#fonctionnement",
+         concerned: "#{anchor_base}#concerne", available_evidence: available_evidence_index_path,
+         connecting: "#{anchor_base}#raccorder", faq: "#{anchor_base}#faq" }.each do |section, path| %>
+      <% header.with_direct_link_simple(title: t("layouts.entete.navigation.#{section}"), path:) %>
     <% end %>
     <% header.with_tool_link(title: t('layouts.entete.contact'), path: team_mail_address,
          html_attributes: { class: 'fr-icon-mail-line' }) %>

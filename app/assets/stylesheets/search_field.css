@@ -26,3 +26,12 @@
      not target the field. */
   pointer-events: none;
 }
+
+/*
+ * The list beside the field, level with it: its label is off screen as the
+ * field's is, and the DSFR would still leave the room of a visible label
+ * above the list.
+ */
+.search-field__choice .fr-select {
+  margin-top: 0;
+}

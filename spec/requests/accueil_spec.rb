@@ -54,13 +54,14 @@ RSpec.describe 'Accueil' do
     it 'leads from its header to its sections, its contact and the administration space' do
       expect(page.css('nav.fr-nav a').map { [it['href'], it.text.squish] }).to eq([
         ['#comprendre', 'OOTS en bref'], ['#fonctionnement', 'Comment ça marche'],
-        ['#concerne', 'Êtes-vous concerné ?'], ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'],
+        ['#concerne', 'Êtes-vous concerné ?'], [available_evidence_index_path, 'Justificatifs disponibles'],
+        ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'],
       ])
       expect(page.css('.fr-header__tools-links .fr-btns-group a').map { [it['href'], it.text.squish] })
         .to eq([[ApplicationHelper::TEAM_MAIL_ADDRESS, 'Contact'], [admin_root_path, 'Administration']])
       expect(page.at_css('.fr-header__tools-links .fr-translate')).to be_present
       expect(page.css('#button-header-menu, .fr-header__menu-links').size).to eq(2)
-      expect(page.at_css('header').text).not_to include('Justificatifs disponibles', 'Annuaires', 'Se déconnecter')
+      expect(page.at_css('header').text).not_to include('Annuaires', 'Se déconnecter')
     end
 
     # CA4
@@ -141,11 +142,16 @@ RSpec.describe 'Accueil' do
         .to eq('annexe II du règlement (UE) 2018/1724')
     end
 
-    # CA10
-    it 'leads to no page of available evidence' do
-      expect(page.css('a').pluck('href')).not_to include(a_string_matching(/justificatifs/i))
-      expect(page.at_css('main').text).not_to include('Vérifiez s', 'Vérifier qu’un justificatif', "Vérifier qu'un justificatif")
-      expect(section('raccorder').css('ol')[0].css('li')[0].css('a')).to be_empty
+    # OOTS-294, CA12
+    it 'leads to the page of available evidence from three places' do
+      expect(section('fonctionnement').css("a[href='#{available_evidence_index_path}']").map { it.text.squish })
+        .to eq(["Vérifiez s'il est déjà disponible via OOTS."])
+      expect(section('fonctionnement').text.squish)
+        .to include("Votre démarche demande un justificatif délivré dans un autre pays ? Vérifiez s'il")
+      expect(section('concerne').css("a.fr-btn[href='#{available_evidence_index_path}']").map { it.text.squish })
+        .to eq(["Vérifier qu'un justificatif est disponible dans un autre pays"])
+      expect(section('raccorder').css('ol')[0].css('li')[0].css('a').map { [it['href'], it.text.squish] })
+        .to eq([[available_evidence_index_path, 'pays qui les délivrent']])
     end
 
     # CA11
@@ -282,7 +288,7 @@ RSpec.describe 'Accueil' do
     it 'says the same things in English, navigation included' do
       expect(page.at_css('html')['lang']).to eq('en')
       expect(page.css('nav.fr-nav a').map { it.text.squish })
-        .to eq(['OOTS in brief', 'How it works', 'Are you concerned?', 'Connecting', 'FAQ'])
+        .to eq(['OOTS in brief', 'How it works', 'Are you concerned?', 'Available evidence', 'Connecting', 'FAQ'])
       expect(text_of('.fr-header__service-title')).to eq('OOTS-France Pre-production')
       expect(section('fonctionnement').text.squish).to include(
         'at the provider that issues it', 'For each request of a French procedure, OOTS-France reads'

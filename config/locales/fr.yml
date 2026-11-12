@@ -354,6 +354,9 @@ fr:
           use: >-
             Pour chaque demande d'une démarche française, OOTS-France lit dans ces annuaires quel
             type de justificatif prouve l'exigence, et qui le délivre.
+          check_html: >-
+            Votre démarche demande un justificatif délivré dans un autre pays ? %{link}
+          check_link: Vérifiez s'il est déjà disponible via OOTS.
       benefits:
         title: Ce que votre administration y gagne
         reliable:
@@ -397,6 +400,7 @@ fr:
           examples: >-
             Exemples : admission dans l'enseignement supérieur, demande de bourse, déclaration
             d'activité, candidature à un marché public.
+          check: Vérifier qu'un justificatif est disponible dans un autre pays
         data_provider:
           badge: Fournisseur de données
           title: Vous délivrez des justificatifs
@@ -507,10 +511,11 @@ fr:
           steps:
             list:
               title: Lister les justificatifs de votre démarche
-              body: >-
+              body_html: >-
                 Avec l'équipe OOTS-France, vous identifiez les justificatifs que votre démarche
-                demande et les pays qui les délivrent. Votre démarche est ensuite inscrite dans
+                demande et les %{countries}. Votre démarche est ensuite inscrite dans
                 l'annuaire européen, avec ces justificatifs.
+              countries: pays qui les délivrent
             sign_in:
               title: Ouvrir la connexion aux usagers européens
               body: >-
@@ -676,11 +681,13 @@ fr:
       # Le service n'est pas homologué : toutes les pages le disent.
       badge: Préproduction
       contact: Contact
-      # Les ancres de la page de présentation, que son seul entête porte.
+      # Le menu du site public : les ancres de la page de présentation, et la
+      # page des justificatifs disponibles, qui porte le même entête.
       navigation:
         in_brief: OOTS en bref
         how_it_works: Comment ça marche
         concerned: Êtes-vous concerné ?
+        available_evidence: Justificatifs disponibles
         connecting: Se raccorder
         faq: Questions fréquentes
       admin_space: Administration
@@ -2237,6 +2244,9 @@ fr:
   interactors:
     # Écrits dans le log, sauf `no_identifier`, que la page affiche comme ce
     # que la passerelle a répondu.
+    directory_snapshotting:
+      take:
+        failed: "Copie des annuaires de production non reprise, la précédente reste en place : %{error}"
     directory_lookup:
       fetch_providers:
         malformed_question: "Question du Data Service Directory non conforme, pas posée (%{id}) : %{errors}"
@@ -2465,6 +2475,84 @@ fr:
         unreadable_logged: "Message illisible (%{id}) : %{error}"
         unknown_action: "Action ebMS inconnue : « %{action} »."
         abandoned: "%{reason} : %{error}"
+  # La page publique des justificatifs disponibles, lue sur une copie des
+  # annuaires de production. Aucun statut de publication ni date de mise en
+  # service : l'interface de requête des annuaires ne les sert pas.
+  available_evidence:
+    # Ce que la liste et la page d'une exigence disent toutes les deux.
+    title: Justificatifs disponibles via OOTS
+    lead: >-
+      Votre démarche demande un justificatif délivré dans un autre pays européen ? Choisissez
+      l'exigence qu'il prouve pour voir ce que chaque pays a référencé dans l'annuaire européen.
+    in_service: En service
+    breadcrumbs:
+      home: Accueil
+      index: Justificatifs disponibles
+    index:
+      search: Rechercher une exigence
+      country: Pays qui publie
+      all_countries: Tous les pays
+      published_by: Justificatifs publiés par
+      nobody: Aucun pays ne publie de justificatif pour cette exigence.
+      empty: Aucune exigence ne correspond à cette recherche.
+      unavailable: Les données des annuaires ne sont pas encore disponibles.
+    show:
+      kicker: Exigence de l'annuaire européen
+      nothing_published_html: >-
+        L'annuaire européen ne référence encore aucun justificatif pour cette exigence (%{code}).
+      back: Choisir une autre exigence
+      next:
+        title: Votre démarche demande ce justificatif ?
+        body: >-
+          L'équipe OOTS-France, à la DINUM, vous aide à déclarer votre démarche dans l'annuaire
+          européen et à vous raccorder.
+        write: Écrire à l'équipe OOTS-France
+        discover: Découvrir OOTS-France
+    # La date de la copie, que tout visiteur lit ; le reste, l'administrateur
+    # seul le lit, à côté du bouton.
+    snapshot:
+      taken_at: Données des annuaires de production au %{date}
+      never_taken: Aucune mise à jour n'a encore réussi.
+      refused_html: "Dernière tentative échouée le %{date} : un annuaire l'a refusée, code %{code}."
+      failed: >-
+        Dernière tentative échouée le %{date}, sans code de refus d'un annuaire : injoignable,
+        réponse illisible ou mal signée, ou truststore illisible.
+      refresh: Mettre à jour
+    summary:
+      counts: "%{evidence_types} référencés par %{countries} pour cette exigence."
+      evidence_types:
+        one: "%{count} type de justificatif"
+        other: "%{count} types de justificatif"
+      countries:
+        one: "%{count} pays"
+        other: "%{count} pays"
+      registered: "%{evidence_types}, dans %{countries} :"
+      none_registered: Aucun pays n'a encore inscrit de data service pour ces justificatifs.
+    detail:
+      title: Détail par pays
+      caption: Justificatifs référencés pour l'exigence « %{requirement} »
+      country: Pays
+      evidence_type: Justificatif
+      publishers: Délivré par
+      formats: Format
+      # Ce que les annuaires servent, à la place des statuts de publication
+      # qu'ils ne servent pas.
+      status: Data Service Directory
+    jurisdiction:
+      # Dit seulement d'une combinaison de plusieurs types, dans un pays qui en
+      # publie plusieurs.
+      combination_html: Combinaison <strong>%{label}</strong>, exigée d'un bloc
+      not_registered: Non inscrit
+      no_match: Ce pays déclare ne délivrer aucun justificatif pour cette exigence.
+      no_data_service_html: Aucun data service inscrit pour ce justificatif (%{code}).
+      unknown_evidence_type_html: Le Data Service Directory ne connaît pas ce justificatif (%{code}).
+      classification_required_html: >-
+        Le Data Service Directory demande une précision sur l'usager pour nommer le fournisseur
+        (%{code}).
+    refreshes:
+      create:
+        launched: La mise à jour de la copie des annuaires est lancée.
+        already_running: Une mise à jour de la copie des annuaires est déjà en cours.
   admin:
     # Le même message pour toutes les listes de l'espace : c'est le filtre qui
     # dit lequel de ses critères est en cause, jamais le titre de l'alerte.

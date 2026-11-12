@@ -58,6 +58,20 @@
   content: none;
 }
 
+/*
+ * A card whose footer leads nowhere of its own is one link, footer included:
+ * the content gives up its position, and the pseudo-element is placed on the
+ * card again; the whole card lights up.
+ */
+.fr-card.fr-enlarge-link.card--whole:not(.fr-card--no-icon) .fr-card__content {
+  position: static;
+}
+
+.fr-card.fr-enlarge-link.card--whole:hover,
+.fr-card.fr-enlarge-link.card--whole .fr-card__content:hover {
+  background-color: var(--background-alt-grey);
+}
+
 /* In its column, level with the body it extends. */
 .fr-card.fr-enlarge-link .fr-card__title a::after {
   position: absolute;
@@ -65,6 +79,15 @@
   right: 2rem;
   bottom: auto;
   transform: translateY(-50%);
+}
+
+/*
+ * The card being its positioned ancestor, the arrow would centre on the whole
+ * card: it stays level with the first line of the title, in the head of the
+ * card, where the content's top padding and half a line of the title put it.
+ */
+.fr-card.fr-enlarge-link.card--whole.card--dense .fr-card__title a::after {
+  top: calc(1.5rem + 0.875rem);
 }
 
 .fr-card .fr-card__footer {
