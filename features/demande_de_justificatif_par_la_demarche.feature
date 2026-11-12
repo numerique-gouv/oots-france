@@ -59,7 +59,36 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
-    Et la page des justificatifs affiche que l'usager a choisi de ne pas utiliser le document
+    Et la page des justificatifs affiche qu'aucun document n'a été envoyé à la démarche
+
+  Scénario: aucun document ne correspond à l'usager, qui le lit sur l'espace de prévisualisation, et la démarche le dit
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "FR - Test without evidence match (TC18)" sur la carte "(TEST) Test Requirement"
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
+    Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Alors la page dit qu'aucun document ne correspond à l'usager
+    Quand l'usager revient à sa démarche par le bouton de l'espace de prévisualisation
+    Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
+    Et la page des justificatifs affiche qu'aucun document n'a été envoyé à la démarche
+    Et la page des justificatifs affiche "Redemander le document"
+    Et le journal des échanges contient la seconde requête et la réception d'une réponse sans justificatif
+
+  Scénario: l'usager qui a choisi la version 1.2 lit qu'aucun document ne lui correspond, et la démarche le dit
+    Quand l'administrateur choisit la version "OOTS 1.2"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "FR - Test without evidence match (TC18)" sur la carte "(TEST) Test Requirement"
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
+    Et que l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Alors la page dit qu'aucun document ne correspond à l'usager
+    Quand l'usager revient à sa démarche par le bouton de l'espace de prévisualisation
+    Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
+    Et la page des justificatifs affiche qu'aucun document n'a été envoyé à la démarche
+    Et le journal des échanges contient la seconde requête et la réception d'une réponse sans justificatif
 
   Scénario: une carte ajoutée sous une démarche qui ne la déclare pas ramène le justificatif
     Quand l'administrateur choisit la version "OOTS 2.0"

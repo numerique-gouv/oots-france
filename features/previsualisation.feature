@@ -8,7 +8,9 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
   document et de choisir de l'utiliser ou non ; la seconde requête du
   requêteur étranger reçoit exactement ce que l'usager a accepté. Un usager
   qui s'identifie sous une autre identité que celle de la requête ne voit
-  rien, et la seconde requête reçoit l'erreur d'authentification.
+  rien, et la seconde requête reçoit l'erreur d'authentification. Pour un
+  type auquel aucun document ne correspond, l'usager lit sur l'espace
+  qu'aucun ne lui correspond, et la seconde requête reçoit une liste vide.
 
   Le requêteur étranger forge ses requêtes au nom d'une identité de test du
   faux FranceConnect+, et l'usager suit l'adresse dans un navigateur ; ce que
@@ -64,3 +66,22 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Alors la page dit que le document ne peut pas être fourni
     Quand le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France répond "EDM:ERR:0001" à la seconde requête, sans adresse de prévisualisation
+
+  Scénario: aucun document ne correspond à l'usager, qui le lit sur l'espace, et la seconde requête reçoit une liste vide
+    Quand le requêteur étranger envoie une requête qui exige la prévisualisation pour le type "FR - Test without evidence match (TC18)"
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
+    Quand l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Alors la page dit qu'aucun document ne correspond à l'usager
+    Quand le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France envoie une réponse sans justificatif
+
+  Scénario: un requêteur étranger en "oots-edm:v1.2" reçoit une liste vide quand aucun document ne correspond à l'usager
+    Quand le requêteur étranger envoie en "oots-edm:v1.2" une requête qui exige la prévisualisation pour le type "FR - Test without evidence match (TC18)"
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace et la méthode "GET"
+    Quand l'usager ouvre l'espace de prévisualisation avec une adresse de retour
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Alors la page dit qu'aucun document ne correspond à l'usager
+    Et la page propose de revenir à l'adresse de retour
+    Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
+    Alors la France envoie une réponse sans justificatif

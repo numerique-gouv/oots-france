@@ -29,14 +29,29 @@ end
 def space_browser = @space_browser ||= DemoBrowser.new(procedure_url)
 
 # The person France's preview space confirms: the test identity
-# `dk-substantial` of the fake FranceConnect+.
-def previewed_request(**, &) = @correspondent.request(subject: FakeCorrespondent::PREVIEWED_BENEFICIARY, **, &)
+# `dk-substantial` of the fake FranceConnect+. Both requests of a scenario ask for the same type, the one it named if any.
+def previewed_request(**, &)
+  @correspondent.request(subject: FakeCorrespondent::PREVIEWED_BENEFICIARY,
+    evidence_type: @evidence_type || FakeCorrespondent::EVIDENCE_TYPE, **, &)
+end
 
 Quand('le requêteur étranger envoie une requête qui exige la prévisualisation') do
   @exchange_id = @correspondent.submit(previewed_request { |xml| preview_flag(xml) })
 end
 
+Quand('le requêteur étranger envoie une requête qui exige la prévisualisation pour le type {string}') do |title|
+  @evidence_type = FakeCorrespondent::EVIDENCE_TYPES.fetch(title)
+  @exchange_id = @correspondent.submit(previewed_request { |xml| preview_flag(xml) })
+end
+
 Quand('le requêteur étranger envoie en {string} une requête qui exige la prévisualisation') do |version|
+  body = previewed_request(specification: EdmSpecification.find(version)) { |xml| preview_flag(xml) }
+
+  @request_id = @correspondent.submit_on_the_earlier_line(body)
+end
+
+Quand('le requêteur étranger envoie en {string} une requête qui exige la prévisualisation pour le type {string}') do |version, title|
+  @evidence_type = FakeCorrespondent::EVIDENCE_TYPES.fetch(title)
   body = previewed_request(specification: EdmSpecification.find(version)) { |xml| preview_flag(xml) }
 
   @request_id = @correspondent.submit_on_the_earlier_line(body)
@@ -72,6 +87,16 @@ end
 Alors('la page dit que le document ne peut pas être fourni') do
   expect(space_browser.title).to eq(I18n.t('preview_sessions.show.refused.title'))
   expect(space_browser.links("a[href$='/document']")).to be_empty
+end
+
+Alors('la page dit qu\'aucun document ne correspond à l\'usager') do
+  expect(space_browser.title).to eq(I18n.t('preview_sessions.show.unmatched.title'))
+  expect(space_browser.links("a[href$='/document']")).to be_empty
+  expect(space_browser.body).not_to include('type="radio"')
+end
+
+Alors('la page propose de revenir à l\'adresse de retour') do
+  expect(space_browser.links("a[href='#{RETURN_ADDRESS}']").size).to eq(1)
 end
 
 Alors('la France répond {string} à la seconde requête, sans adresse de prévisualisation') do |code|

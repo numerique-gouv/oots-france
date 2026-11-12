@@ -264,6 +264,8 @@ end
 EVIDENCE_TYPE_CLASSIFICATIONS = {
   'FR - Test Evidence Type not held' =>
     'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/0a4cf159-133d-4ca7-91a7-749f9a1cc3e3',
+  'FR - Test without evidence match (TC18)' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/11cb64a4-6134-4b0e-aa6b-4a90250924ab',
 }.freeze
 
 Alors('cette requête demande le type de justificatif {string}') do |titre|
@@ -318,6 +320,31 @@ Quand('l\'usager est ramené à sa démarche') do
   end
 end
 
+# Where no document matches the user, the space does not send them back on its
+# own: they read the page, then take the button. On 2.0 the button appears
+# once the second request has reached the space, so the address is opened
+# again until it does.
+Quand('l\'usager revient à sa démarche par le bouton de l\'espace de prévisualisation') do
+  patiente_jusqu_a('l\'espace de prévisualisation présente le bouton de retour à la démarche') do
+    next true if bouton_de_retour.present?
+
+    @navigateur.follow_address(@lien_de_depart)
+    bouton_de_retour.present?
+  end
+
+  @navigateur.follow_address(bouton_de_retour)
+end
+
+def bouton_de_retour = @navigateur.links('[data-controller=preview-return] a.fr-btn').first
+
+Alors('le journal des échanges contient la seconde requête et la réception d\'une réponse sans justificatif') do
+  depart_de_la_requete
+  patiente_jusqu_a('le journal porte la réponse à la seconde requête') { journal.exists?(event_type: 'response_received') }
+
+  expect(journal.where(event_type: 'request_sent').count).to eq(2)
+  expect(journal.where(event_type: 'response_received').pluck(:evidence_digest)).to eq([nil])
+end
+
 Alors('l\'usager arrive sur la page des justificatifs, qui reçoit l\'échange et la conversation') do
   arrivee = URI.parse(@navigateur.current_url)
 
@@ -327,19 +354,20 @@ Alors('l\'usager arrive sur la page des justificatifs, qui reçoit l\'échange e
 end
 
 # The document comes back on another connection: the page is asked again, as
-# the zone asks again, until it says so.
+# the zone asks again, until it says so. Read as text, the markup escaping
+# what an apostrophe or a quote would otherwise spell differently.
 Alors('la page des justificatifs affiche {string}') do |texte|
   attend_sur_la_page_des_justificatifs(texte)
 end
 
-Alors('la page des justificatifs affiche que l\'usager a choisi de ne pas utiliser le document') do
+Alors('la page des justificatifs affiche qu\'aucun document n\'a été envoyé à la démarche') do
   attend_sur_la_page_des_justificatifs(I18n.t('components.demo_request_zone.declined_title'))
 end
 
 def attend_sur_la_page_des_justificatifs(texte)
   patiente_jusqu_a("la page des justificatifs affiche « #{texte} »") do
     @navigateur.visit(adresse_de_la_demarche('documents'))
-    @navigateur.body.include?(texte)
+    Nokogiri::HTML(@navigateur.body).text.include?(texte)
   end
 end
 

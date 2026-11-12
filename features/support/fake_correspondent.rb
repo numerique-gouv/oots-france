@@ -37,6 +37,14 @@ class FakeCorrespondent
   EVIDENCE_TYPE =
     'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
 
+  # The types a scenario names instead, by the title the Evidence Broker gives
+  # them: « FR - Test without evidence match (TC18) », which France answers
+  # without any document.
+  EVIDENCE_TYPES = {
+    'FR - Test without evidence match (TC18)' =>
+      'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/11cb64a4-6134-4b0e-aa6b-4a90250924ab',
+  }.freeze
+
   def initialize(requester:, gateway: DomibusClient.new, uuid: UuidGenerator.new)
     @requester = requester
     @gateway = gateway
@@ -47,9 +55,10 @@ class FakeCorrespondent
   # Rendered once and returned, so that submitting the same body twice replays
   # the very request identifier chapter 4.4 forbids reusing.
   def request(procedure_code: ProcedureCode::SYSTEM_CHECK, specification: EdmSpecification.preferred,
-              subject: BENEFICIARY)
+              subject: BENEFICIARY, evidence_type: EVIDENCE_TYPE)
     body = EvidenceRequestBuilder.new(
-      requester:, provider:, beneficiary: NaturalPerson.new(**subject), requirement:, data_service:, procedure_code:, specification:, uuid:,
+      requester:, provider:, beneficiary: NaturalPerson.new(**subject), requirement:,
+      data_service: data_service(evidence_type), procedure_code:, specification:, uuid:,
     )
     rendered = body.render
 
@@ -104,12 +113,12 @@ class FakeCorrespondent
     Requirement.new(id: REQUIREMENT, descriptions: { 'EN' => 'Test requirement' })
   end
 
-  # The evidence type France serves: a PDF, under the classification its own
+  # The evidence type asked for: a PDF, under the classification France's own
   # directory entry publishes.
-  def data_service
+  def data_service(evidence_type)
     DataService.new(
       id: '41170824-15d9-4c16-984e-63b75b937b8c',
-      evidence_type_classification: EVIDENCE_TYPE,
+      evidence_type_classification: evidence_type,
       distribution_format: EvidenceType::PDF,
       distribution_language: 'EN',
       descriptions: { 'EN' => 'FR - Test Evidence Type' },
