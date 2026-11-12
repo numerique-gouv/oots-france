@@ -95,7 +95,7 @@ RSpec.describe 'scripts/worktree.sh' do
   it 'says what is lost, and still creates the worktree, when flock is missing' do
     without_flock = File.join(repository, 'chemin-sans-flock')
     FileUtils.mkdir_p(without_flock)
-    %w[git sed grep cat mkdir dirname basename].each do |command|
+    %w[git sed grep cat mkdir rm dirname basename].each do |command|
       File.symlink(executable_path(command), File.join(without_flock, command))
     end
 
