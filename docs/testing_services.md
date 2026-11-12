@@ -14,7 +14,7 @@ Le gabarit DNS des annuaires centraux (voir [carte_des_tdd.md](carte_des_tdd.md#
 | `acc` | L'**acceptation** : la vraie implémentation des Common Services par la Commission, avant production | Ce que les États membres y ont réellement inscrit — c'est l'environnement sur lequel ce dépôt travaille |
 | `prod` | La production | Ce que les États membres ont publié pour de bon. Le dépôt ne la lit qu'à un endroit : la [copie des annuaires de production](espace_administration.md#la-page-des-justificatifs-disponibles) que lit la page publique des justificatifs disponibles, quel que soit `ENVIRONNEMENT_SERVICES_COMMUNS` |
 
-Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste après le rôle. La **console d'administration** est l'interface graphique par laquelle un État membre inscrit à la main ce que l'interface LCM dépose par message — schémas de classification, types de justificatif, fournisseurs, déclarations de démarche ; elle demande un compte rattaché à un pays, ouvert par le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk).
+Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste après le rôle. La **console d'administration** est l'interface graphique par laquelle un État membre inscrit à la main ce que l'interface LCM dépose par message — schémas de classification, types de justificatif, fournisseurs, déclarations de démarche ; elle demande un compte rattaché à un pays, ouvert par le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). [configurer_les_annuaires_via_l_interface.md](configurer_les_annuaires_via_l_interface.md) la décrit écran par écran.
 
 | | Acceptation | Production |
 | --- | --- | --- |
@@ -122,6 +122,28 @@ Une base de connaissances ouverte, que les équipes nationales alimentent elles-
 - **Déclarations de démarche, exigences, types de justificatif, fournisseurs, services de données, schémas de classification** se déposent par l'interface LCM, sous forme d'un message *SubmitObjects* — c'est même l'objet du composant 4. Dans les Testing Services, ce dépôt se fait par **envoi de fichier depuis l'interface de la plateforme**, il n'est visible que des requêtes portant son propre code pays, il s'annule d'un appel de restauration, et une évolution du modèle de données le périme. C'est une **épreuve du format**, pas une publication : rien n'en sort vers un autre État membre.
 - **Une inscription réelle** — celle qui manque à la France — se fait ailleurs : sur les Common Services d'acceptation puis de production, soit par l'interface LCM en AS4, soit à la main par l'interface graphique que la Commission fournit, celle que décrit le composant 11b (menus « For Providers » et « For Requesters »). C'est ce chemin-là qu'il faut emprunter pour que la France devienne interrogeable, et il ne demande pas de code.
 - **Les justificatifs ne sont déposés nulle part.** Les annuaires centraux ne portent que des métadonnées — qui délivre quoi, où, sous quel format ; le document lui-même reste chez son fournisseur et ne voyage qu'en AS4, chiffré, d'un point d'accès à l'autre ([le modèle des quatre coins](oots_context.md#le-modèle-des-quatre-coins)). Aucun composant des Testing Services n'offre de les téléverser : ceux du composant 5 sont fixes et servis par la plateforme, et la seule façon d'en émettre un est de **jouer le rôle de fournisseur** dans un cas de test AS4, en répondant soi-même à une requête de la plateforme.
+
+## Les cas de test des événements de la Commission
+
+Les Projectathons, puis l'[OOTS Checkpoint](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/991264908/OOTS+Checkpoint1) des 25-26 novembre 2026, se jouent sur une liste de cas de test que la Commission tient dans le document *OOTS Projectathon – test scenarios*. Ce document est joint à la page *Document repository – Testing and deployment* de l'espace SDG Once-Only, en accès restreint. La version 1.1 du 23 octobre 2026 ajoute TC18, discuté en [réunion M58 du sous-groupe](https://ec.europa.eu/digital-building-blocks/wikis/spaces/SDGOO/pages/882672179/M58+2026-11-03+SUMMARY+REPORT+Testing+and+deployment+sub-group+meeting). Le [Checkpoint Playbook](https://ec.europa.eu/digital-building-blocks/sites/download/attachments/991264908/OOTS-Participants-Checkpoint-Playbook.pdf) dit comment l'événement se déroule, mais pas ce que chaque cas exige : c'est ce document qui le dit.
+
+| Cas | Ce qu'il exerce, d'après la v1.1 |
+| --- | --- |
+| TC01 | Une requête sans prévisualisation, qui rend un PDF |
+| TC02 | Une requête sans prévisualisation à laquelle le fournisseur ne trouve rien : il répond **aussitôt** une liste vide |
+| TC03, TC04 | Une erreur, du registre de base puis du point d'accès |
+| TC05 | Une requête sans prévisualisation, précédée d'une conversation supplémentaire avec le DSD |
+| TC06 | Une requête avec prévisualisation et ré-authentification, qui rend un PDF |
+| TC07 | La même chose auprès de deux fournisseurs |
+| TC08 | Le refus du justificatif par l'usager sur l'espace de prévisualisation |
+| TC09 | L'expiration de la prévisualisation |
+| TC10 | Une prévisualisation avec transformation lisible (XML) |
+| TC11, TC12 | La modification des données d'un fournisseur au DSD, par la console puis par le LCM |
+| TC13 | Une erreur d'identité à la ré-authentification |
+| TC14 à TC17 | La représentation d'une personne morale, avec pouvoirs complets ou partiels, avec ou sans problème de représentation |
+| TC18 | Une requête avec prévisualisation et ré-authentification où rien ne correspond à l'usager identifié : « *This test case specifically covers the scenario where the absence of matching evidence is determined as part of the Preview flow* ». Le fournisseur ne répond qu'après la visite et la ré-authentification de l'usager, avec une liste vide |
+
+Pour le Checkpoint de novembre 2026, la Commission a retenu pour la France, en fournisseur, TC06, TC08, TC13 et TC18. TC06 et TC08 se jouent sur « FR - Test Evidence Type for abroad », TC13 sur le refus `EDM:ERR:0001` d'[OOTS-76](https://linear.app/pole-api/issue/OOTS-76), et TC18 sur le type « FR - Test without evidence match (TC18) » qu'[OOTS-286](https://linear.app/pole-api/issue/OOTS-286) a publié et qu'[OOTS-287](https://linear.app/pole-api/issue/OOTS-287) fait répondre.
 
 ## Ce que ça change pour ce dépôt
 
