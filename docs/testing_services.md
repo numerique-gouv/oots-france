@@ -14,7 +14,7 @@ Le gabarit DNS des annuaires centraux (voir [carte_des_tdd.md](carte_des_tdd.md#
 | `acc` | L'**acceptation** : la vraie implémentation des Common Services par la Commission, avant production | Ce que les États membres y ont réellement inscrit — c'est l'environnement sur lequel ce dépôt travaille |
 | `prod` | La production | — |
 
-Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste après le rôle. La **console d'administration** est l'interface graphique par laquelle un État membre inscrit à la main ce que l'interface LCM dépose par message — schémas de classification, types de justificatif, fournisseurs, déclarations de démarche ; elle demande un compte rattaché à un pays, ouvert par le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk).
+Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste après le rôle. La **console d'administration** est l'interface graphique par laquelle un État membre inscrit à la main ce que l'interface LCM dépose par message — schémas de classification, types de justificatif, fournisseurs, déclarations de démarche ; elle demande un compte rattaché à un pays, ouvert par le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk). [configurer_les_annuaires_via_l_interface.md](configurer_les_annuaires_via_l_interface.md) la décrit écran par écran.
 
 | | Acceptation | Production |
 | --- | --- | --- |

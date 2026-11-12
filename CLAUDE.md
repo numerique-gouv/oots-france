@@ -46,6 +46,7 @@ Each piece of information has a single owning document; everything else links to
 | Installation and configuration steps, including `scripts/configure_domibus.sh` | `README.md` |
 | Deploying on a server: machine sizing, the order of operations and what each one freezes, the HTTPS front, what to firewall and back up, how to update | `docs/deploiement.md` |
 | Configuring Domibus by hand in its admin console (Plugin User, keystores, PMode, admin accounts) | `docs/configurer_domibus_via_l_interface.md` |
+| Publishing to the Common Services by hand in the Common Services Administration Tool, screen by screen: evidence type, evidence type list, data service, how to verify each, how to guide someone through it | `docs/configurer_les_annuaires_via_l_interface.md` |
 | The operator console: what it shows, what it deliberately does not, the DSFR wiring, and the account that opens it | `docs/espace_administration.md` |
 | The exchange log of article 17: what is recorded and where, the encryption and retention of personal data, how to read it back | `docs/journal_des_echanges.md` |
 | The TLS profile the outgoing clients actually use towards the Common Services, confronted requirement by requirement with chapter 3.7: versions, cipher suites, key exchange groups, mutual TLS, the load the client puts on the directories, DNSSEC | `docs/securite_transport.md` |
