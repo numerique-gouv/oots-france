@@ -66,6 +66,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
       **distributed_as(declared),
+      distribution_formats: distribution_formats(declared),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
@@ -97,6 +98,9 @@ class DataServicesResponseParser < CommonServicesResponseParser
       unstructured_sibling_published: unstructured_sibling?(declared),
     }
   end
+
+  # Every distribution, where the attributes above read the first alone.
+  def distribution_formats(declared) = all(declared, './sdg:DistributedAs/sdg:Format').map { |format| format.text.strip }
 
   # The one question C039 and C041 ask of the record rather than of a single
   # distribution: they excuse a structured distribution from carrying a data
