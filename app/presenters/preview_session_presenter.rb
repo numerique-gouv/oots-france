@@ -31,8 +31,12 @@ class PreviewSessionPresenter
   # answer goes; what says the link is spent, or the evidence refused, needs
   # none.
   def identification_required?
-    verdict.nil? && (state == :open || (state == :recorded && !session.answered?))
+    verdict.nil? && (state == :open || (state.in?(%i[recorded unmatched]) && !session.answered?))
   end
+
+  # Whether the request is still there to name who asks, and for what: it goes
+  # with the answer, and the page then says only the outcome.
+  def names_request? = first_request.present?
 
   # Chapter 4.9 §2, step 8: who asks, and for what, as the request said it.
   def requester_name = first_request.requester.name
@@ -59,7 +63,7 @@ class PreviewSessionPresenter
   # the way back being someone else's.
   def offers_return?
     case state
-    when :recorded then verdict == :confirmed
+    when :recorded, :unmatched then verdict == :confirmed
     when :refused then verdict == :refused && session.identification_failed?
     else false
     end
@@ -71,7 +75,8 @@ class PreviewSessionPresenter
 
   # Taken on its own once known after a choice; after a refusal the user reads
   # first why the evidence cannot be provided (article 16(3) of implementing
-  # regulation 2022/1463).
+  # regulation 2022/1463), and where no document matches them, that none does
+  # (chapter 2.1 §3.3).
   def follows_return? = state == :recorded && offers_return?
 
   private
@@ -79,9 +84,9 @@ class PreviewSessionPresenter
   def lifecycle
     return :expired if session.expired?
     return :open if session.openable?
-    return :recorded if session.decided? || session.answered?
+    return :invalid unless session.decided? || session.answered?
 
-    :invalid
+    session.unmatched? ? :unmatched : :recorded
   end
 
   # Chapter 4.9 §2, steps 19-20: this browser failed the identity check, or

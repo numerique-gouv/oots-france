@@ -314,6 +314,126 @@ RSpec.describe 'The preview France offers as a provider' do
     end
   end
 
+  # OOTS-287: « FR - Test without evidence match (TC18) », for which no
+  # document matches any user (chapter 4.9 §1).
+  describe 'a type no document matches' do
+    def unmatched(flag = 'true', line: :v2_0)
+      requested(line) { |body| flagged(body, flag).sub(Fixtures::SERVED_TYPE, Fixtures::UNMATCHED_TYPE) }
+    end
+
+    let(:first) { unmatched }
+    let(:second_id) { SecureRandom.uuid }
+    let(:following) { second(exchange_id: first.exchange_id, request_id: second_id) }
+
+    def recognised_visit
+      EvidenceProvision::RecordPreviewVisit.call(preview_session: PreviewSession.sole, location:, identified: true)
+    end
+
+    def empty_answer?(envelope)
+      answer = body_of(envelope)
+      answer.root['status'].end_with?('Success') && answer.xpath('/*/rim:RegistryObjectList/*', RS).empty? &&
+        Nokogiri::XML(envelope).xpath('//payload').size == 1
+    end
+
+    # CA1: the preview is asked as for a type served, with no document kept.
+    it 'sends the user to the preview space, keeping no document' do
+      deliver(first, 'm001')
+
+      expect(exception_of(body_of(submitted.sole))['code']).to eq('EDM:ERR:0002')
+      expect(slot(body_of(submitted.sole), 'PreviewLocation')).to eq(location)
+      expect(PreviewSession.sole).to have_attributes(unmatched: true, document: nil, evidence_id: nil)
+    end
+
+    it 'asks for the preview with a PreviewMethod GET on the 1.2 line' do
+      deliver(unmatched(line: :v1_2), 'm001')
+
+      expect(slot(body_of(submitted.sole), 'PreviewMethod')).to eq('GET')
+    end
+
+    # CA2: step 4 of §2, the empty list at once.
+    it 'answers the empty list at once where the request allows no preview' do
+      deliver(unmatched('false'), 'm001')
+
+      expect(empty_answer?(submitted.sole)).to be(true)
+      expect(PreviewSession.count).to eq(0)
+      expect(Exchange.sole.status).to eq('delivered')
+    end
+
+    it 'defers the procedure answered later, before saying no document matches' do
+      deliver(requested(:v2_0) do |body|
+        flagged(body, 'false').sub(Fixtures::SERVED_TYPE, Fixtures::UNMATCHED_TYPE)
+          .sub(/(<rim:Slot name="Procedure">.*?<rim:Value>)[^<]*/m, "\\1#{ProcedureCode::BIRTH_REGISTRATION}")
+      end, 'm001')
+
+      expect(slot(body_of(submitted.sole), 'ResponseAvailableDateTime')).to be_present
+    end
+
+    it 'answers the empty list at once on the 1.2 line too' do
+      deliver(unmatched('false', line: :v1_2), 'm001')
+
+      expect(empty_answer?(submitted.sole)).to be(true)
+    end
+
+    describe 'the second request' do
+      before { deliver(first, 'm001') }
+
+      # CA4: nothing goes while the user has not read the page.
+      it 'is held until the user, recognised, has opened the page, then answered the empty list' do
+        deliver(following, 'm002')
+        expect(submitted.size).to eq(1)
+
+        perform_enqueued_jobs { recognised_visit }
+
+        expect(empty_answer?(submitted.last)).to be(true)
+        expect(body_of(submitted.last).root['requestId']).to eq("urn:uuid:#{second_id}")
+        expect(Nokogiri::XML(submitted.last).to_s).to include(first.exchange_id, first.conversation_id)
+        expect(PreviewSession.sole).to have_attributes(status: 'answered', unmatched: true, first_request: nil)
+      end
+
+      it 'is answered on arrival once the user has opened the page' do
+        recognised_visit
+        deliver(following, 'm002')
+
+        expect(empty_answer?(submitted.last)).to be(true)
+        expect(Exchange.sole.status).to eq('delivered')
+      end
+
+      it 'is not answered by a visit of a browser not yet recognised' do
+        deliver(following, 'm002')
+        perform_enqueued_jobs do
+          EvidenceProvision::RecordPreviewVisit.call(preview_session: PreviewSession.sole, location:, identified: false)
+        end
+
+        expect(submitted.size).to eq(1)
+        expect(PreviewSession.sole.status).to eq('pending')
+      end
+
+      # CA5: nothing was decided, so nothing is logged as decided.
+      it 'logs no decision' do
+        deliver(following, 'm002')
+        perform_enqueued_jobs { recognised_visit }
+
+        expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
+        expect(AuditEvent.where(event_type: 'response_sent').count).to eq(1)
+      end
+
+      # CA4 and CA5: T3 without a visit, the timeout, and still no decision.
+      it 'answers the timeout once T3 runs out on a user who never opened the page' do
+        deliver(following, 'm002')
+        travel(41.minutes) { perform_enqueued_jobs { ExpirePreviewSessionsJob.perform_now } }
+
+        expect(exception_of(body_of(submitted.last))['code']).to eq('EDM:ERR:0005')
+        expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
+      end
+
+      it 'refuses a second request arriving past T2' do
+        travel(17.minutes) { deliver(following, 'm002') }
+
+        expect(exception_of(body_of(submitted.last))['code']).to eq('EDM:ERR:0005')
+      end
+    end
+  end
+
   # CA2, CA21 and CA22.
   describe 'the 1.2 line' do
     let(:first) { request_asking_preview(line: :v1_2) }

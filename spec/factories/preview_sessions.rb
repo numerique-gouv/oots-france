@@ -16,6 +16,14 @@ FactoryBot.define do
       first_visited_at { Time.current }
     end
 
+    # OOTS-287: no document matches the user.
+    trait :unmatched do
+      unmatched { true }
+      document { nil }
+      evidence_id { nil }
+      evidence_issued_at { nil }
+    end
+
     trait :legacy_line do
       specification { EdmSpecification::V1_2 }
     end

@@ -205,10 +205,11 @@ module Oots
     end
 
     # The two messages of chapter 4.9 France emits as a provider: the exception
-    # sending the user to its preview space, and the answer to a user who used
-    # nothing; and the one it emits as a requester, the second request. Last,
-    # so that the identifiers drawn above do not shift — the second request
-    # last of all.
+    # sending the user to its preview space, and the empty list — to a user who
+    # used nothing, or whom no document matches, at either exchange (chapter
+    # 4.9 §1 and §2, step 4); and the one it emits as a requester, the second
+    # request. Last, so that the identifiers drawn above do not shift — the
+    # second request last of all.
     def write_preview_specimens
       write('erreurPrevisualisationRequise',
         *error_response(EdmException::AUTHORIZATION, preview_location:))

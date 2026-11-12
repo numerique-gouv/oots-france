@@ -265,7 +265,7 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
     it 'says so, and offers to ask again' do
       render_inline(zone)
 
-      expect(page).to have_css('.fr-alert--info', text: 'Vous avez choisi de ne pas utiliser ce document')
+      expect(page).to have_css('.fr-alert--info', text: "Aucun document n'a été envoyé à cette démarche")
       expect(page).to have_button('Redemander le document')
       expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="failed"]')
     end

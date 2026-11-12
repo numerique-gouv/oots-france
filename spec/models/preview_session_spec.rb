@@ -57,6 +57,51 @@ RSpec.describe PreviewSession do
     end
   end
 
+  # OOTS-287 RG4: no document matches the user, and reading so settles the
+  # outcome, nothing being decided.
+  describe 'an address no document matches' do
+    let!(:session) { create(:preview_session, :unmatched) }
+
+    it 'settles the outcome once read, and says whether a second request waits' do
+      expect(session.unmatched_seen!).to be(false)
+      expect(session).to have_attributes(status: 'decided', decision: nil)
+    end
+
+    it 'holds the request before it is read, and answers it the outcome after' do
+      expect(hold).to be_nil
+      expect(session.unmatched_seen!).to be(true)
+      expect(hold).to eq(described_class::UNMATCHED)
+    end
+
+    it 'offers no decision' do
+      expect(session.decide!(accepted: true)).to be_nil
+      expect(session.reload.status).to eq('pending')
+    end
+
+    it 'settles nothing once the address no longer opens, or already settled' do
+      session.unmatched_seen!
+      expect(session.unmatched_seen!).to be_nil
+
+      travel(17.minutes) do
+        late = create(:preview_session, :unmatched, issued_at: 17.minutes.ago)
+        expect(late.unmatched_seen!).to be_nil
+        expect(late.reload.status).to eq('pending')
+      end
+    end
+
+    it 'keeps saying so once concluded' do
+      session.unmatched_seen!
+      session.conclude!
+
+      expect(session.reload).to have_attributes(status: 'answered', unmatched: true, first_request: nil)
+    end
+  end
+
+  it 'settles nothing by a read where a document matches' do
+    expect(session.unmatched_seen!).to be_nil
+    expect(session.reload.status).to eq('pending')
+  end
+
   # Chapter 4.9 §2, steps 19-20: a failed identity check concludes an
   # address still open.
   describe 'a failed identity check' do

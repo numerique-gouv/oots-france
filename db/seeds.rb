@@ -263,6 +263,19 @@ if Rails.env.development?
       decision: PreviewSession::ACCEPTED,
       events: %w[request_received error_sent preview_visited preview_identified preview_visited preview_decided
                  response_sent] },
+    # La même, pour « FR - Test without evidence match (TC18) » : l'usager
+    # reconnu lit qu'aucun document ne lui correspond, et la seconde requête
+    # reçoit une liste vide (chapitre 4.9 §1). Il n'avait rien à décider : le
+    # journal ne porte aucun `preview_decided`, et la réponse aucun
+    # justificatif — l'échange n'en est pas moins `delivered`, comme le règle
+    # `Answers::EmptyList`.
+    { incoming: true, status: 'delivered', country_code: 'MT',
+      procedure_code: ProcedureCode::STUDY_FINANCING,
+      specification: EdmSpecification::V2_0,
+      message_error_code: EdmException::AUTHORIZATION.code,
+      preview_location: PreviewSession.location_for('3c8e1f2a-7b4d-4e6f-9a1b-2c3d4e5f6a7b', EdmSpecification::V2_0),
+      without_evidence: true,
+      events: %w[request_received error_sent preview_visited preview_identified preview_visited response_sent] },
     # Le chapitre 4.9 du côté qui demande : le correspondant envoie l'usager à
     # son espace, le portail confirme, la seconde requête part sous l'adresse de
     # retour de la France, l'usager revient par elle, et la réponse remet le
@@ -376,6 +389,12 @@ if Rails.env.development?
   # sujet : une différée, une liste vide après prévisualisation, une liste vide
   # dès la première réponse.
   answered_without_evidence = %w[deferred declined unmatched].freeze
+
+  # Et celles qu'un échange `delivered` envoie sans justificatif : la liste
+  # vide que la France répond après une prévisualisation.
+  carries_no_evidence = lambda do |exchange, scenario|
+    exchange.status.in?(answered_without_evidence) || scenario[:without_evidence]
+  end
 
   # Les deux sujets que le journal garde d'un même échange : celui que la
   # requête demande, et celui que la réponse confirme. Une réponse différée
@@ -560,7 +579,7 @@ if Rails.env.development?
   end
 
   evidence_fingerprint = lambda do |event_type, exchange, scenario, evidence_id, content_id, occurred_at|
-    return {} unless event_type.in?(carries_evidence) && !exchange.status.in?(answered_without_evidence)
+    return {} unless event_type.in?(carries_evidence) && !carries_no_evidence.call(exchange, scenario)
 
     digest = if exchange.incoming?
                served_digest.call(scenario, evidence_id, occurred_at)
@@ -579,8 +598,8 @@ if Rails.env.development?
   # there only what the exchange and the document itself say.
   names_evidence = %w[response_sent response_received].freeze
 
-  evidence_identifier = lambda do |event_type, exchange, evidence_id|
-    return {} unless event_type.in?(names_evidence) && !exchange.status.in?(answered_without_evidence)
+  evidence_identifier = lambda do |event_type, exchange, scenario, evidence_id|
+    return {} unless event_type.in?(names_evidence) && !carries_no_evidence.call(exchange, scenario)
 
     { evidence_identifier: evidence_id }
   end
@@ -643,7 +662,7 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without, :presumed, :decision, :previewed).merge(
+        :confirmed_without, :presumed, :decision, :previewed, :without_evidence).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre, et
           # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien
@@ -739,7 +758,7 @@ if Rails.env.development?
         **regrep_body.call(event_type, sent: (second ? second_request_id : circulated_id), echoed: answered_request,
           code: message_error_code, preview: declared_preview),
         **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
-        **evidence_identifier.call(event_type, exchange, evidence_id),
+        **evidence_identifier.call(event_type, exchange, scenario, evidence_id),
       )
     end
 

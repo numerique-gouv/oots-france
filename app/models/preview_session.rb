@@ -15,8 +15,15 @@ class PreviewSession < ApplicationRecord
   REFUSED = 'refused'.freeze
   DECISIONS = [ACCEPTED, REFUSED].freeze
 
-  # `pending` until the user decides, `decided` until the answer has gone,
-  # then `answered`; `expired` where T2 or T3 ran out first. `failed` where the
+  # The outcome of a preview with nothing to decide: no document matches the
+  # user, who is told so (§1), and the answer is the empty list all the same.
+  # Read by `hold!`, never stored in `decision`: the column `unmatched` holds
+  # the fact.
+  UNMATCHED = 'unmatched'.freeze
+
+  # `pending` until the outcome is settled — the user decides, or reads that
+  # no document matches them —, `decided` until the answer has gone, then
+  # `answered`; `expired` where T2 or T3 ran out first. `failed` where the
   # identity check of chapter 4.9 §2 failed instead, until its exception has
   # gone: neither T2 nor T3 sweeps it, there being nothing left to wait for.
   STATUSES = %w[pending decided failed answered expired].freeze
@@ -70,13 +77,16 @@ class PreviewSession < ApplicationRecord
   end
 
   # `exchange_id` names the row the first request opened: on the 1.2 line, one
-  # France minted, the header carrying none.
-  def self.issue(token:, exchange_id:, conversation_id:, specification:, first_request:, document:, evidence_id:,
-                 evidence_issued_at:)
+  # France minted, the header carrying none. No document where none matches
+  # the user, and `unmatched` then says so — outside the subject, since it
+  # holds of the evidence type, and outlives it.
+  def self.issue(token:, exchange_id:, conversation_id:, specification:, first_request:, document: nil,
+                 evidence_id: nil, evidence_issued_at: nil)
     create!(
       token:, location: location_for(token, specification), issued_at: Time.current,
-      exchange_id:, conversation_id:, specification:, first_request:,
-      document: Base64.strict_encode64(document), evidence_id:, evidence_issued_at: evidence_issued_at.iso8601(6)
+      exchange_id:, conversation_id:, specification:, first_request:, unmatched: document.nil?,
+      document: document && Base64.strict_encode64(document), evidence_id:,
+      evidence_issued_at: evidence_issued_at&.iso8601(6)
     )
   end
 
@@ -90,6 +100,9 @@ class PreviewSession < ApplicationRecord
   def issued_under?(segment) = specification&.segment == segment
 
   def document_bytes = document && Base64.strict_decode64(document)
+
+  # A document the user may still open: none where none matches them.
+  def document_offered? = openable? && !unmatched?
 
   def evidence_instant = evidence_issued_at && Time.zone.iso8601(evidence_issued_at)
 
@@ -146,8 +159,9 @@ class PreviewSession < ApplicationRecord
   # nil for any other.
   def self.return_method(value) = value.to_s.upcase.presence_in(RETURN_METHODS)
 
-  # The second request is kept, and the decision read, under the lock
-  # `decide!` takes: whichever comes second answers, and only one does.
+  # The second request is kept, and the outcome read, under the lock
+  # `decide!` and `unmatched_seen!` take: whichever comes second answers, and
+  # only one does.
   def hold!(raw:, sent_at:, message_id:, answering:, return_location:)
     with_lock do
       unless holds?(message_id)
@@ -155,17 +169,29 @@ class PreviewSession < ApplicationRecord
           answering_exchange_id: answering&.exchange_id, return_location: return_location || self.return_location)
       end
 
-      decision
+      settled_outcome
     end
   end
 
-  # Nil when the choice can no longer be made; otherwise whether the second
-  # request is waiting on it, and has then to be answered.
+  # Nil when the choice can no longer be made, or there is none to make;
+  # otherwise whether the second request is waiting on it, and has then to be
+  # answered.
   def decide!(accepted:)
     with_lock do
-      return nil unless openable?
+      return nil if unmatched? || !openable?
 
       update!(decision: accepted ? ACCEPTED : REFUSED, status: 'decided')
+      second_request.present?
+    end
+  end
+
+  # The user, recognised, has read that no document matches them: the outcome
+  # is settled with nothing decided. As `decide!` answers.
+  def unmatched_seen!
+    with_lock do
+      return nil unless unmatched? && openable?
+
+      update!(status: 'decided')
       second_request.present?
     end
   end
@@ -205,5 +231,13 @@ class PreviewSession < ApplicationRecord
       kept = second_request.present? ? %i[second_request second_message_id] : []
       update!(status: 'expired', **(SUBJECT - kept).index_with(nil))
     end
+  end
+
+  private
+
+  def settled_outcome
+    return decision unless unmatched?
+
+    UNMATCHED if decided?
   end
 end
