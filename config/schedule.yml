@@ -17,6 +17,10 @@ default: &commun
     cron: '*/2 * * * *'
     class: CollectPendingMessagesJob
     description: Récupère ce que la passerelle garde encore pour nous
+  copie_annuaires_production:
+    cron: '43 2 * * *'
+    class: RefreshDirectorySnapshotJob
+    description: Reprend la copie des annuaires de production que lit la page des justificatifs disponibles
   purge_journal_echanges:
     cron: '17 3 * * *'
     class: PurgeAuditEventsJob

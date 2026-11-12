@@ -23,21 +23,21 @@ class CommonServicesQuery
   # directory's passing failure for the whole freshness window, long after the
   # directory recovered.
   def search(parameters, parser:)
-    url = "#{@instance.base_url.chomp('/')}/#{SEARCH_PATH}"
     key = cache_key(url, parameters, parser)
     cached = Rails.cache.read(key)
     return parser.new(cached) if cached
 
-    body = fetch(url, parameters)
-    read = parser.new(body)
+    body = read(parameters)
+    parsed = parser.new(body)
     remember(url, key, body)
 
-    read
+    parsed
   end
 
-  private
-
-  def fetch(url, parameters)
+  # The body the directory answers now, its signature checked, the cache
+  # neither read nor written: what a copy of the directories keeps, refusals
+  # included.
+  def read(parameters)
     response = connection.get(url, parameters)
     @signature.verify!(
       body: response.body,
@@ -49,6 +49,10 @@ class CommonServicesQuery
   rescue Faraday::Error => e
     raise CommonServicesError, I18n.t('clients.common_services_query.unreachable', url:, error: e.message)
   end
+
+  private
+
+  def url = "#{@instance.base_url.chomp('/')}/#{SEARCH_PATH}"
 
   # A cache is an optimisation: one that cannot be written must not cost the
   # answer that was already obtained.

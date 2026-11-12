@@ -109,4 +109,21 @@ RSpec.describe CommonServicesInstance do
       expect(broker.base_url).to eq('https://query.cs.acc.oots.tech.ec.europa.eu/dsd/')
     end
   end
+
+  # The public page of available evidence reads production whatever the
+  # deployment exchanges in, and the proxy URLs stand in for the latter alone.
+  describe '.production' do
+    subject(:production) { described_class.production(described_class::EVIDENCE_BROKER) }
+
+    before { allow(Settings).to receive(:common_services_base_url).and_return('https://mandataire.example') }
+
+    it 'names the production record, whatever the environment configured' do
+      expect(production.name).to eq('fr.eb.v1.cs.prod.oots.tech.ec.europa.eu')
+    end
+
+    it 'resolves it rather than taking the proxy URL' do
+      expect(production.base_url).to eq('https://query.cs.acc.oots.tech.ec.europa.eu/dsd/')
+      expect(resolver).to have_received(:getresources).with('fr.eb.v1.cs.prod.oots.tech.ec.europa.eu', anything).at_least(:once)
+    end
+  end
 end
