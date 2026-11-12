@@ -96,6 +96,15 @@ L'écran dit qu'un objet est publié ; seule une requête dit ce qu'un correspon
 
 Les identifiants que l'outil attribue — classification, combinaison, service — ne se lisent sûrement que là, et se reportent sur le ticket au fil de l'eau : c'est le ticket de code qui suit qui les porte ensuite dans `app/` et dans [test_e2e.md](test_e2e.md).
 
+> [!IMPORTANT]
+> **Une publication ne se voit pas tout de suite dans la démarche de démonstration** : OOTS-France garde une heure les réponses des annuaires (`DUREE_CACHE_SERVICES_COMMUNS`). Une carte constatée avant la publication continue de montrer l'ancien état jusqu'à l'échéance ; la requête directe, elle, montre le nouveau à la minute. Constaté le 2026-11-12 sur la combinaison d'OOTS-277.
+
+## Retirer une déclaration de démarche — `For Requesters` → `MS Procedures`
+
+Le menu `For Requesters` offre `MS Procedures` — les déclarations de l'État membre — et `SDG Procedures` — le catalogue de la Commission, `T1`, `00`…, auquel on ne touche pas. La liste des `MS Procedures` se filtre par pays ; la fiche d'une déclaration porte son statut, ses onglets `Member State procedure Information` (dont le `SDG procedure ID` qu'elle implémente), `Jurisdictions` et `Requirements linked`, et les boutons `Move to draft` et `Archive`. L'URL de la fiche porte un identifiant interne à l'outil, qui n'est pas celui que l'Evidence Broker publie : on reconnaît la déclaration à son nom, à sa démarche et à ses exigences liées, jamais à cet identifiant.
+
+`Archive` demande confirmation (« *You are going to change the status of the procedure from "Published" to "Archived"* ») et retire la déclaration, avec ses liens aux exigences, des réponses de l'Evidence Broker — vérifié par la requête `requirements-by-procedure-and-jurisdiction` le 2026-11-12 ([OOTS-276](https://linear.app/pole-api/issue/OOTS-276)). Une fois l'objet archivé, l'outil offre `Delete Member State procedure` : il n'ajoute rien aux requêtes, et efface la trace de ce qui a été retiré ; on s'en tient à l'archivage.
+
 ## Guider quelqu'un dans la console
 
 La console se tient par un humain, son compte étant nominatif ; un agent le guide sans y toucher.
@@ -107,4 +116,4 @@ La console se tient par un humain, son compte étant nominatif ; un agent le gui
 
 ## Non constaté
 
-Ce que la session du 2026-11-12 n'a pas vu, et que ce document ne décrit donc pas encore : le côté *Requester* (`Add Member State procedure`, `Link a procedure to requirement(s)`) ; `Add evidence provider` et `Create Access Service` ; ce que font `Move to draft`, `Create draft version` et `Archive` ; le `Dashboard` et les menus `Requirements`, `For Requesters` et `For Providers` ; le choix de la juridiction d'une combinaison, si l'écran en offre un.
+Ce que la session du 2026-11-12 n'a pas vu, et que ce document ne décrit donc pas encore : la création côté *Requester* (`Add Member State procedure`, `Link a procedure to requirement(s)`) ; `Add evidence provider` et `Create Access Service` ; ce que font `Move to draft` et `Create draft version`, et `Archive` sur un autre objet qu'une déclaration de démarche ; le `Dashboard` et les menus `Requirements` et `For Providers` ; le choix de la juridiction d'une combinaison, si l'écran en offre un.
