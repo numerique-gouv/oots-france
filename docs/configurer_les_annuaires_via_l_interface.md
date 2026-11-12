@@ -8,7 +8,7 @@
 > | ce que sont l'Evidence Broker, le Data Service Directory, le Semantic Repository, une combinaison | [glossaire.md](glossaire.md#les-annuaires-centraux) |
 > | la forme d'une requête de vérification aux annuaires | [test_e2e.md](test_e2e.md#les-annuaires-centraux-sont-les-vrais) |
 
-Constaté le 2026-11-12 sur l'acceptation, en publiant le type « `FR - Test without evidence match (TC18)` » d'[OOTS-286](https://linear.app/pole-api/issue/OOTS-286) avec un compte *MS Administrator*. La console change sans préavis : un écran qui ne ressemble plus à ce qui suit se décrit d'abord, se corrige ici ensuite.
+Constaté le 2026-11-12 sur l'acceptation avec un compte *MS Administrator*, en publiant le type « `FR - Test without evidence match (TC18)` » d'[OOTS-286](https://linear.app/pole-api/issue/OOTS-286), le type « `FR - Student status (MESRI)` » d'[OOTS-290](https://linear.app/pole-api/issue/OOTS-290), en deux langues et deux distributions, et la combinaison d'[OOTS-277](https://linear.app/pole-api/issue/OOTS-277). La console change sans préavis : un écran qui ne ressemble plus à ce qui suit se décrit d'abord, se corrige ici ensuite.
 
 ## L'accueil, et l'objet que chaque bouton produit
 
@@ -29,16 +29,20 @@ Côté fournisseur, l'ordre des étapes est celui des dépendances : la combinai
 
 Le parcours vit sous `/flow/evidence-type` et compte trois sous-étapes.
 
-**1. *General information*.** `Planned go-live date` est prérempli du jour ; `Name (in English)` est obligatoire ; `Description (in English)` est facultative ; `Add other language for name and description` ajoute un nom et une description dans une autre langue.
+**1. *General information*.** `Planned go-live date` est prérempli du jour ; `Name (in English)` est obligatoire ; `Description (in English)` est facultative ; `Add other language for name and description` ouvre une fenêtre — `Language` (une liste, obligatoire), `Name of the evidence type` (obligatoire), `Description` — que `Add language` valide et `Discard` abandonne ; on y ajoute le nom dans la langue où un portail le lira, le français pour un type que la démarche de démonstration affiche.
+
+**L'URL de la classification est attribuée dès cette sous-étape**, avant toute publication : dès qu'on y revient, le champ `Classification` affiche `https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/<pays>/<uuid>`. Elle se relève là et se reporte sur le ticket ; avant la publication, le Semantic Repository y répond `404` et `SR:ERR:0004` (« *Asset not found* »), constaté le 2026-11-12.
 
 > [!IMPORTANT]
 > **La description est limitée à 512 caractères** : au-delà, l'outil refuse avec « *The description must be at least 2 characters long and no more than 512 characters.* » Un texte rédigé d'avance dans un ticket se mesure avant d'être collé, et la version publiée se reporte sur le ticket quand elle diffère.
 
 **2. *Evidence Provider's classification concepts*.** Facultative — l'écran le dit, « *You can skip this step if not needed* ». Un concept assigné ici est une question que le Data Service Directory posera au requêteur avant de désigner le fournisseur : il répond d'abord `DSD:ERR:0005` en réclamant l'attribut manquant ([testing_services.md](testing_services.md), composant 11, « Les schémas de classification propres à un État membre »). La France n'ayant qu'un fournisseur par type, elle n'en assigne aucun.
 
-**3. *Domains*.** Sept domaines au choix (`Education`, `Vehicles`, `Population`, `Professional Qualifications`, `Social Security`, `Income`…). **Aucun n'est obligatoire** : l'outil publie avec zéro domaine. La fiche publique du type au Semantic Repository n'en montre aucun, ni pour ce type ni pour ceux publiés auparavant ; ils restent internes à la console.
+**3. *Domains*.** Sept domaines au choix (`Education`, `Vehicles`, `Population`, `Professional Qualifications`, `Social Security`, `Income`…). **Aucun n'est obligatoire** : l'outil publie avec zéro domaine. Un domaine coché se relit au récapitulatif, sous `Domains` (« *1 domains* » pour `Education`). La fiche publique du type au Semantic Repository n'en montre aucun ; ils restent internes à la console.
 
 **Final check.** Un récapitulatif offre `No, go back to editing`, `Save as draft`, `Submit for review` et `Publish`. Seul `Publish` rend l'objet visible des requêtes ; un *MS Administrator* publie directement.
+
+Une traduction ajoutée par `Add other language` se publie à côté de l'anglais : le Semantic Repository la rend en `sr:title xml:lang="fr"`, le Data Service Directory en `sdg:Title lang="FR"` sur le service de données du type.
 
 La page de détail qui suit porte le statut `Published`, l'URL de la classification sous `Classification` — c'est l'identifiant du type, que tout le reste nomme —, et trois boutons : `Move to draft`, `Create draft version` et `Archive`. Ses onglets sont `Evidence type information`, `Evidence Provider's classification concepts`, `Evidence providers linked` et `Requirements linked`.
 
@@ -53,7 +57,7 @@ Le parcours vit sous `/flow/req-ets` et compte deux sous-étapes.
 
 **2. *Evidence type(s) and jurisdiction*.** `Name of the evidence type list` est obligatoire : c'est le `sdg:Name` de la combinaison, que la démarche de démonstration affiche. Pour une combinaison d'un seul type, la France lui donne le nom du type. La recherche ne liste que les types en `Draft` ou `Published` ; les types cochés passent sous `Selected evidence types`.
 
-Une combinaison réunit des types qui satisfont l'exigence **ensemble** ; deux combinaisons sont des alternatives — l'écran le rappelle, et le [3.2.2 §2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932944) le fonde. Un type qui suffit seul a donc sa propre combinaison, publiée par un passage de plus dans ce parcours, et les combinaisons existantes ne bougent pas. La frise nomme la sous-étape « *and jurisdiction* », mais la partie basse de l'écran, sous la liste des types, n'a pas été capturée : la combinaison publiée le 2026-11-12 l'a été sous `FR`, et l'Evidence Broker l'a confirmé, sans que la session ait vu comment la juridiction se choisit.
+Une combinaison réunit des types qui satisfont l'exigence **ensemble** ; deux combinaisons sont des alternatives — l'écran le rappelle, et le [3.2.2 §2.3](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932944) le fonde. Un type qui suffit seul a donc sa propre combinaison, publiée par un passage de plus dans ce parcours, et les combinaisons existantes ne bougent pas. La frise nomme la sous-étape « *and jurisdiction* », mais la session n'a vu aucun champ de juridiction : chaque combinaison publiée le 2026-11-12 l'a été sous `FR`, ce que l'Evidence Broker a confirmé, sans qu'on l'ait choisie à l'écran. Elle est sans doute déduite du pays du compte ; c'est une hypothèse, que rien n'a encore vérifiée.
 
 ## Rendre un type joignable — `Link an evidence provider to an evidence type`
 
@@ -67,9 +71,14 @@ Le parcours vit sous `/flow/ep-et` et compte deux sous-étapes.
 | --- | --- | --- |
 | `Minimum level of assurance` (obligatoire) | le niveau des types que la France sert, `Substantial` | le niveau de garantie que le DSD publie ([3.1.4](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932957)) |
 | `Distribution format 1` (obligatoire), avec `Standard name`, `Supported languages`, `Link to standard` | `PDF` ; `Standard name` reste à `Not applicable` | pas de `ConformsTo` sur un PDF ([`R-DSD-RESP-C067`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/DSD-RESP-C.sch), FATAL) |
-| `Add new format` | une distribution de plus, quand le type en a plusieurs | — |
+| `Add new format` | une distribution de plus, quand le type en a plusieurs : l'écran ajoute `Distribution format 2 *`, obligatoire, avec un lien `Remove format` | — |
 | `Additional information (in English)` | vide | rien ne la lit |
 | `Evidence service identifier` | **vide** | l'outil attribue lui-même l'UUID du service ; le saisir à la main n'apporte rien |
+
+Pour une distribution `JSON`, `Standard name` devient une liste active, dont la seule entrée est son propre texte d'invite, « *Standard name* » : la fermer sans rien choisir laisse `N/A` au récapitulatif, et le DSD publie la distribution sans `ConformsTo` — ce que [`R-DSD-RESP-C041`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/DSD-RESP-C.sch) (FATAL) n'admet que si une distribution PDF ou image existe à côté. `Supported languages` est une liste à cocher, propre à chaque format : ne la remplir que sur une décision écrite au ticket.
+
+> [!IMPORTANT]
+> **L'ordre des formats saisi n'est pas l'ordre publié.** Le 2026-11-12, un service saisi avec `PDF` en format 1 et `JSON` en format 2 (`1e4a95b7-…`, type « `FR - Student status (MESRI)` ») a été rendu par le DSD avec `application/json` **avant** `application/pdf`, en `oots-edm:v1.2` comme en `v2.0`. Rien ne garantit l'ordre des `DistributedAs` : un lecteur qui retient « la première distribution » lit ce que l'annuaire a choisi, pas ce qu'on a saisi. Après publication, relire l'ordre au DSD et le reporter sur le ticket.
 
 **Le point d'accès n'est pas un champ de ce parcours.** Le service publié porte celui que le fournisseur utilise déjà — le lien `UsesAccessService` qui unit « `FR - Test Evidence Provider` » à `AP_FR_01` —, et le DSD le rend sous `urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR`, avec les versions qu'`AP_FR_01` déclare.
 
@@ -98,4 +107,4 @@ La console se tient par un humain, son compte étant nominatif ; un agent le gui
 
 ## Non constaté
 
-Ce que la session du 2026-11-12 n'a pas vu, et que ce document ne décrit donc pas encore : le côté *Requester* (`Add Member State procedure`, `Link a procedure to requirement(s)`) ; `Add evidence provider` et `Create Access Service` ; ce que font `Move to draft`, `Create draft version` et `Archive` ; le `Dashboard` et les menus `Requirements`, `For Requesters` et `For Providers` ; un type publié avec un nom et une description dans une seconde langue ; un service de données à plusieurs distributions. Les deux derniers sont le parcours d'[OOTS-290](https://linear.app/pole-api/issue/OOTS-290), et s'ajouteront ici une fois faits ; le choix de la juridiction d'une combinaison aussi.
+Ce que la session du 2026-11-12 n'a pas vu, et que ce document ne décrit donc pas encore : le côté *Requester* (`Add Member State procedure`, `Link a procedure to requirement(s)`) ; `Add evidence provider` et `Create Access Service` ; ce que font `Move to draft`, `Create draft version` et `Archive` ; le `Dashboard` et les menus `Requirements`, `For Requesters` et `For Providers` ; le choix de la juridiction d'une combinaison, si l'écran en offre un.
