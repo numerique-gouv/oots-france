@@ -91,6 +91,7 @@ ignore_unused:
   # `search.strict: false` that would bless whole subtrees in silence.
   - admin.journal.exchanges.statuses.*
   - admin.sessions.{pro_connect_failed,signed_out,connection_required}
+  - available_evidence.refreshes.create.{launched,already_running}
   - components.directory_query.identifiers.*
   # Looked up by a key composed of the field name read off the subject, falling
   # back on that name when no wording translates it.

@@ -8,7 +8,7 @@ class ApplicationController < ActionController::Base
   # its pages alone.
   def admin_section? = false
 
-  # The presentation page's header carries its anchors, its contact and the way
-  # into the administration space; no other page's does.
+  # The header of the public site carries the anchors of the presentation
+  # page, the contact and the way into the administration space.
   def presentation_page? = false
 end

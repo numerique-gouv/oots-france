@@ -5,9 +5,10 @@
 module AdminAuthentication
   extend ActiveSupport::Concern
 
+  include RecognisesAdministrator
+
   included do
     before_action :require_administrator
-    helper_method :signed_in_email, :named_administrator?
   end
 
   private
@@ -34,16 +35,6 @@ module AdminAuthentication
       alert: :'admin.sessions.connection_required', status: :see_other
   end
 
-  # The agent the sign-in identified, admitted again at every request rather
-  # than once at the sign-in: a domain taken out of `DOMAINES_AGENTS_PROCONNECT`,
-  # or an invitation withdrawn, closes the sessions it had opened at their next
-  # page.
-  def administrator_signed_in?
-    email = session[:agent_email]
-
-    email.present? && Agent.new(email:).admitted?
-  end
-
   # Declared by the controllers it closes rather than here: the directories and
   # the demonstration stay open to every admitted agent. Redirected rather than
   # rendered in place, for the reason `require_administrator` is — the jobs
@@ -54,16 +45,5 @@ module AdminAuthentication
     redirect_to Rails.application.routes.url_helpers.admin_restricted_access_path, status: :see_other
   end
 
-  # Read in the list at every request, so that naming or dismissing an agent in
-  # a console takes effect at their next page.
-  def named_administrator?
-    return @named_administrator if defined?(@named_administrator)
-
-    @named_administrator = administrator_signed_in? && Administrator.appointed?(signed_in_email)
-  end
-
   def requested_path = session[:requested_path]
-
-  # The address of the agent the session admitted, which the header shows.
-  def signed_in_email = session[:agent_email]
 end

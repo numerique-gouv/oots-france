@@ -106,4 +106,15 @@ RSpec.describe Requirement do
 
     expect(requirement.reference_frameworks.first.requirement).to be(requirement)
   end
+
+  # The two smoke-test requirements of the production Evidence Broker.
+  describe '#smoke_test?' do
+    it 'is true under the nil and the max UUID alone' do
+      base = 'https://sr.oots.tech.ec.europa.eu/requirements/'
+
+      expect(%w[00000000-0000-0000-0000-000000000000 ffffffff-ffff-ffff-ffff-ffffffffffff
+                5247bb6b-6bec-43fd-9b2e-f99be2dbae39].map { described_class.new(id: base + it).smoke_test? })
+        .to eq([true, true, false])
+    end
+  end
 end

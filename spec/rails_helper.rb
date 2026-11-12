@@ -31,6 +31,7 @@ RSpec.configure do |config|
   config.include GatewayStubs
   config.include CodeListStubs
   config.include DirectoryStubs
+  config.include DirectorySnapshots
   config.include DemoContractStubs
   config.include FranceConnectStubs
   config.include ProConnectStubs

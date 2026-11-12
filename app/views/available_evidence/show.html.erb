@@ -1,0 +1,54 @@
+<% content_for :full_width, true %>
+<% requirement = @availability.requirement %>
+<% content_for :title, requirement.display_name %>
+
+<div class="fr-container fr-pb-7w">
+  <%= render 'available_evidence/breadcrumbs', requirement: %>
+
+  <div class="fr-grid-row">
+    <div class="fr-col-12 fr-col-lg-8">
+      <h1><%= t('available_evidence.title') %></h1>
+      <p class="fr-text--lead fr-mb-3w"><%= t('available_evidence.lead') %></p>
+    </div>
+  </div>
+
+  <%= render 'available_evidence/snapshot' %>
+
+  <section aria-labelledby="titre-exigence">
+    <p class="fr-mb-1w fr-text-mention--grey"><%= t('available_evidence.show.kicker') %></p>
+    <h2 id="titre-exigence" lang="<%= requirement.label_language&.downcase %>"><%= requirement.display_name %></h2>
+    <% if requirement.detail.present? %>
+      <p class="fr-col-12 fr-col-lg-8 fr-px-0 fr-mb-4w" lang="<%= requirement.detail_language&.downcase %>"><%=
+            requirement.detail %></p>
+    <% end %>
+
+    <% if @availability.nothing_published? %>
+      <p><%= t('available_evidence.show.nothing_published_html',
+            code: tag.code(@availability.empty_result_code)) %></p>
+    <% else %>
+      <%= render 'available_evidence/summary', availability: @availability %>
+      <%= render 'available_evidence/detail', availability: @availability, requirement: %>
+    <% end %>
+
+    <p class="fr-mt-4w fr-mb-0"><%= link_to t('available_evidence.show.back'), available_evidence_index_path,
+          class: 'fr-link fr-icon-arrow-left-line fr-link--icon-left' %></p>
+  </section>
+</div>
+
+<section class="fr-background-alt--blue-france fr-py-7w" aria-labelledby="titre-suite">
+  <div class="fr-container">
+    <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
+      <div class="fr-col-12 fr-col-md-8">
+        <h2 id="titre-suite" class="fr-h3"><%= t('available_evidence.show.next.title') %></h2>
+        <p class="fr-mb-0"><%= t('available_evidence.show.next.body') %></p>
+      </div>
+      <div class="fr-col-12 fr-col-md-4">
+        <ul class="fr-btns-group fr-btns-group--icon-left fr-mb-0">
+          <li><%= link_to t('available_evidence.show.next.write'), team_mail_address,
+                class: 'fr-btn fr-btn--icon-left fr-icon-mail-line' %></li>
+          <li><%= link_to t('available_evidence.show.next.discover'), root_path, class: 'fr-btn fr-btn--secondary' %></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_09_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -121,6 +121,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
     t.jsonb "preview_descriptions", default: [], null: false
     t.index ["exchange_id"], name: "index_demo_requests_on_exchange_id", unique: true
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_requests_on_journey_id_and_requirement_uuid"
+  end
+
+  create_table "directory_snapshot_answers", force: :cascade do |t|
+    t.bigint "directory_snapshot_id", null: false
+    t.string "key", null: false
+    t.text "body", null: false
+    t.index ["directory_snapshot_id", "key"], name: "index_directory_snapshot_answers_on_snapshot_and_key", unique: true
+  end
+
+  create_table "directory_snapshots", force: :cascade do |t|
+    t.datetime "taken_at"
+    t.datetime "failed_at"
+    t.string "failure_code"
+    t.text "failure_detail"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.check_constraint "(taken_at IS NULL) <> (failed_at IS NULL)", name: "directory_snapshots_taken_or_failed"
   end
 
   create_table "exchanges", force: :cascade do |t|
@@ -290,4 +307,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_09_120000) do
     t.index ["location"], name: "index_preview_sessions_on_location", unique: true
     t.index ["token"], name: "index_preview_sessions_on_token", unique: true
   end
+
+  add_foreign_key "directory_snapshot_answers", "directory_snapshots", on_delete: :cascade
 end

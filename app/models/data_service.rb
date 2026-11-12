@@ -89,6 +89,11 @@ class DataService
 
   attr_reader :descriptions, :details, :providers
 
+  # The format of every `sdg:DistributedAs` the record publishes, where the
+  # attributes above read the first alone: what the public page of available
+  # evidence lists.
+  attr_reader :distribution_formats
+
   # The classifications the service was matched on, each with the value it
   # supports, when the query carried the user's answers to a `DSD:ERR:0005`.
   attr_reader :classifications
@@ -116,6 +121,7 @@ class DataService
     @details = attributes.delete(:details) || {}
     @providers = attributes.delete(:providers) || []
     @classifications = attributes.delete(:classifications) || []
+    @distribution_formats = attributes.delete(:distribution_formats) || []
     super
   end
 

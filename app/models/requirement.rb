@@ -31,6 +31,8 @@ class Requirement
   IDENTIFIER = %r{\Ahttps://sr(\.[a-zA-Z]+)?\.oots\.tech\.ec\.europa\.eu/requirements/
                   [a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\z}x
 
+  SMOKE_TESTS = %w[00000000-0000-0000-0000-000000000000 ffffffff-ffff-ffff-ffff-ffffffffffff].freeze
+
   attribute :id, :string
 
   # { 'EN' => '(TEST) Test Requirement', 'FI' => 'Testivaatimus' }
@@ -56,6 +58,14 @@ class Requirement
   end
 
   def detail = in_preferred_language(details)
+
+  def detail_language = chosen_language_in(details)
+
+  # The production Evidence Broker carries two requirements for smoke tests —
+  # « Member States may assign their own Evidence Types to this Requirement to
+  # perform Smoke Tests in the production system » —, under the nil and the max
+  # UUID of RFC 9562, which no requirement of the Semantic Repository draws.
+  def smoke_test? = uuid.in?(SMOKE_TESTS)
 
   # Blank rather than nil throughout: this holds whatever the caller built its
   # declarations from, and a code or a country named « » is not one.

@@ -11,9 +11,9 @@ import { Controller } from "@hotwired/stimulus"
 // nowhere else, `COUNT` standing there for the number.
 //
 // What is narrowed is named by CSS selector rather than by target: what is
-// narrowed, what tallies it and what is said when nothing is left are three
-// parts of a page, and `SearchFieldComponent` says why it does not reach into
-// them.
+// narrowed, what tallies it, what is said when nothing is left and the list
+// that narrows beside the field are four parts of a page, and
+// `SearchFieldComponent` says why it does not reach into them.
 
 const flatten = (text) =>
   text.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '')
@@ -28,6 +28,10 @@ const words = (text) => flatten(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
 const matches = (found, terms) =>
   terms.every((term) => found.some((word) => word.startsWith(term)))
 
+// Nothing chosen keeps everything.
+const chosen = (element, value) =>
+  !value || (element.dataset.filterKeys || '').split(' ').includes(value)
+
 const say = (forms, count) => (forms[count] || forms.other).replace('COUNT', count)
 
 // An entry weighs what it holds — a providing country counts for its evidence
@@ -35,7 +39,7 @@ const say = (forms, count) => (forms[count] || forms.other).replace('COUNT', cou
 const weight = (item) => Number(item.dataset.tallyWeight || 1)
 
 export default class extends Controller {
-  static values = { entries: String, tally: String, empty: String }
+  static values = { entries: String, tally: String, empty: String, choice: String }
 
   // `connect` and not `DOMContentLoaded`: two pages of the console fetch their
   // listing after they have loaded, and the field arrives with it.
@@ -46,8 +50,18 @@ export default class extends Controller {
     this.tally = this.hasTallyValue && document.querySelector(this.tallyValue)
     this.empty = this.hasEmptyValue && document.querySelector(this.emptyValue)
     this.forms = this.tally && JSON.parse(this.tally.dataset.tally)
+    // A list beside the field, which keeps the entries whose
+    // `data-filter-keys` name what it chose: outside this element, so listened
+    // to rather than declared as an action.
+    this.choice = this.hasChoiceValue ? document.querySelector(this.choiceValue) : null
+    this.applied = () => this.apply()
+    this.choice?.addEventListener('change', this.applied)
 
     this.apply()
+  }
+
+  disconnect() {
+    this.choice?.removeEventListener('change', this.applied)
   }
 
   apply() {
@@ -56,7 +70,7 @@ export default class extends Controller {
     let entries = 0
 
     this.items.forEach((item) => {
-      const kept = matches(item.words, terms)
+      const kept = matches(item.words, terms) && chosen(item.element, this.choice?.value)
 
       item.element.hidden = !kept
       if (!kept) return

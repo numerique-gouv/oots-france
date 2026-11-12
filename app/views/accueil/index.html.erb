@@ -181,6 +181,8 @@
         <% end %>
       </ul>
       <p class="accueil-measure fr-mt-3w fr-mb-0"><%= t('accueil.index.how_it_works.common_services.use') %></p>
+      <p class="accueil-measure fr-mt-2w fr-mb-0"><%= t('accueil.index.how_it_works.common_services.check_html',
+            link: link_to(t('accueil.index.how_it_works.common_services.check_link'), available_evidence_index_path)) %></p>
     </div>
   </div>
 </section>
@@ -220,7 +222,9 @@
             </li>
             <li><%= t('accueil.index.concerned.service_provider.directives_html', **directive_links) %></li>
           </ul>
-          <p class="accueil-mention fr-text--sm fr-mb-0"><%= t('accueil.index.concerned.service_provider.examples') %></p>
+          <p class="accueil-mention fr-text--sm"><%= t('accueil.index.concerned.service_provider.examples') %></p>
+          <%= link_to t('accueil.index.concerned.service_provider.check'), available_evidence_index_path,
+                class: 'fr-btn fr-btn--secondary' %>
         </div>
       </div>
       <div class="fr-col-12 fr-col-md-6">
@@ -316,7 +320,14 @@
                 <span class="accueil-number" aria-hidden="true"><%= number %></span>
                 <div>
                   <h4 class="fr-h6 fr-mb-1v"><%= t("accueil.index.connecting.#{role}.steps.#{step}.title") %></h4>
-                  <p class="fr-mb-0"><%= t("accueil.index.connecting.#{role}.steps.#{step}.body") %></p>
+                  <% body = if step == :list
+                              t('accueil.index.connecting.service_provider.steps.list.body_html',
+                                countries: link_to(t('accueil.index.connecting.service_provider.steps.list.countries'),
+                                  available_evidence_index_path))
+                            else
+                              t("accueil.index.connecting.#{role}.steps.#{step}.body")
+                            end %>
+                  <p class="fr-mb-0"><%= body %></p>
                 </div>
               </li>
             <% end %>

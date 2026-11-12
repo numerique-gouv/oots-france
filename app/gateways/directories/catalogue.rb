@@ -40,17 +40,20 @@ module Directories
     # What a country publishes as a provider.
     def published_in(country_code)
       requirements.filter_map do |requirement|
-        published = lists_of(requirement).select { |list| list.country == country_code }
+        published = evidence_type_lists(requirement).select { |list| list.country == country_code }
 
         [requirement, published] if published.any?
       end
     end
 
+    # The lists that carry evidence types, every jurisdiction at once.
+    def evidence_type_lists(requirement) = published_lists.fetch(requirement.id, [])
+
     # The other way round: the countries publishing for one requirement. Sorted
     # here rather than in the page, a listing of jurisdictions having no order
     # of its own to read.
     def publishing_countries(requirement)
-      lists_of(requirement).filter_map { |list| list.country.presence }.uniq.sort
+      evidence_type_lists(requirement).filter_map { |list| list.country.presence }.uniq.sort
     end
 
     private
@@ -78,8 +81,6 @@ module Directories
     def published_lists
       @published_lists ||= requirements.to_h { |requirement| [requirement.id, swept(requirement)] }
     end
-
-    def lists_of(requirement) = published_lists.fetch(requirement.id, [])
 
     # A requirement nobody satisfies is a result of the sweep — `EB:ERR:0001`
     # is « the result set is empty » — and not a refusal of the page: the next

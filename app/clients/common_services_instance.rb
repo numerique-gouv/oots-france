@@ -12,17 +12,27 @@ class CommonServicesInstance
   # for `v2` is published beside it and resolves to the same instance.
   MAJOR_VERSION = 'v1'.freeze
 
+  # Chapter 3.4 §3: « "prod" for the production use ».
+  PRODUCTION = 'prod'.freeze
+
   # RFC 4848 substitution expression. The flag is `U`, so the replacement is
   # the URI itself rather than a name to resolve further.
   SUBSTITUTION = /\A!\.\*!(?<uri>.+)!\z/
   TERMINAL_FLAG = 'U'.freeze
 
-  def initialize(service)
+  # The production instances, whatever environment the deployment exchanges
+  # in: what the public page of available evidence reads. The proxy URLs of
+  # `Settings.common_services_base_url` stand in for the deployment's own
+  # environment, and are not consulted.
+  def self.production(service) = new(service, environment: PRODUCTION)
+
+  def initialize(service, environment: nil)
     @service = service
+    @environment = environment
   end
 
   def base_url
-    configured = Settings.common_services_base_url(@service)
+    configured = Settings.common_services_base_url(@service) unless @environment
     return configured if configured
 
     Rails.cache.fetch("common_services/instance/#{name}", expires_in: Settings.common_services_cache_duration) do
@@ -36,7 +46,7 @@ class CommonServicesInstance
       country: Settings.common_services_country_code.downcase,
       service: @service,
       version: MAJOR_VERSION,
-      environment: Settings.common_services_environment,
+      environment: @environment || Settings.common_services_environment,
     )
   end
 

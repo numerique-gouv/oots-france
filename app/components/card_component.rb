@@ -12,13 +12,14 @@
 class CardComponent < ViewComponent::Base
   renders_one :list
 
-  def initialize(title:, href: nil, heading_level: 2, hint: nil, dense: false, clickable: false)
+  def initialize(title:, href: nil, heading_level: 2, hint: nil, dense: false, clickable: false, whole: false)
     @title = title
     @href = href
     @heading_level = heading_level
     @hint = hint
     @dense = dense
     @clickable = clickable
+    @whole = whole
     super()
   end
 
@@ -29,8 +30,11 @@ class CardComponent < ViewComponent::Base
   # it the DSFR arrow. Whatever else leads elsewhere must then live in the
   # footer, the one place left outside that reach: a link in the body would fall
   # under it and stop being reachable.
+  #
+  # `whole` stretches it over the footer as well, for a card whose footer leads
+  # nowhere of its own.
   def classes
-    ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense),
+    ['fr-card', 'fr-card--shadow', 'fr-mb-4w', ('card--dense' if @dense), ('card--whole' if enlarged? && @whole),
      (enlarged? ? 'fr-enlarge-link' : 'fr-card--no-arrow')]
   end
 

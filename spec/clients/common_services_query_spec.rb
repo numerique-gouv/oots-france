@@ -84,6 +84,17 @@ RSpec.describe CommonServicesQuery do
       expect(stubbed).to have_been_requested.once
     end
 
+    # What a copy of the production directories keeps is what they answer now.
+    it 'reads past it, and writes nothing to it, when asked for the answer itself' do
+      stubbed = stub_directory
+
+      search
+      2.times { query.read({ queryId: 'une-requête' }) }
+
+      expect(stubbed).to have_been_requested.times(3)
+      expect(query.read({ queryId: 'une-requête' })).to eq(body)
+    end
+
     # A key that did not depend on the parameters would hand one country the
     # provider of another, and nothing would say so.
     it 'keeps two queries apart when only their parameters differ' do

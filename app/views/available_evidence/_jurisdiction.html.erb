@@ -1,0 +1,69 @@
+<%# One country: its combinations, which are alternatives to one another, each
+    holding the evidence types required together (chapter 3.2.4 §4.3.1); and
+    the `NoMatch` lists by which it declares it issues nothing. The country
+    cell spans every row. The grouping is said only where it settles
+    something: a country publishing more than one combination, and a
+    combination of more than one type. %>
+<% alternatives = jurisdiction.combinations.size > 1 %>
+<% announced = ->(combination) { alternatives && combination.offers.size > 1 } %>
+<% rows = jurisdiction.combinations.sum { |combination| combination.offers.size + (announced.(combination) ? 1 : 0) } +
+          jurisdiction.declarations.size %>
+<% country_cell = capture do %>
+  <th scope="rowgroup" rowspan="<%= rows %>">
+    <%= tag.span(CountryTagComponent.flag(jurisdiction.code), aria: { hidden: true }) %>
+    <%= jurisdiction.name %>
+  </th>
+<% end %>
+<% first = true %>
+<tbody>
+  <% jurisdiction.combinations.each_with_index do |combination, index| %>
+    <% if announced.(combination) %>
+      <tr>
+        <% if first %><%= country_cell %><% first = false %><% end %>
+        <td colspan="4" class="fr-text--sm"><%= t('available_evidence.jurisdiction.combination_html',
+              label: tag.span(combination.list.label || (index + 1),
+                lang: combination.list.label_language&.downcase)) %></td>
+      </tr>
+    <% end %>
+    <% combination.offers.each do |offer| %>
+      <tr>
+        <% if first %><%= country_cell %><% first = false %><% end %>
+        <td><%= render 'available_evidence/titles', evidence_type: offer.evidence_type %></td>
+        <% if offer.refusal %>
+          <td colspan="2">
+            <% case offer.refusal %>
+            <% when 'DSD:ERR:0001' %>
+              <%= t('available_evidence.jurisdiction.no_data_service_html', code: tag.code(offer.refusal)) %>
+            <% when 'DSD:ERR:0002' %>
+              <%= t('available_evidence.jurisdiction.unknown_evidence_type_html', code: tag.code(offer.refusal)) %>
+            <% else %>
+              <%= t('available_evidence.jurisdiction.classification_required_html', code: tag.code(offer.refusal)) %>
+            <% end %>
+          </td>
+        <% else %>
+          <td><%= safe_join(offer.publishers.map { |name| tag.span(name) }, tag.br) %></td>
+          <td><%= safe_join(offer.formats.map { |format| tag.abbr(format_label(format), title: format) }, ', ') %></td>
+        <% end %>
+        <td>
+          <% if offer.registered? %>
+            <p class="fr-badge fr-badge--sm fr-badge--success fr-mb-0"><%= t('available_evidence.in_service') %></p>
+          <% else %>
+            <p class="fr-badge fr-badge--sm fr-mb-0"><%= t('available_evidence.jurisdiction.not_registered') %></p>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+  <% jurisdiction.declarations.each do |list| %>
+    <tr>
+      <% if first %><%= country_cell %><% first = false %><% end %>
+      <td colspan="4">
+        <%= t('available_evidence.jurisdiction.no_match') %>
+        <% if list.match_description.present? %>
+          <br><%= tag.span(list.match_description, class: 'fr-hint-text',
+                lang: list.match_description_language&.downcase.presence) %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+</tbody>

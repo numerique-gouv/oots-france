@@ -315,6 +315,9 @@ en:
           use: >-
             For each request of a French procedure, OOTS-France reads in these directories which
             evidence type proves the requirement, and who issues it.
+          check_html: >-
+            Does your procedure require evidence issued in another country? %{link}
+          check_link: Check whether it is already available through OOTS.
       benefits:
         title: What your administration gains
         reliable:
@@ -358,6 +361,7 @@ en:
           examples: >-
             Examples: admission to higher education, grant application, declaration of activity,
             bid for a public contract.
+          check: Check whether evidence is available in another country
         data_provider:
           badge: Data provider
           title: You issue evidence
@@ -451,10 +455,11 @@ en:
           steps:
             list:
               title: List the evidence your procedure requires
-              body: >-
+              body_html: >-
                 With the OOTS-France team, you identify the evidence your procedure requires and the
-                countries that issue it. Your procedure is then registered in the European
+                %{countries}. Your procedure is then registered in the European
                 directory, with this evidence.
+              countries: countries that issue it
             sign_in:
               title: Open sign-in to European users
               body: >-
@@ -607,6 +612,7 @@ en:
         in_brief: OOTS in brief
         how_it_works: How it works
         concerned: Are you concerned?
+        available_evidence: Available evidence
         connecting: Connecting
         faq: FAQ
       admin_space: Administration
@@ -1606,6 +1612,9 @@ en:
       none: You can close this page and go back to your procedure.
       back: Back to my procedure
   interactors:
+    directory_snapshotting:
+      take:
+        failed: "Copy of the production directories not refreshed, the previous one stays: %{error}"
     directory_lookup:
       fetch_providers:
         malformed_question: "Non-compliant Data Service Directory question, not asked (%{id}): %{errors}"
@@ -1741,6 +1750,74 @@ en:
         unreadable_logged: "Unreadable message (%{id}): %{error}"
         unknown_action: "Unknown ebMS action: \"%{action}\"."
         abandoned: "%{reason}: %{error}"
+  available_evidence:
+    title: Evidence available through OOTS
+    lead: >-
+      Does your procedure require evidence issued in another European country? Choose the
+      requirement it proves to see what each country has referenced in the European directory.
+    in_service: In service
+    breadcrumbs:
+      home: Home
+      index: Available evidence
+    index:
+      search: Search for a requirement
+      country: Publishing country
+      all_countries: All countries
+      published_by: Evidence published by
+      nobody: No country publishes evidence for this requirement.
+      empty: No requirement matches this search.
+      unavailable: The directory data is not available yet.
+    show:
+      kicker: Requirement of the European directory
+      nothing_published_html: >-
+        The European directory references no evidence for this requirement yet (%{code}).
+      back: Choose another requirement
+      next:
+        title: Does your procedure require this evidence?
+        body: >-
+          The OOTS-France team, at DINUM, helps you declare your procedure in the European
+          directory and connect to it.
+        write: Write to the OOTS-France team
+        discover: Discover OOTS-France
+    snapshot:
+      taken_at: Data of the production directories as of %{date}
+      never_taken: No update has succeeded yet.
+      refused_html: "Last attempt failed on %{date}: a directory refused it, code %{code}."
+      failed: >-
+        Last attempt failed on %{date}, with no refusal code from a directory: unreachable, an
+        unreadable or badly signed answer, or an unreadable trust store.
+      refresh: Update
+    summary:
+      counts: "%{evidence_types} referenced by %{countries} for this requirement."
+      evidence_types:
+        one: "%{count} evidence type"
+        other: "%{count} evidence types"
+      countries:
+        one: "%{count} country"
+        other: "%{count} countries"
+      registered: "%{evidence_types}, in %{countries}:"
+      none_registered: No country has registered a data service for this evidence yet.
+    detail:
+      title: Detail by country
+      caption: Evidence referenced for the requirement "%{requirement}"
+      country: Country
+      evidence_type: Evidence
+      publishers: Issued by
+      formats: Format
+      status: Data Service Directory
+    jurisdiction:
+      combination_html: Combination <strong>%{label}</strong>, required as a whole
+      not_registered: Not registered
+      no_match: This country declares it issues no evidence for this requirement.
+      no_data_service_html: No data service registered for this evidence (%{code}).
+      unknown_evidence_type_html: The Data Service Directory does not know this evidence (%{code}).
+      classification_required_html: >-
+        The Data Service Directory asks for more about the user before naming the provider
+        (%{code}).
+    refreshes:
+      create:
+        launched: The update of the directory copy has started.
+        already_running: An update of the directory copy is already running.
   admin:
     unreadable: Some criteria could not be read
     solicited_country: Solicited country

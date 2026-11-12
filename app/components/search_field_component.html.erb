@@ -1,9 +1,17 @@
-<div class="fr-grid-row fr-mb-2w">
-  <div class="fr-col-12 fr-col-md-6">
+<div class="fr-grid-row fr-grid-row--gutters fr-mb-2w">
+  <div class="fr-col-12 <%= choice ? 'fr-col-md-8' : 'fr-col-md-6' %>">
     <div class="fr-input-group search-field">
       <label class="fr-label fr-sr-only" for="<%= id %>"><%= label %></label>
       <span class="fr-icon-search-line" aria-hidden="true"></span>
       <%= field %>
     </div>
   </div>
+  <% if choice %>
+    <div class="fr-col-12 fr-col-md-4">
+      <div class="fr-select-group search-field__choice">
+        <label class="fr-label fr-sr-only" for="<%= choice[:id] %>"><%= choice[:label] %></label>
+        <%= choice_field %>
+      </div>
+    </div>
+  <% end %>
 </div>

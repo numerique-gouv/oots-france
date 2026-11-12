@@ -73,6 +73,15 @@ RSpec.describe DataServicesResponseParser do
     expect(service.details).to include('FI' => 'Testitodistetyyppi testivaatimukselle')
   end
 
+  # The public page of available evidence lists them all; a request keeps
+  # reading the first.
+  it 'reads the format of every distribution, the first staying the one a request reads' do
+    service = described_class.new(common_services_answer('dsd_data_services_at_cb10c17a').first).data_services.first
+
+    expect(service.distribution_formats).to eq(%w[application/json application/xml application/pdf])
+    expect(service.distribution_format).to eq('application/json')
+  end
+
   # Optional in the directory as in a request: absent, the evidence comes back
   # in any of the available languages.
   it 'leaves the language nil where the directory published none' do
