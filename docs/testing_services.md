@@ -12,7 +12,7 @@ Le gabarit DNS des annuaires centraux (voir [carte_des_tdd.md](carte_des_tdd.md#
 | --- | --- | --- |
 | `testing` | Les annuaires **simulés par la plateforme de test**, servis depuis l'hébergement Azure de l'équipe de test | Un jeu de données de référence fixe, et les modifications qu'on y dépose soi-même, visibles de soi seul |
 | `acc` | L'**acceptation** : la vraie implémentation des Common Services par la Commission, avant production | Ce que les États membres y ont réellement inscrit — c'est l'environnement sur lequel ce dépôt travaille |
-| `prod` | La production | — |
+| `prod` | La production | Ce que les États membres ont publié pour de bon. Le dépôt ne la lit qu'à un endroit : la [copie des annuaires de production](espace_administration.md#la-page-des-justificatifs-disponibles) que lit la page publique des justificatifs disponibles, quel que soit `ENVIRONNEMENT_SERVICES_COMMUNS` |
 
 Les hôtes suivent tous la même règle : l'acceptation insère `acc` juste après le rôle. La **console d'administration** est l'interface graphique par laquelle un État membre inscrit à la main ce que l'interface LCM dépose par message — schémas de classification, types de justificatif, fournisseurs, déclarations de démarche ; elle demande un compte rattaché à un pays, ouvert par le [Service Desk](https://ec.europa.eu/digital-building-blocks/sites/display/OOTS/Service+Desk).
 
