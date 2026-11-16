@@ -6,7 +6,7 @@
 - [docs/glossaire.md](docs/glossaire.md) — every acronym and domain term in one sentence each (DSD, EDM, ebMS3, *requêteur*, *bouchon*…), with the class that carries it. **Look a word up here rather than guessing from context**, and define no term anywhere else.
 - [docs/domibus_context.md](docs/domibus_context.md) — the eDelivery gateway (Domibus) this app talks to, and how the app drives it.
 - [README.md](README.md) — step-by-step local environment setup.
-- [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end scenario through Domibus: run it after any change to the ebMS payloads or the Domibus plumbing, since the Jest suite mocks the transport away entirely.
+- [docs/test_e2e.md](docs/test_e2e.md) — the end-to-end scenario through Domibus: run it after any change to the ebMS payloads or the Domibus plumbing, since the RSpec suite mocks the transport away entirely.
 
 ## This repository implements the TDD. It does not invent
 
