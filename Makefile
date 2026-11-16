@@ -67,8 +67,10 @@ domibus: ## Run the gateway alone, and wait until its console answers
 down: ## Stop everything, keeping the volumes
 	$(COMPOSE) down
 
+# `run` and not `up`: `up` exits 0 whatever the container returned, so a red
+# suite would look green to whoever reads only the exit status.
 test: database-test ## RuboCop then RSpec, in Docker
-	$(COMPOSE) up test
+	$(COMPOSE) run --rm test
 
 # What `make test` does not play, and CI does: the scenarios of the default
 # Cucumber profile, among them the ones a browser drives. That browser lives in
