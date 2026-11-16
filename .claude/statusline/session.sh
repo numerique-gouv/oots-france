@@ -49,9 +49,15 @@ LIGNE1="${MODELE:-?}"
 # The weekly window is the only usage limit the Max plan has: the harness
 # passes no `five_hour` entry. The colour carries the alert, so the number
 # need not be read.
+#
+# The harness gives what has been *used*; the line shows what is *left*, which
+# is the question one asks before launching a batch. Keep the two apart: read
+# `used_percentage` as a remainder and a 31 reads as a week nearly gone when
+# two thirds of it are still there.
 if [ -n "$SEMAINE" ]; then
-  if [ "$SEMAINE" -ge 90 ]; then TEINTE=$(printf '\033[31m')
-  elif [ "$SEMAINE" -ge 75 ]; then TEINTE=$(printf '\033[33m')
+  CREDIT=$(( 100 - SEMAINE ))
+  if [ "$CREDIT" -le 10 ]; then TEINTE=$(printf '\033[31m')
+  elif [ "$CREDIT" -le 25 ]; then TEINTE=$(printf '\033[33m')
   else TEINTE=''; fi
   [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
 
@@ -68,7 +74,7 @@ if [ -n "$SEMAINE" ]; then
     fi
   fi
 
-  LIGNE1="$LIGNE1 · ${TEINTE}${SEMAINE}% week${RESTE}${NEUTRE}"
+  LIGNE1="$LIGNE1 · ${TEINTE}${CREDIT}% week left${RESTE}${NEUTRE}"
 fi
 
 # Les indices ferment la ligne, en gris : ils sont toujours vrais, donc ne
