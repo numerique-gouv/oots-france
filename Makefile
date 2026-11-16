@@ -4,7 +4,7 @@ COMPOSE = docker compose
 IN_WEB = $(COMPOSE) exec -T web bundle exec
 
 .DEFAULT_GOAL = help
-.PHONY: help setup update update-certifs check-env check-secrets up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
+.PHONY: help setup update update-certifs check-env check-secrets database database-test up domibus down test cucumber lint lint-fix i18n e2e schematron assets console shell logs logs-domibus
 
 help:
 	@grep -hE '^[a-z0-9-]+:.*##' $(MAKEFILE_LIST) | sed 's/:.*##/\t/' | expand -t 16
@@ -32,7 +32,24 @@ check-env: ## What the templates declare, against what the .env* files carry
 check-secrets: ## What a deployment carries as secrets, against the development values of the templates
 	scripts/check_secrets.sh
 
-up: ## Run the application: server, background worker, fake FranceConnect+, database, gateway
+# The owner runs both tasks, alone able to change the schema and to declare the
+# role: `run` replaces the service's command, so `bin/database_role` is not
+# sourced. The privileges are replayed after the migrations, for the reason
+# lib/database_privileges.rb gives.
+database: ## Create, migrate and seed the development database if new, and grant the application role its privileges
+	$(COMPOSE) up --detach postgres
+	scripts/ci/wait_for_postgres.sh
+	$(COMPOSE) run --rm --no-deps web bundle exec rails db:prepare db:privileges
+
+database-test: ## Recreate the test database from db/schema.rb
+	$(COMPOSE) up --detach postgres
+	scripts/ci/wait_for_postgres.sh
+	$(COMPOSE) run --rm --no-deps test bundle exec rails db:test:prepare
+
+# The gateway's bind mount must exist before `depends_on` starts it: see
+# `domibus` below.
+up: database ## Run the application: server, background worker, fake FranceConnect+, database, gateway
+	mkdir -p domibus
 	$(COMPOSE) up web worker fake-france-connect
 
 # Same order as scripts/setup.sh, and for the same reasons: `depends_on` only
@@ -50,14 +67,14 @@ domibus: ## Run the gateway alone, and wait until its console answers
 down: ## Stop everything, keeping the volumes
 	$(COMPOSE) down
 
-test: ## RuboCop then RSpec, in Docker
+test: database-test ## RuboCop then RSpec, in Docker
 	$(COMPOSE) up test
 
 # What `make test` does not play, and CI does: the scenarios of the default
 # Cucumber profile, among them the ones a browser drives. That browser lives in
 # the image, so this runs in a container like everything else — see
 # docs/test_e2e.md.
-cucumber: ## The Cucumber scenarios of the default profile, browser included
+cucumber: database-test ## The Cucumber scenarios of the default profile, browser included
 	$(COMPOSE) run --rm test bundle exec cucumber
 
 lint: ## RuboCop alone
