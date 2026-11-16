@@ -66,7 +66,6 @@ class DataServicesResponseParser < CommonServicesResponseParser
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
       **distributed_as(declared),
-      distribution_formats: formats_of(declared),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
@@ -87,23 +86,27 @@ class DataServicesResponseParser < CommonServicesResponseParser
   # specification and not a value left empty — a difference `text` cannot carry,
   # answering nil for either.
   def distributed_as(declared)
-    distributions = all(declared, './sdg:DistributedAs')
+    distributions = all(declared, './sdg:DistributedAs').map { |published| build_distribution(published) }
     return { distribution_published: false } if distributions.empty?
 
-    requested = DataService.requested_format(formats_of(declared))
-    published = distributions.find { |distribution| text(distribution, './sdg:Format') == requested }
+    requested = DataService.requested_format(distributions.filter_map(&:format))
+    chosen = distributions.find { |distribution| distribution.format == requested }
 
     {
-      distribution_published: true,
-      distribution_format: text(published, './sdg:Format'),
-      distribution_language: text(published, './sdg:Language'),
-      distribution_conforms_to: text(published, './sdg:ConformsTo'),
+      distribution_published: true, distributions:,
+      distribution_format: requested,
+      distribution_language: chosen.language,
+      distribution_conforms_to: chosen.conforms_to,
     }
   end
 
-  # The format of each distribution, in the order the directory publishes them;
-  # one naming none offers nothing to choose.
-  def formats_of(declared) = all(declared, './sdg:DistributedAs/sdg:Format').map { |format| format.text.strip }
+  def build_distribution(published)
+    Distribution.new(
+      format: text(published, './sdg:Format'),
+      language: text(published, './sdg:Language'),
+      conforms_to: text(published, './sdg:ConformsTo'),
+    )
+  end
 
   def build(service)
     publisher = at(service, './sdg:Publisher')

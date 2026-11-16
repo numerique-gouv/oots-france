@@ -105,9 +105,19 @@ RSpec.describe DataServicesResponseParser do
       json, pdf = body.scan(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m)
 
       expect(requested(service_distributed_as(pdf, json)))
-        .to have_attributes(distribution_format: 'application/pdf', distribution_language: requested(body).distribution_language,
-          distribution_conforms_to: nil)
+        .to have_attributes(distribution_format: 'application/pdf', distribution_conforms_to: nil)
     end
+  end
+
+  # The console shows them all, each read whole and in the directory's order.
+  it 'reads every distribution, each from its own element' do
+    published = service_distributed_as(distribution('application/xml', language: 'FI', conforms_to: data_model),
+      distribution('application/pdf', language: 'EN'))
+
+    expect(requested(published).distributions.map(&:attributes)).to eq([
+      { 'format' => 'application/xml', 'language' => 'FI', 'conforms_to' => data_model },
+      { 'format' => 'application/pdf', 'language' => 'EN', 'conforms_to' => nil },
+    ])
   end
 
   # Between two images no criterion exists, and the order decides.

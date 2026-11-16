@@ -126,16 +126,35 @@ RSpec.describe 'Admin::CommonServices::Providers' do
     expect(response.body).to include('application/json', 'Modèle de données manquant', 'R-DSD-RESP-C041')
   end
 
-  # The card shows the distribution a request writes: the PDF, published after
-  # a JSON one without a data model, and nothing then to say of a data model.
-  it 'shows the PDF a request asks for, wherever the directory publishes it' do
+  # Every distribution is shown; C041 excuses the JSON published beside the PDF
+  # from a data model, which a dash would render as a gap.
+  it 'shows every distribution, the data model waived by distribution' do
     stub_directory_signature
     stub_directory_body('dsd', 'dataservices-by-evidencetype', json_then_pdf)
 
     visit_providers
 
-    expect(response.body).to include('application/pdf')
-    expect(response.body).not_to include('application/json', 'Modèle de données')
+    card = response.parsed_body.text.squish
+    expect(card).to match(%r{application/json .*Modèle de données non exigé.* application/pdf})
+    expect(response.body).to include('R-DSD-RESP-C041')
+    expect(response.body).not_to include('Modèle de données manquant')
+  end
+
+  # The verdict is read distribution by distribution: a modelled XML beside an
+  # unmodelled JSON, with no unstructured one to excuse it, shows the model on
+  # the first and accuses the second alone.
+  it 'judges the data model of each structured distribution apart' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype',
+      modelled.sub('</sdg:DistributedAs>',
+        '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/json</sdg:Format></sdg:DistributedAs>'))
+
+    visit_providers
+
+    card = response.parsed_body.text.squish
+    expect(card).to match(%r{application/xml .*#{Regexp.escape(data_model)}.* application/json .*Modèle de données manquant})
+    expect(response.body).to include('R-DSD-RESP-C041')
+    expect(response.body).not_to include('R-DSD-RESP-C039')
   end
 
   # R-DSD-RESP-C067 forbids the value beside an unstructured distribution, and

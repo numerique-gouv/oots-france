@@ -40,32 +40,10 @@ class DataService
   # environment midfix — `sr.acc.` on the acceptance instance.
   DATA_MODEL = %r{\Ahttps://sr(\.[a-zA-Z]+)?\.oots\.tech\.ec\.europa\.eu/datamodels/\S+\z}
 
-  # The two `OOTSMediaTypes` codes the `name-Structure` column marks
-  # `structured`; the four others are the ones R-EDM-REQ-C107 (FATAL) forbids a
-  # data model on. Written here rather than read from the code list at run
-  # time: `CodeListClient` answers an outage with an empty hash, which cannot
-  # decide what a fatal rule judges.
-  STRUCTURED_FORMATS = %w[application/json application/xml].freeze
-
-  # Those four others, the ones chapter 4.5.1 §3.5 calls « human-readable »,
-  # which `requested_format` prefers. Taken from the code list, and not from the
-  # diagnostic text of R-DSD-RESP-C039 and C041, which also names `image/jpg`:
-  # the list holds no such code.
-  UNSTRUCTURED_FORMATS = %w[application/pdf image/jpeg image/png image/svg+xml].freeze
-
   # The rule a service published without any `sdg:DistributedAs` departs from,
-  # named here beside the two below rather than in the template that shows it:
-  # a rule identifier is a value the TDD fixes word for word.
+  # named here rather than in the template that shows it: a rule identifier is
+  # a value the TDD fixes word for word.
   DISTRIBUTION_RULE = 'R-DSD-RESP-S027'.freeze
-
-  # Which rule requires the data model beside the format read: R-DSD-RESP-C039
-  # governs an XML distribution, C041 a JSON one — the same sentence under two
-  # identifiers, and the console names the one judging what it shows. The same
-  # two formats as `STRUCTURED_FORMATS` because the code list marks these two
-  # `structured`, not because either list is derived from the other.
-  DATA_MODEL_RULES = {
-    'application/xml' => 'R-DSD-RESP-C039', 'application/json' => 'R-DSD-RESP-C041',
-  }.freeze
 
   attribute :id, :string
   attribute :evidence_type_classification, :string
@@ -82,10 +60,10 @@ class DataService
 
   attr_reader :descriptions, :details, :providers
 
-  # The format of every `sdg:DistributedAs` the record publishes, where the
-  # attributes above read the requested one alone: what the public page of
-  # available evidence lists.
-  attr_reader :distribution_formats
+  # Every `sdg:DistributedAs` the record publishes, in its order, where the
+  # attributes above read the requested one alone: what the console shows of
+  # the service. Empty unless built from a directory answer.
+  attr_reader :distributions
 
   # The classifications the service was matched on, each with the value it
   # supports, when the query carried the user's answers to a `DSD:ERR:0005`.
@@ -101,9 +79,8 @@ class DataService
   # R-EDM-REQ-C070 and C071 only say SHOULD. What the directory owes is
   # stricter — R-DSD-RESP-C067 forbids the value on an unstructured
   # distribution, C039 and C041 make it mandatory on an XML — resp. a JSON —
-  # one unless an unstructured one is published too. `requested_format` takes a
-  # structured distribution only when none is, so that exemption never applies
-  # to the one read here: absent beside a structured format, the value is missing.
+  # one unless an unstructured one is published too, which
+  # `data_model_required?` answers for the console.
   validates :distribution_conforms_to, format: { with: DATA_MODEL, message: :format }, allow_blank: true
   # R-EDM-REQ-C029 and C031, the counterparts of C010 and C094 on this slot:
   # `lang` is mandatory on `sdg:Title` and `sdg:Description` alike.
@@ -113,12 +90,13 @@ class DataService
   # The distribution France requests, among the formats the directory publishes
   # for one service. Chapter 4.5.1 §3.5 leaves the choice to the Evidence
   # Requester (« selected by the Evidence Requester during the DSD query
-  # process »), and the portal is handed a PDF alone: the PDF wherever it stands,
-  # else the first other human-readable format, else the first published.
+  # process »). The PDF is the one format France can hand the portal, so it is
+  # requested wherever it stands; failing it, the first other human-readable
+  # format, else the first published.
   def self.requested_format(formats)
     return EvidenceType::PDF if formats.include?(EvidenceType::PDF)
 
-    formats.find { |format| UNSTRUCTURED_FORMATS.include?(format) } || formats.first
+    formats.find { |format| Distribution::UNSTRUCTURED_FORMATS.include?(format) } || formats.first
   end
 
   def initialize(attributes = {})
@@ -126,19 +104,24 @@ class DataService
     @details = attributes.delete(:details) || {}
     @providers = attributes.delete(:providers) || []
     @classifications = attributes.delete(:classifications) || []
-    @distribution_formats = attributes.delete(:distribution_formats) || []
+    @distributions = attributes.delete(:distributions) || []
     super
   end
+
+  # What the public page of available evidence lists.
+  def distribution_formats = distributions.filter_map(&:format)
+
+  # Whether a missing data model on this distribution is the directory at
+  # fault. C039 and C041 exempt a structured distribution the record also
+  # publishes in an unstructured format, and nothing is then missing: the
+  # console renders the two absences apart, where an empty value renders them
+  # alike.
+  def data_model_required?(distribution) = distribution.structured? && distributions.none?(&:unstructured?)
 
   # Which of the two families of R-EDM-REQ-C107 the requested format falls in,
   # and so whether a data model may be written beside it. Unknown formats count
   # as unstructured, the rule being fatal in that direction alone.
-  def structured_distribution? = STRUCTURED_FORMATS.include?(distribution_format)
-
-  # The rule the console names when it speaks of the data model. Nil beside an
-  # unstructured format, which neither rule judges — C067 forbids the value
-  # there rather than asking for it.
-  def data_model_rule = DATA_MODEL_RULES[distribution_format]
+  def structured_distribution? = Distribution::STRUCTURED_FORMATS.include?(distribution_format)
 
   private
 

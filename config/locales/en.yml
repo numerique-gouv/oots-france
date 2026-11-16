@@ -2295,6 +2295,9 @@ en:
           data_model_missing_detail_html: >-
             This evidence is not distributed in any unstructured format:
             <code>%{rule}</code> then requires a <code>sdg:ConformsTo</code>.
+          data_model_waived_html: >-
+            Data model not required: this evidence is also distributed in an unstructured format,
+            which lifts <code>%{rule}</code>.
           access_point_html: >-
             Access point <strong>%{label}</strong>
             — <code>%{id}</code>,

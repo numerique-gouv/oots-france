@@ -441,10 +441,6 @@ RSpec.describe EvidenceRequestBuilder do
       .to eq(%w[Format Language ConformsTo AssociatedDocumentRequest AssociatedDocumentRequest])
   end
 
-  # CA2 of OOTS-200: what a request written on the 1.2 line owes the 1.2.5
-  # rules, and what it must leave out because the 1.2.0 profile has no room for
-  # it. The whole message is confronted with those rules by `make schematron`;
-  # what is held here is each difference, one by one.
   # The acceptance directory returns the French student status JSON first and
   # PDF second; France asks for the PDF alone, on either line.
   describe 'the French student status, as the Data Service Directory returns it' do
@@ -465,6 +461,10 @@ RSpec.describe EvidenceRequestBuilder do
     end
   end
 
+  # CA2 of OOTS-200: what a request written on the 1.2 line owes the 1.2.5
+  # rules, and what it must leave out because the 1.2.0 profile has no room for
+  # it. The whole message is confronted with those rules by `make schematron`;
+  # what is held here is each difference, one by one.
   describe 'a request written on the 1.2 line' do
     subject(:request) do
       described_class.new(**attributes, specification: EdmSpecification::V1_2,
