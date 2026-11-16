@@ -26,7 +26,13 @@ search:
     - app/templates
   # `Rails/I18nLazyLookup` is off: every key is absolute.
   relative_roots: []
-  # The default scanners of i18n-tasks 1.1, which a `scanners` list replaces
+  # A key written `t("accueil.index.benefits.#{benefit}.title")` counts the keys
+  # it can compose as used. Since 1.2, `unused` follows this setting, whose
+  # default is `true`, where it used to infer them whatever the setting said
+  # (https://github.com/glebm/i18n-tasks/pull/779); `missing` reads the code
+  # strictly either way.
+  strict: false
+  # The default scanners of i18n-tasks 1.2, which a `scanners` list replaces
   # rather than extends — to keep in step when upgrading the gem —, then the
   # application log's lines: `LogLine.t` writes them in the default
   # locale, and the default scanners read `t` and `I18n.t` alone.
@@ -87,8 +93,9 @@ ignore_unused:
   - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable,both_identities}
   - activemodel.errors.models.demo/user_identity.attributes.{birthdate,eidas_identifier}.format
   - activemodel.errors.models.demo/user_identity.attributes.{level_of_assurance,gender}.inclusion
-  # Composed at run time. One line per set, rather than a
-  # `search.strict: false` that would bless whole subtrees in silence.
+  # Composed at run time, out of the reach of `strict: false`, which infers only
+  # from a key written in the call itself, interpolated or ending on a dot. One
+  # line per set.
   - admin.journal.exchanges.statuses.*
   - admin.sessions.{pro_connect_failed,signed_out,connection_required}
   - available_evidence.refreshes.create.{launched,already_running}
