@@ -19,14 +19,19 @@
         </div>
       <% end %>
 
-      <p><%= t('preview_sessions.show.open.optional') %></p>
-      <p>
-        <%# Opened in a new tab rather than downloaded, and the new window said in
-            the `title`, as the DSFR writes it. %>
-        <%= link_to t('preview_sessions.show.open.consult', size: @preview.document_size),
-              preview_session_document_path(token: @preview.token), class: 'fr-link', target: '_blank', rel: 'noopener',
-              title: t('preview_sessions.show.open.consult_title', size: @preview.document_size) %>
-      </p>
+      <% if @preview.structured? %>
+        <%= render StudentStatusComponent.new(student_status: @preview.student_status) %>
+      <% end %>
+      <% if @preview.offers_document? %>
+        <p><%= t('preview_sessions.show.open.optional') %></p>
+        <p>
+          <%# Opened in a new tab rather than downloaded, and the new window said in
+              the `title`, as the DSFR writes it. %>
+          <%= link_to t('preview_sessions.show.open.consult', size: @preview.document_size),
+                preview_session_document_path(token: @preview.token), class: 'fr-link', target: '_blank', rel: 'noopener',
+                title: t('preview_sessions.show.open.consult_title', size: @preview.document_size) %>
+        </p>
+      <% end %>
 
       <%= form_with url: preview_session_choice_path(token: @preview.token), method: :post, class: 'fr-mt-4w',
             data: { controller: 'preview-choice' } do %>
@@ -72,8 +77,8 @@
       <%# The address itself, which departs again. %>
       <p><%= link_to t('preview_sessions.show.unavailable.retry'), preview_session_path(version: @preview.segment, token: @preview.token),
             class: 'fr-btn' %></p>
-    <% when :refused %>
-      <p class="fr-text--lead"><%= t('preview_sessions.show.refused.lead') %></p>
+    <% when :refused, :unobtainable %>
+      <p class="fr-text--lead"><%= t("preview_sessions.show.#{state}.lead") %></p>
       <%= render 'return', preview: @preview if @preview.offers_return? %>
     <% else %>
       <p class="fr-text--lead"><%= t("preview_sessions.show.#{state}.lead") %></p>

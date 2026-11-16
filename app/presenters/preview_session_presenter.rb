@@ -17,6 +17,7 @@ class PreviewSessionPresenter
     return :invalid if session.nil?
     return :unavailable if unavailable
     return :refused if refused?
+    return :unobtainable if session.unobtainable?
 
     lifecycle
   end
@@ -46,6 +47,18 @@ class PreviewSessionPresenter
     titles['FR'] || titles['EN'] || titles.values.first
   end
 
+  # A structured evidence, which the page shows rather than offers: chapter
+  # 4.10 §5.1, step 20, « The evidence may need to be transformed to allow the
+  # user to preview it ». The attestation of a student status is offered like
+  # any PDF, and nothing of the data is shown beside it.
+  def structured? = names_request? && served_distribution == StudentStatus::DATA
+
+  def student_status = StudentStatus.new(session.document_bytes)
+
+  # A document the user can open: a PDF, the test document or the attestation
+  # of a student status — a JSON being no reading for a user.
+  def offers_document? = names_request? && served_distribution&.format == EvidenceType::PDF
+
   def document_size = ActiveSupport::NumberHelper.number_to_human_size(session.document_bytes.bytesize)
 
   # Chapter 4.9 v1.2.3 §2, step 13: a 1.2 visit that brought no safe way back.
@@ -63,7 +76,7 @@ class PreviewSessionPresenter
   # the way back being someone else's.
   def offers_return?
     case state
-    when :recorded, :unmatched then verdict == :confirmed
+    when :recorded, :unmatched, :unobtainable then verdict == :confirmed
     when :refused then verdict == :refused && session.identification_failed?
     else false
     end
@@ -80,6 +93,8 @@ class PreviewSessionPresenter
   def follows_return? = state == :recorded && offers_return?
 
   private
+
+  def served_distribution = ServedEvidenceType.distribution_for(first_request.evidence_type)
 
   def lifecycle
     return :expired if session.expired?

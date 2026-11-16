@@ -1,0 +1,32 @@
+<h2 class="fr-h4"><%= t('components.student_status.identity') %></h2>
+<dl class="evidence-subject">
+  <dt><%= t('components.student_status.family_name') %></dt>
+  <dd><%= identity.family_name %></dd>
+  <dt><%= t('components.student_status.given_name') %></dt>
+  <dd><%= identity.given_name %></dd>
+  <dt><%= t('components.student_status.date_of_birth') %></dt>
+  <dd><%= identity.date_of_birth %></dd>
+</dl>
+
+<%# Not a DSFR card: a card fills the height of its column (`height: 100%`)
+    and orders its title after anything else in its content, which a page
+    with more below it than a grid of cards cannot hold. %>
+<h2 class="fr-h4 fr-mt-4w"><%= t('components.student_status.admissions') %></h2>
+<% admissions.each do |admission| %>
+  <section class="fr-background-alt--grey fr-p-3w fr-mb-3w">
+    <h3 class="fr-h6 fr-mb-1w"><%= admission.institution %></h3>
+    <p class="fr-badge fr-badge--sm fr-mb-2w"><%= enrolment(admission) %></p>
+    <dl class="evidence-subject">
+      <dt><%= t('components.student_status.institution_code') %></dt>
+      <dd><%= admission.institution_code %></dd>
+      <dt><%= t('components.student_status.start_date') %></dt>
+      <dd><%= admission.start_date %></dd>
+      <dt><%= t('components.student_status.end_date') %></dt>
+      <dd><%= admission.end_date %></dd>
+      <dt><%= t('components.student_status.scheme') %></dt>
+      <dd><%= admission.scheme %></dd>
+      <dt><%= t('components.student_status.commune_code') %></dt>
+      <dd><%= admission.commune_code %></dd>
+    </dl>
+  </section>
+<% end %>

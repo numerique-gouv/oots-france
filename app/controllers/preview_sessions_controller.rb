@@ -25,7 +25,7 @@ class PreviewSessionsController < ApplicationController
   end
 
   def document
-    return head(:not_found) unless confirmed? && @session.document_offered?
+    return head(:not_found) unless confirmed? && @session.document_offered? && @preview.offers_document?
 
     send_data @session.document_bytes, type: Attachment::MIME_TYPE, disposition: :inline,
       filename: t('preview_sessions.document.filename')

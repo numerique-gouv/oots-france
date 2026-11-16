@@ -992,6 +992,22 @@ fr:
       previous: Page précédente
       next: Page suivante
       page: Page %{number}
+    # Le statut étudiant qu'API Particulier a rendu, tel que l'espace de
+    # prévisualisation le montre à l'usager : chaque valeur telle que le registre
+    # l'a écrite.
+    student_status:
+      identity: Votre identité
+      family_name: Nom de naissance
+      given_name: Prénom
+      date_of_birth: Date de naissance
+      admissions: Vos admissions cette année
+      enrolled: Inscrit
+      admitted: Admis, sans être inscrit
+      institution_code: Code de l'établissement (UAI)
+      start_date: Début
+      end_date: Fin
+      scheme: Régime de formation
+      commune_code: Commune d'études (code INSEE)
     # Le sujet du justificatif relu champ par champ sur la fiche d'événement.
     # Les intitulés sont cherchés par une clé composée du nom du champ, avec
     # repli sur ce nom : un attribut que le chapitre 4.5.1 autorise et que
@@ -1066,6 +1082,9 @@ fr:
       not_cached: "Réponse d'annuaire non mise en cache (%{url}) : %{error}"
     code_list:
       nothing_read: "Liste de codes lue sans y rien trouver (%{list}) : structure inattendue ?"
+    api_particulier:
+      unauthorized: "API Particulier refuse le jeton (%{status}) : expiré, invalide ou sans les scopes mesri_* ; le statut étudiant ne peut être servi à personne"
+      unobtainable: "API Particulier n'a pas rendu le statut étudiant (%{cause}) : la requête reçoit %{code}"
     # La liste qu'adresse la `sdg:ValueExpression` d'une question du Data
     # Service Directory : sans elle, la question se pose dans un champ texte.
     classification_values:
@@ -2245,6 +2264,12 @@ fr:
       refused:
         title: Le document ne peut pas être fourni
         lead: L'identité que vous venez d'établir ne correspond pas à celle de la demande, ou votre identification n'a pas abouti. Aucun document ne vous sera montré, et votre démarche en sera informée.
+      # API Particulier a échoué à l'appel qui suit l'identification de
+      # l'usager : l'adresse est conclue, sans rien lui parler d'identité, et la
+      # seconde requête reçoit l'exception du registre (chapitre 4.10 §3).
+      unobtainable:
+        title: Le document ne peut pas être fourni
+        lead: L'administration française n'a pas pu obtenir ce document. Aucun document ne sera envoyé à votre démarche, qui en sera informée.
       # FranceConnect+ ne peut pas être joint, au départ comme au retour :
       # l'usager ne peut pas s'identifier, rien de la demande ne lui est
       # montré, et l'adresse reste ouverte.
