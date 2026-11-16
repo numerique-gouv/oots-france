@@ -117,8 +117,9 @@ Rails.application.routes.draw do
           get '/', to: 'home#show', as: :home
           # `create` and not `show`: starting the European flow writes the `state`
           # and the `nonce` its return is checked against, which a prefetched or
-          # replayed GET would overwrite.
-          resource :identification, only: :create
+          # replayed GET would overwrite. `destroy` and not a GET for the same
+          # reason: ending it writes the `state` of the sign-out.
+          resource :identification, only: %i[create destroy]
           # Where the user comes back to, identified, and the only page an exchange
           # is asked for from. It carries the identity the authentication attested,
           # and names the provider and the evidence type the directories resolve,

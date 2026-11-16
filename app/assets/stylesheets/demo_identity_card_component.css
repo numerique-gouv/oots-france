@@ -8,6 +8,28 @@
  */
 
 /*
+ * The civil identity and what the page offers to do with it, side by side: the
+ * identity takes what the button leaves, and the button goes under it only
+ * when fewer than twelve rems would be left — narrower than a phone's card.
+ */
+.identity-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.identity-card__head > .pictogram-row {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.identity-card__action {
+  flex: none;
+}
+
+/*
  * Each attribute takes the room its longest line needs and no more, and wraps
  * to the next line when what is left cannot hold it. A grid would give a place
  * of birth the width of a provenance, and leave holes wherever an attribute the

@@ -81,7 +81,23 @@ RSpec.describe 'Admin::Demo::Documents' do
 
       expect(rows).to include('Nom' => 'Sørensen', 'Prénom(s)' => 'Freja Marie')
       expect(card.css('.identity-card__level').text.squish).to eq('Niveau de garantie : Substantial')
-      expect(card.css('input, select, textarea')).to be_empty
+      expect(card.css('input:not([type=hidden]), select, textarea')).to be_empty
+    end
+
+    # OOTS-296 CA1: the button that ends the FranceConnect+ session alone,
+    # named apart from the « Se déconnecter » of the header.
+    it 'offers to sign out of FranceConnect+ from the identity card, in French as in English' do
+      { '' => 'Se déconnecter de FranceConnect+', 'en' => 'Sign out of FranceConnect+' }.each do |language, label|
+        get admin_demo_documents_path(version: 'v2.0', procedure: 'T1', locale: language.presence)
+        follow_redirect! if response.redirect?
+
+        button = response.parsed_body.at_css('main .identity-card .identity-card__action button')
+        expect(button.text.squish).to eq(label)
+        expect(button['title']).to eq(label)
+        expect(button['class']).to include('fr-btn--sm', 'fr-btn--tertiary', 'fr-icon-logout-box-r-line')
+        expect(button['class']).not_to include('fr-btn--icon-')
+        expect(button.ancestors('form').first['action']).to eq(admin_demo_identification_path(version: 'v2.0', procedure: 'T1'))
+      end
     end
 
     it 'shows the eIDAS identifier in grey on the line of the level, when the authentication yielded one' do

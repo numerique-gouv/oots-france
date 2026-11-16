@@ -907,18 +907,21 @@ en:
         catalogue_unreachable: "Evidence Broker catalogue unreadable for the demonstration procedure: %{error}"
         cards:
           uncatalogued: "Requirement %{requirement} absent from the Evidence Broker catalogue: no card added"
+        identifications:
+          not_closed: The FranceConnect+ session could not be closed
         home:
           no_requirements: "Requirements of the demonstration procedure unreadable: %{error}"
       pro_connect:
         undeclared: ProConnect return on a deployment that declares none.
         unexpected_logout_state: The state of the ProConnect logout return is not the one the session expected.
         agent_refused: "Agent refused, neither in an admitted domain nor invited: %{email}"
-      sessions:
-        france_connect_undeclared: "FranceConnect+ session not closed: the identity had been attested by \"%{name}\", which this deployment no longer declares."
+    ends_france_connect_session:
+      undeclared: "FranceConnect+ session not closed: the identity had been attested by \"%{name}\", which this deployment no longer declares."
     reads_demo_request:
       unanswered: "State of the demonstration procedure request unreadable: %{error}"
       unreadable: "The contract did not give the state of exchange %{exchange} of the demonstration procedure (%{status}): %{error}"
     france_connect:
+      signed_out: Your FranceConnect+ session is closed
       incomplete_departure: >-
         The departure to FranceConnect+ retained no version or no procedure: choose a version
         and a procedure, then identify again.
@@ -1670,7 +1673,7 @@ en:
         unreachable: "Ending the ProConnect session was impossible, the agent is signed out anyway: %{error}"
     demo:
       end_identification:
-        unreachable: "Ending the FranceConnect+ session was impossible, the operator is signed out anyway: %{error}"
+        unreachable: "Ending the FranceConnect+ session was impossible, the identity is forgotten anyway: %{error}"
       start_identification:
         undiscoverable: "FranceConnect+ did not answer the discovery of its configuration: %{error}"
       request_evidence:
@@ -2055,6 +2058,7 @@ en:
             have to obtain it yourself.
           nothing_listed: The Common Services listed no evidence for this procedure.
           unreachable: The Common Services could not be reached
+          sign_out: Sign out of FranceConnect+
           add:
             heading: Add another evidence
             label: Document to add

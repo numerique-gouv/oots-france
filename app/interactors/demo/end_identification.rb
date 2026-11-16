@@ -7,9 +7,9 @@ module Demo
   # It draws and does not store, for the reason its sibling gives: a session is
   # the controller's to touch.
   #
-  # Failing here does not fail the sign-out. The operator is signed out either
-  # way — `reset_session` has already run — and FranceConnect+ closes its own
-  # session on inactivity; refusing to sign someone out because the portal is
+  # Failing here does not fail the sign-out. The identity is forgotten either
+  # way — its callers forget it first — and FranceConnect+ closes its own
+  # session on inactivity; holding on to an identity because the portal is
   # unreachable would trade a session left open elsewhere for one left open
   # here.
   class EndIdentification < ApplicationInteractor

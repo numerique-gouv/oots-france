@@ -1192,6 +1192,12 @@ fr:
         # n'est pas ajoutée, et la page revient telle quelle.
         cards:
           uncatalogued: "Exigence %{requirement} absente du catalogue de l'Evidence Broker : aucune carte ajoutée"
+        # Le titre de l'alerte de l'accueil de la démarche quand la déconnexion
+        # de FranceConnect+ n'a pas pu préparer la fin de session : l'identité
+        # est oubliée, mais la session du portail d'identité est peut-être
+        # encore ouverte. La raison est au log.
+        identifications:
+          not_closed: La session FranceConnect+ n'a pas pu être close
         # Écrit dans le log et nulle part ailleurs : l'accueil de la démarche
         # perd sa liste d'exigences quand l'Evidence Broker ne répond pas, et
         # rien sur l'écran d'un usager n'aurait à dire pourquoi.
@@ -1204,13 +1210,13 @@ fr:
         undeclared: Retour de ProConnect sur un déploiement qui n'en déclare aucun.
         unexpected_logout_state: Le state du retour de déconnexion de ProConnect n'est pas celui que la session attendait.
         agent_refused: "Agent refusé, ni dans un domaine admis ni invité : %{email}"
-      # Écrit dans le log et nulle part ailleurs : l'exploitant est déconnecté
-      # quoi qu'il arrive, et rien à l'écran ne distinguerait une session
-      # FranceConnect+ close d'une session laissée ouverte faute de savoir à qui
-      # la demander. Même trace que le portail injoignable, que
-      # `Demo::EndIdentification` écrit pour lui-même.
-      sessions:
-        france_connect_undeclared: "Session FranceConnect+ non close : l'identité avait été attestée par « %{name} », que ce déploiement ne déclare plus."
+    # Écrit dans le log, par la déconnexion de la console comme par celle de
+    # FranceConnect+ seule : c'est le seul endroit qui nomme le FranceConnect+
+    # dont la session reste ouverte faute de savoir à qui la demander. Même
+    # trace que le portail injoignable, que `Demo::EndIdentification` écrit
+    # pour lui-même.
+    ends_france_connect_session:
+      undeclared: "Session FranceConnect+ non close : l'identité avait été attestée par « %{name} », que ce déploiement ne déclare plus."
     # Écrit dans le log et nulle part ailleurs. La zone dit déjà la panne à
     # l'usager dans ses propres mots ; ce que le log garde, c'est qu'elle a eu
     # lieu — le client qui lève l'erreur ne journalise pas, laissant la trace à
@@ -1222,6 +1228,9 @@ fr:
     # aucune démarche : aucun parcours ne s'ouvre, et l'exploitant repart de
     # l'écran du choix.
     france_connect:
+      # Le titre de l'alerte de l'accueil de la démarche, où ramène la
+      # déconnexion de FranceConnect+ depuis la carte de l'identité.
+      signed_out: Votre session FranceConnect+ est close
       incomplete_departure: >-
         Le départ vers FranceConnect+ n'a retenu aucune version ou aucune démarche : choisir une version
         et une démarche, puis s'identifier de nouveau.
@@ -2341,10 +2350,10 @@ fr:
     # que l'exploitant lit sous le titre ci-dessus, et qui doit lui dire ce qui
     # a cédé sans qu'il ait à ouvrir les logs.
     demo:
-      # Écrit dans les logs et jamais à l'écran : l'exploitant est déconnecté
-      # quoi qu'il arrive, et FranceConnect+ ferme sa propre session d'elle-même.
+      # Écrit dans les logs : l'identité est oubliée quoi qu'il arrive, et
+      # FranceConnect+ ferme sa propre session d'elle-même.
       end_identification:
-        unreachable: "Fin de session FranceConnect+ impossible, l'exploitant est déconnecté malgré tout : %{error}"
+        unreachable: "Fin de session FranceConnect+ impossible, l'identité est oubliée malgré tout : %{error}"
       start_identification:
         undiscoverable: "FranceConnect+ n'a pas répondu à la découverte de sa configuration : %{error}"
       request_evidence:
@@ -2909,6 +2918,12 @@ fr:
           # exigence — regarde l'annuaire, et son code reste à la console.
           nothing_listed: Les annuaires européens n'ont listé aucun justificatif pour cette démarche.
           unreachable: Les annuaires européens n'ont pas pu être joints
+          # Le nom du bouton de la carte de l'identité, qui ferme la seule
+          # session FranceConnect+ : distinct du « Se déconnecter » de l'en-tête,
+          # qui ferme la console, deux boutons menant à deux endroits ne
+          # pouvant porter le même intitulé (critère 11.9 du RGAA,
+          # https://accessibilite.numerique.gouv.fr/methode/criteres-et-tests/#11.9).
+          sign_out: Se déconnecter de FranceConnect+
           # Ce qui offre d'ajouter, sous les cartes de la démarche, la carte de
           # n'importe quelle exigence du catalogue de l'Evidence Broker.
           add:

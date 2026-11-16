@@ -61,3 +61,12 @@ Fonctionnalité: Identifier l'usager de la démarche de démonstration par la ci
     Quand il se reconnecte à l'espace d'administration
     Et qu'il ouvre la page des justificatifs de la démarche
     Alors l'administrateur arrive sur l'écran du choix de la version, sans identité
+
+  Scénario: se déconnecter de FranceConnect+ laisse l'administrateur dans l'espace d'administration
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et qu'il se déconnecte de FranceConnect+
+    Alors FranceConnect+ le ramène sur l'accueil de la démarche, qui affiche "Votre session FranceConnect+ est close"
+    Quand il ouvre la page des justificatifs de la démarche
+    Alors l'administrateur arrive sur l'écran du choix de la version, sans identité

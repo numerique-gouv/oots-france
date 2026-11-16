@@ -8,17 +8,26 @@
           beside the level under it: the level is what the authentication adds,
           and stands apart from what the user recognises themself by.
           Decorative — the heading above the card names it. %>
-      <div class="pictogram-row">
-        <%= render PictogramComponent.new(name: 'digital/avatar') %>
+      <%# What the page offers to do with the identity, passed by the caller:
+          its address names the line and the procedure, which the card does not
+          know. %>
+      <div class="identity-card__head">
+        <div class="pictogram-row">
+          <%= render PictogramComponent.new(name: 'digital/avatar') %>
 
-        <dl class="identity-card__attributes pictogram-row__wording">
-          <% civil.each do |label, value| %>
-            <div>
-              <dt><%= label %></dt>
-              <dd><%= value %></dd>
-            </div>
-          <% end %>
-        </dl>
+          <dl class="identity-card__attributes pictogram-row__wording">
+            <% civil.each do |label, value| %>
+              <div>
+                <dt><%= label %></dt>
+                <dd><%= value %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+
+        <% if content? %>
+          <div class="identity-card__action"><%= content %></div>
+        <% end %>
       </div>
 
       <% if level.present? || eidas_identifier %>

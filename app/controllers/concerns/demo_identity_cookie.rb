@@ -26,4 +26,6 @@ module DemoIdentityCookie
     keep_encrypted(:demo_identity, identity.to_cookie.except('id_token'))
     keep_encrypted(:demo_id_token, identity.id_token)
   end
+
+  def forget_demo_identity = COOKIES.each { |name| cookies.delete(name) }
 end

@@ -11,7 +11,14 @@
 
 <p class="fr-col-12 fr-col-md-8 fr-mb-3w"><%= t('admin.demo.documents.show.identity') %></p>
 
-<%= render DemoIdentityCardComponent.new(identity: @identity) %>
+<%= render DemoIdentityCardComponent.new(identity: @identity) do %>
+  <%# The icon alone: the DSFR hides the text of a `fr-btn` carrying an icon
+      and no `fr-btn--icon-*`, which still names the button, and the `title`
+      shows it on hover. %>
+  <%= button_to t('admin.demo.documents.show.sign_out'), admin_demo_identification_path, method: :delete,
+        class: 'fr-btn fr-btn--sm fr-btn--tertiary fr-icon-logout-box-r-line',
+        title: t('admin.demo.documents.show.sign_out') %>
+<% end %>
 
 <% if @unreachable.present? %>
   <%= dsfr_alert(type: :error, title: t('admin.demo.documents.show.unreachable')) do %>
