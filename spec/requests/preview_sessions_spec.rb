@@ -513,8 +513,8 @@ RSpec.describe 'The preview space' do
     end
 
     # A correspondent's way back is carried through the identification only
-    # where the session cookie can hold it with the rest of the departure.
-    it 'departs without a way back too long for the session' do
+    # where the cookie of the departure can hold it with the rest.
+    it 'departs without a way back too long for its cookie' do
       stub_france_connect
       visit_space(params: { returnurl: "https://portail.example/#{'a' * 4000}" })
 
@@ -522,7 +522,7 @@ RSpec.describe 'The preview space' do
     end
 
     # Measured as the cookie serialises it: `<` alone weighs six bytes there.
-    it 'departs without a way back that escapes beyond the session' do
+    it 'departs without a way back that escapes beyond its cookie' do
       stub_france_connect
       visit_space(params: { returnurl: "https://portail.example/#{'<' * 1000}" })
 
@@ -628,6 +628,106 @@ RSpec.describe 'The preview space' do
 
       expect(response).to have_http_status(:service_unavailable)
       expect(page_title).to eq(I18n.t('preview_sessions.show.unavailable.title'))
+    end
+
+    it 'keeps the departure and the verdict in cookies no script reads' do
+      stub_france_connect
+      visit_space
+      expect(written_cookie('preview_identification')).to match(/httponly/i).and match(/samesite=lax/i)
+
+      identify
+      expect(written_cookie('preview_verdicts')).to match(/httponly/i).and match(/samesite=lax/i)
+    end
+
+    # OOTS-301 CA5: the recognition stays that of the browser which identified.
+    it 'sends another browser to identify on an address still open, and serves it nothing' do
+      identify
+      reset!
+      visit_space
+
+      expect(response.headers['Location']).to start_with(FranceConnectStubs::AUTHORIZATION_ENDPOINT)
+      get preview_session_document_path(segment, session.token)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    # The cookie store writes the whole session back with every response that
+    # read it: a request that left before the departure, or the return, and is
+    # answered after it puts the session from before back into the browser.
+    describe 'beside a request of the same browser answered late' do
+      let!(:instance) { stub_france_connect(userinfo: FranceConnectStubs::REQUESTED_USERINFO) }
+
+      # The zone of the documents page the demonstration procedure re-asks
+      # while it waits.
+      def demo_zone_path
+        admin_demo_demande_path(version: 'v2.0', procedure: ProcedureCode::ADMITTED.first, exigence: SecureRandom.uuid)
+      end
+
+      # Requests `path`, keeps the cookies its response wrote, runs the block,
+      # then writes those cookies back over the browser's: a response that
+      # left before the block and arrives after it.
+      def answered_late(path)
+        get path
+        late = written_cookies
+        uri = URI(request.url)
+        yield.tap { cookies.merge(late, uri) }
+      end
+
+      def depart
+        visit_space(params: departure_params)
+        departure_query
+      end
+
+      def departure_params = {}
+
+      def return_identified(departure)
+        stub_france_connect_tokens(granted_id_token(instance, departure, {}), issuer: instance.issuer)
+        get preview_franceconnect_retour_connexion_path, params: { code: 'un-code', state: departure.fetch('state') }
+      end
+
+      before { sign_in }
+
+      # OOTS-301 CA1
+      it 'recognises the return from FranceConnect+' do
+        departure = answered_late(demo_zone_path) { depart }
+        return_identified(departure)
+
+        expect(response).to redirect_to(space_path)
+        visit_space
+        expect(page.css('input[type=radio]').size).to eq(2)
+      end
+
+      # OOTS-301 CA2
+      it "recognises the return although another address's zone of return answered late" do
+        other = create(:preview_session)
+        departure = answered_late(preview_session_return_path(segment, other.token)) { depart }
+        return_identified(departure)
+
+        expect(response).to redirect_to(space_path)
+      end
+
+      # OOTS-301 CA3
+      it 'still recognises the identified user when the address is opened again' do
+        answered_late(demo_zone_path) { return_identified(depart) }
+        visit_space
+
+        expect(response).to have_http_status(:ok)
+        expect(page.css('input[type=radio]').size).to eq(2)
+      end
+
+      # OOTS-301 CA4
+      describe 'on the 1.2 line' do
+        let!(:session) { create(:preview_session, :legacy_line) }
+
+        def departure_params = { returnurl: 'https://portail.example/retour', returnmethod: 'POST' }
+
+        it 'keeps the way back of the visit' do
+          departure = answered_late(demo_zone_path) { depart }
+          return_identified(departure)
+
+          expect(session.reload).to have_attributes(return_location: 'https://portail.example/retour',
+            return_method: 'POST')
+        end
+      end
     end
 
     # CA8: the way back of the 1.2 visit survives the round trip, and a

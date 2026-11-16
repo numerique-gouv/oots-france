@@ -177,6 +177,8 @@ module FranceConnectStubs
     departure
   end
 
+  def preview_address(preview) = preview_session_path(preview.specification.segment, preview.token)
+
   def departure_query = URI.decode_www_form(URI.parse(response.headers['Location']).query).to_h
 
   # The claims of an ID Token the procedure would accept, which each example
