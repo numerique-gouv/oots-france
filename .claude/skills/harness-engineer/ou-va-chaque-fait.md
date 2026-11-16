@@ -9,10 +9,10 @@ Lu à l'étape 4 de la passe, et à l'étape 6 par `decouper-un-fichier.md`, pou
 | un fait que deux rôles lisent | un frère chez le rôle qui le possède, les autres lient son chemin | comment lire les TDD → `tdd-nerd/lire-les-tdd.md` ; les coûts → `orchestrateur/couts.md` |
 | une convention qui vaut pour tout travail sur le dépôt, quelle que soit la tâche | `CLAUDE.md` — et il faut alors y retirer autant qu'on y ajoute | « pas de trailer », « `--merge`, jamais `--squash` », « un ticket se cite en lien » |
 | ce qu'un contrôle pourrait vérifier à la place d'une phrase | un script, la CI, un format de verdict, `settings.json` — **en le proposant**, pas en l'écrivant | « `--force` nu interdit » → une vérification avant push ; « les verdicts de l'ouvrier » → déjà lus par `subagent.sh` |
-| une bizarrerie de ce poste, de la VM, du bac à sable | `CLAUDE.local.md` | les shims `node_modules/.bin`, `git -c core.checkStat=minimal`, les ports reportés par lima |
+| une bizarrerie de ce poste, de la VM, du bac à sable | `CLAUDE.local.md` | le `.claude` que le partage refuse sous `.worktrees/`, `git -c core.checkStat=minimal`, les ports reportés par lima |
 | la machine hôte, hors de tout dépôt | `~/.claude/CLAUDE.md` — **à proposer dans le compte rendu**, tu n'y écris pas : il n'appartient à aucun dépôt | le budget RAM des VM, la clé de signature |
 | ce que l'utilisateur attend de la conversation elle-même | reste une mémoire | « agir sans demander confirmation », « ne pas rapporter une attente » |
-| un incident machine et son diagnostic | `~/.claude/post-mortems/` | le son Bluetooth, la saturation des VM |
+| un incident machine et son diagnostic | `~/.claude/post-mortems/` | le DNS de la VM qui perd les NAPTR, la saturation des VM |
 | un fait sur le monde extérieur qui périme | une mémoire, datée, ou le document propriétaire de `docs/` s'il est durable | l'état du DSD pour la France, l'accès au registre européen |
 | un chiffre mesuré | l'audit qui l'a mesuré, et `orchestrateur/couts.md` s'il sert à dimensionner ; un skill y renvoie | 1,6 M par ticket, 114 M par semaine |
 | une consigne sur la rédaction du harnais lui-même | `harness-engineer/comment-on-ecrit.md`, seul rôle qui édite ces fichiers | « pas de seuil en pourcentage dans un skill », « ne repose pas `cacheTtl` » |

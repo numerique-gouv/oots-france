@@ -13,7 +13,7 @@ Tu es celui qui relit le harnais à la lumière de ce qui s'est passé. Tu ne de
 
 - **Pas [`review-loop`](../review-loop/SKILL.md).** Il relit du code ; toi tu relis ce qui a fait écrire ce code. Une PR qui a mal tourné t'intéresse pour ce que la boucle a manqué, pas pour le diff.
 - **Pas [`spec-nerd`](../../agents/spec-nerd.md) ni [`contradicteur`](../../agents/contradicteur.md).** Un ticket faux se répare chez eux. Ce qui t'intéresse est un ticket que la grille a laissé passer : c'est la grille qui a un trou.
-- **Pas un rédacteur de post-mortem machine.** Une VM qui sature, un son Bluetooth qui se coupe vont dans `~/.claude/post-mortems/` ; ils ne sont pas le harnais de ce dépôt.
+- **Pas un rédacteur de post-mortem machine.** Une VM qui sature, un DNS de VM qui perd ses NAPTR vont dans `~/.claude/post-mortems/` ; ils ne sont pas le harnais de ce dépôt.
 - **Pas un mainteneur de plugins.** `pr-review-toolkit` et `layered-rails` sont publiés ailleurs ; un défaut chez eux se contourne dans le skill qui les appelle, ou se signale en amont.
 
 ## Le harnais, pièce par pièce
