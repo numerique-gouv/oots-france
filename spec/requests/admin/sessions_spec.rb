@@ -205,6 +205,16 @@ RSpec.describe 'Admin::Sessions' do
         expect(demo_identity_cookies).to be_empty
       end
 
+      # The departure and the verdicts of the preview space go with the session.
+      it 'forgets what the preview space recognised of the browser' do
+        identify_in_preview_space(preview_address(create(:preview_session)))
+        get preview_address(create(:preview_session))
+
+        delete admin_session_path
+
+        expect(cookies.to_hash.slice('preview_identification', 'preview_verdicts').compact_blank).to be_empty
+      end
+
       it 'forgets the identity at once, keeping only the end of the FranceConnect+ session it prepared' do
         delete admin_session_path
 
@@ -254,7 +264,10 @@ RSpec.describe 'Admin::Sessions' do
       # Everything the browser sends back fits the request header buffer a
       # front leaves by default, eight kibibytes.
       it 'sends back all its cookies within eight kibibytes' do
-        names = %i[_oots_france_session pro_connect_id_token demo_identity demo_id_token]
+        RecognisesPreviewIdentity::KEPT.times { identify_in_preview_space(preview_address(create(:preview_session))) }
+        get preview_address(create(:preview_session)), params: { returnurl: "https://portail.example/#{'a' * 1000}" }
+        names = %i[_oots_france_session pro_connect_id_token demo_identity demo_id_token
+                   preview_identification preview_verdicts]
 
         expect(names.sum { |name| held_cookie_size(name) }).to be < 8192
       end

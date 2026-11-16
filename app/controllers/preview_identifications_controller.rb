@@ -9,12 +9,12 @@ class PreviewIdentificationsController < ApplicationController
   include RecognisesPreviewIdentity
 
   def retour_connexion
-    departure = session[:preview_identification].to_h.symbolize_keys
+    departure = preview_departure
     preview = PreviewSession.issued(token: departure[:token], version: departure[:version])
     return refuse_unknown_departure(departure[:token], :unknown_preview) if preview.nil?
     return refuse_unknown_departure(departure[:token], :another_state) unless tied_to?(departure)
 
-    session.delete(:preview_identification)
+    spend_preview_departure
     identified(preview, departure)
   end
 

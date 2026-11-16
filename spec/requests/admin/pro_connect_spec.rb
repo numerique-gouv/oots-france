@@ -32,6 +32,19 @@ RSpec.describe 'Admin::ProConnect' do
       end
     end
 
+    # The departure and the verdicts of the preview space go with the session
+    # too: a recognition outliving a sign-in would pass to the next agent.
+    it 'forgets what the preview space recognised of the browser' do
+      sign_in
+      identify_in_preview_space(preview_address(create(:preview_session)))
+      get preview_address(create(:preview_session))
+      expect(cookies.to_hash.slice('preview_identification', 'preview_verdicts').compact_blank.size).to eq(2)
+
+      return_from_pro_connect
+
+      expect(cookies.to_hash.slice('preview_identification', 'preview_verdicts').compact_blank).to be_empty
+    end
+
     # CA3: the space opens, in a session whose identifier changed.
     it 'opens the space to an agent of an admitted domain, in a renewed session' do
       get new_admin_session_path

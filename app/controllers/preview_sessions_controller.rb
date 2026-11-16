@@ -7,9 +7,9 @@ class PreviewSessionsController < ApplicationController
   include ChosenLanguage
   include RecognisesPreviewIdentity
 
-  # What of a correspondent's way back the session cookie carries through the
-  # identification, in the bytes the cookie serialises it to: four kilobytes
-  # once encrypted, for the whole departure and the verdicts beside it.
+  # What of a correspondent's way back the cookie of the departure carries
+  # through the identification, in the bytes the cookie serialises it to: four
+  # kilobytes once encrypted, for the whole departure.
   RETURN_KEPT = 1024
 
   before_action :find_session
@@ -86,11 +86,11 @@ class PreviewSessionsController < ApplicationController
   end
 
   def remember_departure(result, instance)
-    session[:preview_identification] = {
+    keep_preview_departure(
       token: @session.token, version: params[:version], state: result.state, nonce: result.nonce,
       name: instance.name, returnurl: departing_return(params[:returnurl]),
       returnmethod: PreviewSession.return_method(params[:returnmethod])
-    }
+    )
   end
 
   # A way back longer than the cookie can carry, or not even a string, is not
