@@ -10,10 +10,12 @@ Tout ce qui se livre et qui se regarde a une adresse, et l'utilisateur n'a aucun
 ## 1. Monter la pile sur l'état final, et la laisser tourner
 
 ```sh
-docker compose up -d --no-deps web postgres
-docker compose exec -T web bundle exec rails db:prepare   # migrations de la branche
+make database                                             # migrations de la branche, puis le rôle avec lequel web se connecte
+docker compose up -d --no-deps web
 docker compose exec -T web bundle exec rails db:seed      # compte et jeu de démonstration
 ```
+
+**`make database`, jamais `rails db:prepare` seul** : `web` se connecte avec le rôle applicatif, que seul `db:privileges` crée, et ses droits ne couvrent que les tables qui existaient quand il a tourné. Sans lui, la pile répond 500 « Database not found » alors que les seeds sont passés (ouvriers d'OOTS-300, d'OOTS-296 et d'OOTS-291, le 2026-11-16).
 
 Ne pas éteindre `web` en fin de course : le laisser debout coûte un conteneur, l'éteindre coûte un aller-retour. Éteindre en revanche ce qui est lourd et sans rapport — Domibus et MySQL — sauf si la branche les concerne : la VM a 8 Gio et d'autres agents y travaillent.
 
