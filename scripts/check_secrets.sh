@@ -130,6 +130,18 @@ gabaritDe() {
   done
 }
 
+# The one development value a deployment may keep: the public token of API
+# Particulier's staging, where the deployment joins that staging — the only
+# environment that generates the attestation, until
+# https://github.com/datagouv/apistration/pull/671 opens it in production. It
+# opens fictitious identities alone. The staging is whatever address the
+# template carries, read there rather than copied here, so that the exception
+# follows the template; next to any other address, the token is refused.
+jetonPublicDuStaging() {
+  [ "$1" = JETON_API_PARTICULIER ] &&
+    [ "$(valeur URL_API_PARTICULIER "$2")" = "$(valeur URL_API_PARTICULIER "$3")" ]
+}
+
 for nom in $NOMS $RECOPIES; do
   gabarit=$(gabaritDe "$nom")
 
@@ -147,6 +159,8 @@ for nom in $NOMS $RECOPIES; do
   installee=$(valeur "$nom" "$fichier")
 
   if [ "$installee" = "$(valeur "$nom" "$gabarit")" ]; then
+    jetonPublicDuStaging "$nom" "$fichier" "$gabarit" && continue
+
     signale "❌ $fichier : $nom porte encore la valeur de développement de $gabarit."
     continue
   fi
