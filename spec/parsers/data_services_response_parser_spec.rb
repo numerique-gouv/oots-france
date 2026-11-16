@@ -6,11 +6,19 @@ RSpec.describe DataServicesResponseParser do
   subject(:providers) { described_class.new(body).providers }
 
   let(:body) { common_services_answer('dsd_data_services_fi').first }
-  # The capture distributes a PDF, which C039 and C041 do not judge: only a
-  # structured format puts a record under them.
-  let(:structured) do
-    body.sub('<sdg:Format>application/pdf</sdg:Format>', '<sdg:Format>application/xml</sdg:Format>')
+  let(:data_model) { 'https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth' }
+
+  def service_distributed_as(*distributions)
+    body.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m, distributions.join)
   end
+
+  def distribution(format, language: nil, conforms_to: nil)
+    "<sdg:DistributedAs><sdg:Format>#{format}</sdg:Format>" \
+      "#{"<sdg:Language>#{language}</sdg:Language>" if language}" \
+      "#{"<sdg:ConformsTo>#{conforms_to}</sdg:ConformsTo>" if conforms_to}</sdg:DistributedAs>"
+  end
+
+  def requested(published) = described_class.new(published).data_services.first
 
   it 'reads the provider the directory holds for that evidence type' do
     expect(providers.size).to eq(1)
@@ -73,13 +81,53 @@ RSpec.describe DataServicesResponseParser do
     expect(service.details).to include('FI' => 'Testitodistetyyppi testivaatimukselle')
   end
 
-  # The public page of available evidence lists them all; a request keeps
-  # reading the first.
-  it 'reads the format of every distribution, the first staying the one a request reads' do
-    service = described_class.new(common_services_answer('dsd_data_services_at_cb10c17a').first).data_services.first
+  # The public page of available evidence lists them all; a request asks for
+  # the PDF, published last.
+  it 'reads the format of every distribution, and requests the PDF wherever it stands' do
+    service = requested(common_services_answer('dsd_data_services_at_cb10c17a').first)
 
     expect(service.distribution_formats).to eq(%w[application/json application/xml application/pdf])
-    expect(service.distribution_format).to eq('application/json')
+    expect(service.distribution_format).to eq('application/pdf')
+  end
+
+  # The acceptance directory returns the French student status JSON first,
+  # whatever order it was entered in: the order decides nothing once a PDF is
+  # published.
+  describe 'the French student status, distributed as JSON then PDF' do
+    let(:body) { common_services_answer('dsd_data_services_fr_1e4a95b7').first }
+
+    it 'requests the PDF, without a data model' do
+      expect(requested(body)).to have_attributes(distribution_format: 'application/pdf',
+        distribution_conforms_to: nil, distribution_formats: %w[application/json application/pdf])
+    end
+
+    it 'requests the same distribution with the two swapped' do
+      json, pdf = body.scan(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m)
+
+      expect(requested(service_distributed_as(pdf, json)))
+        .to have_attributes(distribution_format: 'application/pdf', distribution_language: requested(body).distribution_language,
+          distribution_conforms_to: nil)
+    end
+  end
+
+  # Between two images no criterion exists, and the order decides.
+  it 'requests the first image where no PDF is published' do
+    expect(requested(service_distributed_as(distribution('application/json'), distribution('image/png'),
+      distribution('image/jpeg'))).distribution_format).to eq('image/png')
+  end
+
+  # Nothing unstructured is published: the first, with its own data model.
+  it 'requests the first structured distribution where no unstructured one is published' do
+    expect(requested(service_distributed_as(distribution('application/xml', conforms_to: data_model),
+      distribution('application/json'))))
+      .to have_attributes(distribution_format: 'application/xml', distribution_conforms_to: data_model)
+  end
+
+  # `image/jpg` is no code of the `OOTSMediaTypes` list, so it is not the
+  # human-readable distribution chapter 4.5.1 §3.5 speaks of.
+  it 'does not count a format the code list does not carry as unstructured' do
+    expect(requested(service_distributed_as(distribution('application/xml'), distribution('image/jpg')))
+      .distribution_format).to eq('application/xml')
   end
 
   # Optional in the directory as in a request: absent, the evidence comes back
@@ -114,7 +162,6 @@ RSpec.describe DataServicesResponseParser do
     expect(described_class.new(stripped).data_services.first).to have_attributes(
       distribution_published: false, distribution_format: nil,
       distribution_language: nil, distribution_conforms_to: nil,
-      unstructured_sibling_published: false,
     )
   end
 
@@ -124,52 +171,15 @@ RSpec.describe DataServicesResponseParser do
     expect(described_class.new(body).data_services.first.distribution_published).to be(true)
   end
 
-  # C039 and C041 excuse a structured distribution from carrying a data model
-  # when an unstructured one is published beside it, so the absence of the value
-  # is two different things and only the record says which.
-  it 'says when an unstructured distribution is published beside a structured one' do
-    published = structured.sub('</sdg:DistributedAs>', <<~XML.strip)
-      </sdg:DistributedAs>
-      <sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>
-    XML
+  # Chapter 4.5.1 §3.5 has only « distributions which the data service is able
+  # to provide » requested: paths anchored on the record would take the
+  # language and the data model of the XML published first, and pair a PDF
+  # with an XML schema in a request nothing downstream would question.
+  it 'reads the format, the language and the data model from the requested distribution alone' do
+    published = service_distributed_as(distribution('application/xml', language: 'FI', conforms_to: data_model),
+      distribution('application/pdf', language: 'EN'))
 
-    expect(described_class.new(published).data_services.first)
-      .to have_attributes(distribution_format: 'application/xml', unstructured_sibling_published: true)
-  end
-
-  it 'says when a structured distribution is published on its own' do
-    expect(described_class.new(structured).data_services.first)
-      .to have_attributes(distribution_format: 'application/xml', unstructured_sibling_published: false)
-  end
-
-  # The diagnostic text of C039 and C041 also names `image/jpg`, which the code list has
-  # no code for; both assertions test membership of the list, so a distribution
-  # published under that spelling excuses nothing.
-  it 'excuses nothing for a format the code list does not carry' do
-    published = structured.sub('</sdg:DistributedAs>', <<~XML.strip)
-      </sdg:DistributedAs>
-      <sdg:DistributedAs><sdg:Format>image/jpg</sdg:Format></sdg:DistributedAs>
-    XML
-
-    expect(described_class.new(published).data_services.first.unstructured_sibling_published).to be(false)
-  end
-
-  # A directory publishes one distribution per format — C039 and C041 are
-  # written around that — and the three elements must be read from one and the
-  # same: paths anchored on the record would take the format of the first and
-  # the data model of another, and pair a PDF with an XML schema in a request
-  # nothing downstream would question. Asking for several is OOTS-129's.
-  it 'reads the format and the data model from one and the same distribution' do
-    published = body.sub('</sdg:DistributedAs>', <<~XML.strip)
-      </sdg:DistributedAs>
-      <sdg:DistributedAs>
-        <sdg:Format>application/xml</sdg:Format>
-        <sdg:Language>FI</sdg:Language>
-        <sdg:ConformsTo>https://sr.acc.oots.tech.ec.europa.eu/datamodels/SDG-CertificateOfBirth</sdg:ConformsTo>
-      </sdg:DistributedAs>
-    XML
-
-    expect(described_class.new(published).data_services.first)
+    expect(requested(published))
       .to have_attributes(distribution_format: 'application/pdf', distribution_language: 'EN',
         distribution_conforms_to: nil)
   end

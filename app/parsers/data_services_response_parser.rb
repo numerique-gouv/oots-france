@@ -66,7 +66,7 @@ class DataServicesResponseParser < CommonServicesResponseParser
       id: text(declared, './sdg:Identifier'),
       evidence_type_classification: text(declared, './sdg:EvidenceTypeClassification'),
       **distributed_as(declared),
-      distribution_formats: distribution_formats(declared),
+      distribution_formats: formats_of(declared),
       level_of_assurance: text(declared, './sdg:AuthenticationLevelOfAssurance'),
       descriptions: by_language(all(declared, './sdg:Title')),
       details: by_language(all(declared, './sdg:Description')),
@@ -75,44 +75,35 @@ class DataServicesResponseParser < CommonServicesResponseParser
     )
   end
 
-  # Read from one and the same distribution, and not each from the record: a
-  # directory publishes several, which is what R-DSD-RESP-C039 and C041 are
-  # written around, and a path anchored higher would take the format of the
-  # first and the data model of another — a request asking for a PDF against an
-  # XML schema, which nothing downstream would question. Asking for more than
-  # one distribution is OOTS-129's.
+  # Read from one and the same distribution, the one
+  # `DataService.requested_format` picks, and not each from the record: chapter
+  # 4.5.1 §3.5 has only « distributions which the data service is able to
+  # provide » requested, and a path anchored higher would take the format of
+  # one and the data model of another — a request asking for a PDF against an
+  # XML schema, which nothing downstream would question.
   #
   # Both branches state what was read, the absent element included: R-DSD-RESP-S027
   # makes it mandatory, so its absence is the directory departing from the
   # specification and not a value left empty — a difference `text` cannot carry,
   # answering nil for either.
   def distributed_as(declared)
-    published = at(declared, './sdg:DistributedAs')
-    return { distribution_published: false } if published.nil?
+    distributions = all(declared, './sdg:DistributedAs')
+    return { distribution_published: false } if distributions.empty?
+
+    requested = DataService.requested_format(formats_of(declared))
+    published = distributions.find { |distribution| text(distribution, './sdg:Format') == requested }
 
     {
       distribution_published: true,
       distribution_format: text(published, './sdg:Format'),
       distribution_language: text(published, './sdg:Language'),
       distribution_conforms_to: text(published, './sdg:ConformsTo'),
-      unstructured_sibling_published: unstructured_sibling?(declared),
     }
   end
 
-  # Every distribution, where the attributes above read the first alone.
-  def distribution_formats(declared) = all(declared, './sdg:DistributedAs/sdg:Format').map { |format| format.text.strip }
-
-  # The one question C039 and C041 ask of the record rather than of a single
-  # distribution: they excuse a structured distribution from carrying a data
-  # model when the same `DataServiceEvidenceType` is distributed in an
-  # unstructured format as well. Without it the console cannot tell a value
-  # legitimately absent from one missing at fault.
-  #
-  # The others, the one read above being the first `xpath` returns.
-  def unstructured_sibling?(declared)
-    all(declared, './sdg:DistributedAs[position() > 1]/sdg:Format')
-      .any? { |format| DataService::UNSTRUCTURED_FORMATS.include?(format.text.strip) }
-  end
+  # The format of each distribution, in the order the directory publishes them;
+  # one naming none offers nothing to choose.
+  def formats_of(declared) = all(declared, './sdg:DistributedAs/sdg:Format').map { |format| format.text.strip }
 
   def build(service)
     publisher = at(service, './sdg:Publisher')

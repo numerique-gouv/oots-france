@@ -55,22 +55,19 @@
           is not what the access point declares below — those are the EDM
           versions of R-DSD-RESP-C015, another element under another parent.
 
-          Its absence is two states and not one, which a dash renders alike:
-          C039 and C041 excuse a structured distribution the record also
-          publishes in an unstructured format, and hold the directory at fault
-          when it does not. %>
+          The distribution shown is the one the request writes, structured
+          only when the record publishes no unstructured one: the exemption
+          C039 and C041 grant then never applies, and an absent value is the
+          directory at fault. %>
       <% if service.structured_distribution? %>
         <br>
         <% if service.distribution_conforms_to.present? %>
           <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_html',
                 model: service.distribution_conforms_to) %></span>
-        <% elsif service.data_model_required? %>
+        <% else %>
           <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
                 t('admin.common_services.providers.index.data_model_missing') %></span>
           <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_missing_detail_html',
-                rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
-        <% else %>
-          <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_waived_html',
                 rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
         <% end %>
       <% end %>

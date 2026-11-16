@@ -22,8 +22,12 @@ RSpec.describe 'Admin::CommonServices::Providers' do
       .sub(%r{<sdg:AuthenticationLevelOfAssurance>[^<]+</sdg:AuthenticationLevelOfAssurance>},
         '<sdg:AuthenticationLevelOfAssurance/>')
   end
-  let(:waived) do
-    structured.sub('</sdg:DistributedAs>',
+  let(:json) do
+    published.sub(%r{<sdg:DistributedAs>.*?</sdg:DistributedAs>}m,
+      '<sdg:DistributedAs><sdg:Format>application/json</sdg:Format></sdg:DistributedAs>')
+  end
+  let(:json_then_pdf) do
+    json.sub('</sdg:DistributedAs>',
       '</sdg:DistributedAs><sdg:DistributedAs><sdg:Format>application/pdf</sdg:Format></sdg:DistributedAs>')
   end
 
@@ -113,18 +117,25 @@ RSpec.describe 'Admin::CommonServices::Providers' do
       "#{schematron}/DSD-RESP-C.sch")
   end
 
-  # C039 and C041 excuse the distribution when the record publishes an
-  # unstructured one too, which is what the Irish entries of the acceptance
-  # environment do: nothing is missing there, and a dash would say otherwise.
-  it 'names the data model unowed where an unstructured distribution is published too' do
+  it 'accuses a JSON distribution published alone without a data model under C041' do
     stub_directory_signature
-    stub_directory_body('dsd', 'dataservices-by-evidencetype', waived)
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', json)
 
     visit_providers
 
-    expect(response.body).to include('Modèle de données non exigé', 'R-DSD-RESP-C039',
-      "#{schematron}/DSD-RESP-C.sch")
-    expect(response.body).not_to include('Modèle de données manquant')
+    expect(response.body).to include('application/json', 'Modèle de données manquant', 'R-DSD-RESP-C041')
+  end
+
+  # The card shows the distribution a request writes: the PDF, published after
+  # a JSON one without a data model, and nothing then to say of a data model.
+  it 'shows the PDF a request asks for, wherever the directory publishes it' do
+    stub_directory_signature
+    stub_directory_body('dsd', 'dataservices-by-evidencetype', json_then_pdf)
+
+    visit_providers
+
+    expect(response.body).to include('application/pdf')
+    expect(response.body).not_to include('application/json', 'Modèle de données')
   end
 
   # R-DSD-RESP-C067 forbids the value beside an unstructured distribution, and

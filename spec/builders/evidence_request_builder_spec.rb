@@ -445,6 +445,26 @@ RSpec.describe EvidenceRequestBuilder do
   # rules, and what it must leave out because the 1.2.0 profile has no room for
   # it. The whole message is confronted with those rules by `make schematron`;
   # what is held here is each difference, one by one.
+  # The acceptance directory returns the French student status JSON first and
+  # PDF second; France asks for the PDF alone, on either line.
+  describe 'the French student status, as the Data Service Directory returns it' do
+    let(:student_status) do
+      DataServicesResponseParser.new(common_services_answer('dsd_data_services_fr_1e4a95b7').first).data_services.first
+    end
+
+    [EdmSpecification::V1_2, EdmSpecification::V2_0].each do |specification|
+      it "requests one PDF distribution without a data model, in #{specification.identifier}" do
+        rendered = described_class.new(**attributes, data_service: student_status, specification:).render
+        distributions = Nokogiri::XML(rendered).xpath('//sdg:DistributedAs', 'sdg' => 'http://data.europa.eu/p4s')
+
+        expect(distributions.size).to eq(1)
+        expect(distributions.first.at_xpath('./sdg:Format', 'sdg' => 'http://data.europa.eu/p4s').text)
+          .to eq('application/pdf')
+        expect(distributions.first.at_xpath('./sdg:ConformsTo', 'sdg' => 'http://data.europa.eu/p4s')).to be_nil
+      end
+    end
+  end
+
   describe 'a request written on the 1.2 line' do
     subject(:request) do
       described_class.new(**attributes, specification: EdmSpecification::V1_2,
