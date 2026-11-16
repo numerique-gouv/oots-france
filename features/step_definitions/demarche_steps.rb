@@ -90,8 +90,8 @@ end
 # card that holds them: the page carries a form of its own, the one the button
 # submits.
 Alors('la page affiche l\'identité sans aucun champ de saisie') do
-  expect(Nokogiri::HTML(@navigateur.body).css('.identity-card input, .identity-card select, .identity-card textarea'))
-    .to be_empty
+  card = Nokogiri::HTML(@navigateur.body).css('.identity-card')
+  expect(card.css('input:not([type=hidden]), select, textarea')).to be_empty
 end
 
 # The `sub` is a pseudonym of FranceConnect+'s own, per service provider:
@@ -109,6 +109,16 @@ end
 
 Quand('il se déconnecte de l\'espace d\'administration') do
   @navigateur.sign_out
+end
+
+# The button of the identity card, which leaves the console's session open.
+Quand('il se déconnecte de FranceConnect+') do
+  @navigateur.submit_to(adresse_de_la_demarche('identification'))
+end
+
+Alors('FranceConnect+ le ramène sur l\'accueil de la démarche, qui affiche {string}') do |alerte|
+  expect(@navigateur.current_url).to end_with(adresse_de_la_demarche)
+  expect(@navigateur.body).to include(alerte)
 end
 
 Alors('FranceConnect+ le ramène sur la page de déconnexion de la démarche') do

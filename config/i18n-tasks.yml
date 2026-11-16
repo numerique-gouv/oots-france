@@ -98,6 +98,8 @@ ignore_unused:
   # line per set.
   - admin.journal.exchanges.statuses.*
   - admin.sessions.{pro_connect_failed,signed_out,connection_required}
+  - controllers.admin.demo.identifications.not_closed
+  - controllers.france_connect.signed_out
   - available_evidence.refreshes.create.{launched,already_running}
   - components.directory_query.identifiers.*
   # Looked up by a key composed of the field name read off the subject, falling

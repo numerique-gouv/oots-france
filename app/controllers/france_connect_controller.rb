@@ -45,13 +45,19 @@ class FranceConnectController < ApplicationController
     redirect_to admin_demo_documents_path(version: specification.segment, procedure:)
   end
 
-  # A page, where the other return is a redirection: FranceConnect+ brings back
-  # here a user whose session has just ended on both sides, and there is nothing
-  # left to send them on to.
+  # A page, where the other return is a redirection: after the console's
+  # sign-out FranceConnect+ brings back here a user with no session left, and
+  # there is nothing to send them on to. After the identity card's, the console
+  # is still open, and the agent goes back to the home of the procedure they
+  # left — once the `state` says the return is that sign-out's.
   def retour_deconnexion
     expected = session.delete(:france_connect_logout)
+    home = session.delete(:france_connect_logout_home)
 
     @acknowledged = expected.present? && params[:state] == expected
+    return unless @acknowledged && home
+
+    redirect_to home, notice: :'controllers.france_connect.signed_out'
   end
 
   private
