@@ -11,8 +11,6 @@ Boucle `code → review → fix → review → fix → …` sur une PR déjà ou
 
 URL de la PR, en paramètre. Si absent : déduire via `gh pr view --json url -q .url` sur la branche courante ; si ça échoue (pas de PR pour cette branche), s'arrêter et le dire.
 
-En entrant, mettre la session en sourdine — [`sourdine.md`](sourdine.md) dit comment et pourquoi ; le `off` se fait avant **tout** retour de main, quelle qu'en soit la raison.
-
 ## La boucle
 
 Répéter tant que la dernière passe a confirmé au moins un finding **bloquant** ; s'arrêter dès qu'une passe n'en trouve plus (0 bloquant, avec ou sans non-bloquant). Une passe :
@@ -39,7 +37,7 @@ Répéter tant que la dernière passe a confirmé au moins un finding **bloquant
 
    **Et le fichier de revue existe sur disque, une section par passe** : un `ls .claude/reviews/` avant de sortir, pas la mémoire de l'avoir écrit. S'il manque, la passe n'a pas eu lieu pour qui que ce soit d'autre — l'écrire de ce qu'on a, puis continuer. Constaté le 2026-09-14 sur la [PR #240](https://github.com/numerique-gouv/oots-france/pull/240) : deux passes de sept relecteurs, convergence annoncée dans le fil, PR fusionnée trois minutes plus tard, et aucun fichier — les faux positifs de sa passe 1 ne seront relayés à personne.
 
-7. **Refondre l'historique** : `Skill(skill: "refondre-historique")`, qui sauvegarde, refond, vérifie l'arbre, pousse en `--force-with-lease` et attend la CI du nouveau SHA. Rouge, c'est un bloquant comme un autre : retour à l'étape 1. Puis retirer la sourdine et rendre la main.
+7. **Refondre l'historique** : `Skill(skill: "refondre-historique")`, qui sauvegarde, refond, vérifie l'arbre, pousse en `--force-with-lease` et attend la CI du nouveau SHA. Rouge, c'est un bloquant comme un autre : retour à l'étape 1. Puis rendre la main.
 
 ## Garde-fous
 
