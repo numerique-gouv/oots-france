@@ -18,7 +18,7 @@ $ make up      # à chaque fois
 
 | Commande | Ce qu'elle lance |
 | --- | --- |
-| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie, `fake-france-connect` joue FranceConnect+ et la passerelle eIDAS pour la [démarche de démonstration](docs/espace_administration.md#la-démarche-de-démonstration). **Les deux premiers sont nécessaires** — sans le worker, une demande reste indéfiniment en attente. Les bases et la passerelle suivent, `docker compose` les tirant par dépendance. Un déploiement, lui, lance `nginx`, qui ne tire pas le faux |
+| `make up` | L'application : `web` répond aux requêtes, `worker` traite ce que la passerelle notifie, `fake-france-connect` joue FranceConnect+ et la passerelle eIDAS pour la [démarche de démonstration](docs/espace_administration.md#la-démarche-de-démonstration). **Les deux premiers sont nécessaires** — sans le worker, une demande reste indéfiniment en attente. La base de développement est d'abord préparée par `make database`. La base de la passerelle (MySQL) et la passerelle suivent, `docker compose` les tirant par dépendance. Un déploiement, lui, lance `nginx`, qui ne tire pas le faux |
 | `make domibus` | La passerelle seule, puis attend que sa console réponde. De quoi la reconfigurer ou l'observer sans monter l'application |
 
 `make down` arrête tout en conservant les volumes.
@@ -105,7 +105,7 @@ $ make e2e         # un échange OOTS réel à travers la passerelle
 $ make schematron  # les messages produits, contre les règles des TDD
 ```
 
-`make test` remplace toutes les frontières par des doublures : il ne touche jamais Domibus. C'est `make e2e` qui exerce la chaîne eDelivery réelle, et il demande la pile démarrée — voir [docs/test_e2e.md](docs/test_e2e.md).
+`make test` et `make cucumber` recréent d'abord la base de test depuis `db/schema.rb` (`make database-test`) : ils ne demandent que les fichiers `.env*`, que `make setup` écrit sur un clone neuf et que `scripts/worktree.sh` copie dans un worktree. `make test` remplace toutes les frontières par des doublures : il ne touche jamais Domibus. C'est `make e2e` qui exerce la chaîne eDelivery réelle, et il demande la pile démarrée — voir [docs/test_e2e.md](docs/test_e2e.md).
 
 `make cucumber` joue le profil Cucumber par défaut, le même que la CI. Les scénarios qui y portent l'étiquette `@javascript` sont pilotés par un **Chromium sans tête**, qui vit dans l'image : rien à installer sur le poste, et `docker compose build web` suffit après un clone neuf ou une mise à jour du `Dockerfile`.
 
