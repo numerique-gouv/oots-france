@@ -168,6 +168,12 @@ grep -ohE '(^|[^~/])(\.claude|scripts|docs)/[A-Za-z0-9À-ÿ_./-]+' CLAUDE.md .cl
   | sed -E 's/^[^.sd]//; s/[.,)]*$//' | sort -u | while read p; do [ -e "$p" ] || git check-ignore -q "$p" || echo "$p"; done
 # la même chose dans les mémoires — sans les chemins de ~/.claude, qui ne sont pas ceux du dépôt
 grep -ohE '(^|[^~/])\.claude/[A-Za-z0-9_./-]+' ~/.claude/projects/$(pwd | tr / -)/memory/*.md | sed -E 's/^[^.]//' | sort -u | while read p; do [ -e "$p" ] || echo "$p"; done
+# les chemins de ~/.claude que le harnais, CLAUDE.local.md et les mémoires citent, et que ce poste n'a pas : ce qu'un harnais venu d'un autre poste cite encore.
+# ~/.claude est le seul répertoire de l'hôte que la VM voit aussi ; un autre ~/ ne se vérifie que depuis l'hôte. Rejoué le 2026-11-16 sur 9f72f7f6 :
+# il sortait les ~/.claude/hooks/peon-quiet.sh que sept agents ont appelés en vain du 9 au 16 novembre
+grep -oHE '~/\.claude/[A-Za-z0-9_./-]+' CLAUDE.md CLAUDE.local.md .claude/agents/*.md .claude/agents/*/*.md \
+  $(ls .claude/skills/*/*.md | grep -v harness-engineer) ~/.claude/CLAUDE.md ~/.claude/projects/$(pwd | tr / -)/memory/*.md 2>/dev/null \
+  | sed -E 's/[.,)]*$//' | sort -u | while IFS= read -r l; do p=${l#*:}; [ -e "${p/#\~/$HOME}" ] || echo "$l"; done
 # les verdicts que la statusline connaît sont ceux de l'ouvrier
 V='PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ'   # la même alternance des deux côtés, sinon le contrôle invente un écart
 grep -oE "$V" .claude/statusline/subagent.sh | sort -u
