@@ -9,7 +9,8 @@ Fonctionnalité: Recevoir la requête d'un autre État membre
   s'envoie à elle-même sont conformes par construction.
 
   Ce que la France répond se lit dans le journal des échanges, qu'aucune page
-  n'expose : il contient des données personnelles.
+  n'expose : il contient des données personnelles. Le statut étudiant se lit
+  au bac à sable d'API Particulier, que la pile doit joindre.
 
   Contexte:
     Étant donné un portail de démarche français déclaré dans l'annuaire des requêteurs
@@ -34,6 +35,18 @@ Fonctionnalité: Recevoir la requête d'un autre État membre
     Quand le requêteur étranger envoie une requête sous la démarche "T1" pour un type que la France ne détient pas
     Alors la France refuse la requête avec le code "EDM:ERR:0004"
     Et la France n'envoie aucun justificatif
+
+  Scénario: le statut étudiant est lu chez API Particulier et servi en JSON
+    Quand le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, né à "75102"
+    Alors la France sert le statut étudiant en "application/json"
+
+  Scénario: le statut étudiant demandé en PDF est l'attestation d'API Particulier
+    Quand le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, né à "75102", en "application/pdf"
+    Alors la France sert le statut étudiant en "application/pdf"
+
+  Scénario: le statut étudiant d'une personne qu'API Particulier ne connaît pas est une liste vide
+    Quand le requêteur étranger envoie une requête pour le statut étudiant d'une personne qu'API Particulier ne connaît pas
+    Alors la France répond une liste vide, sans justificatif
 
   Scénario: une requête en "oots-edm:v1.2" est servie dans sa propre version
     Quand le requêteur étranger envoie une requête en "oots-edm:v1.2"

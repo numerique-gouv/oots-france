@@ -61,6 +61,47 @@ Quand('le requêteur étranger envoie une requête sous la démarche {string} po
   @exchange_id = @correspondent.submit(body)
 end
 
+Quand('le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, né à {string}') do |place|
+  body = @correspondent.request(evidence_type: FakeCorrespondent::EVIDENCE_TYPES.fetch('FR - Student status (MESRI)'),
+    subject: FakeCorrespondent::STUDENT.merge(place_of_birth: place))
+
+  @exchange_id = @correspondent.submit(body)
+end
+
+Quand(
+  'le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, né à {string}, en {string}',
+) do |place, format|
+  body = @correspondent.request(evidence_type: FakeCorrespondent::EVIDENCE_TYPES.fetch('FR - Student status (MESRI)'),
+    subject: FakeCorrespondent::STUDENT.merge(place_of_birth: place), format:)
+
+  @exchange_id = @correspondent.submit(body)
+end
+
+Quand('le requêteur étranger envoie une requête pour le statut étudiant d\'une personne qu\'API Particulier ne connaît pas') do
+  body = @correspondent.request(evidence_type: FakeCorrespondent::EVIDENCE_TYPES.fetch('FR - Student status (MESRI)'),
+    subject: FakeCorrespondent::UNKNOWN_STUDENT)
+
+  @exchange_id = @correspondent.submit(body)
+end
+
+def answered
+  patiente_jusqu_a('la France ait répondu') do
+    ServerAuditEvent.exists?(exchange_id: @exchange_id, event_type: 'response_sent')
+  end
+
+  ServerAuditEvent.find_by!(exchange_id: @exchange_id, event_type: 'response_sent')
+end
+
+Alors('la France sert le statut étudiant en {string}') do |format|
+  expect(answered).to have_attributes(evidence_mime_type: format, evidence_digest: be_present,
+    evidence_identifier: be_present)
+end
+
+Alors('la France répond une liste vide, sans justificatif') do
+  expect(answered).to have_attributes(evidence_digest: nil)
+  expect(answered.regrep_body).to include('<rim:RegistryObjectList/>')
+end
+
 Alors('la France sert le justificatif dans une réponse en {string}') do |version|
   patiente_jusqu_a('la France ait répondu') do
     ServerAuditEvent.exists?(request_id: @request_id, event_type: 'response_sent')
