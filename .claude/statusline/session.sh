@@ -10,7 +10,7 @@
 #
 # Un ouvrier se reconnaît à la première invite de son transcript, qui vaut
 # « OOTS-<n> », et son état se lit à son dernier bloc de texte : le fichier
-# d'agent lui impose de terminer sur l'un des cinq verdicts.
+# d'agent lui impose de terminer sur l'un des sept verdicts.
 
 # Une statusline personnalisée éteint les indices du pied de page (`esc to
 # interrupt`, `? for shortcuts`…) et aucun réglage ne les rallume : on les
@@ -49,9 +49,15 @@ LIGNE1="${MODELE:-?}"
 # The weekly window is the only usage limit the Max plan has: the harness
 # passes no `five_hour` entry. The colour carries the alert, so the number
 # need not be read.
+#
+# The harness gives what has been *used*; the line shows what is *left*, which
+# is the question one asks before launching a batch. Keep the two apart: read
+# `used_percentage` as a remainder and a 31 reads as a week nearly gone when
+# two thirds of it are still there.
 if [ -n "$SEMAINE" ]; then
-  if [ "$SEMAINE" -ge 90 ]; then TEINTE=$(printf '\033[31m')
-  elif [ "$SEMAINE" -ge 75 ]; then TEINTE=$(printf '\033[33m')
+  CREDIT=$(( 100 - SEMAINE ))
+  if [ "$CREDIT" -le 10 ]; then TEINTE=$(printf '\033[31m')
+  elif [ "$CREDIT" -le 25 ]; then TEINTE=$(printf '\033[33m')
   else TEINTE=''; fi
   [ -n "$TEINTE" ] && NEUTRE=$(printf '\033[0m') || NEUTRE=''
 
@@ -68,7 +74,7 @@ if [ -n "$SEMAINE" ]; then
     fi
   fi
 
-  LIGNE1="$LIGNE1 · ${TEINTE}${SEMAINE}% week${RESTE}${NEUTRE}"
+  LIGNE1="$LIGNE1 · ${TEINTE}${CREDIT}% week left${RESTE}${NEUTRE}"
 fi
 
 # Les indices ferment la ligne, en gris : ils sont toujours vrais, donc ne
@@ -112,11 +118,11 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   # puisqu'il ne merge jamais.
   [ "$DECLAREE" = merged ] && continue
 
-  # Dernier bloc de texte : un des cinq verdicts s'il a rendu la main, avec
+  # Dernier bloc de texte : un des sept verdicts s'il a rendu la main, avec
   # l'instant où il l'a prononcé.
   LIGNE=$(tail -6 "$F" 2>/dev/null \
     | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
-    | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLAN|ARBITRAGE|BLOQUÉ)$" | tail -1)
+    | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|INTERROMPU|BLOQUÉ)$" | tail -1)
   VERDICT=''
   PRONONCE=''
   # Le test porte sur la ligne, jamais sur ce que `date` en tire : `date -d ""`
@@ -146,7 +152,7 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
 
   # Mêmes libellés que le panneau d'agents, à qui cette ligne se substitue
-  # quand il escamote : deux vocabulaires pour cinq états seraient deux
+  # quand il escamote : deux vocabulaires pour sept états seraient deux
   # choses à apprendre pour une seule.
   #
   # Un verdict, c'est l'ouvrier qui rend la main — et l'instant précis où on
@@ -155,11 +161,13 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   # le panneau, qui garde sa ligne une demi-minute, coûte moins cher que la
   # demi-minute d'aveuglement qu'on paie sinon.
   case "$VERDICT" in
-    LIVRÉ)     RENDUS="$RENDUS  ⚒ $TICKET (delivered)";          continue ;;
-    ÉCRAN)     RENDUS="$RENDUS  ⚒ $TICKET (screen to review)";   continue ;;
-    PLAN)      RENDUS="$RENDUS  ⚒ $TICKET (plan to approve)";    continue ;;
-    ARBITRAGE) RENDUS="$RENDUS  ⚒ $TICKET (waiting for answer)"; continue ;;
-    BLOQUÉ)    RENDUS="$RENDUS  ⚒ $TICKET (blocked)";            continue ;;
+    LIVRÉ)      RENDUS="$RENDUS  ⚒ $TICKET (delivered)";          continue ;;
+    ÉCRAN)      RENDUS="$RENDUS  ⚒ $TICKET (screen to review)";   continue ;;
+    PLANIFIÉ)   RENDUS="$RENDUS  ⚒ $TICKET (plan to implement)";  continue ;;
+    PLAN)       RENDUS="$RENDUS  ⚒ $TICKET (plan to approve)";    continue ;;
+    ARBITRAGE)  RENDUS="$RENDUS  ⚒ $TICKET (waiting for answer)"; continue ;;
+    INTERROMPU) RENDUS="$RENDUS  ⚒ $TICKET (to resume)";          continue ;;
+    BLOQUÉ)     RENDUS="$RENDUS  ⚒ $TICKET (blocked)";            continue ;;
   esac
 
   # Sans verdict, il travaille encore. Celui qui vient d'agir est affiché par
