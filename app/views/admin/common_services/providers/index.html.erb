@@ -26,9 +26,7 @@
           of an empty format would render as an ordinary gap. A badge on the
           card and not an alert in the page head, which would not say which of
           the services it speaks of. %>
-      <% if service.distribution_published %>
-        <code class="entry__tag"><%= service.distribution_format.presence || '—' %></code>
-      <% else %>
+      <% unless service.distribution_published %>
         <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
               t('admin.common_services.providers.index.no_distribution') %></span>
       <% end %>
@@ -48,30 +46,34 @@
       <br><span class="fr-text--sm"><%= t('admin.common_services.providers.index.service_id_html',
             id: service.id.presence || '—') %></span>
 
-      <%# The data model of the distribution, which R-DSD-RESP-C010 has the
-          directory publish as a Semantic Repository URL. Rendered only beside a
-          structured format, R-DSD-RESP-C067 forbidding the value on the others:
-          an empty line there would announce a gap the rule itself creates. It
-          is not what the access point declares below — those are the EDM
-          versions of R-DSD-RESP-C015, another element under another parent.
+      <%# Every distribution the directory publishes, in its order.
 
-          Its absence is two states and not one, which a dash renders alike:
-          C039 and C041 excuse a structured distribution the record also
+          The data model is R-DSD-RESP-C010's Semantic Repository URL, shown
+          beside a structured format only, R-DSD-RESP-C067 forbidding it on the
+          others. It is not what the access point declares below — those are
+          the EDM versions of R-DSD-RESP-C015, another element under another
+          parent. Its absence is two states and not one, which a dash renders
+          alike: C039 and C041 excuse a structured distribution the record also
           publishes in an unstructured format, and hold the directory at fault
           when it does not. %>
-      <% if service.structured_distribution? %>
-        <br>
-        <% if service.distribution_conforms_to.present? %>
-          <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_html',
-                model: service.distribution_conforms_to) %></span>
-        <% elsif service.data_model_required? %>
-          <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
-                t('admin.common_services.providers.index.data_model_missing') %></span>
-          <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_missing_detail_html',
-                rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
-        <% else %>
-          <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_waived_html',
-                rule: render(TddRuleComponent.new(rule: service.data_model_rule))) %></span>
+      <% service.distributions.each do |distribution| %>
+        <br><code class="entry__tag"><%= distribution.format.presence || '—' %></code>
+        <% if distribution.language.present? %>
+          <span class="fr-text--sm"><%= distribution.language %></span>
+        <% end %>
+        <% if distribution.structured? %>
+          <% if distribution.conforms_to.present? %>
+            <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_html',
+                  model: distribution.conforms_to) %></span>
+          <% elsif service.data_model_required?(distribution) %>
+            <span class="fr-badge fr-badge--sm fr-badge--warning"><%=
+                  t('admin.common_services.providers.index.data_model_missing') %></span>
+            <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_missing_detail_html',
+                  rule: render(TddRuleComponent.new(rule: distribution.data_model_rule))) %></span>
+          <% else %>
+            <span class="fr-text--sm"><%= t('admin.common_services.providers.index.data_model_waived_html',
+                  rule: render(TddRuleComponent.new(rule: distribution.data_model_rule))) %></span>
+          <% end %>
         <% end %>
       <% end %>
 

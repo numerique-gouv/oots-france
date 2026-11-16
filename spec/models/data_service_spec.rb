@@ -189,51 +189,69 @@ RSpec.describe DataService do
     end
   end
 
+  # Chapter 4.5.1 §3.5 leaves the choice of the distribution to the Evidence
+  # Requester; France takes the PDF, which alone reaches the portal.
+  describe '.requested_format' do
+    {
+      %w[application/json application/pdf] => 'application/pdf',
+      %w[application/json image/png application/pdf] => 'application/pdf',
+      %w[application/json image/png image/jpeg] => 'image/png',
+      %w[application/xml application/json] => 'application/xml',
+      %w[application/xml image/jpg] => 'application/xml',
+      [] => nil,
+    }.each do |published, expected|
+      it "takes #{expected.inspect} among #{published.inspect}" do
+        expect(described_class.requested_format(published)).to eq(expected)
+      end
+    end
+  end
+
   # Whether an absent data model is the directory at fault or the rules
   # excusing it: C039 and C041 require the value beside a structured format,
   # unless the record publishes an unstructured distribution as well.
   describe '#data_model_required?' do
+    def published(*formats) = build(:data_service, distributions: formats.map { |format| Distribution.new(format:) })
+
     it 'is true of a structured distribution published on its own' do
-      expect(build(:data_service, distribution_format: 'application/xml')).to be_data_model_required
+      service = published('application/xml', 'application/json')
+
+      expect(service.distributions).to all(satisfy { |distribution| service.data_model_required?(distribution) })
     end
 
     it 'is false where an unstructured distribution is published beside it' do
-      published = build(:data_service, distribution_format: 'application/json',
-        unstructured_sibling_published: true)
+      service = published('application/json', EvidenceType::PDF)
 
-      expect(published).not_to be_data_model_required
+      expect(service.data_model_required?(service.distributions.first)).to be(false)
     end
 
     # C067 forbids the value beside an unstructured format rather than asking
     # for it, so nothing is owed there whatever else the record publishes.
     it 'is false of an unstructured distribution' do
-      expect(build(:data_service, distribution_format: EvidenceType::PDF)).not_to be_data_model_required
+      service = published(EvidenceType::PDF)
+
+      expect(service.data_model_required?(service.distributions.first)).to be(false)
+    end
+
+    # The diagnostic text of C039 and C041 also names `image/jpg`, which the
+    # code list has no code for; the assertions test membership of the list.
+    it 'excuses nothing for a format the code list does not carry' do
+      service = published('application/xml', 'image/jpg')
+
+      expect(service.data_model_required?(service.distributions.first)).to be(true)
     end
   end
 
-  # The console names the rule it invokes, and the two are one sentence under
-  # two identifiers: C039 judges an XML distribution, C041 a JSON one.
-  it 'names the rule that requires the data model of the format read' do
-    expect(build(:data_service, distribution_format: 'application/xml').data_model_rule)
-      .to eq('R-DSD-RESP-C039')
-    expect(build(:data_service, distribution_format: 'application/json').data_model_rule)
-      .to eq('R-DSD-RESP-C041')
-    expect(build(:data_service, distribution_format: EvidenceType::PDF).data_model_rule).to be_nil
+  it 'lists the formats of every distribution' do
+    service = build(:data_service,
+      distributions: [Distribution.new(format: 'application/json'), Distribution.new(format: EvidenceType::PDF)])
+
+    expect(service.distribution_formats).to eq(['application/json', EvidenceType::PDF])
   end
 
-  # The two lists are written apart, and the console reads them together: a
-  # structured format the rules table forgot would send `nil` to the component
-  # that names the rule, on the one branch that cannot guard against it.
-  it 'names a rule for every format it counts as structured' do
-    expect(described_class::DATA_MODEL_RULES.keys).to match_array(described_class::STRUCTURED_FORMATS)
-  end
-
-  # Only a directory answer can say what the record published; every other way
-  # of building a service starts from a distribution it already holds and knows
-  # of no second one, so both defaults claim nothing.
-  it 'counts a service built without a word on it as distributed, and alone' do
-    expect(build(:data_service)).to have_attributes(distribution_published: true,
-      unstructured_sibling_published: false)
+  # Only a directory answer can say a record published no distribution; every
+  # other way of building a service starts from a distribution it already holds.
+  it 'counts a service built without a word on it as distributed' do
+    expect(build(:data_service).distribution_published).to be(true)
   end
 
   it 'prefers the French name to the English one' do

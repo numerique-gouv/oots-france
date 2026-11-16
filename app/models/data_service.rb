@@ -40,33 +40,10 @@ class DataService
   # environment midfix — `sr.acc.` on the acceptance instance.
   DATA_MODEL = %r{\Ahttps://sr(\.[a-zA-Z]+)?\.oots\.tech\.ec\.europa\.eu/datamodels/\S+\z}
 
-  # The two `OOTSMediaTypes` codes the `name-Structure` column marks
-  # `structured`; the four others are the ones R-EDM-REQ-C107 (FATAL) forbids a
-  # data model on. Written here rather than read from the code list at run
-  # time: `CodeListClient` answers an outage with an empty hash, which cannot
-  # decide what a fatal rule judges.
-  STRUCTURED_FORMATS = %w[application/json application/xml].freeze
-
-  # Those four others, listed here because publishing one of them beside a
-  # structured distribution is what lifts C039 and C041 below. Taken from the
-  # code list, and not from the diagnostic text of those two assertions, which
-  # also names `image/jpg`: the list holds no such code, and the assertion tests
-  # membership of the list, so that spelling exempts nothing.
-  UNSTRUCTURED_FORMATS = %w[application/pdf image/jpeg image/png image/svg+xml].freeze
-
   # The rule a service published without any `sdg:DistributedAs` departs from,
-  # named here beside the two below rather than in the template that shows it:
-  # a rule identifier is a value the TDD fixes word for word.
+  # named here rather than in the template that shows it: a rule identifier is
+  # a value the TDD fixes word for word.
   DISTRIBUTION_RULE = 'R-DSD-RESP-S027'.freeze
-
-  # Which rule requires the data model beside the format read: R-DSD-RESP-C039
-  # governs an XML distribution, C041 a JSON one — the same sentence under two
-  # identifiers, and the console names the one judging what it shows. The same
-  # two formats as `STRUCTURED_FORMATS` because the code list marks these two
-  # `structured`, not because either list is derived from the other.
-  DATA_MODEL_RULES = {
-    'application/xml' => 'R-DSD-RESP-C039', 'application/json' => 'R-DSD-RESP-C041',
-  }.freeze
 
   attribute :id, :string
   attribute :evidence_type_classification, :string
@@ -79,20 +56,14 @@ class DataService
   # empty. Only a directory answer can turn it false; everything else builds a
   # service around a distribution it already holds.
   attribute :distribution_published, :boolean, default: true
-  # Whether the record publishes a second distribution, in an unstructured
-  # format, beside the one the three attributes above are read from — the
-  # « another 'sdg:DistributedAs/sdg:Format' » of C039 and C041, and the only
-  # thing they ask of the record rather than of one distribution. False by
-  # default: nothing but a directory answer publishes a second one.
-  attribute :unstructured_sibling_published, :boolean, default: false
   attribute :level_of_assurance, :string
 
   attr_reader :descriptions, :details, :providers
 
-  # The format of every `sdg:DistributedAs` the record publishes, where the
-  # attributes above read the first alone: what the public page of available
-  # evidence lists.
-  attr_reader :distribution_formats
+  # Every `sdg:DistributedAs` the record publishes, in its order, where the
+  # attributes above read the requested one alone: what the console shows of
+  # the service. Empty unless built from a directory answer.
+  attr_reader :distributions
 
   # The classifications the service was matched on, each with the value it
   # supports, when the query carried the user's answers to a `DSD:ERR:0005`.
@@ -108,7 +79,7 @@ class DataService
   # R-EDM-REQ-C070 and C071 only say SHOULD. What the directory owes is
   # stricter — R-DSD-RESP-C067 forbids the value on an unstructured
   # distribution, C039 and C041 make it mandatory on an XML — resp. a JSON —
-  # one unless an unstructured sibling is published, which
+  # one unless an unstructured one is published too, which
   # `data_model_required?` answers for the console.
   validates :distribution_conforms_to, format: { with: DATA_MODEL, message: :format }, allow_blank: true
   # R-EDM-REQ-C029 and C031, the counterparts of C010 and C094 on this slot:
@@ -116,30 +87,41 @@ class DataService
   validate :wordings_name_their_language
   validate :classifications_conform
 
+  # The distribution France requests, among the formats the directory publishes
+  # for one service. Chapter 4.5.1 §3.5 leaves the choice to the Evidence
+  # Requester (« selected by the Evidence Requester during the DSD query
+  # process »). The PDF is the one format France can hand the portal, so it is
+  # requested wherever it stands; failing it, the first other human-readable
+  # format, else the first published.
+  def self.requested_format(formats)
+    return EvidenceType::PDF if formats.include?(EvidenceType::PDF)
+
+    formats.find { |format| Distribution::UNSTRUCTURED_FORMATS.include?(format) } || formats.first
+  end
+
   def initialize(attributes = {})
     @descriptions = attributes.delete(:descriptions) || {}
     @details = attributes.delete(:details) || {}
     @providers = attributes.delete(:providers) || []
     @classifications = attributes.delete(:classifications) || []
-    @distribution_formats = attributes.delete(:distribution_formats) || []
+    @distributions = attributes.delete(:distributions) || []
     super
   end
+
+  # What the public page of available evidence lists.
+  def distribution_formats = distributions.filter_map(&:format)
+
+  # Whether a missing data model on this distribution is the directory at
+  # fault. C039 and C041 exempt a structured distribution the record also
+  # publishes in an unstructured format, and nothing is then missing: the
+  # console renders the two absences apart, where an empty value renders them
+  # alike.
+  def data_model_required?(distribution) = distribution.structured? && distributions.none?(&:unstructured?)
 
   # Which of the two families of R-EDM-REQ-C107 the requested format falls in,
   # and so whether a data model may be written beside it. Unknown formats count
   # as unstructured, the rule being fatal in that direction alone.
-  def structured_distribution? = STRUCTURED_FORMATS.include?(distribution_format)
-
-  # Whether a missing `distribution_conforms_to` is the directory at fault.
-  # C039 and C041 exempt a structured distribution published beside an
-  # unstructured one, and nothing is then missing: the console renders the two
-  # absences apart, where an empty value renders them alike.
-  def data_model_required? = structured_distribution? && !unstructured_sibling_published
-
-  # The rule the console names when it speaks of the data model. Nil beside an
-  # unstructured format, which neither rule judges — C067 forbids the value
-  # there rather than asking for it.
-  def data_model_rule = DATA_MODEL_RULES[distribution_format]
+  def structured_distribution? = Distribution::STRUCTURED_FORMATS.include?(distribution_format)
 
   private
 
