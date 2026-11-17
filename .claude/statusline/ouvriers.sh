@@ -1,12 +1,20 @@
 #!/bin/sh
 # Les ouvriers d'une session, un par ligne, en TSV :
-#   ticket  état  libellé  étape déclarée  secondes depuis le dernier geste  agent
+#   ticket  état  libellé  étape déclarée  secondes depuis le dernier geste  agent  activité
 # L'état vaut `rendu` (le libellé dit le verdict, ou l'étape déclarée depuis),
 # `actif` (un geste il y a moins de 45 s) ou `endormi`. Un champ vide vaut
 # `-`, sans quoi `read` fondrait deux tabulations en une. Un ouvrier dont
 # l'étape vaut `merged` n'est pas listé. L'agent est l'identifiant du
 # sous-agent, celui de son transcript `agent-<id>.jsonl` et de `$.agent.list()`,
 # par lequel le panneau ouvre sa vue.
+#
+# L'activité est le dernier outil que l'agent a appelé, par la description
+# qu'il lui a donnée, ou à défaut son nom et sa cible ; elle n'est lue qu'avec
+# `--tous`, et pour un agent qui a agi dans l'heure : une session garde des
+# centaines de transcripts, que relire toutes les dix secondes coûterait des
+# secondes. `-` sinon. C'est une approximation du résumé que le panneau natif
+# affiche : Claude Code l'écrit par une requête à part et ne le range ni dans
+# le transcript ni dans ce qu'il expose à un mod.
 #
 # Avec `--tous`, les autres sous-agents suivent, un par ligne aussi : ticket
 # `-`, état `actif` ou `endormi`, et pour libellé le `description` que le
@@ -43,6 +51,17 @@ PRINCIPAL=$(git -C "$RACINE" rev-parse --path-format=absolute --git-common-dir 2
 MAINTENANT=$(date +%s)
 TAB=$(printf '\t')
 
+# Ligne à ligne et `fromjson?` : la dernière ligne d'un transcript peut être
+# en cours d'écriture, et un `-s` mourrait dessus.
+activite() {
+  [ -n "$TOUS" ] && [ "$2" -lt 3600 ] || { printf -- '-'; return; }
+  A=$(tail -20 "$1" 2>/dev/null | jq -rR 'fromjson? | select(.type=="assistant") | .message.content[]?
+        | select(.type=="tool_use")
+        | (.input.description // ((.name) + " " + ((.input.file_path // .input.pattern // .input.command // .input.skill // .input.url // "") | tostring | split("\n")[0])))' 2>/dev/null \
+    | tail -1 | tr -d '\t\r' | cut -c1-200)
+  printf '%s' "${A:--}"
+}
+
 for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   [ -f "$F" ] || continue
   AGENT=${F##*/agent-}
@@ -58,7 +77,7 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
     if [ "$DEPUIS_S" -lt 45 ]; then ETAT=actif; else ETAT=endormi; fi
     DESCRIPTION=$(jq -r '.description // empty' "${F%.jsonl}.meta.json" 2>/dev/null | tr -d '\t\r\n')
-    printf -- '-\t%s\t%s\t-\t%s\t%s\n' "$ETAT" "${DESCRIPTION:--}" "$DEPUIS_S" "$AGENT"
+    printf -- '-\t%s\t%s\t-\t%s\t%s\t%s\n' "$ETAT" "${DESCRIPTION:--}" "$DEPUIS_S" "$AGENT" "$(activite "$F" "$DEPUIS_S")"
     continue
   fi
 
@@ -100,7 +119,7 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   # son travail effacerait la déclaration qu'on vient d'écrire.
   DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
   if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
-    printf '%s\trendu\t%s\t%s\t%s\t%s\n' "$TICKET" "$DECLAREE" "$DECLAREE" "$DEPUIS_S" "$AGENT"
+    printf '%s\trendu\t%s\t%s\t%s\t%s\t%s\n' "$TICKET" "$DECLAREE" "$DECLAREE" "$DEPUIS_S" "$AGENT" "$(activite "$F" "$DEPUIS_S")"
     continue
   fi
 
@@ -117,13 +136,13 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     BLOQUÉ)     LIBELLE='blocked' ;;
   esac
   if [ -n "$LIBELLE" ]; then
-    printf '%s\trendu\t%s\t%s\t%s\t%s\n' "$TICKET" "$LIBELLE" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT"
+    printf '%s\trendu\t%s\t%s\t%s\t%s\t%s\n' "$TICKET" "$LIBELLE" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT" "$(activite "$F" "$DEPUIS_S")"
     continue
   fi
 
   # Sans verdict, il travaille encore.
   if [ "$DEPUIS_S" -lt 45 ]; then ETAT=actif; else ETAT=endormi; fi
-  printf '%s\t%s\t-\t%s\t%s\t%s\n' "$TICKET" "$ETAT" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT"
+  printf '%s\t%s\t-\t%s\t%s\t%s\t%s\n' "$TICKET" "$ETAT" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT" "$(activite "$F" "$DEPUIS_S")"
 done
 
 exit 0
