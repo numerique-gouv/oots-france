@@ -151,15 +151,9 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
 
   DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
 
-  # Mêmes libellés que le panneau d'agents, à qui cette ligne se substitue
-  # quand il escamote : deux vocabulaires pour sept états seraient deux
-  # choses à apprendre pour une seule.
-  #
   # Un verdict, c'est l'ouvrier qui rend la main — et l'instant précis où on
   # le cherche des yeux. Il s'affiche donc sans délai : ni la garde qui suit,
-  # ni le travail d'un autre ouvrier ne le retiennent. Le redoublement avec
-  # le panneau, qui garde sa ligne une demi-minute, coûte moins cher que la
-  # demi-minute d'aveuglement qu'on paie sinon.
+  # ni le travail d'un autre ouvrier ne le retiennent.
   case "$VERDICT" in
     LIVRÉ)      RENDUS="$RENDUS  ⚒ $TICKET (delivered)";          continue ;;
     ÉCRAN)      RENDUS="$RENDUS  ⚒ $TICKET (screen to review)";   continue ;;
