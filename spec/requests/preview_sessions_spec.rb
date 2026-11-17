@@ -788,4 +788,123 @@ RSpec.describe 'The preview space' do
       end
     end
   end
+
+  # OOTS-308: the demonstration procedure, identified by the fake
+  # FranceConnect+, opens the preview of its own request without identifying
+  # again where the space would send it to the real one.
+  describe 'the demonstration procedure identified by the fake FranceConnect+' do
+    def identify_on_the_fake(userinfo: FranceConnectStubs::REQUESTED_USERINFO)
+      sign_in
+      identify_demo_user(userinfo:)
+      stub_real_france_connect
+    end
+
+    def journey_id = Demo::Journey.from_session(request.session[:demo_journey]).id
+
+    def requested_in_this_journey(address = session.location, journey: journey_id)
+      registered_request(SecureRandom.uuid, journey_id: journey, preview_address: address)
+    end
+
+    def sent_to_the_real_france_connect?
+      response.redirect? && response.headers['Location'].start_with?(FranceConnectStubs::REAL_AUTHORIZATION_ENDPOINT)
+    end
+
+    # CA1.
+    it 'shows the document and the choice, and answers the choice' do
+      identify_on_the_fake
+      requested_in_this_journey
+      visit_space
+
+      expect(response).to have_http_status(:ok)
+      expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
+      get preview_session_document_path(segment, session.token)
+      expect(response.body).to eq(session.document_bytes)
+      post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
+      expect(session.reload.decision).to eq('accepted')
+    end
+
+    # CA3.
+    it 'journals that the identification was dispensed, and not confirmed' do
+      identify_on_the_fake
+      requested_in_this_journey
+      2.times { visit_space }
+
+      expect(AuditEvent.where(event_type: 'preview_identified').pluck(:detail)).to eq([PreviewSession::DISPENSED])
+    end
+
+    # CA2.
+    describe 'an address no document matches' do
+      let!(:session) { create(:preview_session, :unmatched) }
+
+      it 'says no document matches, without sending the user to identify' do
+        identify_on_the_fake
+        requested_in_this_journey
+        visit_space
+
+        expect(response).to have_http_status(:ok)
+        expect(page.at_css('h1').text).to eq('Aucun document ne vous correspond')
+      end
+    end
+
+    # CA5.
+    describe 'on the 1.2 line' do
+      let!(:session) { create(:preview_session, :legacy_line) }
+
+      it 'offers the way back the visit brought' do
+        identify_on_the_fake
+        requested_in_this_journey("#{session.location}?returnurl=https%3A%2F%2Fportail.example%2Fretour&returnmethod=GET")
+        visit_space(params: { returnurl: 'https://portail.example/retour', returnmethod: 'GET' })
+        post preview_session_choice_path(segment, session.token), params: { choice: 'accepted' }
+
+        expect(response).to redirect_to('https://portail.example/retour')
+      end
+    end
+
+    # CA4: a request of a foreign requester, or of another journey.
+    it 'sends to the real FranceConnect+ for a request this journey did not make' do
+      identify_on_the_fake
+      visit_space
+      expect(sent_to_the_real_france_connect?).to be(true)
+
+      requested_in_this_journey(journey: SecureRandom.uuid)
+      visit_space
+      expect(sent_to_the_real_france_connect?).to be(true)
+
+      requested_in_this_journey(create(:preview_session).location)
+      visit_space
+      expect(sent_to_the_real_france_connect?).to be(true)
+      expect(AuditEvent.where(event_type: 'preview_identified')).to be_empty
+    end
+
+    # CA6.
+    it 'sends to the real FranceConnect+ an identity that is not the subject of the request' do
+      identify_on_the_fake(userinfo: FranceConnectStubs::REQUESTED_USERINFO.merge('birthdate' => '1965-11-26'))
+      requested_in_this_journey
+      visit_space
+
+      expect(sent_to_the_real_france_connect?).to be(true)
+      expect(AuditEvent.where(event_type: 'preview_identified')).to be_empty
+    end
+
+    # CA7.
+    it 'sends to the real FranceConnect+ the procedure identified by the real one' do
+      sign_in
+      stub_france_connect
+      identify_demo_user(userinfo: FranceConnectStubs::REQUESTED_USERINFO, instance: real_france_connect)
+      requested_in_this_journey
+      visit_space
+
+      expect(sent_to_the_real_france_connect?).to be(true)
+    end
+
+    # CA8.
+    it 'sends to the fake FranceConnect+ a deployment that declares only it' do
+      sign_in
+      identify_demo_user(userinfo: FranceConnectStubs::REQUESTED_USERINFO)
+      requested_in_this_journey
+      visit_space
+
+      expect(response.headers['Location']).to start_with(FranceConnectStubs::AUTHORIZATION_ENDPOINT)
+    end
+  end
 end

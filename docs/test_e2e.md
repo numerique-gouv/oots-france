@@ -223,7 +223,7 @@ La démarche ne connaît FranceConnect+ **que par son document de découverte** 
 
 Un jeu renseigné à moitié refuse le démarrage en nommant les variables manquantes, et une configuration qui n'en renseigne aucun aussi : une carte qui mène à un refus certain mentirait, et aucune carte sans un mot laisserait la démonstration sans porte d'entrée.
 
-Sur la pile locale comme en intégration continue, seul le faux est déclaré — son adresse et les deux constantes qu'il déclare (`features/support/fake_france_connect/clients.rb`), que `scripts/ci/prepare_environment.sh` et `.env.oots.template` écrivent sans rien à éditer à la main : le bac à sable exige un domaine déclaré, qu'aucune des deux n'a.
+Sur la pile locale comme en intégration continue, seul le faux est déclaré — son adresse et les deux constantes qu'il déclare (`features/support/fake_france_connect/clients.rb`), que `scripts/ci/prepare_environment.sh` et `.env.oots.template` écrivent sans rien à éditer à la main : le bac à sable exige un domaine déclaré, qu'aucune des deux n'a. L'espace de prévisualisation y ré-authentifie donc toujours par le faux : la dispense de ré-authentification, qui ne joue que là où le vrai est aussi déclaré ([eidas_context.md](eidas_context.md#ce-que-ce-dépôt-en-fait-aujourdhui)), n'y est jamais exercée, et les specs de requête de l'espace la couvrent.
 
 ## Les annuaires centraux sont les vrais
 
