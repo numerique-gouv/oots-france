@@ -15,6 +15,11 @@ ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
 ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] ||= '00000000000003'
 ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 ENV['URL_OOTS_FRANCE'] ||= 'http://localhost:3000'
+# API Particulier, which no example reaches: `ApiParticulierStubs` answers
+# for it.
+ENV['URL_API_PARTICULIER'] ||= 'https://particulier.test'
+ENV['JETON_API_PARTICULIER'] ||= 'jeton-api-particulier'
+ENV['SIRET_DESTINATAIRE_API_PARTICULIER'] ||= '13002526500013'
 # The fake FranceConnect+, as a development machine declares it. Only
 # `Settings` reads these: what an example sees of the declarations is what
 # `FranceConnectStubs` pins on it, so that the number of cards a page offers

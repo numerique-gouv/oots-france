@@ -35,6 +35,7 @@ RSpec.configure do |config|
   config.include DemoContractStubs
   config.include FranceConnectStubs
   config.include ProConnectStubs
+  config.include ApiParticulierStubs
   config.include RenderedText
 end
 

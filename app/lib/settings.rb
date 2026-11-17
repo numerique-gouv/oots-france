@@ -37,6 +37,9 @@ module Settings
     DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES
     DELAI_REDIRECTION_REQUETEUR_MINUTES
     DELAI_PREVISUALISATION_REQUETEUR_MINUTES
+    URL_API_PARTICULIER
+    JETON_API_PARTICULIER
+    SIRET_DESTINATAIRE_API_PARTICULIER
   ].freeze
 
   # Those of REQUIRED that are read as numbers. Their format is verified at
@@ -150,6 +153,16 @@ module Settings
     def french_provider_identity
       { id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), name: required('NOM_FOURNISSEUR_FRANCAIS') }
     end
+
+    # API Particulier, which France reads the student status from: where it
+    # answers, the token — the staging's public one, or the one DataPass delivered
+    # for another address —, and the SIRET the habilitation
+    # names, which the endpoint verifies (`recipient`).
+    def api_particulier_url = required('URL_API_PARTICULIER').delete_suffix('/')
+
+    def api_particulier_token = required('JETON_API_PARTICULIER')
+
+    def api_particulier_recipient = required('SIRET_DESTINATAIRE_API_PARTICULIER')
 
     # Where this deployment answers, and the origin the three addresses declared
     # to FranceConnect+ are built on. Read here and never from the request: the

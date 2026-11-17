@@ -3,31 +3,33 @@ require 'rails_helper'
 RSpec.describe EvidenceType do
   it { is_expected.to validate_presence_of(:id) }
 
-  # `pdf?` is what decides whether France serves at all —
-  # `EvidenceProvision::ChooseAnswer` reads it and nothing else to choose
-  # between the document and `EDM:ERR:0007`.
-  describe '#pdf?' do
-    it 'is true of a type distributed as the one document France holds' do
-      expect(build(:evidence_type)).to be_pdf
+  # `requests?` is what decides whether France serves at all —
+  # `ServedEvidenceType.distribution_for` asks it of each format a type is
+  # served in, to choose between the evidence and `EDM:ERR:0007`.
+  describe '#requests?' do
+    let(:pdf) { described_class::PDF }
+
+    it 'is true of a type distributed in the format asked about' do
+      expect(build(:evidence_type).requests?(pdf)).to be(true)
     end
 
     # `R-EDM-REQ-C032` admits several distributions, and chapter 4.5.1 §3.5
     # names the case: a human-readable format beside a structured one. France
-    # holds one document, so it answers as soon as the PDF is among them.
-    it 'is true whatever rank the PDF holds among the formats asked for' do
-      expect(build(:evidence_type, distribution_formats: ['application/xml', described_class::PDF])).to be_pdf
-      expect(build(:evidence_type, distribution_formats: [described_class::PDF, 'application/xml'])).to be_pdf
+    # serves one, so it answers as soon as it is among them.
+    it 'is true whatever rank the format holds among those asked for' do
+      expect(build(:evidence_type, distribution_formats: ['application/xml', pdf]).requests?(pdf)).to be(true)
+      expect(build(:evidence_type, distribution_formats: [pdf, 'application/xml']).requests?(pdf)).to be(true)
     end
 
     it 'is false when none of the formats asked for is the one served' do
-      expect(build(:evidence_type, distribution_formats: ['application/xml', 'image/png'])).not_to be_pdf
+      expect(build(:evidence_type, distribution_formats: ['application/xml', 'image/png']).requests?(pdf)).to be(false)
     end
 
     # What a `sdg:DistributedAs` naming no format reads as. The rule counts the
     # element and says nothing of its content, so this type is conformant and
     # simply asks for nothing France serves.
     it 'is false of a distribution that named no format at all' do
-      expect(build(:evidence_type, distribution_formats: [nil])).not_to be_pdf
+      expect(build(:evidence_type, distribution_formats: [nil]).requests?(pdf)).to be(false)
     end
   end
 
