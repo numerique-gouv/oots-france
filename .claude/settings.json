@@ -4,10 +4,6 @@
     "command": "${CLAUDE_PROJECT_DIR}/.claude/statusline/session.sh",
     "refreshInterval": 10
   },
-  "subagentStatusLine": {
-    "type": "command",
-    "command": "${CLAUDE_PROJECT_DIR}/.claude/statusline/subagent.sh"
-  },
   "attribution": {
     "commit": "",
     "pr": "",
