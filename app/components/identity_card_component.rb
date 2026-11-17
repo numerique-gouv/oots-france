@@ -1,28 +1,33 @@
-# The identity the authentication attested, as the last page before an exchange
-# shows it to the user it describes.
+# An identity, as a page shows it to the user it describes: on the
+# demonstration procedure, the one the authentication attested, as the last page
+# before an exchange; on the preview space, the one the registry wrote into the
+# evidence (chapter 4.10 §5.1, step 20).
 #
-# Chapter 2.2 §2 makes the portal answerable for the identity in the request
-# matching the one the eID means yielded, so every attribute is shown and none
-# is offered as a field.
+# Every attribute is shown and none is offered as a field: on the demonstration
+# procedure, chapter 2.2 §2 makes the portal answerable for the identity in the
+# request matching the one the eID means yielded.
 #
-# They are not all of one kind, and the card says so by its shape rather than by
-# a second heading: the civil identity is what the user recognises themself by,
-# and under a rule, in the mention register, what the authentication adds to
-# it — the level it reached and, when one was yielded, the eIDAS identifier, in
-# grey at the far end of the same line: what the request will carry, not what
-# the user recognises themself by.
+# Where the source yields them, the card sets apart by its shape rather than by
+# a second heading what the authentication adds to the civil identity: under a
+# rule, in the mention register, the level it reached and the eIDAS identifier,
+# in grey at the far end of the same line — what the request will carry, not
+# what the user recognises themself by. The registry yields neither.
 #
-# An attribute the authentication did not yield has no row: an empty value would
-# read as one the portal holds blank. The country the identity comes from never
-# appears, because no claim names it: all that could be said is that the user
-# came through the European flow, which is what they clicked a button to do.
+# An attribute the source does not carry has no row: an empty value would read
+# as one held blank. The country an attested identity comes from never appears,
+# because no claim names it.
 class IdentityCardComponent < ViewComponent::Base
   # The identity alone: what a screen says of it is derived from it here rather
   # than beside it, so that no caller can hand the card two objects describing
   # two different people.
-  def initialize(identity:)
+  #
+  # `labels`: what a caller names an attribute where its source names it
+  # otherwise — the registry's « nom de naissance » is not the « nom » an
+  # authentication yields.
+  def initialize(identity:, labels: {})
     @identity = identity
     @wording = IdentityWording.new(identity)
+    @labels = labels
     super()
   end
 
@@ -52,11 +57,11 @@ class IdentityCardComponent < ViewComponent::Base
 
   private
 
-  attr_reader :identity, :wording
+  attr_reader :identity, :wording, :labels
 
   def filled(attributes)
     attributes.filter_map do |name, value|
-      [t("components.identity_card.attributes.#{name}"), value] if value.present?
+      [labels.fetch(name) { t("components.identity_card.attributes.#{name}") }, value] if value.present?
     end
   end
 end

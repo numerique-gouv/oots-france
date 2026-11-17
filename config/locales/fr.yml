@@ -927,8 +927,9 @@ fr:
       # registre le garde. Recharger reprend à ce que le serveur en dit.
       disconnected_html: Cette page n'a pas pu joindre le service. %{reload} pour voir où en est votre demande.
       reload: Rechargez la page
-    # La carte d'identité de la démonstration. Le titre porte les deux moitiés :
-    # l'état civil et ce dont l'authentification a répondu, que rien ne
+    # La carte d'identité, de la démonstration et de l'espace de
+    # prévisualisation. Le titre est dit par la page ; sous lui, l'état civil et,
+    # quand la source le donne, ce dont l'authentification a répondu, que rien ne
     # sous-titre — la règle et le registre de mention le disent à sa place.
     #
     # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.

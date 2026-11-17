@@ -42,6 +42,16 @@ RSpec.describe 'The preview space for the student status' do
       expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
     end
 
+    it 'shows the identity in the card of an identity, under the registry\'s names and nothing else' do
+      identify
+      visit_space
+
+      card = page.at_css('main .identity-card')
+      expect(card.css('dt').map { |node| node.text.strip }).to eq(['Nom de naissance', 'Prénom', 'Date de naissance'])
+      expect(card.css('dd').map { |node| node.text.strip }).to eq(%w[Martin Jacques 2004-01-01])
+      expect(card.css('.identity-card__level, .identity-card__action')).to be_empty
+    end
+
     it 'shows nothing before the user identifies' do
       stub_france_connect(userinfo: martin_jacques)
       get space_path
@@ -55,6 +65,25 @@ RSpec.describe 'The preview space for the student status' do
       get preview_session_document_path(segment, session.token)
 
       expect(response).to have_http_status(:not_found)
+    end
+  end
+
+  describe 'a status whose identity the registry gives in part' do
+    let!(:session) do
+      partial = ApiParticulierStubs::MARTIN_JACQUES.merge(
+        'identite' => ApiParticulierStubs::MARTIN_JACQUES['identite'].merge('prenom' => nil),
+      )
+      create(:preview_session, first_request: student_status_request(flag: 'true').raw,
+        document: Base64.strict_encode64(partial.to_json))
+    end
+
+    it 'gives the missing attribute no row, and still offers the choice' do
+      identify
+      visit_space
+
+      card = page.at_css('main .identity-card')
+      expect(card.css('dt').map { |node| node.text.strip }).to eq(['Nom de naissance', 'Date de naissance'])
+      expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
     end
   end
 

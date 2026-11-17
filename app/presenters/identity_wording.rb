@@ -1,13 +1,13 @@
-# What the demonstration's form says of the identity FranceConnect+ attested.
+# What the identity card says of an identity: the one FranceConnect+ attested on
+# the demonstration procedure, the one the registry wrote on the preview space.
 #
 # On the model of `DirectoryWording`: the screen's words, held where a spec of
-# the view can reach them, and reading no request. It takes the identity rather
-# than fetching it — the controller has already read the session.
+# the view can reach them, and reading no request. It takes the identity the
+# caller already holds.
 #
-# The values themselves are shown as they came: a name, a date, a place of birth
-# are the portal's, and rewriting them would be asserting an identity nobody
-# attested. Only what has no wording of its own is worded here — the sex, whose
-# code is not a word.
+# The values themselves are shown as their source wrote them: rewriting them
+# would be asserting an identity nobody attested. Only what has no wording of
+# its own is worded here — the sex, whose code is not a word.
 class IdentityWording
   def initialize(identity)
     @identity = identity

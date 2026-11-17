@@ -1,16 +1,10 @@
 <h2 class="fr-h4"><%= t('components.student_status.identity') %></h2>
-<dl class="evidence-subject">
-  <dt><%= t('components.student_status.family_name') %></dt>
-  <dd><%= identity.family_name %></dd>
-  <dt><%= t('components.student_status.given_name') %></dt>
-  <dd><%= identity.given_name %></dd>
-  <dt><%= t('components.student_status.date_of_birth') %></dt>
-  <dd><%= identity.date_of_birth %></dd>
-</dl>
+<%= render IdentityCardComponent.new(identity: card_identity, labels: identity_labels) %>
 
-<%# Not a DSFR card: a card fills the height of its column (`height: 100%`)
-    and orders its title after anything else in its content, which a page
-    with more below it than a grid of cards cannot hold. %>
+<%# Each admission in a section and not a DSFR card: a card fills the height
+    of its column (`height: 100%`) and orders its title after anything else
+    in its content, which a page with more below it than a grid of cards
+    cannot hold. %>
 <h2 class="fr-h4 fr-mt-4w"><%= t('components.student_status.admissions') %></h2>
 <% admissions.each do |admission| %>
   <section class="fr-background-alt--grey fr-p-3w fr-mb-3w">

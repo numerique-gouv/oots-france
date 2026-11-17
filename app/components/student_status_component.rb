@@ -11,7 +11,18 @@ class StudentStatusComponent < ViewComponent::Base
     super()
   end
 
-  delegate :identity, :admissions, to: :@student_status
+  delegate :admissions, to: :@student_status
+
+  def card_identity = StudentStatus::CardIdentity.from(@student_status.identity)
+
+  # The registry's own names for what it holds: `nom_naissance` is a birth name.
+  def identity_labels
+    {
+      family_name: t('components.student_status.family_name'),
+      given_name: t('components.student_status.given_name'),
+      birthdate: t('components.student_status.date_of_birth'),
+    }
+  end
 
   def enrolment(admission) = t("components.student_status.#{admission.enrolled ? 'enrolled' : 'admitted'}")
 end
