@@ -45,6 +45,8 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Et que l'usager choisit "Ne pas l'utiliser" et valide son choix
     Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France envoie une réponse sans justificatif
+    Et la fiche de l'échange affiche "Refusé par l'usager"
+    Et le journal de l'échange contient une seule ligne "Prévisualisation terminée" de détail "refused"
 
   Scénario: un requêteur étranger en "oots-edm:v1.2" reçoit le document que l'usager a accepté
     Quand le requêteur étranger envoie en "oots-edm:v1.2" une requête qui exige la prévisualisation
@@ -78,8 +80,11 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Quand l'usager ouvre l'espace de prévisualisation
     Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
     Alors la page dit qu'aucun document ne correspond à l'usager
-    Quand le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Quand l'usager rouvre l'espace de prévisualisation
+    Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France envoie une réponse sans justificatif
+    Et la fiche de l'échange affiche "Aucun justificatif"
+    Et le journal de l'échange contient une seule ligne "Prévisualisation terminée" de détail "unmatched"
 
   Scénario: un requêteur étranger en "oots-edm:v1.2" reçoit une liste vide quand aucun document ne correspond à l'usager
     Quand le requêteur étranger envoie en "oots-edm:v1.2" une requête qui exige la prévisualisation pour le type "FR - Test without evidence match (TC18)"
@@ -90,6 +95,8 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Et la page propose de revenir à l'adresse de retour
     Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
     Alors la France envoie une réponse sans justificatif
+    Et la fiche de l'échange affiche "Aucun justificatif"
+    Et le journal de l'échange contient une seule ligne "Prévisualisation terminée" de détail "unmatched"
 
   Scénario: l'usager lit son statut étudiant sur l'espace et l'accepte, et la seconde requête le reçoit
     Quand le requêteur étranger envoie une requête qui exige la prévisualisation du statut étudiant de Martin Jacques

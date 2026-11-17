@@ -47,6 +47,13 @@ Fonctionnalité: Recevoir la requête d'un autre État membre
   Scénario: le statut étudiant d'une personne qu'API Particulier ne connaît pas est une liste vide
     Quand le requêteur étranger envoie une requête pour le statut étudiant d'une personne qu'API Particulier ne connaît pas
     Alors la France répond une liste vide, sans justificatif
+    Et la fiche de l'échange affiche "Aucun justificatif"
+
+  Scénario: une requête sans prévisualisation pour un type auquel aucun document ne correspond reçoit une liste vide
+    Quand le requêteur étranger envoie une requête sans prévisualisation pour le type "FR - Test without evidence match (TC18)"
+    Alors la France répond une liste vide, sans justificatif
+    Et la fiche de l'échange affiche "Aucun justificatif"
+    Et le journal de l'échange ne contient aucune ligne "Prévisualisation terminée"
 
   Scénario: une requête en "oots-edm:v1.2" est servie dans sa propre version
     Quand le requêteur étranger envoie une requête en "oots-edm:v1.2"

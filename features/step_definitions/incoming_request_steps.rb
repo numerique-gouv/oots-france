@@ -61,6 +61,12 @@ Quand('le requêteur étranger envoie une requête sous la démarche {string} po
   @exchange_id = @correspondent.submit(body)
 end
 
+Quand('le requêteur étranger envoie une requête sans prévisualisation pour le type {string}') do |title|
+  body = @correspondent.request(evidence_type: FakeCorrespondent::EVIDENCE_TYPES.fetch(title))
+
+  @exchange_id = @correspondent.submit(body)
+end
+
 Quand('le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, né à {string}') do |place|
   body = @correspondent.request(evidence_type: FakeCorrespondent::EVIDENCE_TYPES.fetch('FR - Student status (MESRI)'),
     subject: FakeCorrespondent::STUDENT.merge(place_of_birth: place))

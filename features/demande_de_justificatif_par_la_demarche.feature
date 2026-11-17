@@ -60,6 +60,8 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager est ramené à sa démarche
     Alors l'usager arrive sur la page des justificatifs, qui reçoit l'échange et la conversation
     Et la page des justificatifs affiche qu'aucun document n'a été envoyé à la démarche
+    Et la fiche de l'échange affiche "Aucun justificatif après prévisualisation"
+    Et le journal de l'échange contient une seule ligne "Prévisualisation terminée" de détail "refused"
 
   Scénario: aucun document ne correspond à l'usager, qui le lit sur l'espace de prévisualisation, et la démarche le dit
     Quand l'administrateur choisit la version "OOTS 2.0"
@@ -75,6 +77,8 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et la page des justificatifs affiche qu'aucun document n'a été envoyé à la démarche
     Et la page des justificatifs affiche "Redemander le document"
     Et le journal des échanges contient la seconde requête et la réception d'une réponse sans justificatif
+    Et la fiche de l'échange affiche "Aucun justificatif après prévisualisation"
+    Et le journal de l'échange contient une seule ligne "Prévisualisation terminée" de détail "unmatched"
 
   Scénario: l'usager qui a choisi la version 1.2 lit qu'aucun document ne lui correspond, et la démarche le dit
     Quand l'administrateur choisit la version "OOTS 1.2"
