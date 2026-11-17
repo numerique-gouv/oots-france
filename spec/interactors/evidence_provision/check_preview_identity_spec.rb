@@ -53,6 +53,25 @@ RSpec.describe EvidenceProvision::CheckPreviewIdentity do
     expect(session.reload.identification).to eq(PreviewSession::UNAUTHENTICATED)
   end
 
+  # OOTS-308: dispensed from identifying, recognised as after a confirmed
+  # identification, and journalled as dispensed.
+  def dispensed(granted:)
+    described_class.call(preview_session: session,
+      dispensation: instance_double(PreviewDispensation, granted?: granted, identity:))
+  end
+
+  it 'recognises a dispensed identity, and journals it as such' do
+    expect(dispensed(granted: true).verdict).to eq(:confirmed)
+    expect(session.reload.identification).to be_nil
+    expect(AuditEvent.where(event_type: 'preview_identified').pluck(:detail)).to eq([PreviewSession::DISPENSED])
+  end
+
+  it 'does nothing where the dispensation is refused' do
+    expect(dispensed(granted: false).verdict).to be_nil
+    expect(session.reload.identification).to be_nil
+    expect(AuditEvent.where(event_type: 'preview_identified')).to be_empty
+  end
+
   # Once answered, the subject is gone: nothing is checked, nor journalled.
   it 'gives no verdict once the subject is erased' do
     session.update!(first_request: nil, status: 'answered')

@@ -8,21 +8,30 @@ module EvidenceProvision
   # concludes an address still open: steps 19-20 have the user « not get access
   # to any evidences », and the second request answered `EDM:ERR:0001`.
   #
+  # A browser that may be dispensed from identifying comes with a
+  # `dispensation` in place of an identification: granted, it is journalled as
+  # such and recognised as after a confirmed one; refused, nothing happens.
+  #
   # No verdict at all where nothing could be checked: the subject already
   # erased, the answer gone.
   class CheckPreviewIdentity < ApplicationInteractor
+    RECOGNISED = [PreviewSession::CONFIRMED, PreviewSession::DISPENSED].freeze
+
     def call
       session = context.preview_session
-      return if session.first_request.nil?
+      return if session.first_request.nil? || refused_dispensation?
 
       outcome = outcome_of(context.identification, session)
       audit_trail.preview_identified(session:, outcome:)
-      outcome == PreviewSession::CONFIRMED ? confirmed(session) : failed(session, outcome)
+      outcome.in?(RECOGNISED) ? confirmed(session) : failed(session, outcome)
     end
 
     private
 
+    def refused_dispensation? = context.dispensation.present? && !context.dispensation.granted?
+
     def outcome_of(identification, session)
+      return PreviewSession::DISPENSED if context.dispensation
       return PreviewSession::UNAUTHENTICATED unless identification.success?
       return PreviewSession::MISMATCHED unless same_person?(identification.identity, session)
 
@@ -40,9 +49,11 @@ module EvidenceProvision
       remember_return(session)
       return unless session.lookup_pending?
 
-      LookUpDeferredStudentStatus.call(preview_session: session, identity: context.identification.identity,
+      LookUpDeferredStudentStatus.call(preview_session: session, identity: recognised_identity,
         clock:, uuid:, api_particulier: context.api_particulier)
     end
+
+    def recognised_identity = context.dispensation&.identity || context.identification.identity
 
     # On the 1.2 line the way back the failing visit brought is kept only
     # where none is yet, and offered to that browser alone: a refused user is

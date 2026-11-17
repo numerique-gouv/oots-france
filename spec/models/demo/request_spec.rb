@@ -21,6 +21,37 @@ RSpec.describe Demo::Request do
   # The procedure the journey plays.
   it { is_expected.to validate_presence_of(:procedure_code) }
 
+  describe '.previewed_at' do
+    let(:location) { 'https://oots.example/previsualisation/v1.2/jeton' }
+
+    def previewed(address, journey_id: 'parcours-1')
+      registered_request(SecureRandom.uuid, journey_id:, preview_address: address)
+    end
+
+    def found = described_class.previewed_at(journey_id: 'parcours-1', location:)
+
+    it 'finds the request of the journey whose link is the address' do
+      expected = previewed(location)
+
+      expect(found).to eq([expected])
+    end
+
+    # Chapter 4.9 v1.2.3 §5: the way back appended to the address for a GET.
+    it 'finds it under the way back the 1.2 line appends' do
+      expected = previewed("#{location}?returnurl=https%3A%2F%2Fportail.example&returnmethod=GET")
+
+      expect(found).to eq([expected])
+    end
+
+    it 'finds neither another journey nor another address' do
+      previewed(location, journey_id: 'parcours-2')
+      previewed("#{location}-autre")
+      previewed('https://oots.example/previsualisation/v1.2/jetons')
+
+      expect(found).to be_empty
+    end
+  end
+
   describe '#answers?' do
     # Chapter 4.4 §4.3.2 gives each identifier its own job, so both are asked of
     # a delivery.

@@ -38,6 +38,15 @@ module Demo
       where(journey_id:, requirement_uuid:).order(:created_at, :id).last&.country_code
     end
 
+    # A request of the journey whose preview link leads to `location`: the
+    # address as the space issued it, or followed by the way back the 1.2 line
+    # appends to it for a `GET` (`PreviewLink`).
+    def self.previewed_at(journey_id:, location:)
+      where(journey_id:)
+        .where('preview_address = :location OR preview_address LIKE :prefix',
+          location:, prefix: "#{sanitize_sql_like(location)}?%")
+    end
+
     # Chapter 4.4 §4.3.2 gives each identifier its own job — the `ExchangeId`
     # ties together the messages of one exchange, the `ConversationId` ties them
     # to one authenticated user — so a delivery is asked for both: one naming

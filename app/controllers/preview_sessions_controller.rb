@@ -2,10 +2,12 @@
 # another member state through the address France issued. No operator session:
 # the unpredictable address finds the request, and the user identifies again
 # through FranceConnect+ before anything of it is shown (§2, steps 15-17) —
-# `PreviewIdentificationsController` receives them back.
+# `PreviewIdentificationsController` receives them back — unless
+# `PreviewDispensation` waives it for the demonstration procedure.
 class PreviewSessionsController < ApplicationController
   include ChosenLanguage
   include RecognisesPreviewIdentity
+  include DemoIdentityCookie
 
   # What of a correspondent's way back the cookie of the departure carries
   # through the identification, in the bytes the cookie serialises it to: four
@@ -17,6 +19,7 @@ class PreviewSessionsController < ApplicationController
   def show
     return render(:show, status: :not_found) if @session.nil?
 
+    dispense_identification
     EvidenceProvision::RecordPreviewVisit.call(preview_session: @session, location: request.original_url,
       return_url: params[:returnurl], return_method: params[:returnmethod], identified: confirmed?)
     return depart_to_identify if @preview.identification_required?
@@ -58,7 +61,8 @@ class PreviewSessionsController < ApplicationController
   # is an address France never issued.
   def find_session
     @session = PreviewSession.issued(token: params[:token], version: params[:version])
-    @preview = PreviewSessionPresenter.new(@session, first_request: read_first_request, verdict:)
+    @first_request = read_first_request
+    @preview = PreviewSessionPresenter.new(@session, first_request: @first_request, verdict:)
   end
 
   def verdict = @session && preview_verdict(@session.token)
@@ -71,11 +75,32 @@ class PreviewSessionsController < ApplicationController
     RetrievedMessageParser.new(raw).body if raw
   end
 
+  # Recognised as after a confirmed identification, and for this address
+  # alone, where `PreviewDispensation` grants it; the page is then read with
+  # the verdict just written.
+  def dispense_identification
+    return unless @preview.identification_required?
+
+    recognised = EvidenceProvision::CheckPreviewIdentity.call(preview_session: @session, dispensation:,
+      return_url: params[:returnurl], return_method: params[:returnmethod]).verdict
+    return unless recognised
+
+    remember_preview_verdict(@session.token, recognised)
+    @preview = PreviewSessionPresenter.new(@session, first_request: @first_request, verdict: recognised)
+  end
+
+  def dispensation
+    PreviewDispensation.new(identity: demo_identity, journey: Demo::Journey.from_session(session[:demo_journey]),
+      preview_session: @session, beneficiary: @first_request&.beneficiary, instance: preview_france_connect)
+  end
+
+  def preview_france_connect = Settings.preview_france_connect_instance
+
   # The FranceConnect+ the deployment declares for the space, with no choice
   # offered; the departure keeps what the return needs to find this address
   # again, and the way back a 1.2 visit brought (chapter 4.9 v1.2.3 §5).
   def depart_to_identify
-    instance = Settings.preview_france_connect_instance
+    instance = preview_france_connect
     return no_france_connect if instance.nil?
 
     result = Demo::StartIdentification.call(instance:, return_path: preview_franceconnect_retour_connexion_path)

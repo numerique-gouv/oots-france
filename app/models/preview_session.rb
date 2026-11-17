@@ -34,10 +34,12 @@ class PreviewSession < ApplicationRecord
   # must leave be: the user deciding, or the failure answering.
   ANSWER_DUE = [*HOLDING, 'failed'].freeze
 
-  # The three outcomes of that check, as the journal records them. The column
-  # keeps only the two that conclude the address (§2, steps 19-20); a
-  # confirmed identity belongs to the browser that obtained it.
+  # The outcomes of that check, as the journal records them — `dispensed` where
+  # the space waived it (`PreviewDispensation`). The column keeps only the two
+  # that conclude the address (§2, steps 19-20); a confirmed or dispensed
+  # identity belongs to the browser that obtained it.
   CONFIRMED = 'confirmed'.freeze
+  DISPENSED = 'dispensed'.freeze
   MISMATCHED = 'mismatched'.freeze
   UNAUTHENTICATED = 'unauthenticated'.freeze
   FAILED_IDENTIFICATIONS = [MISMATCHED, UNAUTHENTICATED].freeze

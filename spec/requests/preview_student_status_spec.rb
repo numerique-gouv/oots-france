@@ -158,6 +158,23 @@ RSpec.describe 'The preview space for the student status' do
       expect(heading).to eq('Aucun document ne vous correspond')
     end
 
+    # OOTS-308 CA9: dispensed from identifying, the registry asked on the
+    # identity the demonstration procedure holds of the fake FranceConnect+.
+    it 'asks API Particulier on the identity of the fake FranceConnect+, without sending the user to identify' do
+      stub_student_status
+      sign_in
+      identify_demo_user(userinfo: martin_jacques.merge('birthplace' => 'Aarhus'))
+      stub_real_france_connect
+      registered_request(SecureRandom.uuid, preview_address: session.location,
+        journey_id: Demo::Journey.from_session(request.session[:demo_journey]).id)
+      get space_path
+
+      expect(response).to have_http_status(:ok)
+      expect(student_status_asked(ApiParticulierStubs::MARTIN_JACQUES_QUERY.merge('sexeEtatCivil' => 'M')))
+        .to have_been_made.once
+      expect(page.text).to include('Université Paris Nanterre')
+    end
+
     # CA14.
     describe 'when API Particulier fails' do
       before { stub_student_status(status: 502, body: '{}') }
