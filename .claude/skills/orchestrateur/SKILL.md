@@ -75,7 +75,7 @@ Agent(subagent_type: "ouvrier",
       prompt: "OOTS-131")
 ```
 
-Le `description` nomme l'instance dans le panneau d'agents et **est le seul champ qui y parvienne** — [`subagent.sh`](../../statusline/subagent.sh) le lit ; sans lui, trois ouvriers deviennent indiscernables. **Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan ; le second est identique au premier.
+Le `description` nomme l'instance dans le panneau d'agents ; sans lui, trois ouvriers deviennent indiscernables. **Un ticket demande deux lancements**, la planification et l'implémentation étant deux invocations séparées par le fichier de plan ; le second est identique au premier.
 
 **Le prompt est l'identifiant du ticket, rien d'autre.** Ce qui est sur disque — le plan, le ticket, ce que le planificateur en a écrit — ne voyage jamais dans le prompt : il les lira, et une paraphrase crée une seconde source, moins fiable que la première. Ce que lui seul ne peut pas savoir y tient en une phrase : qu'un autre travaille dans les mêmes fichiers (§ 2), qu'une PR dont il dépend n'est pas fusionnée, une décision que l'utilisateur vient de rendre — qui va **aussi** en commentaire du ticket ; une correction d'un plan approuvé va dans le fichier de plan, pas dans le prompt. Commis le 2026-09-14 sur [OOTS-214](https://linear.app/pole-api/issue/OOTS-214) : le prompt a recopié « libres de conflit » en « ne touche ni l'un ni l'autre », sur deux fichiers que le ticket exigeait de modifier ; l'ouvrier a contesté et a eu raison, ce sur quoi on ne peut pas compter.
 

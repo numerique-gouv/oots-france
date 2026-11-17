@@ -36,7 +36,7 @@ mkdir -p <principal>/.claude/etapes
 printf 'opening\n' > <principal>/.claude/etapes/OOTS-<n>
 ```
 
-**Une étape ne s'éteint pas toute seule** : elle s'affiche jusqu'à ce que tu en déclares une autre, donc un détour qui se termine se déclare aussi — le conflit résolu, tu réécris `review`. Ce qui s'affiche est le plus récent entre ce fichier et ton dernier verdict : un ouvrier relancé après `LIVRÉ` redevient visible en déclarant son étape.
+**Une étape ne s'éteint pas toute seule** : elle vaut jusqu'à ce que tu en déclares une autre, donc un détour qui se termine se déclare aussi — le conflit résolu, tu réécris `review`. Ce qui s'affiche est le plus récent entre ce fichier et ton dernier verdict : un ouvrier relancé après `LIVRÉ` redevient visible en déclarant son étape.
 
 ### 1. Ouvrir — lire le ticket, passer en cours, se créer un worktree
 
