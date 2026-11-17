@@ -8,8 +8,9 @@ class AccessPointRow
 
   delegate :name, :identifier, :endpoint, to: :@party
 
-  # Ordered by `rank`. A test kept for a party the PMode no longer lists says
-  # nothing of today's connectivity, whatever its outcome, hence last.
+  # Ordered by `rank`: connected, pending, then the other declared parties. A
+  # test kept for a party the PMode no longer lists says nothing of today's
+  # connectivity, whatever its outcome, hence last.
   # `countries` maps the codes of the country list to their names;
   # `certificates` are the entries of the gateway's truststore, stored under
   # the names of the parties — Java keystore aliases, which ignore case.
@@ -68,8 +69,10 @@ class AccessPointRow
   private
 
   def group
-    return 2 unless declared?
+    return 3 unless declared?
+    return 0 if test&.acknowledged?
+    return 1 if test&.pending?
 
-    test&.acknowledged? ? 0 : 1
+    2
   end
 end

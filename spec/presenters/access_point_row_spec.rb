@@ -32,6 +32,27 @@ RSpec.describe AccessPointRow do
     expect(rows.map(&:country_code)).to eq(%w[FR EL] + [nil])
   end
 
+  it 'lists the connected parties, then the pending ones, then the others, never tested and failed alike' do
+    parties = %w[AP_AT_01 AP_BE_01 AP_DE_01 AP_EL_01 AP_FI_01].map { |name| party(name) }
+    tests = [
+      build(:connectivity_test, :acknowledged, party_name: 'AP_FI_01'),
+      build(:connectivity_test, party_name: 'AP_EL_01'),
+      build(:connectivity_test, party_name: 'AP_DE_01'),
+      build(:connectivity_test, :submitted, party_name: 'AP_BE_01', outcome: ConnectivityTest::FAILED),
+    ]
+    countries = { 'AT' => 'Autriche', 'BE' => 'Belgique', 'DE' => 'Allemagne', 'EL' => 'Grèce', 'FI' => 'Finlande' }
+
+    expect(names(parties, tests, countries)).to eq(%w[AP_FI_01 AP_DE_01 AP_EL_01 AP_AT_01 AP_BE_01])
+  end
+
+  it 'leaves a pending test of a party no longer declared at the bottom' do
+    tests = [build(:connectivity_test, party_name: 'AP_ZZ_01',
+      party_identifier_type: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:ZZ')]
+
+    expect(names([party('AP_FR_01'), party('ec_support_acc', 'oots')], tests, { 'FR' => 'France', 'ZZ' => 'Zédie' }))
+      .to eq(%w[AP_FR_01 ec_support_acc AP_ZZ_01])
+  end
+
   it 'orders a group by the name of the country, then by the name of the party' do
     parties = [party('SDG-OOP-AT-SCONAP-Q', 'AT'), party('AP_BE_01'), party('AP_AT_01')]
 

@@ -206,16 +206,18 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
 
       before { stub_code_list(countries: every_country) }
 
-      it 'reads the connected parties first, then the others, each by country, the platforms last' do
+      it 'reads the connected parties first, then the pending ones, then the others, each by country, the platforms last' do
         gateway_listing
         create(:connectivity_test, :acknowledged, party_name: 'AP_SE_01')
         create(:connectivity_test, :acknowledged, party_name: 'AP_AT_01')
-        create(:connectivity_test, :submitted, party_name: 'AP_EL_01', outcome: 'refused_for_configuration')
+        create(:connectivity_test, party_name: 'AP_PT_01')
+        create(:connectivity_test, party_name: 'AP_EL_01')
+        create(:connectivity_test, :submitted, party_name: 'AP_BE_01', outcome: 'refused_for_configuration')
 
         get admin_common_services_access_points_path
 
-        expect(names_on_page).to eq(%w[AP_AT_01 AP_SE_01 AP_DE_01 AP_BE_01 AP_ES_01 AP_FI_01 AP_FR_01 AP_EL_01
-                                       AP_IT_01 AP_NL_01 AP_PT_01 ec_support_acc])
+        expect(names_on_page).to eq(%w[AP_AT_01 AP_SE_01 AP_EL_01 AP_PT_01 AP_DE_01 AP_BE_01 AP_ES_01 AP_FI_01
+                                       AP_FR_01 AP_IT_01 AP_NL_01 ec_support_acc])
       end
 
       it 'reads two parties of one country by name, before the next country' do
@@ -226,6 +228,17 @@ RSpec.describe 'Admin::CommonServices::AccessPoints' do
         get admin_common_services_access_points_path
 
         expect(names_on_page).to eq(%w[AP_AT_01 SDG-OOP-AT-SCONAP-Q AP_BE_01])
+      end
+
+      it 'leaves a pending test of a party the PMode no longer declares at the bottom, marked' do
+        gateway_listing
+        create(:connectivity_test, party_name: 'AP_ZZ_01',
+          party_identifier_type: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:ZZ')
+
+        get admin_common_services_access_points_path
+
+        expect(names_on_page.last).to eq('AP_ZZ_01')
+        expect(row('AP_ZZ_01').text).to include('absent du PMode chargé')
       end
 
       it 'leaves a connected party the PMode no longer declares at the bottom, marked' do
