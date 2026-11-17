@@ -53,10 +53,14 @@ class PreviewSession < ApplicationRecord
   validates :decision, inclusion: { in: DECISIONS }, allow_nil: true
   validates :identification, inclusion: { in: FAILED_IDENTIFICATIONS }, allow_nil: true
 
-  # T2 of chapter 4.4 §4.4.3, counted from the issue: neither visited in time
-  # nor joined by a second request.
+  # T2 of chapter 4.4 §4.4.3, counted from the issue, waits for the user to
+  # reach the preview space and for the second request: where either is
+  # missing, the link has expired, and a second request already held is
+  # answered at once (chapter 4.9 §2, step 14). A decided address was reached,
+  # deciding taking it open.
   scope :past_redirection, lambda {
-    where(status: HOLDING, second_request_sent_at: nil, issued_at: ...Settings.preview_redirection_timeout.ago)
+    where(issued_at: ...Settings.preview_redirection_timeout.ago)
+      .and(where(status: HOLDING, second_request_sent_at: nil).or(where(status: 'pending', first_visited_at: nil)))
   }
 
   # T3, counted from the ebMS stamp of the second request as T1 is from the
@@ -138,18 +142,19 @@ class PreviewSession < ApplicationRecord
   end
 
   # Chapter 4.9 §2, step 14: the link expires with T2 where no second request
-  # came, with T3 where the user has not decided since it did.
+  # came or the user never reached it, with T3 where the user, having reached
+  # it, has not decided since the second request came.
   def expired?
     return true if status == 'expired'
-    return issued_at < Settings.preview_redirection_timeout.ago if second_request_sent_at.nil? && status.in?(HOLDING)
+    return false unless status.in?(HOLDING)
 
-    pending? && second_request_sent_at < Settings.preview_decision_timeout.ago
+    (past_redirection? && redirection_missing?) || past_decision?
   end
 
   # Chapter 4.9 §4: a first visit within T2, a revisit until expiry, and no
   # interaction once the choice has been made.
   def openable?
-    pending? && !expired? && (first_visited_at.present? || issued_at >= Settings.preview_redirection_timeout.ago)
+    pending? && !expired? && (first_visited_at.present? || !past_redirection?)
   end
 
   # Chapter 4.9 §2, step 12, and 4.7 §2.5.2: the second request names an
@@ -264,6 +269,14 @@ class PreviewSession < ApplicationRecord
   end
 
   private
+
+  def past_redirection? = issued_at < Settings.preview_redirection_timeout.ago
+
+  def redirection_missing? = second_request_sent_at.nil? || (pending? && first_visited_at.nil?)
+
+  def past_decision?
+    pending? && second_request_sent_at.present? && second_request_sent_at < Settings.preview_decision_timeout.ago
+  end
 
   def conclude_failed!(**concluded)
     with_lock do

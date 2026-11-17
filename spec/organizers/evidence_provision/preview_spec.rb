@@ -240,8 +240,37 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(PreviewSession.count).to eq(0)
     end
 
+    # CA1 and CA4 of OOTS-307: a link nobody opened expires at T2, and the
+    # second request already held is answered then rather than at T3.
+    it 'answers the timeout at T2 to a second request held for a link nobody opened' do
+      deliver(following, 'm002')
+      travel(17.minutes) { ExpirePreviewSessionsJob.perform_now }
+
+      answer = body_of(submitted.last)
+      expect(exception_of(answer).attributes.transform_values(&:value))
+        .to include('type' => 'rs:TimeoutExceptionType', 'code' => 'EDM:ERR:0005')
+      expect(answer.root['requestId']).to eq("urn:uuid:#{second_id}")
+      expect(slot(answer, 'PreviewLocation')).to be_nil
+      expect(Nokogiri::XML(submitted.last).to_s).to include(first.exchange_id, first.conversation_id)
+      expect(AuditEvent.where(event_type: 'error_sent').pluck(:edm_error_code)).to include('EDM:ERR:0005')
+      expect(AuditEvent.find_by(event_type: 'preview_decided').detail).to eq(AuditEvent::UNDECIDED)
+      expect(PreviewSession.sole).to have_attributes(status: 'expired', first_request: nil, document: nil,
+        second_request: nil)
+    end
+
+    # CA3 of OOTS-307: opened within T2, the link waits for T3.
+    it 'answers nothing at T2 for a link opened in time' do
+      PreviewSession.sole.visited!
+      deliver(following, 'm002')
+      travel(17.minutes) { ExpirePreviewSessionsJob.perform_now }
+
+      expect(submitted.size).to eq(1)
+      expect(PreviewSession.sole).to be_openable
+    end
+
     # CA25: past T3, the sweep answers the timeout and says the user left.
     it 'answers the timeout once T3 runs out on an undecided user' do
+      PreviewSession.sole.visited!
       deliver(following, 'm002')
       travel(41.minutes) { perform_enqueued_jobs { ExpirePreviewSessionsJob.perform_now } }
 
@@ -417,12 +446,14 @@ RSpec.describe 'The preview France offers as a provider' do
         expect(AuditEvent.where(event_type: 'response_sent').count).to eq(1)
       end
 
-      # CA4 and CA5: T3 without a visit, the timeout, and still no decision.
-      it 'answers the timeout once T3 runs out on a user who never opened the page' do
+      # CA4 and CA5, and CA4 of OOTS-307: T2 without a visit, the timeout, and
+      # still no decision.
+      it 'answers the timeout once T2 runs out on a user who never opened the page' do
         deliver(following, 'm002')
-        travel(41.minutes) { perform_enqueued_jobs { ExpirePreviewSessionsJob.perform_now } }
+        travel(17.minutes) { ExpirePreviewSessionsJob.perform_now }
 
         expect(exception_of(body_of(submitted.last))['code']).to eq('EDM:ERR:0005')
+        expect(AuditEvent.where(event_type: 'error_sent').pluck(:edm_error_code)).to include('EDM:ERR:0005')
         expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
       end
 
@@ -499,6 +530,21 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(second_exchange).not_to eq(first_exchange)
       expect(lines.pluck(:event_type)).to include('request_received', 'response_sent')
       expect(lines.pluck(:exchange_id)).to all(eq(second_exchange.exchange_id))
+    end
+
+    # CA1 of OOTS-307, on the 1.2 line.
+    it 'answers the timeout at T2 to a second request held for a link nobody opened' do
+      second_id = SecureRandom.uuid
+      deliver(second(line: :v1_2, request_id: second_id), 'm002')
+      travel(17.minutes) { ExpirePreviewSessionsJob.perform_now }
+
+      answer = body_of(submitted.last)
+      expect(exception_of(answer)['code']).to eq('EDM:ERR:0005')
+      expect(answer.root['requestId']).to eq("urn:uuid:#{second_id}")
+      expect(slot(answer, 'SpecificationIdentifier')).to eq('oots-edm:v1.2')
+      expect(slot(answer, 'PreviewLocation')).to be_nil
+      expect(Nokogiri::XML(submitted.last).to_s).to include(first.conversation_id)
+      expect(Exchange.find_by(request_id: "urn:uuid:#{second_id}").status).to eq('failed')
     end
 
     it 'refuses a ReturnLocation under R-EDM-REQ-S019' do

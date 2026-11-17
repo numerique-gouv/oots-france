@@ -160,8 +160,27 @@ RSpec.describe PreviewSession do
       travel(17.minutes) { expect(session).to be_expired }
     end
 
-    it 'expires at T3 after the second request, the user undecided' do
+    # RG1 of OOTS-307: the second request does not keep alive a link nobody
+    # reached within T2.
+    it 'expires at T2 a link never opened, even once the second request came' do
       hold
+
+      travel(15.minutes) { expect(session.reload).not_to be_expired }
+      travel(17.minutes) do
+        expect(session.reload).to be_expired
+        expect(described_class.past_redirection).to eq([session])
+      end
+    end
+
+    # RG3 of OOTS-307: opened within T2, the link lives until T3.
+    it 'expires at T3 after the second request, the user having opened the link without deciding' do
+      session.visited!
+      hold
+
+      travel(17.minutes) do
+        expect(session.reload).not_to be_expired
+        expect(described_class.past_redirection).to be_empty
+      end
       travel(41.minutes) { expect(session.reload).to be_expired }
     end
 
@@ -181,7 +200,7 @@ RSpec.describe PreviewSession do
 
     it 'keeps only what answering the second request still needs' do
       hold
-      travel(41.minutes) { session.expire! }
+      travel(17.minutes) { session.expire! }
 
       expect(session.reload).to have_attributes(document: nil, first_request: nil, decision: nil,
         second_message_id: 'second-message')
