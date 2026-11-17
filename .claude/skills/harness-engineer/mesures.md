@@ -176,7 +176,7 @@ grep -oHE '~/\.claude/[A-Za-z0-9_./-]+' CLAUDE.md CLAUDE.local.md .claude/agents
   | sed -E 's/[.,)]*$//' | sort -u | while IFS= read -r l; do p=${l#*:}; [ -e "${p/#\~/$HOME}" ] || echo "$l"; done
 # les verdicts que la statusline connaît sont ceux de l'ouvrier
 V='PLANIFIÉ|PLAN|ARBITRAGE|LIVRÉ|ÉCRAN|INTERROMPU|BLOQUÉ'   # la même alternance des deux côtés, sinon le contrôle invente un écart
-grep -oE "$V" .claude/statusline/session.sh | sort -u
+grep -oE "$V" .claude/statusline/ouvriers.sh | sort -u
 grep -oE "^\| \`?($V)\`?" .claude/agents/ouvrier.md | sort -u
 # les tableaux de CLAUDE.md nomment les fichiers qui existent
 ls .claude/skills .claude/agents
