@@ -27,7 +27,7 @@
     </h2>
 
     <p class="fr-mb-2w">
-      <%= render ExchangeStatusComponent.new(status: exchange.status) %>
+      <%= render ExchangeStatusComponent.new(exchange:) %>
       <span class="fr-text--sm fr-ml-1w">
         <%= t("admin.journal.exchanges.directions.#{exchange.direction}") %> ·
         <%= exchange.procedure_code.presence || '—' %> ·

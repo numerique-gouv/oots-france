@@ -96,7 +96,7 @@ module EvidenceProvision
       case outcome
       when nil then Answers::Withheld.new
       when PreviewSession::ACCEPTED then previewed(session)
-      else empty_list
+      else empty_list(declined: outcome == PreviewSession::REFUSED)
       end
     end
 
@@ -112,10 +112,11 @@ module EvidenceProvision
       served_with(body, session.document_bytes)
     end
 
-    def empty_list
+    def empty_list(declined: false)
       body = EvidenceResponseBuilder.new(requester:, request_id:, specification:, uuid:)
 
-      Answers::EmptyList.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id)
+      Answers::EmptyList.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id,
+        declined:)
     end
   end
 end

@@ -31,12 +31,14 @@ class Exchange < ApplicationRecord
   IN_PROGRESS = %w[pending sent].freeze
 
   # Where France asks, an exchange goes pending → sent → delivered, preview and
-  # deferral aside; where it answers, pending → delivered, deferred or failed.
-  # `declined` — the user saw the evidence in a correspondent's preview space and
-  # used none of it, which chapter 4.9 §1 has the second response say with an
-  # empty list: an outcome, and not a failure. `unmatched` — the same empty list
-  # answering the first request, no preview having taken place: the provider
-  # found no evidence to match, chapter 4.9 §2, step 4.
+  # deferral aside; where it answers, pending → delivered, declined, unmatched,
+  # deferred or failed. `declined` — the user saw the evidence in a preview
+  # space and used none of it, which chapter 4.9 §1 has the second response say
+  # with an empty list: an outcome, and not a failure. France asking cannot
+  # tell that list from the one answering a user nothing matched after the
+  # preview, and reads both so. `unmatched` — the empty list where the provider
+  # found no evidence to match: answering the first request, chapter 4.9 §2,
+  # step 4, or, France answering, the second once its user read so.
   # `preview_required` — the user must visit a preview space before the
   # answer — is where either side stands between the two round trips of
   # chapter 4.9: France asking, a correspondent sent it there; France answering,

@@ -1961,6 +1961,8 @@ en:
           declined: Declined by the user
           unmatched: No evidence
           failed: Failed
+        outgoing_statuses:
+          declined: No evidence after preview
         attributes:
           direction: Direction
           specification: Version

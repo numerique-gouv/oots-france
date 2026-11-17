@@ -2771,6 +2771,12 @@ fr:
           declined: Refusé par l'usager
           unmatched: Aucun justificatif
           failed: Échec
+        # Le statut `declined` d'un échange émis : la France, requêteur, reçoit la
+        # même liste vide que l'usager ait refusé le justificatif ou qu'aucun ne
+        # lui corresponde (chapitre 4.9 §1), et rien dans la réponse ne départage
+        # les deux.
+        outgoing_statuses:
+          declined: Aucun justificatif après prévisualisation
         # Ce que la fiche met en tête de ligne.
         attributes:
           direction: Sens
