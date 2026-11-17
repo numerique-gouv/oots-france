@@ -1,16 +1,25 @@
 #!/bin/sh
 # Les ouvriers d'une session, un par ligne, en TSV :
-#   ticket  état  libellé  étape déclarée  secondes depuis le dernier geste
+#   ticket  état  libellé  étape déclarée  secondes depuis le dernier geste  agent
 # L'état vaut `rendu` (le libellé dit le verdict, ou l'étape déclarée depuis),
 # `actif` (un geste il y a moins de 45 s) ou `endormi`. Un champ vide vaut
 # `-`, sans quoi `read` fondrait deux tabulations en une. Un ouvrier dont
-# l'étape vaut `merged` n'est pas listé.
+# l'étape vaut `merged` n'est pas listé. L'agent est l'identifiant du
+# sous-agent, celui de son transcript `agent-<id>.jsonl` et de `$.agent.list()`,
+# par lequel le panneau ouvre sa vue.
+#
+# Avec `--tous`, les autres sous-agents suivent, un par ligne aussi : ticket
+# `-`, état `actif` ou `endormi`, et pour libellé le `description` que le
+# lanceur a passé à l'appel `Agent`, que le harnais garde dans le
+# `agent-<id>.meta.json` voisin du transcript.
 #
 # Lu par `session.sh` pour sa seconde ligne et par le mod `ouvriers`, qui en
 # fait un panneau : une seule lecture de l'étape et des verdicts pour les deux.
 #
-# Usage : ouvriers.sh <transcript de la session, ou son identifiant> [répertoire du dépôt]
+# Usage : ouvriers.sh [--tous] <transcript de la session, ou son identifiant> [répertoire du dépôt]
 
+TOUS=''
+[ "$1" = --tous ] && { TOUS=1; shift; }
 SESSION=$1
 RACINE=${2:-.}
 
@@ -36,13 +45,22 @@ TAB=$(printf '\t')
 
 for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   [ -f "$F" ] || continue
+  AGENT=${F##*/agent-}
+  AGENT=${AGENT%.jsonl}
 
   # Premier tour = l'invite qu'on lui a passée. « OOTS-<n> » signe un ouvrier ;
   # une invite de plusieurs lignes peut en nommer d'autres, seul le premier compte.
   TICKET=$(head -1 "$F" 2>/dev/null \
     | jq -r 'select(.type=="user") | (.message.content | if type=="string" then . else "" end)' 2>/dev/null \
     | grep -oE '^OOTS-[0-9]+' | head -1)
-  [ -n "$TICKET" ] || continue
+  if [ -z "$TICKET" ]; then
+    [ -n "$TOUS" ] || continue
+    DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
+    if [ "$DEPUIS_S" -lt 45 ]; then ETAT=actif; else ETAT=endormi; fi
+    DESCRIPTION=$(jq -r '.description // empty' "${F%.jsonl}.meta.json" 2>/dev/null | tr -d '\t\r\n')
+    printf -- '-\t%s\t%s\t-\t%s\t%s\n' "$ETAT" "${DESCRIPTION:--}" "$DEPUIS_S" "$AGENT"
+    continue
+  fi
 
   ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
   DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n\t')
@@ -82,7 +100,7 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
   # son travail effacerait la déclaration qu'on vient d'écrire.
   DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
   if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
-    printf '%s\trendu\t%s\t%s\t%s\n' "$TICKET" "$DECLAREE" "$DECLAREE" "$DEPUIS_S"
+    printf '%s\trendu\t%s\t%s\t%s\t%s\n' "$TICKET" "$DECLAREE" "$DECLAREE" "$DEPUIS_S" "$AGENT"
     continue
   fi
 
@@ -99,13 +117,13 @@ for F in "$SOUS_AGENTS"/agent-*.jsonl; do
     BLOQUÉ)     LIBELLE='blocked' ;;
   esac
   if [ -n "$LIBELLE" ]; then
-    printf '%s\trendu\t%s\t%s\t%s\n' "$TICKET" "$LIBELLE" "${DECLAREE:--}" "$DEPUIS_S"
+    printf '%s\trendu\t%s\t%s\t%s\t%s\n' "$TICKET" "$LIBELLE" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT"
     continue
   fi
 
   # Sans verdict, il travaille encore.
   if [ "$DEPUIS_S" -lt 45 ]; then ETAT=actif; else ETAT=endormi; fi
-  printf '%s\t%s\t-\t%s\t%s\n' "$TICKET" "$ETAT" "${DECLAREE:--}" "$DEPUIS_S"
+  printf '%s\t%s\t-\t%s\t%s\t%s\n' "$TICKET" "$ETAT" "${DECLAREE:--}" "$DEPUIS_S" "$AGENT"
 done
 
 exit 0

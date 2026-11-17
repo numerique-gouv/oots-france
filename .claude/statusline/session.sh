@@ -90,7 +90,7 @@ ENDORMIS=""
 UN_ACTIF=""
 TAB=$(printf '\t')
 
-while IFS="$TAB" read -r TICKET ETAT LIBELLE ETAPE DEPUIS_S; do
+while IFS="$TAB" read -r TICKET ETAT LIBELLE ETAPE DEPUIS_S AGENT; do
   case "$ETAT" in
     rendu)   RENDUS="$RENDUS  ⚒ $TICKET ($LIBELLE)" ;;
     # Celui qui vient d'agir est affiché par le panneau d'agents : ne pas le
