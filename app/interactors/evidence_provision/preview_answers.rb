@@ -53,8 +53,8 @@ module EvidenceProvision
     # with the timeout exception step 14 names. The request is otherwise held,
     # and answered as the user decided — or not yet, if they have not.
     #
-    # Replayed by `AnswerAfterPreview` once the user decides, or once T3 runs
-    # out: the session then already holds this very message.
+    # Replayed by `AnswerAfterPreview` once the user decides, or once the
+    # address expires: the session then already holds this very message.
     def second_exchange
       session = issued_session
       return refusal(EdmException::INVALID_REQUEST.with_detail(UNKNOWN_PREVIEW)) if session.nil?

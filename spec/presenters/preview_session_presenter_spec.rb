@@ -9,6 +9,19 @@ RSpec.describe PreviewSessionPresenter do
     expect(I18n.with_locale(:en) { presenter.document_size }).to eq('1.5 KB')
   end
 
+  # CA4 of OOTS-307: a link nobody opened within T2 reads as run out, even once
+  # the second request came, before the sweep as after it, which no longer
+  # holds the first request nor the document.
+  it 'says the time is up on a link never opened past T2, the second request held' do
+    session = create(:preview_session, issued_at: 17.minutes.ago, second_request: '<second/>',
+      second_request_sent_at: 16.minutes.ago)
+
+    expect(described_class.new(session)).to have_attributes(state: :expired, identification_required?: false)
+    session.expire!
+    expect(described_class.new(session.reload).state).to eq(:expired)
+    expect(session).to have_attributes(first_request: nil, document: nil)
+  end
+
   # Nothing of the request before the identity check, and a refusal instead
   # of it once failed.
   describe 'the identity check' do
