@@ -24,9 +24,10 @@ class StudentStatus
     title: 'Attestation de statut étudiant')
   DISTRIBUTIONS = [DATA, ATTESTATION].freeze
 
-  # The data where the request asks for it, alone or beside the PDF — both in
-  # one package are OOTS-292 —; the attestation where it asks for the PDF
-  # alone; none otherwise.
+  # The data where the request asks for it, alone or beside the PDF; the
+  # attestation where it asks for the PDF alone; none otherwise. One
+  # distribution per response: chapter 4.5.2 §2.1 asks for « at least one of
+  # the requested distributions », and §4 leaves the others to a « may ».
   def self.distribution_for(evidence_type)
     DISTRIBUTIONS.find { |distribution| evidence_type.requests?(distribution.format) }
   end
