@@ -24,13 +24,14 @@ class PreviewSession < ApplicationRecord
   # `pending` until the outcome is settled — the user decides, or reads that
   # no document matches them —, `decided` until the answer has gone, then
   # `answered`; `expired` where T2 or T3 ran out first. `failed` where the
-  # identity check of chapter 4.9 §2 failed instead, until its exception has
-  # gone: neither T2 nor T3 sweeps it, there being nothing left to wait for.
+  # identity check of chapter 4.9 §2 failed instead, or the registry asked
+  # once the user identified, until its exception has gone: neither T2 nor T3
+  # sweeps it, there being nothing left to wait for.
   STATUSES = %w[pending decided failed answered expired].freeze
   HOLDING = %w[pending decided].freeze
   RETURN_METHODS = %w[GET POST PUT].freeze
   # Where an answer to the second request is still due, which the T1 sweep
-  # must leave be: the user deciding, or the check that failed answering.
+  # must leave be: the user deciding, or the failure answering.
   ANSWER_DUE = [*HOLDING, 'failed'].freeze
 
   # The three outcomes of that check, as the journal records them. The column
@@ -79,12 +80,14 @@ class PreviewSession < ApplicationRecord
   # `exchange_id` names the row the first request opened: on the 1.2 line, one
   # France minted, the header carrying none. No document where none matches
   # the user, and `unmatched` then says so — outside the subject, since it
-  # holds of the evidence type, and outlives it.
-  def self.issue(token:, exchange_id:, conversation_id:, specification:, first_request:, document: nil,
-                 evidence_id: nil, evidence_issued_at: nil)
+  # holds of the evidence type or of the registry, and outlives it. No document
+  # either where the registry is still to be asked, once the user has
+  # identified: `lookup_pending` says so.
+  def self.issue(token:, exchange_id:, conversation_id:, specification:, first_request:, unmatched: false,
+                 lookup_pending: false, document: nil, evidence_id: nil, evidence_issued_at: nil)
     create!(
       token:, location: location_for(token, specification), issued_at: Time.current,
-      exchange_id:, conversation_id:, specification:, first_request:, unmatched: document.nil?,
+      exchange_id:, conversation_id:, specification:, first_request:, unmatched:, lookup_pending:,
       document: document && Base64.strict_encode64(document), evidence_id:,
       evidence_issued_at: evidence_issued_at&.iso8601(6)
     )
@@ -101,7 +104,9 @@ class PreviewSession < ApplicationRecord
 
   def document_bytes = document && Base64.strict_decode64(document)
 
-  # A document the user may still open: none where none matches them.
+  # The session's half of whether a document is offered: none where none
+  # matches the user. `PreviewSessionPresenter#offers_document?` holds the
+  # other half, a document a user can read.
   def document_offered? = openable? && !unmatched?
 
   def evidence_instant = evidence_issued_at && Time.zone.iso8601(evidence_issued_at)
@@ -118,6 +123,19 @@ class PreviewSession < ApplicationRecord
   # gone: a revisit says the evidence cannot be provided (chapter 4.9 §2, steps
   # 19-20).
   def identification_failed? = identification.present?
+
+  # Concluded by a registry that failed once the user had identified, and still
+  # so once its exception has gone.
+  def unobtainable? = unobtainable.present?
+
+  # The exception the second request is answered with on a concluded address:
+  # `EDM:ERR:0001` after a failed identity check (steps 19-20), the registry's
+  # own failure otherwise (chapter 4.10 §3).
+  def failure_exception
+    return EdmException::AUTHENTICATION if identification_failed?
+
+    EdmException::ALL.find { |exception| exception.code == unobtainable }
+  end
 
   # Chapter 4.9 §2, step 14: the link expires with T2 where no second request
   # came, with T3 where the user has not decided since it did.
@@ -178,11 +196,23 @@ class PreviewSession < ApplicationRecord
   # answered.
   def decide!(accepted:)
     with_lock do
-      return nil if unmatched? || !openable?
+      return nil if unmatched? || lookup_pending? || !openable?
 
       update!(decision: accepted ? ACCEPTED : REFUSED, status: 'decided')
       second_request.present?
     end
+  end
+
+  # The registry, asked once the user identified (chapter 4.9 §2, steps 16-17),
+  # found the evidence, or nothing: the address then reads as one issued with
+  # the document, or with none.
+  def looked_up!(document:, evidence_id:, evidence_issued_at:)
+    update!(lookup_pending: false, document: Base64.strict_encode64(document), evidence_id:,
+      evidence_issued_at: evidence_issued_at.iso8601(6))
+  end
+
+  def nothing_found!
+    update!(lookup_pending: false, unmatched: true)
   end
 
   # The user, recognised, has read that no document matches them: the outcome
@@ -206,16 +236,16 @@ class PreviewSession < ApplicationRecord
   #
   # The block runs under that lock, on the row as it stands, before the
   # address is concluded.
-  def fail_identification!(outcome)
-    with_lock do
-      return nil unless openable?
+  def fail_identification!(outcome, &)
+    conclude_failed!(identification: outcome, &)
+  end
 
-      yield self if block_given?
-      waiting = second_request.present?
-      kept = waiting ? %i[second_request second_message_id] : []
-      update!(status: 'failed', identification: outcome, **(SUBJECT - kept).index_with(nil))
-      waiting
-    end
+  # The registry failed where the user had identified: the address is concluded
+  # as a failed check concludes it, and the second request answered the
+  # registry's exception — `EDM:ERR:0008` or `EDM:ERR:0005`, chapter 4.10 §3.
+  # Called under the lock the lookup holds, the row as it stands.
+  def unobtainable!(exception)
+    conclude_failed!(unobtainable: exception.code, lookup_pending: false)
   end
 
   def conclude!
@@ -234,6 +264,18 @@ class PreviewSession < ApplicationRecord
   end
 
   private
+
+  def conclude_failed!(**concluded)
+    with_lock do
+      return nil unless openable?
+
+      yield self if block_given?
+      waiting = second_request.present?
+      kept = waiting ? %i[second_request second_message_id] : []
+      update!(status: 'failed', **concluded, **(SUBJECT - kept).index_with(nil))
+      waiting
+    end
+  end
 
   def settled_outcome
     return decision unless unmatched?

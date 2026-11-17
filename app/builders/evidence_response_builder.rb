@@ -19,28 +19,27 @@ class EvidenceResponseBuilder < ApplicationBuilder
   # §1 answers a user who decided to use none with « an empty registry object
   # list ». With an `evidence_id`, the evidence is one described already — the
   # document the user previewed, whose identifier the response must repeat.
+  #
+  # `issuer`: who issued the evidence, the provider by default — chapter 4.5.2
+  # §1, « the Issuing Authority of the Evidence Metadata shall be used to
+  # indicate the actual issuer of the Evidence ». `distribution`: the one the
+  # document is in.
   def initialize(
     requester:, request_id:, beneficiary: nil, evidence_type: nil, evidence_reference: nil, evidence_id: nil,
-    provider: nil, specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
+    provider: nil, issuer: nil, distribution: ServedDistribution::PDF, specification: EdmSpecification.preferred,
+    clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
     @requester = requester
     @provider = provider || EvidenceProvider.french
+    @issuer = issuer
+    @distribution = distribution
     @beneficiary = beneficiary
     @evidence_type = evidence_type
     @evidence_reference = evidence_reference
     @request_id = request_id
     @instant = clock.now
-    @document_id = uuid.next
-    # Drawn whatever the version, though only the 2.0 response carries the
-    # package and the classification: a sequence that skipped them would give
-    # the same message two different sets of identifiers depending on the
-    # version, and nothing would then be comparable between the two.
-    @package_id = uuid.next
-    @extrinsic_object_id = uuid.next
-    drawn = uuid.next
-    @evidence_id = evidence_id || drawn
-    @classification_id = uuid.next
+    draw_identifiers(uuid, evidence_id)
   end
 
   # The day the evidence was issued, which is the day this response produces the
@@ -59,9 +58,26 @@ class EvidenceResponseBuilder < ApplicationBuilder
 
   private
 
+  # Drawn whatever the version, though only the 2.0 response carries the
+  # package and the classification: a sequence that skipped them would give
+  # the same message two different sets of identifiers depending on the
+  # version, and nothing would then be comparable between the two.
+  def draw_identifiers(uuid, evidence_id)
+    @document_id = uuid.next
+    @package_id = uuid.next
+    @extrinsic_object_id = uuid.next
+    drawn = uuid.next
+    @evidence_id = evidence_id || drawn
+    @classification_id = uuid.next
+  end
+
   def provider_identity = @provider.ebms_identity.validate!(:french_provider)
 
   def provider_names = @provider.descriptions
+
+  def issuer_identity = @issuer ? @issuer.ebms_identity : provider_identity
+
+  def issuer_names = (@issuer || @provider).descriptions
 
   def provider_agent
     AgentBuilder.new(
@@ -94,5 +110,10 @@ class EvidenceResponseBuilder < ApplicationBuilder
   # sense of one describing the document carried. It constrains an
   # `EvidenceMetadata` slot one `rim:RegistryObject` shallower than the one
   # this response writes, so it is read here for what it settles, not applied.
-  def served_format = Attachment::MIME_TYPE
+  def served_format = @distribution.format
+
+  # Optional, and in `LanguageCode` where written (`R-EDM-RESP-C026`).
+  def served_language = @distribution.language
+
+  def evidence_title = @distribution.title
 end

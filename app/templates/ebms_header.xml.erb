@@ -38,7 +38,7 @@
 <%- if attachment.present? -%>
       <eb:PartInfo href="<%= escape(attachment.identifier) %>">
         <eb:PartProperties>
-          <eb:Property name="MimeType"><%= Attachment::MIME_TYPE %></eb:Property>
+          <eb:Property name="MimeType"><%= escape(attachment.mime_type) %></eb:Property>
         </eb:PartProperties>
       </eb:PartInfo>
 <%- end -%>

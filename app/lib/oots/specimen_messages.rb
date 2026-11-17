@@ -138,6 +138,8 @@ module Oots
     def write_responses
       write('reponse', *evidence_response)
       write('reponsePersonneMorale', *evidence_response(subject: legal_person))
+      write('reponseStatutEtudiant', *student_status_response)
+      write('reponseStatutEtudiantPdf', *student_status_response(StudentStatus::ATTESTATION))
     end
 
     def write(name, body, header)
@@ -175,6 +177,18 @@ module Oots
       body = EvidenceResponseBuilder.new(
         requester:, beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier,
         request_id: REQUEST_ID, specification:, clock:, uuid:,
+      )
+
+      [body.render, evidence_response_header(body, attachment)]
+    end
+
+    # « FR - Student status (MESRI) »: the data in JSON, or the attestation in
+    # PDF, with its language, and the ministry as the issuer.
+    def student_status_response(distribution = StudentStatus::DATA)
+      attachment = Attachment.new(payload_id(uuid.next), 'e30=', mime_type: distribution.format)
+      body = EvidenceResponseBuilder.new(
+        requester:, beneficiary:, evidence_type:, evidence_reference: attachment.identifier, request_id: REQUEST_ID,
+        issuer: StudentStatus.issuer, distribution:, specification:, clock:, uuid:,
       )
 
       [body.render, evidence_response_header(body, attachment)]

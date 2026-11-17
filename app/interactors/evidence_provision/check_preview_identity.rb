@@ -33,9 +33,15 @@ module EvidenceProvision
       IdentityMatch.new(identity, RetrievedMessageParser.new(session.first_request).body.beneficiary).match?
     end
 
+    # The way back first: it is kept only while the address is open, and a
+    # registry failing below concludes it.
     def confirmed(session)
       context.verdict = :confirmed
       remember_return(session)
+      return unless session.lookup_pending?
+
+      LookUpDeferredStudentStatus.call(preview_session: session, identity: context.identification.identity,
+        clock:, uuid:, api_particulier: context.api_particulier)
     end
 
     # On the 1.2 line the way back the failing visit brought is kept only

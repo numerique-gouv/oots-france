@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -295,6 +295,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_120000) do
     t.string "identification"
     t.datetime "issued_at", null: false
     t.string "location", null: false
+    t.boolean "lookup_pending", default: false, null: false
     t.text "return_location"
     t.string "return_method"
     t.text "second_message_id"
@@ -304,6 +305,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_120000) do
     t.string "status", default: "pending", null: false
     t.string "token", null: false
     t.boolean "unmatched", default: false, null: false
+    t.string "unobtainable"
     t.datetime "updated_at", null: false
     t.index ["location"], name: "index_preview_sessions_on_location", unique: true
     t.index ["token"], name: "index_preview_sessions_on_token", unique: true

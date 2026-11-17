@@ -141,7 +141,7 @@ RSpec.describe EvidenceProvision::Answer do
   # France serves on the evidence type asked for, whatever the procedure: a
   # request naming any procedure of the list is answered through the very
   # objects that answer the system check, and with a document produced the same
-  # way. Stub, tracked as OOTS-82.
+  # way.
   describe 'another procedure, asking for a type it serves' do
     let(:message) { request_for('U1') }
 

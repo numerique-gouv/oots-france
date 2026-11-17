@@ -173,6 +173,16 @@ valide reponse EDM-RESP-S
 # impose à la branche morale.
 valide reponsePersonneMorale EDM-RESP-C
 valide reponsePersonneMorale EDM-RESP-S
+# Le statut étudiant, servi en JSON : `sdg:Language` dans la distribution,
+# `R-EDM-RESP-C026` la tenant à la liste `LanguageCode`, et le ministère pour
+# émetteur, sous ses deux noms.
+valide reponseStatutEtudiant EDM-RESP-C
+valide reponseStatutEtudiant EDM-RESP-S
+# Le même, servi en attestation PDF : `application/pdf`, la langue, et aucun
+# `ConformsTo` — que `R-EDM-RESP-C050` interdit sans le juger ici en 2.0, son
+# contexte étant l'objet de premier niveau.
+valide reponseStatutEtudiantPdf EDM-RESP-C
+valide reponseStatutEtudiantPdf EDM-RESP-S
 valide reponseDifferee EDM-RESP-C
 valide reponseDifferee EDM-RESP-S
 valide erreur EDM-ERR-C
@@ -210,6 +220,8 @@ valide requete.entete EDM-ebMS
 valide requetePersonneMorale.entete EDM-ebMS
 valide reponse.entete EDM-ebMS
 valide reponsePersonneMorale.entete EDM-ebMS
+valide reponseStatutEtudiant.entete EDM-ebMS
+valide reponseStatutEtudiantPdf.entete EDM-ebMS
 valide reponseDifferee.entete EDM-ebMS
 valide erreur.entete EDM-ebMS
 valide erreurRequeteInvalide.entete EDM-ebMS
