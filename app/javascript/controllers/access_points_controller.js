@@ -5,10 +5,11 @@ import { Controller } from "@hotwired/stimulus"
 // page does not reload; while a block says a test is pending, the page asks for
 // the blocks again until none does.
 //
-// The server decides what each block says: this controller only swaps a block
-// whose outcome or request instant changed, and keeps the element itself — it
-// carries the `aria-live` region, and a region swapped out with what it
-// announces announces nothing.
+// The server decides what each block says and where it stands: this controller
+// only swaps a block whose outcome or request instant changed and moves it to
+// the place the server gives it, keeping the element itself — it carries the
+// `aria-live` region, and a region swapped out with what it announces
+// announces nothing.
 
 const INTERVAL = 2000
 
@@ -80,10 +81,14 @@ export default class extends Controller {
   // alone, so its spinner does not start over and nothing is announced twice.
   splice(html) {
     const arriving = new DOMParser().parseFromString(html, 'text/html')
+    const ordered = []
+    const changed = new Set()
 
     arriving.querySelectorAll(BLOCK).forEach((block) => {
       const current = this.block(block.dataset.party)
       if (!current) return
+
+      ordered.push(current)
 
       if (current.dataset.outcome === block.dataset.outcome &&
           (current.dataset.requestedAt || '') === (block.dataset.requestedAt || '')) {
@@ -97,11 +102,27 @@ export default class extends Controller {
       // A value and not a bare attribute: `aria-busy` is `true` or absent.
       if (block.hasAttribute('aria-busy')) current.setAttribute('aria-busy', 'true')
       else current.removeAttribute('aria-busy')
+      changed.add(current)
     })
+
+    this.reorder(ordered, changed)
 
     this.buttons(this.element).filter((button) => !this.listTarget.contains(button))
       .forEach((button) => { button.disabled = false })
     this.reveal()
+  }
+
+  // Only the changed blocks move, walked from the last, each just before the
+  // block that follows it in the server's order and only if it is not there
+  // already: inserting a block again would restart its spinner, as replacing it
+  // would.
+  reorder(ordered, changed) {
+    let anchor = null
+
+    ordered.slice().reverse().forEach((block) => {
+      if (changed.has(block) && block.nextElementSibling !== anchor) this.listTarget.insertBefore(block, anchor)
+      anchor = block
+    })
   }
 
   fail() {

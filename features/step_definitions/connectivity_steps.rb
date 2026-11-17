@@ -14,7 +14,7 @@ end
 def passerelle_doublee(*parties)
   base = 'http://domibus:8080/domibus'
   allow(Settings).to receive_messages(domibus_base_url: base, domibus_credentials: { login: 'oots', password: 'secret' })
-  stub_code_list(countries: { 'AT' => 'Autriche (l’)', 'EL' => 'Grèce (la)' })
+  stub_code_list(countries: { 'AT' => 'Autriche (l’)', 'EL' => 'Grèce (la)', 'IT' => 'Italie (l’)' })
 
   parties_du_pmode = parties.map do |partie|
     { name: partie, endpoint: 'https://as4.oots.example.eu/domibus/services/msh',
@@ -35,6 +35,10 @@ end
   passerelle_doublee(premiere, seconde)
 end
 
+Étantdonné("une passerelle doublée dont le PMode déclare les points d'accès {string}, {string} et {string}") do |*parties|
+  passerelle_doublee(*parties)
+end
+
 Quand("l'administrateur ouvre la page des points d'accès") do
   next @navigateur.visit(POINTS_D_ACCES) if @navigateur
 
@@ -42,16 +46,24 @@ Quand("l'administrateur ouvre la page des points d'accès") do
   # A mark on the window, which a reload would wipe: what lets a later step say
   # the page did not reload.
   page.execute_script('window.pageNonRechargee = true')
-end
-
-Quand("l'administrateur rouvre la page des points d'accès") do
-  visit POINTS_D_ACCES
+  # Every block taken out of the list, moved or replaced: what lets a later step
+  # say which blocks moved.
+  page.execute_script(<<~JS)
+    window.blocsDeplaces = []
+    new MutationObserver((records) => records.forEach((record) =>
+      record.removedNodes.forEach((node) => node.dataset && window.blocsDeplaces.push(node.dataset.party))
+    )).observe(document.querySelector('.access-points'), { childList: true })
+  JS
 end
 
 Quand("il teste le point d'accès {string}") do |partie|
   next @navigateur.submit_to('/admin/common_services/connectivity_tests', party: partie) if @navigateur
 
   bloc_du_point_d_acces(partie).click_button(I18n.t('admin.common_services.access_points.index.test'))
+end
+
+Quand("il teste tous les points d'accès") do
+  click_button I18n.t('admin.common_services.access_points.index.test_all')
 end
 
 Alors("le point d'accès {string} affiche {string}, sans bouton de test") do |partie, issue|
@@ -63,19 +75,32 @@ Alors("le point d'accès {string} affiche {string}, sans bouton de test") do |pa
   expect(bloc['aria-busy']).to eq('true')
 end
 
-# The verdict as `ConnectivityTesting::ReadVerdict` records it: what follows is
-# the page noticing, which is the subject here. The click that records the
-# `ConnectivityTest` is served a moment after the step that made it.
-Quand("la France lit dans la passerelle que le point d'accès {string} a acquitté le test") do |partie|
+# The click that records the `ConnectivityTest` is served a moment after the
+# step that made it.
+def test_enregistre(partie)
   wait_until("Aucun test de connectivité enregistré pour #{partie} : le clic n'a pas été servi.") do
     ConnectivityTest.exists?(party_name: partie)
   end
-  ConnectivityTest.find_by!(party_name: partie).acknowledged!
+  ConnectivityTest.find_by!(party_name: partie)
+end
+
+# The verdict as `ConnectivityTesting::ReadVerdict` records it: what follows is
+# the page noticing, which is the subject here.
+Quand("la France lit dans la passerelle que le point d'accès {string} a acquitté le test") do |partie|
+  test_enregistre(partie).acknowledged!
+end
+
+Quand("la France lit dans la passerelle que le point d'accès {string} est en échec") do |partie|
+  test_enregistre(partie).failed!(nil)
+end
+
+def page_non_rechargee
+  expect(page.evaluate_script('window.pageNonRechargee')).to be(true)
 end
 
 Alors("le point d'accès {string} affiche {string}, sans que la page se soit rechargée") do |partie, issue|
   expect(bloc_du_point_d_acces(partie)).to have_css('.fr-badge', text: /\A#{Regexp.escape(issue)}\z/i)
-  expect(page.evaluate_script('window.pageNonRechargee')).to be(true)
+  page_non_rechargee
 end
 
 # The gateway notifies nothing about a test message: its verdict is read by
@@ -88,8 +113,51 @@ Alors("la page des points d'accès affiche {string} pour {string}") do |issue, p
   end
 end
 
-Alors("le point d'accès {string} précède {string}") do |premiere, seconde|
-  noms = page.all('.access-point__name').map(&:text)
+# Capybara waits for an element, not for an order: the blocks are read again
+# until they stand as expected.
+def noms_dans_l_ordre
+  page.document.synchronize do
+    noms = page.all('.access-point__name').map(&:text)
+    raise Capybara::ExpectationNotMet, "Les points d'accès se lisent #{noms.join(', ')}" unless yield(noms)
+  end
+end
 
-  expect(noms.index(premiere)).to be < noms.index(seconde)
+Alors("le point d'accès {string} précède {string}") do |premiere, seconde|
+  noms_dans_l_ordre do |noms|
+    rangs = [noms.index(premiere), noms.index(seconde)]
+    rangs.all? && rangs.first < rangs.last
+  end
+end
+
+Alors("les points d'accès se lisent {string}, {string} et {string}") do |*attendus|
+  noms_dans_l_ordre { |noms| noms == attendus }
+end
+
+Alors("la page ne s'est pas rechargée") do
+  page_non_rechargee
+end
+
+# A property set on the element in the browser: it survives the element being
+# moved, not the element being replaced by another.
+Quand("une marque est posée sur le bloc du point d'accès {string}") do |partie|
+  page.execute_script('arguments[0].marque = true', bloc_du_point_d_acces(partie))
+end
+
+Alors("seul le bloc du point d'accès {string} s'est déplacé") do |partie|
+  expect(page.evaluate_script('window.blocsDeplaces')).to eq([partie])
+end
+
+Alors("le bloc du point d'accès {string} porte encore la marque") do |partie|
+  expect(page.evaluate_script('arguments[0].marque === true', bloc_du_point_d_acces(partie))).to be(true)
+end
+
+Alors("le bloc du point d'accès {string} porte {string} à {string}") do |partie, attribut, valeur|
+  expect(bloc_du_point_d_acces(partie)[attribut]).to eq(valeur)
+end
+
+Alors("le bloc du point d'accès {string} porte {string} à {string}, et plus {string}") do |partie, attribut, valeur, retire|
+  bloc = bloc_du_point_d_acces(partie)
+
+  expect(bloc[attribut]).to eq(valeur)
+  expect(bloc[retire]).to be_nil
 end
