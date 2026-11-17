@@ -12,18 +12,19 @@ module EvidenceProvision
     # Step 9. The document is produced now, so that what the user previews is
     # byte for byte what the answer will carry (§3), and kept with the
     # identifier and instant that describe it — unless none matches the user,
-    # who is then told so on the space (§1).
-    def preview_required
+    # who is then told so on the space (§1), or the registry is to be asked
+    # once the user has identified (`lookup_pending`).
+    def preview_required(**evidence)
       message = context.message
       session = PreviewSession.issue(token: uuid.next, conversation_id: message.conversation_id,
         specification: message.specification, first_request: message.raw, exchange_id: previewed_exchange_id,
-        **previewed_evidence)
+        **(evidence.presence || previewed_evidence))
 
       preview_refusal(session.location)
     end
 
     def previewed_evidence
-      return {} if ServedEvidenceType.unmatched?(request.evidence_type)
+      return { unmatched: true } if ServedEvidenceType.unmatched?(request.evidence_type)
 
       evidence_id = uuid.next
       instant = clock.now
@@ -66,12 +67,13 @@ module EvidenceProvision
     end
 
     # An address the identity check concluded is answered steps 19-20's
-    # `AuthenticationExceptionType`, `EDM:ERR:0001`, without `PreviewLocation`.
-    # Read after `hold!`, whose lock reloads the row: a check failing between
+    # `AuthenticationExceptionType`, `EDM:ERR:0001`, without `PreviewLocation`;
+    # one the registry's failure concluded, with that failure (chapter 4.10
+    # §3). Read after `hold!`, whose lock reloads the row: a conclusion between
     # the two would otherwise leave the request held with nobody to answer it.
     def held(session)
       outcome = hold(session)
-      return refusal(EdmException::AUTHENTICATION) if session.failed?
+      return refusal(session.failure_exception) if session.failed?
 
       decided(session, outcome)
     end
@@ -103,21 +105,11 @@ module EvidenceProvision
     # instant it was produced with.
     def previewed(session)
       reference = OutgoingEnvelopeBuilder.payload_reference(uuid.next)
-      body = previewed_body(session, reference)
-      attachment = Attachment.new(reference, session.document)
-
-      Answers::Served.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
-        identifier: body.document_id, evidence: served_evidence(body, attachment, session.document_bytes))
-    end
-
-    def previewed_body(session, reference)
       first = RetrievedMessageParser.new(session.first_request).body
+      body = evidence_body(beneficiary: first.beneficiary, evidence_type: first.evidence_type, reference:,
+        evidence_id: session.evidence_id, clock: Oots::FrozenClock.new(session.evidence_instant))
 
-      EvidenceResponseBuilder.new(
-        requester:, beneficiary: first.beneficiary, evidence_type: first.evidence_type, evidence_reference: reference,
-        evidence_id: session.evidence_id, request_id:, specification:, uuid:,
-        clock: Oots::FrozenClock.new(session.evidence_instant)
-      )
+      served_with(body, session.document_bytes)
     end
 
     def empty_list

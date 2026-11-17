@@ -1,12 +1,14 @@
 #!/bin/sh
 # Writes the four .env* files of a server, with secrets of its own.
 #
-# It prompts for nothing: every secret scripts/secret_variables names is
-# generated here, `RAILS_ENV=production` goes with them, and everything else
-# takes the value its template carries — which the command line overrides, one
-# variable at a time, scripts/ci/prepare_environment.sh letting the environment
-# win. `URL_OOTS_FRANCE` is the one thing it demands, having no default worth
-# taking.
+# It prompts for nothing. Every secret scripts/secret_variables names is
+# generated here, but those marked `fourni`, which the operator passes; the
+# public token of API Particulier's staging is the one `fourni` it does not
+# demand, where the deployment joins that staging. `RAILS_ENV=production` is
+# set, and everything else takes the value its template carries — which the
+# command line overrides, one variable at a time,
+# scripts/ci/prepare_environment.sh letting the environment win. It demands
+# `URL_OOTS_FRANCE`, having no default worth taking.
 #
 # It stops there, before `make setup`: what follows creates the containers, and
 # an operator has a firewall and a docker-compose.override.yml to put in place
@@ -62,7 +64,8 @@ if ! command -v openssl >/dev/null 2>&1; then
   exit 1
 fi
 
-# The two formats scripts/secret_variables uses. `domibus` satisfies what the
+# The two formats of scripts/secret_variables that are generated; `fourni` is
+# refused in the loop below when missing, the staging's token excepted. `domibus` satisfies what the
 # gateway demands of an account created through its REST API — 16 to 32
 # characters, with an upper case, a lower case, a digit and a special character
 # — and gives 28.
@@ -88,6 +91,19 @@ sansRoleApplicatif() {
     [ -z "$(printenv UTILISATEUR_APPLICATIF_BASE_DE_DONNEES)" ]
 }
 
+# The template's token suffices where the deployment joins API Particulier's
+# staging — the address passed, or the template's when none is —, as
+# `scripts/check_secrets.sh` admits it there and nowhere else.
+adresseDuGabarit() {
+  lue=$(sed -n 's/^URL_API_PARTICULIER=//p' .env.oots.template | head -n 1)
+  printf '%s' "${lue%% #*}"
+}
+
+jetonPublicDuStaging() {
+  [ "$1" = JETON_API_PARTICULIER ] &&
+    [ "$(printenv URL_API_PARTICULIER 2>/dev/null || adresseDuGabarit)" = "$(adresseDuGabarit)" ]
+}
+
 # Empty and absent are the same answer here, unlike everywhere else in
 # scripts/ci/prepare_environment.sh: an operator taking over an existing
 # password passes it, and nobody passes an empty secret on purpose. `NOM=` is a
@@ -104,6 +120,14 @@ while read -r nom format; do
   if sansRoleApplicatif "$nom"; then
     export MOT_DE_PASSE_APPLICATIF_BASE_DE_DONNEES=""
     continue
+  fi
+
+  if [ -z "$(printenv "$nom" 2>/dev/null || true)" ] && [ "$format" = fourni ]; then
+    jetonPublicDuStaging "$nom" && continue
+
+    echo "❌ $nom est délivré par un tiers : le passer à ce script." >&2
+    echo "   Voir docs/deploiement.md, « Ce qu'on lui passe en plus »." >&2
+    exit 1
   fi
 
   if [ -z "$(printenv "$nom" 2>/dev/null || true)" ]; then

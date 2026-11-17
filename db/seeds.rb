@@ -248,19 +248,20 @@ if Rails.env.development?
       error_description: I18n.t('models.exchange.expired.incoming'),
       presumed: true,
       events: %w[request_received] },
-    # Une requête qui demande la prévisualisation (chapitre 4.9) : la France
-    # répond `EDM:ERR:0002` avec l'adresse de son espace, l'usager l'ouvre,
-    # s'y identifie de nouveau sous l'identité de la requête, la rouvre et
-    # accepte, et la seconde requête reçoit le justificatif. L'échange garde
-    # l'adresse que `preview_required!` y a inscrite. Aucune `PreviewSession`
-    # n'est semée : elle vit au plus T2 + T3, et une graine serait morte avant
-    # qu'on l'ouvre.
+    # Une requête pour le statut étudiant qui demande la prévisualisation
+    # (chapitre 4.9) : la France le lit chez API Particulier, répond
+    # `EDM:ERR:0002` avec l'adresse de son espace, l'usager l'ouvre, s'y
+    # identifie de nouveau sous l'identité de la requête, la rouvre et
+    # accepte, et la seconde requête reçoit le justificatif, en JSON.
+    # L'échange garde l'adresse que `preview_required!` y a inscrite. Aucune
+    # `PreviewSession` n'est semée : elle vit au plus T2 + T3, et une graine
+    # serait morte avant qu'on l'ouvre.
     { incoming: true, status: 'delivered', country_code: 'SE',
       procedure_code: ProcedureCode::STUDY_FINANCING,
       specification: EdmSpecification::V2_0,
       message_error_code: EdmException::AUTHORIZATION.code,
       preview_location: PreviewSession.location_for('9b2f6c1e-3d4a-4f8b-a1c2-5e6d7f8a9b0c', EdmSpecification::V2_0),
-      decision: PreviewSession::ACCEPTED,
+      decision: PreviewSession::ACCEPTED, student_status: true,
       events: %w[request_received error_sent preview_visited preview_identified preview_visited preview_decided
                  response_sent] },
     # La même, pour « FR - Test without evidence match (TC18) » : l'usager
@@ -555,6 +556,21 @@ if Rails.env.development?
     )
   end
 
+  # Celle du statut étudiant qu'API Particulier aurait rendu pour le sujet, et
+  # que la France sert en JSON : l'objet `data`, une admission fictive.
+  student_status_digest = lambda do |scenario|
+    subject = scenario.fetch(:subject, person)
+
+    Digest::SHA256.hexdigest(JSON.generate(
+      'identite' => { 'nom_naissance' => subject.family_name, 'prenom' => subject.given_name,
+                      'date_naissance' => subject.date_of_birth },
+      'admissions' => [{ 'date_debut' => '2026-09-01', 'date_fin' => '2027-08-31', 'est_inscrit' => true,
+                         'regime_formation' => { 'libelle' => 'formation initiale', 'code' => 'RF1' },
+                         'code_cog_insee_commune' => '44109',
+                         'etablissement_etudes' => { 'uai' => '0440984F', 'nom' => 'Nantes Université' } }],
+    ))
+  end
+
   # Celle d'un échange **sortant**, où le document vient d'un fournisseur
   # étranger : ni le moyen français, qui dirait que la France l'a fabriqué, ni un
   # fichier du dépôt, qui donnerait la même à tous. Des octets composés ici, donc,
@@ -580,6 +596,11 @@ if Rails.env.development?
 
   evidence_fingerprint = lambda do |event_type, exchange, scenario, evidence_id, content_id, occurred_at|
     return {} unless event_type.in?(carries_evidence) && !carries_no_evidence.call(exchange, scenario)
+
+    if scenario[:student_status]
+      return { evidence_digest: student_status_digest.call(scenario), evidence_mime_type: StudentStatus::DATA.format,
+               evidence_content_id: content_id }
+    end
 
     digest = if exchange.incoming?
                served_digest.call(scenario, evidence_id, occurred_at)
@@ -662,7 +683,7 @@ if Rails.env.development?
     exchange.update!(
       scenario.except(:events, :incoming, :conversation, :error_detail, :response_detail,
         :request_id, :request_id_as_sent, :message_error_code, :subject,
-        :confirmed_without, :presumed, :decision, :previewed, :without_evidence).merge(
+        :confirmed_without, :presumed, :decision, :previewed, :without_evidence, :student_status).merge(
           conversation_id:,
           # `SendToGateway` l'écrit au moment de soumettre, et
           # `IncomingMessage::OpenExchange` à l'ouverture : un échange que rien

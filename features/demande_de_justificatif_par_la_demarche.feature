@@ -6,7 +6,7 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
 
   Ce que ces scénarios prouvent, et que la suite unitaire ne peut pas montrer : la démarche de démonstration appelle la France par la même adresse publique qu'un portail de démarche français, avec un jeton du bénéficiaire qu'elle signe et que la France ouvre en lisant les clés que la démarche publie. La chaîne entière se voit donc ici, du clic de l'usager jusqu'au message parti par la passerelle, puis jusqu'au retour de l'usager et au justificatif qu'il a accepté. La France se répond à elle-même : l'espace visité est le sien.
 
-  Ils demandent une vraie passerelle Domibus, les vrais annuaires européens, le faux FranceConnect+ que la pile lance à côté d'elle. docs/test_e2e.md dit comment les jouer.
+  Ils demandent une vraie passerelle Domibus, les vrais annuaires européens, le faux FranceConnect+ que la pile lance à côté d'elle, et pour le statut étudiant le bac à sable d'API Particulier. docs/test_e2e.md dit comment les jouer.
 
   Contexte:
     Étant donné un faux FranceConnect+ lancé à côté du scénario
@@ -102,6 +102,23 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que l'usager est ramené à sa démarche
     Alors la page des justificatifs affiche "Document récupéré avec succès"
+
+  Scénario: l'usager demande son statut étudiant et ouvre l'attestation d'API Particulier
+    Quand l'administrateur choisit l'anglais dans l'en-tête
+    Et que l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "T1"
+    Et que l'administrateur s'identifie avec l'identité de test "etudiant-inscrit"
+    Alors la page des justificatifs affiche le fournisseur et le type de justificatif de la carte "Proof of enrolment in academic tertiary education"
+    Quand l'usager confirme la demande de la carte "Proof of enrolment in academic tertiary education"
+    Alors cette requête demande le type de justificatif "FR - Student status (MESRI)"
+    Et cette requête ne demande que "application/pdf", et porte le lieu de naissance "75102"
+    Quand l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "etudiant-inscrit"
+    Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que l'usager est ramené à sa démarche
+    Alors la page des justificatifs affiche "Document retrieved successfully"
+    Quand l'usager ouvre le document
+    Alors le document ouvert est un PDF
 
   Scénario: l'usager demande un type que la France déclare sans le servir, et la démarche dit le refus
     Quand l'administrateur choisit la version "OOTS 2.0"

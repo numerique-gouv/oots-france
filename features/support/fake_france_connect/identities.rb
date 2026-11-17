@@ -8,7 +8,8 @@ module FakeFranceConnect
   # Names of use, invented: « Il est interdit d'utiliser de vraies données
   # personnelles sur l'environnement bac à sable » holds here too, and these
   # identities are the fake's own, like the named users of the mock node the
-  # FranceConnect sources ship.
+  # FranceConnect sources ship — the students aside, which are the fictitious
+  # test cases of API Particulier's staging.
   class Identity
     # The bridge maps an eIDAS level of assurance onto an ACR value, and it is
     # that one the core keeps as long as its own configuration admits it —
@@ -90,7 +91,7 @@ module FakeFranceConnect
   end
 
   # The identities the fake serves, and the countries its first page offers:
-  # every member state, and the same three identities behind each of them — what
+  # every member state, and the same identities behind each of them — what
   # a country button changes is the screen, never who signs in.
   module Identities
     COUNTRY_NAMES = {
@@ -119,6 +120,27 @@ module FakeFranceConnect
         key: 'dk-high', country: 'DK', level: 'high',
         person_identifier: 'DK/FR/8c0d5ea2-77b1-4f0e-8f5a-2b93c4d61e07',
         given_name: 'Mikkel Anker', family_name: 'Bruun', birthdate: '1998-09-03',
+      ),
+      # The three students the staging of API Particulier knows, one per
+      # situation it tells apart, each taken whole from
+      # `mocks/payloads/api_particulier_v3_mesri_statut_etudiant_with_civility/`
+      # of `datagouv/apistration` — `birthplace` included, without which the
+      # staging finds nobody born in France. The persons France's preview space
+      # confirms for a request of « FR - Student status (MESRI) ».
+      Identity.new(
+        key: 'etudiant-inscrit', country: 'DK', level: 'substantial',
+        person_identifier: 'DK/FR/3e7b9c14-5a2d-4f60-b8e1-0d9a6c2f4b17',
+        given_name: 'Jacques', family_name: 'Martin', birthdate: '2004-01-01', gender: 'male', birthplace: '75102',
+      ),
+      Identity.new(
+        key: 'etudiant-admis', country: 'DK', level: 'substantial',
+        person_identifier: 'DK/FR/a4c1e2f7-9b3d-4e58-8f6a-1c2d3e4f5a6b',
+        given_name: 'Patrick', family_name: 'Melinard', birthdate: '1990-01-01', gender: 'male', birthplace: '78000',
+      ),
+      Identity.new(
+        key: 'etudiant-formation-continue', country: 'DK', level: 'substantial',
+        person_identifier: 'DK/FR/7d8e9f0a-1b2c-4d3e-9f4a-5b6c7d8e9f0a',
+        given_name: 'Walid', family_name: 'Souli', birthdate: '1998-01-01', gender: 'male', birthplace: '78000',
       ),
       Identity.new(
         key: 'pl-substantial', country: 'PL', level: 'substantial',

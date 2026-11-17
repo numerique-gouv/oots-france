@@ -237,14 +237,36 @@ RSpec.describe 'db/seeds.rb' do
     distribution_formats: [RetrievedMessageParser::PDF],
   ).freeze
 
+  # OOTS-291 CA10: the student status, served in JSON.
+  it 'shows an incoming exchange served in JSON' do
+    replay
+
+    expect(AuditEvent.where(event_type: 'response_sent', evidence_mime_type: StudentStatus::DATA.format)).to be_any
+  end
+
   # The document that row says France served, produced again from what the
   # exchange holds: France keeps no bytes, so this is the only way back to them.
   def reproduced_digest(event)
+    return Digest::SHA256.hexdigest(student_status_of(requested_subject(event))) if
+      event.evidence_mime_type == StudentStatus::DATA.format
+
     Digest::SHA256.hexdigest(
       EvidenceDocumentBuilder.new(
         evidence_id: event.evidence_identifier, instant: event.occurred_at,
         evidence_type: DEMONSTRATION_EVIDENCE_TYPE, beneficiary: requested_subject(event),
       ).render,
+    )
+  end
+
+  # The object `data` the seed gives API Particulier's answer for the subject.
+  def student_status_of(subject)
+    JSON.generate(
+      'identite' => { 'nom_naissance' => subject.family_name, 'prenom' => subject.given_name,
+                      'date_naissance' => subject.date_of_birth },
+      'admissions' => [{ 'date_debut' => '2026-09-01', 'date_fin' => '2027-08-31', 'est_inscrit' => true,
+                         'regime_formation' => { 'libelle' => 'formation initiale', 'code' => 'RF1' },
+                         'code_cog_insee_commune' => '44109',
+                         'etablissement_etudes' => { 'uai' => '0440984F', 'nom' => 'Nantes Université' } }],
     )
   end
 

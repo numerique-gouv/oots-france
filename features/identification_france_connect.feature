@@ -223,6 +223,22 @@ Fonctionnalité: Identifier un usager européen par un faux FranceConnect+
     Alors /userinfo contient "person_identifier" égal à "PL/FR/91040665144"
     Et le sub de /userinfo fait 64 caractères hexadécimaux suivis de "v1", sans contenir "91040665144"
 
+  Plan du Scénario: un étudiant du staging d'API Particulier publie l'identité entière de son cas
+    Quand l'usager s'identifie avec l'identité de test "<identité>" au niveau demandé "eidas2"
+    Et que le portail échange le code contre les jetons
+    Et qu'il appelle /userinfo
+    Alors /userinfo contient "family_name" égal à "<nom>"
+    Et /userinfo contient "given_name" égal à "<prénom>"
+    Et /userinfo contient "birthdate" égal à "<naissance>"
+    Et /userinfo contient "gender" égal à "male"
+    Et /userinfo contient "birthplace" égal à "<lieu>"
+
+    Exemples:
+      | identité                    | nom      | prénom  | naissance  | lieu  |
+      | etudiant-inscrit            | Martin   | Jacques | 2004-01-01 | 75102 |
+      | etudiant-admis              | Melinard | Patrick | 1990-01-01 | 78000 |
+      | etudiant-formation-continue | Souli    | Walid   | 1998-01-01 | 78000 |
+
   Scénario: /userinfo refuse un jeton d'accès qu'il n'a pas émis
     Quand le portail appelle /userinfo avec un jeton d'accès inconnu
     Alors /userinfo refuse la demande

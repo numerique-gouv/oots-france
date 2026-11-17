@@ -12,10 +12,13 @@ module EvidenceProvision
   # asked where an answer would otherwise go, never before a refusal or a
   # deferral. Where no document matches the user, step 4 of §2 allows the
   # empty list at once, « independent of the value of the
-  # "PossibilityForPreview" flag »: France still asks for the preview a request
-  # allows, so that the user reads why on the space (§1).
+  # "PossibilityForPreview" flag »: for a test type that matches nobody,
+  # France still asks for the preview a request allows, so that the user
+  # reads why on the space (§1); a student status the registry does not know
+  # is the empty list at once.
   class ChooseAnswer < ApplicationInteractor
     include PreviewAnswers
+    include StudentStatusAnswers
 
     # Chapter 4.4 states this duty in prose and numbers no rule for it, so the
     # detail names the chapter where every other one names a rule.
@@ -74,7 +77,7 @@ module EvidenceProvision
       refuse_what_cannot_be_answered_at_all
 
       return refusal(EdmException::OBJECT_NOT_FOUND) unless answered?
-      return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless request.evidence_type.pdf?
+      return refusal(EdmException::UNSUPPORTED_CAPABILITY) unless served_distribution(request.evidence_type)
       return second_exchange if request.preview_location
 
       timely_answer
@@ -83,6 +86,7 @@ module EvidenceProvision
     def timely_answer
       return refusal(EdmException::TIMEOUT) if expired?
       return deferral if ProcedureCode.deferred?(procedure_code)
+      return student_status_answer if student_status?
       return preview_required if request.possibility_for_preview?
       return empty_list if ServedEvidenceType.unmatched?(request.evidence_type)
 
@@ -93,7 +97,16 @@ module EvidenceProvision
 
     # A type France serves, under any procedure, or the procedure France
     # defers whatever it is asked for.
-    def answered? = ServedEvidenceType.served?(request.evidence_type) || ProcedureCode.deferred?(procedure_code)
+    def answered? = served_type? || ProcedureCode.deferred?(procedure_code)
+
+    # The student status is a natural person's: France holds none of a legal
+    # person, and « Object not found » says so (chapter 4.5.3, `EDM:ERR:0004`).
+    def served_type?
+      ServedEvidenceType.served?(request.evidence_type) &&
+        (!student_status? || request.beneficiary.is_a?(NaturalPerson))
+    end
+
+    def student_status? = ServedEvidenceType.student_status?(request.evidence_type)
 
     # The refusals pronounced by raising, which `chosen_or_invalid` turns into
     # the exception response. All three precede the choice below and none of
@@ -159,17 +172,33 @@ module EvidenceProvision
     def served
       reference = OutgoingEnvelopeBuilder.payload_reference(uuid.next)
       body = response_body(reference)
-      document = evidence(body)
-      attachment = Attachment.new(reference, Base64.strict_encode64(document))
+      served_with(body, evidence(body))
+    end
+
+    def served_with(body, document)
+      attachment = Attachment.new(body.evidence_reference, Base64.strict_encode64(document),
+        mime_type: served_distribution(body.evidence_type).format)
 
       Answers::Served.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
         identifier: body.document_id, evidence: served_evidence(body, attachment, document))
     end
 
+    # What the response says of the evidence beyond its type: who issued it, and
+    # the distribution it is in. France issues its test documents itself. The
+    # distribution is read again off the request each time — the first one,
+    # for a preview — so that both exchanges serve the same without storing it.
+    def served_distribution(evidence_type) = ServedEvidenceType.distribution_for(evidence_type)
+
+    def issuer(evidence_type) = (StudentStatus.issuer if ServedEvidenceType.student_status?(evidence_type))
+
     def response_body(reference)
+      evidence_body(beneficiary: request.beneficiary, evidence_type: request.evidence_type, reference:)
+    end
+
+    def evidence_body(beneficiary:, evidence_type:, reference:, **described)
       EvidenceResponseBuilder.new(
-        requester:, beneficiary: request.beneficiary, evidence_type: request.evidence_type,
-        evidence_reference: reference, request_id:, specification:, uuid:,
+        requester:, beneficiary:, evidence_type:, evidence_reference: reference, request_id:, specification:, uuid:,
+        issuer: issuer(evidence_type), distribution: served_distribution(evidence_type), **described
       )
     end
 
@@ -189,7 +218,7 @@ module EvidenceProvision
     def served_evidence(body, attachment, document)
       Evidence.new(
         identifier: body.evidence_id,
-        part: MimePart.new(mime_type: Attachment::MIME_TYPE, content_id: attachment.identifier, content: document),
+        part: MimePart.new(mime_type: attachment.mime_type, content_id: attachment.identifier, content: document),
       )
     end
 

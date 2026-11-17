@@ -54,8 +54,8 @@
 <%= evidence_subject %>
                 </sdg:IsAbout>
                 <sdg:IssuingAuthority>
-                  <sdg:Identifier schemeID="<%= escape(provider_identity.type_id) %>"><%= escape(provider_identity.id) %></sdg:Identifier>
-<%- provider_names.each do |language, text| -%>
+                  <sdg:Identifier schemeID="<%= escape(issuer_identity.type_id) %>"><%= escape(issuer_identity.id) %></sdg:Identifier>
+<%- issuer_names.each do |language, text| -%>
                   <sdg:Name lang="<%= escape(language) %>"><%= escape(text) %></sdg:Name>
 <%- end -%>
                 </sdg:IssuingAuthority>
@@ -68,12 +68,15 @@
                 <sdg:IssuingDate><%= issuing_date %></sdg:IssuingDate>
                 <sdg:Distribution>
                   <sdg:Format><%= escape(served_format) %></sdg:Format>
+<%- if served_language -%>
+                  <sdg:Language><%= escape(served_language) %></sdg:Language>
+<%- end -%>
                 </sdg:Distribution>
               </sdg:Evidence>
             </rim:SlotValue>
           </rim:Slot>
           <rim:Classification id="urn:uuid:<%= escape(classification_id) %>" classificationScheme="urn:fdc:oots:classification:edm" classificationNode="MainEvidence"/>
-          <rim:RepositoryItemRef xlink:href="<%= escape(evidence_reference) %>" xlink:title="Evidence"/>
+          <rim:RepositoryItemRef xlink:href="<%= escape(evidence_reference) %>" xlink:title="<%= escape(evidence_title) %>"/>
         </rim:RegistryObject>
       </rim:RegistryObjectList>
     </rim:RegistryObject>

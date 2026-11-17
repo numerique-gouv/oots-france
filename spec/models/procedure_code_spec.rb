@@ -23,8 +23,7 @@ RSpec.describe ProcedureCode do
     end
   end
 
-  # Stub, tracked as OOTS-82: the announcement of chapter 4.5.2 has to be
-  # produced somewhere.
+  # The announcement of chapter 4.5.2 has to be produced somewhere.
   it 'defers the registration of a birth, and nothing else' do
     expect(described_class).to be_deferred(described_class::BIRTH_REGISTRATION)
     expect(described_class).not_to be_deferred(described_class::STUDY_FINANCING)

@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 # RG14 of OOTS-253: France serves on the evidence type
-# asked for, whatever the procedure. Stub, tracked as OOTS-82.
+# asked for, whatever the procedure.
 RSpec.describe ServedEvidenceType do
   def type(id) = build(:evidence_type, id:)
 
@@ -21,5 +21,34 @@ RSpec.describe ServedEvidenceType do
     expect(described_class).to be_served(unmatched)
     expect(described_class).to be_unmatched(unmatched)
     expect(described_class).not_to be_unmatched(type(Fixtures::SERVED_TYPE))
+  end
+
+  describe '.distribution_for' do
+    def asking(id, *formats) = build(:evidence_type, id:, distribution_formats: formats)
+
+    let(:student_status) { ApiParticulierStubs::STUDENT_STATUS_TYPE }
+
+    it 'serves the student status as data where the request asks for JSON, alone or beside the PDF' do
+      expect(described_class.distribution_for(asking(student_status, 'application/json'))).to eq(StudentStatus::DATA)
+      expect(described_class.distribution_for(asking(student_status, 'application/json', EvidenceType::PDF)))
+        .to eq(StudentStatus::DATA)
+      expect(described_class.distribution_for(asking(student_status, EvidenceType::PDF, 'application/json')))
+        .to eq(StudentStatus::DATA)
+    end
+
+    it 'serves the attestation where the request asks for the PDF alone' do
+      expect(described_class.distribution_for(asking(student_status, EvidenceType::PDF)))
+        .to eq(StudentStatus::ATTESTATION)
+    end
+
+    it 'serves nothing the request does not ask for' do
+      expect(described_class.distribution_for(asking(student_status, 'application/xml'))).to be_nil
+      expect(described_class.distribution_for(asking(Fixtures::SERVED_TYPE, 'application/json'))).to be_nil
+    end
+
+    it 'serves the test types in their PDF' do
+      expect(described_class.distribution_for(asking(Fixtures::SERVED_TYPE, EvidenceType::PDF)))
+        .to eq(ServedDistribution::PDF)
+    end
   end
 end

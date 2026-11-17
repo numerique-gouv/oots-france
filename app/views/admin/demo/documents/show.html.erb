@@ -11,7 +11,7 @@
 
 <p class="fr-col-12 fr-col-md-8 fr-mb-3w"><%= t('admin.demo.documents.show.identity') %></p>
 
-<%= render DemoIdentityCardComponent.new(identity: @identity) do %>
+<%= render IdentityCardComponent.new(identity: @identity) do %>
   <%# The icon alone: the DSFR hides the text of a `fr-btn` carrying an icon
       and no `fr-btn--icon-*`, which still names the button, and the `title`
       shows it on hover. %>

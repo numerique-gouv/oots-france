@@ -96,6 +96,16 @@ L'application interroge les **Common Services réels** — l'Evidence Broker et 
 > [!NOTE]
 > La pile sort vers `query.cs.acc.oots.tech.ec.europa.eu` en HTTPS, et la découverte de l'instance demande une **résolution DNS de type NAPTR**. Un réseau qui filtre l'un ou l'autre fait échouer toute demande de justificatif, en `502`, l'annuaire étant alors injoignable plutôt que sans réponse. C'est vrai du test de bout en bout comme de l'installation locale : les deux interrogent l'acceptation.
 
+### API Particulier
+
+La France sert le statut étudiant qu'elle lit chez [API Particulier](https://particulier.api.gouv.fr/catalogue/mesri/statut_etudiant) ([oots_context.md](docs/oots_context.md#côté-evidence-provider-un-autre-pays-demande-un-justificatif-à-la-france)). Trois variables la désignent, écrites par `make setup` avec les valeurs de son staging, le [bac à sable](https://particulier.api.gouv.fr/developpeurs) : c'est l'environnement que joignent un poste, l'intégration continue et le serveur d'acceptation, le seul où l'en-tête `X-Generate-Proof: pdf` rend l'attestation PDF — la production l'ignore tant qu'[apistration #671](https://github.com/datagouv/apistration/pull/671) n'est pas fusionnée. Le bac à sable ne connaît que les identités fictives de ses [cas de test](https://github.com/datagouv/apistration/tree/develop/mocks/payloads/api_particulier_v3_mesri_statut_etudiant_with_civility), que le faux FranceConnect+ reprend ([test_e2e.md](docs/test_e2e.md)) :
+
+| Variable | Rôle |
+| --- | --- |
+| `URL_API_PARTICULIER` | son adresse : `https://staging.particulier.api.gouv.fr`, sur un poste comme sur le serveur d'acceptation |
+| `JETON_API_PARTICULIER` | le jeton présenté en `Authorization: Bearer` : le jeton public du bac à sable, celui de [`mocks/tokens/default`](https://github.com/datagouv/apistration/tree/develop/mocks/tokens/default), que `make check-secrets` n'admet qu'à côté de l'adresse du bac à sable ; avec une autre adresse, celui que DataPass a délivré ([deploiement.md](docs/deploiement.md)) |
+| `SIRET_DESTINATAIRE_API_PARTICULIER` | le SIRET présenté en `recipient`, que l'endpoint vérifie : celui de l'organisation habilitée, `13002526500013` pour la DINUM |
+
 ## Tests
 
 ```sh

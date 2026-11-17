@@ -42,7 +42,6 @@ class EvidenceType
     super
   end
 
-  # Any of them: a request naming several distributions asks for one document in
-  # several shapes, and France serves the one it holds.
-  def pdf? = distribution_formats.include?(PDF)
+  # Any of them: a request may name several distributions.
+  def requests?(format) = distribution_formats.include?(format)
 end

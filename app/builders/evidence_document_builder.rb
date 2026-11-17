@@ -1,12 +1,8 @@
-# The document France serves for the procedures it answers with one: a PDF
-# produced at the instant the response is built, saying what it attests, for
-# whom and when.
-#
-# Stub, tracked as OOTS-82: France holds no real evidence, and this stands in
-# for one. What it replaces served the same bytes to everyone, dated 1970 —
-# where a demonstration is worth something only if each exchange shows its own
-# document, which the journal then ties to its row by the digest of these very
-# bytes.
+# The document France serves for its test evidence types (`ServedEvidenceType`):
+# a PDF produced at the instant the response is built, saying what it attests,
+# for whom and when. It plays the test cases of the Commission: a test is
+# worth something only if each exchange shows its own document, which the
+# journal then ties to its row by the digest of these very bytes.
 #
 # No TDD chapter governs the content of an `application/pdf`: chapter 4.7 §5
 # fixes its media type and its size, chapter 4.5.1 §3.5 makes the PDF the

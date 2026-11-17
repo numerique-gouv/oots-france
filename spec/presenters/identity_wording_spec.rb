@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe DemoIdentityWording do
+RSpec.describe IdentityWording do
   # The code FranceConnect+ publishes is not a word, and the screen must say one.
   describe '#gender' do
     it 'says each of the three the portal publishes' do

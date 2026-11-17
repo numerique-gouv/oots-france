@@ -10,7 +10,12 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
   qui s'identifie sous une autre identité que celle de la requête ne voit
   rien, et la seconde requête reçoit l'erreur d'authentification. Pour un
   type auquel aucun document ne correspond, l'usager lit sur l'espace
-  qu'aucun ne lui correspond, et la seconde requête reçoit une liste vide.
+  qu'aucun ne lui correspond, et la seconde requête reçoit une liste vide. Le
+  statut étudiant est lu au bac à sable d'API Particulier dès la requête quand
+  elle porte le sexe et le code de la commune de naissance, sinon une fois
+  l'usager identifié, sur l'identité que FranceConnect+ certifie : il
+  s'affiche sur l'espace au lieu d'un document, ou son attestation y est
+  offerte comme un document quand la requête la demande.
 
   Le requêteur étranger forge ses requêtes au nom d'une identité de test du
   faux FranceConnect+, et l'usager suit l'adresse dans un navigateur ; ce que
@@ -85,3 +90,34 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Et la page propose de revenir à l'adresse de retour
     Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
     Alors la France envoie une réponse sans justificatif
+
+  Scénario: l'usager lit son statut étudiant sur l'espace et l'accepte, et la seconde requête le reçoit
+    Quand le requêteur étranger envoie une requête qui exige la prévisualisation du statut étudiant de Martin Jacques
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
+    Quand l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "etudiant-inscrit"
+    Alors la page affiche le statut étudiant de l'usager, sans lien vers un document
+    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France envoie le statut étudiant en "application/json"
+
+  Scénario: l'usager lit son statut étudiant, ouvre son attestation et l'accepte, et la seconde requête la reçoit
+    Quand le requêteur étranger envoie une requête qui exige la prévisualisation du statut étudiant de Martin Jacques, en "application/pdf"
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
+    Quand l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "etudiant-inscrit"
+    Alors la page affiche le lien vers le document, sans le statut étudiant
+    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France envoie le statut étudiant en "application/pdf"
+    Et la France envoie le document que l'usager a vu
+
+  Scénario: sans le sexe ni le lieu de naissance dans la requête, la France lit le statut étudiant sur l'identité que FranceConnect+ certifie
+    Quand le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, sans son sexe ni son lieu de naissance
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
+    Quand l'usager ouvre l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "etudiant-inscrit"
+    Alors la page affiche le statut étudiant de l'usager, sans lien vers un document
+    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France envoie le statut étudiant en "application/json"

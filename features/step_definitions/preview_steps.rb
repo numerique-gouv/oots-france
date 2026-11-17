@@ -29,10 +29,52 @@ end
 def space_browser = @space_browser ||= DemoBrowser.new(procedure_url)
 
 # The person France's preview space confirms: the test identity
-# `dk-substantial` of the fake FranceConnect+. Both requests of a scenario ask for the same type, the one it named if any.
+# `dk-substantial` of the fake FranceConnect+, unless the scenario named another.
+# Both requests of a scenario ask for the same type and subject, the ones it named if any.
 def previewed_request(**, &)
-  @correspondent.request(subject: FakeCorrespondent::PREVIEWED_BENEFICIARY,
-    evidence_type: @evidence_type || FakeCorrespondent::EVIDENCE_TYPE, **, &)
+  @correspondent.request(subject: @subject || FakeCorrespondent::PREVIEWED_BENEFICIARY,
+    evidence_type: @evidence_type || FakeCorrespondent::EVIDENCE_TYPE, format: @format, **, &)
+end
+
+def student_status = FakeCorrespondent::EVIDENCE_TYPES.fetch('FR - Student status (MESRI)')
+
+Quand('le requêteur étranger envoie une requête qui exige la prévisualisation du statut étudiant de Martin Jacques') do
+  @evidence_type = student_status
+  @subject = FakeCorrespondent::STUDENT
+  @exchange_id = @correspondent.submit(previewed_request { |xml| preview_flag(xml) })
+end
+
+Quand(
+  'le requêteur étranger envoie une requête qui exige la prévisualisation du statut étudiant de Martin Jacques, en {string}',
+) do |format|
+  @evidence_type = student_status
+  @subject = FakeCorrespondent::STUDENT
+  @format = format
+  @exchange_id = @correspondent.submit(previewed_request { |xml| preview_flag(xml) })
+end
+
+Alors('la page affiche le lien vers le document, sans le statut étudiant') do
+  expect(space_browser.body).not_to include('Université Paris Nanterre')
+  expect(space_browser.links("a[href$='/document']").size).to eq(1)
+  @seen_document = space_browser.fetch(space_browser.links("a[href$='/document']").first)
+end
+
+# Neither the sex nor the place: the match waits for FranceConnect+, whatever the flag, and reads both off it.
+Quand(
+  'le requêteur étranger envoie une requête pour le statut étudiant de Martin Jacques, sans son sexe ni son lieu de naissance',
+) do
+  @evidence_type = student_status
+  @subject = FakeCorrespondent::STUDENT.except(:gender, :place_of_birth)
+  @exchange_id = @correspondent.submit(previewed_request)
+end
+
+Alors('la page affiche le statut étudiant de l\'usager, sans lien vers un document') do
+  expect(space_browser.body).to include('Université Paris Nanterre', '0330023W')
+  expect(space_browser.links("a[href$='/document']")).to be_empty
+end
+
+Alors('la France envoie le statut étudiant en {string}') do |format|
+  expect(second_answer).to have_attributes(evidence_mime_type: format, evidence_digest: be_present)
 end
 
 Quand('le requêteur étranger envoie une requête qui exige la prévisualisation') do

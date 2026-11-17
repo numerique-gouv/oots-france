@@ -733,7 +733,7 @@ en:
         the console.
       disconnected_html: This page could not reach the service. %{reload} to see where your request stands.
       reload: Reload the page
-    demo_identity_card:
+    identity_card:
       attributes:
         family_name: Family name
         given_name: Given name(s)
@@ -773,6 +773,19 @@ en:
       previous: Previous page
       next: Next page
       page: Page %{number}
+    student_status:
+      identity: Your identity
+      family_name: Birth name
+      given_name: First name
+      date_of_birth: Date of birth
+      admissions: Your admissions this year
+      enrolled: Enrolled
+      admitted: Admitted, not enrolled
+      institution_code: Institution code (UAI)
+      start_date: Start
+      end_date: End
+      scheme: Study scheme
+      commune_code: Commune of study (INSEE code)
     evidence_subject:
       fields:
         level_of_assurance: Level of assurance
@@ -821,6 +834,9 @@ en:
       not_cached: "Directory response not cached (%{url}): %{error}"
     code_list:
       nothing_read: "Code list read without finding anything (%{list}): unexpected structure?"
+    api_particulier:
+      unauthorized: "API Particulier refuses the token (%{status}): expired, invalid or without the mesri_* scopes; the student status cannot be served to anyone"
+      unobtainable: "API Particulier did not return the student status (%{cause}): the request receives %{code}"
     classification_values:
       insecure: the address is not https
       empty: no active value can be read in it
@@ -1517,7 +1533,7 @@ en:
       requiring:
         none: ", with no published requirement"
         some: ", with %{requirements}"
-    demo_identity:
+    identity:
       genders:
         male: Male
         female: Female
@@ -1607,6 +1623,9 @@ en:
       refused:
         title: The document cannot be provided
         lead: The identity you have just established does not match the one of the request, or your identification did not complete. No document will be shown to you, and your procedure will be informed.
+      unobtainable:
+        title: The document cannot be provided
+        lead: The French administration could not obtain this document. No document will be sent to your procedure, which will be informed.
       unavailable:
         title: Identification temporarily impossible
         lead: The service that lets you identify does not answer. Try again in a few moments.

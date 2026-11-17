@@ -1,11 +1,19 @@
 /*
- * The identity card of the demonstration. Two lists under one title: what the
- * user is, then what the authentication vouched for, which reads as a footnote
- * to the first.
+ * The identity card: the civil identity and, where the source yields it, what
+ * the authentication vouched for, which reads as a footnote to the first.
  *
  * Colours come from the DSFR's own tokens and never from a literal — the layout
  * sets `data-fr-scheme="system"`, so the dark theme is reachable.
  */
+
+/*
+ * As tall as what it holds: the DSFR gives a `fr-card` inside a `fr-grid-row`
+ * the height of its column (`.fr-grid-row .fr-card`), which a page with more
+ * under the card than a grid of cards — the preview space — cannot hold.
+ */
+.fr-grid-row .identity-card {
+  height: auto;
+}
 
 /*
  * The civil identity and what the page offers to do with it, side by side: the

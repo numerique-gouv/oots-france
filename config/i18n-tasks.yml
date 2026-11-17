@@ -110,7 +110,7 @@ ignore_unused:
   - builders.evidence_document_builder.fields.*
   - interactors.failures.*
   # Composé du code que FranceConnect+ publie pour le sexe d'un usager européen.
-  - presenters.demo_identity.genders.*
+  - presenters.identity.genders.*
   # Composé du nom sous lequel `Settings::FRANCE_CONNECT` déclare chacun des
   # FranceConnect+, l'accueil de la démarche servant une carte par déclaration.
   - admin.demo.home.show.france_connect.*

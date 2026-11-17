@@ -20,7 +20,7 @@
 # for a tertiary education financing. `R1`, the registration of a birth, is
 # answered with a deferral whatever it asks for, so that the announcement of
 # chapter 4.5.2 is produced somewhere: no chapter asks France for it, it is a
-# demonstration. Stub, tracked as OOTS-82. `T3` is the recognition of diplomas.
+# demonstration. `T3` is the recognition of diplomas.
 module ProcedureCode
   # The `Procedures` code list published with the TDD, which `R-EDM-REQ-C081`
   # and `C091` hold the sectoral attributes of an authorised representative to —
@@ -63,6 +63,6 @@ module ProcedureCode
   private_class_method :by_code
 
   # The procedure France answers with the deferral of chapter 4.5.2, whatever
-  # type it is asked for. Stub, tracked as OOTS-82.
+  # type it is asked for, the student status included.
   def self.deferred?(code) = code == BIRTH_REGISTRATION
 end

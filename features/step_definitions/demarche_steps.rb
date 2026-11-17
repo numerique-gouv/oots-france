@@ -102,8 +102,8 @@ end
 
 Alors('la page n\'affiche ni le sexe ni le lieu de naissance') do
   expect(@navigateur.rows.keys).not_to include(
-    I18n.t('components.demo_identity_card.attributes.gender'),
-    I18n.t('components.demo_identity_card.attributes.place_of_birth'),
+    I18n.t('components.identity_card.attributes.gender'),
+    I18n.t('components.identity_card.attributes.place_of_birth'),
   )
 end
 
@@ -272,6 +272,8 @@ end
 
 # As the acceptance publishes it under `00`: docs/test_e2e.md records where.
 EVIDENCE_TYPE_CLASSIFICATIONS = {
+  'FR - Student status (MESRI)' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/4daaf228-43fd-43fc-9148-a416c9a22464',
   'FR - Test Evidence Type not held' =>
     'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/0a4cf159-133d-4ca7-91a7-749f9a1cc3e3',
   'FR - Test without evidence match (TC18)' =>
@@ -280,6 +282,33 @@ EVIDENCE_TYPE_CLASSIFICATIONS = {
 
 Alors('cette requête demande le type de justificatif {string}') do |titre|
   expect(depart_de_la_requete.evidence_type_id).to eq(EVIDENCE_TYPE_CLASSIFICATIONS.fetch(titre))
+end
+
+# Chapter 4.5.1 §3.5: the distribution the request asked for, read in the
+# message that left, with the place of birth FranceConnect+ gave the procedure.
+Alors('cette requête ne demande que {string}, et porte le lieu de naissance {string}') do |format, lieu|
+  document = Nokogiri::XML(depart_de_la_requete.regrep_body)
+  sdg = { 'sdg' => 'http://data.europa.eu/p4s' }
+
+  expect(document.xpath('//sdg:DistributedAs/sdg:Format', sdg).map(&:text)).to eq([format])
+  expect(document.at_xpath('//sdg:PlaceOfBirth', sdg)&.text).to eq(lieu)
+end
+
+# The selector of the header, whose choice a cookie keeps for every page after.
+Quand('l\'administrateur choisit l\'anglais dans l\'en-tête') do
+  @navigateur.visit("/admin/demo?#{ChosenLanguage::PARAMETER}=en")
+end
+
+Quand('l\'usager ouvre le document') do
+  @document_ouvert = @navigateur.fetch(
+    Nokogiri::HTML(@navigateur.body).css('.demo-request a.fr-btn').find { |lien|
+      lien.text.strip == I18n.t('components.demo_request_zone.open', locale: :en)
+    }&.[]('href') || raise("Aucun lien « Open the document » : #{@navigateur.body}"),
+  )
+end
+
+Alors('le document ouvert est un PDF') do
+  expect(@document_ouvert.b).to start_with('%PDF-')
 end
 
 # The callout and not its link: where the correspondent asked for a `POST`, the
