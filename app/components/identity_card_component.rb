@@ -16,13 +16,13 @@
 # read as one the portal holds blank. The country the identity comes from never
 # appears, because no claim names it: all that could be said is that the user
 # came through the European flow, which is what they clicked a button to do.
-class DemoIdentityCardComponent < ViewComponent::Base
+class IdentityCardComponent < ViewComponent::Base
   # The identity alone: what a screen says of it is derived from it here rather
   # than beside it, so that no caller can hand the card two objects describing
   # two different people.
   def initialize(identity:)
     @identity = identity
-    @wording = DemoIdentityWording.new(identity)
+    @wording = IdentityWording.new(identity)
     super()
   end
 
@@ -43,11 +43,11 @@ class DemoIdentityCardComponent < ViewComponent::Base
   # and a badge is what the DSFR gives a value read at a glance.
   def level = identity.level_of_assurance.presence
 
-  def level_label = t('components.demo_identity_card.attributes.level_of_assurance')
+  def level_label = t('components.identity_card.attributes.level_of_assurance')
 
   def eidas_identifier
     value = identity.eidas_identifier.presence
-    t('components.demo_identity_card.eidas_identifier_html', value:) if value
+    t('components.identity_card.eidas_identifier_html', value:) if value
   end
 
   private
@@ -56,7 +56,7 @@ class DemoIdentityCardComponent < ViewComponent::Base
 
   def filled(attributes)
     attributes.filter_map do |name, value|
-      [t("components.demo_identity_card.attributes.#{name}"), value] if value.present?
+      [t("components.identity_card.attributes.#{name}"), value] if value.present?
     end
   end
 end

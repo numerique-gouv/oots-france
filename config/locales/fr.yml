@@ -932,7 +932,7 @@ fr:
     # sous-titre — la règle et le registre de mention le disent à sa place.
     #
     # L'ordre des clés n'est pas celui de l'écran, que le composant fixe.
-    demo_identity_card:
+    identity_card:
       attributes:
         family_name: Nom
         given_name: Prénom(s)
@@ -2127,7 +2127,7 @@ fr:
         # « avec aucune exigence » n'est pas une phrase qu'on écrit.
         none: ", sans exigence publiée"
         some: ", avec %{requirements}"
-    demo_identity:
+    identity:
       # Le vocabulaire de FranceConnect+, en toutes lettres : le code lui-même
       # n'est pas un mot, et le traduire côté requête est l'affaire du jeton du
       # bénéficiaire.

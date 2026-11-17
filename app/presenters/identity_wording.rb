@@ -8,7 +8,7 @@
 # are the portal's, and rewriting them would be asserting an identity nobody
 # attested. Only what has no wording of its own is worded here — the sex, whose
 # code is not a word.
-class DemoIdentityWording
+class IdentityWording
   def initialize(identity)
     @identity = identity
   end
@@ -16,7 +16,7 @@ class DemoIdentityWording
   def gender
     return nil if identity.gender.blank?
 
-    I18n.t("presenters.demo_identity.genders.#{identity.gender}")
+    I18n.t("presenters.identity.genders.#{identity.gender}")
   end
 
   def place_of_birth = identity.place_of_birth.presence

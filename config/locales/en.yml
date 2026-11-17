@@ -733,7 +733,7 @@ en:
         the console.
       disconnected_html: This page could not reach the service. %{reload} to see where your request stands.
       reload: Reload the page
-    demo_identity_card:
+    identity_card:
       attributes:
         family_name: Family name
         given_name: Given name(s)
@@ -1533,7 +1533,7 @@ en:
       requiring:
         none: ", with no published requirement"
         some: ", with %{requirements}"
-    demo_identity:
+    identity:
       genders:
         male: Male
         female: Female

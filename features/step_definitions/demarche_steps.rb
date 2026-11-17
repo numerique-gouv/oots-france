@@ -102,8 +102,8 @@ end
 
 Alors('la page n\'affiche ni le sexe ni le lieu de naissance') do
   expect(@navigateur.rows.keys).not_to include(
-    I18n.t('components.demo_identity_card.attributes.gender'),
-    I18n.t('components.demo_identity_card.attributes.place_of_birth'),
+    I18n.t('components.identity_card.attributes.gender'),
+    I18n.t('components.identity_card.attributes.place_of_birth'),
   )
 end
 
