@@ -8,9 +8,8 @@
 # panneau s'est endormi, et un ouvrier passe l'essentiel d'une passe de revue
 # endormi à attendre ses relecteurs. Cette ligne-là, elle, ne se cache jamais.
 #
-# Un ouvrier se reconnaît à la première invite de son transcript, qui vaut
-# « OOTS-<n> », et son état se lit à son dernier bloc de texte : le fichier
-# d'agent lui impose de terminer sur l'un des sept verdicts.
+# Les ouvriers et leur état, `ouvriers.sh` les lit ; cette ligne-ci ne fait
+# que les mettre en forme.
 
 # Une statusline personnalisée éteint les indices du pied de page (`esc to
 # interrupt`, `? for shortcuts`…) et aucun réglage ne les rallume : on les
@@ -83,99 +82,27 @@ fi
 
 printf '%s\n' "$LIGNE1"
 
-# --- seconde ligne, s'il y a lieu : les ouvriers endormis ---
+# --- seconde ligne, s'il y a lieu : les ouvriers rendus ou endormis ---
 [ -n "$TRANSCRIPT" ] || exit 0
-# Le transcript est <projet>/<session>.jsonl, ses sous-agents <projet>/<session>/subagents.
-SOUS_AGENTS="${TRANSCRIPT%.jsonl}/subagents"
-[ -d "$SOUS_AGENTS" ] || exit 0
 
-# Le checkout principal, où l'étape se déclare : `.claude/` est git-ignored
-# donc absent des worktrees. `--git-common-dir` vaut la même chose depuis
-# n'importe lequel d'entre eux.
-PRINCIPAL=$(git -C "${RACINE:-.}" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
-[ -n "$PRINCIPAL" ] && PRINCIPAL=$(dirname "$PRINCIPAL")
-
-MAINTENANT=$(date +%s)
 RENDUS=""
 ENDORMIS=""
 UN_ACTIF=""
+TAB=$(printf '\t')
 
-for F in "$SOUS_AGENTS"/agent-*.jsonl; do
-  [ -f "$F" ] || continue
-
-  # Premier tour = l'invite qu'on lui a passée. « OOTS-<n> » signe un ouvrier.
-  TICKET=$(head -1 "$F" 2>/dev/null \
-    | jq -r 'select(.type=="user") | (.message.content | if type=="string" then . else "" end)' 2>/dev/null \
-    | grep -oE '^OOTS-[0-9]+')
-  [ -n "$TICKET" ] || continue
-
-  ETAPE="$PRINCIPAL/.claude/etapes/$TICKET"
-  DECLAREE=$(head -1 "$ETAPE" 2>/dev/null | tr -d '\r\n')
-
-  # « merged » retire l'ouvrier de l'affichage : sa PR est fusionnée et ses
-  # affaires rangées, il n'a plus rien à dire et sa ligne prendrait la place
-  # de celle d'un vivant. Le seul que l'ouvrier n'écrit pas lui-même,
-  # puisqu'il ne merge jamais.
-  [ "$DECLAREE" = merged ] && continue
-
-  # Dernier bloc de texte : un des sept verdicts s'il a rendu la main, avec
-  # l'instant où il l'a prononcé.
-  LIGNE=$(tail -6 "$F" 2>/dev/null \
-    | jq -rc 'select(.type=="assistant") | .timestamp as $t | .message.content[]? | select(.type=="text") | (($t // "") + "\t" + (.text | split("\n")[0]))' 2>/dev/null \
-    | grep -E "$(printf '\t')(LIVRÉ|ÉCRAN|PLANIFIÉ|PLAN|ARBITRAGE|INTERROMPU|BLOQUÉ)$" | tail -1)
-  VERDICT=''
-  PRONONCE=''
-  # Le test porte sur la ligne, jamais sur ce que `date` en tire : `date -d ""`
-  # ne rend pas la main vide, GNU date lit la chaîne vide comme « aujourd'hui à
-  # minuit ». Un ouvrier n'ayant rendu aucun verdict héritait donc de minuit,
-  # que toute étape déclarée depuis dépasse — et il s'affichait en permanence,
-  # sans jamais passer par la garde qui suit.
-  if [ -n "$LIGNE" ]; then
-    VERDICT=${LIGNE#*$(printf '\t')}
-    PRONONCE=$(date -d "${LIGNE%%$(printf '\t')*}" +%s 2>/dev/null)
-  fi
-
-  # Une étape déclarée *après* que le verdict a été prononcé prime sur lui :
-  # c'est la parole la plus fraîche, et c'est ce qui fait apparaître
-  # « resolving conflicts » sur un ouvrier qui a rendu LIVRÉ et dont la PR a
-  # divergé depuis. Comme un verdict, elle s'affiche sans délai.
-  #
-  # On compare à l'horodatage de la ligne du verdict, jamais à la date du
-  # transcript : celle-ci avance au moindre outil, donc l'ouvrier qui reprend
-  # son travail effacerait la déclaration qu'on vient d'écrire.
-  DECLARE_A=$(stat -c %Y "$ETAPE" 2>/dev/null)
-  if [ -n "$DECLAREE" ] && [ -n "$PRONONCE" ] && [ "${DECLARE_A:-0}" -gt "$PRONONCE" ]; then
-    RENDUS="$RENDUS  ⚒ $TICKET ($DECLAREE)"
-    continue
-  fi
-
-  DEPUIS_S=$(( MAINTENANT - $(stat -c %Y "$F" 2>/dev/null || echo "$MAINTENANT") ))
-
-  # Un verdict, c'est l'ouvrier qui rend la main — et l'instant précis où on
-  # le cherche des yeux. Il s'affiche donc sans délai : ni la garde qui suit,
-  # ni le travail d'un autre ouvrier ne le retiennent.
-  case "$VERDICT" in
-    LIVRÉ)      RENDUS="$RENDUS  ⚒ $TICKET (delivered)";          continue ;;
-    ÉCRAN)      RENDUS="$RENDUS  ⚒ $TICKET (screen to review)";   continue ;;
-    PLANIFIÉ)   RENDUS="$RENDUS  ⚒ $TICKET (plan to implement)";  continue ;;
-    PLAN)       RENDUS="$RENDUS  ⚒ $TICKET (plan to approve)";    continue ;;
-    ARBITRAGE)  RENDUS="$RENDUS  ⚒ $TICKET (waiting for answer)"; continue ;;
-    INTERROMPU) RENDUS="$RENDUS  ⚒ $TICKET (to resume)";          continue ;;
-    BLOQUÉ)     RENDUS="$RENDUS  ⚒ $TICKET (blocked)";            continue ;;
+while IFS="$TAB" read -r TICKET ETAT LIBELLE ETAPE DEPUIS_S; do
+  case "$ETAT" in
+    rendu)   RENDUS="$RENDUS  ⚒ $TICKET ($LIBELLE)" ;;
+    # Celui qui vient d'agir est affiché par le panneau d'agents : ne pas le
+    # redoubler ici. Et tant qu'un seul travaille, le panneau ne masque aucune
+    # ligne — c'est sa règle, il n'escamote qu'une fois *tout* endormi. Les
+    # endormis ne servent donc qu'au cas où plus rien n'est affiché en dessous.
+    actif)   UN_ACTIF=1 ;;
+    endormi) ENDORMIS="$ENDORMIS  ⚒ $TICKET (asleep $(( DEPUIS_S / 60 )) min)" ;;
   esac
-
-  # Sans verdict, il travaille encore. Celui qui vient d'agir est affiché par
-  # le panneau : ne pas le redoubler ici. Et tant qu'un seul travaille, le
-  # panneau ne masque aucune ligne — c'est sa règle, il n'escamote qu'une
-  # fois *tout* endormi. Les endormis ne servent donc qu'au cas où plus rien
-  # n'est affiché en dessous.
-  if [ "$DEPUIS_S" -lt 45 ]; then
-    UN_ACTIF=1
-    continue
-  fi
-
-  ENDORMIS="$ENDORMIS  ⚒ $TICKET (asleep $(( DEPUIS_S / 60 )) min)"
-done
+done <<FIN
+$("$(dirname "$0")/ouvriers.sh" "$TRANSCRIPT" "${RACINE:-.}")
+FIN
 
 [ -n "$UN_ACTIF" ] && ENDORMIS=""
 OUVRIERS="$RENDUS$ENDORMIS"
