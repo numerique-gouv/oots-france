@@ -188,6 +188,7 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(answer.xpath('/*/rim:RegistryObjectList/*', RS)).to be_empty
       expect(Nokogiri::XML(submitted.last).xpath('//payload').size).to eq(1)
       expect(PreviewSession.sole).to have_attributes(status: 'answered', document: nil, decision: nil)
+      expect(Exchange.sole.status).to eq('declined')
     end
 
     # CA9: what carries the subject goes with the answer.
@@ -385,7 +386,8 @@ RSpec.describe 'The preview France offers as a provider' do
 
       expect(empty_answer?(submitted.sole)).to be(true)
       expect(PreviewSession.count).to eq(0)
-      expect(Exchange.sole.status).to eq('delivered')
+      expect(Exchange.sole.status).to eq('unmatched')
+      expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
     end
 
     it 'defers the procedure answered later, before saying no document matches' do
@@ -424,7 +426,7 @@ RSpec.describe 'The preview France offers as a provider' do
         deliver(following, 'm002')
 
         expect(empty_answer?(submitted.last)).to be(true)
-        expect(Exchange.sole.status).to eq('delivered')
+        expect(Exchange.sole.status).to eq('unmatched')
       end
 
       it 'is not answered by a visit of a browser not yet recognised' do
@@ -437,13 +439,28 @@ RSpec.describe 'The preview France offers as a provider' do
         expect(PreviewSession.sole.status).to eq('pending')
       end
 
-      # CA5: nothing was decided, so nothing is logged as decided.
-      it 'logs no decision' do
+      # CA2 of OOTS-306: how the preview ended, once, under the exchange the
+      # first request opened.
+      it 'logs that no document matched, once however often the page is read' do
         deliver(following, 'm002')
-        perform_enqueued_jobs { recognised_visit }
+        perform_enqueued_jobs { 2.times { recognised_visit } }
+
+        decided = AuditEvent.where(event_type: 'preview_decided')
+        expect(decided.pluck(:detail)).to eq([PreviewSession::UNMATCHED])
+        expect(decided.sole.exchange_id).to eq(Exchange.sole.exchange_id)
+        expect(AuditEvent.where(event_type: 'response_sent').count).to eq(1)
+      end
+
+      it 'logs nothing for a page read once the address has expired' do
+        travel(17.minutes) { recognised_visit }
 
         expect(AuditEvent.where(event_type: 'preview_decided')).to be_empty
-        expect(AuditEvent.where(event_type: 'response_sent').count).to eq(1)
+      end
+
+      it 'logs that no document matched before the second request arrives' do
+        recognised_visit
+
+        expect(AuditEvent.where(event_type: 'preview_decided').pluck(:detail)).to eq([PreviewSession::UNMATCHED])
       end
 
       # CA4 and CA5, and CA4 of OOTS-307: T2 without a visit, the timeout, and
@@ -462,6 +479,19 @@ RSpec.describe 'The preview France offers as a provider' do
 
         expect(exception_of(body_of(submitted.last))['code']).to eq('EDM:ERR:0005')
       end
+    end
+
+    # CA2 of OOTS-306 on the 1.2 line: the status on the exchange the second
+    # request opened, the line under the first.
+    it 'settles the exchange of the second request and logs under the first on the 1.2 line' do
+      deliver(unmatched(line: :v1_2), 'm001')
+      first_exchange = Exchange.sole
+      deliver(second(line: :v1_2, request_id: second_id), 'm002')
+      perform_enqueued_jobs { recognised_visit }
+
+      expect(Exchange.find_by(request_id: "urn:uuid:#{second_id}").status).to eq('unmatched')
+      expect(AuditEvent.find_by(event_type: 'preview_decided'))
+        .to have_attributes(detail: PreviewSession::UNMATCHED, exchange_id: first_exchange.exchange_id)
     end
   end
 

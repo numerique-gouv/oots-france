@@ -17,8 +17,8 @@ class PreviewSession < ApplicationRecord
 
   # The outcome of a preview with nothing to decide: no document matches the
   # user, who is told so (§1), and the answer is the empty list all the same.
-  # Read by `hold!`, never stored in `decision`: the column `unmatched` holds
-  # the fact.
+  # Read by `hold!`, and the detail of the journal's `preview_decided`; never
+  # stored in `decision`: the column `unmatched` holds the fact.
   UNMATCHED = 'unmatched'.freeze
 
   # `pending` until the outcome is settled — the user decides, or reads that

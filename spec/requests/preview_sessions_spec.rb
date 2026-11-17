@@ -198,6 +198,14 @@ RSpec.describe 'The preview space' do
       expect(session.reload.status).to eq('decided')
     end
 
+    # CA2 of OOTS-306: how the preview ended, logged once, the page read again.
+    it 'logs that no document matched, once' do
+      identify
+      2.times { visit_space }
+
+      expect(AuditEvent.where(event_type: 'preview_decided').pluck(:detail)).to eq([PreviewSession::UNMATCHED])
+    end
+
     it 'speaks the language the header chose' do
       identify
       get preview_session_path(segment, session.token, locale: 'en')

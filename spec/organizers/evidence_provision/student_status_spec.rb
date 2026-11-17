@@ -205,6 +205,7 @@ RSpec.describe 'The student status France serves from API Particulier' do
 
         expect(empty_list?).to be(true)
         expect(PreviewSession.count).to eq(0)
+        expect(Exchange.sole.status).to eq('unmatched')
       end
     end
   end
@@ -493,6 +494,8 @@ RSpec.describe 'The student status France serves from API Particulier' do
 
         expect(student_status_asked(full_query(sex: 'F'))).to have_been_made.once
         expect(empty_list?).to be(true)
+        expect(Exchange.sole.status).to eq('unmatched')
+        expect(AuditEvent.where(event_type: 'preview_decided').pluck(:detail)).to eq([PreviewSession::UNMATCHED])
       end
 
       it 'answers EDM:ERR:0001 to another person, without asking' do

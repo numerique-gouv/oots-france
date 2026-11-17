@@ -8,7 +8,8 @@ module EvidenceProvision
   # what settles the outcome, there being nothing to decide: the user has read
   # the automated message of chapter 2.1 §3.3, and the second request, if it
   # waits, is answered the empty list of chapter 4.9 §1 — in a job, as
-  # `RecordPreviewDecision` does. Nothing is logged as decided: nothing was.
+  # `RecordPreviewDecision` does. The journal says how the preview ended,
+  # `unmatched`, once: a page read again finds the outcome already settled.
   class RecordPreviewVisit < ApplicationInteractor
     def call
       session = context.preview_session
@@ -23,7 +24,11 @@ module EvidenceProvision
     def recognised(session)
       RememberPreviewReturn.call(preview_session: session, return_url: context.return_url,
         return_method: context.return_method)
-      AnswerPreviewedRequestJob.perform_later(session.id) if session.unmatched_seen!
+      waiting = session.unmatched_seen!
+      return if waiting.nil?
+
+      audit_trail.preview_decided(session:, decision: PreviewSession::UNMATCHED)
+      AnswerPreviewedRequestJob.perform_later(session.id) if waiting
     end
   end
 end
