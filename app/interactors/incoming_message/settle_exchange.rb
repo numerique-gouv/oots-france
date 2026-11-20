@@ -96,20 +96,24 @@ module IncomingMessage
     # `claim_delivery!` guards it. Nothing gives that reservation back: a POST
     # that raises settles the exchange in `IncomingMessage::Process`, and
     # releasing after one that reached the requester would license a second.
+    #
+    # The part of the format the exchange requested, and no other: chapter
+    # 4.5.2 §3.3 has a response provide the distributions « requested by the
+    # EvidenceRequester », and the portal is not handed one it did not expect.
+    # A response missing it raises, and `IncomingMessage::Process` settles the
+    # exchange as failed. The part and not its bytes: the journal records the
+    # reference the response made of it as well as what it held.
     def deliver(exchange)
       return refuse(exchange, :already_delivering) unless exchange.claim_delivery!
 
       requester = requesters.find(exchange.evidence_requester_id)
 
-      evidence_forwarder.deliver(evidence.content, requester, exchange)
+      evidence = context.message.evidence(exchange.requested_format)
+      evidence_forwarder.deliver(evidence, requester, exchange)
       exchange.delivered!
 
       audit_trail.evidence_delivered(exchange:, evidence:)
     end
-
-    # The part and not its bytes: the journal records the reference the response
-    # made of it as well as what it held.
-    def evidence = context.message.evidence
 
     def record_error(exchange)
       error = context.message.body

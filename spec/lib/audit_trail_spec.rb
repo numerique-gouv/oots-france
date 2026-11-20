@@ -133,7 +133,7 @@ RSpec.describe AuditTrail do
     it 'records the fingerprint of the evidence, and never the evidence' do
       expect(journalled).to have_attributes(
         event_type: 'response_received',
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence(EvidenceType::PDF).content),
         evidence_mime_type: 'application/pdf',
         country_code: 'FR',
       )
@@ -457,7 +457,7 @@ RSpec.describe AuditTrail do
 
       expect(journalled).to have_attributes(
         event_type: 'response_received',
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence(EvidenceType::PDF).content),
         evidence_mime_type: 'application/pdf',
         evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
         request_id: nil,

@@ -186,8 +186,17 @@ class JournalledMessage
   # carry the pieces that *are* available, and a body too malformed to parse is
   # exactly the one whose evidence fingerprint an auditor still needs. Past this
   # guard, a part was announced and could not be read.
+  #
+  # The part of the format the exchange requested when the envelope declares
+  # one, being the one the portal is handed; otherwise the first declared,
+  # which is all there is to record of a response that answers no exchange or
+  # missed the format asked. Chapter 4.8 §3.2 asks for evidence content
+  # referenced, whatever its format, and the line has one set of columns.
   def carried_evidence
-    message.evidence if message.carries_evidence?
+    format = exchange&.requested_format
+    return message.evidence(format) if format && message.carries_evidence?(format)
+
+    message.first_evidence
   end
 
   # A message we cannot read must still be journalled, so what its body would

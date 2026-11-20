@@ -135,7 +135,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { RetrievedMessageParser.new(real_envelope('erreurObjetIntrouvable')) }
 
     let!(:exchange) do
-      create(:exchange, :sent, exchange_id: message.exchange_id)
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id)
     end
 
     before { allow(message).to receive(:body).and_raise(UnreadableMessageError, 'corps illisible') }
@@ -166,7 +166,7 @@ RSpec.describe IncomingMessage::Process do
       envelope_with_body('erreurObjetIntrouvable') { |body| body.gsub('query:QueryResponse', 'query:QueryRequest') }
     end
 
-    let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
+    let!(:exchange) { create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id) }
 
     before { allow(gateway).to receive(:retrieve).and_return(message) }
 
@@ -194,7 +194,7 @@ RSpec.describe IncomingMessage::Process do
       envelope_with_body('erreurObjetIntrouvable') { |body| body.sub(%r{<rs:Exception.*?</rs:Exception>}m, '') }
     end
 
-    let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
+    let!(:exchange) { create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id) }
 
     it 'names both rules requiring one on the line of its arrival' do
       process
@@ -233,13 +233,34 @@ RSpec.describe IncomingMessage::Process do
     end
   end
 
+  # Chapter 4.5.2 §3.3 has a response provide the distributions the requester
+  # asked for: one carrying another format only is not handed to the portal,
+  # and the exchange ends as it does on any response missing its evidence.
+  describe 'a response lacking the format the exchange requested' do
+    let(:message) do
+      envelope_with_evidence_parts(MimePart.new(mime_type: EvidenceType::PDF, content_id: 'cid:attestation@oots.fr',
+        content: "%PDF-1.4\n".b))
+    end
+    let(:collaborators) { super().merge(evidence_forwarder: instance_double(EvidenceForwarder, deliver: nil)) }
+    let!(:exchange) do
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id, requested_format: 'application/json')
+    end
+
+    it 'hands nothing over and settles the exchange as failed' do
+      process
+
+      expect(collaborators[:evidence_forwarder]).not_to have_received(:deliver)
+      expect(exchange.reload).to have_attributes(status: 'failed')
+    end
+  end
+
   # A list naming evidence the envelope does not carry is a response missing
   # its evidence: unreadable, on either request of an exchange.
   describe 'a response whose list names evidence it does not carry' do
     let(:message) { RetrievedMessageParser.new(without_evidence(real_envelope('reponseAvecPieceJointe'))) }
 
     let!(:conversation) do
-      create(:exchange, :sent, exchange_id: message.exchange_id)
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id)
     end
 
     it 'settles the exchange as a failure, under no code' do
@@ -249,7 +270,7 @@ RSpec.describe IncomingMessage::Process do
     end
 
     context 'when it answers a confirmed preview' do
-      let!(:conversation) { create(:exchange, :preview_confirmed, exchange_id: message.exchange_id) }
+      let!(:conversation) { create(:exchange, :with_request_basis, :preview_confirmed, exchange_id: message.exchange_id) }
 
       it 'settles the exchange as a failure, and not as the user declining' do
         process
@@ -265,7 +286,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { response_matching_nothing }
 
     let!(:conversation) do
-      create(:exchange, :sent, exchange_id: message.exchange_id)
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id)
     end
 
     it 'settles the exchange as unmatched' do
@@ -328,7 +349,7 @@ RSpec.describe IncomingMessage::Process do
     let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
     let!(:exchange) do
-      create(:exchange, :sent, exchange_id: message.exchange_id)
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id)
     end
 
     # Retrying is not an option: the PMode erases a message once retrieved, so a
@@ -448,7 +469,7 @@ RSpec.describe IncomingMessage::Process do
     end
 
     it 'settles the one exchange its conversation still has underway' do
-      exchange = create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id)
+      exchange = create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id)
 
       process
 
@@ -456,7 +477,7 @@ RSpec.describe IncomingMessage::Process do
     end
 
     it 'settles none where the conversation holds two' do
-      waiting = Array.new(2) { create(:exchange, :sent, conversation_id: message.conversation_id) }
+      waiting = Array.new(2) { create(:exchange, :with_request_basis, :sent, conversation_id: message.conversation_id) }
 
       process
 
@@ -474,7 +495,7 @@ RSpec.describe IncomingMessage::Process do
     before { allow(collaborators[:evidence_forwarder]).to receive(:deliver) }
 
     it 'journals R-EDM-RESP-C002 against the literal of the 1.2 line' do
-      create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+      create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id,
         request_id: message.body.request_id)
 
       process
@@ -490,7 +511,7 @@ RSpec.describe IncomingMessage::Process do
       let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
 
       it 'journals R-EDM-RESP-C002 all the same' do
-        create(:exchange, :sent, :legacy_line, exchange_id: message.exchange_id,
+        create(:exchange, :with_request_basis, :sent, :legacy_line, exchange_id: message.exchange_id,
           conversation_id: message.conversation_id, request_id: message.body.request_id)
 
         process
@@ -583,7 +604,7 @@ RSpec.describe IncomingMessage::Process do
     # France sent comes back to it as a request received.
     describe 'a request coming back on an exchange France sent' do
       let!(:sent) do
-        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+        create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id,
           request_id: message.body.request_id)
       end
 
@@ -614,7 +635,7 @@ RSpec.describe IncomingMessage::Process do
     describe 'a response correlated by the request it answers' do
       let(:message) { earlier_line_response }
       let!(:sent) do
-        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+        create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id,
           request_id: message.body.request_id)
       end
 
@@ -652,7 +673,7 @@ RSpec.describe IncomingMessage::Process do
       end
 
       it 'journals its arrival under the one exchange the conversation has underway' do
-        sent = create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id)
+        sent = create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id)
 
         process
 

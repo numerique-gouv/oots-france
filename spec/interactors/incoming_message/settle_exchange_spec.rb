@@ -13,7 +13,7 @@ RSpec.describe IncomingMessage::SettleExchange do
     )
   end
   let(:message) { RetrievedMessageParser.new(real_envelope('reponseAvecPieceJointe')) }
-  let!(:exchange) { create(:exchange, :sent, exchange_id: message.exchange_id) }
+  let!(:exchange) { create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id) }
 
   # Chapter 4.4: « An Online Procedure Portal MUST NOT process responses that
   # use request identifiers of previous requests to which it already received a
@@ -161,7 +161,8 @@ RSpec.describe IncomingMessage::SettleExchange do
       settle
 
       expect(evidence_forwarder).to have_received(:deliver)
-        .with(start_with('%PDF'), have_attributes(id: '00000000000002', url: 'http://localhost:4000'), exchange)
+        .with(have_attributes(mime_type: EvidenceType::PDF, content: start_with('%PDF')),
+          have_attributes(id: '00000000000002', url: 'http://localhost:4000'), exchange)
     end
 
     it 'records the exchange as delivered' do
@@ -180,12 +181,78 @@ RSpec.describe IncomingMessage::SettleExchange do
         event_type: 'evidence_delivered',
         exchange_id: exchange.exchange_id,
         country_code: exchange.country_code,
-        evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
-        # Pinned to a literal rather than read off `message.evidence`: taken
+        evidence_digest: Digest::SHA256.hexdigest(message.evidence(EvidenceType::PDF).content),
+        # Pinned to a literal rather than read off `message.evidence(EvidenceType::PDF)`: taken
         # from the very call under test, it would prove the value travelled and
         # not that it is right. This is the `href` the fixture declares.
         evidence_content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
       )
+    end
+  end
+
+  # Chapter 4.7 §5 gives each `RegistryObject` its own MIME part, and chapter
+  # 4.5.2 §3.3 has a response provide the distributions « requested by the
+  # EvidenceRequester »: the portal is handed the part of the format the
+  # exchange asked for, whatever that format, and that part alone.
+  describe 'an answer in the format the exchange requested' do
+    let(:json) { MimePart.new(mime_type: 'application/json', content_id: 'cid:statut@oots.fr', content: '{"inscrit":true}') }
+    let(:pdf) { MimePart.new(mime_type: EvidenceType::PDF, content_id: 'cid:attestation@oots.fr', content: "%PDF-1.4\n".b) }
+    let!(:exchange) do
+      create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id, requested_format: 'application/json')
+    end
+
+    context 'when the response carries that format alone' do
+      let(:message) { envelope_with_evidence_parts(json) }
+
+      it 'hands over the bytes of that part, under its type' do
+        settle
+
+        expect(evidence_forwarder).to have_received(:deliver)
+          .with(have_attributes(mime_type: 'application/json', content: '{"inscrit":true}'), anything, exchange)
+        expect(exchange.reload).to have_attributes(status: 'delivered')
+      end
+
+      it 'journals the delivery of that part' do
+        settle
+
+        expect(AuditEvent.last).to have_attributes(
+          event_type: 'evidence_delivered', evidence_mime_type: 'application/json',
+          evidence_content_id: 'cid:statut@oots.fr', evidence_digest: Digest::SHA256.hexdigest('{"inscrit":true}'),
+        )
+      end
+    end
+
+    context 'when the response carries a PDF beside it' do
+      let(:message) { envelope_with_evidence_parts(pdf, json) }
+
+      it 'hands over the part of the requested format alone' do
+        settle
+
+        expect(evidence_forwarder).to have_received(:deliver).once
+          .with(have_attributes(mime_type: 'application/json'), anything, exchange)
+      end
+    end
+
+    context 'when the exchange requested the PDF of that same response' do
+      let(:message) { envelope_with_evidence_parts(pdf, json) }
+      let!(:exchange) { create(:exchange, :with_request_basis, :sent, exchange_id: message.exchange_id) }
+
+      it 'hands over the PDF alone' do
+        settle
+
+        expect(evidence_forwarder).to have_received(:deliver).once
+          .with(have_attributes(mime_type: EvidenceType::PDF, content: "%PDF-1.4\n".b), anything, exchange)
+      end
+    end
+
+    context 'when the response lacks the requested format' do
+      let(:message) { envelope_with_evidence_parts(pdf) }
+
+      it 'hands nothing over, and raises for the exchange to be given up' do
+        expect { settle }.to raise_error(UnreadableMessageError, %r{application/json})
+
+        expect(evidence_forwarder).not_to have_received(:deliver)
+      end
     end
   end
 
@@ -305,7 +372,7 @@ RSpec.describe IncomingMessage::SettleExchange do
   # second request has gone.
   describe 'an answer to the second request of a preview' do
     let!(:exchange) do
-      create(:exchange, :preview_confirmed, exchange_id: message.exchange_id)
+      create(:exchange, :with_request_basis, :preview_confirmed, exchange_id: message.exchange_id)
     end
 
     it 'hands the evidence over, as the first would have' do
@@ -401,7 +468,7 @@ RSpec.describe IncomingMessage::SettleExchange do
 
     context 'when the exchange already reached that outcome' do
       let(:message) { response_matching_nothing }
-      let!(:exchange) { create(:exchange, :unmatched, exchange_id: message.exchange_id) }
+      let!(:exchange) { create(:exchange, :with_request_basis, :unmatched, exchange_id: message.exchange_id) }
 
       it 'turns a second answer away, and leaves the outcome as it was' do
         expect { settle }.to change { AuditEvent.where(event_type: 'response_refused').count }.by(1)
@@ -412,7 +479,7 @@ RSpec.describe IncomingMessage::SettleExchange do
     context 'when it arrives on the 1.2 line' do
       let(:message) { earlier_line_response_matching_nothing }
       let!(:exchange) do
-        create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+        create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id,
           request_id: message.body.request_id)
       end
 
@@ -604,7 +671,7 @@ RSpec.describe IncomingMessage::SettleExchange do
   describe 'an answer arriving on the 1.2 line' do
     let(:message) { earlier_line_response }
     let!(:exchange) do
-      create(:exchange, :sent, :legacy_line, conversation_id: message.conversation_id,
+      create(:exchange, :with_request_basis, :sent, :legacy_line, conversation_id: message.conversation_id,
         request_id: message.body.request_id)
     end
 

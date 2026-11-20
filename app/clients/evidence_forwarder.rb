@@ -1,8 +1,10 @@
 # Hands the evidence back to the French service provider that asked for it.
 #
-# Sent as what it is — a PDF, with its own content type — and not wrapped in a
-# JSON envelope: the receiver saves the body to a file, and anything else makes
-# it unpack a serialised byte array first.
+# Sent as what it is — the bytes of the part, under the type the response
+# declared for it, which is the format the exchange requested — and not wrapped
+# in a JSON envelope: the receiver saves the body to a file, and anything else
+# makes it unpack a serialised byte array first. Untransformed: chapter 1 §4.2
+# leaves any « format transformation » to the portal.
 #
 # The body carries the evidence and nothing else, so the two identifiers that
 # say which exchange it answers travel in the query string. They are the pair
@@ -24,7 +26,7 @@ class EvidenceForwarder
   end
 
   def deliver(evidence, requester, exchange)
-    connection.post("#{requester.url}#{PATH}", evidence, 'Content-Type' => Attachment::MIME_TYPE) do |request|
+    connection.post("#{requester.url}#{PATH}", evidence.content, 'Content-Type' => evidence.mime_type) do |request|
       request.params.update(echange: exchange.exchange_id, conversation: exchange.conversation_id)
     end
   end

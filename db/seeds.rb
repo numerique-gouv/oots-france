@@ -532,7 +532,7 @@ if Rails.env.development?
   demonstration_evidence_type = EvidenceType.new(
     id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/6f9619ff-8b86-d011-b42d-00c04fc964ff',
     descriptions: { 'FR' => "Attestation d'inscription", 'EN' => 'Certificate of enrolment' },
-    distribution_formats: [RetrievedMessageParser::PDF],
+    distribution_formats: [EvidenceType::PDF],
   )
 
   # L'empreinte d'une ligne d'un échange **entrant**, celle d'un document que la
@@ -603,7 +603,7 @@ if Rails.env.development?
              end
 
     { evidence_digest: digest,
-      evidence_mime_type: RetrievedMessageParser::PDF,
+      evidence_mime_type: EvidenceType::PDF,
       evidence_content_id: content_id }
   end
 

@@ -367,6 +367,27 @@ module Fixtures
     RetrievedMessageParser.new(document.to_xml)
   end
 
+  # The real response with its evidence part replaced by the ones given, each a
+  # `MimePart`, in order: what a correspondent answering in several
+  # distributions sends — chapter 4.7 §5 gives each `RegistryObject` its own MIME
+  # part — or in a format other than the PDF captured. The header declaration
+  # and the payload are cloned from the captured ones, so the namespaces stay
+  # those Domibus bound.
+  def envelope_with_evidence_parts(*parts)
+    document = Nokogiri::XML(real_envelope('reponseAvecPieceJointe'))
+    declared = document.at_xpath("//eb:PartInfo[.//eb:Property[@name='MimeType']='application/pdf']",
+      OotsNamespaces::NAMESPACES)
+    payload = document.xpath('//payload').find { |found| found['contentType'] == 'application/pdf' }
+
+    parts.each do |part|
+      declared.before(declared_part(declared, part))
+      payload.before(carried_payload(payload, part))
+    end
+    [declared, payload].each(&:remove)
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
   # The complement of the above: a real envelope with one of its elements given
   # another value — how a spec fabricates a message the gateway would have
   # accepted and a TDD rule refuses. Same binding by URI, for the same reason.
@@ -385,6 +406,21 @@ module Fixtures
   end
 
   private
+
+  def declared_part(template, part)
+    template.dup.tap do |copy|
+      copy['href'] = part.content_id
+      copy.at_xpath(".//eb:Property[@name='MimeType']", OotsNamespaces::NAMESPACES).content = part.mime_type
+    end
+  end
+
+  def carried_payload(template, part)
+    template.dup.tap do |copy|
+      copy['payloadId'] = part.content_id
+      copy['contentType'] = part.mime_type
+      copy.at_xpath('./value').content = Base64.strict_encode64(part.content)
+    end
+  end
 
   # Left alone where there is no such slot — a response carries none.
   def translated_procedure(body)
