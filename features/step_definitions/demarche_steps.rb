@@ -1,3 +1,6 @@
+ParameterType(name: 'joueur', regexp: /l'administrateur|le visiteur/, transformer: ->(joueur) { joueur },
+  use_for_snippets: false)
+
 Étantdonné('l\'administrateur de démonstration connecté à l\'espace d\'administration') do
   @navigateur = DemoBrowser.new(procedure_url)
   @navigateur.sign_in
@@ -15,15 +18,15 @@ end
 # The card of one line, chosen from the screen that offers both: every page of
 # the walk after it lives under that line's segment, and the steps below
 # compose their addresses on it.
-Quand('l\'administrateur choisit la version {string}') do |carte|
-  @navigateur.visit('/admin/demo')
+Quand('{joueur} choisit la version {string}') do |_joueur, carte|
+  @navigateur.visit(racine_de_la_demarche)
   @navigateur.choose_card(carte)
   @ligne = EdmSpecification.from_segment("v#{carte.delete_prefix('OOTS ')}")
 end
 
 # The entry of one procedure, chosen from the screen that follows the line:
 # every page of the walk after it lives under its code too.
-Quand('l\'administrateur choisit la démarche {string}') do |code|
+Quand('{joueur} choisit la démarche {string}') do |_joueur, code|
   @navigateur.choose_procedure(code)
   @demarche = code
 end
@@ -49,7 +52,7 @@ Quand('l\'administrateur consent à la transmission de ses données') do
 end
 
 # The whole flow, for the scenarios that are about what comes after it.
-Quand('l\'administrateur s\'identifie avec l\'identité de test {string}') do |cle|
+Quand('{joueur} s\'identifie avec l\'identité de test {string}') do |_joueur, cle|
   @navigateur.visit(adresse_de_la_demarche)
   @navigateur.start_identification('fake')
   @navigateur.choose('country', 'DK')
@@ -62,7 +65,7 @@ ENTERED_IDENTITY_FIELDS = {
   'identifiant eIDAS' => 'national_part'
 }.freeze
 
-Quand('l\'administrateur s\'identifie en saisissant cette identité sous le pays {string}:') do |code, table|
+Quand('{joueur} s\'identifie en saisissant cette identité sous le pays {string}:') do |_joueur, code, table|
   @navigateur.visit(adresse_de_la_demarche)
   @navigateur.start_identification('fake')
   @navigateur.choose('country', code)
@@ -71,7 +74,7 @@ Quand('l\'administrateur s\'identifie en saisissant cette identité sous le pays
 end
 
 # The heading is the procedure's, as on the home page: the two are one journey.
-Alors('l\'administrateur arrive sur la page des justificatifs') do
+Alors('{joueur} arrive sur la page des justificatifs') do |_joueur|
   expect(@navigateur.current_url).to end_with(adresse_de_la_demarche('documents'))
   expect(@navigateur.title).to include(@demarche)
 end
@@ -420,7 +423,15 @@ def adresse_de_la_demarche(page = nil)
   raise 'Aucune version choisie : le pas « choisit la version » précède celui-ci.' if @ligne.nil?
   raise 'Aucune démarche choisie : le pas « choisit la démarche » précède celui-ci.' if @demarche.nil?
 
-  ['/admin/demo', @ligne.segment, @demarche, page].compact.join('/')
+  [racine_de_la_demarche, @ligne.segment, @demarche, page].compact.join('/')
+end
+
+# The entrance the scenario walks: the console's unless the scenario began as
+# a visitor of the public site.
+def racine_de_la_demarche = @racine || '/admin/demo'
+
+def requeteur_de_la_demarche
+  ENV.fetch(@racine ? 'IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE' : 'IDENTIFIANT_REQUETEUR_DEMARCHE')
 end
 
 # The departure this scenario opened, found by the requester it was sent under
@@ -439,7 +450,7 @@ end
 
 def departs_de_la_demarche
   ServerAuditEvent
-    .where(event_type: 'request_sent', evidence_requester_id: ENV.fetch('IDENTIFIANT_REQUETEUR_DEMARCHE'))
+    .where(event_type: 'request_sent', evidence_requester_id: requeteur_de_la_demarche)
     .where(id: (@journal_avant.to_i + 1)..)
     .order(:id)
 end
