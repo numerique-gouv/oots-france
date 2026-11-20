@@ -423,6 +423,63 @@ RSpec.describe 'GET /requete/pieceJustificative' do
     end
   end
 
+  # `R-EDM-REQ-C033` (FATAL) holds the `sdg:Format` of a request to the
+  # `OOTSMediaTypes` list, and chapter 4.5.1 §3.5 leaves the distribution to the
+  # Evidence Requester.
+  describe 'the format the caller may name' do
+    it 'passes on the one it was given' do
+      get '/requete/pieceJustificative', params: parameters.merge(format: 'application/json')
+
+      expect(response).to have_http_status(:accepted)
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(requested_format: 'application/json'))
+    end
+
+    it 'asks for none when the caller named none' do
+      get '/requete/pieceJustificative', params: parameters
+
+      expect(EvidenceRequest::Fetch).to have_received(:call).with(hash_including(requested_format: nil))
+    end
+
+    it 'refuses a format outside the list before calling anything, and journals it' do
+      get '/requete/pieceJustificative', params: parameters.merge(format: 'text/plain')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body['erreur']).to include('application/json', 'image/svg+xml')
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+      expect(AuditEvent.sole).to have_attributes(event_type: 'request_refused')
+    end
+
+    # `permit` drops an array: read as absent, it would fall back on the default.
+    it 'refuses a format named as a list' do
+      get '/requete/pieceJustificative', params: parameters.merge(format: ['application/json'])
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(EvidenceRequest::Fetch).not_to have_received(:call)
+    end
+
+    it 'reports a format the directory does not publish as the caller fault' do
+      allow(EvidenceRequest::Fetch).to receive(:call)
+        .and_return(failure(:format_not_published, 'Le format « application/json » n’est pas publié'))
+
+      get '/requete/pieceJustificative', params: parameters.merge(format: 'application/json')
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(AuditEvent.sole).to have_attributes(event_type: 'request_refused')
+    end
+
+    # Chapter 1 §4.2 leaves any format transformation to the portal, which plans
+    # one knowing what it will be handed — named or retained by default.
+    it 'answers the format the exchange requested' do
+      exchange.update!(request_basis: build(:exchange, :with_request_basis, requested_format: 'application/xml').request_basis)
+
+      get '/requete/pieceJustificative', params: parameters.merge(format: 'application/xml')
+      expect(response.parsed_body).to include('format' => 'application/xml')
+
+      get "/requete/#{exchange.exchange_id}"
+      expect(response.parsed_body).to include('format' => 'application/xml')
+    end
+  end
+
   # The exchange settles on another connection entirely, so this is where a
   # caller holding the identifier learns how it ended.
   describe 'reading the state back' do

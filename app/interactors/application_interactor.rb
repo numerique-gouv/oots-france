@@ -24,8 +24,8 @@ class ApplicationInteractor
   # The failures this application knows how to say. A `fail_with_error` on a key
   # absent from here has no wording, and the console would render an empty
   # alert title.
-  FAILURES = %i[agent_refused common_services_refused demo_evidence_empty demo_locked demo_refused demo_unexpected
-                demo_preview_unconfirmed demo_unplaceable demo_unreachable evidence_type_unchosen
+  FAILURES = %i[agent_refused common_services_refused demo_evidence_empty demo_evidence_untyped demo_locked demo_refused demo_unexpected
+                demo_preview_unconfirmed demo_unplaceable demo_unreachable evidence_type_unchosen format_not_published
                 gateway_refused identification_refused invalid_configuration
                 invalid_directory_entry invalid_token no_evidence_type no_provider preview_not_awaited
                 provider_classification_required sign_in_failed unknown_country

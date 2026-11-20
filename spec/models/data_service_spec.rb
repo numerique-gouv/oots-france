@@ -206,6 +206,44 @@ RSpec.describe DataService do
     end
   end
 
+  # Chapter 4.5.1 §3.5: « only distributions which the data service is able to
+  # provide can be requested ».
+  describe '#requesting' do
+    let(:model) { 'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40' }
+    let(:published) do
+      build(:data_service, distributions: [
+        Distribution.new(format: 'application/pdf', language: 'EN'),
+        Distribution.new(format: 'application/xml', language: 'FI', conforms_to: model),
+        Distribution.new(format: 'application/xml', language: 'SV'),
+      ])
+    end
+
+    it 'requests the first distribution of that format, with its language and data model' do
+      expect(published.requesting('application/xml')).to have_attributes(
+        distribution_format: 'application/xml', distribution_language: 'FI', distribution_conforms_to: model,
+      )
+    end
+
+    it 'keeps the rest of the service as the directory published it' do
+      expect(published.requesting('application/xml')).to have_attributes(
+        id: published.id, providers: published.providers, distributions: published.distributions,
+        descriptions: published.descriptions,
+      )
+    end
+
+    it 'leaves no data model of the default distribution behind' do
+      structured = build(:data_service, distribution_format: 'application/xml', distribution_conforms_to: model,
+        distributions: [Distribution.new(format: 'application/xml', conforms_to: model), Distribution.new(format: 'application/pdf')])
+
+      expect(structured.requesting('application/pdf')).to have_attributes(distribution_conforms_to: nil,
+        distribution_language: nil)
+    end
+
+    it 'is nil when the service publishes no distribution of that format' do
+      expect(published.requesting('application/json')).to be_nil
+    end
+  end
+
   # Whether an absent data model is the directory at fault or the rules
   # excusing it: C039 and C041 require the value beside a structured format,
   # unless the record publishes an unstructured distribution as well.

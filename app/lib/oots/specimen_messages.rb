@@ -129,6 +129,7 @@ module Oots
       write('requetePersonneMorale', *request(subject: legal_person))
       write('requeteClassification', *request(provider_classifications: [code_list_classification]))
       write('requeteTroisClassifications', *request(provider_classifications: three_classifications))
+      write('requeteFormatStructure', *request(service: structured_data_service))
     end
 
     # One specimen per kind of subject, for the reason the requests have one:
@@ -151,9 +152,10 @@ module Oots
 
     # A preview location makes it the second request of chapter 4.9 §2 step 12,
     # which only a request that offered the preview can be.
-    def request(subject: beneficiary, preview_location: nil, return_location: nil, provider_classifications: [])
+    def request(subject: beneficiary, preview_location: nil, return_location: nil, provider_classifications: [],
+                service: data_service)
       body = EvidenceRequestBuilder.new(
-        requester:, provider: german_provider, beneficiary: subject, requirement:, data_service:,
+        requester:, provider: german_provider, beneficiary: subject, requirement:, data_service: service,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         associated_documents: [AssociatedDocument::TRANSLATION], provider_classifications:,
         preview_possible: preview_location.present?, preview_location:, return_location:,
@@ -427,6 +429,19 @@ module Oots
         descriptions: evidence_type.descriptions,
         details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
       )
+    end
+
+    # The structured distribution a portal names by `format`, published without
+    # a data model, as the acceptance directory publishes several: chapter
+    # 4.5.1 §3.5 lets it travel without `sdg:ConformsTo`, which R-EDM-REQ-C070
+    # and C071 only warn of.
+    def structured_data_service
+      DataService.new(
+        **data_service.attributes.symbolize_keys, descriptions: data_service.descriptions,
+        details: data_service.details,
+        distributions: [Distribution.new(format: EvidenceType::PDF, language: 'EN'),
+                        Distribution.new(format: 'application/xml')]
+      ).requesting('application/xml')
     end
   end
 end

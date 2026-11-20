@@ -41,6 +41,39 @@ RSpec.describe EvidenceRequest::ResolveProvider do
     expect(resolve.recipient.id).to eq('AP_DE_01')
   end
 
+  # Chapter 4.5.1 §3.5: the distribution is the Evidence Requester's to select,
+  # among those the data service provides.
+  describe 'a format the portal named' do
+    subject(:resolve) do
+      described_class.call(evidence_type:, country_code: 'DE', common_services:, requested_format:)
+    end
+
+    let(:data_service) do
+      build(:data_service, distributions: [Distribution.new(format: 'application/pdf'),
+                                           Distribution.new(format: 'application/xml', language: 'DE')])
+    end
+
+    context 'when the directory publishes it' do
+      let(:requested_format) { 'application/xml' }
+
+      it 'keeps the service requesting that distribution' do
+        expect(resolve.data_service).to have_attributes(distribution_format: 'application/xml', distribution_language: 'DE')
+      end
+    end
+
+    # No fallback on the default: the portal is told, rather than handed a
+    # format it did not ask for.
+    context 'when the directory does not publish it' do
+      let(:requested_format) { 'application/json' }
+
+      it 'fails under its own key, naming the format' do
+        expect(resolve).to be_failure
+        expect(resolve.error).to include(key: :format_not_published)
+        expect(resolve.error[:errors].first).to include('application/json', 'DE')
+      end
+    end
+  end
+
   describe 'a country the directory holds no provider for' do
     it 'fails, naming what was not found' do
       allow(common_services).to receive(:data_service).and_raise(CountryCodeNotFound, 'Aucun fournisseur … « IT ».')

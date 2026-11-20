@@ -6,7 +6,9 @@
 # and that reason is the only thing the caller can act on. So does the announced
 # date, which chapter 4.5.2 exists to convey: « … the Online Procedure Portal
 # may use this information to inform the user to pause the procedure and to
-# return at a later point … ».
+# return at a later point … ». So does the format the evidence will be handed
+# in: chapter 1 §4.2 leaves any « format transformation » to the portal, which
+# can only plan one knowing what it will receive.
 class ExchangeState
   # `preview_link`: the link the portal presents once it has confirmed a
   # preview, which the answer to that confirmation carries.
@@ -20,6 +22,7 @@ class ExchangeState
       echange: exchange.exchange_id,
       conversation: exchange.conversation_id,
       statut: exchange.status,
+      format: exchange.requested_format,
       codeErreur: exchange.edm_error_code,
       **preview,
       **presented_link,

@@ -2202,6 +2202,7 @@ fr:
     conversation_invalid: L'identifiant de conversation doit être un UUID
     provider_classification_invalid: Chaque classificationFournisseur doit être nommée par l'UUID de sa classification et porter une valeur
     specification_invalid: "La version demandée doit être %{spoken}"
+    format_invalid: "Le format demandé doit être l'un de %{spoken}"
     # Une exigence demandée hors de sa démarche (`exigenceHorsDemarche`) : il
     # n'y a rien d'où partir sans elle, et le code de démarche n'est plus
     # vérifié par l'Evidence Broker — R-EDM-REQ-C003 le borne à la liste
@@ -2333,6 +2334,7 @@ fr:
       # de `FAILURES` n'a pas de libellé, et qu'une clé sans libellé est une
       # alerte vide le jour où une page la rend.
       demo_evidence_empty: Le justificatif remis ne portait aucun octet
+      demo_evidence_untyped: Le justificatif remis ne portait aucun type de la liste OOTSMediaTypes
       demo_unplaceable: Le justificatif remis ne se rattache à aucune demande
       demo_locked: Le requêtage est verrouillé sur ce déploiement
       demo_preview_unconfirmed: La prévisualisation n'a pas pu être confirmée
@@ -2343,6 +2345,7 @@ fr:
       # que l'usager n'en a choisi aucun : rien n'est refusé, rien n'est encore
       # demandé au Data Service Directory.
       evidence_type_unchosen: Aucun type de justificatif choisi parmi ceux que le pays publie
+      format_not_published: Format non publié pour ce justificatif
       gateway_refused: La passerelle a refusé le message
       identification_refused: L'identification par FranceConnect+ n'a pas abouti
       invalid_configuration: Cette installation ne peut pas construire le message
@@ -2398,6 +2401,7 @@ fr:
           Justificatif remis pour l'échange %{exchange} et la conversation %{conversation} :
           la démarche de démonstration n'a ouvert aucune demande sous ces identifiants, remise refusée.
         empty: "Justificatif remis sans aucun octet pour l'échange %{exchange} : remise refusée."
+        untyped: "Justificatif remis sous le type %{type}, hors de la liste OOTSMediaTypes, pour l'échange %{exchange} : remise refusée."
         unnamed: non fourni
       complete_identification:
         refused_by_portal: "FranceConnect+ a refusé l'identification (%{error}) : %{description}"
@@ -2483,6 +2487,12 @@ fr:
           L'exigence « %{requirement} » n'est pas une exigence de la démarche « %{procedure} »
         unknown_evidence_type: >-
           Le type de justificatif « %{evidence_type} » n'est pas publié pour l'exigence « %{requirement} » dans le pays « %{country} »
+      # Le portail a nommé un `format` que le Data Service Directory ne publie
+      # pas pour le service retenu : aucun repli sur le format par défaut, la
+      # requête n'est pas émise.
+      resolve_provider:
+        format_not_published: >-
+          Le format « %{media_type} » n'est pas publié pour le type de justificatif « %{evidence_type} » dans le pays « %{country} »
       # Ce que la France ne fait pas d'une notification de la passerelle sur une
       # requête qui n'a pas atteint le correspondant, consigné au journal
       # applicatif avec l'identifiant que la passerelle donne au message.
@@ -2966,8 +2976,9 @@ fr:
             submit: Ajouter
       evidences:
         show:
-          # Le nom proposé par le navigateur à l'enregistrement.
-          filename: document.pdf
+          # Le nom proposé par le navigateur à l'enregistrement, sous l'extension du
+          # type sous lequel le justificatif a été remis.
+          filename: document.%{extension}
     common_services:
       access_points:
         index:

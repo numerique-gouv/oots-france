@@ -1581,6 +1581,7 @@ en:
     conversation_invalid: The conversation identifier must be a UUID
     provider_classification_invalid: Each classificationFournisseur must be named by the UUID of its classification and carry a value
     specification_invalid: "The requested version must be %{spoken}"
+    format_invalid: "The requested format must be one of %{spoken}"
     outside_procedure:
       requirement_required: A requirement requested outside its procedure must be named in idExigence
       procedure_invalid: The procedure code must be a code from the Procedures list, or 00
@@ -1657,6 +1658,7 @@ en:
       agent_refused: The agent's address is neither in an admitted domain nor invited
       sign_in_failed: Signing in with ProConnect did not succeed
       demo_evidence_empty: The evidence delivered contained no bytes
+      demo_evidence_untyped: The evidence delivered carried no type of the OOTSMediaTypes list
       demo_unplaceable: The evidence delivered matches no request
       demo_locked: Querying is locked on this deployment
       demo_preview_unconfirmed: The preview could not be confirmed
@@ -1664,6 +1666,7 @@ en:
       demo_unexpected: Unexpected response from the query service
       demo_unreachable: The query service could not be reached
       evidence_type_unchosen: No evidence type chosen among those the country publishes
+      format_not_published: Format not published for this evidence
       gateway_refused: The gateway refused the message
       identification_refused: Identification with FranceConnect+ did not succeed
       invalid_configuration: This installation cannot build the message
@@ -1704,6 +1707,7 @@ en:
           Evidence delivered for exchange %{exchange} and conversation %{conversation}:
           the demonstration procedure opened no request under these identifiers, delivery refused.
         empty: "Evidence delivered with no bytes for exchange %{exchange}: delivery refused."
+        untyped: "Evidence delivered under the type %{type}, outside the OOTSMediaTypes list, for exchange %{exchange}: delivery refused."
         unnamed: not provided
       complete_identification:
         refused_by_portal: "FranceConnect+ refused the identification (%{error}): %{description}"
@@ -1756,6 +1760,9 @@ en:
           The requirement "%{requirement}" is not a requirement of the procedure "%{procedure}"
         unknown_evidence_type: >-
           The evidence type "%{evidence_type}" is not published for the requirement "%{requirement}" in the country "%{country}"
+      resolve_provider:
+        format_not_published: >-
+          The format "%{media_type}" is not published for the evidence type "%{evidence_type}" in the country "%{country}"
       record_delivery_failure:
         unknown: "Notification %{status} ignored: no sent request carries message identifier %{id}"
         ignored: "Notification %{status} ignored for message %{id}: exchange %{exchange} is already settled"
@@ -2087,7 +2094,7 @@ en:
             submit: Add
       evidences:
         show:
-          filename: document.pdf
+          filename: document.%{extension}
     common_services:
       access_points:
         index:
