@@ -393,7 +393,7 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_exchange_state
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
       post demande_path
-      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
+      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b, EvidenceType::PDF)
     end
 
     it 'offers the button again once the user has identified anew' do
@@ -468,7 +468,7 @@ RSpec.describe 'Admin::Demo::Requests' do
 
     # Le document remis par le worker règle l'état, quoi que dise le contrat.
     it 'offers the document once it has been filed against the exchange' do
-      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
+      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b, EvidenceType::PDF)
 
       get demande_path
 
@@ -698,7 +698,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     it 'settles one zone while the other is still waiting' do
       post demande_path(premiere)
       post demande_path(seconde)
-      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
+      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document, EvidenceType::PDF)
 
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
@@ -731,8 +731,8 @@ RSpec.describe 'Admin::Demo::Requests' do
     it 'serves the document of the request the address names' do
       post demande_path(premiere)
       post demande_path(seconde)
-      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
-      Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
+      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document, EvidenceType::PDF)
+      Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document, EvidenceType::PDF)
 
       get justificatif_path(seconde)
 
@@ -743,7 +743,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     # the document nor the zone of one is anything it may obtain.
     it 'serves neither document nor zone to a session that followed neither request' do
       post demande_path(premiere)
-      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
+      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document, EvidenceType::PDF)
 
       identify_demo_user
 
@@ -782,7 +782,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     it 'reloads each zone on its own request, asking the contract for nothing more' do
       post demande_path(premiere)
       post demande_path(seconde)
-      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
+      Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document, EvidenceType::PDF)
 
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
@@ -869,8 +869,8 @@ RSpec.describe 'Admin::Demo::Requests' do
       # click opened, and not the one whose answer came back last.
       it 'serves each card the document remitted for the exchange its own click opened' do
         clicking_at_once(premiere, seconde)
-        Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document)
-        Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document)
+        Demo::Request.find_by(exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE).receive_evidence!(document, EvidenceType::PDF)
+        Demo::Request.find_by(exchange_id: second_echange).receive_evidence!(autre_document, EvidenceType::PDF)
 
         get justificatif_path(premiere)
         expect(response.body.b).to eq(document)

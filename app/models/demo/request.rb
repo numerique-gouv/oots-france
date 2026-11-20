@@ -89,13 +89,23 @@ module Demo
 
     # Chapter 1 §4.2 has the user unable to « modify its content in any way », so
     # what is filed is what arrived, byte for byte, and the digest is taken of
-    # those same bytes rather than recomputed anywhere else.
-    def receive_evidence!(content)
+    # those same bytes rather than recomputed anywhere else. The type it was
+    # handed under is kept beside it, to serve it as what it is.
+    def receive_evidence!(content, mime_type)
       update!(
         evidence: content,
+        evidence_mime_type: mime_type,
         evidence_digest: Digest::SHA256.hexdigest(content),
         evidence_received_at: Time.current,
       )
     end
+
+    # Whether the browser opens the evidence in place. A PDF alone: the evidence
+    # comes from a correspondent, and an `image/svg+xml` or an `application/xml`
+    # opened in place would run under the console's origin, which no content
+    # security policy guards.
+    def evidence_opens_in_place? = evidence_mime_type == EvidenceType::PDF
+
+    def evidence_extension = OotsMediaType::EXTENSIONS.fetch(evidence_mime_type)
   end
 end

@@ -4,7 +4,7 @@ RSpec.describe Demo::ReceiveEvidence do
   let(:content) { "%PDF-1.4\ndrapeau".b }
   let(:arguments) do
     { exchange_id: DemoContractStubs::ACCEPTED_EXCHANGE,
-      conversation_id: DemoContractStubs::ACCEPTED_CONVERSATION, evidence: content }
+      conversation_id: DemoContractStubs::ACCEPTED_CONVERSATION, evidence: content, mime_type: EvidenceType::PDF }
   end
 
   context 'when the procedure opened the request the delivery names' do

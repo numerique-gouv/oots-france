@@ -280,7 +280,7 @@ Quand('deux interrogations de suite n\'obtiennent aucune réponse exploitable') 
 end
 
 Quand('le justificatif est remis') do
-  Demo::Request.sole.receive_evidence!(EVIDENCE)
+  Demo::Request.sole.receive_evidence!(EVIDENCE, EvidenceType::PDF)
 end
 
 Quand("l'usager recharge la page des justificatifs") do

@@ -24,7 +24,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
   end
 
   describe 'GET /admin/demo/justificatif' do
-    before { Demo::Request.sole.receive_evidence!(content) }
+    before { Demo::Request.sole.receive_evidence!(content, EvidenceType::PDF) }
 
     # CA1, second half. Chapter 1 §4.2: the user « cannot modify its content in
     # any way », so the bytes are served as they arrived, and their digest is
@@ -32,13 +32,13 @@ RSpec.describe 'Admin::Demo::Evidences' do
     it 'serves the evidence byte for byte, under its own type' do
       get justificatif_path
 
-      expect(response.media_type).to eq(Attachment::MIME_TYPE)
+      expect(response.media_type).to eq(EvidenceType::PDF)
       expect(response.body.b).to eq(content)
       expect(Digest::SHA256.hexdigest(response.body.b)).to eq(Demo::Request.sole.evidence_digest)
       # `send_data` defaults to `attachment`: without this, a return to that
       # default would pass every assertion above while making the user download
       # what the chapter has them read and decide on.
-      expect(response.headers['Content-Disposition']).to start_with('inline')
+      expect(response.headers['Content-Disposition']).to start_with('inline').and include('document.pdf')
     end
 
     it 'sends an operator holding no identity back to the start' do
@@ -88,12 +88,32 @@ RSpec.describe 'Admin::Demo::Evidences' do
     expect(response).to redirect_to(admin_demo_documents_path(version: 'v2.0', procedure: 'T1'))
   end
 
+  # The evidence is served under the type it was delivered with. Only a PDF opens
+  # in place: any other comes from a correspondent, and an `image/svg+xml` or
+  # an `application/xml` opened under the console's origin would run there.
+  describe 'an evidence delivered in another format' do
+    {
+      'application/xml' => ['<statut>inscrit</statut>', 'document.xml'],
+      'image/svg+xml' => ['<svg xmlns="http://www.w3.org/2000/svg"/>', 'document.svg'],
+    }.each do |mime_type, (delivered, filename)|
+      it "serves #{mime_type} under its type, offered for saving as #{filename}" do
+        Demo::Request.sole.receive_evidence!(delivered, mime_type)
+
+        get justificatif_path
+
+        expect(response.media_type).to eq(mime_type)
+        expect(response.body).to eq(delivered)
+        expect(response.headers['Content-Disposition']).to start_with('attachment').and include(filename)
+      end
+    end
+  end
+
   # Chapter 1 §4.2 makes the evidence available to « the specific procedure
   # end-user that issued the query », and the parameter only says which of that
   # user's requests is meant: one it does not name is one the session never
   # followed, whatever the register holds.
   describe 'a requirement the session followed no request for' do
-    before { Demo::Request.sole.receive_evidence!(content) }
+    before { Demo::Request.sole.receive_evidence!(content, EvidenceType::PDF) }
 
     it 'serves nothing for a requirement the session never asked about' do
       get justificatif_path('11111111-2222-3333-4444-555555555555')

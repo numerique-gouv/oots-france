@@ -10,9 +10,10 @@ module Admin
     # in any way » — hence the bytes as they arrived, under the type they arrived
     # with, never re-rendered.
     #
-    # `inline`, so the browser opens it where it can and offers to save it
-    # otherwise: the chapter has the user read the evidence and decide, which a
-    # forced download makes a step longer than it is.
+    # `inline` where the evidence may open in place, so the browser opens it:
+    # the chapter has the user read the evidence and decide, which a forced
+    # download makes a step longer than it is. `Demo::Request` says which
+    # evidence may.
     #
     # `exigence` and `type` say which of this journey's own requests is meant,
     # the page offering one document per evidence type it asked for. They name a
@@ -25,8 +26,9 @@ module Admin
 
       def show
         send_data demo_request.evidence,
-          type: Attachment::MIME_TYPE, disposition: :inline,
-          filename: t('admin.demo.evidences.show.filename')
+          type: demo_request.evidence_mime_type,
+          disposition: demo_request.evidence_opens_in_place? ? :inline : :attachment,
+          filename: t('admin.demo.evidences.show.filename', extension: demo_request.evidence_extension)
       end
 
       private

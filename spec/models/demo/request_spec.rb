@@ -72,14 +72,25 @@ RSpec.describe Demo::Request do
     # Chapter 1 §4.2: the user « cannot modify its content in any way », so what
     # is filed is what arrived, and the digest is taken of those same bytes.
     it 'files the bytes as they arrived, with their digest' do
-      request.receive_evidence!(content)
+      request.receive_evidence!(content, EvidenceType::PDF)
 
       expect(request.reload.evidence).to eq(content)
-      expect(request.evidence_digest).to eq(Digest::SHA256.hexdigest(content))
+      expect(request).to have_attributes(evidence_digest: Digest::SHA256.hexdigest(content),
+        evidence_mime_type: EvidenceType::PDF)
+    end
+
+    # Only a PDF opens in place: any other type comes from a correspondent, and
+    # opened under the console's origin an SVG or an XML would run there.
+    it 'opens a PDF alone in place, and names the extension of its type' do
+      request.receive_evidence!(content, EvidenceType::PDF)
+      expect(request).to have_attributes(evidence_opens_in_place?: true, evidence_extension: 'pdf')
+
+      request.receive_evidence!('<svg/>', 'image/svg+xml')
+      expect(request).to have_attributes(evidence_opens_in_place?: false, evidence_extension: 'svg')
     end
 
     it 'is what makes the request one that has its evidence' do
-      expect { request.receive_evidence!(content) }.to change(request, :evidence?).from(false).to(true)
+      expect { request.receive_evidence!(content, EvidenceType::PDF) }.to change(request, :evidence?).from(false).to(true)
     end
   end
 end
