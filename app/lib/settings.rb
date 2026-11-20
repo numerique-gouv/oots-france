@@ -12,6 +12,7 @@ module Settings
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
     IDENTIFIANT_REQUETEUR_DEMARCHE
+    IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
     CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
@@ -242,6 +243,11 @@ module Settings
     # plays C4, and the demonstration looping France to France is a fact of the
     # setup, not an identity the TDD give the two roles.
     def demo_requester_id = required('IDENTIFIANT_REQUETEUR_DEMARCHE')
+
+    # The SIRET the public entrance of the demonstration asks under, registered
+    # in `DONNEES_REQUETEURS` beside the console's: the journal then tells a
+    # visitor's requests from an agent's by the requester alone.
+    def public_demo_requester_id = required('IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE')
 
     def evidence_requesters_data = JSON.parse(required('DONNEES_REQUETEURS'))
 

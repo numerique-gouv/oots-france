@@ -603,6 +603,7 @@ en:
       name: OOTS-France
       skiplink: Quick access
       skiplink_content: Content
+      demonstration_notice: Demonstration — fictitious data
     logo_html: République<br>Française
     entete:
       tagline: Exchange of evidence between European administrations
@@ -615,6 +616,7 @@ en:
         available_evidence: Available evidence
         connecting: Connecting
         faq: FAQ
+        demo: Demo
       admin_space: Administration
       demo: Demo
       directories: Common Services
@@ -662,6 +664,7 @@ en:
       not_submitted: not sent
     demo_breadcrumbs:
       demo: Demo
+      home: Home
       procedure: "Procedure %{code}"
     regrep_body:
       summary: Show the body (%{size})

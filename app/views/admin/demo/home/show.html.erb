@@ -32,7 +32,7 @@
     <% @france_connect_instances.each do |instance| %>
       <li>
         <%= button_to t("admin.demo.home.show.france_connect.#{instance.name}.button"),
-              admin_demo_identification_path, params: { france_connect: instance.name },
+              demo_path(:identification), params: { france_connect: instance.name },
               class: instance.name == 'real' ? 'fr-btn fr-btn--secondary' : 'fr-btn fr-btn--tertiary' %>
       </li>
     <% end %>

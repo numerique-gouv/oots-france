@@ -14,6 +14,9 @@
          connecting: "#{anchor_base}#raccorder", faq: "#{anchor_base}#faq" }.each do |section, path| %>
       <% header.with_direct_link_simple(title: t("layouts.entete.navigation.#{section}"), path:) %>
     <% end %>
+    <% if Demo::Entrance::PUBLIC.open? %>
+      <% header.with_direct_link_simple(title: t('layouts.entete.navigation.demo'), path: demonstration_root_path) %>
+    <% end %>
     <% header.with_tool_link(title: t('layouts.entete.contact'), path: team_mail_address,
          html_attributes: { class: 'fr-icon-mail-line' }) %>
     <% header.with_tool_link(title: t('layouts.entete.admin_space'), path: admin_root_path,

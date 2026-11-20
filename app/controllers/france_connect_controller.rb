@@ -4,6 +4,7 @@
 class FranceConnectController < ApplicationController
   include ChosenLanguage
   include DemoIdentityCookie
+  include RecognisesAdministrator
   include RefusesIdentification
 
   # The « Client keys url » of the demonstration procedure. Distinct from the
@@ -29,20 +30,20 @@ class FranceConnectController < ApplicationController
   # before the authentication could claim to do. A click writes nothing further.
   #
   # The journey plays the line and the procedure of the sign-in page the flow
-  # left from, which the departure kept with the `state`: these addresses are
-  # declared to FranceConnect+ once and for all, and name neither.
+  # left from, under its entrance, which the departure kept with the `state`:
+  # these addresses are declared to FranceConnect+ once and for all, and name
+  # none of the three.
   def retour_connexion
     expected = session.delete(:france_connect)
-    specification = departed_line(expected)
-    procedure = departed_procedure(expected)
+    specification, procedure, entrance = departed_walk(expected)
     result = completed_identification(expected)
 
-    return refuse_identification(result, version: specification&.segment, procedure:) unless result.success?
-    return refuse_incomplete_departure if specification.nil? || procedure.nil?
+    return refuse_identification(result, version: specification&.segment, procedure:, entrance:) unless result.success?
+    return refuse_incomplete_departure(entrance) if specification.nil? || procedure.nil?
 
-    open_journey(result.identity, specification, procedure)
+    open_journey(result.identity, specification, procedure, entrance)
 
-    redirect_to admin_demo_documents_path(version: specification.segment, procedure:)
+    redirect_to demo_path(:documents, entrance:, version: specification.segment, procedure:)
   end
 
   # A page, where the other return is a redirection: after the console's
@@ -62,29 +63,42 @@ class FranceConnectController < ApplicationController
 
   private
 
-  def departed_line(expected) = EdmSpecification.from_segment(expected.to_h.symbolize_keys[:version])
-
-  def departed_procedure(expected)
-    expected.to_h.symbolize_keys[:procedure].presence_in(ProcedureCode::ADMITTED)
-  end
-
   # An identification that succeeded from a departure that kept no line or no
   # admitted procedure opens no journey: none of its pages would have an
   # address. Said and logged like the other refusals.
-  def refuse_incomplete_departure
+  def refuse_incomplete_departure(entrance)
     Rails.logger.warn(LogLine.t('controllers.france_connect.incomplete_departure'))
     reason = t('controllers.france_connect.incomplete_departure')
 
-    redirect_to admin_demo_root_path, flash: { alert: :'interactors.failures.identification_refused', details: [reason] }
+    redirect_to demo_path(:root, entrance:), flash: { alert: :'interactors.failures.identification_refused', details: [reason] }
   end
 
-  def open_journey(identity, specification, procedure_code)
-    previous = Demo::Journey.from_session(session[:demo_journey])
+  def departed_walk(expected)
+    departure = expected.to_h.symbolize_keys
+    entrance = expected ? Demo::Entrance.named(departure[:entrance]) : unattributed_entrance
+
+    [EdmSpecification.from_segment(departure[:version]), departure[:procedure].presence_in(ProcedureCode::ADMITTED),
+     entrance]
+  end
+
+  # A return this browser kept no departure for: the console to an agent it
+  # admits, and to anyone else the public entrance where it is open, rather
+  # than a console login they have no account for.
+  def unattributed_entrance
+    if Demo::Entrance::PUBLIC.open? && !administrator_signed_in?
+      Demo::Entrance::PUBLIC
+    else
+      Demo::Entrance::CONSOLE
+    end
+  end
+
+  def open_journey(identity, specification, procedure_code, entrance)
+    previous = Demo::Journey.from_session(session[entrance.journey_key])
     Demo::Card.forget(previous.id) if previous
 
-    session[:demo_journey] = Demo::Journey.opened(previous:, subject: identity.subject, specification:,
+    session[entrance.journey_key] = Demo::Journey.opened(previous:, subject: identity.subject, specification:,
       procedure_code:).to_session
-    keep_demo_identity(identity)
+    keep_demo_identity(identity, entrance)
   end
 
   def completed_identification(expected)

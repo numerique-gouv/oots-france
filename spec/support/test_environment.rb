@@ -13,6 +13,7 @@ ENV['IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'AP_FR_01'
 ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'
 ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
 ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] ||= '00000000000003'
+ENV['IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE'] ||= '00000000000004'
 ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 ENV['URL_OOTS_FRANCE'] ||= 'http://localhost:3000'
 # API Particulier, which no example reaches: `ApiParticulierStubs` answers

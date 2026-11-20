@@ -71,7 +71,7 @@ class DemoRequirementCardComponent < ViewComponent::Base
 
   # Where the cross posts: the card's own requirement, under the journey's
   # line and procedure.
-  def removal_path = helpers.admin_demo_carte_path(exigence: requirement_uuid)
+  def removal_path = helpers.demo_path(:carte, exigence: requirement_uuid)
 
   # The jurisdiction the evidence was sought in, which the card names twice: in
   # what satisfies the requirement, and in what stands there when nothing does.
@@ -132,20 +132,20 @@ class DemoRequirementCardComponent < ViewComponent::Base
   # console and `DirectoryLookup` already pass between themselves, and a
   # Semantic Repository URL would have to be escaped into the query string of
   # every one of these.
-  def zone_path = helpers.admin_demo_demande_path(exigence: requirement_uuid)
+  def zone_path = helpers.demo_path(:demande, exigence: requirement_uuid)
 
   # Posted outside the zone the request controller watches: the answer replaces
   # what the resolution produced — the country line and the foot of the card,
   # button included — and never the list, nor the region announcing the change.
-  def country_path = helpers.admin_demo_pays_path(exigence: requirement_uuid)
+  def country_path = helpers.demo_path(:pays, exigence: requirement_uuid)
 
   # Posted outside the foot, which is all its answer replaces.
-  def combination_path = helpers.admin_demo_combinaison_path(exigence: requirement_uuid)
+  def combination_path = helpers.demo_path(:combinaison, exigence: requirement_uuid)
 
   # Posted outside what its answer replaces, which is the resolution of its
   # line and the zone: the questions keep the focus and the values typed.
   def answer_path(line)
-    helpers.admin_demo_classification_fournisseur_path(exigence: requirement_uuid,
+    helpers.demo_path(:classification_fournisseur, exigence: requirement_uuid,
       type: line.evidence_type_uuid)
   end
 

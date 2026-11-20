@@ -27,8 +27,10 @@ class AdminBreadcrumbsComponent < ViewComponent::Base
   # section's addresses nest deeper.
   def sections = [section]
 
+  def home = [t('components.admin_breadcrumbs.admin'), helpers.admin_root_path]
+
   def crumbs
-    walked = [[t('components.admin_breadcrumbs.admin'), helpers.admin_root_path], *sections, *@trail]
+    walked = [home, *sections, *@trail]
 
     walked[..-2] + [[walked.last.first, nil]]
   end

@@ -49,13 +49,13 @@ class DemoRequestComponent < ViewComponent::Base
   # answers with every block — and the type it asks for. Parameters and not
   # segments of the path: the path is what `docs/espace_administration.md`
   # documents and what the end-to-end suite finds its form by.
-  def button_path = helpers.admin_demo_demande_path(exigence: requirement_uuid, type: evidence_type.uuid)
+  def button_path = helpers.demo_path(:demande, exigence: requirement_uuid, type: evidence_type.uuid)
 
   # The document this block's own request obtained. Chapter 1 §4.2 has it
   # « made available to the specific procedure end-user that issued the query »,
   # and the requirement and the type only say which of that user's requests is
   # meant.
-  def evidence_path = helpers.admin_demo_justificatif_path(exigence: requirement_uuid, type: evidence_type.uuid)
+  def evidence_path = helpers.demo_path(:justificatif, exigence: requirement_uuid, type: evidence_type.uuid)
 
   # Private: outside the class everything is read through the accessors that
   # apply the precedence of `refused_click?`, and a raw read would skirt it.

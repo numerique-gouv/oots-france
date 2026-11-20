@@ -24,7 +24,7 @@ module Admin
       # it was; one resubmitted lands on the card it already added. A value that
       # is no UUID comes from no form this application renders.
       def create
-        return redirect_to(admin_demo_documents_path) if requirement_uuid.blank?
+        return redirect_to(demo_path(:documents)) if requirement_uuid.blank?
         return head :unprocessable_content unless requirement_uuid.match?(SemanticRepositoryAsset::UUID)
         return back_to_the_card if carried?
 
@@ -38,7 +38,7 @@ module Admin
       def destroy
         ::Demo::Card.added(journey.id).where(requirement_uuid:).delete_all
 
-        redirect_to admin_demo_documents_path
+        redirect_to demo_path(:documents)
       end
 
       private
@@ -53,7 +53,7 @@ module Admin
         if requirement.nil?
           Rails.logger.warn(LogLine.t('controllers.admin.demo.cards.uncatalogued', requirement: requirement_uuid))
 
-          return redirect_to(admin_demo_documents_path)
+          return redirect_to(demo_path(:documents))
         end
 
         ::Demo::Card.add(journey_id: journey.id, requirement:, country_code: card_country)
@@ -71,10 +71,10 @@ module Admin
       def report_unreachable_catalogue(error)
         Rails.logger.warn(LogLine.t('controllers.admin.demo.catalogue_unreachable', error: error.message))
 
-        redirect_to admin_demo_documents_path
+        redirect_to demo_path(:documents)
       end
 
-      def back_to_the_card = redirect_to(admin_demo_documents_path(anchor: "exigence-#{requirement_uuid}"))
+      def back_to_the_card = redirect_to(demo_path(:documents, anchor: "exigence-#{requirement_uuid}"))
     end
   end
 end

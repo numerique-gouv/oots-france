@@ -97,7 +97,7 @@
           hidden: true, data: { demo_request_target: 'disconnected' } do %>
       <span class="fr-icon-error-warning-line demo-request__failed" aria-hidden="true"></span>
       <%= t('components.demo_request_zone.disconnected_html',
-            reload: link_to(t('components.demo_request_zone.reload'), helpers.admin_demo_documents_path)) %>
+            reload: link_to(t('components.demo_request_zone.reload'), helpers.demo_path(:documents))) %>
     <% end %>
   <% end %>
 

@@ -30,14 +30,14 @@ module HoldsDemoJourney
 
   private
 
-  def identity = @identity ||= demo_identity
+  def identity = @identity ||= demo_identity(demo_entrance)
 
-  def journey = @journey ||= ::Demo::Journey.from_session(session[:demo_journey])
+  def journey = @journey ||= ::Demo::Journey.from_session(session[demo_entrance.journey_key])
 
   def demo_specification = journey.specification
 
   def require_journey
-    redirect_to admin_demo_root_path unless identity&.valid? && journey&.valid? && walked_line?
+    redirect_to demo_path(:root) unless identity&.valid? && journey&.valid? && walked_line?
   end
 
   def walked_line?

@@ -44,6 +44,15 @@
     <%= dsfr_skiplink(label: t('layouts.application.skiplink'),
       links: [link_to(t('layouts.application.skiplink_content'), '#contenu')]) %>
     <%= render 'layouts/entete' %>
+    <% if public_demonstration? %>
+      <div class="fr-notice fr-notice--info">
+        <div class="fr-container">
+          <div class="fr-notice__body">
+            <p class="fr-notice__title"><%= t('layouts.application.demonstration_notice') %></p>
+          </div>
+        </div>
+      </div>
+    <% end %>
 
     <%# A page that sets `:full_width` lays out its own containers, so that its
         sections can carry a background from one edge of the window to the other. %>

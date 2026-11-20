@@ -31,7 +31,7 @@ class DemoRequestZoneComponent < ViewComponent::Base
   # The address the combined button posts to, naming no type, and the one the
   # browser re-asks while any block waits — `RequestsController` answering both
   # with the whole zone.
-  def button_path = helpers.admin_demo_demande_path(exigence: @requirement_uuid)
+  def button_path = helpers.demo_path(:demande, exigence: @requirement_uuid)
 
   # Asked again while any block waits: a settled zone carries no polling at all,
   # which is what stops the asking.

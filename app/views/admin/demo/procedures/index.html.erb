@@ -30,7 +30,7 @@
         <%= render CardComponent.new(
               title: ProcedureComponent.label(code, @names[code].presence || DemoProcedureWording.untitled),
               hint: ProcedureComponent.hint(@names[code]),
-              href: admin_demo_home_path(procedure: code),
+              href: demo_path(:home, procedure: code),
               dense: true, clickable: true,
             ) do |carte| %>
           <% if (count = @requirements_declared[code]) %>
