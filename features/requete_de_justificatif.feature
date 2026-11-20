@@ -27,6 +27,21 @@ Fonctionnalité: Demander un justificatif à un autre État membre
     Et le journal des échanges contient tout l'échange, de l'envoi de la requête à la remise du justificatif
     Et le journal des échanges contient le corps RegRep de chaque message, tel qu'il a circulé
 
+  Scénario: le portail reçoit le justificatif dans le format qu'il a nommé
+    Quand le portail demande un justificatif pour la démarche "00" en nommant le format "application/pdf"
+    Alors le portail reçoit tout de suite l'identifiant de l'échange
+    Et le portail reçoit le justificatif, sous "application/pdf"
+
+  Scénario: un format que le Data Service Directory ne publie pas pour le type est refusé
+    Quand le portail demande un justificatif pour la démarche "00" en nommant le format "application/json"
+    Alors le portail reçoit tout de suite un refus, de statut "422"
+    Et le portail ne reçoit aucun justificatif
+
+  Scénario: le statut étudiant demandé en JSON revient au portail en JSON
+    Quand le portail demande pour la démarche "T1" le statut étudiant de Martin Jacques, né à "75102", en nommant le format "application/json"
+    Alors le portail reçoit tout de suite l'identifiant de l'échange
+    Et le portail reçoit le justificatif, sous "application/json"
+
   Scénario: deux demandes d'un même usager forment une seule conversation
     Quand le portail demande deux justificatifs pour le même usager
     Alors les deux requêtes ont la même conversation et deux échanges distincts

@@ -12,6 +12,10 @@ class FakeRequester
   # its users this document answers.
   attr_reader :received_evidence, :received_delivery
 
+  # The type the evidence was delivered under, which is the format the exchange
+  # requested.
+  attr_reader :received_media_type
+
   # What the user brought back to the page the portal named for resuming the
   # procedure (chapter 4.9 §5): the identifiers it resumes by.
   attr_reader :received_return
@@ -79,6 +83,7 @@ class FakeRequester
     return response.status = 400 if delivery['echange'].to_s.empty?
 
     @received_evidence = request.body
+    @received_media_type = request.content_type
     @received_delivery = delivery
     response.status = 200
   end
