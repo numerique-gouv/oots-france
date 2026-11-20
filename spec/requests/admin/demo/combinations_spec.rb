@@ -179,7 +179,7 @@ RSpec.describe 'Admin::Demo::Combinations' do
     describe 'when one document comes back and the other is refused' do
       before do
         post demande_path
-        Demo::Request.find_by(exchange_id: projectathon_exchange).receive_evidence!("%PDF-1.4\nprojectathon".b)
+        Demo::Request.find_by(exchange_id: projectathon_exchange).receive_evidence!("%PDF-1.4\nprojectathon".b, EvidenceType::PDF)
         stub_exchange_state(simple_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
       end
 

@@ -50,12 +50,16 @@ FactoryBot.define do
     # What the first request left for a second one: `EvidenceRequest::OpenExchange`
     # writes it where France asks.
     trait :with_request_basis do
+      # The distribution that request asked for.
+      transient { requested_format { EvidenceType::PDF } }
+
       request_basis do
         provider = FactoryBot.build(:evidence_provider)
 
         RequestBasis.new(
           requirement: FactoryBot.build(:requirement), provider:, recipient: provider.access_point,
-          data_service: FactoryBot.build(:data_service), evidence_type: FactoryBot.build(:evidence_type),
+          data_service: FactoryBot.build(:data_service, distribution_format: requested_format),
+          evidence_type: FactoryBot.build(:evidence_type),
           preview_possible: true,
         )
       end

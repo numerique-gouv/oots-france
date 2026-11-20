@@ -45,6 +45,54 @@ RSpec.describe EvidenceRequest::Fetch do
     end
   end
 
+  # Chapter 4.5.1 §3.5 has « only distributions which the data service is able
+  # to provide » requested: a format the portal named and the directory does not
+  # publish is refused before anything is opened, and one it publishes is the
+  # one the exchange keeps.
+  describe 'a format the portal names' do
+    before do
+      allow(common_services).to receive(:data_service).and_return(build(:data_service,
+        providers: [build(:evidence_provider, access_point:)],
+        distributions: [Distribution.new(format: 'application/pdf'), Distribution.new(format: 'application/xml')]))
+    end
+
+    context 'when the directory publishes it' do
+      let(:arguments) { super().merge(requested_format: 'application/xml') }
+
+      it 'submits, and keeps it as the format of the exchange' do
+        expect(fetch).to be_success
+        expect(fetch.exchange.reload.requested_format).to eq('application/xml')
+      end
+    end
+
+    # The default the portal is told of in `format`, when it names none: the one
+    # the directory's answer already requests.
+    context 'when the portal names none, for a service published in XML alone' do
+      before do
+        allow(common_services).to receive(:data_service).and_return(build(:data_service,
+          providers: [build(:evidence_provider, access_point:)], distribution_format: 'application/xml',
+          distributions: [Distribution.new(format: 'application/xml')]))
+      end
+
+      it 'keeps that format as the format of the exchange' do
+        expect(fetch).to be_success
+        expect(ExchangeState.new(fetch.exchange.reload).to_h).to include(format: 'application/xml')
+      end
+    end
+
+    context 'when the directory does not publish it' do
+      let(:arguments) { super().merge(requested_format: 'application/json') }
+
+      it 'refuses under its own key, opening nothing and submitting nothing' do
+        expect(fetch).to be_failure
+        expect(fetch.error).to include(key: :format_not_published)
+
+        expect(Exchange.count).to eq(0)
+        expect(gateway).not_to have_received(:submit)
+      end
+    end
+  end
+
   # CA10 and CA11 of OOTS-269: what the user answered reaches the request.
   context 'when the directory named the provider on the user\'s answer' do
     let(:question) { build(:evidence_provider_classification) }

@@ -23,8 +23,9 @@ module Demo
 
       return unplaceable unless request&.answers?(exchange_id, conversation_id)
       return empty if evidence.blank?
+      return untyped unless OotsMediaType.valid?(mime_type)
 
-      request.receive_evidence!(evidence)
+      request.receive_evidence!(evidence, mime_type)
     end
 
     private
@@ -34,6 +35,8 @@ module Demo
     def conversation_id = context.conversation_id.presence
 
     def evidence = context.evidence
+
+    def mime_type = context.mime_type
 
     def unplaceable
       Rails.logger.warn(LogLine.t('interactors.demo.receive_evidence.unplaceable',
@@ -46,6 +49,16 @@ module Demo
       Rails.logger.warn(LogLine.t('interactors.demo.receive_evidence.empty', exchange: named(exchange_id)))
 
       fail_with_error(:demo_evidence_empty)
+    end
+
+    # Served back under this type, which `send_data` requires and the extension
+    # of the saved file is read from: `EvidenceForwarder` posts the format the
+    # exchange requested, always a code of the list.
+    def untyped
+      Rails.logger.warn(LogLine.t('interactors.demo.receive_evidence.untyped',
+        exchange: named(exchange_id), type: named(mime_type)))
+
+      fail_with_error(:demo_evidence_untyped)
     end
 
     # A delivery naming nothing is exactly the one worth reading in the log, so

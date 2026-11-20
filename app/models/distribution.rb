@@ -2,7 +2,8 @@
 # a format of the `OOTSMediaTypes` list, an optional language, and for a
 # structured format the data model it conforms to (chapter 3.1.4 §4.3.2).
 # Read for the operator console, which shows every one; a request writes only
-# the one `DataService.requested_format` picks.
+# one — the first of the format the portal names, `DataService#requesting`, or
+# else the one `DataService.requested_format` picks.
 class Distribution
   include ActiveModel::Model
   include ActiveModel::Attributes

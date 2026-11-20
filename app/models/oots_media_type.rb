@@ -7,14 +7,20 @@
 # failure, deliberately, and a list that empties itself would make every value
 # conformant — the opposite of what a FATAL rule asks.
 #
-# Distinct from what France actually serves, which is `EvidenceType::PDF` and
-# nothing else: a format of this list France has no document in is refused too,
-# by `EvidenceProvision::ChooseAnswer` and under `EDM:ERR:0007`, which says
+# Distinct from what France serves as a provider: a format of this list in
+# which it has no document is refused by `EvidenceProvision::ChooseAnswer`
+# under `EDM:ERR:0007`, which says
 # « unsupported capability » where this rule says the correspondent asked for
 # something the specification does not publish at all. The two refusals are not
 # the same message and must not be merged.
 module OotsMediaType
-  CODES = %w[image/jpeg application/json image/png application/pdf application/xml image/svg+xml].freeze
+  # Each code, with the extension a file of it is saved under.
+  EXTENSIONS = {
+    'image/jpeg' => 'jpg', 'application/json' => 'json', 'image/png' => 'png',
+    'application/pdf' => 'pdf', 'application/xml' => 'xml', 'image/svg+xml' => 'svg',
+  }.freeze
+
+  CODES = EXTENSIONS.keys.freeze
 
   def self.valid?(code) = CODES.include?(code)
 end

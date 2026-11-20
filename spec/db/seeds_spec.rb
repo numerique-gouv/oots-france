@@ -234,7 +234,7 @@ RSpec.describe 'db/seeds.rb' do
   DEMONSTRATION_EVIDENCE_TYPE = EvidenceType.new(
     id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/6f9619ff-8b86-d011-b42d-00c04fc964ff',
     descriptions: { 'FR' => "Attestation d'inscription", 'EN' => 'Certificate of enrolment' },
-    distribution_formats: [RetrievedMessageParser::PDF],
+    distribution_formats: [EvidenceType::PDF],
   ).freeze
 
   # OOTS-291 CA10: the student status, served in JSON.

@@ -21,6 +21,21 @@ Quand('le portail demande un justificatif pour la démarche {string}') do |proce
   @response = demande(procedure)
 end
 
+# Chapter 4.5.1 §3.5 leaves the distribution to the Evidence Requester, and the
+# portal may name it.
+Quand('le portail demande un justificatif pour la démarche {string} en nommant le format {string}') do |procedure, format|
+  @response = demande(procedure, format:)
+end
+
+# The student status France serves from the API Particulier sandbox, in JSON
+# when the request asks for JSON, to the identity the sandbox knows.
+Quand(
+  'le portail demande pour la démarche {string} le statut étudiant de Martin Jacques, né à {string}, en nommant le format {string}',
+) do |procedure, place, format|
+  @response = demande(procedure, format:, evidence_type: EVIDENCE_TYPE_CLASSIFICATIONS.fetch('FR - Student status (MESRI)'),
+    beneficiaire: ETUDIANT.merge('lieuNaissance' => place))
+end
+
 # Chapter 4.4: the conversation identifies the user and their session, and the
 # portal is the one that knows two requests are the same person's. It says so by
 # naming the same conversation twice.
@@ -50,6 +65,16 @@ end
 
 Alors('le portail reçoit le justificatif') do
   patiente_jusqu_a('le justificatif soit transmis') { @fake_requester.received_evidence.present? }
+end
+
+Alors('le portail reçoit le justificatif, sous {string}') do |format|
+  patiente_jusqu_a('le justificatif soit transmis') { @fake_requester.received_evidence.present? }
+
+  expect(@fake_requester.received_media_type).to eq(format)
+end
+
+Alors('le portail reçoit tout de suite un refus, de statut {string}') do |statut|
+  expect(@response.status).to eq(Integer(statut))
 end
 
 # The provider produces the document as it answers and keeps no copy of it, so
@@ -182,13 +207,14 @@ REQUESTED_REQUIREMENT = 'https://sr.acc.oots.tech.ec.europa.eu/requirements/ffff
 REQUESTED_EVIDENCE_TYPE =
   'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4'.freeze
 
-def demande(procedure, conversation: nil, preview: false, beneficiaire: BENEFICIAIRE)
+def demande(procedure, conversation: nil, preview: false, beneficiaire: BENEFICIAIRE, format: nil, evidence_type: nil)
   token = @fake_requester.beneficiary_token(oots_france_url, beneficiaire)
 
   Faraday.get("#{oots_france_url}/requete/pieceJustificative", {
     codeDemarche: procedure, codePays: 'FR', idRequeteur: @requester_id, beneficiaire: token,
     idConversation: conversation, previsualisationRequise: (true if preview),
     idExigence: (REQUESTED_REQUIREMENT if procedure == ProcedureCode::SYSTEM_CHECK),
+    idTypeJustificatif: evidence_type, format:,
   }.compact)
 end
 
@@ -206,6 +232,10 @@ def oots_france_url = ENV.fetch('URL_OOTS_FRANCE')
 
 BENEFICIAIRE = { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Dupont', 'prenom' => 'Sophie',
                  'dateNaissance' => '1965-11-25', 'lieuNaissance' => 'Nantes', 'sexe' => 'female' }.freeze
+
+# The student the API Particulier sandbox knows.
+ETUDIANT = { 'niveauGarantie' => 'Substantial', 'nomUsage' => 'Martin', 'prenom' => 'Jacques',
+             'dateNaissance' => '2004-01-01', 'lieuNaissance' => '75102', 'sexe' => 'male' }.freeze
 
 # The test identity `dk-substantial` of the fake FranceConnect+, whom France's
 # preview space confirms when the user identifies again with it.

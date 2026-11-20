@@ -428,6 +428,12 @@ class Exchange < ApplicationRecord
       .update_all(delivering_at: Time.current) == 1
   end
 
+  # The format France asked the correspondent for, named by the portal or
+  # retained by default, and so the one the portal is handed. Read from what
+  # the second request of a preview repeats, so that one place holds it. Nil
+  # where France answers, and where no request was written.
+  def requested_format = request_basis&.data_service&.distribution_format
+
   # Which way the exchange runs, as the console words it.
   def direction = incoming? ? :incoming : :outgoing
 

@@ -461,6 +461,62 @@ RSpec.describe EvidenceRequestBuilder do
     end
   end
 
+  # Chapter 4.5.1 §3.5: the distribution is « selected by the Evidence Requester
+  # during the DSD query process », among those the data service provides. The
+  # portal may name it; the request then asks for that one alone, with the
+  # language and data model the directory published beside it, on either line.
+  describe 'a distribution the portal named' do
+    def distributions_of(service, specification)
+      rendered = described_class.new(**attributes, data_service: service, specification:).render
+
+      Nokogiri::XML(rendered).xpath('//sdg:DistributedAs', 'sdg' => 'http://data.europa.eu/p4s')
+    end
+
+    def child(distribution, name) = distribution.at_xpath("./sdg:#{name}", 'sdg' => 'http://data.europa.eu/p4s')&.text
+
+    let(:captured) do
+      DataServicesResponseParser.new(common_services_answer('dsd_data_services_at_cb10c17a').first).data_services.first
+    end
+
+    [EdmSpecification::V1_2, EdmSpecification::V2_0].each do |specification|
+      it "asks for the XML of the capture alone, without a data model, in #{specification.identifier}" do
+        distributions = distributions_of(captured.requesting('application/xml'), specification)
+
+        expect(distributions.size).to eq(1)
+        expect(child(distributions.first, 'Format')).to eq('application/xml')
+        expect(child(distributions.first, 'ConformsTo')).to be_nil
+      end
+
+      it "asks for the PDF of the capture when the portal named nothing, in #{specification.identifier}" do
+        expect(child(distributions_of(captured, specification).first, 'Format')).to eq('application/pdf')
+      end
+    end
+
+    it 'carries the language and data model published with the format named' do
+      model = 'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40'
+      published = build(:data_service, distributions: [
+        Distribution.new(format: 'application/pdf', language: 'EN'),
+        Distribution.new(format: 'application/xml', language: 'FI', conforms_to: model),
+      ])
+
+      distribution = distributions_of(published.requesting('application/xml'), EdmSpecification::V2_0).sole
+
+      expect([child(distribution, 'Format'), child(distribution, 'Language'), child(distribution, 'ConformsTo')])
+        .to eq(['application/xml', 'FI', model])
+    end
+
+    it 'asks for no readable version beside a structured format published without a data model' do
+      published = build(:data_service, distributions: [
+        Distribution.new(format: 'application/json'), Distribution.new(format: 'application/pdf'),
+      ])
+
+      distribution = distributions_of(published.requesting('application/json'), EdmSpecification::V2_0).sole
+
+      expect(distribution.element_children.map(&:name)).to eq(%w[Format])
+      expect(child(distribution, 'Format')).to eq('application/json')
+    end
+  end
+
   # CA2 of OOTS-200: what a request written on the 1.2 line owes the 1.2.5
   # rules, and what it must leave out because the 1.2.0 profile has no room for
   # it. The whole message is confronted with those rules by `make schematron`;

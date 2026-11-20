@@ -39,6 +39,7 @@ class EvidenceRequestsController < ApplicationController
   before_action :check_conversation_id, only: :create
   before_action :check_provider_classifications, only: :create
   before_action :check_specification, only: :create
+  before_action :check_format, only: :create
   before_action :check_outside_procedure, only: :create
 
   def create
@@ -58,7 +59,7 @@ class EvidenceRequestsController < ApplicationController
   # A query string and not a form: the caller is a server-side integration.
   def query
     @query ||= params.permit(:codeDemarche, :codePays, :idRequeteur, :beneficiaire,
-      :previsualisationRequise, :idConversation, :idExigence, :idTypeJustificatif, :specification, :exigenceHorsDemarche,
+      :previsualisationRequise, :idConversation, :idExigence, :idTypeJustificatif, :specification, :format, :exigenceHorsDemarche,
       classificationFournisseur: {})
   end
 
@@ -92,8 +93,12 @@ class EvidenceRequestsController < ApplicationController
   end
 
   # The requirement and the evidence type the caller may name, each the whole
-  # identifier the Evidence Broker publishes.
-  def asked_evidence = { requirement_id: query[:idExigence], evidence_type_id: query[:idTypeJustificatif] }
+  # identifier the Evidence Broker publishes, and the format it may ask the
+  # evidence in, a code of `OOTSMediaTypes`.
+  def asked_evidence
+    { requirement_id: query[:idExigence], evidence_type_id: query[:idTypeJustificatif],
+      requested_format: query[:format].presence }
+  end
 
   # The user's answers to the questions a `DSD:ERR:0005` asks, by the UUID of
   # each, which only the screens of the demonstration set — chapter 3.1.4
@@ -161,6 +166,19 @@ class EvidenceRequestsController < ApplicationController
     return if supplied.nil? || EdmSpecification.find(supplied)
 
     refuse_as_unprocessable(t('evidence_requests.specification_invalid', spoken: EdmSpecification.identifiers.join(', ')))
+  end
+
+  # The distribution a caller may name, among the codes of `OOTSMediaTypes`
+  # alone: `R-EDM-REQ-C033` (FATAL) holds the `sdg:Format` of a request to that
+  # list. Refused before anything is decrypted, like the version above.
+  #
+  # Read from the raw parameters: `permit` drops an array or a hash, and a
+  # format named that way would otherwise fall back on the default unseen.
+  def check_format
+    supplied = params[:format]
+    return if supplied.blank? || OotsMediaType.valid?(supplied)
+
+    refuse_as_unprocessable(t('evidence_requests.format_invalid', spoken: OotsMediaType::CODES.join(', ')))
   end
 
   # Asked outside its procedure, a requirement is all there is to start from,

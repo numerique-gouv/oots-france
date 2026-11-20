@@ -87,12 +87,12 @@ class DataService
   validate :wordings_name_their_language
   validate :classifications_conform
 
-  # The distribution France requests, among the formats the directory publishes
-  # for one service. Chapter 4.5.1 §3.5 leaves the choice to the Evidence
-  # Requester (« selected by the Evidence Requester during the DSD query
-  # process »). The PDF is the one format France can hand the portal, so it is
-  # requested wherever it stands; failing it, the first other human-readable
-  # format, else the first published.
+  # The distribution France requests when the portal names none, among the
+  # formats the directory publishes for one service. Chapter 4.5.1 §3.5 leaves
+  # the choice to the Evidence Requester (« selected by the Evidence Requester
+  # during the DSD query process »). A portal that names nothing is handed a
+  # document a person reads: the PDF wherever it stands, failing it the first
+  # other human-readable format, else the first published.
   def self.requested_format(formats)
     return EvidenceType::PDF if formats.include?(EvidenceType::PDF)
 
@@ -106,6 +106,22 @@ class DataService
     @classifications = attributes.delete(:classifications) || []
     @distributions = attributes.delete(:distributions) || []
     super
+  end
+
+  # The same service requesting the first distribution of `format` it
+  # publishes, language and data model included, or nil when it publishes none:
+  # chapter 4.5.1 §3.5 has « only distributions which the data service is able
+  # to provide » requested.
+  def requesting(format)
+    chosen = distributions.find { |distribution| distribution.format == format }
+    return if chosen.nil?
+
+    DataService.new(
+      **attributes.symbolize_keys,
+      distribution_format: chosen.format, distribution_language: chosen.language,
+      distribution_conforms_to: chosen.conforms_to,
+      descriptions:, details:, providers:, classifications:, distributions:,
+    )
   end
 
   # What the public page of available evidence lists.

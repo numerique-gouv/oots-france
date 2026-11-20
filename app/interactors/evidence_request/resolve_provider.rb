@@ -32,7 +32,29 @@ module EvidenceRequest
       # later as an opaque NoMethodError.
       return fail_with_error(:no_provider, errors: [context.country_code]) if provider.nil?
 
-      keep(service, provider)
+      settle_distribution(service, provider)
+    end
+
+    def settle_distribution(service, provider)
+      requested = requesting(service)
+      requested.nil? ? format_not_published : keep(requested, provider)
+    end
+
+    # The distribution the portal named, when it named one; the directory's
+    # answer already holds the one requested by default. No fallback on that
+    # default: chapter 4.5.1 §3.5 has « only distributions which the data
+    # service is able to provide » requested, and the portal is told so rather
+    # than handed a format it did not ask for.
+    def requesting(service)
+      format = context.requested_format
+      format.present? ? service.requesting(format) : service
+    end
+
+    def format_not_published
+      fail_with_error(:format_not_published, errors: [
+        I18n.t('interactors.evidence_request.resolve_provider.format_not_published',
+          media_type: context.requested_format, evidence_type: context.evidence_type.id, country: context.country_code),
+      ])
     end
 
     # The access point comes from the directory with the provider, so the

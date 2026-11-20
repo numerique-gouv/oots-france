@@ -76,9 +76,9 @@ RSpec.describe JournalledMessage do
     end
 
     it 'fingerprints the evidence, and never hands the evidence itself' do
-      expect(attributes).to include(evidence_digest: Digest::SHA256.hexdigest(message.evidence.content),
+      expect(attributes).to include(evidence_digest: Digest::SHA256.hexdigest(message.evidence(EvidenceType::PDF).content),
         evidence_mime_type: 'application/pdf')
-      expect(attributes.values).not_to include(message.evidence.content)
+      expect(attributes.values).not_to include(message.evidence(EvidenceType::PDF).content)
     end
 
     it 'names the party that answered, and the country read off its address' do
@@ -93,6 +93,42 @@ RSpec.describe JournalledMessage do
 
     it 'says nothing broken of a response that breaks no rule' do
       expect(attributes[:detail]).to be_nil
+    end
+  end
+
+  # Chapter 4.8 §3.2 asks for « MIME type and MIME content identifier » of the
+  # evidence content referenced, and the line has one set of columns: the part
+  # the portal is handed fills them when the envelope declares it, the first
+  # declared otherwise.
+  describe 'which evidence part an answer records' do
+    let(:json) { MimePart.new(mime_type: 'application/json', content_id: 'cid:statut@oots.fr', content: '{"inscrit":true}') }
+    let(:pdf) { MimePart.new(mime_type: EvidenceType::PDF, content_id: 'cid:attestation@oots.fr', content: "%PDF-1.4\n".b) }
+    let(:asking_json) { build(:exchange, :with_request_basis, requested_format: 'application/json') }
+
+    def recorded(message, exchange: asking_json)
+      read(message, exchange:).slice(:evidence_mime_type, :evidence_content_id, :evidence_digest)
+    end
+
+    def digest(part) = Digest::SHA256.hexdigest(part.content)
+
+    it 'records the part of the requested format' do
+      expect(recorded(envelope_with_evidence_parts(json)))
+        .to eq(evidence_mime_type: 'application/json', evidence_content_id: 'cid:statut@oots.fr', evidence_digest: digest(json))
+    end
+
+    it 'records the part of the requested format, though another is declared first' do
+      expect(recorded(envelope_with_evidence_parts(pdf, json)))
+        .to include(evidence_mime_type: 'application/json', evidence_digest: digest(json))
+    end
+
+    it 'records the first part declared, when the requested format is missing' do
+      expect(recorded(envelope_with_evidence_parts(pdf)))
+        .to eq(evidence_mime_type: EvidenceType::PDF, evidence_content_id: 'cid:attestation@oots.fr', evidence_digest: digest(pdf))
+    end
+
+    it 'records the first part declared, when the answer belongs to no exchange' do
+      expect(recorded(envelope_with_evidence_parts(json), exchange: nil))
+        .to include(evidence_mime_type: 'application/json', evidence_digest: digest(json))
     end
   end
 

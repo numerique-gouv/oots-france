@@ -4,7 +4,6 @@ class RetrievedMessageParser
   include OotsNamespaces
 
   REGREP = 'application/x-ebrs+xml'.freeze
-  PDF = 'application/pdf'.freeze
 
   # Chapter 4.7 §2.6.2 has the property « always correspond to the specification
   # identifier of the main ebMS payload message », and a message where the two
@@ -105,28 +104,42 @@ class RetrievedMessageParser
               end
   end
 
-  # The evidence as it arrived, and the part that carried it: chapter 4.8 asks
-  # the response flow for « MIME type and MIME content identifier » of evidence
-  # content referenced by a `rim:RepositoryItemRef`, and the reference it names
-  # is the `href` of the `eb:PartInfo` — the same `cid:` on both sides.
+  # The evidence of `mime_type` as it arrived, and the part that carried it:
+  # chapter 4.8 asks the response flow for « MIME type and MIME content
+  # identifier » of evidence content referenced by a `rim:RepositoryItemRef`,
+  # and the reference it names is the `href` of the `eb:PartInfo` — the same
+  # `cid:` on both sides.
   #
-  # Looked up by type, as the payload itself is: the identifier is recorded from
-  # the header rather than read back from the body, which nothing here parses
-  # for it.
-  def evidence
-    declared = payload_part(PDF)
+  # Looked up by type, as the payload itself is: chapter 4.7 §5 gives each
+  # `RegistryObject` its own MIME part, so a response may carry several, and
+  # the one asked for is the format the exchange requested. The identifier is
+  # recorded from the header rather than read back from the body, which
+  # nothing here parses for it.
+  def evidence(mime_type)
+    declared = payload_part(mime_type)
 
     part_from(declared, payload_at(declared[:href]))
   end
 
-  # Whether the envelope declares a part for the evidence at all. Chapter 4.5.2
-  # lets a response carry none and stay conformant — one announcing the evidence
-  # for later, and equally one whose package is empty « if no matching Evidence
-  # is available or if the user decides not to use any of them during preview ».
-  # Read from the header, which is also where the evidence itself is looked up:
-  # the status says nothing here, a deferral being allowed to carry the pieces
-  # that are available while flagging that others are not.
-  def carries_evidence? = declared_part(PDF).present?
+  # The first evidence part the envelope declares, whatever its type, the
+  # RegRep body apart, or nil where it declares none: what the journal records
+  # of a response whose part of the requested format is missing, or that
+  # answers no exchange at all.
+  def first_evidence
+    declared = evidence_parts.first
+
+    part_from(declared, payload_at(declared[:href])) if declared
+  end
+
+  # Whether the envelope declares a part for the evidence of `mime_type`.
+  # Chapter 4.5.2 lets a response carry none and stay conformant —
+  # one announcing the evidence for later, and equally one whose package is
+  # empty « if no matching Evidence is available or if the user decides not to
+  # use any of them during preview ». Read from the header, which is also where
+  # the evidence itself is looked up: the status says nothing here, a deferral
+  # being allowed to carry the pieces that are available while flagging that
+  # others are not.
+  def carries_evidence?(mime_type) = declared_part(mime_type).present?
 
   # A response saying that no evidence matches, read on the body and on the
   # envelope together: chapter 4.7 §5 has the message carry « as many additional
@@ -195,6 +208,8 @@ class RetrievedMessageParser
   end
 
   def declared_part(mime_type) = header.payload_parts.find { |part| part[:mime_type] == mime_type && part[:href] }
+
+  def evidence_parts = header.payload_parts.select { |part| part[:href] && part[:mime_type] != REGREP }
 
   # Base64 decodes to bytes; the journal keeps this part as text, so they are
   # tagged and never transcoded. Bytes that are not valid UTF-8 are kept as they

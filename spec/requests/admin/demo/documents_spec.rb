@@ -667,7 +667,7 @@ RSpec.describe 'Admin::Demo::Documents' do
       end
 
       it 'names it too once the document is in hand' do
-        Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
+        Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b, EvidenceType::PDF)
 
         get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 
@@ -756,7 +756,7 @@ RSpec.describe 'Admin::Demo::Documents' do
     end
 
     it 'opens on the document once it has been filed, and asks the contract nothing more' do
-      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b)
+      Demo::Request.sole.receive_evidence!("%PDF-1.4\ndrapeau".b, EvidenceType::PDF)
 
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
 

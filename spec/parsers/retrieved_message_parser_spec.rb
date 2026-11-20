@@ -56,7 +56,7 @@ RSpec.describe RetrievedMessageParser do
     end
 
     it 'decodes the evidence, which is a PDF' do
-      expect(message.evidence.content).to start_with('%PDF')
+      expect(message.evidence(EvidenceType::PDF).content).to start_with('%PDF')
     end
 
     # Chapter 4.8 asks the response flow for « MIME type and MIME content
@@ -64,10 +64,44 @@ RSpec.describe RetrievedMessageParser do
     # reference is the `href` of the `eb:PartInfo`, and the body points at the
     # very same `cid:`.
     it 'names the part that carried it, as the header declared it' do
-      expect(message.evidence).to have_attributes(
+      expect(message.evidence(EvidenceType::PDF)).to have_attributes(
         mime_type: 'application/pdf',
         content_id: 'cid:802edbd4-fdfb-4345-84bd-0b7f17549075@pdf.oots.fr',
       )
+    end
+  end
+
+  # Chapter 4.7 §5 gives each `RegistryObject` its own MIME part: a response may
+  # carry several, and each is found by its type.
+  describe 'a response carrying evidence in several formats' do
+    subject(:message) do
+      envelope_with_evidence_parts(
+        MimePart.new(mime_type: EvidenceType::PDF, content_id: 'cid:attestation@oots.fr', content: "%PDF-1.4\n".b),
+        MimePart.new(mime_type: 'application/json', content_id: 'cid:statut@oots.fr', content: '{"inscrit":true}'),
+      )
+    end
+
+    it 'finds the part of each type' do
+      expect(message.evidence('application/json'))
+        .to have_attributes(content_id: 'cid:statut@oots.fr', content: '{"inscrit":true}')
+      expect(message.evidence(EvidenceType::PDF)).to have_attributes(content_id: 'cid:attestation@oots.fr')
+    end
+
+    it 'says which formats it carries' do
+      expect(message).to be_carries_evidence('application/json')
+      expect(message).not_to be_carries_evidence('application/xml')
+    end
+
+    it 'refuses a type it does not carry' do
+      expect { message.evidence('application/xml') }.to raise_error(UnreadableMessageError, %r{application/xml})
+    end
+
+    it 'takes the first evidence part declared, and never the RegRep body' do
+      expect(message.first_evidence).to have_attributes(mime_type: EvidenceType::PDF)
+    end
+
+    it 'takes no evidence part from an envelope declaring none' do
+      expect(described_class.new(real_envelope('erreurObjetIntrouvable')).first_evidence).to be_nil
     end
   end
 

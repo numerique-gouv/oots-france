@@ -166,6 +166,11 @@ valide requeteClassification EDM-REQ-C
 valide requeteClassification EDM-REQ-S
 valide requeteTroisClassifications EDM-REQ-C
 valide requeteTroisClassifications EDM-REQ-S
+# La même requête, demandant la distribution structurée qu'un portail nomme par
+# `format`, publiée sans modèle de données : un seul `sdg:DistributedAs`, sans
+# `sdg:ConformsTo`.
+valide requeteFormatStructure EDM-REQ-C
+valide requeteFormatStructure EDM-REQ-S
 valide reponse EDM-RESP-C
 valide reponse EDM-RESP-S
 # La même réponse, à propos d'une personne morale : `sdg:IsAbout` étant un

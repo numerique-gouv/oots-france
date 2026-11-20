@@ -22,6 +22,7 @@ module Demo
     FAILURE_STATUSES = {
       demo_unplaceable: :not_found,
       demo_evidence_empty: :unprocessable_content,
+      demo_evidence_untyped: :unsupported_media_type,
     }.freeze
 
     def create
@@ -29,6 +30,7 @@ module Demo
         exchange_id: params[:echange],
         conversation_id: params[:conversation],
         evidence: request.raw_post,
+        mime_type: request.media_type,
       )
 
       return head :created if result.success?

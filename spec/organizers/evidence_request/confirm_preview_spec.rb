@@ -115,6 +115,34 @@ RSpec.describe EvidenceRequest::ConfirmPreview do
     end
   end
 
+  # Chapter 4.9 §2 step 12 again: the distribution the portal named for the
+  # first request is the one the second asks for, though it is not the default.
+  context 'when the portal named the format of the first request' do
+    let(:common_services) do
+      instance_double(Directories::CommonServices,
+        required_evidence_for_procedure: [Directories::CommonServices::RequiredEvidence.new(
+          requirement: build(:requirement), evidence_types: [build(:evidence_type)],
+        )],
+        data_service: build(:data_service, providers: [build(:evidence_provider, access_point:)],
+          distributions: [Distribution.new(format: 'application/pdf'), Distribution.new(format: 'application/xml')]))
+    end
+    let(:first) do
+      EvidenceRequest::Fetch.call(
+        requester_id: '00000000000002', conversation_id: nil, requesters:, encrypted_beneficiary: 'un-jeton',
+        procedure_code: ProcedureCode::SYSTEM_CHECK, country_code: 'SI', preview_possible: true,
+        requested_format: 'application/xml', common_services:, gateway:, uuid:, audit_trail: AuditTrail.new,
+      )
+    end
+
+    it 'asks for that distribution alone in the second request' do
+      confirm
+      second = body_of(submissions.last)
+
+      expect(all(second, '//sdg:DistributedAs').size).to eq(1)
+      expect(text_at(second, '//sdg:DistributedAs/sdg:Format')).to eq('application/xml')
+    end
+  end
+
   # CA4 again: chapter 4.4 §4.1 refuses a request identifier used before, and
   # chapter 4.7 §2.5.2 has the second request reuse the `ExchangeId`.
   it 'gives the second request an identifier of its own, under the same exchange and conversation' do

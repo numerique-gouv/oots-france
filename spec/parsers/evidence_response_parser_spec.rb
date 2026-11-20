@@ -858,7 +858,7 @@ RSpec.describe EvidenceResponseParser do
       subject(:unclassified) { envelope_with_body('reponseAvecPieceJointe') { |body| body.gsub('MainEvidence', 'Annexe') } }
 
       it 'still delivers the evidence the header declares' do
-        expect(unclassified.evidence).to have_attributes(mime_type: 'application/pdf', content: be_present)
+        expect(unclassified.evidence(EvidenceType::PDF)).to have_attributes(mime_type: 'application/pdf', content: be_present)
       end
 
       it 'reads a package broken in every way it can be broken without ever raising' do
