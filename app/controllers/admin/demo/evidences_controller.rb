@@ -36,7 +36,7 @@ module Admin
       # Back to the page the document is offered from: an address reached
       # without one is a journey that has yet to get that far, not an error.
       def require_evidence
-        redirect_to admin_demo_documents_path unless demo_request&.evidence?
+        redirect_to demo_path(:documents) unless demo_request&.evidence?
       end
 
       def demo_request = demo_request_for(params[:exigence].to_s, params[:type].to_s)

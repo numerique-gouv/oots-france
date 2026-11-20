@@ -35,11 +35,11 @@ module Admin
     # The operator's session is also the demonstration user's, and ending one
     # ends both: ProConnect first, then the FranceConnect+ session that attested
     # the demonstration identity, if there is one — prepared here from the
-    # identity the browser holds, read before `reset_session` empties the
+    # identity the console's entrance holds, read before `reset_session` empties the
     # session and the identity cookies, and chained on by
     # `Admin::ProConnectController#retour_deconnexion`.
     def destroy
-      identity = demo_identity
+      identity = demo_identity(::Demo::Entrance::CONSOLE)
       id_token = take_id_token
 
       reset_session

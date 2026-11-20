@@ -673,6 +673,9 @@ fr:
       name: OOTS-France
       skiplink: Accès rapide
       skiplink_content: Contenu
+      # Le bandeau que chaque écran de la démonstration publique porte sous
+      # l'entête : le visiteur y joue un usager fictif.
+      demonstration_notice: Démonstration — données fictives
     # Le bloc-marque du DSFR se lit sur deux lignes, la seconde après un saut.
     # L'entête et le pied de page le disent tous les deux.
     logo_html: République<br>Française
@@ -690,6 +693,9 @@ fr:
         available_evidence: Justificatifs disponibles
         connecting: Se raccorder
         faq: Questions fréquentes
+        # La démarche de démonstration publique, sous /demonstration, là où le
+        # déploiement déclare le faux FranceConnect+.
+        demo: Démo
       admin_space: Administration
       demo: Démo
       directories: Annuaires
@@ -746,6 +752,9 @@ fr:
     # numéro, qui ne se traduit pas.
     demo_breadcrumbs:
       demo: Démo
+      # Le premier maillon sur la démonstration publique, dont le visiteur n'a
+      # pas d'espace d'administration où remonter.
+      home: Accueil
       procedure: "Démarche %{code}"
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.

@@ -25,7 +25,7 @@ module HoldsDemoNames
   # in is kept either way, and a line that names nothing holds an invalid
   # `Demo::NamedEvidence`, which the click refuses to leave on.
   def remember_demo_names(procedure, wordings)
-    session[:demo_procedure] = named_procedure_of(procedure).to_session
+    session[demo_procedure_key] = named_procedure_of(procedure).to_session
     wordings.each { |wording| remember_demo_name(wording) }
   end
 
@@ -45,7 +45,11 @@ module HoldsDemoNames
   # never rendered names nothing.
   def named_evidences(requirement_uuid) = demo_card(requirement_uuid)&.named_evidences.to_a
 
-  def named_procedure = ::Demo::NamedProcedure.from_session(session[:demo_procedure])
+  def named_procedure = ::Demo::NamedProcedure.from_session(session[demo_procedure_key])
+
+  # Under the entrance, as the journey is: a browser walking both keeps the
+  # title each documents page showed for the click that follows on it.
+  def demo_procedure_key = :"#{demo_entrance.journey_key}_procedure"
 
   # The one crossing between what a screen says and what a row records, and the
   # reason it lives here: a presenter has no business knowing the register, and

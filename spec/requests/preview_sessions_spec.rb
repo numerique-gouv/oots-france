@@ -823,6 +823,18 @@ RSpec.describe 'The preview space' do
       expect(session.reload.decision).to eq('accepted')
     end
 
+    it 'dispenses the visitor of the public demonstration, on its own journey, and journals it' do
+      identify_demo_user(userinfo: FranceConnectStubs::REQUESTED_USERINFO, entrance: Demo::Entrance::PUBLIC)
+      stub_real_france_connect
+      public_journey = Demo::Journey.from_session(request.session[Demo::Entrance::PUBLIC.journey_key])
+      requested_in_this_journey(journey: public_journey.id)
+      visit_space
+
+      expect(response).to have_http_status(:ok)
+      expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
+      expect(AuditEvent.where(event_type: 'preview_identified').pluck(:detail)).to eq([PreviewSession::DISPENSED])
+    end
+
     # CA3.
     it 'journals that the identification was dispensed, and not confirmed' do
       identify_on_the_fake

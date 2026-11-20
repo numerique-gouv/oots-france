@@ -14,20 +14,28 @@ class DemoBreadcrumbsComponent < AdminBreadcrumbsComponent
 
   private
 
-  def section = [t('components.demo_breadcrumbs.demo'), helpers.admin_demo_root_path]
+  # The public entrance climbs to the front page of the site: its visitor has
+  # no console to reach.
+  def home
+    return super unless helpers.public_demonstration?
+
+    [t('components.demo_breadcrumbs.home'), helpers.root_path]
+  end
+
+  def section = [t('components.demo_breadcrumbs.demo'), helpers.demo_path(:root)]
 
   def sections = [section, *line, *procedure]
 
   def line
     return [] if @specification.nil?
 
-    [[@specification.number, helpers.admin_demo_procedures_path(version: @specification.segment)]]
+    [[@specification.number, helpers.demo_path(:procedures, version: @specification.segment)]]
   end
 
   def procedure
     return [] if @specification.nil? || @procedure.nil?
 
     [[t('components.demo_breadcrumbs.procedure', code: @procedure),
-      helpers.admin_demo_home_path(version: @specification.segment, procedure: @procedure)]]
+      helpers.demo_path(:home, version: @specification.segment, procedure: @procedure)]]
   end
 end

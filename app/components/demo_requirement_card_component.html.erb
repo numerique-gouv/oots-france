@@ -63,7 +63,7 @@
                     so no answer takes it away but the controller. %>
                 <%= tag.p t('components.demo_requirement_card.unreachable_html',
                             reload: link_to(t('components.demo_requirement_card.reload'),
-                                            helpers.admin_demo_documents_path)),
+                                            helpers.demo_path(:documents))),
                           class: 'fr-error-text', id: failure_field, hidden: true,
                           data: { demo_card_target: 'countryFailure' } %>
               </div>
@@ -99,7 +99,7 @@
                       cannot say it could not be reached. %>
                   <%= tag.p t('components.demo_requirement_card.combination_unreachable_html',
                               reload: link_to(t('components.demo_requirement_card.reload'),
-                                              helpers.admin_demo_documents_path)),
+                                              helpers.demo_path(:documents))),
                             class: 'fr-error-text', id: combination_failure_field, hidden: true,
                             data: { demo_card_target: 'combinationFailure' } %>
                 </div>
@@ -177,7 +177,7 @@
                     so no answer takes it away but the controller. %>
                 <%= tag.p t('components.demo_requirement_card.questions.unreachable_html',
                             reload: link_to(t('components.demo_requirement_card.reload'),
-                                            helpers.admin_demo_documents_path)),
+                                            helpers.demo_path(:documents))),
                           class: 'fr-error-text fr-mb-2w', id: answer_failure_field(line), hidden: true,
                           data: { demo_card_target: 'answerFailure' } %>
               <% end %>

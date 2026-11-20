@@ -272,6 +272,20 @@ RSpec.describe 'Admin::Sessions' do
         expect(names.sum { |name| held_cookie_size(name) }).to be < 8192
       end
 
+      # Both entrances holding the longest identity can pass the eight kibibytes
+      # a front leaves by default: they fit the `large_client_header_buffers` of
+      # `nginx.template`, which `docs/deploiement.md` has every front set.
+      it 'sends back all its cookies within the header buffer of the front when the public demonstration holds one too' do
+        declare_france_connect(fake_france_connect)
+        identify_long_demo_user(entrance: Demo::Entrance::PUBLIC)
+        RecognisesPreviewIdentity::KEPT.times { identify_in_preview_space(preview_address(create(:preview_session))) }
+        get preview_address(create(:preview_session)), params: { returnurl: "https://portail.example/#{'a' * 1000}" }
+        names = %i[_oots_france_session pro_connect_id_token demo_identity demo_id_token public_demo_identity
+                   public_demo_id_token preview_identification preview_verdicts]
+
+        expect(names.sum { |name| held_cookie_size(name) }).to be < 32.kilobytes
+      end
+
       it 'keeps the session under the bound on the way to ProConnect, and forgets the identity' do
         delete admin_session_path
 

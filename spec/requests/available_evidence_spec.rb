@@ -98,7 +98,7 @@ RSpec.describe 'AvailableEvidence' do
         expect(page.css('nav.fr-nav a').map { [it['href'], it.text.squish] }).to eq([
           ['/#comprendre', 'OOTS en bref'], ['/#fonctionnement', 'Comment ça marche'],
           ['/#concerne', 'Êtes-vous concerné ?'], [available_evidence_index_path, 'Justificatifs disponibles'],
-          ['/#raccorder', 'Se raccorder'], ['/#faq', 'Questions fréquentes'],
+          ['/#raccorder', 'Se raccorder'], ['/#faq', 'Questions fréquentes'], ['/demonstration', 'Démo'],
         ])
       end
 

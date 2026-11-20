@@ -134,7 +134,7 @@ module ReadsDemoRequest
   end
 
   def demo_resume_location
-    "#{Settings.oots_france_url}#{admin_demo_documents_path(version: journey.specification.segment,
+    "#{Settings.oots_france_url}#{demo_path(:documents, version: journey.specification.segment,
       procedure: journey.procedure_code)}"
   end
 

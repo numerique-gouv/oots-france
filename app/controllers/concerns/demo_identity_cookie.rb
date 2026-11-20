@@ -6,26 +6,28 @@
 # the server: `Demo::UserIdentity` is personal data.
 #
 # The two are written and deleted together, and read only together: a browser
-# that kept one without the other holds no identity.
+# that kept one without the other holds no identity. Each entrance of
+# `Demo::Entrance` has its own two, so that identifying on one leaves the other
+# as it was.
 module DemoIdentityCookie
   extend ActiveSupport::Concern
 
-  COOKIES = %i[demo_identity demo_id_token].freeze
+  COOKIES = ::Demo::Entrance::ALL.flat_map(&:cookies).freeze
 
   private
 
-  def demo_identity
-    attributes = cookies.encrypted[:demo_identity]
-    id_token = cookies.encrypted[:demo_id_token]
+  def demo_identity(entrance)
+    attributes = cookies.encrypted[entrance.identity_cookie]
+    id_token = cookies.encrypted[entrance.id_token_cookie]
     return nil if attributes.nil? || id_token.nil?
 
     ::Demo::UserIdentity.from_cookie(attributes.merge('id_token' => id_token))
   end
 
-  def keep_demo_identity(identity)
-    keep_encrypted(:demo_identity, identity.to_cookie.except('id_token'))
-    keep_encrypted(:demo_id_token, identity.id_token)
+  def keep_demo_identity(identity, entrance)
+    keep_encrypted(entrance.identity_cookie, identity.to_cookie.except('id_token'))
+    keep_encrypted(entrance.id_token_cookie, identity.id_token)
   end
 
-  def forget_demo_identity = COOKIES.each { |name| cookies.delete(name) }
+  def forget_demo_identity(entrance) = entrance.cookies.each { |name| cookies.delete(name) }
 end

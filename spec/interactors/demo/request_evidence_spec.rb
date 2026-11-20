@@ -2,7 +2,7 @@ require 'rails_helper'
 
 RSpec.describe Demo::RequestEvidence do
   subject(:result) do
-    described_class.call(identity:, journey:, requirement_uuid:, country_code: 'FI',
+    described_class.call(identity:, journey:, requirement_uuid:, country_code: 'FI', requester_id: '00000000000004',
       evidence_request_client: client, token_writer:)
   end
 
@@ -19,12 +19,13 @@ RSpec.describe Demo::RequestEvidence do
   end
 
   # Step 16 of chapter 1 §10.1: the member state is the one the user picked on
-  # the card, and nothing here decides it.
-  it 'asks under the procedure of the journey, in the member state the card named' do
+  # the card, and nothing here decides it. The requester is the one of the
+  # entrance the click was made on, which the caller names.
+  it 'asks under the procedure of the journey, in the member state the card named, as the requester it is given' do
     result
 
     expect(client).to have_received(:fetch).with(
-      hash_including(requester_id: Settings.demo_requester_id, procedure_code: 'U1', country_code: 'FI'),
+      hash_including(requester_id: '00000000000004', procedure_code: 'U1', country_code: 'FI'),
     )
     expect(Demo::Request.sole.procedure_code).to eq('U1')
   end

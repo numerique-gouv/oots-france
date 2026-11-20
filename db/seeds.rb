@@ -141,6 +141,12 @@ if Rails.env.development?
     { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
       specification: EdmSpecification::V2_0,
       evidence_requester_id: '00000000000003', events: %w[request_sent] },
+    # La même démarche jouée depuis le site public, sous le SIRET du requêteur
+    # qui lui est propre : le filtre du journal par requêteur l'isole de celle
+    # de la console.
+    { status: 'sent', country_code: 'FR', procedure_code: ProcedureCode::STUDY_FINANCING,
+      specification: EdmSpecification::V2_0,
+      evidence_requester_id: '00000000000004', events: %w[request_sent] },
     # Ouvert et rien de plus : `EvidenceRequest::ChooseSpecification` n'a pas
     # encore choisi, donc aucune version n'est arrêtée et la console n'en donne
     # aucune.
@@ -695,7 +701,7 @@ if Rails.env.development?
                {}
              end),
           # Le requêteur du scénario quand il en nomme un — la démarche de
-          # démonstration est le seul à en nommer —, et sinon celui que le sens
+          # démonstration, sous ses deux entrées, est la seule à en nommer —, et sinon celui que le sens
           # de l'échange désigne.
           evidence_requester_id: scenario[:evidence_requester_id] ||
             (incoming ? '00000000000009' : '00000000000002'),

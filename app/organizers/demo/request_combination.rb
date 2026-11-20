@@ -4,7 +4,8 @@ module Demo
   # under the conversation of the journey, which chapter 4.4 §4.3.2 says
   # « SHOULD be reused for combined flows ».
   #
-  # `named_evidences` is what the card named for each type asked for, and
+  # `requester_id` is the SIRET of the entrance the click was made on,
+  # `named_evidences` what the card named for each type asked for, and
   # `procedure` the names of the journey's procedure. `whole` is a click on the
   # combination's one button, which the card keeps: a refusal of the contract
   # opens no exchange to show it by. A refusal stops the requests after it, and
@@ -33,7 +34,7 @@ module Demo
 
     def request(named)
       RequestEvidence.call(identity: context.identity, journey: context.journey, requirement_uuid: context.requirement_uuid,
-        **named.attributes.symbolize_keys, **context.procedure)
+        requester_id: context.requester_id, **named.attributes.symbolize_keys, **context.procedure)
     end
   end
 end

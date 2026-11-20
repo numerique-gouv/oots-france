@@ -55,7 +55,7 @@ RSpec.describe 'Accueil' do
       expect(page.css('nav.fr-nav a').map { [it['href'], it.text.squish] }).to eq([
         ['#comprendre', 'OOTS en bref'], ['#fonctionnement', 'Comment ça marche'],
         ['#concerne', 'Êtes-vous concerné ?'], [available_evidence_index_path, 'Justificatifs disponibles'],
-        ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'],
+        ['#raccorder', 'Se raccorder'], ['#faq', 'Questions fréquentes'], ['/demonstration', 'Démo'],
       ])
       expect(page.css('.fr-header__tools-links .fr-btns-group a').map { [it['href'], it.text.squish] })
         .to eq([[ApplicationHelper::TEAM_MAIL_ADDRESS, 'Contact'], [admin_root_path, 'Administration']])
@@ -288,7 +288,7 @@ RSpec.describe 'Accueil' do
     it 'says the same things in English, navigation included' do
       expect(page.at_css('html')['lang']).to eq('en')
       expect(page.css('nav.fr-nav a').map { it.text.squish })
-        .to eq(['OOTS in brief', 'How it works', 'Are you concerned?', 'Available evidence', 'Connecting', 'FAQ'])
+        .to eq(['OOTS in brief', 'How it works', 'Are you concerned?', 'Available evidence', 'Connecting', 'FAQ', 'Demo'])
       expect(text_of('.fr-header__service-title')).to eq('OOTS-France Pre-production')
       expect(section('fonctionnement').text.squish).to include(
         'at the provider that issues it', 'For each request of a French procedure, OOTS-France reads'

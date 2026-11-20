@@ -74,6 +74,83 @@ Rails.application.routes.draw do
   # authenticated.
   post '/domibus/notifications', to: 'domibus_notifications#create'
 
+  # Every page of the demonstration procedure, drawn twice: under the console,
+  # for every admitted agent, and on the public site, for anyone.
+  # `Demo::Entrance` says what tells the two apart.
+  concern :demo_walk do
+    # The screen the user picks the line of the walk on, and the one
+    # address of the walk no line names.
+    root to: 'versions#index'
+
+    # Every page of the walk under the line it plays: `v2.0` or `v1.2`, the
+    # identifier `R-DSD-RESP-C015` writes less its prefix. Constrained, and so
+    # read whole despite its dot, which Rails would otherwise take for a format;
+    # any other segment is an address that does not exist.
+    scope ':version', constraints: { version: EdmSpecification::SEGMENTS } do
+      # The screen the procedure the walk plays is chosen on.
+      get '/', to: 'procedures#index', as: :procedures
+
+      # Every page of the walk under the procedure it plays, its code right
+      # after the line: what a request may name in `Procedure` and nothing
+      # else, `R-EDM-REQ-C003` being FATAL.
+      scope ':procedure', constraints: { procedure: Regexp.union(ProcedureCode::ADMITTED) } do
+        get '/', to: 'home#show', as: :home
+        # `create` and not `show`: starting the European flow writes the `state`
+        # and the `nonce` its return is checked against, which a prefetched or
+        # replayed GET would overwrite. `destroy` and not a GET for the same
+        # reason: ending it writes the `state` of the sign-out.
+        resource :identification, only: %i[create destroy]
+        # Where the user comes back to, identified, and the only page an exchange
+        # is asked for from. It carries the identity the authentication attested,
+        # and names the provider and the evidence type the directories resolve,
+        # which requirement 27 of chapter 1 asks for « before any request is
+        # made ».
+        #
+        # `resource` and not `resources`: there is one such page and no identifier
+        # reaches it, the session saying which documents are this user's.
+        resource :documents, only: :show, controller: 'documents'
+        # The request itself, and what became of it. `create` **is** the explicit
+        # request of chapter 1 §3.3, and the request leaves as the button is
+        # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
+        # from that instant. `show` renders the zone of the documents page that says where
+        # the request stands, and is the address that zone re-asks while it waits:
+        # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
+        # never asks anew — confirming, until it succeeds, the preview a correspondent asks for
+        # being the second round trip of the same exchange.
+        resource :demande, only: %i[show create], controller: 'requests'
+        # The member state one card resolves its requirement in, which the user
+        # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
+        # answers with the card alone, and opens nothing.
+        resource :pays, only: :update, controller: 'countries'
+        # The combination of evidence types one card names, where its country
+        # publishes several for the requirement — chapter 3.2.2 §2.3. Asks the
+        # directories only, answers with the card alone, and opens nothing.
+        resource :combinaison, only: :update, controller: 'evidence_type_lists'
+        # The answers one card gives to the questions the Data Service
+        # Directory asks before it can name the provider — chapter 3.1.4
+        # §4.4.3.3. Asks the directories only, answers with the card alone, and
+        # opens nothing.
+        resource :classification_fournisseur, only: :update, controller: 'provider_classifications'
+        # A card the user adds to the documents page, beyond those the
+        # Evidence Broker lists for the procedure, and takes off it again.
+        resources :cartes, only: %i[create destroy], param: :exigence, controller: 'cards'
+        # The evidence itself. Nothing reaches it without the exchange the session
+        # is following.
+        get 'justificatif', to: 'evidences#show', as: :justificatif
+      end
+    end
+  end
+
+  # The same walk on the public site, where a visitor plays the user of the
+  # procedure without any session of the console. Matched only where the fake
+  # FranceConnect+ is declared, the one way it offers to identify: elsewhere the
+  # address answers 404, rather than existing and refusing.
+  constraints(->(_request) { Demo::Entrance::PUBLIC.open? }) do
+    namespace :demonstration do
+      concerns :demo_walk
+    end
+  end
+
   namespace :admin do
     root to: 'home#show'
     resource :session, only: %i[new create destroy]
@@ -98,67 +175,7 @@ Rails.application.routes.draw do
     # observe an exchange — `docs/espace_administration.md` says why it is
     # nonetheless here.
     namespace :demo do
-      # The screen the operator picks the line of the walk on, and the one
-      # address of the walk no line names.
-      root to: 'versions#index'
-
-      # Every page of the walk under the line it plays: `v2.0` or `v1.2`, the
-      # identifier `R-DSD-RESP-C015` writes less its prefix. Constrained, and so
-      # read whole despite its dot, which Rails would otherwise take for a format;
-      # any other segment is an address that does not exist.
-      scope ':version', constraints: { version: EdmSpecification::SEGMENTS } do
-        # The screen the procedure the walk plays is chosen on.
-        get '/', to: 'procedures#index', as: :procedures
-
-        # Every page of the walk under the procedure it plays, its code right
-        # after the line: what a request may name in `Procedure` and nothing
-        # else, `R-EDM-REQ-C003` being FATAL.
-        scope ':procedure', constraints: { procedure: Regexp.union(ProcedureCode::ADMITTED) } do
-          get '/', to: 'home#show', as: :home
-          # `create` and not `show`: starting the European flow writes the `state`
-          # and the `nonce` its return is checked against, which a prefetched or
-          # replayed GET would overwrite. `destroy` and not a GET for the same
-          # reason: ending it writes the `state` of the sign-out.
-          resource :identification, only: %i[create destroy]
-          # Where the user comes back to, identified, and the only page an exchange
-          # is asked for from. It carries the identity the authentication attested,
-          # and names the provider and the evidence type the directories resolve,
-          # which requirement 27 of chapter 1 asks for « before any request is
-          # made ».
-          #
-          # `resource` and not `resources`: there is one such page and no identifier
-          # reaches it, the session saying which documents are this user's.
-          resource :documents, only: :show, controller: 'documents'
-          # The request itself, and what became of it. `create` **is** the explicit
-          # request of chapter 1 §3.3, and the request leaves as the button is
-          # clicked — chapter 4.5.1 §2.3 allows `IssueDateTime` no material distance
-          # from that instant. `show` renders the zone of the documents page that says where
-          # the request stands, and is the address that zone re-asks while it waits:
-          # chapter 4.4 §4.1 requires a new request for a new answer, so it reads and
-          # never asks anew — confirming, until it succeeds, the preview a correspondent asks for
-          # being the second round trip of the same exchange.
-          resource :demande, only: %i[show create], controller: 'requests'
-          # The member state one card resolves its requirement in, which the user
-          # picks there — step 16 of chapter 1 §10.1. Asks the directories only,
-          # answers with the card alone, and opens nothing.
-          resource :pays, only: :update, controller: 'countries'
-          # The combination of evidence types one card names, where its country
-          # publishes several for the requirement — chapter 3.2.2 §2.3. Asks the
-          # directories only, answers with the card alone, and opens nothing.
-          resource :combinaison, only: :update, controller: 'evidence_type_lists'
-          # The answers one card gives to the questions the Data Service
-          # Directory asks before it can name the provider — chapter 3.1.4
-          # §4.4.3.3. Asks the directories only, answers with the card alone, and
-          # opens nothing.
-          resource :classification_fournisseur, only: :update, controller: 'provider_classifications'
-          # A card the operator adds to the documents page, beyond those the
-          # Evidence Broker lists for the procedure, and takes off it again.
-          resources :cartes, only: %i[create destroy], param: :exigence, controller: 'cards'
-          # The evidence itself. Nothing reaches it without the exchange the session
-          # is following.
-          get 'justificatif', to: 'evidences#show', as: :justificatif
-        end
-      end
+      concerns :demo_walk
     end
 
     # The log is walked through its events, and only through them: the listing

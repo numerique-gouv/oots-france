@@ -3,6 +3,7 @@ require 'rails_helper'
 RSpec.describe Demo::RequestCombination do
   subject(:requested) do
     described_class.call(identity: :identity, journey: :journey, requirement_uuid: 'exigence', procedure: {},
+      requester_id: '00000000000004',
       named_evidences: %w[premier second troisieme].map { |uuid| Demo::NamedEvidence.new(evidence_type_id: "https://sr/EL/#{uuid}") })
   end
 
@@ -22,5 +23,13 @@ RSpec.describe Demo::RequestCombination do
     expect(requested.failures).to eq('second' => :refus)
     expect(asked).to eq(%w[https://sr/EL/premier https://sr/EL/second])
     expect(requested).to be_success
+  end
+
+  it 'asks each type under the requester of the entrance the click was made on' do
+    allow(Demo::RequestEvidence).to receive(:call).and_return(Interactor::Context.new)
+
+    requested
+
+    expect(Demo::RequestEvidence).to have_received(:call).with(hash_including(requester_id: '00000000000004')).thrice
   end
 end

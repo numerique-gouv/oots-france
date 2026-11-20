@@ -2,10 +2,10 @@
 # application reads it: the cookies are encrypted, and a request spec only sees
 # their ciphertext.
 module DemoIdentityCookieReader
-  def held_demo_identity
+  def held_demo_identity(entrance = Demo::Entrance::CONSOLE)
     jar = ActionDispatch::Cookies::CookieJar.build(request, cookies.to_hash).encrypted
-    attributes = jar[:demo_identity]
-    attributes&.merge('id_token' => jar[:demo_id_token])&.symbolize_keys
+    attributes = jar[entrance.identity_cookie]
+    attributes&.merge('id_token' => jar[entrance.id_token_cookie])&.symbolize_keys
   end
 
   # Whichever of the two cookies the browser still holds, whatever they say.

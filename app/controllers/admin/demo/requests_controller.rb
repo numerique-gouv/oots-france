@@ -57,7 +57,7 @@ module Admin
       # contract opens no exchange: the block of its type says why and offers
       # its button again rather than waiting on an answer nobody will send.
       def create
-        return redirect_to admin_demo_documents_path unless askable?
+        return redirect_to demo_path(:documents) unless askable?
 
         render_zone(failures: request_combination.failures)
       end
@@ -68,6 +68,7 @@ module Admin
 
       def request_combination
         ::Demo::RequestCombination.call(identity:, journey:, requirement_uuid:, named_evidences: asked,
+          requester_id: demo_entrance.requester_id,
           procedure: named_procedure.attributes.symbolize_keys, whole: evidence_type_uuid.blank?)
       end
 

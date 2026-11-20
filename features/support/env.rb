@@ -38,8 +38,9 @@ end
 # first of this profile to ask for a document, so they are the first to reach
 # `Demo::RequestEvidence` and `Demo::BeneficiaryTokenWriter` at all.
 #
-# These two and no more. Of everything `Settings::REQUIRED` names, the rest is
-# either forced on `Settings` by the doubles of FranceConnect+ (the issuer, the
+# These three and no more — the two SIRETs, the console's and the public
+# entrance's, and the signing key. Of everything `Settings::REQUIRED` names,
+# the rest is either forced on `Settings` by the doubles of FranceConnect+ (the issuer, the
 # credentials, the decryption key, and `URL_OOTS_FRANCE`, which every double of
 # the contract is mounted on), posted above, given to the job by `tests.yml`
 # because the framework reads it while booting (the three journal keys and the
@@ -54,6 +55,8 @@ Before('not @bout_en_bout') do
   # RSpec and `scripts/ci/prepare_environment.sh` writes for the stack.
   ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'] =
     ENV['IDENTIFIANT_REQUETEUR_DEMARCHE'].presence || '00000000000003'
+  ENV['IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE'] =
+    ENV['IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE'].presence || '00000000000004'
 
   # The key the procedure signs its beneficiary token with. Drawn rather than
   # pinned, and an EC one: `BeneficiaryToken` admits ES256 alone. Drawn once —

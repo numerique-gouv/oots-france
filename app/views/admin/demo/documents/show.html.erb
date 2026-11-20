@@ -15,7 +15,7 @@
   <%# The icon alone: the DSFR hides the text of a `fr-btn` carrying an icon
       and no `fr-btn--icon-*`, which still names the button, and the `title`
       shows it on hover. %>
-  <%= button_to t('admin.demo.documents.show.sign_out'), admin_demo_identification_path, method: :delete,
+  <%= button_to t('admin.demo.documents.show.sign_out'), demo_path(:identification), method: :delete,
         class: 'fr-btn fr-btn--sm fr-btn--tertiary fr-icon-logout-box-r-line',
         title: t('admin.demo.documents.show.sign_out') %>
 <% end %>
@@ -63,7 +63,7 @@
 
     <%# The list and its button on one line; the label is said off screen
         only, the heading above already saying what the list is for. %>
-    <%= form_with url: admin_demo_cartes_path, method: :post do |form| %>
+    <%= form_with url: demo_path(:cartes), method: :post do |form| %>
       <div class="fr-grid-row fr-grid-row--gutters fr-grid-row--middle">
         <div class="fr-col">
           <div class="fr-select-group fr-mb-0">

@@ -14,7 +14,7 @@
       <div class="fr-col-12 fr-col-md-6">
         <%= render CardComponent.new(
               title: t('admin.demo.versions.index.card', number: specification.number),
-              href: admin_demo_procedures_path(version: specification.segment),
+              href: demo_path(:procedures, version: specification.segment),
               clickable: true,
             ) do %>
           <%= t("admin.demo.versions.index.descriptions.#{specification.slug}") %>

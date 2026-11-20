@@ -74,7 +74,7 @@ module Demo
     # a step earlier.
     def ask_the_contract
       client.fetch(
-        requester_id: Settings.demo_requester_id,
+        requester_id: context.requester_id,
         procedure_code: context.journey.procedure_code,
         country_code: context.country_code,
         encrypted_beneficiary: token_writer.call(context.identity),

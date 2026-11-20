@@ -89,9 +89,16 @@ class PreviewSessionsController < ApplicationController
     @preview = PreviewSessionPresenter.new(@session, first_request: @first_request, verdict: recognised)
   end
 
+  # One per entrance of the demonstration, each on its own journey and
+  # identity: the first granted, the console's otherwise.
   def dispensation
-    PreviewDispensation.new(identity: demo_identity, journey: Demo::Journey.from_session(session[:demo_journey]),
-      preview_session: @session, beneficiary: @first_request&.beneficiary, instance: preview_france_connect)
+    dispensations = Demo::Entrance::ALL.map do |entrance|
+      PreviewDispensation.new(identity: demo_identity(entrance),
+        journey: Demo::Journey.from_session(session[entrance.journey_key]), preview_session: @session,
+        beneficiary: @first_request&.beneficiary, instance: preview_france_connect)
+    end
+
+    dispensations.find(&:granted?) || dispensations.first
   end
 
   def preview_france_connect = Settings.preview_france_connect_instance

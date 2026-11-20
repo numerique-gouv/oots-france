@@ -116,7 +116,7 @@ URL_DEMARCHE="http://web:$PORT_OOTS_FRANCE/demo"
 # object — which produces a truncated directory nothing complains about until a
 # requester goes unrecognised.
 if ! printenv DONNEES_REQUETEURS >/dev/null 2>&1; then
-  DONNEES_REQUETEURS="{\"00000000000002\":{\"nom\":\"Requêteur de test\",\"url\":\"http://web:4000\"},\"00000000000003\":{\"nom\":\"Université de démonstration\",\"url\":\"$URL_DEMARCHE\"}}"
+  DONNEES_REQUETEURS="{\"00000000000002\":{\"nom\":\"Requêteur de test\",\"url\":\"http://web:4000\"},\"00000000000003\":{\"nom\":\"Université de démonstration\",\"url\":\"$URL_DEMARCHE\"},\"00000000000004\":{\"nom\":\"Démonstration publique d'OOTS-France\",\"url\":\"$URL_DEMARCHE\"}}"
 fi
 
 export PORT_OOTS_FRANCE PORT_FAUX_FRANCE_CONNECT
