@@ -668,6 +668,7 @@ en:
       procedure: "Procedure %{code}"
     regrep_body:
       summary: Show the body (%{size})
+      indented: Indented for reading. The journal keeps the message as it travelled.
     decrypted_value:
       label: Decrypted personal data
     directory_value:

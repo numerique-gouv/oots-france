@@ -763,6 +763,7 @@ fr:
     # taille, un document de métadonnées faisant plusieurs kilo-octets.
     regrep_body:
       summary: Afficher le corps (%{size})
+      indented: Indenté pour la lecture. Le journal conserve le message tel qu'il a circulé.
     decrypted_value:
       label: Donnée personnelle déchiffrée
     # Ce que la teinte bleue signifie, écrit hors écran parce qu'une couleur
