@@ -17,6 +17,13 @@ module SettingsEnvironment
       .merge('DELAI_PREVISUALISATION_REQUETEUR_MINUTES' => '41', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40')
       .merge('CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64' => france_connect_key)
       .merge('CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64' => demo_signing_key)
+      .merge(Settings::EVIDENCE_REQUESTERS => evidence_requesters)
+  end
+
+  # One requester by default; `urls` maps each SIRET to its `url`, where `nil`
+  # leaves the member out.
+  def evidence_requesters(urls = { '00000000000003' => 'http://web:3000/demo' })
+    urls.transform_values { |url| { nom: 'Requêteur', url: }.compact }.to_json
   end
 
   # A FranceConnect+ declared at last: the contract refuses an environment that

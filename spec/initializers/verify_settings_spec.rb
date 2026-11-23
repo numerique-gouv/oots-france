@@ -40,4 +40,8 @@ RSpec.describe 'config/initializers/verify_settings.rb' do
   it 'checks nothing in a process that is not the worker' do
     expect { boot(false, Settings::REQUIRED.index_with { nil }) }.not_to raise_error
   end
+
+  it 'reads no requester in a process that is not the worker' do
+    expect { boot(false, complete_environment.merge(Settings::EVIDENCE_REQUESTERS => '{')) }.not_to raise_error
+  end
 end
