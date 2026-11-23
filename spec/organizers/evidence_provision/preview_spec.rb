@@ -495,6 +495,36 @@ RSpec.describe 'The preview France offers as a provider' do
     end
   end
 
+  # OOTS-311.
+  describe 'the type whose preview waives the re-authentication' do
+    def waived(flag, line:)
+      requested(line) { |body| flagged(body, flag).sub(Fixtures::SERVED_TYPE, Fixtures::REAUTHENTICATION_WAIVED_TYPE) }
+    end
+
+    %i[v2_0 v1_2].each do |line|
+      # CA1.
+      it "answers the test document at once where the request allows no preview, on the #{line} line" do
+        deliver(waived('false', line:), 'm001')
+
+        answer = body_of(submitted.sole)
+        expect(answer.root['status']).to end_with('Success')
+        expect(slot(answer, 'PreviewLocation')).to be_nil
+        expect(attachment_of(submitted.sole)).to start_with('%PDF')
+        expect(PreviewSession.count).to eq(0)
+      end
+
+      # CA2.
+      it "sends the user to the preview space, on the #{line} line" do
+        deliver(waived('true', line:), 'm001')
+
+        exception = exception_of(body_of(submitted.sole))
+        expect(exception.attributes.transform_values(&:value))
+          .to include('code' => 'EDM:ERR:0002', 'severity' => EdmException::PREVIEW_REQUIRED)
+        expect(slot(body_of(submitted.sole), 'PreviewLocation')).to eq(location)
+      end
+    end
+  end
+
   # CA2, CA21 and CA22.
   describe 'the 1.2 line' do
     let(:first) { request_asking_preview(line: :v1_2) }

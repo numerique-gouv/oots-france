@@ -9,6 +9,10 @@ module Fixtures
   # « FR - Test without evidence match (TC18) », served without any document.
   UNMATCHED_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/11cb64a4-6134-4b0e-aa6b-4a90250924ab'.freeze
 
+  # « FR - Test with preview, without reauthentication », whose preview France
+  # shows without the user identifying again.
+  REAUTHENTICATION_WAIVED_TYPE = 'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/dc8598fb-b315-41a5-8002-77c4a34e61a9'.freeze
+
   # One of another member state's, which France does not serve.
   UNSERVED_TYPE = 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e'.freeze
 

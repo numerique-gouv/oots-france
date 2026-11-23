@@ -2,7 +2,7 @@ module EvidenceProvision
   # A visit to France's preview space. Chapter 4.8 §3.2 asks for the « URL
   # visited », at every visit, identified or not; a first one opens the time
   # the user has; and on the 1.2 line the way back arrives with it, kept from a
-  # browser the space has identified (`RememberPreviewReturn`).
+  # browser the space has recognised (`RememberPreviewReturn`).
   #
   # Where no document matches the user, the visit of a recognised browser is
   # what settles the outcome, there being nothing to decide: the user has read

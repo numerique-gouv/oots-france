@@ -1,7 +1,9 @@
 # Whether France's preview space lets a browser through without identifying
 # again. Chapter 4.9 §1 leaves the re-authentication to the provider — « This
-# is an implementation and/or policy decision » — and this deployment waives
-# it in one case only: the demonstration procedure, identified by the fake
+# is an implementation and/or policy decision » — and, the type asked for aside
+# (`ServedEvidenceType.reauthentication_waived?`, which waives it for whoever
+# opens the address and is decided before this is asked), this deployment
+# waives it in one case: the demonstration procedure, identified by the fake
 # FranceConnect+, opening the preview of its own request on a deployment that
 # re-authenticates by the real one, whose sandbox knows none of the fake's
 # identities.

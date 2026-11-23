@@ -23,6 +23,17 @@ RSpec.describe ServedEvidenceType do
     expect(described_class).not_to be_unmatched(type(Fixtures::SERVED_TYPE))
   end
 
+  # RG1 of OOTS-311.
+  it 'serves the type whose preview waives the re-authentication, and tells it apart' do
+    waived = type(Fixtures::REAUTHENTICATION_WAIVED_TYPE)
+
+    expect(described_class).to be_served(waived)
+    expect(described_class).to be_reauthentication_waived(waived)
+    [Fixtures::SERVED_TYPE, Fixtures::UNMATCHED_TYPE, Fixtures::UNSERVED_TYPE].each do |other|
+      expect(described_class).not_to be_reauthentication_waived(type(other))
+    end
+  end
+
   describe '.distribution_for' do
     def asking(id, *formats) = build(:evidence_type, id:, distribution_formats: formats)
 
@@ -48,6 +59,8 @@ RSpec.describe ServedEvidenceType do
 
     it 'serves the test types in their PDF' do
       expect(described_class.distribution_for(asking(Fixtures::SERVED_TYPE, EvidenceType::PDF)))
+        .to eq(ServedDistribution::PDF)
+      expect(described_class.distribution_for(asking(Fixtures::REAUTHENTICATION_WAIVED_TYPE, EvidenceType::PDF)))
         .to eq(ServedDistribution::PDF)
     end
   end
