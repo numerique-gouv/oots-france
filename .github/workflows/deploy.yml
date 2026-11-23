@@ -1,0 +1,56 @@
+---
+name: Déploiement sur le serveur
+
+run-name: Deploy to ${{ inputs.environment || 'acceptance' }}
+on:
+  push:
+    branches:
+      - action-déploiement-continu
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environnement vers lequel déployer
+        required: true
+        default: acceptance
+        type: choice
+        options:
+          - acceptance
+
+env:
+  TARGET_ENV: ${{ inputs.environment || 'acceptance' }}
+  SSH_USER: ${{ secrets.SSH_OOTS_ACC_DEPLOY_USER }}
+  SSH_PRIVKEY: ${{ secrets.SSH_OOTS_ACC_DEPLOY_KEY }}
+  SSH_PEER: ${{ secrets.SSH_OOTS_ACC_DEPLOY_PEER }}
+  WG_PRIVKEY: ${{ secrets.WG_OOTS_ACC_PRIVKEY }}
+  WG_PEER_ENDPOINT: ${{ secrets.WG_OOTS_ACC_TUNNEL_ENDPOINT }}
+  WG_LOCAL_IP: ${{ secrets.WG_OOTS_ACC_LOCAL_IP }}
+  WG_REMOTE_IP: ${{ secrets.WG_OOTS_ACC_REMOTE_IP }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: ${{ inputs.environment || 'acceptance' }}
+  steps:
+    - name: Install wireguard
+      run: apt-get update && apt-get install wireguard
+    - name: Configure wireguard
+      run: |
+        umask 077
+        cat <<__EOF__ >/etc/wireguard/wgOotsDepl.conf
+        [Interface]
+        PrivateKey = $WG_PRIVKEY
+        Address = $WG_LOCAL_IP
+        
+        [Peer]
+        PublicKey = L5VfeZKRJtOLE7xUrX6iYp7TqwlqBi3becyxuOj26mw=
+        AllowedIPs = $WG_REMOTE_IP
+        Endpoint = $WG_PEER_ENDPOINT
+        PersistentKeepalive = 30
+        __EOF__
+    - name: Start wireguard tunnel
+      run: systemctl daemon-reload && systemctl start wg-quick@wgOotsDepl
+    - name: Write SSH private key
+      run: mkdir ~/.ssh && (umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy)
+    - name: Deploy via SSH
+      run: ssh -i ~/.ssh/.id-oots-deploy $SSH_USER@$SSH_PEER
