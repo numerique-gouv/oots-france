@@ -58,7 +58,7 @@ jobs:
         run: mkdir ~/.ssh
       - name: Write remote host's known public keys
         run: echo "$SSH_PEER_PUBKEYS" | sed "s/^/$SSH_PEER /" >~/.ssh/known_hosts
-      - name: Write SSH private key .
+      - name: Write SSH private key
         run: umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy
       - name: Deploy via SSH
         run: ssh -i ~/.ssh/.id-oots-deploy $SSH_USER@$SSH_PEER
