@@ -63,6 +63,15 @@ end
   stub_evidence_request_for_type(greek_type_id(title), nil, status: 422, error: 'EB:ERR:0001')
 end
 
+# Each exchange of the combination asking for a preview, and the contract
+# handing the link the zone presents once it has confirmed it.
+Étantdonné('le fournisseur demandant une prévisualisation pour chaque document de la combinaison') do
+  GREEK_EXCHANGES.each_value do |exchange|
+    stub_exchange_state(exchange, statut: 'preview_required', adressePrevisualisation: PREVIEW_SPACE)
+    stub_preview_confirmation(exchange, adressePrevisualisation: PREVIEW_SPACE)
+  end
+end
+
 Quand("l'usager clique sur {string} dans le bloc de {string}") do |label, title|
   within(zone_block(title)) { click_button label, exact: true }
 end
@@ -75,6 +84,36 @@ Quand('la zone a interrogé deux fois de plus son adresse') do
   seen = readings.call
 
   wait_until('La zone ne réinterroge pas son adresse.', seconds: INTERVAL * 4) { readings.call >= seen + 2 }
+end
+
+# The contract redirects the user back to the address the procedure gave it
+# in its confirmation, with the two identifiers of the exchange — what the
+# return address of France does once the preview space hands the user back.
+Quand("l'espace de prévisualisation ramène l'usager par l'adresse de retour de la demande de {string}") do |title|
+  exchange = GREEK_EXCHANGES.fetch(title)
+  resume = URI(confirmed_resume_location(exchange))
+  conversation = Demo::Request.find_by!(exchange_id: exchange).conversation_id
+
+  visit "#{resume.path}?#{{ echange: exchange, conversation: }.to_query}##{resume.fragment}"
+  mark_the_page
+end
+
+Quand('le justificatif de {string} est remis') do |title|
+  Demo::Request.where(evidence_type_id: greek_type_id(title)).order(:created_at, :id).last
+    .receive_evidence!(EVIDENCE, EvidenceType::PDF)
+end
+
+# The empty list of chapter 4.9 §1, which the contract reports as `declined`.
+Quand("l'usager écarte le document de {string} sur l'espace de prévisualisation") do |title|
+  stub_exchange_state(GREEK_EXCHANGES.fetch(title), statut: 'declined')
+end
+
+# Asking again is a new exchange (chapter 4.4 §4.1): the contract opens another
+# for whatever is asked of this type next.
+Quand('le fournisseur refuse la demande de {string}') do |title|
+  stub_exchange_state(GREEK_EXCHANGES.fetch(title), statut: 'failed', codeErreur: 'EDM:ERR:0003')
+  stub_evidence_request_for_type(greek_type_id(title), SECOND_EXCHANGE)
+  stub_exchange_state(SECOND_EXCHANGE, statut: 'pending')
 end
 
 Quand('chaque demande de la combinaison est refusée') do
@@ -126,9 +165,53 @@ Alors("le contrat n'a reçu de demande que pour {string}") do |title|
   expect(every_demand.map { |demand| demand_query(demand)['idTypeJustificatif'] }).to eq([greek_type_id(title)])
 end
 
-Alors("la zone affiche un bloc par type, dans l'ordre :") do |table|
-  expect(page).to have_css(ZONE_BLOCK_TYPE, count: table.hashes.size)
-  expect(all(ZONE_BLOCK_TYPE).map { |name| said_by(name) }).to eq(table.hashes.pluck('type'))
+Alors("la zone affiche, dans l'ordre :") do |table|
+  expect(page).to have_css(ZONE_BLOCK, count: table.hashes.size)
+  table.hashes.each_with_index do |row, index|
+    block = all(ZONE_BLOCK)[index]
+    expect(said_by(block.find('.demo-request__rank'))).to eq(row.fetch('rang'))
+    expect(said_by(block.find('.demo-request__type'))).to end_with(row.fetch('type'))
+    expect(block).to have_text(row.fetch('état'))
+  end
+end
+
+Alors("la zone n'affiche ni rang ni attente d'un document précédent") do
+  expect(page).to have_css(ZONE_BLOCK, count: 1)
+  expect(page).to have_no_css('.demo-request__rank')
+  expect(page).to have_no_text(I18n.t('components.demo_request_zone.queued'))
+end
+
+Alors("le bloc de {string} n'offre aucun bouton") do |title|
+  expect(zone_block(title)).to have_no_button
+end
+
+# A link or a form, as the correspondent asked: either is an access to its
+# space, and chapter 4.9 §6 has one per request.
+Alors('la carte présente un seul lien vers un espace de prévisualisation') do
+  expect(find(CARD)).to have_css(PREVIEW_ACCESS, count: 1)
+end
+
+Alors('la carte ne présente aucun lien vers un espace de prévisualisation') do
+  expect(find(CARD)).to have_no_css(PREVIEW_ACCESS)
+end
+
+# Chapter 4.9 §5: the user resumes « from the state it was in », on the card the
+# request left from.
+Alors('la page des justificatifs s\'affiche positionnée sur la carte') do
+  fragment = -> { URI(page.current_url).fragment }
+
+  expect(page).to have_current_path(DOCUMENTS_PAGE, ignore_query: true)
+  expect(fragment.call).to eq(find(CARD)[:id])
+end
+
+Alors('la zone affiche {string} au-dessus de ses blocs') do |sentence|
+  expect(page).to have_css("#{BODY} > .demo-request__complete:first-child", text: sentence)
+end
+
+Alors('le bloc de {string} ouvre le justificatif de son type') do |title|
+  link = zone_block(title).find_link(I18n.t('components.demo_request_zone.open'))
+
+  expect(Rack::Utils.parse_query(URI(link[:href]).query)['type']).to eq(GREEK_COMBINED_TYPES.fetch(title))
 end
 
 Alors('le bloc de {string} affiche {string}') do |title, sentence|
@@ -140,7 +223,9 @@ Alors("le bloc de {string} n'affiche pas {string}") do |title, sentence|
 end
 
 CARD_LINE = '[data-demo-card-line]'.freeze
-ZONE_BLOCK_TYPE = '[data-demo-request-block] .demo-request__type'.freeze
+ZONE_BLOCK = '[data-demo-request-block]'.freeze
+PREVIEW_ACCESS = '.demo-request__preview a, .demo-request__preview form'.freeze
+PREVIEW_SPACE = 'https://ap.example/preview'.freeze
 
 def stub_greek_combination
   stub_greece
@@ -192,6 +277,14 @@ end
 def every_demand
   WebMock::RequestRegistry.instance.requested_signatures.hash.to_a
     .flat_map { |signature, times| signature.uri.path == DemoContractStubs::PATH ? [signature] * times : [] }
+end
+
+# The address the procedure asked the contract to bring the user back to.
+def confirmed_resume_location(exchange)
+  confirmation = WebMock::RequestRegistry.instance.requested_signatures.hash.keys
+    .find { |signature| signature.method == :post && signature.uri.path == "/requete/#{exchange}/previsualisation" }
+
+  Rack::Utils.parse_nested_query(confirmation.body)['adresseRetour']
 end
 
 def demand_query(demand) = Rack::Utils.parse_nested_query(demand.uri.query.to_s)
