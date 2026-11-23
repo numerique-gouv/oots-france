@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_23_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -85,7 +85,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_19_120000) do
     t.datetime "added_at"
     t.string "evidence_type_list_id"
     t.jsonb "evidence_types", default: [], null: false
-    t.string "requested_evidence_type_list_id"
     t.index ["journey_id", "requirement_uuid"], name: "index_demo_cards_on_journey_id_and_requirement_uuid", unique: true
   end
 

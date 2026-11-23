@@ -1,7 +1,7 @@
 require 'rails_helper'
 
-# OOTS-270: a combination of several evidence types, asked for whole. Greece
-# publishes « Compound test evidence » for « (TEST) Test Requirement », which
+# A combination of several evidence types, asked for whole, one type after the
+# other (OOTS-270, OOTS-278). Greece publishes « Compound test evidence » for « (TEST) Test Requirement », which
 # calls on « Projectathon test evidence » — on which the Data Service Directory
 # asks « Projectathon test case » — and « Simple test evidence », served by the
 # Ministry of Digital Governance without a question. Both providers sit behind
@@ -63,95 +63,166 @@ RSpec.describe 'Admin::Demo::Combinations' do
     expect(contract_demands).to be_empty
   end
 
-  # CA4, last clause: the answer resolves its line, and the one button comes.
-  it 'offers one button for the whole combination once the question is answered' do
+  # CA4, last clause, and OOTS-278 CA1: the answer resolves its line, and the
+  # first type offers its button, the second waiting for its document.
+  it 'offers the first type its button once the question is answered, the second waiting for it' do
     choose_combination
     answer('TC03')
 
     fragment = response.parsed_body
     expect(lines_said(fragment)).to eq([['Projectathon test evidence', 'Ministry of Digital Governance'],
                                         ['Simple test evidence', 'Ministry of Digital Governance']])
-    expect(fragment.css('.demo-request button').map { |button| button.text.squish }).to eq(['Demander les documents'])
+    first, second = blocks(fragment)
+    expect(first.css('button').map { |button| button.text.squish }).to eq(['Demander le document'])
+    expect(second.css('button, a')).to be_empty
+    expect(second.text).to include('Sera demandé une fois le document précédent récupéré')
+    expect(fragment.text).not_to include('Demander les documents')
   end
 
-  describe 'the button of the combination' do
+  # OOTS-278: the types of the combination asked for one after the other, each
+  # by its own click.
+  describe 'the buttons of the combination' do
     before do
       choose_combination
       answer('TC03')
     end
 
-    # CA5: a request per type, in the order of the list, under the conversation
-    # of the journey, each with its own answers and the combination it came
-    # from.
-    it 'asks for each type in its own request, in order, under one conversation' do
-      post demande_path
+    # CA2: one click, one request, for the type of its block, under the
+    # conversation of the journey, with its answers and its combination.
+    it 'asks for the first type alone, the second staying queued' do
+      post demande_path(type: projectathon)
 
-      expect(contract_demands.map { |demand| query_of(demand)['idTypeJustificatif'] })
-        .to eq([type_id(projectathon), type_id(simple)])
-      expect(conversations_asked.uniq.size).to eq(1)
-      expect(contract_demands.map { |demand| query_of(demand)['classificationFournisseur'] })
-        .to eq([{ question => 'TC03' }, nil])
-      expect(Demo::Request.order(:id).pluck(:exchange_id, :evidence_type_list_id))
-        .to eq([[projectathon_exchange, compound], [simple_exchange, compound]])
+      expect(contract_demands.map { |demand| query_of(demand)['idTypeJustificatif'] }).to eq([type_id(projectathon)])
+      expect(query_of(contract_demands.sole)['classificationFournisseur']).to eq(question => 'TC03')
+      expect(Demo::Request.sole).to have_attributes(exchange_id: projectathon_exchange, evidence_type_list_id: compound)
+      expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('pending queued')
     end
 
-    # CA6: a block per request, each under the name of its type.
-    it 'answers with a block per request, each waiting' do
-      post demande_path
+    # RG4: a request forged for the second type leaves no more than its hidden
+    # button would, whatever became of the first.
+    it 'sends nothing for the second type before the first is asked for' do
+      post demande_path(type: simple)
 
-      expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('pending pending')
-      expect(response.parsed_body.css('.demo-request__type').map { |name| seen(name.at_css('.directory-value')) })
-        .to eq(['Projectathon test evidence', 'Simple test evidence'])
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
+      expect(contract_demands).to be_empty
     end
 
-    # CA5: a refusal of the contract stops the requests after it, and each
-    # block keeps its own button, including after a reload.
+    it 'sends nothing for the second type while the first runs, nor once it is refused' do
+      post demande_path(type: projectathon)
+      post demande_path(type: simple)
+      stub_exchange_state(projectathon_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
+      post demande_path(type: simple)
+
+      expect(contract_demands.map { |demand| query_of(demand)['idTypeJustificatif'] }).to eq([type_id(projectathon)])
+    end
+
+    it 'sends nothing for the second type while the first waits on its preview, nor once it is declined' do
+      stub_exchange_state(projectathon_exchange, statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview')
+      stub_preview_confirmation(projectathon_exchange)
+      post demande_path(type: projectathon)
+      post demande_path(type: simple)
+      stub_exchange_state(projectathon_exchange, statut: 'declined')
+      post demande_path(type: simple)
+
+      expect(contract_demands.map { |demand| query_of(demand)['idTypeJustificatif'] }).to eq([type_id(projectathon)])
+      expect(a_request(:post, %r{/requete/#{projectathon_exchange}/previsualisation})).to have_been_made.once
+    end
+
+    # Requirement 27 of chapter 1 §2: a click names the type it asks for.
+    it 'sends nothing for a click naming no type' do
+      post demande_path
+
+      expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
+      expect(contract_demands).to be_empty
+    end
+
+    # CA6: a refusal of the contract is said in the block of its type, and the
+    # second stays queued, including after a reload.
     describe 'when the contract refuses the first' do
       before do
         stub_evidence_request_for_type(type_id(projectathon), nil, status: 422, error: 'EB:ERR:0001')
-        post demande_path
+        post demande_path(type: projectathon)
       end
 
-      it 'sends no other, says the refusal in its block, and offers the other its own button' do
-        expect(contract_demands.size).to eq(1)
+      it 'says the refusal in its block, and keeps the second queued' do
         expect(Demo::Request.count).to eq(0)
 
         first, second = blocks(response.parsed_body)
         expect(first.at_css('.demo-request__failure').text).to include('EB:ERR:0001')
-        expect(second.at_css('button').text.squish).to eq('Demander le document')
+        expect(first.at_css('button').text.squish).to eq('Redemander le document')
+        expect(second['data-state']).to eq('queued')
       end
 
-      it 'offers each block its own button once the page is reloaded' do
+      # RG11: no exchange keeps the refusal, so the block offers its button.
+      it 'offers the first its button once the page is reloaded, the second still queued' do
         page
 
-        expect(blocks(carte).map { |block| block.at_css('button').text.squish })
-          .to eq(['Demander le document', 'Demander le document'])
-      end
-
-      it 'asks for the type of the block clicked, and for it alone' do
-        post demande_path(type: simple)
-
-        expect(query_of(contract_demands.last)['idTypeJustificatif']).to eq(type_id(simple))
-        expect(contract_demands.size).to eq(2)
-        expect(Demo::Request.sole.exchange_id).to eq(simple_exchange)
+        expect(blocks(carte).pluck('data-state')).to eq(%w[idle queued])
       end
     end
 
-    # RG4: those already accepted run.
-    describe 'when the contract refuses the second' do
+    # CA5: the first document in hand, the second is offered and asked for.
+    describe 'once the first document is in hand' do
       before do
-        stub_evidence_request_for_type(type_id(simple), nil, status: 422, error: 'EB:ERR:0001')
-        post demande_path
+        post demande_path(type: projectathon)
+        Demo::Request.find_by(exchange_id: projectathon_exchange).receive_evidence!("%PDF-1.4\nprojectathon".b, EvidenceType::PDF)
       end
 
-      it 'keeps the first request running, and says the refusal in the block of the second' do
-        expect(contract_demands.size).to eq(2)
-        expect(Demo::Request.sole.exchange_id).to eq(projectathon_exchange)
+      it 'offers the second its button' do
+        page
 
-        first, second = blocks(response.parsed_body)
-        expect(first['data-state']).to eq('pending')
-        expect(second['data-refused-click']).to eq('true')
-        expect(second.at_css('.demo-request__failure').text).to include('EB:ERR:0001')
+        first, second = blocks(carte)
+        expect(first.text).to include('Document récupéré avec succès')
+        expect(first.at_css('a')['href']).to include("type=#{projectathon}")
+        expect(second.at_css('button').text.squish).to eq('Demander le document')
+        expect(carte.text).not_to include('Les documents demandés ont tous été récupérés')
+      end
+
+      # CA10: a document in hand holds the card on its combination.
+      it 'offers neither list' do
+        page
+
+        expect(carte.css('select')).to be_empty
+      end
+
+      it 'asks for the second type, under the same conversation and another exchange' do
+        post demande_path(type: simple)
+
+        expect(contract_demands.map { |demand| query_of(demand)['idTypeJustificatif'] })
+          .to eq([type_id(projectathon), type_id(simple)])
+        expect(conversations_asked.uniq.size).to eq(1)
+        expect(Demo::Request.order(:id).pluck(:exchange_id)).to eq([projectathon_exchange, simple_exchange])
+        expect(response.parsed_body.at_css('.demo-request__body')['data-outcome']).to eq('delivered pending')
+      end
+
+      # CA7, CA8: the second refused, asked again alone under a new exchange,
+      # then delivered.
+      it 'asks for the refused second type alone again, and says the combination retrieved once it is in hand' do
+        post demande_path(type: simple)
+        stub_exchange_state(simple_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
+        page
+        expect(blocks(carte).last.text).to include('Le document ne peut pas être fourni', 'Redemander le document')
+
+        stub_evidence_request_for_type(type_id(simple), 'aaaaaaaa-0000-4000-8000-0000000000c2')
+        stub_exchange_state('aaaaaaaa-0000-4000-8000-0000000000c2', statut: 'pending')
+        post demande_path(type: simple)
+        expect(contract_demands.size).to eq(3)
+        expect(query_of(contract_demands.last)['idTypeJustificatif']).to eq(type_id(simple))
+
+        Demo::Request.find_by(exchange_id: 'aaaaaaaa-0000-4000-8000-0000000000c2')
+          .receive_evidence!("%PDF-1.4\nsimple".b, EvidenceType::PDF)
+        page
+        expect(carte.text).to include('Les documents demandés ont tous été récupérés')
+        expect(carte.css('.demo-request button')).to be_empty
+        expect(blocks(carte).pluck('data-state')).to eq(%w[delivered delivered])
+      end
+
+      it 'serves the document of the type the address names' do
+        get admin_demo_justificatif_path(exigence:, type: projectathon, version: 'v1.2', procedure: 'T1')
+        expect(response.body.b).to eq("%PDF-1.4\nprojectathon".b)
+
+        get admin_demo_justificatif_path(exigence:, type: simple, version: 'v1.2', procedure: 'T1')
+        expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
       end
     end
 
@@ -174,47 +245,10 @@ RSpec.describe 'Admin::Demo::Combinations' do
       expect(contract_demands).to be_empty
     end
 
-    # CA6: one document in, one refusal: each says its own, and the retry asks
-    # for its type alone, under a new exchange.
-    describe 'when one document comes back and the other is refused' do
-      before do
-        post demande_path
-        Demo::Request.find_by(exchange_id: projectathon_exchange).receive_evidence!("%PDF-1.4\nprojectathon".b, EvidenceType::PDF)
-        stub_exchange_state(simple_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
-      end
-
-      it 'says each in its own block' do
-        page
-
-        first, second = blocks(carte)
-        expect(first.text).to include('Document récupéré avec succès')
-        expect(first.at_css('a')['href']).to include("type=#{projectathon}")
-        expect(second.text).to include('Le document ne peut pas être fourni', 'Redemander le document')
-      end
-
-      it 'asks for the refused type alone again, under a new exchange' do
-        stub_evidence_request_for_type(type_id(simple), 'aaaaaaaa-0000-4000-8000-0000000000c2')
-        stub_exchange_state('aaaaaaaa-0000-4000-8000-0000000000c2', statut: 'pending')
-
-        post demande_path(type: simple)
-
-        expect(contract_demands.size).to eq(3)
-        expect(query_of(contract_demands.last)['idTypeJustificatif']).to eq(type_id(simple))
-        expect(blocks(response.parsed_body).pluck('data-state')).to eq(%w[delivered pending])
-      end
-
-      it 'serves the document of the type the address names' do
-        get admin_demo_justificatif_path(exigence:, type: projectathon, version: 'v1.2', procedure: 'T1')
-        expect(response.body.b).to eq("%PDF-1.4\nprojectathon".b)
-
-        get admin_demo_justificatif_path(exigence:, type: simple, version: 'v1.2', procedure: 'T1')
-        expect(response).to redirect_to(admin_demo_documents_path(version: 'v1.2', procedure: 'T1'))
-      end
-    end
-
-    # CA7: the card follows its requests while one of them runs.
-    describe 'while a request runs' do
-      before { post demande_path }
+    # CA10: the card follows its request while it runs, and is free again once
+    # it is refused with no document in hand.
+    describe 'while the first request runs' do
+      before { post demande_path(type: projectathon) }
 
       it 'offers neither list nor question, and names the combination asked for' do
         page
@@ -224,9 +258,8 @@ RSpec.describe 'Admin::Demo::Combinations' do
         expect(lines_said(carte).map(&:first)).to eq(['Projectathon test evidence', 'Simple test evidence'])
       end
 
-      it 'offers both lists again, on the combination and its answers, once every request is refused' do
+      it 'offers both lists again, on the combination and its answers, once the request is refused' do
         stub_exchange_state(projectathon_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
-        stub_exchange_state(simple_exchange, statut: 'failed', codeErreur: 'EDM:ERR:0003')
 
         page
 

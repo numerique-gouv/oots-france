@@ -439,75 +439,103 @@ RSpec.describe DemoRequestZoneComponent, type: :component do
       )
     end
 
-    it 'names no type in a block alone' do
+    # OOTS-278 CA11: a card on a single type has neither rank nor queue.
+    it 'names no type and no rank in a block alone' do
       render_inline(zone)
 
       expect(page).to have_no_css('.demo-request__type')
+      expect(page).to have_no_text('Document 1 sur 1')
     end
   end
 
-  # OOTS-270: a combination of several types, a block per type.
+  # OOTS-278: a combination of several types, a block per type, asked for one
+  # after the other. Which block is queued is `ReadsDemoRequest`'s to decide;
+  # the zone says what each is given.
   describe 'a combination of several types' do
     let(:types) do
       [DemoRequestZoneComponent::Type.new(uuid: 'bbbb', name: 'Projectathon test evidence', language: 'EN'),
        DemoRequestZoneComponent::Type.new(uuid: 'cccc', name: 'Simple test evidence', language: 'EN')]
     end
+    let(:delivered) do
+      Demo::Request.new(exchange_id: 'echange-a').tap { |request| allow(request).to receive(:evidence?).and_return(true) }
+        .then { |request| DemoOutcomeWording.new(answer:, request:) }
+    end
 
-    def blocks(outcomes, failures: {})
-      types.zip(outcomes).map do |each, outcome|
-        DemoRequestComponent.new(outcome:, requirement_uuid:, evidence_type: each, headed: true, failure: failures[each.uuid])
+    def blocks(outcomes, queued: [false, true], failures: {})
+      types.zip(outcomes, queued).each_with_index.map do |(each, outcome, waiting), index|
+        DemoRequestComponent.new(outcome:, requirement_uuid:, evidence_type: each, position: index + 1, count: types.size,
+          queued: waiting, failure: failures[each.uuid])
       end
     end
 
-    # CA2 and CA3: one button, which asks for them all.
-    it 'offers one button for them all while none has been asked for' do
+    def block(uuid) = page.find("[data-demo-request-block='#{uuid}']")
+
+    # CA1: the rank and the name of each type, the first offering its button,
+    # the second waiting for it.
+    it 'ranks each block, and offers the button of the first alone' do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil])))
 
-      expect(page).to have_button('Demander les documents')
-      expect(page).to have_css("form.demo-request__button[action='/admin/demo/v2.0/T1/demande?exigence=#{requirement_uuid}']")
-      expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="idle"]')
-      expect(page).to have_css('[data-demo-request-target="loading"]', visible: :hidden, text: 'Demande des documents en cours')
+      expect(page.all('.demo-request__type').map { |name| name.text.squish })
+        .to eq(['Document 1 sur 2 Projectathon test evidence, récupéré auprès des services communs',
+                'Document 2 sur 2 Simple test evidence, récupéré auprès des services communs'])
+      expect(block('bbbb')).to have_button('Demander le document')
+      expect(block('cccc')).to have_text('Sera demandé une fois le document précédent récupéré')
+      expect(block('cccc')).to have_no_css('form, a', visible: :all)
+      expect(page).to have_css('.demo-request__body[data-polling="false"][data-outcome="idle queued"]')
+      expect(page).to have_no_button('Demander les documents')
     end
 
-    # CA5: a click the contract refused leaves each type its own button.
-    it 'offers each block its own button once the combination was asked for' do
-      render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil]), requested: true))
+    it 'ranks the blocks in English on a page read in English' do
+      I18n.with_locale(:en) { render_inline(described_class.new(requirement_uuid:, blocks: blocks([nil, nil]))) }
 
-      expect(page.all('[data-demo-request-block] button').map(&:text)).to eq(['Demander le document'] * 2)
+      expect(page).to have_text('Document 2 of 2')
+      expect(page).to have_text('Will be requested once the previous document is retrieved')
     end
 
-    # CA6: a block per demand, each under the name of its type, and the zone
-    # waiting while any of them does.
-    it 'says each request in its own block, under the name of its type' do
+    # CA2: the first waits on its request, the second still on the first.
+    it 'waits on the first while the second stays queued' do
       render_inline(described_class.new(requirement_uuid:, blocks: blocks([outcome, nil])))
 
-      expect(page.all('.demo-request__type').map { |name| name.text.squish })
-        .to eq(['Projectathon test evidence, récupéré auprès des services communs',
-                'Simple test evidence, récupéré auprès des services communs'])
-      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending idle"]')
-      expect(page).to have_css('[data-demo-request-block][data-state="idle"]', text: 'Demander le document')
+      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="pending queued"]')
+      expect(block('cccc')).to have_no_css('form', visible: :all)
     end
 
-    # OOTS-257 CA2: an announced block is settled, and the zone waits on the other.
-    it 'keeps waiting on a block still out beside an announced one' do
-      deferred = DemoOutcomeWording.new(answer: Demo::ContractAnswer.new(status: 200, payload: { 'statut' => 'deferred' }),
-        request:)
-      render_inline(described_class.new(requirement_uuid:, blocks: blocks([deferred, outcome])))
+    # CA3: one preview link in the card, the first block's.
+    it 'presents the preview link of the first block alone' do
+      request.assign_attributes(preview_address: 'https://ap.example/preview?t=1', preview_method: 'GET')
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([outcome, outcome])))
 
-      expect(page).to have_css('.demo-request__body[data-polling="true"][data-outcome="failed pending"]')
-      expect(page).to have_css('[data-demo-request-block="bbbb"] .fr-alert--info', text: 'Document annoncé pour plus tard')
+      expect(page.all(:link, 'Prévisualiser et approuver le document').size).to eq(1)
+      expect(block('bbbb')).to have_link('Prévisualiser et approuver le document')
     end
 
-    # CA5: a click the contract refused is said in the block of its type, and
-    # the other keeps its own button.
-    it 'says a refused click in the block of its type alone' do
+    # CA5: the first delivered, the second offers its button.
+    it 'offers the second button once the first document is in hand' do
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([delivered, nil], queued: [false, false])))
+
+      expect(block('bbbb')).to have_text('Document récupéré avec succès')
+      expect(block('cccc')).to have_button('Demander le document')
+      expect(page).to have_css('.demo-request__body[data-outcome="delivered idle"]')
+      expect(page).to have_no_text('Les documents demandés ont tous été récupérés')
+    end
+
+    # CA6: a refused click on the first keeps the second queued.
+    it 'says a refused click in the first block, the second still queued' do
       render_inline(described_class.new(requirement_uuid:,
         blocks: blocks([nil, nil], failures: { 'bbbb' => { key: :demo_refused, errors: ['refus'] } })))
 
-      first, second = page.all('[data-demo-request-block]').to_a
-      expect(first).to have_css('.demo-request__failure', text: 'refus')
-      expect(second).to have_no_css('.demo-request__failure')
-      expect(second).to have_css("form[action='/admin/demo/v2.0/T1/demande?exigence=#{requirement_uuid}&type=cccc']")
+      expect(block('bbbb')).to have_css('.demo-request__failure', text: 'refus')
+      expect(block('bbbb')).to have_button('Redemander le document')
+      expect(block('cccc')).to have_no_css('.demo-request__failure, form', visible: :all)
+    end
+
+    # CA8: every document in hand.
+    it 'says the combination is retrieved once every document is in hand' do
+      render_inline(described_class.new(requirement_uuid:, blocks: blocks([delivered, delivered], queued: [false, false])))
+
+      expect(page.find('.demo-request__body > *:first-child')).to have_text('Les documents demandés ont tous été récupérés')
+      expect(page.all(:link, 'Ouvrir le document').size).to eq(2)
+      expect(page).to have_no_css('form', visible: :all)
     end
   end
 end

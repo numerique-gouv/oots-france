@@ -5,9 +5,10 @@
 # It holds only what changes. The evidence type and the provider requirement 27
 # of chapter 1 §2 has named stand in the card above and never move, so they are
 # not part of what an answer replaces; in a combination of several types, the
-# block repeats the name of its own, which says which of them it reports on.
+# block repeats its rank and the name of its own type, which say which of them
+# it reports on.
 #
-# One component for the five states because it is one place on the screen. A
+# One component for the six states because it is one place on the screen. A
 # click is answered where it was made — the user's eye is on the button — and
 # the zone around it answers its address with every block, so what arrives can
 # replace what is there.
@@ -34,13 +35,16 @@ class DemoRequestComponent < ViewComponent::Base
   # The outcomes the zone says as something other than a failure.
   STANDING = %i[delivered pending preview].freeze
 
-  # `evidence_type` is a `DemoRequestZoneComponent::Type`; `headed` a block
-  # among others, which says the name of its type.
-  def initialize(outcome:, requirement_uuid:, evidence_type:, headed: false, failure: nil)
+  # `evidence_type` is a `DemoRequestZoneComponent::Type`; `position` its rank
+  # among the `count` types of the combination; `queued` a block whose type
+  # waits for the document of the one before it.
+  def initialize(outcome:, requirement_uuid:, evidence_type:, position: 1, count: 1, queued: false, failure: nil)
     @outcome = outcome
     @requirement_uuid = requirement_uuid
     @evidence_type = evidence_type
-    @headed = headed
+    @position = position
+    @count = count
+    @queued = queued
     @failure = failure
     super()
   end
@@ -61,9 +65,10 @@ class DemoRequestComponent < ViewComponent::Base
   # apply the precedence of `refused_click?`, and a raw read would skirt it.
   private attr_reader :outcome, :failure
 
-  attr_reader :requirement_uuid, :evidence_type
+  attr_reader :requirement_uuid, :evidence_type, :position, :count
 
-  def headed? = @headed
+  # A block among others, which says its rank and the name of its type.
+  def headed? = count > 1
 
   # What the block is reporting: a click the contract turned away, or what
   # became of one it accepted. The two can stand together — a refused click
@@ -72,10 +77,8 @@ class DemoRequestComponent < ViewComponent::Base
   # answer to that click says it.
   def refused_click? = failure.present?
 
-  # Something was asked for this type: a request, or a click the contract
-  # refused.
-  def asked? = outcome.present? || refused_click?
-
+  # `queued` while the type before it has no document in hand, whatever this
+  # type's own register says: nothing of it is offered until then. Otherwise
   # `idle` before any click, `pending` while the answer is out, `preview` while
   # the user has the preview space to visit, `delivered` once the document is in
   # hand, `failed` for everything else — a refusal the contract returned, an
@@ -83,6 +86,7 @@ class DemoRequestComponent < ViewComponent::Base
   # could not be read, a document the user chose not to use, a document
   # announced for later.
   def state
+    return :queued if @queued
     return :failed if refused_click?
     return :idle if outcome.nil?
     return :failed if outcome.unreadable?
@@ -101,6 +105,8 @@ class DemoRequestComponent < ViewComponent::Base
   def delivered? = state == :delivered
 
   def failed? = state == :failed
+
+  def queued? = state == :queued
 
   # The label of the block's button, which is the same one throughout: asking
   # again after a refusal is a new request and not a retry of the old one —

@@ -157,7 +157,7 @@ RSpec.describe 'Admin::Demo::ProviderClassifications' do
       stub_evidence_request
       stub_exchange_state
       answer('TC03')
-      post admin_demo_demande_path(exigence:, version: 'v1.2', procedure: 'T1')
+      post admin_demo_demande_path(exigence:, type: named_type(exigence), version: 'v1.2', procedure: 'T1')
     end
 
     it 'sends the answer, and the register keeps it' do

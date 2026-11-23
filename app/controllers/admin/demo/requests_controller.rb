@@ -50,31 +50,38 @@ module Admin
       # carrying none was made without them — a session that expired between
       # the two requests, a POST that never went through the page — so nothing
       # leaves and the user is sent back to be shown what they would be asking
-      # for. A combination is asked for whole, so every line must name both.
+      # for.
       #
-      # `type` names the one evidence type asked for; without it, every type of
-      # the combination is, as `Demo::RequestCombination` says. A refusal of the
-      # contract opens no exchange: the block of its type says why and offers
-      # its button again rather than waiting on an answer nobody will send.
+      # `type` names the one evidence type asked for, and a click asks for no
+      # other: the types of a combination are asked for one after the other,
+      # and one whose predecessor has no document in hand yet is not askable.
+      # A refusal of the contract opens no exchange: the block of its type says
+      # why and offers its button again rather than waiting on an answer nobody
+      # will send.
       def create
         return redirect_to demo_path(:documents) unless askable?
 
-        render_zone(failures: request_combination.failures)
+        result = request_evidence
+        forget_demo_reads
+        render_zone(failures: result.success? ? {} : { evidence_type_uuid => result.error })
       end
 
       private
 
-      def askable? = asked.any? && named_evidences(requirement_uuid).all?(&:valid?)
+      # The whole combination named, and not only the type asked for: the user
+      # confirms what each request of it will ask before the first leaves.
+      def askable?
+        named_evidences(requirement_uuid).all?(&:valid?) &&
+          demo_askable_type?(requirement_uuid, zone_types, evidence_type_uuid)
+      end
 
-      def request_combination
-        ::Demo::RequestCombination.call(identity:, journey:, requirement_uuid:, named_evidences: asked,
-          requester_id: demo_entrance.requester_id,
-          procedure: named_procedure.attributes.symbolize_keys, whole: evidence_type_uuid.blank?)
+      def request_evidence
+        ::Demo::RequestEvidence.call(identity:, journey:, requirement_uuid:, requester_id: demo_entrance.requester_id,
+          **asked.attributes.symbolize_keys, **named_procedure.attributes.symbolize_keys)
       end
 
       def asked
-        @asked ||= named_evidences(requirement_uuid)
-          .select { |named| evidence_type_uuid.blank? || named.evidence_type_uuid == evidence_type_uuid }
+        @asked ||= named_evidences(requirement_uuid).find { |named| named.evidence_type_uuid == evidence_type_uuid }
       end
 
       # The header is what tells `demo_request_controller.js` that the body is
@@ -87,12 +94,11 @@ module Admin
       def render_zone(failures: {})
         response.set_header('Deferred-Fragment', '1')
 
-        render demo_request_zone(requirement_uuid, zone_types, requested: demo_card(requirement_uuid)&.requested?, failures:),
-          layout: false
+        render demo_request_zone(requirement_uuid, zone_types, failures:), layout: false
       end
 
       def zone_types
-        named_evidences(requirement_uuid).map do |named|
+        @zone_types ||= named_evidences(requirement_uuid).map do |named|
           DemoRequestZoneComponent::Type.new(uuid: named.evidence_type_uuid, name: named.evidence_type_name,
             language: named.evidence_type_language)
         end

@@ -218,7 +218,7 @@ RSpec.describe 'Admin::Demo::Cards' do
       carte = response.parsed_body.at_css("main #exigence-#{ajoutee}")
       expect(carte.at_css('select option[selected]')['value']).to eq('FI')
 
-      post admin_demo_demande_path(exigence: ajoutee, version: 'v2.0', procedure:)
+      post admin_demo_demande_path(exigence: ajoutee, type: named_type(ajoutee), version: 'v2.0', procedure:)
 
       expect(evidence_request_query).to include(
         'idExigence' => requirement_uri(ajoutee), 'exigenceHorsDemarche' => 'true',
@@ -242,7 +242,7 @@ RSpec.describe 'Admin::Demo::Cards' do
 
     it 'takes the card off, leaving its request and asking the contract nothing' do
       stub_exchange_state(statut: 'pending')
-      post admin_demo_demande_path(exigence: ajoutee, version: 'v2.0', procedure:)
+      post admin_demo_demande_path(exigence: ajoutee, type: named_type(ajoutee), version: 'v2.0', procedure:)
       demands = contract_demands.size
 
       delete carte_path(ajoutee)
@@ -256,7 +256,7 @@ RSpec.describe 'Admin::Demo::Cards' do
 
     it 'brings it back in the country of its request, waiting, when added again' do
       stub_exchange_state(statut: 'pending')
-      post admin_demo_demande_path(exigence: ajoutee, version: 'v2.0', procedure:)
+      post admin_demo_demande_path(exigence: ajoutee, type: named_type(ajoutee), version: 'v2.0', procedure:)
       delete carte_path(ajoutee)
 
       post cartes_path, params: { exigence: ajoutee }
@@ -270,7 +270,7 @@ RSpec.describe 'Admin::Demo::Cards' do
 
     it 'brings a refused one back in its country, offering to ask again and the list' do
       stub_exchange_state(statut: 'failed')
-      post admin_demo_demande_path(exigence: ajoutee, version: 'v2.0', procedure:)
+      post admin_demo_demande_path(exigence: ajoutee, type: named_type(ajoutee), version: 'v2.0', procedure:)
       delete carte_path(ajoutee)
 
       post cartes_path, params: { exigence: ajoutee }

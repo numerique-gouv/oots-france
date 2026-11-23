@@ -168,7 +168,7 @@ RSpec.describe 'The public demonstration' do
       stub_exchange_state
 
       get demonstration_documents_path(version: 'v2.0', procedure: 'T1')
-      post demonstration_demande_path(exigence:, version: 'v2.0', procedure: 'T1')
+      post demonstration_demande_path(exigence:, type: named_type(exigence), version: 'v2.0', procedure: 'T1')
 
       expect(evidence_request_query['idRequeteur']).to eq(Settings.public_demo_requester_id)
       expect(Demo::Request.sole.journey_id).to eq(journey(public_entrance).id)
@@ -293,7 +293,7 @@ RSpec.describe 'The public demonstration' do
 
     it 'goes out under the requester of the public site' do
       get demonstration_documents_path(version: 'v2.0', procedure: 'T1')
-      post demonstration_demande_path(exigence:, version: 'v2.0', procedure: 'T1')
+      post demonstration_demande_path(exigence:, type: named_type(exigence), version: 'v2.0', procedure: 'T1')
 
       expect(evidence_request_query['idRequeteur']).to eq(Settings.public_demo_requester_id)
       expect(Demo::Request.sole.journey_id).to eq(journey(public_entrance).id)
@@ -301,7 +301,7 @@ RSpec.describe 'The public demonstration' do
 
     it 'serves the evidence as the console does: a PDF in place, any other format for saving' do
       get demonstration_documents_path(version: 'v2.0', procedure: 'T1')
-      post demonstration_demande_path(exigence:, version: 'v2.0', procedure: 'T1')
+      post demonstration_demande_path(exigence:, type: named_type(exigence), version: 'v2.0', procedure: 'T1')
       justificatif = demonstration_justificatif_path(exigence:, version: 'v2.0', procedure: 'T1',
         type: Demo::Card.sole.named_evidences.sole.evidence_type_uuid)
 
@@ -323,7 +323,7 @@ RSpec.describe 'The public demonstration' do
 
       stub_code_list(procedures: { 'T1' => 'Le titre que la console affiche' })
       get admin_demo_documents_path(version: 'v2.0', procedure: 'T1')
-      post demonstration_demande_path(exigence:, version: 'v2.0', procedure: 'T1')
+      post demonstration_demande_path(exigence:, type: named_type(exigence), version: 'v2.0', procedure: 'T1')
 
       expect(Demo::Request.sole.procedure_name).to eq('Le titre que le site public affiche')
     end
