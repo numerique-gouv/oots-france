@@ -13,6 +13,7 @@ module Settings
     URL_OOTS_FRANCE
     IDENTIFIANT_REQUETEUR_DEMARCHE
     IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE
+    DONNEES_REQUETEURS
     CLE_PRIVEE_JWK_EN_BASE64
     CLE_PRIVEE_JWK_DEMARCHE_EN_BASE64
     CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64
@@ -133,6 +134,10 @@ module Settings
   # https://partenaires.proconnect.gouv.fr/docs/fournisseur-service/restriction_acces
   AGENT_DOMAINS = 'DOMAINES_AGENTS_PROCONNECT'.freeze
 
+  # What `Directories::EvidenceRequesters` reads, and `Settings::Contract`
+  # refuses at startup when it would fail a request instead.
+  EVIDENCE_REQUESTERS = 'DONNEES_REQUETEURS'.freeze
+
   # Optional, one per Common Service, keyed by the name `CommonServicesInstance` uses.
   COMMON_SERVICES_BASE_URLS = {
     'eb' => 'URL_BASE_EVIDENCE_BROKER',
@@ -249,7 +254,7 @@ module Settings
     # visitor's requests from an agent's by the requester alone.
     def public_demo_requester_id = required('IDENTIFIANT_REQUETEUR_DEMONSTRATION_PUBLIQUE')
 
-    def evidence_requesters_data = JSON.parse(required('DONNEES_REQUETEURS'))
+    def evidence_requesters_data = JSON.parse(required(EVIDENCE_REQUESTERS))
 
     # `acc` or `prod`, and the country whose NAPTR record names the instance to
     # query: chapter 3.4 lets a member state run its own.

@@ -988,6 +988,9 @@ en:
       agent_domains_absent: "%{name} is empty: Administration would admit no agent. List the admitted address domains in it, separated by commas, e.g. numerique.gouv.fr."
       demo_signing_key_unreadable: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 does not decode to a JWK key: the expected value is a JSON object encoded in base64."
       demo_signing_curve: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 declares a %{kty} key on %{crv}: the beneficiary token is signed with ES256, which requires an EC key on P-256."
+      requesters_unreadable: "%{name} cannot be read: the expected value is a JSON object whose every member, keyed by a requester's SIRET, is an object."
+      requesters_url_malformed: "%{name} carries urls that are not absolute http or https addresses naming a host: %{entries}."
+      requesters_url_entry: "%{siret} (\"%{url}\")"
       unnamed_member: without value
       missing: "Mandatory environment variables absent or empty: %{names}."
       not_boolean: "%{name} is \"%{value}\": this variable controls a feature, it can only be true, false, or nothing at all."

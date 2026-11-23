@@ -20,6 +20,7 @@ module Settings
       reject_unless_demo_signing_curve
       reject_unless_proconnect_whole
       reject_unless_agent_domains
+      reject_unless_requesters_readable
     end
 
     private
@@ -148,6 +149,45 @@ module Settings
       return if Settings.proconnect_agent_domains.any?
 
       refuse(I18n.t('lib.settings.agent_domains_absent', name: AGENT_DOMAINS))
+    end
+
+    # Faraday hands each requester's `url` to `URI` untouched, to fetch its keys
+    # and to deliver its evidence: a value `URI.parse` rejects, or that names no
+    # HTTP host, would pass startup and fail only at that first use. Judged as
+    # written, a leading space included, since that is what the request receives.
+    #
+    # After `reject_unless_present`, which has already refused an empty value.
+    def reject_unless_requesters_readable
+      requesters = decoded_requesters
+      return refuse(I18n.t('lib.settings.requesters_unreadable', name: EVIDENCE_REQUESTERS)) if requesters.nil?
+
+      malformed = requesters.reject { |_siret, requester| http_address?(requester['url']) }
+      return if malformed.empty?
+
+      refuse(I18n.t('lib.settings.requesters_url_malformed',
+        name: EVIDENCE_REQUESTERS, entries: malformed.map { |siret, requester| requester_offender(siret, requester) }.join(', ')))
+    end
+
+    # An object of objects, or `nil`: read here rather than through `Settings`
+    # for the reason `decoded_jwk` gives.
+    def decoded_requesters
+      requesters = JSON.parse(ENV.fetch(EVIDENCE_REQUESTERS, ''))
+      requesters if requesters.is_a?(Hash) && requesters.each_value.all?(Hash)
+    rescue JSON::ParserError
+      nil
+    end
+
+    def http_address?(url)
+      uri = URI.parse(url.to_s)
+      uri.is_a?(URI::HTTP) && uri.host.present?
+    rescue URI::InvalidURIError
+      false
+    end
+
+    def requester_offender(siret, requester)
+      url = requester['url'].to_s
+      I18n.t('lib.settings.requesters_url_entry',
+        siret:, url: url.empty? ? I18n.t('lib.settings.unnamed_member') : url)
     end
 
     # Some of its three filled and not all: a declaration begun and left

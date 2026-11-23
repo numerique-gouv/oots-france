@@ -1326,6 +1326,10 @@ fr:
       # sur P-256 : une clé d'un autre type échouerait à la première signature,
       # loin d'ici.
       demo_signing_curve: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 déclare une clé %{kty} sur %{crv} : le jeton du bénéficiaire se signe en ES256, qui exige une clé EC sur P-256."
+      requesters_unreadable: "%{name} ne se lit pas : la valeur attendue est un objet JSON dont chaque membre, indexé par le SIRET d'un requêteur, est un objet."
+      requesters_url_malformed: "%{name} porte des url qui ne sont pas des adresses http ou https absolues nommant un hôte : %{entries}."
+      # Entre guillemets, pour qu'un espace en trop s'y voie : l'adresse est lue telle qu'écrite.
+      requesters_url_entry: "%{siret} (« %{url} »)"
       unnamed_member: sans valeur
       missing: "Variables d'environnement obligatoires absentes ou vides : %{names}."
       not_boolean: "%{name} vaut « %{value} » : cette variable commande un dispositif, elle ne peut valoir que true, false, ou rien du tout."

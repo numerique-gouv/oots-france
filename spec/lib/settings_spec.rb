@@ -264,6 +264,81 @@ RSpec.describe Settings do
     end
   end
 
+  # Each `url` is what the first request of that requester hands to `URI`:
+  # refused here, it costs a restart rather than a 500.
+  describe 'the evidence requesters a deployment declares' do
+    def with_requesters(value, &)
+      with_environment(filled.merge(Settings::EVIDENCE_REQUESTERS => value), &)
+    end
+
+    it 'refuses them absent or blank, naming the variable' do
+      [nil, ''].each do |value|
+        with_requesters(value) do
+          expect { described_class.verify! }.to raise_error(ConfigurationError, /DONNEES_REQUETEURS/)
+        end
+      end
+    end
+
+    it 'refuses a value that is not an object of objects, naming the variable' do
+      ['{"00000000000002":', '[]', '{"00000000000002":"http://web:4000"}'].each do |value|
+        with_requesters(value) do
+          expect { described_class.verify! }.to raise_error(ConfigurationError, /DONNEES_REQUETEURS ne se lit pas/)
+        end
+      end
+    end
+
+    it 'refuses an url that is no absolute HTTP address naming a host' do
+      [nil, '', 'web:3000/demo', '/demo', 'ftp://web/demo', 'http:///demo', 42].each do |url|
+        with_requesters(evidence_requesters('00000000000003' => url)) do
+          expect { described_class.verify! }.to raise_error(ConfigurationError, /00000000000003/)
+        end
+      end
+    end
+
+    it 'says an absent or empty url is without value' do
+      [nil, ''].each do |url|
+        with_requesters(evidence_requesters('00000000000003' => url)) do
+          expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+            expect(refus.message).to include('00000000000003 (« sans valeur »)')
+          end
+        end
+      end
+    end
+
+    it 'quotes the url as written, so that a leading space shows' do
+      with_requesters(evidence_requesters('00000000000003' => ' http://web:3000/demo')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('00000000000003 («  http://web:3000/demo »)')
+        end
+      end
+    end
+
+    it 'names every malformed entry at once, and only those' do
+      urls = { '00000000000002' => 'web:4000', '00000000000003' => ' http://web:3000/demo',
+               '00000000000004' => 'https://demarche.test/demo' }
+
+      with_requesters(evidence_requesters(urls)) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError) do |refus|
+          expect(refus.message).to include('00000000000002 (« web:4000 »)', '00000000000003')
+          expect(refus.message).not_to include('00000000000004')
+        end
+      end
+    end
+
+    it 'accepts the value the template gives a development machine' do
+      line = Rails.root.join('.env.oots.template').each_line.find { |l| l.start_with?('DONNEES_REQUETEURS=') }
+      value = line.delete_prefix('DONNEES_REQUETEURS=').split(' # ').first
+
+      with_requesters(value) { expect { described_class.verify! }.not_to raise_error }
+    end
+
+    it 'accepts an https address, and an empty directory' do
+      [evidence_requesters('00000000000003' => 'https://demarche.test'), '{}'].each do |value|
+        with_requesters(value) { expect { described_class.verify! }.not_to raise_error }
+      end
+    end
+  end
+
   describe 'the two expiry intervals' do
     # The switch is posed rather than left absent: the two answer the same, and a
     # rule that only ever meets the absent one proves half of what it says.
