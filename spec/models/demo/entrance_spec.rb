@@ -26,25 +26,23 @@ RSpec.describe Demo::Entrance do
     expect(Settings.public_demo_requester_id).not_to eq(Settings.demo_requester_id)
   end
 
-  describe 'the FranceConnect+ offered' do
-    it 'is every one declared on the console, the fake alone on the public site' do
-      declare_france_connect(fake_france_connect, real_france_connect)
-
-      expect(described_class::CONSOLE.france_connect_instances.map(&:name)).to eq(%w[real fake])
-      expect(described_class::PUBLIC.france_connect_instances.map(&:name)).to eq(%w[fake])
-    end
-
-    it 'leaves the public entrance closed where the fake is not declared' do
+  describe 'the public entrance' do
+    it 'opens where the real FranceConnect+ alone is declared' do
       declare_france_connect(real_france_connect)
 
-      expect(described_class::PUBLIC).not_to be_open
-      expect(described_class::CONSOLE).to be_open
+      expect(described_class::PUBLIC).to be_open
     end
 
-    it 'opens the public entrance where the fake is declared' do
+    it 'opens where the fake FranceConnect+ alone is declared' do
       declare_france_connect(fake_france_connect)
 
       expect(described_class::PUBLIC).to be_open
+    end
+
+    it 'stays closed where no FranceConnect+ is declared' do
+      allow(Settings).to receive(:france_connect_instances).and_return([])
+
+      expect(described_class::PUBLIC).not_to be_open
     end
   end
 end

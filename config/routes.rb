@@ -142,9 +142,9 @@ Rails.application.routes.draw do
   end
 
   # The same walk on the public site, where a visitor plays the user of the
-  # procedure without any session of the console. Matched only where the fake
-  # FranceConnect+ is declared, the one way it offers to identify: elsewhere the
-  # address answers 404, rather than existing and refusing.
+  # procedure without any session of the console. Matched only where a
+  # FranceConnect+ is declared, without which a visitor could not identify:
+  # elsewhere the address answers 404, rather than existing and refusing.
   constraints(->(_request) { Demo::Entrance::PUBLIC.open? }) do
     namespace :demonstration do
       concerns :demo_walk

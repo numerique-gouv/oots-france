@@ -835,6 +835,17 @@ RSpec.describe 'The preview space' do
       expect(AuditEvent.where(event_type: 'preview_identified').pluck(:detail)).to eq([PreviewSession::DISPENSED])
     end
 
+    it 'sends to the real FranceConnect+ the visitor of the public demonstration identified by the real one' do
+      stub_france_connect
+      identify_demo_user(userinfo: FranceConnectStubs::REQUESTED_USERINFO, instance: real_france_connect,
+        entrance: Demo::Entrance::PUBLIC)
+      public_journey = Demo::Journey.from_session(request.session[Demo::Entrance::PUBLIC.journey_key])
+      requested_in_this_journey(journey: public_journey.id)
+      visit_space
+
+      expect(sent_to_the_real_france_connect?).to be(true)
+    end
+
     # CA3.
     it 'journals that the identification was dispensed, and not confirmed' do
       identify_on_the_fake

@@ -24,10 +24,9 @@ module Admin
       include EndsFranceConnectSession
       include RefusesIdentification
 
-      # A FranceConnect+ the entrance does not offer leads nowhere, as one the
-      # deployment does not declare: the public entrance offers the fake alone.
+      # A FranceConnect+ the deployment does not declare leads nowhere.
       def create
-        instance = offered_instance
+        instance = declared_instance
 
         return redirect_to(demo_path(:home)) if instance.nil?
 
@@ -59,7 +58,7 @@ module Admin
 
       private
 
-      def offered_instance = demo_entrance.france_connect_instances.find { it.name == params[:france_connect] }
+      def declared_instance = Settings.france_connect_instances.find { it.name == params[:france_connect] }
 
       # FranceConnect+ has a single return address for every sign-out: the
       # session keeps the home the agent left from, for that return to send
