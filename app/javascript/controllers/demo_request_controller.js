@@ -31,7 +31,9 @@ const PENDING = 'pending'
 
 // What a block says once a request of its type is under way or delivered:
 // news a refusal of the contract does not outweigh. Anything else — the
-// button, or an earlier request's ending — is older than the refusal.
+// button, or an earlier request's ending — is older than the refusal. The
+// same states hold the card in the country of that request, as
+// `DemoOutcomeWording#holds_country?` has it on the server.
 const SUPERSEDING = ['pending', 'preview', 'delivered']
 
 // What a polled block says of itself: the states `polling?` re-asks for.
@@ -50,6 +52,7 @@ export default class extends Controller {
     this.failures = 0
     this.clicks = 0
     this.clicking = false
+    this.declareHolding()
     this.schedule()
   }
 
@@ -91,6 +94,7 @@ export default class extends Controller {
     this.hide(this.within(block, this.disconnectedTargets))
     this.gaveUp = false
     this.declareWaiting(block)
+    this.declareHolding()
 
     clearTimeout(this.timer)
     this.clicks += 1
@@ -187,6 +191,7 @@ export default class extends Controller {
 
     if (!arriving) {
       this.element.innerHTML = html
+      this.declareHolding()
       return this.offerButtons(!this.clicking)
     }
 
@@ -194,7 +199,20 @@ export default class extends Controller {
     if (arriving.dataset.outcome === this.body?.dataset.outcome) return
 
     this.element.replaceChildren(arriving)
+    this.declareHolding()
     this.offerButtons(!this.clicking)
+  }
+
+  // Tells the card whether a request of the zone holds it in its country: the
+  // page read again renders the card without its lists while one does. Said on
+  // connecting too, since a zone the card's own answer brings back may follow
+  // a click the card has already been told of.
+  declareHolding() {
+    this.dispatch('holding', { detail: { held: this.holding } })
+  }
+
+  get holding() {
+    return [...this.element.querySelectorAll(BLOCK)].some((block) => SUPERSEDING.includes(block.dataset.state))
   }
 
   keepRefusedClicks(arriving) {

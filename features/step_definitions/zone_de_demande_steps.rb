@@ -240,15 +240,11 @@ end
 # The option is named as the list shows it, flag aside: the flag is an emoji the
 # label begins with, and a scenario spells the country, not its picture.
 Quand("l'usager choisit {string} dans la liste des pays de la carte") do |country|
-  label = I18n.t('components.demo_requirement_card.country_label')
-
-  find_field(label).find('option', text: country).select_option
+  find_field(country_label).find('option', text: country).select_option
 end
 
 Quand("l'usager choisit {string} dans la liste des pays de la {word} carte") do |country, rank|
-  label = I18n.t('components.demo_requirement_card.country_label')
-
-  within(card(rank)) { find_field(label).find('option', text: country).select_option }
+  within(card(rank)) { find_field(country_label).find('option', text: country).select_option }
 end
 
 Quand("l'usager choisit {string} dans la liste des combinaisons de la carte") do |title|
@@ -277,6 +273,10 @@ end
 
 Quand('deux interrogations de suite n\'obtiennent aucune réponse exploitable') do
   wait_until_seen(2)
+end
+
+Quand('le fournisseur refuse la demande') do
+  stub_exchange_state(statut: 'failed', codeErreur: 'EDM:ERR:0003')
 end
 
 Quand('le justificatif est remis') do
@@ -392,7 +392,7 @@ Alors('la {word} carte nomme le pays {string}') do |rank, country|
 end
 
 Alors("la carte n'offre pas de liste des pays") do
-  expect(find(CARD)).to have_no_field(I18n.t('components.demo_requirement_card.country_label'))
+  expect(find(CARD)).to have_no_field(country_label)
 end
 
 # The two names requirement 27 of chapter 1 §2 has shown before any request,
@@ -441,7 +441,31 @@ Alors('la carte affiche {string}') do |sentence|
 end
 
 Alors('la liste des pays de la carte affiche {string}') do |country|
-  expect(find_field(I18n.t('components.demo_requirement_card.country_label'))).to have_css('option:checked', text: country)
+  expect(find_field(country_label)).to have_css('option:checked', text: country)
+end
+
+Alors('la liste des pays de la carte est désactivée') do
+  expect_list(find(CARD), country_label, disabled: true)
+end
+
+Alors('la liste des pays de la carte est active') do
+  expect_list(find(CARD), country_label, disabled: false)
+end
+
+Alors('la liste des pays de la {word} carte est désactivée') do |rank|
+  expect_list(card(rank), country_label, disabled: true)
+end
+
+Alors('la liste des pays de la {word} carte est active') do |rank|
+  expect_list(card(rank), country_label, disabled: false)
+end
+
+Alors('la liste des combinaisons de la carte est désactivée') do
+  expect_list(find(CARD), combination_label, disabled: true)
+end
+
+Alors('la liste des combinaisons de la carte est active') do
+  expect_list(find(CARD), combination_label, disabled: false)
 end
 
 Alors('la page des justificatifs a été rechargée') do
@@ -518,9 +542,7 @@ Quand("l'usager ajoute la carte {string}") do |name|
 end
 
 Quand("l'usager choisit {string} dans la liste des pays de la carte {string}") do |country, name|
-  label = I18n.t('components.demo_requirement_card.country_label')
-
-  within(added_card_selector(name)) { find_field(label).find('option', text: country).select_option }
+  within(added_card_selector(name)) { find_field(country_label).find('option', text: country).select_option }
 end
 
 Quand("l'usager clique sur le bouton de la carte {string}") do |name|
@@ -574,7 +596,7 @@ Alors('le contrat a reçu une seule demande') do
 end
 
 Alors('la carte offre de nouveau la liste des pays') do
-  expect(find(CARD)).to have_field(I18n.t('components.demo_requirement_card.country_label'))
+  expect(find(CARD)).to have_field(country_label)
 end
 
 Alors('le contrat a reçu deux demandes, chacune sous son propre échange') do
@@ -608,6 +630,17 @@ def identify_in_line_1_2
 end
 
 def combination_requests = intercepted_requests(pattern: EVIDENCE_TYPE_LIST_ADDRESS)
+
+def country_label = I18n.t('components.demo_requirement_card.country_label')
+
+# The list as a browser offers it, and its group in the state the DSFR draws:
+# `find_field` waits, the lists following the zone, whose answer arrives after
+# the step has begun.
+def expect_list(scope, label, disabled:)
+  group = scope.find_field(label, disabled:).ancestor('.fr-select-group')
+
+  expect(group[:class].split.include?('fr-select-group--disabled')).to eq(disabled)
+end
 
 def combination_label = I18n.t('components.demo_requirement_card.combination_label')
 

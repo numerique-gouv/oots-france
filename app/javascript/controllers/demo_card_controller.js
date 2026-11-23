@@ -22,6 +22,12 @@ const ANNOUNCED = '[data-demo-card-announced]'
 // The state the DSFR gives a list whose group carries an error text.
 const ERROR = 'fr-select-group--error'
 
+// The state the DSFR gives a list that takes no choice.
+const DISABLED = 'fr-select-group--disabled'
+
+// The two lists a card may offer.
+const LISTS = ['country', 'combination']
+
 // What the answer to each choice replaces.
 const REPLACED = { country: ['top', 'foot'], combination: ['foot'] }
 
@@ -211,10 +217,25 @@ export default class extends Controller {
     this.announce([failure])
   }
 
+  // A card rendered while a request holds it offers no list, and has nothing
+  // to hold. What a failed choice said is no longer what is happening once a
+  // request holds the card.
+  hold({ detail: { held } }) {
+    const lists = LISTS.filter((list) => this.hasList(list))
+    if (!lists.length) return
+
+    if (held) this.recover()
+
+    for (const list of lists) {
+      this.select(list).disabled = held
+      this.group(list).classList.toggle(DISABLED, held)
+    }
+  }
+
   recover() {
     this.element.querySelectorAll('[data-demo-card-target~="answerFailure"]').forEach((failure) => { failure.hidden = true })
 
-    for (const list of ['country', 'combination']) {
+    for (const list of LISTS) {
       if (!this.hasList(list)) continue
 
       this.failure(list).hidden = true
