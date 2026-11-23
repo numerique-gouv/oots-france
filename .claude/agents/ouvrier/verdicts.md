@@ -4,7 +4,7 @@ Lu au moment de rendre son tour. Ton texte final **est** la valeur de retour : l
 
 ```
 PLANIFIÉ
-Ticket : OOTS-<n> — <titre> — <url>  (statut : In Progress)
+Ticket : **<titre>** — [OOTS-<n>](<url>)  (statut : In Progress)
 Plan   : <chemin absolu du fichier de plan>
 En deux phrases : <ce que le plan fait>
 TDD    : <les chapitres qui le dictent>
@@ -15,7 +15,7 @@ Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il reprendra à l'implémentati
 
 ```
 PLAN
-Ticket : OOTS-<n> — <titre> — <url>  (statut : In Progress)
+Ticket : **<titre>** — [OOTS-<n>](<url>)  (statut : In Progress)
 Plan   : <chemin absolu du fichier de plan>   (révision <n>)
 En deux phrases : <ce que le plan fait>
 TDD    : <les chapitres qui le justifient, et le désaccord relevé s'il y en a>
@@ -27,7 +27,7 @@ Worktree : <chemin>  (en attente de l'approbation)
 
 ```
 ARBITRAGE
-Ticket : OOTS-<n> — <titre> — <url>
+Ticket : **<titre>** — [OOTS-<n>](<url>)
 Plan   : <chemin absolu du fichier de plan>
 Décision(s) à rendre, que les TDD ne tranchent pas :
   1. <la question, en une phrase>
@@ -40,8 +40,8 @@ Où j'ai cherché : <les chapitres et artefacts lus, muets sur ce point>
 
 ```
 LIVRÉ
-Ticket : OOTS-<n> — <url>  (statut : In Review)
-PR     : <url>  (CI verte, review-loop convergé en <n> passes)
+Ticket : **<titre>** — [OOTS-<n>](<url>)  (statut : In Review)
+PR     : **<titre de la PR>** — <url>  (CI verte, review-loop convergé en <n> passes)
 Écran  : <aucun — rien ne se regarde | une URL par ligne, avec en trois mots ce qu'on y voit ;
          vérifiées joignables>
 Fait   : <deux ou trois phrases sur ce qui change>
@@ -54,8 +54,8 @@ Worktree : <chemin>  (à supprimer après merge)
 
 ```
 ÉCRAN
-Ticket : OOTS-<n> — <url>  (statut : In Progress)
-PR     : <url>  (brouillon)
+Ticket : **<titre>** — [OOTS-<n>](<url>)  (statut : In Progress)
+PR     : **<titre de la PR>** — <url>  (brouillon)
 CI     : <verte | rouge : quel check, ce que ses logs montrent, ce que j'ai tenté | arrêt : même check deux fois ou infra, et ce que j'ai tenté>
 Écran  : <une URL par ligne, avec en trois mots ce qu'on y voit ;
          vérifiées joignables>
@@ -67,12 +67,12 @@ Worktree : <chemin>  (prêt à être repris pour la passe sur l'écran)
 
 ```
 INTERROMPU
-Ticket : OOTS-<n> — <url>  (statut : In Progress)
+Ticket : **<titre>** — [OOTS-<n>](<url>)  (statut : In Progress)
 Arrêté à : <étape>, sur demande — <ce qu'on m'a demandé>
 Passation : <chemin absolu du fichier de reprise>
 Worktree : <chemin>  (à adopter tel quel, reprise.md)
 Branche : <nom>  (poussée jusqu'à <sha>, ou « rien à pousser »)
-PR     : <url, ou « pas encore ouverte »>
+PR     : **<titre de la PR>** — <url>, ou « pas encore ouverte »
 Fait   : <ce qui est livré, testé et poussé — une ligne par point>
 En cours : <ce qui était commencé et où exactement, ou « rien, l'arbre est propre »>
 Tranché seul : <une ligne par décision que je ne veux pas voir rejouée>
@@ -81,7 +81,7 @@ Suite  : relancer un ouvrier neuf sur OOTS-<n> ; il adoptera le worktree.
 
 ```
 BLOQUÉ
-Ticket : OOTS-<n> — <url>
+Ticket : **<titre>** — [OOTS-<n>](<url>)
 Bloqué à : <étape>
 Cause : <ce qui a échoué, avec la sortie qui le montre>
 Ce que j'ai tenté : <liste courte>
