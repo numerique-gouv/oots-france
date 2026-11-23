@@ -634,11 +634,16 @@ if Rails.env.development?
   # body of a request would teach the console, and whoever reads it, that the two
   # look alike — where the whole point of keeping the body is to show what each
   # message actually said.
-  regrep_body = lambda do |event_type, sent:, echoed:, code:, preview:|
+  #
+  # Belgium sends its requests on a single line, from the declaration to the
+  # closing tag; the Belgian request received is written so, for the event page
+  # to show one it indents.
+  regrep_body = lambda do |event_type, sent:, echoed:, code:, preview:, single_line: false|
     return {} unless event_type.in?(carries_message)
 
+    body = demonstration_body.call(event_type, sent:, echoed:, code:, preview:)
     { regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
-      regrep_body: demonstration_body.call(event_type, sent:, echoed:, code:, preview:) }
+      regrep_body: single_line ? body.gsub(/>\s+</, '><').gsub(/\s*\n\s*/, ' ') : body }
   end
 
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
@@ -777,7 +782,8 @@ if Rails.env.development?
         **demonstration_subject.call(event_type, scenario, exchange),
         preview_location: declared_preview,
         **regrep_body.call(event_type, sent: (second ? second_request_id : circulated_id), echoed: answered_request,
-          code: message_error_code, preview: declared_preview),
+          code: message_error_code, preview: declared_preview,
+          single_line: event_type == 'request_received' && exchange.country_code == 'BE'),
         **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
         **evidence_identifier.call(event_type, exchange, evidence_id),
       )
