@@ -94,9 +94,20 @@ RSpec.describe 'The public demonstration' do
       end
     end
 
-    it 'does not exist where the fake FranceConnect+ is not declared' do
+    it 'exists where the real FranceConnect+ alone is declared' do
+      stub_code_list
       undeclare_france_connect('fake')
       declare_france_connect(real_france_connect)
+
+      get '/'
+      expect(header_links).to include('Démo')
+
+      get '/demonstration'
+      expect(response).to have_http_status(:ok)
+    end
+
+    it 'does not exist where no FranceConnect+ is declared' do
+      undeclare_france_connect('fake')
 
       get '/'
       expect(header_links).not_to include('Démo')
@@ -115,21 +126,79 @@ RSpec.describe 'The public demonstration' do
 
     def offered = page.css('input[name=france_connect]').pluck('value')
 
-    it 'offers the fake alone on the public site, and both on the console' do
+    it 'offers both on the public site, as on the console' do
       get demonstration_home_path(version: 'v2.0', procedure: 'T1')
-      expect(offered).to eq(%w[fake])
+      expect(offered).to eq(%w[real fake])
 
       sign_in
       get admin_demo_home_path(version: 'v2.0', procedure: 'T1')
       expect(offered).to eq(%w[real fake])
     end
 
-    it 'refuses to depart to the real one from the public site' do
+    it 'departs to the real one from the public site, remembering the entrance' do
+      stub_real_france_connect
       post demonstration_identification_path(version: 'v2.0', procedure: 'T1'), params: { france_connect: 'real' }
 
-      expect(response).to redirect_to(demonstration_home_path(version: 'v2.0', procedure: 'T1'))
-      expect(request.session[:france_connect]).to be_nil
+      expect(response.headers['Location']).to start_with(FranceConnectStubs::REAL_AUTHORIZATION_ENDPOINT)
+      expect(session[:france_connect].symbolize_keys).to include(name: 'real', entrance: 'public')
     end
+  end
+
+  describe 'a visitor identified by the real FranceConnect+' do
+    before { sign_in }
+
+    it 'walks the public journey, apart from the console of the same browser' do
+      identify_demo_user
+      console_journey = journey(Demo::Entrance::CONSOLE)
+
+      identify_visitor(userinfo: FranceConnectStubs::REQUESTED_USERINFO, instance: real_france_connect)
+
+      expect(response).to redirect_to(demonstration_documents_path(version: 'v2.0', procedure: 'T1'))
+      expect(held_demo_identity(public_entrance)).to include(family_name: 'Dupont', france_connect: 'real')
+      expect(journey(public_entrance).id).not_to eq(console_journey.id)
+      expect(journey(Demo::Entrance::CONSOLE).id).to eq(console_journey.id)
+      expect(held_demo_identity[:family_name]).to eq('Sørensen')
+    end
+
+    it 'asks under the requester of the public site' do
+      identify_visitor(instance: real_france_connect)
+      stub_documents_page
+      stub_oots_france_public_keys
+      stub_evidence_request
+      stub_exchange_state
+
+      get demonstration_documents_path(version: 'v2.0', procedure: 'T1')
+      post demonstration_demande_path(exigence:, version: 'v2.0', procedure: 'T1')
+
+      expect(evidence_request_query['idRequeteur']).to eq(Settings.public_demo_requester_id)
+      expect(Demo::Request.sole.journey_id).to eq(journey(public_entrance).id)
+    end
+
+    it 'signs out of the real one back to the public sign-in page, the identity of the console held' do
+      identify_demo_user
+      identify_visitor(instance: real_france_connect)
+
+      delete demonstration_identification_path(version: 'v2.0', procedure: 'T1')
+
+      expect(response.headers['Location']).to start_with(FranceConnectStubs::REAL_END_SESSION_ENDPOINT)
+      expect(request.session[:france_connect_logout_home]).to eq(demonstration_home_path(version: 'v2.0', procedure: 'T1'))
+      expect(held_demo_identity(public_entrance)).to be_nil
+      expect(held_demo_identity[:family_name]).to eq('Sørensen')
+    end
+  end
+
+  it 'offers the real one alone, and departs nowhere else, where it alone is declared' do
+    undeclare_france_connect('fake')
+    declare_france_connect(real_france_connect)
+    stub_code_list
+    stub_demonstration_requirements
+
+    get demonstration_home_path(version: 'v2.0', procedure: 'T1')
+    expect(page.css('input[name=france_connect]').pluck('value')).to eq(%w[real])
+
+    post demonstration_identification_path(version: 'v2.0', procedure: 'T1'), params: { france_connect: 'fake' }
+    expect(response).to redirect_to(demonstration_home_path(version: 'v2.0', procedure: 'T1'))
+    expect(session[:france_connect]).to be_nil
   end
 
   describe 'one browser walking both entrances' do
@@ -206,7 +275,6 @@ RSpec.describe 'The public demonstration' do
 
     it 'sends it to the console where the public site is closed' do
       undeclare_france_connect('fake')
-      declare_france_connect(real_france_connect)
 
       get '/demo/franceconnect/retour_connexion', params: { error: 'access_denied' }
 

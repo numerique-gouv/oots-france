@@ -3,8 +3,9 @@ module Demo
   # `/admin/demo`, open to every admitted agent, and the public site's, under
   # `/demonstration`, open to anyone. The screens are the same; what differs is
   # here — where each keeps its journey and its identity, so that one browser
-  # walking both keeps two walks apart, the requester each asks under, the
-  # FranceConnect+ each offers, and the prefix of its named routes.
+  # walking both keeps two walks apart, the requester each asks under, and the
+  # prefix of its named routes. Both offer every FranceConnect+ the deployment
+  # declares.
   #
   # Read by more than the walk's own controllers: the return from
   # FranceConnect+ and France's preview space each serve both, and must read an
@@ -27,14 +28,8 @@ module Demo
     # `DONNEES_REQUETEURS` maps to the name the request carries.
     def requester_id = public? ? Settings.public_demo_requester_id : Settings.demo_requester_id
 
-    # The public one offers the fake FranceConnect+ alone, whatever else the
-    # deployment declares: a visitor has no identity of their own to bring.
-    def france_connect_instances
-      public? ? [Settings.france_connect_instance(PreviewDispensation::FAKE)].compact : Settings.france_connect_instances
-    end
-
-    # Without the fake, a visitor would have no way to identify, and the public
-    # entrance does not exist.
-    def open? = france_connect_instances.any?
+    # Without a FranceConnect+, a visitor would have no way to identify, and the
+    # public entrance does not exist.
+    def open? = Settings.france_connect_instances.any?
   end
 end

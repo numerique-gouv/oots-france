@@ -674,7 +674,8 @@ fr:
       skiplink: Accès rapide
       skiplink_content: Contenu
       # Le bandeau que chaque écran de la démonstration publique porte sous
-      # l'entête : le visiteur y joue un usager fictif.
+      # l'entête, quel que soit le FranceConnect+ choisi : le justificatif que
+      # la démarche reçoit reste celui que la France engendre pour elle.
       demonstration_notice: Démonstration — données fictives
     # Le bloc-marque du DSFR se lit sur deux lignes, la seconde après un saut.
     # L'entête et le pied de page le disent tous les deux.
@@ -694,7 +695,7 @@ fr:
         connecting: Se raccorder
         faq: Questions fréquentes
         # La démarche de démonstration publique, sous /demonstration, là où le
-        # déploiement déclare le faux FranceConnect+.
+        # déploiement déclare un FranceConnect+.
         demo: Démo
       admin_space: Administration
       demo: Démo
