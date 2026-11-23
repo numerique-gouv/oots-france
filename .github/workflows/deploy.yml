@@ -22,6 +22,7 @@ env:
   SSH_USER: ${{ secrets.SSH_OOTS_ACC_DEPLOY_USER }}
   SSH_PRIVKEY: ${{ secrets.SSH_OOTS_ACC_DEPLOY_KEY }}
   SSH_PEER: ${{ secrets.SSH_OOTS_ACC_DEPLOY_PEER }}
+  SSH_PEER_PUBKEYS: ${{ vars.SSH_OOTS_ACC_DEPLOY_PEER_PUBKEYS }}
   WG_PRIVKEY: ${{ secrets.WG_OOTS_ACC_PRIVKEY }}
   WG_PEER_ENDPOINT: ${{ secrets.WG_OOTS_ACC_TUNNEL_ENDPOINT }}
   WG_LOCAL_IP: ${{ secrets.WG_OOTS_ACC_LOCAL_IP }}
@@ -53,7 +54,11 @@ jobs:
           )"
       - name: Start wireguard tunnel
         run: sudo systemctl daemon-reload && sudo systemctl start wg-quick@wgOotsDepl
+      - name: Create ~/.ssh
+        run: mkdir ~/.ssh
+      - name: Write remote host's known public keys
+        run: echo "$SSH_PEER_PUBKEYS" | sed "s/^/$SSH_PEER /" >~/.ssh/known_hosts
       - name: Write SSH private key
-        run: mkdir ~/.ssh && (umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy)
+        run: umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy
       - name: Deploy via SSH
         run: ssh -i ~/.ssh/.id-oots-deploy $SSH_USER@$SSH_PEER
