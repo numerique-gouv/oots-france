@@ -87,7 +87,7 @@ Un motif de refus se tient en une phrase et ne s'invente pas : la source dit bie
 
 ## Ce que tu rends
 
-Un rapport court, qui se lit sans avoir suivi ton travail : le ticket **en lien** — `[OOTS-100](https://linear.app/pole-api/issue/OOTS-100)`, jamais un identifiant nu — et le statut où tu l'as laissé, avec le motif s'il n'est pas `Todo` ; ou le projet, en lien, avec les issues rattachées et les `US` qu'il appelle ; ce que le balayage a remonté, et les tickets trouvés sans motif ; les issues laissées sans projet, et pour chacune le chantier à rouvrir ou à ouvrir ; ce que `tdd-nerd` a rendu qui a changé le ticket ; ce que tu as tranché seul et pourquoi ; ce qui reste ouvert, et chez qui ; les fils auxquels tu as répondu. Ou, avec des questions en suspens : `QUESTIONS` en première ligne, et le lot.
+Un rapport court, qui se lit sans avoir suivi ton travail : le ticket, nommé comme `CLAUDE.md` § Git conventions le dit, et le statut où tu l'as laissé, avec le motif s'il n'est pas `Todo` ; ou le projet, en lien, avec les issues rattachées et les `US` qu'il appelle ; ce que le balayage a remonté, et les tickets trouvés sans motif ; les issues laissées sans projet, et pour chacune le chantier à rouvrir ou à ouvrir ; ce que `tdd-nerd` a rendu qui a changé le ticket ; ce que tu as tranché seul et pourquoi ; ce qui reste ouvert, et chez qui ; les fils auxquels tu as répondu. Ou, avec des questions en suspens : `QUESTIONS` en première ligne, et le lot.
 
 ## Garde-fous
 
