@@ -6,13 +6,24 @@
     controller keeps it on screen while the zone's other blocks are polled. %>
 <%= tag.div class: 'demo-request__block', data: { demo_request_block: evidence_type.uuid, state:, refused_click: refused_click? } do %>
   <% if headed? %>
-    <%# The type this block asks for, among the others of its combination,
-        in the language the directory published it in (RGAA 8.7). %>
+    <%# The type this block asks for, its rank among the others of its
+        combination first, and its name in the language the directory published
+        it in (RGAA 8.7). %>
     <h4 class="fr-h6 fr-mb-1w demo-request__type">
+      <span class="fr-text--sm demo-request__rank"><%= t('components.demo_request_zone.rank', position:, count:) %></span>
       <%= render(DirectoryValueComponent.new(lang: evidence_type.language)) { evidence_type.name } %>
     </h4>
   <% end %>
-  <% if delivered? %>
+  <% if queued? %>
+    <%# Neither button nor link: the type waits for the document of the one
+        before it, so that the card never presents two preview links at once.
+        Chapter 4.4 §4.2.2 leaves the order of the flows free (« sequentially
+        and/or in parallel »). %>
+    <p class="fr-mb-0 demo-request__state">
+      <span class="fr-icon-time-line" aria-hidden="true"></span>
+      <%= t('components.demo_request_zone.queued') %>
+    </p>
+  <% elsif delivered? %>
     <%# Chapter 1 §4.2: the evidence is « made available to the specific
         procedure end-user that issued the query », and the user « cannot modify
         its content in any way » — so it is offered exactly as it arrived. %>

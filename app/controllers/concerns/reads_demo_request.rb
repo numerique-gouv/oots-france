@@ -85,16 +85,36 @@ module ReadsDemoRequest
   end
 
   # The zone of one card: a block per evidence type of its combination, each on
-  # the latest request of its type — `DemoRequestZoneComponent` says when its
-  # one button stands instead. `failures` is a refusal of the contract to the
-  # click being answered, by evidence type UUID.
-  def demo_request_zone(requirement_uuid, types, requested:, failures: {})
-    blocks = types.map do |type|
-      DemoRequestComponent.new(outcome: demo_outcome_for(requirement_uuid, type.uuid), requirement_uuid:,
-        evidence_type: type, headed: types.many?, failure: failures[type.uuid])
+  # the latest request of its type, in the order of the combination. Every
+  # block after the first whose document is not in hand is queued: the user
+  # asks for one document at a time, and the next once the one before it is
+  # delivered. `failures` is a refusal of the contract to the click being
+  # answered, by evidence type UUID.
+  def demo_request_zone(requirement_uuid, types, failures: {})
+    waiting = false
+    blocks = types.each_with_index.map do |type, index|
+      block = DemoRequestComponent.new(outcome: demo_outcome_for(requirement_uuid, type.uuid), requirement_uuid:,
+        evidence_type: type, position: index + 1, count: types.size, queued: waiting,
+        failure: failures[type.uuid])
+      waiting ||= !block.delivered?
+      block
     end
 
-    DemoRequestZoneComponent.new(requirement_uuid:, blocks:, requested:)
+    DemoRequestZoneComponent.new(requirement_uuid:, blocks:)
+  end
+
+  # The type a click may ask for: one of the combination whose block is not
+  # queued. A button the zone hides is no guarantee, and a request for the next
+  # type would otherwise leave while the one before it is still under way.
+  def demo_askable_type?(requirement_uuid, types, evidence_type_uuid)
+    demo_request_zone(requirement_uuid, types).blocks
+      .any? { |block| block.evidence_type.uuid == evidence_type_uuid && !block.queued? }
+  end
+
+  # What was read before a click is what the zone was before it: the zone that
+  # answers the click reads the register again.
+  def forget_demo_reads
+    @demo_requests = @demo_outcomes = @holding_requests = nil
   end
 
   def read_demo_outcome(request)
@@ -128,14 +148,17 @@ module ReadsDemoRequest
   def confirm_preview(request, state)
     return nil unless state.preview_required? && !request.preview_link?
 
-    result = ::Demo::ConfirmPreview.call(request:, state:, identity:, resume_location: demo_resume_location)
+    result = ::Demo::ConfirmPreview.call(request:, state:, identity:, resume_location: demo_resume_location(request))
 
     result.error unless result.success?
   end
 
-  def demo_resume_location
+  # On the card the request was made from: chapter 4.9 §5 has the user
+  # « resume the procedure from the state it was in », and a page carrying
+  # several cards would otherwise open on its top.
+  def demo_resume_location(request)
     "#{Settings.oots_france_url}#{demo_path(:documents, version: journey.specification.segment,
-      procedure: journey.procedure_code)}"
+      procedure: journey.procedure_code, anchor: DemoRequirementCardComponent.anchor(request.requirement_uuid))}"
   end
 
   # What the contract answered when it would not say the state — an exchange it

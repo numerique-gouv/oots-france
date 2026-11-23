@@ -846,13 +846,20 @@ fr:
       # chapitre 4.4 §4.1 impose — « a new unique request MUST be issued ».
       submit: Demander le document
       retry: Redemander le document
-      # Le bouton unique d'une combinaison de plusieurs types qu'aucune demande
-      # n'a encore touchée : il les demande tous, une requête chacun.
-      submit_all: Demander les documents
       # L'attente, annoncée et pas seulement montrée : qui ne voit pas le bouton
       # changer n'apprendrait rien autrement.
       loading: Demande du document en cours…
-      loading_all: Demande des documents en cours…
+      # Le rang d'un bloc parmi les types d'une combinaison, au-dessus du nom
+      # de son type : les types se demandent l'un après l'autre, dans l'ordre de
+      # la combinaison.
+      rank: Document %{position} sur %{count}
+      # Un bloc dont le type précédent n'a pas encore son document : ni bouton
+      # ni lien, la demande ne part qu'une fois celui-là remis.
+      queued: Sera demandé une fois le document précédent récupéré
+      # Au-dessus des blocs, quand chaque type de la combinaison a son
+      # document : la combinaison n'est satisfaite qu'alors (chapitre 3.2.2
+      # §2.3).
+      all_delivered: Les documents demandés ont tous été récupérés
       delivered: Document récupéré avec succès
       open: Ouvrir le document
       # Le chapitre 2.1 §3.3 impose ce message à une seule condition — « If the

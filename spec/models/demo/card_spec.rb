@@ -72,33 +72,6 @@ RSpec.describe Demo::Card do
     end
   end
 
-  describe '#requested?' do
-    it 'holds the click for the combination it was made for' do
-      remember
-      described_class.request_the_combination(journey_id: 'parcours', requirement_uuid: 'exigence')
-
-      expect(described_class.sole).to be_requested
-    end
-
-    it 'says nothing once the card has stood on no combination, and stands on it again' do
-      remember
-      described_class.request_the_combination(journey_id: 'parcours', requirement_uuid: 'exigence')
-      remember({ country_code: 'DE' }, [])
-      remember
-
-      expect(described_class.sole).to have_attributes(requested?: false, requested_evidence_type_list_id: nil)
-    end
-
-    it 'says nothing of another combination chosen since, nor of the first chosen again' do
-      remember
-      described_class.request_the_combination(journey_id: 'parcours', requirement_uuid: 'exigence')
-      remember(card.merge(evidence_type_list_id: 'autre'))
-      remember
-
-      expect(described_class.sole).not_to be_requested
-    end
-  end
-
   describe '.forget' do
     it 'drops the cards of one journey and no other' do
       remember(journey_id: 'ancien')

@@ -10,31 +10,13 @@
     nothing while the answer says what the zone already says: the waiting is one
     waiting, and one announcement. %>
 <div class="demo-request__body" data-polling="<%= polling? %>" data-outcome="<%= outcome %>">
-  <% if combined? %>
-    <%# One button for every type of the combination, which is the only thing
-        that satisfies it (chapter 3.2.2 §2.3). The waiting and the failure to
-        reach the service are those of a block, written once more here. %>
-    <div class="demo-request__block" data-demo-request-block data-state="idle">
-      <%= button_to t('components.demo_request_zone.submit_all'), button_path,
-            class: 'fr-btn fr-btn--icon-left fr-icon-arrow-down-circle-line',
-            form: { class: 'demo-request__button', data: { demo_request_target: 'button' } } %>
-
-      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
-            hidden: true, data: { demo_request_target: 'loading' } do %>
-        <span class="demo-request__spinner" aria-hidden="true"></span>
-        <%= t('components.demo_request_zone.loading_all') %>
-      <% end %>
-
-      <%= tag.p class: 'fr-mb-0 demo-request__state demo-request__state--waiting',
-            hidden: true, data: { demo_request_target: 'disconnected' } do %>
-        <span class="fr-icon-error-warning-line demo-request__failed" aria-hidden="true"></span>
-        <%= t('components.demo_request_zone.disconnected_html',
-              reload: link_to(t('components.demo_request_zone.reload'), helpers.demo_path(:documents))) %>
-      <% end %>
-    </div>
-  <% else %>
-    <% blocks.each do |block| %>
-      <%= render block %>
-    <% end %>
+  <% if complete? %>
+    <p class="fr-mb-0 demo-request__state demo-request__complete">
+      <span class="fr-icon-check-line demo-request__check" aria-hidden="true"></span>
+      <%= t('components.demo_request_zone.all_delivered') %>
+    </p>
+  <% end %>
+  <% blocks.each do |block| %>
+    <%= render block %>
   <% end %>
 </div>

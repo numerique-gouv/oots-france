@@ -156,7 +156,11 @@ class DemoRequirementCardComponent < ViewComponent::Base
   def answer_failure_field(line) = "reponse-#{requirement_uuid}-#{line.evidence_type_uuid}-erreur"
 
   # The card's own address in the page, which a reload of the page can land on.
-  def anchor = "exigence-#{requirement_uuid}"
+  def anchor = self.class.anchor(requirement_uuid)
+
+  # What the page is scrolled to when the user comes back from a preview space
+  # to the card the request was made from.
+  def self.anchor(requirement_uuid) = "exigence-#{requirement_uuid}"
 
   def country_field = "pays-#{requirement_uuid}"
 

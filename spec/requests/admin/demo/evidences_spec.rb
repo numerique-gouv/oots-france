@@ -147,7 +147,7 @@ RSpec.describe 'Admin::Demo::Evidences' do
     Demo::Request.delete_all
   end
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, type: named_type(uuid), version: 'v2.0', procedure: 'T1')
 
   # The type the card asked for, which names the block of the zone along with
   # the requirement.

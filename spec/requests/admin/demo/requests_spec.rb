@@ -549,14 +549,15 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_preview_confirmation(adressePrevisualisation: 'https://ap.example/preview?t=1')
     end
 
-    # CA2: confirmed once, with a token and the page of the journey's line.
-    it 'confirms the preview with a beneficiary token and the documents page of the journey' do
+    # CA2: confirmed once, with a token and the page of the journey's line,
+    # on the card the request was made from (OOTS-278 RG6, chapter 4.9 §5).
+    it 'confirms the preview with a beneficiary token and the card of the documents page of the journey' do
       get demande_path
 
       expect(a_request(:post, confirmation).with do |sent|
         form = Rack::Utils.parse_nested_query(sent.body)
         form['beneficiaire'].present? &&
-          form['adresseRetour'] == "#{Settings.oots_france_url}/admin/demo/v2.0/T1/documents"
+          form['adresseRetour'] == "#{Settings.oots_france_url}/admin/demo/v2.0/T1/documents#exigence-#{exigence}"
       end).to have_been_made.once
     end
 
@@ -622,13 +623,13 @@ RSpec.describe 'Admin::Demo::Requests' do
       stub_exchange_state(statut: 'preview_required', adressePrevisualisation: 'https://ap.example/preview')
       stub_preview_confirmation
       get admin_demo_documents_path(version: 'v1.2', procedure: '00')
-      post admin_demo_demande_path(exigence:, version: 'v1.2', procedure: '00')
+      post admin_demo_demande_path(exigence:, type: named_type(exigence), version: 'v1.2', procedure: '00')
     end
 
-    it 'has the user brought back under the segments of its line and its procedure' do
+    it 'has the user brought back under the segments of its line and its procedure, on the card' do
       expect(a_request(:post, %r{/previsualisation}).with do |sent|
         Rack::Utils.parse_nested_query(sent.body)['adresseRetour'] ==
-          "#{Settings.oots_france_url}/admin/demo/v1.2/00/documents"
+          "#{Settings.oots_france_url}/admin/demo/v1.2/00/documents#exigence-#{exigence}"
       end).to have_been_made.once
     end
   end
@@ -952,7 +953,7 @@ RSpec.describe 'Admin::Demo::Requests' do
     end
 
     it 'asks in 1.2, and files it' do
-      post admin_demo_demande_path(exigence:, version: 'v1.2', procedure: 'T1')
+      post demande_path(version: 'v1.2')
 
       expect(evidence_request_query).to include('specification' => 'oots-edm:v1.2', 'codePays' => 'FR')
       expect(Demo::Request.last.specification).to eq(EdmSpecification::V1_2)
@@ -972,7 +973,9 @@ RSpec.describe 'Admin::Demo::Requests' do
   # spec, as `spec/fixtures/README.md` has a body no capture holds made.
   def provider_announcing(line) = common_services_answer('dsd_data_services_fi').first.sub('oots-edm:v2.0', line)
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
+  def demande_path(uuid = exigence, version: 'v2.0')
+    admin_demo_demande_path(exigence: uuid, type: named_type(uuid), version:, procedure: 'T1')
+  end
 
   # The document of the one evidence type each card of these cases names.
   def justificatif_path(uuid)

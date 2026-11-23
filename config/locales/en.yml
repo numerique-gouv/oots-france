@@ -695,9 +695,10 @@ en:
     demo_request_zone:
       submit: Request the document
       retry: Retry to request
-      submit_all: Request the documents
       loading: Requesting the document…
-      loading_all: Requesting the documents…
+      rank: Document %{position} of %{count}
+      queued: Will be requested once the previous document is retrieved
+      all_delivered: All the requested documents have been retrieved
       delivered: Document retrieved successfully
       open: Open the document
       refused_title: The document cannot be provided

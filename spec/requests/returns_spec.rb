@@ -15,6 +15,17 @@ RSpec.describe 'GET /retour/:token' do
     expect(response.body).to be_empty
   end
 
+  # OOTS-278 RG6: the place in the page the procedure named is kept, the
+  # identifiers going in the query before it.
+  it 'keeps the fragment of the address the procedure named' do
+    exchange.update!(resume_location: 'https://demarche.example.fr/documents#exigence-1')
+
+    get "/retour/#{exchange.return_token}"
+
+    expect(response.location).to eq('https://demarche.example.fr/documents' \
+                                    "?echange=#{exchange.exchange_id}&conversation=#{exchange.conversation_id}#exigence-1")
+  end
+
   it 'does so every time it is followed' do
     2.times { get "/retour/#{exchange.return_token}" }
 

@@ -342,11 +342,9 @@ end
 # under another word, and giving up offers neither.
 Alors('la page n\'affiche aucun bouton de demande') do
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit'))
-  expect(page).to have_no_button(I18n.t('components.demo_request_zone.submit_all'))
   expect(page).to have_no_button(I18n.t('components.demo_request_zone.retry'))
 end
 
-# Exactly: « Request the document » is a part of « Request the documents ».
 Alors('la page affiche le bouton {string}') do |label|
   expect(page).to have_button(label, exact: true)
 end
@@ -366,8 +364,9 @@ Alors("la zone n'a pas été remplacée, seulement son contenu") do
   expect(page).to have_css("#{ZONE}[data-scenario-zone='#{ZONE_MARK}']", visible: :all)
 end
 
+# The query aside: the page the user is brought back to carries the exchange.
 Alors("la page des justificatifs n'a pas été rechargée") do
-  expect(page).to have_current_path(DOCUMENTS_PAGE)
+  expect(page).to have_current_path(DOCUMENTS_PAGE, ignore_query: true)
   expect(page.evaluate_script('window.pageMark')).to eq(PAGE_MARK)
 end
 

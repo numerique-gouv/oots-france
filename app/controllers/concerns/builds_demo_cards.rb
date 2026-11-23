@@ -14,8 +14,8 @@ module BuildsDemoCards
   # A provider whose gateway does not announce the line of the journey offers
   # no button: requirement 27 of chapter 1 §2 has the user told « before any
   # request is made », and the contract would refuse the request anyway
-  # (chapter 4.5.1 §2.2). A combination is asked for whole, so one such line
-  # leaves the whole card without its zone.
+  # (chapter 4.5.1 §2.2). A combination is asked for whole, one type after the
+  # other, so one such line leaves the whole card without its zone.
   def requirement_card(wording)
     unspoken = unspoken_lines(wording)
 
@@ -88,7 +88,7 @@ module BuildsDemoCards
         language: line.evidence_type_language)
     end
 
-    demo_request_zone(wording.requirement_uuid, types, requested: demo_card(wording.requirement_uuid)&.requested?)
+    demo_request_zone(wording.requirement_uuid, types)
   end
 
   # In the language the page is read in. A code list that says nothing leaves the name

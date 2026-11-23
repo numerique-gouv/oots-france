@@ -830,5 +830,5 @@ RSpec.describe 'Admin::Demo::Documents' do
 
   def seconde_id = "https://sr.acc.oots.tech.ec.europa.eu/requirements/#{seconde}"
 
-  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, version: 'v2.0', procedure: 'T1')
+  def demande_path(uuid = exigence) = admin_demo_demande_path(exigence: uuid, type: named_type(uuid), version: 'v2.0', procedure: 'T1')
 end

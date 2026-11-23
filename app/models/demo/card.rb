@@ -31,21 +31,10 @@ module Demo
     # model declares none: the table's `null: false` are what is checked.
     #
     # `card` holds the `CARD_NAMES`, and `lines` one `Demo::NamedEvidence` per
-    # evidence type. A click on « Request the documents » made for another
-    # combination than the one now named says nothing of this one.
+    # evidence type.
     def self.remember(journey_id:, requirement_uuid:, card:, lines:)
       upsert(card.slice(*CARD_NAMES).merge(journey_id:, requirement_uuid:, evidence_types: lines.map { |line| line.attributes.slice(*LINE_NAMES) }), # rubocop:disable Rails/SkipsModelValidations
         unique_by: %i[journey_id requirement_uuid], update_only: [*CARD_NAMES, :evidence_types])
-      where(journey_id:, requirement_uuid:).where('requested_evidence_type_list_id IS DISTINCT FROM evidence_type_list_id')
-        .update_all(requested_evidence_type_list_id: nil) # rubocop:disable Rails/SkipsModelValidations
-    end
-
-    # The click on « Request the documents », kept for the combination the card
-    # names: a refusal of the contract opens no exchange, and the zone would
-    # otherwise forget, at the next reload, that its types are now asked for one
-    # by one.
-    def self.request_the_combination(journey_id:, requirement_uuid:)
-      where(journey_id:, requirement_uuid:).update_all('requested_evidence_type_list_id = evidence_type_list_id') # rubocop:disable Rails/SkipsModelValidations
     end
 
     # A card the operator added to the page, beyond those the Evidence Broker
@@ -89,8 +78,6 @@ module Demo
     def provider_classifications
       named_evidences.to_h { |named| [named.evidence_type_uuid, named.provider_classifications] }.compact_blank
     end
-
-    def requested? = requested_evidence_type_list_id.present? && requested_evidence_type_list_id == evidence_type_list_id
 
     # The requirement as the row keeps it, which is what an added card is
     # resolved from: no first query lists it, and the second takes nothing more

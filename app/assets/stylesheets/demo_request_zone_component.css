@@ -41,6 +41,20 @@
   flex: 1 1 100%;
 }
 
+/*
+ * A block among the others of its combination: its rank above the name of its
+ * type, on a line of its own.
+ */
+.demo-request__type {
+  flex: 1 1 100%;
+}
+
+.demo-request__rank {
+  display: block;
+  font-weight: normal;
+  color: var(--text-mention-grey);
+}
+
 .demo-request__button .fr-btn {
   width: 100%;
   justify-content: center;
