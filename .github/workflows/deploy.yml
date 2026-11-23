@@ -2,6 +2,7 @@
 name: Déploiement sur le serveur
 
 run-name: Deploy to ${{ inputs.environment || 'acceptance' }}
+
 on:
   push:
     branches:
@@ -31,26 +32,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     environment: ${{ inputs.environment || 'acceptance' }}
-  steps:
-    - name: Install wireguard
-      run: apt-get update && apt-get install wireguard
-    - name: Configure wireguard
-      run: |
-        umask 077
-        cat <<__EOF__ >/etc/wireguard/wgOotsDepl.conf
-        [Interface]
-        PrivateKey = $WG_PRIVKEY
-        Address = $WG_LOCAL_IP
-        
-        [Peer]
-        PublicKey = L5VfeZKRJtOLE7xUrX6iYp7TqwlqBi3becyxuOj26mw=
-        AllowedIPs = $WG_REMOTE_IP
-        Endpoint = $WG_PEER_ENDPOINT
-        PersistentKeepalive = 30
-        __EOF__
-    - name: Start wireguard tunnel
-      run: systemctl daemon-reload && systemctl start wg-quick@wgOotsDepl
-    - name: Write SSH private key
-      run: mkdir ~/.ssh && (umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy)
-    - name: Deploy via SSH
-      run: ssh -i ~/.ssh/.id-oots-deploy $SSH_USER@$SSH_PEER
+    steps:
+      - name: Install wireguard
+        run: apt-get update && apt-get install wireguard
+      - name: Configure wireguard
+        run: |
+          umask 077
+          cat <<__EOF__ >/etc/wireguard/wgOotsDepl.conf
+          [Interface]
+          PrivateKey = $WG_PRIVKEY
+          Address = $WG_LOCAL_IP
+          
+          [Peer]
+          PublicKey = L5VfeZKRJtOLE7xUrX6iYp7TqwlqBi3becyxuOj26mw=
+          AllowedIPs = $WG_REMOTE_IP
+          Endpoint = $WG_PEER_ENDPOINT
+          PersistentKeepalive = 30
+          __EOF__
+      - name: Start wireguard tunnel
+        run: systemctl daemon-reload && systemctl start wg-quick@wgOotsDepl
+      - name: Write SSH private key
+        run: mkdir ~/.ssh && (umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy)
+      - name: Deploy via SSH
+        run: ssh -i ~/.ssh/.id-oots-deploy $SSH_USER@$SSH_PEER
