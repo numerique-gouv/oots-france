@@ -366,6 +366,32 @@ RSpec.describe 'Admin::Journal::Events' do
       expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include('QueryRequest')
     end
 
+    # The page indents what it shows and nothing else: the column still answers
+    # with the bytes that travelled.
+    it 'leaves the body it indents untouched in the journal' do
+      body = '<query:QueryRequest xmlns:query="urn:q"><query:Slot>BE</query:Slot></query:QueryRequest>'
+      event = create(:audit_event, :with_regrep_body, regrep_body: body)
+
+      get admin_journal_event_path(event)
+
+      expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include("\n  <query:Slot>")
+      expect(event.reload.regrep_body.b).to eq(body.b)
+    end
+
+    {
+      'is not well-formed' => '<query:QueryRequest><rim:Slot></query:QueryRequest>',
+      'declares another encoding' => '<?xml version="1.0" encoding="ISO-8859-1"?><a><b>BE</b></a>'
+    }.each do |what, body|
+      it "renders an event whose body #{what}, as it is kept" do
+        event = create(:audit_event, :with_regrep_body, regrep_body: body)
+
+        get admin_journal_event_path(event)
+
+        expect(response).to have_http_status(:ok)
+        expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to eq(body)
+      end
+    end
+
     it 'marks the document it had to decrypt as it marks the subject' do
       event = create(:audit_event, :with_regrep_body)
 
