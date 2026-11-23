@@ -6,7 +6,10 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
   voie d'abord. La France lui répond l'adresse de son espace de
   prévisualisation, où l'usager s'identifie de nouveau avant d'y consulter le
   document et de choisir de l'utiliser ou non ; la seconde requête du
-  requêteur étranger reçoit exactement ce que l'usager a accepté. Un usager
+  requêteur étranger reçoit exactement ce que l'usager a accepté. Pour le type
+  de test "FR - Test with preview, without reauthentication", l'usager ne
+  s'identifie pas de nouveau : il consulte le document et choisit aussitôt, et
+  le journal de l'échange ne contient aucun contrôle d'identité. Un usager
   qui s'identifie sous une autre identité que celle de la requête ne voit
   rien, et la seconde requête reçoit l'erreur d'authentification. Pour un
   type auquel aucun document ne correspond, l'usager lit sur l'espace
@@ -128,3 +131,24 @@ Fonctionnalité: Montrer le justificatif à l'usager avant de l'envoyer
     Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
     Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
     Alors la France envoie le statut étudiant en "application/json"
+
+  Scénario: pour le type "FR - Test with preview, without reauthentication", l'usager voit le document sans s'identifier de nouveau, et la seconde requête le reçoit
+    Quand le requêteur étranger envoie une requête qui exige la prévisualisation pour le type "FR - Test with preview, without reauthentication"
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace de prévisualisation
+    Quand l'usager ouvre l'espace de prévisualisation
+    Alors la page affiche le lien vers le document
+    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que le requêteur étranger envoie la seconde requête avec l'adresse de l'espace et une adresse de retour
+    Alors la France envoie le document que l'usager a vu
+    Et le journal de l'échange ne contient aucune ligne "Identité contrôlée"
+
+  Scénario: un requêteur étranger en "oots-edm:v1.2" reçoit le document de type "FR - Test with preview, without reauthentication" que l'usager a vu sans s'identifier de nouveau
+    Quand le requêteur étranger envoie en "oots-edm:v1.2" une requête qui exige la prévisualisation pour le type "FR - Test with preview, without reauthentication"
+    Alors la France répond "EDM:ERR:0002" avec l'adresse de son espace et la méthode "GET"
+    Quand l'usager ouvre l'espace de prévisualisation avec une adresse de retour
+    Alors la page affiche le lien vers le document
+    Quand l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Alors l'espace ramène l'usager à l'adresse de retour
+    Quand le requêteur étranger envoie en "oots-edm:v1.2" la seconde requête avec l'adresse de l'espace
+    Alors la France envoie le document que l'usager a vu
+    Et le journal de l'échange ne contient aucune ligne "Identité contrôlée"

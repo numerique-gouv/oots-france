@@ -52,6 +52,8 @@ class FakeCorrespondent
       'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/11cb64a4-6134-4b0e-aa6b-4a90250924ab',
     'FR - Student status (MESRI)' =>
       'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/4daaf228-43fd-43fc-9148-a416c9a22464',
+    'FR - Test with preview, without reauthentication' =>
+      'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/dc8598fb-b315-41a5-8002-77c4a34e61a9',
   }.freeze
 
   # The distribution a request asks for unless a scenario names another: the
