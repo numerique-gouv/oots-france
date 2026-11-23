@@ -103,8 +103,6 @@ Un rapport en markdown, et rien d'autre. Sa forme est fixe pour qu'un lecteur pr
 
 Chaque citation porte son lien. Chaque règle porte son rôle. Une section vide se dit en une ligne (« aucun écart relevé »), elle ne se supprime pas : son absence ferait croire qu'on n'a pas cherché.
 
-**Cite tout ticket par un lien**, jamais par un identifiant nu : `[OOTS-100](https://linear.app/pole-api/issue/OOTS-100)`.
-
 ## Garde-fous
 
 - **Rien de toi.** Pas de « il faudrait », pas de « je recommande », pas de priorité, pas de découpage, pas de solution. Si on te pousse à trancher, rends les deux lectures et la question, marquée comme telle.
