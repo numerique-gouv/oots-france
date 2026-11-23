@@ -15,13 +15,16 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
   carte ajoutée depuis le catalogue de l'Evidence Broker s'y tient sous celles
   de la démarche, change de pays, se demande et se retire comme elles. Le
   serveur décide de tout le reste, et ce qu'il dit déjà à l'écran n'est jamais
-  reconstruit. Le choix du type de justificatif s'y joue de même, quand le pays
-  en publie plusieurs pour l'exigence : rien n'est choisi à la place de
-  l'usager, la carte se résout sur le type qu'il choisit, et la demande part
-  avec lui. La question que le Data Service Directory pose avant de pouvoir
-  désigner le fournisseur s'y pose aussi, sur la carte, dans la forme que son
-  type demande : la réponse de l'usager résout la carte, et la demande part
-  avec elle. Une réponse différée du fournisseur s'y dit avec sa date, comme une
+  reconstruit. Sur la page où l'usager clique le bouton d'une carte, la liste
+  des pays de cette carte, et celle des combinaisons quand elle en offre une,
+  sont désactivées tant que la demande court ou que son justificatif est remis.
+  Le choix du type de justificatif s'y joue de même, quand le pays en publie
+  plusieurs pour l'exigence : rien n'est choisi à la place de l'usager, la
+  carte se résout sur le type qu'il choisit, et la demande part avec lui. La
+  question que le Data Service Directory pose avant de pouvoir désigner le
+  fournisseur s'y pose aussi, sur la carte, dans la forme que son type
+  demande : la réponse de l'usager résout la carte, et la demande part avec
+  elle. Une réponse différée du fournisseur s'y dit avec sa date, comme une
   demande réglée, et le justificatif ne se redemande que sur un clic.
 
   Ces scénarios demandent un navigateur sans tête, et rien de plus : ni
@@ -38,11 +41,13 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand l'usager clique sur "Demander le document"
     Alors la zone annonce qu'elle attend
     Et la page n'affiche aucun bouton de demande
+    Et la liste des pays de la carte est désactivée
     Et la page des justificatifs est toujours affichée
     Et le contrat n'a reçu aucune demande
     Quand la soumission retenue est libérée
     Alors le contrat a reçu la demande
     Et la zone annonce toujours la même attente
+    Et la liste des pays de la carte est désactivée
 
   Scénario: une interrogation qui dit la même attente ne remplace rien, et une seule court à la fois
     Étant donné une demande en cours
@@ -86,6 +91,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la page affiche le lien "Rechargez la page"
     Et la page n'affiche pas "Demande du document en cours…"
     Et la page n'affiche aucun bouton de demande
+    Et la liste des pays de la carte est désactivée
     Quand l'usager suit le lien "Rechargez la page"
     Alors la zone annonce qu'elle attend
 
@@ -172,6 +178,9 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Alors la carte affiche "Le pays n'a pas pu être changé : cette page n'a pas pu joindre le service."
     Et la liste des pays de la carte affiche "Finlande (FI)"
     Et la carte nomme le pays "Finlande (FI)"
+    Quand l'usager clique sur "Demander le document"
+    Alors la page n'affiche pas "Le pays n'a pas pu être changé"
+    Et la liste des pays de la carte est désactivée
 
   Scénario: un choix de pays refusé par la page la recharge, et une session finie mène à la page de connexion
     Étant donné le choix du pays répondu en "422" sans l'en-tête "Deferred-Fragment" devant le navigateur
@@ -181,6 +190,29 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Quand la session de l'agent prend fin
     Et que l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
     Alors la page de connexion s'affiche
+
+  Scénario: la liste des pays d'une carte dont la demande est refusée redevient active sans recharger la page
+    Étant donné une demande en cours
+    Alors la liste des pays de la carte est désactivée
+    Quand le fournisseur refuse la demande
+    Alors la page affiche le bouton "Redemander le document"
+    Et la liste des pays de la carte est active
+    Et la page des justificatifs n'a pas été rechargée
+    Quand l'usager choisit "Finlande (FI)" dans la liste des pays de la carte
+    Alors la page affiche "Keha v. 2.0"
+
+  Scénario: la liste des pays d'une carte dont le justificatif est remis reste désactivée
+    Étant donné une demande en cours
+    Quand le justificatif est remis
+    Alors la page affiche "Document récupéré avec succès"
+    Et la liste des pays de la carte est désactivée
+    Et la page des justificatifs n'a pas été rechargée
+
+  Scénario: seule la carte dont la demande court a sa liste des pays désactivée
+    Étant donné les deux exigences de la démarche affichées
+    Quand l'usager clique sur le bouton de la première carte
+    Alors la liste des pays de la première carte est désactivée
+    Et la liste des pays de la seconde carte est active
 
   Scénario: une carte ajoutée se tient sous celles de la démarche, se demande dans son pays, et revient dans ce pays une fois retirée
     Étant donné le catalogue de l'Evidence Broker offert sous les cartes de la démarche
@@ -219,6 +251,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et le contrat n'a reçu aucune demande
     Quand l'usager clique sur "Demander le document"
     Alors le contrat a reçu la demande pour le type "Austrian Test Evidence Type without Reauthentication"
+    Et la liste des combinaisons de la carte est désactivée
     Quand l'usager recharge la page des justificatifs
     Alors la carte n'offre pas de liste des pays
     Et la carte n'offre pas de liste des combinaisons
@@ -404,6 +437,7 @@ Fonctionnalité: Demander un justificatif depuis la démarche de démonstration 
     Et la page n'affiche pas "EDM:ERR"
     Et la carte n'a ni le contour du justificatif arrivé ni celui de l'exigence insatisfaisable
     Et la page des justificatifs n'a pas été rechargée
+    Et la liste des pays de la carte est active
     Et aucune autre interrogation ne part
     Et le contrat a reçu une seule demande
 

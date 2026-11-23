@@ -11,7 +11,8 @@
     between the two halves is the `<hr>` that card draws: the DSFR footer pulls
     its own edge past the card's padding, so a rule on it would run wider than
     the wording above it. %>
-<div class="<%= css_classes %>" id="<%= anchor %>" data-controller="demo-card">
+<div class="<%= css_classes %>" id="<%= anchor %>" data-controller="demo-card"
+     data-action="demo-request:holding->demo-card#hold">
   <%# The cross of an added card, in its top right corner. Its name is said in
       words to whoever cannot see the icon, which criterion 11.9 of the RGAA
       asks of a button whose label is one. Outside what an answer replaces, so

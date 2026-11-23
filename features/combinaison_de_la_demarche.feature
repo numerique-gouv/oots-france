@@ -120,6 +120,7 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
     Alors le bloc de "Projectathon test evidence" affiche "EB:ERR:0001"
     Et le bloc de "Simple test evidence" affiche "Demander le document"
     Et le contrat n'a reçu de demande que pour "Projectathon test evidence"
+    Et la liste des combinaisons de la carte est active
     Quand l'usager clique sur "Redemander le document" dans le bloc de "Projectathon test evidence"
     Alors le bloc de "Projectathon test evidence" affiche "EB:ERR:0001"
     Et le bloc de "Projectathon test evidence" n'affiche pas "Demande du document en cours"
@@ -144,6 +145,7 @@ Fonctionnalité: Demander entière, depuis la démarche de démonstration, une c
     Quand la zone a interrogé deux fois de plus son adresse
     Alors le bloc de "Simple test evidence" affiche "EB:ERR:0001"
     Et le bloc de "Projectathon test evidence" affiche "Demande du document en cours"
+    Et la liste des combinaisons de la carte est désactivée
 
   Scénario: la combinaison tient au rechargement, une demande la retient, et un autre pays la défait
     Étant donné la Grèce publiant "Compound test evidence" pour l'exigence de la carte
