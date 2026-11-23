@@ -502,7 +502,10 @@ class Exchange < ApplicationRecord
       next false unless send(:"can_#{event}?")
 
       assign_attributes({ settled_at: Time.current }.merge(attributes))
+      # state_machines answers a bang event with the `Transition` it performed,
+      # not `true`: callers compare this answer to `true`.
       send(:"#{event}!")
+      true
     end
   end
 end
