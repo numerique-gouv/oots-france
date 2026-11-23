@@ -4,9 +4,10 @@ module EvidenceProvision
   # one received winning; one `WebAddress` cannot open or does not admit is
   # not kept, and the page warns instead (§2, step 13).
   #
-  # Only ever from a browser the space has identified, or from the visit that
-  # left to identify, carried through the departure: a browser that never came
-  # back from identifying cannot move it.
+  # Only ever from a browser the space has recognised — identified, dispensed,
+  # or let through by the type asked for —, or from the visit that left to
+  # identify, carried through the departure: a browser that never came back
+  # from identifying cannot move it.
   class RememberPreviewReturn < ApplicationInteractor
     def call
       session = context.preview_session

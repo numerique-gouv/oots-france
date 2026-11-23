@@ -930,4 +930,99 @@ RSpec.describe 'The preview space' do
       expect(response.headers['Location']).to start_with(FranceConnectStubs::AUTHORIZATION_ENDPOINT)
     end
   end
+
+  # OOTS-311: « FR - Test with preview, without reauthentication », whose
+  # preview chapter 4.9 §1 lets France show without identifying the user again.
+  describe 'a type France previews without re-authentication' do
+    let!(:session) { create(:preview_session, first_request: asking_for_the_waived_type) }
+
+    def asking_for_the_waived_type
+      document = Nokogiri::XML(Rails.root.join('spec/fixtures/incoming/reel/requete.xml').read)
+      rewrite_body(document) { |body| asking_for_type(body, Fixtures::REAUTHENTICATION_WAIVED_TYPE) }
+
+      document.to_xml
+    end
+
+    def choose(choice) = post(preview_session_choice_path(segment, session.token), params: { choice: })
+
+    def journalled(event_type) = AuditEvent.where(exchange_id: session.exchange_id, event_type:)
+
+    shared_examples 'a preview shown without re-authentication' do
+      # CA3.
+      it 'shows who asks, the type, the document and the choice to a browser that never identified' do
+        visit_space
+
+        expect(response).to have_http_status(:ok)
+        expect(page.text).to include('Requêteur de test')
+        expect(page.at_css("a[href='#{preview_session_document_path(segment, session.token)}']")).to be_present
+        expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
+        get preview_session_document_path(segment, session.token)
+        expect(response.body).to eq(session.document_bytes)
+      end
+
+      # CA4 and CA6.
+      %w[accepted refused].each do |choice|
+        it "records the choice #{choice}, offers none once made, and journals no identity check" do
+          visit_space
+          choose(choice)
+          visit_space
+
+          expect(session.reload.decision).to eq(choice)
+          expect(page.css('input[type=radio]')).to be_empty
+          expect(journalled('preview_visited').count).to eq(2)
+          expect(journalled('preview_decided').pluck(:detail)).to eq([choice])
+          expect(journalled('preview_identified')).to be_empty
+        end
+      end
+    end
+
+    describe 'on a deployment that declares only the fake FranceConnect+' do
+      before { stub_france_connect }
+
+      it_behaves_like 'a preview shown without re-authentication'
+    end
+
+    describe 'on a deployment that declares the real FranceConnect+' do
+      before do
+        stub_france_connect
+        stub_real_france_connect
+      end
+
+      it_behaves_like 'a preview shown without re-authentication'
+    end
+
+    # CA5.
+    describe 'on the 1.2 line' do
+      let!(:session) { create(:preview_session, :legacy_line, first_request: asking_for_the_waived_type) }
+
+      it 'offers the way back the visit brought' do
+        stub_france_connect
+        stub_real_france_connect
+        visit_space(params: { returnurl: 'https://portail.example/retour', returnmethod: 'GET' })
+        choose('accepted')
+
+        expect(response).to redirect_to('https://portail.example/retour')
+        expect(journalled('preview_identified')).to be_empty
+      end
+    end
+
+    # CA9: the dispensation of OOTS-308 is not asked, and journals nothing.
+    {
+      'the console' => Demo::Entrance::CONSOLE,
+      'the public demonstration' => Demo::Entrance::PUBLIC,
+    }.each do |name, entrance|
+      it "lets through the browser #{name} identified by the fake FranceConnect+, journalling no check" do
+        sign_in if entrance == Demo::Entrance::CONSOLE
+        identify_demo_user(userinfo: FranceConnectStubs::REQUESTED_USERINFO, entrance:)
+        stub_real_france_connect
+        journey = Demo::Journey.from_session(request.session[entrance.journey_key])
+        registered_request(SecureRandom.uuid, journey_id: journey.id, preview_address: session.location)
+        visit_space
+
+        expect(response).to have_http_status(:ok)
+        expect(page.css('input[type=radio]').pluck('value')).to eq(PreviewSession::DECISIONS)
+        expect(journalled('preview_identified')).to be_empty
+      end
+    end
+  end
 end

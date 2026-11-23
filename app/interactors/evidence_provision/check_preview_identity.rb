@@ -10,7 +10,9 @@ module EvidenceProvision
   #
   # A browser that may be dispensed from identifying comes with a
   # `dispensation` in place of an identification: granted, it is journalled as
-  # such and recognised as after a confirmed one; refused, nothing happens.
+  # such and recognised as after a confirmed one; refused, nothing happens. A
+  # type whose preview waives the re-authentication never comes here: nothing
+  # is checked of it, so nothing is journalled.
   #
   # No verdict at all where nothing could be checked: the subject already
   # erased, the answer gone.

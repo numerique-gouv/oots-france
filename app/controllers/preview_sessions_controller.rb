@@ -2,8 +2,9 @@
 # another member state through the address France issued. No operator session:
 # the unpredictable address finds the request, and the user identifies again
 # through FranceConnect+ before anything of it is shown (§2, steps 15-17) —
-# `PreviewIdentificationsController` receives them back — unless
-# `PreviewDispensation` waives it for the demonstration procedure.
+# `PreviewIdentificationsController` receives them back — unless the type
+# asked for waives it (`ServedEvidenceType.reauthentication_waived?`), or
+# `PreviewDispensation` does for the demonstration procedure.
 class PreviewSessionsController < ApplicationController
   include ChosenLanguage
   include RecognisesPreviewIdentity
@@ -76,17 +77,27 @@ class PreviewSessionsController < ApplicationController
   end
 
   # Recognised as after a confirmed identification, and for this address
-  # alone, where `PreviewDispensation` grants it; the page is then read with
-  # the verdict just written.
+  # alone, where the type asked for waives it or `PreviewDispensation` grants
+  # it; the page is then read with the verdict just written. The type's waiver
+  # checks no identity, so journals none (chapter 4.9 §2, step 18 compares
+  # only an identification), and leaves the dispensation unasked.
   def dispense_identification
     return unless @preview.identification_required?
 
-    recognised = EvidenceProvision::CheckPreviewIdentity.call(preview_session: @session, dispensation:,
-      return_url: params[:returnurl], return_method: params[:returnmethod]).verdict
+    recognised = reauthentication_waived? ? :confirmed : dispensed
     return unless recognised
 
     remember_preview_verdict(@session.token, recognised)
     @preview = PreviewSessionPresenter.new(@session, first_request: @first_request, verdict: recognised)
+  end
+
+  def reauthentication_waived?
+    @first_request.present? && ServedEvidenceType.reauthentication_waived?(@first_request.evidence_type)
+  end
+
+  def dispensed
+    EvidenceProvision::CheckPreviewIdentity.call(preview_session: @session, dispensation:,
+      return_url: params[:returnurl], return_method: params[:returnmethod]).verdict
   end
 
   # One per entrance of the demonstration, each on its own journey and
