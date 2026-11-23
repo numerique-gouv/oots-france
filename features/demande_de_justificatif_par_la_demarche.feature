@@ -107,6 +107,32 @@ Fonctionnalité: Demander le justificatif de la démarche de démonstration
     Et que l'usager est ramené à sa démarche
     Alors la page des justificatifs affiche "Document récupéré avec succès"
 
+  Scénario: l'usager demande l'un après l'autre les deux documents de la combinaison que la France publie, chacun prévisualisé
+    Quand l'administrateur choisit la version "OOTS 2.0"
+    Et que l'administrateur choisit la démarche "00"
+    Et que l'administrateur s'identifie avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "FR - Compound test evidence" sur la carte "(TEST) Test Requirement"
+    Et que l'usager confirme la demande de la carte "(TEST) Test Requirement"
+    Alors la page des justificatifs présente un seul lien vers l'espace de prévisualisation
+    Et le journal des échanges contient 1 requête envoyée par la démarche de démonstration pour la carte
+    Quand l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que l'usager est ramené à sa démarche
+    Alors la page des justificatifs affiche "Document récupéré avec succès"
+    Quand l'usager demande le document suivant de la carte "(TEST) Test Requirement"
+    Alors la page des justificatifs présente un seul lien vers l'espace de prévisualisation
+    Quand l'usager suit le lien que la page des justificatifs lui présente vers l'espace de prévisualisation
+    Et que l'usager s'identifie sur l'espace de prévisualisation avec l'identité de test "dk-substantial"
+    Et que l'usager choisit "Utiliser ce document dans ma démarche" et valide son choix
+    Et que l'usager est ramené à sa démarche
+    Alors la page des justificatifs affiche "Les documents demandés ont tous été récupérés"
+    Et la page des justificatifs affiche 2 fois "Document récupéré avec succès"
+    Et le journal des échanges contient 2 requêtes envoyées par la démarche de démonstration pour la carte, sous une même conversation, pour les types :
+      | type                               |
+      | FR - Test Evidence Type            |
+      | FR - Test Evidence Type for abroad |
+
   Scénario: l'usager demande son statut étudiant et ouvre l'attestation d'API Particulier
     Quand l'administrateur choisit l'anglais dans l'en-tête
     Et que l'administrateur choisit la version "OOTS 2.0"

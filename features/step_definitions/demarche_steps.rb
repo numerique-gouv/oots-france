@@ -170,6 +170,14 @@ Quand('l\'usager confirme la demande de la carte {string}') do |carte|
   @navigateur.request_card(carte)
 end
 
+# The next document of a combination: its block offers the only button of the
+# card once the one before it is delivered. The mark of the first click stays,
+# so that the log is read for the whole combination.
+Quand('l\'usager demande le document suivant de la carte {string}') do |carte|
+  @depart_de_la_requete = nil
+  @navigateur.request_card(carte)
+end
+
 # Added from the list under the cards of the procedure: the page comes back
 # carrying the new card, whether or not the Evidence Broker ties its
 # requirement to the procedure.
@@ -275,6 +283,10 @@ end
 
 # As the acceptance publishes it under `00`: docs/test_e2e.md records where.
 EVIDENCE_TYPE_CLASSIFICATIONS = {
+  'FR - Test Evidence Type' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4',
+  'FR - Test Evidence Type for abroad' =>
+    'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/9bc466ca-d785-4b20-a5e2-0da1c0b9e931',
   'FR - Student status (MESRI)' =>
     'https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/4daaf228-43fd-43fc-9148-a416c9a22464',
   'FR - Test Evidence Type not held' =>
@@ -320,6 +332,41 @@ Alors('la page des justificatifs ne présente aucun lien vers l\'espace de prév
   @navigateur.visit(adresse_de_la_demarche('documents'))
 
   expect(Nokogiri::HTML(@navigateur.body).at_css('.demo-request__preview')).to be_nil
+end
+
+# Waited for as the link is: the correspondent asks for its preview on another
+# connection. One access in the whole page, the card being the only one asked.
+Alors('la page des justificatifs présente un seul lien vers l\'espace de prévisualisation') do
+  patiente_jusqu_a('la page des justificatifs présente le lien vers l\'espace de prévisualisation') do
+    @navigateur.visit(adresse_de_la_demarche('documents'))
+    lien_de_depart.present?
+  end
+
+  expect(Nokogiri::HTML(@navigateur.body).css('.demo-request__preview a, .demo-request__preview form').size).to eq(1)
+end
+
+# Each document is one exchange, and its preview a second request under the
+# same exchange (chapter 4.9 §2 step 12): exchanges are what is counted.
+Alors('le journal des échanges contient {int} requête(s) envoyée(s) par la démarche de démonstration pour la carte') do |nombre|
+  depart_de_la_requete
+
+  expect(departs_de_la_demarche.pluck(:exchange_id).uniq.size).to eq(nombre)
+end
+
+# Chapter 4.4 §4.3.2: the `ConversationId` « SHOULD be reused for combined
+# flows ».
+Alors('le journal des échanges contient {int} requête(s) envoyée(s) par la démarche de démonstration pour la carte, sous une même conversation, pour les types :') do |nombre, table|
+  departs = departs_de_la_demarche.to_a
+
+  expect(departs.map(&:exchange_id).uniq.size).to eq(nombre)
+  expect(departs.map(&:conversation_id).uniq.size).to eq(1)
+  expect(departs.map(&:evidence_type_id).uniq).to eq(table.hashes.map { |row| EVIDENCE_TYPE_CLASSIFICATIONS.fetch(row.fetch('type')) })
+end
+
+Alors('la page des justificatifs affiche {int} fois {string}') do |nombre, texte|
+  attend_sur_la_page_des_justificatifs(texte)
+
+  expect(Nokogiri::HTML(@navigateur.body).text.scan(texte).size).to eq(nombre)
 end
 
 # Chapter 4.9 §5: the zone becomes the departure page once the demonstration
