@@ -34,9 +34,10 @@ jobs:
     environment: ${{ inputs.environment || 'acceptance' }}
     steps:
       - name: Install wireguard
-        run: apt-get update && apt-get install wireguard
+        run: sudo apt-get update && sudo apt-get install wireguard
       - name: Configure wireguard
         run: |
+          sudo bash -c "(
           umask 077
           cat <<__EOF__ >/etc/wireguard/wgOotsDepl.conf
           [Interface]
@@ -49,8 +50,9 @@ jobs:
           Endpoint = $WG_PEER_ENDPOINT
           PersistentKeepalive = 30
           __EOF__
+          )"
       - name: Start wireguard tunnel
-        run: systemctl daemon-reload && systemctl start wg-quick@wgOotsDepl
+        run: sudo systemctl daemon-reload && sudo systemctl start wg-quick@wgOotsDepl
       - name: Write SSH private key
         run: mkdir ~/.ssh && (umask 077 && echo "$SSH_PRIVKEY" >~/.ssh/.id-oots-deploy)
       - name: Deploy via SSH
