@@ -187,7 +187,9 @@ Rails.application.routes.draw do
       resource :subjects, only: :show
       resources :events, only: :show
       resources :exchanges, only: :show
-      resources :conversations, only: :show
+      resources :conversations, only: :show do
+        resource :test_files, only: :show
+      end
     end
 
     # The pages carry short identifiers only — a procedure code, the last

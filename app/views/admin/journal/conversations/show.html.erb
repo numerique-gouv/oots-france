@@ -13,6 +13,10 @@
 
 <p class="fr-text--sm fr-mb-4w"><%= t('admin.journal.exchanges.count', count: @exchanges.size) %></p>
 
+<% if @test_files.any? %>
+  <%= render 'admin/journal/conversations/test_files_form', conversation_id: @conversation_id, test_run: @test_run %>
+<% end %>
+
 <%# One table per exchange, in the order they were opened: the conversation is
     a sequence of round trips, and merging their events into a single listing
     would lose which belongs to which. %>

@@ -91,6 +91,7 @@ ignore_unused:
   - activemodel.errors.models.audit_event_filter.attributes.{event_type.inclusion,country_code.format,jusqu_a.before_start}
   - activemodel.errors.models.audit_event_filter.unreadable
   - activemodel.errors.models.subject_search.{attributes.date_of_birth.format,unreadable,both_identities}
+  - activemodel.errors.models.test_run.{attributes.test_case.format,attributes.run.format,unreadable}
   - activemodel.errors.models.demo/user_identity.attributes.{birthdate,eidas_identifier}.format
   - activemodel.errors.models.demo/user_identity.attributes.{level_of_assurance,gender}.inclusion
   # Composed at run time, out of the reach of `strict: false`, which infers only

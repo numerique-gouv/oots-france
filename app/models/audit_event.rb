@@ -233,9 +233,10 @@ class AuditEvent < ApplicationRecord
   # turned away that already has its own line, an answer the gateway never took,
   # and the two arrivals whose action named none of the three.
   #
-  # Read by `db/seeds.rb` alone, to decide which demonstration events carry a
-  # message identifier. No page reads them: they derive the direction from the
-  # type and the country as recorded.
+  # Read by `db/seeds.rb`, to decide which demonstration events carry a message
+  # identifier, and by `TestFiles`, which draws the files of a test from these
+  # event types. The tables of the journal derive the direction from the type
+  # and the country as recorded.
   SENT_BY_FRANCE = %w[request_sent response_sent error_sent].freeze
   RECEIVED_BY_FRANCE = %w[request_received response_received error_received].freeze
 
