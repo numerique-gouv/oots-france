@@ -28,6 +28,9 @@ gem 'nokogiri'
 # à un dépôt public — là où `hexapdf` est en AGPL.
 gem 'prawn', '~> 2.5'
 
+# The archive of the files of a Commission test, served by the console.
+gem 'rubyzip', '~> 3.0'
+
 # Beneficiary token: a JWE encrypted for us, holding a JWT signed by the
 # requester. RSA-OAEP-256 / A256GCM.
 gem 'jwe'

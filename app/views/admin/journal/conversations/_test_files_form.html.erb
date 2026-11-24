@@ -1,0 +1,29 @@
+<%= form_with url: admin_journal_conversation_test_files_path(conversation_id), method: :get,
+      class: 'fr-mb-6w' do |form| %>
+  <fieldset class="fr-fieldset">
+    <legend class="fr-fieldset__legend">
+      <%= t('admin.journal.conversations.show.test_files.legend') %>
+    </legend>
+
+    <% %i[test_case run].each do |field| %>
+      <% message = test_run.errors[field].first %>
+      <div class="fr-fieldset__element fr-fieldset__element--inline">
+        <div class="fr-input-group<%= ' fr-input-group--error' if message %>">
+          <%= form.label field, t("admin.journal.conversations.show.test_files.#{field}"), class: 'fr-label' %>
+          <%= form.text_field field, value: test_run.public_send(field),
+                class: "fr-input#{' fr-input--error' if message}",
+                aria: { describedby: ("#{field}-error" if message) } %>
+          <% if message %>
+            <p class="fr-error-text" id="<%= field %>-error"><%= message %></p>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="fr-fieldset__element fr-fieldset__element--inline">
+      <button type="submit" class="fr-btn fr-btn--secondary fr-icon-download-line fr-btn--icon-left">
+        <%= t('admin.journal.conversations.show.test_files.submit') %>
+      </button>
+    </div>
+  </fieldset>
+<% end %>

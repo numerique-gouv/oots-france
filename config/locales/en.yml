@@ -151,6 +151,13 @@ en:
             jusqu_a:
               before_start: is earlier than the start date
           unreadable: is unreadable
+        test_run:
+          attributes:
+            test_case:
+              format: The test case contains only letters and digits, for example TC06.
+            run:
+              format: The run is written with two digits, for example 01.
+          unreadable: is unreadable
         subject_search:
           attributes:
             date_of_birth:
@@ -2011,6 +2018,11 @@ en:
             each one the events it left in the log.
           journal: "Log of exchange %{id}"
           empty: No events carry this exchange.
+          test_files:
+            legend: Files for a Commission test
+            test_case: Test case
+            run: Run
+            submit: Download the XML messages
     sessions:
       pro_connect_failed: Signing in with ProConnect did not succeed. Try again.
       signed_out: You are signed out.

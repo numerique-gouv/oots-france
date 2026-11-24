@@ -179,6 +179,17 @@ class Exchange < ApplicationRecord
     format: { with: %r{\Ahttps?://}, message: :format },
     allow_nil: true
 
+  # The exchanges of one conversation, in the order they were opened, each with
+  # its journal through the association declared above.
+  #
+  # And each event with its exchange: every row of the console asks whether the
+  # identifier it names was one France minted for itself, and the association
+  # does not hand back the exchange already loaded — it joins on `exchange_id`
+  # rather than on the primary key, which is what defeats `inverse_of` here.
+  scope :of_conversation, lambda { |conversation_id|
+    where(conversation_id:).order(:created_at).includes(audit_events: :exchange)
+  }
+
   # Chapter 4.4, table « Evidence Exchange Timeouts »: past the interval the
   # deployment configures, an exchange nobody settled is a failure, either way
   # round. Each direction is counted from the instant that does not move for it

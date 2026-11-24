@@ -165,6 +165,14 @@ fr:
             jusqu_a:
               before_start: est antérieure à la date de début
           unreadable: est illisible
+        # Affichés seuls sous leur champ, d'où la phrase entière.
+        test_run:
+          attributes:
+            test_case:
+              format: Le cas de test ne contient que des lettres et des chiffres, par exemple TC06.
+            run:
+              format: L'exécution s'écrit sur deux chiffres, par exemple 01.
+          unreadable: est illisible
         subject_search:
           attributes:
             date_of_birth:
@@ -2850,6 +2858,11 @@ fr:
             sous chacun les événements qu'il a laissés au journal.
           journal: "Le journal de l'échange %{id}"
           empty: Aucun événement ne porte cet échange.
+          test_files:
+            legend: Fichiers pour un test de la Commission
+            test_case: Cas de test
+            run: Exécution
+            submit: Télécharger les messages XML
     sessions:
       # Le flash porte ces clés plutôt que leur texte : `layouts/_messages` les
       # traduit, dans une requête servie par le backend I18n de l'application.

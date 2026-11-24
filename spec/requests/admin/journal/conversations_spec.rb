@@ -84,6 +84,60 @@ RSpec.describe 'Admin::Journal::Conversations' do
       expect(response.body).to include(admin_journal_exchange_path(exchange.exchange_id))
     end
 
+    describe 'the export of the test files' do
+      def record_request(exchange, event_type: 'request_sent', **attributes)
+        create(:audit_event, event_type:, exchange_id: exchange.exchange_id, conversation_id:, **attributes)
+      end
+
+      it 'offers the form prefilled with the case and the run' do
+        record_request(create(:exchange, conversation_id:, country_code: 'BE'), ebms_header: '<eb:Messaging/>')
+
+        get admin_journal_conversation_path(conversation_id)
+
+        page = response.parsed_body
+        expect(page.at_css('input[name=test_case]')['value']).to eq('TC06')
+        expect(page.at_css('input[name=run]')['value']).to eq('01')
+        expect(page.css('label').map { it.text.strip })
+          .to include(I18n.t('admin.journal.conversations.show.test_files.test_case'),
+            I18n.t('admin.journal.conversations.show.test_files.run'))
+        expect(page.at_css('input[name=test_case]').ancestors('form').first['action'])
+          .to eq(admin_journal_conversation_test_files_path(conversation_id))
+        expect(response.body).to include(I18n.t('admin.journal.conversations.show.test_files.submit'))
+      end
+
+      it 'offers it in English to whoever chose English' do
+        record_request(create(:exchange, conversation_id:, country_code: 'BE'), ebms_header: '<eb:Messaging/>')
+        cookies[:locale] = 'en'
+
+        get admin_journal_conversation_path(conversation_id)
+
+        expect(response.body).to include('Test case').and include('Run').and include('Download the XML messages')
+      end
+
+      [
+        ['no message kept a part', ->(exchange) { record_request(exchange) }],
+        ['the one event with a part is an unhandled message',
+         ->(exchange) { record_request(exchange, event_type: 'message_unhandled', regrep_body: '<x/>') }],
+      ].each do |situation, record|
+        it "offers no form where #{situation}" do
+          instance_exec(create(:exchange, conversation_id:, country_code: 'BE'), &record)
+
+          get admin_journal_conversation_path(conversation_id)
+
+          expect(response.parsed_body.at_css('input[name=test_case]')).to be_nil
+        end
+      end
+
+      it 'offers no form where the one exchange has no correspondent' do
+        record_request(create(:exchange, :received, conversation_id:, country_code: nil), regrep_body: '<x/>')
+
+        get admin_journal_conversation_path(conversation_id)
+
+        expect(response.parsed_body.at_css('input[name=test_case]')).to be_nil
+        expect(response.body).not_to include(I18n.t('admin.journal.conversations.show.test_files.submit'))
+      end
+    end
+
     # A conversation nothing names never happened: answered like an exchange
     # nobody opened, rather than as an empty page that would read as a session
     # with no exchanges.
