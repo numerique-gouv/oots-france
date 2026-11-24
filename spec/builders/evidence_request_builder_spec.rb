@@ -144,7 +144,7 @@ RSpec.describe EvidenceRequestBuilder do
   it 'declares the requirement the Evidence Broker named, in every language it published' do
     multilingual = Requirement.new(
       id: 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42',
-      descriptions: { 'EN' => 'Test requirement', 'FI' => 'Testivaatimus' },
+      descriptions: { 'FI' => 'Testivaatimus', 'EN' => 'Test requirement' },
       details: { 'EN' => 'What it proves' },
     )
     declared = Nokogiri::XML(described_class.new(**attributes, requirement: multilingual).render)
@@ -162,16 +162,29 @@ RSpec.describe EvidenceRequestBuilder do
       evidence_type_classification:
         'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
       distribution_format: 'application/pdf',
-      descriptions: { 'EN' => 'Certificate of Birth', 'DE' => 'Geburtsurkunde' },
-      details: { 'EN' => 'What it proves' },
+      descriptions: { 'EN' => 'Certificate of Birth', 'DE' => 'Geburtsurkunde', 'FR' => 'Acte de naissance',
+                      'NL' => 'Geboorteakte' },
+      details: { 'EN' => 'What it proves', 'DE' => 'Was sie belegt', 'FR' => 'Ce qu’il prouve', 'NL' => 'Wat het bewijst' },
     )
     declared = Nokogiri::XML(described_class.new(**attributes, data_service: multilingual).render)
       .at_xpath('//sdg:DataServiceEvidenceType', 'sdg' => 'http://data.europa.eu/p4s')
 
     expect(declared.element_children.map(&:name))
-      .to eq(%w[Identifier EvidenceTypeClassification Title Title Description DistributedAs])
+      .to eq(%w[Identifier EvidenceTypeClassification] + (%w[Title] * 4) + (%w[Description] * 4) + %w[DistributedAs])
     expect(declared.xpath('./sdg:Title | ./sdg:Description', 'sdg' => 'http://data.europa.eu/p4s').pluck('lang'))
-      .to eq(%w[EN DE EN])
+      .to eq(%w[DE EN FR NL DE EN FR NL])
+  end
+
+  it 'names the provider in the alphabetical order of the language codes, whatever their case' do
+    multilingual = EvidenceProvider.new(
+      identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+      descriptions: { 'EN' => 'Office', 'NL' => 'Kantoor', 'fr' => 'Bureau', 'DE' => 'Amt' },
+    )
+    rendered = Nokogiri::XML(described_class.new(**attributes, provider: multilingual).render)
+    namespaces = { 'sdg' => 'http://data.europa.eu/p4s', 'rim' => 'urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0' }
+
+    expect(rendered.xpath('//rim:Slot[@name="EvidenceProvider"]//sdg:Name', namespaces).pluck('lang'))
+      .to eq(%w[DE EN fr NL])
   end
 
   # Chapter 4.5.1 makes the language « as selected by the requester from the

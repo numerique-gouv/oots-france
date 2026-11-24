@@ -1,6 +1,6 @@
 <sdg:Agent>
   <sdg:Identifier schemeID="<%= escape(identity.type_id) %>"><%= escape(identity.id) %></sdg:Identifier>
-<%- names.each do |language, text| -%>
+<%- in_language_order(names).each do |language, text| -%>
   <sdg:Name lang="<%= escape(language) %>"><%= escape(text) %></sdg:Name>
 <%- end -%>
 <%- if address -%>

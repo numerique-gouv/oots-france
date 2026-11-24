@@ -69,10 +69,10 @@
       <rim:Element xsi:type="rim:AnyValueType">
         <sdg:Requirement>
           <sdg:Identifier><%= escape(requirement.id) %></sdg:Identifier>
-<%- requirement.descriptions.each do |language, name| -%>
+<%- in_language_order(requirement.descriptions).each do |language, name| -%>
           <sdg:Name lang="<%= escape(language) %>"><%= escape(name) %></sdg:Name>
 <%- end -%>
-<%- requirement.details.each do |language, description| -%>
+<%- in_language_order(requirement.details).each do |language, description| -%>
           <sdg:Description lang="<%= escape(language) %>"><%= escape(description) %></sdg:Description>
 <%- end -%>
         </sdg:Requirement>
@@ -114,7 +114,7 @@
 <%- if classification.value_expression.present? -%>
           <sdg:ValueExpression><%= escape(classification.value_expression) %></sdg:ValueExpression>
 <%- end -%>
-<%- classification.descriptions.each do |language, question| -%>
+<%- in_language_order(classification.descriptions).each do |language, question| -%>
           <sdg:Description lang="<%= escape(language) %>"><%= escape(question) %></sdg:Description>
 <%- end -%>
           <sdg:SupportedValue>

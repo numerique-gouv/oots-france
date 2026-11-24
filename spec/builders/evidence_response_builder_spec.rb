@@ -56,6 +56,18 @@ RSpec.describe EvidenceResponseBuilder do
       .to eq([Attachment::MIME_TYPE])
   end
 
+  EdmSpecification::SPOKEN.each do |specification|
+    it "names the issuing authority in the order of the language codes, in #{specification.identifier}" do
+      provider = EvidenceProvider.new(
+        identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
+        descriptions: { 'NL' => 'Kantoor', 'EN' => 'Office', 'DE' => 'Amt' },
+      )
+      rendered = Nokogiri::XML(described_class.new(**attributes, provider:, specification:).render)
+
+      expect(rendered.xpath('//sdg:IssuingAuthority/sdg:Name', namespaces).pluck('lang')).to eq(%w[DE EN NL])
+    end
+  end
+
   it 'classifies the answering provider as evidence provider' do
     expect(Nokogiri::XML(response).xpath('//sdg:Classification', namespaces).map(&:text)).to eq(['EP'])
   end
@@ -121,7 +133,7 @@ RSpec.describe EvidenceResponseBuilder do
     subject(:echoed) do
       multilingual = EvidenceType.new(
         id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
-        descriptions: { 'EN' => 'Certificate of Birth', 'FR' => 'Acte de naissance' },
+        descriptions: { 'FR' => 'Acte de naissance', 'EN' => 'Certificate of Birth' },
         distribution_formats: ['application/pdf'],
       )
       subject_of = NaturalPerson.new(
@@ -138,7 +150,7 @@ RSpec.describe EvidenceResponseBuilder do
 
     # One title per language received, each naming its own: a response keeping
     # the first alone would drop what the request said in the other.
-    it 'states one title per language received, each carrying its lang' do
+    it 'states one title per language received, each carrying its lang, in the order of the language codes' do
       titles = echoed.xpath('//sdg:IsConformantTo/sdg:Title', namespaces)
 
       expect(titles.map { |title| [title['lang'], title.text] })
