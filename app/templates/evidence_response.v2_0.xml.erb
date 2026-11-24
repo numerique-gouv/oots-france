@@ -55,13 +55,13 @@
                 </sdg:IsAbout>
                 <sdg:IssuingAuthority>
                   <sdg:Identifier schemeID="<%= escape(issuer_identity.type_id) %>"><%= escape(issuer_identity.id) %></sdg:Identifier>
-<%- issuer_names.each do |language, text| -%>
+<%- in_language_order(issuer_names).each do |language, text| -%>
                   <sdg:Name lang="<%= escape(language) %>"><%= escape(text) %></sdg:Name>
 <%- end -%>
                 </sdg:IssuingAuthority>
                 <sdg:IsConformantTo>
                   <sdg:EvidenceTypeClassification><%= escape(evidence_type.id) %></sdg:EvidenceTypeClassification>
-<%- evidence_type.descriptions.each do |language, title| -%>
+<%- in_language_order(evidence_type.descriptions).each do |language, title| -%>
                   <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
 <%- end -%>
                 </sdg:IsConformantTo>

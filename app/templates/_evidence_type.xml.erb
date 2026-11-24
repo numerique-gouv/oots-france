@@ -1,10 +1,10 @@
 <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
   <sdg:Identifier><%= escape(data_service.id) %></sdg:Identifier>
   <sdg:EvidenceTypeClassification><%= escape(data_service.evidence_type_classification) %></sdg:EvidenceTypeClassification>
-<%- data_service.descriptions.each do |language, title| -%>
+<%- in_language_order(data_service.descriptions).each do |language, title| -%>
   <sdg:Title lang="<%= escape(language) %>"><%= escape(title) %></sdg:Title>
 <%- end -%>
-<%- data_service.details.each do |language, description| -%>
+<%- in_language_order(data_service.details).each do |language, description| -%>
   <sdg:Description lang="<%= escape(language) %>"><%= escape(description) %></sdg:Description>
 <%- end -%>
   <sdg:DistributedAs>

@@ -31,6 +31,12 @@ class ApplicationBuilder
   # `SERVICE`. Methods resolve on `self` and need no such care.
   def render = renderer.result(binding)
 
+  # Wordings repeated by language, in the alphabetical order of their codes,
+  # ignoring case, whatever order a directory returned them in. No chapter asks
+  # for it: the Commission's Schematron check of the November 2026 testing event
+  # fails when the order varies from one message to the next.
+  def in_language_order(wordings) = wordings.sort_by { |language, _| language.to_s.upcase }
+
   protected
 
   def template_name = raise(NotImplementedError)
