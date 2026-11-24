@@ -37,6 +37,16 @@ RSpec.describe RetrievedMessageParser do
       )
     end
 
+    # Serialised on its own, the element would lose the namespace declarations
+    # it inherits from the envelope; the copy must read back as XML.
+    it 'reads the ebMS header whole, readable on its own' do
+      header = Nokogiri::XML(message.ebms_header, &:strict)
+
+      expect(header.root.name).to eq('Messaging')
+      expect(header.root.namespace.href).to eq(OotsNamespaces::NAMESPACES.fetch('eb'))
+      expect(message.ebms_header).to include('1647038b-7eaf-4711-b738-d5d83f96fa7b')
+    end
+
     it 'hands the body to the request parser' do
       expect(message.body).to be_a(EvidenceRequestParser)
     end

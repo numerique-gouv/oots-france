@@ -119,6 +119,10 @@ RSpec.describe AuditTrail do
       )
       expect(journalled.regrep_body).to start_with('<?xml').and include('QueryRequest')
     end
+
+    it 'keeps the ebMS header whole beside it' do
+      expect(journalled.ebms_header).to eq(message.ebms_header)
+    end
   end
 
   describe 'an answer carrying evidence' do
@@ -757,20 +761,22 @@ RSpec.describe AuditTrail do
       MimePart.new(mime_type: 'application/x-ebrs+xml', content_id: 'cid:x@oots.fr',
         content: '<query:QueryRequest/>')
     end
+    let(:ebms_header) { '<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/"/>' }
     let(:answered) do
       { exchange: nil, message: RetrievedMessageParser.new(real_envelope('requete')), requester: nil,
         provider: nil, request_id: 'urn:uuid:x', response_id: 'urn:uuid:y', message_id: 'message-passerelle',
-        first_part: }
+        first_part:, ebms_header: }
     end
 
     it 'keeps the request it submitted' do
       audit_trail.request_sent(exchange: create(:exchange), requester: nil, provider: nil, beneficiary: nil,
-        evidence_type: nil, request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:)
+        evidence_type: nil, request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:, ebms_header:)
 
       expect(journalled).to have_attributes(
         event_type: 'request_sent',
         regrep_mime_type: 'application/x-ebrs+xml',
         regrep_body: '<query:QueryRequest/>',
+        ebms_header:,
       )
     end
 
@@ -781,7 +787,7 @@ RSpec.describe AuditTrail do
       exchange = create(:exchange, :preview_confirmed)
 
       audit_trail.request_sent(exchange:, requester: nil, provider: nil, beneficiary: nil, evidence_type: nil,
-        request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:,
+        request_id: 'urn:uuid:x', message_id: 'message-passerelle', first_part:, ebms_header:,
         preview_location: 'https://ap.example.si/espace?returnurl=x')
       expect(journalled).to have_attributes(event_type: 'request_sent',
         preview_location: 'https://ap.example.si/espace?returnurl=x')
@@ -816,11 +822,12 @@ RSpec.describe AuditTrail do
 
     it 'keeps the answer and the refusal alike' do
       audit_trail.response_sent(**answered, evidence: nil)
-      expect(journalled).to have_attributes(event_type: 'response_sent', regrep_body: first_part.content)
+      expect(journalled).to have_attributes(event_type: 'response_sent', regrep_body: first_part.content,
+        ebms_header:)
 
       audit_trail.error_sent(**answered, exception: EdmException::OBJECT_NOT_FOUND)
       expect(journalled).to have_attributes(event_type: 'error_sent', regrep_body: first_part.content,
-        evidence_identifier: nil)
+        ebms_header:, evidence_identifier: nil)
     end
 
     # Chapter 4.8 asks the response flow for the evidence identifier from the
@@ -857,7 +864,7 @@ RSpec.describe AuditTrail do
       expect(journalled).to have_attributes(
         event_type: 'answer_not_sent', ebms_action: EbmsAction::EXECUTE_QUERY_RESPONSE,
         edm_error_code: nil, message_id: nil, detail: 'connexion refusée',
-        regrep_body: first_part.content,
+        regrep_body: first_part.content, ebms_header:,
       )
 
       audit_trail.answer_not_sent(**unsent, exception: EdmException::OBJECT_NOT_FOUND, reason: 'connexion refusée')

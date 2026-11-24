@@ -126,6 +126,14 @@ RSpec.describe EvidenceRequest::SendToGateway do
     )
   end
 
+  it 'journals the very ebMS header it submitted' do
+    send_to_gateway
+
+    message_id = submitted.at_xpath('//eb:MessageId', OotsNamespaces::NAMESPACES).text
+
+    expect(AuditEvent.last.ebms_header).to start_with('<eb:Messaging').and include(message_id)
+  end
+
   it 'records that the exchange is now waiting on the correspondent' do
     send_to_gateway
 

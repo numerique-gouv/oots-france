@@ -86,6 +86,15 @@ Deux arrivées laissent la paire vide sans que ce soit un défaut du journal, et
 > [!NOTE]
 > **Un corps qui n'est pas en UTF-8 est conservé tel quel, pas écarté.** Aucun chapitre ne fixe d'encodage — le [4.7.2](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932948) profile `MimeType` et `CompressionType`, et pas la propriété `CharacterSet` que recommande le profil [AS4](https://docs.oasis-open.org/ebxml-msg/ebms/v3.0/profiles/AS4-profile/v1.0/AS4-profile-v1.0.html) — et le chapitre 4.8 réclame le contenu entier. Ce qui est archivé est donc ce qui est arrivé, bien formé ou non : un journal consigne, il ne valide pas. Un corps sans déclaration d'encodage et hors UTF-8 est d'ailleurs une erreur fatale au sens de [XML 1.0 §4.3.3](https://www.w3.org/TR/xml/#charencoding) — raison de plus pour le conserver, puisque c'est précisément ce qu'un litige portera. La colonne étant chiffrée, ses octets voyagent en base64 et PostgreSQL ne les inspecte jamais. La fiche l'affiche alors en caractères de remplacement et sans l'indenter, comme un corps mal formé ou qui déclare un autre encodage qu'UTF-8 ; elle n'indente pour la lecture qu'un XML bien formé en UTF-8 ([espace d'administration](espace_administration.md#ce-quil-ne-montre-pas)). C'est un défaut de l'écran et non de la trace : dans les trois cas, la colonne rend exactement ce qui a circulé. En contrepartie, une ligne peut porter des octets qu'un `to_json` refuserait — ce qu'un export à écrire devra savoir.
 
+### L'en-tête ebMS
+
+À côté de la première partie MIME, `ebms_header` garde l'en-tête ebMS du même message, l'élément `eb:Messaging` en entier, sur les mêmes événements. **Aucun chapitre ne le demande** : le chapitre 4.8 ne réclame de l'en-tête que les valeurs que portent déjà leurs colonnes — l'action, les identifiants, les parties. C'est un besoin de l'équipe qui exploite le déploiement, décidé le 2026-11-24 : relire en entier ce qu'un correspondant a déclaré, alors que la passerelle efface le message dès qu'il a été récupéré.
+
+- **À la réception**, c'est l'`eb:Messaging` que `retrieveMessage` rend, recopié par `RetrievedMessageParser#ebms_header` dans un document à lui, faute de quoi il perdrait les déclarations d'espaces de noms qu'il hérite de l'enveloppe. C'est la forme que le greffon WS donne de l'en-tête AS4, et non les octets reçus par la passerelle.
+- **À l'émission**, c'est l'en-tête que la France met dans sa `submitRequest`, rendu une seule fois par `OutgoingEnvelopeBuilder#header` : le journal lit celui-là même qui a été soumis. Sur `answer_not_sent`, il nomme l'identifiant de message que la France avait tiré, et que la ligne ne porte pas, puisque rien n'est parti.
+
+Il n'est pas chiffré : il ne porte aucune donnée de l'usager, seulement des points d'accès, des autorités et des identifiants.
+
 ### La pièce jointe, et l'adresse de prévisualisation
 
 Deux lignes des tableaux du chapitre corrèlent, et rien d'autre : elles ne disent pas ce qui s'est passé, elles disent par quel fil rattacher une trace à une autre.

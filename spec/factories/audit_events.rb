@@ -24,6 +24,14 @@ FactoryBot.define do
       regrep_body { '<query:QueryRequest id="urn:uuid:cdd87e02-2bdc-4ce6-bdc9-79e05adae700"/>' }
     end
 
+    trait :with_ebms_header do
+      ebms_header do
+        '<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">' \
+          '<eb:UserMessage><eb:MessageInfo><eb:MessageId>message-passerelle</eb:MessageId></eb:MessageInfo>' \
+          '</eb:UserMessage></eb:Messaging>'
+      end
+    end
+
     trait :about_a_person do
       transient { person { { family_name: 'Königreich', given_name: 'Ada', date_of_birth: '1990-01-01' } } }
 

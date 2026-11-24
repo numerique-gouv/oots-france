@@ -1,12 +1,12 @@
 require 'rails_helper'
 
-RSpec.describe RegrepBodyComponent, type: :component do
+RSpec.describe CirculatedDocumentComponent, type: :component do
   let(:body) { '<query:QueryRequest id="urn:uuid:cdd87e02"/>' }
 
   it 'folds the document behind a button that names its size' do
-    render_inline(described_class.new(body:))
+    render_inline(described_class.new(body:, part: :regrep_body))
 
-    button = page.find("button[aria-controls='#{described_class::REGION_ID}']")
+    button = page.find("button[aria-controls='#{described_class.region_id(:regrep_body)}']")
 
     expect(button[:'aria-expanded']).to eq('false')
     expect(button.text).to include(ActiveSupport::NumberHelper.number_to_human_size(body.bytesize))
@@ -15,16 +15,32 @@ RSpec.describe RegrepBodyComponent, type: :component do
   # A box one can only scroll with a pointer fails WCAG 2.1.1, and a focusable
   # region with no name says nothing to whoever lands on it.
   it 'gives the scrolling region a name and a way in from the keyboard' do
-    render_inline(described_class.new(body:))
+    render_inline(described_class.new(body:, part: :regrep_body))
 
-    region = page.find('.regrep-body__content')
+    region = page.find('.circulated-document__content')
 
     expect(region[:tabindex]).to eq('0')
     expect(region[:'aria-label']).to be_present
   end
 
+  # Both documents of an event share its page, so each needs a region of its own
+  # for its button to control.
+  it 'gives the ebMS header a button and a region of its own' do
+    render_inline(described_class.new(body:, part: :ebms_header))
+
+    expect(page).to have_css("button[aria-controls='ebms-header']", text: I18n.t(
+      'components.circulated_document.summary.ebms_header',
+      size: ActiveSupport::NumberHelper.number_to_human_size(body.bytesize),
+    ))
+    expect(page).to have_css('#ebms-header pre code')
+  end
+
+  it 'refuses a part it cannot name' do
+    expect { described_class.new(body:, part: :detail) }.to raise_error(ArgumentError)
+  end
+
   it 'renders the document as it circulated' do
-    render_inline(described_class.new(body:))
+    render_inline(described_class.new(body:, part: :regrep_body))
 
     expect(page).to have_css('pre code', text: body)
   end
@@ -37,7 +53,7 @@ RSpec.describe RegrepBodyComponent, type: :component do
         '</rim:Slot></query:QueryRequest>'
     end
 
-    def shown(body) = render_inline(described_class.new(body:)).at_css('pre code').text
+    def shown(body) = render_inline(described_class.new(body:, part: :regrep_body)).at_css('pre code').text
 
     it 'shows one element per line, each indented under its parent' do
       expect(shown(body).lines.map(&:chomp)).to eq(
@@ -67,15 +83,15 @@ RSpec.describe RegrepBodyComponent, type: :component do
     end
 
     it 'says it was indented for reading, in the language of the page' do
-      render_inline(described_class.new(body:))
+      render_inline(described_class.new(body:, part: :regrep_body))
       expect(page).to have_text("Indenté pour la lecture. Le journal conserve le message tel qu'il a circulé.")
 
-      I18n.with_locale(:en) { render_inline(described_class.new(body:)) }
+      I18n.with_locale(:en) { render_inline(described_class.new(body:, part: :regrep_body)) }
       expect(page).to have_text('Indented for reading. The journal keeps the message as it travelled.')
     end
 
     it 'announces the size that circulated, not that of what is shown' do
-      render_inline(described_class.new(body:))
+      render_inline(described_class.new(body:, part: :regrep_body))
 
       expect(page.find('button').text).to include(ActiveSupport::NumberHelper.number_to_human_size(body.bytesize))
       expect(shown(body).bytesize).not_to eq(body.bytesize)
@@ -113,7 +129,7 @@ RSpec.describe RegrepBodyComponent, type: :component do
     end
 
     it 'keeps escaped what a well-formed document carries as text' do
-      render_inline(described_class.new(body: '<a><b>&lt;script&gt;alert(1)&lt;/script&gt;</b></a>'))
+      render_inline(described_class.new(body: '<a><b>&lt;script&gt;alert(1)&lt;/script&gt;</b></a>', part: :regrep_body))
 
       expect(page.native.to_html).to include('&amp;lt;script&amp;gt;')
       expect(page).to have_no_css('script')
@@ -131,17 +147,17 @@ RSpec.describe RegrepBodyComponent, type: :component do
       "\uFEFF<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?><a><b>BE</b></a>"
   }.each do |what, kept|
     it "shows #{what} as it is kept" do
-      render_inline(described_class.new(body: kept))
+      render_inline(described_class.new(body: kept, part: :regrep_body))
 
       expect(page.find('pre code').text).to eq(kept.scrub)
-      expect(page).to have_no_text(I18n.t('components.regrep_body.indented'))
+      expect(page).to have_no_text(I18n.t('components.circulated_document.indented'))
     end
   end
 
   # The bytes are a correspondent's. ViewComponent renders through ActionView,
   # which escapes; what this holds shut is a later `raw` on the way in.
   it 'escapes what the correspondent sent' do
-    render_inline(described_class.new(body: '<script>alert(1)</script>'))
+    render_inline(described_class.new(body: '<script>alert(1)</script>', part: :regrep_body))
 
     expect(page.native.to_html).to include('&lt;script&gt;')
     expect(page).to have_no_css('script')

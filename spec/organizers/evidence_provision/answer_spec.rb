@@ -96,6 +96,14 @@ RSpec.describe EvidenceProvision::Answer do
     )
   end
 
+  it 'journals the very ebMS header it submitted' do
+    answer
+
+    message_id = Nokogiri::XML(gateway_body).at_xpath('//eb:MessageId', OotsNamespaces::NAMESPACES).text
+
+    expect(AuditEvent.last.ebms_header).to start_with('<eb:Messaging').and include(message_id)
+  end
+
   it 'attaches a document it produced for this very answer' do
     answer
 
