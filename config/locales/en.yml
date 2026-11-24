@@ -666,8 +666,10 @@ en:
       demo: Demo
       home: Home
       procedure: "Procedure %{code}"
-    regrep_body:
-      summary: Show the body (%{size})
+    circulated_document:
+      summary:
+        regrep_body: Show the body (%{size})
+        ebms_header: Show the header (%{size})
       indented: Indented for reading. The journal keeps the message as it travelled.
     decrypted_value:
       label: Decrypted personal data
@@ -1894,6 +1896,7 @@ en:
         preview_location: Preview Space
         detail: Detail
         regrep_body: RegRep body
+        ebms_header: ebMS header
       event_types:
         request_sent: Request sent
         request_refused: Request refused

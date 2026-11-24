@@ -22,7 +22,7 @@ class AuditTrail
   # was presented, which is all the requester knows of the visit — the slot
   # itself reads in `regrep_body`, as emitted.
   def request_sent(exchange:, requester:, provider:, beneficiary:, evidence_type:, request_id:, message_id:,
-                   first_part:, preview_location: nil)
+                   first_part:, ebms_header:, preview_location: nil)
     record(
       'request_sent',
       ebms_action: EbmsAction::EXECUTE_QUERY_REQUEST,
@@ -34,6 +34,7 @@ class AuditTrail
       **AuditEvent.authorities(requesting: requester, providing: provider),
       **AuditEvent.subject(beneficiary),
       **AuditEvent.circulated(first_part),
+      ebms_header:,
     )
   end
 
@@ -193,7 +194,8 @@ class AuditTrail
   #
   # The exchange is the one the request was answered under, and its identifier
   # comes before the header's for the reason `JournalledMessage#arrived` gives.
-  def answered(exchange:, message:, requester:, provider:, request_id:, response_id:, message_id:, first_part:)
+  def answered(exchange:, message:, requester:, provider:, request_id:, response_id:, message_id:, first_part:,
+               ebms_header:)
     {
       conversation_id: message.conversation_id,
       exchange_id: exchange&.exchange_id || message.exchange_id,
@@ -207,6 +209,7 @@ class AuditTrail
       country_code: requester&.address&.country,
       **AuditEvent.authorities(requesting: requester, providing: provider),
       **AuditEvent.circulated(first_part),
+      ebms_header:,
     }
   end
 

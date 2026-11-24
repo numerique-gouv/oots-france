@@ -28,8 +28,8 @@ class JournalledMessage
   def attributes = arrived.merge(readable(:body) { body } || {})
 
   # What a message that did arrive says of itself, before anything is made of
-  # its body: the action, the two identifiers of chapter 4.4, and the first MIME
-  # part — the last read by position, so an action no handler claims carries one
+  # its body: the action, the two identifiers of chapter 4.4, the ebMS header
+  # whole, and the first MIME part — the last read by position, so an action no handler claims carries one
   # just as a request does.
   #
   # The exchange's identifier before the header's: on the 1.2 line the header
@@ -46,6 +46,7 @@ class JournalledMessage
       exchange_id: exchange&.exchange_id || message.exchange_id,
       message_id:,
       **AuditEvent.circulated(readable(:regrep_body) { message.first_part }),
+      ebms_header: message.ebms_header,
     }
   end
 

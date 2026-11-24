@@ -16,7 +16,7 @@ class AuditEventPresenter
                evidence_requester_id procedure_code country_code evidence_type_id
                evidence_subject evidence_subject_key
                evidence_identifier evidence_digest evidence_mime_type evidence_content_id
-               regrep_mime_type edm_error_code preview_location detail regrep_body].freeze
+               regrep_mime_type edm_error_code preview_location detail regrep_body ebms_header].freeze
 
   # How a cell is read, where reading it as text would say less: a date, an
   # identifier that leads somewhere, a document. Columns absent from here are
@@ -24,13 +24,14 @@ class AuditEventPresenter
   READINGS = { occurred_at: :timestamp, conversation_id: :conversation, exchange_id: :exchange,
                procedure_code: :procedure, country_code: :country, evidence_type_id: :address,
                preview_location: :address, edm_error_code: :edm_error_code,
-               evidence_subject: :subject, regrep_body: :regrep_body }.freeze
+               evidence_subject: :subject, regrep_body: :circulated_document,
+               ebms_header: :circulated_document }.freeze
   PLAIN = :identifier
 
-  # The two readings that are flow content — a folded document and a definition
+  # The two readings that are flow content — folded documents and a definition
   # list. `DecryptedValueComponent` wraps an encrypted cell in a `<span>` unless
   # told otherwise, and a `<span>` cannot take either.
-  FLOW = %i[subject regrep_body].freeze
+  FLOW = %i[subject circulated_document].freeze
 
   Row = Data.define(:name, :label, :value, :reading, :encrypted) do
     def encrypted? = encrypted

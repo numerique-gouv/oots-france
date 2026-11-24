@@ -334,10 +334,24 @@ RSpec.describe 'Admin::Journal::Events' do
       get admin_journal_event_path(event)
 
       page = response.parsed_body
-      button = page.at_css("button[aria-controls='#{RegrepBodyComponent::REGION_ID}']")
+      button = page.at_css("button[aria-controls='#{CirculatedDocumentComponent.region_id(:regrep_body)}']")
 
       expect(button).to be_present
-      expect(page.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include('QueryRequest')
+      expect(page.at_css("##{CirculatedDocumentComponent.region_id(:regrep_body)} pre").text).to include('QueryRequest')
+    end
+
+    # Both documents share the page, each under its own control.
+    it 'shows the ebMS header beside the RegRep document, each folded on its own' do
+      event = create(:audit_event, :with_regrep_body, :with_ebms_header)
+
+      get admin_journal_event_path(event)
+
+      page = response.parsed_body
+      header = CirculatedDocumentComponent.region_id(:ebms_header)
+
+      expect(page.at_css("button[aria-controls='#{header}']")).to be_present
+      expect(page.at_css("##{header} pre").text).to include('<eb:MessageId>message-passerelle</eb:MessageId>')
+      expect(page.at_css("##{CirculatedDocumentComponent.region_id(:regrep_body)} pre").text).to include('QueryRequest')
     end
 
     # The document is bytes a correspondent chose, and the page renders them
@@ -363,7 +377,7 @@ RSpec.describe 'Admin::Journal::Events' do
       get admin_journal_event_path(event)
 
       expect(response).to have_http_status(:ok)
-      expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include('QueryRequest')
+      expect(response.parsed_body.at_css("##{CirculatedDocumentComponent.region_id(:regrep_body)} pre").text).to include('QueryRequest')
     end
 
     # The page indents what it shows and nothing else: the column still answers
@@ -374,7 +388,7 @@ RSpec.describe 'Admin::Journal::Events' do
 
       get admin_journal_event_path(event)
 
-      expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to include("\n  <query:Slot>")
+      expect(response.parsed_body.at_css("##{CirculatedDocumentComponent.region_id(:regrep_body)} pre").text).to include("\n  <query:Slot>")
       expect(event.reload.regrep_body.b).to eq(body.b)
     end
 
@@ -388,7 +402,7 @@ RSpec.describe 'Admin::Journal::Events' do
         get admin_journal_event_path(event)
 
         expect(response).to have_http_status(:ok)
-        expect(response.parsed_body.at_css("##{RegrepBodyComponent::REGION_ID} pre").text).to eq(body)
+        expect(response.parsed_body.at_css("##{CirculatedDocumentComponent.region_id(:regrep_body)} pre").text).to eq(body)
       end
     end
 

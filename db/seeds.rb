@@ -646,6 +646,51 @@ if Rails.env.development?
       regrep_body: single_line ? body.gsub(/>\s+</, '><').gsub(/\s*\n\s*/, ' ') : body }
   end
 
+  # The ebMS header travels with every message that carries a first part, and
+  # `AuditTrail` keeps it beside the body: on the same events, and naming what
+  # the line's own columns name — the action, the message, the two identifiers
+  # of chapter 4.4 —, so that the page never shows a header contradicting the
+  # row above it. A stand-in like the body, in the shape of `ebms_header.xml.erb`.
+  #
+  # On the 1.2 line the header names no exchange: the one the line carries is
+  # France's own, minted for it, and the caller passes nil.
+  demonstration_header = lambda do |action:, message_id:, conversation_id:, exchange_id:, occurred_at:|
+    if exchange_id
+      exchange_property = <<~XML.chomp.indent(4).prepend("\n")
+        <eb:MessageProperties>
+          <eb:Property name="ExchangeId">#{exchange_id}</eb:Property>
+        </eb:MessageProperties>
+      XML
+    end
+
+    values = { action:, message_id: message_id || "#{SecureRandom.uuid}@#{Settings.identifier_suffix}",
+               conversation_id:, timestamp: occurred_at.utc.iso8601(3), exchange_property:,
+               regrep: EbmsHeaderBuilder::REGREP_MIME_TYPE }
+
+    format(<<~XML, **values)
+      <eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+        <eb:UserMessage>
+          <eb:MessageInfo>
+            <eb:Timestamp>%<timestamp>s</eb:Timestamp>
+            <eb:MessageId>%<message_id>s</eb:MessageId>
+          </eb:MessageInfo>
+          <eb:CollaborationInfo>
+            <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>
+            <eb:Action>%<action>s</eb:Action>
+            <eb:ConversationId>%<conversation_id>s</eb:ConversationId>
+          </eb:CollaborationInfo>%<exchange_property>s
+          <eb:PayloadInfo>
+            <eb:PartInfo href="cid:message@oots.eu">
+              <eb:PartProperties>
+                <eb:Property name="MimeType">%<regrep>s</eb:Property>
+              </eb:PartProperties>
+            </eb:PartInfo>
+          </eb:PayloadInfo>
+        </eb:UserMessage>
+      </eb:Messaging>
+    XML
+  end
+
   demonstrations = scenarios.each_with_index.map do |scenario, rank|
     events = scenario[:events]
     incoming = scenario.fetch(:incoming, false)
@@ -765,6 +810,15 @@ if Rails.env.development?
           exchange.return_location
         end
 
+      message_id = (format('%s@domibus.eu', SecureRandom.uuid) if event_type.in?(carries_message))
+      header = if event_type.in?(carries_message)
+                 { ebms_header: demonstration_header.call(action: ebms_actions[event_type], message_id:,
+                   conversation_id: exchange.conversation_id,
+                   exchange_id: (exchange.exchange_id unless exchange.minted_identifier?), occurred_at:) }
+               else
+                 {}
+               end
+
       AuditEvent.create!(
         event_type:,
         occurred_at:,
@@ -773,7 +827,7 @@ if Rails.env.development?
         procedure_code: (exchange.procedure_code if event_type.in?(carries_procedure)),
         country_code: exchange.country_code,
         evidence_requester_id: (exchange.evidence_requester_id if event_type.in?(carries_requester)),
-        message_id: (format('%s@domibus.eu', SecureRandom.uuid) if event_type.in?(carries_message)),
+        message_id:,
         ebms_action: ebms_actions[event_type],
         request_id: (answered_request if event_type.in?(carries_message)),
         response_id: (response_id if event_type.in?(carries_response_id)),
@@ -786,6 +840,7 @@ if Rails.env.development?
           single_line: event_type == 'request_received' && exchange.country_code == 'BE'),
         **evidence_fingerprint.call(event_type, exchange, scenario, evidence_id, content_id, occurred_at),
         **evidence_identifier.call(event_type, exchange, evidence_id),
+        **header,
       )
     end
 
@@ -828,12 +883,13 @@ if Rails.env.development?
   end
 
   unless AuditEvent.exists?(event_type: 'message_unhandled')
+    unhandled = { ebms_action: 'SomethingElse', conversation_id: '00000000-0000-0000-0001-000000000010',
+                  exchange_id: '00000000-0000-0000-0000-000000000010', occurred_at: 3.hours.ago,
+                  message_id: format('%s@domibus.eu', SecureRandom.uuid) }
+
     AuditEvent.create!(
-      event_type: 'message_unhandled', occurred_at: 3.hours.ago,
-      ebms_action: 'SomethingElse',
-      conversation_id: '00000000-0000-0000-0001-000000000010',
-      exchange_id: '00000000-0000-0000-0000-000000000010',
-      message_id: format('%s@domibus.eu', SecureRandom.uuid),
+      event_type: 'message_unhandled', **unhandled,
+      ebms_header: demonstration_header.call(action: unhandled[:ebms_action], **unhandled.except(:ebms_action)),
       detail: I18n.t('lib.audit_trail.unhandled_action', action: 'SomethingElse'),
       # The body of a request, because that is what an unknown action arrives
       # carrying: `first_part` reads by position, so a correspondent who names
@@ -873,6 +929,11 @@ if Rails.env.development?
       detail: '503 Service Unavailable',
       regrep_mime_type: EbmsHeaderBuilder::REGREP_MIME_TYPE,
       regrep_body: demonstration_body.call('response_sent', echoed: answered_request&.request_id),
+      # France drew a message identifier when it built the header, and the
+      # gateway never took the message: the header names one, the line none.
+      ebms_header: demonstration_header.call(action: EbmsAction::EXECUTE_QUERY_RESPONSE, message_id: nil,
+        conversation_id: refused_by_gateway.conversation_id, exchange_id: refused_by_gateway.exchange_id,
+        occurred_at: refused_by_gateway.created_at + 7.minutes),
     )
   end
 

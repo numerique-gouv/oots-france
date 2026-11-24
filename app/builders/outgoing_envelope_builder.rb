@@ -30,17 +30,17 @@ class OutgoingEnvelopeBuilder
       content_id: payload_id, content: body.render)
   end
 
+  # The ebMS header as it goes on the wire, which the journal keeps beside the
+  # first part. Memoised for the same reason: `EbmsHeaderBuilder` draws a
+  # message identifier and a timestamp in its constructor, so a second rendering
+  # would describe another message than the one submitted.
+  def header
+    @header ||= EbmsHeaderBuilder.new(**header_attributes, payload_id:, attachment:).render
+  end
+
   private
 
   attr_reader :body, :attachment, :header_attributes
 
   def payload_id = @payload_id ||= self.class.payload_reference(body.document_id)
-
-  # Not memoised, and not idempotent: `EbmsHeaderBuilder` draws a message
-  # identifier and a timestamp in its constructor, so each call describes a
-  # different message. Rendering this envelope twice therefore submits two
-  # messages the journal cannot both name — callers render it once.
-  def header
-    EbmsHeaderBuilder.new(**header_attributes, payload_id:, attachment:).render
-  end
 end

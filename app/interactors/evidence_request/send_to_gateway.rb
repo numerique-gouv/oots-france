@@ -58,6 +58,7 @@ module EvidenceRequest
         request_id: body.request_id,
         message_id:,
         first_part: envelope.first_part,
+        ebms_header: envelope.header,
         preview_location: sent.preview_link&.address,
       )
     end

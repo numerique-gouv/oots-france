@@ -40,8 +40,8 @@
                       <%= external_link(row.value) %>
                     <% when :edm_error_code %>
                       <%= render EdmErrorCodeComponent.new(code: row.value) %>
-                    <% when :regrep_body %>
-                      <%= render RegrepBodyComponent.new(body: row.value) %>
+                    <% when :circulated_document %>
+                      <%= render CirculatedDocumentComponent.new(body: row.value, part: row.name) %>
                     <% when :subject %>
                       <%= render EvidenceSubjectComponent.new(value: row.value) %>
                     <% else %>

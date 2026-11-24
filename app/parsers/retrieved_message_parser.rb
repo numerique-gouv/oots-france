@@ -150,6 +150,16 @@ class RetrievedMessageParser
     body.matches_nothing? && header.payload_parts.all? { |part| part[:mime_type] == REGREP }
   end
 
+  # The `eb:Messaging` element as the gateway handed it over, which the journal
+  # keeps beside the first part: `retention_downloaded="0"` leaves no other copy.
+  # Copied into a document of its own, since a node serialised in place drops
+  # the namespace declarations it inherits from the envelope.
+  def ebms_header
+    messaging = Nokogiri::XML::Document.new
+    messaging.root = at(document, '//eb:Messaging').dup
+    messaging.root.to_xml(save_with: Nokogiri::XML::Node::SaveOptions::AS_XML)
+  end
+
   # The first MIME part as it arrived, bytes and declared type: chapter 4.8 asks
   # both its tables for it, and `retention_downloaded="0"` has Domibus erase the
   # message the instant `retrieveMessage` returns — nothing can read it twice.

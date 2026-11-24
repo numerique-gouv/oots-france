@@ -5,20 +5,26 @@ module EvidenceProvision
   # Shared because two steps record the same message: `SubmitAnswer` when the
   # gateway would not take it, `JournalAnswer` when it did. The part is read
   # from the envelope's builder, so the log holds what was submitted and not a
-  # second rendering of it.
+  # second rendering of it — the part and the ebMS header alike.
   module Answered
     private
 
+    # `context` is aliased once rather than read eight times: each read counts
+    # twice against `Metrics/AbcSize`.
     def answered(message_id)
+      answering = context
+      envelope = answering.answer.envelope
+
       {
-        exchange: context.exchange,
-        message: context.message,
-        requester: context.requester,
+        exchange: answering.exchange,
+        message: answering.message,
+        requester: answering.requester,
         provider: EvidenceProvider.french,
-        request_id: context.request_id,
+        request_id: answering.request_id,
         message_id:,
-        response_id: context.answer.identifier,
-        first_part: context.answer.envelope.first_part,
+        response_id: answering.answer.identifier,
+        first_part: envelope.first_part,
+        ebms_header: envelope.header,
       }
     end
   end
