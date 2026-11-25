@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryResponse xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+                     xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                     xmlns:sdg="http://data.europa.eu/p4s"
+                     xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     requestId="urn:uuid:c0bb0000-0000-4000-8000-000000000001"
+                     status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v1.2</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceResponseIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>c0bb0000-0000-4000-8000-000000000002</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="ErrorProvider">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">DE73524311</sdg:Identifier>
+  <sdg:Name lang="EN">Civil Registration Office Berlin I</sdg:Name>
+  <sdg:Address>
+    <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+  </sdg:Address>
+  <sdg:Classification>ERRP</sdg:Classification>
+</sdg:Agent>
+
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000002</sdg:Identifier>
+  <sdg:Name lang="FR">Ministère de l'enseignement supérieur</sdg:Name>
+</sdg:Agent>
+
+    </rim:SlotValue>
+  </rim:Slot>
+
+  <rs:Exception xsi:type="rs:AuthorizationExceptionType"
+                message="Missing Authorization"
+                severity="urn:sr.oots.tech.ec.europa.eu:codes:ErrorSeverity:EDMErrorResponse:PreviewRequired"
+                code="EDM:ERR:0002"
+                >
+    <rim:Slot name="Timestamp">
+      <rim:SlotValue xsi:type="rim:DateTimeValueType">
+        <rim:Value>2026-08-06T09:00:00.000Z</rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="PreviewLocation">
+      <rim:SlotValue xsi:type="rim:StringValueType">
+        <rim:Value>https://ap.example.de/preview/2d7c4b1a-8e3f-4a6b-9c5d-0e1f2a3b4c5d?session=abc</rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="PreviewDescription">
+      <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+        <rim:Value>
+          <rim:LocalizedString xml:lang="EN" value="The French administration holding your document will show it to you before sending it, and let you decide whether to use it."/>
+          <rim:LocalizedString xml:lang="FR" value="L'administration française qui détient votre document vous le montrera avant de l'envoyer, et vous laissera décider de l'utiliser ou non."/>
+        </rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="PreviewMethod">
+      <rim:SlotValue xsi:type="rim:StringValueType">
+        <rim:Value>GET</rim:Value>
+      </rim:SlotValue>
+    </rim:Slot>
+  </rs:Exception>
+</query:QueryResponse>

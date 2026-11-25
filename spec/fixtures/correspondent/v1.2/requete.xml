@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+          xmlns:sdg="http://data.europa.eu/p4s"
+          xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+          xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+          xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xmlns:xml="http://www.w3.org/XML/1998/namespace"
+          id="urn:uuid:c0aa0000-0000-4000-8000-000000000001">
+
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v1.2</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-08-06T09:00:00.000Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Procedure">
+    <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+      <rim:Value>
+        <rim:LocalizedString xml:lang="EN" value="T3"/>
+      </rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="PossibilityForPreview">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>false</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="ExplicitRequestGiven">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>true</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Requirements">
+    <rim:SlotValue xsi:type="rim:CollectionValueType"
+      collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Requirement>
+          <sdg:Identifier>https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42</sdg:Identifier>
+          <sdg:Name lang="EN">Proof of tertiary education diploma/certificate/degree</sdg:Name>
+        </sdg:Requirement>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:9930">DE87654321</sdg:Identifier>
+  <sdg:Name lang="DE">Studierendenwerk Berlin</sdg:Name>
+  <sdg:Address>
+    <sdg:AdminUnitLevel1>DE</sdg:AdminUnitLevel1>
+  </sdg:Address>
+  <sdg:Classification>ER</sdg:Classification>
+</sdg:Agent>
+
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:Agent>
+  <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0002">13000247900016</sdg:Identifier>
+  <sdg:Name lang="FR">Service de test des justificatifs</sdg:Name>
+</sdg:Agent>
+
+    </rim:SlotValue>
+  </rim:Slot>
+  <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
+  <query:Query queryDefinition="DocumentQuery">
+    <rim:Slot name="NaturalPerson">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:Person>
+  <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+  <sdg:Identifier schemeID="eidas">DE/FR/123456789</sdg:Identifier>
+  <sdg:FamilyName>Müller</sdg:FamilyName>
+  <sdg:GivenName>Anna</sdg:GivenName>
+  <sdg:DateOfBirth>1990-04-12</sdg:DateOfBirth>
+</sdg:Person>
+
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceRequest">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+<sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
+  <sdg:Identifier>5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b</sdg:Identifier>
+  <sdg:EvidenceTypeClassification>https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/FR/869a6748-bfc5-4de6-a0b4-ec0420f6b6a4</sdg:EvidenceTypeClassification>
+  <sdg:Title lang="EN">FR - Test Evidence Type</sdg:Title>
+  <sdg:Description lang="EN">Test evidence issued by France.</sdg:Description>
+  <sdg:DistributedAs>
+    <sdg:Format>application/pdf</sdg:Format>
+  </sdg:DistributedAs>
+</sdg:DataServiceEvidenceType>
+
+      </rim:SlotValue>
+    </rim:Slot>
+  </query:Query>
+</query:QueryRequest>

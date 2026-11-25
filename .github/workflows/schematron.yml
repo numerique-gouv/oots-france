@@ -50,7 +50,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      # Saxon, SchXslt and the thirty-odd Schematron files do not change as long
+      # Saxon, SchXslt and the forty-odd Schematron files do not change as long
       # as the TDD version does not; nor does their compilation to XSLT, and that
       # is what costs. The cache replays it in seconds.
       - name: Restaure les artefacts de validation
