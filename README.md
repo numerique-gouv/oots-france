@@ -195,6 +195,7 @@ Il est rejouable, et garde ce que la passerelle tient déjà :
 - **le PMode** : sans `FICHIER_PMODE`, celui de la passerelle est conservé s'il déclare notre point d'accès, `IDENTIFIANT_EXPEDITEUR_DOMIBUS` de `.env.oots`, et le PMode d'exemple `exemples/configuration_PMode_Domibus.xml` ne va qu'à une passerelle qui n'en a pas de tel — l'image démarre avec un PMode à elle, qui ne le déclare pas. Un PMode que la passerelle ne sait pas rendre arrête le script. `FICHIER_PMODE=<fichier>` en charge un, l'exemple compris ;
 - **le keystore et le truststore** : sans `REPERTOIRE_KEYSTORE_TRUSTSTORE`, ils sont conservés dès que le keystore porte la clé de ce point d'accès, et engendrés par `scripts/generate_certificates.sh` sinon — qui ne connaît que `AP_FR_01` : un autre nom demande ses propres stores, voir [docs/domibus_context.md](docs/domibus_context.md#concepts-clés). Un keystore que la passerelle ne sait pas lister arrête le script plutôt que de l'écraser, sauf s'il est certain qu'aucun fichier n'existe là où `docker-compose.yml` la fait le chercher. `REPERTOIRE_KEYSTORE_TRUSTSTORE=<répertoire>` téléverse les deux stores qu'il contient ;
 - **le Plugin User** n'est créé que s'il manque ;
+- **les filtres de message** ne sont réécrits que si `backendWSPlugin` n'est pas en tête — l'image installe aussi le plugin REST, qui capterait sinon les messages entrants ;
 - **la notification** est réécrite à chaque passage, sans empiler de bloc dans `ws-plugin.properties`.
 
 > [!IMPORTANT]

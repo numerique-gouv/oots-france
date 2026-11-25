@@ -21,11 +21,11 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-# The two variables scripts/secret_variables deliberately leaves out, being
-# recopies that scripts/ci/prepare_environment.sh keeps equal to the two
-# passwords above them. Checked all the same: the file they live in is
-# hand-editable, and a recopy left behind is as readable as its original.
-RECOPIES="DB_PASS MOT_DE_PASSE_BASE_DE_DONNEES"
+# The variable scripts/secret_variables deliberately leaves out, being a recopy
+# that scripts/ci/prepare_environment.sh keeps equal to POSTGRES_PASSWORD.
+# Checked all the same: the file it lives in is hand-editable, and a recopy
+# left behind is as readable as its original.
+RECOPIES="MOT_DE_PASSE_BASE_DE_DONNEES"
 
 # The one name no template declares, and must not: declared empty, `RAILS_ENV=`
 # would make the test suites run in `development` — see .env.oots.template. Its

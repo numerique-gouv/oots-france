@@ -19,14 +19,16 @@ RACINE=$(cd "$(dirname "$0")/../.." && pwd)
 
 # The password is taken out with `sed` rather than by sourcing the file:
 # nothing guarantees it survives an interpretation by the shell.
-[ -n "$MYSQL_ROOT_PASSWORD" ] || [ ! -f "$RACINE/.env.domibus" ] || \
-  MYSQL_ROOT_PASSWORD=$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' "$RACINE/.env.domibus" | head -n 1)
+if [ -z "$MYSQL_ROOT_PASSWORD" ] && [ -f "$RACINE/.env" ]; then
+  MYSQL_ROOT_PASSWORD=$(sed -n 's/^MYSQL_ROOT_PASSWORD=//p' "$RACINE/.env" | head -n 1)
+  MYSQL_ROOT_PASSWORD="${MYSQL_ROOT_PASSWORD%% #*}"
+fi
 
 # Leaving it empty would give a bare `-p`, on which `mysqladmin` asks for the
 # password — on a prompt the probe's redirection makes invisible, and which
 # would burn the whole timeout with nothing to say why.
 if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
-  echo "❌ MYSQL_ROOT_PASSWORD introuvable, ni dans l'environnement ni dans $RACINE/.env.domibus." >&2
+  echo "❌ MYSQL_ROOT_PASSWORD introuvable, ni dans l'environnement ni dans $RACINE/.env." >&2
   exit 1
 fi
 

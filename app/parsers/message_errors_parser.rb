@@ -6,7 +6,7 @@
 class MessageErrorsParser
   include OotsNamespaces
 
-  # Domibus 5.2 records the ebMS error that the correspondent's access point
+  # Domibus 5.2.2 records the ebMS error that the correspondent's access point
   # returns in a SOAP fault under this role — `FaultOutHandler#handleFault`
   # writes it, `MSHRole.RECEIVING` —, then records its own `EBMS:0005`, *Error
   # dispatching message*, under `SENDING` for the same attempt. A refusal that

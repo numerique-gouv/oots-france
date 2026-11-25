@@ -126,14 +126,13 @@ export URL_OOTS_FRANCE URL_FAUX_FRANCE_CONNECT DONNEES_REQUETEURS
 # their image expects and under the names the application reads. Held in step
 # here rather than asked twice: the application presents the first, the image
 # creates the role with the second, and nothing checks the equality before
-# `db:prepare` meets `password authentication failed`.
-MYSQL_PASSWORD=$(valeurEffective MYSQL_PASSWORD .env.domibus.template)
+# `db:prepare` meets `password authentication failed`. Both images of the
+# gateway read its password from the one secret.
 DB_USER=$(valeurEffective MYSQL_USER .env.domibus.template)
-DB_PASS="$MYSQL_PASSWORD"
 UTILISATEUR_BASE_DE_DONNEES=$(valeurEffective POSTGRES_USER .env.postgres.template)
 MOT_DE_PASSE_BASE_DE_DONNEES=$(valeurEffective POSTGRES_PASSWORD .env.postgres.template)
 NOM_BASE_DE_DONNEES=$(valeurEffective POSTGRES_DB .env.postgres.template)
-export MYSQL_PASSWORD DB_USER DB_PASS
+export DB_USER
 export UTILISATEUR_BASE_DE_DONNEES MOT_DE_PASSE_BASE_DE_DONNEES NOM_BASE_DE_DONNEES
 
 # The continuous integration runner installs Ruby for itself; a development

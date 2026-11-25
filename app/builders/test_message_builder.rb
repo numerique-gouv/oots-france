@@ -4,7 +4,7 @@
 #
 # `originalSender` and `finalRecipient` are the ones the gateway gives its own
 # test message (`messages/testservice/testservicemessage.json`, Domibus
-# `5.2-JEE10`), untyped: the `fourCornersPropertySet` of the `testServiceCase`
+# `5.2.2-JEE10`), untyped: the `fourCornersPropertySet` of the `testServiceCase`
 # leg requires them. The payload and the conversation are those of
 # `TestService.createSubmission`, same version, so that an access point that
 # refuses a message without an attachment receives what the « Connection

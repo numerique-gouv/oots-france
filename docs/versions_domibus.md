@@ -12,25 +12,44 @@
 
 ## La version utilisée ici
 
-`docker-compose.yml` fige **Domibus 5.2-JEE10** (images `domibus-tomcat10` et `domibus-mysql8`, toutes deux publiées le 23 mai 2026) : Tomcat 10.1, Java 21, Jakarta EE 10.
+`docker-compose.yml` fige **Domibus 5.2.2-JEE10** (images `domibus-tomcat10` et `domibus-mysql8`, toutes deux publiées le 18 novembre 2026, [notes de version](https://ec.europa.eu/digital-building-blocks/sites/spaces/DIGITAL/pages/991265649/Domibus+-+v5.2.2)) : Tomcat 10.1, Java 21, Jakarta EE 10, et **MySQL 8.4** pour la base, là où la 5.2 embarquait MySQL 8.0. C'est la version que la Commission maintient, et la première depuis la 5.2 dont les deux images s'accordent : `domibus-mysql8` porte le schéma 5.2.2 (`DOMIBUS_SQL_VERSION=5.2.2`) et les deux scripts de montée, `mysql-5.2-to-5.2.1-upgrade.ddl` et `mysql-5.2.1-to-5.2.2-upgrade.ddl`. Monter un serveur dont la base existe est une procédure à part, que [deploiement.md](deploiement.md#monter-la-passerelle-dun-serveur-dont-la-base-existe) décrit.
 
-### Pourquoi pas la 5.2.1
+### Pourquoi la 5.2.1 a été sautée
 
-Une image `5.2.1-JEE10` existe pour les deux, et c'est la plus récente publiée. Mais **les deux images de ce tag ne s'accordent pas** : `domibus-tomcat10` déploie un WAR 5.2.1, tandis que `domibus-mysql8` n'embarque que le script `mysql-5.2.ddl` — le même que celui du tag 5.2. Or la 5.2.1 a ajouté quatre colonnes (`TB_PART_INFO.TYPE`, `.PROCESSING_STATE`, `.PROCESSING_DETAIL` et `TB_USER_MESSAGE_LOG.AUTO_SEND_IF_COMPLETE`). Le premier message émis échoue alors sur :
+L'image `5.2.1-JEE10` de `domibus-mysql8` n'embarquait que le schéma de la 5.2, quand le WAR de `domibus-tomcat10` au même tag attendait quatre colonnes de plus (`TB_PART_INFO.TYPE`, `.PROCESSING_STATE`, `.PROCESSING_DETAIL` et `TB_USER_MESSAGE_LOG.AUTO_SEND_IF_COMPLETE`) : le premier message émis échouait sur `Unknown column 'PROCESSING_DETAIL' in 'field list'`, et aucun script de montée n'était livré. La 5.2 est restée en place jusqu'à la 5.2.2, qui livre les deux.
 
-```
-could not execute batch [Unknown column 'PROCESSING_DETAIL' in 'field list']
-```
+### Ce que la 5.2.2 a changé pour ce dépôt
 
-Aucune image MySQL publiée ne fournit ce schéma, et aucun script `mysql-5.2-to-5.2.1-upgrade.ddl` n'est livré : la 5.2.1 n'est donc pas utilisable en l'état sans rattraper le schéma à la main. **Le tag 5.2-JEE10, lui, est cohérent de bout en bout** — c'est la version la plus récente qui fonctionne.
+| Changement, lu aux tags `5.2-JEE10` et `5.2.2-JEE10` | Ce que le dépôt en fait |
+| --- | --- |
+| Les images ne lisent plus les mots de passe de la base et du broker ActiveMQ que dans des secrets Docker ([`Dockerfile10`](https://code.europa.eu/edelivery/docker/-/blob/5.2.2-JEE10/images/domibus-tomcat/Dockerfile10) : `DB_PASS_FILE`, `ACTIVEMQ_PASSWORD_FILE`), et leur entrypoint s'arrête quand l'un manque ; l'image MySQL pose elle-même `MYSQL_PASSWORD_FILE` et `MYSQL_ROOT_PASSWORD_FILE`, et l'entrypoint de MySQL refuse une variable posée avec son `_FILE` | `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` et `MOT_DE_PASSE_ACTIVEMQ` vivent dans `.env`, d'où `docker-compose.yml` tire les trois secrets ; `DB_PASS` a disparu. Le mot de passe d'ActiveMQ, que l'image 5.2 fixait à `changeit`, est un secret que chaque déploiement engendre |
+| La liste des entrées d'un store vient sous `storeEntries` ([`StoreListRO`](https://code.europa.eu/edelivery/domibus/-/blob/5.2.2-JEE10/Core/Domibus-MSH/src/main/java/eu/domibus/web/rest/ro/StoreListRO.java)), et non plus sous `trustStoreList` | `scripts/configure_domibus.sh` lit `storeEntries` |
+| La notification des plugins devient asynchrone quand le PMode ne dit rien (`asyncNotification`, [guide de montée](https://docs.edelivery.tech.ec.europa.eu/domibus-upgrade/) 5.2.1 → 5.2.2) | Rien : le PMode d'exemple reste sans l'attribut, comme celui du Technical Support Dashboard, et le test de bout en bout passe avec une notification asynchrone |
+| L'image installe le Domibus REST Plugin, et ses tables sur une base neuve | Voir [plus bas](#le-plugin-rest-installé-et-pas-employé) |
+| MySQL 8.4 démarre avec `--lower-case-table-names=1`, que la 5.2 ne posait pas | Un volume de la 5.2 ne s'ouvre pas sous la 5.2.2 (`Different lower_case_table_names settings for server ('1') and data dictionary ('0')`) : la base d'un serveur se monte par un export et un import, voir [deploiement.md](deploiement.md#monter-la-passerelle-dun-serveur-dont-la-base-existe) |
 
 > [!NOTE]
-> Le dépôt de sources publie aussi un tag `5.2.1.1-JEE10`, sans image correspondante au registre.
+> La page de version dit « *No database schemas upgrades required* », là où le guide de montée et les scripts que l'image livre disent le contraire. La procédure suit le guide et les scripts.
 
 > [!NOTE]
 > La version de Domibus et celle des TDD sont **indépendantes** : Domibus transporte, il ne connaît pas le modèle de données OOTS. Migrer l'un n'impose rien sur l'autre — pour les TDD, voir [versions_tdd.md](versions_tdd.md).
 
-## Ce que 5.2 coûte aujourd'hui
+### Ce qu'un poste installé en 5.2 doit faire
+
+> [!IMPORTANT]
+> Un poste installé en 5.2 repart d'une base et d'un `./domibus` neufs : son volume `shared_db_file_system` ne s'ouvre plus sous MySQL 8.4, et `./domibus` garde les jars des plugins 5.2, que l'image ne remplace pas tant qu'elle y trouve son `.configured`.
+
+`make check-env` nomme les trois variables que `.env` a gagnées ; les recopier depuis `.env.template`, retirer de `.env.domibus` `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` et `DB_PASS` — l'image MySQL refuse de démarrer avec les deux premiers —, puis :
+
+```sh
+docker compose down --volumes
+rm -rf domibus
+make setup
+```
+
+Rien n'est perdu qu'un poste ait à garder : keystore, truststore, PMode et Plugin User sont ceux que `make setup` recrée.
+
+## Ce que la version en place coûte
 
 Deux irritants seulement subsistent :
 
@@ -88,22 +107,17 @@ La même méthode répond à la question voisine, « ce plugin tourne-t-il sur c
 
 | Piste | Apport |
 | --- | --- |
-| Une image MySQL 5.2.1 cohérente | Elle débloquerait la 5.2.1, et avec elle le **Domibus REST Plugin** 1.0 — voir la section suivante, qui est le chantier en attente |
-| Le profil de sécurité `ecdsa` | Annoncé, non disponible : seul `rsa` existe en 5.2 |
+| Adopter le **Domibus REST Plugin**, que l'image installe déjà | Du JSON plutôt que du SOAP — voir la section suivante |
+| Le profil de sécurité `ecdsa` | Annoncé, non disponible : seul `rsa` existe en 5.2.2 |
 
-## Le plugin REST attend la 5.2.1
+## Le plugin REST, installé et pas employé
 
-Le [Domibus REST Plugin](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#restplugin) 1.0 remplacerait le WS plugin SOAP par une interface JSON décrite en OpenAPI. Le gain qu'on en attendait — supprimer le sondage au profit d'une notification — est déjà acquis : le WS plugin sait pousser vers le dorsal, et c'est ce que l'application emploie (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)). Ce qui resterait à gagner est du confort : du JSON plutôt que du SOAP, et une enveloppe de moins à construire. La bascule réécrirait `app/parsers/`, `DomibusClient` et leurs spécifications.
+L'image `domibus-tomcat10:5.2.2-JEE10` installe le [Domibus REST Plugin](https://docs.edelivery.tech.ec.europa.eu/domibus/5.2/#restplugin) : `domibus-default-rest-plugin-1.0.0.3.jar` arrive dans `./domibus/plugins/lib`, et l'image MySQL crée ses tables `REST_PLUGIN_TB_*` sur une base neuve (`rest-plugin-mysql.sql`, qu'elle ne joue jamais sur une base existante — la montée d'un serveur le joue à la main). Ce qui le bloquait en 5.2 — son [POM](https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-rest-plugin/1.0/domibus-rest-plugin-1.0.pom) déclare `domibus 5.2.1-JEE10` comme parent, et dépend d'une API du cœur que la 5.2 n'avait pas — est levé.
 
-**Elle est impossible sur la 5.2**, et ce n'est pas une question de distribution : le plugin s'installe très bien à la main. Il est publié en artefact autonome — [`domibus-rest-plugin-distribution-1.0.zip`](https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-rest-plugin-distribution/1.0/domibus-rest-plugin-distribution-1.0.zip), qui contient le jar, `rest-plugin.properties` et un `rest-plugin-mysql.sql` dont les tables `REST_PLUGIN_TB_*` ne touchent à rien d'existant. C'est **l'API du cœur** qui manque : son [POM](https://ec.europa.eu/digital-building-blocks/artifact/repository/eDelivery/eu/domibus/domibus-rest-plugin/1.0/domibus-rest-plugin-1.0.pom) déclare `domibus 5.2.1-JEE10` comme parent, et le [comparatif 5.2 → 5.2.1](https://code.europa.eu/edelivery/domibus/-/compare/5.2-JEE10...5.2.1-JEE10) montre que la 5.2.1 crée précisément ce dont il dépend — `MessageLogExtService`, `ErrorLogExtService`, `MessageIdExtService`, `AttachmentReferenceValidationExtService`, `PayloadProcessingState`, `PayloadType`, `AttachmentDTO`. Sur un cœur 5.2, le plugin ne se charge pas.
-
-Reste donc à débloquer la 5.2.1, dont l'écart de schéma se mesure exactement : **quatre colonnes**, `TB_USER_MESSAGE_LOG.AUTO_SEND_IF_COMPLETE` et `TB_PART_INFO.TYPE` / `.PROCESSING_STATE` / `.PROCESSING_DETAIL`. Une image `domibus-mysql8` au schéma 5.2.1 les apporterait ; à défaut, quatre `ALTER TABLE` joués à l'initialisation de la base suffiraient, la table rase supprimant tout risque de migration.
-
-> [!NOTE]
-> Aucun script de montée officiel n'existe parce que ces colonnes ont été ajoutées **dans les `changeSet` de création** de [`changelog.xml`](https://code.europa.eu/edelivery/domibus/-/blob/5.2.1-JEE10/Core/Domibus-MSH-db/src/main/resources/db/changelog.xml), le `changeSet` `addColumn` correspondant (`EDELIVERY-16054-2`) étant laissé en commentaire. Un Liquibase qui a déjà joué la création ne les verra donc jamais — ce qui explique aussi que l'image MySQL 5.2.1 publiée reste au schéma 5.2.
+L'application ne l'emploie pas : elle parle à la passerelle par le plugin WS, qui sait déjà pousser vers le dorsal (voir [domibus_context.md](domibus_context.md#comment-oots-france-utilise-domibus)). Ce que la bascule apporterait est du confort — du JSON plutôt que du SOAP, une enveloppe de moins à construire —, et elle réécrirait `app/parsers/`, `DomibusClient` et leurs spécifications.
 
 > [!IMPORTANT]
-> Le jour où le plugin REST sera installé, il arrivera **en tête des filtres de message et sans critère de routage** : il captera tous les messages entrants, et le WS plugin ne sera plus notifié. L'échange AS4 aboutira pourtant — le journal montrera un `ACKNOWLEDGED` puis un `RECEIVED` — mais `listPendingMessages` ne renverra rien et la requête s'achèvera sur un 504. Seul le `pluginType` du message reçu trahit la cause. Il faudra remettre `backendWSPlugin` en tête, ce que fait la page « Message Filter » de la console et que sait aussi l'API `rest/internal/admin/messagefilters`.
+> Sur une base neuve de la 5.2.2, le filtre du plugin REST passe **devant** celui du plugin WS, sans critère de routage — sur une base montée depuis la 5.2, il arrive en dernier. En tête, il capte tous les messages entrants et le plugin WS n'est plus notifié. L'échange AS4 aboutit pourtant — le journal montre un `ACKNOWLEDGED` puis un `RECEIVED` — mais `listPendingMessages` ne renvoie rien et la requête s'achève sur un 504 ; seul le `pluginType` du message reçu trahit la cause. `scripts/configure_domibus.sh` remet donc `backendWSPlugin` en tête à chaque passage, par l'API `rest/internal/admin/messagefilters`, ce que fait aussi la page « Message Filter » de la console.
 
 > [!IMPORTANT]
 > Le test de bout en bout reste le garde-fou de toute montée de version : il exerce la chaîne réelle, là où la suite unitaire simule le transport. Le jouer contre la nouvelle version dit en une exécution si le contrat tient — voir [test_e2e.md](test_e2e.md).

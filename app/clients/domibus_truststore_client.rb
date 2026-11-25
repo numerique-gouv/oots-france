@@ -1,6 +1,6 @@
 # Reads the certificates of the truststore the gateway has loaded, through the
 # REST resource `/ext/truststore/entries`, which Domibus answers in one list,
-# unpaged (`TruststoreExtResource`, `5.2-JEE10`).
+# unpaged (`TruststoreExtResource`, `5.2.2-JEE10`).
 class DomibusTruststoreClient
   PATH = 'ext/truststore/entries'.freeze
 

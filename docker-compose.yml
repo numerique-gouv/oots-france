@@ -146,12 +146,19 @@ services:
       - postgres_data:/var/lib/postgresql
 
   domibus:
-    image: code.europa.eu:4567/edelivery/docker/domibus-tomcat10:5.2-JEE10
+    image: code.europa.eu:4567/edelivery/docker/domibus-tomcat10:5.2.2-JEE10
     <<: *env-domibus
+    # The image reads its two passwords from files and nowhere else: its
+    # entrypoint stops when one is missing. The database one goes by the name the `mysql` image reads it under, rather
+    # than this image's default `secret-database`: one secret for both sides.
+    secrets:
+      - secret-database-mysql
+      - secret-activemq
     environment:
       - DB_TYPE=MySQL
       - DB_HOST=mysql
       - DB_PORT=3306
+      - DB_PASS_FILE=secret-database-mysql
       # The image rewrites only these two levels in logback.xml, and leaves
       # eu.domibus at DEBUG. INFO would not be enough: the authentication of each
       # request logs « [SEC-001] Unsecure login is allowed » at that level. What
@@ -193,13 +200,35 @@ services:
     depends_on:
       - mysql
 
+  # MySQL 8.4, started with `--lower-case-table-names=1`: a volume another
+  # image initialised does not open under it, nor one it opened under MySQL 8.0
+  # — docs/deploiement.md, « Mettre à jour », says how a gateway is brought to
+  # it.
+  #
+  # The image sets MYSQL_PASSWORD_FILE and MYSQL_ROOT_PASSWORD_FILE itself, and
+  # MySQL's entrypoint refuses a variable alongside its `_FILE`: neither password
+  # may reach this container through `.env.domibus`.
   mysql:
-    image: code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.2-JEE10
+    image: code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.2.2-JEE10
     <<: *env-domibus
+    secrets:
+      - secret-database-mysql
+      - secret-database-mysql-root
     security_opt:
       - seccomp:unconfined
     volumes:
       - shared_db_file_system:/var/lib/mysql
+
+# Read from the variables `.env` declares — Compose fills a secret from a file
+# or from the environment it interpolates —, so that configuration stays in the
+# environment, where `make check-secrets` sees it.
+secrets:
+  secret-database-mysql:
+    environment: MYSQL_PASSWORD
+  secret-database-mysql-root:
+    environment: MYSQL_ROOT_PASSWORD
+  secret-activemq:
+    environment: MOT_DE_PASSE_ACTIVEMQ
 
 volumes:
   postgres_data:

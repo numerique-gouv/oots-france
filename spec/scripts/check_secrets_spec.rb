@@ -8,7 +8,7 @@ RSpec.describe 'scripts/check_secrets.sh' do
   let(:root) { Pathname(File.expand_path('../..', __dir__)) }
   let(:secrets) do
     root.join('scripts/secret_variables').readlines.filter_map { |line| line[/\A([A-Z_0-9]+)\s/, 1] } +
-      %w[DB_PASS MOT_DE_PASSE_BASE_DE_DONNEES]
+      %w[MOT_DE_PASSE_BASE_DE_DONNEES]
   end
   let(:public_token) { template_value('JETON_API_PARTICULIER') }
 
