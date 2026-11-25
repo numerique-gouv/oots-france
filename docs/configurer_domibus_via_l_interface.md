@@ -49,6 +49,10 @@ Dans la colonne de gauche, cliquer sur « PMode », puis sur « Current ». Cli
 
 Dans la colonne de gauche, cliquer sur « Connection Monitoring ». Une ligne devrait être affichée avec `AP_FR_01` comme « Sender Party » et « Responder Party ». Cliquer sur l'icône « avion en papier » à droite. Le « Connection Status » devrait passer au vert.
 
+## Mettre le plugin WS en tête des filtres de message
+
+Dans la colonne de gauche, cliquer sur « Message Filter ». `backendWSPlugin` doit occuper la première ligne : l'image installe aussi le plugin REST, dont le filtre sans critère capterait sinon tous les messages entrants, et l'application n'en serait plus notifiée — voir [versions_domibus.md](versions_domibus.md#le-plugin-rest-installé-et-pas-employé). S'il n'y est pas, le sélectionner, le remonter en tête, puis enregistrer.
+
 ## Sécuriser les comptes d'administration
 
 > [!IMPORTANT]

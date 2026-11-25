@@ -221,8 +221,8 @@ Tout ce que le dépôt ne reconstruit pas, et que `.gitignore` laisse sur la mac
 - les fichiers `.env*`, qui portent tous les secrets, et le `docker-compose.override.yml` s'il existe ;
 - le keystore de nos clés privées, `oots_acceptance_keystore.jks`, là où [`scripts/pki/`](../scripts/pki/) l'a créé, son *keystore password* et le *keypair password* de chaque clé : sans eux, le certificat de la PKI ne sert plus à rien ;
 - le volume `postgres_data` — l'état des échanges, le journal des échanges que l'article 17 impose de garder douze mois, la file des jobs ;
-- le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, le keystore et le truststore téléversés, et le compte d'accès ;
-- le répertoire `./domibus`, où `configure_domibus.sh` a écrit les règles de notification, **fichiers cachés compris** : sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles ;
+- le volume `shared_db_file_system` — la base de Domibus, où vivent le PMode, le compte d'accès, les filtres de message et les messages échangés ;
+- le répertoire `./domibus`, **fichiers cachés compris** : le keystore et le truststore que la passerelle relit à chaque démarrage, sous `keystores/`, le PMode et le truststore que le Technical Support Dashboard a publiés et leurs `*.precedent`, et les règles de notification que `configure_domibus.sh` a écrites — sans `.configured`, l'image rejoue son initialisation au démarrage suivant et écrase ces règles et ces stores ;
 - ce que le frontal garde sur cette machine — avec le gabarit du dépôt, le répertoire `./nginx` : la configuration éditée, le compte Let's Encrypt et les certificats, dont le renouvellement forcé compte dans les limites de l'autorité.
 
 ## Mettre à jour
@@ -238,7 +238,7 @@ $ make update
 3. `docker compose build web` ;
 4. `rails db:prepare` puis `rails db:privileges`, sur la nouvelle image, pendant que l'ancienne version sert encore : une migration qui échoue la laisse en place. `db:privileges` se rejoue après chaque migration, pour la raison que `lib/database_privileges.rb` donne ;
 5. `make assets` ;
-6. `docker compose up -d web worker`, et `fake-france-connect` avec eux s'il tournait — il emprunte le réseau de `web`, que la recréation détruit ;
+6. `docker compose up -d --no-deps web worker`, et `fake-france-connect` avec eux s'il tournait — il emprunte le réseau de `web`, que la recréation détruit. `--no-deps` laisse la passerelle et sa base telles qu'elles tournent, même quand `docker-compose.yml` leur nomme une autre image : la commande le dit alors en finissant, et leur montée suit [la procédure plus bas](#monter-la-passerelle-dun-serveur-dont-la-base-existe) ;
 7. `curl` sur `/up`, jusqu'au `200`, deux minutes au plus.
 
 Si la mise à jour touche ce que `scripts/configure_domibus.sh` écrit dans `ws-plugin.properties`, le rejouer puis redémarrer la passerelle. Il lit ses variables dans les `.env*` —
@@ -249,6 +249,78 @@ $ docker compose restart domibus && scripts/ci/wait_for_domibus.sh
 ```
 
 `notification` n'écrit que ce fichier, sans appeler la console. Rejoué en entier — `DOMIBUS_MOT_DE_PASSE_ADMIN=… scripts/configure_domibus.sh` —, il garde le PMode du Technical Support Dashboard et la clé de la PKI, et finit par le test de connectivité. Un PMode ou des certificats nouveaux se chargent par `make update-certifs` ([plus bas](#raccorder-la-passerelle-à-lacceptation)), ou en les nommant : `FICHIER_PMODE` et `REPERTOIRE_KEYSTORE_TRUSTSTORE`. Le [README](../README.md#configurer-domibus-en-une-commande) détaille.
+
+### Monter la passerelle d'un serveur dont la base existe
+
+`make update` ne monte jamais la passerelle : quand `docker-compose.yml` nomme pour `domibus` et `mysql` une autre image que celle qui tourne, il met l'application à jour, laisse la passerelle telle quelle et finit en renvoyant ici. La montée se fait à la main, une fois, par les scripts de montée de la Commission ([Domibus Upgrade Guides](https://docs.edelivery.tech.ec.europa.eu/domibus-upgrade/)) et **jamais par une base neuve** : la base porte le PMode, le compte d'accès, les filtres de message et les messages échangés, que `make setup` ne recréerait pas — le PMode du Technical Support Dashboard, une base neuve le remplacerait par celui d'exemple.
+
+Ce qui suit monte la 5.2 en 5.2.2 ; [versions_domibus.md](versions_domibus.md#ce-que-la-522-a-changé-pour-ce-dépôt) dit ce que cette version change. Elle a été jouée telle quelle sur une pile locale partie de la 5.2 et portant 277 messages, qui les montrait encore après, et sur laquelle le test de bout en bout passait. Tout se lance depuis la racine du dépôt.
+
+> [!IMPORTANT]
+> La base passe de MySQL 8.0 à MySQL 8.4, sans retour arrière : un volume que MySQL 8.4 a ouvert ne s'ouvre plus en 8.0. Et la 5.2.2 démarre MySQL avec `--lower-case-table-names=1`, qu'un volume initialisé par la 5.2 refuse (`Different lower_case_table_names settings for server ('1') and data dictionary ('0')`) : la base ne se monte pas en place, elle s'exporte, puis s'importe dans un volume neuf. L'archive du volume prise à l'étape 2 est le seul retour arrière.
+
+**1. Tirer le dépôt et compléter `.env`.** `make update` tire la version qui nomme les nouvelles images, puis s'arrête sur `make check-env`, qui nomme `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` et `MOT_DE_PASSE_ACTIVEMQ` : les images de la 5.2.2 ne les lisent plus que dans des secrets Docker. Les deux premiers se **recopient** de `.env.domibus`, jamais ne s'engendrent : la base garde les comptes qu'elle a reçus à sa création. Le troisième s'engendre, `openssl rand -hex 16`. Puis retirer de `.env.domibus` `MYSQL_ROOT_PASSWORD`, `MYSQL_PASSWORD` et `DB_PASS` — l'image MySQL de la 5.2.2 refuse de démarrer quand un mot de passe lui arrive aussi par une variable —, et rejouer `make update`, qui met l'application à jour et laisse la passerelle en 5.2. Les conteneurs de la passerelle gardent l'environnement de leur création, et tournent toujours.
+
+**2. Arrêter la passerelle, puis sauvegarder.** La passerelle s'arrête d'abord, pour que l'export porte tout ce qu'elle a écrit ; la base, encore en route, s'exporte, puis s'arrête et son volume s'archive ; `./domibus` se met de côté entier, fichiers cachés compris. Chaque sauvegarde se vérifie avant de passer à la suivante — l'étape 3 détruit le volume :
+
+```sh
+$ docker compose stop -t 90 domibus
+$ docker compose exec -T mysql sh -c 'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysqldump -u root --single-transaction --routines --triggers --databases "$MYSQL_DATABASE"' > <sauvegarde>/domibus-5.2.sql
+$ tail -n 1 <sauvegarde>/domibus-5.2.sql                       # -- Dump completed on …, sinon s'arrêter là
+$ docker compose stop mysql
+$ docker volume ls --quiet --filter label=com.docker.compose.volume=shared_db_file_system   # le nom du volume, <projet>_shared_db_file_system
+$ docker run --rm --entrypoint tar -v <volume>:/source:ro -v <sauvegarde>:/sauvegarde \
+    code.europa.eu:4567/edelivery/docker/domibus-mysql8:5.2-JEE10 czf /sauvegarde/shared_db_file_system-5.2.tgz -C /source .
+$ tar tzf <sauvegarde>/shared_db_file_system-5.2.tgz > /dev/null && echo archive lisible
+$ docker compose rm --force domibus
+$ mv domibus domibus.5.2 && mkdir domibus
+```
+
+Le délai de 90 s est celui que le guide demande pour Tomcat, au-dessus de `domibus.shutdown.timeout` et `domibus.shutdown.warning.delay` (70 s à eux deux) : l'arrêt laisse la passerelle finir ce qu'elle envoie. Les images 5.2 et 5.2.2 l'ont épuisé l'une et l'autre pendant la répétition, sans dommage.
+
+**3. Monter la base.** Un volume neuf, que l'image 5.2.2 initialise à son schéma ; la base qu'elle y crée vide est remplacée par l'export, puis les deux scripts de montée que l'image livre se jouent dans l'ordre, et celui du plugin REST que l'image n'installe que sur une base neuve. Les commandes s'enchaînent par `&&` : la première qui échoue arrête la suite, et la passerelle ne démarre jamais sur un schéma à moitié monté — on repart alors de l'archive.
+
+```sh
+$ docker compose rm --stop --force mysql
+$ docker volume rm <volume>
+$ docker compose up --detach mysql && scripts/ci/wait_for_mysql.sh
+$ racine() { docker compose exec -T mysql sh -c 'MYSQL_PWD="$(cat /run/secrets/secret-database-mysql-root)" mysql -u root'; }
+$ passerelle() { docker compose exec -T mysql sh -c "MYSQL_PWD=\"\$(cat /run/secrets/secret-database-mysql)\" mysql -u \"\$MYSQL_USER\" \"\$MYSQL_DATABASE\" < /resources/domibus/sql-scripts/$1"; }
+$ echo 'DROP DATABASE domibus' | racine \
+    && racine < <sauvegarde>/domibus-5.2.sql \
+    && passerelle mysql-5.2-to-5.2.1-upgrade.ddl \
+    && passerelle mysql-5.2.1-to-5.2.2-upgrade.ddl \
+    && passerelle rest-plugin-mysql.sql \
+    && echo schéma monté
+```
+
+`DROP DATABASE` ne retire pas les droits du compte de la passerelle, que MySQL tient par le nom de la base. La procédure suit le guide de montée et les scripts, et non la page de version, qui les contredit — voir [versions_domibus.md](versions_domibus.md#ce-que-la-522-a-changé-pour-ce-dépôt).
+
+**4. Démarrer la passerelle, et lui rendre ce que `./domibus` portait.** Sur un `./domibus` vide, l'image 5.2.2 écrit ce que le guide demande de remplacer — le WAR, les jars et les configurations des plugins, l'extension DSS, un `logback.xml` sans `shutdownHook` — et ses propres stores de démonstration. Le PMode, le compte d'accès et les filtres reviennent de la base ; le keystore et le truststore, eux, vivaient dans `./domibus/keystores`, et se rechargent depuis `domibus.5.2` — la clé de la PKI et le truststore du Technical Support Dashboard tels qu'ils étaient, sans rien retélécharger. Les fichiers que `make update-certifs` y avait déposés — le PMode publié, les `*.precedent` — reviennent aussi, et non le `logback.xml` de la 5.2, que l'image vient de remplacer :
+
+```sh
+$ docker compose up --detach --no-deps domibus && scripts/ci/wait_for_domibus.sh
+$ for fichier in domibus.5.2/*.xml* domibus.5.2/keystores/*.precedent; do
+    case "$fichier" in */logback.xml*) continue ;; esac
+    [ -e "$fichier" ] && cp -p "$fichier" "domibus/${fichier#domibus.5.2/}"
+  done
+$ DOMIBUS_MOT_DE_PASSE_ADMIN=… REPERTOIRE_KEYSTORE_TRUSTSTORE=domibus.5.2/keystores scripts/configure_domibus.sh
+$ docker compose restart -t 90 domibus && scripts/ci/wait_for_domibus.sh
+```
+
+`configure_domibus.sh` téléverse les deux stores, garde le PMode en place puisqu'il déclare `AP_FR_01`, remet `backendWSPlugin` en tête des filtres — l'image 5.2.2 installe le plugin REST à côté —, écrit la notification, et finit par le test de connectivité `AP_FR_01` → `AP_FR_01`.
+
+**5. Vérifier.** Le test de connectivité qui clôt l'étape 4 est passé. Le keystore porte la clé d'avant — les deux empreintes sont égales :
+
+```sh
+$ for store in domibus.5.2 domibus; do
+    openssl pkcs12 -in $store/keystores/gateway_keystore.p12 -nokeys -passin pass:<MOT_DE_PASSE_KEYSTORE_TRUSTSTORE> | openssl x509 -noout -fingerprint -sha256
+  done
+```
+
+La page « Message Log » de la console montre les messages d'avant la montée, et `docker compose ps` les conteneurs `domibus` et `mysql` sur les images `5.2.2-JEE10`. `domibus.5.2` et les deux sauvegardes se gardent jusqu'à ce qu'un échange avec un correspondant ait abouti.
+
+**Pour revenir en arrière**, tant que rien ne s'est échangé depuis : arrêter et retirer `domibus` et `mysql`, vider le volume et y désarchiver `shared_db_file_system-5.2.tgz` par la même commande `tar` (`xzf`), remettre `domibus.5.2` à la place de `domibus`, remettre dans `.env.domibus` les trois variables retirées, et démarrer les deux services sur la révision précédente de `docker-compose.yml`.
 
 ## Raccorder la passerelle à l'acceptation
 
@@ -288,7 +360,7 @@ $ DOMIBUS_MOT_DE_PASSE_ADMIN=… MOT_DE_PASSE_KEYSTORE_CLE=… make update-certi
     CLE=<oots_acceptance_keystore.jks> CERTIFICAT=<OOTS_AP_ACC_FR_001.pem> CHAINE=<OOTS_AP_ACC_FR_001-bundle.pem>
 ```
 
-[`scripts/update_certificates.sh`](../scripts/update_certificates.sh) et le script qu'il appelle lisent les identifiants dans les `.env*` ; les mots de passe qui n'y vivent pas — celui de la console, ceux du keystore de notre clé — se demandent ou se donnent. Quand notre certificat change, il lit la clé dans son keystore s'il en reçoit un, vérifie qu'elle est bien celle du certificat, puis construit le keystore sous l'alias `AP_FR_01`, au mot de passe de `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` et au format PKCS#12 que `docker-compose.yml` impose. Sinon, il garde le keystore en place, et refuse de tourner s'il n'y en a pas. Il convertit le truststore publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose le tout sous `domibus/` en gardant les précédents en `*.precedent`, le charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2 refuserait sinon (`DOM_003`) ; il y ajoute `ExchangeId` et `SpecificationId`, que le [chapitre 4.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) exige en 2.0.1 (§ 2.5.2 et § 2.6.2) et que ce PMode ne déclare pas, faute de quoi Domibus refuse tout message 2.0 (`EBMS:0010`) ; et il laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le truststore du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
+[`scripts/update_certificates.sh`](../scripts/update_certificates.sh) et le script qu'il appelle lisent les identifiants dans les `.env*` ; les mots de passe qui n'y vivent pas — celui de la console, ceux du keystore de notre clé — se demandent ou se donnent. Quand notre certificat change, il lit la clé dans son keystore s'il en reçoit un, vérifie qu'elle est bien celle du certificat, puis construit le keystore sous l'alias `AP_FR_01`, au mot de passe de `MOT_DE_PASSE_KEYSTORE_TRUSTSTORE` et au format PKCS#12 que `docker-compose.yml` impose. Sinon, il garde le keystore en place, et refuse de tourner s'il n'y en a pas. Il convertit le truststore publié en PKCS#12 au mot de passe de la passerelle sans toucher à ses alias, dépose le tout sous `domibus/` en gardant les précédents en `*.precedent`, le charge par `scripts/configure_domibus.sh` et redémarre la passerelle. Le chargement retire du PMode les processus où `AP_FR_01` ne figure pas — `lcmProcess`, tant que la France n'est pas déclarée pour le LCM —, que Domibus 5.2.2 refuserait sinon (`DOM_003`) ; il y ajoute `ExchangeId` et `SpecificationId`, que le [chapitre 4.7](https://ec.europa.eu/digital-building-blocks/sites/spaces/TDD/pages/973932931) exige en 2.0.1 (§ 2.5.2 et § 2.6.2) et que ce PMode ne déclare pas, faute de quoi Domibus refuse tout message 2.0 (`EBMS:0010`) ; et il laisse le fichier publié intact. Il se termine par le test de connectivité `AP_FR_01` → `AP_FR_01`, que le truststore du Technical Support Dashboard permet : il porte le certificat de la France sous `ap_fr_01`.
 
 Pour revenir à la publication précédente : remettre les `*.precedent` à leur place, puis recharger ce qu'ils remettent en place, que le script garderait sinon :
 
