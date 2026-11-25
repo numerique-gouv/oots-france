@@ -21,7 +21,7 @@
 # to the screen the line is chosen on.
 module HoldsDemoJourney
   extend ActiveSupport::Concern
-  include DemoIdentityCookie
+  include ReadsDemoJourney
 
   included do
     before_action :require_journey
@@ -30,14 +30,10 @@ module HoldsDemoJourney
 
   private
 
-  def identity = @identity ||= demo_identity(demo_entrance)
-
-  def journey = @journey ||= ::Demo::Journey.from_session(session[demo_entrance.journey_key])
-
   def demo_specification = journey.specification
 
   def require_journey
-    redirect_to demo_path(:root) unless identity&.valid? && journey&.valid? && walked_line?
+    redirect_to demo_path(:root) unless journey_held? && walked_line?
   end
 
   def walked_line?

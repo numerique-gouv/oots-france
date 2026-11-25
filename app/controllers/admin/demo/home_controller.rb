@@ -10,6 +10,8 @@ module Admin
     #
     # Nothing here touches an exchange.
     class HomeController < Admin::BaseController
+      include ReadsDemoJourney
+
       # A directory that cannot be reached costs the page the title France
       # declared and the list of requirements, and nothing else: the one thing
       # this page is for is the way in, and that way needs no directory.

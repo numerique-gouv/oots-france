@@ -7,6 +7,8 @@ module Admin
     # page a card leads to is what carries the choice, until an identification
     # opens a journey in it.
     class VersionsController < Admin::BaseController
+      include ReadsDemoJourney
+
       def index
         @specifications = EdmSpecification::SPOKEN
       end

@@ -765,6 +765,11 @@ fr:
       # pas d'espace d'administration où remonter.
       home: Accueil
       procedure: "Démarche %{code}"
+      # Le bouton du fil d'Ariane montre le nom de l'usager que FranceConnect+ a
+      # attesté ; son intitulé, lu par les lecteurs d'écran et en infobulle,
+      # dit le geste et reprend le nom.
+      sign_out: "Se déconnecter de FranceConnect+ (%{name})"
+      user_name: "%{given_name} %{family_name}"
     # Ce que le cadenas ouvert signifie, écrit hors écran parce qu'une icône
     # seule ne le dit qu'à l'œil, et repris en infobulle pour qui la survole.
     # Le bouton qui déplie le corps RegRep ou l'en-tête ebMS d'un événement :
@@ -1277,7 +1282,8 @@ fr:
     # l'écran du choix.
     france_connect:
       # Le titre de l'alerte de l'accueil de la démarche, où ramène la
-      # déconnexion de FranceConnect+ depuis la carte de l'identité.
+      # déconnexion de FranceConnect+ depuis la carte de l'identité ou le fil
+      # d'Ariane.
       signed_out: Votre session FranceConnect+ est close
       incomplete_departure: >-
         Le départ vers FranceConnect+ n'a retenu aucune version ou aucune démarche : choisir une version

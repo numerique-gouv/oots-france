@@ -3,6 +3,7 @@
 <%= render DemoBreadcrumbsComponent.new(
       specification: demo_specification, procedure: @procedure.code,
       trail: [[t('admin.demo.documents.show.title'), nil]],
+      sign_out: demo_sign_out_path, identity: demo_held_identity,
     ) %>
 
 <%= render 'admin/demo/titre', wording: @procedure %>

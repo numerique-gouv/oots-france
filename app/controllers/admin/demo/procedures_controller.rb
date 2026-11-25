@@ -15,6 +15,8 @@ module Admin
     # reads too. A directory that cannot be reached costs those footers and that
     # grouping, and nothing else: the choice needs no directory.
     class ProceduresController < Admin::BaseController
+      include ReadsDemoJourney
+
       def index
         @specification = EdmSpecification.from_segment(params[:version])
         @requirements_declared = declared_by_france

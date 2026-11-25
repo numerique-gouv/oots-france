@@ -114,9 +114,17 @@ Quand('il se déconnecte de l\'espace d\'administration') do
   @navigateur.sign_out
 end
 
-# The button of the identity card, which leaves the console's session open.
+# The button of the identity card, or the one on the line of the trail: both
+# submit to the address of the walk held, and leave the console's session open.
 Quand('il se déconnecte de FranceConnect+') do
   @navigateur.submit_to(adresse_de_la_demarche('identification'))
+end
+
+Alors('la ligne du fil d\'Ariane affiche le bouton de déconnexion de FranceConnect+ au nom de {string}') do |nom|
+  button = Nokogiri::HTML(@navigateur.body).at_css('.fr-breadcrumb').ancestors('.fr-grid-row').first&.at_css('form button')
+
+  expect(button&.text&.squish).to eq(nom)
+  expect(button['aria-label']).to eq(I18n.t('components.demo_breadcrumbs.sign_out', name: nom))
 end
 
 Alors('FranceConnect+ le ramène sur l\'accueil de la démarche, qui affiche {string}') do |alerte|
