@@ -12,15 +12,17 @@ class DeferredResponseBuilder < ApplicationBuilder
   # tracked as OOTS-91.
   DEFERRAL = 1.day
 
-  attr_reader :request_id, :available_at, :document_id
+  attr_reader :request_id, :provider, :available_at, :document_id
 
+  # `provider`: the agent the request designates, as on `EvidenceResponseBuilder`
+  # and for the same rules, which carry no condition on the status.
   def initialize(
-    requester:, request_id:, provider: nil,
+    requester:, request_id:, provider:,
     specification: EdmSpecification.preferred, clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
     @requester = requester
-    @provider = provider || EvidenceProvider.french
+    @provider = provider
     @request_id = request_id
     @instant = clock.now
     # Counted from that one reading, so the two instants the message carries
@@ -37,9 +39,9 @@ class DeferredResponseBuilder < ApplicationBuilder
 
   def provider_agent
     AgentBuilder.new(
-      identity: @provider.ebms_identity.validate!(:french_provider),
-      names: @provider.descriptions,
-      address: @provider.address,
+      identity: provider.ebms_identity.validate!(:provider),
+      names: provider.descriptions,
+      address: provider.address,
       classification: EvidenceProvider::PROVIDER,
     ).render
   end

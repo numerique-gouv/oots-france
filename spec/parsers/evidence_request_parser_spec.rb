@@ -1099,6 +1099,28 @@ RSpec.describe EvidenceRequestParser do
     end
   end
 
+  # What every evidence response announces as its `EP`, `R-EDM-REQ_EDM-RESP-15`
+  # and `-16` comparing the two.
+  describe '#provider' do
+    it 'reads the identifier of the designated agent under its scheme' do
+      expect(request.provider.ebms_identity)
+        .to eq(EbmsIdentity.new(id: 'blue_gw', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots'))
+    end
+
+    it 'reads its names, each in its language' do
+      expect(with_second_provider_name('<sdg:Name lang="EN">Test provider</sdg:Name>').provider.descriptions)
+        .to eq('FR' => 'Fournisseur de test', 'EN' => 'Test provider')
+    end
+
+    it 'reads the first agent, and not the ones beside it' do
+      expect(beside_the_provider.provider.ebms_identity.id).to eq('blue_gw')
+    end
+
+    it 'keeps a leading zero, the identifier being text' do
+      expect(with_provider_id('00000000000001').provider.ebms_identity.id).to eq('00000000000001')
+    end
+  end
+
   # Chapter 4.6 on the agent the `EvidenceProvider` slot carries — the provider
   # the request designates. Five FATAL rules judge it — `S013` counts the slot
   # and is exercised with the other slots of `REQUIRED_SLOTS` — and four of them,

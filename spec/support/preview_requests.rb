@@ -14,11 +14,12 @@ module PreviewRequests
   # first one again, with the address and — on 2.0 — where to send the user
   # back. A fresh `@id`, chapter 4.4 refusing a request identifier used before.
   def second_request(location:, return_location: 'https://portail.example/retour', line: :v2_0,
-                     exchange_id: nil, request_id: SecureRandom.uuid, slots: nil)
+                     exchange_id: nil, request_id: SecureRandom.uuid, slots: nil, &altered)
     added = slots || preview_slots(location, (return_location if line == :v2_0))
 
     requested(line, exchange_id:) do |body|
-      flagged(body, 'true').sub(AFTER_FLAG, "#{added}#{AFTER_FLAG}").sub(REQUEST_ID, "\\1urn:uuid:#{request_id}")
+      second = flagged(body, 'true').sub(AFTER_FLAG, "#{added}#{AFTER_FLAG}").sub(REQUEST_ID, "\\1urn:uuid:#{request_id}")
+      altered ? yield(second) : second
     end
   end
 

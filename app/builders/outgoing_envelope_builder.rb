@@ -12,6 +12,8 @@ class OutgoingEnvelopeBuilder
   # body to separate files and so has no envelope to build.
   def self.payload_reference(document_id) = "cid:#{document_id}@#{Settings.identifier_suffix}"
 
+  delegate :provider, to: :body
+
   def initialize(body:, attachment: EmptyAttachment.new, **header_attributes)
     @body = body
     @attachment = attachment
