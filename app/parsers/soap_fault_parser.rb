@@ -1,7 +1,7 @@
 # A SOAP 1.2 fault of the Domibus WS plugin. A submission it refuses carries a
 # `FaultDetail` (`webservicePlugin-body.xsd`): the ebMS code of the refusal,
 # written `EBMS:0003` (`WebServiceImpl.generateFaultDetail`, Domibus
-# `5.2-JEE10`), or one of the plugin's own, `WS_PLUGIN_0005`, and a message. The
+# `5.2.2-JEE10`), or one of the plugin's own, `WS_PLUGIN_0005`, and a message. The
 # children of `FaultDetail` carry no namespace, the schema being
 # `elementFormDefault="unqualified"`.
 class SoapFaultParser

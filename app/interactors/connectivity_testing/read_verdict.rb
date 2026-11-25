@@ -43,7 +43,7 @@ module ConnectivityTesting
     # returns in a SOAP fault is recorded under `RECEIVING`, beside the
     # gateway's own `EBMS:0005` under `SENDING` (`MessageErrorsParser#cause`),
     # and a read naming `SENDING` would drop it (`ErrorLogEntry
-    # .findErrorsByMessageIdAndRole`, Domibus `5.2-JEE10`). Only a test towards
+    # .findErrorsByMessageIdAndRole`, Domibus `5.2.2-JEE10`). Only a test towards
     # France's own access point holds its identifier twice, which the form
     # without a role refuses; that one is read under `SENDING`.
     def cause

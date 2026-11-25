@@ -2,7 +2,7 @@
 # resource `/ext/party` that the Plugin User opens.
 #
 # The resource pages by offset — `pageStart` is the number of parties skipped,
-# `pageSize` defaults to ten (`PartyFilterRequestDTO`, Domibus `5.2-JEE10`) —
+# `pageSize` defaults to ten (`PartyFilterRequestDTO`, Domibus `5.2.2-JEE10`) —
 # so the list is read page after page until one comes back short.
 class DomibusPartiesClient
   PATH = 'ext/party'.freeze

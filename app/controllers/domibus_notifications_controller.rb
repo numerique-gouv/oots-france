@@ -25,7 +25,7 @@ class DomibusNotificationsController < ActionController::API
     answer(PushNotificationAcknowledgementBuilder, :ok)
   rescue UnreadableMessageError => e
     # The plugin retries a refused notification whatever the answer, then raises
-    # its alert (`WSPluginMessageSender`, Domibus `5.2-JEE10`): the fault only
+    # its alert (`WSPluginMessageSender`, Domibus `5.2.2-JEE10`): the fault only
     # tells it the call failed, in the form its contract declares.
     Rails.logger.error("Notification Domibus illisible : #{e.message}")
     answer(PushNotificationFaultBuilder, :bad_request)
