@@ -80,8 +80,12 @@ make assets
 SERVICES="web worker"
 ! existe fake-france-connect || SERVICES="$SERVICES fake-france-connect"
 
+# Without `--no-deps`, Compose would recreate whatever `web` depends on whose
+# definition changed — the gateway and its database, on a new image the day
+# docker-compose.yml names one. Bringing them up to a new version is a
+# procedure of its own, with a backup first: docs/deploiement.md says it.
 echo "→ Redémarrage : $SERVICES"
-docker compose up --detach $SERVICES
+docker compose up --detach --no-deps $SERVICES
 
 # `assume_ssl` is what lets a plain HTTP probe through `force_ssl` here: Rails
 # takes the request for an HTTPS one and answers 200 instead of redirecting.
@@ -104,6 +108,20 @@ while true; do
   sleep 2
 done
 
+# The image the gateway runs, against the one the pulled composition names.
+imageDe() {
+  docker inspect --format '{{.Config.Image}}' "$(docker compose ps --all --quiet "$1")"
+}
+imageNommee() {
+  docker compose config --format json "$1" | python3 -c "import json, sys; print(json.load(sys.stdin)['services'][sys.argv[1]]['image'])" "$1"
+}
+PASSERELLE_A_MONTER=""
+for service in domibus mysql; do
+  if existe "$service" && [ "$(imageDe "$service")" != "$(imageNommee "$service")" ]; then
+    PASSERELLE_A_MONTER="$PASSERELLE_A_MONTER $service"
+  fi
+done
+
 cat <<'FIN'
 
 ✅ Mise à jour terminée.
@@ -113,3 +131,13 @@ cat <<'FIN'
    le PMode ou les certificats se rechargent en nommant FICHIER_PMODE et
    REPERTOIRE_KEYSTORE_TRUSTSTORE : docs/deploiement.md, « Mettre à jour ».
 FIN
+
+if [ -n "$PASSERELLE_A_MONTER" ]; then
+  cat <<FIN
+
+⚠️  La passerelle n'a pas été touchée, et docker-compose.yml en nomme une
+   autre image (conteneurs :$PASSERELLE_A_MONTER). La monter est une procédure à
+   part, sauvegarde d'abord : docs/deploiement.md, « Monter la passerelle d'un
+   serveur dont la base existe ».
+FIN
+fi
