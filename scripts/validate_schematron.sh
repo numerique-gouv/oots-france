@@ -116,15 +116,40 @@ PY
   mv "$outils/sch/codelist-include.partiel" "$outils/sch/codelist-include"
 fi
 
-for regle in "${SCHEMATRONS[@]}"; do
-  if [ ! -f "$outils/sch/$regle.xsl" ]; then
-    echo "→ Compilation de $regle"
-    saxon -s:"$outils/sch/$regle.sch" \
-      -xsl:"$outils/schxslt/xslt/2.0/pipeline-for-svrl.xsl" \
-      -o:"$outils/sch/$regle.xsl.partiel"
-    mv "$outils/sch/$regle.xsl.partiel" "$outils/sch/$regle.xsl"
+# The cross-validation rules judge two messages of one exchange together. Only
+# the ten that bear on messages this script renders: the seven others confront
+# a message with a directory answer, which nothing here produces. None includes
+# a code list.
+CROISEES=(
+  EDM-REQ_EDM-RESP EDM-REQ_EDM-ERR EDM-ERR_EDM-REQ2 EDM-REQ1_EDM-REQ2
+  ebMS_EDM-REQ ebMS_EDM-RESP ebMS_EDM-ERR
+  ebMS-REQ_ebMS-RESP ebMS-ERR_ebMS-REQ2 ebMS-REQ1_ebMS-REQ2
+)
+
+mkdir -p "$outils/crossvalidation"
+
+# Guarded file by file, for the reason the rules above are.
+for regle in "${CROISEES[@]}"; do
+  if [ ! -f "$outils/crossvalidation/$regle.sch" ]; then
+    echo "→ Téléchargement de la règle croisée $regle des TDD $VERSION_TDD"
+    telechargeArtefactTdd "OOTS-EDM/crossvalidation/sch/$regle.sch" "$outils/crossvalidation/$regle.sch.partiel"
+    mv "$outils/crossvalidation/$regle.sch.partiel" "$outils/crossvalidation/$regle.sch"
   fi
 done
+
+compile() {
+  local repertoire="$1" regle="$2"
+  if [ ! -f "$outils/$repertoire/$regle.xsl" ]; then
+    echo "→ Compilation de $regle"
+    saxon -s:"$outils/$repertoire/$regle.sch" \
+      -xsl:"$outils/schxslt/xslt/2.0/pipeline-for-svrl.xsl" \
+      -o:"$outils/$repertoire/$regle.xsl.partiel"
+    mv "$outils/$repertoire/$regle.xsl.partiel" "$outils/$repertoire/$regle.xsl"
+  fi
+}
+
+for regle in "${SCHEMATRONS[@]}"; do compile sch "$regle"; done
+for regle in "${CROISEES[@]}"; do compile crossvalidation "$regle"; done
 
 # ----------------------------------------------------- messages to validate
 echo "→ Production des messages $SPECIFICATION_EDM par le code du dépôt"
@@ -151,6 +176,47 @@ valide() {
 refuse() {
   local message="$1" regle="$2" regles="$3"
   valide "$message" "$regle" "--refus=$regles"
+}
+
+# Une paire de messages, confrontée à une règle croisée : chaque message est
+# donné par le nom que la règle attend et le spécimen qui le porte —
+# `edm-req=correspondant.requete`. Le document assemblé et son rapport sont
+# gardés sous `paires/`, pour qu'on relise ce que la règle a lu.
+croise() {
+  local regle="$1"
+  shift
+  local assemblage=() libelle="" nom=""
+  for argument in "$@"; do
+    assemblage+=("${argument%%=*}=$messages/${argument#*=}.xml")
+    libelle+="${libelle:+ + }${argument#*=}"
+    nom+="${nom:+__}${argument#*=}"
+  done
+
+  local paire="$messages/paires/$nom.$regle"
+  mkdir -p "$messages/paires"
+  python3 -I "$racine/scripts/pair_messages.py" "$paire.xml" "${assemblage[@]}"
+  saxon -s:"$paire.xml" -xsl:"$outils/crossvalidation/$regle.xsl" -o:"$paire.svrl" > /dev/null
+
+  if ! python3 "$racine/scripts/summarize_schematron.py" \
+    "$paire.svrl" "$libelle" "$regle" ${BAVARD:+--bavard}; then
+    enEchec=1
+  fi
+}
+
+# Un corps contre son propre en-tête ebMS, par le jeu croisé de sa nature.
+contreSonEntete() {
+  local nature="$1"
+  shift
+  local corps entete
+  case "$nature" in
+    REQ) corps=edm-req entete=evidence_request_header ;;
+    RESP) corps=edm-resp entete=evidence_response_header ;;
+    ERR) corps=edm-err entete=evidence_error_response_header ;;
+  esac
+
+  for message in "$@"; do
+    croise "ebMS_EDM-$nature" "$entete=$message.entete" "$corps=$message"
+  done
 }
 
 valide requete EDM-REQ-C
@@ -237,6 +303,54 @@ valide erreurPrevisualisationRequise.entete EDM-ebMS
 valide reponseVide.entete EDM-ebMS
 valide requeteSeconde.entete EDM-ebMS
 
+# ------------------------------------------------------ validation croisée
+# Les messages d'un correspondant, figés sous `spec/fixtures/correspondent/` :
+# jugés d'abord seuls et contre leur en-tête, pour qu'une paire ne fasse jamais
+# imputer à la France ce qu'eux enfreignent.
+valide correspondant.requete EDM-REQ-C
+valide correspondant.requete EDM-REQ-S
+valide correspondant.requete.entete EDM-ebMS
+contreSonEntete REQ correspondant.requete
+valide correspondant.erreurPrevisualisationRequise EDM-ERR-C
+valide correspondant.erreurPrevisualisationRequise EDM-ERR-S
+valide correspondant.erreurPrevisualisationRequise.entete EDM-ebMS
+contreSonEntete ERR correspondant.erreurPrevisualisationRequise
+
+# Chaque corps que la France émet, contre son propre en-tête.
+contreSonEntete REQ requete requetePersonneMorale requeteClassification requeteTroisClassifications \
+  requeteFormatStructure requeteSeconde requetePremiere
+contreSonEntete RESP reponse reponsePersonneMorale reponseStatutEtudiant reponseStatutEtudiantPdf reponseDifferee \
+  reponseVide recue.reponse recue.reponseVide recue.reponseDifferee
+contreSonEntete ERR erreur erreurRequeteInvalide erreurCapaciteNonSupportee erreurExpiration \
+  erreurSansIdentifiantDeRequete erreurPrevisualisationRequise recue.erreur recue.erreurRequeteInvalide \
+  recue.erreurCapaciteNonSupportee recue.erreurExpiration recue.erreurPrevisualisationRequise
+
+# Ce que la France répond à la requête d'un correspondant, rendu par le code de
+# la production d'après cette requête : chaque sorte de réponse de justificatif,
+# corps contre corps et en-tête contre en-tête…
+for reponse in recue.reponse recue.reponseVide recue.reponseDifferee; do
+  croise EDM-REQ_EDM-RESP edm-req=correspondant.requete edm-resp="$reponse"
+  croise ebMS-REQ_ebMS-RESP evidence_request_header=correspondant.requete.entete \
+    evidence_response_header="$reponse.entete"
+done
+# … et chaque sorte de réponse d'erreur qui porte un `requestId`, corps contre
+# corps : aucun jeu de règles ne confronte l'en-tête d'une erreur à celui de la
+# requête refusée.
+for erreur in recue.erreur recue.erreurRequeteInvalide recue.erreurCapaciteNonSupportee recue.erreurExpiration \
+  recue.erreurPrevisualisationRequise; do
+  croise EDM-REQ_EDM-ERR edm-req=correspondant.requete edm-err="$erreur"
+done
+
+# La seconde requête d'une prévisualisation, contre la première de la même
+# conversation, puis contre l'erreur `PreviewRequired` du correspondant qui l'a
+# demandée — où elle se nomme `edm-req`, la règle ne connaissant qu'une requête.
+croise EDM-REQ1_EDM-REQ2 edm-req=requetePremiere edm-req2=requeteSeconde
+croise ebMS-REQ1_ebMS-REQ2 evidence_request_header1=requetePremiere.entete \
+  evidence_request_header2=requeteSeconde.entete
+croise EDM-ERR_EDM-REQ2 edm-err=correspondant.erreurPrevisualisationRequise edm-req=requeteSeconde
+croise ebMS-ERR_ebMS-REQ2 evidence_error_response_header=correspondant.erreurPrevisualisationRequise.entete \
+  evidence_request_header=requeteSeconde.entete
+
 # Les règles FATAL que `EvidenceProvision::RejectMalformedIdentifiers` invoque
 # pour refuser de répondre à une requête dont les identifiants ne sont pas des
 # UUID. Sans ce spécimen, l'expression rationnelle du dépôt ne s'atteste
@@ -276,4 +390,4 @@ if [ "$enEchec" -ne 0 ]; then
 fi
 
 echo
-echo "✓ Les messages et leurs entêtes ebMS sont conformes aux TDD $VERSION_TDD, et le spécimen malformé est refusé."
+echo "✓ Les messages, leurs entêtes ebMS et les paires d'un même échange sont conformes aux TDD $VERSION_TDD, et les spécimens malformés sont refusés."

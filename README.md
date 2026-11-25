@@ -149,6 +149,29 @@ Le script sort en `0` si les messages sont conformes, en `2` si une règle est v
 - `identifiantsMalformes.entete` porte deux identifiants qui ne sont pas des UUID. En 2.0.1, [`R-EDM-ebMS-017`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/sch/EDM-ebMS.sch) et `R-EDM-ebMS-037` le refusent ; en 1.2.5, `-017` seule, l'`ExchangeId` n'y étant pas une propriété d'entête. C'est ce qui adosse à l'artefact publié le refus qu'oppose `EvidenceProvision::RejectMalformedIdentifiers` à une requête dont les identifiants sont malformés.
 - `versionAnterieure.entete` est l'entête de la ligne 1.2, confronté à dessein aux règles de la 2.0.1, qui le refusent par `R-EDM-ebMS-018` **et** `R-EDM-ebMS-019` : la seconde change de contexte entre les deux étiquettes — ancrée sur `eb:Property` en 1.2.5, elle l'est sur `eb:MessageProperties` en 2.0.1, où elle compte chacun des quatre noms une fois. Ce spécimen n'est produit que dans le lot 2.0.
 
+#### La validation croisée
+
+Un message conforme seul peut contredire celui auquel il répond, ou son propre entête : une réponse qui annonce un autre fournisseur que celui que la requête nomme passe `EDM-RESP-*` sans un mot. Les [règles de validation croisée](https://code.europa.eu/oots/tdd/tdd_chapters/-/tree/2.0.1/OOTS-EDM/crossvalidation/sch) publiées avec chaque étiquette jugent deux messages d'un même échange ensemble. Le script en joue dix, sur chaque ligne, en présentant chaque paire dans la forme que leurs `sch:let` lisent ([`crossvalidation/README.md`](https://code.europa.eu/oots/tdd/tdd_chapters/-/blob/2.0.1/OOTS-EDM/crossvalidation/README.md) §2.3) : une racine `Documents` sans espace de noms, et un `Document name="…"` par message, dont l'enfant est la racine RegRep ou l'élément `eb:Messaging`. [`scripts/pair_messages.py`](scripts/pair_messages.py) les assemble, et le document comme son rapport restent sous `.schematron/<étiquette>/messages/paires/`.
+
+| Jeu de règles | Ce qui y est confronté |
+| --- | --- |
+| `ebMS_EDM-REQ`, `ebMS_EDM-RESP`, `ebMS_EDM-ERR` | Chaque corps que la France émet et que le script attend conforme, à son propre entête — requêtes, réponses de justificatif, réponses d'erreur ; et chaque message de correspondant, à son entête |
+| `EDM-REQ_EDM-RESP`, `ebMS-REQ_ebMS-RESP` | La requête d'un correspondant, et ce que la France y répond : la réponse avec justificatif, la liste vide, la réponse annoncée pour plus tard — corps contre corps, entête contre entête |
+| `EDM-REQ_EDM-ERR` | La même requête, et chaque réponse d'erreur de la France qui porte un `requestId` : objet introuvable, requête invalide, capacité non prise en charge, délai dépassé, prévisualisation requise |
+| `EDM-REQ1_EDM-REQ2`, `ebMS-REQ1_ebMS-REQ2` | La première et la seconde requête que la France émet pour une même prévisualisation |
+| `EDM-ERR_EDM-REQ2`, `ebMS-ERR_ebMS-REQ2` | L'erreur `PreviewRequired` d'un correspondant, et la seconde requête que la France émet d'après elle |
+
+Les réponses de la France y sont rendues **par le code de la production** — `AnswerBuilder`, que `EvidenceProvision::ChooseAnswer` appelle —, à partir de la requête du correspondant lue par `RetrievedMessageParser` : ce qu'elles reprennent de la requête, c'est le code qui le reprend. La seconde requête est rendue d'après l'erreur du correspondant, dont elle reprend l'adresse de prévisualisation, la conversation et l'échange. Les messages du correspondant, eux, sont figés sous [`spec/fixtures/correspondent/`](spec/fixtures/README.md), une version par ligne : rendus par les builders qu'ils jugent, ils en partageraient les défauts. Ils passent d'abord, seuls et contre leur entête, les règles d'un message de leur nature, pour qu'une paire n'impute jamais à la France ce qu'eux enfreignent. La requête du correspondant nomme un fournisseur français **autre** que celui de la configuration : chaque passe prouve ainsi que la réponse annonce celui que la requête nomme.
+
+Une paire échoue sur une règle `FATAL` enfreinte, et sort le script en `2` ; une règle `WARNING` ou `CAUTION` enfreinte ne s'affiche qu'avec `BAVARD=1`. Aucune paire n'est aujourd'hui attendue refusée.
+
+Ce que le script ne confronte pas :
+
+- les sept jeux qui confrontent un message à une réponse d'annuaire — `DSD-ERR_DSD-RESP`, `DSD-RESP_EDM-REQ`, `DSD-RESP_ebMS-REQ`, `EB-EVI_DSD-ERR005`, `EB-EVI_DSD-RESP`, `EB-EVI_EDM-REQ`, `EB-REQ_EB-EVI` : il ne rend aucune réponse d'annuaire, et le [validateur en ligne](docs/testing_services.md) les garde en propre ;
+- une requête de la France à ce qu'un correspondant lui répond, hors l'erreur `PreviewRequired` qui la précède : ces paires jugent le message du correspondant ;
+- la réponse d'erreur sans `requestId` à une requête, que `R-EDM-REQ_EDM-ERR-01` n'admet que si la requête n'en porte pas non plus ; et l'entête d'une erreur à celui de la requête refusée, qu'aucun jeu ne porte ;
+- les messages réellement échangés : le journal des échanges n'est pas lu.
+
 > [!NOTE]
 > C'est une validation autonome : elle ne dépend d'aucun autre État membre, à la différence des [Testing Services](https://ec.europa.eu/digital-building-blocks/sites/spaces/OOTS/pages/787775546/Testing+Services) de la Commission, qui restent le juge de paix avant toute interopérabilité réelle.
 

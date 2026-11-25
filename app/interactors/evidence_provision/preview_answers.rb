@@ -41,8 +41,7 @@ module EvidenceProvision
 
     def preview_refusal(location)
       exception = EdmException::AUTHORIZATION
-      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, preview_location: location,
-        specification:, uuid:)
+      body = answers.error_response(exception, preview_location: location)
 
       Answers::PreviewRequired.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
         identifier: body.document_id, location:)
@@ -113,7 +112,7 @@ module EvidenceProvision
     end
 
     def empty_list(declined: false)
-      body = EvidenceResponseBuilder.new(requester:, provider:, request_id:, specification:, uuid:)
+      body = answers.empty_response
 
       Answers::EmptyList.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id,
         declined:)

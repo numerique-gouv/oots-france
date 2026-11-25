@@ -35,31 +35,13 @@ module EvidenceProvision
 
     private
 
-    def requester = context.requester
-
     def request_id = context.request_id
 
     def request = context.message.body
 
-    # The agent the request designates, announced as `EP` by every evidence
-    # response — `R-EDM-REQ_EDM-RESP-15` and `-16`. For the second request of a
-    # preview, `request` is that second request, whose provider is the one the
-    # rules compare.
-    def provider = @provider ||= request.provider
-
-    # The version the answer is written in: the one the request was read in.
-    # Chapter 4.7 §2.6.2 — « The same SpecificationId value MUST be used
-    # consistently in both request and response messages belonging to the same
-    # evidence exchange » — and, for the mechanism the slot alone carries, a 2.0
-    # response to a 1.2 request would fail at its destination on
-    # `R-EDM-RESP-S015`, whose 1.2.5 context is the object of the list and not
-    # the package around it.
-    #
-    # Read off the message and not off the exchange: where the header
-    # contradicts the body it is the header that says which line the refusal
-    # goes back on, and a request France could not read at all names no exchange
-    # to ask.
-    def specification = context.message.specification
+    # Built at each answer rather than once: `request_id` is only set by
+    # `chosen_or_invalid`, and stays nil where reading it is what refused.
+    def answers = AnswerBuilder.new(message: context.message, request_id:, uuid:)
 
     # Readable enough to answer, not enough to serve: `EDM:ERR:0003` rather
     # than silence. The exception is bound and not dropped — what it names is
@@ -182,8 +164,7 @@ module EvidenceProvision
     end
 
     def served_with(body, document)
-      attachment = Attachment.new(body.evidence_reference, Base64.strict_encode64(document),
-        mime_type: served_distribution(body.evidence_type).format)
+      attachment = answers.attachment(body, document)
 
       Answers::Served.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE, attachment:),
         identifier: body.document_id, evidence: served_evidence(body, attachment, document))
@@ -195,23 +176,18 @@ module EvidenceProvision
     # for a preview — so that both exchanges serve the same without storing it.
     def served_distribution(evidence_type) = ServedEvidenceType.distribution_for(evidence_type)
 
-    def issuer(evidence_type) = (StudentStatus.issuer if ServedEvidenceType.student_status?(evidence_type))
-
     def response_body(reference)
       evidence_body(beneficiary: request.beneficiary, evidence_type: request.evidence_type, reference:)
     end
 
-    def evidence_body(beneficiary:, evidence_type:, reference:, **described)
-      EvidenceResponseBuilder.new(
-        requester:, provider:, beneficiary:, evidence_type:, evidence_reference: reference, request_id:,
-        specification:, uuid:, issuer: issuer(evidence_type), distribution: served_distribution(evidence_type), **described
-      )
+    def evidence_body(beneficiary:, evidence_type:, reference:, **)
+      answers.evidence_response(beneficiary:, evidence_type:, evidence_reference: reference, **)
     end
 
     # After the timeout, for the reason `expired?` gives: a correspondent that
     # has already given up has no use for an appointment.
     def deferral
-      body = DeferredResponseBuilder.new(requester:, provider:, request_id:, specification:, uuid:)
+      body = answers.deferred_response
 
       Answers::Deferral.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
         identifier: body.document_id, available_at: body.available_at)
@@ -229,36 +205,15 @@ module EvidenceProvision
     end
 
     def refusal(exception)
-      body = ErrorResponseBuilder.new(requester:, exception:, request_id:, specification:, uuid:)
+      body = answers.error_response(exception)
 
       Answers::Refusal.new(envelope: wrap(body, EbmsAction::EXCEPTION_RESPONSE),
         identifier: body.document_id, exception:)
     end
 
-    # The corners swap on the way back, and the exchange identifier received is
-    # reused: that is what ties both legs of one exchange together.
-    #
-    # The original sender is read off the body: `R-ebMS_EDM-RESP-01` and `-02`
-    # (FATAL) hold it to the `EP` an evidence response announces, `R-ebMS_EDM-ERR-01`
-    # and `-02` to the `ErrorProvider` of an error, and one source cannot
-    # disagree with itself.
-    #
     # The builder and not its render: `JournalAnswer` reads the first MIME part
     # back from it, and rendering twice would mint a second message identifier.
-    def wrap(body, action, attachment: EmptyAttachment.new)
-      OutgoingEnvelopeBuilder.new(
-        body:,
-        attachment:,
-        action:,
-        recipient: context.message.sender,
-        original_sender: body.provider.ebms_identity,
-        final_recipient: requester.ebms_identity,
-        conversation_id: context.message.conversation_id,
-        exchange_id: context.message.exchange_id,
-        specification:,
-        uuid:,
-      )
-    end
+    def wrap(body, action, attachment: EmptyAttachment.new) = answers.envelope(body, action, attachment:)
 
     # Everything read off `body` and nothing off `request`, though the two agree
     # today: what the document says of an evidence must be what the response

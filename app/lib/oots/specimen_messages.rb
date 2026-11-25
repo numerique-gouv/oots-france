@@ -15,6 +15,8 @@ module Oots
   # and the body does not contain it. On the wire it is the SOAP envelope
   # submitted to Domibus that brings the two together.
   class SpecimenMessages
+    include SpecimenValues
+
     TIMESTAMP = Time.utc(2026, 8, 6, 10, 0, 0).freeze
 
     REQUEST_ID = 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797'.freeze
@@ -90,6 +92,11 @@ module Oots
     # header carries a distribution.
     SEVERAL_DISTRIBUTIONS_SPECIMEN = 'requeteDeuxDistributions'.freeze
 
+    # The prefixes of the files of a pair: what the correspondent sent, and
+    # what France answers to the request it received.
+    CORRESPONDENT = 'correspondant'.freeze
+    RECEIVED = 'recue'.freeze
+
     def initialize(destination, specification: EdmSpecification.preferred)
       @destination = Pathname.new(destination)
       @specification = specification
@@ -106,6 +113,7 @@ module Oots
 
       write_refused_specimens
       write_preview_specimens
+      write_conversation_specimens
     end
 
     private
@@ -153,24 +161,25 @@ module Oots
     # A preview location makes it the second request of chapter 4.9 §2 step 12,
     # which only a request that offered the preview can be.
     def request(subject: beneficiary, preview_location: nil, return_location: nil, provider_classifications: [],
-                service: data_service)
+                service: data_service, preview_possible: preview_location.present?, clock: self.clock, **header)
       body = EvidenceRequestBuilder.new(
         requester:, provider: german_provider, beneficiary: subject, requirement:, data_service: service,
         procedure_code: ProcedureCode::DIPLOMA_RECOGNITION,
         associated_documents: [AssociatedDocument::TRANSLATION], provider_classifications:,
-        preview_possible: preview_location.present?, preview_location:, return_location:,
+        preview_possible:, preview_location:, return_location:,
         specification:, clock:, uuid:,
       )
 
-      [body.render, request_header(body)]
+      [body.render, request_header(body, clock:, **header)]
     end
 
-    def request_header(body)
+    def request_header(body, **)
       header(
         action: EbmsAction::EXECUTE_QUERY_REQUEST,
         original_sender: requester.ebms_identity,
         final_recipient: german_provider.ebms_identity,
         payload_id: payload_id(body.document_id),
+        **,
       )
     end
 
@@ -233,8 +242,34 @@ module Oots
       write('erreurPrevisualisationRequise',
         *error_response(EdmException::AUTHORIZATION, preview_location:))
       write('reponseVide', *empty_response)
-      write('requeteSeconde', *request(preview_location: FOREIGN_PREVIEW_LOCATION, return_location: RETURN_LOCATION))
+      write('requeteSeconde', *second_request)
     end
+
+    # Step 12 of chapter 4.9 §2, as France sends it once a correspondent asked
+    # for the preview: the address that correspondent returned, sent back on the
+    # conversation, the exchange and towards the access point its error came
+    # from. Under a clock of its own, two minutes on: `R-EDM-REQ1_EDM-REQ2-02`
+    # has the second request carry another `IssueDateTime` than the first.
+    def second_request
+      refusal = correspondent.received('erreurPrevisualisationRequise')
+
+      request(preview_location: refusal.body.preview_location, return_location: RETURN_LOCATION,
+        clock: FrozenClock.new(TIMESTAMP + 120), conversation_id: refusal.conversation_id,
+        exchange_id: refusal.exchange_id, recipient: refusal.sender)
+    end
+
+    # The specimens the cross-validation rules judge in pairs, a French message
+    # against the one it answers or follows. Last, so that no identifier drawn
+    # above shifts.
+    def write_conversation_specimens
+      correspondent.copy_to(destination, CORRESPONDENT)
+      write('requetePremiere', *request(preview_possible: true))
+
+      AnswerSpecimens.new(correspondent.received('requete'), errors: ERROR_SPECIMENS, preview_location:, clock:, uuid:)
+        .each { |name, body, header| write("#{RECEIVED}.#{name}", body, header) }
+    end
+
+    def correspondent = @correspondent ||= CorrespondentMessages.new(specification)
 
     # Under the segment of the line of the set, as `PreviewSession.location_for`
     # composes it.
@@ -351,100 +386,6 @@ module Oots
       @german_access_point ||= AccessPoint.new(
         id: 'AP_DE_01', type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:oots',
       )
-    end
-
-    # `Substantial` and not `High`: the level travels from the beneficiary
-    # token, so a specimen wearing the highest value would let a message built
-    # from a constant pass unnoticed. The two optional attributes are carried
-    # too, this being the document `make schematron` asks the rules about.
-    def beneficiary
-      @beneficiary ||= NaturalPerson.new(
-        level_of_assurance: 'Substantial', eidas_identifier: 'FR/DE/123123123',
-        family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
-        place_of_birth: 'Aarhus', gender: 'Male',
-      )
-    end
-
-    # The company name carries an ampersand on purpose: it makes the escaping
-    # travel as far as a document Saxon must parse.
-    def legal_person
-      @legal_person ||= LegalPerson.new(
-        # Lower case on purpose: `R-EDM-REQ-C051` and `R-EDM-RESP-C035` carry
-        # the `i` flag, and this is the only document that asks the rules
-        # themselves to confirm they behave as they read.
-        eidas_identifier: 'fr/de/A2635542Y',
-        legal_name: 'Établissements Dupont & Fils',
-        identifiers: { 'VAT' => 'FR12345678901', 'LEI' => '969500HBOM1RJXTLZ57' },
-      )
-    end
-
-    def evidence_type
-      @evidence_type ||= EvidenceType.new(
-        id: 'https://sr.oots.tech.ec.europa.eu/evidencetypeclassifications/DE/ca8afed6-2dc0-422a-a931-d21c3d8d370e',
-        descriptions: { 'EN' => 'Certificate of Birth' },
-        distribution_formats: [EvidenceType::PDF],
-      )
-    end
-
-    # The classification of the example chapter 4.5.1 §3.4 publishes, answered.
-    def code_list_classification
-      EvidenceProviderClassification.new(
-        id: '5ce148b9-5578-4049-aecf-af7bb55714b5',
-        scheme_id: 'https://sr.oots.tech.ec.europa.eu/codelists/DE/Lau2022', type: 'codelist',
-        value_expression: 'https://query.cs.oots.tech.ec.europa.eu/dsd/rest/codelists/DE/Lau2022/a591a6d4',
-        descriptions: { 'EN' => 'Select the city in which you were born.' }, supported_value: '11000000',
-      )
-    end
-
-    # The three types chapter 3.1.4 §4.4.3.3 has a requester support, each in
-    # the value element `R-EDM-REQ-C103` or `C104` holds it to.
-    def three_classifications
-      [
-        code_list_classification,
-        EvidenceProviderClassification.new(id: '0f6f7a3e-7c55-4c2b-8f8e-6a9a3b9a1c01', type: 'boolean',
-          descriptions: { 'EN' => 'Were you born abroad?' }, supported_value: 'true'),
-        EvidenceProviderClassification.new(id: '0f6f7a3e-7c55-4c2b-8f8e-6a9a3b9a1c02', type: 'string',
-          descriptions: { 'EN' => 'Your passport number' }, supported_value: 'AB123456'),
-      ]
-    end
-
-    def requirement
-      @requirement ||= Requirement.new(
-        id: 'https://sr.oots.tech.ec.europa.eu/requirements/f8a6a284-34e9-42c7-9733-63b5c4f4aa42',
-        descriptions: { 'EN' => 'Proof of tertiary education diploma/certificate/degree' },
-        details: { 'EN' => 'Proof that the person holds a diploma awarded by a tertiary education institution.' },
-      )
-    end
-
-    # The data model is here on a PDF, which R-DSD-RESP-C067 says no conformant
-    # directory publishes, and that is the point: R-EDM-REQ-C107 is FATAL on a
-    # data model written beside an unstructured format, so this is the only
-    # shape in which the rules can judge that the request leaves it out. A
-    # specimen carrying none would satisfy C107 by having nothing to omit.
-    def data_service
-      @data_service ||= DataService.new(
-        id: '41170824-15d9-4c16-984e-63b75b937b8c',
-        evidence_type_classification: evidence_type.id,
-        distribution_format: EvidenceType::PDF,
-        distribution_language: 'EN',
-        distribution_conforms_to:
-          'https://sr.oots.tech.ec.europa.eu/datamodels/1c9a2e1e-1f1a-4b0e-9c2b-2f5e6a3d7c40',
-        descriptions: evidence_type.descriptions,
-        details: { 'EN' => 'Birth certificate issued by the civil registration office.' },
-      )
-    end
-
-    # The structured distribution a portal names by `format`, published without
-    # a data model, as the acceptance directory publishes several: chapter
-    # 4.5.1 §3.5 lets it travel without `sdg:ConformsTo`, which R-EDM-REQ-C070
-    # and C071 only warn of.
-    def structured_data_service
-      DataService.new(
-        **data_service.attributes.symbolize_keys, descriptions: data_service.descriptions,
-        details: data_service.details,
-        distributions: [Distribution.new(format: EvidenceType::PDF, language: 'EN'),
-                        Distribution.new(format: 'application/xml')]
-      ).requesting('application/xml')
     end
   end
 end

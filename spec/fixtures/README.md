@@ -74,6 +74,15 @@ Produit par les constructeurs de `test/constructeurs/`. C'est un corpus de **non
 >
 > La réparation ne change que les déclarations d'espaces de noms et cette ligne blanche : le contenu, lui, est celui que les constructeurs produisaient. Ces fichiers restent un corpus de non-régression, pas un modèle — c'est `incoming/reel/` qui tient ce rôle.
 
+## `correspondent/` — ce qu'un correspondant envoie, pour la validation croisée
+
+Écrits pour la [validation croisée](../../README.md#la-validation-croisée) de `make schematron`, une version par ligne (`v2.0/`, `v1.2/`) : rendus une fois par les constructeurs du dépôt depuis un script jetable, retouchés à la main là où un correspondant diffère de la France — l'agent intermédiaire retiré, l'adresse du requêteur allemand —, puis figés. Ils ne sont plus rendus par le code, qu'ils servent à juger : rendus par lui, ils en partageraient les défauts. Ce ne sont pas des captures ; leur seule garantie est que `scripts/validate_schematron.sh` les juge, seuls et contre leur entête, conformes aux règles d'un message de leur nature.
+
+| Fichier | Ce qu'il porte |
+| --- | --- |
+| `requete.xml`, `requete.entete.xml` | La requête d'un requêteur allemand (`ER`, `AP_DE_01` → `AP_FR_01`) pour « FR - Test Evidence Type » en PDF, sans prévisualisation ni document associé, qui nomme un fournisseur français **autre** que celui de la configuration — un identifiant fictif sous le schéma `EAS:0002` : ce que la France y répond doit l'annoncer |
+| `erreurPrevisualisationRequise.xml`, `.entete.xml` | L'exception `EDM:ERR:0002` de sévérité `PreviewRequired` qu'un fournisseur allemand renvoie au requêteur français des spécimens, sur la conversation et l'échange de ceux-ci, avec l'adresse de prévisualisation que reprend la seconde requête |
+
 ## `incoming/domibus/` — ce que la passerelle dit d'une remise qui échoue
 
 `erreursRemise.refusDistant.xml` est capturée sur le serveur d'acceptation. Les autres sont écrites à la main le 2026-10-05, d'après le schéma du plugin WS de Domibus au tag [`5.2-JEE10`](https://code.europa.eu/edelivery/domibus/-/tree/5.2-JEE10) — `BackendService.xsd` pour la notification, `WebServicePlugin.wsdl` et `webservicePlugin-body.xsd` pour la réponse —, la pile locale bouclant sur une seule passerelle, qui remet toujours, et ne produisant ni `WAITING_FOR_RETRY` ni `SEND_FAILURE`. Elles valent ce que vaut le schéma, et pas davantage : le jour où une passerelle réelle en émet, la capture remplace l'enveloppe écrite.
