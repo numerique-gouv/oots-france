@@ -9,6 +9,7 @@ module Settings
   # Absent or blank, these leave the application unable to answer anything.
   REQUIRED = %w[
     IDENTIFIANT_FOURNISSEUR_FRANCAIS
+    TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS
     NOM_FOURNISSEUR_FRANCAIS
     URL_OOTS_FRANCE
     IDENTIFIANT_REQUETEUR_DEMARCHE
@@ -157,7 +158,10 @@ module Settings
     def timeout_enabled? = timeout_switch != 'false'
 
     def french_provider_identity
-      { id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), name: required('NOM_FOURNISSEUR_FRANCAIS') }
+      {
+        id: required('IDENTIFIANT_FOURNISSEUR_FRANCAIS'), type_id: required('TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS'),
+        name: required('NOM_FOURNISSEUR_FRANCAIS'),
+      }
     end
 
     # API Particulier, which France reads the student status from: where it

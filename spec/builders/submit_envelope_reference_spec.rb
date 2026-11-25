@@ -26,7 +26,9 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
   before do
     allow(Settings).to receive_messages(
       identifier_suffix: 'oots.eu',
-      french_provider_identity: { id: '00000000000001', name: 'Direction interministérielle du numérique' },
+      french_provider_identity: {
+        id: '00000000000001', type_id: IdentifierScheme::FRENCH, name: 'Direction interministérielle du numérique',
+      },
     )
   end
 
@@ -114,7 +116,7 @@ RSpec.describe 'Les enveloppes soumises au plugin WS' do
 
   def response_body(attachment)
     EvidenceResponseBuilder.new(
-      requester:, beneficiary:, evidence_type:, evidence_reference: attachment.identifier,
+      requester:, provider: french_provider, beneficiary:, evidence_type:, evidence_reference: attachment.identifier,
       request_id: REQUEST_ID, clock: frozen_clock, uuid:,
     )
   end

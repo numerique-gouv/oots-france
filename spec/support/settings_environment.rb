@@ -12,6 +12,7 @@ module SettingsEnvironment
       .index_with { |name| name.in?(Settings::NUMERIC) ? '1000' : 'valeur' }
       .merge(france_connect_environment)
       .merge(Settings::AGENT_DOMAINS => 'numerique.gouv.fr')
+      .merge('TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => 'urn:cef.eu:names:identifier:EAS:0009')
       .merge('DELAI_EXPIRATION_REQUETEUR_MINUTES' => '6', 'DELAI_EXPIRATION_FOURNISSEUR_MINUTES' => '5')
       .merge('DELAI_REDIRECTION_REQUETEUR_MINUTES' => '15', 'DELAI_REDIRECTION_FOURNISSEUR_MINUTES' => '16')
       .merge('DELAI_PREVISUALISATION_REQUETEUR_MINUTES' => '41', 'DELAI_PREVISUALISATION_FOURNISSEUR_MINUTES' => '40')

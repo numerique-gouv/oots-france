@@ -16,6 +16,7 @@ namespace :oots do
     ENV['IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'AP_FR_01'
     ENV['TYPE_IDENTIFIANT_EXPEDITEUR_DOMIBUS'] ||= 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'
     ENV['IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= '00000000000001'
+    ENV['TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS'] ||= 'urn:cef.eu:names:identifier:EAS:0009'
     ENV['NOM_FOURNISSEUR_FRANCAIS'] ||= 'Direction interministérielle du numérique'
 
     Oots::SpecimenMessages.new(destination, specification:).write_all

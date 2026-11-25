@@ -63,6 +63,24 @@ RSpec.describe Settings do
     end
   end
 
+  # The scheme France announces itself under is judged by the rules on an
+  # agent's identifier, `R-EDM-ERR-C004` and `R-EDM-RESP-C039` among them.
+  describe 'the scheme of the French provider' do
+    %w[urn:cef.eu:names:identifier:EAS:0009 urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR].each do |scheme|
+      it "starts under #{scheme}" do
+        with_environment(lawful.merge('TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => scheme)) do
+          expect { described_class.verify! }.not_to raise_error
+        end
+      end
+    end
+
+    it 'refuses to start under a scheme the rules do not admit for an agent' do
+      with_environment(lawful.merge('TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => 'SIRET')) do
+        expect { described_class.verify! }.to raise_error(ConfigurationError, /TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS/)
+      end
+    end
+  end
+
   describe 'the retention of the exchange log' do
     # Keeping it less than twelve months breaks article 17(4) as surely as not
     # keeping it, and the nightly purge would carry that out silently.
@@ -801,11 +819,13 @@ RSpec.describe Settings do
   end
 
   describe '.french_provider_identity' do
-    it 'reads the SIRET and the name together' do
-      with_environment('IDENTIFIANT_FOURNISSEUR_FRANCAIS' => '00000000000001',
-        'NOM_FOURNISSEUR_FRANCAIS' => 'Direction interministérielle du numérique') do
+    it 'reads the identifier, its scheme and the name together' do
+      with_environment('IDENTIFIANT_FOURNISSEUR_FRANCAIS' => '00000000-0000-0000-0000-000000000000',
+        'TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR',
+        'NOM_FOURNISSEUR_FRANCAIS' => 'FR - Test Evidence Provider') do
         expect(described_class.french_provider_identity)
-          .to eq(id: '00000000000001', name: 'Direction interministérielle du numérique')
+          .to eq(id: '00000000-0000-0000-0000-000000000000',
+            type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR', name: 'FR - Test Evidence Provider')
       end
     end
   end
