@@ -3,9 +3,9 @@
 # replays on one already configured.
 #
 # Reproduces the steps docs/configurer_domibus_via_l_interface.md describes
-# (stores, PMode, Plugin User) through the administration REST API, then writes
-# the notification towards the application into the WS plugin's properties
-# file. What the gateway already holds for our access point is kept: a PMode
+# (stores, PMode, Plugin User, message filters) through the administration REST
+# API, then writes the notification towards the application into the WS
+# plugin's properties file. What the gateway already holds for our access point is kept: a PMode
 # declaring it, or a keystore with its key, is replaced only when one is given.
 #
 # Usage: scripts/configure_domibus.sh                the whole configuration
@@ -256,7 +256,7 @@ sys.exit(0 if declaree else 3)
 # The Technical Support Dashboard generates one PMode for the whole network,
 # with every process of it: lcmProcess lists the access points declared for LCM,
 # which ours is not.
-# Domibus 5.2 refuses a PMode where its own party takes part in a process neither
+# Domibus 5.2.2 refuses a PMode where its own party takes part in a process neither
 # as initiator nor as responder (BusinessProcessValidator, DOM_003), so such
 # processes are dropped from what is uploaded. None carries a message ours sends
 # or receives; the file on disk is left as published.
@@ -342,12 +342,13 @@ PYTHON
 }
 
 # The keystore's aliases, as `keystore/list` reads them from the file
-# docker-compose.yml forces the gateway onto. Java store aliases being
-# case-insensitive, so is the comparison.
+# docker-compose.yml forces the gateway onto, under `storeEntries` (StoreListRO,
+# Domibus `5.2.2-JEE10`). Java store aliases being case-insensitive, so is the
+# comparison.
 aliasDuKeystore() {
   corpsDomibus | python3 -c "
 import json, sys
-print(' '.join(entree['name'] for entree in json.load(sys.stdin)['trustStoreList'] or []))
+print(' '.join(entree['name'] for entree in json.load(sys.stdin)['storeEntries'] or []))
 " 2> /dev/null
 }
 
@@ -504,6 +505,55 @@ print('oui' if any(u.get('userName') == sys.argv[1] for u in utilisateurs) else 
   fi
 }
 
+filtresIllisibles() {
+  echo "❌ Filtres de message illisibles ($1) : $(messageDomibus)" >&2
+  exit 1
+}
+
+# Domibus hands an incoming message to the first plugin whose filter matches,
+# and a filter without criteria matches everything: the 5.2.2 image installs the
+# REST plugin, whose filter lands before the WS plugin's on a fresh base. The
+# WS plugin would then never be notified, the exchange acknowledged on the wire
+# and lost to the application. The order is the list's order on `PUT`
+# (RoutingService.updateBackendFilters, Domibus `5.2.2-JEE10`), and nothing is
+# written when the WS plugin already leads.
+metLePluginWSEnTete() {
+  echo "→ Filtres de message : backendWSPlugin en tête"
+  codeFiltres=$(appelAvecCode "$URL_DOMIBUS/rest/internal/admin/messagefilters")
+  [ "$codeFiltres" = "200" ] || filtresIllisibles "$codeFiltres"
+  statutFiltres=0
+  reordonnes=$(corpsDomibus | python3 -c "
+import json, sys
+filtres = json.load(sys.stdin)['messageFilterEntries']
+if not any(f['backendName'] == 'backendWSPlugin' for f in filtres):
+    sys.exit(4)
+ordonnes = sorted(filtres, key=lambda f: f['backendName'] != 'backendWSPlugin')
+if ordonnes != filtres:
+    print(json.dumps(ordonnes))
+" 2> /dev/null) || statutFiltres=$?
+  case $statutFiltres in
+    0) ;;
+    4)
+      echo "❌ Aucun filtre de message pour backendWSPlugin : le plugin WS est-il installé ?" >&2
+      exit 1
+      ;;
+    *) filtresIllisibles "$codeFiltres" ;;
+  esac
+  if [ -z "$reordonnes" ]; then
+    echo "  déjà en tête, rien à faire"
+    return
+  fi
+  codeFiltres=$(appelAvecCode \
+    -X PUT "$URL_DOMIBUS/rest/internal/admin/messagefilters" \
+    -H 'Content-Type: application/json' \
+    -d "$reordonnes")
+  if [ "$codeFiltres" != "200" ]; then
+    echo "❌ Réordonnancement des filtres refusé ($codeFiltres) : $(messageDomibus)" >&2
+    exit 1
+  fi
+  echo "  remis en tête"
+}
+
 testeLaPasserelle() {
   # First guard rail: it is through this account, and on this route, that the
   # application resolves access points. If it fails here, it will fail in the
@@ -652,6 +702,7 @@ if [ -n "$FICHIER_PMODE" ]; then
   chargePMode
 fi
 creePluginUser
+metLePluginWSEnTete
 testeLaPasserelle
 ecrisNotification
 
@@ -667,5 +718,5 @@ if [ -n "$FICHIER_PMODE" ]; then
 else
   PMODE="PMode conservé"
 fi
-echo "✅ Domibus configuré : $STORES, $PMODE, Plugin User $LOGIN_API_REST opérationnel, message de test acquitté"
+echo "✅ Domibus configuré : $STORES, $PMODE, Plugin User $LOGIN_API_REST opérationnel, backendWSPlugin en tête des filtres, message de test acquitté"
 echo "   Notification vers le dorsal écrite ; redémarrer la passerelle pour qu'elle s'applique."

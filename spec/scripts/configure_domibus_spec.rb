@@ -1,16 +1,19 @@
 require 'fileutils'
+require 'json'
 require 'open3'
 require 'socket'
 require 'tmpdir'
 
 # The administration console, reduced to canned answers per route: what the
-# script asked is recorded, and any route it was not given answers 500.
+# script asked is recorded, with the last body sent to each route, and any route
+# it was not given answers 500.
 class FakeDomibusConsole
-  attr_reader :requests
+  attr_reader :requests, :bodies
 
   def initialize(routes)
     @routes = routes
     @requests = []
+    @bodies = {}
     @server = TCPServer.new('127.0.0.1', 0)
     @thread = Thread.new { serve_until_closed }
   end
@@ -35,13 +38,17 @@ class FakeDomibusConsole
   def answer(client)
     method, target = client.gets.split
     length = read_headers(client).fetch('content-length', '0').to_i
-    client.read(length)
-    route = "#{method} #{target.split('?').first.delete_prefix('/domibus')}"
-    @requests << route
+    route = record("#{method} #{target.split('?').first.delete_prefix('/domibus')}", client.read(length))
     status, body = @routes.fetch(route, [500, 'unexpected'])
     cookie = route.end_with?('/authentication') ? "Set-Cookie: XSRF-TOKEN=jeton; Path=/\r\n" : ''
     client.write("HTTP/1.1 #{status} X\r\nContent-Length: #{body.bytesize}\r\n#{cookie}Connection: close\r\n\r\n#{body}")
     client.close
+  end
+
+  def record(route, body)
+    @requests << route
+    @bodies[route] = body
+    route
   end
 
   def read_headers(client)
@@ -200,13 +207,13 @@ RSpec.describe 'scripts/configure_domibus.sh' do
         { 'POST /rest/public/security/authentication' => [200, ''] }.merge(routes)
       )
       output, = run_script(URL_DOMIBUS: console.url, **variables)
-      [output, console.requests]
+      [output, console.requests, console.bodies]
     ensure
       console&.stop
     end
 
     let(:current_pmode) { [200, ")]}',\n{\"id\":\"7\",\"current\":true}"] }
-    let(:keystore_with_key) { [200, ")]}',\n{\"trustStoreList\":[{\"name\":\"ap_fr_01\"}]}"] }
+    let(:keystore_with_key) { [200, ")]}',\n{\"storeEntries\":[{\"name\":\"ap_fr_01\"}]}"] }
 
     it 'keeps a PMode declaring AP_FR_01 and a keystore holding its key' do
       output, requests = run_against(
@@ -313,7 +320,7 @@ RSpec.describe 'scripts/configure_domibus.sh' do
       output, = run_against(
         'GET /rest/internal/admin/pmode/current' => current_pmode,
         'GET /rest/internal/admin/pmode/7' => [200, EXAMPLE_PMODE],
-        'GET /rest/internal/admin/keystore/list' => [200, ")]}',\n{\"trustStoreList\":[{\"name\":\"blue_gw\"}]}"]
+        'GET /rest/internal/admin/keystore/list' => [200, ")]}',\n{\"storeEntries\":[{\"name\":\"blue_gw\"}]}"]
       )
 
       expect(output).to include('aucune clé AP_FR_01 : génération')
@@ -339,6 +346,71 @@ RSpec.describe 'scripts/configure_domibus.sh' do
 
       expect(output).to include('Keystore de la passerelle illisible (500)')
       expect(requests).not_to include(*UPLOADS)
+    end
+
+    context 'with the message filters' do
+      let(:configured) do
+        { 'GET /rest/internal/admin/pmode/current' => current_pmode,
+          'GET /rest/internal/admin/pmode/7' => [200, EXAMPLE_PMODE],
+          'GET /rest/internal/admin/keystore/list' => keystore_with_key,
+          'GET /rest/internal/admin/plugin/users' => [200, ")]}',\n{\"entries\":[{\"userName\":\"oots_spec\"}]}"],
+          'PUT /rest/internal/admin/messagefilters' => [200, ''] }
+      end
+
+      def filters(*plugins)
+        entries = plugins.map { |plugin| { backendName: plugin, entityId: "id-#{plugin}", routingCriterias: [] } }
+        [200, ")]}',\n#{JSON.generate(messageFilterEntries: entries)}"]
+      end
+
+      it 'puts the WS plugin back first, the others kept in their order and unchanged' do
+        output, _, bodies = run_against(
+          configured.merge('GET /rest/internal/admin/messagefilters' =>
+                             filters('domibusRestPlugin', 'Jms', 'backendWSPlugin'))
+        )
+
+        expect(output).to include('remis en tête')
+        expect(JSON.parse(bodies.fetch('PUT /rest/internal/admin/messagefilters'))).to eq(
+          %w[backendWSPlugin domibusRestPlugin Jms].map do |plugin|
+            { 'backendName' => plugin, 'entityId' => "id-#{plugin}", 'routingCriterias' => [] }
+          end
+        )
+      end
+
+      it 'stops when the filters cannot be read' do
+        output, requests = run_against(configured.merge('GET /rest/internal/admin/messagefilters' => [200, ")]}',\n{}"]))
+
+        expect(output).to include('Filtres de message illisibles (200)')
+        expect(requests).not_to include('PUT /rest/internal/admin/messagefilters')
+      end
+
+      it 'stops when the gateway refuses the new order' do
+        output, = run_against(
+          configured.merge(
+            'GET /rest/internal/admin/messagefilters' => filters('domibusRestPlugin', 'backendWSPlugin'),
+            'PUT /rest/internal/admin/messagefilters' => [403, 'refus']
+          )
+        )
+
+        expect(output).to include('Réordonnancement des filtres refusé (403) : refus')
+      end
+
+      it 'writes nothing when the WS plugin already leads' do
+        output, requests = run_against(
+          configured.merge('GET /rest/internal/admin/messagefilters' => filters('backendWSPlugin', 'backendRestPlugin'))
+        )
+
+        expect(output).to include('déjà en tête, rien à faire')
+        expect(requests).not_to include('PUT /rest/internal/admin/messagefilters')
+      end
+
+      it 'stops when the gateway lists no WS plugin' do
+        output, requests = run_against(
+          configured.merge('GET /rest/internal/admin/messagefilters' => filters('backendRestPlugin'))
+        )
+
+        expect(output).to include('Aucun filtre de message pour backendWSPlugin')
+        expect(requests).not_to include('PUT /rest/internal/admin/messagefilters')
+      end
     end
 
     it 'loads what it is given without looking at what the gateway holds' do
