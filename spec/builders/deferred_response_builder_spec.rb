@@ -13,6 +13,7 @@ RSpec.describe DeferredResponseBuilder do
   let(:attributes) do
     {
       requester: EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur"),
+      provider: EvidenceProvider.french,
       request_id: 'urn:uuid:4ffb5281-179d-4578-adf2-39fd13ccc797',
       clock: instance_double(Clock, now: Time.utc(2026, 8, 6, 10)),
       uuid: instance_double(UuidGenerator, next: '1a2b3c4d-0000-4000-8000-000000000004'),
@@ -51,6 +52,16 @@ RSpec.describe DeferredResponseBuilder do
 
     expect(list).to be_present
     expect(list.element_children).to be_empty
+  end
+
+  it 'announces the provider it is given, under its own scheme' do
+    provider = build(:evidence_provider, identifier: build(:ebms_identity, id: '00000000-0000-0000-0000-000000000000',
+      type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'))
+    identifier = Nokogiri::XML(described_class.new(**attributes, provider:).render)
+      .at_xpath('//rim:Slot[@name="EvidenceProvider"]//sdg:Agent/sdg:Identifier', namespaces)
+
+    expect([identifier.text, identifier['schemeID']])
+      .to eq(['00000000-0000-0000-0000-000000000000', 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'])
   end
 
   it 'classifies the answering provider as evidence provider' do

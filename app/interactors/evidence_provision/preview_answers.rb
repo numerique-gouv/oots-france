@@ -113,7 +113,7 @@ module EvidenceProvision
     end
 
     def empty_list(declined: false)
-      body = EvidenceResponseBuilder.new(requester:, request_id:, specification:, uuid:)
+      body = EvidenceResponseBuilder.new(requester:, provider:, request_id:, specification:, uuid:)
 
       Answers::EmptyList.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE), identifier: body.document_id,
         declined:)

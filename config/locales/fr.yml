@@ -1351,6 +1351,9 @@ fr:
       # sur P-256 : une clé d'un autre type échouerait à la première signature,
       # loin d'ici.
       demo_signing_curve: "CLE_PRIVEE_JWK_SIGNATURE_DEMARCHE_EN_BASE64 déclare une clé %{kty} sur %{crv} : le jeton du bénéficiaire se signe en ES256, qui exige une clé EC sur P-256."
+      # Les règles qui jugent l'identifiant d'un agent n'admettent qu'un code EAS
+      # ou le repli « unregistered » suivi d'un pays OOTS ou de « oots ».
+      french_provider_scheme: "%{name} vaut « %{value} » : le schéma de l'identifiant d'un agent est urn:cef.eu:names:identifier:EAS: suivi d'un code de la liste EAS, ou urn:oasis:names:tc:ebcore:partyid-type:unregistered: suivi d'un code pays OOTS ou de oots."
       requesters_unreadable: "%{name} ne se lit pas : la valeur attendue est un objet JSON dont chaque membre, indexé par le SIRET d'un requêteur, est un objet."
       requesters_url_malformed: "%{name} porte des url qui ne sont pas des adresses http ou https absolues nommant un hôte : %{entries}."
       # Entre guillemets, pour qu'un espace en trop s'y voie : l'adresse est lue telle qu'écrite.

@@ -207,6 +207,126 @@ RSpec.describe EvidenceProvision::Answer do
     end
   end
 
+  # `R-EDM-REQ_EDM-RESP-15` and `-16`, `R-ebMS_EDM-RESP-01` and `-02` (FATAL):
+  # the provider the Data Service Directory of acceptance publishes for France.
+  describe 'a request naming the provider the Data Service Directory publishes' do
+    PUBLISHED_ID = '00000000-0000-0000-0000-000000000000'.freeze
+    PUBLISHED_SCHEME = 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'.freeze
+
+    let(:message) { envelope_with_body('requete') { |body| naming_the_published_provider(body) } }
+    let(:header) { Nokogiri::XML(gateway_body) }
+
+    def naming_the_published_provider(body)
+      body.sub(Fixtures::PROVIDER_AGENT) do
+        %(<sdg:Agent><sdg:Identifier schemeID="#{PUBLISHED_SCHEME}">#{PUBLISHED_ID}</sdg:Identifier>) \
+          '<sdg:Name lang="EN">FR - Test Evidence Provider</sdg:Name></sdg:Agent>'
+      end
+    end
+
+    def provider_agents = submitted.xpath("//rim:Slot[@name='EvidenceProvider']//sdg:Agent", SlotReading::NAMESPACES)
+
+    def announced_provider
+      identifier = provider_agents.first.at_xpath('sdg:Identifier', SlotReading::NAMESPACES)
+      [identifier.text, identifier['schemeID']]
+    end
+
+    def original_sender
+      property = header.at_xpath("//eb:Property[@name='originalSender']", OotsNamespaces::NAMESPACES)
+      [property.text, property['type']]
+    end
+
+    shared_examples 'an answer announcing the provider the request names' do
+      it 'announces it as the one agent classified EP, under its scheme' do
+        answer
+
+        expect(provider_agents.size).to eq(1)
+        expect(provider_agents.first.at_xpath('sdg:Classification', SlotReading::NAMESPACES).text).to eq('EP')
+        expect(announced_provider).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
+      end
+
+      it 'names it as the request does, and not as the configuration does' do
+        answer
+
+        names = provider_agents.first.xpath('sdg:Name', SlotReading::NAMESPACES).map { |name| [name['lang'], name.text] }
+        expect(names).to eq([['EN', 'FR - Test Evidence Provider']])
+        expect(provider_agents.to_xml).not_to include(Settings.french_provider_identity[:id])
+      end
+
+      it 'puts it in the original sender of the header' do
+        answer
+
+        expect(original_sender).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
+      end
+
+      it 'journals it as the providing authority of the response' do
+        answer
+
+        expect(AuditEvent.last).to have_attributes(event_type: 'response_sent',
+          providing_authority_id: PUBLISHED_ID, providing_authority_scheme: PUBLISHED_SCHEME)
+      end
+    end
+
+    context 'when France serves the evidence on the 2.0 line' do
+      it_behaves_like 'an answer announcing the provider the request names'
+    end
+
+    context 'when France serves the evidence on the 1.2 line' do
+      let(:message) { earlier_line_envelope { |body| naming_the_published_provider(body) } }
+
+      before { create(:exchange, :legacy_line, incoming: true, conversation_id: message.conversation_id) }
+
+      it_behaves_like 'an answer announcing the provider the request names'
+    end
+
+    context 'when France announces the evidence for later' do
+      let(:message) do
+        envelope_with_body('requete') do |body|
+          naming_the_published_provider(body)
+            .sub(/(<rim:Slot name="Procedure">.*?<rim:Value>)[^<]*/m, "\\1#{ProcedureCode::BIRTH_REGISTRATION}")
+        end
+      end
+
+      it_behaves_like 'an answer announcing the provider the request names'
+    end
+
+    context 'when no evidence matches the user' do
+      let(:message) do
+        envelope_with_body('requete') { |body| asking_for_type(naming_the_published_provider(body), Fixtures::UNMATCHED_TYPE) }
+      end
+
+      it_behaves_like 'an answer announcing the provider the request names'
+    end
+
+    # The error response keeps the identity of the configuration: no rule of
+    # `EDM-REQ_EDM-ERR.sch` ties its `ErrorProvider` to the request.
+    context 'when France refuses the request' do
+      let(:message) do
+        envelope_with_body('requete') { |body| asking_for_type(naming_the_published_provider(body), 'inconnu') }
+      end
+
+      it 'answers under the identity of the configuration' do
+        answer
+
+        expect(original_sender).to eq([Settings.french_provider_identity[:id], Settings.french_provider_identity[:type_id]])
+        expect(AuditEvent.last).to have_attributes(event_type: 'error_sent',
+          providing_authority_id: Settings.french_provider_identity[:id])
+      end
+
+      # On a deployment the configuration names the provider France publishes
+      # at the Data Service Directory, scheme included.
+      it 'answers under the scheme the configuration declares' do
+        with_environment('IDENTIFIANT_FOURNISSEUR_FRANCAIS' => PUBLISHED_ID,
+          'TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => PUBLISHED_SCHEME) do
+          answer
+        end
+
+        error_provider = submitted.at_xpath("//rim:Slot[@name='ErrorProvider']//sdg:Identifier", SlotReading::NAMESPACES)
+        expect([error_provider.text, error_provider['schemeID']]).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
+        expect(original_sender).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
+      end
+    end
+  end
+
   # Chapter 4.5.2: France holds no document it merely has to wait for, so one
   # procedure is designated to answer the announcement — stub 10. What matters
   # is that the message exists and is confronted with the response rules.

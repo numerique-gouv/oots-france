@@ -16,7 +16,7 @@ class ErrorResponseBuilder < ApplicationBuilder
   # French beside it.
   PREVIEW_LANGUAGES = %w[EN FR].freeze
 
-  attr_reader :request_id, :document_id, :exception, :preview_location
+  attr_reader :request_id, :provider, :document_id, :exception, :preview_location
 
   def initialize(
     requester:, exception:, request_id:, provider: nil, preview_location: nil,
@@ -53,9 +53,9 @@ class ErrorResponseBuilder < ApplicationBuilder
 
   def provider_agent
     AgentBuilder.new(
-      identity: @provider.ebms_identity.validate!(:french_provider),
-      names: @provider.descriptions,
-      address: @provider.address,
+      identity: provider.ebms_identity.validate!(:french_provider),
+      names: provider.descriptions,
+      address: provider.address,
       classification: EvidenceProvider::ERROR_PROVIDER,
     ).render
   end

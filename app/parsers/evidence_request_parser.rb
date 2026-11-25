@@ -142,6 +142,30 @@ class EvidenceRequestParser
 
   def declared_requester_country = declared { |agent| agent_country(agent) }
 
+  # The agent the request designates, which every evidence response announces
+  # as its `EP`: `R-EDM-REQ_EDM-RESP-15` and `-16` (FATAL) compare the
+  # response's identifier and its scheme to the first `sdg:Identifier` of this
+  # slot's first agent. Its names follow, the identifier under the names of the
+  # configuration would describe two organisations in one agent. The address is
+  # not read: the response does not echo it.
+  #
+  # Keyed by language, safe for the reason `evidence_type` is, and read after
+  # `validate!` like everything that answers.
+  def provider
+    designated = provider_agents.first
+    identifier = require_agent_identifier(designated, :provider)
+    names = require_agent_names(designated, :provider)
+
+    EvidenceProvider.new(
+      identifier: EbmsIdentity.new(
+        # Text, never a number, for the leading zero a SIRET may carry.
+        id: require_content(identifier.text, 'parsers.evidence_request.provider_without_identifier'),
+        type_id: attribute(identifier, 'schemeID'),
+      ),
+      descriptions: names.to_h { |name| [attribute(name, 'lang'), name.text] },
+    )
+  end
+
   # Keyed by language, which `R-EDM-REQ-S058` is what makes safe: it refuses two
   # sibling elements of one local name sharing a `lang`, so no two titles of an
   # accepted request can collide here — and the reading is called after

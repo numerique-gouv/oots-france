@@ -176,10 +176,7 @@ module Oots
 
     def evidence_response(subject: beneficiary)
       attachment = Attachment.new(payload_id(uuid.next), 'JVBERi0=')
-      body = EvidenceResponseBuilder.new(
-        requester:, beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier,
-        request_id: REQUEST_ID, specification:, clock:, uuid:,
-      )
+      body = evidence_response_body(beneficiary: subject, evidence_type:, evidence_reference: attachment.identifier)
 
       [body.render, evidence_response_header(body, attachment)]
     end
@@ -188,12 +185,17 @@ module Oots
     # PDF, with its language, and the ministry as the issuer.
     def student_status_response(distribution = StudentStatus::DATA)
       attachment = Attachment.new(payload_id(uuid.next), 'e30=', mime_type: distribution.format)
-      body = EvidenceResponseBuilder.new(
-        requester:, beneficiary:, evidence_type:, evidence_reference: attachment.identifier, request_id: REQUEST_ID,
-        issuer: StudentStatus.issuer, distribution:, specification:, clock:, uuid:,
-      )
+      body = evidence_response_body(beneficiary:, evidence_type:, evidence_reference: attachment.identifier,
+        issuer: StudentStatus.issuer, distribution:)
 
       [body.render, evidence_response_header(body, attachment)]
+    end
+
+    # France as the provider the request designates: the specimens stand alone,
+    # with no request whose provider they could echo.
+    def evidence_response_body(**)
+      EvidenceResponseBuilder.new(requester:, provider: french_provider, request_id: REQUEST_ID, specification:, clock:,
+        uuid:, **)
     end
 
     def evidence_response_header(body, attachment)
@@ -207,7 +209,8 @@ module Oots
     end
 
     def deferred_response
-      body = DeferredResponseBuilder.new(requester:, request_id: REQUEST_ID, specification:, clock:, uuid:)
+      body = DeferredResponseBuilder.new(requester:, provider: french_provider, request_id: REQUEST_ID, specification:,
+        clock:, uuid:)
 
       [
         body.render,
@@ -238,7 +241,7 @@ module Oots
     def preview_location = "https://oots.example.gouv.fr/previsualisation/#{specification.segment}/#{PREVIEW_TOKEN}"
 
     def empty_response
-      body = EvidenceResponseBuilder.new(requester:, request_id: REQUEST_ID, specification:, clock:, uuid:)
+      body = evidence_response_body
 
       [body.render, evidence_response_header(body, EmptyAttachment.new)]
     end

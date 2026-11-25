@@ -50,7 +50,7 @@ RSpec.describe 'The preview France offers as a provider' do
 
   def location = PreviewSession.sole.location
 
-  def second(**) = second_request(location:, **)
+  def second(**, &) = second_request(location:, **, &)
 
   describe 'the first request' do
     before { deliver(first, 'm001') }
@@ -164,6 +164,58 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(Digest::SHA256.hexdigest(attachment_of(submitted.last))).to eq(Digest::SHA256.hexdigest(seen))
       expect(Nokogiri::XML(submitted.last).to_s).to include(first.exchange_id)
       expect(Exchange.sole.status).to eq('delivered')
+    end
+
+    # `R-EDM-REQ_EDM-RESP-15` and `-16`, `R-ebMS_EDM-RESP-01` and `-02`: the
+    # answer to the second request announces the provider that request names,
+    # which need not be the one the first named.
+    describe 'the provider it announces' do
+      let(:following) do
+        second(exchange_id: first.exchange_id, request_id: second_id) do |body|
+          body.sub(Fixtures::PROVIDER_AGENT) do
+            '<sdg:Agent><sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">' \
+              '00000000-0000-0000-0000-000000000000</sdg:Identifier>' \
+              '<sdg:Name lang="EN">FR - Test Evidence Provider</sdg:Name></sdg:Agent>'
+          end
+        end
+      end
+
+      let(:named) do
+        ['00000000-0000-0000-0000-000000000000', 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR']
+      end
+
+      def announced
+        agent = body_of(submitted.last).at_xpath("//rim:Slot[@name='EvidenceProvider']//sdg:Identifier", RS)
+        sender = Nokogiri::XML(submitted.last)
+          .at_xpath("//eb:Property[@name='originalSender']", OotsNamespaces::NAMESPACES)
+        journalled = AuditEvent.where(event_type: 'response_sent').last
+
+        [[agent.text, agent['schemeID']], [sender.text, sender['type']],
+         [journalled.providing_authority_id, journalled.providing_authority_scheme]]
+      end
+
+      it 'is the second request\'s once the user had accepted before it arrived' do
+        PreviewSession.sole.decide!(accepted: true)
+        deliver(following, 'm002')
+
+        expect(announced).to eq([named] * 3)
+      end
+
+      it 'is the second request\'s once the user accepts after it was held' do
+        deliver(following, 'm002')
+        perform_enqueued_jobs do
+          PreviewSession.sole.decide!(accepted: true) && AnswerPreviewedRequestJob.perform_later(PreviewSession.sole.id)
+        end
+
+        expect(announced).to eq([named] * 3)
+      end
+
+      it 'is the second request\'s on the empty list of a user who used nothing' do
+        PreviewSession.sole.decide!(accepted: false)
+        deliver(following, 'm002')
+
+        expect(announced).to eq([named] * 3)
+      end
     end
 
     # The gateway refusing the late answer settles the exchange, as it would on

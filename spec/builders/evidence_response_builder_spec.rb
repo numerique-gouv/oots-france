@@ -17,6 +17,7 @@ RSpec.describe EvidenceResponseBuilder do
   let(:attributes) do
     {
       requester: EvidenceRequester.french(id: '00000000000002', name: "Ministère de l'enseignement supérieur"),
+      provider: EvidenceProvider.french,
       beneficiary: NaturalPerson.new(
         eidas_identifier: 'FR/DE/123123123', family_name: 'Dupont', given_name: 'Jean', date_of_birth: '1992-10-22',
       ),
@@ -58,13 +59,50 @@ RSpec.describe EvidenceResponseBuilder do
 
   EdmSpecification::SPOKEN.each do |specification|
     it "names the issuing authority in the order of the language codes, in #{specification.identifier}" do
-      provider = EvidenceProvider.new(
+      issuer = EvidenceProvider.new(
         identifier: EbmsIdentity.new(id: 'DE73524311', type_id: 'urn:cef.eu:names:identifier:EAS:9930'),
         descriptions: { 'NL' => 'Kantoor', 'EN' => 'Office', 'DE' => 'Amt' },
       )
-      rendered = Nokogiri::XML(described_class.new(**attributes, provider:, specification:).render)
+      rendered = Nokogiri::XML(described_class.new(**attributes, issuer:, specification:).render)
 
       expect(rendered.xpath('//sdg:IssuingAuthority/sdg:Name', namespaces).pluck('lang')).to eq(%w[DE EN NL])
+    end
+
+    # `R-EDM-REQ_EDM-RESP-15` and `-16`: the `EP` is the provider the request
+    # designates, names included; the issuing authority stays France's.
+    context "with the provider a request designates, in #{specification.identifier}" do
+      subject(:document) { Nokogiri::XML(described_class.new(**attributes, provider:, specification:).render) }
+
+      let(:provider) do
+        EvidenceProvider.new(
+          identifier: EbmsIdentity.new(id: '00000000-0000-0000-0000-000000000000',
+            type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'),
+          descriptions: { 'EN' => 'FR - Test Evidence Provider' },
+        )
+      end
+
+      let(:agent) { document.at_xpath('//rim:Slot[@name="EvidenceProvider"]//sdg:Agent', namespaces) }
+
+      it 'announces it as the one agent of the slot' do
+        expect(document.xpath('//rim:Slot[@name="EvidenceProvider"]//sdg:Agent', namespaces).size).to eq(1)
+      end
+
+      it 'announces its identifier under its scheme' do
+        identifier = agent.at_xpath('sdg:Identifier', namespaces)
+
+        expect([identifier.text, identifier['schemeID']])
+          .to eq(['00000000-0000-0000-0000-000000000000', 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'])
+      end
+
+      it 'announces its names, each in its language' do
+        expect(agent.xpath('sdg:Name', namespaces).map { |name| [name['lang'], name.text] })
+          .to eq([['EN', 'FR - Test Evidence Provider']])
+      end
+
+      it 'keeps France as the issuing authority' do
+        expect(document.at_xpath('//sdg:IssuingAuthority/sdg:Identifier', namespaces).text)
+          .to eq(Settings.french_provider_identity[:id])
+      end
     end
   end
 
@@ -252,7 +290,7 @@ RSpec.describe EvidenceResponseBuilder do
     %w[v2_0 v1_2].each do |slug|
       it "carries an empty registry object list on the #{slug} line" do
         rendered = described_class.new(
-          **attributes.slice(:requester, :request_id, :clock, :uuid),
+          **attributes.slice(:requester, :provider, :request_id, :clock, :uuid),
           specification: EdmSpecification::SPOKEN.find { |spoken| spoken.slug == slug },
         ).render
         list = Nokogiri::XML(rendered).xpath('/*/rim:RegistryObjectList', namespaces)

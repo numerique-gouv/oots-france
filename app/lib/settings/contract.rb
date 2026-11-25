@@ -12,6 +12,7 @@ module Settings
       reject_unless_evidence_request_switch_readable
       reject_unless_present
       reject_unless_whole
+      reject_unless_french_provider_scheme
       reject_unless_lawful_retention
       reject_unless_timeouts_ordered
       reject_unless_france_connect_whole
@@ -44,6 +45,19 @@ module Settings
       return if wrong.empty?
 
       refuse(I18n.t('lib.settings.not_whole', names: wrong.map { |name| offender(name) }.join(', ')))
+    end
+
+    # The scheme France announces itself under, on the error response and as the
+    # issuer of its test evidence: `R-EDM-ERR-C004` and `R-EDM-RESP-C039`
+    # (FATAL) hold it to the forms `IdentifierScheme.agent_scheme?` reads. A
+    # deployment takes the one its Data Service Directory entry publishes, so a
+    # value outside them is refused here rather than in every answer.
+    def reject_unless_french_provider_scheme
+      name = 'TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS'
+      scheme = ENV.fetch(name, nil)
+      return if !filled?(name) || IdentifierScheme.agent_scheme?(scheme)
+
+      refuse(I18n.t('lib.settings.french_provider_scheme', name:, value: scheme))
     end
 
     # Keeping the log less than twelve months breaks the obligation as surely as

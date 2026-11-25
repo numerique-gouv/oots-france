@@ -7,7 +7,7 @@
 # classified `EP` here, and its slot is a collection, where the requester's is a
 # single value — an asymmetry the TDD impose, not one chosen here.
 class EvidenceResponseBuilder < ApplicationBuilder
-  attr_reader :request_id, :beneficiary, :evidence_type, :evidence_reference,
+  attr_reader :request_id, :provider, :beneficiary, :evidence_type, :evidence_reference,
     :document_id, :package_id, :extrinsic_object_id, :evidence_id, :classification_id
 
   # The `cid:` of the attachment and not the attachment itself: it is all the
@@ -20,19 +20,24 @@ class EvidenceResponseBuilder < ApplicationBuilder
   # list ». With an `evidence_id`, the evidence is one described already — the
   # document the user previewed, whose identifier the response must repeat.
   #
-  # `issuer`: who issued the evidence, the provider by default — chapter 4.5.2
-  # §1, « the Issuing Authority of the Evidence Metadata shall be used to
-  # indicate the actual issuer of the Evidence ». `distribution`: the one the
-  # document is in.
+  # `provider`: the agent the request designates, which `R-EDM-REQ_EDM-RESP-15`
+  # and `-16` (FATAL) hold the `EP` of the response to. Required, with no
+  # fallback: the identity of the configuration in its place is precisely what
+  # a correspondent rejects.
+  #
+  # `issuer`: who issued the evidence, France by default — chapter 4.5.2 §1,
+  # « the Issuing Authority of the Evidence Metadata shall be used to indicate
+  # the actual issuer of the Evidence ». `distribution`: the one the document
+  # is in.
   def initialize(
-    requester:, request_id:, beneficiary: nil, evidence_type: nil, evidence_reference: nil, evidence_id: nil,
-    provider: nil, issuer: nil, distribution: ServedDistribution::PDF, specification: EdmSpecification.preferred,
+    requester:, request_id:, provider:, beneficiary: nil, evidence_type: nil, evidence_reference: nil,
+    evidence_id: nil, issuer: nil, distribution: ServedDistribution::PDF, specification: EdmSpecification.preferred,
     clock: Clock.new, uuid: UuidGenerator.new
   )
     @specification = specification
     @requester = requester
-    @provider = provider || EvidenceProvider.french
-    @issuer = issuer
+    @provider = provider
+    @issuer = issuer || EvidenceProvider.french.tap { |french| french.ebms_identity.validate!(:french_provider) }
     @distribution = distribution
     @beneficiary = beneficiary
     @evidence_type = evidence_type
@@ -71,19 +76,15 @@ class EvidenceResponseBuilder < ApplicationBuilder
     @classification_id = uuid.next
   end
 
-  def provider_identity = @provider.ebms_identity.validate!(:french_provider)
+  def issuer_identity = @issuer.ebms_identity
 
-  def provider_names = @provider.descriptions
-
-  def issuer_identity = @issuer ? @issuer.ebms_identity : provider_identity
-
-  def issuer_names = (@issuer || @provider).descriptions
+  def issuer_names = @issuer.descriptions
 
   def provider_agent
     AgentBuilder.new(
-      identity: provider_identity,
-      names: provider_names,
-      address: @provider.address,
+      identity: provider.ebms_identity.validate!(:provider),
+      names: provider.descriptions,
+      address: provider.address,
       classification: EvidenceProvider::PROVIDER,
     ).render
   end

@@ -41,6 +41,12 @@ module EvidenceProvision
 
     def request = context.message.body
 
+    # The agent the request designates, announced as `EP` by every evidence
+    # response — `R-EDM-REQ_EDM-RESP-15` and `-16`. For the second request of a
+    # preview, `request` is that second request, whose provider is the one the
+    # rules compare.
+    def provider = @provider ||= request.provider
+
     # The version the answer is written in: the one the request was read in.
     # Chapter 4.7 §2.6.2 — « The same SpecificationId value MUST be used
     # consistently in both request and response messages belonging to the same
@@ -197,15 +203,15 @@ module EvidenceProvision
 
     def evidence_body(beneficiary:, evidence_type:, reference:, **described)
       EvidenceResponseBuilder.new(
-        requester:, beneficiary:, evidence_type:, evidence_reference: reference, request_id:, specification:, uuid:,
-        issuer: issuer(evidence_type), distribution: served_distribution(evidence_type), **described
+        requester:, provider:, beneficiary:, evidence_type:, evidence_reference: reference, request_id:,
+        specification:, uuid:, issuer: issuer(evidence_type), distribution: served_distribution(evidence_type), **described
       )
     end
 
     # After the timeout, for the reason `expired?` gives: a correspondent that
     # has already given up has no use for an appointment.
     def deferral
-      body = DeferredResponseBuilder.new(requester:, request_id:, specification:, uuid:)
+      body = DeferredResponseBuilder.new(requester:, provider:, request_id:, specification:, uuid:)
 
       Answers::Deferral.new(envelope: wrap(body, EbmsAction::EXECUTE_QUERY_RESPONSE),
         identifier: body.document_id, available_at: body.available_at)
@@ -232,6 +238,11 @@ module EvidenceProvision
     # The corners swap on the way back, and the exchange identifier received is
     # reused: that is what ties both legs of one exchange together.
     #
+    # The original sender is read off the body: `R-ebMS_EDM-RESP-01` and `-02`
+    # (FATAL) hold it to the `EP` an evidence response announces, `R-ebMS_EDM-ERR-01`
+    # and `-02` to the `ErrorProvider` of an error, and one source cannot
+    # disagree with itself.
+    #
     # The builder and not its render: `JournalAnswer` reads the first MIME part
     # back from it, and rendering twice would mint a second message identifier.
     def wrap(body, action, attachment: EmptyAttachment.new)
@@ -240,7 +251,7 @@ module EvidenceProvision
         attachment:,
         action:,
         recipient: context.message.sender,
-        original_sender: EvidenceProvider.french.ebms_identity,
+        original_sender: body.provider.ebms_identity,
         final_recipient: requester.ebms_identity,
         conversation_id: context.message.conversation_id,
         exchange_id: context.message.exchange_id,

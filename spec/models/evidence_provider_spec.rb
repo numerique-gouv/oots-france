@@ -8,9 +8,12 @@ RSpec.describe EvidenceProvider do
 
     let(:declared) { Settings.french_provider_identity }
 
-    it 'identifies the organisation by its SIRET' do
-      expect(provider.ebms_identity)
-        .to eq(EbmsIdentity.new(id: declared[:id], type_id: IdentifierScheme::FRENCH))
+    it 'identifies the organisation under the scheme the configuration declares' do
+      with_environment('IDENTIFIANT_FOURNISSEUR_FRANCAIS' => '00000000-0000-0000-0000-000000000000',
+        'TYPE_IDENTIFIANT_FOURNISSEUR_FRANCAIS' => 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR') do
+        expect(described_class.french.ebms_identity).to eq(EbmsIdentity.new(id: '00000000-0000-0000-0000-000000000000',
+          type_id: 'urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR'))
+      end
     end
 
     it 'names it in French' do

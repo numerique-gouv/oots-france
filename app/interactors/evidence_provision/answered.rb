@@ -19,7 +19,7 @@ module EvidenceProvision
         exchange: answering.exchange,
         message: answering.message,
         requester: answering.requester,
-        provider: EvidenceProvider.french,
+        provider: envelope.provider,
         request_id: answering.request_id,
         message_id:,
         response_id: answering.answer.identifier,
