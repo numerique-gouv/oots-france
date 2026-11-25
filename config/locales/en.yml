@@ -673,6 +673,8 @@ en:
       demo: Demo
       home: Home
       procedure: "Procedure %{code}"
+      sign_out: "Sign out of FranceConnect+ (%{name})"
+      user_name: "%{given_name} %{family_name}"
     circulated_document:
       summary:
         regrep_body: Show the body (%{size})

@@ -1,6 +1,6 @@
 <% content_for :title, t('admin.demo.procedures.index.title') %>
 
-<%= render DemoBreadcrumbsComponent.new(specification: @specification) %>
+<%= render DemoBreadcrumbsComponent.new(specification: @specification, sign_out: demo_sign_out_path, identity: demo_held_identity) %>
 
 <div>
   <h1><%= t('admin.demo.procedures.index.title') %></h1>

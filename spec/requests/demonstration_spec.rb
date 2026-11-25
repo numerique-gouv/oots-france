@@ -243,6 +243,28 @@ RSpec.describe 'The public demonstration' do
       get admin_root_path
       expect(response).to have_http_status(:ok)
     end
+
+    # OOTS-321 CA3: the button on the line of the trail reads the entrance of
+    # the page, never the other one.
+    it 'offers the sign-out on the line of the trail only where the entrance of the page holds a walk' do
+      identify_demo_user
+
+      get '/demonstration'
+      expect(page.css('button[aria-label^="Se déconnecter de FranceConnect+"]')).to be_empty
+
+      identify_visitor(userinfo: FranceConnectStubs::REQUESTED_USERINFO, version: 'v1.2', procedure: 'T1')
+
+      stub_documents_page
+      ['/demonstration', demonstration_procedures_path(version: 'v2.0'),
+       demonstration_home_path(version: 'v1.2', procedure: 'T1'),
+       demonstration_documents_path(version: 'v1.2', procedure: 'T1')].each do |path|
+        get path
+
+        button = page.at_css('.fr-breadcrumb').ancestors('.fr-grid-row').first&.at_css('form button')
+        expect(button&.text&.squish).to eq('Sophie Dupont'), path
+        expect(button.ancestors('form').first['action']).to eq('/demonstration/v1.2/T1/identification'), path
+      end
+    end
   end
 
   it 'forgets the identity of the visitor when an agent signs in to the console in the same browser' do

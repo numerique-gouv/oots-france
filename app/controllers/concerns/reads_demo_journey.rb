@@ -10,7 +10,7 @@ module ReadsDemoJourney
   include DemoIdentityCookie
 
   included do
-    helper_method :demo_sign_out_path
+    helper_method :demo_sign_out_path, :demo_held_identity
   end
 
   private
@@ -20,6 +20,10 @@ module ReadsDemoJourney
   def journey = @journey ||= ::Demo::Journey.from_session(session[demo_entrance.journey_key])
 
   def journey_held? = identity&.valid? && journey&.valid?
+
+  # The identity the sign-out names, shown to the user it describes as the
+  # identity card shows it; `nil` while no walk is held.
+  def demo_held_identity = (identity if journey_held?)
 
   # The address the sign-out submits to is that of the walk held, not that of
   # the page: the return lands on the home of the procedure the address names,
