@@ -837,6 +837,8 @@ en:
     evidence_subject_builder:
       unknown_subject: "Evidence subject of a type the response cannot write: \"%{type}\"."
   clients:
+    domibus_client:
+      submission_refused: "%{code}: %{message}"
     domibus_parties_client:
       refused: "The gateway refuses the Plugin User: %{error}"
       unreachable: "The gateway did not return its list of parties: %{error}"
@@ -1681,6 +1683,7 @@ en:
       demo_evidence_untyped: The evidence delivered carried no type of the OOTSMediaTypes list
       demo_unplaceable: The evidence delivered matches no request
       demo_locked: Querying is locked on this deployment
+      demo_not_forwarded: The query service could not forward the request
       demo_preview_unconfirmed: The preview could not be confirmed
       demo_refused: The evidence request was refused
       demo_unexpected: Unexpected response from the query service

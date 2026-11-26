@@ -93,7 +93,7 @@ RSpec.describe Demo::RequestEvidence do
     {
       422 => :demo_refused,
       501 => :demo_locked,
-      502 => :demo_unreachable,
+      502 => :demo_not_forwarded,
       500 => :demo_unexpected,
     }.each do |status, key|
       it "answers #{status} with #{key}" do

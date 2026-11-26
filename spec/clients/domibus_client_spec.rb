@@ -31,6 +31,75 @@ RSpec.describe DomibusClient do
 
       expect(stub).to have_been_requested
     end
+
+    # The plugin answers a refused submission with a `500` whose fault says why;
+    # Faraday's own message says only the status and the address.
+    describe 'a submission the gateway refuses with a fault' do
+      def refuse_with(status: 500, body: built_envelope('domibus/soumissionRefusee'))
+        stub_request(:post, "#{base_url}/services/wsplugin/submitMessage").to_return(status:, body:)
+      end
+
+      it 'raises with the code and the message of the fault' do
+        refuse_with
+
+        expect { client.submit('<soap:Envelope/>') }.to raise_error(SubmissionRefused) { |error|
+          expect(error.message).to include('EBMS:0003', 'Receiver party could not be found for the value')
+          expect(error.message).not_to include('status 500', base_url)
+        }
+      end
+
+      it 'stays a Faraday error, which every caller already rescues, and keeps the answer' do
+        refuse_with
+
+        expect { client.submit('<soap:Envelope/>') }.to raise_error(Faraday::Error) { |error|
+          expect(error.response[:status]).to eq(500)
+          expect(error.response[:body]).to include('FaultDetail')
+        }
+      end
+
+      it 'carries a code of the plugin as it comes' do
+        refuse_with(body: built_envelope('domibus/soumissionRefusee')
+          .sub('<code>EBMS:0003</code>', '<code>WS_PLUGIN_0005</code>')
+          .sub(%r{<message>.*</message>}, '<message>Invalid request</message>'))
+
+        expect { client.submit('<soap:Envelope/>') }
+          .to raise_error(SubmissionRefused, 'WS_PLUGIN_0005 : Invalid request')
+      end
+
+      it 'carries the code alone of a fault that gives no message' do
+        refuse_with(body: built_envelope('domibus/soumissionRefusee').sub(%r{<message>.*</message>}, ''))
+
+        expect { client.submit('<soap:Envelope/>') }.to raise_error(SubmissionRefused, 'EBMS:0003')
+      end
+
+      it 'carries the message of a fault detail that gives no code' do
+        refuse_with(body: built_envelope('domibus/soumissionRefusee').sub('<code>EBMS:0003</code>', ''))
+
+        expect { client.submit('<soap:Envelope/>') }
+          .to raise_error(SubmissionRefused, /\AValueInconsistent detail: Receiver party could not be found/)
+      end
+
+      it 'carries the reason of a fault that gives no code' do
+        refuse_with(body: built_envelope('domibus/soumissionRefusee').sub(%r{<soap:Detail>.*</soap:Detail>}, ''))
+
+        expect { client.submit('<soap:Envelope/>') }.to raise_error(SubmissionRefused, 'Message submission failed')
+      end
+    end
+
+    describe 'a submission refused without a fault' do
+      it 'lets an answer that is no SOAP envelope through as it came' do
+        stub_request(:post, "#{base_url}/services/wsplugin/submitMessage").to_return(status: 502, body: 'Bad Gateway')
+
+        expect { client.submit('<soap:Envelope/>') }
+          .to raise_error(Faraday::ServerError, "the server responded with status 502 for POST #{base_url}/services/wsplugin/submitMessage")
+      end
+
+      it 'lets a connection that failed through as it came' do
+        stub_request(:post, "#{base_url}/services/wsplugin/submitMessage").to_raise(Faraday::ConnectionFailed.new('connexion refusée'))
+
+        expect { client.submit('<soap:Envelope/>') }.to raise_error(Faraday::ConnectionFailed, 'connexion refusée')
+      end
+    end
   end
 
   describe '#message_errors' do

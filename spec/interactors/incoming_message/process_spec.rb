@@ -586,6 +586,18 @@ RSpec.describe IncomingMessage::Process do
       end
     end
 
+    describe 'an answer the gateway refuses with a fault' do
+      before { refuse_submissions(gateway) }
+
+      it 'journals and settles it on the cause the fault gives' do
+        expect { process }.to raise_error(SubmissionRefused)
+
+        expect(line('answer_not_sent').detail).to include(*refusal_cause)
+        expect(Exchange.sole.error_description).to include("L'échange a échoué", *refusal_cause)
+        expect(Exchange.sole.error_description).not_to include('status 500')
+      end
+    end
+
     # CA7: no conversation, nothing to open a row under, and no identifier to
     # journal either line under — the arrival first, the refusal after it.
     describe 'a request carrying no conversation' do

@@ -240,6 +240,18 @@ RSpec.describe 'The preview France offers as a provider' do
       expect(PreviewSession.sole).to have_attributes(document: nil, second_request: nil)
     end
 
+    it 'settles the exchange on the cause the gateway gives a refused late answer' do
+      deliver(following, 'm002')
+      # The real client that refuses, built past the double this file hands out.
+      allow(DomibusClient).to receive(:new).with(connection: anything).and_call_original
+      refuse_submissions(gateway)
+      PreviewSession.sole.decide!(accepted: true)
+
+      expect { AnswerPreviewedRequestJob.perform_now(PreviewSession.sole.id) }.to raise_error(SubmissionRefused)
+      expect(Exchange.sole.error_description).to include(*refusal_cause)
+      expect(AuditEvent.find_by!(event_type: 'answer_not_sent').detail).to include(*refusal_cause)
+    end
+
     # CA14: nothing accepted, an empty list and no attachment.
     it 'carries an empty list when the user decided first to use nothing' do
       PreviewSession.sole.decide!(accepted: false)

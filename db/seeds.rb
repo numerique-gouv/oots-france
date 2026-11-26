@@ -355,6 +355,18 @@ if Rails.env.development?
                        '<eb:Property name="originalSender" type="urn:cef.eu:names:identifier:EAS:0208">0671516647</eb:Property>' \
                        "\n      " + '<eb:Property name="finalRecipient">00000000000001</eb:Property>',
       events: %w[request_received] },
+    # Une requête que la passerelle de la France a refusé de prendre, le point
+    # d'accès que le Data Service Directory publie manquant à son PMode : rien
+    # n'a circulé, l'échange est clos sans code EDM, et sa seule ligne au
+    # journal est le refus, ajouté plus bas. La raison est la cause du fault que
+    # `DomibusClient#submit` compose, par la clé même du code.
+    { status: 'failed', country_code: 'DE', procedure_code: ProcedureCode::SYSTEM_CHECK,
+      specification: EdmSpecification::V2_0,
+      error_description: I18n.t('clients.domibus_client.submission_refused', code: 'EBMS:0003',
+        message: 'ValueInconsistent detail: Receiver party could not be found for the value ' \
+                 'eu.domibus.api.model.PartyId@25429047[value=AP_DE_IP_DEV,' \
+                 'type=urn:oasis:names:tc:ebcore:partyid-type:unregistered:DE]'),
+      events: [] },
   ]
 
   # Ce que `EvidenceRequest::OpenExchange` garde de tout échange émis, pour une
@@ -992,6 +1004,23 @@ if Rails.env.development?
       procedure_code: refused_version.procedure_code,
       country_code: refused_version.country_code,
       detail: refused_version.error_description,
+    )
+  end
+
+  # Le refus de la passerelle, sur l'échange qu'elle n'a pas pris : la ligne
+  # reprend la raison que l'échange porte, comme le contrôleur passe au journal
+  # celle qu'il rend au requêteur.
+  refused_submission = demonstrations.find { |one| !one.incoming? && one.country_code == 'DE' && one.edm_error_code.nil? }
+
+  unless AuditEvent.exists?(exchange_id: refused_submission.exchange_id, event_type: 'request_refused')
+    AuditEvent.create!(
+      event_type: 'request_refused', occurred_at: refused_submission.created_at,
+      conversation_id: refused_submission.conversation_id,
+      exchange_id: refused_submission.exchange_id,
+      evidence_requester_id: refused_submission.evidence_requester_id,
+      procedure_code: refused_submission.procedure_code,
+      country_code: refused_submission.country_code,
+      detail: refused_submission.error_description,
     )
   end
 

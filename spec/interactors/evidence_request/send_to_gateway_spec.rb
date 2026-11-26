@@ -159,6 +159,17 @@ RSpec.describe EvidenceRequest::SendToGateway do
     end
   end
 
+  describe 'a gateway that refuses the submission with a fault' do
+    before { refuse_submissions(gateway) }
+
+    it 'settles the exchange on the cause the fault gives, and reports it' do
+      expect(send_to_gateway.error).to include(key: :gateway_refused)
+      expect(send_to_gateway.error[:errors].sole).to include(*refusal_cause)
+      expect(exchange.reload.error_description).to include(*refusal_cause)
+      expect(exchange.error_description).not_to include('status 500')
+    end
+  end
+
   # The gateway can answer 200 with a body we cannot read. From the caller's
   # point of view that is the same problem — the gateway — and not a fault of
   # theirs, so it must not escape as an unhandled error.

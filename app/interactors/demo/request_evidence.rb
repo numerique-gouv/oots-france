@@ -47,7 +47,7 @@ module Demo
     STATUS_FAILURES = {
       422 => :demo_refused,
       501 => :demo_locked,
-      502 => :demo_unreachable,
+      502 => :demo_not_forwarded,
     }.freeze
 
     def call
