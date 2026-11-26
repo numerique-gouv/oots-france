@@ -1,0 +1,36 @@
+<eb:Messaging xmlns:eb="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/">
+  <eb:UserMessage>
+    <eb:MessageInfo>
+      <eb:Timestamp>2026-11-25T09:08:49.422Z</eb:Timestamp>
+      <eb:MessageId>2ec65f41-97de-4a4b-8e79-926ee8c16cef@oots.eu</eb:MessageId>
+    </eb:MessageInfo>
+    <eb:PartyInfo>
+      <eb:From>
+        <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">AP_FR_01</eb:PartyId>
+        <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+      </eb:From>
+      <eb:To>
+        <eb:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE">AP_BE_FED_01</eb:PartyId>
+        <eb:Role>http://sdg.europa.eu/edelivery/gateway</eb:Role>
+      </eb:To>
+    </eb:PartyInfo>
+    <eb:CollaborationInfo>
+      <eb:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</eb:Service>
+      <eb:Action>ExecuteQueryRequest</eb:Action>
+      <eb:ConversationId>9057587e-4538-461d-aef7-d99bb5f2166d</eb:ConversationId>
+    </eb:CollaborationInfo>
+    <eb:MessageProperties>
+      <eb:Property name="originalSender" type="urn:cef.eu:names:identifier:EAS:0009">13002526500013</eb:Property>
+      <eb:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE">0000000000</eb:Property>
+      <eb:Property name="ExchangeId">967ffe5d-a742-45dd-97c4-1ea0aeb9a49d</eb:Property>
+      <eb:Property name="SpecificationId">oots-edm:v2.0</eb:Property>
+    </eb:MessageProperties>
+    <eb:PayloadInfo>
+      <eb:PartInfo href="cid:4e382e15-af02-47a5-9a49-4c721175e194@oots.eu">
+        <eb:PartProperties>
+          <eb:Property name="MimeType">application/x-ebrs+xml</eb:Property>
+        </eb:PartProperties>
+      </eb:PartInfo>
+    </eb:PayloadInfo>
+  </eb:UserMessage>
+</eb:Messaging>

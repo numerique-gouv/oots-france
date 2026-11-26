@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryResponse xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+                     xmlns:sdg="http://data.europa.eu/p4s"
+                     xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                     xmlns:xlink="http://www.w3.org/1999/xlink"
+                     status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Success"
+                     requestId="urn:uuid:3dcb5710-2b04-4d1b-b1fb-8fc7041edc04">
+    <!-- Top Level Slots, providing metadata about the Response and the Evidence Provider -->
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType"
+                       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <rim:Value>oots-edm:v1.2</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceResponseIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType">
+            <rim:Value>1628a1cd-1be8-4f89-9c58-0b7b8cad4d4f</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="IssueDateTime">
+        <rim:SlotValue xsi:type="rim:DateTimeValueType">
+            <rim:Value>2026-11-25T13:15:26.126Z</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceProvider">
+        <rim:SlotValue xsi:type="rim:CollectionValueType"
+                       collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+            <rim:Element xsi:type="rim:AnyValueType">
+                <sdg:Agent>
+                    <sdg:Identifier
+                            schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:PL">100</sdg:Identifier>
+                        <sdg:Name lang="EN">Ministry of Economic Development and Technology</sdg:Name>
+                    <sdg:Address>
+                        <sdg:AdminUnitLevel1>PL</sdg:AdminUnitLevel1>
+                    </sdg:Address>
+                    <sdg:Classification>EP</sdg:Classification>
+                </sdg:Agent>
+            </rim:Element>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceRequester">
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+            <sdg:Agent>
+                <sdg:Identifier
+                        schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000003</sdg:Identifier>
+                    <sdg:Name lang="FR">Université de démonstration</sdg:Name>
+            </sdg:Agent>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:RegistryObjectList>
+        <rim:RegistryObject xsi:type="rim:ExtrinsicObjectType" id="urn:uuid:422203ea-8c5b-4047-a6c2-241532c254c0">
+            <rim:Slot name="EvidenceMetadata">
+                <rim:SlotValue xsi:type="rim:AnyValueType">
+                    <sdg:Evidence>
+                        <sdg:Identifier>2021c16c-a511-4c15-8d6a-1ce5c3d327b0</sdg:Identifier>
+                        <sdg:IsAbout>
+                            <sdg:NaturalPerson>
+                                <sdg:Identifier
+                                        schemeID="eidas">PL/FR/91040665144</sdg:Identifier>
+                                <sdg:FamilyName>eu.europa.data.p4s.StringWithVariantType@795ea485</sdg:FamilyName>
+                                <sdg:GivenName>eu.europa.data.p4s.StringWithVariantType@34fc17e5</sdg:GivenName>
+                                <sdg:DateOfBirth>1991-04-06</sdg:DateOfBirth>
+                            </sdg:NaturalPerson>
+                        </sdg:IsAbout>
+                        <sdg:IssuingAuthority>
+                            <sdg:Identifier
+                                    schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:PL">100</sdg:Identifier>
+                                <sdg:Name lang="EN">Ministry of Economic Development and Technology</sdg:Name>
+                        </sdg:IssuingAuthority>
+                        <sdg:IsConformantTo>
+                            <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/PL/fa398ce9-46c0-40b2-bdb4-0ab08ad056b1</sdg:EvidenceTypeClassification>
+                                <sdg:Title lang="EN">CEIDG certificate</sdg:Title>
+                        </sdg:IsConformantTo>
+                        <sdg:IssuingDate>2019-05-10</sdg:IssuingDate>
+                        <sdg:Distribution>
+                            <sdg:Format>application/pdf</sdg:Format>
+                        </sdg:Distribution>
+                    </sdg:Evidence>
+                </rim:SlotValue>
+            </rim:Slot>
+            <rim:RepositoryItemRef xlink:href="cid:a54818cf-a530-47b8-801c-6137fb06f293@gov.pl" xlink:title="CEIDG certificate"/>
+        </rim:RegistryObject>
+    </rim:RegistryObjectList>
+</query:QueryResponse>

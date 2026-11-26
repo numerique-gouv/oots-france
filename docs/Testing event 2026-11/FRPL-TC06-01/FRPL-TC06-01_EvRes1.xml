@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryResponse xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0"
+                     xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0"
+                     xmlns:sdg="http://data.europa.eu/p4s"
+                     xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     requestId="urn:uuid:dc3d35a7-ddfd-48f0-9f23-87a72d7ec8fa"
+                     status="urn:oasis:names:tc:ebxml-regrep:ResponseStatusType:Failure">
+    <rim:Slot name="SpecificationIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType">
+            <rim:Value>oots-edm:v1.2</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceResponseIdentifier">
+        <rim:SlotValue xsi:type="rim:StringValueType">
+            <rim:Value>a8478d07-6091-40b0-b5ad-dd38df0bafe4</rim:Value>
+        </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="ErrorProvider">
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+            <sdg:Agent>
+                <sdg:Identifier
+                        schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:PL">100</sdg:Identifier>
+                    <sdg:Name lang="EN">Ministry of Economic Development and Technology</sdg:Name>
+                <sdg:Address>
+                    <sdg:AdminUnitLevel1>PL</sdg:AdminUnitLevel1>
+                </sdg:Address>
+                <sdg:Classification>ERRP</sdg:Classification>
+            </sdg:Agent>
+        </rim:SlotValue>
+    </rim:Slot>
+
+    <rim:Slot name="EvidenceRequester">
+        <rim:SlotValue xsi:type="rim:AnyValueType">
+            <sdg:Agent>
+                <sdg:Identifier
+                        schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000003</sdg:Identifier>
+                    <sdg:Name lang="FR">Université de démonstration</sdg:Name>
+            </sdg:Agent>
+        </rim:SlotValue>
+    </rim:Slot>
+
+     <rs:Exception xsi:type="rs:AuthorizationExceptionType" message="Missing Authorization" severity="urn:sr.oots.tech.ec.europa.eu:codes:ErrorSeverity:EDMErrorResponse:PreviewRequired" detail="The server needs authorisation and preview on its side to process the request" code="EDM:ERR:0002">
+        <rim:Slot name="Timestamp">
+            <rim:SlotValue xsi:type="rim:DateTimeValueType">
+                <rim:Value>2026-11-25T13:13:47.638Z</rim:Value>
+            </rim:SlotValue>
+        </rim:Slot>
+        <rim:Slot name="PreviewLocation">
+            <rim:SlotValue xsi:type="rim:StringValueType">
+                <rim:Value>https://qa-sdg.pit.lukasiewicz.gov.pl/previewSpace/4470b908-e387-4cdb-ae1e-70276d7be097</rim:Value>
+            </rim:SlotValue>
+        </rim:Slot>
+        <rim:Slot name="PreviewDescription">
+            <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+                <rim:Value>
+                    <rim:LocalizedString xml:lang="EN" value="Preview link"/>
+                </rim:Value>
+            </rim:SlotValue>
+        </rim:Slot>
+        <rim:Slot name="PreviewMethod">
+            <rim:SlotValue xsi:type="rim:StringValueType">
+                <rim:Value>GET</rim:Value>
+            </rim:SlotValue>
+        </rim:Slot>
+    </rs:Exception>
+</query:QueryResponse>

@@ -1,0 +1,39 @@
+<ns5:Messaging xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns4="http://eu.domibus.wsplugin/">
+  <ns5:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
+    <ns5:MessageInfo>
+      <ns5:Timestamp>2026-11-24T14:07:54.000Z</ns5:Timestamp>
+      <ns5:MessageId>0cf86b38-95d2-4c9c-adb8-1c68fb201c4f@oots.int.fedservices.be</ns5:MessageId>
+    </ns5:MessageInfo>
+    <ns5:PartyInfo>
+      <ns5:From>
+        <ns5:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE">AP_BE_FED_01</ns5:PartyId>
+        <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
+      </ns5:From>
+      <ns5:To>
+        <ns5:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">AP_FR_01</ns5:PartyId>
+        <ns5:Role>http://sdg.europa.eu/edelivery/gateway</ns5:Role>
+      </ns5:To>
+    </ns5:PartyInfo>
+    <ns5:CollaborationInfo>
+      <ns5:Service type="urn:oasis:names:tc:ebcore:ebrs:ebms:binding:1.0">QueryManager</ns5:Service>
+      <ns5:Action>ExecuteQueryResponse</ns5:Action>
+      <ns5:ConversationId>7b961174-0edf-45a1-8491-5872cc47d68c</ns5:ConversationId>
+    </ns5:CollaborationInfo>
+    <ns5:MessageProperties>
+      <ns5:Property name="finalRecipient" type="urn:cef.eu:names:identifier:EAS:0009">00000000000003</ns5:Property>
+      <ns5:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE">0000000000</ns5:Property>
+    </ns5:MessageProperties>
+    <ns5:PayloadInfo>
+      <ns5:PartInfo href="cid:f097ac69-90f5-45fd-9693-2c36cae25e6f@oots.eu">
+        <ns5:PartProperties>
+          <ns5:Property name="MimeType">application/x-ebrs+xml</ns5:Property>
+        </ns5:PartProperties>
+      </ns5:PartInfo>
+      <ns5:PartInfo href="cid:7eec0aad-b467-43fb-8de1-14cffb28559b@oots.bosa.fgov.be">
+        <ns5:PartProperties>
+          <ns5:Property name="MimeType">application/pdf</ns5:Property>
+        </ns5:PartProperties>
+      </ns5:PartInfo>
+    </ns5:PayloadInfo>
+  </ns5:UserMessage>
+</ns5:Messaging>

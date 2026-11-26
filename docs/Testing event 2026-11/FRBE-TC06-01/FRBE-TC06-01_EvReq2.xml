@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<query:QueryRequest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:rs="urn:oasis:names:tc:ebxml-regrep:xsd:rs:4.0" xmlns:sdg="http://data.europa.eu/p4s" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:rim="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0" xmlns:query="urn:oasis:names:tc:ebxml-regrep:xsd:query:4.0" xmlns:xlink="http://www.w3.org/1999/xlink" id="urn:uuid:5f95c051-5322-4abd-8525-5092504de262">
+  <rim:Slot name="SpecificationIdentifier">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>oots-edm:v1.2</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="IssueDateTime">
+    <rim:SlotValue xsi:type="rim:DateTimeValueType">
+      <rim:Value>2026-11-24T14:07:30.159Z</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Procedure">
+    <rim:SlotValue xsi:type="rim:InternationalStringValueType">
+      <rim:Value>
+        <rim:LocalizedString xml:lang="EN" value="00"/>
+      </rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="PreviewLocation">
+    <rim:SlotValue xsi:type="rim:StringValueType">
+      <rim:Value>https://apps.digital.int.belgium.be/ootsproviderpreviewspacepublicfacade/token?token=JDJhJDEwJDllamdjY3hQT21RcWwySzJYSXNLZGVQRDFtLnFMR0psUXR5TUZFR2ExTGNNajBMM1BQYi9T&amp;type=previewSpaceReauth</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="PossibilityForPreview">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>true</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="ExplicitRequestGiven">
+    <rim:SlotValue xsi:type="rim:BooleanValueType">
+      <rim:Value>true</rim:Value>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="Requirements">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Requirement>
+          <sdg:Identifier>https://sr.acc.oots.tech.ec.europa.eu/requirements/00000000-0000-0000-0000-000000000000</sdg:Identifier>
+          <sdg:Name lang="EN">(TEST) Test Requirement</sdg:Name>
+          <sdg:Name lang="FI">Testivaatimus</sdg:Name>
+          <sdg:Description lang="EN">Member States may assign their own Evidence Types to this Requirement to perform Smoke Tests in the production system. This requirement MUST only be linked with an MS Test Procedure</sdg:Description>
+          <sdg:Description lang="FI">Testivaatimuksen avulla jäsenmaat voivat testata järjestelmän toimivuutta.</sdg:Description>
+        </sdg:Requirement>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceRequester">
+    <rim:SlotValue xsi:type="rim:CollectionValueType" collectionType="urn:oasis:names:tc:ebxml-regrep:CollectionType:Set">
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:cef.eu:names:identifier:EAS:0009">00000000000003</sdg:Identifier>
+          <sdg:Name lang="FR">Université de démonstration</sdg:Name>
+          <sdg:Address>
+            <sdg:AdminUnitLevel1>FR</sdg:AdminUnitLevel1>
+          </sdg:Address>
+          <sdg:Classification>ER</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+      <rim:Element xsi:type="rim:AnyValueType">
+        <sdg:Agent>
+          <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">OOTSFRANCE</sdg:Identifier>
+          <sdg:Name lang="EN">OOTS-France Intermediary Platform</sdg:Name>
+          <sdg:Classification>IP</sdg:Classification>
+        </sdg:Agent>
+      </rim:Element>
+    </rim:SlotValue>
+  </rim:Slot>
+  <rim:Slot name="EvidenceProvider">
+    <rim:SlotValue xsi:type="rim:AnyValueType">
+      <sdg:Agent>
+        <sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:BE">0000000000</sdg:Identifier>
+        <sdg:Name lang="DE">FÖD BOSA</sdg:Name>
+        <sdg:Name lang="EN">FPS BOSA</sdg:Name>
+        <sdg:Name lang="FR">SPF BOSA</sdg:Name>
+        <sdg:Name lang="NL">FOD BOSA</sdg:Name>
+      </sdg:Agent>
+    </rim:SlotValue>
+  </rim:Slot>
+  <query:ResponseOption returnType="LeafClassWithRepositoryItem"/>
+  <query:Query queryDefinition="DocumentQuery">
+    <rim:Slot name="NaturalPerson">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+        <sdg:Person>
+          <sdg:LevelOfAssurance>High</sdg:LevelOfAssurance>
+          <sdg:FamilyName>Oots</sdg:FamilyName>
+          <sdg:GivenName>France</sdg:GivenName>
+          <sdg:DateOfBirth>1996-06-01</sdg:DateOfBirth>
+        </sdg:Person>
+      </rim:SlotValue>
+    </rim:Slot>
+    <rim:Slot name="EvidenceRequest">
+      <rim:SlotValue xsi:type="rim:AnyValueType">
+        <sdg:DataServiceEvidenceType xmlns="urn:oasis:names:tc:ebxml-regrep:xsd:rim:4.0">
+          <sdg:Identifier>def525d5-f5c7-46d8-a3ce-ebe1fee5cf03</sdg:Identifier>
+          <sdg:EvidenceTypeClassification>https://sr.acc.oots.tech.ec.europa.eu/evidencetypeclassifications/BE/1fc402b8-e347-4dc6-bc95-f5db10032913</sdg:EvidenceTypeClassification>
+          <sdg:Title lang="DE">Test Zertifikat</sdg:Title>
+          <sdg:Title lang="EN">Test certificate</sdg:Title>
+          <sdg:Title lang="FR">Certificat de test</sdg:Title>
+          <sdg:Title lang="NL">Test certificaat</sdg:Title>
+          <sdg:Description lang="DE">Test Zertifikat</sdg:Description>
+          <sdg:Description lang="EN">Test certificate</sdg:Description>
+          <sdg:Description lang="FR">Certificat de test</sdg:Description>
+          <sdg:Description lang="NL">Test certificaat</sdg:Description>
+          <sdg:DistributedAs>
+            <sdg:Format>application/pdf</sdg:Format>
+          </sdg:DistributedAs>
+        </sdg:DataServiceEvidenceType>
+      </rim:SlotValue>
+    </rim:Slot>
+  </query:Query>
+</query:QueryRequest>
