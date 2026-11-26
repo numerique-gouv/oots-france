@@ -1524,8 +1524,7 @@ fr:
       # « rim:Element/sdg:Agent » sur le rim:SlotValue — et non son message, qui
       # dit que chaque rim:Element « MUST use » un agent : un élément sans agent
       # à côté d'un élément qui en porte un satisfait la règle. Ce refus-là ne
-      # repart pas — sans agent, ni valeur à recopier ni finalRecipient à
-      # adresser —, et il précède C074, qui compterait sinon les classifications
+      # repart pas — sans agent, pas de valeur à recopier —, et il précède C074, qui compterait sinon les classifications
       # d'agents qui n'existent pas.
       collection_without_agent: >-
         La collection « EvidenceRequester » de la requête reçue ne porte aucun agent.

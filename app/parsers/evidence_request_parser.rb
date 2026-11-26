@@ -205,8 +205,7 @@ class EvidenceRequestParser
   # `slot_elements`, which takes the first.
   #
   # `R-EDM-REQ-S039` is refused here too, and carries no answer either: a
-  # collection naming no agent leaves neither a value an exception could copy
-  # back nor a `finalRecipient` to address it to.
+  # collection naming no agent leaves no value an exception could copy back.
   #
   # The assertion, and not its message: the test is `rim:Element/sdg:Agent` on
   # the `rim:SlotValue`, so **one** element carrying an agent satisfies it,
@@ -454,8 +453,7 @@ class EvidenceRequestParser
   # `R-EDM-ERR-C010`, `C009`, `C027`, `C028` and `C029` are FATAL on each of
   # them. Refusing a value by signing a message that carries it is not a
   # refusal. `sdg:Name` cannot be dropped either, `AgentType` making it
-  # `minOccurs="1"`, and the scheme is the `type` of the ebMS `finalRecipient`,
-  # which is the return address itself.
+  # `minOccurs="1"`.
   #
   # `R-EDM-REQ-C011` and the chapter behind `AGENT_IDENTIFIER_REQUIRED` are
   # refused here for the same reason, one step earlier: an identifier a request

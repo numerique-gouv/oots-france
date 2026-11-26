@@ -235,6 +235,8 @@ RSpec.describe EvidenceProvision::Answer do
       [property.text, property['type']]
     end
 
+    def received_final_recipient = [message.final_recipient.id, message.final_recipient.type_id]
+
     shared_examples 'an answer announcing the provider the request names' do
       it 'announces it as the one agent classified EP, under its scheme' do
         answer
@@ -252,10 +254,11 @@ RSpec.describe EvidenceProvision::Answer do
         expect(provider_agents.to_xml).not_to include(Settings.french_provider_identity[:id])
       end
 
-      it 'puts it in the original sender of the header' do
+      # `R-ebMS_ebMS-07` and `-08`: the header copies the request's, swapped.
+      it 'leaves the original sender of the header to the final recipient of the request' do
         answer
 
-        expect(original_sender).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
+        expect(original_sender).to eq(received_final_recipient)
       end
 
       it 'journals it as the providing authority of the response' do
@@ -307,9 +310,14 @@ RSpec.describe EvidenceProvision::Answer do
       it 'answers under the identity of the configuration' do
         answer
 
-        expect(original_sender).to eq([Settings.french_provider_identity[:id], Settings.french_provider_identity[:type_id]])
         expect(AuditEvent.last).to have_attributes(event_type: 'error_sent',
           providing_authority_id: Settings.french_provider_identity[:id])
+      end
+
+      it 'leaves the original sender of the header to the final recipient of the request' do
+        answer
+
+        expect(original_sender).to eq(received_final_recipient)
       end
 
       # On a deployment the configuration names the provider France publishes
@@ -322,7 +330,6 @@ RSpec.describe EvidenceProvision::Answer do
 
         error_provider = submitted.at_xpath("//rim:Slot[@name='ErrorProvider']//sdg:Identifier", SlotReading::NAMESPACES)
         expect([error_provider.text, error_provider['schemeID']]).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
-        expect(original_sender).to eq([PUBLISHED_ID, PUBLISHED_SCHEME])
       end
     end
   end
@@ -1818,4 +1825,5 @@ RSpec.describe EvidenceProvision::Answer do
 
     expect(answer).to be_a_success
   end
+
 end

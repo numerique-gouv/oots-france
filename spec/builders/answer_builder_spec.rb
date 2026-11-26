@@ -45,11 +45,6 @@ RSpec.describe AnswerBuilder do
       it 'announces as EP the provider the request names' do
         expect(agent_identifier(body, 'EvidenceProvider', 'EP')).to eq([designated_id, designated_scheme])
       end
-
-      it 'has its header name that provider as the original sender' do
-        expect(property(header(body, EbmsAction::EXECUTE_QUERY_RESPONSE), 'originalSender'))
-          .to eq([designated_id, designated_scheme])
-      end
     end
   end
 
@@ -63,11 +58,6 @@ RSpec.describe AnswerBuilder do
 
     it 'answers the request it was given the identifier of' do
       expect(Nokogiri::XML(body.render).root['requestId']).to eq(message.body.request_id)
-    end
-
-    it 'has its header name France as the original sender' do
-      french = EvidenceProvider.french.ebms_identity
-      expect(property(header(body, EbmsAction::EXCEPTION_RESPONSE), 'originalSender')).to eq([french.id, french.type_id])
     end
 
     context 'when the request identifier could not be read' do
@@ -92,10 +82,73 @@ RSpec.describe AnswerBuilder do
       expect(at('//eb:ConversationId').text).to eq(message.conversation_id)
       expect(property(envelope, 'ExchangeId').first).to eq(message.exchange_id)
     end
+  end
 
-    it 'names the requester as the final recipient' do
-      requester = message.body.requester.ebms_identity
-      expect(property(envelope, 'finalRecipient')).to eq([requester.id, requester.type_id])
+  # Chapter 4.7 §2.4 and `R-ebMS_ebMS-05` to `-08`: the corners of the
+  # request's header, swapped, whatever its body says — here an intermediary
+  # platform as `originalSender` and another provider as `finalRecipient`.
+  describe 'the corners of a request whose header names other parties than its body' do
+    let(:sender) { ['0671516647', 'urn:cef.eu:names:identifier:EAS:0208'] }
+    let(:recipient) { ['13000247900016', 'urn:cef.eu:names:identifier:EAS:0002'] }
+    let(:message) { readdressed_both(envelope_with_provider_agent { designated_provider }) }
+
+    def readdressed_both(received)
+      readdressed(readdressed(received, 'originalSender', id: sender.first, type: sender.last),
+        'finalRecipient', id: recipient.first, type: recipient.last)
+    end
+
+    def preview_required
+      answers.error_response(EdmException::AUTHORIZATION, preview_location: 'https://oots.example/previsualisation/x')
+    end
+
+    {
+      'the evidence response' => [-> { evidence_response }, EbmsAction::EXECUTE_QUERY_RESPONSE],
+      'the empty list' => [-> { answers.empty_response }, EbmsAction::EXECUTE_QUERY_RESPONSE],
+      'the deferred response' => [-> { answers.deferred_response }, EbmsAction::EXECUTE_QUERY_RESPONSE],
+      'an error response' => [-> { answers.error_response(EdmException::OBJECT_NOT_FOUND) },
+                              EbmsAction::EXCEPTION_RESPONSE],
+      'the PreviewRequired error' => [-> { preview_required }, EbmsAction::EXCEPTION_RESPONSE],
+    }.each do |kind, (build, action)|
+      { 'on the 2.0 line' => -> { envelope_with_provider_agent { designated_provider } },
+        'on the 1.2 line' => -> { earlier_line_envelope { |body| body.sub(Fixtures::PROVIDER_AGENT) { designated_provider } } } }
+        .each do |line, received|
+        describe "#{kind}, #{line}" do
+          subject(:envelope) { header(instance_exec(&build), action) }
+
+          let(:message) { readdressed_both(instance_exec(&received)) }
+
+          it 'is addressed to the original sender of the request' do
+            expect(property(envelope, 'finalRecipient')).to eq(sender)
+          end
+
+          it 'comes from the final recipient of the request' do
+            expect(property(envelope, 'originalSender')).to eq(recipient)
+          end
+
+          it 'names nothing of the requester its body announces' do
+            expect(envelope.to_xml).not_to include(message.body.requester.ebms_identity.id)
+          end
+        end
+      end
+    end
+
+    it 'leaves the provider the request names as the EP of the response' do
+      expect(agent_identifier(evidence_response, 'EvidenceProvider', 'EP')).to eq([designated_id, designated_scheme])
+    end
+
+    it 'leaves France as the error provider' do
+      french = EvidenceProvider.french.ebms_identity
+      expect(agent_identifier(answers.error_response(EdmException::OBJECT_NOT_FOUND), 'ErrorProvider'))
+        .to eq([french.id, french.type_id])
+    end
+
+    it 'copies the values as they are, surrounding whitespace included' do
+      message = readdressed(envelope_with_provider_agent { designated_provider }, 'originalSender',
+        id: " #{sender.first} ", type: sender.last)
+      answers = described_class.new(message:, request_id:, uuid: Oots::SequentialUuids.new)
+      envelope = Nokogiri::XML(answers.envelope(answers.empty_response, EbmsAction::EXECUTE_QUERY_RESPONSE).header)
+
+      expect(property(envelope, 'finalRecipient').first).to eq(" #{sender.first} ")
     end
   end
 end

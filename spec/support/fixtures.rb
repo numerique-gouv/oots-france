@@ -298,6 +298,23 @@ module Fixtures
   # A real request whose designated provider has been altered.
   def envelope_with_provider_agent(&) = envelope_with_body('requete') { |body| body.sub(PROVIDER_AGENT, &) }
 
+  # The message with one of the two corners of its header rewritten, its body
+  # left as it was: how a spec fabricates a request whose header names other
+  # parties than its body, as an intermediary platform's do. `id: nil` removes
+  # the property, `type: nil` its attribute.
+  def readdressed(message, property, id:, type:)
+    document = Nokogiri::XML(message.raw)
+    corner = document.at_xpath("//eb:Property[@name='#{property}']", OotsNamespaces::NAMESPACES)
+    if id.nil?
+      corner.remove
+    else
+      corner.content = id
+      type.nil? ? corner.remove_attribute('type') : corner['type'] = type
+    end
+
+    RetrievedMessageParser.new(document.to_xml)
+  end
+
   # The request the real envelope carries, about an organisation instead of the
   # person it names. `R-EDM-REQ-S016` admits one evidence subject and never two,
   # so the `NaturalPerson` slot gives way rather than being joined.

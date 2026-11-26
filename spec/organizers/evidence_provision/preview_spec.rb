@@ -170,14 +170,18 @@ RSpec.describe 'The preview France offers as a provider' do
     # answer to the second request announces the provider that request names,
     # which need not be the one the first named.
     describe 'the provider it announces' do
+      # CA6 of OOTS-329 on every path: the header names another platform than
+      # the first request, and the answer goes back to it.
+      let(:platform) { ['0671516647', 'urn:cef.eu:names:identifier:EAS:0208'] }
       let(:following) do
-        second(exchange_id: first.exchange_id, request_id: second_id) do |body|
+        named_provider = second(exchange_id: first.exchange_id, request_id: second_id) do |body|
           body.sub(Fixtures::PROVIDER_AGENT) do
             '<sdg:Agent><sdg:Identifier schemeID="urn:oasis:names:tc:ebcore:partyid-type:unregistered:FR">' \
               '00000000-0000-0000-0000-000000000000</sdg:Identifier>' \
               '<sdg:Name lang="EN">FR - Test Evidence Provider</sdg:Name></sdg:Agent>'
           end
         end
+        readdressed(named_provider, 'originalSender', id: platform.first, type: platform.last)
       end
 
       let(:named) do
@@ -186,19 +190,23 @@ RSpec.describe 'The preview France offers as a provider' do
 
       def announced
         agent = body_of(submitted.last).at_xpath("//rim:Slot[@name='EvidenceProvider']//sdg:Identifier", RS)
-        sender = Nokogiri::XML(submitted.last)
-          .at_xpath("//eb:Property[@name='originalSender']", OotsNamespaces::NAMESPACES)
         journalled = AuditEvent.where(event_type: 'response_sent').last
 
-        [[agent.text, agent['schemeID']], [sender.text, sender['type']],
-         [journalled.providing_authority_id, journalled.providing_authority_scheme]]
+        [[agent.text, agent['schemeID']], [journalled.providing_authority_id, journalled.providing_authority_scheme]]
+      end
+
+      def addressed
+        recipient = Nokogiri::XML(submitted.last)
+          .at_xpath("//eb:Property[@name='finalRecipient']", OotsNamespaces::NAMESPACES)
+        [recipient.text, recipient['type']]
       end
 
       it 'is the second request\'s once the user had accepted before it arrived' do
         PreviewSession.sole.decide!(accepted: true)
         deliver(following, 'm002')
 
-        expect(announced).to eq([named] * 3)
+        expect(announced).to eq([named] * 2)
+        expect(addressed).to eq(platform)
       end
 
       it 'is the second request\'s once the user accepts after it was held' do
@@ -207,14 +215,16 @@ RSpec.describe 'The preview France offers as a provider' do
           PreviewSession.sole.decide!(accepted: true) && AnswerPreviewedRequestJob.perform_later(PreviewSession.sole.id)
         end
 
-        expect(announced).to eq([named] * 3)
+        expect(announced).to eq([named] * 2)
+        expect(addressed).to eq(platform)
       end
 
       it 'is the second request\'s on the empty list of a user who used nothing' do
         PreviewSession.sole.decide!(accepted: false)
         deliver(following, 'm002')
 
-        expect(announced).to eq([named] * 3)
+        expect(announced).to eq([named] * 2)
+        expect(addressed).to eq(platform)
       end
     end
 
