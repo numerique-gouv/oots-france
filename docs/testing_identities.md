@@ -59,3 +59,18 @@ TODO to reach level 4 :
 - fill documents and upload them in it (I have romanian examples)
   - Access Point readiness indicators
   - Common Services readiness indicators
+
+
+# Sweden
+
+First name : Beda
+Last name : Marklund
+birthdate : 06/01/2024 (6 jan)
+id : 202401062381
+
+identification : use Ref-IDP
+
+Evidence :
+- Proof of secondary education transcript
+- Upper secondary award
+
