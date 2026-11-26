@@ -168,12 +168,15 @@ RSpec.describe 'Admin::Demo::Requests' do
         expect(response.parsed_body.text).to include('refusée', 'EB:ERR:0001')
       end
 
-      it 'says the service could not be reached on a 502' do
-        stub_evidence_request(status: 502, body: { erreur: 'Annuaire injoignable' }.to_json)
+      # The contract answered: a directory or the gateway, upstream of it, did
+      # not let the request go, and the message it returned says which.
+      it 'says the service could not forward the request on a 502, with the message it returned' do
+        stub_evidence_request(status: 502, body: { erreur: 'EBMS:0003 : Receiver party could not be found' }.to_json)
 
         post demande_path
 
-        expect(response.parsed_body.text).to include("n'a pas pu être joint")
+        expect(response.parsed_body.text).to include("n'a pas pu transmettre la demande", 'EBMS:0003 : Receiver party')
+        expect(response.parsed_body.text).not_to include("n'a pas pu être joint")
       end
 
       # The feature switch answers in plain text and not in JSON: the client has

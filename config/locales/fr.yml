@@ -2366,7 +2366,10 @@ fr:
       # qu'elle rend tels quels à l'usager : ce sont ceux qu'un fournisseur de
       # service reçoit, et la démonstration les montre comme elle montre le
       # reste. Aucun échange n'est ouvert dans les quatre cas — c'est ce que la
-      # page dit sous l'alerte, et non ici.
+      # page dit sous l'alerte, et non ici. `demo_not_forwarded` est le `502` :
+      # un annuaire ou la passerelle, en amont, n'a pas laissé partir la
+      # demande, et le contrat, lui, a répondu ; `demo_unreachable` est le
+      # contrat qui n'a pas répondu du tout.
       #
       # Le message rendu par le contrat voyage sous le titre, jamais dedans :
       # c'est là que se lit `EB:ERR:0001`. Seul `demo_unexpected` ne peut pas
@@ -2380,6 +2383,7 @@ fr:
       demo_evidence_untyped: Le justificatif remis ne portait aucun type de la liste OOTSMediaTypes
       demo_unplaceable: Le justificatif remis ne se rattache à aucune demande
       demo_locked: Le requêtage est verrouillé sur ce déploiement
+      demo_not_forwarded: Le service de requête n'a pas pu transmettre la demande
       demo_preview_unconfirmed: La prévisualisation n'a pas pu être confirmée
       demo_refused: La demande de justificatif a été refusée
       demo_unexpected: Réponse inattendue du service de requête
