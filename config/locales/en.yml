@@ -837,6 +837,8 @@ en:
     evidence_subject_builder:
       unknown_subject: "Evidence subject of a type the response cannot write: \"%{type}\"."
   clients:
+    domibus_client:
+      submission_refused: "%{code}: %{message}"
     domibus_parties_client:
       refused: "The gateway refuses the Plugin User: %{error}"
       unreachable: "The gateway did not return its list of parties: %{error}"

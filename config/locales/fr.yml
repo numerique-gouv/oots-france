@@ -1103,6 +1103,9 @@ fr:
     evidence_subject_builder:
       unknown_subject: "Sujet de justificatif d'un type que la réponse ne sait pas écrire : « %{type} »."
   clients:
+    domibus_client:
+      # La cause d'un fault de la passerelle, à la place du statut HTTP.
+      submission_refused: "%{code} : %{message}"
     domibus_parties_client:
       refused: "La passerelle refuse le Plugin User : %{error}"
       unreachable: "La passerelle n'a pas rendu la liste de ses parties : %{error}"

@@ -10,7 +10,15 @@ class DomibusClient
     @connection = connection
   end
 
-  def submit(envelope) = SubmittedMessageParser.new(post_soap('submitMessage', envelope))
+  # A submission the gateway refuses is answered with a SOAP fault whose cause
+  # Faraday's own message leaves out; a refusal without one is let through as it
+  # came.
+  def submit(envelope)
+    SubmittedMessageParser.new(post_soap('submitMessage', envelope))
+  rescue Faraday::Error => e
+    reason = refusal_reason(SoapFaultParser.new(e.response&.dig(:body)))
+    raise reason ? SubmissionRefused.new(reason, e.response) : e
+  end
 
   def pending_messages(conversation_id: nil)
     request = ListPendingMessagesBuilder.new(conversation_id:).render
@@ -57,6 +65,16 @@ class DomibusClient
   end
 
   private
+
+  # The code and the message of the fault, the code alone where it gives no
+  # message, its words where it gives no code (`WebServiceImpl.generateFaultDetail`,
+  # Domibus `5.2-JEE10`).
+  def refusal_reason(fault)
+    return fault.reason unless fault.code
+    return fault.code unless fault.message
+
+    I18n.t('clients.domibus_client.submission_refused', code: fault.code, message: fault.message)
+  end
 
   def post_soap(operation, body)
     connection.post("#{WS_PLUGIN_PATH}/#{operation}", body, 'Content-Type' => 'text/xml').body
