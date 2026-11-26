@@ -1826,4 +1826,41 @@ RSpec.describe EvidenceProvision::Answer do
     expect(answer).to be_a_success
   end
 
+  # RG9 of OOTS-329: every answer copies the request's corners back swapped, so
+  # one missing its value or its `type` leaves the answer without an address.
+  describe 'a request whose header leaves the answer without an address' do
+    let(:opened) do
+      create(:exchange, incoming: true, exchange_id: message.exchange_id,
+        conversation_id: message.conversation_id, procedure_code: '00', country_code: 'FI')
+    end
+
+    let(:captured) { RetrievedMessageParser.new(real_envelope('requete')) }
+
+    before { opened }
+
+    {
+      'an originalSender absent' => ['originalSender', { id: nil, type: nil }, 'valeur'],
+      'an originalSender empty' => ['originalSender', { id: '', type: 'urn:cef.eu:names:identifier:EAS:0208' }, 'valeur'],
+      'a finalRecipient without type' => ['finalRecipient', { id: '13000247900016', type: nil }, 'type'],
+      'a finalRecipient whose type is empty' => ['finalRecipient', { id: '13000247900016', type: '' }, 'type'],
+    }.each do |case_name, (property, corner, part)|
+      context "with #{case_name}" do
+        let(:message) { readdressed(captured, property, **corner) }
+
+        it 'submits nothing to the gateway' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+          expect(gateway).not_to have_received(:submit)
+        end
+
+        it 'journals the refusal, naming the property and what it lacks' do
+          expect { answer }.to raise_error(UnreadableMessageError)
+
+          expect(AuditEvent.last).to have_attributes(
+            event_type: 'request_refused', exchange_id: message.exchange_id, country_code: 'FI',
+            detail: include(property).and(include("pas de #{part}")),
+          )
+        end
+      end
+    end
+  end
 end
