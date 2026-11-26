@@ -42,7 +42,7 @@ Un message eDelivery traverse quatre coins. Pour une requête de justificatif :
 
 Les coins qualifient le trajet d'un message : sur la réponse, ils s'inversent. L'*Evidence Requester* agit pour le compte de C1 et confie le message à C2.
 
-Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender` et `finalRecipient`, que `EbmsHeaderBuilder` renseigne à partir du requêteur et du fournisseur : sur la requête, le requêteur puis le fournisseur visé ; sur les réponses, où les coins s'inversent, le fournisseur français puis le requêteur reçu.
+Les identités de C1 et C4 voyagent dans les propriétés ebMS `originalSender` et `finalRecipient`, que `EbmsHeaderBuilder` renseigne : sur la requête, le requêteur puis le fournisseur visé ; sur les réponses, où les coins s'inversent, le `finalRecipient` puis l'`originalSender` de l'entête de la requête reçue, recopiés tels quels — valeur et `type` —, sans rien lire des corps ([README](../README.md#la-validation-croisée) pour ce que cette décision coûte quand l'entête et le corps de la requête divergent).
 
 ### Identifier une organisation
 
